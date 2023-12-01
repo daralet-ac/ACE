@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Database;
 using ACE.Entity;
@@ -13,8 +10,9 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Managers;
+using ACE.Server.Network.GameEvent.Events;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
@@ -26,7 +24,7 @@ namespace ACE.Server.WorldObjects
     /// </summary>
     public class Vendor : Creature
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Vendor>();
 
         public readonly Dictionary<ObjectGuid, WorldObject> DefaultItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
 
@@ -83,37 +81,37 @@ namespace ACE.Server.WorldObjects
             if (currencyWeenie == null)
             {
                 var errorMsg = $"WCID {currencyWCID}{(AlternateCurrency.HasValue ? ", which comes from PropertyDataId.AlternateCurrency," : "")} is not found in the database, Vendor has been disabled as a result!";
-                log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) Currency {errorMsg}");
+                _log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) Currency {errorMsg}");
                 success = false;
             }
 
             if (!MerchandiseItemTypes.HasValue)
             {
-                log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) MerchandiseItemTypes is NULL, Vendor has been disabled as a result!");
+                _log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) MerchandiseItemTypes is NULL, Vendor has been disabled as a result!");
                 success = false;
             }
 
             if (!MerchandiseMinValue.HasValue)
             {
-                log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) MerchandiseMinValue is NULL, Vendor has been disabled as a result!");
+                _log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) MerchandiseMinValue is NULL, Vendor has been disabled as a result!");
                 success = false;
             }
 
             if (!MerchandiseMaxValue.HasValue)
             {
-                log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) MerchandiseMaxValue is NULL, Vendor has been disabled as a result!");
+                _log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) MerchandiseMaxValue is NULL, Vendor has been disabled as a result!");
                 success = false;
             }
 
             if (!BuyPrice.HasValue)
             {
-                log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) BuyPrice is NULL, Vendor has been disabled as a result!");
+                _log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) BuyPrice is NULL, Vendor has been disabled as a result!");
                 success = false;
             }
 
             if (!SellPrice.HasValue)
             {
-                log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) SellPrice is NULL, Vendor has been disabled as a result!");
+                _log.Error($"[VENDOR] {Name} (0x{Guid}:{WeenieClassId}) SellPrice is NULL, Vendor has been disabled as a result!");
                 success = false;
             }
 
@@ -314,7 +312,7 @@ namespace ACE.Server.WorldObjects
                     break;
 
                 default:
-                    log.Warn($"Vendor.DoVendorEmote - Encountered Unhandled VendorType {vendorType} for {Name} ({WeenieClassId})");
+                    _log.Warning($"Vendor.DoVendorEmote - Encountered Unhandled VendorType {vendorType} for {Name} ({WeenieClassId})");
                     break;
             }
         }
@@ -638,7 +636,7 @@ namespace ACE.Server.WorldObjects
                     if (!UniqueItemsForSale.TryAdd(item.Guid, item))
                     {
                         var sellItems = string.Join(", ", items.Values.Select(i => $"{i.Name} ({i.Guid})"));
-                        log.Error($"[VENDOR] {Name}.ProcessItemsForPurchase({player.Name}): duplicate item found, sell list: {sellItems}");
+                        _log.Error($"[VENDOR] {Name}.ProcessItemsForPurchase({player.Name}): duplicate item found, sell list: {sellItems}");
                     }
 
                     item.SoldTimestamp = Time.GetUnixTime();
@@ -705,7 +703,7 @@ namespace ACE.Server.WorldObjects
 
                 if (soldTime == null)
                 {
-                    log.Warn($"[VENDOR] Vendor {Name} has unique item {uniqueItem.Name} ({uniqueItem.Guid}) without a SoldTimestamp -- this shouldn't happen");
+                    _log.Warning($"[VENDOR] Vendor {Name} has unique item {uniqueItem.Name} ({uniqueItem.Guid}) without a SoldTimestamp -- this shouldn't happen");
                     continue;   // keep in list?
                 }
 
@@ -725,7 +723,7 @@ namespace ACE.Server.WorldObjects
             {
                 foreach (var itemToRemove in itemsToRemove)
                 {
-                    log.Debug($"[VENDOR] Vendor {Name} has discontinued sale of {itemToRemove.Name} and removed it from its UniqueItemsForSale list.");
+                    _log.Debug($"[VENDOR] Vendor {Name} has discontinued sale of {itemToRemove.Name} and removed it from its UniqueItemsForSale list.");
                     UniqueItemsForSale.Remove(itemToRemove.Guid);
 
                     itemToRemove.Destroy();     // even though it has already been removed from the db at this point, we want to mark as freed in guid manager now

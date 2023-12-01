@@ -1,24 +1,20 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
-
-using log4net;
-
 using ACE.Database.Entity;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
+using Serilog;
 
 namespace ACE.Database
 {
     public class WorldDatabase
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<WorldDatabase>();
 
         public bool Exists(bool retryUntilFound)
         {
@@ -30,12 +26,12 @@ namespace ACE.Database
                 {
                     if (((RelationalDatabaseCreator)context.Database.GetService<IDatabaseCreator>()).Exists())
                     {
-                        log.Debug($"[DATABASE] Successfully connected to {config.Database} database on {config.Host}:{config.Port}.");
+                        _log.Debug("[DATABASE] Successfully connected to {Database} database on {Host}:{Port}.", config.Database, config.Host, config.Port);
                         return true;
                     }
                 }
 
-                log.Error($"[DATABASE] Attempting to reconnect to {config.Database} database on {config.Host}:{config.Port} in 5 seconds...");
+                _log.Error("[DATABASE] Attempting to reconnect to {Database} database on {Host}:{Port} in 5 seconds...", config.Database, config.Host, config.Port);
 
                 if (retryUntilFound)
                     Thread.Sleep(5000);

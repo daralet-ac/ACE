@@ -1,25 +1,23 @@
 using System;
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Entity;
-using ACE.Server.Entity.Actions;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
+using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.GameEvent.Events;
+using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
     public partial class Corpse : Container
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Corpse>();
 
         /// <summary>
         /// The maximum number of seconds for an empty corpse to stick around
@@ -70,7 +68,7 @@ namespace ACE.Server.WorldObjects
                 var dtTimeToRot = DateTime.UtcNow.AddSeconds(TimeToRot ?? 0);
                 var tsDecay = dtTimeToRot - DateTime.UtcNow;
 
-                log.Debug($"[CORPSE] {Name} (0x{Guid}) Reloaded from Database: Corpse Level: {Level ?? 0} | InventoryLoaded: {InventoryLoaded} | Inventory.Count: {Inventory.Count} | TimeToRot: {TimeToRot} | CreationTimestamp: {CreationTimestamp} ({Time.GetDateTimeFromTimestamp(CreationTimestamp ?? 0).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}) | Corpse should not decay before: {dtTimeToRot.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}, {tsDecay.ToString("%d")} day(s), {tsDecay.ToString("%h")} hours, {tsDecay.ToString("%m")} minutes, and {tsDecay.ToString("%s")} seconds from now.");
+                _log.Debug($"[CORPSE] {Name} (0x{Guid}) Reloaded from Database: Corpse Level: {Level ?? 0} | InventoryLoaded: {InventoryLoaded} | Inventory.Count: {Inventory.Count} | TimeToRot: {TimeToRot} | CreationTimestamp: {CreationTimestamp} ({Time.GetDateTimeFromTimestamp(CreationTimestamp ?? 0).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}) | Corpse should not decay before: {dtTimeToRot.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}, {tsDecay.ToString("%d")} day(s), {tsDecay.ToString("%h")} hours, {tsDecay.ToString("%m")} minutes, and {tsDecay.ToString("%s")} seconds from now.");
             }
         }
 
@@ -114,7 +112,7 @@ namespace ACE.Server.WorldObjects
 
             Level = player.Level ?? 1;
 
-            log.Debug($"[CORPSE] {Name}.RecalculateDecayTime({player.Name}) 0x{Guid}: Player Level: {player.Level} | Inventory.Count: {Inventory.Count} | TimeToRot: {TimeToRot} | CreationTimestamp: {CreationTimestamp} ({Time.GetDateTimeFromTimestamp(CreationTimestamp ?? 0).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}) | Corpse should not decay before: {dtTimeToRot.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}, {tsDecay.ToString("%d")} day(s), {tsDecay.ToString("%h")} hours, {tsDecay.ToString("%m")} minutes, and {tsDecay.ToString("%s")} seconds from now.");
+            _log.Debug($"[CORPSE] {Name}.RecalculateDecayTime({player.Name}) 0x{Guid}: Player Level: {player.Level} | Inventory.Count: {Inventory.Count} | TimeToRot: {TimeToRot} | CreationTimestamp: {CreationTimestamp} ({Time.GetDateTimeFromTimestamp(CreationTimestamp ?? 0).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}) | Corpse should not decay before: {dtTimeToRot.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}, {tsDecay.ToString("%d")} day(s), {tsDecay.ToString("%h")} hours, {tsDecay.ToString("%m")} minutes, and {tsDecay.ToString("%s")} seconds from now.");
         }
 
         /// <summary>
@@ -246,7 +244,7 @@ namespace ACE.Server.WorldObjects
             var success = base.EnterWorld();
             if (!success)
             {
-                log.Error($"{Name} ({Guid}) failed to spawn @ {Location?.ToLOCString()}");
+                _log.Error($"{Name} ({Guid}) failed to spawn @ {Location?.ToLOCString()}");
                 return false;
             }
 
@@ -342,8 +340,8 @@ namespace ACE.Server.WorldObjects
             var tier = LootGenerationFactory.GetRareTier(wo.WeenieClassId);
             LootGenerationFactory.RareChances.TryGetValue(tier, out var chance);
 
-            log.Debug($"[LOOT][RARE] {Name} ({Guid}) generated rare {wo.Name} ({wo.Guid}) for {killer.Name} ({killer.Guid})");
-            log.Debug($"[LOOT][RARE] Tier {tier} -- 1 / {chance:N0} chance -- {luck:N0} luck");
+            _log.Debug($"[LOOT][RARE] {Name} ({Guid}) generated rare {wo.Name} ({wo.Guid}) for {killer.Name} ({killer.Guid})");
+            _log.Debug($"[LOOT][RARE] Tier {tier} -- 1 / {chance:N0} chance -- {luck:N0} luck");
 
             if (TryAddToInventory(wo))
             {
@@ -393,7 +391,7 @@ namespace ACE.Server.WorldObjects
                 }
             }
             else
-                log.Error($"[RARE] failed to add to corpse inventory");
+                _log.Error($"[RARE] failed to add to corpse inventory");
         }
 
         /// <summary>

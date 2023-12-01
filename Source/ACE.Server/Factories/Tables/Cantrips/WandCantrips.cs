@@ -1,15 +1,13 @@
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Entity.Enum;
 using ACE.Server.Factories.Entity;
+using Serilog;
 
 namespace ACE.Server.Factories.Tables
 {
     public static class WandCantrips
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(WandCantrips));
 
         private static readonly List<SpellId> spells = new List<SpellId>()
         {
@@ -56,13 +54,13 @@ namespace ACE.Server.Factories.Tables
 
                 if (spellLevels == null)
                 {
-                    log.Error($"WandCantrips - couldn't find {spell}");
+                    _log.Error($"WandCantrips - couldn't find {spell}");
                     continue;
                 }
 
                 if (spellLevels.Count != NumLevels)
                 {
-                    log.Error($"WandCantrips - expected {NumLevels} levels for {spell}, found {spellLevels.Count}");
+                    _log.Error($"WandCantrips - expected {NumLevels} levels for {spell}, found {spellLevels.Count}");
                     continue;
                 }
 

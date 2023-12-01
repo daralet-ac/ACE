@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
@@ -179,7 +178,7 @@ namespace ACE.Server.Factories
 
             if (scriptName == null)
             {
-                log.Error($"AssignArmorLevel_New({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown item type");
+                _log.Error($"AssignArmorLevel_New({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown item type");
                 return false;
             }
 
@@ -245,7 +244,7 @@ namespace ACE.Server.Factories
         {
             if (wo.ArmorType == null)
             {
-                log.Warn($"[LOOT] Missing PropertyInt.ArmorType on loot item {wo.WeenieClassId} - {wo.Name}");
+                _log.Warning($"[LOOT] Missing PropertyInt.ArmorType on loot item {wo.WeenieClassId} - {wo.Name}");
                 return;
             }
 
@@ -399,12 +398,12 @@ namespace ACE.Server.Factories
             }
 
             if ((wo.ResistMagic == null || wo.ResistMagic < 9999) && wo.ArmorLevel >= 345)
-                log.Warn($"[LOOT] Standard armor item exceeding upper AL threshold {wo.WeenieClassId} - {wo.Name}");
+                _log.Warning($"[LOOT] Standard armor item exceeding upper AL threshold {wo.WeenieClassId} - {wo.Name}");
         }
 
         private static void AssignArmorLevelCompat(WorldObject wo, int tier, LootTables.ArmorType armorType)
         {
-            log.Debug($"[LOOT] Using AL Assignment Compatibility layer for item {wo.WeenieClassId} - {wo.Name}.");
+            _log.Debug($"[LOOT] Using AL Assignment Compatibility layer for item {wo.WeenieClassId} - {wo.Name}.");
 
             var baseArmorLevel = wo.ArmorLevel ?? 0;
 
@@ -1024,7 +1023,7 @@ namespace ACE.Server.Factories
             }
             else
             {
-                log.Error($"TryMutateGearRating({wo.Name}, {profile.TreasureType}, {roll.ItemType}): unknown item type");
+                _log.Error($"TryMutateGearRating({wo.Name}, {profile.TreasureType}, {roll.ItemType}): unknown item type");
                 return false;
             }
 

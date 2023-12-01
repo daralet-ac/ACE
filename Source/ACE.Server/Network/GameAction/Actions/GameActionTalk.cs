@@ -1,17 +1,15 @@
 using System;
-
-using log4net;
-
 using ACE.Common.Extensions;
 using ACE.Entity.Enum;
 using ACE.Server.Command;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.Network.GameAction.Actions
 {
     public static class GameActionTalk
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(GameActionTalk));
 
         [GameAction(GameActionType.Talk)]
         public static void Handle(ClientMessage clientMessage, Session session)
@@ -32,7 +30,7 @@ namespace ACE.Server.Network.GameAction.Actions
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"Exception while parsing command: {commandRaw}", ex);
+                    _log.Error(ex, "Exception while parsing command: {RawCommand}", commandRaw);
                     return;
                 }
 
@@ -42,7 +40,7 @@ namespace ACE.Server.Network.GameAction.Actions
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"Exception while getting command handler for: {commandRaw}", ex);
+                    _log.Error(ex, "Exception while getting command handler for: {RawCommand}", commandRaw);
                 }
 
                 if (response == CommandHandlerResponse.Ok)
@@ -57,7 +55,7 @@ namespace ACE.Server.Network.GameAction.Actions
                     }
                     catch (Exception ex)
                     {
-                        log.Error($"Exception while invoking command handler for: {commandRaw}", ex);
+                        _log.Error(ex, "Exception while invoking command handler for: {RawCommand}", commandRaw);
                     }
                 }
                 else if (response == CommandHandlerResponse.SudoOk)
@@ -75,7 +73,7 @@ namespace ACE.Server.Network.GameAction.Actions
                     }
                     catch (Exception ex)
                     {
-                        log.Error($"Exception while invoking command handler for: {commandRaw}", ex);
+                        _log.Error(ex, "Exception while invoking command handler for: {RawCommand}", commandRaw);
                     }
                 }
                 else

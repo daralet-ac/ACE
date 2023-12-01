@@ -197,13 +197,13 @@ namespace ACE.Server.Factories
 
             if (spellLevels == null)
             {
-                log.Error($"MutateCaster_SpellDID: couldn't find {firstSpell}");
+                _log.Error($"MutateCaster_SpellDID: couldn't find {firstSpell}");
                 return;
             }
 
             if (spellLevels.Count != 8)
             {
-                log.Error($"MutateCaster_SpellDID: found {spellLevels.Count} spell levels for {firstSpell}, expected 8");
+                _log.Error($"MutateCaster_SpellDID: found {spellLevels.Count} spell levels for {firstSpell}, expected 8");
                 return;
             }
 

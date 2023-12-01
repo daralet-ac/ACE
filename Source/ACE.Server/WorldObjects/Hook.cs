@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Concurrent;
 using System.Linq;
-
-using log4net;
-
 using ACE.Database;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -13,6 +9,7 @@ using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
@@ -21,7 +18,7 @@ namespace ACE.Server.WorldObjects
     /// </summary>
     public class Hook : Container
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Hook>();
 
         public House House { get => ParentLink as House; }
 
@@ -144,7 +141,7 @@ namespace ACE.Server.WorldObjects
 
             if (item == null)
             {
-                log.Error("OnAddItem() raised for Hook but Inventory collection has no values.");
+                _log.Error("OnAddItem() raised for Hook but Inventory collection has no values.");
                 return;
             }
 

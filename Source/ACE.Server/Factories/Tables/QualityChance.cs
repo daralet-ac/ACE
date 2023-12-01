@@ -1,15 +1,13 @@
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Database.Models.World;
+using Serilog;
 
 namespace ACE.Server.Factories.Tables
 {
     public static class QualityChance
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(QualityChance));
 
         private static readonly List<float> QualityChancePerTier = new List<float>()
         {
@@ -214,7 +212,7 @@ namespace ACE.Server.Factories.Tables
                 if (rng < curChance && curChance >= treasureDeath.LootQualityMod)
                     return i + 1;
             }
-            log.Error($"QualityTables.Roll({treasureDeath.Tier}, {treasureDeath.LootQualityMod}) - this shouldn't happen");
+            _log.Error($"QualityTables.Roll({treasureDeath.Tier}, {treasureDeath.LootQualityMod}) - this shouldn't happen");
             return 0;
         }
 
@@ -251,7 +249,7 @@ namespace ACE.Server.Factories.Tables
                     return (float)(dy * (interval + i));
                 }
             }
-            log.Error($"QualityTables.RollInterval({treasureDeath.Tier}, {treasureDeath.LootQualityMod}) - this shouldn't happen");
+            _log.Error($"QualityTables.RollInterval({treasureDeath.Tier}, {treasureDeath.LootQualityMod}) - this shouldn't happen");
             return 0.0f;
         }
     }

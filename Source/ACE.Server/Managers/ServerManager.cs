@@ -1,15 +1,13 @@
 using System;
 using System.Threading;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Database;
 using ACE.Entity.Enum;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Mods;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Managers;
-using ACE.Server.Mods;
+using Serilog;
 
 namespace ACE.Server.Managers
 {
@@ -25,10 +23,10 @@ namespace ACE.Server.Managers
     /// </remarks>
     public static class ServerManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(ServerManager));
 
         /// <summary>
-        /// Indicates advanced warning if the applcation will unload.
+        /// Indicates advanced warning if the application will unload.
         /// </summary>
         public static bool ShutdownInitiated { get; private set; }
 
@@ -50,7 +48,7 @@ namespace ACE.Server.Managers
         /// <param name="interval">postive value representing seconds</param>
         public static void SetShutdownInterval(uint interval)
         {
-            log.Info($"Server shutdown interval reset: {interval}");
+            _log.Information($"Server shutdown interval reset: {interval}");
             ShutdownInterval = interval;
         }
 
@@ -109,7 +107,7 @@ namespace ACE.Server.Managers
                 {
                     // reset shutdown details
                     string shutdownText = $"The server shut down has been cancelled @ {DateTime.Now} ({DateTime.UtcNow} UTC)";
-                    log.Info(shutdownText);
+                    _log.Information(shutdownText);
 
                     // special text
                     foreach (var player in PlayerManager.GetAllOnline())
@@ -131,7 +129,7 @@ namespace ACE.Server.Managers
 
             WorldManager.EnqueueAction(new ActionEventDelegate(() =>
             {
-                log.Debug("Logging off all players...");
+                _log.Debug("Logging off all players...");
 
                 // logout each player
                 foreach (var player in PlayerManager.GetAllOnline())
@@ -149,10 +147,10 @@ namespace ACE.Server.Managers
                 if (playerCount > 0 && DateTime.UtcNow - playerLogoffStart > TimeSpan.FromMinutes(5))
                 {
                     playerLogoffStart = DateTime.UtcNow;
-                    log.Warn($"5 minute log off failsafe reached and there are {playerCount} player{(playerCount > 1 ? "s" : "")} still online.");
+                    _log.Warning($"5 minute log off failsafe reached and there are {playerCount} player{(playerCount > 1 ? "s" : "")} still online.");
                     foreach (var player in PlayerManager.GetAllOnline())
                     {
-                        log.Warn($"Player {player.Name} (0x{player.Guid}) appears to be stuck in world and unable to log off normally. Requesting Forced Logoff...");
+                        _log.Warning($"Player {player.Name} (0x{player.Guid}) appears to be stuck in world and unable to log off normally. Requesting Forced Logoff...");
                         player.ForcedLogOffRequested = true;
                         player.ForceLogoff();
                     }    
@@ -161,7 +159,7 @@ namespace ACE.Server.Managers
 
             WorldManager.EnqueueAction(new ActionEventDelegate(() =>
             {
-                log.Debug("Disconnecting all sessions...");
+                _log.Debug("Disconnecting all sessions...");
 
                 // disconnect each session
                 NetworkManager.DisconnectAllSessionsForShutdown();
@@ -176,7 +174,7 @@ namespace ACE.Server.Managers
                 Thread.Sleep(10);
             }
 
-            log.Debug("Adding all landblocks to destruction queue...");
+            _log.Debug("Adding all landblocks to destruction queue...");
 
             // Queue unloading of all the landblocks
             // The actual unloading will happen in WorldManager.UpdateGameWorld
@@ -191,7 +189,7 @@ namespace ACE.Server.Managers
                 Thread.Sleep(10);
             }
 
-            log.Debug("Stopping world...");
+            _log.Debug("Stopping world...");
 
             // Disabled thread update loop
             WorldManager.StopWorld();
@@ -207,7 +205,7 @@ namespace ACE.Server.Managers
                 Thread.Sleep(10);
             }
 
-            log.Info("Saving OfflinePlayers that have unsaved changes...");
+            _log.Information("Saving OfflinePlayers that have unsaved changes...");
             PlayerManager.SaveOfflinePlayersWithChanges();
 
             // Wait for the database queue to empty
@@ -220,7 +218,7 @@ namespace ACE.Server.Managers
             }
 
             // Write exit to console/log
-            log.Info($"Exiting at {DateTime.UtcNow}");
+            _log.Information($"Exiting at {DateTime.UtcNow}");
 
             // System exit
             Environment.Exit(Environment.ExitCode);
@@ -230,7 +228,7 @@ namespace ACE.Server.Managers
         {
             if (logUpdateTS == DateTime.MinValue || DateTime.UtcNow > logUpdateTS.ToUniversalTime())
             {
-                log.Info(logMessage);
+                _log.Information(logMessage);
                 logUpdateTS = DateTime.UtcNow.AddSeconds(10);
             }
 

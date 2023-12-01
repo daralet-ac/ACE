@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -11,12 +8,13 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
     public class ManaStone : WorldObject
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<ManaStone>();
 
         /// <summary>
         /// A new biota be created taking all of its values from weenie.
@@ -94,7 +92,7 @@ namespace ACE.Server.WorldObjects
                     {
                         if (!player.TryConsumeFromInventoryWithNetworking(target, 1) && !player.TryDequipObjectWithNetworking(target.Guid, out _, Player.DequipObjectAction.ConsumeItem))
                         {
-                            log.Error($"Failed to remove {target.Name} from player inventory.");
+                            _log.Error($"Failed to remove {target.Name} from player inventory.");
                             player.Session.Network.EnqueueSend(new GameEventUseDone(player.Session, WeenieError.ActionCancelled));
                             return;
                         }

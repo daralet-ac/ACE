@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using log4net;
-
 using ACE.Common;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
@@ -11,12 +8,13 @@ using ACE.Entity.Models;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Entity
 {
     public class DamageEvent
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<DamageEvent>();
 
         // factors:
         // - lifestone protection
@@ -214,9 +212,9 @@ namespace ACE.Server.Entity
 
             if (DamageType == DamageType.Undef)
             {
-                if ((attacker?.Guid.IsPlayer() ?? false) || (damageSource?.Guid.IsPlayer() ?? false))
+                if (attacker.Guid.IsPlayer() || damageSource.Guid.IsPlayer())
                 {
-                    log.Error($"DamageEvent.DoCalculateDamage({attacker?.Name} ({attacker?.Guid}), {defender?.Name} ({defender?.Guid}), {damageSource?.Name} ({damageSource?.Guid})) - DamageType == DamageType.Undef");
+                    _log.Error("DamageEvent.DoCalculateDamage({Attacker} ({AttackerGuid}), {Defender} ({DefenderGuid}), {DamageSource} ({DamageSourceGuid})) - DamageType == DamageType.Undef", attacker.Name, attacker.Guid, defender.Name, defender.Guid, damageSource.Name, damageSource.Guid);
                     GeneralFailure = true;
                 }
             }
@@ -474,7 +472,7 @@ namespace ACE.Server.Entity
 
             if (bodyPart == CombatBodyPart.Undefined)
             {
-                log.Debug($"DamageEvent.GetBodyPart({defender?.Name} ({defender?.Guid}) ) - couldn't find body part for wcid {defender.WeenieClassId}, Quadrant {quadrant}");
+                _log.Debug("DamageEvent.GetBodyPart({Defender} ({DefenderGuid}) ) - couldn't find body part for wcid {DefenderWeenieClassId}, Quadrant {BodyPartQuadrant}", defender.Name, defender.Guid, defender.WeenieClassId, quadrant);
                 Evaded = true;
                 return;
             }

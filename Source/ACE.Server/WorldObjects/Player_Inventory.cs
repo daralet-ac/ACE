@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
-
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
@@ -714,7 +713,7 @@ namespace ACE.Server.WorldObjects
         {
             if (stack.StackSize + amount <= 0 || stack.StackSize + amount > stack.MaxStackSize)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to adjust stack by an invalid amount amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name, amount);
+                _log.Warning("Player 0x{PlayerGuid:X8}:{Player} tried to adjust stack by an invalid amount amount ({StackAmount}) 0x{StackGuid:X8}:{StackName}.", Guid.Full, Name, amount, stack.Guid.Full, stack.Name);
                 return false;
             }
 
@@ -815,7 +814,7 @@ namespace ACE.Server.WorldObjects
 
             if (!item.Guid.IsDynamic() || item is Creature || item.Stuck)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, item.Guid.Full, item.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, item.Guid.Full, item.Name);
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.Stuck));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
                 return false;
@@ -1137,7 +1136,7 @@ namespace ACE.Server.WorldObjects
 
                                 if (isFromAPlayerCorpse)
                                 {
-                                    log.Debug($"[CORPSE] {Name} (0x{Guid}) picked up {item.Name} (0x{item.Guid}) from {itemRootOwner.Name} (0x{itemRootOwner.Guid})");
+                                    _log.Debug($"[CORPSE] {Name} (0x{Guid}) picked up {item.Name} (0x{item.Guid}) from {itemRootOwner.Name} (0x{itemRootOwner.Guid})");
                                     item.SaveBiotaToDatabase();
                                 }
                             }
@@ -1313,7 +1312,7 @@ namespace ACE.Server.WorldObjects
                 }
                 else if (itemRootOwner == null || !itemRootOwner.TryAddToInventory(item))
                 {
-                    log.Error($"{Name}.DoHandleActionPutItemInContainer({item.Name} ({item.Guid}), {itemRootOwner?.Name} ({itemRootOwner?.Guid}), {itemWasEquipped}, {container.Name} ({container.Guid}), {containerRootOwner?.Name} ({containerRootOwner?.Guid}), {placement}) - removed item from original location, failed to add to new container, failed to re-add to original location");
+                    _log.Error($"{Name}.DoHandleActionPutItemInContainer({item.Name} ({item.Guid}), {itemRootOwner?.Name} ({itemRootOwner?.Guid}), {itemWasEquipped}, {container.Name} ({container.Guid}), {containerRootOwner?.Name} ({containerRootOwner?.Guid}), {placement}) - removed item from original location, failed to add to new container, failed to re-add to original location");
                 }
 
                 return false;
@@ -1434,7 +1433,7 @@ namespace ACE.Server.WorldObjects
                         Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
                     }
                     else
-                        log.Warn($"0x{item.Guid}:{item.Name} for player {Name} lost from HandleActionDropItem failure.");
+                        _log.Warning($"0x{item.Guid}:{item.Name} for player {Name} lost from HandleActionDropItem failure.");
                 }
 
                 var returnStance = new Motion(CurrentMotionState.Stance);
@@ -1507,7 +1506,7 @@ namespace ACE.Server.WorldObjects
 
             if (!item.Guid.IsDynamic() || item is Creature || item.Stuck)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, item.Guid.Full, item.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, item.Guid.Full, item.Name);
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.Stuck));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
                 return;
@@ -1522,7 +1521,7 @@ namespace ACE.Server.WorldObjects
 
             if (!item.ValidLocations.HasValue || item.ValidLocations == EquipMask.None)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to wield item 0x{2:X8}:{3} to {4} (0x{4:X}), not in item's validlocatiions {5} (0x{5:X}).", Guid.Full, Name, item.Guid.Full, item.Name, wieldedLocation, item.ValidLocations ?? 0);
+                _log.Warning("Player 0x{0:X8}:{1} tried to wield item 0x{2:X8}:{3} to {4} (0x{4:X}), not in item's validlocatiions {5} (0x{5:X}).", Guid.Full, Name, item.Guid.Full, item.Name, wieldedLocation, item.ValidLocations ?? 0);
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.InvalidInventoryLocation));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
                 return;
@@ -1698,7 +1697,7 @@ namespace ACE.Server.WorldObjects
                 }
                 else
                 {
-                    log.Warn($"{Name} tried to wield {item.Name} ({item.Guid}) in slot {wieldedLocation}, which doesn't match valid slots {item.ValidLocations}");
+                    _log.Warning($"{Name} tried to wield {item.Name} ({item.Guid}) in slot {wieldedLocation}, which doesn't match valid slots {item.ValidLocations}");
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
                     return false;
                 }
@@ -1804,7 +1803,7 @@ namespace ACE.Server.WorldObjects
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
 
                 // todo: So the item isn't lost, we should try to put the item in the players inventory, or if that's full, on the landblock.
-                log.WarnFormat("Item 0x{0:X8}:{1} for player {2} lost from DoHandleActionGetAndWieldItem failure.", item.Guid.Full, item.Name, Name);
+                _log.Warning("Item 0x{0:X8}:{1} for player {2} lost from DoHandleActionGetAndWieldItem failure.", item.Guid.Full, item.Name, Name);
 
                 return false;
             }
@@ -1840,7 +1839,7 @@ namespace ACE.Server.WorldObjects
                         offhand = GetEquippedOffHand();
                         if (offhand != null)
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, but is occupied by '{offhand.Name}'");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, but is occupied by '{offhand.Name}'");
                             return false;
                         }
 
@@ -1848,7 +1847,7 @@ namespace ACE.Server.WorldObjects
                         // Remove any Two Handed, Caster (magic), or Missile Weapons
                         if (mainhand != null && (mainhand.IsTwoHanded || mainhand.IsCaster || mainhand.IsAmmoLauncher))
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
                             return false;
                         }
 
@@ -1859,14 +1858,14 @@ namespace ACE.Server.WorldObjects
                         offhand = GetEquippedOffHand();
                         if (offhand != null && item.IsAmmoLauncher)
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{offhand.Name}'");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{offhand.Name}'");
                             return false;
                         }
 
                         mainhand = GetEquippedMainHand();
                         if (mainhand != null)
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
                             return false;
                         }
 
@@ -1874,7 +1873,7 @@ namespace ACE.Server.WorldObjects
                         ammo = GetEquippedAmmo();
                         if (item.AmmoType != null && ammo != null && ammo.AmmoType != item.AmmoType)
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}), AmmoType: {item.AmmoType} in slot {wieldedLocation}, which conflicts with ammo of '{ammo.Name}' ({ammo.AmmoType})");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}), AmmoType: {item.AmmoType} in slot {wieldedLocation}, which conflicts with ammo of '{ammo.Name}' ({ammo.AmmoType})");
                             return false;
                         }
 
@@ -1884,7 +1883,7 @@ namespace ACE.Server.WorldObjects
                         mainhand = GetEquippedMainHand();
                         if (mainhand != null && mainhand.AmmoType != null && item.AmmoType != null && mainhand.AmmoType != item.AmmoType)
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}), AmmoType: {item.AmmoType} in slot {wieldedLocation}, which conflicts with AmmoType of '{mainhand.Name}' ({mainhand.AmmoType})");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}), AmmoType: {item.AmmoType} in slot {wieldedLocation}, which conflicts with AmmoType of '{mainhand.Name}' ({mainhand.AmmoType})");
                             return false;
                         }
 
@@ -1894,7 +1893,7 @@ namespace ACE.Server.WorldObjects
                         offhand = GetEquippedOffHand();
                         if (offhand != null)
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{offhand.Name}'");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{offhand.Name}'");
                             return false;
                         }
 
@@ -1902,7 +1901,7 @@ namespace ACE.Server.WorldObjects
                         // Remove anything in the main hand!
                         if (mainhand != null)
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
                             return false;
                         }
                         break;
@@ -1911,14 +1910,14 @@ namespace ACE.Server.WorldObjects
                         offhand = GetEquippedOffHand();
                         if (offhand != null && (offhand.IsTwoHanded || offhand.IsCaster || offhand.IsAmmoLauncher))
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{offhand.Name}'");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{offhand.Name}'");
                             return false;
                         }
 
                         mainhand = GetEquippedMainHand();
                         if (mainhand != null && (mainhand.IsTwoHanded || mainhand.IsCaster || mainhand.IsAmmoLauncher))
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
                             return false;
                         }
                         break;
@@ -1930,7 +1929,7 @@ namespace ACE.Server.WorldObjects
                             offhand = GetEquippedOffHand();
                             if (offhand != null)
                             {
-                                log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{offhand.Name}'");
+                                _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{offhand.Name}'");
                                 return false;
                             }
                         }
@@ -1939,7 +1938,7 @@ namespace ACE.Server.WorldObjects
                         mainhand = GetEquippedMainHand();
                         if (mainhand != null)
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with '{mainhand.Name}'");
                             return false;
                         }
 
@@ -1947,7 +1946,7 @@ namespace ACE.Server.WorldObjects
                         // can only be wielded in NonCombat mode
                         if (combatMode != CombatMode.NonCombat && item.DefaultCombatStyle == null)
                         {
-                            log.Warn($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with {combatMode} combat mode");
+                            _log.Warning($"'{Name}' tried to wield '{item.Name}' ({item.Guid}) in slot {wieldedLocation}, which conflicts with {combatMode} combat mode");
                             return false;
                         }
                         break;
@@ -1969,7 +1968,7 @@ namespace ACE.Server.WorldObjects
                         // Can't wield these with anything else!
                         if (mainhand.IsTwoHanded || mainhand.IsAmmoLauncher || mainhand.IsCaster)
                         {
-                            log.Warn($"'{Name}' is illegally wielding '{mainhand.Name}' ({mainhand.Guid}) and {offhand.Name}' ({offhand.Guid})");
+                            _log.Warning($"'{Name}' is illegally wielding '{mainhand.Name}' ({mainhand.Guid}) and {offhand.Name}' ({offhand.Guid})");
                             return false;
                         }
                     }
@@ -1980,7 +1979,7 @@ namespace ACE.Server.WorldObjects
                         ammo = GetEquippedAmmo();
                         if (ammo != null && ammo.AmmoType != null && mainhand.AmmoType != null && ammo.AmmoType != mainhand.AmmoType)
                         {
-                            log.Warn($"'{Name}' is illegally wielding '{mainhand.Name}' ({mainhand.Guid}) with ammo {ammo.Name}' ({ammo.AmmoType})");
+                            _log.Warning($"'{Name}' is illegally wielding '{mainhand.Name}' ({mainhand.Guid}) with ammo {ammo.Name}' ({ammo.AmmoType})");
                             return false;
                         }
                     }
@@ -1992,7 +1991,7 @@ namespace ACE.Server.WorldObjects
 
                     if (mainhand.DefaultCombatStyle == null)
                     {
-                        log.Warn($"'{Name}' is illegally wielding '{mainhand.Name}' ({mainhand.Guid}) in {combatMode} combat mode");
+                        _log.Warning($"'{Name}' is illegally wielding '{mainhand.Name}' ({mainhand.Guid}) in {combatMode} combat mode");
                         return false;
                     }
                 }
@@ -2187,7 +2186,7 @@ namespace ACE.Server.WorldObjects
 
             if (amount <= 0)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, stackId, amount);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, stackId, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2205,7 +2204,7 @@ namespace ACE.Server.WorldObjects
 
             if (!stack.Guid.IsDynamic() || stack.Stuck)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.Stuck));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2214,7 +2213,7 @@ namespace ACE.Server.WorldObjects
             var isStackable = stack is Stackable;
             if (!isStackable)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                 //Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.Stuck));
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "You cannot split that!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
@@ -2244,7 +2243,7 @@ namespace ACE.Server.WorldObjects
 
             if (stack.StackSize == null || stack.StackSize == 0)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split invalid item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split invalid item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Stack not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2252,7 +2251,7 @@ namespace ACE.Server.WorldObjects
 
             if (stack.StackSize <= amount)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name, amount);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2305,7 +2304,7 @@ namespace ACE.Server.WorldObjects
                     // We make sure the stack is still valid. It could have changed during our movement
                     if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
                     {
-                        log.DebugFormat("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                        _log.Debug("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                         Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split failed!")); // Custom error message
                         Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId, WeenieError.ActionCancelled));
                         return;
@@ -2321,7 +2320,7 @@ namespace ACE.Server.WorldObjects
                         // We make sure the stack is still valid. It could have changed during our pickup animation
                         if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
                         {
-                            log.DebugFormat("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                            _log.Debug("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                             Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split failed!")); // Custom error message
                             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId, WeenieError.ActionCancelled));
                             EnqueuePickupDone(pickupMotion);
@@ -2419,7 +2418,7 @@ namespace ACE.Server.WorldObjects
         {
             if (amount <= 0)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, stackId, amount);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, stackId, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2437,7 +2436,7 @@ namespace ACE.Server.WorldObjects
             var isStackable = stack is Stackable;
             if (!isStackable)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                 //Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.Stuck));
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "You cannot split that!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
@@ -2446,7 +2445,7 @@ namespace ACE.Server.WorldObjects
 
             if (stack.StackSize == null || stack.StackSize == 0)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split invalid item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split invalid item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Stack not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2454,7 +2453,7 @@ namespace ACE.Server.WorldObjects
 
             if (stack.StackSize <= amount)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name, amount);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2522,7 +2521,7 @@ namespace ACE.Server.WorldObjects
                             UpdateCoinValue();
                     }
                     else
-                        log.WarnFormat("Partial stack 0x{0:X8}:{1} for player {2} lost from HandleActionStackableSplitTo3D failure.", stack.Guid.Full, stack.Name, Name);
+                        _log.Warning("Partial stack 0x{0:X8}:{1} for player {2} lost from HandleActionStackableSplitTo3D failure.", stack.Guid.Full, stack.Name, Name);
 
                     newStack.Destroy();
                 }
@@ -2540,7 +2539,7 @@ namespace ACE.Server.WorldObjects
 
             if (amount <= 0)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, stackId, amount);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, stackId, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2557,7 +2556,7 @@ namespace ACE.Server.WorldObjects
 
             if (!stack.Guid.IsDynamic() || stack.Stuck)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.Stuck));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2566,7 +2565,7 @@ namespace ACE.Server.WorldObjects
             var isStackable = stack is Stackable;
             if (!isStackable)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                 //Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.Stuck));
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "You cannot split that!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
@@ -2582,7 +2581,7 @@ namespace ACE.Server.WorldObjects
 
             if (stack.StackSize == null || stack.StackSize == 0)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split invalid item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split invalid item 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Stack not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2590,7 +2589,7 @@ namespace ACE.Server.WorldObjects
 
             if (stack.StackSize <= amount)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to split item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name, amount);
+                _log.Warning("Player 0x{0:X8}:{1} tried to split item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2610,7 +2609,7 @@ namespace ACE.Server.WorldObjects
 
             if (!stack.ValidLocations.HasValue || stack.ValidLocations == EquipMask.None)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to wield item 0x{2:X8}:{3} to {4} (0x{4:X}), not in item's validlocatiions {5} (0x{5:X}).", Guid.Full, Name, stack.Guid.Full, stack.Name, wieldedLocation, stack.ValidLocations ?? 0);
+                _log.Warning("Player 0x{0:X8}:{1} tried to wield item 0x{2:X8}:{3} to {4} (0x{4:X}), not in item's validlocatiions {5} (0x{5:X}).", Guid.Full, Name, stack.Guid.Full, stack.Name, wieldedLocation, stack.ValidLocations ?? 0);
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.InvalidInventoryLocation));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
                 return;
@@ -2648,7 +2647,7 @@ namespace ACE.Server.WorldObjects
                     // We make sure the stack is still valid. It could have changed during our movement
                     if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
                     {
-                        log.DebugFormat("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                        _log.Debug("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                         Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split failed!")); // Custom error message
                         Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId, WeenieError.ActionCancelled));
                         return;
@@ -2664,7 +2663,7 @@ namespace ACE.Server.WorldObjects
                         // We make sure the stack is still valid. It could have changed during our pickup animation
                         if (stackOriginalContainer != stack.ContainerId || stack.StackSize < amount)
                         {
-                            log.DebugFormat("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
+                            _log.Debug("Player 0x{0:X8}:{1} tried to split an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, stack.Guid.Full, stack.Name);
                             Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Split failed!")); // Custom error message
                             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId, WeenieError.ActionCancelled));
                             EnqueuePickupDone(pickupMotion);
@@ -2722,7 +2721,7 @@ namespace ACE.Server.WorldObjects
                                     Session.Network.EnqueueSend(new GameMessageSetStackSize(stack));
                             }
                             else
-                                log.WarnFormat("Partial stack 0x{0:X8}:{1} for player {2} lost from HandleActionStackableSplitToWield failure.", stack.Guid.Full, stack.Name, Name);
+                                _log.Warning("Partial stack 0x{0:X8}:{1} for player {2} lost from HandleActionStackableSplitToWield failure.", stack.Guid.Full, stack.Name, Name);
 
                             newStack.Destroy();
                         }
@@ -2768,7 +2767,7 @@ namespace ACE.Server.WorldObjects
                         Session.Network.EnqueueSend(new GameMessageSetStackSize(stack));
                     }
                     else
-                        log.WarnFormat("Partial stack 0x{0:X8}:{1} for player {2} lost from HandleActionStackableSplitToWield failure.", stack.Guid.Full, stack.Name, Name);
+                        _log.Warning("Partial stack 0x{0:X8}:{1} for player {2} lost from HandleActionStackableSplitToWield failure.", stack.Guid.Full, stack.Name, Name);
 
                     newStack.Destroy();
                 }
@@ -2793,7 +2792,7 @@ namespace ACE.Server.WorldObjects
 
             if (amount <= 0)
             {
-                log.WarnFormat("Player 0x{0}:{1} tried to merge item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, mergeFromGuid, amount);
+                _log.Warning("Player 0x{0}:{1} tried to merge item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, mergeFromGuid, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Merge amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid));
                 return;
@@ -2811,7 +2810,7 @@ namespace ACE.Server.WorldObjects
 
             if (!sourceStack.Guid.IsDynamic() || sourceStack.Stuck)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.Stuck));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid));
                 return;
@@ -2833,7 +2832,7 @@ namespace ACE.Server.WorldObjects
 
             if (!targetStack.Guid.IsDynamic() || targetStack.Stuck)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, targetStack.Guid.Full, targetStack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to move item 0x{2:X8}:{3}.", Guid.Full, Name, targetStack.Guid.Full, targetStack.Name);
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.Stuck));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeToGuid));
                 return;
@@ -2853,12 +2852,12 @@ namespace ACE.Server.WorldObjects
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "You cannot merge those items!")); // Custom error message
                 if (!sourceIsStackable)
                 {
-                    log.WarnFormat("Player 0x{0:X8}:{1} tried to merge an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
+                    _log.Warning("Player 0x{0:X8}:{1} tried to merge an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid));
                 }
                 else
                 {
-                    log.WarnFormat("Player 0x{0:X8}:{1} tried to merge an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, targetStack.Guid.Full, targetStack.Name);
+                    _log.Warning("Player 0x{0:X8}:{1} tried to merge an item 0x{2:X8}:{3} that is not stackable.", Guid.Full, Name, targetStack.Guid.Full, targetStack.Name);
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeToGuid));
                 }
                 return;
@@ -2866,7 +2865,7 @@ namespace ACE.Server.WorldObjects
 
             if (sourceStack.WeenieClassId != targetStack.WeenieClassId)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to merge different items 0x{2:X8}:{3} and 0x{4:X8}:{5}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name, targetStack.Guid.Full, targetStack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to merge different items 0x{2:X8}:{3} and 0x{4:X8}:{5}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name, targetStack.Guid.Full, targetStack.Name);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Stacks not compatible!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid, WeenieError.YouCannotMergeDifferentStacks));
                 return;
@@ -2874,7 +2873,7 @@ namespace ACE.Server.WorldObjects
 
             if (sourceStack.StackSize == null || sourceStack.StackSize == 0)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to merge invalid source item 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to merge invalid source item 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Stack not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid));
                 return;
@@ -2882,7 +2881,7 @@ namespace ACE.Server.WorldObjects
 
             if (targetStack.StackSize == null || targetStack.StackSize == 0 || targetStack.StackSize == targetStack.MaxStackSize)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to merge invalid target item 0x{2:X8}:{3}.", Guid.Full, Name, targetStack.Guid.Full, targetStack.Name);
+                _log.Warning("Player 0x{0:X8}:{1} tried to merge invalid target item 0x{2:X8}:{3}.", Guid.Full, Name, targetStack.Guid.Full, targetStack.Name);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Target not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid));
                 return;
@@ -2890,7 +2889,7 @@ namespace ACE.Server.WorldObjects
 
             if (sourceStack.StackSize < amount)
             {
-                log.WarnFormat("Player 0x{0}:{1} tried to merge item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name, amount);
+                _log.Warning("Player 0x{0}:{1} tried to merge item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Merge amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid));
                 return;
@@ -2957,7 +2956,7 @@ namespace ACE.Server.WorldObjects
                     // We make sure the stack is still valid. It could have changed during our movement
                     if (sourceStackOriginalContainer != sourceStack.ContainerId || sourceStack.StackSize < amount)
                     {
-                        log.DebugFormat("Player 0x{0}:{1} tried to merge an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
+                        _log.Debug("Player 0x{0}:{1} tried to merge an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
                         Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Merge Failed!")); // Custom error message
                         Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid, WeenieError.ActionCancelled));
                         return;
@@ -2973,7 +2972,7 @@ namespace ACE.Server.WorldObjects
                         // We make sure the stack is still valid. It could have changed during our pickup animation
                         if (sourceStackOriginalContainer != sourceStack.ContainerId || sourceStack.StackSize < amount)
                         {
-                            log.DebugFormat("Player 0x{0}:{1} tried to merge an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
+                            _log.Debug("Player 0x{0}:{1} tried to merge an item that's no longer valid 0x{2:X8}:{3}.", Guid.Full, Name, sourceStack.Guid.Full, sourceStack.Name);
                             Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Merge Failed!")); // Custom error message
                             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid, WeenieError.ActionCancelled));
                             EnqueuePickupDone(pickupMotion);
@@ -3110,7 +3109,7 @@ namespace ACE.Server.WorldObjects
 
             if (isFromAPlayerCorpse)
             {
-                log.Debug($"[CORPSE] {Name} (0x{Guid}) merged {amount:N0} {(sourceStack.IsDestroyed ? $"which resulted in the destruction" : $"leaving behind {sourceStack.StackSize:N0}")} of {sourceStack.Name} (0x{sourceStack.Guid}) to {targetStack.Name} (0x{targetStack.Guid}) from {sourceStackRootOwner.Name} (0x{sourceStackRootOwner.Guid})");
+                _log.Debug($"[CORPSE] {Name} (0x{Guid}) merged {amount:N0} {(sourceStack.IsDestroyed ? $"which resulted in the destruction" : $"leaving behind {sourceStack.StackSize:N0}")} of {sourceStack.Name} (0x{sourceStack.Guid}) to {targetStack.Name} (0x{targetStack.Guid}) from {sourceStackRootOwner.Name} (0x{sourceStackRootOwner.Guid})");
                 targetStack.SaveBiotaToDatabase();
             }
 
@@ -3139,7 +3138,7 @@ namespace ACE.Server.WorldObjects
 
             if (amount <= 0)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to give item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, itemGuid, amount);
+                _log.Warning("Player 0x{0:X8}:{1} tried to give item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, itemGuid, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Give amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
                 return;
@@ -3164,7 +3163,7 @@ namespace ACE.Server.WorldObjects
 
             if (item.StackSize < amount)
             {
-                log.WarnFormat("Player 0x{0:X8}:{1} tried to give item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, item.Guid.Full, item.Name, amount);
+                _log.Warning("Player 0x{0:X8}:{1} tried to give item with invalid amount ({4}) 0x{2:X8}:{3}.", Guid.Full, Name, item.Guid.Full, item.Name, amount);
                 Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Give amount not valid!")); // Custom error message
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
                 return;
@@ -3291,7 +3290,7 @@ namespace ACE.Server.WorldObjects
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemToGive.Guid.Full));
 
                     if (!TryCreateInInventoryWithNetworking(itemToGive))
-                        log.WarnFormat("Item 0x{0:X8}:{1} for player {2} lost from GiveObjecttoPlayer failure.", item.Guid.Full, item.Name, Name);
+                        _log.Warning("Item 0x{0:X8}:{1} for player {2} lost from GiveObjecttoPlayer failure.", item.Guid.Full, item.Name, Name);
 
                     return;
                 }
@@ -3476,7 +3475,7 @@ namespace ACE.Server.WorldObjects
                                     if (PropertyManager.GetBool("player_receive_immediate_save").Item)
                                         RushNextPlayerSave(5);
 
-                                    log.Debug($"[IOU] {Name} (0x{Guid}) traded in a IOU (0x{iouToTurnIn.Guid}) for {wcid} which became {item.Name} (0x{item.Guid}).");
+                                    _log.Debug($"[IOU] {Name} (0x{Guid}) traded in a IOU (0x{iouToTurnIn.Guid}) for {wcid} which became {item.Name} (0x{item.Guid}).");
                                 }
                                 return;
                             }
@@ -3583,7 +3582,7 @@ namespace ACE.Server.WorldObjects
 
                 if (item == null)
                 {
-                    log.Error("Player_Inventory HandleActionSetInscription failed");
+                    _log.Error("Player_Inventory HandleActionSetInscription failed");
                     return;
                 }
             }
@@ -3665,10 +3664,10 @@ namespace ACE.Server.WorldObjects
         {
             if (emoter is null || weenieClassId == 0)
             {
-                log.Warn($"Player.GiveFromEmote: Emoter is null: {emoter is null} | weenieClassId == 0: {weenieClassId == 0}");
+                _log.Warning($"Player.GiveFromEmote: Emoter is null: {emoter is null} | weenieClassId == 0: {weenieClassId == 0}");
 
                 if (emoter != null)
-                    log.Warn($"Player.GiveFromEmote: Emoter is {emoter.Name} (0x{emoter.Guid}) | WCID: {emoter.WeenieClassId}");
+                    _log.Warning($"Player.GiveFromEmote: Emoter is {emoter.Name} (0x{emoter.Guid}) | WCID: {emoter.WeenieClassId}");
 
                 return;
             }
@@ -3705,7 +3704,7 @@ namespace ACE.Server.WorldObjects
 
                     if (item == null)
                     {
-                        log.Warn($"Player.GiveFromEmote: Emoter is {emoter.Name} (0x{emoter.Guid}) | WCID: {emoter.WeenieClassId} is not able to be created.");
+                        _log.Warning($"Player.GiveFromEmote: Emoter is {emoter.Name} (0x{emoter.Guid}) | WCID: {emoter.WeenieClassId} is not able to be created.");
                         return;
                     }
 
@@ -3729,7 +3728,7 @@ namespace ACE.Server.WorldObjects
             }
             else
             {
-                log.Warn($"Player.GiveFromEmote: itemStacks <= 0: emoter: {emoter.Name} (0x{emoter.Guid}) - {emoter.WeenieClassId} | weenieClassId: {weenieClassId} | amount: {amount}");
+                _log.Warning($"Player.GiveFromEmote: itemStacks <= 0: emoter: {emoter.Name} (0x{emoter.Guid}) - {emoter.WeenieClassId} | weenieClassId: {weenieClassId} | amount: {amount}");
 
                 if (PropertyManager.GetBool("iou_trades").Item)
                 {
@@ -3819,7 +3818,7 @@ namespace ACE.Server.WorldObjects
 
             foreach (var dequipItem in dequipItems)
             {
-                log.Warn($"{Name}.AuditEquippedItems() - dequipping {dequipItem.Name} ({dequipItem.Guid})");
+                _log.Warning($"{Name}.AuditEquippedItems() - dequipping {dequipItem.Name} ({dequipItem.Guid})");
                 HandleActionPutItemInContainer(dequipItem.Guid.Full, Guid.Full);
             }
         }
@@ -3887,19 +3886,19 @@ namespace ACE.Server.WorldObjects
 
             if (container == null)
             {
-                log.Error($"{Name}.Player_Inventory.MoveItemToFirstContainerSlot() - failed to find target item {target.Name} ({target.Guid}) in player inventory");
+                _log.Error($"{Name}.Player_Inventory.MoveItemToFirstContainerSlot() - failed to find target item {target.Name} ({target.Guid}) in player inventory");
                 return false;
             }
 
             if (!TryRemoveFromInventory(target.Guid))
             {
-                log.Error($"{Name}.Player_Inventory.MoveItemToFirstContainerSlot() - failed to remove target item {target.Name} ({target.Guid}) from player inventory");
+                _log.Error($"{Name}.Player_Inventory.MoveItemToFirstContainerSlot() - failed to remove target item {target.Name} ({target.Guid}) from player inventory");
                 return false;
             }
 
             if (!container.TryAddToInventory(target, 0, true, false))
             {
-                log.Error($"{Name}.Player_Inventory.MoveItemToFirstContainerSlot() - failed to re-add target item {target.Name} ({target.Guid}) to player inventory");
+                _log.Error($"{Name}.Player_Inventory.MoveItemToFirstContainerSlot() - failed to re-add target item {target.Name} ({target.Guid}) to player inventory");
                 return false;
             }
 

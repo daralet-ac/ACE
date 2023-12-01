@@ -2,34 +2,31 @@ using System;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Common.Performance;
 using ACE.Database;
 using ACE.Database.Entity;
+using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
-using ACE.Server.WorldObjects;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Managers;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Common;
-
-using Character = ACE.Database.Models.Shard.Character;
+using ACE.Server.WorldObjects;
+using Serilog;
+using Biota = ACE.Entity.Models.Biota;
 using Position = ACE.Entity.Position;
 
 namespace ACE.Server.Managers
 {
     public static class WorldManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(WorldManager));
 
         private static readonly PhysicsEngine Physics;
 
@@ -63,12 +60,12 @@ namespace ACE.Server.Managers
             thread.Name = "World Manager";
             thread.Priority = ThreadPriority.AboveNormal;
             thread.Start();
-            log.DebugFormat("ServerTime initialized to {0}", Timers.WorldStartLoreTime);
-            log.DebugFormat($"Current maximum allowed sessions: {ConfigManager.Config.Server.Network.MaximumAllowedSessions}");
+            _log.Debug("ServerTime initialized to {0}", Timers.WorldStartLoreTime);
+            _log.Debug($"Current maximum allowed sessions: {ConfigManager.Config.Server.Network.MaximumAllowedSessions}");
 
-            log.Info($"World started and is currently {WorldStatus.ToString()}{(PropertyManager.GetBool("world_closed", false).Item ? "" : " and will open automatically when server startup is complete.")}");
+            _log.Information($"World started and is currently {WorldStatus.ToString()}{(PropertyManager.GetBool("world_closed", false).Item ? "" : " and will open automatically when server startup is complete.")}");
             if (WorldStatus == WorldStatusState.Closed)
-                log.Info($"To open world to players, use command: world open");
+                _log.Information($"To open world to players, use command: world open");
         }
 
         internal static void Open(Player player)
@@ -96,14 +93,14 @@ namespace ACE.Server.Managers
 
             if (offlinePlayer == null)
             {
-                log.Error($"PlayerEnterWorld requested for character.Id 0x{character.Id:X8} not found in PlayerManager OfflinePlayers.");
+                _log.Error($"PlayerEnterWorld requested for character.Id 0x{character.Id:X8} not found in PlayerManager OfflinePlayers.");
                 return;
             }
 
             var start = DateTime.UtcNow;
             DatabaseManager.Shard.GetPossessedBiotasInParallel(character.Id, biotas =>
             {
-                log.Debug($"GetPossessedBiotasInParallel for {character.Name} took {(DateTime.UtcNow - start).TotalMilliseconds:N0} ms");
+                _log.Debug($"GetPossessedBiotasInParallel for {character.Name} took {(DateTime.UtcNow - start).TotalMilliseconds:N0} ms");
 
                 ActionQueue.EnqueueAction(new ActionEventDelegate(() => DoPlayerEnterWorld(session, character, offlinePlayer.Biota, biotas)));
             });
@@ -225,7 +222,7 @@ namespace ACE.Server.Managers
                 // send to lifestone, or fallback location
                 var fixLoc = session.Player.Sanctuary ?? new Position(0xA9B40019, 84, 7.1f, 94, 0, 0, -0.0784591f, 0.996917f);
 
-                log.Error($"WorldManager.DoPlayerEnterWorld: failed to spawn {session.Player.Name}, relocating to {fixLoc.ToLOCString()}");
+                _log.Error($"WorldManager.DoPlayerEnterWorld: failed to spawn {session.Player.Name}, relocating to {fixLoc.ToLOCString()}");
 
                 session.Player.Location = new Position(fixLoc);
                 LandblockManager.AddObject(session.Player, true);
@@ -321,7 +318,7 @@ namespace ACE.Server.Managers
         /// </summary>
         private static void UpdateWorld()
         {
-            log.DebugFormat("Starting UpdateWorld thread");
+            _log.Debug("Starting UpdateWorld thread");
 
             WorldActive = true;
             var worldTickTimer = new Stopwatch();

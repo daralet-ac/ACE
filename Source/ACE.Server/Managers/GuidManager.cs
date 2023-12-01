@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-
-using log4net;
-
 using ACE.Entity;
+using Serilog;
 
 namespace ACE.Server.Managers
 {
@@ -13,7 +11,7 @@ namespace ACE.Server.Managers
     /// </summary>
     public static class GuidManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(GuidManager));
 
         // Running server is guid master - database only read as startup to get current max per range.
         // weenie class templates Max 65,535 - took Turbine 17 years to get to 10K
@@ -62,10 +60,10 @@ namespace ACE.Server.Managers
                         // Need to start allocating at current value in db +1
                         current++;
 
-                    log.Debug($"{name} GUID Allocator current is now {current:X8} of {max:X8}");
+                    _log.Debug($"{name} GUID Allocator current is now {current:X8} of {max:X8}");
 
                     if ((max - current) < LowIdLimit)
-                        log.Warn($"Dangerously low on {name} GUIDs: {current:X8} of {max:X8}");
+                        _log.Warning($"Dangerously low on {name} GUIDs: {current:X8} of {max:X8}");
                 }
 
                 this.name = name;
@@ -77,12 +75,12 @@ namespace ACE.Server.Managers
                 {
                     if (current == max)
                     {
-                        log.Fatal($"Out of {name} GUIDs!");
+                        _log.Fatal($"Out of {name} GUIDs!");
                         return InvalidGuid;
                     }
 
                     if (current == max - LowIdLimit)
-                        log.Warn($"Running dangerously low on {name} GUIDs, need to defrag");
+                        _log.Warning($"Running dangerously low on {name} GUIDs, need to defrag");
 
                     uint ret = current;
                     current += 1;
@@ -154,10 +152,10 @@ namespace ACE.Server.Managers
                         // Need to start allocating at current value in db +1
                         current++;
 
-                    log.Debug($"{name} GUID Allocator current is now {current:X8} of {max:X8}");
+                    _log.Debug($"{name} GUID Allocator current is now {current:X8} of {max:X8}");
 
                     if ((max - current) < LowIdLimit)
-                        log.Warn($"Dangerously low on {name} GUIDs: {current:X8} of {max:X8}");
+                        _log.Warning($"Dangerously low on {name} GUIDs: {current:X8} of {max:X8}");
                 }
 
                 // Get available ids in the form of sequence gaps
@@ -172,7 +170,7 @@ namespace ACE.Server.Managers
                             uint total = 0;
                             foreach (var pair in availableIDs)
                                 total += (pair.end - pair.start) + 1;
-                            log.Debug($"{name} GUID Sequence gaps initialized with total availableIDs of {total:N0}");
+                            _log.Debug($"{name} GUID Sequence gaps initialized with total availableIDs of {total:N0}");
                             done = true;
                             Monitor.Pulse(this);
                         }
@@ -206,7 +204,7 @@ namespace ACE.Server.Managers
                             availableIDs.RemoveFirst();
 
                             //if (availableIDs.First == null)
-                            //    log.Warn($"Sequence gap GUIDs depleted on {name}");
+                            //    _log.Warning($"Sequence gap GUIDs depleted on {name}");
                         }
                         else
                             availableIDs.First.Value = (availableIDs.First.Value.start + 1, availableIDs.First.Value.end);
@@ -217,7 +215,7 @@ namespace ACE.Server.Managers
                     {
                         if (!useSequenceGapExhaustedMessageDisplayed)
                         {
-                            log.Debug($"{name} GUID Sequence gaps exhausted. Any new, non-recycled GUID will be current + 1. current is now {current:X8}");
+                            _log.Debug($"{name} GUID Sequence gaps exhausted. Any new, non-recycled GUID will be current + 1. current is now {current:X8}");
                             useSequenceGapExhaustedMessageDisplayed = true;
                         }
                     }
@@ -225,12 +223,12 @@ namespace ACE.Server.Managers
                     // Lastly, use an id that increments our max
                     if (current == max)
                     {
-                        log.Fatal($"Out of {name} GUIDs!");
+                        _log.Fatal($"Out of {name} GUIDs!");
                         return InvalidGuid;
                     }
 
                     if (current == max - LowIdLimit)
-                        log.Warn($"Running dangerously low on {name} GUIDs, need to defrag");
+                        _log.Warning($"Running dangerously low on {name} GUIDs, need to defrag");
 
                     uint ret = current;
                     current += 1;

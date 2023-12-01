@@ -1,8 +1,5 @@
 using System;
 using System.Diagnostics;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Entity.Enum;
@@ -11,6 +8,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
@@ -30,7 +28,7 @@ namespace ACE.Server.WorldObjects
     }
     public class UnlockerHelper
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(UnlockerHelper));
 
         public static void ConsumeUnlocker(Player player, WorldObject unlocker, WorldObject target, bool success)
         {
@@ -87,7 +85,7 @@ namespace ACE.Server.WorldObjects
                 if (unlocker.Structure == 0)
                 {
                     if (!player.TryConsumeFromInventoryWithNetworking(unlocker, 1))
-                        log.Warn($"UnlockerHelper.ConsumeUnlocker: TryConsumeFromInventoryWithNetworking failed for {unlocker.Name} (0x{unlocker.Guid}:{unlocker.WeenieClassId}), used on {target.Name} (0x{target.Guid}:{target.WeenieClassId}) and used by {player.Name} (0x{player.Guid})");
+                        _log.Warning($"UnlockerHelper.ConsumeUnlocker: TryConsumeFromInventoryWithNetworking failed for {unlocker.Name} (0x{unlocker.Guid}:{unlocker.WeenieClassId}), used on {target.Name} (0x{target.Guid}:{target.WeenieClassId}) and used by {player.Name} (0x{player.Guid})");
                 }
                 else
                 {

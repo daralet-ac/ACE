@@ -1,15 +1,13 @@
-using System;
 using System.IO;
-
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
-using log4net;
+using Serilog;
 
 namespace ACE.DatLoader.Entity
 {
     public class AnimationHook : IUnpackable
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(AnimationHook));
 
         public AnimationHookType HookType { get; private set; }
         public AnimationHookDir Direction { get; private set; }
@@ -147,7 +145,7 @@ namespace ACE.DatLoader.Entity
                     break;
 
                 default:
-                    log.Warn($"Not Implemented Hook type encountered: {hookType}");
+                    _log.Warning("Not Implemented Hook type encountered: {HookType}", hookType);
                     hook = null;
                     break;
             }

@@ -1500,7 +1500,7 @@ namespace ACE.Server.WorldObjects
         {
             if (spell.NumProjectiles == 0)
             {
-                log.Error($"{Name} ({Guid}).CreateSpellProjectiles({spell.Id} - {spell.Name}) - spell.NumProjectiles == 0");
+                _log.Error($"{Name} ({Guid}).CreateSpellProjectiles({spell.Id} - {spell.Name}) - spell.NumProjectiles == 0");
                 return new List<SpellProjectile>();
             }
 
@@ -1765,7 +1765,7 @@ namespace ACE.Server.WorldObjects
 
                 if (sp == null)
                 {
-                    log.Error($"{Name} ({Guid}).LaunchSpellProjectiles({spell.Id} - {spell.Name}) - failed to create spell projectile from wcid {spell.Wcid}");
+                    _log.Error($"{Name} ({Guid}).LaunchSpellProjectiles({spell.Id} - {spell.Name}) - failed to create spell projectile from wcid {spell.Wcid}");
                     break;
                 }
 
@@ -1853,13 +1853,13 @@ namespace ACE.Server.WorldObjects
 
             if (weenie == null)
             {
-                log.Error($"{Name} ({Guid}).GetSetupRadius({spell.Id} - {spell.Name}): couldn't find weenie {projectileWcid}");
+                _log.Error($"{Name} ({Guid}).GetSetupRadius({spell.Id} - {spell.Name}): couldn't find weenie {projectileWcid}");
                 return 0.0f;
             }
 
             if (!weenie.PropertiesDID.TryGetValue(PropertyDataId.Setup, out var setupId))
             {
-                log.Error($"{Name} ({Guid}).GetSetupRadius({spell.Id} - {spell.Name}): couldn't find setup ID for {weenie.WeenieClassId} - {weenie.ClassName}");
+                _log.Error($"{Name} ({Guid}).GetSetupRadius({spell.Id} - {spell.Name}): couldn't find setup ID for {weenie.WeenieClassId} - {weenie.ClassName}");
                 return 0.0f;
             }
 
@@ -1895,13 +1895,13 @@ namespace ACE.Server.WorldObjects
 
                 if (weenie == null)
                 {
-                    log.Error($"{Name} ({Guid}).GetSpellProjectileSpeed({spell.Id} - {spell.Name}, {distance}): couldn't find weenie {projectileWcid}");
+                    _log.Error($"{Name} ({Guid}).GetSpellProjectileSpeed({spell.Id} - {spell.Name}, {distance}): couldn't find weenie {projectileWcid}");
                     return 0.0f;
                 }
 
                 if (!weenie.PropertiesFloat.TryGetValue(PropertyFloat.MaximumVelocity, out var maxVelocity))
                 {
-                    log.Error($"{Name} ({Guid}).GetSpellProjectileSpeed({spell.Id} - {spell.Name}, {distance}): couldn't find MaxVelocity for {weenie.WeenieClassId} - {weenie.ClassName}");
+                    _log.Error($"{Name} ({Guid}).GetSpellProjectileSpeed({spell.Id} - {spell.Name}, {distance}): couldn't find MaxVelocity for {weenie.WeenieClassId} - {weenie.ClassName}");
                     return 0.0f;
                 }
 
@@ -2014,7 +2014,7 @@ namespace ACE.Server.WorldObjects
 
             if (spell.Category != SpellCategory.NetherDamageOverTimeRaising && spell.Category != SpellCategory.NetherDamageOverTimeRaising2 && spell.Category != SpellCategory.NetherDamageOverTimeRaising3)
             {
-                log.Error($"{Name}.CalculateDamageOverTimeBase({spell.Id} - {spell.Name}, {target?.Name}) - unknown dot spell category {spell.Category}");
+                _log.Error($"{Name}.CalculateDamageOverTimeBase({spell.Id} - {spell.Name}, {target?.Name}) - unknown dot spell category {spell.Category}");
                 return enchantment_statModVal;
             }
 

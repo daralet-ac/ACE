@@ -24,7 +24,7 @@ namespace ACE.Server.WorldObjects
 
             if (target.Location == null)
             {
-                log.Error($"{Name}.MoveTo({target.Name}): target.Location is null");
+                _log.Error($"{Name}.MoveTo({target.Name}): target.Location is null");
                 callback(false);
                 return;
             }
@@ -77,7 +77,7 @@ namespace ACE.Server.WorldObjects
 
             if (rotateTarget.Location == null)
             {
-                log.Error($"{Name}.TurnTo({target.Name}): target.Location is null");
+                _log.Error($"{Name}.TurnTo({target.Name}): target.Location is null");
                 callback(false);
                 return;
             }

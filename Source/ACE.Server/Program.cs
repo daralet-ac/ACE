@@ -4,17 +4,15 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
-
-using log4net;
-using log4net.Config;
-
 using ACE.Common;
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.Server.Command;
 using ACE.Server.Managers;
-using ACE.Server.Network.Managers;
 using ACE.Server.Mods;
+using ACE.Server.Network.Managers;
+using Microsoft.Extensions.Configuration;
+using Serilog;
 
 namespace ACE.Server
 {
@@ -35,7 +33,7 @@ namespace ACE.Server
         [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
         public static extern uint MM_EndPeriod(uint uMilliseconds);
 
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(Program));
 
         public static readonly bool IsRunningInContainer = Convert.ToBoolean(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"));
 
@@ -55,58 +53,19 @@ namespace ACE.Server
             // Init our text encoding options. This will allow us to use more than standard ANSI text, which the client also supports.
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
-            // Look for the log4net.config first in the current environment directory, then in the ExecutingAssembly location
             var exeLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var containerConfigDirectory = "/ace/Config";
-            var log4netConfig = Path.Combine(exeLocation, "log4net.config");
-            var log4netConfigExample = Path.Combine(exeLocation, "log4net.config.example");
-            var log4netConfigContainer = Path.Combine(containerConfigDirectory, "log4net.config");
 
-            if (IsRunningInContainer && File.Exists(log4netConfigContainer))
-                File.Copy(log4netConfigContainer, log4netConfig, true);
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", reloadOnChange: false, optional: false)
+                .Build();
 
-            var log4netFileInfo = new FileInfo("log4net.config");
-            if (!log4netFileInfo.Exists)
-                log4netFileInfo = new FileInfo(log4netConfig);
-
-            if (!log4netFileInfo.Exists)
-            {
-                var exampleFile = new FileInfo(log4netConfigExample);
-                if (!exampleFile.Exists)
-                {
-                    Console.WriteLine("log4net Configuration file is missing.  Please copy the file log4net.config.example to log4net.config and edit it to match your needs before running ACE.");
-                    throw new Exception("missing log4net configuration file");
-                }
-                else
-                {
-                    if (!IsRunningInContainer)
-                    {
-                        Console.WriteLine("log4net Configuration file is missing,  cloning from example file.");
-                        File.Copy(log4netConfigExample, log4netConfig);
-                    }
-                    else
-                    {                        
-                        if (!File.Exists(log4netConfigContainer))
-                        {
-                            Console.WriteLine("log4net Configuration file is missing, ACEmulator is running in a container,  cloning from docker file.");
-                            var log4netConfigDocker = Path.Combine(exeLocation, "log4net.config.docker");
-                            File.Copy(log4netConfigDocker, log4netConfig);
-                            File.Copy(log4netConfigDocker, log4netConfigContainer);
-                        }
-                        else
-                        {
-                            File.Copy(log4netConfigContainer, log4netConfig);
-                        }
-
-                    }
-                }
-            }
-
-            var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-            XmlConfigurator.ConfigureAndWatch(logRepository, log4netFileInfo);
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(configuration)
+                .CreateLogger();
 
             if (Environment.ProcessorCount < 2)
-                log.Warn("Only one vCPU was detected. ACE may run with limited performance. You should increase your vCPU count for anything more than a single player server.");
+                _log.Warning("Only one vCPU was detected. ACE may run with limited performance. You should increase your vCPU count for anything more than a single player server.");
 
             // Do system specific initializations here
             try
@@ -119,13 +78,13 @@ namespace ACE.Server
             }
             catch (Exception ex)
             {
-                log.Error(ex.ToString());
+                _log.Error(ex, "Could not set timer resolution to 1ms");
             }
 
-            log.Info("Starting ACEmulator...");
+            _log.Information("Starting ACEmulator...");
 
             if (IsRunningInContainer)
-                log.Info("ACEmulator is running in a container...");
+                _log.Information("ACEmulator is running in a container...");
             
             var configFile = Path.Combine(exeLocation, "Config.js");
             var configConfigContainer = Path.Combine(containerConfigDirectory, "Config.js");
@@ -149,7 +108,7 @@ namespace ACE.Server
                 }
             }
 
-            log.Info("Initializing ConfigManager...");
+            _log.Information("Initializing ConfigManager...");
             ConfigManager.Initialize();
 
             if (ConfigManager.Config.Server.WorldName != "ACEmulator")
@@ -160,43 +119,43 @@ namespace ACE.Server
 
             if (ConfigManager.Config.Offline.PurgeDeletedCharacters)
             {
-                log.Info($"Purging deleted characters, and their possessions, older than {ConfigManager.Config.Offline.PurgeDeletedCharactersDays} days ({DateTime.Now.AddDays(-ConfigManager.Config.Offline.PurgeDeletedCharactersDays)})...");
+                _log.Information($"Purging deleted characters, and their possessions, older than {ConfigManager.Config.Offline.PurgeDeletedCharactersDays} days ({DateTime.Now.AddDays(-ConfigManager.Config.Offline.PurgeDeletedCharactersDays)})...");
                 ShardDatabaseOfflineTools.PurgeCharactersInParallel(ConfigManager.Config.Offline.PurgeDeletedCharactersDays, out var charactersPurged, out var playerBiotasPurged, out var possessionsPurged);
-                log.Info($"Purged {charactersPurged:N0} characters, {playerBiotasPurged:N0} player biotas and {possessionsPurged:N0} possessions.");
+                _log.Information($"Purged {charactersPurged:N0} characters, {playerBiotasPurged:N0} player biotas and {possessionsPurged:N0} possessions.");
             }
 
             if (ConfigManager.Config.Offline.PurgeOrphanedBiotas)
             {
-                log.Info($"Purging orphaned biotas...");
+                _log.Information($"Purging orphaned biotas...");
                 ShardDatabaseOfflineTools.PurgeOrphanedBiotasInParallel(out var numberOfBiotasPurged);
-                log.Info($"Purged {numberOfBiotasPurged:N0} biotas.");
+                _log.Information($"Purged {numberOfBiotasPurged:N0} biotas.");
             }
 
             if (ConfigManager.Config.Offline.PruneDeletedCharactersFromFriendLists)
             {
-                log.Info($"Pruning invalid friends from all friend lists...");
+                _log.Information($"Pruning invalid friends from all friend lists...");
                 ShardDatabaseOfflineTools.PruneDeletedCharactersFromFriendLists(out var numberOfFriendsPruned);
-                log.Info($"Pruned {numberOfFriendsPruned:N0} invalid friends found on friend lists.");
+                _log.Information($"Pruned {numberOfFriendsPruned:N0} invalid friends found on friend lists.");
             }
 
             if (ConfigManager.Config.Offline.PruneDeletedObjectsFromShortcutBars)
             {
-                log.Info($"Pruning invalid shortcuts from all shortcut bars...");
+                _log.Information($"Pruning invalid shortcuts from all shortcut bars...");
                 ShardDatabaseOfflineTools.PruneDeletedObjectsFromShortcutBars(out var numberOfShortcutsPruned);
-                log.Info($"Pruned {numberOfShortcutsPruned:N0} deleted objects found on shortcut bars.");
+                _log.Information($"Pruned {numberOfShortcutsPruned:N0} deleted objects found on shortcut bars.");
             }
 
             if (ConfigManager.Config.Offline.PruneDeletedCharactersFromSquelchLists)
             {
-                log.Info($"Pruning invalid squelches from all squelch lists...");
+                _log.Information($"Pruning invalid squelches from all squelch lists...");
                 ShardDatabaseOfflineTools.PruneDeletedCharactersFromSquelchLists(out var numberOfSquelchesPruned);
-                log.Info($"Pruned {numberOfSquelchesPruned:N0} invalid squelched characters found on squelch lists.");
+                _log.Information($"Pruned {numberOfSquelchesPruned:N0} invalid squelched characters found on squelch lists.");
             }
 
             if (ConfigManager.Config.Offline.AutoServerUpdateCheck)
                 CheckForServerUpdate();
             else
-                log.Info($"AutoServerVersionCheck is disabled...");
+                _log.Information($"AutoServerVersionCheck is disabled...");
 
             if (ConfigManager.Config.Offline.AutoUpdateWorldDatabase)
             {
@@ -206,12 +165,12 @@ namespace ACE.Server
                     AutoApplyWorldCustomizations();
             }
             else
-                log.Info($"AutoUpdateWorldDatabase is disabled...");
+                _log.Information($"AutoUpdateWorldDatabase is disabled...");
 
             if (ConfigManager.Config.Offline.AutoApplyDatabaseUpdates)
                 AutoApplyDatabaseUpdates();
             else
-                log.Info($"AutoApplyDatabaseUpdates is disabled...");
+                _log.Information($"AutoApplyDatabaseUpdates is disabled...");
 
             // This should only be enabled manually. To enable it, simply uncomment this line
             //ACE.Database.OfflineTools.Shard.BiotaGuidConsolidator.ConsolidateBiotaGuids(0xA0000000, true, false, out int numberOfBiotasConsolidated, out int numberOfBiotasSkipped, out int numberOfErrors);
@@ -222,106 +181,106 @@ namespace ACE.Server
             // pre-load starterGear.json, abort startup if file is not found as it is required to create new characters.
             if (Factories.StarterGearFactory.GetStarterGearConfiguration() == null)
             {
-                log.Fatal("Unable to load or parse starterGear.json. ACEmulator will now abort startup.");
+                _log.Fatal("Unable to load or parse starterGear.json. ACEmulator will now abort startup.");
                 ServerManager.StartupAbort();
                 Environment.Exit(0);
             }
 
-            log.Info("Initializing ServerManager...");
+            _log.Information("Initializing ServerManager...");
             ServerManager.Initialize();
 
-            log.Info("Initializing DatManager...");
+            _log.Information("Initializing DatManager...");
             DatManager.Initialize(ConfigManager.Config.Server.DatFilesDirectory, true);
 
             if (ConfigManager.Config.DDD.EnableDATPatching)
             {
-                log.Info("Initializing DDDManager...");
+                _log.Information("Initializing DDDManager...");
                 DDDManager.Initialize();
             }
             else
-                log.Info("DAT Patching Disabled...");
+                _log.Information("DAT Patching Disabled...");
 
-            log.Info("Initializing DatabaseManager...");
+            _log.Information("Initializing DatabaseManager...");
             DatabaseManager.Initialize();
 
             if (DatabaseManager.InitializationFailure)
             {
-                log.Fatal("DatabaseManager initialization failed. ACEmulator will now abort startup.");
+                _log.Fatal("DatabaseManager initialization failed. ACEmulator will now abort startup.");
                 ServerManager.StartupAbort();
                 Environment.Exit(0);
             }
 
-            log.Info("Starting DatabaseManager...");
+            _log.Information("Starting DatabaseManager...");
             DatabaseManager.Start();
 
-            log.Info("Starting PropertyManager...");
+            _log.Information("Starting PropertyManager...");
             PropertyManager.Initialize();
 
-            log.Info("Initializing GuidManager...");
+            _log.Information("Initializing GuidManager...");
             GuidManager.Initialize();
 
             if (ConfigManager.Config.Server.ServerPerformanceMonitorAutoStart)
             {
-                log.Info("Server Performance Monitor auto starting...");
+                _log.Information("Server Performance Monitor auto starting...");
                 ServerPerformanceMonitor.Start();
             }
 
             if (ConfigManager.Config.Server.WorldDatabasePrecaching)
             {
-                log.Info("Precaching Weenies...");
+                _log.Information("Precaching Weenies...");
                 DatabaseManager.World.CacheAllWeenies();
-                log.Info("Precaching Cookbooks...");
+                _log.Information("Precaching Cookbooks...");
                 DatabaseManager.World.CacheAllCookbooks();
-                log.Info("Precaching Events...");
+                _log.Information("Precaching Events...");
                 DatabaseManager.World.GetAllEvents();
-                log.Info("Precaching House Portals...");
+                _log.Information("Precaching House Portals...");
                 DatabaseManager.World.CacheAllHousePortals();
-                log.Info("Precaching Points Of Interest...");
+                _log.Information("Precaching Points Of Interest...");
                 DatabaseManager.World.CacheAllPointsOfInterest();
-                log.Info("Precaching Spells...");
+                _log.Information("Precaching Spells...");
                 DatabaseManager.World.CacheAllSpells();
-                log.Info("Precaching Treasures - Death...");
+                _log.Information("Precaching Treasures - Death...");
                 DatabaseManager.World.CacheAllTreasuresDeath();
-                log.Info("Precaching Treasures - Material Base...");
+                _log.Information("Precaching Treasures - Material Base...");
                 DatabaseManager.World.CacheAllTreasureMaterialBase();
-                log.Info("Precaching Treasures - Material Groups...");
+                _log.Information("Precaching Treasures - Material Groups...");
                 DatabaseManager.World.CacheAllTreasureMaterialGroups();
-                log.Info("Precaching Treasures - Material Colors...");
+                _log.Information("Precaching Treasures - Material Colors...");
                 DatabaseManager.World.CacheAllTreasureMaterialColor();
-                log.Info("Precaching Treasures - Wielded...");
+                _log.Information("Precaching Treasures - Wielded...");
                 DatabaseManager.World.CacheAllTreasureWielded();
             }
             else
-                log.Info("Precaching World Database Disabled...");
+                _log.Information("Precaching World Database Disabled...");
 
-            log.Info("Initializing PlayerManager...");
+            _log.Information("Initializing PlayerManager...");
             PlayerManager.Initialize();
 
-            log.Info("Initializing HouseManager...");
+            _log.Information("Initializing HouseManager...");
             HouseManager.Initialize();
 
-            log.Info("Initializing InboundMessageManager...");
+            _log.Information("Initializing InboundMessageManager...");
             InboundMessageManager.Initialize();
 
-            log.Info("Initializing SocketManager...");
+            _log.Information("Initializing SocketManager...");
             SocketManager.Initialize();
 
-            log.Info("Initializing WorldManager...");
+            _log.Information("Initializing WorldManager...");
             WorldManager.Initialize();
 
-            log.Info("Initializing EventManager...");
+            _log.Information("Initializing EventManager...");
             EventManager.Initialize();
 
             // Free up memory before the server goes online. This can free up 6 GB+ on larger servers.
-            log.Info("Forcing .net garbage collection...");
+            _log.Information("Forcing .net garbage collection...");
             for (int i = 0 ; i < 10 ; i++)
                 GC.Collect();
 
             // This should be last
-            log.Info("Initializing CommandManager...");
+            _log.Information("Initializing CommandManager...");
             CommandManager.Initialize();
 
-            log.Info("Initializing ModManager...");
+            _log.Information("Initializing ModManager...");
             ModManager.Initialize();
 
             if (!PropertyManager.GetBool("world_closed", false).Item)
@@ -332,7 +291,8 @@ namespace ACE.Server
 
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            log.Error(e.ExceptionObject);
+            _log.Error(e.ExceptionObject as Exception, "An unhandled exception occurred.");
+            Thread.Sleep(1000);
         }
 
         private static void OnProcessExit(object sender, EventArgs e)
@@ -340,7 +300,7 @@ namespace ACE.Server
             if (!IsRunningInContainer)
             {
                 if (!ServerManager.ShutdownInitiated)
-                    log.Warn("Unsafe server shutdown detected! Data loss is possible!");
+                    _log.Warning("Unsafe server shutdown detected! Data loss is possible!");
 
                 PropertyManager.StopUpdating();
                 DatabaseManager.Stop();
@@ -355,7 +315,7 @@ namespace ACE.Server
                 }
                 catch (Exception ex)
                 {
-                    log.Error(ex.ToString());
+                    _log.Error(ex.ToString());
                 }
             }
             else

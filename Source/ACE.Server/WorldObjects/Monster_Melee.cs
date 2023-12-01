@@ -167,7 +167,7 @@ namespace ACE.Server.WorldObjects
 
             if (CombatTable == null)
             {
-                log.Error($"{Name} ({Guid}).GetCombatManeuver() - CombatTable is null");
+                _log.Error($"{Name} ({Guid}).GetCombatManeuver() - CombatTable is null");
                 return null;
             }
 
@@ -176,13 +176,13 @@ namespace ACE.Server.WorldObjects
             var motionTable = DatManager.PortalDat.ReadFromDat<DatLoader.FileTypes.MotionTable>(MotionTableId);
             if (motionTable == null)
             {
-                log.Error($"{Name} ({Guid}).GetCombatManeuver() - motionTable is null");
+                _log.Error($"{Name} ({Guid}).GetCombatManeuver() - motionTable is null");
                 return null;
             }
 
             if (!CombatTable.Stances.TryGetValue(CurrentMotionState.Stance, out var stanceManeuvers))
             {
-                log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
+                _log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
                 return null;
             }
 
@@ -190,7 +190,7 @@ namespace ACE.Server.WorldObjects
             motionTable.Links.TryGetValue(stanceKey, out var motions);
             if (motions == null)
             {
-                log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find stance {CurrentMotionState.Stance} in MotionTable {MotionTableId:X8}");
+                _log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find stance {CurrentMotionState.Stance} in MotionTable {MotionTableId:X8}");
                 return null;
             }
 
@@ -205,7 +205,7 @@ namespace ACE.Server.WorldObjects
 
             if (!stanceManeuvers.Table.TryGetValue(AttackHeight.Value, out var attackTypes))
             {
-                log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find attack height {AttackHeight} for stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
+                _log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find attack height {AttackHeight} for stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
                 return null;
             }
 
@@ -241,7 +241,7 @@ namespace ACE.Server.WorldObjects
 
                     if (!attackTypes.Table.TryGetValue(AttackType, out maneuvers) || maneuvers.Count == 0)
                     {
-                        log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find attack type Kick or Punch for attack height {AttackHeight} and stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
+                        _log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find attack type Kick or Punch for attack height {AttackHeight} and stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
                         return null;
                     }
                 }
@@ -251,7 +251,7 @@ namespace ACE.Server.WorldObjects
 
                     if (!attackTypes.Table.TryGetValue(reduced, out maneuvers) || maneuvers.Count == 0)
                     {
-                        log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find attack type {reduced} for attack height {AttackHeight} and stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
+                        _log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find attack type {reduced} for attack height {AttackHeight} and stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
                         return null;
                     }
                     //else
@@ -259,7 +259,7 @@ namespace ACE.Server.WorldObjects
                 }
                 else
                 {
-                    log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find attack type {AttackType} for attack height {AttackHeight} and stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
+                    _log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find attack type {AttackType} for attack height {AttackHeight} and stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
                     return null;
                 }
             }
@@ -304,7 +304,7 @@ namespace ACE.Server.WorldObjects
                         return firstCommand;
                     }
                 }
-                log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find {motionCommand} in MotionTable {MotionTableId:X8}");
+                _log.Error($"{Name} ({Guid}).GetCombatManeuver() - couldn't find {motionCommand} in MotionTable {MotionTableId:X8}");
                 return null;
             }
 
@@ -361,7 +361,7 @@ namespace ACE.Server.WorldObjects
                 if (!missingAttackFrames.ContainsKey(attackFrameParams))
                 {
                     // only show warning message once for each combo
-                    log.Warn($"{Name} ({Guid}) - no attack frames for MotionTable {MotionTableId:X8}, {CurrentMotionState.Stance}, {motionCommand}, using defaults");
+                    _log.Warning($"{Name} ({Guid}) - no attack frames for MotionTable {MotionTableId:X8}, {CurrentMotionState.Stance}, {motionCommand}, using defaults");
                     missingAttackFrames.TryAdd(attackFrameParams, true);
                 }
                 attackFrames = defaultAttackFrames;
@@ -609,8 +609,8 @@ namespace ACE.Server.WorldObjects
 
             if (parts.Count == 0)
             {
-                log.Warn($"{Name} ({Guid}.GetAttackPart({motionCommand}) failed");
-                log.Warn($"CombatTable: {CombatTableDID:X8}, MotionTable: {MotionTableId:X8}, CurrentStance: {CurrentMotionState.Stance}, AttackHeight: {AttackHeight}, AttackType: {AttackType}");
+                _log.Warning($"{Name} ({Guid}.GetAttackPart({motionCommand}) failed");
+                _log.Warning($"CombatTable: {CombatTableDID:X8}, MotionTable: {MotionTableId:X8}, CurrentStance: {CurrentMotionState.Stance}, AttackHeight: {AttackHeight}, AttackType: {AttackType}");
                 return new KeyValuePair<CombatBodyPart, PropertiesBodyPart>();
             }
 

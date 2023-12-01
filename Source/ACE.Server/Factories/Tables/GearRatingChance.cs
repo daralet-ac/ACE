@@ -1,15 +1,13 @@
-using log4net;
-
 using ACE.Database.Models.World;
 using ACE.Server.Factories.Entity;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Factories.Tables
 {
     public static class GearRatingChance
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
+        private static readonly ILogger _log = Log.ForContext(typeof(GearRatingChance));
 
         private static ChanceTable<bool> RatingChance = new ChanceTable<bool>()
         {
@@ -49,7 +47,7 @@ namespace ACE.Server.Factories.Tables
             }
             else
             {
-                log.Error($"GearRatingChance.Roll({wo.Name}, {profile.TreasureType}, {roll.ItemType}): unknown item type");
+                _log.Error($"GearRatingChance.Roll({wo.Name}, {profile.TreasureType}, {roll.ItemType}): unknown item type");
                 return 0;
             }
 

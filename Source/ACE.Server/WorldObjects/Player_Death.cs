@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Common;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
@@ -12,9 +11,9 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
-using ACE.Server.Network.Structure;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects
 {
@@ -62,7 +61,7 @@ namespace ACE.Server.WorldObjects
 
             var broadcastMsg = new GameMessagePlayerKilled(nearbyMsg, Guid, lastDamager?.Guid ?? ObjectGuid.Invalid);
 
-            log.Debug("[CORPSE] " + nearbyMsg);
+            _log.Debug("[CORPSE] " + nearbyMsg);
 
             var excludePlayers = new List<Player>();
 
@@ -534,7 +533,7 @@ namespace ACE.Server.WorldObjects
                     }
                     else
                     {
-                        log.WarnFormat("Couldn't find death item stack 0x{0:X8}:{1} for player {2}", deathItem.WorldObject.Guid.Full, deathItem.WorldObject.Name, Name);
+                        _log.Warning("Couldn't find death item stack 0x{WorldObjectGuid:X8}:{WorldObject} for player {Player}", deathItem.WorldObject.Guid.Full, deathItem.WorldObject.Name, Name);
                     }
                 }
                 else
@@ -546,7 +545,7 @@ namespace ACE.Server.WorldObjects
                     }
                     else
                     {
-                        log.WarnFormat("Couldn't find death item 0x{0:X8}:{1} for player {2}", deathItem.WorldObject.Guid.Full, deathItem.WorldObject.Name, Name);
+                        _log.Warning("Couldn't find death item 0x{WorldObjectGuid:X8}:{WorldObject} for player {Player}", deathItem.WorldObject.Guid.Full, deathItem.WorldObject.Name, Name);
                     }
                 }
             }
@@ -574,10 +573,10 @@ namespace ACE.Server.WorldObjects
 
                 if (!corpse.TryAddToInventory(dropItem))
                 {
-                    log.Warn($"Player_Death: couldn't add item to {Name}'s corpse: {dropItem.Name}");
+                    _log.Warning($"Player_Death: couldn't add item to {Name}'s corpse: {dropItem.Name}");
 
                     if (!TryAddToInventory(dropItem))
-                        log.Warn($"Player_Death: couldn't re-add item to {Name}'s inventory: {dropItem.Name}");
+                        _log.Warning($"Player_Death: couldn't re-add item to {Name}'s inventory: {dropItem.Name}");
                 }
             }
 
@@ -608,7 +607,7 @@ namespace ACE.Server.WorldObjects
 
             msg = msg.Substring(0, msg.Length - 2);
 
-            log.Debug(msg);
+            _log.Debug(msg);
         }
 
         /// <summary>
@@ -1066,7 +1065,7 @@ namespace ACE.Server.WorldObjects
                     return new();
 
                 if (!corpse.TryAddToInventory(slag))
-                    log.Warn($"CalculateDeathItems_Olthoi: couldn't add item to {Name}'s corpse: {slag.Name}");
+                    _log.Warning($"CalculateDeathItems_Olthoi: couldn't add item to {Name}'s corpse: {slag.Name}");
 
                 return new() { slag };
             }
@@ -1087,7 +1086,7 @@ namespace ACE.Server.WorldObjects
                 foreach (WorldObject wo in items)
                 {
                     if (!corpse.TryAddToInventory(wo))
-                        log.Warn($"CalculateDeathItems_Olthoi: couldn't add item to {Name}'s corpse: {wo.Name}");
+                        _log.Warning($"CalculateDeathItems_Olthoi: couldn't add item to {Name}'s corpse: {wo.Name}");
                 }
 
                 return items;

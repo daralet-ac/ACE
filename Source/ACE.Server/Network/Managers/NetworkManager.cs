@@ -4,23 +4,20 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
-using ACE.Server.Network.Packets;
-using ACE.Server.Network.Handlers;
 using ACE.Server.Network.Enum;
+using ACE.Server.Network.Handlers;
+using ACE.Server.Network.Packets;
+using Serilog;
 
 namespace ACE.Server.Network.Managers
 {
     public static class NetworkManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private static readonly ILog packetLog = LogManager.GetLogger(System.Reflection.Assembly.GetEntryAssembly(), "Packets");
+        private static readonly ILogger _log = Log.ForContext(typeof(NetworkManager));
 
         // Hard coded server Id, this will need to change if we move to multi-process or multi-server model
         public const ushort ServerId = 0xB;
@@ -49,7 +46,7 @@ namespace ACE.Server.Network.Managers
                 //ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.ProcessPacket_1);
                 if (packet.Header.Flags.HasFlag(PacketHeaderFlags.ConnectResponse))
                 {
-                    packetLog.Debug($"{packet}, {endPoint}");
+                    _log.Verbose($"{packet}, {endPoint}");
                     PacketInboundConnectResponse connectResponse = new PacketInboundConnectResponse(packet);
 
                     // This should be set on the second packet to the server from the client.
@@ -86,7 +83,7 @@ namespace ACE.Server.Network.Managers
                 }
                 else
                 {
-                    log.ErrorFormat("Packet from {0} rejected. Packet sent to listener 1 and is not a ConnectResponse or CICMDCommand", endPoint);
+                    _log.Error("Packet from {Endpoint} rejected. Packet sent to listener 1 and is not a ConnectResponse or CICMDCommand", endPoint);
                 }
                 //ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.ProcessPacket_1);
             }
@@ -95,25 +92,25 @@ namespace ACE.Server.Network.Managers
                 //ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.ProcessPacket_0);
                 if (packet.Header.HasFlag(PacketHeaderFlags.LoginRequest))
                 {
-                    packetLog.Debug($"{packet}, {endPoint}");
+                    _log.Verbose($"{packet}, {endPoint}");
                     if (GetAuthenticatedSessionCount() >= ConfigManager.Config.Server.Network.MaximumAllowedSessions)
                     {
-                        log.InfoFormat("Login Request from {0} rejected. Server full.", endPoint);
+                        _log.Information("Login Request from {Endpoint} rejected. Server full.", endPoint);
                         SendLoginRequestReject(connectionListener, endPoint, CharacterError.LogonServerFull);
                     }
                     else if (ServerManager.ShutdownInProgress)
                     {
-                        log.InfoFormat("Login Request from {0} rejected. Server is shutting down.", endPoint);
+                        _log.Information("Login Request from {Endpoint} rejected. Server is shutting down.", endPoint);
                         SendLoginRequestReject(connectionListener, endPoint, CharacterError.ServerCrash1);
                     }
                     else if (ServerManager.ShutdownInitiated && (ServerManager.ShutdownTime - DateTime.UtcNow).TotalMinutes < 2)
                     {
-                        log.InfoFormat("Login Request from {0} rejected. Server shutting down in less than 2 minutes.", endPoint);
+                        _log.Information("Login Request from {Endpoint} rejected. Server shutting down in less than 2 minutes.", endPoint);
                         SendLoginRequestReject(connectionListener, endPoint, CharacterError.ServerCrash1);
                     }
                     else
                     {
-                        log.DebugFormat("Login Request from {0}", endPoint);
+                        _log.Debug("Login Request from {Endpoint}", endPoint);
 
                         var ipAllowsUnlimited = ConfigManager.Config.Server.Network.AllowUnlimitedSessionsFromIPAddresses.Contains(endPoint.Address.ToString());
                         if (ipAllowsUnlimited || ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress == -1 || GetSessionEndpointTotalByAddressCount(endPoint.Address) < ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress)
@@ -126,20 +123,20 @@ namespace ACE.Server.Network.Managers
                                     // connect request packet sent to the client was corrupted in transit and session entered an unspecified state.
                                     // ignore the request and remove the broken session and the client will start a new session.
                                     RemoveSession(session);
-                                    log.Warn($"Bad handshake from {endPoint}, aborting session.");
+                                    _log.Warning($"Bad handshake from {endPoint}, aborting session.");
                                 }
 
                                 session.ProcessPacket(packet);
                             }
                             else
                             {
-                                log.InfoFormat("Login Request from {0} rejected. Failed to find or create session.", endPoint);
+                                _log.Information("Login Request from {Endpoint} rejected. Failed to find or create session.", endPoint);
                                 SendLoginRequestReject(connectionListener, endPoint, CharacterError.LogonServerFull);
                             }
                         }
                         else
                         {
-                            log.InfoFormat("Login Request from {0} rejected. Session would exceed MaximumAllowedSessionsPerIPAddress limit.", endPoint);
+                            _log.Information("Login Request from {Endpoint} rejected. Session would exceed MaximumAllowedSessionsPerIPAddress limit.", endPoint);
                             SendLoginRequestReject(connectionListener, endPoint, CharacterError.LogonServerFull);
                         }
                     }
@@ -152,16 +149,16 @@ namespace ACE.Server.Network.Managers
                         if (session.EndPointC2S.Equals(endPoint))
                             session.ProcessPacket(packet);
                         else
-                            log.DebugFormat("Session for Id {0} has IP {1} but packet has IP {2}", packet.Header.Id, session.EndPointC2S, endPoint);
+                            _log.Information("Session for Id {PackerHeaderId} has IP {ClientEndpoint} but packet has IP {Endpoint}", packet.Header.Id, session.EndPointC2S, endPoint);
                     }
                     else
                     {
-                        log.DebugFormat("Unsolicited Packet from {0} with Id {1}", endPoint, packet.Header.Id);
+                        _log.Debug("Unsolicited Packet from {Endpoint} with Id {PackerHeaderId}", endPoint, packet.Header.Id);
                     }
                 }
                 else
                 {
-                    log.DebugFormat("Unsolicited Packet from {0} with Id {1}", endPoint, packet.Header.Id);
+                    _log.Debug("Unsolicited Packet from {Endpoint} with Id {PackerHeaderId}", endPoint, packet.Header.Id);
                 }
                 //ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.ProcessPacket_0);
             }
@@ -277,7 +274,7 @@ namespace ACE.Server.Network.Managers
                         {
                             if (sessionMap[i] == null)
                             {
-                                log.DebugFormat("Creating new session for {0} with id {1}", endPoint, i);
+                                _log.Debug("Creating new session for {ClientEndpoint} with id {ClientId}", endPoint, i);
                                 session = new Session(connectionListener, endPoint, i, ServerId);
                                 sessionMap[i] = session;
                                 break;
@@ -332,7 +329,7 @@ namespace ACE.Server.Network.Managers
             sessionLock.EnterWriteLock();
             try
             {
-                log.DebugFormat("Removing session for {0} with id {1}", session.EndPointC2S, session.Network.ClientId);
+                _log.Debug("Removing session for {ClientEndpoint} with id {ClientId}", session.EndPointC2S, session.Network.ClientId);
                 if (sessionMap[session.Network.ClientId] == session)
                     sessionMap[session.Network.ClientId] = null;
             }

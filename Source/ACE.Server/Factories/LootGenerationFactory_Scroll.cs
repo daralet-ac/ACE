@@ -43,7 +43,7 @@ namespace ACE.Server.Factories
 
             if (weenie == null)
             {
-                log.DebugFormat("CreateRandomScroll for tier {0} and spellID of {1} returned null from the database.", profile.Tier, spellId);
+                _log.Debug("CreateRandomScroll for tier {LootTier} and spellID of {SpellId} returned null from the database.", profile.Tier, spellId);
                 return null;
             }
 

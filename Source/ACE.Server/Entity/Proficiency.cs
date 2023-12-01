@@ -1,15 +1,15 @@
 using System;
-using log4net;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Entity;
+using Serilog;
 
 namespace ACE.Server.Entity
 {
     public class Proficiency
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(Proficiency));
 
         public static TimeSpan FullTime = TimeSpan.FromMinutes(15);
 
@@ -40,7 +40,7 @@ namespace ACE.Server.Entity
             if (timeDiff < 0)
             {
                 // can happen if server clock is rewound back in time
-                log.Warn($"Proficiency.OnSuccessUse({player.Name}, {skill.Skill}, {difficulty}) - timeDiff: {timeDiff}");
+                _log.Warning($"Proficiency.OnSuccessUse({player.Name}, {skill.Skill}, {difficulty}) - timeDiff: {timeDiff}");
                 skill.PropertiesSkill.LastUsedTime = currentTime;       // update to prevent log spam
                 return;
             }
@@ -74,7 +74,7 @@ namespace ACE.Server.Entity
 
                 if (totalXPGranted > 10000)
                 {
-                    log.Warn($"Proficiency.OnSuccessUse({player.Name}, {skill.Skill}, {difficulty}) - totalXPGranted: {totalXPGranted:N0}");
+                    _log.Warning($"Proficiency.OnSuccessUse({player.Name}, {skill.Skill}, {difficulty}) - totalXPGranted: {totalXPGranted:N0}");
                 }
 
                 var maxLevel = Player.GetMaxLevel();
@@ -114,7 +114,7 @@ namespace ACE.Server.Entity
         {
             if (difficulty < 0)
             {
-                log.Error($"Proficiency.OnSuccessUse({player.Name}, {skill.Skill}, {difficulty}) - difficulty cannot be negative");
+                _log.Error($"Proficiency.OnSuccessUse({player.Name}, {skill.Skill}, {difficulty}) - difficulty cannot be negative");
                 return;
             }
             OnSuccessUse(player, skill, (uint)difficulty);

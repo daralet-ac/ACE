@@ -1,17 +1,14 @@
-using System;
-
-using log4net;
-
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
     public class Key : WorldObject
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Key>();
 
         /// <summary>
         /// A new biota be created taking all of its values from weenie.
@@ -67,7 +64,7 @@ namespace ACE.Server.WorldObjects
 
             if (Structure == 0 || Structure > MaxStructure)
             {
-                log.Warn($"Key.HandleActionUseOnTarget: Structure / MaxStructure is {Structure:N0} / {MaxStructure:N0} for {Name} (0x{Guid}:{WeenieClassId}), used on {target.Name} (0x{target.Guid}:{target.WeenieClassId}) and used by {player.Name} (0x{player.Guid})");
+                _log.Warning($"Key.HandleActionUseOnTarget: Structure / MaxStructure is {Structure:N0} / {MaxStructure:N0} for {Name} (0x{Guid}:{WeenieClassId}), used on {target.Name} (0x{target.Guid}:{target.WeenieClassId}) and used by {player.Name} (0x{player.Guid})");
 
                 var wo = player.FindObject(Guid.Full, Player.SearchLocations.Everywhere, out _, out Container rootOwner, out bool wasEquipped);
                 DeleteObject(rootOwner);

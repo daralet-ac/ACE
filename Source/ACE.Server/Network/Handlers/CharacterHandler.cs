@@ -1,9 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Database;
@@ -16,12 +13,13 @@ using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.Network.Handlers
 {
     public static class CharacterHandler
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(CharacterHandler));
 
         [GameMessage(GameMessageOpcode.CharacterCreate, SessionState.AuthConnected)]
         public static void CharacterCreate(ClientMessage message, Session session)
@@ -112,7 +110,7 @@ namespace ACE.Server.Network.Handlers
             if (weenie == null) // If it is STILL null after the above catchall, the database is missing critical data and cannot continue with character creation.
             {
                 SendCharacterCreateResponse(session, CharacterGenerationVerificationResponse.DatabaseDown);
-                log.Error("Database does not contain the weenie for human (1). Characters cannot be created until the missing weenie is restored.");
+                _log.Error("Database does not contain the weenie for human (1). Characters cannot be created until the missing weenie is restored.");
                 return;
             }
 

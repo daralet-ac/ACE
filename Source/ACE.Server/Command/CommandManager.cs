@@ -1,21 +1,18 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
-
 using ACE.Entity.Enum;
 using ACE.Server.Network;
-
-using log4net;
+using Serilog;
 
 namespace ACE.Server.Command
 {
     public static class CommandManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(CommandManager));
 
         public static readonly bool NonInteractiveConsole = Convert.ToBoolean(Environment.GetEnvironmentVariable("ACE_NONINTERACTIVE_CONSOLE"));
 
@@ -71,17 +68,17 @@ namespace ACE.Server.Command
             if (!commandHandlers.ContainsKey(command))
             {
                 commandHandlers.Add(command, commandHandler);
-                log.Info($"Command created: {command}");
+                _log.Information("Command created: {Command}", command);
                 return true;
             }
             //Update if overriding and the command exists
             else if (overrides)
             {
-                log.Info($"Command updated: {command}");
+                _log.Information("Command updated: {Command}", command);
                 commandHandlers[command] = commandHandler;
                 return true;
             }
-            log.Warn($"Failed to add command: {command}");
+            _log.Warning("Failed to add command: {Command}", command);
             return false;
         }
 
@@ -90,7 +87,7 @@ namespace ACE.Server.Command
             if (!commandHandlers.ContainsKey(command))
                 return false;
 
-            log.Info($"Removed command: {command}");
+            _log.Information("Removed command: {Command}", command);
             commandHandlers.Remove(command);
             return true;
         }
@@ -117,7 +114,7 @@ namespace ACE.Server.Command
 
             if (NonInteractiveConsole)
             {
-                log.Info("ACEmulator command prompt disabled - Environment.GetEnvironmentVariable(ACE_NONINTERACTIVE_CONSOLE) was true");
+                _log.Information("ACEmulator command prompt disabled - Environment.GetEnvironmentVariable(ACE_NONINTERACTIVE_CONSOLE) was true");
                 return;
             }
 
@@ -151,7 +148,7 @@ namespace ACE.Server.Command
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"Exception while parsing command: {commandLine}", ex);
+                    _log.Error(ex, "Exception while parsing command: {Line}", commandLine);
                     return;
                 }
                 try
@@ -169,13 +166,13 @@ namespace ACE.Server.Command
                         }
                         catch (Exception ex)
                         {
-                            log.Error($"Exception while invoking command handler for: {commandLine}", ex);
+                            _log.Error(ex, "Exception while invoking command handler for: {Line}", commandLine);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"Exception while getting command handler for: {commandLine}", ex);
+                    _log.Error(ex, "Exception while getting command handler for: {Line}", commandLine);
                 }
             }
         }

@@ -3,23 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Microsoft.EntityFrameworkCore;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace ACE.Database
 {
     public static class ShardDatabaseOfflineTools
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
+        private static readonly ILogger _log = Log.ForContext(typeof(ShardDatabaseOfflineTools));
 
         /*public static bool CanPurgeCharacter(ShardDbContext context, uint characterId)
         {
@@ -121,17 +117,22 @@ namespace ACE.Database
                 charactersPurged++;
             }
 
-            var message = $"[DATABASE][PURGE] Character 0x{characterId:X8}";
-
-            if (character != null)
-               message += $":{character.Name}, deleted on {Time.GetDateTimeFromTimestamp(character.DeleteTime).ToLocalTime()}";
-
-            message += $", and {possessionsPurged} of their possessions has been purged.";
-
-            if (!string.IsNullOrWhiteSpace(reason))
-                message += $" Reason: {reason}.";
-
-            log.Debug(message);
+            if (character != null && !string.IsNullOrWhiteSpace(reason))
+            {
+                _log.Debug("[DATABASE][PURGE] Character 0x{CharacterId:X8}:{CharacterName}, deleted on {CharacterDeletedAt}, and {NumPossessionsPurged} of their possessions has been purged. Reason: {Reason}.", characterId, character.Name, Time.GetDateTimeFromTimestamp(character.DeleteTime).ToLocalTime(), possessionsPurged, reason);
+            }
+            else if (character != null && string.IsNullOrWhiteSpace(reason))
+            {
+                _log.Debug("[DATABASE][PURGE] Character 0x{CharacterId:X8}:{CharacterName}, deleted on {CharacterDeletedAt}, and {NumPossessionsPurged} of their possessions has been purged.", characterId, character.Name, Time.GetDateTimeFromTimestamp(character.DeleteTime).ToLocalTime(), possessionsPurged);
+            }
+            else if (character == null && !string.IsNullOrWhiteSpace(reason))
+            {
+                _log.Debug("[DATABASE][PURGE] Character 0x{CharacterId:X8}, and {NumPossessionsPurged} of their possessions has been purged. Reason: {Reason}.", characterId, possessionsPurged, reason);
+            }
+            else
+            {
+                _log.Debug("[DATABASE][PURGE] Character 0x{CharacterId:X8}, and {NumPossessionsPurged} of their possessions has been purged.", characterId, possessionsPurged);
+            }
 
             try
             {
@@ -139,7 +140,7 @@ namespace ACE.Database
             }
             catch (Exception ex)
             {
-                log.Error($"[DATABASE][PURGE] PurgeCharacter 0x{characterId:X8} failed with exception: {ex}");
+                _log.Error(ex, "[DATABASE][PURGE] PurgeCharacter 0x{CharacterId:X8} failed", characterId);
             }
         }
 
@@ -246,7 +247,7 @@ namespace ACE.Database
             if (!string.IsNullOrWhiteSpace(reason))
                 message += $" Reason: {reason}.";
 
-            log.Debug(message);
+            _log.Debug(message);
 
             try
             {
@@ -254,7 +255,7 @@ namespace ACE.Database
             }
             catch (Exception ex)
             {
-                log.Error($"[DATABASE][PURGE] PurgePlayer 0x{playerId:X8} failed with exception: {ex}");
+                _log.Error(ex, $"[DATABASE][PURGE] PurgePlayer 0x{playerId:X8} failed.");
             }
         }
 
@@ -292,7 +293,7 @@ namespace ACE.Database
                 //    message += ", has NOT been purged due to non-purgeable WeenieType.";
                 //    if (!String.IsNullOrWhiteSpace(reason))
                 //        message += $" Reason: {reason}.";
-                //    log.Debug(message);
+                //    _log.Debug(message);
 
                 //    return false;
                 //}
@@ -302,7 +303,7 @@ namespace ACE.Database
                 if (!string.IsNullOrWhiteSpace(reason))
                     message += $" Reason: {reason}.";
 
-                log.Debug(message);
+                _log.Debug(message);
 
                 context.Biota.Remove(biota);
 
@@ -312,7 +313,7 @@ namespace ACE.Database
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"[DATABASE][PURGE] PurgeBiota 0x{id:X8} failed with exception: {ex}");
+                    _log.Error(ex, $"[DATABASE][PURGE] PurgeBiota 0x{id:X8} failed.");
                 }
 
                 return true;
@@ -371,10 +372,10 @@ namespace ACE.Database
                     PurgeCharacter(result, out var charactersPurged, out var playerBiotasPurged, out var possessionPurged, "No Player biota counterpart found");
 
                     if (charactersPurged != 1)
-                        log.Error("[DATABASE][PURGE] PurgeOrphanedBiotasInParallel failed to purge exactly 1 character. This should not happen!");
+                        _log.Error("[DATABASE][PURGE] PurgeOrphanedBiotasInParallel failed to purge exactly 1 character. This should not happen!");
 
                     if (playerBiotasPurged != 0)
-                        log.Error("[DATABASE][PURGE] PurgeOrphanedBiotasInParallel purged a player biota and character record. This should not happen!");
+                        _log.Error("[DATABASE][PURGE] PurgeOrphanedBiotasInParallel purged a player biota and character record. This should not happen!");
 
                     Interlocked.Add(ref totalNumberOfBiotasPurged, charactersPurged);
                     Interlocked.Add(ref totalNumberOfBiotasPurged, playerBiotasPurged);
@@ -417,10 +418,10 @@ namespace ACE.Database
                     PurgePlayer(result, out var charactersPurged, out var playerBiotasPurged, out var possessionPurged, "No Character record counterpart found");
 
                     if (charactersPurged != 0)
-                        log.Error("[DATABASE][PURGE] PurgeOrphanedBiotasInParallel purged a character record and a player biota. This should not happen!");
+                        _log.Error("[DATABASE][PURGE] PurgeOrphanedBiotasInParallel purged a character record and a player biota. This should not happen!");
 
                     if (playerBiotasPurged != 1)
-                        log.Error("[DATABASE][PURGE] PurgeOrphanedBiotasInParallel failed to purge exactly 1 player biota. This should not happen!");
+                        _log.Error("[DATABASE][PURGE] PurgeOrphanedBiotasInParallel failed to purge exactly 1 player biota. This should not happen!");
 
                     Interlocked.Add(ref totalNumberOfBiotasPurged, charactersPurged);
                     Interlocked.Add(ref totalNumberOfBiotasPurged, playerBiotasPurged);
@@ -691,7 +692,7 @@ namespace ACE.Database
             //                                nameString.Value = "Mansion";
             //                        }
 
-            //                        log.Info($"Biota for {nameString.Value} (0x{item.Id:X8}) has been altered. Reason: HouseOwnerIID (0x{houseOwnerIID.Value:X8}) was not found in database");
+            //                        _log.Information($"Biota for {nameString.Value} (0x{item.Id:X8}) has been altered. Reason: HouseOwnerIID (0x{houseOwnerIID.Value:X8}) was not found in database");
 
             //                        context.SaveChanges();
 
@@ -788,7 +789,7 @@ namespace ACE.Database
             //                    {
             //                        item.BiotaPropertiesIID.Remove(monarchIID);
 
-            //                        log.Info($"Biota for {nameString.Value} (0x{item.Id:X8}) has been altered. Reason: MonarchIID (0x{monarchIID.Value:X8}) was not found in database");
+            //                        _log.Information($"Biota for {nameString.Value} (0x{item.Id:X8}) has been altered. Reason: MonarchIID (0x{monarchIID.Value:X8}) was not found in database");
 
             //                        context.SaveChanges();
             //                    }
@@ -805,7 +806,7 @@ namespace ACE.Database
             //                    {
             //                        item.BiotaPropertiesIID.Remove(patronIID);
 
-            //                        log.Info($"Biota for {nameString.Value} (0x{item.Id:X8}) has been altered. Reason: PatronIID (0x{patronIID.Value:X8}) was not found in database");
+            //                        _log.Information($"Biota for {nameString.Value} (0x{item.Id:X8}) has been altered. Reason: PatronIID (0x{patronIID.Value:X8}) was not found in database");
 
             //                        context.SaveChanges();
             //                    }
@@ -822,7 +823,7 @@ namespace ACE.Database
             //                    {
             //                        item.BiotaPropertiesIID.Remove(allegianceIID);
 
-            //                        log.Info($"Biota for {nameString.Value} (0x{item.Id:X8}) has been altered. Reason: AllegianceIID (0x{allegianceIID.Value:X8}) was not found in database");
+            //                        _log.Information($"Biota for {nameString.Value} (0x{item.Id:X8}) has been altered. Reason: AllegianceIID (0x{allegianceIID.Value:X8}) was not found in database");
 
             //                        context.SaveChanges();
             //                    }
@@ -833,7 +834,7 @@ namespace ACE.Database
             //            {
             //                context.Remove(item);
 
-            //                log.Info($"Biota for {nameString.Value} (0x{item.Id:X8}) - WCID: {item.WeenieClassId} | WeenieType: {(WeenieType)item.WeenieType} - has been purged. Reason: {deleteReason}");
+            //                _log.Information($"Biota for {nameString.Value} (0x{item.Id:X8}) - WCID: {item.WeenieClassId} | WeenieType: {(WeenieType)item.WeenieType} - has been purged. Reason: {deleteReason}");
             //                //log.Info($"Biota for {nameString.Value} (0x{item.Id:X8}) - WCID: {item.WeenieClassId} | WeenieType: {(WeenieType)item.WeenieType} | CreationTimestamp: {creationTS.ToLocalTime()} - has been purged. Reason: {deleteReason}");
 
             //                context.SaveChanges();
@@ -869,7 +870,7 @@ namespace ACE.Database
             //        {
             //            item.CharacterPropertiesFriendList.Remove(friend);
 
-            //            log.Info($"Character for {item.Name} (0x{item.Id:X8}) has been altered. Reason: Friend (0x{friend.FriendId:X8}) was not found in database");
+            //            _log.Information($"Character for {item.Name} (0x{item.Id:X8}) has been altered. Reason: Friend (0x{friend.FriendId:X8}) was not found in database");
 
             //            context.SaveChanges();
             //        }
@@ -885,7 +886,7 @@ namespace ACE.Database
             //        {
             //            item.CharacterPropertiesShortcutBar.Remove(shortcut);
 
-            //            log.Info($"Character for {item.Name} (0x{item.Id:X8}) has been altered. Reason: Shortcut (0x{shortcut.ShortcutObjectId:X8}) was not found in database");
+            //            _log.Information($"Character for {item.Name} (0x{item.Id:X8}) has been altered. Reason: Shortcut (0x{shortcut.ShortcutObjectId:X8}) was not found in database");
 
             //            context.SaveChanges();
             //        }
@@ -903,7 +904,7 @@ namespace ACE.Database
             //        {
             //            item.CharacterPropertiesSquelch.Remove(squelch);
 
-            //            log.Info($"Character for {item.Name} (0x{item.Id:X8}) has been altered. Reason: Squelched Character (0x{squelch.SquelchCharacterId:X8}) was not found in database");
+            //            _log.Information($"Character for {item.Name} (0x{item.Id:X8}) has been altered. Reason: Squelched Character (0x{squelch.SquelchCharacterId:X8}) was not found in database");
 
             //            context.SaveChanges();
             //        }
@@ -958,7 +959,7 @@ namespace ACE.Database
         /// </summary>
         public static void CheckForPR2918Script()
         {
-            log.Info($"Checking for 2020-04-11-00-Update-Character-SpellBars.sql patch");
+            _log.Information("Checking for 2020-04-11-00-Update-Character-SpellBars.sql patch");
 
             using (var context = new ShardDbContext())
             {
@@ -966,14 +967,14 @@ namespace ACE.Database
 
                 if (characterSpellBarsNotFixed.Count > 0)
                 {
-                    log.Warn("2020-04-11-00-Update-Character-SpellBars.sql patch not yet applied. Please apply this patch ASAP! Skipping FixSpellBarsPR2918 for now...");
-                    log.Fatal("2020-04-11-00-Update-Character-SpellBars.sql patch not yet applied. You must apply this patch before proceeding further...");
+                    _log.Warning("2020-04-11-00-Update-Character-SpellBars.sql patch not yet applied. Please apply this patch ASAP! Skipping FixSpellBarsPR2918 for now...");
+                    _log.Fatal("2020-04-11-00-Update-Character-SpellBars.sql patch not yet applied. You must apply this patch before proceeding further...");
                     Environment.Exit(1);
                     return;
                 }
             }
 
-            log.Info($"2020-04-11-00-Update-Character-SpellBars.sql patch has been successfully installed. Before opening world to players, make sure you've run fix-spell-bars command from console");
+            _log.Information("2020-04-11-00-Update-Character-SpellBars.sql patch has been successfully installed. Before opening world to players, make sure you've run fix-spell-bars command from console");
         }
 
         /// <summary>
@@ -992,7 +993,7 @@ namespace ACE.Database
                 }
                 catch (MySqlConnector.MySqlException)
                 {
-                    log.Warn("order column in biota_properties_palette table in shard database is missing! Attempting to fix...");
+                    _log.Warning("order column in biota_properties_palette table in shard database is missing! Attempting to fix...");
                     try
                     {
                         context.Database.ExecuteSqlRaw("ALTER TABLE `biota_properties_palette` ADD COLUMN `order` TINYINT(3) UNSIGNED NULL DEFAULT NULL AFTER `length`;");
@@ -1001,7 +1002,7 @@ namespace ACE.Database
                     }
                     catch (Exception ex)
                     {
-                        log.Fatal($"Unable to restore order column in biota_properties_palette table in shard database due to following error: {ex.GetFullMessage()}");
+                        _log.Fatal(ex, "Unable to restore order column in biota_properties_palette table in shard database");
                         Environment.Exit(1);
                         return;
                     }
@@ -1040,7 +1041,7 @@ namespace ACE.Database
 
                 foreach (var invalidFriend in invalidFriends)
                 {
-                    log.Debug($"[PRUNE] Character 0x{invalidFriend.CharacterId:X8} had 0x{invalidFriend.FriendId:X8} for a friend, which is not found in database, and has been removed from their friends list.");
+                    _log.Debug($"[PRUNE] Character 0x{invalidFriend.CharacterId:X8} had 0x{invalidFriend.FriendId:X8} for a friend, which is not found in database, and has been removed from their friends list.");
                     context.CharacterPropertiesFriendList.Remove(invalidFriend);
                     numberOfRecordsFixed++;
                 }
@@ -1076,7 +1077,7 @@ namespace ACE.Database
 
                 foreach (var invalidShortcut in invalidShortcuts)
                 {
-                    log.Debug($"[PRUNE] Character 0x{invalidShortcut.CharacterId:X8} had 0x{invalidShortcut.ShortcutObjectId:X8} as a shortcut (in position {invalidShortcut.ShortcutBarIndex}), which is not found in database, and has been removed from their shortcut bar.");
+                    _log.Debug($"[PRUNE] Character 0x{invalidShortcut.CharacterId:X8} had 0x{invalidShortcut.ShortcutObjectId:X8} as a shortcut (in position {invalidShortcut.ShortcutBarIndex}), which is not found in database, and has been removed from their shortcut bar.");
                     context.CharacterPropertiesShortcutBar.Remove(invalidShortcut);
                     numberOfRecordsFixed++;
                 }
@@ -1115,7 +1116,7 @@ namespace ACE.Database
 
                 foreach (var invalidSquelchCharacter in invalidSquelchCharacters)
                 {
-                    log.Debug($"[PRUNE] Character 0x{invalidSquelchCharacter.CharacterId:X8} had 0x{invalidSquelchCharacter.SquelchCharacterId:X8} squelched, which is not found in database, and has been removed from their squelch list.");
+                    _log.Debug($"[PRUNE] Character 0x{invalidSquelchCharacter.CharacterId:X8} had 0x{invalidSquelchCharacter.SquelchCharacterId:X8} squelched, which is not found in database, and has been removed from their squelch list.");
                     context.CharacterPropertiesSquelch.Remove(invalidSquelchCharacter);
                     numberOfRecordsFixed++;
                 }

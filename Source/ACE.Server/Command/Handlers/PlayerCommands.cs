@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Database;
 using ACE.Entity;
@@ -14,13 +11,13 @@ using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-
+using Serilog;
 
 namespace ACE.Server.Command.Handlers
 {
     public static class PlayerCommands
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(PlayerCommands));
 
         // pop
         [CommandHandler("pop", AccessLevel.Player, CommandHandlerFlag.None, 0,
@@ -88,7 +85,7 @@ namespace ACE.Server.Command.Handlers
             // ensure current multihouse owner
             if (!session.Player.IsMultiHouseOwner(false))
             {
-                log.Warn($"{session.Player.Name} tried to /house-select {houseIdx}, but they are not currently a multi-house owner!");
+                _log.Warning("{Player} tried to /house-select {HouseIndex}, but they are not currently a multi-house owner!", session.Player.Name, houseIdx);
                 return;
             }
 
@@ -130,7 +127,7 @@ namespace ACE.Server.Command.Handlers
             var player = PlayerManager.FindByGuid(keepHouse.HouseOwner ?? 0, out bool isOnline);
             if (player == null)
             {
-                log.Error($"{session.Player.Name}.HandleHouseSelect({houseIdx}) - couldn't find HouseOwner {keepHouse.HouseOwner} for {keepHouse.Name} ({keepHouse.Guid})");
+                _log.Error("{Player}.HandleHouseSelect({HouseIndex}) - couldn't find HouseOwner {HouseOwner} for {House} ({HouseGuid})", session.Player.Name, houseIdx, keepHouse.HouseOwner, keepHouse.Name, keepHouse.Guid);
                 return;
             }
 

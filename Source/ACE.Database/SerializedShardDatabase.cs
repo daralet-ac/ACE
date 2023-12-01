@@ -1,20 +1,18 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-
-using log4net;
-
 using ACE.Database.Entity;
 using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
+using Serilog;
 
 namespace ACE.Database
 {
     public class SerializedShardDatabase
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<SerializedShardDatabase>();
 
         /// <summary>
         /// This is the base database that SerializedShardDatabase is a wrapper for.
@@ -58,7 +56,7 @@ namespace ACE.Database
                     }
                     catch (Exception ex)
                     {
-                        log.Error($"[DATABASE] DoWork task failed with exception: {ex}");
+                        _log.Error(ex, "[DATABASE] DoWork task failed");
                         // perhaps add failure callbacks?
                         // swallow for now.  can't block other db work because 1 fails.
                     }

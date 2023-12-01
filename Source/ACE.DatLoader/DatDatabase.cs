@@ -2,16 +2,14 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-
-using log4net;
-
 using ACE.DatLoader.FileTypes;
+using Serilog;
 
 namespace ACE.DatLoader
 {
     public class DatDatabase
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<DatDatabase>();
 
         private static readonly uint DAT_HEADER_OFFSET = 0x140;
 
@@ -106,7 +104,7 @@ namespace ACE.DatLoader
                 //log.DebugFormat("Unable to find object_id {0:X8} in {1}", fileId, Enum.GetName(typeof(DatDatabaseType), Header.DataSet));
             }
             else
-                log.InfoFormat("Unable to find object_id {0:X8} in {1}", fileId, Enum.GetName(typeof(DatDatabaseType), Header.DataSet));
+                _log.Information("Unable to find object_id {FileId:X8} in {DatDatabaseType}", fileId, Enum.GetName(typeof(DatDatabaseType), Header.DataSet));
 
             return null;
         }
@@ -156,12 +154,12 @@ namespace ACE.DatLoader
             if (iteration.TotalIterations > 0)
             {
                 if (iteration.Ints.Count > 1)
-                    log.Error($"{FilePath} contains an incomplete dat file!");
+                    _log.Error("{FilePath} contains an incomplete dat file!", FilePath);
                 return iteration.TotalIterations;
             }
             else
             {
-                log.Error($"Unable to read iteration from {FilePath}");
+                _log.Error("Unable to read iteration from {FilePath}", FilePath);
                 return 0;
             }
         }

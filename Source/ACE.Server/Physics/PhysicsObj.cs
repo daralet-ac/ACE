@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-
 using ACE.Common;
+using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity.Actions;
@@ -15,11 +15,9 @@ using ACE.Server.Physics.Common;
 using ACE.Server.Physics.Hooks;
 using ACE.Server.Physics.Managers;
 using ACE.Server.WorldObjects;
-
-using log4net;
-
-using Landblock = ACE.Server.Physics.Common.Landblock;
-using ObjectGuid = ACE.Entity.ObjectGuid;
+using Serilog;
+using Plane = System.Numerics.Plane;
+using Position = ACE.Server.Physics.Common.Position;
 
 namespace ACE.Server.Physics
 {
@@ -28,7 +26,7 @@ namespace ACE.Server.Physics
     /// </summary>
     public class PhysicsObj
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<PhysicsObj>();
 
         public uint ID;
         public ObjectGuid ObjID;
@@ -1322,7 +1320,7 @@ namespace ACE.Server.Physics
 
                 // ideally CellArray.LoadCells = false would be passed to find_cell_list to prevent it from even attempting to load an unloaded neighboring landblock
 
-                log.Debug($"{Name} ({ID:X8}) AddPhysicsObj() - {pos.ShortLoc()} resulted in {transition.SpherePath.CurPos.ShortLoc()}, discarding");
+                _log.Debug($"{Name} ({ID:X8}) AddPhysicsObj() - {pos.ShortLoc()} resulted in {transition.SpherePath.CurPos.ShortLoc()}, discarding");
                 return SetPositionError.NoValidPosition;
             }
 
@@ -1436,7 +1434,7 @@ namespace ACE.Server.Physics
                         var groundZ = landblock.GetZ(newPos.Frame.Origin) + 0.05f;
 
                         if (Math.Abs(newPos.Frame.Origin.Z - groundZ) > ScatterThreshold_Z)
-                            log.Debug($"{Name} ({ID:X8}).SetScatterPositionInternal() - tried to spawn outdoor object @ {newPos} ground Z {groundZ} (diff: {newPos.Frame.Origin.Z - groundZ}), investigate ScatterThreshold_Z");
+                            _log.Debug($"{Name} ({ID:X8}).SetScatterPositionInternal() - tried to spawn outdoor object @ {newPos} ground Z {groundZ} (diff: {newPos.Frame.Origin.Z - groundZ}), investigate ScatterThreshold_Z");
                         else
                             newPos.Frame.Origin.Z = groundZ;
 
@@ -1684,7 +1682,7 @@ namespace ACE.Server.Physics
 
                     if (GetBlockDist(Position, newPos) > 1)
                     {
-                        log.Warn($"WARNING: failed transition for {Name} from {Position} to {newPos}");
+                        _log.Warning($"WARNING: failed transition for {Name} from {Position} to {newPos}");
                         return;
                     }
 
@@ -1701,9 +1699,9 @@ namespace ACE.Server.Physics
                     else
                     {
                         if (IsPlayer)
-                            log.Debug($"{Name} ({ID:X8}).UpdateObjectInternal({quantum}) - failed transition from {Position} to {newPos}");
+                            _log.Debug($"{Name} ({ID:X8}).UpdateObjectInternal({quantum}) - failed transition from {Position} to {newPos}");
                         else if (transit != null && transit.SpherePath.CurCell == null)
-                            log.Warn($"{Name} ({ID:X8}).UpdateObjectInternal({quantum}) - avoided CurCell=null from {Position} to {newPos}");
+                            _log.Warning($"{Name} ({ID:X8}).UpdateObjectInternal({quantum}) - avoided CurCell=null from {Position} to {newPos}");
 
                         newPos.Frame.Origin = Position.Frame.Origin;
                         set_initial_frame(newPos.Frame);
@@ -1769,7 +1767,7 @@ namespace ACE.Server.Physics
             //UpdatePhysicsInternal((float)quantum, ref offsetFrame);
             if (GetBlockDist(Position, RequestPos) > 1)
             {
-                log.Warn($"WARNING: failed transition for {Name} from {Position} to {RequestPos}");
+                _log.Warning($"WARNING: failed transition for {Name} from {Position} to {RequestPos}");
                 return false;
             }
 
@@ -1782,7 +1780,7 @@ namespace ACE.Server.Physics
                 SetPositionInternal(transit);
             }
             else
-                log.Debug($"{Name}.UpdateObjectInternalServer({quantum}) - failed transition from {Position} to {RequestPos}");
+                _log.Debug($"{Name}.UpdateObjectInternalServer({quantum}) - failed transition from {Position} to {RequestPos}");
 
             if (DetectionManager != null) DetectionManager.CheckDetection();
 
@@ -2803,9 +2801,9 @@ namespace ACE.Server.Physics
             if (CurCell == null || obj.CurCell == null)
             {
                 if (CurCell == null)
-                    log.Error($"{Name}.handle_visible_obj({obj.Name}): CurCell null");
+                    _log.Error($"{Name}.handle_visible_obj({obj.Name}): CurCell null");
                 else
-                    log.Error($"{Name}.handle_visible_obj({obj.Name}): obj.CurCell null");
+                    _log.Error($"{Name}.handle_visible_obj({obj.Name}): obj.CurCell null");
 
                 return false;
             }
@@ -4322,7 +4320,7 @@ namespace ACE.Server.Physics
             {
                 if (GetBlockDist(Position, RequestPos) > 1)
                 {
-                    log.Warn($"WARNING: failed transition for {Name} from {Position} to {RequestPos}");
+                    _log.Warning($"WARNING: failed transition for {Name} from {Position} to {RequestPos}");
                     success = false;
                 }
 

@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
-using log4net;
-
 using ACE.Database.Models.Shard;
 using ACE.DatLoader;
 using ACE.DatLoader.Entity;
@@ -17,8 +14,6 @@ namespace ACE.Server.WorldObjects.Managers
 {
     public class ContractManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         public Player Player { get; }
 
         private const int MaxContracts = 100;

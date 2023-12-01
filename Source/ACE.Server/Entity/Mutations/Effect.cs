@@ -1,13 +1,12 @@
-using log4net;
-
 using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Entity.Mutations
 {
     public class Effect
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Effect>();
 
         public EffectArgument Quality;
         public MutationEffectType Type;
@@ -119,13 +118,13 @@ namespace ACE.Server.Entity.Mutations
         {
             /*if (!result.IsValid)
             {
-                log.Error($"{wo.Name} ({wo.Guid}).TryMutate({type}) - result invalid");
+                _log.Error($"{wo.Name} ({wo.Guid}).TryMutate({type}) - result invalid");
                 return false;
             }*/
 
             if (!arg1.IsValid)
             {
-                log.Error($"{wo.Name} ({wo.Guid}).TryMutate({type}) - argument 1 invalid");
+                _log.Error($"{wo.Name} ({wo.Guid}).TryMutate({type}) - argument 1 invalid");
                 return false;
             }
 
@@ -144,7 +143,7 @@ namespace ACE.Server.Entity.Mutations
 
                     if (!arg2.IsValid)
                     {
-                        log.Error($"{wo.Name} ({wo.Guid}).TryMutate({type}) - argument 2 invalid");
+                        _log.Error($"{wo.Name} ({wo.Guid}).TryMutate({type}) - argument 2 invalid");
                         return false;
                     }
                     break;

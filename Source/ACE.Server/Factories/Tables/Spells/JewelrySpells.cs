@@ -1,14 +1,12 @@
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Entity.Enum;
+using Serilog;
 
 namespace ACE.Server.Factories.Tables
 {
     public static class JewelrySpells
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(JewelrySpells));
 
         private static readonly List<SpellId> spells = new List<SpellId>()
         {
@@ -109,13 +107,13 @@ namespace ACE.Server.Factories.Tables
 
                 if (spellLevels == null)
                 {
-                    log.Error($"JewelrySpells - couldn't find {spell}");
+                    _log.Error($"JewelrySpells - couldn't find {spell}");
                     continue;
                 }
 
                 if (spellLevels.Count != NumTiers)
                 {
-                    log.Error($"JewelrySpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
+                    _log.Error($"JewelrySpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
                     continue;
                 }
 

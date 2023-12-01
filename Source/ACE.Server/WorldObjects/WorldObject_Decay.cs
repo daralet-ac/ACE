@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Entity.Actions;
@@ -60,7 +60,7 @@ namespace ACE.Server.WorldObjects
                 TimeToRot = DefaultTimeToRot.TotalSeconds;
 
                 if (this is Corpse && Level.HasValue)
-                    log.Debug($"[CORPSE] {Name} (0x{Guid.ToString()}).Decay: TimeToRot had no value, set to {TimeToRot}");
+                    _log.Debug("[CORPSE] {CorpseName} (0x{CorpseGuid}).Decay: TimeToRot had no value, set to {CorpseTimeToRot}", Name, Guid, TimeToRot);
 
                 return;
             }
@@ -76,7 +76,7 @@ namespace ACE.Server.WorldObjects
                 {
                     TimeToRot = Corpse.EmptyDecayTime;
                     if (Level.HasValue && PropertyManager.GetBool("corpse_decay_tick_logging").Item)
-                        log.Debug($"[CORPSE] {corpse.Name} (0x{corpse.Guid.ToString()}).Decay({elapsed.ToString()}): InventoryLoaded = {corpse.InventoryLoaded} | Inventory.Count = {corpse.Inventory.Count} | previous TimeToRot: {previousTTR} | current TimeToRot: {TimeToRot}");
+                        _log.Debug($"[CORPSE] {corpse.Name} (0x{corpse.Guid}).Decay({elapsed}): InventoryLoaded = {corpse.InventoryLoaded} | Inventory.Count = {corpse.Inventory.Count} | previous TimeToRot: {previousTTR} | current TimeToRot: {TimeToRot}");
                     return;
                 }
             }
@@ -86,7 +86,7 @@ namespace ACE.Server.WorldObjects
                 TimeToRot -= elapsed.TotalSeconds;
 
                 if (this is Corpse && Level.HasValue && PropertyManager.GetBool("corpse_decay_tick_logging").Item)
-                    log.Debug($"[CORPSE] {corpse.Name} (0x{corpse.Guid.ToString()}).Decay({elapsed.ToString()}): previous TimeToRot: {previousTTR} | current TimeToRot: {TimeToRot}");
+                    _log.Debug("[CORPSE] {CorpseName} (0x{CorpseGuid}).Decay({CorpseElapsedTime}): previous TimeToRot: {PreviousTimeToRot} | current TimeToRot: {CorpseTimeToRot}", corpse.Name, corpse.Guid, elapsed, previousTTR, TimeToRot);
 
                 // Is there still time left?
                 if (TimeToRot > 0)
@@ -95,7 +95,7 @@ namespace ACE.Server.WorldObjects
                 TimeToRot = -2; // We force it to -2 to make sure it doesn't end up at 0 or -1. 0 indicates instant rot. -1 indicates no rot. 0 and -1 can be found in weenie defaults
 
                 if (this is Corpse && Level.HasValue && PropertyManager.GetBool("corpse_decay_tick_logging").Item)
-                    log.Debug($"[CORPSE] {corpse.Name} (0x{corpse.Guid.ToString()}).Decay({elapsed.ToString()}): previous TimeToRot: {previousTTR} | current TimeToRot: {TimeToRot}");
+                    _log.Debug("[CORPSE] {CorpseName} (0x{CorpseGuid}).Decay({CorpseElapsedTime}): previous TimeToRot: {PreviousTimeToRot} | current TimeToRot: {CorpseTimeToRot}", corpse.Name, corpse.Guid, elapsed, previousTTR, TimeToRot);
             }
 
             if (this is Container container && container.IsOpen)
@@ -113,7 +113,7 @@ namespace ACE.Server.WorldObjects
             {
                 var inventoryGUIDs = corpse.Inventory.Keys.ToList();
 
-                var pukedItems = "";
+                var corpseItems = new List<string>();
 
                 foreach (var guid in inventoryGUIDs)
                 {
@@ -124,14 +124,18 @@ namespace ACE.Server.WorldObjects
                         item.Placement = ACE.Entity.Enum.Placement.Resting; // This is needed to make items lay flat on the ground.
                         CurrentLandblock.AddWorldObject(item);
                         item.SaveBiotaToDatabase();
-                        pukedItems += $"{item.Name} (0x{item.Guid.Full.ToString("X8")}), ";
+                        corpseItems.Add($"{item.Name} (0x{item.Guid.Full:X8})");
                     }
                 }
 
-                if (pukedItems.EndsWith(", "))
-                    pukedItems = pukedItems.Substring(0, pukedItems.Length - 2);
-
-                log.Debug($"[CORPSE] {corpse.Name} (0x{corpse.Guid.ToString()}) at {corpse.Location.ToLOCString()} has decayed{((pukedItems == "") ? "" : $" and placed the following items on the landblock: {pukedItems}")}.");
+                if (corpseItems.Any())
+                {
+                    _log.Debug("[CORPSE] {CorpseName} (0x{CorpseGuid}) at {CorpseLocation} has decayed and placed the following items on the landblock: {CorpseItems}.", corpse.Name, corpse.Guid, corpse.Location.ToLOCString(), corpseItems);
+                }
+                else
+                {
+                    _log.Debug("[CORPSE] {CorpseName} (0x{CorpseGuid}) at {CorpseLocation} has decayed.", corpse.Name, corpse.Guid, corpse.Location.ToLOCString());
+                }
             }
 
             if (corpse != null)

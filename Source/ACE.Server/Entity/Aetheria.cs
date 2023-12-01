@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -8,7 +7,7 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-using log4net;
+using Serilog;
 
 namespace ACE.Server.Entity
 {
@@ -58,6 +57,8 @@ namespace ACE.Server.Entity
 
     public class Aetheria
     {
+        private static readonly ILogger _log = Log.ForContext(typeof(Aetheria));
+
         // https://asheron.fandom.com/wiki/Aetheria
 
         public const uint AetheriaBlue = 42635;
@@ -244,7 +245,7 @@ namespace ACE.Server.Entity
 
             player.SendUseDoneEvent();
 
-            log.Debug($"[CRAFTING] {player.Name} revealed a {color} {randSigil} with a surge of {surgeSpell} on {target.Name}:0x{target.Guid}");
+            _log.Debug("[CRAFTING] {Player} revealed a {AetheriaColor} {AetheriaSigil} with a surge of {AetheriaSurge} on {Item}:0x{ItemGuid}", player.Name, color, randSigil, surgeSpell, target.Name, target.Guid);
         }
 
         public static Dictionary<Sigil, EquipmentSet> SigilToEquipmentSet = new Dictionary<Sigil, EquipmentSet>()
@@ -306,7 +307,5 @@ namespace ACE.Server.Entity
         {
             return wo.WeenieClassId == AetheriaManaStone;
         }
-
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
     }
 }

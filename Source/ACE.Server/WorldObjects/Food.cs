@@ -1,19 +1,16 @@
 using System;
-using log4net;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.Physics;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
     public class Food : Stackable
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         /// <summary>
         /// A new biota be created taking all of its values from weenie.
         /// </summary>

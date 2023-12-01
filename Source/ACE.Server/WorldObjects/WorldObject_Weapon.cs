@@ -473,7 +473,7 @@ namespace ACE.Server.WorldObjects
             var rendDamageType = GetRendDamageType(damageType);
 
             if (rendDamageType == ImbuedEffectType.Undef)
-                log.Debug($"{wielder.Name}.GetRendDamageType({damageType}) unexpected damage type for {weapon.Name} ({weapon.Guid})");
+                _log.Debug($"{wielder.Name}.GetRendDamageType({damageType}) unexpected damage type for {weapon.Name} ({weapon.Guid})");
 
             if (rendDamageType != ImbuedEffectType.Undef && weapon.HasImbuedEffect(rendDamageType) && skill != null)
             {
@@ -870,7 +870,7 @@ namespace ACE.Server.WorldObjects
                     return ImbuedSkillType.Magic;
 
                 default:
-                    log.Debug($"WorldObject_Weapon.GetImbuedSkillType({skill?.Skill}): unexpected skill");
+                    _log.Debug($"WorldObject_Weapon.GetImbuedSkillType({skill?.Skill}): unexpected skill");
                     return ImbuedSkillType.Undef;
             }
         }
@@ -1056,7 +1056,7 @@ namespace ACE.Server.WorldObjects
 
             if ((attackType & AttackType.Offhand) != 0)
             {
-                log.Warn($"{Name} ({Guid}, {WeenieClassId}).GetAttackType(): {attackType}");
+                _log.Warning($"{Name} ({Guid}, {WeenieClassId}).GetAttackType(): {attackType}");
                 attackType &= ~AttackType.Offhand;
             }
 
@@ -1168,7 +1168,7 @@ namespace ACE.Server.WorldObjects
 
             if ((attackType & AttackType.Offhand) != 0)
             {
-                log.Warn($"{Name} ({Guid}, {WeenieClassId}).GetOffhandAttackType(): {attackType}");
+                _log.Warning($"{Name} ({Guid}, {WeenieClassId}).GetOffhandAttackType(): {attackType}");
                 attackType &= ~AttackType.Offhand;
             }
 

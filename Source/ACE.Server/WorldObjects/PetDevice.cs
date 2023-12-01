@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Database;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -13,6 +10,7 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
@@ -21,7 +19,7 @@ namespace ACE.Server.WorldObjects
     /// </summary>
     public class PetDevice : WorldObject
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<PetDevice>();
 
         public int? PetClass
         {
@@ -68,7 +66,7 @@ namespace ACE.Server.WorldObjects
 
             if (PetClass == null)
             {
-                log.Error($"{activator.Name}.ActOnUse({Name}) - PetClass is null for PetDevice {WeenieClassId}");
+                _log.Error($"{activator.Name}.ActOnUse({Name}) - PetClass is null for PetDevice {WeenieClassId}");
                 return;
             }
 
@@ -151,7 +149,7 @@ namespace ACE.Server.WorldObjects
 
             if (wo == null)
             {
-                log.Error($"{player.Name}.SummonCreature({wcid}) - couldn't find wcid for PetDevice {WeenieClassId} - {WeenieClassName}");
+                _log.Error($"{player.Name}.SummonCreature({wcid}) - couldn't find wcid for PetDevice {WeenieClassId} - {WeenieClassName}");
                 return false;
             }
 
@@ -159,7 +157,7 @@ namespace ACE.Server.WorldObjects
 
             if (pet == null)
             {
-                log.Error($"{player.Name}.SummonCreature({wcid}) - PetDevice {WeenieClassId} - {WeenieClassName} tried to summon {wo.WeenieClassId} - {wo.WeenieClassName} of unknown type {wo.WeenieType}");
+                _log.Error($"{player.Name}.SummonCreature({wcid}) - PetDevice {WeenieClassId} - {WeenieClassName} tried to summon {wo.WeenieClassId} - {wo.WeenieClassName} of unknown type {wo.WeenieType}");
                 return false;
             }
             var success = pet.Init(player, this);

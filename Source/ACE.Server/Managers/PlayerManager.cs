@@ -4,9 +4,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.Shard;
@@ -19,14 +16,14 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-
+using Serilog;
 using Biota = ACE.Entity.Models.Biota;
 
 namespace ACE.Server.Managers
 {
     public static class PlayerManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(PlayerManager));
 
         private static readonly ReaderWriterLockSlim playersLock = new ReaderWriterLockSlim();
         private static readonly Dictionary<uint, Player> onlinePlayers = new Dictionary<uint, Player>();
@@ -74,7 +71,7 @@ namespace ACE.Server.Managers
                         playerAccountsDict[offlinePlayer.Guid.Full] = offlinePlayer;
                     }
                     else
-                        log.Error($"PlayerManager.Initialize: couldn't find account for player {offlinePlayer.Name} ({offlinePlayer.Guid})");
+                        _log.Error($"PlayerManager.Initialize: couldn't find account for player {offlinePlayer.Name} ({offlinePlayer.Guid})");
                 }
             });
         }
@@ -722,9 +719,9 @@ namespace ACE.Server.Managers
             }
 
             if (channel != Channel.AllBroadcast)
-                log.Info($"[CHAT][{channel.ToString().ToUpper()}] {(sender != null ? sender.Name : "[SYSTEM]")} says on the {channel} channel, \"{message}\"");
+                _log.Information($"[CHAT][{channel.ToString().ToUpper()}] {(sender != null ? sender.Name : "[SYSTEM]")} says on the {channel} channel, \"{message}\"");
             else
-                log.Info($"[CHAT][GLOBAL] {(sender != null ? sender.Name : "[SYSTEM]")} issued a world broadcast, \"{message}\"");
+                _log.Information($"[CHAT][GLOBAL] {(sender != null ? sender.Name : "[SYSTEM]")} issued a world broadcast, \"{message}\"");
         }
 
         public static void BroadcastToChannelFromConsole(Channel channel, string message)

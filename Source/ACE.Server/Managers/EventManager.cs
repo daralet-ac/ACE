@@ -4,14 +4,13 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
-
-using log4net;
+using Serilog;
 
 namespace ACE.Server.Managers
 {
     public static class EventManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(EventManager));
 
         public static Dictionary<string, Event> Events;
 
@@ -34,7 +33,7 @@ namespace ACE.Server.Managers
                     StartEvent(evnt.Name, null, null);
             }
 
-            log.DebugFormat("EventManager Initalized.");
+            _log.Debug("EventManager Initalized.");
         }
 
         public static bool StartEvent(string e, WorldObject source, WorldObject target)
@@ -60,7 +59,7 @@ namespace ACE.Server.Managers
                     Console.WriteLine($"Starting event {evnt.Name}");
             }
 
-            log.Debug($"[EVENT] {(source == null ? "SYSTEM" : $"{source.Name} (0x{source.Guid}|{source.WeenieClassId})")}{(target == null ? "" : $", triggered by {target.Name} (0x{target.Guid}|{target.WeenieClassId}),")} started an event: {evnt.Name}{((int)state == evnt.State ? (source == null ? ", which is the default state for this event." : ", which had already been started.") : "")}");
+            _log.Debug($"[EVENT] {(source == null ? "SYSTEM" : $"{source.Name} (0x{source.Guid}|{source.WeenieClassId})")}{(target == null ? "" : $", triggered by {target.Name} (0x{target.Guid}|{target.WeenieClassId}),")} started an event: {evnt.Name}{((int)state == evnt.State ? (source == null ? ", which is the default state for this event." : ", which had already been started.") : "")}");
 
             return true;
         }
@@ -88,7 +87,7 @@ namespace ACE.Server.Managers
                     Console.WriteLine($"Stopping event {evnt.Name}");
             }
 
-            log.Debug($"[EVENT] {(source == null ? "SYSTEM" : $"{source.Name} (0x{source.Guid}|{source.WeenieClassId})")}{(target == null ? "" : $", triggered by {target.Name} (0x{target.Guid}|{target.WeenieClassId}),")} stopped an event: {evnt.Name}{((int)state == evnt.State ? (source == null ? ", which is the default state for this event." : ", which had already been stopped.") : "")}");
+            _log.Debug($"[EVENT] {(source == null ? "SYSTEM" : $"{source.Name} (0x{source.Guid}|{source.WeenieClassId})")}{(target == null ? "" : $", triggered by {target.Name} (0x{target.Guid}|{target.WeenieClassId}),")} stopped an event: {evnt.Name}{((int)state == evnt.State ? (source == null ? ", which is the default state for this event." : ", which had already been stopped.") : "")}");
 
             return true;
         }

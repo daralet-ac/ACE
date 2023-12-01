@@ -1,18 +1,16 @@
 using System;
 using System.Net;
-
-using log4net;
-
 using ACE.Database;
 using ACE.Database.Models.Auth;
 using ACE.Entity.Enum;
 using ACE.Server.Network;
+using Serilog;
 
 namespace ACE.Server.Command.Handlers
 {
     public static class AccountCommands
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(AccountCommands));
 
         // accountcreate username password (accesslevel)
         [CommandHandler("accountcreate", AccessLevel.Admin, CommandHandlerFlag.None, 2,
@@ -48,7 +46,7 @@ namespace ACE.Server.Command.Handlers
                       
             if (accountExists != null)
             {
-                message= "Account already exists. Try a new name.";
+                message = "Account already exists. Try a new name.";
             }
             else
             {
@@ -59,7 +57,7 @@ namespace ACE.Server.Command.Handlers
                     if (DatabaseManager.AutoPromoteNextAccountToAdmin && accessLevel == AccessLevel.Admin)
                         DatabaseManager.AutoPromoteNextAccountToAdmin = false;
 
-                    message = ("Account successfully created for " + account.AccountName + " (" + account.AccountId + ") with access rights as " + articleAorAN + " " + Enum.GetName(typeof(AccessLevel), accessLevel) + ".");
+                    message = "Account successfully created for " + account.AccountName + " (" + account.AccountId + ") with access rights as " + articleAorAN + " " + Enum.GetName(typeof(AccessLevel), accessLevel) + ".";
                 }
                 catch
                 {
@@ -173,7 +171,7 @@ namespace ACE.Server.Command.Handlers
                 return;
             }
 
-            log.Debug($"{session.Player.Name} is changing their password");
+            _log.Debug("{Player} is changing their password", session.Player.Name);
 
             var currentTime = DateTime.UtcNow;
 

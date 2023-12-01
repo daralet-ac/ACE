@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.Auth;
@@ -16,6 +13,7 @@ using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Managers;
 using ACE.Server.Network.Packets;
+using Serilog;
 
 namespace ACE.Server.Network.Handlers
 {
@@ -26,8 +24,7 @@ namespace ACE.Server.Network.Handlers
         /// </summary>
         public const int DefaultAuthTimeout = 15;
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private static readonly ILog packetLog = LogManager.GetLogger(System.Reflection.Assembly.GetEntryAssembly(), "Packets");
+        private static readonly ILogger _log = Log.ForContext(typeof(AuthenticationHandler));
 
         public static void HandleLoginRequest(ClientPacket packet, Session session)
         {
@@ -47,8 +44,7 @@ namespace ACE.Server.Network.Handlers
             }
             catch (Exception ex)
             {
-                log.ErrorFormat("Received LoginRequest from {0} that threw an exception.", session.EndPointC2S);
-                log.Error(ex);
+                _log.Error(ex, "Received LoginRequest from {ClientEndpoint} that threw an exception.", session.EndPointC2S);
             }
         }
 
@@ -64,9 +60,9 @@ namespace ACE.Server.Network.Handlers
                     {
                         // no account, dynamically create one
                         if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                            log.Info($"Auto creating account for: {loginRequest.Account}");
+                            _log.Information($"Auto creating account for: {loginRequest.Account}");
                         else
-                            log.Debug($"Auto creating account for: {loginRequest.Account}");
+                            _log.Debug($"Auto creating account for: {loginRequest.Account}");
 
                         var accessLevel = (AccessLevel)ConfigManager.Config.Server.Accounts.DefaultAccessLevel;
 
@@ -77,7 +73,7 @@ namespace ACE.Server.Network.Handlers
                         {
                             accessLevel = AccessLevel.Admin;
                             DatabaseManager.AutoPromoteNextAccountToAdmin = false;
-                            log.Warn($"Automatically setting account AccessLevel to Admin for account \"{loginRequest.Account}\" because there are no admin accounts in the current database.");
+                            _log.Warning($"Automatically setting account AccessLevel to Admin for account \"{loginRequest.Account}\" because there are no admin accounts in the current database.");
                         }
 
                         account = DatabaseManager.Authentication.CreateAccount(loginRequest.Account.ToLower(), loginRequest.Password, accessLevel, session.EndPointC2S.Address);
@@ -87,12 +83,12 @@ namespace ACE.Server.Network.Handlers
 
             try
             {
-                log.Debug($"new client connected: {loginRequest.Account}. setting session properties");
+                _log.Debug($"new client connected: {loginRequest.Account}. setting session properties");
                 AccountSelectCallback(account, session, loginRequest);
             }
             catch (Exception ex)
             {
-                log.Error("Error in HandleLoginRequest trying to find the account.", ex);
+                _log.Error(ex, "Error in HandleLoginRequest trying to find the account.");
                 session.Terminate(SessionTerminationReason.AccountSelectCallbackException);
             }
         }
@@ -100,7 +96,7 @@ namespace ACE.Server.Network.Handlers
 
         private static void AccountSelectCallback(Account account, Session session, PacketInboundLoginRequest loginRequest)
         {
-            packetLog.DebugFormat("ConnectRequest TS: {0}", Timers.PortalYearTicks);
+            _log.Verbose("ConnectRequest TS: {0}", Timers.PortalYearTicks);
 
             if (session.Network.ConnectionData.ServerSeed == null || session.Network.ConnectionData.ClientSeed == null)
             {
@@ -138,9 +134,9 @@ namespace ACE.Server.Network.Handlers
                 }
 
                 if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                    log.Info($"client {loginRequest.Account} connected with no Password or GlsTicket included so booting");
+                    _log.Information($"client {loginRequest.Account} connected with no Password or GlsTicket included so booting");
                 else
-                    log.Debug($"client {loginRequest.Account} connected with no Password or GlsTicket included so booting");
+                    _log.Debug($"client {loginRequest.Account} connected with no Password or GlsTicket included so booting");
 
                 session.Terminate(SessionTerminationReason.NotAuthorizedNoPasswordOrGlsTicketIncludedInLoginReq, new GameMessageCharacterError(CharacterError.AccountInvalid));
 
@@ -167,9 +163,9 @@ namespace ACE.Server.Network.Handlers
                 if (!account.PasswordMatches(loginRequest.Password))
                 {
                     if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                        log.Info($"client {loginRequest.Account} connected with non matching password so booting");
+                        _log.Information($"client {loginRequest.Account} connected with non matching password so booting");
                     else
-                        log.Debug($"client {loginRequest.Account} connected with non matching password so booting");
+                        _log.Debug($"client {loginRequest.Account} connected with non matching password so booting");
 
                     session.Terminate(SessionTerminationReason.NotAuthorizedPasswordMismatch, new GameMessageBootAccount(" because the password entered for this account was not correct"));
 
@@ -195,16 +191,16 @@ namespace ACE.Server.Network.Handlers
                 }
 
                 if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                    log.Info($"client {loginRequest.Account} connected with verified password");
+                    _log.Information($"client {loginRequest.Account} connected with verified password");
                 else
-                    log.Debug($"client {loginRequest.Account} connected with verified password");
+                    _log.Debug($"client {loginRequest.Account} connected with verified password");
             }
             else if (loginRequest.NetAuthType == NetAuthType.GlsTicket)
             {
                 if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                    log.Info($"client {loginRequest.Account} connected with GlsTicket which is not implemented yet so booting");
+                    _log.Information($"client {loginRequest.Account} connected with GlsTicket which is not implemented yet so booting");
                 else
-                    log.Debug($"client {loginRequest.Account} connected with GlsTicket which is not implemented yet so booting");
+                    _log.Debug($"client {loginRequest.Account} connected with GlsTicket which is not implemented yet so booting");
 
                 session.Terminate(SessionTerminationReason.NotAuthorizedGlsTicketNotImplementedToProcLoginReq, new GameMessageCharacterError(CharacterError.AccountInvalid));
 

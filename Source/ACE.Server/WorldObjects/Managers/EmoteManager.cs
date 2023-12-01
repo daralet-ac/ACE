@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Database;
@@ -19,17 +18,13 @@ using ACE.Server.Factories.Enum;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-
-using log4net;
-
-using Position = ACE.Entity.Position;
-using Spell = ACE.Server.Entity.Spell;
+using Serilog;
 
 namespace ACE.Server.WorldObjects.Managers
 {
     public class EmoteManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<EmoteManager>();
 
         public WorldObject WorldObject => _proxy ?? _worldObject;
 
@@ -187,7 +182,7 @@ namespace ACE.Server.WorldObjects.Managers
 
                     text = Replace(emote.Message, WorldObject, targetObject, emoteSet.Quest);
 
-                    log.Info($"0x{WorldObject.Guid}:{WorldObject.Name}({WorldObject.WeenieClassId}).EmoteManager.BLog - {text}");
+                    _log.Information($"0x{WorldObject.Guid}:{WorldObject.Name}({WorldObject.WeenieClassId}).EmoteManager.BLog - {text}");
                     break;
 
                 case EmoteType.CastSpell:
@@ -197,7 +192,7 @@ namespace ACE.Server.WorldObjects.Managers
                         var spell = new Spell((uint)emote.SpellId);
                         if (spell.NotFound)
                         {
-                            log.Error($"{WorldObject.Name} ({WorldObject.Guid}) EmoteManager.CastSpell - unknown spell {emote.SpellId}");
+                            _log.Error($"{WorldObject.Name} ({WorldObject.Guid}) EmoteManager.CastSpell - unknown spell {emote.SpellId}");
                             break;
                         }
 
@@ -1268,7 +1263,7 @@ namespace ACE.Server.WorldObjects.Managers
                         var questName = emote.Message;
 
                         if (questName.EndsWith("@#kt", StringComparison.Ordinal))
-                            log.Warn($"0x{WorldObject.Guid}:{WorldObject.Name} ({WorldObject.WeenieClassId}).EmoteManager.ExecuteEmote: EmoteType.StampQuest({questName}) is a depreciated kill task method.");
+                            _log.Warning($"0x{WorldObject.Guid}:{WorldObject.Name} ({WorldObject.WeenieClassId}).EmoteManager.ExecuteEmote: EmoteType.StampQuest({questName}) is a depreciated kill task method.");
 
                         questTarget.QuestManager.Stamp(emote.Message);
                     }
@@ -1299,13 +1294,13 @@ namespace ACE.Server.WorldObjects.Managers
 
                         if (weenieItemToTake == 0)
                         {
-                            log.Warn($"EmoteManager.Execute: 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}) EmoteType.TakeItems has invalid emote.WeenieClassId: {weenieItemToTake}");
+                            _log.Warning($"EmoteManager.Execute: 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}) EmoteType.TakeItems has invalid emote.WeenieClassId: {weenieItemToTake}");
                             break;
                         }
 
                         if (amountToTake < -1 || amountToTake == 0)
                         {
-                            log.Warn($"EmoteManager.Execute: 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}) EmoteType.TakeItems has invalid emote.StackSize: {amountToTake}");
+                            _log.Warning($"EmoteManager.Execute: 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}) EmoteType.TakeItems has invalid emote.StackSize: {amountToTake}");
                             break;
                         }
 
@@ -1495,7 +1490,7 @@ namespace ACE.Server.WorldObjects.Managers
                     break;
 
                 default:
-                    log.Debug($"EmoteManager.Execute - Encountered Unhandled EmoteType {(EmoteType)emote.Type} for {WorldObject.Name} ({WorldObject.WeenieClassId})");
+                    _log.Debug($"EmoteManager.Execute - Encountered Unhandled EmoteType {(EmoteType)emote.Type} for {WorldObject.Name} ({WorldObject.WeenieClassId})");
                     break;
             }
 
@@ -1606,7 +1601,7 @@ namespace ACE.Server.WorldObjects.Managers
                 foreach (var e in emoteSet.PropertiesEmoteAction)
                     emoteStack += $"       - {(EmoteType)emote.Type}{(string.IsNullOrEmpty(emote.Message) ? "" : $": {emote.Message}")}\n";
 
-                log.Error($"[EMOTE] {WorldObject.Name}.EmoteManager.Enqueue(): Nested > 75, possible Infinite loop detected and aborted on 0x{WorldObject.Guid}:{WorldObject.WeenieClassId}\n-> {emoteStack}");
+                _log.Error($"[EMOTE] {WorldObject.Name}.EmoteManager.Enqueue(): Nested > 75, possible Infinite loop detected and aborted on 0x{WorldObject.Guid}:{WorldObject.WeenieClassId}\n-> {emoteStack}");
 
                 Nested--;
 
@@ -1646,7 +1641,7 @@ namespace ACE.Server.WorldObjects.Managers
 
             //if (!string.IsNullOrEmpty(emoteSet.Quest) && emoteSet.Quest == emote.Message && EmoteIsBranchingType(emote))
             //{
-            //    log.Error($"[EMOTE] {WorldObject.Name}.EmoteManager.DoEnqueue(): Infinite loop detected on 0x{WorldObject.Guid}:{WorldObject.WeenieClassId}\n-> {emoteSet.Category}: {emoteSet.Quest} to {(EmoteType)emote.Type}: {emote.Message}");
+            //    _log.Error($"[EMOTE] {WorldObject.Name}.EmoteManager.DoEnqueue(): Infinite loop detected on 0x{WorldObject.Guid}:{WorldObject.WeenieClassId}\n-> {emoteSet.Category}: {emoteSet.Quest} to {(EmoteType)emote.Type}: {emote.Message}");
 
             //    Nested--;
 
@@ -1774,7 +1769,7 @@ namespace ACE.Server.WorldObjects.Managers
 
             if (result == null)
             {
-                log.Warn($"[EMOTE] {WorldObject.Name}.EmoteManager.Replace(message, {source.Name}:0x{source.Guid}:{source.WeenieClassId}, {target.Name}:0x{target.Guid}:{target.WeenieClassId}, {quest}): message was null!");
+                _log.Warning($"[EMOTE] {WorldObject.Name}.EmoteManager.Replace(message, {source.Name}:0x{source.Guid}:{source.WeenieClassId}, {target.Name}:0x{target.Guid}:{target.WeenieClassId}, {quest}): message was null!");
                 return "";
             }
 

@@ -1,23 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using Microsoft.EntityFrameworkCore;
-
 using ACE.Database;
 using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
 using ACE.Server.Command.Handlers.Processors;
 using ACE.Server.Managers;
 using ACE.Server.Network;
-
-using log4net;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace ACE.Server.Command.Handlers
 {
     public static class DeveloperDatabaseCommands
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(DeveloperDatabaseCommands));
 
         [CommandHandler("databasequeueinfo", AccessLevel.Developer, CommandHandlerFlag.None, 0, "Show database queue information.")]
         public static void HandleDatabaseQueueInfo(Session session, params string[] parameters)
@@ -231,7 +228,7 @@ namespace ACE.Server.Command.Handlers
 
             var numberOfRecordsFixed = 0;
 
-            log.Info($"Starting FixSpellBarsPR2918 process. This could take a while...");
+            _log.Information("Starting FixSpellBarsPR2918 process. This could take a while...");
 
             using (var context = new ShardDbContext())
             {
@@ -239,8 +236,8 @@ namespace ACE.Server.Command.Handlers
 
                 if (characterSpellBarsNotFixed.Count > 0)
                 {
-                    log.Warn("2020-04-11-00-Update-Character-SpellBars.sql patch not yet applied. Please apply this patch ASAP! Skipping FixSpellBarsPR2918 for now...");
-                    log.Fatal("2020-04-11-00-Update-Character-SpellBars.sql patch not yet applied. You must apply this patch before proceeding further...");
+                    _log.Warning("2020-04-11-00-Update-Character-SpellBars.sql patch not yet applied. Please apply this patch ASAP! Skipping FixSpellBarsPR2918 for now...");
+                    _log.Fatal("2020-04-11-00-Update-Character-SpellBars.sql patch not yet applied. You must apply this patch before proceeding further...");
                     return;
                 }
 
@@ -283,7 +280,7 @@ namespace ACE.Server.Command.Handlers
                 {
                     Console.WriteLine("Saving changes...");
                     context.SaveChanges();
-                    log.Info($"Fixed {numberOfRecordsFixed:N0} CharacterPropertiesSpellBar records.");
+                    _log.Information("Fixed {RecordsFixed:N0} CharacterPropertiesSpellBar records.", numberOfRecordsFixed);
                 }
                 else
                 {

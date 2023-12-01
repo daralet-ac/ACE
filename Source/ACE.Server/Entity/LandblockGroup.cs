@@ -1,8 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
-using log4net;
+using Serilog;
 
 namespace ACE.Server.Entity
 {
@@ -27,7 +26,7 @@ namespace ACE.Server.Entity
     /// </summary>
     public class LandblockGroup : IEnumerable<Landblock>
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<LandblockGroup>();
 
         public const int LandblockGroupMinSpacing = 5;
 
@@ -79,13 +78,13 @@ namespace ACE.Server.Entity
             {
                 if (IsDungeon)
                 {
-                    log.Error($"[LANDBLOCK GROUP] You cannot add a landblock ({landblock.Id}) to a LandblockGroup that represents a single Dungeon Landblock");
+                    _log.Error($"[LANDBLOCK GROUP] You cannot add a landblock ({landblock.Id}) to a LandblockGroup that represents a single Dungeon Landblock");
                     return false;
                 }
 
                 if (landblock.IsDungeon)
                 {
-                    log.Error($"[LANDBLOCK GROUP] You cannot add a dungeon landblock ({landblock.Id}) to an existing LandblockGroup");
+                    _log.Error($"[LANDBLOCK GROUP] You cannot add a dungeon landblock ({landblock.Id}) to an existing LandblockGroup");
                     return false;
                 }
             }
@@ -300,7 +299,7 @@ namespace ACE.Server.Entity
 
         public override string ToString()
         {
-            return $"x: 0x{xMin:X2} - 0x{xMax:X2}, y: 0x{yMin:X2} - 0x{yMax:X2}, w: {width.ToString().PadLeft(3)}, h: {height.ToString().PadLeft(3)}, Count: {Count.ToString().PadLeft(4)}";
+            return $"x: 0x{xMin:X2} - 0x{xMax:X2}, y: 0x{yMin:X2} - 0x{yMax:X2}, w: {width.ToString().PadRight(3)}, h: {height.ToString().PadLeft(3)}, Count: {Count.ToString().PadLeft(4)}";
         }
     }
 }

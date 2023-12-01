@@ -1,17 +1,16 @@
-using log4net;
-
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
     public class Storage : Chest
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Storage>();
 
         public House House { get => ParentLink as House; }
 
@@ -61,7 +60,7 @@ namespace ACE.Server.WorldObjects
 
             if (rootHouse == null)
             {
-                log.Error($"[HOUSE] {player.Name} tried to use Storage chest @ {Location}, couldn't find RootHouse (this shouldn't happen)");
+                _log.Error($"[HOUSE] {player.Name} tried to use Storage chest @ {Location}, couldn't find RootHouse (this shouldn't happen)");
                 return new ActivationResult(false);
             }
 

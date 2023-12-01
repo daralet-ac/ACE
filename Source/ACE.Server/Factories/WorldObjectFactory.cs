@@ -1,24 +1,22 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using log4net;
-
 using ACE.Database;
+using ACE.Database.Models.World;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
-
+using Serilog;
 using Biota = ACE.Database.Models.Shard.Biota;
-using LandblockInstance = ACE.Database.Models.World.LandblockInstance;
+using HousePortal = ACE.Server.WorldObjects.HousePortal;
+using Weenie = ACE.Entity.Models.Weenie;
 
 namespace ACE.Server.Factories
 {
     public static class WorldObjectFactory
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(WorldObjectFactory));
 
         /// <summary>
         /// A new biota be created taking all of its values from weenie.
@@ -33,7 +31,7 @@ namespace ACE.Server.Factories
             switch (objWeenieType)
             {
                 case WeenieType.Undef:
-                    log.Warn($"CreateWorldObject: {weenie.GetName()} (0x{guid}:{weenie.WeenieClassId}) - WeenieType is Undef, Object cannot be created.");
+                    _log.Warning($"CreateWorldObject: {weenie.GetName()} (0x{guid}:{weenie.WeenieClassId}) - WeenieType is Undef, Object cannot be created.");
                     return null;
                 case WeenieType.LifeStone:
                     return new Lifestone(weenie, guid);
@@ -282,7 +280,7 @@ namespace ACE.Server.Factories
 
                 if (weenie == null)
                 {
-                    log.Warn($"CreateNewWorldObjects: Database does not contain weenie {instance.WeenieClassId} for instance 0x{instance.Guid:X8} at {new Position(instance.ObjCellId, instance.OriginX, instance.OriginY, instance.OriginZ, instance.AnglesX, instance.AnglesY, instance.AnglesZ, instance.AnglesW).ToLOCString()}");
+                    _log.Warning($"CreateNewWorldObjects: Database does not contain weenie {instance.WeenieClassId} for instance 0x{instance.Guid:X8} at {new Position(instance.ObjCellId, instance.OriginX, instance.OriginY, instance.OriginZ, instance.AnglesX, instance.AnglesY, instance.AnglesZ, instance.AnglesW).ToLOCString()}");
                     continue;
                 }
 
@@ -306,7 +304,7 @@ namespace ACE.Server.Factories
 
                     if (worldObject.Location == null)
                     {
-                        log.Warn($"CreateNewWorldObjects: {worldObject.Name} (0x{worldObject.Guid}) Location was null. CreationTimestamp = {worldObject.CreationTimestamp} ({Common.Time.GetDateTimeFromTimestamp(worldObject.CreationTimestamp ?? 0).ToLocalTime()}) | Location restored from world db instance.");
+                        _log.Warning($"CreateNewWorldObjects: {worldObject.Name} (0x{worldObject.Guid}) Location was null. CreationTimestamp = {worldObject.CreationTimestamp} ({Common.Time.GetDateTimeFromTimestamp(worldObject.CreationTimestamp ?? 0).ToLocalTime()}) | Location restored from world db instance.");
                         worldObject.Location = new Position(instance.ObjCellId, instance.OriginX, instance.OriginY, instance.OriginZ, instance.AnglesX, instance.AnglesY, instance.AnglesZ, instance.AnglesW);
                     }
                 }

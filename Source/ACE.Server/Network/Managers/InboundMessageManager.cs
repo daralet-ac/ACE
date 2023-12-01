@@ -1,19 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-
-using log4net;
-
 using ACE.Server.Entity.Actions;
-using ACE.Server.Managers;
 using ACE.Server.Network.GameAction;
 using ACE.Server.Network.GameMessages;
+using Serilog;
 
 namespace ACE.Server.Network.Managers
 {
     public static class InboundMessageManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(InboundMessageManager));
 
         private class MessageHandlerInfo
         {
@@ -106,15 +103,14 @@ namespace ACE.Server.Network.Managers
                         }
                         catch (Exception ex)
                         {
-                            log.Error($"Received GameMessage packet that threw an exception from account: {session.AccountId}:{session.Account}, player: {session.Player?.Name}, opcode: 0x{((int)opcode):X4}:{opcode}");
-                            log.Error(ex);
+                            _log.Error(ex, $"Received GameMessage packet that threw an exception from account: {session.AccountId}:{session.Account}, player: {session.Player?.Name}, opcode: 0x{((int)opcode):X4}:{opcode}");
                         }
                     }));
                 }
             }
             else
             {
-                log.Warn($"Received unhandled fragment opcode: 0x{(int)opcode:X4} - {opcode}");
+                _log.Warning($"Received unhandled fragment opcode: 0x{(int)opcode:X4} - {opcode}");
             }
         }
 
@@ -138,13 +134,12 @@ namespace ACE.Server.Network.Managers
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"Received GameAction packet that threw an exception from account: {session.AccountId}:{session.Account}, player: {session.Player?.Name}, opcode: 0x{((int)opcode):X4}:{opcode}");
-                    log.Error(ex);
+                    _log.Error(ex, $"Received GameAction packet that threw an exception from account: {session.AccountId}:{session.Account}, player: {session.Player?.Name}, opcode: 0x{((int)opcode):X4}:{opcode}");
                 }
             }
             else
             {
-                log.Warn($"Received unhandled GameActionType: 0x{(int)opcode:X4} - {opcode}");
+                _log.Warning($"Received unhandled GameActionType: 0x{(int)opcode:X4} - {opcode}");
             }
         }
     }

@@ -1,11 +1,10 @@
 using System.Collections.Concurrent;
-
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.Sequence;
-using log4net;
+using Serilog;
 
 namespace ACE.Server.WorldObjects.Managers
 {
@@ -15,7 +14,7 @@ namespace ACE.Server.WorldObjects.Managers
 
         private ConcurrentDictionary<ConfirmationType, Confirmation> confirmations = new ConcurrentDictionary<ConfirmationType, Confirmation>();
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<ConfirmationManager>();
 
         private static readonly double confirmationTimeout = 30;
 
@@ -101,7 +100,7 @@ namespace ACE.Server.WorldObjects.Managers
                         break;
 
                     default:
-                        log.Error($"{Player.Name}.ConfirmationManager.HandleResponse({confirmType}, {contextId}, {response}, {timeout}) - confirmType not found");
+                        _log.Error($"{Player.Name}.ConfirmationManager.HandleResponse({confirmType}, {contextId}, {response}, {timeout}) - confirmType not found");
                         break;
                 }
 
@@ -114,17 +113,17 @@ namespace ACE.Server.WorldObjects.Managers
                 {
                     // dialog box does not dismiss on ConfirmationDone, unlike on all other types, so we must let the player know when they click either yes or no, nothing occured because the offer has already expired.
                     if (!confirmations.TryAdd(confirm.ConfirmationType, confirm))
-                        log.Error($"{Player.Name}.ConfirmationManager.HandleResponse({confirm.ConfirmationType}, {confirm.ContextId}) - Unable to re-add confirmation, duplicate confirmation type");
+                        _log.Error($"{Player.Name}.ConfirmationManager.HandleResponse({confirm.ConfirmationType}, {confirm.ContextId}) - Unable to re-add confirmation, duplicate confirmation type");
 
                     Player.SendMessage("That offer of fellowship has expired."); // still looking for pcap accurate response
 
                     return false;
                 }    
 
-                log.Error($"{Player.Name}.ConfirmationManager.HandleResponse({confirmType}, {contextId}, {response}, {timeout}) - contextId != confirm.ContextId");
+                _log.Error($"{Player.Name}.ConfirmationManager.HandleResponse({confirmType}, {contextId}, {response}, {timeout}) - contextId != confirm.ContextId");
 
                 if (!confirmations.TryAdd(confirm.ConfirmationType, confirm))
-                    log.Error($"{Player.Name}.ConfirmationManager.HandleResponse({confirm.ConfirmationType}, {confirm.ContextId}) - Unable to re-add confirmation, duplicate confirmation type");
+                    _log.Error($"{Player.Name}.ConfirmationManager.HandleResponse({confirm.ConfirmationType}, {confirm.ContextId}) - Unable to re-add confirmation, duplicate confirmation type");
 
                 return false;
             }

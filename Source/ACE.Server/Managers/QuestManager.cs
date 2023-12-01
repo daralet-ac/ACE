@@ -1,24 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Database;
 using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
+using ACE.Server.Entity;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-using ACE.Server.Entity;
+using Serilog;
 
 namespace ACE.Server.Managers
 {
     public class QuestManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<QuestManager>();
 
         /// <summary>
         /// This is almost always a Player
@@ -589,7 +587,7 @@ namespace ACE.Server.Managers
 
             if (killedCreature == null)
             {
-                log.Error($"{Name}.QuestManager.HandleKillTask({killQuestName}): input object is null!");
+                _log.Error($"{Name}.QuestManager.HandleKillTask({killQuestName}): input object is null!");
                 return;
             }
 
@@ -598,7 +596,7 @@ namespace ACE.Server.Managers
 
             if (quest == null)
             {
-                log.Error($"{Name}.QuestManager.HandleKillTask({killQuestName}): couldn't find kill task {questName} in database");
+                _log.Error($"{Name}.QuestManager.HandleKillTask({killQuestName}): couldn't find kill task {questName} in database");
                 return;
             }
 
@@ -612,7 +610,7 @@ namespace ACE.Server.Managers
             if (playerQuest == null)
             {
                 // this should be impossible
-                log.Error($"{Name}.QuestManager.HandleKillTask({killQuestName}): couldn't find kill task {questName} in player quests");
+                _log.Error($"{Name}.QuestManager.HandleKillTask({killQuestName}): couldn't find kill task {questName} in player quests");
                 return;
             }
 

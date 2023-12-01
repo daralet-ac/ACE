@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using log4net;
-
 using ACE.Database;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -12,15 +9,16 @@ using ACE.Entity.Models;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
+using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
     public partial class Container : WorldObject
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Container>();
 
         /// <summary>
         /// A new biota be created taking all of its values from weenie.
@@ -145,7 +143,7 @@ namespace ACE.Server.WorldObjects
             SortWorldObjectsIntoInventory(worldObjects);
 
             if (worldObjects.Count > 0)
-                log.Error("Inventory detected without a container to put it in to.");
+                _log.Error("Inventory detected without a container to put it in to.");
         }
 
         /// <summary>

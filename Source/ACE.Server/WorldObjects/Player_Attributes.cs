@@ -14,13 +14,13 @@ namespace ACE.Server.WorldObjects
         {
             if (!Attributes.TryGetValue(attribute, out var creatureAttribute))
             {
-                log.Error($"{Name}.HandleActionRaiseAttribute({attribute}, {amount}) - invalid attribute");
+                _log.Error($"{Name}.HandleActionRaiseAttribute({attribute}, {amount}) - invalid attribute");
                 return false;
             }
 
             if (amount > AvailableExperience)
             {
-                log.Error($"{Name}.HandleActionRaiseAttribute({attribute}, {amount}) - amount > AvaiableExperience ({AvailableExperience})");
+                _log.Error($"{Name}.HandleActionRaiseAttribute({attribute}, {amount}) - amount > AvailableExperience ({AvailableExperience})");
                 return false;
             }
 
@@ -77,7 +77,7 @@ namespace ACE.Server.WorldObjects
             // ensure attribute is not already max rank
             if (creatureAttribute.IsMaxRank)
             {
-                log.Error($"{Name}.SpendAttributeXp({creatureAttribute.Attribute}, {amount}) - player tried to raise attribute beyond max rank");
+                _log.Error($"{Name}.SpendAttributeXp({creatureAttribute.Attribute}, {amount}) - player tried to raise attribute beyond max rank");
                 return false;
             }
 
@@ -87,7 +87,7 @@ namespace ACE.Server.WorldObjects
 
             if (amount > amountToEnd)
             {
-                log.Error($"{Name}.SpendAttributeXp({creatureAttribute.Attribute}, {amount}) - player tried to raise attribute beyond {amountToEnd} experience");
+                _log.Error($"{Name}.SpendAttributeXp({creatureAttribute.Attribute}, {amount}) - player tried to raise attribute beyond {amountToEnd} experience");
                 return false;   // returning error here, instead of setting amount to amountToEnd
             }
 
@@ -95,7 +95,7 @@ namespace ACE.Server.WorldObjects
             // spend xp on attribute
             if (!SpendXP(amount, sendNetworkUpdate))
             {
-                log.Error($"{Name}.SpendAttributeXp({creatureAttribute.Attribute}, {amount}) - SpendXP failed");
+                _log.Error($"{Name}.SpendAttributeXp({creatureAttribute.Attribute}, {amount}) - SpendXP failed");
                 return false;
             }
 

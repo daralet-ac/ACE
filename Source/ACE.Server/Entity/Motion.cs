@@ -2,7 +2,7 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
-using log4net;
+using Serilog;
 
 namespace ACE.Server.Entity
 {
@@ -11,7 +11,7 @@ namespace ACE.Server.Entity
     /// </summary>
     public class Motion
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Motion>();
 
         // previously in MotionState base abstract class, only 1 reference
         // IsAutonomous TRUE would indicate a client-initiated movement
@@ -60,7 +60,7 @@ namespace ACE.Server.Entity
             else
             {
                 Stance = new Motion(MotionStance.NonCombat).Stance;
-                log.Warn($"{wo.Name} (0x{wo.Guid}) has a null CurrentMotionState, subbing in new Motion(MotionStance.NonCombat) for it.");
+                _log.Warning($"{wo.Name} (0x{wo.Guid}) has a null CurrentMotionState, subbing in new Motion(MotionStance.NonCombat) for it.");
             }
             MovementType = type;
             Position = new Position(target.Location);
@@ -77,7 +77,7 @@ namespace ACE.Server.Entity
             else
             {
                 Stance = new Motion(MotionStance.NonCombat).Stance;
-                log.Warn($"{wo.Name} (0x{wo.Guid}) has a null CurrentMotionState, subbing in new Motion(MotionStance.NonCombat) for it.");
+                _log.Warning($"{wo.Name} (0x{wo.Guid}) has a null CurrentMotionState, subbing in new Motion(MotionStance.NonCombat) for it.");
             }
             MovementType = MovementType.MoveToPosition;
             Position = new Position(position);
@@ -93,7 +93,7 @@ namespace ACE.Server.Entity
             else
             {
                 Stance = new Motion(MotionStance.NonCombat).Stance;
-                log.Warn($"{wo.Name} (0x{wo.Guid}) has a null CurrentMotionState, subbing in new Motion(MotionStance.NonCombat) for it.");
+                _log.Warning($"{wo.Name} (0x{wo.Guid}) has a null CurrentMotionState, subbing in new Motion(MotionStance.NonCombat) for it.");
             }
             MovementType = MovementType.TurnToHeading;
             Position = new Position(position);
@@ -113,7 +113,7 @@ namespace ACE.Server.Entity
             else
             {
                 Stance = new Motion(MotionStance.NonCombat).Stance;
-                log.Warn($"{wo.Name} (0x{wo.Guid}) has a null CurrentMotionState, subbing in new Motion(MotionStance.NonCombat) for it.");
+                _log.Warning($"{wo.Name} (0x{wo.Guid}) has a null CurrentMotionState, subbing in new Motion(MotionStance.NonCombat) for it.");
             }
             SetForwardCommand(motion, speed);
         }

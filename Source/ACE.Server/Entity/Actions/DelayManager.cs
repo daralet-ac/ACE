@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-
-using log4net;
+using Serilog;
 
 namespace ACE.Server.Entity.Actions
 {
     public class DelayManager : IActor
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<DelayManager>();
 
         private readonly SortedSet<DelayAction> delayHeap = new SortedSet<DelayAction>();
 
@@ -60,7 +59,7 @@ namespace ACE.Server.Entity.Actions
 
             if (delayAction == null)
             {
-                log.Error("Non DelayAction IAction added to DelayManager");
+                _log.Error("Non DelayAction IAction added to DelayManager");
                 return;
             }
 

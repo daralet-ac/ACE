@@ -8,8 +8,6 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
-using log4net;
-
 using ACE.Common.Performance;
 using ACE.Database;
 using ACE.Database.Models.World;
@@ -27,6 +25,7 @@ using ACE.Server.Network.GameMessages;
 using ACE.Server.WorldObjects;
 
 using Position = ACE.Entity.Position;
+using Serilog;
 
 namespace ACE.Server.Entity
 {
@@ -38,7 +37,7 @@ namespace ACE.Server.Entity
     /// </summary>
     public class Landblock : IActor
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Landblock>();
 
         public static float AdjacencyLoadRange { get; } = 96f;
         public static float OutdoorChatRange { get; } = 75f;
@@ -502,7 +501,7 @@ namespace ACE.Server.Entity
                 {
                     sortedGeneratorsByNextRegeneration.RemoveFirst();
                     first.GeneratorRegeneration(currentUnixTime);
-                    InsertWorldObjectIntoSortedGeneratorRegenerationList(first); // Generators can have regnerations at different intervals
+                    InsertWorldObjectIntoSortedGeneratorRegenerationList(first); // Generators can have regenerations at different intervals
                 }
                 else
                 {
@@ -805,7 +804,7 @@ namespace ACE.Server.Entity
         {
             if (wo.Location == null)
             {
-                log.DebugFormat("Landblock 0x{0} failed to add 0x{1:X8} {2}. Invalid Location", Id, wo.Biota.Id, wo.Name);
+                _log.Debug("Landblock 0x{LandblockId} failed to add 0x{BiotaId:X8} {WorldObject}. Invalid Location", Id, wo.Biota.Id, wo.Name);
                 return false;
             }
 
@@ -823,24 +822,24 @@ namespace ACE.Server.Entity
             {
                 if (CurrentLandblockGroup != null && CurrentLandblockGroup != LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value)
                 {
-                    log.Error($"Landblock 0x{Id} entered AddWorldObjectInternal in a cross-thread operation.");
-                    log.Error($"Landblock 0x{Id} CurrentLandblockGroup: {CurrentLandblockGroup}");
-                    log.Error($"LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value: {LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value}");
+                    _log.Error($"Landblock 0x{Id} entered AddWorldObjectInternal in a cross-thread operation.");
+                    _log.Error($"Landblock 0x{Id} CurrentLandblockGroup: {CurrentLandblockGroup}");
+                    _log.Error($"LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value: {LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value}");
 
-                    log.Error($"wo: 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}], previous landblock 0x{wo.CurrentLandblock?.Id}");
+                    _log.Error($"wo: 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}], previous landblock 0x{wo.CurrentLandblock?.Id}");
 
                     if (wo.WeenieType == WeenieType.ProjectileSpell)
                     {
                         if (wo.ProjectileSource != null)
-                            log.Error($"wo.ProjectileSource: 0x{wo.ProjectileSource?.Guid}:{wo.ProjectileSource?.Name}, position: {wo.ProjectileSource?.Location}");
+                            _log.Error($"wo.ProjectileSource: 0x{wo.ProjectileSource?.Guid}:{wo.ProjectileSource?.Name}, position: {wo.ProjectileSource?.Location}");
 
                         if (wo.ProjectileTarget != null)
-                            log.Error($"wo.ProjectileTarget: 0x{wo.ProjectileTarget?.Guid}:{wo.ProjectileTarget?.Name}, position: {wo.ProjectileTarget?.Location}");
+                            _log.Error($"wo.ProjectileTarget: 0x{wo.ProjectileTarget?.Guid}:{wo.ProjectileTarget?.Name}, position: {wo.ProjectileTarget?.Location}");
                     }
 
-                    log.Error(System.Environment.StackTrace);
+                    _log.Error(System.Environment.StackTrace);
 
-                    log.Error("PLEASE REPORT THIS TO THE ACE DEV TEAM !!!");
+                    _log.Error("PLEASE REPORT THIS TO THE ACE DEV TEAM !!!");
 
                     // Prevent possible multi-threaded crash
                     if (wo.WeenieType == WeenieType.ProjectileSpell)
@@ -866,13 +865,13 @@ namespace ACE.Server.Entity
 
                     if (wo.Generator != null)
                     {
-                        log.Debug($"AddWorldObjectInternal: couldn't spawn 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}] at {wo.Location.ToLOCString()} from generator {wo.Generator.WeenieClassId} - 0x{wo.Generator.Guid}:{wo.Generator.Name}");
+                        _log.Debug($"AddWorldObjectInternal: couldn't spawn 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}] at {wo.Location.ToLOCString()} from generator {wo.Generator.WeenieClassId} - 0x{wo.Generator.Guid}:{wo.Generator.Name}");
                         wo.NotifyOfEvent(RegenerationType.PickUp); // Notify generator the generated object is effectively destroyed, use Pickup to catch both cases.
                     }
                     else if (wo.IsGenerator) // Some generators will fail random spawns if they're circumference spans over water or cliff edges
-                        log.Debug($"AddWorldObjectInternal: couldn't spawn generator 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}] at {wo.Location.ToLOCString()}");
+                        _log.Debug($"AddWorldObjectInternal: couldn't spawn generator 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}] at {wo.Location.ToLOCString()}");
                     else if (wo.ProjectileTarget == null && !(wo is SpellProjectile))
-                        log.Warn($"AddWorldObjectInternal: couldn't spawn 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}] at {wo.Location.ToLOCString()}");
+                        _log.Warning($"AddWorldObjectInternal: couldn't spawn 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}] at {wo.Location.ToLOCString()}");
 
                     return false;
                 }
@@ -900,7 +899,7 @@ namespace ACE.Server.Entity
 
                     if (corpse != null)
                     {
-                        log.Warn($"[CORPSE] Landblock.AddWorldObjectInternal(): {wo.Name} (0x{wo.Guid}) exceeds the per player limit of {corpseLimit} corpses for 0x{Id.Landblock:X4}. Adjusting TimeToRot for oldest {corpse.Name} (0x{corpse.Guid}), CreationTimestamp: {corpse.CreationTimestamp} ({Common.Time.GetDateTimeFromTimestamp(corpse.CreationTimestamp ?? 0).ToLocalTime():yyyy-MM-dd HH:mm:ss}), to Corpse.EmptyDecayTime({Corpse.EmptyDecayTime}).");
+                        _log.Warning($"[CORPSE] Landblock.AddWorldObjectInternal(): {wo.Name} (0x{wo.Guid}) exceeds the per player limit of {corpseLimit} corpses for 0x{Id.Landblock:X4}. Adjusting TimeToRot for oldest {corpse.Name} (0x{corpse.Guid}), CreationTimestamp: {corpse.CreationTimestamp} ({Common.Time.GetDateTimeFromTimestamp(corpse.CreationTimestamp ?? 0).ToLocalTime():yyyy-MM-dd HH:mm:ss}), to Corpse.EmptyDecayTime({Corpse.EmptyDecayTime}).");
                         corpse.TimeToRot = Corpse.EmptyDecayTime;
                     }
                 }
@@ -930,15 +929,15 @@ namespace ACE.Server.Entity
             {
                 if (CurrentLandblockGroup != null && CurrentLandblockGroup != LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value)
                 {
-                    log.Error($"Landblock 0x{Id} entered RemoveWorldObjectInternal in a cross-thread operation.");
-                    log.Error($"Landblock 0x{Id} CurrentLandblockGroup: {CurrentLandblockGroup}");
-                    log.Error($"LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value: {LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value}");
+                    _log.Error($"Landblock 0x{Id} entered RemoveWorldObjectInternal in a cross-thread operation.");
+                    _log.Error($"Landblock 0x{Id} CurrentLandblockGroup: {CurrentLandblockGroup}");
+                    _log.Error($"LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value: {LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value}");
 
-                    log.Error($"objectId: 0x{objectId}");
+                    _log.Error($"objectId: 0x{objectId}");
 
-                    log.Error(System.Environment.StackTrace);
+                    _log.Error(System.Environment.StackTrace);
 
-                    log.Error("PLEASE REPORT THIS TO THE ACE DEV TEAM !!!");
+                    _log.Error("PLEASE REPORT THIS TO THE ACE DEV TEAM !!!");
 
                     // This may still crash...
                 }
@@ -949,7 +948,7 @@ namespace ACE.Server.Entity
             else if (!pendingAdditions.Remove(objectId, out wo))
             {
                 if (showError)
-                    log.Warn($"RemoveWorldObjectInternal: Couldn't find {objectId.Full:X8}");
+                    _log.Warning($"RemoveWorldObjectInternal: Couldn't find {objectId.Full:X8}");
                 return;
             }
 

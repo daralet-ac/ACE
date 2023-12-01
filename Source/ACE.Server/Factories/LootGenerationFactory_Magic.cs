@@ -552,7 +552,7 @@ namespace ACE.Server.Factories
             }
             else
             {
-                log.Error($"RollItemMaxMana({wo.Name}, {roll.ItemType}, {maxSpellMana}) - unknown item type");
+                _log.Error($"RollItemMaxMana({wo.Name}, {roll.ItemType}, {maxSpellMana}) - unknown item type");
                 return 1;
             }
 
@@ -620,7 +620,7 @@ namespace ACE.Server.Factories
             }
             else if (!roll.IsGem)
             {
-                log.Error($"RollSpellcraft({wo.Name}, {roll.ItemType}) - unknown item type");
+                _log.Error($"RollSpellcraft({wo.Name}, {roll.ItemType}) - unknown item type");
             }
 
             var rng = ThreadSafeRandom.Next(range.min, range.max);
@@ -699,7 +699,7 @@ namespace ACE.Server.Factories
             }
             else
             {
-                log.Error($"RollItemSkillLimit({wo.Name}, {roll.ItemType}) - unknown item type");
+                _log.Error($"RollItemSkillLimit({wo.Name}, {roll.ItemType}) - unknown item type");
                 return false;
             }
 

@@ -1,12 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading;
-using System.Collections.Generic;
-
 using ACE.Common;
-
 using Newtonsoft.Json;
 
 namespace ACE.Server
@@ -15,12 +13,12 @@ namespace ACE.Server
     {
         private static void CheckForWorldDatabaseUpdate()
         {
-            log.Info($"Automatic World Database Update started...");
+            _log.Information("Automatic World Database Update started...");
             try
             {
                 var worldDb = new Database.WorldDatabase();
                 var currentVersion = worldDb.GetVersion();
-                log.Info($"Current World Database version: Base - {currentVersion.BaseVersion} | Patch - {currentVersion.PatchVersion}");
+                _log.Information($"Current World Database version: Base - {currentVersion.BaseVersion} | Patch - {currentVersion.PatchVersion}");
 
                 var url = "https://api.github.com/repos/ACEmulator/ACE-World-16PY-Patches/releases/latest";
 
@@ -46,26 +44,26 @@ namespace ACE.Server
 
                     if (tagMajor > patchMajor || tagMinor > patchMinor || (tagBuild > patchBuild && patchBuild != 0))
                     {
-                        log.Info($"Latest patch version is {tag} -- Update Required!");
+                        _log.Information($"Latest patch version is {tag} -- Update Required!");
                         UpdateToLatestWorldDatabase(dbURL, dbFileName);
                         var newVersion = worldDb.GetVersion();
-                        log.Info($"Updated World Database version: Base - {newVersion.BaseVersion} | Patch - {newVersion.PatchVersion}");
+                        _log.Information($"Updated World Database version: Base - {newVersion.BaseVersion} | Patch - {newVersion.PatchVersion}");
                     }
                     else
                     {
-                        log.Info($"Latest patch version is {tag} -- No Update Required!");
+                        _log.Information($"Latest patch version is {tag} -- No Update Required!");
                     }
                 }
                 else
                 {
-                    log.Info($"Latest patch version is {tag} -- No Update Required!");
+                    _log.Information($"Latest patch version is {tag} -- No Update Required!");
                 }
             }
             catch (Exception ex)
             {
-                log.Info($"Unable to continue with Automatic World Database Update due to the following error: {ex}");
+                _log.Information(ex, "Unable to continue with Automatic World Database Update");
             }
-            log.Info($"Automatic World Database Update complete.");
+            _log.Information("Automatic World Database Update complete.");
         }
 
         private static void UpdateToLatestWorldDatabase(string dbURL, string dbFileName)
@@ -223,7 +221,7 @@ namespace ACE.Server
 
         private static void AutoApplyDatabaseUpdates()
         {
-            log.Info($"Automatic Database Patching started...");
+            _log.Information("Automatic Database Patching started...");
             Thread.Sleep(1000);
 
             PatchDatabase("Authentication", ConfigManager.Config.MySql.Authentication.Host, ConfigManager.Config.MySql.Authentication.Port, ConfigManager.Config.MySql.Authentication.Username, ConfigManager.Config.MySql.Authentication.Password, ConfigManager.Config.MySql.Authentication.Database, ConfigManager.Config.MySql.Shard.Database, ConfigManager.Config.MySql.World.Database);
@@ -231,7 +229,7 @@ namespace ACE.Server
             PatchDatabase("World", ConfigManager.Config.MySql.World.Host, ConfigManager.Config.MySql.World.Port, ConfigManager.Config.MySql.World.Username, ConfigManager.Config.MySql.World.Password, ConfigManager.Config.MySql.Authentication.Database, ConfigManager.Config.MySql.Shard.Database, ConfigManager.Config.MySql.World.Database);
 
             Thread.Sleep(1000);
-            log.Info($"Automatic Database Patching complete.");
+            _log.Information("Automatic Database Patching complete.");
         }
 
         private static void PatchDatabase(string dbType, string host, uint port, string username, string password, string authDB, string shardDB, string worldDB)

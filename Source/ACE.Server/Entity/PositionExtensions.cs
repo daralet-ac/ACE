@@ -1,8 +1,5 @@
 using System;
 using System.Numerics;
-
-using log4net;
-
 using ACE.DatLoader;
 using ACE.Entity;
 using ACE.Entity.Enum.Properties;
@@ -10,14 +7,14 @@ using ACE.Server.Physics.Common;
 using ACE.Server.Physics.Extensions;
 using ACE.Server.Physics.Util;
 using ACE.Server.WorldObjects;
-
+using Serilog;
 using Position = ACE.Entity.Position;
 
 namespace ACE.Server.Entity
 {
     public static class PositionExtensions
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(PositionExtensions));
 
         public static Vector3 ToGlobal(this Position p, bool skipIndoors = false)
         {
@@ -349,8 +346,8 @@ namespace ACE.Server.Entity
 
         public static bool AttemptToFixRotation(this Position pos, WorldObject wo, PositionType positionType)
         {
-            log.Warn($"detected bad quaternion x y z w for {wo.Name} (0x{wo.Guid}) | WCID: {wo.WeenieClassId} | WeenieType: {wo.WeenieType} | PositionType: {positionType}");
-            log.Warn($"before fix: {pos.ToLOCString()}");
+            _log.Warning($"detected bad quaternion x y z w for {wo.Name} (0x{wo.Guid}) | WCID: {wo.WeenieClassId} | WeenieType: {wo.WeenieType} | PositionType: {positionType}");
+            _log.Warning($"before fix: {pos.ToLOCString()}");
 
             var normalized = Quaternion.Normalize(pos.Rotation);
 
@@ -359,7 +356,7 @@ namespace ACE.Server.Entity
             if (success)
                 pos.Rotation = normalized;
 
-            log.Warn($" after fix: {pos.ToLOCString()}");
+            _log.Warning($" after fix: {pos.ToLOCString()}");
 
             return success;
         }

@@ -47,7 +47,7 @@ namespace ACE.Server.WorldObjects
             if (target.Location == null)
             {
                 StopExistingMoveToChains();
-                log.Error($"{Name}.CreateMoveToChain({target.Name}): target.Location is null");
+                _log.Error($"{Name}.CreateMoveToChain({target.Name}): target.Location is null");
 
                 callback(false);
                 return;

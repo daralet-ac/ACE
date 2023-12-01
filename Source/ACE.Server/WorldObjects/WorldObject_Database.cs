@@ -165,7 +165,7 @@ namespace ACE.Server.WorldObjects
             var missile = Missile;
             if (missile.HasValue && missile.Value)
             {
-                log.Warn($"Missile: WeenieClassId: {WeenieClassId}, Name: {Name}, WeenieType: {WeenieType}, detected in IsDynamicThatShouldPersistToShard() that wasn't caught by prior check.");
+                _log.Warning("Missile: WeenieClassId: {WeenieClassId}, Name: {WeenieName}, WeenieType: {WeenieType}, detected in IsDynamicThatShouldPersistToShard() that wasn't caught by prior check.", WeenieClassId, Name, WeenieType);
                 return false;
             }
 

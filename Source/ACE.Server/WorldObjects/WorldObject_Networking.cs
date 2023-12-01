@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-
 using ACE.DatLoader;
 using ACE.DatLoader.Entity;
 using ACE.DatLoader.FileTypes;
@@ -426,7 +425,7 @@ namespace ACE.Server.WorldObjects
                             targetSession.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyInt(targetSession.Player, (PropertyInt)property.PropertyId, value.Value));
                         break;
                     default:
-                        log.Debug($"Unsupported property in SendPartialUpdates: id {property.PropertyId}, type {property.PropertyType}.");
+                        _log.Debug("Unsupported property in SendPartialUpdates: id {PropertyId}, type {PropertyType}.", property.PropertyId, property.PropertyType);
                         break;
                 }
             }

@@ -1,20 +1,18 @@
 using System;
 using System.Numerics;
-
-using log4net;
-
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Network.GameEvent.Events;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
     public sealed class HousePortal : Portal
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<HousePortal>();
 
         public House House => ParentLink as House;
 
@@ -38,13 +36,13 @@ namespace ACE.Server.WorldObjects
         {
             if (House == null)
             {
-                log.Warn($"[HOUSE] HousePortal.SetLinkProperties({(wo != null ? $"{wo.Name}:0x{wo.Guid}:{wo.WeenieClassId}" : "null")}): House is null for HousePortal 0x{Guid} at {Location.ToLOCString()}");
+                _log.Warning($"[HOUSE] HousePortal.SetLinkProperties({(wo != null ? $"{wo.Name}:0x{wo.Guid}:{wo.WeenieClassId}" : "null")}): House is null for HousePortal 0x{Guid} at {Location.ToLOCString()}");
                 return;
             }
 
             if (wo == null)
             {
-                log.Warn($"[HOUSE] HousePortal.SetLinkProperties(null): WorldObject is null for HousePortal 0x{Guid} at {Location.ToLOCString()} | {(House != null ? $"House = {House.Name}:0x{House.Guid}:{House.WeenieClassId}" : "House is null")}");
+                _log.Warning($"[HOUSE] HousePortal.SetLinkProperties(null): WorldObject is null for HousePortal 0x{Guid} at {Location.ToLOCString()} | {(House != null ? $"House = {House.Name}:0x{House.Guid}:{House.WeenieClassId}" : "House is null")}");
                 return;
             }
 
@@ -95,8 +93,8 @@ namespace ACE.Server.WorldObjects
 
             if (activator == null || rootHouse == null)
             {
-                log.Warn($"HousePortal.CheckUseRequirements: 0x{Guid} - {Location.ToLOCString()}");
-                log.Warn($"HousePortal.CheckUseRequirements: activator is null - {activator == null} | House is null - {House == null} | RootHouse is null - {rootHouse == null}");
+                _log.Warning($"HousePortal.CheckUseRequirements: 0x{Guid} - {Location.ToLOCString()}");
+                _log.Warning($"HousePortal.CheckUseRequirements: activator is null - {activator == null} | House is null - {House == null} | RootHouse is null - {rootHouse == null}");
                 return new ActivationResult(false);
             }
 

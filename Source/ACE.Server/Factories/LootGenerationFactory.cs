@@ -3,28 +3,24 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
-
+using Serilog;
 using WeenieClassName = ACE.Server.Factories.Enum.WeenieClassName;
 
 namespace ACE.Server.Factories
 {
     public static partial class LootGenerationFactory
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(LootGenerationFactory));
 
         // Used for cumulative ServerPerformanceMonitor event recording
         private static readonly ThreadLocal<Stopwatch> stopwatch = new ThreadLocal<Stopwatch>(() => new Stopwatch());
@@ -480,7 +476,7 @@ namespace ACE.Server.Factories
         {
             if (wo.TsysMutationData == null)
             {
-                log.Warn($"[LOOT] Missing PropertyInt.TsysMutationData on loot item {wo.WeenieClassId} - {wo.Name}");
+                _log.Warning($"[LOOT] Missing PropertyInt.TsysMutationData on loot item {wo.WeenieClassId} - {wo.Name}");
                 return GetDefaultMaterialType(wo);
             }
 
@@ -695,12 +691,12 @@ namespace ACE.Server.Factories
                         wo.Shade = ThreadSafeRandom.Next(0.0f, 1.0f);
 
                         // Some debug info...
-                        // log.Info($"Color success for {wo.MaterialType}({(int)wo.MaterialType}) - {wo.WeenieClassId} - {wo.Name}. PaletteTemplate {paletteTemplate} applied.");
+                        // _log.Information($"Color success for {wo.MaterialType}({(int)wo.MaterialType}) - {wo.WeenieClassId} - {wo.Name}. PaletteTemplate {paletteTemplate} applied.");
                     }
                 }
                 else
                 {
-                    log.Warn($"[LOOT] Color looked failed for {wo.MaterialType} ({(int)wo.MaterialType}) - {wo.WeenieClassId} - {wo.Name}.");
+                    _log.Warning($"[LOOT] Color looked failed for {wo.MaterialType} ({(int)wo.MaterialType}) - {wo.WeenieClassId} - {wo.Name}.");
                 }
             }
         }
@@ -936,7 +932,7 @@ namespace ACE.Server.Factories
 
             if (treasureItemType == TreasureItemType_Orig.Undef)
             {
-                log.Error($"LootGenerationFactory.RollWcid({treasureDeath.TreasureType}, {category}): treasureItemType == Undef");
+                _log.Error($"LootGenerationFactory.RollWcid({treasureDeath.TreasureType}, {category}): treasureItemType == Undef");
                 return null;
             }
 
@@ -1097,7 +1093,7 @@ namespace ACE.Server.Factories
 
                 if (wo == null)
                 {
-                    log.Error($"CreateAndMutateWcid({treasureDeath.TreasureType}, {(int)treasureRoll.Wcid} - {treasureRoll.Wcid}, {treasureRoll.GetItemType()}, {isMagical}) - failed to create item");
+                    _log.Error($"CreateAndMutateWcid({treasureDeath.TreasureType}, {(int)treasureRoll.Wcid} - {treasureRoll.Wcid}, {treasureRoll.GetItemType()}, {isMagical}) - failed to create item");
                     return null;
                 }
 
@@ -1162,7 +1158,7 @@ namespace ACE.Server.Factories
                             break;
 
                         default:
-                            log.Error($"CreateAndMutateWcid({treasureDeath.TreasureType}, {(int)treasureRoll.Wcid} - {treasureRoll.Wcid}, {treasureRoll.GetItemType()}, {isMagical}) - unknown weapon type");
+                            _log.Error($"CreateAndMutateWcid({treasureDeath.TreasureType}, {(int)treasureRoll.Wcid} - {treasureRoll.Wcid}, {treasureRoll.GetItemType()}, {isMagical}) - unknown weapon type");
                             break;
                     }
                     break;

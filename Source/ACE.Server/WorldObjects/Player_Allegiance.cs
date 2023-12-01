@@ -94,7 +94,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            log.Debug($"[ALLEGIANCE] {Name} ({Level}) swearing allegiance to {patron.Name} ({patron.Level})");
+            _log.Debug($"[ALLEGIANCE] {Name} ({Level}) swearing allegiance to {patron.Name} ({patron.Level})");
 
             PatronId = targetGuid;
 
@@ -175,7 +175,7 @@ namespace ACE.Server.WorldObjects
 
             if (target == null) return;
 
-            log.Debug($"[ALLEGIANCE] {Name} breaking allegiance to {target.Name}");
+            _log.Debug($"[ALLEGIANCE] {Name} breaking allegiance to {target.Name}");
 
             // target can be either patron or vassal
             var isPatron = PatronId == target.Guid.Full;
@@ -981,7 +981,7 @@ namespace ACE.Server.WorldObjects
                     if (approvedVassal == null)
                     {
                         // automatically remove?
-                        log.Warn($"{Name}.HandleActionDoAllegianceLockAction({action}): couldn't find approved vassal {entity.Key:X8}");
+                        _log.Warning($"{Name}.HandleActionDoAllegianceLockAction({action}): couldn't find approved vassal {entity.Key:X8}");
                         continue;
                     }
 
@@ -1299,7 +1299,7 @@ namespace ACE.Server.WorldObjects
                 if (player == null)
                 {
                     // automatically remove?
-                    log.Warn($"{Name}.HandleActionListAllegianceBans(): couldn't find banned player {entity.Key:X8}");
+                    _log.Warning($"{Name}.HandleActionListAllegianceBans(): couldn't find banned player {entity.Key:X8}");
                     continue;
                 }
 
@@ -1394,7 +1394,7 @@ namespace ACE.Server.WorldObjects
 
         public void HandleActionBreakAllegianceBoot(string playerName, bool accountBoot)
         {
-            log.Debug($"[ALLEGIANCE] {Name}.HandleActionBreakAllegianceBoot({playerName}, {accountBoot})");
+            _log.Debug($"[ALLEGIANCE] {Name}.HandleActionBreakAllegianceBoot({playerName}, {accountBoot})");
 
             // TODO: handle account boot
 

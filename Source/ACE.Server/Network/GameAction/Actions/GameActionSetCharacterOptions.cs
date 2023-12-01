@@ -1,10 +1,8 @@
 using System.Collections.Generic;
-
 using ACE.Common.Extensions;
 using ACE.Entity.Enum;
 using ACE.Server.Network.Enum;
-
-using log4net;
+using Serilog;
 
 namespace ACE.Server.Network.GameAction.Actions
 {
@@ -17,7 +15,7 @@ namespace ACE.Server.Network.GameAction.Actions
 
     public static class GameActionSetCharacterOptions
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(GameActionSetCharacterOptions));
 
         [GameAction(GameActionType.SetCharacterOptions)]
         public static void Handle(ClientMessage message, Session session)
@@ -30,7 +28,7 @@ namespace ACE.Server.Network.GameAction.Actions
                 // and their client will send the default character options upon clicking the logout button,
                 // overwriting their custom options on the server with the defaults. this code avoids that situation
 
-                log.Warn($"{session.Player.Name} sent GameAction 0x1A1 - SetCharacterOptions before FirstEnterWorldDone, ignoring...");
+                _log.Warning($"{session.Player.Name} sent GameAction 0x1A1 - SetCharacterOptions before FirstEnterWorldDone, ignoring...");
                 return;
             }
 

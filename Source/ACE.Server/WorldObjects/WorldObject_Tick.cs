@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Numerics;
-
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -9,7 +8,6 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
-using ACE.Server.Physics;
 using ACE.Server.Physics.Common;
 
 namespace ACE.Server.WorldObjects
@@ -49,7 +47,7 @@ namespace ACE.Server.WorldObjects
 
             if (RegenerationInterval < 0)
             {
-                log.Warn($"{Name} ({Guid}).InitializeHeartBeats() - RegenerationInterval {RegenerationInterval}, setting to 0");
+                _log.Warning($"{Name} ({Guid}).InitializeHeartBeats() - RegenerationInterval {RegenerationInterval}, setting to 0");
                 RegenerationInterval = 0;
             }
 
@@ -185,7 +183,7 @@ namespace ACE.Server.WorldObjects
                     else
                     {
                         if (!(OwnerId.HasValue && OwnerId.Value > 0))
-                            log.WarnFormat("Item 0x{0:X8}:{1} has enqueued an action but is not attached to a landblock.", Guid.Full, Name);
+                            _log.Warning("Item 0x{ItemGuid:X8}:{Item} has enqueued an action but is not attached to a landblock.", Guid.Full, Name);
                     }
 
                     WorldManager.EnqueueAction(action);
@@ -345,7 +343,7 @@ namespace ACE.Server.WorldObjects
                         spellProjectile.DebugVelocity++;
 
                         if (spellProjectile.DebugVelocity == 30)
-                            log.Error($"Spell projectile w/ zero velocity detected @ {spellProjectile.Location.ToLOCString()}, launched by {spellProjectile.ProjectileSource?.Name} ({spellProjectile.ProjectileSource?.Guid}), spell ID {spellProjectile.Spell?.Id} - {spellProjectile.Spell?.Name}");
+                            _log.Error($"Spell projectile w/ zero velocity detected @ {spellProjectile.Location.ToLOCString()}, launched by {spellProjectile.ProjectileSource?.Name} ({spellProjectile.ProjectileSource?.Guid}), spell ID {spellProjectile.Spell?.Id} - {spellProjectile.Spell?.Name}");
                     }
 
                     if (spellProjectile.SpellType == ProjectileSpellType.Ring)
@@ -374,7 +372,7 @@ namespace ACE.Server.WorldObjects
                 if (elapsedSeconds >= 0.100) // Yea, that ain't good....
                 {
                     slowUpdateObjectPhysicsHits++;
-                    log.Warn($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}");
+                    _log.Warning($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}");
 
                     // Destroy laggy projectiles
                     if (slowUpdateObjectPhysicsHits >= 5 && this is SpellProjectile spellProjectile)
@@ -393,10 +391,10 @@ namespace ACE.Server.WorldObjects
                         PhysicsObj.set_active(false);
                         spellProjectile.ProjectileImpact();
 
-                        log.Warn($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}. SpellProjectile destroyed.");
+                        _log.Warning($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}. SpellProjectile destroyed.");
                     }
                     else
-                        log.Debug($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}");
+                        _log.Debug($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}");
                 }
             }
         }

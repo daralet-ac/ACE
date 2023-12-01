@@ -271,7 +271,7 @@ namespace ACE.Server.WorldObjects
             if (equippedItemsRatingCache.TryGetValue(rating, out var value))
                 return value;
 
-            log.Error($"Creature_Equipment.GetEquippedItemsRatingsSum() does not support {rating}");
+            _log.Error($"Creature_Equipment.GetEquippedItemsRatingsSum() does not support {rating}");
             return 0;
         }
 

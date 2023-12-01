@@ -1,17 +1,15 @@
 using System;
 using System.IO;
 using System.Reflection;
-
 using ACE.Server.Entity;
-
-using log4net;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace ACE.Server.Factories
 {
     public class StarterGearFactory
     {
-        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(StarterGearFactory));
 
         private static StarterGearConfiguration _config = LoadConfigFromResource();
 
@@ -41,7 +39,7 @@ namespace ACE.Server.Factories
             }
             catch (Exception ex)
             {
-                log.Error($"StarterGearFactory.LoadConfigFromResource() - {ex}: {ex.Message}; {ex.InnerException}: {ex.InnerException.Message}");
+                _log.Error($"StarterGearFactory.LoadConfigFromResource() - {ex}: {ex.Message}; {ex.InnerException}: {ex.InnerException.Message}");
             }
 
             return null;

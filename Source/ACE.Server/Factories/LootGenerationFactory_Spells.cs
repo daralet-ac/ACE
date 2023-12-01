@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
@@ -86,7 +84,7 @@ namespace ACE.Server.Factories
             }
             else
             {
-                log.Error($"RollItemSpells({wo.Name}) - item is not clothing / armor / weapon");
+                _log.Error($"RollItemSpells({wo.Name}) - item is not clothing / armor / weapon");
                 return null;
             }
 
@@ -105,7 +103,7 @@ namespace ACE.Server.Factories
 
                 if (spellLevels.Count != 8)
                 {
-                    log.Error($"RollSpellLevels({wo.Name}, {spell}) - spell level progression returned {spellLevels.Count}, expected 8");
+                    _log.Error($"RollSpellLevels({wo.Name}, {spell}) - spell level progression returned {spellLevels.Count}, expected 8");
                     continue;
                 }
 
@@ -119,7 +117,7 @@ namespace ACE.Server.Factories
         {
             /*if (wo.SpellSelectionCode == null)
             {
-                log.Warn($"RollEnchantments({wo.Name}) - missing spell selection code / PropertyInt.TsysMutationData");
+                _log.Warning($"RollEnchantments({wo.Name}) - missing spell selection code / PropertyInt.TsysMutationData");
                 return null;
             }*/
 
@@ -166,7 +164,7 @@ namespace ACE.Server.Factories
             }
             else
             {
-                log.Warn($"RollNumEnchantments({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown item type");
+                _log.Warning($"RollNumEnchantments({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown item type");
                 return 1;   // gems?
             }
         }
@@ -291,7 +289,7 @@ namespace ACE.Server.Factories
 
                 if (cantripLevels.Count != 4)
                 {
-                    log.Error($"RollCantrips({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - {cantrip} has {cantripLevels.Count} cantrip levels, expected 4");
+                    _log.Error($"RollCantrips({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - {cantrip} has {cantripLevels.Count} cantrip levels, expected 4");
                     continue;
                 }
 
@@ -358,7 +356,7 @@ namespace ACE.Server.Factories
             }
             else
             {
-                log.Error($"RollCantrip({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown item type");
+                _log.Error($"RollCantrip({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown item type");
                 return SpellId.Undef;
             }
         }
@@ -373,7 +371,7 @@ namespace ACE.Server.Factories
 
                 if (cantripLevels == null || cantripLevels.Count != 4)
                 {
-                    log.Error($"RollCantripDifficulty({cantripId}) - unknown cantrip");
+                    _log.Error($"RollCantripDifficulty({cantripId}) - unknown cantrip");
                     continue;
                 }
 
@@ -481,7 +479,7 @@ namespace ACE.Server.Factories
                 return 19;
             }
 
-            log.Error($"GetSpellCode_Dynamic({wo.Name}) - couldn't determine spell selection code");
+            _log.Error($"GetSpellCode_Dynamic({wo.Name}) - couldn't determine spell selection code");
 
             return 0;
         }
@@ -536,7 +534,7 @@ namespace ACE.Server.Factories
             if (coverageMask == CoverageMask.Feet)
                 return 18;
 
-            log.Error($"GetSpellCode_Dynamic_ClothingArmor({wo.Name}) - couldn't determine spell selection code for {coverageMask}, {isArmor}");
+            _log.Error($"GetSpellCode_Dynamic_ClothingArmor({wo.Name}) - couldn't determine spell selection code for {coverageMask}, {isArmor}");
             return 0;
         }
     }

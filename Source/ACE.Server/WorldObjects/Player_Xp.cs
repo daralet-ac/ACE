@@ -36,8 +36,8 @@ namespace ACE.Server.WorldObjects
 
             if (m_amount < 0)
             {
-                log.Warn($"{Name}.EarnXP({amount}, {shareType})");
-                log.Warn($"modifier: {modifier}, enchantment: {enchantment}, m_amount: {m_amount}");
+                _log.Warning($"{Name}.EarnXP({amount}, {shareType})");
+                _log.Warning($"modifier: {modifier}, enchantment: {enchantment}, m_amount: {m_amount}");
                 return;
             }
 
@@ -137,8 +137,8 @@ namespace ACE.Server.WorldObjects
 
             if (vitae == null)
             {
-                log.Error($"{Name}.UpdateXpVitae({amount}) vitae null, likely due to cross-thread operation or corrupt EnchantmentManager cache. Please report this.");
-                log.Error(Environment.StackTrace);
+                _log.Error($"{Name}.UpdateXpVitae({amount}) vitae null, likely due to cross-thread operation or corrupt EnchantmentManager cache. Please report this.");
+                _log.Error(Environment.StackTrace);
                 return;
             }
 

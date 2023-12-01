@@ -1,14 +1,12 @@
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Entity.Enum;
+using Serilog;
 
 namespace ACE.Server.Factories.Tables
 {
     public static class ScrollSpells
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(ScrollSpells));
 
         private static readonly List<SpellId> creatureSpells = new List<SpellId>()
         {
@@ -376,7 +374,7 @@ namespace ACE.Server.Factories.Tables
 
             if (startIdx != NumSpells)
             {
-                log.Error($"ScrollSpells - startIdx {startIdx}, expected {NumSpells}");
+                _log.Error($"ScrollSpells - startIdx {startIdx}, expected {NumSpells}");
             }
         }
 
@@ -390,13 +388,13 @@ namespace ACE.Server.Factories.Tables
 
                 if (spellLevels == null)
                 {
-                    log.Error($"ScrollSpells - couldn't find {spell}");
+                    _log.Error($"ScrollSpells - couldn't find {spell}");
                     continue;
                 }
 
                 if (spellLevels.Count != MaxLevels)
                 {
-                    log.Error($"ScrollSpells - expected {MaxLevels} levels for {spell}, found {spellLevels.Count}");
+                    _log.Error($"ScrollSpells - expected {MaxLevels} levels for {spell}, found {spellLevels.Count}");
                     continue;
                 }
 

@@ -7,11 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
-
-using log4net;
-
 using ACE.Common;
-using ACE.Common.Extensions;
 using ACE.Database;
 using ACE.Database.Models.Auth;
 using ACE.Entity;
@@ -29,14 +25,13 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Entity;
-
-using Position = ACE.Entity.Position;
+using Serilog;
 
 namespace ACE.Server.Command.Handlers
 {
     public static class AdminCommands
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(AdminCommands));
 
         // // commandname parameters
         // [CommandHandler("commandname", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0)]
@@ -2864,7 +2859,7 @@ namespace ACE.Server.Command.Handlers
                         item.SaveBiotaToDatabase();
                     }
                     else
-                        log.Warn($"0x{item.Guid}:{item.Name} for player {player.Name} lost from fumble failure.");
+                        _log.Warning("0x{ItemGuid}:{Item} for player {Player} lost from fumble failure.", item.Guid, item.Name, player.Name);
                 }
             }
             else

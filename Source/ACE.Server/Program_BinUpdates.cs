@@ -1,13 +1,4 @@
 using System;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Net;
-using System.Threading;
-using System.Collections.Generic;
-
-using ACE.Common;
-
 using Newtonsoft.Json;
 
 namespace ACE.Server
@@ -16,12 +7,12 @@ namespace ACE.Server
     {
         private static void CheckForServerUpdate()
         {
-            log.Info($"Automatic Server version check started...");
+            _log.Information("Automatic Server version check started...");
             try
             {
                 var worldDb = new Database.WorldDatabase();
                 var currentVersion = worldDb.GetVersion();
-                log.Info($"Current Server Binary: {ServerBuildInfo.FullVersion}");
+                _log.Information("Current Server Binary: {ServerFullVersion}", ServerBuildInfo.FullVersion);
 
                 var url = "https://api.github.com/repos/ACEmulator/ACE/releases/latest";
                 using var client = new WebClient();
@@ -39,8 +30,8 @@ namespace ACE.Server
                 // Status returns > 0 if the GitHub version is newer. (0 if the same, or < 0 if older.)
                 if (versionStatus > 0)
                 {
-                    log.Warn("There is a newer version of ACE available!");
-                    log.Warn($"Please visit {json.html_url} for more information.");
+                    _log.Warning("There is a newer version of ACE available!");
+                    _log.Warning("Please visit {RepositoryUrl} for more information.", json.html_url);
 
                     // the Console.Title.Get() only works on Windows...
                     #pragma warning disable CA1416 // Validate platform compatibility
@@ -49,13 +40,13 @@ namespace ACE.Server
                 }
                 else
                 {
-                    log.Info($"Latest Server Version is {tag} -- No Update Required!");
+                    _log.Information("Latest Server Version is {ServerVersion} -- No Update Required!", tag);
                 }
                 return;
             }
             catch (Exception ex)
             {
-                log.Info($"Unable to continue with Automatic Server Version Check due to the following error: {ex}");
+                _log.Information(ex, "Unable to continue with Automatic Server Version Check");
             }
         }
     }

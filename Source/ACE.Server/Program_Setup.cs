@@ -4,7 +4,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using ACE.Common;
-
 using DouglasCrockford.JsMin;
 using Newtonsoft.Json;
 
@@ -19,7 +18,7 @@ namespace ACE.Server
             var exampleFile = new FileInfo(configJsExample);
             if (!exampleFile.Exists)
             {
-                log.Error("config.js.example Configuration file is missing.  Please copy the file config.js.example to config.js and edit it to match your needs before running ACE.");
+                _log.Error("config.js.example Configuration file is missing.  Please copy the file config.js.example to config.js and edit it to match your needs before running ACE.");
                 throw new Exception("missing config.js configuration file");
             }
             else

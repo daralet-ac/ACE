@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Common;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
@@ -13,14 +10,13 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects.Entity;
-
-using Position = ACE.Entity.Position;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
     public partial class Creature : Container
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(Creature));
 
         public bool IsExhausted { get => Stamina.Current == 0; }
 
@@ -33,7 +29,7 @@ namespace ACE.Server.WorldObjects
                 if (_questManager == null)
                 {
                     /*if (!(this is Player))
-                        log.Debug($"Initializing non-player QuestManager for {Name} (0x{Guid})");*/
+                        _log.Debug($"Initializing non-player QuestManager for {Name} (0x{Guid})");*/
 
                     _questManager = new QuestManager(this);
                 }
@@ -173,7 +169,7 @@ namespace ACE.Server.WorldObjects
             if (!cg.HeritageGroups.TryGetValue((uint)Heritage, out var heritageGroup) || !heritageGroup.Genders.TryGetValue((int)Gender, out var sex))
             {
 #if DEBUG
-                log.Debug($"Creature.GenerateNewFace: {Name} (0x{Guid}) - wcid {WeenieClassId} - Heritage: {Heritage} | HeritageGroupName: {HeritageGroupName} | Gender: {Gender} | Sex: {Sex} - Data invalid, Cannot randomize face.");
+                _log.Debug($"Creature.GenerateNewFace: {Name} (0x{Guid}) - wcid {WeenieClassId} - Heritage: {Heritage} | HeritageGroupName: {HeritageGroupName} | Gender: {Gender} | Sex: {Sex} - Data invalid, Cannot randomize face.");
 #endif
                 return;
             }
@@ -208,7 +204,7 @@ namespace ACE.Server.WorldObjects
 
             if (sex.HairStyleList.Count < appearance.HairStyle)
             {
-                log.Warn($"Creature.GenerateNewFace: {Name} (0x{Guid}) - wcid {WeenieClassId} - HairStyle = {appearance.HairStyle} | HairStyleList.Count = {sex.HairStyleList.Count} - Data invalid, Cannot randomize face.");
+                _log.Warning($"Creature.GenerateNewFace: {Name} (0x{Guid}) - wcid {WeenieClassId} - HairStyle = {appearance.HairStyle} | HairStyleList.Count = {sex.HairStyleList.Count} - Data invalid, Cannot randomize face.");
                 return;
             }
 

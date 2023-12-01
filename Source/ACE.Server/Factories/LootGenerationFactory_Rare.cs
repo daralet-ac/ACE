@@ -92,7 +92,7 @@ namespace ACE.Server.Factories
             var wo = WorldObjectFactory.CreateNewWorldObject((uint)rareWCID);
 
             if (wo == null)
-                log.Error($"LootGenerationFactory_Rare.CreateRare(): failed to generate rare wcid {rareWCID}");
+                _log.Error($"LootGenerationFactory_Rare.CreateRare(): failed to generate rare wcid {rareWCID}");
 
             return wo;
         }

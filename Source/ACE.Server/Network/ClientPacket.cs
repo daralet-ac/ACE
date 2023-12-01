@@ -1,15 +1,13 @@
 using System;
 using System.IO;
-
-using log4net;
-
 using ACE.Common.Cryptography;
+using Serilog;
 
 namespace ACE.Server.Network
 {
     public class ClientPacket : Packet
     {
-        private static readonly ILog packetLog = LogManager.GetLogger(System.Reflection.Assembly.GetEntryAssembly(), "Packets");
+        private readonly ILogger _log = Log.ForContext<ClientPacket>();
 
         public static int MaxPacketSize { get; } = 1024;
 
@@ -45,7 +43,7 @@ namespace ACE.Server.Network
             }
             catch (Exception ex)
             {
-                packetLog.Error("Invalid packet data", ex);
+                _log.Error(ex, "Invalid packet data");
 
                 return false;
             }
@@ -150,11 +148,11 @@ namespace ACE.Server.Network
             {
                 if (headerChecksum + payloadChecksum == Header.Checksum)
                 {
-                    packetLog.DebugFormat("{0}", this);
+                    _log.Verbose("{0}", this);
                     return true;
                 }
 
-                packetLog.DebugFormat("{0}, Checksum Failed", this);
+                _log.Verbose("{0}, Checksum Failed", this);
             }
 
             NetworkStatistics.C2S_CRCErrors_Aggregate_Increment();

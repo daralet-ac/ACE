@@ -485,7 +485,7 @@ namespace ACE.Server.WorldObjects
 
             if (_amount < 0)
             {
-                log.Error($"{Name}.TakeDamage({source?.Name} ({source?.Guid}), {damageType}, {_amount}) - negative damage, this shouldn't happen");
+                _log.Error($"{Name}.TakeDamage({source?.Name} ({source?.Guid}), {damageType}, {_amount}) - negative damage, this shouldn't happen");
                 return 0;
             }
 
@@ -530,7 +530,7 @@ namespace ACE.Server.WorldObjects
 
             if (!BodyParts.Indices.TryGetValue(bodyPart, out var iDamageLocation))
             {
-                log.Error($"{Name}.TakeDamage({source.Name}, {damageType}, {amount}, {bodyPart}, {crit}): avoided crash for bad damage location");
+                _log.Error($"{Name}.TakeDamage({source.Name}, {damageType}, {amount}, {bodyPart}, {crit}): avoided crash for bad damage location");
                 return 0;
             }
             var damageLocation = (DamageLocation)iDamageLocation;
@@ -1076,7 +1076,7 @@ namespace ACE.Server.WorldObjects
                 houses.Add(rootHouse);
             }
             else
-                log.Error($"{Name}.CheckHouseRestrictions_GetHouse({houseGuid:X8}): couldn't find house from {CurrentLandblock.Id.Raw:X8}");
+                _log.Error($"{Name}.CheckHouseRestrictions_GetHouse({houseGuid:X8}): couldn't find house from {CurrentLandblock.Id.Raw:X8}");
         }
 
         /// <summary>
@@ -1101,7 +1101,7 @@ namespace ACE.Server.WorldObjects
                     weapon = FootArmor;
                 else
                 {
-                    log.Warn($"{Name}.GetDamageType(): no weapon, AttackType={AttackType}");
+                    _log.Warning($"{Name}.GetDamageType(): no weapon, AttackType={AttackType}");
                     return DamageType.Undef;
                 }
 
@@ -1118,7 +1118,7 @@ namespace ACE.Server.WorldObjects
 
             if (damageType == DamageType.Undef)
             {
-                log.Warn($"{Name}.GetDamageType(): {damageSource} ({damageSource.Guid}, {damageSource.WeenieClassId}): no DamageType");
+                _log.Warning($"{Name}.GetDamageType(): {damageSource} ({damageSource.Guid}, {damageSource.WeenieClassId}): no DamageType");
                 return DamageType.Bludgeon;
             }
 

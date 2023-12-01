@@ -4,16 +4,14 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Timers;
-
-using log4net;
-
 using ACE.Database;
+using Serilog;
 
 namespace ACE.Server.Managers
 {
     public static class PropertyManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(PropertyManager));
 
         // caching internally to the server
         private static readonly ConcurrentDictionary<string, ConfigurationEntry<bool>> CachedBooleanSettings = new ConcurrentDictionary<string, ConfigurationEntry<bool>>();
@@ -137,7 +135,7 @@ namespace ACE.Server.Managers
             if (CachedBooleanSettings.ContainsKey(key))
                 CachedBooleanSettings[key].ModifyDescription(description);
             else
-                log.Warn($"Attempted to modify {key} which did not exist in the BOOL cache.");
+                _log.Warning($"Attempted to modify {key} which did not exist in the BOOL cache.");
         }
 
         /// <summary>
@@ -187,7 +185,7 @@ namespace ACE.Server.Managers
             if (CachedLongSettings.ContainsKey(key))
                 CachedLongSettings[key].ModifyDescription(description);
             else
-                log.Warn($"Attempted to modify {key} which did not exist in the LONG cache.");
+                _log.Warning($"Attempted to modify {key} which did not exist in the LONG cache.");
         }
 
         /// <summary>
@@ -251,7 +249,7 @@ namespace ACE.Server.Managers
             if (CachedDoubleSettings.ContainsKey(key))
                 CachedDoubleSettings[key].ModifyDescription(description);
             else
-                log.Warn($"Attempted to modify the description of {key} which did not exist in the DOUBLE cache.");
+                _log.Warning($"Attempted to modify the description of {key} which did not exist in the DOUBLE cache.");
         }
 
         /// <summary>
@@ -301,7 +299,7 @@ namespace ACE.Server.Managers
             if (CachedStringSettings.ContainsKey(key))
                 CachedStringSettings[key].ModifyDescription(description);
             else
-                log.Warn($"Attempted to modify {key} which did not exist in the STRING cache.");
+                _log.Warning($"Attempted to modify {key} which did not exist in the STRING cache.");
         }
 
 
@@ -381,7 +379,7 @@ namespace ACE.Server.Managers
             // next, we need to fetch all of the variables from the DB and compare them quickly.
             LoadPropertiesFromDB();
 
-            log.Debug($"PropertyManager DoWork took {(DateTime.UtcNow - startTime).TotalMilliseconds:N0} ms");
+            _log.Debug($"PropertyManager DoWork took {(DateTime.UtcNow - startTime).TotalMilliseconds:N0} ms");
         }
         public static string ListProperties()
         {

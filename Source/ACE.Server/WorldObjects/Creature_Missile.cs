@@ -1,7 +1,5 @@
 using System;
-using System.Linq;
 using System.Numerics;
-
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
@@ -182,13 +180,13 @@ namespace ACE.Server.WorldObjects
 
             if (weenie == null)
             {
-                log.Error($"Creature_Missile.GetProjectileRadius(): couldn't find projectile weenie {projectileWcid}");
+                _log.Error($"Creature_Missile.GetProjectileRadius(): couldn't find projectile weenie {projectileWcid}");
                 return 0.0f;
             }
 
             if (!weenie.PropertiesDID.TryGetValue(PropertyDataId.Setup, out var setupId))
             {
-                log.Error($"Creature_Missile.GetProjectileRadius(): couldn't find SetupId for {weenie.WeenieClassId} - {weenie.ClassName}");
+                _log.Error($"Creature_Missile.GetProjectileRadius(): couldn't find SetupId for {weenie.WeenieClassId} - {weenie.ClassName}");
                 return 0.0f;
             }
 
@@ -215,7 +213,7 @@ namespace ACE.Server.WorldObjects
 
             if (maxVelocity == 0.0f)
             {
-                log.Warn($"{Name}.GetMissileSpeed() - {missileLauncher.Name} ({missileLauncher.Guid}) has speed 0");
+                _log.Warning($"{Name}.GetMissileSpeed() - {missileLauncher.Name} ({missileLauncher.Guid}) has speed 0");
 
                 maxVelocity = DefaultProjectileSpeed;
             }

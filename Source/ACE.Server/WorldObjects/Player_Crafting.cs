@@ -138,7 +138,7 @@ namespace ACE.Server.WorldObjects
 
                 if (item.MaterialType == null)
                 {
-                    log.Warn($"[CRAFTING] {Name}.HandleSalvaging({item.Name}): no material type");
+                    _log.Warning($"[CRAFTING] {Name}.HandleSalvaging({item.Name}): no material type");
                     continue;
                 }
 

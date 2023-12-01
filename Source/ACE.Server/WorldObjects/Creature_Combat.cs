@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -93,7 +92,7 @@ namespace ACE.Server.WorldObjects
                     animLength = HandleSwitchToMissileCombatMode();
                     break;
                 default:
-                    log.InfoFormat($"Unknown combat mode {CombatMode} for {Name}");
+                    _log.Information("Unknown combat mode {CombatMode} for {Creature}", CombatMode, Name);
                     break;
             }
 

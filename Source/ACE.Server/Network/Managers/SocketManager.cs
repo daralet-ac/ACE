@@ -2,16 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-
-using log4net;
-
 using ACE.Common;
+using Serilog;
 
 namespace ACE.Server.Network.Managers
 {
     public static class SocketManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(SocketManager));
 
         private static ConnectionListener[] listeners;
 
@@ -28,8 +26,7 @@ namespace ACE.Server.Network.Managers
             }
             catch (Exception ex)
             {
-                log.Error($"Unable to use {ConfigManager.Config.Server.Network.Host} as host due to: {ex}");
-                log.Error("Using IPAddress.Any as host instead.");
+                _log.Error(ex, $"Unable to use {ConfigManager.Config.Server.Network.Host} as host. Using IPAddress.Any as host instead.");
                 hosts.Clear();
                 hosts.Add(IPAddress.Any);
             }
@@ -39,10 +36,10 @@ namespace ACE.Server.Network.Managers
             for (int i = 0; i < hosts.Count; i++)
             {
                 listeners[(i * 2) + 0] = new ConnectionListener(hosts[i], ConfigManager.Config.Server.Network.Port);
-                log.Info($"Binding ConnectionListener to {hosts[i]}:{ConfigManager.Config.Server.Network.Port}");
+                _log.Information($"Binding ConnectionListener to {hosts[i]}:{ConfigManager.Config.Server.Network.Port}");
 
                 listeners[(i * 2) + 1] = new ConnectionListener(hosts[i], ConfigManager.Config.Server.Network.Port + 1);
-                log.Info($"Binding ConnectionListener to {hosts[i]}:{ConfigManager.Config.Server.Network.Port + 1}");
+                _log.Information($"Binding ConnectionListener to {hosts[i]}:{ConfigManager.Config.Server.Network.Port + 1}");
 
                 listeners[(i * 2) + 0].Start();
                 listeners[(i * 2) + 1].Start();

@@ -1,18 +1,18 @@
-using ACE.Server.Managers;
-using ACE.Server.WorldObjects;
-using log4net;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ACE.Server.Managers;
+using ACE.Server.WorldObjects;
+using Newtonsoft.Json;
+using Serilog;
 
 namespace ACE.Server.Mods
 {
     public static class ModManager
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Serilog.Log.ForContext(typeof(ModManager));
 
         public static string ModPath { get; } = ACE.Common.ConfigManager.Config.Server.ModsDirectory ??
                 Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Mods");
@@ -42,18 +42,18 @@ namespace ACE.Server.Mods
         public static void FindMods()
         {
             //if (ACE.Common.ConfigManager.Config.Server.ModsDirectory is null)
-            //    log.Warn($"You are missing the ModsDirectory setting in your Config.js.  Defaulting to:\r\n{ModPath}");
+            //    _log.Warning($"You are missing the ModsDirectory setting in your Config.js.  Defaulting to: {ModPath}");
 
             if (!Directory.Exists(ModPath))
             {
                 try
                 {
                     Directory.CreateDirectory(ModPath);
-                    log.Info($"Created mod folder at:\r\n{ModPath}");
+                    _log.Information("Created mod folder at: {ModFolderPath}", ModPath);
                 }
                 catch (Exception ex)
                 {
-                    log.Error($"Failed to create mod folder:\r\n{ModPath}\n{ex}");
+                    _log.Error(ex, "Failed to create mod folder: {ModFolderPath}", ModPath);
                     return;
                 }
             }
@@ -100,7 +100,7 @@ namespace ACE.Server.Mods
 
             //Check for missing and shut them down
             //foreach (var mod in Mods.Where(x => !directories.Contains(x.FolderPath))) {
-            //    log.Info($"Shutting down mod {mod.ModMetadata.Name} with missing folder:\r\n\t{mod.FolderPath}");
+            //    _log.Information($"Shutting down mod {mod.ModMetadata.Name} with missing folder:\r\n\t{mod.FolderPath}");
             //    mod.Shutdown();
             //}
             //Mods.RemoveAll(x => !directories.Contains(x.FolderPath));
@@ -135,7 +135,7 @@ namespace ACE.Server.Mods
             if (!File.Exists(metadataPath))
             {
                 //Log missing metadata
-                log.Warn($"Metadata not found at: {metadataPath}");
+                _log.Warning("Metadata not found at: {ModMetadataPath}", metadataPath);
                 return false;
             }
 
@@ -153,7 +153,7 @@ namespace ACE.Server.Mods
             }
             catch (Exception ex)
             {
-                log.Error($"Unable to deserialize mod metadata from: {metadataPath}\n{ex}");
+                _log.Error(ex, "Unable to deserialize mod metadata from: {ModMetadataPath}", metadataPath);
                 return false;
             }
         }
@@ -165,7 +165,7 @@ namespace ACE.Server.Mods
         //        //First is highest priority mod with a name, flag any others
         //        foreach (var mod in group.Skip(1))
         //        {
-        //            log.Error($"Duplicate mod found: {mod.ModMetadata.Name}");
+        //            _log.Error($"Duplicate mod found: {mod.ModMetadata.Name}");
         //            mod.Status = ModStatus.NameConflict;
         //        }
         //    }
@@ -229,7 +229,7 @@ namespace ACE.Server.Mods
                 }
             }
 
-            log.Info(sb);
+            _log.Information(sb.ToString());
             player?.SendMessage(sb.ToString());
         }
 
@@ -247,22 +247,22 @@ namespace ACE.Server.Mods
             switch (level)
             {
                 case LogLevel.Debug:
-                    log.Debug(message);
+                    _log.Debug(message);
                     break;
                 case LogLevel.Error:
-                    log.Error(message);
+                    _log.Error(message);
                     break;
                 case LogLevel.Fatal:
-                    log.Fatal(message);
+                    _log.Fatal(message);
                     break;
                 case LogLevel.Info:
-                    log.Info(message);
+                    _log.Information(message);
                     break;
                 case LogLevel.Warn:
-                    log.Warn(message);
+                    _log.Warning(message);
                     break;
                 default:
-                    log.Info(message);
+                    _log.Information(message);
                     break;
             };
         }

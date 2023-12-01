@@ -116,7 +116,7 @@ namespace ACE.Server.WorldObjects
 
             if (Guid.Full != Fellowship.FellowshipLeaderGuid)
             {
-                log.Warn($"{Name} tried to assign new fellowship leader from {Fellowship.FellowshipLeaderGuid:X8} to {newLeaderGuid:X8}");
+                _log.Warning($"{Name} tried to assign new fellowship leader from {Fellowship.FellowshipLeaderGuid:X8} to {newLeaderGuid:X8}");
                 return;
             }
 

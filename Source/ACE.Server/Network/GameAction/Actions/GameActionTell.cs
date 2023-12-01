@@ -3,14 +3,11 @@ using ACE.Entity.Enum;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using log4net;
 
 namespace ACE.Server.Network.GameAction.Actions
 {
     public static class GameActionTell
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         [GameAction(GameActionType.Tell)]
         public static void Handle(ClientMessage clientMessage, Session session)
         {
@@ -39,7 +36,7 @@ namespace ACE.Server.Network.GameAction.Actions
             if (targetPlayer.SquelchManager.Squelches.Contains(session.Player, ChatMessageType.Tell))
             {
                 session.Network.EnqueueSend(new GameEventWeenieErrorWithString(session, WeenieErrorWithString.MessageBlocked_,$"{target} has you squelched."));
-                //log.Warn($"Tell from {session.Player.Name} (0x{session.Player.Guid.ToString()}) to {targetPlayer.Name} (0x{targetPlayer.Guid.ToString()}) blocked due to squelch");
+                // _log.Warning($"Tell from {session.Player.Name} (0x{session.Player.Guid.ToString()}) to {targetPlayer.Name} (0x{targetPlayer.Guid.ToString()}) blocked due to squelch");
                 return;
             }
 

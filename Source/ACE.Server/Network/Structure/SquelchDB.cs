@@ -1,19 +1,17 @@
 using System.Collections.Generic;
 using System.IO;
-
-using log4net;
-
 using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Managers;
+using Serilog;
 
 namespace ACE.Server.Network.Structure
 {
     public class SquelchDB
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<SquelchDB>();
 
         /// <summary>
         /// Account squelches
@@ -53,7 +51,7 @@ namespace ACE.Server.Network.Structure
                 var squelchPlayer = PlayerManager.FindByGuid(squelch.SquelchCharacterId);
                 if (squelchPlayer == null)
                 {
-                    log.Warn($"BuildSquelchDB(): couldn't find character {squelch.SquelchCharacterId:X8}");
+                    _log.Warning($"BuildSquelchDB(): couldn't find character {squelch.SquelchCharacterId:X8}");
                     continue;
                 }
 

@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using log4net;
-
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
@@ -11,14 +7,15 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
-using ACE.Server.WorldObjects;
 using ACE.Server.Managers;
+using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Factories
 {
     public static class PlayerFactory
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(PlayerFactory));
 
         public enum CreateResult
         {
@@ -172,7 +169,7 @@ namespace ACE.Server.Factories
 
                     if (!DatManager.PortalDat.SkillTable.SkillBaseHash.ContainsKey((uint)i))
                     {
-                        log.ErrorFormat("Character {0} tried to create with skill {1} that was not found in Portal dat.", characterCreateInfo.Name, i);
+                        _log.Error("Character {Character} tried to create with skill {SkillId} that was not found in Portal dat.", characterCreateInfo.Name, i);
                         return CreateResult.InvalidSkillRequested;
                     }
 
@@ -579,7 +576,7 @@ namespace ACE.Server.Factories
         {
             if (!PropertyManager.GetBool("iou_trades").Item)
             {
-                log.Warn($"CreateIOU: Skipping creation of IOU for missing weenie {missingWeenieId} because IOU system is disabled.");
+                _log.Warning($"CreateIOU: Skipping creation of IOU for missing weenie {missingWeenieId} because IOU system is disabled.");
 
                 return null;
             }

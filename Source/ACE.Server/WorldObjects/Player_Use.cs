@@ -41,7 +41,7 @@ namespace ACE.Server.WorldObjects
 
             if (sourceItem == null)
             {
-                log.Warn($"{Name}.HandleActionUseWithTarget({sourceObjectGuid:X8}, {targetObjectGuid:X8}): couldn't find {sourceObjectGuid:X8}");
+                _log.Warning($"{Name}.HandleActionUseWithTarget({sourceObjectGuid:X8}, {targetObjectGuid:X8}): couldn't find {sourceObjectGuid:X8}");
                 SendUseDoneEvent();
                 return;
             }
@@ -51,7 +51,7 @@ namespace ACE.Server.WorldObjects
 
             if (target == null)
             {
-                log.Warn($"{Name}.HandleActionUseWithTarget({sourceObjectGuid:X8}, {targetObjectGuid:X8}): couldn't find {targetObjectGuid:X8}");
+                _log.Warning($"{Name}.HandleActionUseWithTarget({sourceObjectGuid:X8}, {targetObjectGuid:X8}): couldn't find {targetObjectGuid:X8}");
                 SendUseDoneEvent();
                 return;
             }
@@ -209,7 +209,7 @@ namespace ACE.Server.WorldObjects
             }
             else
             {
-                log.Debug($"{Name}.HandleActionUseItem({itemGuid:X8}): couldn't find object");
+                _log.Debug($"{Name}.HandleActionUseItem({itemGuid:X8}): couldn't find object");
                 SendUseDoneEvent();
             }
         }

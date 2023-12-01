@@ -38,7 +38,7 @@ namespace ACE.Server.WorldObjects
                 case PropertyAttribute2nd.Mana:
                     return Mana;
                 default:
-                    log.Error($"{Name}.GetCreatureVital({vital}): unexpected vital");
+                    _log.Error($"{Name}.GetCreatureVital({vital}): unexpected vital");
                     return null;
             }
         }

@@ -1,12 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Network.Enum;
-using log4net;
+using Serilog;
 
 namespace ACE.Server.Network.Structure
 {
@@ -15,7 +13,7 @@ namespace ACE.Server.Network.Structure
     /// </summary>
     public class RawMotionState
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<RawMotionState>();
 
         public static RawMotionState None = new RawMotionState();
 
@@ -90,7 +88,7 @@ namespace ACE.Server.Network.Structure
                     if (SoulEmote.SoulEmotes.Contains(motionItem.MotionCommand) && motionItem.Speed == 1.0f)
                         Commands.Add(motionItem);
                     else
-                        log.Error($"RawMotionState reader - received non-standard action {motionItem.MotionCommand}, Speed: {motionItem.Speed} for {moveToState.WorldObject?.Name}");
+                        _log.Error($"RawMotionState reader - received non-standard action {motionItem.MotionCommand}, Speed: {motionItem.Speed} for {moveToState.WorldObject?.Name}");
                 }
             }
         }

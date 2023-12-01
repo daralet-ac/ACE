@@ -108,7 +108,7 @@ namespace ACE.Server.Factories
 
             if (spellLevels == null || spellLevels.Count != 8)
             {
-                log.Error($"AssignMagic_Gem_New({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown spell {spell}");
+                _log.Error($"AssignMagic_Gem_New({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown spell {spell}");
                 return false;
             }
 

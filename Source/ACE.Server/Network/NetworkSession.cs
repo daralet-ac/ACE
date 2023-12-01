@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-
 using ACE.Common.Cryptography;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
@@ -17,15 +16,14 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Handlers;
 using ACE.Server.Network.Managers;
 using ACE.Server.Network.Packets;
-
-using log4net;
+using Serilog;
+using Serilog.Events;
 
 namespace ACE.Server.Network
 {
     public class NetworkSession
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private static readonly ILog packetLog = LogManager.GetLogger(System.Reflection.Assembly.GetEntryAssembly(), "Packets");
+        private readonly ILogger _log = Log.ForContext<NetworkSession>();
 
         private const int minimumTimeBetweenBundles = 5; // 5ms
         private const int timeBetweenTimeSync = 20000; // 20s
@@ -127,7 +125,7 @@ namespace ACE.Server.Network
                 {
                     var currentBundle = currentBundles[(int) grp];
                     currentBundle.EncryptedChecksum = true;
-                    packetLog.DebugFormat("[{0}] Enqueuing Message {1}", session.LoggingIdentifier, message.Opcode);
+                    _log.Verbose("[{LoggingIdentifier}] Enqueuing Message {MessageOpCode}", session.LoggingIdentifier, message.Opcode);
                     currentBundle.Enqueue(message);
                 }
             }
@@ -145,7 +143,7 @@ namespace ACE.Server.Network
 
             foreach (var packet in packets)
             {
-                packetLog.DebugFormat("[{0}] Enqueuing Packet {1}", session.LoggingIdentifier, packet.GetHashCode());
+                _log.Verbose("[{LoggingIdentifier}] Enqueuing Packet {PacketHashCode}", session.LoggingIdentifier, packet.GetHashCode());
                 packetQueue.Enqueue(packet);
             }
         }
@@ -177,7 +175,7 @@ namespace ACE.Server.Network
                     {
                         if (sendResync && !currentBundle.TimeSync && DateTime.UtcNow > nextResync)
                         {
-                            packetLog.DebugFormat("[{0}] Setting to send TimeSync packet", session.LoggingIdentifier);
+                            _log.Verbose("[{LoggingIdentifier}] Setting to send TimeSync packet", session.LoggingIdentifier);
                             currentBundle.TimeSync = true;
                             currentBundle.EncryptedChecksum = true;
                             nextResync = DateTime.UtcNow.AddMilliseconds(timeBetweenTimeSync);
@@ -185,14 +183,14 @@ namespace ACE.Server.Network
 
                         if (sendAck && !currentBundle.SendAck && DateTime.UtcNow > nextAck)
                         {
-                            packetLog.DebugFormat("[{0}] Setting to send ACK packet", session.LoggingIdentifier);
+                            _log.Verbose("[{LoggingIdentifier}] Setting to send ACK packet", session.LoggingIdentifier);
                             currentBundle.SendAck = true;
                             nextAck = DateTime.UtcNow.AddMilliseconds(timeBetweenAck);
                         }
 
                         if (currentBundle.NeedsSending && DateTime.UtcNow >= nextSend)
                         {
-                            packetLog.DebugFormat("[{0}] Swapping bundle", session.LoggingIdentifier);
+                            _log.Verbose("[{LoggingIdentifier}] Swapping bundle", session.LoggingIdentifier);
                             // Swap out bundle so we can process it
                             bundleToSend = currentBundle;
                             currentBundles[i] = new NetworkBundle();
@@ -202,7 +200,7 @@ namespace ACE.Server.Network
                     {
                         if (currentBundle.NeedsSending && DateTime.UtcNow >= nextSend)
                         {
-                            packetLog.DebugFormat("[{0}] Swapping bundle", session.LoggingIdentifier);
+                            _log.Verbose("[{LoggingIdentifier}] Swapping bundle", session.LoggingIdentifier);
                             // Swap out bundle so we can process it
                             bundleToSend = currentBundle;
                             currentBundles[i] = new NetworkBundle();
@@ -246,7 +244,7 @@ namespace ACE.Server.Network
             if (isReleased) // Session has been removed
                 return;
 
-            packetLog.DebugFormat("[{0}] Processing packet {1}", session.LoggingIdentifier, packet.Header.Sequence);
+            _log.Verbose("[{LoggingIdentifier}] Processing packet {PacketSequence}", session.LoggingIdentifier, packet.Header.Sequence);
             NetworkStatistics.C2S_Packets_Aggregate_Increment();
 
             if (!packet.VerifyCRC(ConnectionData.CryptoClient))
@@ -317,7 +315,7 @@ namespace ACE.Server.Network
             if (packet.Header.Sequence <= lastReceivedPacketSequence && packet.Header.Sequence != 0 &&
                 !(packet.Header.Flags == PacketHeaderFlags.AckSequence && packet.Header.Sequence == lastReceivedPacketSequence))
             {
-                packetLog.WarnFormat("[{0}] Packet {1} received again", session.LoggingIdentifier, packet.Header.Sequence);
+                _log.Verbose("[{LoggingIdentifier}] Packet {PacketSequence} received again", session.LoggingIdentifier, packet.Header.Sequence);
                 return;
             }
 
@@ -326,7 +324,7 @@ namespace ACE.Server.Network
             var desiredSeq = lastReceivedPacketSequence + 1;
             if (packet.Header.Sequence > desiredSeq)
             {
-                packetLog.DebugFormat("[{0}] Packet {1} received out of order", session.LoggingIdentifier, packet.Header.Sequence);
+                _log.Verbose("[{LoggingIdentifier}] Packet {PacketSequence} received out of order", session.LoggingIdentifier, packet.Header.Sequence);
 
                 if (!outOfOrderPackets.ContainsKey(packet.Header.Sequence))
                     outOfOrderPackets.TryAdd(packet.Header.Sequence, packet);
@@ -395,7 +393,7 @@ namespace ACE.Server.Network
             EnqueueSend(reqPacket);
 
             LastRequestForRetransmitTime = DateTime.UtcNow;
-            packetLog.DebugFormat("[{0}] Requested retransmit of {1}", session.LoggingIdentifier, needSeq.Select(k => k.ToString()).Aggregate((a, b) => a + ", " + b));
+            _log.Verbose("[{LoggingIdentifier}] Requested retransmit of {RequestedSequence}", session.LoggingIdentifier, needSeq.Select(k => k.ToString()).Aggregate((a, b) => a + ", " + b));
             NetworkStatistics.S2C_RequestsForRetransmit_Aggregate_Increment();
         }
 
@@ -408,7 +406,7 @@ namespace ACE.Server.Network
         /// <param name="packet">ClientPacket to handle</param>
         private void HandleOrderedPacket(ClientPacket packet)
         {
-            packetLog.DebugFormat("[{0}] Handling packet {1}", session.LoggingIdentifier, packet.Header.Sequence);
+            _log.Verbose("[{LoggingIdentifier}] Handling packet {PacketSequence}", session.LoggingIdentifier, packet.Header.Sequence);
 
             // If we have an EchoRequest flag, we should flag to respond with an echo response on next send.
             if (packet.Header.HasFlag(PacketHeaderFlags.EchoRequest))
@@ -423,7 +421,7 @@ namespace ACE.Server.Network
 
             if (packet.Header.HasFlag(PacketHeaderFlags.TimeSync))
             {
-                packetLog.DebugFormat("[{0}] Incoming TimeSync TS: {1}", session.LoggingIdentifier, packet.HeaderOptional.TimeSynch);
+                _log.Verbose("[{LoggingIdentifier}] Incoming TimeSync TS: {PacketTimeSync}", session.LoggingIdentifier, packet.HeaderOptional.TimeSynch);
                 // Do something with this...
                 // Based on network traces these are not 1:1.  Server seems to send them every 20 seconds per port.
                 // Client seems to send them alternatingly every 2 or 4 seconds per port.
@@ -436,7 +434,7 @@ namespace ACE.Server.Network
             // In our current implimenation we handle all roles in this one server.
             if (packet.Header.HasFlag(PacketHeaderFlags.LoginRequest))
             {
-                packetLog.Debug($"[{session.LoggingIdentifier}] LoginRequest");
+                _log.Verbose("[{LoggingIdentifier}] LoginRequest", session.LoggingIdentifier);
                 AuthenticationHandler.HandleLoginRequest(packet, session);
                 return;
             }
@@ -456,7 +454,7 @@ namespace ACE.Server.Network
         /// <param name="fragment">ClientPacketFragment to process</param>
         private void ProcessFragment(ClientPacketFragment fragment)
         {
-            packetLog.DebugFormat("[{0}] Processing fragment {1}", session.LoggingIdentifier, fragment.Header.Sequence);
+            _log.Verbose("[{LoggingIdentifier}] Processing fragment {FragmentSequence}", session.LoggingIdentifier, fragment.Header.Sequence);
 
             ClientMessage message = null;
 
@@ -464,17 +462,17 @@ namespace ACE.Server.Network
             if (fragment.Header.Count != 1)
             {
                 // Packet is split
-                packetLog.DebugFormat("[{0}] Fragment {1} is split, this index {2} of {3} fragments", session.LoggingIdentifier, fragment.Header.Sequence, fragment.Header.Index, fragment.Header.Count);
+                _log.Verbose("[{LoggingIdentifier}] Fragment {FragmentSequence} is split, this index {FragmentIndex} of {FragmentCount} fragments", session.LoggingIdentifier, fragment.Header.Sequence, fragment.Header.Index, fragment.Header.Count);
 
                 if (partialFragments.TryGetValue(fragment.Header.Sequence, out var buffer))
                 {
                     // Existing buffer, add this to it and check if we are finally complete.
                     buffer.AddFragment(fragment);
-                    packetLog.DebugFormat("[{0}] Added fragment {1} to existing buffer. Buffer at {2} of {3}", session.LoggingIdentifier, fragment.Header.Sequence, buffer.Count, buffer.TotalFragments);
+                    _log.Verbose("[{LoggingIdentifier}] Added fragment {FragmentSequence} to existing buffer. Buffer at {BufferCount} of {TotalFragments}", session.LoggingIdentifier, fragment.Header.Sequence, buffer.Count, buffer.TotalFragments);
                     if (buffer.Complete)
                     {
                         // The buffer is complete, so we can go ahead and handle
-                        packetLog.DebugFormat("[{0}] Buffer {1} is complete", session.LoggingIdentifier, buffer.Sequence);
+                        _log.Verbose("[{LoggingIdentifier}] Buffer {BufferSequence} is complete", session.LoggingIdentifier, buffer.Sequence);
                         message = buffer.GetMessage();
                         MessageBuffer removed = null;
                         partialFragments.TryRemove(fragment.Header.Sequence, out removed);
@@ -483,18 +481,18 @@ namespace ACE.Server.Network
                 else
                 {
                     // No existing buffer, so add a new one for this fragment sequence.
-                    packetLog.DebugFormat("[{0}] Creating new buffer {1} for this split fragment", session.LoggingIdentifier, fragment.Header.Sequence);
+                    _log.Verbose("[{LoggingIdentifier}] Creating new buffer {FragmentSequence} for this split fragment", session.LoggingIdentifier, fragment.Header.Sequence);
                     var newBuffer = new MessageBuffer(fragment.Header.Sequence, fragment.Header.Count);
                     newBuffer.AddFragment(fragment);
 
-                    packetLog.DebugFormat("[{0}] Added fragment {1} to the new buffer. Buffer at {2} of {3}", session.LoggingIdentifier, fragment.Header.Sequence, newBuffer.Count, newBuffer.TotalFragments);
+                    _log.Verbose("[{LoggingIdentifier}] Added fragment {FragmentSequence} to the new buffer. Buffer at {BufferCount} of {TotalFragments}", session.LoggingIdentifier, fragment.Header.Sequence, newBuffer.Count, newBuffer.TotalFragments);
                     partialFragments.TryAdd(fragment.Header.Sequence, newBuffer);
                 }
             }
             else
             {
                 // Packet is not split, proceed with handling it.
-                packetLog.DebugFormat("[{0}] Fragment {1} is not split", session.LoggingIdentifier, fragment.Header.Sequence);
+                _log.Verbose("[{LoggingIdentifier}] Fragment {FragmentSequence} is not split", session.LoggingIdentifier, fragment.Header.Sequence);
                 message = new ClientMessage(fragment.Data);
             }
 
@@ -504,12 +502,12 @@ namespace ACE.Server.Network
                 // First check if this message is the next sequence, if it is not, add it to our outOfOrderFragments
                 if (fragment.Header.Sequence == lastReceivedFragmentSequence + 1)
                 {
-                    packetLog.DebugFormat("[{0}] Handling fragment {1}", session.LoggingIdentifier, fragment.Header.Sequence);
+                    _log.Verbose("[{LoggingIdentifier}] Handling fragment {FragmentSequence}", session.LoggingIdentifier, fragment.Header.Sequence);
                     HandleFragment(message);
                 }
                 else
                 {
-                    packetLog.DebugFormat("[{0}] Fragment {1} is early, lastReceivedFragmentSequence = {2}", session.LoggingIdentifier, fragment.Header.Sequence, lastReceivedFragmentSequence);
+                    _log.Verbose("[{LoggingIdentifier}] Fragment {FragmentSequence} is early, lastReceivedFragmentSequence = {LastFragmentSequenceReceived}", session.LoggingIdentifier, fragment.Header.Sequence, lastReceivedFragmentSequence);
                     outOfOrderFragments.TryAdd(fragment.Header.Sequence, message);
                 }
             }
@@ -532,7 +530,7 @@ namespace ACE.Server.Network
         {
             while (outOfOrderPackets.TryRemove(lastReceivedPacketSequence + 1, out var packet))
             {
-                packetLog.DebugFormat("[{0}] Ready to handle out-of-order packet {1}", session.LoggingIdentifier, packet.Header.Sequence);
+                _log.Verbose("[{LoggingIdentifier}] Ready to handle out-of-order packet {PacketSequence}", session.LoggingIdentifier, packet.Header.Sequence);
                 HandleOrderedPacket(packet);
             }
         }
@@ -544,7 +542,7 @@ namespace ACE.Server.Network
         {
             while (outOfOrderFragments.TryRemove(lastReceivedFragmentSequence + 1, out var message))
             {
-                packetLog.DebugFormat("[{0}] Ready to handle out of order fragment {1}", session.LoggingIdentifier, lastReceivedFragmentSequence + 1);
+                _log.Verbose("[{LoggingIdentifier}] Ready to handle out of order fragment {LastFragmentSequenceReceived}", session.LoggingIdentifier, lastReceivedFragmentSequence + 1);
                 HandleFragment(message);
             }
         }
@@ -587,17 +585,17 @@ namespace ACE.Server.Network
                 echoDiff++;
 
                 if (echoDiff >= EchoLogInterval)
-                    log.Warn($"{session.Player.Name} - TimeSync error: {echoDiff} (diff: {diff})");
+                    _log.Warning("{Player} - TimeSync error: {EchoDiff} (diff: {TimeDifference})", session.Player.Name, echoDiff, diff);
 
                 if (echoDiff >= EchoInterval)
                 {
-                    log.Error($"{session.Player.Name} - disconnected for speedhacking");
+                    _log.Error("{Player} - disconnected for speedhacking", session.Player.Name);
 
                     var actionChain = new ActionChain();
                     actionChain.AddAction(session.Player, () =>
                     {
                         //session.Network.EnqueueSend(new GameMessageBootAccount(session));
-                        session.Network.EnqueueSend(new GameMessageSystemChat($"TimeSync: client speed error", ChatMessageType.Broadcast));
+                        session.Network.EnqueueSend(new GameMessageSystemChat("TimeSync: client speed error", ChatMessageType.Broadcast));
                         session.LogOffPlayer();
 
                         echoDiff = 0;
@@ -611,7 +609,7 @@ namespace ACE.Server.Network
             else if (echoDiff > 0)
             {
                 if (echoDiff > EchoLogInterval)
-                    log.Warn($"{session.Player.Name} - Diff: {diff}");
+                    _log.Warning("{Player} - Diff: {TimeDifference}", session.Player.Name, diff);
 
                 lastDiff = 0;
                 echoDiff = 0;
@@ -648,7 +646,7 @@ namespace ACE.Server.Network
         {
             if (cachedPackets.TryGetValue(sequence, out var cachedPacket))
             {
-                packetLog.DebugFormat("[{0}] Retransmit {1}", session.LoggingIdentifier, sequence);
+                _log.Verbose("[{LoggingIdentifier}] Retransmit {PacketSequence}", session.LoggingIdentifier, sequence);
 
                 if (!cachedPacket.Header.HasFlag(PacketHeaderFlags.Retransmission))
                     cachedPacket.Header.Flags |= PacketHeaderFlags.Retransmission;
@@ -663,15 +661,15 @@ namespace ACE.Server.Network
                 // This is to catch a race condition between .Count and .Min() and .Max()
                 try
                 {
-                    log.Error($"Session {session.Network?.ClientId}\\{session.EndPointC2S} ({session.Account}:{session.Player?.Name}) retransmit requested packet {sequence} not in cache. Cache range {cachedPackets.Keys.Min()} - {cachedPackets.Keys.Max()}.");
+                    _log.Error($"Session {session.Network?.ClientId}\\{session.EndPointC2S} ({session.Account}:{session.Player?.Name}) retransmit requested packet {sequence} not in cache. Cache range {cachedPackets.Keys.Min()} - {cachedPackets.Keys.Max()}.");
                 }
                 catch
                 {
-                    log.Error($"Session {session.Network?.ClientId}\\{session.EndPointC2S} ({session.Account}:{session.Player?.Name}) retransmit requested packet {sequence} not in cache. Cache is empty. Race condition threw exception.");
+                    _log.Error($"Session {session.Network?.ClientId}\\{session.EndPointC2S} ({session.Account}:{session.Player?.Name}) retransmit requested packet {sequence} not in cache. Cache is empty. Race condition threw exception.");
                 }
             }
             else
-                log.Error($"Session {session.Network?.ClientId}\\{session.EndPointC2S} ({session.Account}:{session.Player?.Name}) retransmit requested packet {sequence} not in cache. Cache is empty.");
+                _log.Error($"Session {session.Network?.ClientId}\\{session.EndPointC2S} ({session.Account}:{session.Player?.Name}) retransmit requested packet {sequence} not in cache. Cache is empty.");
 
             return false;
         }
@@ -680,7 +678,7 @@ namespace ACE.Server.Network
         {
             while (packetQueue.TryDequeue(out var packet))
             {
-                packetLog.DebugFormat("[{0}] Flushing packets, count {1}", session.LoggingIdentifier, packetQueue.Count);
+                _log.Verbose("[{LoggingIdentifier}] Flushing packets, count {PacketCount}", session.LoggingIdentifier, packetQueue.Count);
 
                 if (packet.Header.HasFlag(PacketHeaderFlags.EncryptedChecksum) && ConnectionData.PacketSequence.CurrentValue == 0)
                     ConnectionData.PacketSequence = new Sequence.UIntSequence(1);
@@ -705,13 +703,13 @@ namespace ACE.Server.Network
 
         private void SendPacket(ServerPacket packet)
         {
-            packetLog.DebugFormat("[{0}] Sending packet {1}", session.LoggingIdentifier, packet.GetHashCode());
+            _log.Verbose("[{LoggingIdentifier}] Sending packet {PacketHashCode}", session.LoggingIdentifier, packet.GetHashCode());
             NetworkStatistics.S2C_Packets_Aggregate_Increment();
 
             if (packet.Header.HasFlag(PacketHeaderFlags.EncryptedChecksum))
             {
                 uint issacXor = ConnectionData.IssacServer.Next();
-                packetLog.DebugFormat("[{0}] Setting Issac for packet {1} to {2}", session.LoggingIdentifier, packet.GetHashCode(), issacXor);
+                _log.Verbose("[{LoggingIdentifier}] Setting Issac for packet {PacketHashCode} to {IssacXor}", session.LoggingIdentifier, packet.GetHashCode(), issacXor);
                 packet.IssacXor = issacXor;
             }
 
@@ -730,15 +728,12 @@ namespace ACE.Server.Network
 
                 packet.CreateReadyToSendPacket(buffer, out var size);
 
-                packetLog.Debug(packet.ToString());
+                _log.Verbose(packet.ToString());
 
-                if (packetLog.IsDebugEnabled)
+                if (_log.IsEnabled(LogEventLevel.Verbose))
                 {
                     var listenerEndpoint = (System.Net.IPEndPoint)socket.LocalEndPoint;
-                    var sb = new StringBuilder();
-                    sb.AppendLine(String.Format("[{5}] Sending Packet (Len: {0}) [{1}:{2}=>{3}:{4}]", size, listenerEndpoint.Address, listenerEndpoint.Port, endPoint.Address, endPoint.Port, session.Network.ClientId));
-                    sb.AppendLine(buffer.BuildPacketString(0, size));
-                    packetLog.Debug(sb.ToString());
+                    _log.Verbose("[{ClientId}] Sending Packet (Len: {PacketLength}) [{ListenerAddress}:{ListenerPort}=>{EndpointAddress}:{EndpointPort}]\n{Packet}", session.Network.ClientId, size, listenerEndpoint.Address, listenerEndpoint.Port, endPoint.Address, endPoint.Port, buffer.BuildPacketString(0, size));
                 }
 
                 try
@@ -752,10 +747,7 @@ namespace ACE.Server.Network
                     // at System.Net.Sockets.Socket.SendTo(Byte[] buffer, Int32 offset, Int32 size, SocketFlags socketFlags, EndPoint remoteEP)
 
                     var listenerEndpoint = (System.Net.IPEndPoint)socket.LocalEndPoint;
-                    var sb = new StringBuilder();
-                    sb.AppendLine(ex.ToString());
-                    sb.AppendLine(String.Format("[{5}] Sending Packet (Len: {0}) [{1}:{2}=>{3}:{4}]", buffer.Length, listenerEndpoint.Address, listenerEndpoint.Port, endPoint.Address, endPoint.Port, session.Network.ClientId));
-                    log.Error(sb.ToString());
+                    _log.Error(ex, "[{ClientId}] Sending Packet Len: ({PacketLength}) [{ListenerAddress}:{ListenerPort}=>{EndpointAddress}:{EndpointPort}]", session.Network.ClientId, buffer.Length, listenerEndpoint.Address, listenerEndpoint.Port, endPoint.Address, endPoint.Port);
 
                     session.Terminate(SessionTerminationReason.SendToSocketException, null, null, ex.Message);
                 }
@@ -774,7 +766,7 @@ namespace ACE.Server.Network
         /// <param name="bundle"></param>
         private void SendBundle(NetworkBundle bundle, GameMessageGroup group)
         {
-            packetLog.DebugFormat("[{0}] Sending Bundle", session.LoggingIdentifier);
+            _log.Verbose("[{LoggingIdentifier}] Sending Bundle", session.LoggingIdentifier);
 
             bool writeOptionalHeaders = true;
 
@@ -789,7 +781,7 @@ namespace ACE.Server.Network
                 fragments.Add(fragment);
             }
 
-            packetLog.DebugFormat("[{0}] Bundle Fragment Count: {1}", session.LoggingIdentifier, fragments.Count);
+            _log.Verbose("[{LoggingIdentifier}] Bundle Fragment Count: {FragmentCount}", session.LoggingIdentifier, fragments.Count);
 
             // Loop through while we have fragements
             while (fragments.Count > 0 || writeOptionalHeaders)
@@ -812,7 +804,7 @@ namespace ACE.Server.Network
                     // If a large message send only this one, filling the whole packet
                     if (firstMessage.DataRemaining >= availableSpace)
                     {
-                        packetLog.DebugFormat("[{0}] Sending large fragment", session.LoggingIdentifier);
+                        _log.Verbose("[{LoggingIdentifier}] Sending large fragment", session.LoggingIdentifier);
                         ServerPacketFragment spf = firstMessage.GetNextFragment();
                         packet.Fragments.Add(spf);
                         availableSpace -= spf.Length;
@@ -840,7 +832,7 @@ namespace ACE.Server.Network
                             // Is this a large fragment and does it have a tail that needs sending?
                             if (!fragment.TailSent && availableSpace >= fragment.TailSize)
                             {
-                                packetLog.DebugFormat("[{0}] Sending tail fragment", session.LoggingIdentifier);
+                                _log.Verbose("[{LoggingIdentifier}] Sending tail fragment", session.LoggingIdentifier);
                                 ServerPacketFragment spf = fragment.GetTailFragment();
                                 packet.Fragments.Add(spf);
                                 availableSpace -= spf.Length;
@@ -848,7 +840,7 @@ namespace ACE.Server.Network
                             // Otherwise will this message fit in the remaining space?
                             else if (availableSpace >= fragment.NextSize)
                             {
-                                packetLog.DebugFormat("[{0}] Sending small message", session.LoggingIdentifier);
+                                _log.Verbose("[{LoggingIdentifier}] Sending small message", session.LoggingIdentifier);
                                 ServerPacketFragment spf = fragment.GetNextFragment();
                                 packet.Fragments.Add(spf);
                                 availableSpace -= spf.Length;
@@ -872,7 +864,7 @@ namespace ACE.Server.Network
                 // If no messages, write optional headers
                 else
                 {
-                    packetLog.DebugFormat("[{0}] No messages, just sending optional headers", session.LoggingIdentifier);
+                    _log.Verbose("[{LoggingIdentifier}] No messages, just sending optional headers", session.LoggingIdentifier);
                     if (writeOptionalHeaders)
                     {
                         writeOptionalHeaders = false;
@@ -892,7 +884,7 @@ namespace ACE.Server.Network
             if (bundle.SendAck) // 0x4000
             {
                 packetHeader.Flags |= PacketHeaderFlags.AckSequence;
-                packetLog.DebugFormat("[{0}] Outgoing AckSeq: {1}", session.LoggingIdentifier, lastReceivedPacketSequence);
+                _log.Verbose("[{LoggingIdentifier}] Outgoing AckSeq: {LastPacketSequenceReceived}", session.LoggingIdentifier, lastReceivedPacketSequence);
                 packet.InitializeDataWriter();
                 packet.DataWriter.Write(lastReceivedPacketSequence);
             }
@@ -900,7 +892,7 @@ namespace ACE.Server.Network
             if (bundle.TimeSync) // 0x1000000
             {
                 packetHeader.Flags |= PacketHeaderFlags.TimeSync;
-                packetLog.DebugFormat("[{0}] Outgoing TimeSync TS: {1}", session.LoggingIdentifier, Timers.PortalYearTicks);
+                _log.Verbose("[{LoggingIdentifier}] Outgoing TimeSync TS: {PortalYearTicks}", session.LoggingIdentifier, Timers.PortalYearTicks);
                 packet.InitializeDataWriter();
                 packet.DataWriter.Write(Timers.PortalYearTicks);
             }
@@ -908,7 +900,7 @@ namespace ACE.Server.Network
             if (bundle.ClientTime != -1f) // 0x4000000
             {
                 packetHeader.Flags |= PacketHeaderFlags.EchoResponse;
-                packetLog.DebugFormat("[{0}] Outgoing EchoResponse: {1}", session.LoggingIdentifier, bundle.ClientTime);
+                _log.Verbose("[{LoggingIdentifier}] Outgoing EchoResponse: {ClientTime}", session.LoggingIdentifier, bundle.ClientTime);
                 packet.InitializeDataWriter();
                 packet.DataWriter.Write(bundle.ClientTime);
                 packet.DataWriter.Write((float)Timers.PortalYearTicks - bundle.ClientTime);

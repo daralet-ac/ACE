@@ -1,6 +1,4 @@
-using System;
 using System.Linq;
-
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
@@ -60,7 +58,7 @@ namespace ACE.Server.Factories
             {
                 if (!MutateMeleeWeapon(wo, profile, isMagical))
                 {
-                    log.Warn($"[LOOT] {wo.WeenieClassId} - {wo.Name} is not a MeleeWeapon");
+                    _log.Warning($"[LOOT] {wo.WeenieClassId} - {wo.Name} is not a MeleeWeapon");
                     return null;
                 }
             }

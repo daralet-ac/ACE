@@ -2,28 +2,26 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Common.Performance;
 using ACE.Database;
 using ACE.Database.Models.Shard;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
-using ACE.Server.WorldObjects;
 using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
-using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.GameMessages;
+using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Managers;
+using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Network
 {
     public class Session
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Session>();
 
         public IPEndPoint EndPointC2S { get; }
 
@@ -302,9 +300,9 @@ namespace ACE.Server.Network
                     reas = reas + ", " + PendingTermination.ExtraReason;
                 }
                 if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                    log.Info($"Session {Network?.ClientId}\\{EndPointC2S} dropped. Account: {Account}, Player: {Player?.Name}{reas}");
+                    _log.Information($"Session {Network?.ClientId}\\{EndPointC2S} dropped. Account: {Account}, Player: {Player?.Name}{reas}");
                 else
-                    log.Debug($"Session {Network?.ClientId}\\{EndPointC2S} dropped. Account: {Account}, Player: {Player?.Name}{reas}");
+                    _log.Debug($"Session {Network?.ClientId}\\{EndPointC2S} dropped. Account: {Account}, Player: {Player?.Name}{reas}");
             }
 
             if (Player != null)

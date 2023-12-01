@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-
 using ACE.Database;
 using ACE.Database.Models.Auth;
 using ACE.Entity;
@@ -11,19 +10,16 @@ using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.Enum;
-using ACE.Server.Network.Structure;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Managers;
+using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
-
-using log4net;
 
 namespace ACE.Server.Command.Handlers
 {
     public static class SentinelCommands
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         // cloak < on / off / player / creature >
         [CommandHandler("cloak", AccessLevel.Sentinel, CommandHandlerFlag.RequiresWorld, 1,

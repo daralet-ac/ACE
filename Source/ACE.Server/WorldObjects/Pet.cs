@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Numerics;
-
-using log4net;
-
 using ACE.Common;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
@@ -14,6 +10,7 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Physics.Animation;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
@@ -26,7 +23,7 @@ namespace ACE.Server.WorldObjects
 
         public PetDevice P_PetDevice;
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Pet>();
 
         public uint? PetDevice
         {
@@ -208,7 +205,7 @@ namespace ACE.Server.WorldObjects
 
             if (P_PetOwner?.PhysicsObj == null)
             {
-                log.Error($"{Name} ({Guid}).SlowTick() - P_PetOwner: {P_PetOwner}, P_PetOwner.PhysicsObj: {P_PetOwner?.PhysicsObj}");
+                _log.Error($"{Name} ({Guid}).SlowTick() - P_PetOwner: {P_PetOwner}, P_PetOwner.PhysicsObj: {P_PetOwner?.PhysicsObj}");
                 Destroy();
                 return;
             }

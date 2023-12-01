@@ -1,18 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using log4net;
-
 using ACE.Database.Models.World;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Managers;
+using Serilog;
 
 namespace ACE.Server.Factories.Tables
 {
     public static class CantripChance
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(CantripChance));
 
         private static ChanceTable<int> T1_NumCantrips = new ChanceTable<int>()
         {
@@ -171,8 +169,7 @@ namespace ACE.Server.Factories.Tables
 
             if (showResults)
             {
-                log.Info($"ApplyNumCantripsMod({cantrip_drop_rate})");
-                log.Info("");
+                _log.Information($"ApplyNumCantripsMod({cantrip_drop_rate})");
 
                 ShowTables(numCantrips);
             }
@@ -229,8 +226,7 @@ namespace ACE.Server.Factories.Tables
 
             if (showResults)
             {
-                log.Info($"ApplyCantripLevelsMod({minor_cantrip_drop_rate}, {major_cantrip_drop_rate}, {epic_cantrip_drop_rate}, {legendary_cantrip_drop_rate})");
-                log.Info("");
+                _log.Information($"ApplyCantripLevelsMod({minor_cantrip_drop_rate}, {major_cantrip_drop_rate}, {epic_cantrip_drop_rate}, {legendary_cantrip_drop_rate})");
 
                 ShowTables(cantripLevels);
             }
@@ -295,13 +291,10 @@ namespace ACE.Server.Factories.Tables
             {
                 var table = tables[i];
 
-                log.Info($"Tier {i + 1}:");
-                log.Info("");
+                _log.Information($"Tier {i + 1}:");
 
                 foreach (var entry in table)
-                    log.Info($"{entry.result}: {GetPercent(entry.chance)}");
-
-                log.Info("");
+                    _log.Information($"{entry.result}: {GetPercent(entry.chance)}");
             }
         }
 

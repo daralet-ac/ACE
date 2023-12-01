@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.Auth;
+using ACE.Database.Models.Shard;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
 using ACE.Entity;
@@ -25,15 +23,15 @@ using ACE.Server.Physics;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects.Managers;
-
-using Character = ACE.Database.Models.Shard.Character;
+using Serilog;
+using Biota = ACE.Entity.Models.Biota;
 using MotionTable = ACE.DatLoader.FileTypes.MotionTable;
 
 namespace ACE.Server.WorldObjects
 {
     public partial class Player : Creature, IPlayer
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(Player));
 
         public Account Account { get; }
 
@@ -645,7 +643,7 @@ namespace ACE.Server.WorldObjects
             SavePlayerToDatabase();
             PlayerManager.SwitchPlayerFromOnlineToOffline(this);
 
-            log.Debug($"[LOGOUT] Account {Account.AccountName} exited the world with character {Name} (0x{Guid}) at {DateTime.Now}.");
+            _log.Debug($"[LOGOUT] Account {Account.AccountName} exited the world with character {Name} (0x{Guid}) at {DateTime.Now}.");
         }
 
         public void HandleMRT()

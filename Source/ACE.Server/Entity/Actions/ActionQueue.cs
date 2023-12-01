@@ -40,12 +40,12 @@ namespace ACE.Server.Entity.Actions
                         if (result is ActionEventDelegate actionEventDelegate)
                         {
                             if (actionEventDelegate.Action.Target is WorldObjects.WorldObject worldObject)
-                                log.Warn($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s. Method.Name: {actionEventDelegate.Action.Method.Name}, Target: {actionEventDelegate.Action.Target} 0x{worldObject.Guid}:{worldObject.Name}");
+                                _log.Warning($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s. Method.Name: {actionEventDelegate.Action.Method.Name}, Target: {actionEventDelegate.Action.Target} 0x{worldObject.Guid}:{worldObject.Name}");
                             else
-                                log.Warn($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s. Method.Name: {actionEventDelegate.Action.Method.Name}, Target: {actionEventDelegate.Action.Target}");
+                                _log.Warning($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s. Method.Name: {actionEventDelegate.Action.Method.Name}, Target: {actionEventDelegate.Action.Target}");
                         }
                         else
-                            log.Warn($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s.");
+                            _log.Warning($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s.");
                     }
                     #endif
 

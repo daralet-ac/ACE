@@ -1,17 +1,15 @@
 using System;
-
-using log4net;
-
 using ACE.Entity.Enum;
 using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.Command.Handlers
 {
     public static class AdminShardCommands
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(AdminShardCommands));
 
         // // commandname parameters
         // [CommandHandler("commandname", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0)]
@@ -29,8 +27,9 @@ namespace ACE.Server.Command.Handlers
         public static void HandleCancelShutdown(Session session, params string[] parameters)
         {
             var adminName = (session == null) ? "CONSOLE" : session.Player.Name;
+            _log.Information("{AdminName} has requested the pending shut down @ {ShutdownLocalTime} ({ShutdownUtcTime} UTC) be cancelled.", adminName, ServerManager.ShutdownTime.ToLocalTime(), ServerManager.ShutdownTime);
+
             var msg = $"{adminName} has requested the pending shut down @ {ServerManager.ShutdownTime.ToLocalTime()} ({ServerManager.ShutdownTime} UTC) be cancelled.";
-            log.Info(msg);
             PlayerManager.BroadcastToAuditChannel(session?.Player, msg);
 
             ServerManager.CancelShutdown();
@@ -105,15 +104,17 @@ namespace ACE.Server.Command.Handlers
             var hideName = string.IsNullOrEmpty(adminText);
 
             var timeTillShutdown = TimeSpan.FromSeconds(ServerManager.ShutdownInterval);
-            var timeRemaining = "The server will shut down in " + (timeTillShutdown.TotalSeconds > 120 ? $"{(int)timeTillShutdown.TotalMinutes} minutes." : $"{timeTillShutdown.TotalSeconds} seconds.");
+            var timeRemaining = timeTillShutdown.TotalSeconds > 120
+                ? $"{(int)timeTillShutdown.TotalMinutes} minutes."
+                : $"{timeTillShutdown.TotalSeconds} seconds.";
 
-            log.Info($"{adminName} initiated a complete server shutdown @ {DateTime.Now} ({DateTime.UtcNow} UTC)");
-            log.Info(timeRemaining);
+            _log.Information("{AdminName} initiated a complete server shutdown @ {ShutdownInitiatedAt} ({ShutdownInitiatedAtUtc} UTC)", adminName, DateTime.Now, DateTime.UtcNow);
+            _log.Information("The server will shut down in {ShutdownTimeRemaining}.", timeRemaining);
             PlayerManager.BroadcastToAuditChannel(session?.Player, $"{adminName} initiated a complete server shutdown @ {DateTime.Now} ({DateTime.UtcNow} UTC)");
 
             if (adminText.Length > 0)
             {
-                log.Info("Admin message: " + adminText);
+                _log.Information("Admin message: {ShutdownMessage}", adminText);
                 PlayerManager.BroadcastToAuditChannel(session?.Player, $"{adminName} sent the following message for the shutdown: {adminText}");
             }
 

@@ -425,7 +425,7 @@ namespace ACE.Server.WorldObjects
 
             if (Location.Landblock != newPosition.Landblock)
             {
-                log.Error($"{Name} tried to teleport from {Location} to a different landblock {newPosition}");
+                _log.Error($"{Name} tried to teleport from {Location} to a different landblock {newPosition}");
                 return;
             }
 

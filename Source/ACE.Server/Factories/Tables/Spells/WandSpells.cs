@@ -1,17 +1,15 @@
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Factories.Tables
 {
     public static class WandSpells
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(WandSpells));
 
         private static readonly List<SpellId> spells = new List<SpellId>()
         {
@@ -59,13 +57,13 @@ namespace ACE.Server.Factories.Tables
 
                 if (spellLevels == null)
                 {
-                    log.Error($"WandSpells - couldn't find {spell}");
+                    _log.Error($"WandSpells - couldn't find {spell}");
                     continue;
                 }
 
                 if (spellLevels.Count != NumTiers)
                 {
-                    log.Error($"WandSpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
+                    _log.Error($"WandSpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
                     continue;
                 }
 

@@ -4,9 +4,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Database;
@@ -27,7 +24,7 @@ using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Common;
 using ACE.Server.Physics.Util;
 using ACE.Server.WorldObjects.Managers;
-
+using Serilog;
 using Landblock = ACE.Server.Entity.Landblock;
 using Position = ACE.Entity.Position;
 
@@ -38,7 +35,7 @@ namespace ACE.Server.WorldObjects
     /// </summary>
     public abstract partial class WorldObject : IActor
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(WorldObject));
 
         /// <summary>
         /// If this object was created from a weenie (and not a database biota), this is the source.

@@ -1,14 +1,12 @@
 using System.Collections.Generic;
-
-using log4net;
-
 using ACE.Entity.Enum;
+using Serilog;
 
 namespace ACE.Server.Factories.Tables
 {
     public static class GemSpells
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILogger _log = Log.ForContext(typeof(GemSpells));
 
         // all attribute / skill buffs
         private static readonly List<SpellId> creatureSpells = new List<SpellId>()
@@ -113,13 +111,13 @@ namespace ACE.Server.Factories.Tables
 
                 if (spellLevels == null)
                 {
-                    log.Error($"GemSpells - couldn't find {spell}");
+                    _log.Error($"GemSpells - couldn't find {spell}");
                     continue;
                 }
 
                 if (spellLevels.Count != NumTiers)
                 {
-                    log.Error($"GemSpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
+                    _log.Error($"GemSpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
                     continue;
                 }
 

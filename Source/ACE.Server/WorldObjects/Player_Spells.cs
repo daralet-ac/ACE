@@ -114,7 +114,7 @@ namespace ACE.Server.WorldObjects
         {
             if (!Biota.TryRemoveKnownSpell((int)spellId, BiotaDatabaseLock))
             {
-                log.Error("Invalid spellId passed to Player.RemoveSpellFromSpellBook");
+                _log.Error("Invalid spellId passed to Player.RemoveSpellFromSpellBook");
                 return;
             }
 
@@ -179,7 +179,7 @@ namespace ACE.Server.WorldObjects
                 var addSpells = spells.Except(prevSpells);
 
                 if (addSpells.Count() != 0)
-                    log.Error($"{Name}.DequipItemFromSet({item.Name}) -- last item in set dequipped, but addSpells still contains {string.Join(", ", addSpells.Select(i => i.Name))} -- this shouldn't happen!");
+                    _log.Error($"{Name}.DequipItemFromSet({item.Name}) -- last item in set dequipped, but addSpells still contains {string.Join(", ", addSpells.Select(i => i.Name))} -- this shouldn't happen!");
             }
 
             EquipDequipItemFromSet(item, spells, prevSpells, surrogateItem);
@@ -429,7 +429,7 @@ namespace ACE.Server.WorldObjects
             // ensure wcid is spell component
             if (!SpellComponent.IsValid(component_wcid))
             {
-                log.Warn($"{Name}.HandleSetDesiredComponentLevel({component_wcid}, {amount}): invalid spell component wcid");
+                _log.Warning($"{Name}.HandleSetDesiredComponentLevel({component_wcid}, {amount}): invalid spell component wcid");
                 return;
             }
             if (amount > 0)
@@ -551,7 +551,7 @@ namespace ACE.Server.WorldObjects
                 if (!table.TryGetValue(new ObjectGuid(enchantment.CasterObjectId), out var item))
                 {
                     var spell = new Spell(enchantment.SpellId, false);
-                    log.Error($"{Name}.AuditItemSpells(): removing spell {spell.Name} from {(enchantment.HasSpellSetId ? "non-possessed" : "non-equipped")} item");
+                    _log.Error($"{Name}.AuditItemSpells(): removing spell {spell.Name} from {(enchantment.HasSpellSetId ? "non-possessed" : "non-equipped")} item");
 
                     EnchantmentManager.Dispel(enchantment);
                     continue;
@@ -580,7 +580,7 @@ namespace ACE.Server.WorldObjects
 
                     foreach (var removeSpell in removeSpells)
                     {
-                        log.Error($"{Name}.AuditItemSpells(): removing spell {inactiveSpell.Name} from {item.EquipmentSetId}");
+                        _log.Error($"{Name}.AuditItemSpells(): removing spell {inactiveSpell.Name} from {item.EquipmentSetId}");
 
                         EnchantmentManager.Dispel(removeSpell);
                     }

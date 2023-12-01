@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using Microsoft.EntityFrameworkCore;
-using log4net;
-
+using System.Text;
 using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.Shard;
@@ -18,14 +15,12 @@ using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.WorldObjects;
-using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace ACE.Server.Command.Handlers
 {
     public class DeveloperFixCommands
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         [CommandHandler("verify-player-data", AccessLevel.Admin, CommandHandlerFlag.ConsoleInvoke, "Verifies and optionally fixes any bugs with player data. Runs all of the verify* commands.")]
         public static void HandleVerifyAll(Session session, params string[] parameters)
         {

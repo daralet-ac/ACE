@@ -54,7 +54,7 @@ namespace ACE.Server.WorldObjects
 
             if (CombatMode != CombatMode.Melee)
             {
-                log.Error($"{Name}.HandleActionTargetedMeleeAttack({targetGuid:X8}, {attackHeight}, {powerLevel}) - CombatMode mismatch {CombatMode}, LastCombatMode {LastCombatMode}");
+                _log.Error($"{Name}.HandleActionTargetedMeleeAttack({targetGuid:X8}, {attackHeight}, {powerLevel}) - CombatMode mismatch {CombatMode}, LastCombatMode {LastCombatMode}");
 
                 if (LastCombatMode == CombatMode.Melee)
                     CombatMode = CombatMode.Melee;
@@ -112,7 +112,7 @@ namespace ACE.Server.WorldObjects
             var creatureTarget = target as Creature;
             if (creatureTarget == null)
             {
-                log.Warn($"{Name}.HandleActionTargetedMeleeAttack({targetGuid:X8}, {AttackHeight}, {powerLevel}) - target guid not creature");
+                _log.Warning($"{Name}.HandleActionTargetedMeleeAttack({targetGuid:X8}, {AttackHeight}, {powerLevel}) - target guid not creature");
                 OnAttackDone();
                 return;
             }

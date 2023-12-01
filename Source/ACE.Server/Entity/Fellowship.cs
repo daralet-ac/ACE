@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -11,14 +10,13 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
-
-using log4net;
+using Serilog;
 
 namespace ACE.Server.Entity
 {
     public class Fellowship
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Fellowship>();
 
         /// <summary>
         /// The maximum # of fellowship members
@@ -190,7 +188,7 @@ namespace ACE.Server.Entity
 
             if (!fellowshipMembers.ContainsKey(player.Guid.Full))
             {
-                log.Warn($"{leader.Name} tried to dismiss {player.Name} from the fellowship, but {player.Name} was not found in the fellowship");
+                _log.Warning("{Leader} tried to dismiss {Player} from the fellowship, but player was not found in the fellowship", leader.Name, player.Name);
 
                 var done = true;
 
@@ -198,11 +196,11 @@ namespace ACE.Server.Entity
                 {
                     if (player.Fellowship == this)
                     {
-                        log.Warn($"{player.Name} still has a reference to this fellowship somehow. This shouldn't happen");
+                        _log.Warning("{Player} still has a reference to this fellowship somehow. This shouldn't happen", player.Name);
                         done = false;
                     }
                     else
-                        log.Warn($"{player.Name} has a reference to a different fellowship. {leader.Name} is possibly sending crafted data!");
+                        _log.Warning("{Player} has a reference to a different fellowship. {Leader} is possibly sending crafted data!", player.Name, leader.Name);
                 }
 
                 if (done) return;
@@ -767,7 +765,7 @@ namespace ACE.Server.Entity
                 var offlinePlayer = PlayerManager.FindByGuid(fellowGuid);
                 var offlineName = offlinePlayer != null ? offlinePlayer.Name : "NULL";
 
-                log.Warn($"Dropped fellow: {offlineName}");
+                _log.Warning("Dropped fellow because player offline. {Player}", offlineName);
                 fellowshipMembers.Remove(fellowGuid);
             }
             if (fellowGuids.Contains(FellowshipLeaderGuid))

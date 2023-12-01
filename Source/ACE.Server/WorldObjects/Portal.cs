@@ -1,7 +1,4 @@
 using System.Numerics;
-
-using log4net;
-
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -12,12 +9,13 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
     public partial class Portal : WorldObject
     {
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log = Log.ForContext<Portal>();
 
         /// <summary>
         /// A new biota be created taking all of its values from weenie.
@@ -50,7 +48,7 @@ namespace ACE.Server.WorldObjects
 
             if (!success)
             {
-                log.Error($"{Name} ({Guid}) failed to spawn @ {Location?.ToLOCString()}");
+                _log.Error($"{Name} ({Guid}) failed to spawn @ {Location?.ToLOCString()}");
                 return false;
             }
 
