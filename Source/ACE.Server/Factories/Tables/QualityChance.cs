@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ACE.Common;
 using ACE.Database.Models.World;
@@ -203,7 +204,11 @@ namespace ACE.Server.Factories.Tables
             var chances = GetQualityChancesForTier(treasureDeath.Tier);
 
             //var rng = ThreadSafeRandom.NextIntervalMax(treasureDeath.LootQualityMod);
-            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+            double rng;
+            if(treasureDeath.LootQualityMod >= 0)
+                rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+            else
+                rng = ThreadSafeRandom.Next(0.0f, Math.Max(1.0f + treasureDeath.LootQualityMod, 0.0f));
 
             for (var i = 0; i < chances.Count; i++)
             {
@@ -231,7 +236,11 @@ namespace ACE.Server.Factories.Tables
             var chances = GetQualityChancesForTier(treasureDeath.Tier);
 
             //var rng = ThreadSafeRandom.NextIntervalMax(treasureDeath.LootQualityMod);
-            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+            double rng;
+            if (treasureDeath.LootQualityMod >= 0)
+                rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+            else
+                rng = ThreadSafeRandom.Next(0.0f, Math.Max(1.0f + treasureDeath.LootQualityMod, 0.0f));
 
             for (var i = 0; i < chances.Count; i++)
             {

@@ -103,12 +103,12 @@ namespace ACE.Server.Factories.Tables
         /// </summary>
         private static readonly List<int> gemClassValue = new List<int>()
         {
-            10,
             50,
             100,
+            150,
+            200,
             250,
-            500,
-            1000
+            300
         };
 
         private static readonly Dictionary<MaterialType, int> gemMaterialValue = new Dictionary<MaterialType, int>();

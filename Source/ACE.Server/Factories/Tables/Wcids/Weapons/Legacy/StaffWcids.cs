@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 
@@ -7,6 +9,25 @@ namespace ACE.Server.Factories.Tables.Wcids
 {
     public static class StaffWcids
     {
+        private static ChanceTable<WeenieClassName> StaffWcids_All = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        {
+            ( WeenieClassName.quarterstaffnew,         4.0f ),
+            ( WeenieClassName.quarterstaffacidnew,     1.0f ),
+            ( WeenieClassName.quarterstaffelectricnew, 1.0f ),
+            ( WeenieClassName.quarterstaffflamenew,    1.0f ),
+            ( WeenieClassName.quarterstafffrostnew,    1.0f ),
+            ( WeenieClassName.nabutnew,         4.0f ),
+            ( WeenieClassName.nabutacidnew,     1.0f ),
+            ( WeenieClassName.nabutelectricnew, 1.0f ),
+            ( WeenieClassName.nabutfirenew,     1.0f ),
+            ( WeenieClassName.nabutfrostnew,    1.0f ),
+            ( WeenieClassName.jonew,         4.0f ),
+            ( WeenieClassName.joacidnew,     1.0f ),
+            ( WeenieClassName.joelectricnew, 1.0f ),
+            ( WeenieClassName.jofirenew,     1.0f ),
+            ( WeenieClassName.jofrostnew,    1.0f ),
+        };
+
         private static ChanceTable<WeenieClassName> StaffWcids_Aluvian = new ChanceTable<WeenieClassName>()
         {
             ( WeenieClassName.quarterstaffnew,         0.40f ),
@@ -34,7 +55,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.jofrostnew,    0.15f ),
         };
 
-        public static WeenieClassName Roll(TreasureHeritageGroup heritage)
+        public static WeenieClassName Roll(TreasureHeritageGroup heritage, int tier)
         {
             switch (heritage)
             {
@@ -46,8 +67,17 @@ namespace ACE.Server.Factories.Tables.Wcids
 
                 case TreasureHeritageGroup.Sho:
                     return StaffWcids_Sho.Roll();
+
+                default:
+                    return StaffWcids_All.Roll();
             }
-            return WeenieClassName.undef;
+        }
+
+        private static readonly Dictionary<WeenieClassName, TreasureWeaponType> _combined = new Dictionary<WeenieClassName, TreasureWeaponType>();
+
+        public static bool TryGetValue(WeenieClassName wcid, out TreasureWeaponType weaponType)
+        {
+            return _combined.TryGetValue(wcid, out weaponType);
         }
     }
 }

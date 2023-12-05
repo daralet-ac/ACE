@@ -40,7 +40,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.tankard,        0.05f ),
         };
 
-        private static ChanceTable<WeenieClassName> T5_T6_Chances = new ChanceTable<WeenieClassName>()
+        private static ChanceTable<WeenieClassName> T5_T8_Chances = new ChanceTable<WeenieClassName>()
         {
             ( WeenieClassName.bowl,           0.00f ),
             ( WeenieClassName.chalice,        0.23f ),
@@ -62,14 +62,16 @@ namespace ACE.Server.Factories.Tables.Wcids
             T1_T2_Chances,
             T3_T4_Chances,
             T3_T4_Chances,
-            T5_T6_Chances,
-            T5_T6_Chances,
+            T5_T8_Chances,
+            T5_T8_Chances,
+            T5_T8_Chances,
+            T5_T8_Chances,
         };
 
         public static WeenieClassName Roll(int tier)
         {
             // todo: add unique profiles for t7 / t8?
-            tier = Math.Clamp(tier, 1, 6);
+            tier = Math.Clamp(tier, 1, 8);
 
             return tierChances[tier - 1].Roll();
         }
