@@ -7,6 +7,7 @@ using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -29,6 +30,142 @@ namespace ACE.Server.Factories
         {
             InitRares();
             InitClothingColors();
+
+            coinRanges = new List<(int, int)>()
+            {
+                (   5,   25), // T1
+                (  10,   50), // T2
+                (  15,   75), // T3
+                (  20,  100), // T4
+                (  25,  125), // T5
+                (  30,  150), // T6
+                (  35,  175), // T7
+                (  40,  200), // T8
+            };
+
+            ItemValue_TierMod = new List<int>()
+            {
+                25,    // T1
+                50,    // T2
+                65,    // T3
+                80,    // T4
+                95,    // T5
+                110,   // T6
+                125,   // T7
+                140,   // T8
+            };
+        }
+
+        public static Database.Models.World.TreasureDeath GetTweakedDeathTreasureProfile(uint deathTreasureId, object tweakedFor)
+        {
+            if(deathTreasureId == 338) // Leave Steel Chests alone!
+                return DatabaseManager.World.GetCachedDeathTreasure(deathTreasureId);
+
+            // Tweaks to make the loot system more akin to Infiltration Era and CustomDM
+            TreasureDeath deathTreasure;
+            TreasureDeath tweakedDeathTreasure;
+
+            Creature creature = tweakedFor as Creature;
+            if (creature != null)
+            {
+                deathTreasure = DatabaseManager.World.GetCachedDeathTreasure(deathTreasureId);
+                if (deathTreasure == null)
+                    return deathTreasure;
+
+                tweakedDeathTreasure = new Database.Models.World.TreasureDeath(deathTreasure);
+
+                float percentile = 1.0f;
+                int minLevelOfTier = 1;
+                int maxLevelOfTier = 1;
+                int levelsPerTier = 1;
+                float minimumMod = 0.75f;
+                float mod = 1.0f;
+
+                // Loot chance of each category is modified by 75% to 100%, depending on an enemy's level within its tier.
+                switch (creature.Tier ?? 1)
+                {
+                    case 1:
+                        minLevelOfTier = 1;
+                        maxLevelOfTier = 9;
+                        break;
+                    case 2:
+                        minLevelOfTier = 10;
+                        maxLevelOfTier = 19;
+                        break;
+                    case 3:
+                        minLevelOfTier = 20;
+                        maxLevelOfTier = 29;
+                        break;
+                    case 4:
+                        minLevelOfTier = 30;
+                        maxLevelOfTier = 39;
+                        break;
+                    case 5:
+                        minLevelOfTier = 40;
+                        maxLevelOfTier = 49;
+                        break;
+                    case 6:
+                        minLevelOfTier = 50;
+                        maxLevelOfTier = 74;
+                        break;
+                    case 7:
+                        minLevelOfTier = 75;
+                        maxLevelOfTier = 99;
+                        break;
+                    case 8:
+                        minLevelOfTier = 100;
+                        maxLevelOfTier = 125;
+                        break;
+                }
+
+                levelsPerTier = maxLevelOfTier - minLevelOfTier + 1;
+                percentile = (float)(creature.Level - minLevelOfTier) / levelsPerTier;
+                mod = minimumMod + (percentile * (1 - minimumMod));
+
+                //Console.WriteLine($"-Tier: {deathTreasure.Tier} Percentile: {percentile}");
+
+                mod = Math.Min(1, mod);
+
+                //Console.WriteLine($"CreatureLevel: {creature.Level} TierMinLv: {minLevelOfTier} TierMaxLv: {maxLevelOfTier} LevelsPerTier: {levelsPerTier} Percentile: {percentile} Mod: {mod}\n" +
+                //    $" -ItemBaseChance: {tweakedDeathTreasure.ItemChance} -ModdedItemChance: {(int)(tweakedDeathTreasure.ItemChance * mod)}\n" +
+                //    $" -MagicBaseChance: {tweakedDeathTreasure.MagicItemChance} -ModdedMagicChance: {(int)(tweakedDeathTreasure.MagicItemChance * mod)}\n" +
+                //    $" -MundaneBaseChance: {tweakedDeathTreasure.MundaneItemChance} -ModdedMundaneChance: {(int)(tweakedDeathTreasure.MundaneItemChance * mod)}");
+
+                // Loot drop chance is decreased for enemies towards the bottom of a tier, by up to 25% (mod = 0.75 to 1.00)
+                tweakedDeathTreasure.ItemChance = (int)(tweakedDeathTreasure.ItemChance * mod);
+                tweakedDeathTreasure.MagicItemChance = (int)(tweakedDeathTreasure.MagicItemChance * mod);
+                tweakedDeathTreasure.MundaneItemChance = (int)(tweakedDeathTreasure.MundaneItemChance * mod);
+
+                // Loot Quality receives a boost of of +0% to +25%, depending on an enemy's level with its tier.
+                mod -= 0.75f; // range of 0.0 to 0.25
+                var qualityBonus = (1 - tweakedDeathTreasure.LootQualityMod) * mod;
+
+                tweakedDeathTreasure.LootQualityMod += qualityBonus;
+                
+                return tweakedDeathTreasure;
+            }
+
+            deathTreasure = DatabaseManager.World.GetCachedDeathTreasure(deathTreasureId);
+            if (deathTreasure == null)
+                return deathTreasure;
+
+            if (tweakedFor is Container)
+            {
+                // Some overrides to make chests more interesting, ideally this should be done in the data but as a quick tweak this will do.
+                tweakedDeathTreasure = new Database.Models.World.TreasureDeath(deathTreasure);
+
+                return tweakedDeathTreasure;
+                    
+            }
+            else if (tweakedFor is GenericObject generic && generic.GeneratorProfiles != null) // Ground item spawners
+            {
+                tweakedDeathTreasure = new Database.Models.World.TreasureDeath(deathTreasure);
+
+                return tweakedDeathTreasure;
+                    
+            }
+            else
+                return deathTreasure;
         }
 
         public static List<WorldObject> CreateRandomLootObjects(TreasureDeath profile)
@@ -168,8 +305,9 @@ namespace ACE.Server.Factories
 
                 var loot = new List<WorldObject>();
 
-                var itemChance = ThreadSafeRandom.Next(1, 100);
-                if (itemChance <= profile.ItemChance)
+                //Console.WriteLine(profile.Id);
+                double itemChance;
+                if (profile.ItemChance == 100)
                 {
                     numItems = ThreadSafeRandom.Next(profile.ItemMinAmount, profile.ItemMaxAmount);
 
@@ -181,9 +319,40 @@ namespace ACE.Server.Factories
                             loot.Add(lootWorldObject);
                     }
                 }
+                else if (profile.ItemChance > 0)
+                {
+                    itemChance = ThreadSafeRandom.NextInterval(profile.LootQualityMod);
 
-                itemChance = ThreadSafeRandom.Next(1, 100);
-                if (itemChance <= profile.MagicItemChance)
+                    //Console.WriteLine($"\n\nItemChance: {profile.ItemChance} Roll: {itemChance * 100}");
+
+                    if (itemChance < profile.ItemChance / 100.0)
+                    {
+                        // If we roll this bracket we are guaranteed at least ItemMinAmount of items, with an extra roll for each additional item under itemMaxAmount.
+                        for (var i = 0; i < profile.ItemMinAmount; i++)
+                        {
+                            lootWorldObject = CreateRandomLootObjects_New(profile, TreasureItemCategory.Item);
+
+                            if (lootWorldObject != null)
+                                loot.Add(lootWorldObject);
+                        }
+
+                        for (var i = 0; i < profile.ItemMaxAmount - profile.ItemMinAmount; i++)
+                        {
+                            itemChance = ThreadSafeRandom.NextInterval(profile.LootQualityMod);
+                            if (itemChance < profile.ItemChance / 100.0)
+                            {
+                                lootWorldObject = CreateRandomLootObjects_New(profile, TreasureItemCategory.Item);
+
+                                //Console.WriteLine($"Success! Item: {lootWorldObject.Name}");
+
+                                if (lootWorldObject != null)
+                                    loot.Add(lootWorldObject);
+                            }
+                        }
+                    }
+                }
+
+                if (profile.MagicItemChance == 100)
                 {
                     numItems = ThreadSafeRandom.Next(profile.MagicItemMinAmount, profile.MagicItemMaxAmount);
 
@@ -195,9 +364,38 @@ namespace ACE.Server.Factories
                             loot.Add(lootWorldObject);
                     }
                 }
+                else if (profile.MagicItemChance > 0)
+                {
+                    itemChance = ThreadSafeRandom.NextInterval(profile.LootQualityMod);
 
-                itemChance = ThreadSafeRandom.Next(1, 100);
-                if (itemChance <= profile.MundaneItemChance)
+                    if (itemChance < profile.MagicItemChance / 100.0)
+                    {
+                        // If we roll this bracket we are guaranteed at least MagicItemMinAmount of items, with an extra roll for each additional item under MagicItemMaxAmount.
+                        for (var i = 0; i < profile.MagicItemMinAmount; i++)
+                        {
+                            lootWorldObject = CreateRandomLootObjects_New(profile, TreasureItemCategory.MagicItem);
+
+                            if (lootWorldObject != null)
+                                loot.Add(lootWorldObject);
+                        }
+
+                        for (var i = 0; i < profile.MagicItemMaxAmount - profile.MagicItemMinAmount; i++)
+                        {
+                            itemChance = ThreadSafeRandom.NextInterval(profile.LootQualityMod);
+                            if (itemChance < profile.MagicItemChance / 100.0)
+                            {
+                                lootWorldObject = CreateRandomLootObjects_New(profile, TreasureItemCategory.MagicItem);
+
+                                //Console.WriteLine($"Success! Item: {lootWorldObject.Name}");
+
+                                if (lootWorldObject != null)
+                                    loot.Add(lootWorldObject);
+                            }
+                        }
+                    }
+                }
+
+                if (profile.MundaneItemChance == 100)
                 {
                     numItems = ThreadSafeRandom.Next(profile.MundaneItemMinAmount, profile.MundaneItemMaxAmount);
 
@@ -217,6 +415,45 @@ namespace ACE.Server.Factories
                     if (lootWorldObject != null)
                         loot.Add(lootWorldObject);
                 }
+                else if(profile.MundaneItemChance > 0)
+                {
+                    itemChance = ThreadSafeRandom.NextInterval(profile.LootQualityMod);
+
+                    //Console.WriteLine($"\nMaundaneItemChance: {profile.MundaneItemChance} Roll: {itemChance * 100}");
+
+                    if (itemChance < profile.MundaneItemChance / 100.0)
+                    {
+                        for (var i = 0; i < profile.MundaneItemMinAmount; i++)
+                        {
+                            lootWorldObject = CreateRandomLootObjects_New(profile, TreasureItemCategory.MundaneItem);
+
+                            //Console.WriteLine($"Success! Item: {lootWorldObject.Name}");
+
+                            if (lootWorldObject != null)
+                                loot.Add(lootWorldObject);
+                        }
+
+                        for (var i = 0; i < profile.MundaneItemMaxAmount - profile.MundaneItemMinAmount; i++)
+                        {
+                            itemChance = ThreadSafeRandom.NextInterval(profile.LootQualityMod);
+                            if (itemChance < profile.MundaneItemChance / 100.0)
+                            {
+                                lootWorldObject = CreateRandomLootObjects_New(profile, TreasureItemCategory.MundaneItem);
+
+                                if (lootWorldObject != null)
+                                    loot.Add(lootWorldObject);
+                            }
+                        }
+
+                        // extra roll for mundane:
+                        // https://asheron.fandom.com/wiki/Announcements_-_2010/04_-_Shedding_Skin :: May 5th, 2010 entry
+                        // aetheria and coalesced mana were handled in here
+                        lootWorldObject = TryRollMundaneAddon(profile);
+
+                        if (lootWorldObject != null)
+                            loot.Add(lootWorldObject);
+                    }
+                }
 
                 return loot;
             }
@@ -226,15 +463,21 @@ namespace ACE.Server.Factories
             }
         }
 
+        /// <summary>
+        /// Mundane additional items.
+        /// ie. Coalesced mana, Aetheria
+        /// </summary>
         private static WorldObject TryRollMundaneAddon(TreasureDeath profile)
         {
-            // coalesced mana only dropped in tiers 1-4
-            if (profile.Tier <= 4)
-                return TryRollCoalescedMana(profile);
+            return null; // Change this to enable drops of Coalisced Mana and Aetheria
 
-            // aetheria dropped in tiers 5+
-            else
-                return TryRollAetheria(profile);
+            //// coalesced mana only dropped in tiers 1-4
+            //if (profile.Tier <= 4)
+            //    return TryRollCoalescedMana(profile);
+
+            //// aetheria dropped in tiers 5+
+            //else
+            //    return TryRollAetheria(profile);
         }
 
         private static WorldObject TryRollCoalescedMana(TreasureDeath profile)
@@ -276,7 +519,9 @@ namespace ACE.Server.Factories
         {
             WorldObject wo = null;
 
-            var treasureItemTypeChances = isMagical ? TreasureItemTypeChances.DefaultMagical : TreasureItemTypeChances.DefaultNonMagical;
+            ChanceTable<TreasureItemType> treasureItemTypeChances;
+
+            treasureItemTypeChances = isMagical ? TreasureItemTypeChances.TimelineDefaultMagical : TreasureItemTypeChances.TimelineDefaultNonMagical;
 
             switch (lootBias)
             {
@@ -297,6 +542,7 @@ namespace ACE.Server.Factories
             }
 
             var treasureItemType = treasureItemTypeChances.Roll();
+            int type;
 
             switch (treasureItemType)
             {
@@ -305,11 +551,11 @@ namespace ACE.Server.Factories
                     break;
 
                 case TreasureItemType.Armor:
-                    wo = CreateArmor(profile, isMagical, true, lootBias);
+                    wo = CreateArmor(profile, isMagical, true, TreasureItemType.Undef, lootBias);
                     break;
 
                 case TreasureItemType.Clothing:
-                    wo = CreateArmor(profile, isMagical, false, lootBias);
+                    wo = CreateArmor(profile, isMagical, false, TreasureItemType.Undef, lootBias);
                     break;
 
                 case TreasureItemType.Cloak:
@@ -329,6 +575,57 @@ namespace ACE.Server.Factories
                     // they are mutable loot drops that don't belong with the non-mutable drops
                     // TODO: Will likely need some adjustment/fine tuning
                     wo = CreateDinnerware(profile, isMagical);
+                    break;
+
+                case TreasureItemType.WeaponWarrior:
+                    type = ThreadSafeRandom.Next(0, 5);
+
+                    switch(type)
+                    {
+                        default: 
+                        case 0: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.Axe); break;
+                        case 1: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.Mace); break;
+                        case 2: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.Spear); break;
+                        case 3: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.Staff); break;
+                        case 4: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.Sword); break;
+                        case 5: wo = CreateMissileWeapon(profile, isMagical); break;
+                    }
+                    break;
+
+                case TreasureItemType.WeaponRogue:
+                    type = ThreadSafeRandom.Next(0, 2);
+
+                    switch (type)
+                    {
+                        default:
+                        case 0: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.Dagger); break;
+                        case 1: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.UnarmedCombat); break;
+                        case 2: wo = CreateMissileWeapon(profile, isMagical); break;
+                    }
+                    break;
+
+                case TreasureItemType.WeaponCaster:
+                    CreateCaster(profile, isMagical);
+                    break;
+
+                case TreasureItemType.ArmorWarrior:
+                    wo = CreateArmor(profile, isMagical, true, TreasureItemType.ArmorWarrior);
+                    break;
+
+                case TreasureItemType.ArmorRogue:
+                    wo = CreateArmor(profile, isMagical, true, TreasureItemType.ArmorRogue);
+                    break;
+
+                case TreasureItemType.ArmorCaster:
+                    wo = CreateArmor(profile, isMagical, true, TreasureItemType.ArmorCaster);
+                    break;
+
+                case TreasureItemType.AnimalParts:
+                    wo = CreateAnimalParts(profile);
+                    break;
+
+                case TreasureItemType.EmpoweredScarabs:
+                    wo = CreateEmpoweredScarab(profile);
                     break;
             }
             return wo;
@@ -356,6 +653,7 @@ namespace ACE.Server.Factories
 
             roll.Wcid = (WeenieClassName)item.WeenieClassId;
             roll.BaseArmorLevel = item.ArmorLevel ?? 0;
+            roll.BaseAegisLevel = item.AegisLevel ?? 0;
 
             if (roll.Wcid == WeenieClassName.coinstack)
             {
@@ -393,9 +691,7 @@ namespace ACE.Server.Factories
                 roll.WeaponType = weaponType;
                 MutateMeleeWeapon(item, profile, isMagical, roll);
             }
-            else if (BowWcids_Aluvian.TryGetValue(roll.Wcid, out weaponType) ||
-                BowWcids_Gharundim.TryGetValue(roll.Wcid, out weaponType) ||
-                BowWcids_Sho.TryGetValue(roll.Wcid, out weaponType) ||
+            else if (BowWcids.TryGetValue(roll.Wcid, out weaponType) ||
                 CrossbowWcids.TryGetValue(roll.Wcid, out weaponType) ||
                 AtlatlWcids.TryGetValue(roll.Wcid, out weaponType))
             {
@@ -443,6 +739,11 @@ namespace ACE.Server.Factories
             {
                 // mundane add-on
                 MutateAetheria_New(item, profile);
+            }
+            else if (EmpoweredScarabWcids.Contains(roll.Wcid))
+            {
+                // mundane add-on
+                MutateEmpoweredanaScarab(item, profile);
             }
             // other mundane items (mana stones, food/drink, healing kits, lockpicks, and spell components/peas) don't get mutated
             // it should be safe to return false here, for the 1 caller that currently uses this method
@@ -691,7 +992,7 @@ namespace ACE.Server.Factories
                         wo.Shade = ThreadSafeRandom.Next(0.0f, 1.0f);
 
                         // Some debug info...
-                        // _log.Information($"Color success for {wo.MaterialType}({(int)wo.MaterialType}) - {wo.WeenieClassId} - {wo.Name}. PaletteTemplate {paletteTemplate} applied.");
+                        // log.Info($"Color success for {wo.MaterialType}({(int)wo.MaterialType}) - {wo.WeenieClassId} - {wo.Name}. PaletteTemplate {paletteTemplate} applied.");
                     }
                 }
                 else
@@ -770,13 +1071,13 @@ namespace ACE.Server.Factories
         private static List<(int min, int max)> itemValue_RandomRange = new List<(int min, int max)>()
         {
             ( 50, 1000),    // T1
-            (200, 1500),    // T2
+            (100, 1500),    // T2
             (200, 2000),    // T3
-            (400, 2500),    // T4
+            (300, 2500),    // T4
             (400, 3000),    // T5
-            (400, 3500),    // T6
+            (500, 3500),    // T6
             (600, 4000),    // T7
-            (600, 4500),    // T8
+            (700, 4500),    // T8
         };
 
         private static int Roll_ItemValue(WorldObject wo, int tier)
@@ -806,32 +1107,16 @@ namespace ACE.Server.Factories
             if (wo.Value == null)
                 wo.Value = 0;   // fixme: data
 
-            //var weenieValue = wo.Value;
+            var baseValue = wo.Value;
+            var itemWorkmanship = wo.ItemWorkmanship ?? 1;
+            var workmanshipMod = Math.Pow(itemWorkmanship, 2.0);
+            var rng = ThreadSafeRandom.Next(0.7f, 1.3f);
 
-            if (!(wo is Gem))
-            {
-                if (wo.HasArmorLevel())
-                    MutateValue_Armor(wo);
+            wo.Value = (int)(baseValue * workmanshipMod * rng);
 
-                MutateValue_Generic(wo, tier);
-            }
-            else
-                MutateValue_Gem(wo);
-
-            MutateValue_Spells(wo);
-
-            /*Console.WriteLine($"Mutating value for {wo.Name} ({weenieValue:N0} -> {wo.Value:N0})");
-
-            // compare with previous function
-            var materialMod = LootTables.getMaterialValueModifier(wo);
-            var gemMod = LootTables.getGemMaterialValueModifier(wo);
-
-            var rngRange = itemValue_RandomRange[tier - 1];
-
-            var minValue = (int)(rngRange.min * gemMod * materialMod * Math.Ceiling(tier / 2.0f));
-            var maxValue = (int)(rngRange.max * gemMod * materialMod * Math.Ceiling(tier / 2.0f));
-
-            Console.WriteLine($"Previous ACE range: {minValue:N0} - {maxValue:N0}");*/
+            // For Appraise skill
+            wo.OriginalValue = wo.Value;
+            wo.Value = (int)ThreadSafeRandom.Next(wo.Value.Value * 0.7f, wo.Value.Value * 0.9f);
         }
 
         // increase for a wider variance in item value ranges
@@ -852,13 +1137,20 @@ namespace ACE.Server.Factories
 
             var tierMod = ItemValue_TierMod[Math.Clamp(tier, 1, 8) - 1];
 
-            var newValue = (int)wo.Value * valueFactor + materialMod * tierMod + gemValue;
-
-            newValue *= (workmanshipMod /* + qualityMod */ ) * rng;
-
-            newValue += (int)wo.Value * valueNonFactor;
+            var newValue = 0.0f;
+            newValue = (int)wo.Value * materialMod * (int)wo.Tier + gemValue;
+            newValue *= workmanshipMod * rng;
 
             int iValue = (int)Math.Ceiling(newValue);
+
+            //Console.WriteLine($"\n\nMutateValue_Generic()\n" +
+            //    $" -BaseValue: {wo.Value}, ValueFactor {valueFactor}\n" +
+            //    $" -materialMod: {materialMod}, tierMod: {wo.Tier}\n" +
+            //    $" -workmanshipMod: {workmanshipMod}, gemValue: {gemValue}\n" +
+            //    $" -rng: {rng}\n" +
+            //    $" --NewValue: {newValue} --iValue: {iValue}\n\n" +
+            //    $" -Formula: (({wo.Value} * {materialMod} * {(wo.Tier)}) + {gemValue}) * ({workmanshipMod} * {rng})\n" +
+            //    $" -Formula: (({wo.Value * materialMod * wo.Tier + gemValue}) * ({workmanshipMod * rng})");
 
             // only raise value?
             if (iValue > wo.Value)
@@ -925,8 +1217,12 @@ namespace ACE.Server.Factories
 
         // new methods
 
-        public static TreasureRoll RollWcid(TreasureDeath treasureDeath, TreasureItemCategory category, TreasureItemType_Orig treasureItemType = TreasureItemType_Orig.Undef)
+        public static TreasureRoll RollWcid(TreasureDeath treasureDeath, TreasureItemCategory category)
         {
+            TreasureDeathExtended treasureDeathExtended = treasureDeath as TreasureDeathExtended;
+
+            TreasureItemType_Orig treasureItemType = treasureDeathExtended != null ? treasureDeathExtended.ForceTreasureItemType : TreasureItemType_Orig.Undef;
+
             if (treasureItemType == TreasureItemType_Orig.Undef)
                 treasureItemType = RollItemType(treasureDeath, category);
 
@@ -938,7 +1234,18 @@ namespace ACE.Server.Factories
 
             var treasureRoll = new TreasureRoll(treasureItemType);
 
-            // TODO: quality mod
+            if (treasureDeathExtended != null)
+            {
+                treasureRoll.ArmorType = treasureDeathExtended.ForceArmorType;
+                treasureRoll.WeaponType = treasureDeathExtended.ForceWeaponType;
+                treasureRoll.Heritage = treasureDeathExtended.ForceHeritage;
+            }
+
+            WeenieClassName wcid;
+            TreasureHeritageGroup heritage;
+            TreasureWeaponType weaponType;
+            int rng;
+
             switch (treasureItemType)
             {
                 case TreasureItemType_Orig.Pyreal:
@@ -966,19 +1273,24 @@ namespace ACE.Server.Factories
 
                 case TreasureItemType_Orig.Weapon:
 
-                    treasureRoll.WeaponType = WeaponTypeChance.Roll(treasureDeath.Tier);
-                    treasureRoll.Wcid = WeaponWcids.Roll(treasureDeath, ref treasureRoll.WeaponType);
+                    if(treasureRoll.WeaponType == TreasureWeaponType.Undef)
+                        treasureRoll.WeaponType = WeaponTypeChance.Roll(treasureDeath.Tier);
+                    else if(treasureRoll.WeaponType == TreasureWeaponType.MeleeWeapon || treasureRoll.WeaponType == TreasureWeaponType.MissileWeapon)
+                        treasureRoll.WeaponType = WeaponTypeChance.Roll(treasureDeath.Tier, treasureRoll.WeaponType);
+                    treasureRoll.Wcid = WeaponWcids.Roll(treasureDeath, treasureRoll);
                     break;
 
                 case TreasureItemType_Orig.Armor:
 
-                    treasureRoll.ArmorType = ArmorTypeChance.Roll(treasureDeath.Tier);
-                    treasureRoll.Wcid = ArmorWcids.Roll(treasureDeath, ref treasureRoll.ArmorType);
+                    if (treasureRoll.ArmorType == TreasureArmorType.Undef)
+                        treasureRoll.ArmorType = ArmorTypeChance.Roll(treasureDeath.Tier);
+                    treasureRoll.Wcid = ArmorWcids.Roll(treasureDeath, treasureRoll);
                     break;
 
                 case TreasureItemType_Orig.Clothing:
 
-                    treasureRoll.Wcid = ClothingWcids.Roll(treasureDeath);
+                    treasureRoll.Wcid = ClothingWcids.Roll(treasureDeath, treasureRoll);
+                    //Console.WriteLine($"Clothing WCID: {treasureRoll.Wcid}");
                     break;
 
                 case TreasureItemType_Orig.Scroll:
@@ -1032,7 +1344,7 @@ namespace ACE.Server.Factories
                     treasureRoll.ItemType = TreasureItemType_Orig.SocietyArmor;     // collapse for mutation
                     treasureRoll.ArmorType = TreasureArmorType.Society;
 
-                    treasureRoll.Wcid = SocietyArmorWcids.Roll(treasureDeath, treasureItemType);
+                    treasureRoll.Wcid = SocietyArmorWcids.Roll(treasureDeath, treasureItemType, treasureRoll);
                     break;
 
                 case TreasureItemType_Orig.Cloak:
@@ -1049,7 +1361,100 @@ namespace ACE.Server.Factories
 
                     treasureRoll.Wcid = WeenieClassName.ace49485_encapsulatedspirit;
                     break;
+
+                case TreasureItemType_Orig.Salvage:
+
+                    treasureRoll.Wcid = SalvageWcids.Roll(treasureDeath);
+                    break;
+
+                case TreasureItemType_Orig.SpecialItem:
+
+                    treasureRoll.Wcid = SpecialItemsWcids.Roll(treasureDeath, treasureRoll);
+                    break;
+
+                case TreasureItemType_Orig.ArmorWarrior:
+
+                    if (treasureRoll.ArmorType == TreasureArmorType.Undef)
+                        treasureRoll.ArmorType = ArmorTypeChance.RollWarrior(treasureDeath.Tier);
+
+                    treasureRoll.Wcid = ArmorWcids.Roll(treasureDeath, treasureRoll);
+                    break;
+
+                case TreasureItemType_Orig.ArmorRogue:
+
+                    if (treasureRoll.ArmorType == TreasureArmorType.Undef)
+                        treasureRoll.ArmorType = ArmorTypeChance.RollRogue(treasureDeath.Tier);
+                    treasureRoll.Wcid = ArmorWcids.Roll(treasureDeath, treasureRoll);
+                    break;
+
+                case TreasureItemType_Orig.ArmorCaster:
+
+                    if (treasureRoll.ArmorType == TreasureArmorType.Undef)
+                        treasureRoll.ArmorType = ArmorTypeChance.RollCaster(treasureDeath.Tier);
+                    treasureRoll.Wcid = ArmorWcids.Roll(treasureDeath, treasureRoll);
+                    break;
+
+                case TreasureItemType_Orig.WeaponWarrior:
+
+                    heritage = (TreasureHeritageGroup)ThreadSafeRandom.Next(1, 3);
+                    rng = ThreadSafeRandom.Next(0, 7);
+
+                    if (treasureRoll.WeaponType == TreasureWeaponType.Undef)
+                        treasureRoll.WeaponType = WeaponTypeChance.Roll(TreasureItemType_Orig.WeaponWarrior);
+
+                    switch (treasureRoll.WeaponType)
+                    {
+                        default:
+                        case TreasureWeaponType.Axe: wcid = AxeWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Mace: wcid = MaceWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Spear: wcid = SpearWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Sword: wcid = SwordWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Staff: wcid = StaffWcids.Roll(heritage, treasureDeath.Tier); break;
+                        case TreasureWeaponType.Atlatl: wcid = AtlatlWcids.Roll(treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Crossbow: wcid = CrossbowWcids.Roll(treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Bow: wcid = BowWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;
+                    }
+
+                    treasureRoll.Wcid = wcid;
+                    break;
+
+                case TreasureItemType_Orig.WeaponRogue:
+
+                    heritage = (TreasureHeritageGroup)ThreadSafeRandom.Next(1, 3);
+
+                    if (treasureRoll.WeaponType == TreasureWeaponType.Undef)
+                        treasureRoll.WeaponType = WeaponTypeChance.Roll(TreasureItemType_Orig.WeaponRogue);
+
+                    switch (treasureRoll.WeaponType)
+                    {
+                        default:
+                        case TreasureWeaponType.Unarmed: wcid = UnarmedWcids.Roll(heritage, treasureDeath.Tier); break;
+                        case TreasureWeaponType.Dagger:wcid = DaggerWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Atlatl: wcid = AtlatlWcids.Roll(treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Crossbow: wcid = CrossbowWcids.Roll(treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Bow: wcid = BowWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;
+                    }
+
+                    treasureRoll.Wcid = wcid;
+                    break;
+
+                case TreasureItemType_Orig.WeaponCaster:
+
+                    treasureRoll.WeaponType = TreasureWeaponType.Caster;
+                    treasureRoll.Wcid = CasterWcids.Roll(treasureDeath.Tier);
+                    break;
+
+                case TreasureItemType_Orig.AnimalParts:
+
+                    treasureRoll.Wcid = AnimalPartsWcids.Roll(treasureDeath.Tier);
+                    break;
+
+                case TreasureItemType_Orig.EmpoweredScarabs:
+
+                    treasureRoll.Wcid = EmpoweredScarabWcids.Roll(treasureDeath.Tier);
+                    break;
             }
+
             return treasureRoll;
         }
 
@@ -1072,10 +1477,47 @@ namespace ACE.Server.Factories
             return TreasureItemType_Orig.Undef;
         }
 
-        public static WorldObject CreateRandomLootObjects_New(TreasureDeath treasureDeath, TreasureItemCategory category, TreasureItemType_Orig treasureItemType = TreasureItemType_Orig.Undef)
+        public static WorldObject CreateRandomLootObjects_New(int tier, TreasureItemCategory category, TreasureItemType_Orig treasureItemType = TreasureItemType_Orig.Undef, TreasureArmorType armorType = TreasureArmorType.Undef, TreasureWeaponType weaponType = TreasureWeaponType.Undef)
         {
-            var treasureRoll = RollWcid(treasureDeath, category, treasureItemType);
+            return CreateRandomLootObjects_New(tier, 0.0f, category, treasureItemType, armorType, weaponType);
+        }
 
+        public static WorldObject CreateRandomLootObjects_New(int tier, float lootQualityMod, TreasureItemCategory category, TreasureItemType_Orig treasureItemType = TreasureItemType_Orig.Undef, TreasureArmorType armorType = TreasureArmorType.Undef, TreasureWeaponType weaponType = TreasureWeaponType.Undef, TreasureHeritageGroup heritageGroup = TreasureHeritageGroup.Invalid)
+        {
+            var treasureDeath = new TreasureDeathExtended()
+            {
+                Tier = tier,
+                LootQualityMod = lootQualityMod,
+                ForceTreasureItemType = treasureItemType,
+                ForceArmorType = armorType,
+                ForceWeaponType = weaponType,
+                ForceHeritage = heritageGroup,
+
+                ItemChance = 100,
+                ItemMinAmount = 1,
+                ItemMaxAmount = 1,
+                ItemTreasureTypeSelectionChances = 8,
+
+                MagicItemChance = 100,
+                MagicItemMinAmount = 1,
+                MagicItemMaxAmount = 1,
+                MagicItemTreasureTypeSelectionChances = 8,
+
+                MundaneItemChance = 100,
+                MundaneItemMinAmount = 1,
+                MundaneItemMaxAmount = 1,
+                MundaneItemTypeSelectionChances = 7,
+
+                UnknownChances = 21
+            };
+
+            return CreateRandomLootObjects_New(treasureDeath, category);
+        }
+
+        public static WorldObject CreateRandomLootObjects_New(TreasureDeath treasureDeath, TreasureItemCategory category)
+        {
+            var treasureRoll = RollWcid(treasureDeath, category);
+            
             if (treasureRoll == null) return null;
 
             var wo = CreateAndMutateWcid(treasureDeath, treasureRoll, category == TreasureItemCategory.MagicItem);
@@ -1086,10 +1528,13 @@ namespace ACE.Server.Factories
         public static WorldObject CreateAndMutateWcid(TreasureDeath treasureDeath, TreasureRoll treasureRoll, bool isMagical)
         {
             WorldObject wo = null;
-
+            
             if (treasureRoll.ItemType != TreasureItemType_Orig.Scroll)
             {
                 wo = WorldObjectFactory.CreateNewWorldObject((uint)treasureRoll.Wcid);
+                if(wo != null)
+                    // ADD wo.Tier = Monster.Tier
+                    wo.Tier = treasureDeath.Tier;
 
                 if (wo == null)
                 {
@@ -1097,8 +1542,31 @@ namespace ACE.Server.Factories
                     return null;
                 }
 
+                if (wo.MaxStackSize > 1)
+                {
+                    if (treasureRoll.ItemType == TreasureItemType_Orig.SpecialItem_Unmutated)
+                        wo.SetStackSize(SpecialItemsWcids.GetAmount(wo.WeenieClassId));
+                    else if (treasureRoll.WeaponType == TreasureWeaponType.Thrown)
+                        wo.SetStackSize(Math.Min(30, (int)(wo.MaxStackSize ?? 1)));
+                    else if (treasureRoll.ItemType == TreasureItemType_Orig.ArtObject)
+                        wo.SetStackSize(Math.Min(10, (int)(wo.MaxStackSize ?? 1)));
+                    else if (treasureRoll.ItemType == TreasureItemType_Orig.Consumable)
+                        wo.SetStackSize(Math.Min(5, (int)(wo.MaxStackSize ?? 1)));
+                    else if (wo.ItemType == ItemType.SpellComponents)
+                    {
+                        uint componentId = wo.GetProperty(PropertyDataId.SpellComponent) ?? 0;
+                        if ((componentId > 6 && componentId < 49) || (componentId > 62 && componentId < 75)) // herbs, powders, potions and tapers
+                            wo.SetStackSize(Math.Min(2 * treasureDeath.Tier, wo.MaxStackSize ?? 1));
+                        else if ((wo.GetProperty(PropertyDataId.SpellComponent) ?? 0) < 63) // scarabs and talismans
+                            wo.SetStackSize(Math.Min(treasureDeath.Tier, wo.MaxStackSize ?? 1));
+                    }
+                }
+
                 treasureRoll.BaseArmorLevel = wo.ArmorLevel ?? 0;
+                treasureRoll.BaseAegisLevel = wo.AegisLevel ?? 0;
             }
+
+            var armorType = treasureRoll.ArmorType.ToACE();
 
             switch (treasureRoll.ItemType)
             {
@@ -1119,7 +1587,8 @@ namespace ACE.Server.Factories
                     }
                     break;
                 case TreasureItemType_Orig.ArtObject:
-                    MutateDinnerware(wo, treasureDeath, isMagical, treasureRoll);
+                    if (wo.WeenieType == WeenieType.Generic && wo.ItemType == ItemType.MissileWeapon)
+                        MutateDinnerware(wo, treasureDeath, isMagical, treasureRoll);
                     break;
 
                 case TreasureItemType_Orig.Weapon:
@@ -1136,6 +1605,7 @@ namespace ACE.Server.Factories
                         case TreasureWeaponType.Sword:
                         case TreasureWeaponType.SwordMS:
                         case TreasureWeaponType.Unarmed:
+                        case TreasureWeaponType.Thrown:
 
                         case TreasureWeaponType.TwoHandedAxe:
                         case TreasureWeaponType.TwoHandedMace:
@@ -1151,8 +1621,11 @@ namespace ACE.Server.Factories
                             break;
 
                         case TreasureWeaponType.Bow:
+                        case TreasureWeaponType.BowShort:
                         case TreasureWeaponType.Crossbow:
+                        case TreasureWeaponType.CrossbowLight:
                         case TreasureWeaponType.Atlatl:
+                        case TreasureWeaponType.AtlatlRegular:
 
                             MutateMissileWeapon(wo, treasureDeath, isMagical, null, treasureRoll);
                             break;
@@ -1172,7 +1645,6 @@ namespace ACE.Server.Factories
                 case TreasureItemType_Orig.Armor:
                 case TreasureItemType_Orig.SocietyArmor:    // collapsed, after rolling for initial wcid
 
-                    var armorType = treasureRoll.ArmorType.ToACE();
                     MutateArmor(wo, treasureDeath, isMagical, armorType, treasureRoll);
                     break;
 
@@ -1192,8 +1664,79 @@ namespace ACE.Server.Factories
                     MutatePetDevice(wo, treasureDeath.Tier);
                     break;
 
-                // other mundane items (mana stones, food/drink, healing kits, lockpicks, and spell components/peas) don't get mutated
+                case TreasureItemType_Orig.Salvage:
+                    MutateSalvage(wo, treasureDeath.Tier);
+                    break;
+
+                case TreasureItemType_Orig.ArmorWarrior:
+                    MutateArmor(wo, treasureDeath, isMagical, armorType, treasureRoll);
+                    break;
+
+                case TreasureItemType_Orig.ArmorRogue:
+                    MutateArmor(wo, treasureDeath, isMagical, armorType, treasureRoll);
+                    break;
+
+                case TreasureItemType_Orig.ArmorCaster:
+                    MutateArmor(wo, treasureDeath, isMagical, armorType, treasureRoll);
+                    break;
+
+                case TreasureItemType_Orig.WeaponWarrior:
+                    switch (treasureRoll.WeaponType)
+                    {
+                        case TreasureWeaponType.Axe:
+                        case TreasureWeaponType.Mace:
+                        case TreasureWeaponType.Spear:
+                        case TreasureWeaponType.Staff:
+                        case TreasureWeaponType.Sword:
+                            MutateMeleeWeapon(wo, treasureDeath, isMagical, treasureRoll);
+                            break;
+
+                        case TreasureWeaponType.Atlatl:
+                        case TreasureWeaponType.Bow:
+                        case TreasureWeaponType.Crossbow:
+                            MutateMissileWeapon(wo, treasureDeath, isMagical, GetWieldDifficultyPerTier(treasureDeath.Tier), treasureRoll);
+                            break;
+                    }
+                    break;
+
+                case TreasureItemType_Orig.WeaponRogue:
+                    switch (treasureRoll.WeaponType)
+                    {
+                        case TreasureWeaponType.Dagger:
+                        case TreasureWeaponType.Unarmed:
+                            MutateMeleeWeapon(wo, treasureDeath, isMagical, treasureRoll);
+                            break;
+
+                        case TreasureWeaponType.Atlatl:
+                        case TreasureWeaponType.Bow:
+                        case TreasureWeaponType.Crossbow:
+                            MutateMissileWeapon(wo, treasureDeath, isMagical, GetWieldDifficultyPerTier(treasureDeath.Tier), treasureRoll);
+                            break;
+                    }
+                    break;
+
+                case TreasureItemType_Orig.WeaponCaster:
+                    MutateCaster(wo, treasureDeath, isMagical, GetWieldDifficultyPerTier(treasureDeath.Tier), treasureRoll);
+                    break;
+
+                    // other mundane items (mana stones, food/drink, healing kits, lockpicks, and spell components/peas) don't get mutated
             }
+
+            if (wo != null)
+            {
+                if (wo.WieldRequirements != WieldRequirement.RawAttrib)
+                {
+                    if (wo.WieldSkillType.HasValue)
+                        wo.WieldSkillType = (int)wo.ConvertToMoASkill((Skill)wo.WieldSkillType);
+                    if (wo.WieldSkillType2.HasValue)
+                        wo.WieldSkillType2 = (int)wo.ConvertToMoASkill((Skill)wo.WieldSkillType2);
+                    if (wo.WieldSkillType3.HasValue)
+                        wo.WieldSkillType3 = (int)wo.ConvertToMoASkill((Skill)wo.WieldSkillType3);
+                    if (wo.WieldSkillType4.HasValue)
+                        wo.WieldSkillType4 = (int)wo.ConvertToMoASkill((Skill)wo.WieldSkillType4);
+                }
+            }
+
             return wo;
         }
 
@@ -1277,6 +1820,70 @@ namespace ACE.Server.Factories
 
             // as per retail pcaps, must be set to appear in client
             wo.WieldSkillType = 1;  
+        }
+
+        private static int GetTierValue(TreasureDeath treasureDeath)
+        {
+            return treasureDeath.Tier;
+        }
+
+        private static int GetArmorLevelReq(int armorTier)
+        {
+            switch (armorTier)
+            {
+                case 2:
+                    return 10;
+                case 3:
+                    return 20;
+                case 4:
+                    return 30;
+                case 5:
+                    return 40;
+                case 6:
+                    return 50;
+                case 7:
+                    return 75;
+                case 8:
+                    return 100;
+                default:
+                    return 1;
+            }
+        }
+
+        public static float GetDiminishingRoll(TreasureDeath treasureDeath)
+        {
+            var result = 0.0f;
+            var lootQualityMod = treasureDeath.LootQualityMod > 0 ? treasureDeath.LootQualityMod * 100 : 1;
+            var roll = ThreadSafeRandom.Next(lootQualityMod, 100);
+
+            switch (roll)
+            {
+                case <= 50: result = (float)ThreadSafeRandom.Next(0, 20) / 100; break;
+                case <= 75: result = (float)ThreadSafeRandom.Next(20, 40) / 100; break;
+                case <= 90: result = (float)ThreadSafeRandom.Next(40, 60) / 100; break;
+                case <= 95: result = (float)ThreadSafeRandom.Next(60, 80) / 100; break;
+                case <= 99: result = (float)ThreadSafeRandom.Next(80, 90) / 100; break;
+                case 100: result = (float)ThreadSafeRandom.Next(90, 100) / 100; break;
+            }
+
+            return result;
+        }
+
+        private static int GetMaxValueOfTier(int tier)
+        {
+            switch (tier)
+            {
+                case 1: return 10;
+                case 2: return 20;
+                case 3: return 30;
+                case 4: return 40;
+                case 5: return 50;
+                case 6: return 75;
+                case 7: return 100;
+                case 8: return 126;
+                default: return 10;
+
+            }
         }
     }         
 }
