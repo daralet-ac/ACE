@@ -19,6 +19,7 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Weenie = ACE.Entity.Models.Weenie;
 
 namespace ACE.Server.Managers
 {
@@ -204,11 +205,11 @@ namespace ACE.Server.Managers
             var tinkeredCount = target.NumTimesTinkered;
 
             var materialType = tool.MaterialType ?? MaterialType.Unknown;
-            var salvageMod = GetMaterialMod(materialType);
 
-            var workmanshipMod = 1.0f;
-            if (toolWorkmanship >= itemWorkmanship)
-                workmanshipMod = 2.0f;
+            // thanks to Endy's Tinkering Calculator for this formula!
+            var attemptMod = TinkeringDifficulty[tinkeredCount];
+
+            double successChance;
 
             var recipeSkill = (Skill)recipe.Skill;
 
@@ -221,14 +222,17 @@ namespace ACE.Server.Managers
                 return null;
             }
 
-            // thanks to Endy's Tinkering Calculator for this formula!
-            var attemptMod = TinkeringDifficulty[tinkeredCount];
+            var salvageMod = GetMaterialMod(materialType);
 
-            var difficulty = (int)Math.Floor(((salvageMod * 5.0f) + (itemWorkmanship * salvageMod * 2.0f) - (toolWorkmanship * workmanshipMod * salvageMod / 5.0f)) * attemptMod);
+            var workmanshipMod = 1.0f;
+            if (toolWorkmanship >= itemWorkmanship)
+                workmanshipMod = 2.0f;
 
             var playerCurrentPlusLumAugSkilledCraft = skill.Current + (uint)player.LumAugSkilledCraft;
 
-            var successChance = SkillCheck.GetSkillChance((int)playerCurrentPlusLumAugSkilledCraft, difficulty);
+            var difficulty = (int)Math.Floor(((salvageMod * 5.0f) + (itemWorkmanship * salvageMod * 2.0f) - (toolWorkmanship * workmanshipMod * salvageMod / 5.0f)) * attemptMod);
+
+            successChance = SkillCheck.GetSkillChance((int)playerCurrentPlusLumAugSkilledCraft, difficulty);
 
             // imbue: divide success by 3
             if (recipe.IsImbuing())
@@ -425,7 +429,7 @@ namespace ACE.Server.Managers
 
                  // mutations apparently didn't cap to 2.0 here, clamps are applied in damage calculations though
 
-                case 0x38000017:    // Alabaster    
+                case 0x38000017:    // Alabaster
                     //target.ArmorModVsPierce = Math.Min((target.ArmorModVsPierce ?? 0) + 0.2f, 2.0f);
                     target.ArmorModVsPierce += 0.2f;
                     break;
@@ -483,19 +487,32 @@ namespace ACE.Server.Managers
                 case 0x38000043:    // Leather
                     target.Retained = true;
                     break;
-                case 0x3900004E:    // Sandstone: 43 -> 4E
+                case 0x3800004E:    // Sandstone: 43 -> 4E
                     target.Retained = false;
                     break;
                 case 0x3800002F:    // Moonstone
                     target.ItemMaxMana += 500;
                     break;
 
-                case 0x39000042:
-                    // legacy, these are handled in recipe mods
-                    //target.SetProperty(PropertyString.ItemHeritageGroupRestriction, "Aluvian");     // Teak
-                    //target.SetProperty(PropertyString.ItemHeritageGroupRestriction, "Gharu'ndim");  // Ebony
-                    //target.SetProperty(PropertyString.ItemHeritageGroupRestriction, "Sho");         // Porcelain
-                    //target.SetProperty(PropertyString.ItemHeritageGroupRestriction, "Viamontian");  // Satin
+                case 0x38000042:
+                    switch (target.ItemHeritageGroupRestriction)
+                    {
+                        case "Aluvian":
+                            target.HeritageGroup = HeritageGroup.Aluvian;
+                            break;
+
+                        case "Gharu'ndim":
+                            target.HeritageGroup = HeritageGroup.Gharundim;
+                            break;
+
+                        case "Sho":
+                            target.HeritageGroup = HeritageGroup.Sho;
+                            break;
+
+                        case "Viamontian":
+                            target.HeritageGroup = HeritageGroup.Viamontian;
+                            break;
+                    }
                     break;
 
                 case 0x38000035:    // Copper
@@ -529,12 +546,12 @@ namespace ACE.Server.Managers
 
                 // armatures / trinkets
                 // these are handled in recipe mod
-                case 0x39000048:    // Amber
-                case 0x39000049:    // Diamond
-                case 0x39000050:    // GromnieHide
-                case 0x39000051:    // Pyreal
-                case 0x39000052:    // Ruby
-                case 0x39000053:    // Sapphire
+                case 0x38000048:    // Amber
+                case 0x38000049:    // Diamond
+                case 0x38000050:    // GromnieHide
+                case 0x38000051:    // Pyreal
+                case 0x38000052:    // Ruby
+                case 0x38000053:    // Sapphire
                     return false;
 
                 // magic item tinkering
@@ -550,6 +567,10 @@ namespace ACE.Server.Managers
                 case 0x38000023:    // BlackOpal
                     //AddImbuedEffect(target, ImbuedEffectType.CriticalStrike);
                     target.ImbuedEffect = ImbuedEffectType.CriticalStrike;
+                    break;
+                case 0x38000058:    // Tourmaline
+                    //AddImbuedEffect(target, ImbuedEffectType.AegisRending);
+                    target.ImbuedEffect = ImbuedEffectType.AegisRending;
                     break;
                 case 0x3800002E:    // Opal
                     //target.ManaConversionMod += 0.01f;
@@ -649,7 +670,7 @@ namespace ACE.Server.Managers
                 case 0x38000046:    // Fetish of the Dark Idols
 
                     // shouldn't exist on player items, but just recreating original script here
-                    if (target.ImbuedEffect >= ImbuedEffectType.IgnoreAllArmor)  
+                    if (target.ImbuedEffect >= ImbuedEffectType.IgnoreAllArmor)
                         target.ImbuedEffect = ImbuedEffectType.Undef;
 
                     target.ImbuedEffect |= ImbuedEffectType.IgnoreSomeMagicProjectileDamage;
@@ -716,6 +737,7 @@ namespace ACE.Server.Managers
             0x38000041, // Cantrips
             0x38000042, // Heritage
             0x3800004B, // Green Garnet
+            0x38000058, // Tourmaline
         };
 
         public static void AddSpell(Player player, WorldObject target, SpellId spell, int difficulty = 25)
@@ -774,10 +796,12 @@ namespace ACE.Server.Managers
 
             if (!VerifyRequirements(recipe, player, player, RequirementType.Player)) return false;
 
+            if (!RequiresEqualOrGreaterWork(player, source, target)) return false;
+
             return true;
         }
 
-        public static bool VerifyUse(Player player, WorldObject source, WorldObject target)
+        public static bool VerifyUse(Player player, WorldObject source, WorldObject target, bool blockWielded = false)
         {
             var usable = source.ItemUseable ?? Usable.Undef;
 
@@ -790,7 +814,9 @@ namespace ACE.Server.Managers
                     return false;
 
                 // almost always MyInventory, but sometimes can be applied to equipped
-                if (player.FindObject(target.Guid.Full, Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems) == null)
+                if (!blockWielded && player.FindObject(target.Guid.Full, Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems) == null)
+                    return false;
+                else if (blockWielded && player.FindObject(target.Guid.Full, Player.SearchLocations.MyInventory) == null)
                     return false;
 
                 return true;
@@ -799,17 +825,21 @@ namespace ACE.Server.Managers
             var sourceUse = usable.GetSourceFlags();
             var targetUse = usable.GetTargetFlags();
 
-            return VerifyUse(player, source, sourceUse) && VerifyUse(player, target, targetUse);
+            return VerifyUse(player, source, sourceUse, blockWielded) && VerifyUse(player, target, targetUse, blockWielded);
         }
 
-        public static bool VerifyUse(Player player, WorldObject obj, Usable usable)
+        public static bool VerifyUse(Player player, WorldObject obj, Usable usable, bool blockWielded = false)
         {
             var searchLocations = Player.SearchLocations.None;
 
             // TODO: figure out other Usable flags
             if (usable.HasFlag(Usable.Contained))
-                searchLocations |= Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems;
-            if (usable.HasFlag(Usable.Wielded))
+            {
+                searchLocations |= Player.SearchLocations.MyInventory;
+                if (!blockWielded)
+                    searchLocations |= Player.SearchLocations.MyEquippedItems;
+            }
+            if (!blockWielded && usable.HasFlag(Usable.Wielded))
                 searchLocations |= Player.SearchLocations.MyEquippedItems;
             if (usable.HasFlag(Usable.Remote))
                 searchLocations |= Player.SearchLocations.LocationsICanMove;    // TODO: moveto for this type
@@ -1040,6 +1070,9 @@ namespace ACE.Server.Managers
                 var destroyTargetAmount = success ? recipe.SuccessDestroyTargetAmount : recipe.FailDestroyTargetAmount;
                 var destroyTargetMessage = success ? recipe.SuccessDestroyTargetMessage : recipe.FailDestroyTargetMessage;
 
+                if (recipe.IsTinkering() && target.WeenieType == WeenieType.Missile)
+                    destroyTargetAmount = (uint)(target.StackSize ?? 1); // Thrown weapons tinkering should destroy the whole stack on failure.
+
                 DestroyItem(player, recipe, target, destroyTargetAmount, destroyTargetMessage);
             }
 
@@ -1099,7 +1132,7 @@ namespace ACE.Server.Managers
             if (amount > 1)
                 wo.SetStackSize((int)amount);
 
-            player.TryCreateInInventoryWithNetworking(wo);
+            player.TryCreateInInventoryWithNetworking(wo, out _, true);
             return wo;
         }
 
@@ -1460,6 +1493,76 @@ namespace ACE.Server.Managers
             }
         }
 
+        private static void ModifyWeenieClassId(WorldObject target, uint weenieClassId, HashSet<uint> modified)
+        {
+            var newWeenie = DatabaseManager.World.GetCachedWeenie(weenieClassId);
+            var oldWeenie = DatabaseManager.World.GetCachedWeenie(target.Biota.WeenieClassId);
+
+            switch (target.ItemType)
+            {
+                case ItemType.MeleeWeapon:
+                case ItemType.MissileWeapon:
+                case ItemType.Caster:
+                    ModifyWeenieWeapon(target, newWeenie);
+                    break;
+                default:
+                    _log.Error($"RecipeManager.ModifyWeenieClassId({target.Guid}, {weenieClassId}) Unsupported ItemType: {target.ItemType}");
+                    return;
+            }
+
+            target.Biota.WeenieClassId = weenieClassId;
+            ModifyWeenieName(target, oldWeenie, newWeenie);
+            ModifyWeenieDescription(target, oldWeenie, newWeenie);
+
+            modified.Add(target.Guid.Full);
+        }
+
+        private static void ModifyWeenieName(WorldObject target, Weenie oldWeenie, Weenie newWeenie)
+        {
+            var previousWeenieName = oldWeenie.GetProperty(PropertyString.Name);
+            var newWeenieName = newWeenie.GetProperty(PropertyString.Name);
+
+            var previousTargetName = target.GetProperty(PropertyString.Name);
+            var newTargetName = previousTargetName.Replace(previousWeenieName, newWeenieName);
+
+            target.SetProperty(PropertyString.Name, newTargetName);
+        }
+
+        private static void ModifyWeenieDescription(WorldObject target, Weenie oldWeenie, Weenie newWeenie)
+        {
+            var previousWeenieName = oldWeenie.GetProperty(PropertyString.Name);
+            var newWeenieName = newWeenie.GetProperty(PropertyString.Name);
+
+            var previousTargetDesc = target.GetProperty(PropertyString.LongDesc);
+            var newTargetDesc = previousTargetDesc.Replace(previousWeenieName, newWeenieName);
+
+            target.SetProperty(PropertyString.LongDesc, newTargetDesc);
+        }
+
+        private static void ModifyWeenieWeapon(WorldObject target, Weenie newWeenie)
+        {
+            var newDamageType = newWeenie.GetProperty(PropertyInt.DamageType);
+            var newUiEffects = newWeenie.GetProperty(PropertyInt.UiEffects);
+            var newSetup = newWeenie.GetProperty(PropertyDataId.Setup);
+
+            if (newDamageType != null)
+                target.SetProperty(PropertyInt.DamageType, (int) newDamageType);
+            else
+                target.RemoveProperty(PropertyInt.DamageType);
+
+            if (newUiEffects != null)
+                target.SetProperty(PropertyInt.UiEffects, (int) newUiEffects);
+            else if (target.ProcSpell != null || target.Biota.HasKnownSpell(target.BiotaDatabaseLock))
+                target.SetProperty(PropertyInt.UiEffects, (int) UiEffects.Magical);
+            else
+                target.RemoveProperty(PropertyInt.UiEffects);
+
+            if (newSetup != null)
+                target.SetProperty(PropertyDataId.Setup, (uint) newSetup);
+            else
+                target.RemoveProperty(PropertyDataId.Setup);
+        }
+
         /// <summary>
         /// flag to use c# logic instead of mutate script logic
         /// </summary>
@@ -1469,6 +1572,29 @@ namespace ACE.Server.Managers
         {
             if (useMutateNative)
                 return TryMutateNative(player, source, target, recipe, dataId);
+
+            if (dataId == 0x38000042)
+            {
+                // Can this be done with mutation script?
+                switch (target.ItemHeritageGroupRestriction)
+                {
+                    case "Aluvian":
+                        target.HeritageGroup = HeritageGroup.Aluvian;
+                        break;
+
+                    case "Gharu'ndim":
+                        target.HeritageGroup = HeritageGroup.Gharundim;
+                        break;
+
+                    case "Sho":
+                        target.HeritageGroup = HeritageGroup.Sho;
+                        break;
+
+                    case "Viamontian":
+                        target.HeritageGroup = HeritageGroup.Viamontian;
+                        break;
+                }
+            }
 
             var numTimesTinkered = target.NumTimesTinkered;
 
@@ -1545,6 +1671,24 @@ namespace ACE.Server.Managers
             WeenieClassName.W_MATERIALACE36635FOOLPROOFYELLOWTOPAZ,
             WeenieClassName.W_MATERIALACE36636FOOLPROOFZIRCON,
         };
+
+        private static bool RequiresEqualOrGreaterWork(Player player, WorldObject source, WorldObject target)
+        {
+            if(source.ItemType != ItemType.TinkeringMaterial)
+                return true;
+
+            uint[] qualifyingSalvageTypes = { (uint)MaterialType.Leather, (uint)MaterialType.Sandstone };
+
+            if (qualifyingSalvageTypes.Contains((uint)source.MaterialType))
+            {
+                if (source.Workmanship >= target.Workmanship)
+                    return true;
+
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {source.Name} (workmanship: {source.Workmanship}) does not have enough quality to apply it to the {target.Name} (workmanship: {target.Workmanship}).", ChatMessageType.Craft));
+            }
+
+            return false;
+        }
     }
 
     public static class RecipeExtensions
