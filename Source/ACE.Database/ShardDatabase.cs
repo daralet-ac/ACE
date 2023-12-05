@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ACE.Common;
+using ACE.Common.Extensions;
 using ACE.Database.Entity;
 using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
@@ -852,6 +853,56 @@ namespace ACE.Database
             finally
             {
                 rwLock.ExitReadLock();
+            }
+        }
+
+        public void LogAccountSessionStart(uint accountId, string accountName, string sessionIP)
+        {
+            var logEntry = new AccountSessionLog();
+
+            try
+            {
+                logEntry.AccountId = accountId;
+                logEntry.AccountName = accountName;
+                logEntry.SessionIP = sessionIP;
+                logEntry.LoginDateTime = DateTime.Now;
+
+                using (var context = new ShardDbContext())
+                {
+                    context.AccountSessions.Add(logEntry);
+                    context.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Exception in LogAccountSessionStart saving session log data to DB. Ex: {ex}");
+            }
+
+            return;
+        }
+
+        public void LogCharacterLogin(uint accountId, string accountName, string sessionIP, uint characterId, string characterName)
+        {
+            var logEntry = new CharacterLoginLog();
+
+            try
+            {
+                logEntry.AccountId = accountId;
+                logEntry.AccountName = accountName;
+                logEntry.SessionIP = sessionIP;
+                logEntry.CharacterId = characterId;
+                logEntry.CharacterName = characterName;
+                logEntry.LoginDateTime = DateTime.Now;
+
+                using (var context = new ShardDbContext())
+                {
+                    context.CharacterLogins.Add(logEntry);
+                    context.SaveChanges();
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Exception in LogCharacterLogin saving character login info to DB. Ex: {ex}");
             }
         }
     }
