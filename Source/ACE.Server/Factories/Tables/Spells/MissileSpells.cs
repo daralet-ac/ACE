@@ -2,9 +2,10 @@ using System.Collections.Generic;
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Server.Factories.Entity;
 using Serilog;
 
-namespace ACE.Server.Factories.Tables
+namespace ACE.Server.Factories.Tables.Spells
 {
     public static class MissileSpells
     {
@@ -12,19 +13,10 @@ namespace ACE.Server.Factories.Tables
 
         private static readonly List<SpellId> spells = new List<SpellId>()
         {
-            SpellId.StrengthSelf1,
-            SpellId.EnduranceSelf1,
-            SpellId.CoordinationSelf1,
-            SpellId.QuicknessSelf1,     // added, according to spellSelectionGroup6
-
             SpellId.BloodDrinkerSelf1,
             SpellId.HeartSeekerSelf1,
             SpellId.DefenderSelf1,
             SpellId.SwiftKillerSelf1,
-
-            SpellId.DirtyFightingMasterySelf1,
-            SpellId.RecklessnessMasterySelf1,
-            SpellId.SneakAttackMasterySelf1,
         };
 
         private static readonly int NumTiers = 8;
@@ -85,9 +77,42 @@ namespace ACE.Server.Factories.Tables
 
         private static readonly List<(SpellId spellId, float chance)> weaponMissileSpells = new List<(SpellId, float)>()
         {
-            ( SpellId.SwiftKillerSelf1,  0.30f ),
-            ( SpellId.DefenderSelf1,     0.25f ),
+            ( SpellId.SwiftKillerSelf1,  1.00f ),
+            ( SpellId.DefenderSelf1,     1.00f ),
+            ( SpellId.HeartSeekerSelf1,  1.00f ),
             ( SpellId.BloodDrinkerSelf1, 1.00f ),
+        };
+
+        public static ChanceTable<SpellId> missileProcs = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        {
+            ( SpellId.Undef,              150.0f ),
+
+            ( SpellId.StaminaToManaSelf1,   2.0f ),
+            ( SpellId.ManaToStaminaSelf1,   2.0f ),
+            ( SpellId.ManaToHealthSelf1,    2.0f ),
+
+            ( SpellId.DrainMana1,           2.0f ),
+            ( SpellId.DrainStamina1,        2.0f ),
+            ( SpellId.DrainHealth1,         2.0f ),
+
+            ( SpellId.ManaBoostSelf1,       1.0f ),
+            ( SpellId.RevitalizeSelf1,      1.0f ),
+            ( SpellId.HealSelf1,            1.0f ),
+        };
+
+        private static ChanceTable<SpellId> missileProcsCertain = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        {
+            ( SpellId.StaminaToManaSelf1,   2.0f ),
+            ( SpellId.ManaToStaminaSelf1,   2.0f ),
+            ( SpellId.ManaToHealthSelf1,    2.0f ),
+
+            ( SpellId.DrainMana1,           2.0f ),
+            ( SpellId.DrainStamina1,        2.0f ),
+            ( SpellId.DrainHealth1,         2.0f ),
+
+            ( SpellId.ManaBoostSelf1,       1.0f ),
+            ( SpellId.RevitalizeSelf1,      1.0f ),
+            ( SpellId.HealSelf1,            1.0f ),
         };
 
         public static List<SpellId> Roll(TreasureDeath treasureDeath)
@@ -102,6 +127,19 @@ namespace ACE.Server.Factories.Tables
                     spells.Add(spell.spellId);
             }
             return spells;
+        }
+
+        public static SpellId RollProc(TreasureDeath treasureDeath)
+        {
+            float lootQualityMod = 0.0f;
+            if (treasureDeath != null)
+                lootQualityMod = treasureDeath.LootQualityMod;
+            return missileProcs.Roll(lootQualityMod);
+        }
+
+        public static SpellId PseudoRandomRollProc(int seed)
+        {
+            return missileProcsCertain.PseudoRandomRoll(seed);
         }
     }
 }

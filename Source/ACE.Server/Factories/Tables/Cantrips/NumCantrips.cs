@@ -1,9 +1,8 @@
 using System.Collections.Generic;
-
 using ACE.Database.Models.World;
 using ACE.Server.Factories.Entity;
 
-namespace ACE.Server.Factories.Tables
+namespace ACE.Server.Factories.Tables.Cantrips
 {
     public static class NumCantrips
     {
