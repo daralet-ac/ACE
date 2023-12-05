@@ -8,10 +8,12 @@ namespace ACE.Server.Factories.Entity
         public TreasureItemType_Orig ItemType;
         public TreasureArmorType ArmorType;
         public TreasureWeaponType WeaponType;
+        public TreasureHeritageGroup Heritage;
 
         public WeenieClassName Wcid;
 
         public int BaseArmorLevel;
+        public int BaseAegisLevel;
 
         /// <summary>
         /// A cumulative addon to the ItemDifficulty / Arcane Lore requirement
@@ -54,7 +56,9 @@ namespace ACE.Server.Factories.Entity
         /// </summary>
         public bool IsArmor => ArmorType != TreasureArmorType.Undef;
 
-        public bool IsClothing => ItemType == TreasureItemType_Orig.Clothing;
+        public bool IsClothArmor => ArmorType == TreasureArmorType.Cloth || ArmorType == TreasureArmorType.Chiran;
+
+        public bool IsClothing => ItemType == TreasureItemType_Orig.Clothing || (ItemType == TreasureItemType_Orig.Armor && ArmorType == TreasureArmorType.Cloth) || (ItemType == TreasureItemType_Orig.Armor && ArmorType == TreasureArmorType.Chiran);
 
         public bool IsCloak => ItemType == TreasureItemType_Orig.Cloak;
 
@@ -66,10 +70,20 @@ namespace ACE.Server.Factories.Entity
             return (wo.ArmorLevel ?? 0) > 0;
         }
 
+        /// <summary>
+        /// Returns TRUE if wo has an AegisLevel > 0
+        /// </summary>
+        public bool HasAegisLevel(WorldObject wo)
+        {
+            return (wo.AegisLevel ?? 0) > 0;
+        }
+
         public bool IsGem => ItemType == TreasureItemType_Orig.Gem;
 
         public bool IsJewelry => ItemType == TreasureItemType_Orig.Jewelry;
 
         public bool IsDinnerware => ItemType == TreasureItemType_Orig.ArtObject;
+
+        public bool IsSalvage => ItemType == TreasureItemType_Orig.Salvage;
     }
 }
