@@ -731,5 +731,17 @@ namespace ACE.Entity.Enum
         GauntletVitalityRaising = 731,
         GauntletCriticalDamageRatingRaising = 732,
         GauntletCriticalDamageReductionRatingRaising = 733,
+        //TIMELINE
+        BonusRun = 738,
+        PenaltyRun = 739,
+        BonusHealth = 740,
+        PenaltyHealth = 741,
+        BonusStamina = 742,
+        PenaltyStamina = 743,
+        BonusMana = 744,
+        PenaltyMana = 745,
+        ExtraSpearSkillRaising = 746,
+        ExtraMaceSkillRaising = 747,
+        ExtraStaffSkillRaising = 748,
     }
 }

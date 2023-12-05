@@ -42,7 +42,7 @@ namespace ACE.Entity.Enum
         ArmorTinkering,
         MagicItemTinkering,
         CreatureEnchantment,
-        ItemEnchantment,
+        PortalMagic,
         LifeMagic,
         WarMagic,
         Leadership,
@@ -64,7 +64,11 @@ namespace ACE.Entity.Enum
         SneakAttack,
         DirtyFighting,
         Challenge,          /* Unimplemented */
-        Summoning
+        Summoning,
+        // CustomDM
+        Appraise,
+        Armor,
+        Sneaking
     }
 
     public static class SkillExtensions
@@ -103,46 +107,68 @@ namespace ACE.Entity.Enum
 
     public static class SkillHelper
     {
+        static SkillHelper()
+        {
+            
+        }
+
         public static HashSet<Skill> ValidSkills = new HashSet<Skill>
         {
+            Skill.Axe,
+            Skill.Bow,
+            Skill.Crossbow,
+            Skill.Dagger,
+            Skill.Mace,
+            Skill.Sling,
+            Skill.Spear,
+            Skill.Staff,
+            Skill.Sword,
+            Skill.ThrownWeapon,
+            Skill.UnarmedCombat,
+            Skill.TwoHandedCombat,
+            Skill.DualWield,
+            Skill.SneakAttack,
+
+            Skill.LifeMagic,
+            Skill.WarMagic,
+            Skill.PortalMagic,
+            Skill.ManaConversion,
+            Skill.ArcaneLore,
+
             Skill.MeleeDefense,
             Skill.MissileDefense,
-            Skill.ArcaneLore,
             Skill.MagicDefense,
-            Skill.ManaConversion,
-            Skill.ItemTinkering,
+            Skill.Shield,
+            Skill.Healing,
+
             Skill.AssessPerson,
             Skill.Deception,
-            Skill.Healing,
-            Skill.Jump,
             Skill.Lockpick,
+            Skill.Jump,
             Skill.Run,
+
+            Skill.Leadership,
+            Skill.Loyalty,
+
+            Skill.Fletching,
+            Skill.Alchemy,
+            Skill.Cooking,
             Skill.AssessCreature,
             Skill.WeaponTinkering,
             Skill.ArmorTinkering,
             Skill.MagicItemTinkering,
-            Skill.CreatureEnchantment,
-            Skill.ItemEnchantment,
-            Skill.LifeMagic,
-            Skill.WarMagic,
-            Skill.Leadership,
-            Skill.Loyalty,
-            Skill.Fletching,
-            Skill.Alchemy,
-            Skill.Cooking,
-            Skill.Salvaging,
-            Skill.TwoHandedCombat,
-            Skill.VoidMagic,
-            Skill.HeavyWeapons,
-            Skill.LightWeapons,
-            Skill.FinesseWeapons,
-            Skill.MissileWeapons,
-            Skill.Shield,
-            Skill.DualWield,
-            Skill.Recklessness,
-            Skill.SneakAttack,
-            Skill.DirtyFighting,
-            Skill.Summoning
+
+            //Skill.ItemTinkering,
+            //Skill.CreatureEnchantment,
+            //Skill.Salvaging,
+            //Skill.VoidMagic,
+            //Skill.HeavyWeapons,
+            //Skill.LightWeapons,
+            //Skill.FinesseWeapons,
+            //Skill.MissileWeapons,
+            //Skill.Recklessness,
+            //Skill.DirtyFighting,
+            //Skill.Summoning
         };
 
         public static HashSet<Skill> AttackSkills = new HashSet<Skill>

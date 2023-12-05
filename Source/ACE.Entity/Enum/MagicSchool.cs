@@ -5,7 +5,7 @@ namespace ACE.Entity.Enum
         None                = 0,
         WarMagic            = 1,
         LifeMagic           = 2,
-        ItemEnchantment     = 3,
+        PortalMagic         = 3,
         CreatureEnchantment = 4,
         VoidMagic           = 5,
     }

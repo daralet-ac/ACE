@@ -170,6 +170,15 @@ namespace ACE.Entity.Enum.Properties
         [SendOnLogin]
         NoOlthoiTalk                     = 129,
         AutowieldLeft                    = 130,
+        // Timeline
+        UseArchetypeSystem               = 131,
+        OverrideArchetypeXp              = 132,
+        OverrideArchetypeHealth          = 133,
+        OverrideArchetypeStamina         = 134,
+        OverrideArchetypeMana            = 135,
+        OverrideArchetypeSkills          = 136,
+        ArmorPatchApplied                = 137,
+        BossKillXpReward                 = 138,
 
         /* custom */
         [ServerOnly]
@@ -192,6 +201,15 @@ namespace ACE.Entity.Enum.Properties
         SkillTemplesTimerReset           = 9009,
         [ServerOnly]
         FreeMasteryResetRenewed          = 9010,
+
+        [Ephemeral][ServerOnly]
+        IsPseudoRandomGenerator          = 9011,
+        [ServerOnly]
+        IsModified                       = 9012,
+        [ServerOnly]
+        VendorSellsSalvage               = 9013,
+        [ServerOnly]
+        VendorSellsSpecialItems          = 9014,
     }
 
     public static class PropertyBoolExtensions

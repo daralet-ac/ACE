@@ -197,6 +197,23 @@ namespace ACE.Entity.Enum.Properties
         [SendOnLogin]
         WeaponAuraManaConv             = 171,
 
+        //Timeline
+        LootQualityMod                 = 172,
+        KillXpMod                      = 173,
+        ArchetypeToughness             = 174,
+        ArchetypePhysicality           = 175,
+        ArchetypeDexterity             = 176,
+        ArchetypeMagic                 = 177,
+        ArchetypeIntelligence          = 178,
+        ArchetypeLethality             = 179,
+        BossKillXpMonsterMax           = 180,
+        BossKillXpPlayerMax            = 181,
+        EmpoweredScarabTriggerChance   = 182,
+        EmpoweredScarabCooldown        = 183,
+        EmpoweredScarabManaReserved    = 184,
+        EmpoweredScarabIntensity       = 185,
+        EmpoweredScarabReductionAmount = 186,
+
         [ServerOnly]
         PCAPRecordedWorkmanship        = 8004,
         [ServerOnly]
@@ -216,7 +233,40 @@ namespace ACE.Entity.Enum.Properties
         [ServerOnly]
         PCAPRecordeOmegaY              = 8017,
         [ServerOnly]
-        PCAPRecordeOmegaZ              = 8018
+        PCAPRecordeOmegaZ              = 8018,
+
+        HotspotImmunityTimestamp       = 10002,
+        [ServerOnly]
+        VendorRestockInterval          = 10006,
+        [ServerOnly]
+        VendorStockTimeToRot           = 10007,
+
+        // Timeline 
+        IgnoreAegis                    = 20000,
+        ArmorWarMagicMod               = 20001,
+        ArmorLifeMagicMod              = 20002,
+        ArmorMagicDefMod               = 20003,
+        ArmorMeleeDefMod               = 20004,
+        ArmorMissileDefMod             = 20005,
+        ArmorDualWieldMod              = 20006,
+        ArmorRunMod                    = 20007,
+        ArmorAttackMod                 = 20008,
+        ArmorHealthRegenMod            = 20009,
+        ArmorStaminaRegenMod           = 20010,
+        ArmorManaRegenMod              = 20011,
+        ArmorShieldMod                 = 20012,
+        ArmorAssessMod                 = 20013,
+        ArmorSneakingMod               = 20014,
+        WeaponWarMagicMod              = 20015,
+        WeaponLifeMagicMod             = 20016,
+        WeaponRestorationSpellsMod     = 20017,
+        ArmorHealthMod                 = 20018,
+        ArmorStaminaMod                = 20019,
+        ArmorManaMod                   = 20020,
+        ArmorResourcePenalty           = 20021,
+        ArmorDeceptionMod              = 20022,
+        ArmorTwohandedCombatMod        = 20023,
+
     }
 
     public static class PropertyFloatExtensions
