@@ -1109,12 +1109,12 @@ namespace ACE.Server.Command.Handlers
         [CommandHandler("addallspells", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 0, "Adds all known spells to your own spellbook.")]
         public static void HandleAddAllSpells(Session session, params string[] parameters)
         {
-            for (uint spellLevel = 1; spellLevel <= 8; spellLevel++)
+            for (uint spellLevel = 1; spellLevel <= 7; spellLevel++)
             {
                 session.Player.LearnSpellsInBulk(MagicSchool.CreatureEnchantment, spellLevel);
-                session.Player.LearnSpellsInBulk(MagicSchool.ItemEnchantment, spellLevel);
+                session.Player.LearnSpellsInBulk(MagicSchool.PortalMagic, spellLevel);
                 session.Player.LearnSpellsInBulk(MagicSchool.LifeMagic, spellLevel);
-                session.Player.LearnSpellsInBulk(MagicSchool.VoidMagic, spellLevel);
+                //session.Player.LearnSpellsInBulk(MagicSchool.VoidMagic, spellLevel);
                 session.Player.LearnSpellsInBulk(MagicSchool.WarMagic, spellLevel);
             }
         }
@@ -1452,19 +1452,19 @@ namespace ACE.Server.Command.Handlers
             var targetID = session.Player.CurrentAppraisalTarget;
             if (targetID == null)
             {
-                Console.WriteLine("ERROR: no appraisal target");
+                CommandHandlerHelper.WriteOutputInfo(session, "ERROR: no appraisal target");
                 return;
             }
             var targetGuid = new ObjectGuid(targetID.Value);
             var target = session.Player.CurrentLandblock?.GetObject(targetGuid);
             if (target == null)
             {
-                Console.WriteLine("Couldn't find " + targetGuid);
+                CommandHandlerHelper.WriteOutputInfo(session, "Couldn't find " + targetGuid);
                 return;
             }
 
             var visible = session.Player.IsDirectVisible(target);
-            Console.WriteLine("Visible: " + visible);
+            CommandHandlerHelper.WriteOutputInfo(session, "Visible: " + visible);
         }
 
         [CommandHandler("showstats", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 0, "Shows a list of a creature's current attribute/skill levels", "showstats")]
@@ -2287,11 +2287,11 @@ namespace ACE.Server.Command.Handlers
 
             if (tier < 1 || tier > 8)
             {
-                session.Network.EnqueueSend(new GameMessageSystemChat($"Loot Tier must be a number between 1 and 8", ChatMessageType.Broadcast));
+                session.Network.EnqueueSend(new GameMessageSystemChat($"Loot Tier must be a number between 0 and 8", ChatMessageType.Broadcast));
                 return;
             }
 
-            if (wo.TsysMutationData == null && !Aetheria.IsAetheria(wo.WeenieClassId) && !(wo is PetDevice))
+            if (wo.TsysMutationData == null && !Aetheria.IsAetheria(wo.WeenieClassId) && !EmpoweredScarab.IsEmpoweredScarab(wo.WeenieClassId) && !(wo is PetDevice))
             {
                 session.Network.EnqueueSend(new GameMessageSystemChat($"{wo.Name} ({wo.WeenieClassId}) missing PropertyInt.TsysMutationData", ChatMessageType.Broadcast));
                 return;
@@ -2903,32 +2903,32 @@ namespace ACE.Server.Command.Handlers
             player.EnchantmentManager.RemoveVitae();
 
             if (player != session.Player)
-                session.Network.EnqueueSend(new GameMessageSystemChat($"Removed vitae for {player.Name}", ChatMessageType.Broadcast));
+                session.Network.EnqueueSend(new GameMessageSystemChat("Removed vitae for {player.Name}", ChatMessageType.Broadcast));
         }
 
         [CommandHandler("fast", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld)]
         public static void HandleFast(Session session, params string[] parameters)
         {
-            var spell = new Spell(SpellId.QuicknessSelf8);
+            var spell = new Spell(SpellId.QuicknessSelf7);
             session.Player.CreateEnchantment(session.Player, session.Player, null, spell);
 
-            spell = new Spell(SpellId.SprintSelf8);
+            spell = new Spell(SpellId.SprintSelf7);
             session.Player.CreateEnchantment(session.Player, session.Player, null, spell);
 
-            spell = new Spell(SpellId.StrengthSelf8);
+            spell = new Spell(SpellId.StrengthSelf7);
             session.Player.CreateEnchantment(session.Player, session.Player, null, spell);
         }
 
         [CommandHandler("slow", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld)]
         public static void HandleSlow(Session session, params string[] parameters)
         {
-            var spell = new Spell(SpellId.SlownessSelf8);
+            var spell = new Spell(SpellId.SlownessSelf7);
             session.Player.CreateEnchantment(session.Player, session.Player, null, spell);
 
-            spell = new Spell(SpellId.LeadenFeetSelf8);
+            spell = new Spell(SpellId.LeadenFeetSelf7);
             session.Player.CreateEnchantment(session.Player, session.Player, null, spell);
 
-            spell = new Spell(SpellId.WeaknessSelf8);
+            spell = new Spell(SpellId.WeaknessSelf7);
             session.Player.CreateEnchantment(session.Player, session.Player, null, spell);
         }
 

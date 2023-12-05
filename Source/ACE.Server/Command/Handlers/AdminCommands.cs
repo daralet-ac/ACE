@@ -22,6 +22,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Handlers;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Entity;
@@ -558,8 +559,10 @@ namespace ACE.Server.Command.Handlers
                 if (objectId.IsPlayer())
                     return;
 
-                if (wo != null & wo.IsGenerator)
+                if (wo != null && wo.IsGenerator)
                 {
+                    if(wo is Container container)
+                        container.Reset();
                     wo.ResetGenerator();
                     wo.GeneratorEnteredWorld = false;
                     wo.GeneratorRegeneration(Time.GetUnixTime());
@@ -2267,7 +2270,7 @@ namespace ACE.Server.Command.Handlers
         /// Returns a weenie for a wcid or classname for /create, /createliveops, and /ci
         /// Performs some basic verifications for weenie types that are safe to spawn with these commands
         /// </summary>
-        private static Weenie GetWeenieForCreate(Session session, string weenieDesc, bool forInventory = false)
+        public static Weenie GetWeenieForCreate(Session session, string weenieDesc, bool forInventory = false)
         {
             Weenie weenie = null;
 
@@ -2962,10 +2965,12 @@ namespace ACE.Server.Command.Handlers
                     }
                 }
 
+                int correctLength = 250;
+
                 // Check string is correctly formatted before altering stats
                 // correctly formatted return string should have 240 entries
                 // if the construction of the string changes - this will need to be updated to match
-                if (returnState.Split("=").Length != 240)
+                if (returnState.Split("=").Length != correctLength)
                 {
                     ChatPacket.SendServerMessage(session, "Godmode is not available at this time.", ChatMessageType.Broadcast);
                     Console.WriteLine($"Player {session.Player.Name} tried to enter god mode but there was an error with the godString length. (length = {returnState.Split("=").Length}) Godmode not available.");
@@ -3055,11 +3060,13 @@ namespace ACE.Server.Command.Handlers
                 {
                     string[] returnStringArr = returnString.Split("=");
 
+                    int correctLength = 250;
+
                     // correctly formatted return string should have 240 entries
                     // if the construction of the string changes - this will need to be updated to match
-                    if (returnStringArr.Length != 240)
+                    if (returnStringArr.Length != correctLength)
                     {
-                        Console.WriteLine($"The returnString was not set to the correct length while {currentPlayer.Name} was attempting to return to normal from godmode.");
+                        Console.WriteLine($"The returnString ({returnStringArr.Length} vs {correctLength}) was not set to the correct length while {currentPlayer.Name} was attempting to return to normal from godmode.");
                         ChatPacket.SendServerMessage(session, "Error returning to mortal state, defaulting to godmode.", ChatMessageType.Broadcast);
                         return;
                     }
@@ -3093,7 +3100,7 @@ namespace ACE.Server.Command.Handlers
                                 currentPlayer.Session.Network.EnqueueSend(new GameMessagePrivateUpdateVital(currentPlayer, playerVital));
                                 i += 5;
                                 break;
-                            case int n when (n <= 238):
+                            case int n when (n <= correctLength - 2):
                                 var playerSkill = currentPlayer.Skills[(Skill)int.Parse(returnStringArr[i])];
                                 playerSkill.Ranks = ushort.Parse(returnStringArr[i + 1]);
 
@@ -3113,7 +3120,7 @@ namespace ACE.Server.Command.Handlers
                                 currentPlayer.Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(currentPlayer, playerSkill));
                                 i += 5;
                                 break;
-                            case 239: //end of returnString, this will need to be updated if the length of the string changes
+                            case int n when (n == correctLength - 1): //end of returnString, this will need to be updated if the length of the string changes
                                 GameMessagePrivateUpdatePropertyInt levelMsg = new GameMessagePrivateUpdatePropertyInt(currentPlayer, PropertyInt.Level, (int)currentPlayer.Level);
                                 GameMessagePrivateUpdatePropertyInt skMsg = new GameMessagePrivateUpdatePropertyInt(currentPlayer, PropertyInt.AvailableSkillCredits, (int)currentPlayer.AvailableSkillCredits);
                                 GameMessagePrivateUpdatePropertyInt64 totalExpMsg = new GameMessagePrivateUpdatePropertyInt64(currentPlayer, PropertyInt64.TotalExperience, (long)currentPlayer.TotalExperience);
@@ -3534,17 +3541,17 @@ namespace ACE.Server.Command.Handlers
         [CommandHandler("qst", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 1,
             "Query, stamp, and erase quests on the targeted player",
             "(fellow) [list | bestow | erase]\n"
-            + "qst list - List the quest flags for the targeted player\n"
+            + "qst list [filter] - List the quest flags for the targeted player\n"
             + "qst bestow - Stamps the specific quest flag on the targeted player. If this fails, it's probably because you spelled the quest flag wrong.\n"
             + "qst stamp - Stamps the specific quest flag on the targeted player the specified number of times. If this fails, it's probably because you spelled the quest flag wrong.\n"
             + "qst erase - Erase the specific quest flag from the targeted player. If no quest flag is given, it erases the entire quest table for the targeted player.\n")]
         public static void Handleqst(Session session, params string[] parameters)
         {
             // fellow bestow  stamp erase
-            // @qst list[filter]-List the quest flags for the targeted player, if a filter is provided, you will only get quest flags back that have the filter as a substring of the quest name. (Filter IS case sensitive!)
-            // @qst erase < quest flag > -Erase the specific quest flag from the targeted player.If no quest flag is given, it erases the entire quest table for the targeted player.
-            // @qst erase fellow < quest flag > -Erase a fellowship quest flag.
-            // @qst bestow < quest flag > -Stamps the specific quest flag on the targeted player.If this fails, it's probably because you spelled the quest flag wrong.
+            // @qst list [filter]-List the quest flags for the targeted player, if a filter is provided, you will only get quest flags back that have the filter as a substring of the quest name.
+            // @qst erase <quest flag> -Erase the specific quest flag from the targeted player.If no quest flag is given, it erases the entire quest table for the targeted player.
+            // @qst erase fellow <quest flag> -Erase a fellowship quest flag.
+            // @qst bestow <quest flag> -Stamps the specific quest flag on the targeted player.If this fails, it's probably because you spelled the quest flag wrong.
             // @qst - Query, stamp, and erase quests on the targeted player.
             if (parameters.Length == 0)
             {
@@ -3567,6 +3574,10 @@ namespace ACE.Server.Command.Handlers
             {
                 if (parameters[0].Equals("list"))
                 {
+                    string filter = "";
+                    if (parameters.Length > 1)
+                        filter = parameters[1].ToLower();
+
                     var questsHdr = $"Quest Registry for {creature.Name} (0x{creature.Guid}):\n";
                     questsHdr += "================================================\n";
                     session.Player.SendMessage(questsHdr);
@@ -3581,6 +3592,9 @@ namespace ACE.Server.Command.Handlers
 
                     foreach (var quest in quests)
                     {
+                        if (filter != "" && !quest.QuestName.ToLower().Contains(filter))
+                            continue;
+
                         var questEntry = "";
                         questEntry += $"Quest Name: {quest.QuestName}\nCompletions: {quest.NumTimesCompleted} | Last Completion: {quest.LastTimeCompleted} ({Common.Time.GetDateTimeFromTimestamp(quest.LastTimeCompleted).ToLocalTime()})\n";
                         var nextSolve = creature.QuestManager.GetNextSolveTime(quest.QuestName);
