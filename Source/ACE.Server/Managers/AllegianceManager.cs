@@ -177,7 +177,7 @@ namespace ACE.Server.Managers
         /// <summary>
         /// The maximum amount of leadership / loyalty
         /// </summary>
-        public static float SkillCap = 291.0f;
+        public static float SkillCap = 263.0f; // TODO Eventually change to 300
 
         /// <summary>
         /// The maximum amount of realtime hours sworn to patron
@@ -265,35 +265,37 @@ namespace ACE.Server.Managers
             var loyalty = Math.Min(vassal.GetCurrentLoyalty(), SkillCap);
             var leadership = Math.Min(patron.GetCurrentLeadership(), SkillCap);
 
-            var timeReal = Math.Min(RealCap, RealCap);
-            var timeGame = Math.Min(GameCap, GameCap);
+            // NEW SYSTEM
+            // Vassal Generated XP Mod = (Loyalty / 300) * 0.5
+            // Patron Received XP Mod = (Leadership / 300) * (Rank / 10)
+            // Passup % = Generated Mod * Received Mod
+            //
+            // Passup XP ranges from 0% to 50%.
+            // directFactor can be enabled to reduce continued passup by an additional 50%.
+            //
+            // Example A - players with MAXIMUM Loyalty (300), Leadership(300), and Rank(10): 
+            // Player earns 1000xp, generating 500xp for their patron.
+            // Patron receives 500xp passup. Then, generates 250xp passup to the grand patron.
+            // Grand Patron receives the 250xp. 
+            //
+            // Example B - players with MID-RANGE Loyalty (150), Leadership (150), and Rank (5)
+            // Player earns 1000xp, generating 250 xp for their patron.
+            // Patron receives 63 xp passup. Then, generates 16 xp passup to the grand patron.
+            // Grand Patron receives 4 xp.
 
-            var timeRealAvg = Math.Min(RealCap, RealCap);
-            var timeGameAvg = Math.Min(GameCap, GameCap);
+            //var directFactor = direct ? 1.0f : 0.5f; // Currently not in use. May not be needed. Requires further testing.
+            var loyaltyMod = loyalty / SkillCap;
+            var leadershipMod = leadership / SkillCap;
+            var rankMod = (float)patron.AllegianceRank.Value / 10;
 
-            var vassalFactor = Math.Min(0.25f * patronNode.TotalVassals, 1.0f);
-
-            var factor1 = direct ? 50.0f : 16.0f;
-            var factor2 = direct ? 22.5f : 8.0f;
-
-            var generated = (factor1 + factor2 * (loyalty / SkillCap) * (1.0f + (timeReal / RealCap) * (timeGame / GameCap))) * 0.01f;
-            var received = (factor1 + factor2 * (leadership / SkillCap) * (1.0f + vassalFactor * (timeRealAvg / RealCap) * (timeGameAvg / GameCap))) * 0.01f;
+            var generated = loyaltyMod * 0.5f; // directFactor to be used here if needed.
+            var received = leadershipMod * rankMod;
             var passup = generated * received;
 
-            var generatedAmount = (ulong)(amount * generated);
-            var passupAmount = (ulong)(amount * passup);
+            var generatedAmount = (uint)(amount * generated);
+            var passupAmount = (uint)(amount * passup);
 
-            /*Console.WriteLine("---");
-            Console.WriteLine("AllegianceManager.PassXP(" + amount + ")");
-            Console.WriteLine("Vassal: " + vassal.Name);
-            Console.WriteLine("Patron: " + patron.Name);
-
-            Console.WriteLine("Generated: " + Math.Round(generated * 100, 2) + "%");
-            Console.WriteLine("Received: " + Math.Round(received * 100, 2) + "%");
-            Console.WriteLine("Passup: " + Math.Round(passup * 100, 2) + "%");
-
-            Console.WriteLine("Generated amount: " + generatedAmount);
-            Console.WriteLine("Passup amount: " + passupAmount);*/
+            //Console.WriteLine($"{vassal.Name} earned {amount} xp and generated {generatedAmount} xp for passup ({Math.Round(generated, 3)}% mod). {patron.Name}'s {Math.Round(received, 3)}% received mod earned them {passupAmount} xp.");
 
             if (passupAmount > 0)
             {
