@@ -19,8 +19,12 @@ namespace ACE.Server.Factories.Enum
 
         MissileWeapon,
         Bow,
+        BowShort,
         Crossbow,
+        CrossbowLight,
         Atlatl,
+        AtlatlRegular,
+        Thrown,
 
         Caster,
 
@@ -62,6 +66,7 @@ namespace ACE.Server.Factories.Enum
                 case TreasureWeaponType.TwoHandedMace:
                 case TreasureWeaponType.TwoHandedSpear:
                 case TreasureWeaponType.TwoHandedSword:
+                case TreasureWeaponType.Thrown:
                     return true;
             }
             return false;
@@ -73,8 +78,11 @@ namespace ACE.Server.Factories.Enum
             {
                 case TreasureWeaponType.MissileWeapon:
                 case TreasureWeaponType.Bow:
+                case TreasureWeaponType.BowShort:
                 case TreasureWeaponType.Crossbow:
+                case TreasureWeaponType.CrossbowLight:
                 case TreasureWeaponType.Atlatl:
+                case TreasureWeaponType.AtlatlRegular:
                     return true;
             }
             return false;
@@ -100,7 +108,6 @@ namespace ACE.Server.Factories.Enum
                 case TreasureWeaponType.MaceJitte:
                     return "mace_jitte";
                 case TreasureWeaponType.Spear:
-                case TreasureWeaponType.TwoHandedSpear:
                     return "spear";
                 case TreasureWeaponType.Staff:
                     return "staff";
@@ -111,16 +118,28 @@ namespace ACE.Server.Factories.Enum
                 case TreasureWeaponType.Unarmed:
                     return "unarmed";
                 case TreasureWeaponType.TwoHandedAxe:
+                    return "two_handed_axe";
                 case TreasureWeaponType.TwoHandedMace:
+                    return "two_handed_mace";
+                case TreasureWeaponType.TwoHandedSpear:
+                    return "two_handed_spear";
                 case TreasureWeaponType.TwoHandedSword:
-                    return "cleaver";
+                    return "two_handed_sword";
 
                 case TreasureWeaponType.Bow:
                     return "bow";
+                case TreasureWeaponType.BowShort:
+                    return "bow_short";
                 case TreasureWeaponType.Crossbow:
                     return "crossbow";
+                case TreasureWeaponType.CrossbowLight:
+                    return "crossbow_light";
                 case TreasureWeaponType.Atlatl:
                     return "atlatl";
+                case TreasureWeaponType.AtlatlRegular:
+                    return "atlatl_regular";
+                case TreasureWeaponType.Thrown:
+                    return "thrown";
                 case TreasureWeaponType.Caster:
                     return "caster";
             }
@@ -149,6 +168,8 @@ namespace ACE.Server.Factories.Enum
                     return "sword";
                 case TreasureWeaponType.Unarmed:
                     return "unarmed";
+                case TreasureWeaponType.Thrown:
+                    return "thrown";
 
                 case TreasureWeaponType.TwoHandedAxe:
                     return "two_handed_axe";
