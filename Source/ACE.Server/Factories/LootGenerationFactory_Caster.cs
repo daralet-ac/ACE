@@ -1,11 +1,13 @@
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity.Mutations;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.WorldObjects;
+using System;
 
 namespace ACE.Server.Factories
 {
@@ -25,26 +27,18 @@ namespace ACE.Server.Factories
                 wield = RollWieldDifficulty(profile.Tier, TreasureWeaponType.Caster);
 
             // Getting the caster Weenie needed.
-            if (wield == 0)
-            {
-                // Determine plain caster type: 0 - Orb, 1 - Sceptre, 2 - Staff, 3 - Wand
-                subType = ThreadSafeRandom.Next(0, 3);
-                casterWeenie = LootTables.CasterWeaponsMatrix[wield][subType];
-            }
-            else
-            {
-                // Determine caster type: 1 - Sceptre, 2 - Baton, 3 - Staff
-                int casterType = ThreadSafeRandom.Next(1, 3);
+            
+            // Determine caster type: 0 = Orb, 1 = Scepter, 2 = Baton, 3 = Staff
+            subType = ThreadSafeRandom.Next(0, LootTables.TimelineCasterWeaponsMatrix.Length - 1);
+            var subTypeLength = ThreadSafeRandom.Next(0, LootTables.TimelineCasterWeaponsMatrix[subType].Length - 1);
 
-                // Determine element type: 0 - Slashing, 1 - Piercing, 2 - Blunt, 3 - Frost, 4 - Fire, 5 - Acid, 6 - Electric, 7 - Nether
-                element = forceWar ? ThreadSafeRandom.Next(0, 6) : ThreadSafeRandom.Next(0, 7);
-                casterWeenie = LootTables.CasterWeaponsMatrix[casterType][element];
-            }
+            element = ThreadSafeRandom.Next(0, subTypeLength);
+            casterWeenie = LootTables.TimelineCasterWeaponsMatrix[subType][element];
 
             WorldObject wo = WorldObjectFactory.CreateNewWorldObject((uint)casterWeenie);
 
             if (wo != null && mutate)
-                MutateCaster(wo, profile, isMagical, wield);
+                MutateCaster(wo, profile, isMagical, wield, null);
 
             return wo;
         }
@@ -76,7 +70,7 @@ namespace ACE.Server.Factories
                 }
                 else
                 {
-                    elementalDamageMod = RollElementalDamageMod(wieldDifficulty.Value);
+                    elementalDamageMod = RollElementalDamageMod(wieldDifficulty.Value, profile);
 
                     if (wo.W_DamageType == DamageType.Nether)
                         wieldSkillType = Skill.VoidMagic;
@@ -110,42 +104,79 @@ namespace ACE.Server.Factories
                 // WeaponDefense
                 wo.WeaponDefense = RollWeaponDefense(wieldDifficulty.Value, profile);
             }
+
+            wo.Tier = GetTierValue(profile);
+
+            // Determine caster type: 0 = Orb, 1 = Scepter, 2 = Wand/Baton, 3 = Staff
+            var subType = GetCasterSubType(wo);
+
+            // Add element/material to low tier orb/wand/scepter/staff
+            if (wo.WeenieClassId == 2366 || wo.WeenieClassId == 2547 || wo.WeenieClassId == 2548 || wo.WeenieClassId == 2472)
+            {
+                RollCasterElement(profile, wo);
+            }
             else
             {
-                // new method - mutation scripts
-
-                // mutate ManaConversionMod
-                var mutationFilter = MutationCache.GetMutation("Casters.caster.txt");
-                mutationFilter.TryMutate(wo, profile.Tier);
-
-                // mutate ElementalDamageMod / WieldRequirements
-                var isElemental = wo.W_DamageType != DamageType.Undef;
-                var scriptName = GetCasterScript(isElemental);
-
-                mutationFilter = MutationCache.GetMutation(scriptName);
-                mutationFilter.TryMutate(wo, profile.Tier);
-
-                // this part was not handled by mutation filter
-                if (wo.WieldRequirements == WieldRequirement.RawSkill)
-                {
-                    if (wo.W_DamageType == DamageType.Nether)
-                        wo.WieldSkillType = (int)Skill.VoidMagic;
-                    else
-                        wo.WieldSkillType = (int)Skill.WarMagic;
-                }
-
-                // mutate WeaponDefense
-                mutationFilter = MutationCache.GetMutation("Casters.weapon_defense.txt");
-                mutationFilter.TryMutate(wo, profile.Tier);
+                var materialType = GetMaterialType(wo, profile.Tier);
+                if (materialType > 0)
+                    wo.MaterialType = materialType;
             }
 
-            // material type
-            var materialType = GetMaterialType(wo, profile.Tier);
-            if (materialType > 0)
-                wo.MaterialType = materialType;
-
             // item color
-            MutateColor(wo);
+            if (wo.WeenieClassId == 2548)
+                MutateScepterColor(wo);
+            //else if (wo.WeenieClassId >= 1050100)
+            //    MutateOrbColor();
+            else
+            {
+                MutateColor(wo);
+            }
+
+            // Wield Reqs
+            wo.WieldRequirements = WieldRequirement.RawSkill;
+            var wieldDiff = RollWieldDifficulty(profile.Tier, TreasureWeaponType.Caster);
+            wo.WieldDifficulty = wieldDiff > 0 ? wieldDiff : null;
+
+            // Bonus Resto/Elemental %
+            var damagePercentile = 0.0;
+            if (wo.W_DamageType == DamageType.Undef)
+                wo.WieldSkillType = (int)Skill.LifeMagic;
+            else
+                wo.WieldSkillType = (int)Skill.WarMagic;
+
+            // Roll Elemental Damage Mod
+            TryMutateCasterWeaponDamage(wo, roll, profile, out damagePercentile);
+
+            // T1 casters have damage penalty
+            if (profile.Tier == 1)
+            {
+                // Orb and Staff receive harsher penalties
+                if (subType == 0 || subType == 3)
+                {
+                    wo.GearDamage = ThreadSafeRandom.Next(-30, -20);
+                    wo.DamageRating = ThreadSafeRandom.Next(-30, -20);
+                }
+                else
+                {
+                    wo.GearDamage = ThreadSafeRandom.Next(-20, -10);
+                    wo.DamageRating = ThreadSafeRandom.Next(-20, -10);
+                }
+            }
+
+            // Roll Weapon Mods
+            TryMutateWeaponMods(wo, profile, out var modsPercentile, true);
+
+            // Bonus Crit Chance for Scepters
+            if (subType == 1)
+            {
+                RollBonusCritDamage(profile, wo);
+            }
+            // Bonus Crit Damage for Wands/Batons
+            else if (subType == 2)
+            {
+                RollBonusCritChance(profile, wo);
+            }
+
 
             // gem count / gem material
             if (wo.GemCode != null)
@@ -156,13 +187,9 @@ namespace ACE.Server.Factories
             wo.GemType = RollGemType(profile.Tier);
 
             // workmanship
-            wo.ItemWorkmanship = WorkmanshipChance.Roll(profile.Tier);
+            wo.ItemWorkmanship = GetCasterWorkmanship(wo, damagePercentile, modsPercentile);
 
             // burden?
-
-            // missile defense / magic defense
-            wo.WeaponMissileDefense = MissileMagicDefense.Roll(profile.Tier);
-            wo.WeaponMagicDefense = MissileMagicDefense.Roll(profile.Tier);
 
             // spells
             if (!isMagical)
@@ -183,10 +210,17 @@ namespace ACE.Server.Factories
 
             // item value
             //if (wo.HasMutateFilter(MutateFilter.Value))   // fixme: data
-                MutateValue(wo, profile.Tier, roll);
+            MutateValue(wo, profile.Tier, roll);
 
             // long description
             wo.LongDesc = GetLongDesc(wo);
+
+            wo.ItemDifficulty = null;
+
+            if(profile.Tier == 1)
+            {
+                wo.Name += " (damaged)";
+            }
         }
 
         private static void MutateCaster_SpellDID(WorldObject wo, TreasureDeath profile)
@@ -215,9 +249,13 @@ namespace ACE.Server.Factories
 
             var castableMod = CasterSlotSpells.IsOrb(wo) ? 5.0f : 2.5f;
 
-            wo.ItemManaCost = (int)(spell.BaseMana * castableMod);
+            //wo.ItemManaCost = (int)(spell.BaseMana * castableMod);
+            wo.ItemManaCost = (int)spell.BaseMana;
 
             wo.ItemUseable = Usable.SourceWieldedTargetRemoteNeverWalk;
+
+            wo.CooldownId = 1001;
+            wo.CooldownDuration = 10;
         }
 
         private static string GetCasterScript(bool isElemental = false)
@@ -240,6 +278,215 @@ namespace ACE.Server.Factories
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Return caster subtype
+        /// Orb = 0, Scepter = 1, Wand/Baton = 2, Staff = 3
+        /// </summary>
+        private static int GetCasterSubType(WorldObject wo)
+        {
+            var subType = 0;
+            if (wo.Tier <= 5)
+            {
+                for (int i = 0; i < LootTables.TimelineCasterWeaponsMatrix[0].Length; i++)
+                {
+                    if (wo.WeenieClassId == LootTables.TimelineCasterWeaponsMatrix[0][i])
+                        subType = i;
+                }
+            }
+            else
+            {
+                for (int i = 1; i < LootTables.TimelineCasterWeaponsMatrix.Length; i++)
+                {
+                    foreach (int type in LootTables.TimelineCasterWeaponsMatrix[i])
+                    {
+                        if (wo.WeenieClassId == type)
+                            subType = i - 1;
+                    }
+                }
+            }
+
+            return subType; 
+        }
+
+        private static bool RollMagicSkillMod(TreasureDeath treasureDeath, WorldObject wo)
+        {
+            var magicSkillMod = 0.0f;
+            var maxMagicSkillMod = (treasureDeath.Tier * 2.5f) / 100;
+            var lootQualityMod = treasureDeath.LootQualityMod * 100;
+            var roll = ThreadSafeRandom.Next((int)lootQualityMod, 100);
+
+            if (treasureDeath.Tier == 1)
+            {
+                //switch (roll)
+                //{
+                //    case <= 50: elementBonus += 0.0f; break;
+                //    case <= 75: elementBonus += 0.005f; break;
+                //    case <= 90: elementBonus += 0.01f; break;
+                //    case <= 95: elementBonus += 0.015f; break;
+                //    case <= 99: elementBonus += 0.02f; break;
+                //    case 100: elementBonus += 0.025f; break;
+                //}
+            }
+            else if (treasureDeath.Tier == 2)
+            {
+                switch (roll)
+                {
+                    case <= 50: magicSkillMod += 0.0f; break;
+                    case <= 75: magicSkillMod += (float)ThreadSafeRandom.Next(0, 2) / 2 / 100; break;
+                    case <= 90: magicSkillMod += (float)ThreadSafeRandom.Next(2, 4) / 2 / 100; break;
+                    case <= 95: magicSkillMod += (float)ThreadSafeRandom.Next(4, 6) / 2 / 100; break;
+                    case <= 99: magicSkillMod += (float)ThreadSafeRandom.Next(6, 8) / 2 / 100; break;
+                    case 100: magicSkillMod += (float)ThreadSafeRandom.Next(8, 10) / 2 / 100; break;
+                }
+            }
+            else if (treasureDeath.Tier == 3)
+            {
+                switch (roll)
+                {
+                    case <= 50: magicSkillMod += 0.0f; break;
+                    case <= 75: magicSkillMod += (float)ThreadSafeRandom.Next(0, 3) / 2 / 100; break;
+                    case <= 90: magicSkillMod += (float)ThreadSafeRandom.Next(3, 6) / 2 / 100; break;
+                    case <= 95: magicSkillMod += (float)ThreadSafeRandom.Next(6, 9) / 2 / 100; break;
+                    case <= 99: magicSkillMod += (float)ThreadSafeRandom.Next(9, 12) / 2 / 100; break;
+                    case 100: magicSkillMod += (float)ThreadSafeRandom.Next(12, 15) / 2 / 100; break;
+                }
+            }
+            else
+            {
+                switch (roll)
+                {
+                    case <= 50: magicSkillMod += 0.0f; break;
+                    case <= 75: magicSkillMod += (float)(maxMagicSkillMod - 0.10 + (float)ThreadSafeRandom.Next(0, 4) / 2 / 100); break;
+                    case <= 90: magicSkillMod += (float)(maxMagicSkillMod - 0.10 + (float)ThreadSafeRandom.Next(4, 8) / 2 / 100); break;
+                    case <= 95: magicSkillMod += (float)(maxMagicSkillMod - 0.10 + (float)ThreadSafeRandom.Next(8, 12) / 2 / 100); break;
+                    case <= 99: magicSkillMod += (float)(maxMagicSkillMod - 0.10 + (float)ThreadSafeRandom.Next(12, 16) / 2 / 100); break;
+                    case 100: magicSkillMod += (float)(maxMagicSkillMod - 0.10 + (float)ThreadSafeRandom.Next(16, 20) / 2 / 100); break;
+                }
+            }
+
+            // TODO Make MagicSkillMod float for casters
+            //if (magicSkillMod >= 0.1f)
+            //    wo.WeaponOffense += magicSkillMod;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Rolls for the Element for casters
+        /// </summary>
+        private static void RollCasterElement(TreasureDeath profile, WorldObject wo)
+        {
+            var noElement = ThreadSafeRandom.Next(0, 3) == 0 ? true : false;
+            var elementType = 0;
+            var materialType = 0;
+            var uiEffect = 0;
+
+            if (noElement)
+            {
+                var material = GetMaterialType(wo, profile.Tier);
+                if (material > 0)
+                    wo.MaterialType = material;
+                wo.UiEffects = UiEffects.BoostHealth;
+
+                return;
+            }
+
+            var roll = ThreadSafeRandom.Next(1, 7);
+            switch (roll)
+            {
+                case 1:
+                    elementType = 0x1; // slash
+                    materialType = 0x0000001A; // imperial topaz
+                    uiEffect = 0x0400;
+                    break; 
+                case 2:
+                    elementType = 0x2; // pierce
+                    materialType = 0x0000000F; // black garnet
+                    uiEffect = 0x0800; 
+                    break; 
+                case 3:
+                    elementType = 0x4; // bludge
+                    materialType = 0x0000002F; // white saphhire
+                    uiEffect = 0x0200; 
+                    break;
+                case 4:
+                    elementType = 0x8; // cold
+                    materialType = 0x0000000D; // aquamarine
+                    uiEffect = 0x0080;
+                    break;
+                case 5:
+                    elementType = 0x10; // fire
+                    materialType = 0x00000023; // red garnet
+                    uiEffect = 0x0020; 
+                    break;
+                case 6:
+                    elementType = 0x20; // acid
+                    materialType = 0x00000015; // emerald
+                    uiEffect = 0x0100; 
+                    break;
+                case 7:
+                    elementType = 0x40; // electric
+                    materialType = 0x0000001B; // jet
+                    uiEffect = 0x0040; 
+                    break;
+            }
+            wo.W_DamageType = (DamageType)elementType;
+            wo.MaterialType = (MaterialType)materialType;
+            wo.UiEffects = (UiEffects)uiEffect;
+        }
+
+        /// <summary>
+        /// Rolls Bonus Crit Chance for Scepters
+        /// </summary>
+        private static void RollBonusCritChance(TreasureDeath treasureDeath, WorldObject wo)
+        {
+            var lootQualityMod = treasureDeath.LootQualityMod * 100;
+            var roll = ThreadSafeRandom.Next((int)lootQualityMod, 100);
+            var tier = treasureDeath.Tier;
+
+            var critChanceMod = 0.1f * GetDiminishingRoll(treasureDeath);
+
+            wo.SetProperty(PropertyFloat.CriticalFrequency, 0.1f + critChanceMod);
+        }
+
+        /// <summary>
+        /// Rolls Bonus Crit Chance for Batons
+        /// </summary>
+        private static void RollBonusCritDamage(TreasureDeath treasureDeath, WorldObject wo)
+        {;
+            var lootQualityMod = treasureDeath.LootQualityMod * 100;
+            var roll = ThreadSafeRandom.Next((int)lootQualityMod, 100);
+            var tier = treasureDeath.Tier;
+
+            var critDamageMod = 1.0f * GetDiminishingRoll(treasureDeath);
+
+            if (wo.GetProperty(PropertyFloat.CriticalMultiplier) != null)
+            {
+                var currentCritMultipier = wo.GetProperty(PropertyFloat.CriticalMultiplier);
+                var newCritMultipier = currentCritMultipier + 1.0f + critDamageMod;
+                wo.SetProperty(PropertyFloat.CriticalMultiplier, (float)newCritMultipier);
+            }
+            else
+            {
+                var newCritMultipier = 1.0f + critDamageMod;
+                wo.SetProperty(PropertyFloat.CriticalMultiplier, (float)newCritMultipier);
+            }
+        }
+
+        /// <summary>
+        /// Rolls Bonus Defense Mods for Orbs (magic) and Staffs (melee)
+        /// </summary>
+        private static float BonusDefenseMod(TreasureDeath treasureDeath, WorldObject wo)
+        {
+            var lootQualityMod = treasureDeath.LootQualityMod * 100;
+            var roll = ThreadSafeRandom.Next((int)lootQualityMod, 100);
+            var tier = treasureDeath.Tier;
+
+            var defenseMod = 0.1f + 0.1f * GetDiminishingRoll(treasureDeath);
+
+            return defenseMod;
         }
 
         /// <summary>
@@ -354,81 +601,130 @@ namespace ACE.Server.Factories
         /// <summary>
         /// Rolls for ElementalDamageMod for caster weapons
         /// </summary>
-        private static double RollElementalDamageMod(int wield)
+        private static double RollElementalDamageMod(int? wield, TreasureDeath treasureDeath = null)
         {
             double elementBonus = 0;
 
-            int chance = ThreadSafeRandom.Next(1, 100);
-            switch (wield)
-            {
-                case 290:
-                    if (chance > 95)
-                        elementBonus = 0.03;
-                    else if (chance > 65)
-                        elementBonus = 0.02;
-                    else
-                        elementBonus = 0.01;
-                    break;
-                case 310:
-                    if (chance > 95)
-                        elementBonus = 0.06;
-                    else if (chance > 65)
-                        elementBonus = 0.05;
-                    else
-                        elementBonus = 0.04;
-                    break;
+            int[] maxModPerTier = { 10, 20, 30, 40, 50, 75, 100, 126 };
+            var maxMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 100;
+            var minMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 200;
+            var bonusAmount = (maxMod - minMod) * GetDiminishingRoll(treasureDeath);
 
-                case 330:
-                    if (chance > 95)
-                        elementBonus = 0.09;
-                    else if (chance > 65)
-                        elementBonus = 0.08;
-                    else
-                        elementBonus = 0.07;
-                    break;
-
-                case 355:
-                    if (chance > 95)
-                        elementBonus = 0.13;
-                    else if (chance > 80)
-                        elementBonus = 0.12;
-                    else if (chance > 55)
-                        elementBonus = 0.11;
-                    else if (chance > 20)
-                        elementBonus = 0.10;
-                    else
-                        elementBonus = 0.09;
-                    break;
-
-                case 375:
-                    if (chance > 95)
-                        elementBonus = 0.16;
-                    else if (chance > 85)
-                        elementBonus = 0.15;
-                    else if (chance > 60)
-                        elementBonus = 0.14;
-                    else if (chance > 30)
-                        elementBonus = 0.13;
-                    else if (chance > 10)
-                        elementBonus = 0.12;
-                    else
-                        elementBonus = 0.11;
-                    break;
-
-                default:
-                    // 385
-                    if (chance > 95)
-                        elementBonus = 0.18;
-                    else if (chance > 65)
-                        elementBonus = 0.17;
-                    else
-                        elementBonus = 0.16;
-                    break;
-            }
+            elementBonus = minMod + bonusAmount;
 
             elementBonus += 1;
 
             return elementBonus;
+        }
+
+        /// <summary>
+        /// Rolls for RestorationSpellMod for caster weapons
+        /// </summary>
+        private static double RollRestorationSpellsMod(int? wield, TreasureDeath treasureDeath = null)
+        {
+            int[] maxModPerTier = { 10, 20, 30, 40, 50, 75, 100, 126 };
+            var maxMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 100;
+            var minMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 200;
+            var bonusAmount = (maxMod - minMod) * GetDiminishingRoll(treasureDeath);
+
+            var restorationMod = minMod + bonusAmount + 1;
+
+            return restorationMod;
+        }
+
+
+        private static void MutateScepterColor(WorldObject wo)
+        {
+            wo.IgnoreCloIcons = true;
+
+            switch (wo.W_DamageType)
+            {
+                case DamageType.Undef:
+                    wo.IconId = 0x0600200F;
+                    wo.PaletteTemplate = 0;
+                    wo.UiEffects = UiEffects.BoostHealth;
+                    break;
+                case DamageType.Slash:
+                    wo.IconId = 0x06002011;
+                    wo.PaletteTemplate = 4;
+                    wo.UiEffects = (UiEffects)0x0400;
+                    break;
+                case DamageType.Pierce:
+                    wo.IconId = 0x06002012;
+                    wo.PaletteTemplate = 21;
+                    wo.UiEffects = (UiEffects)0x0800;
+                    break;
+                case DamageType.Bludgeon:
+                    wo.IconId = 0x06002013;
+                    wo.PaletteTemplate = 61;
+                    wo.UiEffects = (UiEffects)0x0200;
+                    break;
+                case DamageType.Acid:
+                    wo.IconId = 0x06002014;
+                    wo.PaletteTemplate = 8;
+                    wo.UiEffects = (UiEffects)0x0100;
+                    break;
+                case DamageType.Fire:
+                    wo.IconId = 0x06002015;
+                    wo.PaletteTemplate = 14;
+                    wo.UiEffects = (UiEffects)0x0020;
+                    break;
+                case DamageType.Cold:
+                    wo.IconId = 0x06002016;
+                    wo.PaletteTemplate = 2;
+                    wo.UiEffects = (UiEffects)0x0080;
+                    break;
+                case DamageType.Electric:
+                    wo.IconId = 0x06002017;
+                    wo.PaletteTemplate = 82;
+                    wo.UiEffects = (UiEffects)0x0040;
+                    break;
+            }
+        }
+
+        private static void TryMutateCasterWeaponDamage(WorldObject wo, TreasureRoll roll, TreasureDeath profile, out double damagePercentile)
+        {
+            // If Staff or Orb reduce damage by 50%
+            var defensiveCasterMultiplier = GetCasterSubType(wo) == 0 || GetCasterSubType(wo) == 3 ? 0.5f : 1.0f;
+
+            // Calculate Max, Min, and Roll
+            var maxDamageMod = GetCasterMaxDamageMod(wo)[profile.Tier - 1] * defensiveCasterMultiplier / 100;
+            var minDamageMod = (profile.Tier > 1 ? (float)(GetCasterMaxDamageMod(wo)[profile.Tier - 2] - 5) : 1) / 100 * defensiveCasterMultiplier;
+            var diminishedDamageModRoll = (maxDamageMod - minDamageMod) * GetDiminishingRoll(profile);
+
+            var maxPossibleDamage = GetCasterMaxDamageMod(wo)[7] * defensiveCasterMultiplier / 100;
+
+            // Elemental or Resto?
+            if (wo.W_DamageType != DamageType.Undef)
+            {
+                wo.ElementalDamageMod = minDamageMod + diminishedDamageModRoll + 1;
+                damagePercentile = ((double)wo.ElementalDamageMod - 1) / maxPossibleDamage;
+            }
+            else
+            {
+                wo.WeaponRestorationSpellsMod = minDamageMod + diminishedDamageModRoll + 1;
+                damagePercentile = ((double)wo.WeaponRestorationSpellsMod - 1) / maxPossibleDamage;
+            }
+        }
+
+        private static int GetCasterWorkmanship(WorldObject wo, double damagePercentile, double modsPercentile)
+        {
+            var divisor = 0;
+
+            // Damage
+            divisor++;
+
+            // Weapon Mods
+            divisor++;
+
+            // Average Percentile
+            var finalPercentile = (damagePercentile + modsPercentile) / divisor;
+
+            //Console.WriteLine($"{wo.Name}\n -Mods %: {modsPercentile}\n" + $" -Damage %: {damagePercentile}\n" + $" -Divisor: {divisor}\n" +
+            //    $" --FINAL: {finalPercentile}\n\n");
+
+            // Workmanship Calculation
+            return Math.Max((int)Math.Round(finalPercentile * 10, 0), 1);
         }
     }
 }

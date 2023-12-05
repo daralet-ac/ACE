@@ -21,17 +21,8 @@ namespace ACE.Server.Factories
 
             switch (chance)
             {
-                case var rate when (rate < 2):
-                    wo = WorldObjectFactory.CreateNewWorldObject(49485); // Encapsulated Spirit
-                    break;
-                case var rate when (rate < 10):
-                    wo = CreateSummoningEssence(profile.Tier);
-                    break;
-                case var rate when (rate < 28):
+                case var rate when (rate < 3):
                     wo = CreateRandomScroll(profile);
-                    break;
-                case var rate when (rate < 57):
-                    wo = CreateFood();
                     break;
                 default:
                     int genericLootMatrixIndex = profile.Tier - 1;

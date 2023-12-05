@@ -7,6 +7,8 @@ using ACE.Entity.Models;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Cantrips;
+using ACE.Server.Factories.Tables.Spells;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Factories
@@ -22,32 +24,28 @@ namespace ACE.Server.Factories
                 wo.Biota.GetOrAddKnownSpell((int)spell, wo.BiotaDatabaseLock, out _);
             }
             numSpells = spells.Count;
+
+            if (roll.IsMeleeWeapon || roll.IsMissileWeapon)
+            {
+                var itemProc = RollItemProc(wo, profile, roll);
+
+                if(itemProc != SpellId.Undef)
+                {
+                    Server.Entity.Spell spell = new Server.Entity.Spell(itemProc);
+                    wo.ProcSpellRate = 0.15f;
+                    wo.ProcSpell = (uint)itemProc;
+                    wo.ProcSpellSelfTargeted = spell.IsSelfTargeted;
+
+                    numSpells++;
+                }
+            }
+
             return true;
         }
 
         private static List<SpellId> RollSpells(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
         {
             var spells = new List<SpellId>();
-
-            // crowns, which are classified as TreasureItemType.Jewelry, should also be getting item spells
-            // perhaps replace this with wo.ArmorLevel check?
-            //if (roll.IsArmor || roll.IsArmorClothing(wo) || roll.IsWeapon)
-            if (roll.HasArmorLevel(wo) || roll.IsWeapon)
-            {
-                var itemSpells = RollItemSpells(wo, profile, roll);
-
-                if (itemSpells != null)
-                    spells.AddRange(itemSpells);
-            }
-
-            var enchantments = RollEnchantments(wo, profile, roll);
-
-            if (enchantments != null)
-            {
-                spells.AddRange(enchantments);
-
-                roll.ItemDifficulty += RollEnchantmentDifficulty(enchantments);
-            }
 
             var cantrips = RollCantrips(wo, profile, roll);
 
@@ -61,12 +59,54 @@ namespace ACE.Server.Factories
             return spells;
         }
 
+        private static SpellId RollItemProc(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
+        {
+            SpellId procSpellId = SpellId.Undef;
+
+            if (roll.IsMeleeWeapon)
+            {
+                procSpellId = MeleeSpells.RollProc(profile);
+            }
+            else if (roll.IsMissileWeapon)
+            {
+               procSpellId = MissileSpells.RollProc(profile);
+            }
+            else
+            {
+                _log.Error($"RollItemProc({wo.Name}) - item is not melee or missile weapon");
+                return SpellId.Undef;
+            }
+
+            if(procSpellId != SpellId.Undef)
+                return RollProcLevel(wo, profile, procSpellId);
+            return SpellId.Undef;
+        }
+
+        private static SpellId RollProcLevel(WorldObject wo, TreasureDeath profile, SpellId procSpellId)
+        {
+            var spellLevel = wo.Tier.Value;
+
+            var spellLevels = SpellLevelProgression.GetSpellLevels(procSpellId);
+
+            if (spellLevels.Count != 8)
+            {
+                _log.Error($"RollSpellLevels({wo.Name}, {procSpellId}) - spell level progression returned {spellLevels.Count}, expected 8");
+                return SpellId.Undef;
+            }
+
+            return(spellLevels[spellLevel - 1]);
+        }
+
         private static List<SpellId> RollItemSpells(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
         {
             List<SpellId> spells = null;
 
-            //if (roll.IsArmor || roll.IsArmorClothing(wo))
-            if (roll.HasArmorLevel(wo))
+
+            if (roll.IsClothArmor)
+            {
+                spells = ClothArmorSpells.Roll(profile);
+            }
+            else if (roll.HasArmorLevel(wo))
             {
                 spells = ArmorSpells.Roll(profile);
             }
@@ -88,7 +128,10 @@ namespace ACE.Server.Factories
                 return null;
             }
 
-            return RollSpellLevels(wo, profile, spells);
+            if(spells != null)
+                return RollSpellLevels(wo, profile, spells);
+            else
+                return null;
         }
 
         private static List<SpellId> RollSpellLevels(WorldObject wo, TreasureDeath profile, IEnumerable<SpellId> spells)
@@ -124,7 +167,7 @@ namespace ACE.Server.Factories
             // test method: determine spell selection code dynamically
             var spellSelectionCode = GetSpellSelectionCode_Dynamic(wo, roll);
 
-            if (spellSelectionCode == 0)
+            if (spellSelectionCode == 0 || spellSelectionCode == 6 || spellSelectionCode == 17)
                 return null;
 
             //Console.WriteLine($"Using spell selection code {spellSelectionCode} for {wo.Name}");
@@ -227,7 +270,7 @@ namespace ACE.Server.Factories
                 return 3;
         }
 
-        private static float RollEnchantmentDifficulty(List<SpellId> spellIds)
+        public static float RollEnchantmentDifficulty(List<SpellId> spellIds)
         {
             var spells = new List<Server.Entity.Spell>();
 
@@ -241,15 +284,15 @@ namespace ACE.Server.Factories
 
             var itemDifficulty = 0.0f;
 
-            // exclude highest spell
-            for (var i = 0; i < spells.Count - 1; i++)
-            {
-                var spell = spells[i];
+                // exclude highest spell
+                for (var i = 0; i < spells.Count - 1; i++)
+                {
+                    var spell = spells[i];
 
-                var rng = (float)ThreadSafeRandom.Next(0.5f, 1.5f);
+                    var rng = (float)ThreadSafeRandom.Next(0.5f, 1.5f);
 
-                itemDifficulty += spell.Formula.Level * 5.0f * rng;
-            }
+                    itemDifficulty += spell.Formula.Level * 5.0f * rng;
+                }
 
             return itemDifficulty;
         }
@@ -287,16 +330,16 @@ namespace ACE.Server.Factories
 
                 var cantripLevels = SpellLevelProgression.GetSpellLevels(cantrip);
 
-                if (cantripLevels.Count != 4)
-                {
-                    _log.Error($"RollCantrips({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - {cantrip} has {cantripLevels.Count} cantrip levels, expected 4");
-                    continue;
-                }
-
-                finalCantrips.Add(cantripLevels[cantripLevel - 1]);
-
-                if (cantripLevel == 4)
-                    hasLegendary = true;
+	            if (cantripLevels.Count != 4)
+	            {
+	                _log.Error($"RollCantrips({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - {cantrip} has {cantripLevels.Count} cantrip levels, expected 4");
+	                continue;
+	            }
+	
+	            finalCantrips.Add(cantripLevels[cantripLevel - 1]);
+	
+	            if (cantripLevel == 4)
+	                hasLegendary = true;
             }
 
             // if a legendary cantrip dropped on this item
@@ -317,13 +360,22 @@ namespace ACE.Server.Factories
 
         private static SpellId RollCantrip(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
         {
-            if (roll.HasArmorLevel(wo) || roll.IsClothing)
+            if(wo.WeenieClassId == (uint)Enum.WeenieClassName.leggingschiran)
+            {
+                //Console.WriteLine($"Chiran Leggings ({wo.WeenieClassId}), IsClothArmor? ({roll.IsClothArmor}) ArmorType: ({wo.ArmorType}) ItemType: ({roll.ItemType})");
+            }
+            if (roll.IsClothArmor || roll.Wcid == Enum.WeenieClassName.crown)
+            {
+                // robes
+                return ClothArmorCantrips.Roll();
+            }
+            else if (roll.HasArmorLevel(wo) || roll.IsClothing)
             {
                 // armor / clothing cantrip
                 // this table also applies to crowns (treasureitemtype.jewelry w/ al)
                 return ArmorCantrips.Roll();
             }
-            if (roll.IsMeleeWeapon)
+            else if (roll.IsMeleeWeapon)
             {
                 // melee cantrip
                 var meleeCantrip = MeleeCantrips.Roll();
@@ -337,7 +389,13 @@ namespace ACE.Server.Factories
             else if (roll.IsMissileWeapon)
             {
                 // missile cantrip
-                return MissileCantrips.Roll();
+                var missileCantrip = MissileCantrips.Roll();
+
+                // adjust for weapon skill
+                if (missileCantrip == SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1)
+                    missileCantrip = AdjustForWeaponMastery(wo);
+
+                return missileCantrip;
             }
             else if (roll.IsCaster)
             {
@@ -361,7 +419,7 @@ namespace ACE.Server.Factories
             }
         }
 
-        private static float RollCantripDifficulty(List<SpellId> cantripIds)
+        public static float RollCantripDifficulty(List<SpellId> cantripIds)
         {
             var itemDifficulty = 0.0f;
 
@@ -369,7 +427,7 @@ namespace ACE.Server.Factories
             {
                 var cantripLevels = SpellLevelProgression.GetSpellLevels(cantripId);
 
-                if (cantripLevels == null || cantripLevels.Count != 4)
+                if (cantripLevels == null || (cantripLevels.Count != 3 && cantripLevels.Count != 4))
                 {
                     _log.Error($"RollCantripDifficulty({cantripId}) - unknown cantrip");
                     continue;
@@ -387,44 +445,70 @@ namespace ACE.Server.Factories
 
         private static SpellId AdjustForWeaponMastery(WorldObject wo)
         {
-            // handle two-handed weapons
-            if (wo.WeaponSkill == Skill.TwoHandedCombat)
-                return SpellId.CANTRIPTWOHANDEDAPTITUDE1;
+            if (wo.WeaponSkill != Skill.TwoHandedCombat && wo.WeaponSkill != Skill.MissileWeapons)
+            {
+                // 10% chance to adjust to dual wielding
+                var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-            // 10% chance to adjust to dual wielding
-            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+                if (rng < 0.1f)
+                    return SpellId.CantripDualWieldAptitude1;
+            }
 
-            if (rng < 0.1f)
-                return SpellId.CantripDualWieldAptitude1;
-
-            // heavy/light/finesse weapons
             switch (wo.WeaponSkill)
             {
+                case Skill.TwoHandedCombat:
+                    return SpellId.CANTRIPTWOHANDEDAPTITUDE1;
                 case Skill.HeavyWeapons:
                     return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1;
                 case Skill.LightWeapons:
                     return SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1;
                 case Skill.FinesseWeapons:
                     return SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1;
+                case Skill.MissileWeapons:
+                    return SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1;
+                case Skill.Axe:
+                    return SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1; // CANTRIPAXEAPTITUDE1
+                case Skill.Dagger:
+                    return SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1; // CANTRIPDAGGERAPTITUDE1
+                case Skill.Mace:
+                    return SpellId.CANTRIPMACEAPTITUDE1;
+                case Skill.Spear:
+                    return SpellId.CANTRIPSPEARAPTITUDE1;
+                case Skill.Staff:
+                    return SpellId.CANTRIPSPEARAPTITUDE4;
+                case Skill.Sword:
+                    return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1; // CANTRIPSWORDAPTITUDE1
+                case Skill.UnarmedCombat:
+                    return SpellId.CANTRIPUNARMEDAPTITUDE1;
+                case Skill.Bow:
+                    return SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1; // CANTRIPBOWAPTITUDE1
+                case Skill.Crossbow:
+                    return SpellId.CANTRIPCROSSBOWAPTITUDE1;
+                case Skill.ThrownWeapon:
+                    return SpellId.CANTRIPTHROWNAPTITUDE1;
             }
             return SpellId.Undef;
         }
 
         private static SpellId AdjustForDamageType(WorldObject wo, SpellId spell)
         {
-            if (wo.W_DamageType == DamageType.Nether)
-                return SpellId.CantripVoidMagicAptitude1;
+            return SpellId.CANTRIPWARMAGICAPTITUDE1;
 
-            if (wo.W_DamageType != DamageType.Undef)
-                return SpellId.CANTRIPWARMAGICAPTITUDE1;
+            // (If Nether magic exists)
 
-            // even split? retail was broken here
-            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+            //if (wo.W_DamageType == DamageType.Nether)
+            //    return SpellId.CantripVoidMagicAptitude1;
 
-            if (rng < 0.5f)
-                return SpellId.CANTRIPWARMAGICAPTITUDE1;
-            else
-                return SpellId.CantripVoidMagicAptitude1;
+            //if (wo.W_DamageType != DamageType.Undef)
+            //    return SpellId.CANTRIPWARMAGICAPTITUDE1;
+
+            //// even split? retail was broken here
+            //var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+            //if (rng < 0.5f)
+            //    return SpellId.CANTRIPWARMAGICAPTITUDE1;
+            //else
+            //    return SpellId.CantripVoidMagicAptitude1;
         }
 
         /// <summary>
@@ -470,7 +554,7 @@ namespace ACE.Server.Factories
                 else
                     return 16;
             }
-            else if (roll.IsMissileWeapon || wo.WeaponSkill == Skill.TwoHandedCombat)
+            else if (roll.IsMissileWeapon || wo.IsTwoHanded)
             {
                 return 17;
             }
@@ -501,6 +585,9 @@ namespace ACE.Server.Factories
                     return 20;
             }
 
+            if (roll.IsClothArmor || wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth)
+                return 21;
+
             var coverageMask = wo.ClothingPriority ?? 0;
             var isArmor = roll.IsArmor;
 
@@ -510,11 +597,11 @@ namespace ACE.Server.Factories
             if (coverageMask == CoverageMask.Hands && isArmor)
                 return 9;
 
-            if (coverageMask == CoverageMask.Head && roll.BaseArmorLevel > 20)
+            if (coverageMask == CoverageMask.Head && roll.BaseArmorLevel >= 20)
                 return 10;
 
-            // base weenie armorLevel > 20
-            if ((coverageMask & CoverageMask.Feet) != 0 && roll.BaseArmorLevel > 20)
+            // base weenie armorLevel >= 20
+            if ((coverageMask & CoverageMask.Feet) != 0 && roll.BaseArmorLevel >= 20)
                 return 11;
 
             if ((coverageMask & clothing) != 0)

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using ACE.Common;
@@ -18,16 +20,12 @@ namespace ACE.Server.Factories
 
             int jewelrySlot = ThreadSafeRandom.Next(1, 100);
             int jewelType;
-
-            // Made this easier to read (switch -> if statement)
-            if (jewelrySlot <= 31)
-                jewelType = LootTables.ringItems[ThreadSafeRandom.Next(0, LootTables.ringItems.Length - 1)];
-            else if (jewelrySlot <= 62)
-                jewelType = LootTables.braceletItems[ThreadSafeRandom.Next(0, LootTables.braceletItems.Length - 1)];
-            else if (jewelrySlot <= 92)
-                jewelType = LootTables.necklaceItems[ThreadSafeRandom.Next(0, LootTables.necklaceItems.Length - 1)];
-            else
-                jewelType = LootTables.trinketItems[ThreadSafeRandom.Next(0, LootTables.trinketItems.Length - 1)];
+                if (jewelrySlot <= 33)
+                    jewelType = LootTables.ringItems[ThreadSafeRandom.Next(0, LootTables.ringItems.Length - 1)];
+                else if (jewelrySlot <= 66)
+                    jewelType = LootTables.braceletItems[ThreadSafeRandom.Next(0, LootTables.braceletItems.Length - 1)];
+                else
+                    jewelType = LootTables.necklaceItems[ThreadSafeRandom.Next(0, LootTables.necklaceItems.Length - 1)];
 
             WorldObject wo = WorldObjectFactory.CreateNewWorldObject((uint)jewelType);
 
@@ -55,13 +53,6 @@ namespace ACE.Server.Factories
 
             wo.GemType = RollGemType(profile.Tier);
 
-            // workmanship
-            wo.ItemWorkmanship = WorkmanshipChance.Roll(profile.Tier);
-
-            // wield level requirement for t7+
-            if (profile.Tier > 6)
-                RollWieldLevelReq_T7_T8(wo, profile);
-
             // assign magic
             if (isMagical)
                 AssignMagic(wo, profile, roll);
@@ -75,15 +66,24 @@ namespace ACE.Server.Factories
                 wo.ManaRate = null;
             }
 
-            // gear rating (t8)
-            if (roll != null && profile.Tier == 8)
-                TryMutateGearRating(wo, profile, roll);
-
             // item value
             //  if (wo.HasMutateFilter(MutateFilter.Value))     // fixme: data
                 MutateValue(wo, profile.Tier, roll);
 
             wo.LongDesc = GetLongDesc(wo);
+
+            var totalGearRatingPercentile = 0.0;
+
+            if (profile.Tier > 1)
+            {
+                wo.WieldRequirements = WieldRequirement.Level;
+                wo.WieldSkillType = 0;
+                wo.WieldDifficulty = GetArmorLevelReq(profile.Tier);
+            }
+            TryMutateJewelryMods(wo, profile, roll, isMagical, out totalGearRatingPercentile);
+
+            // Workmanship
+            wo.Workmanship = GetJewelryWorkmanship(wo, totalGearRatingPercentile);
         }
 
         private static bool GetMutateJewelryData(uint wcid)
@@ -94,6 +94,310 @@ namespace ACE.Server.Factories
                     return true;
             }
             return false;
+        }
+
+        private static bool TryMutateJewelryMods(WorldObject wo, TreasureDeath td, TreasureRoll roll, bool isMagical, out double totalRollPercentile)
+        {
+            totalRollPercentile = 0.0f;
+
+            //if (td.Tier < 2)
+            //    return false;
+
+            var tier = td.Tier;
+            var jewelryType = wo.ValidLocations;
+            var qualityMod = td.LootQualityMod != 0.0f ? td.LootQualityMod : 0.0f;
+
+            // Roll Aegis
+            var minAegis = GetMaxValueOfTier(tier) / 2;
+            wo.AegisLevel = (int)(minAegis * GetDiminishingRoll(td) + minAegis);
+            var maxAegisRollPercentile = (float)wo.AegisLevel / (GetMaxValueOfTier(8));
+
+            // Necklaces
+            if (jewelryType == EquipMask.NeckWear)
+            {
+                var minRating = (float)(tier - 1);
+                var rollPercentile = GetDiminishingRoll(td);
+                var ratingRoll = minRating * rollPercentile;
+                var finalAmount = ratingRoll + minRating;
+                var ratingPercentile = finalAmount / 14.0;
+
+                var type = ThreadSafeRandom.Next(1, 3);
+                switch (type)
+                {
+                    case 1: wo.GearHealingBoost = (int)finalAmount * 2; break;
+                    case 2: wo.GearMaxHealth = (int)finalAmount * 2; break;
+                    case 3:
+                        if (!isMagical)
+                        {
+                            //Console.WriteLine(wo.NameWithMaterial);
+                            // Apply Spell
+                            var element = ThreadSafeRandom.Next(1, 7);
+                            var spellType = tier < 4 ? 1 : ThreadSafeRandom.Next(1, 4);
+                            //wo.ProcSpell = (uint)GetSpellDID(tier, element, spellType);
+                            wo.UiEffects = GetUiEffects(element);
+                            //wo.ProcSpellRate = (GetSpellProcChance(tier, spellType) / 2) * rollPercentile + (GetSpellProcChance(tier, spellType) / 2);
+                            wo.ItemDifficulty = GetSpellProcDifficulty(tier);
+                            wo.LongDesc = "This item cannot contain additional spells.\n\n(This item's ability is still in development)\n\n" + wo.LongDesc;
+                        }
+                        break;
+                }
+                totalRollPercentile += ratingPercentile;
+
+                totalRollPercentile = (totalRollPercentile + maxAegisRollPercentile) / 2;
+
+                return true;
+            }
+            // Rings
+            else if (jewelryType == EquipMask.FingerWear)
+            {
+                wo.AegisLevel /= 2;
+
+                var minRating = (float)(tier - 1) / 2;
+                var rollPercentile = GetDiminishingRoll(td);
+                var ratingRoll = minRating * rollPercentile;
+                var finalAmount = ratingRoll + minRating;
+                var ratingPercentile = finalAmount / 7.0;
+
+                var type = ThreadSafeRandom.Next(1, 3);
+                switch (type)
+                {
+                    case 1: wo.GearCritDamage = (int)finalAmount; break;
+                    case 2: wo.GearCritDamageResist = (int)finalAmount; break;
+                    case 3:
+                        if (!isMagical)
+                        {
+                            //Console.WriteLine(wo.NameWithMaterial);
+                            // Apply Spell Proc DID and Proc Rate
+                            var element = ThreadSafeRandom.Next(1, 7);
+                            var spellType = tier < 4 ? 1 : ThreadSafeRandom.Next(1, 4);
+                            wo.ProcSpell = (uint)GetSpellDID(tier, element, spellType);
+                            wo.UiEffects = GetUiEffects(element);
+                            wo.ProcSpellRate = (GetSpellProcChance(tier, spellType) / 2) * rollPercentile + (GetSpellProcChance(tier, spellType) / 2);
+                            wo.ItemDifficulty = GetSpellProcDifficulty(tier);
+                            wo.LongDesc = "This item cannot contain additional spells.\n\n" + wo.LongDesc;
+                        }
+                        break;
+                    }
+                    totalRollPercentile += ratingPercentile;
+                
+                totalRollPercentile = (totalRollPercentile + maxAegisRollPercentile) / 2;
+
+                return true;
+            }
+            // Bracelets
+            else if (jewelryType == EquipMask.WristWear)
+            {
+                wo.AegisLevel /= 2;
+
+                var minRating = (float)(tier - 1) / 2;
+                var rollPercentile = GetDiminishingRoll(td);
+                var ratingRoll = minRating * rollPercentile;
+                var finalAmount = ratingRoll + minRating;
+                var ratingPercentile = finalAmount / 7.0;
+
+                var type = ThreadSafeRandom.Next(1, 3);
+                switch (type)
+                {
+                    case 1: wo.GearDamage = (int)finalAmount; break;
+                    case 2: wo.GearDamageResist = (int)finalAmount; break;
+                    case 3:
+                        if (!isMagical)
+                        {
+                            //Console.WriteLine(wo.NameWithMaterial);
+                            // Apply Spell Proc DID and Proc Rate
+                            var element = ThreadSafeRandom.Next(1, 7);
+                            var spellType = tier < 4 ? 1 : ThreadSafeRandom.Next(1, 4);
+                            //wo.ProcSpell = (uint)GetSpellDID(tier, element, spellType, out var uiEffects);
+                            wo.UiEffects = GetUiEffects(element);
+                            //wo.ProcSpellRate = (GetSpellProcChance(tier, spellType) / 2) * rollPercentile + (GetSpellProcChance(tier, spellType) / 2);
+                            wo.ItemDifficulty = GetSpellProcDifficulty(tier);
+                            wo.LongDesc = "This item cannot contain additional spells.\n\n(This item's ability is still in development)\n\n" + wo.LongDesc;
+                        }
+                        break;
+                }
+                totalRollPercentile += ratingPercentile;
+                
+
+                totalRollPercentile = (totalRollPercentile + maxAegisRollPercentile) / 2;
+
+                return true;
+            }
+            else
+            {
+                _log.Error($"TryMutateJewelryMods({wo.Name}, {td.TreasureType}, {roll.ItemType}): unknown item type");
+                return false;
+            }
+        }
+
+        private static UiEffects GetUiEffects(int element)
+        {
+            switch (element)
+            {
+                case 1: return UiEffects.Slashing;
+                case 2: return UiEffects.Piercing;
+                case 3: return UiEffects.Bludgeoning;
+                case 4: return UiEffects.Acid;
+                case 5: return UiEffects.Fire;
+                case 6: return UiEffects.Frost;
+                case 7: return UiEffects.Lightning;
+                default: return UiEffects.Undef;
+            }
+        }
+
+        private static SpellId GetSpellDID(int tier, int element, int spellType)
+        {
+            switch (element)
+            {
+                case 1:
+                    switch (spellType)
+                    { 
+                        case 1:
+                            SpellId[] slashBolts = { SpellId.WhirlingBlade1, SpellId.WhirlingBlade1, SpellId.WhirlingBlade2, SpellId.WhirlingBlade3, SpellId.WhirlingBlade4, SpellId.WhirlingBlade5, SpellId.WhirlingBlade6, SpellId.WhirlingBlade7 };
+                            return slashBolts[tier - 1];
+                        case 2:
+                            SpellId[] slashStreaks = { SpellId.WhirlingBladeStreak1, SpellId.WhirlingBladeStreak1, SpellId.WhirlingBladeStreak2, SpellId.WhirlingBladeStreak3, SpellId.WhirlingBladeStreak4, SpellId.WhirlingBladeStreak5, SpellId.WhirlingBladeStreak6, SpellId.WhirlingBladeStreak7 }; 
+                            return slashStreaks[tier - 1];
+                        case 3:
+                            SpellId[] slashVolleys = { SpellId.BladeVolley1, SpellId.BladeVolley1, SpellId.BladeVolley2, SpellId.BladeVolley3, SpellId.BladeVolley4, SpellId.BladeVolley5, SpellId.BladeVolley6, SpellId.BladeVolley7 };
+                            return slashVolleys[tier - 1];
+                        case 4:
+                            SpellId[] slashBlasts = { SpellId.BladeBlast1, SpellId.BladeBlast1, SpellId.BladeBlast2, SpellId.BladeBlast3, SpellId.BladeBlast4, SpellId.BladeBlast5, SpellId.BladeBlast6, SpellId.BladeBlast7 };
+                            return slashBlasts[tier - 1];
+                    }
+                    break;
+                case 2:
+                    switch (spellType)
+                    {
+                        case 1:
+                            SpellId[] pierceBolts = { SpellId.ForceBolt1, SpellId.ForceBolt1, SpellId.ForceBolt2, SpellId.ForceBolt3, SpellId.ForceBolt4, SpellId.ForceBolt5, SpellId.ForceBolt6, SpellId.ForceBolt7 };
+                            return pierceBolts[tier - 1];
+                        case 2:
+                            SpellId[] pierceStreaks = { SpellId.ForceStreak1, SpellId.ForceStreak1, SpellId.ForceStreak2, SpellId.ForceStreak3, SpellId.ForceStreak4, SpellId.ForceStreak5, SpellId.ForceStreak6, SpellId.ForceStreak7 };
+                            return pierceStreaks[tier - 1];
+                        case 3:
+                            SpellId[] pierceVolleys = { SpellId.ForceVolley1, SpellId.ForceVolley1, SpellId.ForceVolley2, SpellId.ForceVolley3, SpellId.ForceVolley4, SpellId.ForceVolley5, SpellId.ForceVolley6, SpellId.ForceVolley7 };
+                            return pierceVolleys[tier - 1];
+                        case 4:
+                            SpellId[] pierceBlasts = { SpellId.ForceBlast1, SpellId.ForceBlast1, SpellId.ForceBlast2, SpellId.ForceBlast3, SpellId.ForceBlast4, SpellId.ForceBlast5, SpellId.ForceBlast6, SpellId.ForceBlast7 };
+                            return pierceBlasts[tier - 1];
+                    }
+                    break;
+                case 3:
+                    switch (spellType)
+                    {
+                        case 1:
+                            SpellId[] bludgeBolts = { SpellId.ShockWave1, SpellId.ShockWave1, SpellId.ShockWave2, SpellId.ShockWave3, SpellId.ShockWave4, SpellId.ShockWave5, SpellId.ShockWave6, SpellId.ShockWave7 };
+                            return bludgeBolts[tier - 1];
+                        case 2:
+                            SpellId[] bludgeStreaks = { SpellId.ShockwaveStreak1, SpellId.ShockwaveStreak1, SpellId.ShockwaveStreak2, SpellId.ShockwaveStreak3, SpellId.ShockwaveStreak4, SpellId.ShockwaveStreak5, SpellId.ShockwaveStreak6, SpellId.ShockwaveStreak7 };
+                            return bludgeStreaks[tier - 1];
+                        case 3:
+                            SpellId[] bludgeVolleys = { SpellId.BludgeoningVolley1, SpellId.BludgeoningVolley1, SpellId.BludgeoningVolley2, SpellId.BludgeoningVolley3, SpellId.BludgeoningVolley4, SpellId.BludgeoningVolley5, SpellId.BludgeoningVolley6, SpellId.BludgeoningVolley7 };
+                            return bludgeVolleys[tier - 1];
+                        case 4:
+                            SpellId[] bludgeBlasts = { SpellId.ShockBlast1, SpellId.ShockBlast1, SpellId.ShockBlast2, SpellId.ShockBlast3, SpellId.ShockBlast4, SpellId.ShockBlast5, SpellId.ShockBlast6, SpellId.ShockBlast7 };
+                            return bludgeBlasts[tier - 1];
+                    }
+                    break;
+                case 4:
+                    switch (spellType)
+                    {
+                        case 1:
+                            SpellId[] acidBolts = { SpellId.AcidStream1, SpellId.AcidStream1, SpellId.AcidStream2, SpellId.AcidStream3, SpellId.AcidStream4, SpellId.AcidStream5, SpellId.AcidStream6, SpellId.AcidStream7 };
+                            return acidBolts[tier - 1];
+                        case 2:
+                            SpellId[] acidStreaks = { SpellId.AcidStreak1, SpellId.AcidStreak1, SpellId.AcidStreak2, SpellId.AcidStreak3, SpellId.AcidStreak4, SpellId.AcidStreak5, SpellId.AcidStreak6, SpellId.AcidStreak7 };
+                            return acidStreaks[tier - 1];
+                        case 3:
+                            SpellId[] acidVolleys = { SpellId.AcidVolley1, SpellId.AcidVolley1, SpellId.AcidVolley2, SpellId.AcidVolley3, SpellId.AcidVolley4, SpellId.AcidVolley5, SpellId.AcidVolley6, SpellId.AcidVolley7 };
+                            return acidVolleys[tier - 1];
+                        case 4:
+                            SpellId[] acidBlasts = { SpellId.AcidBlast2, SpellId.AcidBlast2, SpellId.AcidBlast2, SpellId.AcidBlast3, SpellId.AcidBlast4, SpellId.AcidBlast5, SpellId.AcidBlast6, SpellId.AcidBlast7 };
+                            return acidBlasts[tier - 1];
+                    }
+                    break;
+                case 5:
+                    switch (spellType)
+                    {
+                        case 1:
+                            SpellId[] fireBolts = { SpellId.FlameBolt1, SpellId.FlameBolt1, SpellId.FlameBolt2, SpellId.FlameBolt3, SpellId.FlameBolt4, SpellId.FlameBolt5, SpellId.FlameBolt6, SpellId.FlameBolt7 };
+                            return fireBolts[tier - 1];
+                        case 2:
+                            SpellId[] fireStreaks = { SpellId.FlameStreak1, SpellId.FlameStreak1, SpellId.FlameStreak2, SpellId.FlameStreak3, SpellId.FlameStreak4, SpellId.FlameStreak5, SpellId.FlameStreak6, SpellId.FlameStreak7 };
+                            return fireStreaks[tier - 1];
+                        case 3:
+                            SpellId[] fireVolleys = { SpellId.FlameVolley1, SpellId.FlameVolley1, SpellId.FlameVolley2, SpellId.FlameVolley3, SpellId.FlameVolley4, SpellId.FlameVolley5, SpellId.FlameVolley6, SpellId.FlameVolley7 };
+                            return fireVolleys[tier - 1];
+                        case 4:
+                            SpellId[] fireBlasts = { SpellId.FlameBlast2, SpellId.FlameBlast2, SpellId.FlameBlast2, SpellId.FlameBlast3, SpellId.FlameBlast4, SpellId.FlameBlast5, SpellId.FlameBlast6, SpellId.FlameBlast7 };
+                            return fireBlasts[tier - 1];
+                    }
+                    break;
+                case 6:
+                    switch (spellType)
+                    {
+                        case 1:
+                            SpellId[] coldBolts = { SpellId.FrostBolt1, SpellId.FrostBolt1, SpellId.FrostBolt2, SpellId.FrostBolt3, SpellId.FrostBolt4, SpellId.FrostBolt5, SpellId.FrostBolt6, SpellId.FrostBolt7 };
+                            return coldBolts[tier - 1];
+                        case 2:
+                            SpellId[] coldStreaks = { SpellId.FrostStreak1, SpellId.FrostStreak1, SpellId.FrostStreak2, SpellId.FrostStreak3, SpellId.FrostStreak4, SpellId.FrostStreak5, SpellId.FrostStreak6, SpellId.FrostStreak7 }; 
+                            return coldStreaks[tier - 1];
+                        case 3:
+                            SpellId[] coldVolleys = { SpellId.FrostVolley1, SpellId.FrostVolley1, SpellId.FrostVolley2, SpellId.FrostVolley3, SpellId.FrostVolley4, SpellId.FrostVolley5, SpellId.FrostVolley6, SpellId.FrostVolley7 };
+                            return coldVolleys[tier - 1];
+                        case 4:
+                            SpellId[] coldBlasts = { SpellId.FrostBlast1, SpellId.FrostBlast1, SpellId.FrostBlast2, SpellId.FrostBlast3, SpellId.FrostBlast4, SpellId.FrostBlast5, SpellId.FrostBlast6, SpellId.FrostBlast7 };
+                            return coldBlasts[tier - 1];
+                    }
+                    break;
+                case 7:
+                    switch (spellType)
+                    {
+                        case 1:
+                            SpellId[] lightningBolts = { SpellId.LightningBolt1, SpellId.LightningBolt1, SpellId.LightningBolt2, SpellId.LightningBolt3, SpellId.LightningBolt4, SpellId.LightningBolt5, SpellId.LightningBolt6, SpellId.LightningBolt7 };
+                            return lightningBolts[tier - 1];
+                        case 2:
+                            SpellId[] lightningStreaks = { SpellId.LightningStreak1, SpellId.LightningStreak1, SpellId.LightningStreak2, SpellId.LightningStreak3, SpellId.LightningStreak4, SpellId.LightningStreak5, SpellId.LightningStreak6, SpellId.LightningStreak7 }; 
+                            return lightningStreaks[tier - 1];
+                        case 3:
+                            SpellId[] lightningVolleys = { SpellId.LightningVolley1, SpellId.LightningVolley1, SpellId.LightningVolley2, SpellId.LightningVolley3, SpellId.LightningVolley4, SpellId.LightningVolley5, SpellId.LightningVolley6, SpellId.LightningVolley7 };
+                            return lightningVolleys[tier - 1];
+                        case 4:
+                            SpellId[] lightningBlasts = { SpellId.LightningBlast1, SpellId.LightningBlast1, SpellId.LightningBlast2, SpellId.LightningBlast3, SpellId.LightningBlast4, SpellId.LightningBlast5, SpellId.LightningBlast6, SpellId.LightningBlast7 };
+                            return lightningBlasts[tier - 1];
+                    }
+                    break;
+            }
+            return SpellId.Undef;
+        }
+
+        private static float GetSpellProcChance(int tier, int spellType)
+        {
+            float[,] procChances =
+            {
+                {0.025f, 0.05f, 0.06f, 0.07f, 0.08f, 0.09f, 0.1f, 0.1f }, // Bolts
+                {0.025f, 0.05f, 0.09f, 0.0175f, 0.21f, 0.25f, 0.3f, 0.3f }, // Streaks
+                {0.025f, 0.05f, 0.06f, 0.07f, 0.08f, 0.09f, 0.1f, 0.1f }, // Volleys
+                {0.025f, 0.05f, 0.06f, 0.07f, 0.08f, 0.09f, 0.1f, 0.1f }, // Blasts
+            };
+
+            return procChances[spellType - 1, tier - 1]; 
+        }
+
+        private static int GetSpellProcDifficulty(int tier)
+        {
+            int[] diff = {50, 100, 200, 300, 350, 400, 450, 475};
+
+            return diff[tier - 1];
+        }
+
+        private static int GetJewelryWorkmanship(WorldObject wo, double gearRatingPercentile)
+        {
+            var finalPercentile = gearRatingPercentile;
+            //Console.WriteLine($"--FINAL: {finalPercentile}\n\n");
+
+            // Workmanship Calculation
+            return (int)Math.Max(Math.Round(finalPercentile * 10, 0), 1);
         }
     }
 }

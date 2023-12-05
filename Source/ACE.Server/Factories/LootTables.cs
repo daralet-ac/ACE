@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
-
 using ACE.Entity.Enum;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Cantrips;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Factories
@@ -286,13 +285,81 @@ namespace ACE.Server.Factories
             new int[] { 41041, 41042, 41043, 41044, 41045 }  // 11 - Magari Yari
         };
 
-        public static readonly List<int[][]> MeleeWeaponsMatrices = new List<int[][]>()
+        public static readonly int[][] AxesMatrix =
+                {
+            new int[] { 301, 3750, 3751, 3752, 3753 },       // 0 - Battle Axe
+            new int[] { 303, 3754, 3755, 3756, 3757 },       // 1 - Hand Axe
+            new int[] { 336, 3842, 3843, 3844, 3845 },       // 2 - Ono
+            new int[] { 342, 3857, 3858, 3859, 3860 },       // 3 - Shou-ono
+            new int[] { 344, 3865, 3866, 3867, 3868 },       // 4 - Silifi
+            new int[] { 357, 3901, 3902, 3903, 3904 },       // 5 - Tungi
+            new int[] { 359, 3905, 3906, 3907, 3908 }        // 6 - War Hammer
+         };
+
+        public static readonly int[][] DaggersMatrix =
         {
-            HeavyWeaponsMatrix,
-            LightWeaponsMatrix,
-            FinesseWeaponsMatrix,
-            TwoHandedWeaponsMatrix
+            new int[] { 314, 3778, 3779, 3780, 3781 },       // 1 - Dagger (MS)
+            new int[] { 319, 3794, 3795, 3796, 3797 },       // 2 - Jambiya (MS)
+            new int[] { 328, 3826, 3827, 3828, 3829 },       // 3 - Khanjar
+            new int[] { 329, 3830, 3831, 3832, 3833 },       // 4 - Knife (MS)
+            new int[] { 22440, 22441, 22442, 22443, 22444 }  // 5 - Dirk
         };
+
+        public static readonly int[][] MacesMatrix =
+        {
+            new int[] { 309, 3766, 3767, 3768, 3769 },       // 0 - Club
+            new int[] { 313, 3774, 3775, 3776, 3777 },       // 1 - Dabus
+            new int[] { 321, 3802, 3803, 3804, 3805 },       // 2 - Jitte
+            new int[] { 325, 3814, 3815, 3816, 3817 },       // 3 - Kasrullah
+            new int[] { 331, 3834, 3835, 3836, 3837 },       // 4 - Mace
+            new int[] { 332, 3937, 3938, 3939, 3940 },       // 5 - Morning Star
+            new int[] { 356, 3897, 3898, 3899, 3900 },       // 6 - Tofun
+            new int[] { 7768, 7787, 7788, 7789, 7790 }       // 7 - Spiked Club
+        };
+
+        public static readonly int[][] SpearsMatrix =
+        {
+            new int[] { 308, 3762, 3763, 3764, 3765 },       // 0 - Budiaq
+            new int[] { 348, 3873, 3874, 3875, 3876 },       // 1 - Spear
+            new int[] { 362, 3913, 3914, 3915, 3916 },       // 2 - Yari
+            new int[] { 7771, 7795, 7796, 7797, 7798 },      // 3 - Naginata
+            new int[] { 7772, 7791, 7792, 7793, 7794 }       // 4 - Trident
+        };
+
+        public static readonly int[][] StavesMatrix =
+        {
+            new int[] { 22158, 22154, 22155, 22156, 22157 },   // 0 - Jo
+            new int[] { 22163, 22159, 22160, 22161, 22162 },   // 1 - Nabut
+            new int[] { 22168, 22164, 22165, 22166, 22167 }    // 2 - Quarter Staff
+            //new int[] { 322, 3806, 3807, 3808, 3809 },         // 3 - Old Jo
+            //new int[] { 333, 3838, 3839, 3840, 3841 },         // 4 - Old Nabut
+            //new int[] { 338, 3846, 3847, 3848, 3936 }          // 5 - Old Quarter Staff
+        };
+
+        public static readonly int[][] SwordsMatrix =
+        {
+            new int[] { 324, 3810, 3811, 3812, 3813 },       //  0 - Kaskara
+            new int[] { 327, 3822, 3823, 3824, 3825 },       //  1 - Ken
+            new int[] { 339, 3849, 3850, 3851, 3852 },       //  2 - Scimitar
+            new int[] { 340, 3853, 3854, 3855, 3856 },       //  3 - Shamshir
+            new int[] { 345, 3869, 3870, 3871, 3872 },       //  4 - Simi
+            new int[] { 350, 3877, 3878, 3879, 3880 },       //  5 - Broad Sword
+            new int[] { 351, 3881, 3882, 3883, 3884 },       //  6 - Long Sword
+            new int[] { 352, 3885, 3886, 3887, 3888 },       //  7 - Short Sword
+            new int[] { 353, 3889, 3890, 3891, 3892 },       //  8 - Tachi
+            new int[] { 354, 3893, 3894, 3895, 3896 },       //  9 - Takuba
+            new int[] { 361, 3909, 3910, 3911, 3912 },       // 10 - Yaoji
+            new int[] { 6853, 45104, 45105, 45106, 45107 }   // 11 - Rapier (MS)
+        };
+
+        public static readonly int[][] UnarmedMatrix =
+        {
+            new int[] { 326, 3818, 3819, 3820, 3821 },       // 0 - Katar
+            new int[] { 4190, 4191, 4192, 4193, 4194 },      // 1 - Cestus
+            new int[] { 4195, 4196, 4197, 4198, 4199 }       // 2 - Nekode
+        };
+
+        public static readonly List<int[][]> MeleeWeaponsMatrices;
 
         public static readonly HashSet<uint> AetheriaWcids = new HashSet<uint>()
         {
@@ -333,12 +400,193 @@ namespace ACE.Server.Factories
                 { 14, 19, 23, 28, 33, 37, 42, 45, 48 }  // Spears
         };
 
+        public static readonly int[] AxeDamageTable =
+                //  0|250|300|325|350|370|400|420|430
+                { 26, 33, 40, 47, 54, 61, 68, 71, 74 };
+
+        public static readonly int[,] DaggerDamageTable =
+        {
+                //  0|250|300|325|350|370|400|420|430
+                { 24, 31, 38, 45, 51, 58, 65, 68, 71 }, // Dagger
+                { 13, 16, 20, 23, 26, 30, 33, 36, 38 }  // MultiDagger
+        };
+
+        public static readonly int[] MaceDamageTable =
+                //  0|250|300|325|350|370|400|420|430
+                { 22, 29, 36, 43, 49, 56, 63, 66, 69 }; // Mace
+
+        public static readonly int[] SpearDamageTable =
+                //  0|250|300|325|350|370|400|420|430
+                { 25, 32, 39, 46, 52, 59, 66, 69, 72 }; // Spear
+
+        public static readonly int[,] SwordDamageTable =
+        {
+                //  0|250|300|325|350|370|400|420|430
+                { 24, 31, 38, 45, 51, 58, 65, 68, 71 }, // Sword
+                { 12, 16, 19, 23, 26, 30, 33, 36, 38 }  // MultiSword
+        };
+
+        public static readonly int[] StaffDamageTable =
+                //  0|250|300|325|350|370|400|420|430
+                { 23, 30, 36, 43, 50, 56, 63, 66, 70 }; // Staff
+
+        public static readonly int[] UnarmedDamageTable =
+                //  0|250|300|325|350|370|400|420|430
+                { 20, 26, 31, 37, 43, 48, 54, 56, 59 }; // UA
+
+
+        // TIMELINE DAMAGE MUTATION VALUES
+        //  0|100|150|200|225|250|275|300
+
+        // Axe
+        public static readonly float[] AxeMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] AxeMutationAdder =
+                { 1, 2, 4, 6, 10, 16, 24, 50 };
+
+        // Dagger
+        public static readonly float[] DaggerMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] DaggerMutationAdder =
+                { 1, 2, 4, 6, 10, 16, 24, 50 };
+
+        public static readonly float[] DaggerMsMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] DaggerMsMutationAdder =
+                { 1, 2, 4, 6, 10, 16, 24, 50 };
+
+        // Mace
+        public static readonly float[] MaceMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] MaceMutationAdder =
+                { 1, 2, 4, 6, 10, 16, 24, 50 };
+
+        // Spear
+        public static readonly float[] SpearMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] SpearMutationAdder =
+                { 1, 2, 4, 6, 10, 16, 24, 50 };
+
+        // Staff
+        public static readonly float[] StaffMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] StaffMutationAdder =
+                {1, 2, 4, 6, 10, 16, 24, 50};
+
+        // Sword
+        public static readonly float[] SwordMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] SwordMutationAdder =
+                {1, 2, 4, 6, 10, 16, 24, 50};
+
+        // Sword MS
+        public static readonly float[] SwordMSMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] SwordMSMutationAdder =
+                {1, 2, 4, 6, 10, 16, 24, 50};
+
+        // UA
+        public static readonly float[] UnarmedMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] UnarmedMutationAdder =
+                {1, 2, 4, 6, 10, 16, 24, 50 };
+
+        // 2H Axe
+        public static readonly float[] TwohandAxeMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] TwohandAxeMutationAdder =
+                { 1, 2, 4, 6, 10, 16, 24, 50 };
+
+        // 2H Mace
+        public static readonly float[] TwohandMaceMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] TwohandMaceMutationAdder =
+                { 1, 2, 4, 6, 10, 16, 24, 50 };
+
+        // 2H Spear
+        public static readonly float[] TwohandSpearMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] TwohandSpearMutationAdder =
+                {1, 2, 4, 6, 10, 16, 24, 50};
+
+        // 2H Sword
+        public static readonly float[] TwohandSwordMutationMultiplier =
+                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
+
+        public static readonly int[] TwohandSwordMutationAdder =
+                { 1, 2, 4 , 6, 10, 16, 24, 50 };
+
+        // Atlatl
+        public static readonly float[] AtlatlDamageBonusMutationMultiplier =
+                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
+
+        public static readonly int[] AtlatlDamageBonusMutationAdder =
+                { 4, 4, 8, 12, 16, 20, 30, 40 };
+
+        public static readonly float[] AtlatlDamageModMutationMultiplier =
+                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
+
+        public static readonly int[] AtlatlDamageModMutationAdder =
+                { 5, 10, 20, 30, 40, 50, 75, 100};
+
+        // Bow
+        public static readonly float[] BowDamageBonusMutationMultiplier =
+                { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
+
+        public static readonly int[] BowDamageBonusMutationAdder =
+                { 4, 4, 8, 12, 16, 20, 30, 40 };
+
+        public static readonly float[] BowDamageModMutationMultiplier =
+                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
+
+        public static readonly int[] BowDamageModMutationAdder =
+                { 5, 10, 20, 30, 40, 50, 75, 100 };
+
+        // Crossbow
+        public static readonly float[] CrossbowDamageBonusMutationMultiplier =
+                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
+
+        public static readonly int[] CrossbowDamageBonusMutationAdder =
+                { 4, 4, 8, 12, 16, 20, 30, 40 };
+
+        public static readonly float[] CrossbowDamageModMutationMultiplier =
+                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
+
+        public static readonly int[] CrossbowDamageModMutationAdder =
+                { 5, 10, 20, 30, 40, 50, 75, 100 };
+
+        // Caster
+        public static readonly int[] CasterMaxDamageMod =
+                { 5, 10, 20, 30, 40, 50, 75, 100  };
+
+
         public static readonly int[][] CasterWeaponsMatrix =
         {
             new int[] { 2366, 2548, 2547, 2472 }, // Orb, Sceptre, Staff, Wand
             new int[] { 29265, 29264, 29260, 29263, 29262, 29259, 29261, 43381 }, // Sceptre: Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric, Nether
             new int[] { 31819, 31825, 31821, 31824, 31823, 31820, 31822, 43382 }, // Baton: Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric, Nether
             new int[] { 37223, 37222, 37225, 37221, 37220, 37224, 37219, 43383 }  // Staff: Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric, Nether
+        };
+
+        public static readonly int[][] TimelineCasterWeaponsMatrix =
+        {
+            new int[] { 2366, 2548, 2472, 2547 }, // Orb, Wand, Scepter, Staff
+            new int[] { 1050100, 1050101, 1050102, 1050103, 1050104, 1050105, 1050106, 1050107 }, // Orb: Life, Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
+            new int[] { 1050108, 29265, 29264, 29260, 29263, 29262, 29259, 29261 }, // Sceptre: Life, Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
+            new int[] { 1050110, 31819, 31825, 31821, 31824, 31823, 31820, 31822 }, // Wand/Baton: Life, Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
+            new int[] { 1050109, 37223, 37222, 37225, 37221, 37220, 37224, 37219 }  // Staff: Life, Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
         };
 
         public static readonly float[][] MissileDamageMod =
@@ -427,7 +675,7 @@ namespace ACE.Server.Factories
             new int[] { 6,7 }
         };
 
-        public static readonly int[] food = { 258, 4746, 259, 547, 260, 5758, 261, 262, 263, 264, 265 };
+        public static readonly int[] food = { 258, 4746, 259, 547, 260, 5758, 261, 262, 263, 264, 265 }; // Apple, Water, Bread, Brimstone-cap Mushroom, Cabbage, Carrot, Cheese, Chicken, Fish, Grapes, Meat
 
         public static readonly int[][] GenericLootMatrix =
         {
@@ -439,6 +687,14 @@ namespace ACE.Server.Factories
             new int[] { 8331, 8327, 8330, 2436, 27328, 27324, 2458, 2461, 27320, 27323, 27327, 27325, 27318, 27321, 631, 632, 9229, 514, 515, 516 },
             new int[] { 8331, 8327, 8330, 2436, 27328, 27324, 2458, 2461, 27320, 27323, 27327, 27325, 27318, 27321, 631, 632, 9229, 514, 515, 516 },
             new int[] { 8331, 8327, 8330, 2436, 27328, 27324, 2458, 2461, 27320, 27323, 27327, 27325, 27318, 27321, 631, 632, 9229, 514, 515, 516 }
+        };
+
+        // Poor, Normal, Quality, Pristine
+        public static readonly int[][] AnimalPartsLootMatrix =
+        {
+            new int[] { 1052500, 1052501, 1052502, 1052503}, // Hide
+            new int[] { 1052504, 1052505, 1052506, 1052507}, // Bones
+            new int[] { 1052508, 1052509, 1052510, 1052511}, // Meat
         };
 
         // Level 8 spell components
@@ -1837,15 +2093,15 @@ namespace ACE.Server.Factories
         {
             Undef,
             MiscClothing,
-            Helms,
+            Helms,              
             Shields,
             LeatherArmor,
             StuddedLeatherArmor,
             ChainmailArmor,
-            PlatemailArmor,
+            PlatemailArmor,     
             ScalemailArmor,
             YoroiArmor,
-            DiforsaArmor,
+            DiforsaArmor,       
             CeldonArmor,
             AmuliArmor,
             KoujiaArmor,
@@ -1864,8 +2120,54 @@ namespace ACE.Server.Factories
             OlthoiCeldonArmor,
             OlthoiKoujiaArmor,
             OlthoiAlduressaArmor,
-            SocietyArmor
+            SocietyArmor,
+            Robes,
+            Cloth,
+            Light
         }
+
+        public enum ArmorTypeWarrior
+        {
+            Undef,
+            Helms,
+            Shields,
+            ChainmailArmor,
+            PlatemailArmor,
+            ScalemailArmor,
+            CeldonArmor,
+            CovenantArmor,
+            NariyidArmor,
+            OlthoiArmor,
+            OlthoiCeldonArmor,
+        }
+
+        public enum ArmorTypeRogue
+        {
+            LeatherArmor,
+            StuddedLeatherArmor,
+            YoroiArmor,
+            KoujiaArmor,
+            LoricaArmor,
+            OlthoiKoujiaArmor,
+        }
+
+        public enum ArmorTypeCaster
+        {
+            RobesAndCloth,
+            AmuliArmor,
+            ChiranArmor,
+            OlthoiAmuliArmor,
+        }
+
+        public static readonly int[] Robes =
+        {
+            //5850,   // Faran Robe
+            //5851,   // Faran Robe with Hood
+            //5852,   // Dho Vest and Robe
+            //5852,   // Dho Vest and Robe
+            //5853,   // Suikan Robe
+            //5854    // Suikan Robe
+        };
 
         public static readonly int[] OverRobes =
         {
@@ -1876,52 +2178,289 @@ namespace ACE.Server.Factories
             44803   // Empyrean Over-robe
         };
 
-        public static readonly int[] MiscClothing =
+        public static readonly int[] RobesAndCloth =
         {
-            107,    // Sollerets
-            117,    // Breeches
             118,    // Cloth Cap
             119,    // Cowl
             121,    // Cloth gloves
-            124,    // Gloves
-            127,    // Pants
             128,    // Qafiya
             129,    // Sandals
-            130,    // Shirt
             132,    // Shoes
             133,    // Slippers
-            134,    // Tunic
             135,    // Turban
+            296,    // Crown
+            2197,   // Iron Crown
+            5894,   // Fez
+            5901,   // Kasa
+            28605,  // Beret
+            28610,  // Loafers
+            28612,  // Bandana
+            5850,   // Faran Robe
+            5851,   // Faran Robe with Hood
+            5852,   // Dho Vest and Robe
+            5852,   // Dho Vest and Robe
+            5853,   // Suikan Robe
+            5854,   // Suikan Robe
+            5855,   // Suikan Robe
+            5905,   // Hood
+        };
+
+        public static readonly int[] Cloth =
+        {
+            118,    // Cloth Cap
+            119,    // Cowl
+            121,    // Cloth gloves
+            128,    // Qafiya
+            129,    // Sandals
+            132,    // Shoes
+            133,    // Slippers
+            135,    // Turban
+            296,    // Crown
+            2197,   // Iron Crown
+            5894,   // Fez
+            5901,   // Kasa
+            28605,  // Beret
+            28610,  // Loafers
+            28612,  // Bandana
+            5850,   // Faran Robe
+            5851,   // Faran Robe with Hood
+            5852,   // Dho Vest and Robe
+            5852,   // Dho Vest and Robe
+            5853,   // Suikan Robe
+            5854,   // Suikan Robe
+            5855,   // Suikan Robe
+            5905,   // Hood
+            6046,   // Amuli Coat
+            6047,   // Amuli Leggings
+            27215,  // Chiran Coat
+            27216,  // Chiran Gauntlets
+            27217,  // Chiran Helm
+            27218,  // Chiran Leggings
+            27219,   // Chiran Sandals
+            37188,  // Olthoi Amuli Gauntlets
+            37196,  // Olthoi Amuli Helm
+            37201,  // Olthoi Amuli Leggings
+            37208,  // Olthoi Amuli Sollerets
+            37299,  // Olthoi Amuli Coat
+        };
+
+        public static readonly int[] Light =
+        {
+            77,     // Kabuton
+            132,    // Shoes
+            36,     // Leather Bracers
+            39,     // Leather Breastplate
+            45,     // Leather Cap
+            47,     // Leather Coat
+            50,     // Leather Cuirass
+            56,     // Leather Gauntlets
+            60,     // Leather Girth
+            65,     // Leather Greaves
+            81,     // Leather Leggings
+            86,     // Leather Pauldrons
+            97,     // Leather Shirt
+            102,    // Leather Sleeves
+            109,    // Leather Tassets
+            115,    // Leather Boots
+            122,    // Soft Leather Gloves
+            458,    // Leather Cowl
+            551,    // Leather Basinet
+            43,     // Yoroi Breastplate
+            54,     // Yoroi Cuirass
+            64,     // Yoroi Girth
+            69,     // Yoroi Greaves
+            78,     // Kote
+            90,     // Yoroi Pauldrons
+            106,    // Yoroi Sleeves
+            113,    // Yoroi Tassets
+            2437,   // Yoroi Leggings
+            25636,  // Leather Helm
+            25637,  // Leather Bracers
+            25638,  // Leather Vest
+            25639,  // Leather Jerkin
+            25640,  // Leather Cowl
+            25641,  // Leather Cuirass
+            25642,  // Leather Gauntlets
+            25643,  // Leather Girth
+            25644,  // Leather Greaves
+            25645,  // Leather Leggings
+            25646,  // Long Leather Gauntlets
+            25647,  // Leather Pants
+            25648,  // Leather Pauldrons
+            25649,  // Leather Shirt
+            25650,  // Leather Shorts
+            25651,  // Leather Sleeves
+            25652,  // Leather Tassets
+            25661,  // Leather Boots
+            27220,  // Lorica Boots
+            27221,  // Lorica Breastplate
+            27222,  // Lorica Gauntlets
+            27223,  // Lorica Helm
+            27224,  // Lorica Leggings
+            27225,  // Lorica Sleeves
+            4224,   // Gromnie Hide Pauldrons
+            4226,   // Gromnie Hide Cuirass
+            4227,   // Gromnie Hide Shirt
+            28142,  // Gromnie Hide Boots
+            28144,  // Gromnie Hide Amuli Coat
+            28146,  // Gromnie Hide Coat
+            28148,  // Gromnie Hide Gauntlets
+            28149,  // Gromnie Hide Helmet
+            28126,  // Gromnie Hide Leggings
+            4222,   // Armoredillo Hide Bracers
+            4223,   // Armoredillo Hide Breastplate
+            4224,   // Armoredillo Hide Cuirass
+            25524,  // Armoredillo Hide Cuirass
+            28611,  // Viamontian Laced Boots
+            38,     // Studded Leather Bracers
+            42,     // Studded Leather Breastplate
+            48,     // Studded Leather Coat
+            53,     // Studded Leather Cuirass
+            59,     // Studded Leather Gauntlets
+            63,     // Studded Leather Girth
+            68,     // Studded Leather Greaves
+            84,     // Studded Leather Leggings
+            89,     // Studded Leather Pauldrons
+            99,     // Studded Leather Shirt
+            105,    // Studded Leather Sleeves
+            112,    // Studded Leather Tassets
+            116,    // Studded Leather Boots
+            554,    // Studded Leather Bassinet
+            723,    // Studded Leather Cowl
+            7897,   // Leather Steel-toed Boots
+            6003,   // Koujia Breastplate
+            6004,   // Koujia Leggings
+            6005,   // Koujia Sleeves
+            37190,  // Olthoi Koujia Gauntlets
+            37198,  // Olthoi Koujia Kabuton
+            37203,  // Olthoi Koujia Leggings
+            37206,  // Olthoi Koujia Sleeves
+            37215,  // Olthoi Koujia Breastplate
+            44,     // Buckler
+        };
+
+        public static readonly int[] Heavy =
+        {
+            46,     // Metal Cap
+            74,     // PP Heaume
+            75,     // Helmet
+            76,     // Horned Helm
+            550,    // Baigha
+            8488,   // Armet
+            8489,   // Heaume
+            107,    // Sollerets
+            35,     // Chainmail Basinet
+            55,     // Chainmail Gauntlets
+            71,     // Chainmail Hauberk
+            80,     // Chainmail Leggings
+            85,     // Chainmail Coif
+            96,     // Chainmail Shirt
+            101,    // Chainmail Sleeves
+            108,    // Chainmail Tassets
+            413,    // Chainmail Bracers
+            414,    // Chainmail Breastplate
+            415,    // Chainmail Girth
+            416,    // Chainmail Pauldrons
+            2605,   // Chainmail Greaves
+            40,     // Platemail Breastplate
+            51,     // Platemail Cuirass
+            57,     // Platemail Gauntlets
+            61,     // Platemail Girth
+            66,     // Platemail Greaves
+            72,     // Platemail Hauberk
+            82,     // Platemail Leggings
+            87,     // Platemail Pauldrons
+            103,    // Platemail Sleeves
+            110,    // Platemail Tassets
+            114,    // Platemail Vambraces
+            37,     // Scalemail Bracers
+            41,     // Scalemail Breastplate
+            52,     // Scalemail Cuirass
+            58,     // Scalemail Gauntlets
+            62,     // Scalemail Girth
+            67,     // Scalemail Greaves
+            73,     // Scalemail Hauberk
+            83,     // Scalemail Leggings
+            88,     // Scalemail Pauldrons
+            98,     // Scalemail Shirt
+            104,    // Scalemail Sleeves
+            111,    // Scalemail Tassets
+            552,    // Scalemail Bassinet
+            793,    // Scalemail Coif
+            6043,   // Celdon Girth
+            6044,   // Celdon Breastplate
+            6045,   // Celdon Leggings
+            6048,   // Celdon Sleeves
+            37189,  // Olthoi Celdon Gauntlets
+            37192,  // Olthoi Celdon Girth
+            37197,  // Olthoi Celdon Helm
+            37202,  // Olthoi Celdon Leggings
+            37205,  // Olthoi Celdon Sleeves
+            37209,  // Olthoi Celdon Sollerets
+            37214,  // Olthoi Celdon Breastplate
+            28145,  // Heavy Gromnie Hide Coat
+            28152,  // Heavy Gromnie Hide Leggings
+            21150,  // Covenant Sollerets
+            21151,  // Covenant Bracers
+            21152,  // Covenant Breastplate
+            21153,  // Covenant Gauntlets
+            21154,  // Covenant Girth
+            21155,  // Covenant Greaves
+            21156,  // Covenant Helm
+            21157,  // Covenant Pauldrons
+            21158,  // Covenant Shield
+            21159,  // Covenant Tassets
+            27226,  // Nariyid Boots
+            27227,  // Nariyid Breastplate
+            27228,  // Nariyid Gauntlets
+            27229,  // Nariyid Girth
+            27230,  // Nariyid Helm
+            27231,  // Nariyid Leggings
+            27232,  // Nariyid Sleeves
+            37191,  // Olthoi Gauntlets
+            37193,  // Olthoi Girth
+            37194,  // Olthoi Greaves
+            37199,  // Olthoi Helm
+            37204,  // Olthoi Pauldrons
+            37211,  // Olthoi Shoes
+            37212,  // Olthoi Tassets
+            37213,  // Olthoi Bracers
+            37216,  // Olthoi Breastplate
+            37291,  // Olthoi Shield
+            91,     // Kite Shield
+            93,     // Round Shield
+            95,      // Round Tower Shield
+            92,     // Large Kite Shield
+            94      // Large Round Shield
+        };
+
+        public static readonly int[] MiscClothing =
+        {
+            124,    // Jerkin
+            130,    // Shirt
+            134,    // Tunic
             2587,   // Shirt
             2588,   // Flared Shirt
             2589,   // Smock
             2590,   // Baggy Shirt
             2591,   // Puffy Shirt
-            2592,   // Tunic
-            2593,   // Tunic
-            2594,   // Tunic
-            2595,   // Tunic
+            //2592,   // Tunic
+            //2593,   // Tunic
+            //2594,   // Tunic
+            //2595,   // Tunic
             2596,   // Doublet
             2597,   // Pants
-            2598,   // Pants
+            //2598,   // Pants
             2599,   // Trousers
             2600,   // Pantaloons
-            2601,   // Pants
+            //2601,   // Pants
             2602,   // Breeches
-            2603,   // Breeches
-            2604,   // Breeches
-            5894,   // Fez
-            5901,   // Kasa
-            7897,   // Steel Toed Boots
-            28605,  // Beret
+            //2603,   // Breeches
+            //2604,   // Breeches
             28606,  // Viamontian Pants
             28607,  // Lace Shirt
             28608,  // Poet's Shirt
             28609,  // Vest
-            28610,  // Loafers
-            28611,  // Viamontian Laced Boots
-            28612,  // Bandana
-            44975   // Hood
         };
 
         public static readonly int[] ringItems =
@@ -1982,7 +2521,9 @@ namespace ACE.Server.Factories
             92,     // Large Kite Shield
             93,     // Round Shield
             94,     // Large Round Shield
-            95      // Round Tower Shield
+            95,     // Round Tower Shield
+            21158,  // Covenant Shield
+            37291   // Olthoi Shield
         };
 
         public static readonly int[] LeatherArmor =
@@ -2381,6 +2922,7 @@ namespace ACE.Server.Factories
         public static readonly Dictionary<ArmorType, int[]> armorTypeMap = new Dictionary<ArmorType, int[]>()
         {
             { ArmorType.MiscClothing,          MiscClothing },
+            { ArmorType.Cloth,                 Cloth },
             { ArmorType.Helms,                 Helms },
             { ArmorType.Shields,               Shields },
             { ArmorType.LeatherArmor,          LeatherArmor },
@@ -2389,25 +2931,56 @@ namespace ACE.Server.Factories
             { ArmorType.PlatemailArmor,        PlatemailArmor },
             { ArmorType.ScalemailArmor,        ScalemailArmor },
             { ArmorType.YoroiArmor,            YoroiArmor },
-            { ArmorType.DiforsaArmor,          DiforsaArmor },
+            //{ ArmorType.DiforsaArmor,          DiforsaArmor },
             { ArmorType.CeldonArmor,           CeldonArmor },
             { ArmorType.AmuliArmor,            AmuliArmor },
             { ArmorType.KoujiaArmor,           KoujiaArmor },
-            { ArmorType.TenassaArmor,          TenassaArmor },
-            { ArmorType.OverRobes,             OverRobes },
+            //{ ArmorType.TenassaArmor,          TenassaArmor },
+            //{ ArmorType.OverRobes,             OverRobes },
             { ArmorType.CovenantArmor,         CovenantArmor },
             { ArmorType.LoricaArmor,           LoricaArmor },
             { ArmorType.NariyidArmor,          NariyidArmor },
             { ArmorType.ChiranArmor,           ChiranArmor },
-            { ArmorType.AlduressaArmor,        AlduressaArmor },
-            { ArmorType.KnorrAcademyArmor,     KnorrAcademyArmor },
-            { ArmorType.SedgemailLeatherArmor, SedgemailLeatherArmor },
-            { ArmorType.HaebreanArmor,         HaebreanArmor },
+            //{ ArmorType.AlduressaArmor,        AlduressaArmor },
+            //{ ArmorType.KnorrAcademyArmor,     KnorrAcademyArmor },
+            //{ ArmorType.SedgemailLeatherArmor, SedgemailLeatherArmor },
+            //{ ArmorType.HaebreanArmor,         HaebreanArmor },
             { ArmorType.OlthoiArmor,           OlthoiArmor },
             { ArmorType.OlthoiAmuliArmor,      OlthoiAmuliArmor },
             { ArmorType.OlthoiCeldonArmor,     OlthoiCeldonArmor },
             { ArmorType.OlthoiKoujiaArmor,     OlthoiKoujiaArmor },
-            { ArmorType.OlthoiAlduressaArmor,  OlthoiAlduressaArmor }
+            //{ ArmorType.OlthoiAlduressaArmor,  OlthoiAlduressaArmor }
+        };
+
+        public static readonly Dictionary<ArmorTypeWarrior, int[]> armorTypeWarriorMap = new Dictionary<ArmorTypeWarrior, int[]>()
+        {
+            { ArmorTypeWarrior.Shields,               Shields },
+            { ArmorTypeWarrior.ChainmailArmor,        ChainmailArmor },
+            { ArmorTypeWarrior.PlatemailArmor,        PlatemailArmor },
+            { ArmorTypeWarrior.ScalemailArmor,        ScalemailArmor },
+            { ArmorTypeWarrior.CeldonArmor,           CeldonArmor },
+            { ArmorTypeWarrior.CovenantArmor,         CovenantArmor },
+            { ArmorTypeWarrior.NariyidArmor,          NariyidArmor },
+            { ArmorTypeWarrior.OlthoiArmor,           OlthoiArmor },
+            { ArmorTypeWarrior.OlthoiCeldonArmor,     OlthoiCeldonArmor }
+        };
+
+        public static readonly Dictionary<ArmorTypeRogue, int[]> armorTypeRogueMap = new Dictionary<ArmorTypeRogue, int[]>()
+        {
+            { ArmorTypeRogue.LeatherArmor,              LeatherArmor },
+            { ArmorTypeRogue.StuddedLeatherArmor,       StuddedLeatherArmor },
+            { ArmorTypeRogue.YoroiArmor,                YoroiArmor },
+            { ArmorTypeRogue.KoujiaArmor,               KoujiaArmor },
+            { ArmorTypeRogue.LoricaArmor,               LoricaArmor },
+            { ArmorTypeRogue.OlthoiKoujiaArmor,         OlthoiKoujiaArmor }
+        };
+
+        public static readonly Dictionary<ArmorTypeCaster, int[]> armorTypeCasterMap = new Dictionary<ArmorTypeCaster, int[]>()
+        {
+            { ArmorTypeCaster.RobesAndCloth,             RobesAndCloth },
+            { ArmorTypeCaster.AmuliArmor,                AmuliArmor },
+            { ArmorTypeCaster.ChiranArmor,               ChiranArmor },
+            { ArmorTypeCaster.OlthoiAmuliArmor,          OlthoiAmuliArmor }
         };
 
         public static readonly int[][] SocietyArmorMatrix =
@@ -2426,6 +2999,21 @@ namespace ACE.Server.Factories
         public static int[] GetLootTable(ArmorType armorType)
         {
             return armorTypeMap[armorType];
+        }
+
+        public static int[] GetLootTable(ArmorTypeWarrior armorTypeWarrior)
+        {
+            return armorTypeWarriorMap[armorTypeWarrior];
+        }
+
+        public static int[] GetLootTable(ArmorTypeRogue armorTypeRogue)
+        {
+            return armorTypeRogueMap[armorTypeRogue];
+        }
+
+        public static int[] GetLootTable(ArmorTypeCaster armorTypeCaster)
+        {
+            return armorTypeCasterMap[armorTypeCaster];
         }
     }
 }

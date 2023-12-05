@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Factories
@@ -10,6 +11,7 @@ namespace ACE.Server.Factories
     {
         // Counters
         public float ArmorCount { get; set; }
+        public float ShieldCount { get; set; }
         public float MeleeWeaponCount { get; set; }
         public float CasterCount { get; set; }
         public float MissileWeaponCount { get; set; }
@@ -159,7 +161,7 @@ namespace ACE.Server.Factories
                             missileDefMod = testItem.WeaponMissileDefense.Value;
                         if (testItem.WieldDifficulty != null)
                             wield = testItem.WieldDifficulty.Value;
-                        if (testItem.WeaponSkill == Skill.TwoHandedCombat)
+                        if (testItem.IsTwoHanded)
                         {
                             if (logStats)
                             {
@@ -187,7 +189,11 @@ namespace ACE.Server.Factories
                         }
                         break;
                     case ItemType.Armor:
-                        ArmorCount++;
+                        if (testItem.IsShield)
+                            ShieldCount++;
+                        else
+                            ArmorCount++;
+
                         string equipmentSet = "None    ";
                         cantrip = false;
                         // float cantripSpells = 0;

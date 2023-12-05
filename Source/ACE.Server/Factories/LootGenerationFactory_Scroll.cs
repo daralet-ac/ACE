@@ -1,9 +1,10 @@
 using ACE.Common;
-using ACE.Database.Models.World;
 using ACE.Database;
+using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Spells;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Factories
@@ -43,7 +44,7 @@ namespace ACE.Server.Factories
 
             if (weenie == null)
             {
-                _log.Debug("CreateRandomScroll for tier {LootTier} and spellID of {SpellId} returned null from the database.", profile.Tier, spellId);
+                _log.Debug("CreateRandomScroll for tier {Tier} and spellID of {SpellId} returned null from the database.", profile.Tier, spellId);
                 return null;
             }
 
