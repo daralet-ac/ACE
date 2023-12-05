@@ -33,6 +33,7 @@ namespace ACE.Server.Entity
         // - critical (chance % mod / critical damage mod)
         // - attribute mod
         // - armor / mod (base al, impen / bane, life armor / imperil)
+        // - aegis / mod
         // - elemental damage bonus
         // - slayer mod
         // - resistance mod (natural, prot, vuln)
@@ -63,6 +64,7 @@ namespace ACE.Server.Entity
         public float AccuracyMod;
 
         public bool Evaded;
+        public PartialEvasion PartialEvasion;
 
         public BaseDamageMod BaseDamageMod;
         public float BaseDamage { get; set; }
@@ -156,6 +158,8 @@ namespace ACE.Server.Entity
 
             damageEvent.HandleLogging(attacker, defender);
 
+            //Console.WriteLine(damageEvent.Evaded);
+
             return damageEvent;
         }
 
@@ -178,7 +182,18 @@ namespace ACE.Server.Entity
             AttackType = attacker.AttackType;
             AttackHeight = attacker.AttackHeight ?? AttackHeight.Medium;
 
-            // check lifestone protection
+            // ---- COMBAT TECHNIQUE REF ----
+            GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
+
+            // ---- SNEAKING? ----
+            var isAttackFromSneaking = false;
+            if (playerAttacker != null)
+            {
+                isAttackFromSneaking = playerAttacker.IsAttackFromSneaking;
+                playerAttacker.IsAttackFromSneaking = false;
+            }
+
+            // ---- LIFESTONE PROTECTION ----
             if (playerDefender != null && playerDefender.UnderLifestoneProtection)
             {
                 LifestoneProtection = true;
@@ -189,22 +204,15 @@ namespace ACE.Server.Entity
             if (defender.Invincible)
                 return 0.0f;
 
-            // overpower
+            // ---- OVERPOWER ----
             if (attacker.Overpower != null)
                 Overpower = Creature.GetOverpower(attacker, defender);
 
-            // evasion chance
-            if (!Overpower)
-            {
-                EvasionChance = GetEvadeChance(attacker, defender);
-                if (EvasionChance > ThreadSafeRandom.Next(0.0f, 1.0f))
-                {
-                    Evaded = true;
-                    return 0.0f;
-                }
-            }
+            // ---- EVASION ----
+            var evasionMod = GetEvasionMod(attacker, defender);
+            //Console.WriteLine(EvasionChance + " " + partialEvasion);
 
-            // get base damage
+            // ---- BASE DAMAGE ----
             if (playerAttacker != null)
                 GetBaseDamage(playerAttacker);
             else
@@ -212,27 +220,59 @@ namespace ACE.Server.Entity
 
             if (DamageType == DamageType.Undef)
             {
-                if (attacker.Guid.IsPlayer() || damageSource.Guid.IsPlayer())
+                if ((attacker?.Guid.IsPlayer() ?? false) || (damageSource?.Guid.IsPlayer() ?? false))
                 {
-                    _log.Error("DamageEvent.DoCalculateDamage({Attacker} ({AttackerGuid}), {Defender} ({DefenderGuid}), {DamageSource} ({DamageSourceGuid})) - DamageType == DamageType.Undef", attacker.Name, attacker.Guid, defender.Name, defender.Guid, damageSource.Name, damageSource.Guid);
+                    _log.Error($"DamageEvent.DoCalculateDamage({attacker?.Name} ({attacker?.Guid}), {defender?.Name} ({defender?.Guid}), {damageSource?.Name} ({damageSource?.Guid})) - DamageType == DamageType.Undef");
                     GeneralFailure = true;
                 }
             }
 
             if (GeneralFailure) return 0.0f;
 
-            // get damage modifiers
+            // ---- DAMAGE RATING ----
             PowerMod = attacker.GetPowerMod(Weapon);
+
             AttributeMod = attacker.GetAttributeMod(Weapon);
+
             SlayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
 
-            // ratings
             DamageRatingBaseMod = Creature.GetPositiveRatingMod(attacker.GetDamageRating());
+
             RecklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
-            SneakAttackMod = attacker.GetSneakAttackMod(defender);
+
+            SneakAttackMod = attacker.GetSneakAttackMod(defender, out var backstabMod);
+            var backstabPenalty = backstabMod > 0.0f ? 0.8f : 1.0f;
+
+            var powershotMod = attacker.IsPowerShot(Weapon, attackerCombatAbility) ? 2.0f : 1.0f;
+
             HeritageMod = attacker.GetHeritageBonus(Weapon) ? 1.05f : 1.0f;
 
-            DamageRatingMod = Creature.AdditiveCombine(DamageRatingBaseMod, RecklessnessMod, SneakAttackMod, HeritageMod);
+            // Attack Height Bonus - High (10 damage rating)
+            var extraDamageMod = 1.0f;
+            if (playerAttacker != null)
+            {
+                if (playerAttacker.AttackHeight == AttackHeight.High)
+                    extraDamageMod += 0.10f;
+            }
+
+            // Combat Technique - Reckless (20 damage rating, if active) 
+            var recklessMod = GetRecklessMod(attacker, defender, attackerCombatAbility);
+
+            // Combat Focus - Enchanted Weapon (Damage reduced to 75%, if active)
+            var enchantedWeaponMod = GetEnchantedWeaponMod(attacker, defender, attackerCombatAbility);
+
+            // Dual Wield Damage Mod
+            var dualWieldDamageMod = 1.0f;
+            if (playerAttacker != null && playerAttacker.IsDualWieldAttack && !playerAttacker.DualWieldAlternate)
+                dualWieldDamageMod = playerAttacker.GetDualWieldDamageMod();
+
+            // Two-handed Combat Damage Mod
+            var twohandedCombatDamageMod = 1.0f;
+            if (playerAttacker != null && playerAttacker.GetEquippedWeapon() != null)
+                if(playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded)
+                    twohandedCombatDamageMod = playerAttacker.GetTwoHandedCombatDamageMod();
+
+            DamageRatingMod = Creature.AdditiveCombine(DamageRatingBaseMod, RecklessnessMod, SneakAttackMod, HeritageMod, extraDamageMod, recklessMod);
 
             if (pkBattle)
             {
@@ -240,12 +280,48 @@ namespace ACE.Server.Entity
                 DamageRatingMod = Creature.AdditiveCombine(DamageRatingMod, PkDamageMod);
             }
 
-            // damage before mitigation
-            DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod;
+            // ---- DAMAGE BEFORE MITIGATION ----
+            DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * powershotMod * enchantedWeaponMod * dualWieldDamageMod * twohandedCombatDamageMod;
 
-            // critical hit?
+            // ---- CRIT ----
             var attackSkill = attacker.GetCreatureSkill(attacker.GetCurrentWeaponSkill());
+
             CriticalChance = WorldObject.GetWeaponCriticalChance(Weapon, attacker, attackSkill, defender);
+
+            if (playerAttacker != null)
+            {
+                // Backstab combat ability bonus
+                CriticalChance += backstabMod;
+
+                // Iron Fist combat ability bonus
+                if (attackerCombatAbility == CombatAbility.IronFist)
+                    CriticalChance += 0.1f;
+
+                if (CombatType == CombatType.Missile)
+                {
+                    // critical chance bonus from accuracy bar
+                    CriticalChance += playerAttacker.GetAccuracyCritChanceMod(Weapon);
+                }
+                        
+                if (isAttackFromSneaking)
+                {
+                    CriticalChance = 1.0f;
+                    if (playerDefender == null)
+                        SneakAttackMod = 3.0f;
+                }
+
+                // Axe and Mace Specialization Bonus - +10% crit chance for axes (additively)
+                if (playerAttacker.GetEquippedWeapon() != null)
+                    if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Axe && playerAttacker.GetCreatureSkill(Skill.Axe).AdvancementClass == SkillAdvancementClass.Specialized)
+                        CriticalChance += 0.1f;
+            }
+
+            if (playerDefender != null)
+            {
+                // Combat Technique - Riposte
+                if (defenderCombatAbility == CombatAbility.Riposte)
+                    CriticalChance += 0.20f; // Extra chance of receiving critical hits while using the Riposte technique.
+            }
 
             // https://asheron.fandom.com/wiki/Announcements_-_2002/08_-_Atonement
             // It should be noted that any time a character is logging off, PK or not, all physical attacks against them become automatically critical.
@@ -253,6 +329,10 @@ namespace ACE.Server.Entity
 
             if (playerDefender != null && (playerDefender.IsLoggingOut || playerDefender.PKLogout))
                 CriticalChance = 1.0f;
+
+            // Cannot crit if Phalanx is equipped
+            if (defenderCombatAbility == CombatAbility.Phalanx)
+                CriticalChance = 0.0f;
 
             if (CriticalChance > ThreadSafeRandom.Next(0.0f, 1.0f))
             {
@@ -273,11 +353,31 @@ namespace ACE.Server.Entity
                     // whereas CD/CDR applied to the total damage (base damage + additional crit damage)
                     CriticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, attacker, attackSkill, defender);
 
+                    // Iron Fist combat ability penalty
+                    if (attackerCombatAbility == CombatAbility.IronFist)
+                        CriticalDamageMod -= 0.2f;
+
+                    if (playerAttacker != null && playerAttacker.GetEquippedWeapon() != null)
+                    {
+                        // Axe and Mace Specialization Bonus - +100% crit damage for maces (additively)
+                        if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Mace && playerAttacker.GetCreatureSkill(Skill.Axe).AdvancementClass == SkillAdvancementClass.Specialized)
+                            CriticalDamageMod += 1.0f;
+
+                        // Spear and Staff Specialization Bonus - +100% crit damage for staves (additively)
+                        if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Staff && playerAttacker.GetCreatureSkill(Skill.Spear).AdvancementClass == SkillAdvancementClass.Specialized)
+                            CriticalDamageMod += 1.0f;
+                    }
+
+                    if (CombatType == CombatType.Missile && playerAttacker != null)
+                    {
+                        CriticalDamageMod += playerAttacker.GetAccuracyCritDamageMod(Weapon);
+                    }
+
                     CriticalDamageRatingMod = Creature.GetPositiveRatingMod(attacker.GetCritDamageRating());
 
                     // recklessness excluded from crits
                     RecklessnessMod = 1.0f;
-                    DamageRatingMod = Creature.AdditiveCombine(DamageRatingBaseMod, CriticalDamageRatingMod, SneakAttackMod, HeritageMod);
+                    DamageRatingMod = Creature.AdditiveCombine(DamageRatingBaseMod, CriticalDamageRatingMod, SneakAttackMod, HeritageMod, extraDamageMod);
 
                     if (pkBattle)
                         DamageRatingMod = Creature.AdditiveCombine(DamageRatingMod, PkDamageMod);
@@ -286,7 +386,7 @@ namespace ACE.Server.Entity
                 }
             }
 
-            // armor rending and cleaving
+            // ---- ARMOR ----
             var armorRendingMod = 1.0f;
             if (Weapon != null && Weapon.HasImbuedEffect(ImbuedEffectType.ArmorRending))
                 armorRendingMod = WorldObject.GetArmorRendingMod(attackSkill);
@@ -295,7 +395,17 @@ namespace ACE.Server.Entity
 
             var ignoreArmorMod = Math.Min(armorRendingMod, armorCleavingMod);
 
-            // get body part / armor pieces / armor modifier
+            if (playerAttacker != null && playerAttacker.GetEquippedWeapon() != null)
+            {
+                // Two-handed Combat Specialization Bonus - +10% armor penetration for spears (additively)
+                if (playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded && Weapon.WeaponSkill == Skill.Spear && playerAttacker.GetCreatureSkill(Skill.TwoHandedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
+                    ignoreArmorMod -= 0.1f;
+
+                // Spear and Staff Specialization Bonus - +10% armor penetration for spears (additively)
+                if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Spear && playerAttacker.GetCreatureSkill(Skill.Spear).AdvancementClass == SkillAdvancementClass.Specialized)
+                    ignoreArmorMod -= 0.1f;
+            }
+
             if (playerDefender != null)
             {
                 // select random body part @ current attack height
@@ -326,7 +436,7 @@ namespace ACE.Server.Entity
             if (Weapon != null && Weapon.HasImbuedEffect(ImbuedEffectType.IgnoreAllArmor))
                 ArmorMod = 1.0f;
 
-            // get resistance modifiers
+            // ---- RESISTANCE ----
             WeaponResistanceMod = WorldObject.GetWeaponResistanceModifier(Weapon, attacker, attackSkill, DamageType);
 
             if (playerDefender != null)
@@ -339,30 +449,34 @@ namespace ACE.Server.Entity
                 ResistanceMod = (float)Math.Max(0.0f, defender.GetResistanceMod(resistanceType, Attacker, Weapon, WeaponResistanceMod));
             }
 
-            // damage resistance rating
+            // ---- DAMAGE RESIST RATING ----
             DamageResistanceRatingMod = DamageResistanceRatingBaseMod = defender.GetDamageResistRatingMod(CombatType);
 
             if (IsCritical)
             {
                 CriticalDamageResistanceRatingMod = Creature.GetNegativeRatingMod(defender.GetCritDamageResistRating());
-
                 DamageResistanceRatingMod = Creature.AdditiveCombine(DamageResistanceRatingBaseMod, CriticalDamageResistanceRatingMod);
             }
 
             if (pkBattle)
             {
                 PkDamageResistanceMod = Creature.GetNegativeRatingMod(defender.GetPKDamageResistRating());
-
                 DamageResistanceRatingMod = Creature.AdditiveCombine(DamageResistanceRatingMod, PkDamageResistanceMod);
             }
 
-            // get shield modifier
+            // ---- SHIELD ----
             ShieldMod = defender.GetShieldMod(attacker, DamageType, Weapon);
 
-            // calculate final output damage
-            Damage = DamageBeforeMitigation * ArmorMod * ShieldMod * ResistanceMod * DamageResistanceRatingMod;
-
+            // ---- FINAL CALCULATIONS ----
+            Damage = DamageBeforeMitigation * ArmorMod * ShieldMod * ResistanceMod * DamageResistanceRatingMod * evasionMod * backstabPenalty;
             DamageMitigated = DamageBeforeMitigation - Damage;
+
+            // ---- OPTIONAL GLOBAL MULTIPLIERS FOR PLAYERS or MONSTERS ----
+            if(attacker.IsMonster)
+                Damage *= 1.0f;
+
+            if(!attacker.IsMonster)
+                Damage *= 1.0f;
 
             return Damage;
         }
@@ -383,16 +497,161 @@ namespace ACE.Server.Entity
         /// </summary>
         public float GetEvadeChance(Creature attacker, Creature defender)
         {
-            AccuracyMod = attacker.GetAccuracyMod(Weapon);
+            Player playerAttacker = attacker as Player;
+            Player playerDefender = defender as Player;
+            bool isPvP = playerAttacker != null && playerDefender != null;
+
+            AccuracyMod = attacker.GetAccuracySkillMod(Weapon);
 
             EffectiveAttackSkill = attacker.GetEffectiveAttackSkill();
 
             //var attackType = attacker.GetCombatType();
 
-            EffectiveDefenseSkill = defender.GetEffectiveDefenseSkill(CombatType);
+            EffectiveDefenseSkill = defender.GetEffectiveDefenseSkill(CombatType, isPvP);
+
+            GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
+
+            if (playerAttacker != null)
+            {
+                if (playerAttacker.AttackHeight == AttackHeight.Medium) // Medium height attacks gives players 10% extra attack skill.
+                    EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * 1.10f);
+            }
+
+            if (playerDefender != null)
+            {
+                if (defenderCombatAbility == CombatAbility.Reckless)
+                    return 0.0f; // No evasion while using Reckless technique.
+
+                if (playerDefender != null && playerDefender.AttackHeight == AttackHeight.Low) // While using low height attacks players get an extra defence skill bonus.
+                    EffectiveDefenseSkill = (uint)Math.Round(EffectiveDefenseSkill * 1.10f);
+            }
+
+            // Evasion penalty for receiving too many attacks per second.
+            if (defender.attacksReceivedPerSecond > 0.0f && Defender.AttackTarget != attacker) // But we still have full evasion chance against our attack target.
+                EffectiveDefenseSkill = (uint)Math.Round(EffectiveDefenseSkill * (1.0f - Math.Min(1.0f, defender.attacksReceivedPerSecond / 40.0f)));
 
             var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, EffectiveDefenseSkill);
-            return (float)evadeChance;
+
+            // Combat Focus - Smokescreen (+10% chance to evade)
+            if (defenderCombatAbility == CombatAbility.Smokescreen)
+                evadeChance += 0.1f; // Gain 10% evade chance
+
+            return (float)Math.Min(evadeChance, 1.0f); ;
+        }
+
+        /// <summary>
+        /// If evade succeeded, determine if evade was partial or full. Return true if full.
+        /// </summary>
+        private bool GetEvadedMod(Creature attacker, Creature defender, out float evasionMod)
+        {
+            evasionMod = 1.0f;
+
+            if (attacker != defender && EvasionChance > ThreadSafeRandom.Next(0.0f, 1.0f))
+            {
+                var fullEvade = EvasionChance / 3.0f;
+                var mostEvade = fullEvade * 2.0f;
+                var someEvade = fullEvade * 3.0f;
+
+                var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+                //Console.WriteLine($"BaseEvasionChance: {Math.Round(EvasionChance * 100)}% AttackRoll: {Math.Round(attackRoll * 100)}");
+                //Console.WriteLine($"FullEvadeChance: {Math.Round(fullEvade * 100)}% MostEvadeChance: {Math.Round(mostEvade * 100)}% SomeEvadeChance: {Math.Round(someEvade * 100)}");
+
+                // full evade
+                if (attacker != defender && fullEvade > attackRoll)
+                {
+                    //Console.WriteLine($"Full Evade");
+                    Evaded = true;
+                    return true;
+                }
+                // partial evade
+                else
+                {
+                    if (mostEvade > attackRoll)          // Evaded most of
+                    {
+                        //Console.WriteLine($"Most Evade");
+                        evasionMod = 1 - 0.33f;
+                        PartialEvasion = PartialEvasion.Most;
+                    }
+                    else if (someEvade > attackRoll)    // Evaded some of
+                    {
+                        //Console.WriteLine($"Some Evade");
+                        evasionMod = 1 - 0.67f;
+                        PartialEvasion = PartialEvasion.Some;
+                    }
+                }
+                //Console.WriteLine($"EvasionMod: {Math.Round(evasionMod * 100)}%");
+                //if (!attacker.IsMonster)
+                //{
+                //    Console.WriteLine($"{attacker.Name} vs {defender.Name}:\n" +
+                //        $" -AttackRoll: {Math.Round(attackRoll * 100)}\n" +
+                //        $" -EvasionChance: {Math.Round(EvasionChance * 100)}%\n" +
+                //        $" -FullEvadeChance: {Math.Round(fullEvade * 100)}%\n" +
+                //        $" -EvasionMod: {Math.Round(evasionMod * 100)}% (IF PARTIAL EVADE)");
+                //}
+            }
+            return false;
+        }
+
+        private void GetCombatAbilities(Creature attacker, Creature defender, out CombatAbility attackerCombatAbility, out CombatAbility defenderCombatAbility)
+        {
+            attackerCombatAbility = CombatAbility.None;
+            defenderCombatAbility = CombatAbility.None;
+
+            var attackerCombatFocus = attacker.GetEquippedCombatFocus();
+            if (attackerCombatFocus != null)
+                attackerCombatAbility = attackerCombatFocus.GetCombatAbility();
+
+            var defenderCombatFocus = defender.GetEquippedCombatFocus();
+            if (defenderCombatFocus != null)
+                defenderCombatAbility = defenderCombatFocus.GetCombatAbility();
+        }
+
+        private float GetRecklessMod(Creature attacker, Creature defender, CombatAbility attackerAbility)
+        {
+            var mod = 1.0f;
+
+            if (attackerAbility == CombatAbility.Reckless)
+            {
+                if (CombatType == CombatType.Melee || attacker.GetDistance(defender) < 3) // Make sure we're close to each other.
+                {
+                    mod = 1.20f; // Extra damage dealt while attacking with the Reckless technique.
+                }
+            }
+
+            return mod;
+        }
+
+        private float GetEnchantedWeaponMod(Creature attacker, Creature defender, CombatAbility attackerAbility)
+        {
+            var mod = 1.0f;
+
+            if (attackerAbility == CombatAbility.EnchantedWeapon)
+                mod = 0.75f; // Reduced physical damage dealt while attacking with the Reckless technique.
+
+            return mod;
+        }
+
+        private float GetEvasionMod(Creature attacker, Creature defender)
+        {
+            var evasionMod = 1.0f;
+
+            if (!Overpower)
+            {
+                var defenderSkillAmount = defender.GetEffectiveDefenseSkill(CombatType, false);
+
+                // This optionally adds a curve to how effective evasion can be as a character levels
+                //var evasionDefenseMod = 1 - (200 / (200 + defenderSkillAmount));
+                //EvasionChance = GetEvadeChance(attacker, defender) * evasionDefenseMod;
+
+                EvasionChance = GetEvadeChance(attacker, defender);
+
+                var evaded = GetEvadedMod(attacker, defender, out evasionMod);
+                if (evaded)
+                    return 0.0f;
+        }
+
+            return evasionMod;
         }
 
         /// <summary>
@@ -419,6 +678,8 @@ namespace ACE.Server.Entity
             // TODO: combat maneuvers for player?
             BaseDamageMod = attacker.GetBaseDamageMod(DamageSource);
 
+            BaseDamageMod.BaseDamage.MaxDamage += attacker.GetUnarmedSkillDamageBonus();
+
             // some quest bows can have built-in damage bonus
             if (Weapon?.WeenieType == WeenieType.MissileLauncher)
                 BaseDamageMod.DamageBonus += Weapon.Damage ?? 0;
@@ -442,6 +703,9 @@ namespace ACE.Server.Entity
             }
 
             BaseDamageMod = attacker.GetBaseDamage(AttackPart.Value);
+
+            BaseDamageMod.BaseDamage.MaxDamage += attacker.GetUnarmedSkillDamageBonus();
+
             BaseDamage = (float)ThreadSafeRandom.Next(BaseDamageMod.MinDamage, BaseDamageMod.MaxDamage);
 
             DamageType = attacker.GetDamageType(AttackPart.Value, CombatType);
@@ -465,7 +729,7 @@ namespace ACE.Server.Entity
         public void GetBodyPart(Creature defender, Quadrant quadrant)
         {
             // get cached body parts table
-            var bodyParts = Creature.GetBodyParts(defender.WeenieClassId);
+            var bodyParts = !defender.IsModified ? Creature.GetBodyParts(defender.WeenieClassId) : Creature.GetBodyParts(defender); // If we're modified(our level has been altered) get our custom body parts instead of the generic one.
 
             // rng roll for body part
             var bodyPart = bodyParts.RollBodyPart(quadrant);
@@ -534,6 +798,7 @@ namespace ACE.Server.Entity
 
             info += $"EvasionChance: {EvasionChance}\n";
             info += $"Evaded: {Evaded}\n";
+            info += $"PartialEvaded: {PartialEvasion}\n";
 
             if (!(Attacker is Player))
             {

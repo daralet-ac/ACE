@@ -80,6 +80,8 @@ namespace ACE.Server.Entity
 
             if (loadDB && (_spell == null || _spellBase == null))
                 _log.Debug($"Spell.Init(spellID = {spellID}, loadDB = {loadDB}) failed! {(_spell == null ? "_spell was null" : "")} {(_spellBase == null ? "_spellBase was null" : "")}");
+
+            SpellPowerMod = 1.0f;
         }
 
         /// <summary>
@@ -217,7 +219,7 @@ namespace ACE.Server.Entity
             switch (School)
             {
                 case MagicSchool.CreatureEnchantment: return Skill.CreatureEnchantment;
-                case MagicSchool.ItemEnchantment:     return Skill.ItemEnchantment;
+                case MagicSchool.PortalMagic:     return Skill.PortalMagic;
                 case MagicSchool.LifeMagic:           return Skill.LifeMagic;
                 case MagicSchool.WarMagic:            return Skill.WarMagic;
                 case MagicSchool.VoidMagic:           return Skill.VoidMagic;

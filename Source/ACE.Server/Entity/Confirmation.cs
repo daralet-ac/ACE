@@ -133,7 +133,12 @@ namespace ACE.Server.Entity
 
             if (source == null || target == null) return;
 
-            RecipeManager.UseObjectOnTarget(player, source, target, true);
+            if(source.WeenieType == WeenieType.SpellTransferScroll)
+                SpellTransferScroll.UseObjectOnTarget(player, source, target, true);
+            else if (source.WeenieType == WeenieType.ArmorPatch)
+                ArmorPatch.UseObjectOnTarget(player, source, target, true);
+            else
+                RecipeManager.UseObjectOnTarget(player, source, target, true);
         }
     }
 

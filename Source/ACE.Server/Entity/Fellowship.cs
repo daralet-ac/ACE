@@ -497,7 +497,7 @@ namespace ACE.Server.Entity
         /// <param name="amount">The input amount of XP</param>
         /// <param name="xpType">The type of XP (quest XP is handled differently)</param>
         /// <param name="player">The fellowship member who originated the XP</param>
-        public void SplitXp(ulong amount, XpType xpType, ShareType shareType, Player player)
+        public void SplitXp(ulong amount, XpType xpType, int? xpSourceLevel, uint? xpSourceId, ShareType shareType, Player player, string xpMessage = "")
         {
             // https://asheron.fandom.com/wiki/Announcements_-_2002/02_-_Fever_Dreams#Letter_to_the_Players_1
 
@@ -514,7 +514,7 @@ namespace ACE.Server.Entity
                 {
                     var fellowXpType = player == member ? XpType.Quest : XpType.Fellowship;
 
-                    member.GrantXP(perAmount, fellowXpType, shareType);
+                    member.GrantXP(perAmount, fellowXpType, xpSourceLevel, xpSourceId, shareType, player == member ? xpMessage : "");
                 }
             }
 
@@ -530,11 +530,12 @@ namespace ACE.Server.Entity
 
                     var fellowXpType = player == member ? xpType : XpType.Fellowship;
 
-                    member.GrantXP((long)shareAmount, fellowXpType, shareType);
+                    member.GrantXP((long)shareAmount, fellowXpType, xpSourceLevel, xpSourceId, shareType, player == member ? xpMessage : "");
                 }
 
                 return;
             }
+
 
             // divides XP to all sharable fellows within level range
             // based on each fellowship member's level
@@ -550,7 +551,7 @@ namespace ACE.Server.Entity
 
                     var fellowXpType = player == member ? xpType : XpType.Fellowship;
 
-                    member.GrantXP((long)playerTotal, fellowXpType, shareType);
+                    member.GrantXP((long)playerTotal, fellowXpType, xpSourceLevel, xpSourceId, shareType, player == member ? xpMessage : "");
                 }
             }
         }
@@ -575,10 +576,7 @@ namespace ACE.Server.Entity
             else
             {
                 // pre-filter: evenly divide between luminance-eligible fellows
-                // updated: retail supposedly did not do this
-                //var shareableMembers = GetFellowshipMembers().Values.Where(f => f.MaximumLuminance != null).ToList();
-
-                var shareableMembers = GetFellowshipMembers().Values.ToList();
+                var shareableMembers = GetFellowshipMembers().Values.Where(f => f.MaximumLuminance != null).ToList();
 
                 if (shareableMembers.Count == 0)
                     return;
@@ -590,8 +588,6 @@ namespace ACE.Server.Entity
 
                 foreach (var member in inRange)
                 {
-                    if (member.MaximumLuminance == null) continue;
-
                     var fellowXpType = player == member ? xpType : XpType.Fellowship;
 
                     member.GrantLuminance(perAmount, fellowXpType, shareType);

@@ -87,21 +87,21 @@ namespace ACE.Server.Entity
         /// <summary>
         /// The maximum spell level in retail
         /// </summary>
-        public static uint MaxSpellLevel = 8;
+        public static uint MaxSpellLevel = 7;
 
         /// <summary>
         /// A mapping of spell levels => minimum power
         /// </summary>
         public static Dictionary<uint, uint> MinPower = new Dictionary<uint, uint>()
         {
-            { 1,   1 },
-            { 2,  50 },
-            { 3, 100 },
-            { 4, 150 },
-            { 5, 200 },
-            { 6, 250 },
-            { 7, 300 },
-            { 8, 400 }
+            { 1,  10 },
+            { 2, 150 },
+            { 3, 200 },
+            { 4, 250 },
+            { 5, 300 },
+            { 6, 350 },
+            { 7, 400 },
+            { 8, 450 }
         };
 
         /// <summary>
