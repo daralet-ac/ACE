@@ -769,20 +769,6 @@ namespace ACE.Server.Factories
             return false;
         }
 
-        private static bool TryMutate_AllegianceRequirement(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
-        {
-            if (wo.Biota.PropertiesSpellBook == null && (wo.SpellDID ?? 0) == 0 && (wo.ProcSpell ?? 0) == 0)
-                return false;
-
-            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
-            if (rng < (roll.Wcid == Enum.WeenieClassName.crown ? 0.25 : 0.05)) // Crowns are special and have allegiance requirements more often.
-            {
-                wo.ItemAllegianceRankLimit = AllegianceRankChance.Roll(profile.Tier);
-                return true;
-            }
-            return false;
-        }
-
         private static bool TryMutate_ItemSkillLimit(WorldObject wo, TreasureRoll roll)
         {
             if (!RollItemSkillLimit(roll))

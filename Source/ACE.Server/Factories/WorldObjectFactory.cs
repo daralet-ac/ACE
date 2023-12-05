@@ -137,10 +137,6 @@ namespace ACE.Server.Factories
                     return new LightSource(weenie, guid);
                 case WeenieType.EmpoweredScarab:
                     return new EmpoweredScarab(weenie, guid);
-                case WeenieType.SpellConduit:
-                    return new SpellConduit(weenie, guid);
-                case WeenieType.SpellTransferScroll:
-                    return new SpellTransferScroll(weenie, guid);
                 case WeenieType.CombatFocus:
                     return new CombatFocus(weenie, guid);
                 case WeenieType.ArmorPatch:
@@ -262,10 +258,6 @@ namespace ACE.Server.Factories
                     return new LightSource(biota);
                 case WeenieType.EmpoweredScarab:
                     return new EmpoweredScarab(biota);
-                case WeenieType.SpellConduit:
-                    return new SpellConduit(biota);
-                case WeenieType.SpellTransferScroll:
-                    return new SpellTransferScroll(biota);
                 case WeenieType.CombatFocus:
                     return new CombatFocus(biota);
                 case WeenieType.ArmorPatch:
