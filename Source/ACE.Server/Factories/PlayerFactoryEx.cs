@@ -710,7 +710,7 @@ namespace ACE.Server.Factories
             for (uint spellLevel = 1; spellLevel <= 8; spellLevel++)
             {
                 player.LearnSpellsInBulk(MagicSchool.CreatureEnchantment, spellLevel, false);
-                player.LearnSpellsInBulk(MagicSchool.ItemEnchantment, spellLevel, false);
+                player.LearnSpellsInBulk(MagicSchool.PortalMagic, spellLevel, false);
                 player.LearnSpellsInBulk(MagicSchool.LifeMagic, spellLevel, false);
                 player.LearnSpellsInBulk(MagicSchool.VoidMagic, spellLevel, false);
                 player.LearnSpellsInBulk(MagicSchool.WarMagic, spellLevel, false);
