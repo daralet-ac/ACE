@@ -19,57 +19,46 @@ namespace ACE.Server.Factories.Tables
 
         private static ChanceTable<int> T1_SpellLevelChances = new ChanceTable<int>()
         {
-            // 15/60/25?
-            ( 1, 0.25f ),
-            ( 2, 0.50f ),
-            ( 3, 0.25f ),
+            ( 1, 1.0f ),
         };
 
         private static ChanceTable<int> T2_SpellLevelChances = new ChanceTable<int>()
         {
-            ( 3, 0.25f ),
-            ( 4, 0.50f ),
-            ( 5, 0.25f ),
+            ( 1, 1.0f ),
         };
 
         private static ChanceTable<int> T3_SpellLevelChances = new ChanceTable<int>()
         {
-            ( 4, 0.25f ),
-            ( 5, 0.50f ),
-            ( 6, 0.25f ),
+            ( 1, 0.95f ),
+            ( 2, 0.05f ),
         };
 
         private static ChanceTable<int> T4_SpellLevelChances = new ChanceTable<int>()
         {
-            ( 5, 0.75f ),
-            ( 6, 0.25f ),
+            ( 2, 1.0f ),
         };
 
         private static ChanceTable<int> T5_SpellLevelChances = new ChanceTable<int>()
         {
-            ( 5, 0.30f ),
-            ( 6, 0.50f ),
-            ( 7, 0.20f ),
+            ( 2, 0.95f ),
+            ( 3, 0.05f ),
         };
 
         private static ChanceTable<int> T6_SpellLevelChances = new ChanceTable<int>()
         {
-            ( 6, 0.60f ),
-            ( 7, 0.40f ),
+            ( 3, 1.0f ),
         };
 
         private static ChanceTable<int> T7_SpellLevelChances = new ChanceTable<int>()
         {
-            ( 6, 0.25f ),
-            ( 7, 0.50f ),
-            ( 8, 0.25f ),
+            ( 3, 0.95f ),
+            ( 4, 0.05f ),
         };
 
         private static ChanceTable<int> T8_SpellLevelChances = new ChanceTable<int>()
         {
-            ( 6, 0.15f ),
-            ( 7, 0.50f ),
-            ( 8, 0.35f ),
+            ( 3, 0.85f ),
+            ( 4, 0.15f ),
         };
 
         private static readonly List<ChanceTable<int>> spellLevelChances = new List<ChanceTable<int>>()
@@ -83,6 +72,11 @@ namespace ACE.Server.Factories.Tables
             T7_SpellLevelChances,
             T8_SpellLevelChances
         };
+
+        static SpellLevelChance()
+        {
+            
+        }
 
         /// <summary>
         /// Rolls for a spell level for a tier

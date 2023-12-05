@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 using ACE.Entity.Enum;
@@ -4098,6 +4099,7 @@ namespace ACE.Server.Factories.Tables
             SpellId.CANTRIPSPEARAPTITUDE1,
             SpellId.CANTRIPSPEARAPTITUDE2,
             SpellId.CANTRIPSPEARAPTITUDE3,
+            SpellId.CANTRIPSPEARAPTITUDE4,
         };
 
         public static readonly List<SpellId> CANTRIPSPRINT = new List<SpellId>()
@@ -4108,12 +4110,12 @@ namespace ACE.Server.Factories.Tables
             SpellId.CantripSprint4,
         };
 
-        public static readonly List<SpellId> CANTRIPSTAFFAPTITUDE = new List<SpellId>()
-        {
-            SpellId.CANTRIPSTAFFAPTITUDE1,
-            SpellId.CANTRIPSTAFFAPTITUDE2,
-            SpellId.CANTRIPSTAFFAPTITUDE3,
-        };
+        //public static readonly List<SpellId> CANTRIPSTAFFAPTITUDE = new List<SpellId>()
+        //{
+        //    SpellId.CANTRIPSPEARAPTITUDE4, // Leg Spear
+        //    SpellId.CANTRIPTHROWNAPTITUDE4, // Leg TW
+        //    SpellId.CANTRIPUNARMEDAPTITUDE4, // leg UA
+        //};
 
         public static readonly List<SpellId> CANTRIPHEAVYWEAPONSAPTITUDE = new List<SpellId>()
         {
@@ -4128,6 +4130,7 @@ namespace ACE.Server.Factories.Tables
             SpellId.CANTRIPTHROWNAPTITUDE1,
             SpellId.CANTRIPTHROWNAPTITUDE2,
             SpellId.CANTRIPTHROWNAPTITUDE3,
+            SpellId.CANTRIPTHROWNAPTITUDE4,
         };
 
         public static readonly List<SpellId> CANTRIPUNARMEDAPTITUDE = new List<SpellId>()
@@ -4135,6 +4138,7 @@ namespace ACE.Server.Factories.Tables
             SpellId.CANTRIPUNARMEDAPTITUDE1,
             SpellId.CANTRIPUNARMEDAPTITUDE2,
             SpellId.CANTRIPUNARMEDAPTITUDE3,
+            SpellId.CANTRIPUNARMEDAPTITUDE4,
         };
 
         public static readonly List<SpellId> CANTRIPWARMAGICAPTITUDE = new List<SpellId>()
@@ -7663,6 +7667,30 @@ namespace ACE.Server.Factories.Tables
             SpellId.GauntletVitalityIII,
         };
 
+        public static readonly List<SpellId> CantripWarriorVitality = new List<SpellId>()
+        {
+            SpellId.WarriorsLesserVitality,
+            SpellId.WarriorsVitality,
+            SpellId.WarriorsGreaterVitality,
+            SpellId.WarriorsUltimateVitality,
+        };
+
+        public static readonly List<SpellId> CantripWarriorVigor = new List<SpellId>()
+        {
+            SpellId.WarriorsLesserVigor,
+            SpellId.WarriorsVigor,
+            SpellId.WarriorsGreaterVigor,
+            SpellId.WarriorsUltimateVigor,
+        };
+
+        public static readonly List<SpellId> CantripWizardIntelect = new List<SpellId>()
+        {
+            SpellId.WizardsLesserIntellect,
+            SpellId.WizardsIntellect,
+            SpellId.WizardsGreaterIntellect,
+            SpellId.WizardsUltimateIntellect,
+        };
+
         static SpellLevelProgression()
         {
             // takes ~5ms
@@ -8021,7 +8049,7 @@ namespace ACE.Server.Factories.Tables
             AddSpells(CANTRIPPERSONATTUNEMENT);
             AddSpells(CANTRIPSPEARAPTITUDE);
             AddSpells(CANTRIPSPRINT);
-            AddSpells(CANTRIPSTAFFAPTITUDE);
+            //AddSpells(CANTRIPSTAFFAPTITUDE);
             AddSpells(CANTRIPHEAVYWEAPONSAPTITUDE);
             AddSpells(CANTRIPTHROWNAPTITUDE);
             AddSpells(CANTRIPUNARMEDAPTITUDE);
@@ -8408,6 +8436,14 @@ namespace ACE.Server.Factories.Tables
             AddSpells(GauntletCriticalDamageReduction);
             AddSpells(GauntletHealingBoost);
             AddSpells(GauntletVitality);
+            AddSpells(CantripWarriorVitality);
+            AddSpells(CantripWarriorVigor);
+            AddSpells(CantripWizardIntelect);
+            //CustomDM
+            //AddSpells(ArmorMasterySelf);
+            //AddSpells(ArmorMasteryOther);
+            //AddSpells(ArmorIneptitudeOther);
+            //AddSpells(CantripArmorAptitude);
         }
 
         private static void AddSpells(List<SpellId> spells)
@@ -8422,6 +8458,40 @@ namespace ACE.Server.Factories.Tables
         public static List<SpellId> GetSpellLevels(SpellId spellId)
         {
             return spellProgression.TryGetValue(spellId, out var progression) ? progression : null;
+        }
+
+        public static SpellId GetLevel1SpellId(SpellId spellId)
+        {
+            foreach(var spellProgressionEntry in spellProgression)
+            {
+                foreach(var entry in spellProgressionEntry.Value)
+                {
+                    if (spellId == entry)
+                        return spellProgressionEntry.Key;
+                }
+            }
+
+            return SpellId.Undef;
+        }
+
+        public static SpellId GetSpellAtLevel(SpellId level1SpellId, int level, bool ifNoMatchReturnLowestPossibleLevel = false)
+        {
+            var spellLevels = GetSpellLevels(level1SpellId);
+
+            if (spellLevels == null)
+                return SpellId.Undef;
+
+            int spellLevelIndex = Math.Max(level - 1, 0);
+
+            while (ifNoMatchReturnLowestPossibleLevel && spellLevelIndex < spellLevels.Count && spellLevels[spellLevelIndex] == SpellId.Undef)
+            {
+                if (spellLevelIndex < spellLevels.Count)
+                    spellLevelIndex++;
+                else
+                    return SpellId.Undef;
+            }
+
+            return spellLevels[spellLevelIndex];
         }
     }
 }
