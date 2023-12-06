@@ -9,7 +9,6 @@ using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.Physics;
 
 namespace ACE.Server.WorldObjects
 {
@@ -169,6 +168,25 @@ namespace ACE.Server.WorldObjects
 
                 // this wasn't in retail, but the lack of feedback when using a contract gem just seems jarring so...
                 player.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} accepted. Click on the quill icon in the lower right corner to open your contract tab to view your active contracts.", ChatMessageType.Broadcast));
+            }
+
+            if (CombatAbilityId > 0)
+            {
+                switch ((CombatAbility)CombatAbilityId)
+                {
+                    case CombatAbility.Taunt:
+                        if (player.ToggleTauntSetting())
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You start taunting nearby enemies.", ChatMessageType.Broadcast));
+                        else
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You stop taunting nearby enemies.", ChatMessageType.Broadcast));
+                        break;
+                    case CombatAbility.Sneak:
+                        if (!player.IsSneaking)
+                            player.BeginSneaking();
+                        else
+                            player.EndSneaking();
+                        break;
+                }
             }
 
             if (UseCreateItem > 0)
