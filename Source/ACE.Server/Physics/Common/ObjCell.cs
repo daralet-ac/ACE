@@ -7,11 +7,14 @@ using ACE.Entity.Enum;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Combat;
 using ACE.Server.Physics.Managers;
+using Serilog;
 
 namespace ACE.Server.Physics.Common
 {
     public class ObjCell: PartCell, IEquatable<ObjCell>
     {
+        private readonly ILogger _log = Log.ForContext<ObjCell>();
+
         public uint ID;
         public LandDefs.WaterType WaterType;
         public Position Pos;
