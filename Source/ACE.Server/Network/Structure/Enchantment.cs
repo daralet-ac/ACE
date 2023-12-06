@@ -42,7 +42,6 @@ namespace ACE.Server.Network.Structure
             Layer = layer;
             CasterGuid = casterGuid;
             StatModValue = statModVal ?? Spell.StatModVal;
-
             Target = target;
             EnchantmentMask = enchantmentMask;
         }
@@ -68,7 +67,7 @@ namespace ACE.Server.Network.Structure
                 return;
             }
 
-            Init(new Spell((uint)entry.SpellId));
+            Init(new Spell((uint)entry.SpellId), entry);
 
             Layer = entry.LayerId;
             StartTime = entry.StartTime;
@@ -76,7 +75,6 @@ namespace ACE.Server.Network.Structure
             CasterGuid = entry.CasterObjectId;
             StatModValue = entry.StatModValue;
             SpellSetID = (uint)entry.SpellSetId;
-
             Target = target;
             EnchantmentMask = (EnchantmentMask)entry.EnchantmentCategory;
         }
@@ -90,6 +88,24 @@ namespace ACE.Server.Network.Structure
             Duration = spell.Duration;
             DegradeModifier = spell.DegradeModifier;
             DegradeLimit = spell.DegradeLimit;
+
+            if (spell._spell != null)
+            {
+                StatModType = spell.StatModType;
+                StatModKey = spell.StatModKey;
+            }
+        }
+
+        public void Init(Spell spell, PropertiesEnchantmentRegistry entry)
+        {
+            Spell = spell;
+            SpellID = (ushort)spell.Id;
+            SpellCategory = (ushort)spell.Category;
+            PowerLevel = spell.Power;
+            Duration = entry.Duration;
+            DegradeModifier = spell.DegradeModifier;
+            DegradeLimit = spell.DegradeLimit;
+            StatModValue = entry.StatModValue;
 
             if (spell._spell != null)
             {
