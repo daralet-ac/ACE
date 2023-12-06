@@ -526,10 +526,6 @@ namespace ACE.Server.Entity
                     EffectiveDefenseSkill = (uint)Math.Round(EffectiveDefenseSkill * 1.10f);
             }
 
-            // Evasion penalty for receiving too many attacks per second.
-            if (defender.attacksReceivedPerSecond > 0.0f && Defender.AttackTarget != attacker) // But we still have full evasion chance against our attack target.
-                EffectiveDefenseSkill = (uint)Math.Round(EffectiveDefenseSkill * (1.0f - Math.Min(1.0f, defender.attacksReceivedPerSecond / 40.0f)));
-
             var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, EffectiveDefenseSkill);
 
             // Combat Focus - Smokescreen (+10% chance to evade)
