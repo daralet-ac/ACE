@@ -48,6 +48,10 @@ namespace ACE.Server.Network.Structure
 
         public ArmorLevel ArmorLevels;
 
+        public bool IsArmorCapped = false;
+        public bool IsArmorBuffed = false;
+        public bool IsAttackModBuffed = false;
+
         // This helps ensure the item will identify properly. Some "items" are technically "Creatures".
         private bool NPCLooksLikeObject;
 
@@ -128,7 +132,20 @@ namespace ACE.Server.Network.Structure
             if (PropertiesFloat.ContainsKey(PropertyFloat.AbsorbMagicDamage) || wo.HasImbuedEffect(ImbuedEffectType.IgnoreSomeMagicProjectileDamage))
                 PropertiesFloat[PropertyFloat.AbsorbMagicDamage] = 1;
 
-            if (wo is Door || wo is Chest)
+            if (wo is PressurePlate)
+            {
+                if (PropertiesInt.ContainsKey(PropertyInt.ResistLockpick))
+                    PropertiesInt.Remove(PropertyInt.ResistLockpick);
+
+                if (PropertiesInt.ContainsKey(PropertyInt.Value))
+                    PropertiesInt.Remove(PropertyInt.Value);
+
+                if (PropertiesInt.ContainsKey(PropertyInt.EncumbranceVal))
+                    PropertiesInt.Remove(PropertyInt.EncumbranceVal);
+
+                PropertiesString.Add(PropertyString.ShortDesc, wo.Active ? "Status: Armed" : "Status: Disarmed");
+            }
+            else if (wo is Door || wo is Chest)
             {
                 // If wo is not locked, do not send ResistLockpick value. If ResistLockpick is sent for unlocked objects, id panel shows bonus to Lockpick skill
                 if (!wo.IsLocked && PropertiesInt.ContainsKey(PropertyInt.ResistLockpick))
@@ -334,6 +351,9 @@ namespace ACE.Server.Network.Structure
                 //PropertiesInt.Clear();
                 //PropertiesInt64.Clear();
                 //PropertiesString.Clear();
+
+                if (PropertiesInt.ContainsKey(PropertyInt.Value))
+                    PropertiesInt.Remove(PropertyInt.Value);
             }
 
             BuildFlags();
@@ -388,7 +408,6 @@ namespace ACE.Server.Network.Structure
                 if (player.Fellowship != null)
                     PropertiesString[PropertyString.Fellowship] = player.Fellowship.FellowshipName;
             }
-
             AddPropertyEnchantments(wo);
         }
 
@@ -397,7 +416,32 @@ namespace ACE.Server.Network.Structure
             if (wo == null) return;
 
             if (PropertiesInt.ContainsKey(PropertyInt.ArmorLevel))
+            {
                 PropertiesInt[PropertyInt.ArmorLevel] += wo.EnchantmentManager.GetArmorMod();
+
+                var baseArmor = PropertiesInt[PropertyInt.ArmorLevel];
+
+                var wielder = wo.Wielder as Player;
+                if (wielder != null && ((wo.ClothingPriority ?? 0) & (CoverageMask)CoverageMaskHelper.Underwear) == 0)
+                {
+                    int armor;
+
+                    if (wo.IsShield)
+                        armor = (int)wielder.GetSkillModifiedShieldLevel(baseArmor);
+                    else
+                        armor = (int)wielder.GetSkillModifiedArmorLevel(baseArmor, (ArmorWeightClass)(wo.ArmorWeightClass ?? 0));
+                    if (armor < baseArmor)
+                    {
+                        PropertiesInt[PropertyInt.ArmorLevel] = armor;
+                        IsArmorCapped = true;
+                    }
+                    else if (armor > baseArmor)
+                    {
+                        PropertiesInt[PropertyInt.ArmorLevel] = armor;
+                        IsArmorBuffed = true;
+                    }
+                }
+            }
 
             if (wo.ItemSkillLimit != null)
                 PropertiesInt[PropertyInt.AppraisalItemSkill] = (int)wo.ItemSkillLimit;
@@ -410,6 +454,19 @@ namespace ACE.Server.Network.Structure
                 var auraDefenseMod = wo.Wielder != null && wo.IsEnchantable ? wo.Wielder.EnchantmentManager.GetDefenseMod() : 0.0f;
 
                 PropertiesFloat[PropertyFloat.WeaponDefense] += defenseMod + auraDefenseMod;
+            }
+
+            if (PropertiesFloat.ContainsKey(PropertyFloat.WeaponOffense))
+            {
+                var attackMod = wo.EnchantmentManager.GetAttackMod();
+                var auraAttackMod = wo.Wielder != null && wo.IsEnchantable ? wo.Wielder.EnchantmentManager.GetAttackMod() : 0.0f;
+
+                PropertiesFloat[PropertyFloat.WeaponOffense] += attackMod + auraAttackMod;
+
+                if (auraAttackMod > 0)
+                {
+                    IsAttackModBuffed = true;
+                }
             }
 
             if (PropertiesFloat.TryGetValue(PropertyFloat.ManaConversionMod, out var manaConvMod))
@@ -459,6 +516,587 @@ namespace ACE.Server.Network.Structure
                 PropertiesInt[PropertyInt.AppraisalLongDescDecoration] = (int)appraisalLongDescDecoration;
             else
                 PropertiesInt.Remove(PropertyInt.AppraisalLongDescDecoration);
+
+            string extraPropertiesText;
+            if (PropertiesString.TryGetValue(PropertyString.Use, out var useText) && useText.Length > 0)
+                extraPropertiesText = $"{useText}\n";
+            else
+                extraPropertiesText = "";
+            bool hasExtraPropertiesText = false;
+
+            // Protection Levels
+            if (PropertiesInt.TryGetValue(PropertyInt.ArmorLevel, out var armorLevel) && armorLevel == 0 && wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth)
+            {
+                var slashingMod = (float)wo.ArmorModVsSlash;
+                var piercingMod = (float)wo.ArmorModVsPierce;
+                var bludgeoningMod = (float)wo.ArmorModVsBludgeon;
+                var fireMod = (float)wo.ArmorModVsFire;
+                var coldMod = (float)wo.ArmorModVsCold;
+                var acidMod = (float)wo.ArmorModVsAcid;
+                var electricMod = (float)wo.ArmorModVsElectric;
+
+                extraPropertiesText += $"Slashing: {GetProtectionLevelText(slashingMod)} ({string.Format("{0:0.00}", slashingMod)}) \n";
+                extraPropertiesText += $"Piercing: {GetProtectionLevelText(piercingMod)} ({string.Format("{0:0.00}", piercingMod)}) \n";
+                extraPropertiesText += $"Bludgeoning: {GetProtectionLevelText(bludgeoningMod)} ({string.Format("{0:0.00}", bludgeoningMod)}) \n";
+                extraPropertiesText += $"Fire: {GetProtectionLevelText(fireMod)} ({string.Format("{0:0.00}", fireMod)}) \n";
+                extraPropertiesText += $"Cold: {GetProtectionLevelText(coldMod)} ({string.Format("{0:0.00}", coldMod)}) \n";
+                extraPropertiesText += $"Acid: {GetProtectionLevelText(acidMod)} ({string.Format("{0:0.00}", acidMod)}) \n";
+                extraPropertiesText += $"Electric: {GetProtectionLevelText(electricMod)} ({string.Format("{0:0.00}", electricMod)}) \n\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Attack Mod for Bows
+            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponOffense, out var weaponOffense) && weaponOffense > 1.001)
+            {
+                var weaponMod = (weaponOffense - 1) * 100;
+                if (wo.WeaponSkill == Skill.Bow || wo.WeaponSkill == Skill.Crossbow)
+                {
+                    extraPropertiesText += $"Bonus to Attack Skill: +{(int)weaponMod}%\n";
+                }
+
+                hasExtraPropertiesText = true;
+            }
+            // Weapon Mod - War Magic
+            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponWarMagicMod, out var weaponWarMagicMod) && weaponWarMagicMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Bonus to War Magic Skill: +{Math.Round((weaponWarMagicMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Weapon Mod - Life Magic
+            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponLifeMagicMod, out var weaponLifeMagicMod) && weaponLifeMagicMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Bonus to Life Magic Skill: +{Math.Round((weaponLifeMagicMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Weapon Mod - Restoration Spell Magic
+            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponRestorationSpellsMod, out var weaponLifeMagicVitalMod) && weaponLifeMagicVitalMod >= 1.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Bonus to Restoration Spells: +{Math.Round((weaponLifeMagicVitalMod - 1) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Aegis Rending
+            if (PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffect) && imbuedEffect == 0x8000)
+            {
+                extraPropertiesText += $"Additional Properties: Aegis Rending\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Aegis Penetration
+            if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreAegis, out var ignoreAegis) && ignoreAegis != 0)
+            {
+                var wielder = (Creature)wo.Wielder;
+                extraPropertiesText += $"Aegis Penetration: {Math.Round(100.0f - (ignoreAegis * 100), 0)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Ignore Armor
+            if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreArmor, out var ignoreArmor) && ignoreArmor != 0)
+            {
+                var wielder = (Creature)wo.Wielder;
+                extraPropertiesText += $"Armor Penetration: +{Math.Round(100.0f - (ignoreArmor * 100), 0)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Crit Multiplier
+            if (PropertiesFloat.TryGetValue(PropertyFloat.CriticalMultiplier, out var critMultiplier) && critMultiplier > 1)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Crit Damage: +{Math.Round(critMultiplier * 100, 0)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Crit Chance
+            if (PropertiesFloat.TryGetValue(PropertyFloat.CriticalFrequency, out var critFrequency) && critFrequency > 0.0f)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Crit Chance: +{Math.Round(critFrequency * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Spell Proc Rate
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ProcSpellRate, out var procSpellRate) && procSpellRate > 0.0f)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Cast on strike chance: {Math.Round(procSpellRate * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // -- ARMOR --
+
+            // Armor Weight Class
+            if (PropertiesInt.TryGetValue(PropertyInt.ArmorWeightClass, out var armorWieghtClass) && armorWieghtClass > 0)
+            {
+                if (PropertiesInt.TryGetValue(PropertyInt.WeightClassReqAmount, out var weightClassReqAmount) && weightClassReqAmount > 0)
+                {
+                    var weightClassText = "";
+                    var wieldAttributeText = "";
+
+                    if (wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth)
+                    {
+                        weightClassText = "Cloth";
+                        wieldAttributeText = "base Focus or base Self";
+                    }
+                    else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Light)
+                    {
+                        weightClassText = "Light";
+                        wieldAttributeText = "base Coordination or base Quickness";
+                    }
+                    else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Heavy)
+                    {
+                        weightClassText = "Heavy";
+                        wieldAttributeText = "base Strength or base Endurance";
+                    }
+
+                    extraPropertiesText += $"Weight Class: {weightClassText}\n" +
+                        $"Wield requires {wieldAttributeText}: {weightClassReqAmount}\n";
+
+                    hasExtraPropertiesText = true;
+                }
+            }
+
+            // Armor Penalty - Attack Resource
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorResourcePenalty, out var armoResourcePenalty) && armoResourcePenalty >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalArmorResourcePenalty = wielder.GetArmorResourcePenalty();
+                    extraPropertiesText += $"Penalty to Stamina/Mana usage: {Math.Round((armoResourcePenalty) * 100, 1)}%  ({Math.Round((double)(totalArmorResourcePenalty * 100), 2)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Penalty to Stamina/Mana usage: {Math.Round((armoResourcePenalty) * 100, 1)}%\n\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // Aegis Level
+            if (PropertiesInt.TryGetValue(PropertyInt.AegisLevel, out var aegisLevel) && aegisLevel != 0)
+            {
+                var wielder = (Creature)wo.Wielder;
+                if (wielder != null)
+                {
+                    var totalAegisLevel = wielder.GetAegisLevel();
+                    extraPropertiesText += $"Aegis Level: {aegisLevel}  ({totalAegisLevel})\n";
+                }
+                else
+                    extraPropertiesText += $"Aegis Level: {aegisLevel}\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Jewelry Mod - Mana Conversion
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ManaConversionMod, out var manaConversionMod) && manaConversionMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wo.ItemType == ItemType.Jewelry)
+                {
+                    extraPropertiesText += $"Bonus to Mana Conversion Skill: +{manaConversionMod}%\n";
+                }
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - War Magic
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorWarMagicMod, out var armorWarMagicMod) && armorWarMagicMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalWarMagicMod = wielder.GetArmorWarMagicMod();
+                    extraPropertiesText += $"Bonus to War Magic Skill: +{Math.Round((armorWarMagicMod) * 100, 1)}%  ({Math.Round((double)(totalWarMagicMod * 100), 2)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to War Magic Skill: +{Math.Round((armorWarMagicMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Life Magic
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorLifeMagicMod, out var armorLifeMagicMod) && armorLifeMagicMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalLifeMagicMod = wielder.GetArmorLifeMagicMod();
+                    extraPropertiesText += $"Bonus to Life Magic Skill: +{Math.Round((armorLifeMagicMod) * 100, 1)}%  ({Math.Round((double)totalLifeMagicMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Life Magic Skill: +{Math.Round((armorLifeMagicMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Attack Skill
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorAttackMod, out var armorAttackMod) && armorAttackMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalAttackMod = wielder.GetArmorAttackMod();
+                    extraPropertiesText += $"Bonus to Attack Skill: +{Math.Round((armorAttackMod) * 100, 1)}%  ({Math.Round((double)totalAttackMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Attack Skill: +{Math.Round((armorAttackMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Melee Def
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorMeleeDefMod, out var armorMeleeDefMod) && armorMeleeDefMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalMeleeDefMod = wielder.GetArmorMeleeDefMod();
+                    extraPropertiesText += $"Bonus to Melee Defense: +{Math.Round((armorMeleeDefMod) * 100, 1)}%  ({Math.Round((double)totalMeleeDefMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Melee Defense: +{Math.Round((armorMeleeDefMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Missile Def
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorMissileDefMod, out var armorMissileDefMod) && armorMissileDefMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalMissileDefMod = wielder.GetArmorMissileDefMod();
+                    extraPropertiesText += $"Bonus to Missile Defense: +{Math.Round((armorMissileDefMod) * 100, 1)}%  ({Math.Round((double)totalMissileDefMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Missile Defense: +{Math.Round((armorMissileDefMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Magic Def
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorMagicDefMod, out var armorMagicDefenseMod) && armorMagicDefenseMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalMagicDefMod = wielder.GetArmorMagicDefMod();
+                    extraPropertiesText += $"Bonus to Magic Defense: +{Math.Round((armorMagicDefenseMod) * 100, 1)}%  ({Math.Round((double)totalMagicDefMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Magic Defense: +{Math.Round((armorMagicDefenseMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Dual Wield
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorDualWieldMod, out var armorDualWieldMod) && armorDualWieldMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalDualWieldMod = wielder.GetArmorDualWieldMod();
+                    extraPropertiesText += $"Bonus to Dual Wield Skill: +{Math.Round((armorDualWieldMod) * 100, 1)}%  ({Math.Round((double)totalDualWieldMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Dual Wield Skill: +{Math.Round((armorDualWieldMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Two-handed Combat
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorTwohandedCombatMod, out var armorTwonandedCombatMod) && armorTwonandedCombatMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalTwohandedCombatMod = wielder.GetArmorDualWieldMod();
+                    extraPropertiesText += $"Bonus to Two-handed Combat Skill: +{Math.Round((armorTwonandedCombatMod) * 100, 1)}%  ({Math.Round((double)totalTwohandedCombatMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Two-handed Combat Skill: +{Math.Round((armorTwonandedCombatMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Run
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorRunMod, out var armorRunMod) && armorRunMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalRunMod = wielder.GetArmorRunMod();
+                    extraPropertiesText += $"Bonus to Run Skill: +{Math.Round((armorRunMod) * 100, 1)}%  ({Math.Round((double)totalRunMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Run Skill: +{Math.Round((armorRunMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Sneaking
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorSneakingMod, out var armorSneakingMod) && armorSneakingMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalSneakMod = wielder.GetArmorSneakingMod();
+                    extraPropertiesText += $"Bonus to Stealth Skill: +{Math.Round((armorSneakingMod) * 100, 1)}%  ({Math.Round((double)totalSneakMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Stealth Skill: +{Math.Round((armorSneakingMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Shield
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorShieldMod, out var armorShieldMod) && armorShieldMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalShieldMod = wielder.GetArmorShieldMod();
+                    extraPropertiesText += $"Bonus to Shield Skill: +{Math.Round((armorShieldMod) * 100, 1)}%  ({Math.Round((double)totalShieldMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Shield Skill: +{Math.Round((armorShieldMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Assess
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorAssessMod, out var armorAssessMod) && armorAssessMod >= 0.01)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalAssessMod = wielder.GetArmorAssessMod();
+                    extraPropertiesText += $"Bonus to Assess Skill: +{Math.Round((armorAssessMod) * 100, 1)}%  ({Math.Round((double)totalAssessMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Assess Skill: +{Math.Round((armorAssessMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Deception
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorDeceptionMod, out var armorDeceptionMod) && armorDeceptionMod >= 0.01)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalDecptionMod = wielder.GetArmorDeceptionMod();
+                    extraPropertiesText += $"Bonus to Deception Skill: +{Math.Round((armorDeceptionMod) * 100, 1)}%  ({Math.Round((double)totalDecptionMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Deception Skill: +{Math.Round((armorDeceptionMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Max Health
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorHealthMod, out var armorHealthMod) && armorHealthMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalHealthMod = wielder.GetArmorHealthMod();
+                    extraPropertiesText += $"Bonus to Maximum Health: +{Math.Round((armorHealthMod) * 100, 1)}%  ({Math.Round((double)totalHealthMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Maximum Health: +{Math.Round((armorHealthMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Health Regen
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorHealthRegenMod, out var armorHealthRegenMod) && armorHealthRegenMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalHealthRegenMod = wielder.GetArmorHealthRegenMod();
+                    extraPropertiesText += $"Bonus to Health Regen: +{Math.Round((armorHealthRegenMod) * 100, 1)}%  ({Math.Round((double)totalHealthRegenMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Health Regen: +{Math.Round((armorHealthRegenMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Max Stamina
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorStaminaMod, out var armorStaminaMod) && armorStaminaMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalStaminaMod = wielder.GetArmorStaminaMod();
+                    extraPropertiesText += $"Bonus to Maximum Stamina: +{Math.Round((armorStaminaMod) * 100, 1)}%  ({Math.Round((double)totalStaminaMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Maximum Stamina: +{Math.Round((armorStaminaMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Stamina Regen
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorStaminaRegenMod, out var armorStaminaRegenMod) && armorStaminaRegenMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalStaminaRegenMod = wielder.GetArmorStaminaRegenMod();
+                    extraPropertiesText += $"Bonus to Stamina Regen: +{Math.Round(armorStaminaRegenMod * 100, 1)}%  ({Math.Round((double)totalStaminaRegenMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Stamina Regen: +{Math.Round((armorStaminaRegenMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Mana
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorManaMod, out var armorManaMod) && armorManaMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalManaMod = wielder.GetArmorManaMod();
+                    extraPropertiesText += $"Bonus to Maximum Mana: +{Math.Round((armorManaMod) * 100, 1)}%  ({Math.Round((double)totalManaMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Maximum Mana: +{Math.Round((armorManaMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Armor Mod - Mana Regen
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorManaRegenMod, out var armorManaRegenMod) && armorManaRegenMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var totalManaRegenMod = wielder.GetArmorManaRegenMod();
+                    extraPropertiesText += $"Bonus to Mana Regen: +{Math.Round((armorManaRegenMod) * 100, 1)}%  ({Math.Round((double)totalManaRegenMod * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Bonus to Mana Regen: +{Math.Round((armorManaRegenMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // Damage Penalty
+            if (PropertiesInt.TryGetValue(PropertyInt.DamageRating, out var damageRating) && damageRating < 0)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Damage Penalty: {damageRating}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // MANA SCARABS
+
+
+            // Max Level
+            if (PropertiesInt.TryGetValue(PropertyInt.EmpoweredScarabMaxLevel, out var manaScarabMaxLevel) && manaScarabMaxLevel > 0)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"\nMax Spell Level: {manaScarabMaxLevel}\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // Proc Chance
+            if (PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabTriggerChance, out var manaScarabTriggerChance) && manaScarabTriggerChance > 0.01)
+            {
+                extraPropertiesText += $"Proc Chance: {Math.Round((double)manaScarabTriggerChance * 100, 0)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // Frequency
+            if (PropertiesFloat.TryGetValue(PropertyFloat.CooldownDuration, out var cooldownDuration) && cooldownDuration > 0.01)
+            {
+                if(wo.WeenieType == WeenieType.EmpoweredScarab)
+                    extraPropertiesText += $"Cooldown: {Math.Round((double)cooldownDuration, 1)} seconds\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // Max Level
+            if (PropertiesInt.TryGetValue(PropertyInt.MaxStructure, out var maxStructure) && maxStructure > 0)
+            {
+                extraPropertiesText += $"Max Number of Uses: {maxStructure}\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // Intensity
+            if (PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabIntensity, out var manaScarabIntensity) && manaScarabIntensity > 0.01)
+            {
+                extraPropertiesText += $"Bonus Intensity: {Math.Round((double)manaScarabIntensity * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // Mana Reduction
+            if (PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabReductionAmount, out var manaScarabReductionAmount) && manaScarabReductionAmount > 0.01)
+            {
+                extraPropertiesText += $"Mana Cost Reduction: {Math.Round((double)manaScarabReductionAmount * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // Reserved Mana
+            if (PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabManaReserved, out var manaScarabManaReserved) && manaScarabManaReserved > 0)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                if (wielder != null)
+                {
+                    var equippedManaScarabs = wielder.GetEquippedEmpoweredScarabs();
+                    var totalReservedMana = 0.0;
+
+                    foreach (EmpoweredScarab manaScarab in equippedManaScarabs)
+                        totalReservedMana += manaScarab.EmpoweredScarabManaReserved ?? 0;
+
+                    extraPropertiesText += $"Mana Reservation: {Math.Round(manaScarabManaReserved * 100, 1)}% ({Math.Round(totalReservedMana * 100, 1)}%)\n";
+                }
+                else
+                    extraPropertiesText += $"Mana Reservation: {Math.Round(manaScarabManaReserved * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            if (hasExtraPropertiesText)
+            {
+                extraPropertiesText += "";
+                PropertiesString[PropertyString.Use] = extraPropertiesText;
+            }
+        }
+
+        private string GetProtectionLevelText(float protectionMod)
+        {
+            switch(protectionMod)
+            {
+                case <= 0.39f: return "Poor";
+                case <= 0.79f: return "Below Average";
+                case <= 1.19f: return "Average";
+                case <= 1.59f: return "Above Average";
+                default: return "Unparalleled";
+            }
         }
 
         private void BuildSpells(WorldObject wo)
@@ -488,7 +1126,7 @@ namespace ACE.Server.Network.Structure
             if (wo == null) return;
 
             // get all currently active item enchantments on the item
-            var woEnchantments = wo.EnchantmentManager.GetEnchantments(MagicSchool.ItemEnchantment);
+            var woEnchantments = wo.EnchantmentManager.GetEnchantments(MagicSchool.PortalMagic);
 
             foreach (var enchantment in woEnchantments)
                 SpellBook.Add((uint)enchantment.SpellId | EnchantmentMask);
@@ -500,7 +1138,7 @@ namespace ACE.Server.Network.Structure
             if (wo.Wielder != null && wo.IsEnchantable && wo.WeenieType != WeenieType.Clothing && !wo.IsShield && PropertyManager.GetBool("show_aura_buff").Item)
             {
                 // get all currently active item enchantment auras on the player
-                var wielderEnchantments = wo.Wielder.EnchantmentManager.GetEnchantments(MagicSchool.ItemEnchantment);
+                var wielderEnchantments = wo.Wielder.EnchantmentManager.GetEnchantments(MagicSchool.PortalMagic);
 
                 // Only show reflected Auras from player appropriate for wielded weapons
                 foreach (var enchantment in wielderEnchantments)
@@ -549,8 +1187,8 @@ namespace ACE.Server.Network.Structure
                 return;
 
             ArmorProfile = new ArmorProfile(wo);
-            ArmorHighlight = ArmorMaskHelper.GetHighlightMask(wo);
-            ArmorColor = ArmorMaskHelper.GetColorMask(wo);
+            ArmorHighlight = ArmorMaskHelper.GetHighlightMask(wo, IsArmorCapped || IsArmorBuffed);
+            ArmorColor = ArmorMaskHelper.GetColorMask(wo, IsArmorBuffed);
 
             AddEnchantments(wo);
         }
@@ -563,10 +1201,10 @@ namespace ACE.Server.Network.Structure
             ResistHighlight = ResistMaskHelper.GetHighlightMask(creature);
             ResistColor = ResistMaskHelper.GetColorMask(creature);
 
-            if (Success && (creature is Player || !creature.Attackable))
-                ArmorLevels = new ArmorLevel(creature);
-
-            AddRatings(creature);
+	        if (Success && (creature is Player || !creature.Attackable))
+	            ArmorLevels = new ArmorLevel(creature);
+	
+	        AddRatings(creature);
 
             if (NPCLooksLikeObject)
             {
@@ -661,8 +1299,9 @@ namespace ACE.Server.Network.Structure
 
             //WeaponHighlight = WeaponMaskHelper.GetHighlightMask(weapon, wielder);
             //WeaponColor = WeaponMaskHelper.GetColorMask(weapon, wielder);
-            WeaponHighlight = WeaponMaskHelper.GetHighlightMask(weaponProfile);
-            WeaponColor = WeaponMaskHelper.GetColorMask(weaponProfile);
+            WeaponHighlight = WeaponMaskHelper.GetHighlightMask(weaponProfile, IsAttackModBuffed);
+            WeaponColor = WeaponMaskHelper.GetColorMask(weaponProfile, IsAttackModBuffed);
+
 
             if (!(weapon is Caster))
                 WeaponProfile = weaponProfile;
