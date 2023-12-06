@@ -2,12 +2,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
-
+using ACE.Common;
 using ACE.DatLoader;
 using ACE.DatLoader.Entity;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 using ACE.Server.Physics.Animation.Internal;
+using ACE.Server.Physics.Common;
 
 namespace ACE.Server.Physics.Animation
 {
@@ -472,6 +473,12 @@ namespace ACE.Server.Physics.Animation
             if (motionTableId == 0) return 0;
 
             var motionTable = DatManager.PortalDat.ReadFromDat<DatLoader.FileTypes.MotionTable>(motionTableId);
+
+            //Normalize Bow and Atlatl Reload Animations to Crossbow's
+            if (motion == MotionCommand.Reload && (stance == MotionStance.BowCombat || stance == MotionStance.AtlatlCombat))
+                return 0.26190478f / speed;
+
+            //Console.WriteLine($"AnimLength without speedMod({speed}): {stance} {motion} {motionTable.GetAnimationLength(stance, motion, null)}");
             return motionTable.GetAnimationLength(stance, motion, null) / speed;
         }
 
@@ -488,7 +495,19 @@ namespace ACE.Server.Physics.Animation
                 currentMotion = MotionCommand.Ready;
             }
 
-            animLength += motionTable.GetAnimationLength(stance, motion, currentMotion) / speed;
+            // Normalize Bow/Crossbow/Atlatl link time animation length
+            {
+                animLength += motionTable.GetAnimationLength(stance, motion, currentMotion) / speed;
+
+                var crossbowLinkTime = 1.2619047f;
+                //Console.WriteLine($"GetAnimationLength: {stance} {motion} BaseAnimLength: {animLength + crossbowLinkTime}");
+
+                if (stance == MotionStance.AtlatlCombat || stance == MotionStance.BowCombat || stance == MotionStance.CrossbowCombat)
+                {
+                    animLength += crossbowLinkTime / speed;
+                }
+            }
+
             return animLength;
         }
 
