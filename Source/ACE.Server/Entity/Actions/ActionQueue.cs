@@ -10,10 +10,10 @@ namespace ACE.Server.Entity.Actions
     {
         protected ConcurrentQueue<IAction> Queue { get; } = new ConcurrentQueue<IAction>();
 
-        #if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+#if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
+        private readonly ILogger _log = Log.ForContext<ActionQueue>();
         private readonly System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-        #endif
+#endif
 
         public void RunActions()
         {
@@ -26,13 +26,13 @@ namespace ACE.Server.Entity.Actions
             {
                 if (Queue.TryDequeue(out var result))
                 {
-                    #if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
+#if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
                     sw.Restart();
-                    #endif
+#endif
 
                     Tuple<IActor, IAction> enqueue = result.Act();
 
-                    #if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
+#if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
                     sw.Stop();
 
                     if (sw.Elapsed.TotalSeconds > 1)
@@ -47,7 +47,7 @@ namespace ACE.Server.Entity.Actions
                         else
                             _log.Warning($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s.");
                     }
-                    #endif
+#endif
 
                     if (enqueue != null)
                         enqueue.Item1.EnqueueAction(enqueue.Item2);
