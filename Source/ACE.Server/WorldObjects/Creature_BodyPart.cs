@@ -33,13 +33,23 @@ namespace ACE.Server.WorldObjects
             return SkillFormula.CalcArmorMod(effectiveArmorVsType);
         }
 
+        public float GetAegisMod()
+        {
+            return 1.0f;
+        }
+
         public float GetEffectiveArmorVsType(DamageType damageType, List<WorldObject> armorLayers, Creature attacker, WorldObject weapon, float armorRendingMod = 1.0f)
         {
             var ignoreMagicArmor = (weapon?.IgnoreMagicArmor ?? false) || (attacker?.IgnoreMagicArmor ?? false);
             var ignoreMagicResist = (weapon?.IgnoreMagicResist ?? false) || (attacker?.IgnoreMagicResist ?? false);
 
             // get base AL / RL
-            var armorVsType = Biota.Value.BaseArmor * (float)Creature.GetArmorVsType(damageType);
+            var armorMod = (float)Creature.GetArmorVsType(damageType);
+
+            if (Creature.IsMonster) // For monsters, we don't use the armorMod float. We simply adjust BaseArmorLevel, AegisLevel, and Resist types as needed
+                armorMod = 1.0f;
+
+            var armorVsType = Biota.Value.BaseArmor * armorMod;
 
             // additive enchantments:
             // imperil / armor
