@@ -646,9 +646,6 @@ namespace ACE.Server.Entity
             foreach (var rNode in Spawned.Values)
             {
                 var wo = rNode.TryGetWorldObject();
-
-                if (wo != null && wo is Container container)
-                    container.StarContainerDecay();
             }
         }
 
