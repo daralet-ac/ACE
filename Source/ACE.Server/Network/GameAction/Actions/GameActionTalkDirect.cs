@@ -3,11 +3,14 @@ using ACE.Entity.Enum;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Network.GameAction.Actions
 {
     public static class GameActionTalkDirect
     {
+        private static readonly ILogger _log = Log.ForContext(typeof(GameActionTalkDirect));
+
         [GameAction(GameActionType.TalkDirect)]
         public static void Handle(ClientMessage clientMessage, Session session)
         {
