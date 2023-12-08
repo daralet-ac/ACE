@@ -507,7 +507,7 @@ namespace ACE.Server.Entity
 
             //var attackType = attacker.GetCombatType();
 
-            EffectiveDefenseSkill = defender.GetEffectiveDefenseSkill(CombatType, isPvP);
+            EffectiveDefenseSkill = defender.GetEffectiveDefenseSkill(CombatType);
 
             GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
 
@@ -634,7 +634,7 @@ namespace ACE.Server.Entity
 
             if (!Overpower)
             {
-                var defenderSkillAmount = defender.GetEffectiveDefenseSkill(CombatType, false);
+                var defenderSkillAmount = defender.GetEffectiveDefenseSkill(CombatType);
 
                 // This optionally adds a curve to how effective evasion can be as a character levels
                 //var evasionDefenseMod = 1 - (200 / (200 + defenderSkillAmount));
@@ -674,8 +674,6 @@ namespace ACE.Server.Entity
             // TODO: combat maneuvers for player?
             BaseDamageMod = attacker.GetBaseDamageMod(DamageSource);
 
-            BaseDamageMod.BaseDamage.MaxDamage += attacker.GetUnarmedSkillDamageBonus();
-
             // some quest bows can have built-in damage bonus
             if (Weapon?.WeenieType == WeenieType.MissileLauncher)
                 BaseDamageMod.DamageBonus += Weapon.Damage ?? 0;
@@ -699,9 +697,6 @@ namespace ACE.Server.Entity
             }
 
             BaseDamageMod = attacker.GetBaseDamage(AttackPart.Value);
-
-            BaseDamageMod.BaseDamage.MaxDamage += attacker.GetUnarmedSkillDamageBonus();
-
             BaseDamage = (float)ThreadSafeRandom.Next(BaseDamageMod.MinDamage, BaseDamageMod.MaxDamage);
 
             DamageType = attacker.GetDamageType(AttackPart.Value, CombatType);
