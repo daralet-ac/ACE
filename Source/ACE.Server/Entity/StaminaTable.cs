@@ -44,12 +44,9 @@ namespace ACE.Server.Entity
             Costs.Add(PowerAccuracy.High, highCosts);
         }
 
-        public static float GetStaminaCost(PowerAccuracy powerAccuracy, int weaponTier, int burden, float powerAccuracyLevel = 0.0f, int weaponSpeed = 0, float? weightClassPenalty = null)
+        public static float GetStaminaCost(int weaponTier, float powerAccuracyLevel = 0.0f, int weaponSpeed = 0, float? weightClassPenalty = null)
         {
-            //Console.WriteLine($"GetStaminaCost - Power: {powerAccuracy}, WeaponTier: {weaponTier}, Burden: {burden}");
-            var baseCost = 0.0f;
-
-            // Max stamina cost per tier, then reduced by these factors (weapon speed, power/accuracy level, 
+            // Max stamina cost per tier, then reduced by these factors (weapon speed, power/accuracy level, armor weight class penalties)
             var maxCost = 20.0f;
 
             // WeaponSpeed mod can range from 66.66% to 100%, depending on weapon speed (0-100)
@@ -65,7 +62,7 @@ namespace ACE.Server.Entity
 
             weaponTier = Math.Max(weaponTier - 1, 1);
 
-            baseCost = maxCost * powerLevelMod * weaponTier * weaponSpeedMod * weightClassMod;
+            var baseCost = maxCost * powerLevelMod * weaponTier * weaponSpeedMod * weightClassMod;
 
             //Console.WriteLine($"GetStaminaCost - Final Cost: {baseCost}\n" +
             //    $" -WeaponTier: {weaponTier} WeightClassPenalty: {weightClassPenalty}\n" +
