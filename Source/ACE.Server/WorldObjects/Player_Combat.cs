@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Common;
-using ACE.DatLoader.Entity;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Managers;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects
 {
@@ -70,37 +70,35 @@ namespace ACE.Server.WorldObjects
 
             var skill = ConvertToMoASkill(weapon.WeaponSkill);
 
-            // DualWieldAlternate will be TRUE if *next* attack is offhand
-            if (IsDualWieldAttack && !DualWieldAlternate)
-            {
-                var weaponSkill = GetCreatureSkill(skill);
-                var dualWield = GetCreatureSkill(Skill.DualWield);
-
-                // offhand attacks use the lower skill level between dual wield and weapon skill
-                if (dualWield.Current < weaponSkill.Current)
-                    skill = Skill.DualWield;
-            }
-            //Console.WriteLine($"{Name}.GetCurrentWeaponSkill - {skill}");
             return skill;
         }
 
         /// <summary>
-        /// Returns the highest melee skill for the player
-        /// (light / heavy / finesse)
+        /// Called when a player receives an attack, evaded or not
         /// </summary>
-        public Skill GetHighestMeleeSkill()
+        public override void OnAttackReceived(WorldObject attacker, CombatType attackType, bool critical, bool avoided)
         {
-            var light = GetCreatureSkill(Skill.LightWeapons);
-            var heavy = GetCreatureSkill(Skill.HeavyWeapons);
-            var finesse = GetCreatureSkill(Skill.FinesseWeapons);
-
-            var maxMelee = light;
-            if (heavy.Current > maxMelee.Current)
-                maxMelee = heavy;
-            if (finesse.Current > maxMelee.Current)
-                maxMelee = finesse;
-
-            return maxMelee.Skill;
+            // COMBAT ABILITY - Riposte
+            if (CombatMode == CombatMode.Melee && avoided && AttackTarget == attacker)
+            {
+                var currentTime = Time.GetUnixTime();
+                if (NextCombatAbilityActivationTime <= currentTime)
+                {
+                    var combatAbilityTrinket = GetEquippedTrinket();
+                    if (combatAbilityTrinket != null && combatAbilityTrinket.CombatAbilityId == (int)CombatAbility.Riposte)
+                    {
+                        Creature creatureAttacker = attacker as Creature;
+                        if (creatureAttacker != null)
+                        {
+                            // Chance of striking back at the target when successfully evading an attack while using the Riposte technique.
+                            Session.Network.EnqueueSend(new GameMessageSystemChat($"You see an opening and quickly strike back at the {attacker.Name}!", ChatMessageType.CombatSelf));
+                            DamageTarget(creatureAttacker, GetEquippedMeleeWeapon());
+                            NextCombatAbilityActivationTime = currentTime + CombatAbilityActivationInterval;
+                        }
+                    }
+                }
+            }
+            base.OnAttackReceived(attacker, attackType, critical, avoided);
         }
 
         public override CombatType GetCombatType()
@@ -133,6 +131,11 @@ namespace ACE.Server.WorldObjects
 
             var damageEvent = DamageEvent.CalculateDamage(this, target, damageSource);
 
+            target.OnAttackReceived(this, (damageSource == null || damageSource.ProjectileSource == null) ? CombatType.Melee : CombatType.Missile, damageEvent.IsCritical, damageEvent.Evaded || damageEvent.PartialEvasion != PartialEvasion.None);
+
+            var crit = damageEvent.IsCritical;
+            var critMessage = crit == true ? "Critical Hit! " : "";
+
             if (damageEvent.HasDamage)
             {
                 OnDamageTarget(target, damageEvent.CombatType, damageEvent.IsCritical);
@@ -146,7 +149,6 @@ namespace ACE.Server.WorldObjects
             {
                 if (damageEvent.LifestoneProtection)
                     Session.Network.EnqueueSend(new GameMessageSystemChat($"The Lifestone's magic protects {target.Name} from the attack!", ChatMessageType.Magic));
-
                 else if (!SquelchManager.Squelches.Contains(target, ChatMessageType.CombatSelf))
                     Session.Network.EnqueueSend(new GameEventEvasionAttackerNotification(Session, target.Name));
 
@@ -159,8 +161,45 @@ namespace ACE.Server.WorldObjects
                 // notify attacker
                 var intDamage = (uint)Math.Round(damageEvent.Damage);
 
+                var pointsText = intDamage == 1 ? "point" : "points";
+
+                var damageTypeText = "";
+                switch (damageEvent.DamageType)
+                {
+                    case DamageType.Acid:
+                        damageTypeText = "acid";
+                        break;
+                    case DamageType.Bludgeon:
+                        damageTypeText = "bludgeoning";
+                        break;
+                    case DamageType.Cold:
+                        damageTypeText = "cold";
+                        break;
+                    case DamageType.Electric:
+                        damageTypeText = "electric";
+                        break;
+                    case DamageType.Fire:
+                        damageTypeText = "fire";
+                        break;
+                    case DamageType.Pierce:
+                        damageTypeText = "piercing";
+                        break;
+                    case DamageType.Slash:
+                        damageTypeText = "slashing";
+                        break;
+                }
+                    
                 if (!SquelchManager.Squelches.Contains(this, ChatMessageType.CombatSelf))
-                    Session.Network.EnqueueSend(new GameEventAttackerNotification(Session, target.Name, damageEvent.DamageType, (float)intDamage / target.Health.MaxValue, intDamage, damageEvent.IsCritical, damageEvent.AttackConditions));
+                {
+                    if (this != target && damageEvent.PartialEvasion == PartialEvasion.Most)
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"Major Glancing Blow! You hit {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
+                    else if (this != target && damageEvent.PartialEvasion == PartialEvasion.Some)
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"Minor Glancing Blow! You hit {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
+                    else if (this != target)
+                        Session.Network.EnqueueSend(new GameEventAttackerNotification(Session, target.Name, damageEvent.DamageType, (float)intDamage / target.Health.MaxValue, intDamage, damageEvent.IsCritical, damageEvent.AttackConditions));
+                    else
+                        Session.Network.EnqueueSend(new GameEventAttackerNotification(Session, "yourself", damageEvent.DamageType, (float)intDamage / target.Health.MaxValue, intDamage, damageEvent.IsCritical, damageEvent.AttackConditions));
+                }
 
                 // splatter effects
                 if (targetPlayer == null)
@@ -222,16 +261,16 @@ namespace ACE.Server.WorldObjects
         {
             var weapon = GetEquippedWeapon();
             var attackSkill = GetCreatureSkill(GetCurrentWeaponSkill()).Current;
-            var offenseMod = GetWeaponOffenseModifier(this);
-            var accuracyMod = GetAccuracyMod(weapon);
+            double? offenseMod = 1.0;
 
-            attackSkill = (uint)Math.Round(attackSkill * accuracyMod * offenseMod);
+            offenseMod = GetWeaponOffenseModifier(this) + GetArmorAttackMod();
+
+            var accuracyMod = GetAccuracySkillMod(weapon);
+
+            attackSkill = (uint)Math.Round(attackSkill * accuracyMod * ((float)offenseMod + GetSecondaryAttributeMod(GetCurrentAttackSkill())));
 
             //if (IsExhausted)
-                //attackSkill = GetExhaustedSkill(attackSkill);
-
-            //var baseStr = offenseMod != 1.0f ? $" (base: {GetCreatureSkill(GetCurrentWeaponSkill()).Current})" : "";
-            //Console.WriteLine("Attack skill: " + attackSkill + baseStr);
+            //attackSkill = GetExhaustedSkill(attackSkill);
 
             return attackSkill;
         }
@@ -357,39 +396,119 @@ namespace ACE.Server.WorldObjects
         {
             if (damageSource == this)
             {
+                BaseDamageMod baseDamageMod;
+
                 if (AttackType == AttackType.Punch)
                     damageSource = HandArmor;
                 else if (AttackType == AttackType.Kick)
                     damageSource = FootArmor;
 
                 // no weapon, no hand or foot armor
-                if (damageSource?.Damage == null)
-                    return HeritageGroup == HeritageGroup.Olthoi ? new BaseDamageMod(new BaseDamage(130, 0.75f)) : new BaseDamageMod(new BaseDamage(2, 0.75f));
+                if (damageSource == null)
+                {
+                    var baseDamage = new BaseDamage(1, 0.75f);
+                    baseDamageMod = new BaseDamageMod(baseDamage);
+                }
                 else
-                    return damageSource.GetDamageMod(this, damageSource);
+                {
+                    baseDamageMod = damageSource.GetDamageMod(this, damageSource);
+                    baseDamageMod.BaseDamage.MaxDamage += 1;
+                }
+
+                return baseDamageMod;
             }
             return damageSource.GetDamageMod(this);
         }
 
+        /// <summary>
+        /// Scales from -50% modifier to +100% (Retail was -50% to +50%)
+        /// </summary>
         public override float GetPowerMod(WorldObject weapon)
         {
-            if (weapon == null || !weapon.IsRanged)
-                return PowerLevel + 0.5f;
+            if (weapon == null)
+                return 1.0f;
+
+            if (weapon.IsRanged)
+                return PowerLevel <= 0.5 ? PowerLevel + 0.5f : PowerLevel * 1.5f;
+            else
+                return PowerLevel <= 0.5 ? PowerLevel + 0.5f : PowerLevel * 2.0f;
+        }
+
+        /// <summary>
+        /// Accuracy Skill Mod ranges from 1 to 1.1 (+0% to +10%)
+        /// (the accuracy bar now also grants crit mods)
+        /// </summary>
+        public override float GetAccuracySkillMod(WorldObject weapon)
+        {
+            if (weapon != null && weapon.IsRanged)
+            {
+
+                var accuracyMod = 1 + (AccuracyLevel / 10);
+
+                //Console.WriteLine($"GetAccuracyMod - AccuracyLevel: {AccuracyLevel}, AccuracyMod: {accuracyMod}");
+
+                return accuracyMod;
+
+            }
             else
                 return 1.0f;
         }
 
-        public override float GetAccuracyMod(WorldObject weapon)
+        public override bool IsPowerShot(WorldObject weapon, CombatAbility combatAbilityType)
+        {
+            if (weapon == null || !weapon.IsRanged)
+                return false;
+
+            if (combatAbilityType == CombatAbility.Powershot && AccuracyLevel == 1.0f)
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Accuracy Crit Chance Mod ranges from 0 to 0.1. This is added to DamageEvent.CriticalChance
+        /// </summary>
+        public float GetAccuracyCritChanceMod(WorldObject weapon)
         {
             if (weapon != null && weapon.IsRanged)
-                return AccuracyLevel + 0.6f;
+            {
+                var critChanceMod = AccuracyLevel <= 0.5 ? AccuracyLevel / 15 : AccuracyLevel / 10;
+
+                //Console.WriteLine($"GetAccuracyCritChanceMod - AccuracyLevel: {AccuracyLevel}, CritChanceMod: {critChanceMod}");
+
+                return critChanceMod;
+
+            }
             else
                 return 1.0f;
+        }
+
+        /// <summary>
+        /// Accuracy Crit Damage Mod ranges from 0 to 0.25. This is added to DamageEvent.CriticalDamageMod
+        /// </summary>
+        public float GetAccuracyCritDamageMod(WorldObject weapon)
+        {
+            if (weapon != null && weapon.IsRanged)
+            {
+                var critDamageMod = AccuracyLevel / 4;
+
+                //Console.WriteLine($"GetAccuracyCritDamageMod - AccuracyLevel: {AccuracyLevel}, CritDamageMod: {critDamageMod}");
+
+                return critDamageMod;
+
+            }
+            else
+                return 0.0f;
         }
 
         public float GetPowerAccuracyBar()
         {
             return GetCombatType() == CombatType.Missile ? AccuracyLevel : PowerLevel;
+        }
+
+        public float ScaleWithPowerAccuracyBar(float value)
+        {
+            return GetPowerAccuracyBar() * value;
         }
 
         public Sound GetHitSound(WorldObject source, BodyPart bodyPart)
@@ -463,18 +582,29 @@ namespace ACE.Server.WorldObjects
 
         public int TakeDamage(WorldObject source, DamageEvent damageEvent)
         {
-            return TakeDamage(source, damageEvent.DamageType, damageEvent.Damage, damageEvent.BodyPart, damageEvent.IsCritical, damageEvent.AttackConditions);
+            return TakeDamage(source, damageEvent.DamageType, damageEvent.Damage, damageEvent.BodyPart, damageEvent.PartialEvasion, damageEvent.IsCritical, damageEvent.AttackConditions);
         }
 
         /// <summary>
         /// Applies damages to a player from a physical damage source
         /// </summary>
-        public int TakeDamage(WorldObject source, DamageType damageType, float _amount, BodyPart bodyPart, bool crit = false, AttackConditions attackConditions = AttackConditions.None)
+        public int TakeDamage(WorldObject source, DamageType damageType, float _amount, BodyPart bodyPart, PartialEvasion partialEvasion, bool crit = false, AttackConditions attackConditions = AttackConditions.None)
         {
             if (Invincible || IsDead) return 0;
 
             if (source is Creature creatureAttacker)
+            {
                 SetCurrentAttacker(creatureAttacker);
+
+                // Combat Focus - Smokescreen (50% to force attacker to search for a new target when hit, if more than one player is available)
+                var playerCombatFocus = GetPlayerCombatAbility(this);
+                if(playerCombatFocus == CombatAbility.Smokescreen)
+                {
+                    var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+                    if (rng > 0.5f)
+                        creatureAttacker.FindNextTarget(false);
+                }
+            }
 
             // check lifestone protection
             if (UnderLifestoneProtection)
@@ -535,12 +665,46 @@ namespace ACE.Server.WorldObjects
             }
             var damageLocation = (DamageLocation)iDamageLocation;
 
+            var pointsText = damageTaken == 1 ? "point" : "points";
+
+            var damageTypeText = "";
+            switch (damageType)
+            {
+                case DamageType.Acid:
+                    damageTypeText = "acid";
+                    break;
+                case DamageType.Bludgeon:
+                    damageTypeText = "bludgeoning";
+                    break;
+                case DamageType.Cold:
+                    damageTypeText = "cold";
+                    break;
+                case DamageType.Electric:
+                    damageTypeText = "electric";
+                    break;
+                case DamageType.Fire:
+                    damageTypeText = "fire";
+                    break;
+                case DamageType.Pierce:
+                    damageTypeText = "piercing";
+                    break;
+                case DamageType.Slash:
+                    damageTypeText = "slashing";
+                    break;
+            }
+
             // send network messages
             if (source is Creature creature)
             {
-                if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy))
-                    Session.Network.EnqueueSend(new GameEventDefenderNotification(Session, creature.Name, damageType, percent, amount, damageLocation, crit, attackConditions));
+                var critMessage = crit == true ? "Critical Hit! " : "";
 
+                if(!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature && partialEvasion == PartialEvasion.Some)
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Minor Glancing Blow! {creature.Name} hit you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
+                else if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature && partialEvasion == PartialEvasion.Most)
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Major Glancing Blow! {creature.Name} hit you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
+                else if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature)
+                    Session.Network.EnqueueSend(new GameEventDefenderNotification(Session, creature.Name, damageType, percent, amount, damageLocation, crit, attackConditions));
+    
                 var hitSound = new GameMessageSound(Guid, GetHitSound(source, bodyPart), 1.0f);
                 var splatter = new GameMessageScript(Guid, (PlayScript)Enum.Parse(typeof(PlayScript), "Splatter" + creature.GetSplatterHeight() + creature.GetSplatterDir(this)));
                 EnqueueBroadcast(hitSound, splatter);
@@ -595,24 +759,72 @@ namespace ACE.Server.WorldObjects
             return mainhandBurden + offhandBurden;
         }
 
-        public float GetStaminaMod()
+        /// <summary>
+        /// Returns weapon tier of a mainhand weapon
+        /// </summary>
+        public int GetMainHandWeaponTier()
         {
-            var endurance = (int)Endurance.Base;
+            var weapon = GetEquippedMainHand();
 
-            // more literal / linear formula
-            var staminaMod = 1.0f - (endurance - 50) / 480.0f;
+            int weaponTier;
 
-            // gdle curve-based formula, caps at 300 instead of 290
-            //var staminaMod = (endurance * endurance * -0.000003175f) - (endurance * 0.0008889f) + 1.052f;
+            if (weapon == null || (!weapon.WieldDifficulty.HasValue && !weapon.Tier.HasValue))
+                return 1;
 
-            staminaMod = Math.Clamp(staminaMod, 0.5f, 1.0f);
+            if (weapon.Tier.HasValue)
+                weaponTier = weapon.Tier.Value;
+            else if (weapon.WieldDifficulty.Value == 300)
+                weaponTier = 8;
+            else if (weapon.WieldDifficulty.Value == 275)
+                weaponTier = 7;
+            else if (weapon.WieldDifficulty.Value == 250)
+                weaponTier = 6;
+            else if (weapon.WieldDifficulty.Value == 225)
+                weaponTier = 5;
+            else if (weapon.WieldDifficulty.Value == 200)
+                weaponTier = 4;
+            else if (weapon.WieldDifficulty.Value == 150)
+                weaponTier = 3;
+            else if (weapon.WieldDifficulty.Value == 100)
+                weaponTier = 2;
+            else
+                weaponTier = 1;
 
-            // this is also specific to gdle,
-            // additive luck which can send the base stamina way over 1.0
-            /*var luck = ThreadSafeRandom.Next(0.0f, 1.0f);
-            staminaMod += luck;*/
+            return weaponTier;
+        }
 
-            return staminaMod;
+        /// <summary>
+        /// Returns weapon tier of a mainhand weapon
+        /// </summary>
+        public int GetOffHandWeaponTier()
+        {
+            var weapon = GetEquippedOffHand();
+
+            int weaponTier;
+
+            if (weapon == null || (!weapon.WieldDifficulty.HasValue && !weapon.Tier.HasValue))
+                return 1;
+
+            if (weapon.Tier.HasValue)
+                weaponTier = weapon.Tier.Value;
+            else if (weapon.WieldDifficulty.Value == 300)
+                weaponTier = 8;
+            else if (weapon.WieldDifficulty.Value == 275)
+                weaponTier = 7;
+            else if (weapon.WieldDifficulty.Value == 250)
+                weaponTier = 6;
+            else if (weapon.WieldDifficulty.Value == 225)
+                weaponTier = 5;
+            else if (weapon.WieldDifficulty.Value == 200)
+                weaponTier = 4;
+            else if (weapon.WieldDifficulty.Value == 150)
+                weaponTier = 3;
+            else if (weapon.WieldDifficulty.Value == 100)
+                weaponTier = 2;
+            else
+                weaponTier = 1;
+
+            return weaponTier;
         }
 
         /// <summary>
@@ -639,13 +851,33 @@ namespace ACE.Server.WorldObjects
             // When stamina drops to 0, your melee and missile defenses also drop to 0 and you will be incapable of attacking.
             // In addition, you will suffer a 50% penalty to your weapon skill. This applies to players and creatures.
 
-            var burden = GetHeldItemBurden();
+            var combatAbility = CombatAbility.None;
+            var combatFocus = GetEquippedCombatFocus();
+            if (combatFocus != null)
+                combatAbility = combatFocus.GetCombatAbility();
 
-            var baseCost = StaminaTable.GetStaminaCost(powerAccuracy, burden);
+            var weaponTier = Math.Max(GetMainHandWeaponTier(), GetOffHandWeaponTier());
 
-            var staminaMod = GetStaminaMod();
+            var weaponSpeedMain = GetEquippedMainHand() != null ? (int)GetEquippedMainHand().WeaponTime : 0;
+            var weaponSpeedOff = GetEquippedOffHand() != null && !GetEquippedOffHand().IsShield ? (int)GetEquippedOffHand().WeaponTime : 0;
 
-            var staminaCost = Math.Max(baseCost * staminaMod, 1);
+            var powerAccuracyLevel = GetEquippedMissileWeapon() != null ? AccuracyLevel : PowerLevel;
+
+            var weaponSpeed = Math.Max(weaponSpeedMain, weaponSpeedOff);
+
+            var weightClassPenalty = (float)(1 + GetArmorResourcePenalty());
+            
+            var baseCost = StaminaTable.GetStaminaCost(weaponTier, powerAccuracyLevel, weaponSpeed, weightClassPenalty);
+
+            // COMBAT ABILITY - Power Shot
+            if (combatAbility == CombatAbility.Powershot && AccuracyLevel == 1.0f)
+                baseCost *= 2;
+
+            // SPEC BONUS: UA - Stamina costs for melee attacks reduced by 20%
+            if(GetCurrentWeaponSkill() == Skill.UnarmedCombat && GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
+                baseCost *= 0.8f;
+
+            var staminaCost = Math.Max(baseCost, 1);
 
             //Console.WriteLine($"GetAttackStamina({powerAccuracy}) - burden: {burden}, baseCost: {baseCost}, staminaMod: {staminaMod}, staminaCost: {staminaCost}");
 
@@ -658,47 +890,49 @@ namespace ACE.Server.WorldObjects
         /// <param name="powerAccuracyBar">The 0.0 - 1.0 power/accurary bar</param>
         public float GetRecklessnessMod(/*float powerAccuracyBar*/)
         {
-            // ensure melee or missile combat mode
-            if (CombatMode != CombatMode.Melee && CombatMode != CombatMode.Missile)
-                return 1.0f;
+            return 1.0f; // Change to enable EoR Recklessness
 
-            var skill = GetCreatureSkill(Skill.Recklessness);
+            //// ensure melee or missile combat mode
+            //if (CombatMode != CombatMode.Melee && CombatMode != CombatMode.Missile)
+            //    return 1.0f;
 
-            // recklessness skill must be either trained or specialized to use
-            if (skill.AdvancementClass < SkillAdvancementClass.Trained)
-                return 1.0f;
+            //var skill = GetCreatureSkill(Skill.Recklessness);
 
-            // recklessness is active when attack bar is between 20% and 80% (according to wiki)
-            // client attack bar range seems to indicate this might have been updated, between 10% and 90%?
-            var powerAccuracyBar = GetPowerAccuracyBar();
-            //if (powerAccuracyBar < 0.2f || powerAccuracyBar > 0.8f)
-            if (powerAccuracyBar < 0.1f || powerAccuracyBar > 0.9f)
-                return 1.0f;
+            //// recklessness skill must be either trained or specialized to use
+            //if (skill.AdvancementClass < SkillAdvancementClass.Trained)
+            //    return 1.0f;
 
-            // recklessness only applies to non-critical hits,
-            // which is handled outside of this method.
+            //// recklessness is active when attack bar is between 20% and 80% (according to wiki)
+            //// client attack bar range seems to indicate this might have been updated, between 10% and 90%?
+            //var powerAccuracyBar = GetPowerAccuracyBar();
+            ////if (powerAccuracyBar < 0.2f || powerAccuracyBar > 0.8f)
+            //if (powerAccuracyBar < 0.1f || powerAccuracyBar > 0.9f)
+            //    return 1.0f;
 
-            // damage rating is increased by 20 for specialized, and 10 for trained.
-            // incoming non-critical damage from all sources is increased by the same.
-            var damageRating = skill.AdvancementClass == SkillAdvancementClass.Specialized ? 20 : 10;
+            //// recklessness only applies to non-critical hits,
+            //// which is handled outside of this method.
 
-            // if recklessness skill is lower than current attack skill (as determined by your equipped weapon)
-            // then the damage rating is reduced proportionately. The damage rating caps at 10 for trained
-            // and 20 for specialized, so there is no reason to raise the skill above your attack skill.
-            var attackSkill = GetCreatureSkill(GetCurrentAttackSkill());
+            //// damage rating is increased by 20 for specialized, and 10 for trained.
+            //// incoming non-critical damage from all sources is increased by the same.
+            //var damageRating = skill.AdvancementClass == SkillAdvancementClass.Specialized ? 20 : 10;
 
-            if (skill.Current < attackSkill.Current)
-            {
-                var scale = (float)skill.Current / attackSkill.Current;
-                damageRating = (int)Math.Round(damageRating * scale);
-            }
+            //// if recklessness skill is lower than current attack skill (as determined by your equipped weapon)
+            //// then the damage rating is reduced proportionately. The damage rating caps at 10 for trained
+            //// and 20 for specialized, so there is no reason to raise the skill above your attack skill.
+            //var attackSkill = GetCreatureSkill(GetCurrentAttackSkill());
 
-            // The damage rating adjustment for incoming damage is also adjusted proportinally if your Recklessness skill
-            // is lower than your active attack skill
+            //if (skill.Current < attackSkill.Current)
+            //{
+            //    var scale = (float)skill.Current / attackSkill.Current;
+            //    damageRating = (int)Math.Round(damageRating * scale);
+            //}
 
-            var recklessnessMod = GetDamageRating(damageRating);    // trained DR 1.10 = 10% additional damage
-                                                                    // specialized DR 1.20 = 20% additional damage
-            return recklessnessMod;
+            //// The damage rating adjustment for incoming damage is also adjusted proportinally if your Recklessness skill
+            //// is lower than your active attack skill
+
+            //var recklessnessMod = GetDamageRating(damageRating);    // trained DR 1.10 = 10% additional damage
+            //                                                        // specialized DR 1.20 = 20% additional damage
+            //return recklessnessMod;
         }
 
         /// <summary>
@@ -760,9 +994,11 @@ namespace ACE.Server.WorldObjects
             }
 
             LastCombatMode = newCombatMode;
-            
+
             if (DateTime.UtcNow >= NextUseTime.AddSeconds(UseTimeEpsilon))
+            {
                 HandleActionChangeCombatMode_Inner(newCombatMode, forceHandCombat, callback);
+            }
             else
             {
                 var actionChain = new ActionChain();
@@ -807,6 +1043,8 @@ namespace ACE.Server.WorldObjects
                                     break;
                                 }
                         }
+                        if(!IsSneaking)
+                            CombatModeRunPenalty(false);
                         break;
                     }
                 case CombatMode.Melee:
@@ -819,6 +1057,7 @@ namespace ACE.Server.WorldObjects
                         return;
                     }
 
+                    CombatModeRunPenalty(true);
                     break;
 
                 case CombatMode.Missile:
@@ -863,6 +1102,7 @@ namespace ACE.Server.WorldObjects
                                         equippedAmmo.Placement = ACE.Entity.Enum.Placement.RightHandCombat;
                                         equippedAmmo.ParentLocation = ACE.Entity.Enum.ParentLocation.RightHand;
                                     }
+                                    CombatModeRunPenalty(true);
                                     break;
                                 }
                         }
@@ -879,6 +1119,7 @@ namespace ACE.Server.WorldObjects
                         return;
                     }
 
+                    CombatModeRunPenalty(true);
                     break;
 
             }
@@ -898,6 +1139,39 @@ namespace ACE.Server.WorldObjects
                 callbackChain.AddDelaySeconds(animTime);
                 callbackChain.AddAction(this, callback);
                 callbackChain.EnqueueChain();
+            }
+        }
+
+        private void CombatModeRunPenalty(bool enable)
+        {
+            if (enable)
+            {
+                var skill = GetCreatureSkill(Skill.Run);
+                if (skill.AdvancementClass != SkillAdvancementClass.Specialized)
+                {
+                    var spell = new Spell(SpellId.MireFoot);
+                    var addResult = EnchantmentManager.Add(spell, null, null, true);
+
+                    addResult.Enchantment.StatModValue += 0.45f;
+
+                    Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, addResult.Enchantment)));
+                    HandleRunRateUpdate(spell);
+                }
+                else
+                    return;
+            }
+            else
+            {
+                var enchantments = Biota.PropertiesEnchantmentRegistry.Clone(BiotaDatabaseLock).Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.Vitae).ToList();
+                foreach (var enchantment in enchantments)
+                {
+                    if (enchantment.SpellId == (int)SpellId.MireFoot)
+                    {
+                        EnchantmentManager.Dispel(enchantment);
+                        if (!Teleporting)
+                            HandleRunRateUpdate(new Spell(enchantment.SpellId));
+                    }
+                }
             }
         }
 
@@ -1212,6 +1486,37 @@ namespace ACE.Server.WorldObjects
                 }
             }
             return null;
+        }
+
+        private CombatAbility GetPlayerCombatAbility(Player player)
+        {
+            var playerCombatAbility = CombatAbility.None;
+
+            var playerCombatFocus = player.GetEquippedCombatFocus();
+            if (playerCombatFocus != null)
+                playerCombatAbility = playerCombatFocus.GetCombatAbility();
+
+            return playerCombatAbility;
+        }
+
+        public float GetDualWieldDamageMod()
+        {
+            var moddedDualWieldSkill = GetModdedDualWieldSkill();
+
+            var damageMod = 1.1f + (moddedDualWieldSkill * 0.001f); // 10% + 1% per 10 points of dual wield skill
+
+            return damageMod;
+        }
+
+        public float GetTwoHandedCombatDamageMod()
+        {
+            var moddedTwohandedCombatSkill = GetModdedTwohandedCombatSkill();
+
+            var damageMod = 5 + (moddedTwohandedCombatSkill * 0.05f); // 5% + 1% per 20 points of dual wield skill
+
+            var finalDamageMod = 1 + damageMod * 0.01f;
+
+            return finalDamageMod;
         }
     }
 }
