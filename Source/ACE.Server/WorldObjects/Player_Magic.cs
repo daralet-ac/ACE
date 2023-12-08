@@ -64,13 +64,13 @@ namespace ACE.Server.WorldObjects
                     return Skill.LifeMagic;
                 case MagicSchool.CreatureEnchantment:
                     return Skill.CreatureEnchantment;
-                case MagicSchool.ItemEnchantment:
-                    return Skill.ItemEnchantment;
+                case MagicSchool.PortalMagic:
+                    return Skill.PortalMagic;
                 case MagicSchool.VoidMagic:
                     return Skill.VoidMagic;
             }
         }
-
+        
         /// <summary>
         /// Handles player targeted casting message
         /// </summary>
@@ -78,7 +78,7 @@ namespace ACE.Server.WorldObjects
         public void HandleActionCastTargetedSpell(uint targetGuid, uint spellId, WorldObject casterItem = null)
         {
             //Console.WriteLine($"{Name}.HandleActionCastTargetedSpell({targetGuid:X8}, {spellId}, {builtInSpell})");
-
+            
             if (CombatMode != CombatMode.Magic)
             {
                 _log.Error($"{Name}.HandleActionCastTargetedSpell({targetGuid:X8}, {spellId}, {casterItem?.Name}) - CombatMode mismatch {CombatMode}, LastCombatMode: {LastCombatMode}");
@@ -435,7 +435,7 @@ namespace ACE.Server.WorldObjects
                 return true;
 
             // Invalidate non Item Enchantment spells cast against non Creatures or Players
-            if (spell.School != MagicSchool.ItemEnchantment && targetCreature == null)
+            if (spell.School != MagicSchool.PortalMagic && targetCreature == null)
                 return true;
 
             // Invalidate beneficial spells against Creature/Non-player targets
@@ -457,9 +457,9 @@ namespace ACE.Server.WorldObjects
             }
 
             // verify target type for item enchantment
-            if (spell.School == MagicSchool.ItemEnchantment && !VerifyNonComponentTargetType(spell, target))
+            if (spell.School == MagicSchool.PortalMagic && !VerifyNonComponentTargetType(spell, target))
             {
-                if (spell.DispelSchool != MagicSchool.ItemEnchantment || !PropertyManager.GetBool("item_dispel").Item)
+                if (spell.DispelSchool != MagicSchool.PortalMagic || !PropertyManager.GetBool("item_dispel").Item)
                     return true;
             }
 
@@ -638,7 +638,7 @@ namespace ACE.Server.WorldObjects
             }
 
             if (FastTick)
-                windupTime = EnqueueMotionAction(castChain, spell.Formula.WindupGestures, CastSpeed, MotionStance.Magic, checkCasting: true);
+                windupTime = EnqueueMotionAction(castChain, spell.Formula.WindupGestures, CastSpeed, MotionStance.Magic);
         }
 
         public void DoCastGesture(Spell spell, WorldObject casterItem, ActionChain castChain)
@@ -690,6 +690,8 @@ namespace ACE.Server.WorldObjects
         public void DoCastSpell(MagicState _state, bool checkAngle = true)
         {
             //Console.WriteLine("DoCastSpell");
+
+            EndSneaking();
 
             if (!MagicState.IsCasting)
                 return;
@@ -848,6 +850,14 @@ namespace ACE.Server.WorldObjects
 
             var itemCaster = isWeaponSpell ? caster : null;
 
+            // EMPOWERED SCARAB - Mana Cost Reduction
+            var manaModifier = GetEmpoweredScarabManaReductionMod();
+            var before = manaUsed;
+            manaUsed = (uint)(manaUsed * manaModifier);
+
+            if (manaModifier < 1.0f)
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"Empowered Scarab of Reduction reduced the spell's cost by {Math.Round((1.0f - manaModifier) * 100, 0)}%, from {before} to {manaUsed}!  ", ChatMessageType.Magic));
+
             if (!isWeaponSpell)
                 UpdateVitalDelta(Mana, -(int)manaUsed);
             else
@@ -888,7 +898,12 @@ namespace ACE.Server.WorldObjects
                 case CastingPreCheckStatus.Success:
 
                     if ((spell.Flags & SpellFlags.FellowshipSpell) == 0)
+                    {
+                        // EMPOWERED SCARAB - Vuln | Prot | Artifice | Growth | Intensity | Duplicate
+                        CheckForEmpoweredScarabOnCastEffects(target, spell, isWeaponSpell);
+
                         CreatePlayerSpell(target, spell, isWeaponSpell);
+                    }
                     else
                     {
                         var fellows = GetFellowshipTargets();
@@ -1072,12 +1087,12 @@ namespace ACE.Server.WorldObjects
 
             switch (spell.School)
             {
-                case MagicSchool.ItemEnchantment:
+                case MagicSchool.PortalMagic:
 
                     TryCastItemEnchantment_WithRedirects(spell, target, itemCaster);
 
                     // use target resistance?
-                    Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.ItemEnchantment), spell.PowerMod);
+                    Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.PortalMagic), spell.PowerMod);
 
                     if (spell.IsHarmful)
                     {
@@ -1097,8 +1112,14 @@ namespace ACE.Server.WorldObjects
                         if (targetPlayer == null)
                             OnAttackMonster(targetCreature);
 
-                        if (TryResistSpell(target, spell, itemCaster))
+                        if (TryResistSpell(target, spell, out PartialEvasion partialResist ,itemCaster))
+                        {
+                            if (spell.IsHarmful && targetCreature != null && targetCreature != this)
+                                targetCreature.OnAttackReceived(this, CombatType.Magic, false, true);
                             break;
+                        }
+                        else if (spell.IsHarmful && targetCreature != null && targetCreature != this)
+                            targetCreature.OnAttackReceived(this, CombatType.Magic, false, false);
 
                         if (targetCreature != null && targetCreature.NonProjectileMagicImmune)
                         {
@@ -1371,7 +1392,7 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        public static bool VerifyNonComponentTargetType(Spell spell, WorldObject target)
+        public bool VerifyNonComponentTargetType(Spell spell, WorldObject target)
         {
             // untargeted spell projectiles
             if (target == null)
@@ -1416,7 +1437,7 @@ namespace ACE.Server.WorldObjects
                 case ItemType.LifeStone:
                     return target is Lifestone;
             }
-
+            
             _log.Error($"VerifyNonComponentTargetType({spell.Id} - {spell.Name}, {target.Name}) - unexpected NonComponentTargetType {spell.NonComponentTargetType}");
             return false;
         }
