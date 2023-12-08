@@ -1079,7 +1079,7 @@ namespace ACE.Server.WorldObjects
 
             var activationChance = 0.5f;
             if(sourceAsPlayer != null)
-                activationChance += sourceAsPlayer.ScaleWithPowerAccuracyBar(0.25f);
+                activationChance += sourceAsPlayer.ScaleWithPowerAccuracyBar(0.25f); // Up to 25% added to activation chance
 
             if (activationChance < ThreadSafeRandom.Next(0.0f, 1.0f))
                 return;
