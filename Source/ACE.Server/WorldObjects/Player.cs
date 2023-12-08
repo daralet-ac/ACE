@@ -31,7 +31,7 @@ namespace ACE.Server.WorldObjects
 {
     public partial class Player : Creature, IPlayer
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(Player));
+        private readonly ILogger _log = Log.ForContext<Player>();
 
         public Account Account { get; }
 
@@ -63,6 +63,24 @@ namespace ACE.Server.WorldObjects
         public ACE.Entity.Position LastGroundPos;
         public ACE.Entity.Position SnapPos;
 
+        public double NextCombatAbilityActivationTime = 0;
+        public double NextCombatAbilityNegativeActivationTime = 0;
+
+        public static double CombatAbilityActivationInterval = 2.5;
+        public static double CombatAbilityNegativeActivationInterval = 10;
+
+        private bool? CachedAttemptToTaunt = null;
+        public bool IsAttemptingToTaunt
+        {
+            get
+            {
+                if (!CachedAttemptToTaunt.HasValue)
+                    CachedAttemptToTaunt = GetCharacterOption(CharacterOption.AttemptToTaunt);
+
+                return CachedAttemptToTaunt ?? false;
+            }
+        }
+
         public ConfirmationManager ConfirmationManager;
 
         public SquelchManager SquelchManager;
@@ -71,6 +89,7 @@ namespace ACE.Server.WorldObjects
         public static readonly float MaxRadarRange_Outdoors = 75.0f;
 
         public DateTime PrevObjSend;
+        public DateTime PrevWho;
 
         public float CurrentRadarRange => Location.Indoors ? MaxRadarRange_Indoors : MaxRadarRange_Outdoors;
 
@@ -305,14 +324,16 @@ namespace ACE.Server.WorldObjects
             if (creature != null)
             {
                 player = obj as Player;
-                var skill = player != null ? Skill.AssessPerson : Skill.AssessCreature;
 
-                var currentSkill = (int)GetCreatureSkill(skill).Current;
+                Skill skill;
+                skill = Skill.AssessCreature;
+
+                var currentSkill = (int)GetModdedAssessSkill();
                 int difficulty = (int)creature.GetCreatureSkill(Skill.Deception).Current;
 
                 if (PropertyManager.GetBool("assess_creature_mod").Item && skill == Skill.AssessCreature
                         && Skills[Skill.AssessCreature].AdvancementClass < SkillAdvancementClass.Trained)
-                    currentSkill = (int)((Focus.Current + Self.Current) / 2);
+                    currentSkill = (int)(Focus.Current / 2);
 
                 var chance = SkillCheck.GetSkillChance(currentSkill, difficulty);
 
@@ -520,6 +541,8 @@ namespace ACE.Server.WorldObjects
         {
             IsBusy = true;
             IsLoggingOut = true;
+
+            EndSneaking();
 
             if (Fellowship != null)
                 FellowshipQuit(false);
@@ -1210,6 +1233,21 @@ namespace ACE.Server.WorldObjects
                 innerChain.EnqueueChain();
             });
             actionChain.EnqueueChain();
+        }
+
+        public int GetPlayerTier (int? level)
+        {
+            switch (level)
+            {
+                case < 10: return 1;
+                case < 20: return 2;
+                case < 30: return 3;
+                case < 40: return 4;
+                case < 50: return 5;
+                case < 75: return 6;
+                case < 100: return 7;
+                default: return 8;
+            }
         }
     }
 }
