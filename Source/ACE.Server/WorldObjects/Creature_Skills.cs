@@ -53,8 +53,8 @@ namespace ACE.Server.WorldObjects
             {
                 case MagicSchool.CreatureEnchantment:
                     return GetCreatureSkill(Skill.CreatureEnchantment);
-                case MagicSchool.ItemEnchantment:
-                    return GetCreatureSkill(Skill.ItemEnchantment);
+                case MagicSchool.PortalMagic:
+                    return GetCreatureSkill(Skill.PortalMagic);
                 case MagicSchool.LifeMagic:
                     return GetCreatureSkill(Skill.LifeMagic);
                 case MagicSchool.VoidMagic:
