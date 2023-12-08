@@ -242,6 +242,18 @@ namespace ACE.Server.WorldObjects
             // TODO: this should be factored in as a separate nether damage rating...
             var netherDotDamageRating = directDamage ? EnchantmentManager.GetNetherDotDamageRating() : 0;
 
+            // Provoke/Phalanx Combat Abilities
+            var combatAbility = CombatAbility.None;
+            var combatFocus = GetEquippedCombatFocus();
+            if (combatFocus != null)
+                combatAbility = combatFocus.GetCombatAbility();
+
+            var provokeBonus = 0;
+            if (combatAbility == CombatAbility.Provoke)
+                provokeBonus = 20; // TODO: Change so only works against the enemy the player is targeting
+            else if (combatAbility == CombatAbility.Phalanx)
+                provokeBonus = 10; //
+
             var augBonus = 0;
             var lumAugBonus = 0;
             var specBonus = 0;
@@ -253,12 +265,27 @@ namespace ACE.Server.WorldObjects
                 specBonus = GetSpecDefenseBonus(combatType);
             }
 
-            return damageResistRating + equipment + enchantments - netherDotDamageRating + augBonus + lumAugBonus + specBonus;
+            return damageResistRating + equipment + enchantments - netherDotDamageRating + augBonus + lumAugBonus + specBonus + provokeBonus;
         }
 
         public float GetDamageResistRatingMod(CombatType? combatType = null, bool directDamage = true)
         {
             var damageResistRating = GetDamageResistRating(combatType, directDamage);
+           
+            // Battery Combat Ability
+            var combatAbility = CombatAbility.None;
+            var combatFocus = GetEquippedCombatFocus();
+            if (combatFocus != null)
+                combatAbility = combatFocus.GetCombatAbility();
+
+            if (combatAbility == CombatAbility.Battery)
+            {
+                var maxMana = Mana.MaxValue;
+                var currentMana = Mana.Current;
+                var bonus = 20 * (currentMana / maxMana);
+
+                damageResistRating += (int)bonus;
+            }
 
             var allowBug = PropertyManager.GetBool("allow_negative_rating_curve").Item;
 
