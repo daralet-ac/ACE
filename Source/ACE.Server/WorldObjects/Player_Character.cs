@@ -116,6 +116,14 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        public bool ToggleTauntSetting()
+        {
+            bool newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed1);
+            SetCharacterOptions2(CharacterOptions2.NotUsed1, newSetting);
+
+            CachedAttemptToTaunt = newSetting;
+            return newSetting;
+        }
 
         // =====================================
         // CharacterPropertiesContract
