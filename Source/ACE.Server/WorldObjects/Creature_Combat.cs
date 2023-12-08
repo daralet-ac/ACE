@@ -499,7 +499,7 @@ namespace ACE.Server.WorldObjects
             else if (skill == Skill.UnarmedCombat && !IsHumanoid)
                 skill = Skill.None; // Non humanoids(creatures that aren't able to wield weapons) use unarmed combat but still have the regular weapon factor.
 
-            return SkillFormula.GetAttributeMod((int)attribute.Current, isBow);
+            return SkillFormula.GetAttributeMod((int)attribute.Current, skill);
         }
 
         /// <summary>
