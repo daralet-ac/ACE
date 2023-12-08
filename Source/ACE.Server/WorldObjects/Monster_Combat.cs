@@ -393,6 +393,14 @@ namespace ACE.Server.WorldObjects
 
                 Die();
             }
+
+            // Try Taunt
+            Player player = source as Player;
+            if(player != null && player.IsAttemptingToTaunt)
+            {
+                FindNextTarget(true);
+            }
+
             return (uint)Math.Max(0, damage);
         }
 
@@ -428,6 +436,11 @@ namespace ACE.Server.WorldObjects
                 BPTableCache[wcid] = bpTable;
             }
             return bpTable;
+        }
+
+        public static BodyPartTable GetBodyParts(Creature creature)
+        {
+            return new BodyPartTable(creature.Weenie);
         }
 
         /// <summary>
