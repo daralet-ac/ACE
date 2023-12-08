@@ -11,12 +11,10 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
-using ACE.Server.Factories.Enum;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
-using Org.BouncyCastle.Asn1.X509;
 
 namespace ACE.Server.WorldObjects
 {
@@ -317,6 +315,8 @@ namespace ACE.Server.WorldObjects
                 {
                     { PropertyInt.GearDamage, 0 },
                     { PropertyInt.GearDamageResist, 0 },
+                    { PropertyInt.GearCrit, 0 },
+                    { PropertyInt.GearCritResist, 0 },
                     { PropertyInt.GearCritDamage, 0 },
                     { PropertyInt.GearCritDamageResist, 0 },
                     { PropertyInt.GearHealingBoost, 0 },
@@ -329,6 +329,8 @@ namespace ACE.Server.WorldObjects
 
             equippedItemsRatingCache[PropertyInt.GearDamage] += (wo.GearDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearDamageResist] += (wo.GearDamageResist ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCrit] += (wo.GearCritDamage ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCritResist] += (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamage] += (wo.GearCritDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamageResist] += (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearHealingBoost] += (wo.GearHealingBoost ?? 0);
@@ -345,6 +347,8 @@ namespace ACE.Server.WorldObjects
 
             equippedItemsRatingCache[PropertyInt.GearDamage] -= (wo.GearDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearDamageResist] -= (wo.GearDamageResist ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCrit] -= (wo.GearCritDamage ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCritResist] -= (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamage] -= (wo.GearCritDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamageResist] -= (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearHealingBoost] -= (wo.GearHealingBoost ?? 0);
