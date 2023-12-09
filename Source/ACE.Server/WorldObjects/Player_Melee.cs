@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
-
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
-using ACE.Server.Physics;
 using ACE.Server.Physics.Animation;
 
 namespace ACE.Server.WorldObjects
@@ -282,6 +280,15 @@ namespace ACE.Server.WorldObjects
             // point of no return beyond this point -- cannot be cancelled
             Attacking = true;
 
+            if (IsSneaking)
+            {
+                var angle = Math.Abs(creature.GetAngle(this));
+                if (angle < 90 || creature.CombatMode != CombatMode.NonCombat)
+                    EndSneaking();
+                else
+                    EndSneaking(null, true);
+            }
+
             if (subsequent)
             {
                 // client shows hourglass, until attack done is received
@@ -363,7 +370,10 @@ namespace ACE.Server.WorldObjects
                 Attacking = false;
 
                 // powerbar refill timing
-                var refillMod = IsDualWieldAttack ? 0.8f : 1.0f;    // dual wield powerbar refills 20% faster
+                var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
+                var dualWieldSpecBonus = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster refill time
+
+                var refillMod = 1.0f / dualWieldSpecBonus;    
 
                 PowerLevel = AttackQueue.Fetch();
 
@@ -400,7 +410,10 @@ namespace ACE.Server.WorldObjects
             // get the proper animation speed for this attack,
             // based on weapon speed and player quickness
             var baseSpeed = GetAnimSpeed();
-            var animSpeedMod = IsDualWieldAttack ? 1.2f : 1.0f;     // dual wield swing animation 20% faster
+
+            var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
+            var animSpeedMod = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster dual-wield swing animation
+
             var animSpeed = baseSpeed * animSpeedMod;
 
             var swingAnimation = GetSwingAnimation();
