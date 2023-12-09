@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Database;
 using ACE.Database.Models.Shard;
 using ACE.DatLoader;
@@ -11,9 +10,9 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
-using ACE.Server.Network.Structure;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects
 {
@@ -262,7 +261,7 @@ namespace ACE.Server.WorldObjects
 
                     var lifeBuffsForPlayer = buffsForPlayer.Where(k => k.Spell.School == MagicSchool.LifeMagic).ToList();
                     var critterBuffsForPlayer = buffsForPlayer.Where(k => k.Spell.School == MagicSchool.CreatureEnchantment).ToList();
-                    var itemBuffsForPlayer = buffsForPlayer.Where(k => k.Spell.School == MagicSchool.ItemEnchantment).ToList();
+                    var itemBuffsForPlayer = buffsForPlayer.Where(k => k.Spell.School == MagicSchool.PortalMagic).ToList();
 
                     lifeBuffsForPlayer.ForEach(spl =>
                     {
@@ -450,7 +449,7 @@ namespace ACE.Server.WorldObjects
         public static Dictionary<MagicSchool, uint> FociWCIDs = new Dictionary<MagicSchool, uint>()
         {
             { MagicSchool.CreatureEnchantment, 15268 },   // Foci of Enchantment
-            { MagicSchool.ItemEnchantment,     15269 },   // Foci of Artifice
+            { MagicSchool.PortalMagic,     15269 },   // Foci of Artifice
             { MagicSchool.LifeMagic,           15270 },   // Foci of Verdancy
             { MagicSchool.WarMagic,            15271 },   // Foci of Strife
             { MagicSchool.VoidMagic,           43173 },   // Foci of Shadow
@@ -464,7 +463,7 @@ namespace ACE.Server.WorldObjects
                     if (AugmentationInfusedCreatureMagic > 0)
                         return true;
                     break;
-                case MagicSchool.ItemEnchantment:
+                case MagicSchool.PortalMagic:
                     if (AugmentationInfusedItemMagic > 0)
                         return true;
                     break;
@@ -531,7 +530,7 @@ namespace ACE.Server.WorldObjects
             return HandleRunRateUpdate();
         }
 
-        public void AuditItemSpells()
+        public void AuditItemSpells(bool peaceMode = false)
         {
             // cleans up bugged chars with dangling item set spells
             // from previous bugs
@@ -551,7 +550,16 @@ namespace ACE.Server.WorldObjects
                 if (!table.TryGetValue(new ObjectGuid(enchantment.CasterObjectId), out var item))
                 {
                     var spell = new Spell(enchantment.SpellId, false);
-                    _log.Error($"{Name}.AuditItemSpells(): removing spell {spell.Name} from {(enchantment.HasSpellSetId ? "non-possessed" : "non-equipped")} item");
+
+                    if (spell.Id == (uint)SpellId.MireFoot && !peaceMode)
+                        continue;
+
+                    var trinket = GetEquippedTrinket();
+                    if (IsCombatFocusSpell(enchantment, trinket))
+                        continue;
+
+                    if (spell.Id != (uint)SpellId.Ardence && spell.Id != (uint)SpellId.Vim && spell.Id != (uint)SpellId.Volition && spell.Id != (uint)SpellId.OntheRun)
+                        _log.Error($"{Name}.AuditItemSpells1(): removing spell {spell.Name} from {(enchantment.HasSpellSetId ? "non-possessed" : "non-equipped")} item");
 
                     EnchantmentManager.Dispel(enchantment);
                     continue;
@@ -580,12 +588,47 @@ namespace ACE.Server.WorldObjects
 
                     foreach (var removeSpell in removeSpells)
                     {
-                        _log.Error($"{Name}.AuditItemSpells(): removing spell {inactiveSpell.Name} from {item.EquipmentSetId}");
+                        if (inactiveSpell.Id == (uint)SpellId.MireFoot && !peaceMode)
+                            continue;
+
+                        if (inactiveSpell.Id != (uint)SpellId.Ardence && inactiveSpell.Id != (uint)SpellId.Vim && inactiveSpell.Id != (uint)SpellId.Volition && inactiveSpell.Id != (uint)SpellId.OntheRun && inactiveSpell.Id != (uint)SpellId.MireFoot)
+                            _log.Error($"{Name}.AuditItemSpells(): removing spell {inactiveSpell.Name} from {item.EquipmentSetId}");
 
                         EnchantmentManager.Dispel(removeSpell);
                     }
                 }
             }
+        }
+
+        private bool IsCombatFocusSpell(PropertiesEnchantmentRegistry enchantment, WorldObject trinket)
+        {
+            if(trinket == null || trinket.WeenieType != WeenieType.CombatFocus)
+                return false;
+
+            var combatFocus = trinket as CombatFocus;
+
+            var spellList = new List<SpellId>();
+
+            if (combatFocus.CombatFocusType == (int)CombatFocusType.Soldier)
+                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Soldier);
+            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Swashbuckler)
+                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Swashbuckler);
+            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Vagabond)
+                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Vagabond);
+            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Wayfayer)
+                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Wayfayer);
+            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Sorcerer)
+                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Sorcerer);
+            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Spellsword)
+                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Spellsword);
+
+            foreach (var spellId in spellList)
+            {
+                if (new Spell(spellId).Category == enchantment.SpellCategory)
+                    return true;
+            }
+
+            return false;
         }
     }
 }
