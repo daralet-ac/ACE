@@ -75,8 +75,6 @@ namespace ACE.Entity.Enum
         PetDevice,
         CombatPet,
         EmpoweredScarab,
-        SpellConduit,
-        SpellTransferScroll,
         CombatFocus,
         ArmorPatch,
     }
