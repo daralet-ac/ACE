@@ -56,10 +56,13 @@ namespace ACE.Server.WorldObjects
                 return;
 
             // If Visibility is true, do not send object to client, object is meant for server side only, unless Adminvision is true.
-            if (worldObject.Visibility && !Adminvision)
+            if (worldObject.Visibility && !Adminvision && !IsAware(worldObject))
                 return;
 
             Session.Network.EnqueueSend(new GameMessageCreateObject(worldObject, Adminvision, Adminvision));
+
+            if(worldObject is Player player && player.IsSneaking)
+                Session.Network.EnqueueSend(new GameMessageScript(player.Guid, PlayScript.SneakingBegin)); // Show the player as half-translucent
 
             //Console.WriteLine($"Player {Name} - TrackObject({worldObject.Name})");
 
@@ -77,18 +80,16 @@ namespace ACE.Server.WorldObjects
 
         public bool AddTrackedObject(WorldObject worldObject)
         {
-            // does this work for equipped objects?
-            if (ObjMaint.KnownObjectsContainsValue(worldObject.PhysicsObj))
+            bool addedKnownObj = ObjMaint.AddKnownObject(worldObject.PhysicsObj);
+            bool addedVisibleObj = ObjMaint.AddVisibleObject(worldObject.PhysicsObj);
+
+            if (addedKnownObj || addedVisibleObj)
             {
-                //Console.WriteLine($"Player {Name} - AddTrackedObject({worldObject.Name}) skipped, already tracked");
-                return false;
+                TrackObject(worldObject);
+                return true;
             }
-
-            ObjMaint.AddKnownObject(worldObject.PhysicsObj);
-            ObjMaint.AddVisibleObject(worldObject.PhysicsObj);
-
-            TrackObject(worldObject);
-            return true;
+            else
+                return false;
         }
 
         public void RemoveTrackedObject(WorldObject wo, bool fromPickup)
