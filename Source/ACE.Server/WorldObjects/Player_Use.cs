@@ -46,6 +46,9 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            if ((sourceItem.CombatAbilityId ?? 0) != (int)CombatAbility.Sneak)
+                EndSneaking();
+
             // Resolve the guid to an object that is either in our possession or on the Landblock
             var target = FindObject(targetObjectGuid, SearchLocations.MyInventory | SearchLocations.MyEquippedItems | SearchLocations.Landblock);
 
@@ -185,15 +188,18 @@ namespace ACE.Server.WorldObjects
 
             var item = FindObject(itemGuid, SearchLocations.MyInventory | SearchLocations.MyEquippedItems | SearchLocations.Landblock);
 
-            if (IsTrading && item.IsBeingTradedOrContainsItemBeingTraded(ItemsInTradeWindow))
-            {
-                SendUseDoneEvent(WeenieError.TradeItemBeingTraded);
-                //SendWeenieError(WeenieError.TradeItemBeingTraded);
-                return;
-            }
-
             if (item != null)
             {
+                if ((item.CombatAbilityId ?? 0) != (int)CombatAbility.Sneak && item.WeenieType != WeenieType.Corpse)
+                    EndSneaking();
+
+                if (IsTrading && item.IsBeingTradedOrContainsItemBeingTraded(ItemsInTradeWindow))
+                {
+                    SendUseDoneEvent(WeenieError.TradeItemBeingTraded);
+                    //SendWeenieError(WeenieError.TradeItemBeingTraded);
+                    return;
+                }
+
                 if (item.CurrentLandblock != null && !item.Visibility && item.Guid != LastOpenedContainerId)
                 {
                     if (IsBusy)
@@ -226,7 +232,11 @@ namespace ACE.Server.WorldObjects
             LastUseTime = 0.0f;
 
             if (success)
+            {
+                if (item is PressurePlate pressurePlate)
+                    pressurePlate.NextActivationIsFromUse = true;
                 item.OnActivate(this);
+            }
 
             // manually managed
             if (LastUseTime == float.MinValue)
