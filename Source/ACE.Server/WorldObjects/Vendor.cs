@@ -10,12 +10,54 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
+using ACE.Server.Factories.Enum;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
+using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.WorldObjects.Entity;
 using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
+    public class VendorItemComparer : IComparer<WorldObject>
+    {
+        public VendorItemComparer()
+        {
+        }
+
+        public int Compare(WorldObject a, WorldObject b)
+        {
+            var result = a.WeenieType.CompareTo(b.WeenieType);
+
+            if (result == 0)
+            {
+                result = a.ItemType.CompareTo(b.ItemType);
+                if (result == 0)
+                {
+                    if (a.WeaponSkill != Skill.None)
+                        result = a.WeaponSkill.CompareTo(b.WeaponSkill);
+                    else if (a.ArmorType != 0)
+                    {
+                        int armorTypeA = a.ArmorType ?? 0;
+                        int armorTypeB = b.ArmorType ?? 0;
+                        result = armorTypeA.CompareTo(armorTypeB);
+                    }
+
+                    if (result == 0)
+                    {
+                        result = a.WeenieClassId.CompareTo(b.WeenieClassId);
+                        if (result == 0)
+                        {
+                            result = a.Name.CompareTo(b.Name);
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+    }
+
     /// <summary>
     /// ** Buy Data Flow **
     ///
@@ -26,10 +68,12 @@ namespace ACE.Server.WorldObjects
     {
         private readonly ILogger _log = Log.ForContext<Vendor>();
 
+        private static readonly VendorItemComparer VendorItemComparer = new VendorItemComparer();
+
         public readonly Dictionary<ObjectGuid, WorldObject> DefaultItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
 
         // unique items purchased from other players
-        public readonly Dictionary<ObjectGuid, WorldObject> UniqueItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
+        public Dictionary<ObjectGuid, WorldObject> UniqueItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
 
         private bool inventoryloaded { get; set; }
 
@@ -37,6 +81,8 @@ namespace ACE.Server.WorldObjects
         ///  The last player who used this vendor
         /// </summary>
         private WorldObjectInfo lastPlayerInfo { get; set; }
+
+        private DateTime LastRestockTime;
 
         public uint? AlternateCurrency
         {
@@ -69,6 +115,7 @@ namespace ACE.Server.WorldObjects
                 GeneratorProfiles.RemoveAll(p => p.Biota.WhereCreate.HasFlag(RegenLocationType.Shop));
             }
 
+            LastRestockTime = DateTime.UnixEpoch;
             OpenForBusiness = ValidateVendorRequirements();
         }
 
@@ -263,18 +310,6 @@ namespace ACE.Server.WorldObjects
             lastPlayerInfo = new WorldObjectInfo(player);
         }
 
-        private void PrepareResetToHome()
-        {
-            // Reset to Home position
-            var resetInterval = ResetInterval ?? 300;
-            ResetTimestamp = Time.GetFutureUnixTime(resetInterval);
-
-            var autoResetTimer = new ActionChain();
-            autoResetTimer.AddDelaySeconds(resetInterval);
-            autoResetTimer.AddAction(this, () => CheckResetToHome());
-            autoResetTimer.EnqueueChain();
-        }
-
         /// <summary>
         /// Sends the latest vendor inventory list to player, rotates vendor towards player, and performs the appropriate emote.
         /// </summary>
@@ -282,6 +317,8 @@ namespace ACE.Server.WorldObjects
         public void ApproachVendor(Player player, VendorType action = VendorType.Undef, uint altCurrencySpent = 0)
         {
             RotUniques();
+
+            RestockRandomItems();
 
             player.Session.Network.EnqueueSend(new GameEventApproachVendor(player.Session, this, altCurrencySpent));
 
@@ -291,8 +328,6 @@ namespace ACE.Server.WorldObjects
                 DoVendorEmote(action, player);
 
             player.LastOpenedContainerId = Guid;
-
-            PrepareResetToHome();
         }
 
         public void DoVendorEmote(VendorType vendorType, WorldObject player)
@@ -305,6 +340,8 @@ namespace ACE.Server.WorldObjects
 
                 case VendorType.Buy:    // player buys item from vendor
                     EmoteManager.DoVendorEmote(vendorType, player);
+                    if (DefaultItemsForSale.Count == 0 && UniqueItemsForSale.Count == 0)
+                        EmoteManager.ExecuteEmoteSet(EmoteManager.GetEmoteSet(EmoteCategory.Vendor, null), player, true);
                     break;
 
                 case VendorType.Sell:   // player sells item to vendor
@@ -362,26 +399,6 @@ namespace ACE.Server.WorldObjects
             closeChain.AddDelaySeconds(closeInterval);
             closeChain.AddAction(this, CheckClose);
             closeChain.EnqueueChain();
-        }
-
-        public void CheckResetToHome()
-        {
-            if (Time.GetUnixTime() >= ResetTimestamp)
-            {
-                // are we already at home origin?
-                if (Location.Pos.Equals(Home.Pos))
-                {
-                    // just turnto if required?
-                    if (!Location.Rotation.Equals(Home.Rotation))
-                    {
-                        TurnTo(Home);
-                    }
-                }
-                else
-                {
-                    MoveTo(Home, GetRunRate(), true, null, 1);
-                }
-            }
         }
 
         /// <summary>
@@ -531,6 +548,7 @@ namespace ACE.Server.WorldObjects
 
             // calculate price
             uint totalPrice = 0;
+            uint totalPriceAfterHaggling = 0;
 
             foreach (var item in purchaseItems)
             {
@@ -689,6 +707,355 @@ namespace ACE.Server.WorldObjects
             NumServicesSold++;
         }
 
+        private int ShopTier = 0;
+        private int ShopRandomItemStockAmount = 0;
+        private float ShopQualityMod = 0.0f;
+        private bool RandomItemGenerationInitialized = false;
+        private bool IsStarterOutpostVendor = false;
+
+        private bool sellsRandomArmor;
+        private bool sellsRandomMeleeWeapons;
+        private bool sellsRandomMissileWeapons;
+        private bool sellsRandomCasters;
+        private bool sellsRandomClothing;
+        private bool sellsRandomJewelry;
+        private bool sellsRandomGems;
+        private bool sellsRandomScrolls;
+        private bool sellsSalvage;
+        private bool sellsSpecialItems;
+
+        private TreasureHeritageGroup ShopHeritage;
+
+        private void SetupRandomItemShop()
+        {
+            RandomItemGenerationInitialized = true;
+
+            ShopTier = Tier ?? 0;
+
+            string townName = GetProperty(PropertyString.TownName);
+
+            switch (townName)
+            {
+                case "South Holtburg Outpost":
+                case "West Holtburg Outpost":
+                case "Southeast Shoushi Outpost":
+                case "West Shoushi Outpost":
+                case "East Yaraq Outpost":
+                case "North Yaraq Outpost":
+                    if (ShopTier == 0)
+                        ShopTier = 1;
+                    ShopQualityMod = -0.5f;
+                    IsStarterOutpostVendor = true;
+                    break;
+                case "Holtburg":
+                case "Shoushi":
+                case "Yaraq":
+                    if (ShopTier == 0)
+                        ShopTier = 1;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Cragstone":
+                case "Glenden Wood":
+                case "Arwic":
+                case "Hebian-to":
+                case "Sawato":
+                case "Tou-Tou":
+                case "Zaikhal":
+                case "Al-Arqas":
+                case "Tufa":
+                    if (ShopTier == 0)
+                        ShopTier = 2;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Rithwic":
+                case "Eastham":
+                case "Lytelthorpe":
+                case "Yanshi":
+                case "Lin":
+                case "Nanto":
+                case "Al-Jalima":
+                case "Samsur":
+                case "Uziz":
+                    if (ShopTier == 0)
+                        ShopTier = 3;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Dryreach":
+                case "Baishi":
+                case "Mayoi":
+                case "Xarabydun":
+                case "Underground City":
+                case "Khayyaban":
+                    if (ShopTier == 0)
+                        ShopTier = 4;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Qalaba'r":
+                case "Kara":
+                case "Coiler":
+                case "Mountain Retreat":
+                case "Danby's Outpost":
+                    if (ShopTier == 0)
+                        ShopTier = 5;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Crater":
+                case "Bandit Castle":
+                case "Neydisa Castle":
+                case "Stonehold":
+                case "Plateau":
+                case "Linvak Tukal":
+                    if (ShopTier == 0)
+                        ShopTier = 6;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Fort Tethana":
+                case "Wai Jhou":
+                case "Ayan Baqur":
+                case "Candeth Keep":
+                    if (ShopTier == 0)
+                        ShopTier = 7;
+                    ShopQualityMod = 0.0f;
+                    break;
+                //case "Bluespire":
+                //case "Greenspire":
+                //case "Ahurenga":
+                //case "Redspire":
+                //case "Martine's Retreat":
+                //case "Oolutanga's Refuge":
+                //case "MacNiall's Freehold":
+                //case "Kryst":
+                //case "Timaru":
+            }
+
+            sellsRandomArmor = ((ItemType)MerchandiseItemTypes & ItemType.Armor) == ItemType.Armor;
+            sellsRandomMeleeWeapons = ((ItemType)MerchandiseItemTypes & ItemType.MeleeWeapon) == ItemType.MeleeWeapon;
+            sellsRandomMissileWeapons = ((ItemType)MerchandiseItemTypes & ItemType.MissileWeapon) == ItemType.MissileWeapon;
+            sellsRandomCasters = ((ItemType)MerchandiseItemTypes & ItemType.Caster) == ItemType.Caster;
+            sellsSalvage = VendorSellsSalvage;
+            sellsSpecialItems = VendorSellsSpecialItems;
+
+            if (!IsStarterOutpostVendor)
+            {
+                sellsRandomClothing = ((ItemType)MerchandiseItemTypes & ItemType.Clothing) == ItemType.Clothing;
+                sellsRandomJewelry = ((ItemType)MerchandiseItemTypes & ItemType.Jewelry) == ItemType.Jewelry;
+                sellsRandomGems = ((ItemType)MerchandiseItemTypes & ItemType.Gem) == ItemType.Gem;
+                sellsRandomScrolls = ((ItemType)MerchandiseItemTypes & ItemType.Writable) == ItemType.Writable && sellsRandomCasters; // Check if we also sell casters to prevent scribes from carrying scrolls
+            }
+
+            int categoriesSold = 0;
+            if (sellsRandomArmor)
+                categoriesSold++;
+            if (sellsRandomMeleeWeapons)
+                categoriesSold++;
+            if (sellsRandomMissileWeapons)
+                categoriesSold++;
+            if (sellsRandomCasters)
+                categoriesSold++;
+            if (sellsRandomClothing)
+                categoriesSold++;
+            if (sellsRandomJewelry)
+                categoriesSold++;
+            if (sellsRandomGems)
+                categoriesSold++;
+            if (sellsRandomScrolls)
+                categoriesSold++;
+            if (sellsSalvage)
+                categoriesSold++;
+            if (sellsSpecialItems)
+                categoriesSold++;
+
+            if (VendorStockMaxAmount == 0)
+                ShopRandomItemStockAmount = categoriesSold * ThreadSafeRandom.Next(5, 10);
+            else
+                ShopRandomItemStockAmount = categoriesSold * VendorStockMaxAmount;
+
+            ShopHeritage = (TreasureHeritageGroup)(Heritage ?? 0);
+
+            if (ShopHeritage > TreasureHeritageGroup.Sho)
+                ShopHeritage = TreasureHeritageGroup.Invalid;
+
+            if (ShopTier == 0) // We're not in a town and no defined shop tier! See what's around us.
+            {
+                ShopTier = 1; // Fallback to tier 1 if there's nothing around us.
+
+                foreach (var obj in CurrentLandblock.GetAllWorldObjectsForDiagnostics())
+                {
+                    if(obj.ItemType == ItemType.Creature)
+                    {
+                        PlayerKillerStatus pkStatus = (PlayerKillerStatus)(obj.GetProperty(PropertyInt.PlayerKillerStatus) ?? 0);
+
+                        Creature creature = obj as Creature;
+
+                        if (!(obj.Guid.IsPlayer()) && creature != null && pkStatus != PlayerKillerStatus.RubberGlue)
+                        {
+                            if(creature.DeathTreasure != null && creature.DeathTreasure.Tier > ShopTier)
+                                ShopTier = creature.DeathTreasure.Tier; // Trade in the highest tier we can find around us.
+                        }
+                    }
+                }
+            }
+
+            // Let's overwrite the database values for MerchandiseMaxValue depending on our tier.
+            switch (ShopTier)
+            {
+                default:
+                case 1:
+                    if (IsStarterOutpostVendor)
+                        MerchandiseMaxValue = 1000;
+                    else
+                        MerchandiseMaxValue = 50000;
+                    break;
+                case 2:
+                    MerchandiseMaxValue = 50000;
+                    break;
+                case 3:
+                    MerchandiseMaxValue = 50000;
+                    break;
+                case 4:
+                    MerchandiseMaxValue = 50000;
+                    break;
+                case 5:
+                    MerchandiseMaxValue = 50000;
+                    break;
+                case 6:
+                    MerchandiseMaxValue = 75000;
+                    break;
+                case 7:
+                    MerchandiseMaxValue = 100000;
+                    break;
+                case 8:
+                    MerchandiseMaxValue = 1000000;
+                    break;
+            }
+        }
+
+        private void RestockRandomItems()
+        {
+            if (!RandomItemGenerationInitialized)
+                SetupRandomItemShop();
+
+            if (ShopTier == 0)
+                return;
+
+            if (VendorRestockInterval == 0 && (DateTime.UtcNow - LastRestockTime).TotalSeconds < PropertyManager.GetDouble("vendor_unique_rot_time", 300).Item)
+                return;
+            else if ((DateTime.UtcNow - LastRestockTime).TotalSeconds < VendorRestockInterval)
+                return;
+
+            RotUniques();
+
+            LastRestockTime = DateTime.UtcNow;
+
+            if (UniqueItemsForSale.Count >= ShopRandomItemStockAmount)
+                return;
+
+            int itemsToGenerate = ShopRandomItemStockAmount - UniqueItemsForSale.Count;
+
+            if (itemsToGenerate <= 0)
+                return;
+
+            int added = 0;
+            while(added < itemsToGenerate)
+            {
+                if (sellsRandomArmor && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.Armor, TreasureArmorType.Undef, TreasureWeaponType.Undef);
+                    added++;
+                }
+                if (sellsRandomMeleeWeapons && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.Weapon, TreasureArmorType.Undef, TreasureWeaponType.MeleeWeapon);
+                    added++;
+                }
+                if (sellsRandomMissileWeapons && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.Weapon, TreasureArmorType.Undef, TreasureWeaponType.MissileWeapon);
+                    added++;
+                }
+                if (sellsRandomCasters && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.Caster, TreasureArmorType.Undef, TreasureWeaponType.Undef);
+                    added++;
+                }
+                if (sellsRandomClothing && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.Clothing, TreasureArmorType.Undef, TreasureWeaponType.Undef);
+                    added++;
+                    if (added < itemsToGenerate)
+                    {
+                        AddRandomItem(TreasureItemType_Orig.Armor, TreasureArmorType.Cloth, TreasureWeaponType.Undef);
+                        added++;
+                    }
+                }
+                if (sellsRandomJewelry && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.Jewelry, TreasureArmorType.Undef, TreasureWeaponType.Undef);
+                    added++;
+                }
+                if (sellsRandomGems && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.Gem, TreasureArmorType.Undef, TreasureWeaponType.Undef);
+                    added++;
+                }
+                if (sellsRandomScrolls && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.Scroll, TreasureArmorType.Undef, TreasureWeaponType.Undef);
+                    added++;
+                }
+                if (sellsSalvage && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.Salvage, TreasureArmorType.Undef, TreasureWeaponType.Undef);
+                    added++;
+                }
+                if (sellsSpecialItems && added < itemsToGenerate)
+                {
+                    AddRandomItem(TreasureItemType_Orig.SpecialItem, TreasureArmorType.Undef, TreasureWeaponType.Undef);
+                    added++;
+                }
+            }
+            
+            UniqueItemsForSale = new Dictionary<ObjectGuid, WorldObject>(UniqueItemsForSale.OrderBy(key => key.Value, VendorItemComparer));
+        }
+
+        private void AddRandomItem(TreasureItemType_Orig treasureItemType, TreasureArmorType armorType = TreasureArmorType.Undef, TreasureWeaponType weaponType = TreasureWeaponType.Undef)
+        {
+            var item = LootGenerationFactory.CreateRandomLootObjects_New(ShopTier, ShopQualityMod, (DealMagicalItems ?? false) ? TreasureItemCategory.MagicItem : TreasureItemCategory.Item, treasureItemType, armorType, weaponType, ShopHeritage);
+
+            if (item == null)
+            {
+                _log.Warning($"AddRandomItem({treasureItemType}, {armorType}, {weaponType}) - item is null for LootGenerationFactory.CreateRandomLootObjects_New({ShopTier}, {ShopQualityMod}, {DealMagicalItems}, {treasureItemType}, {armorType}, {weaponType}, {ShopHeritage})");
+            }
+            else
+            {
+                var amount = item.StackSize ?? 1;
+                if (amount > 1 && !item.Workmanship.HasValue) // Split stackable uniques.
+                {
+                    for (int i = 0; i < amount; i++)
+                    {
+                        var newItem = WorldObjectFactory.CreateNewWorldObject(item.WeenieClassId);
+                        newItem.ContainerId = Guid.Full;
+
+                        UniqueItemsForSale.Add(newItem.Guid, newItem);
+
+                        newItem.SoldTimestamp = Time.GetUnixTime();
+                        newItem.RemoveBiotaFromDatabase();
+                    }
+                    item.Destroy();
+                }
+                else
+                {
+                    item.ContainerId = Guid.Full;
+
+                    UniqueItemsForSale.Add(item.Guid, item);
+
+                    item.SoldTimestamp = Time.GetUnixTime();
+
+                    item.RemoveBiotaFromDatabase();
+                }
+            }
+        }
+
         /// <summary>
         /// Unique items in the vendor's inventory sold to the vendor by players
         /// expire after vendor_unique_rot_time seconds
@@ -709,7 +1076,10 @@ namespace ACE.Server.WorldObjects
 
                 var rotTime = Time.GetDateTimeFromTimestamp(soldTime.Value);
 
-                rotTime = rotTime.AddSeconds(PropertyManager.GetDouble("vendor_unique_rot_time", 300).Item);
+                if (VendorStockTimeToRot != 0)
+                    rotTime = rotTime.AddSeconds(VendorStockTimeToRot);
+                else
+                    rotTime = rotTime.AddSeconds(PropertyManager.GetDouble("vendor_unique_rot_time", 300).Item);
 
                 if (DateTime.UtcNow >= rotTime)
                 {
@@ -741,12 +1111,6 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyBool.OpenForBusiness) ?? true;
             set { if (value) RemoveProperty(PropertyBool.OpenForBusiness); else SetProperty(PropertyBool.OpenForBusiness, value); }
-        }
-
-        public int? MerchandiseItemTypes
-        {
-            get => GetProperty(PropertyInt.MerchandiseItemTypes);
-            set { if (!value.HasValue) RemoveProperty(PropertyInt.MerchandiseItemTypes); else SetProperty(PropertyInt.MerchandiseItemTypes, value.Value); }
         }
 
         public int? MerchandiseMinValue
@@ -831,6 +1195,36 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyInt.MoneyOutflow) ?? 0;
             set { if (value == 0) RemoveProperty(PropertyInt.MoneyOutflow); else SetProperty(PropertyInt.MoneyOutflow, value); }
+        }
+
+        public bool VendorSellsSalvage
+        {
+            get => GetProperty(PropertyBool.VendorSellsSalvage) ?? false;
+            set { if (value == false) RemoveProperty(PropertyBool.VendorSellsSalvage); else SetProperty(PropertyBool.VendorSellsSalvage, value); }
+        }
+
+        public bool VendorSellsSpecialItems
+        {
+            get => GetProperty(PropertyBool.VendorSellsSpecialItems) ?? false;
+            set { if (value == false) RemoveProperty(PropertyBool.VendorSellsSpecialItems); else SetProperty(PropertyBool.VendorSellsSpecialItems, value); }
+        }
+
+        protected double VendorRestockInterval
+        {
+            get => GetProperty(PropertyFloat.VendorRestockInterval) ?? 0;
+            set { if (value == 0) RemoveProperty(PropertyFloat.VendorRestockInterval); else SetProperty(PropertyFloat.VendorRestockInterval, value); }
+        }
+
+        protected double VendorStockTimeToRot
+        {
+            get => GetProperty(PropertyFloat.VendorStockTimeToRot) ?? 0;
+            set { if (value == 0) RemoveProperty(PropertyFloat.VendorStockTimeToRot); else SetProperty(PropertyFloat.VendorStockTimeToRot, value); }
+        }
+
+        protected int VendorStockMaxAmount
+        {
+            get => GetProperty(PropertyInt.VendorStockMaxAmount) ?? 0;
+            set { if (value == 0) RemoveProperty(PropertyInt.VendorStockMaxAmount); else SetProperty(PropertyInt.VendorStockMaxAmount, value); }
         }
     }
 }
