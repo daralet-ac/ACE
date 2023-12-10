@@ -1,6 +1,3 @@
-using System;
-using System.Numerics;
-
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -12,6 +9,8 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
+using System;
+using System.Numerics;
 
 namespace ACE.Server.WorldObjects
 {
@@ -23,6 +22,8 @@ namespace ACE.Server.WorldObjects
         public Position SpawnPos { get; set; }
         public float DistanceToTarget { get; set; }
         public uint LifeProjectileDamage { get; set; }
+
+        public PartialEvasion PartialEvasion;
 
         public SpellProjectileInfo Info { get; set; }
 
@@ -305,8 +306,11 @@ namespace ACE.Server.WorldObjects
             var critical = false;
             var critDefended = false;
             var overpower = false;
+            var resisted = false;
 
-            var damage = CalculateDamage(ProjectileSource, creatureTarget, ref critical, ref critDefended, ref overpower);
+            var damage = CalculateDamage(ProjectileSource, creatureTarget, ref critical, ref critDefended, ref overpower, ref resisted);
+
+            creatureTarget.OnAttackReceived(sourceCreature, CombatType.Magic, critical, resisted);
 
             if (damage != null)
             {
@@ -346,8 +350,13 @@ namespace ACE.Server.WorldObjects
                     }
 
                     if (threadSafe)
+                    {
                         // This can result in spell projectiles being added to either sourceCreature or creatureTargets landblock.
                         sourceCreature.TryProcEquippedItems(sourceCreature, creatureTarget, false, ProjectileLauncher);
+
+                        // EMPOWERED SCARAB - Detonate
+                        player.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, creatureTarget);
+                    }
                     else
                     {
                         // sourceCreature and creatureTarget are now in different landblock groups.
@@ -375,7 +384,7 @@ namespace ACE.Server.WorldObjects
         /// Calculates the damage for a spell projectile
         /// Used by war magic, void magic, and life magic projectiles
         /// </summary>
-        public float? CalculateDamage(WorldObject source, Creature target, ref bool criticalHit, ref bool critDefended, ref bool overpower)
+        public float? CalculateDamage(WorldObject source, Creature target, ref bool criticalHit, ref bool critDefended, ref bool overpower, ref bool resisted)
         {
             var sourcePlayer = source as Player;
             var targetPlayer = target as Player;
@@ -404,7 +413,10 @@ namespace ACE.Server.WorldObjects
             // war/void magic
             var baseDamage = 0;
             var skillBonus = 0.0f;
+            var oldSkillBonus = 0.0f; //For Testing
+           
             var finalDamage = 0.0f;
+            var oldFinalDamage = 0.0f;
 
             var resistanceType = Creature.GetResistanceType(Spell.DamageType);
 
@@ -416,13 +428,49 @@ namespace ACE.Server.WorldObjects
 
             var resistSource = IsWeaponSpell ? weapon : source;
 
-            var resisted = source.TryResistSpell(target, Spell, resistSource, true);
-            if (resisted && !overpower)
-                return null;
+            resisted = source.TryResistSpell(target, Spell, out PartialEvasion partialEvasion, resistSource, true);
+
+            // Combat Ability - Reflect (reflect resisted spells back to the caster)
+            if (resisted && targetPlayer != null && sourceCreature != null)
+            {
+                var combatAbility = CombatAbility.None;
+                var combatFocus = targetPlayer.GetEquippedCombatFocus();
+                if (combatFocus != null)
+                    combatAbility = combatFocus.GetCombatAbility();
+
+                if(combatAbility == CombatAbility.Reflect)
+                {
+                    TryCastSpell(Spell, sourceCreature, null, null, false, false, false, true);
+                }
+            }
+
+            var resistedMod = 1.0f;
+            PartialEvasion = partialEvasion;
+
+            if (!overpower && sourcePlayer != null)
+            {
+                if (GetResistedMod(out resistedMod))
+                    return null;
+            }
+            else
+            {
+                if (resisted && !overpower)
+                    return null;
+            }
 
             CreatureSkill attackSkill = null;
             if (sourceCreature != null)
                 attackSkill = sourceCreature.GetCreatureSkill(Spell.School);
+
+            CombatAbility combatAbilityId = CombatAbility.None;
+            WorldObject combatAbilityTrinket = null;
+
+            if (sourcePlayer != null)
+            {
+                combatAbilityTrinket = sourcePlayer.GetEquippedTrinket();
+                if (combatAbilityTrinket != null)
+                    combatAbilityId = (CombatAbility)combatAbilityTrinket.CombatAbilityId;
+            }
 
             // critical hit
             var criticalChance = GetWeaponMagicCritFrequency(weapon, sourceCreature, attackSkill, target);
@@ -440,11 +488,34 @@ namespace ACE.Server.WorldObjects
 
                 if (!critDefended)
                     criticalHit = true;
+
+                // EMPOWERED SCARAB - Crushing
+                if(criticalHit && sourcePlayer != null && Spell.School == MagicSchool.WarMagic)
+                    sourcePlayer.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, null, true);
             }
 
-            var absorbMod = GetAbsorbMod(target);
+            // aegis mod, rend, and penetration
+            var aegisRendingMod = 1.0f;
+            if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.AegisRending))
+                aegisRendingMod = GetAegisRendingMod(attackSkill);
 
+            var aegisPenMod = 0.0f;
+
+            if(sourcePlayer != null)
+                aegisPenMod = sourcePlayer.GetIgnoreAegisMod(weapon);
+
+            var ignoreAegisMod = Math.Min(aegisRendingMod, aegisPenMod);
+
+            var aegisMod = GetAegisMod(target, ignoreAegisMod);
+
+            //Console.WriteLine($"TargetAegis: {target.AegisLevel} AegisRend: {aegisRendingMod} AegisPen: {aegisPenMod} AegisMod: {aegisMod}");
+
+            var testAegis = target.GetAegisLevel();
+            var testAegisMod = GetAegisMod(target, 1.0f);
+
+            // absorb mod
             bool isPVP = sourcePlayer != null && targetPlayer != null;
+            var absorbMod = GetAbsorbMod(target, this);
 
             //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
             if (isPVP && (target.CombatMode == CombatMode.Melee || target.CombatMode == CombatMode.Missile))
@@ -462,10 +533,25 @@ namespace ACE.Server.WorldObjects
             // Possible 2x + damage bonus for the slayer property
             var slayerMod = GetWeaponCreatureSlayerModifier(weapon, sourceCreature, target);
 
+            // COMBAT ABILITY - Overload (x1.5) and Battery (x0.5)
+            var combatFocusDamageMod = 1.0f;
+            if (sourceCreature != null)
+            {
+                var combatAbility = CombatAbility.None;
+                var combatFocus = sourceCreature.GetEquippedCombatFocus();
+                if (combatFocus != null)
+                    combatAbility = combatFocus.GetCombatAbility();
+
+                if (combatAbility == CombatAbility.Overload)
+                    combatFocusDamageMod = 1.5f;
+                else if (combatAbility == CombatAbility.Battery)
+                    combatFocusDamageMod = 0.5f;
+            }
+
             // life magic projectiles: ie., martyr's hecatomb
             if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
             {
-                lifeMagicDamage = LifeProjectileDamage * Spell.DamageRatio;
+                lifeMagicDamage = LifeProjectileDamage * Spell.DamageRatio * combatFocusDamageMod;
 
                 // could life magic projectiles crit?
                 // if so, did they use the same 1.5x formula as war magic, instead of 2.0x?
@@ -485,7 +571,7 @@ namespace ACE.Server.WorldObjects
 
                 resistanceMod = (float)Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
-                finalDamage = (lifeMagicDamage + critDamageBonus) * elementalDamageMod * slayerMod * resistanceMod * absorbMod;
+                finalDamage = (lifeMagicDamage + critDamageBonus) * elementalDamageMod * slayerMod * resistanceMod * absorbMod * aegisMod * resistedMod;
             }
             // war/void magic projectiles
             else
@@ -521,17 +607,65 @@ namespace ACE.Server.WorldObjects
                 }
 
                 /* War Magic skill-based damage bonus
+                 * (RETAIL)
                  * http://acpedia.org/wiki/Announcements_-_2002/08_-_Atonement#Letter_to_the_Players
+                 * (RETAIL)
+                 * 
+                 * NEW
+                 * Currently, Aegis provides 50% damage reduction at 200 Aegis Level.
+                 * 
+                 * To counter this, War Magic now has a modifier with the reverse formula,
+                 * providing +100% damage at 200 War Magic.
+                 * 
+                 * War Magic skill scales evenly against Aegis. If a caster's War Magic is equal 
+                 * to the target's Aegis, the damage will be the same as the old formula. However, War
+                 * Magic can now deal heavy damage to enemies with little to no Aegis, and vice versa to 
+                 * high Aegis enemies.
                  */
+
+                uint magicSkill = 0;
+
                 if (sourcePlayer != null)
                 {
-                    var magicSkill = sourcePlayer.GetCreatureSkill(Spell.School).Current;
+                    if (Spell.School == MagicSchool.WarMagic || Spell.School == MagicSchool.LifeMagic)
+                    {
+                        var armorWarMagicMod = sourcePlayer.GetModdedWarMagicSkill();
+                        var armorLifeMagicMod = sourcePlayer.GetModdedLifeMagicSkill();
 
+                        var moddedMagicSkill = Spell.School == MagicSchool.WarMagic ? armorWarMagicMod : armorLifeMagicMod;
+
+                        magicSkill = moddedMagicSkill;
+                            
+                        if (magicSkill == 0)
+                        {  
+                            if (sourceCreature.GetEquippedMeleeWeapon() != null)
+                            {
+                                int? spellcraft = 0;
+                                if(sourceCreature.GetEquippedMeleeWeapon().ItemSpellcraft != null)
+                                    spellcraft = sourceCreature.GetEquippedMeleeWeapon().ItemSpellcraft;
+                                magicSkill = (uint)spellcraft;
+                            }
+                            else
+                            {
+                                magicSkill = 1;
+                            }
+                        }
+                        //Console.WriteLine($"{sourceCreature.Name} casts a spell:\n" +
+                        //    $" -BaseSkill: {sourceCreature.GetCreatureSkill(Spell.School).Current} -ArmorMod: {sourcePlayer.GetArmorWarMagicMod()} -FinalSkill: {magicSkill}");
+                    }
+                }
+
+                var magicSkillMod = SkillFormula.CalcSpellMod((int)magicSkill);
+
+                if (sourcePlayer != null)
+                {
                     if (magicSkill > Spell.Power)
                     {
-                        var percentageBonus = (magicSkill - Spell.Power) / 1000.0f;
-
+                        var percentageBonus = (magicSkill - Spell.Power) / 100.0f;
                         skillBonus = Spell.MinDamage * percentageBonus;
+
+                        var oldPercentageBonus = (magicSkill - Spell.Power) / 1000.0f; // for testing
+                        oldSkillBonus = Spell.MinDamage * oldPercentageBonus; // for testing
                     }
                 }
                 baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
@@ -553,8 +687,19 @@ namespace ACE.Server.WorldObjects
                 }
 
                 finalDamage = baseDamage + critDamageBonus + skillBonus;
+                oldFinalDamage = baseDamage + critDamageBonus + oldSkillBonus;
 
-                finalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod;
+                var testFinalDamage = finalDamage * elementalDamageMod * slayerMod * resistanceMod * absorbMod * testAegisMod * magicSkillMod;
+
+                finalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod * aegisMod * magicSkillMod * resistedMod * combatFocusDamageMod;
+                oldFinalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod;
+
+                if (sourcePlayer != null)
+                {
+                    //Console.WriteLine($"\n{sourcePlayer.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
+                    //    $"  -Ignored {Math.Round((1 - aegisPenMod) * 100, 0)}% of target's {testAegis} Aegis, increasing total damage by {Math.Round(finalDamage - testFinalDamage, 0)}.  DekarutideDamage: {Math.Round(oldFinalDamage, 0)}.\n" +
+                    //    $"  -magicSkillMod: {magicSkillMod} -elementalDamageMod: {elementalDamageMod} -slayerMod {slayerMod} -resistanceMod {resistanceMod} -absorbMod: {absorbMod} -aegisMod {aegisMod} -skillBonus {skillBonus} -baseDamage {baseDamage}");
+                }
             }
 
             // show debug info
@@ -569,7 +714,7 @@ namespace ACE.Server.WorldObjects
             return finalDamage;
         }
 
-        public float GetAbsorbMod(Creature target)
+        public float GetAbsorbMod(Creature target, WorldObject source)
         {
             switch (target.CombatMode)
             {
@@ -578,7 +723,7 @@ namespace ACE.Server.WorldObjects
                     // does target have shield equipped?
                     var shield = target.GetEquippedShield();
                     if (shield != null && shield.GetAbsorbMagicDamage() != null)
-                        return GetShieldMod(target, shield);
+                        return GetShieldMod(target, shield, source);
 
                     break;
 
@@ -601,17 +746,35 @@ namespace ACE.Server.WorldObjects
             return 1.0f;
         }
 
+        public float GetAegisMod(Creature target, float ignoreAegisMod)
+        {
+            var aegisLevel = target.GetAegisLevel();
+            //var aegisLevel = target.Level * 5;
+
+            return SkillFormula.CalcAegisMod(aegisLevel * ignoreAegisMod);
+        }
+
         /// <summary>
         /// Calculates the amount of damage a shield absorbs from magic projectile
         /// </summary>
-        public float GetShieldMod(Creature target, WorldObject shield)
+        public static float GetShieldMod(Creature target, WorldObject shield, WorldObject source)
         {
-            // is spell projectile in front of creature target,
-            // within shield effectiveness area?
-            var effectiveAngle = 180.0f;
-            var angle = target.GetAngle(this);
-            if (Math.Abs(angle) > effectiveAngle / 2.0f)
-                return 1.0f;
+            bool bypassShieldAngleCheck = false;
+
+            // COMBAT ABILITY - Phalanx
+            var combatAbilityTrinket = target.GetEquippedTrinket();
+            if (combatAbilityTrinket != null && combatAbilityTrinket.CombatAbilityId == (int)CombatAbility.Phalanx)
+                bypassShieldAngleCheck = true;
+
+            if (!bypassShieldAngleCheck)
+            {
+                // is spell projectile in front of creature target,
+                // within shield effectiveness area?
+                var effectiveAngle = 180.0f;
+                var angle = target.GetAngle(source);
+                if (Math.Abs(angle) > effectiveAngle / 2.0f)
+                    return 1.0f;
+            }
 
             // https://asheron.fandom.com/wiki/Shield
             // The formula to determine magic absorption for shields is:
@@ -730,7 +893,7 @@ namespace ACE.Server.WorldObjects
                 {
                     // TODO: use target direction vs. projectile position, instead of player position
                     // could sneak attack be applied to void DoTs?
-                    sneakAttackMod = sourcePlayer.GetSneakAttackMod(target);
+                    sneakAttackMod = sourcePlayer.GetSneakAttackMod(target, out var backstabMod);
                     //Console.WriteLine("Magic sneak attack:  + sneakAttackMod);
                     heritageMod = sourcePlayer.GetHeritageBonus(sourcePlayer.GetEquippedWand()) ? 1.05f : 1.0f;
                 }
@@ -804,6 +967,8 @@ namespace ACE.Server.WorldObjects
                 var critMsg = critical ? "Critical hit! " : "";
                 var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
                 var overpowerMsg = overpower ? "Overpower! " : "";
+                var resistSome = PartialEvasion == PartialEvasion.Some ? "Minor resist! " : "";
+                var resistMost = PartialEvasion == PartialEvasion.Most ? "Major resist! " : "";
 
                 var nonHealth = Spell.Category == SpellCategory.StaminaLowering || Spell.Category == SpellCategory.ManaLowering;
 
@@ -811,7 +976,7 @@ namespace ACE.Server.WorldObjects
                 {
                     var critProt = critDefended ? " Your critical hit was avoided with their augmentation!" : "";
 
-                    var attackerMsg = $"{critMsg}{overpowerMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
+                    var attackerMsg = $"{resistMost}{resistSome}{critMsg}{overpowerMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
                     // could these crit / sneak attack?
                     if (nonHealth)
@@ -828,7 +993,7 @@ namespace ACE.Server.WorldObjects
                 {
                     var critProt = critDefended ? " Your augmentation allows you to avoid a critical hit!" : "";
 
-                    var defenderMsg = $"{critMsg}{overpowerMsg}{sneakMsg}{ProjectileSource.Name} {plural} you for {amount} points with {Spell.Name}.{critProt}";
+                    var defenderMsg = $"{resistMost}{resistSome}{critMsg}{overpowerMsg}{sneakMsg}{ProjectileSource.Name} {plural} you for {amount} points with {Spell.Name}.{critProt}";
 
                     if (nonHealth)
                     {
@@ -999,6 +1164,33 @@ namespace ACE.Server.WorldObjects
             observer.Session.Network.EnqueueSend(new GameMessageSystemChat(observer.DebugDamageBuffer + info, ChatMessageType.Broadcast));
 
             observer.DebugDamageBuffer = null;
+        }
+
+        /// <summary>
+        /// If resist succeeded, determine if resist was partial or full. 
+        /// </summary>
+        private bool GetResistedMod(out float resistedMod)
+        {
+            if (PartialEvasion == PartialEvasion.None)
+            {
+                resistedMod = 1.0f;
+                return false;
+            }
+            else if (PartialEvasion == PartialEvasion.Some)
+            {
+                resistedMod = 2.0f / 3.0f;
+                return false;
+            }
+            else if(PartialEvasion == PartialEvasion.Most)
+            {
+                resistedMod = 1.0f / 3.0f;
+                return false;
+            }
+            else
+            {
+                resistedMod = 0.0f;
+                return true;
+            }
         }
     }
 }
