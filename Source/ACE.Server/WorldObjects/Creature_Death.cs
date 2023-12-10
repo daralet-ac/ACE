@@ -222,7 +222,7 @@ namespace ACE.Server.WorldObjects
                         playerDamager.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
                 }
                 else
-                    playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill, Level, (uint)CreatureType, ShareType.All);
+                    playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill, Level, ShareType.All);
 
                 // handle luminance
                 if (LuminanceAward != null)

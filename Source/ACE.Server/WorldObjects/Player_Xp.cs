@@ -1,10 +1,11 @@
 using System;
 using System.Linq;
-
 using ACE.Common.Extensions;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Command.Handlers;
+using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
@@ -19,20 +20,21 @@ namespace ACE.Server.WorldObjects
         /// <param name="amount">The amount of XP being added</param>
         /// <param name="xpType">The source of XP being added</param>
         /// <param name="shareable">True if this XP can be shared with Fellowship</param>
-        public void EarnXP(long amount, XpType xpType, ShareType shareType = ShareType.All)
+        public void EarnXP(long amount, XpType xpType, int? xpSourceLevel, ShareType shareType = ShareType.All)
         {
-            //Console.WriteLine($"{Name}.EarnXP({amount}, {sharable}, {fixedAmount})");
+            //Console.WriteLine($"{Name}.EarnXP({amount}, {xpType}, {xpSourceLevel}, {xpSourceId}, {shareType})");
 
-            // apply xp modifiers.  Quest XP is multiplicative with general XP modification
-            var questModifier = PropertyManager.GetDouble("quest_xp_modifier").Item;
+            amount = Math.Abs(amount);
+
+            string xpMessage = "";
+
+            // apply xp modifier
             var modifier = PropertyManager.GetDouble("xp_modifier").Item;
-            if (xpType == XpType.Quest)
-                modifier *= questModifier;
 
             // should this be passed upstream to fellowship / allegiance?
             var enchantment = GetXPAndLuminanceModifier(xpType);
-
-            var m_amount = (long)Math.Round(amount * enchantment * modifier);
+            
+            var m_amount = (long)Math.Round(amount * enchantment);
 
             if (m_amount < 0)
             {
@@ -41,11 +43,39 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            GrantXP(m_amount, xpType, shareType);
+            GrantXP(m_amount, xpType, xpSourceLevel, shareType, xpMessage);
+
         }
 
         /// <summary>
-        /// Directly grants XP to the player, without the XP modifier
+        /// A player earns XP through killing a "boss" creature. Earned as "quest" xp for each available fellow member.
+        /// </summary>
+        /// <param name="xpSourceLevel">The level of the killed boss monster</param>
+        /// <param name="bossKillXpMonsterMax">The percentage of the monster level cost to award as xp. Default is 5%.</param>
+        /// <param name="bossKillXpPlayerMax">The percentage of the player level cost to award as xp. Default is 5%.</param>
+        public void EarnBossKillXP(int? xpSourceLevel, double? bossKillXpMonsterMax, double? bossKillXpPlayerMax, Player playerEarner)
+        {
+            var maxAwardPercentFromMonsterLevel = bossKillXpMonsterMax ?? 0.05;
+            var maxAwardPercentFromPlayerLevel = bossKillXpPlayerMax ?? 0.05;
+
+            var monsterLevelXpCost = GetXPBetweenLevels(xpSourceLevel.Value, xpSourceLevel.Value + 1);
+
+            var distanceScalar = 1.0;
+            var fellowSharePercent = 1.0;
+
+            if (Fellowship != null)
+            {
+                distanceScalar = Fellowship.GetDistanceScalar(playerEarner, this, XpType.Kill);
+                fellowSharePercent = Fellowship.GetMemberSharePercent();
+            }
+
+            var max = (long)(monsterLevelXpCost * maxAwardPercentFromMonsterLevel * distanceScalar * fellowSharePercent);
+
+            GrantLevelProportionalXp(maxAwardPercentFromPlayerLevel, 0, max);
+        }
+
+        /// <summary>
+        /// Directly grants XP to the player, from dev commands, allegiance passup, proficiency checks, and skill gains
         /// </summary>
         /// <param name="amount">The amount of XP to grant to the player</param>
         /// <param name="xpType">The source of the XP being granted</param>
@@ -57,14 +87,6 @@ namespace ACE.Server.WorldObjects
                 if (HasVitae)
                     UpdateXpVitae(amount);
 
-                return;
-            }
-
-            if (Fellowship != null && Fellowship.ShareXP && shareType.HasFlag(ShareType.Fellowship))
-            {
-                // this will divy up the XP, and re-call this function
-                // with ShareType.Fellowship removed
-                Fellowship.SplitXp((ulong)amount, xpType, shareType, this);
                 return;
             }
 
@@ -82,26 +104,135 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
+        /// Directly grants XP to the player, kills, quests, and emotes
+        /// </summary>
+        /// <param name="amount">The amount of XP to grant to the player</param>
+        /// <param name="xpType">The source of the XP being granted</param>
+        /// <param name="shareable">If TRUE, this XP can be shared with fellowship members</param>
+        public void GrantXP(long amount, XpType xpType, int? xpSourceLevel, ShareType shareType = ShareType.All, string xpMessage = "")
+        {
+            //Console.WriteLine($"{Name}.GrantXP({amount}, {xpType}, {shareType})");
+
+            if (IsOlthoiPlayer)
+            {
+                if (HasVitae)
+                    UpdateXpVitae(amount);
+
+                return;
+            }
+
+            if (Fellowship != null && Fellowship.ShareXP && shareType.HasFlag(ShareType.Fellowship))
+            {
+                // this will divy up the XP, and re-call this function
+                // with ShareType.Fellowship removed
+                Fellowship.SplitXp((ulong)amount, xpType, xpSourceLevel, shareType, this, xpMessage);
+                return;
+            }
+
+            // Gain less xp for killing monsters below your level
+            var overlevelPenalty = xpSourceLevel != null ? GetOverlevelPenalty((int)xpSourceLevel) : 1.0f;
+
+            // XP bonus for having higher level alt characters on your account. Doesn't share with fellow.
+            var altBonus = GetAltXpBonus();
+            amount = (long)(altBonus * amount);
+
+            var m_amount = (long)Math.Round(amount * overlevelPenalty * altBonus);
+
+            // Max possible kill xp gained is equal to 1% of your current level cost (5% of current level cost if under level 10)
+            if (xpType == XpType.Kill)
+            {
+                if (Level.Value < 10)
+                {
+                    var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerKill = (long)(currentLevelCost * 0.05);
+
+                    m_amount = Math.Min(m_amount, maxXpPerKill);
+                }
+                else if (Level.Value < 20)
+                {
+                    var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerKill = (long)(currentLevelCost * 0.025);
+
+                    m_amount = Math.Min(m_amount, maxXpPerKill);
+                }
+                else if (Level.Value <= 126)
+                {
+                    var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerKill = (long)(currentLevelCost * 0.01);
+
+                    m_amount = Math.Min(m_amount, maxXpPerKill);
+                }
+            }
+
+            // Max possible quest xp gained is equal to 50% of your current level cost (200% of current level cost if under level 10)
+            if (xpType == XpType.Quest)
+            {
+                if (Level.Value < 10)
+                {
+                    var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerQuest = (long)(currentLevelCost * 2);
+
+                    m_amount = Math.Min(m_amount, maxXpPerQuest);
+                }
+                else if (Level.Value < 20)
+                {
+                    var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerQuest = (long)(currentLevelCost);
+
+                    m_amount = Math.Min(m_amount, maxXpPerQuest);
+                }
+                else if (Level.Value <= 126)
+                {
+                    var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerQuest = (long)(currentLevelCost * 0.5);
+
+                    m_amount = Math.Min(m_amount, maxXpPerQuest);
+                }
+            }
+
+            // Make sure UpdateXpAndLevel is done on this players thread
+            EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(m_amount, xpType, xpMessage)));
+
+            // for passing XP up the allegiance chain,
+            // this function is only called at the very beginning, to start the process.
+            if (shareType.HasFlag(ShareType.Allegiance))
+                UpdateXpAllegiance(amount);
+
+            // only certain types of XP are granted to items
+            if (xpType == XpType.Kill || xpType == XpType.Quest)
+                GrantItemXP(amount);
+        }
+
+        /// <summary>
         /// Adds XP to a player's total XP, handles triggers (vitae, level up)
         /// </summary>
-        private void UpdateXpAndLevel(long amount, XpType xpType)
+        private void UpdateXpAndLevel(long amount, XpType xpType, string xpMessage = "")
         {
             // until we are max level we must make sure that we send
             var xpTable = DatManager.PortalDat.XpTable;
 
             var maxLevel = GetMaxLevel();
-            var maxLevelXp = xpTable.CharacterLevelXPList.Last();
+            var maxLevelXp = xpTable.CharacterLevelXPList[(int)maxLevel];
 
-            if (Level != maxLevel)
+            bool allowXpAtMaxLevel = PropertyManager.GetBool("allow_xp_at_max_level").Item;
+            var totalXpCap = maxLevelXp; // 0 disables the xp cap
+            var availableXpCap = uint.MaxValue; // 0 disables the xp cap
+
+            if (Level != maxLevel || allowXpAtMaxLevel)
             {
                 var addAmount = amount;
 
                 var amountLeftToEnd = (long)maxLevelXp - TotalExperience ?? 0;
-                if (amount > amountLeftToEnd)
+                if (!allowXpAtMaxLevel && amount > amountLeftToEnd)
                     addAmount = amountLeftToEnd;
 
-                AvailableExperience += addAmount;
                 TotalExperience += addAmount;
+                if (totalXpCap > 0 && TotalExperience > (long)totalXpCap)
+                    TotalExperience = (long)totalXpCap;
+
+                AvailableExperience += addAmount;
+                if (availableXpCap > 0 && AvailableExperience > (long)availableXpCap)
+                    AvailableExperience = (long)availableXpCap;
 
                 var xpTotalUpdate = new GameMessagePrivateUpdatePropertyInt64(this, PropertyInt64.TotalExperience, TotalExperience ?? 0);
                 var xpAvailUpdate = new GameMessagePrivateUpdatePropertyInt64(this, PropertyInt64.AvailableExperience, AvailableExperience ?? 0);
@@ -111,7 +242,14 @@ namespace ACE.Server.WorldObjects
             }
 
             if (xpType == XpType.Quest)
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You've earned {amount:N0} experience.", ChatMessageType.Broadcast));
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"You've earned {amount:N0} experience. {xpMessage}", ChatMessageType.Broadcast));
+            else
+            {
+                if (xpType == XpType.Fellowship)
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Your fellowship shared {amount:N0} experience with you!", ChatMessageType.Broadcast));
+                if (xpType == XpType.Kill && xpMessage != "")
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You've earned {amount:N0} experience! {xpMessage}", ChatMessageType.Broadcast));
+            }
 
             if (HasVitae && xpType != XpType.Allegiance)
                 UpdateXpVitae(amount);
@@ -188,7 +326,9 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public static uint GetMaxLevel()
         {
-            return (uint)DatManager.PortalDat.XpTable.CharacterLevelXPList.Count - 1;
+            uint maxPossibleLevel = (uint)DatManager.PortalDat.XpTable.CharacterLevelXPList.Count - 1;
+            uint maxSettingLevel = (uint)PropertyManager.GetLong("max_level").Item;
+            return (Math.Min(maxPossibleLevel, maxSettingLevel));
         }
 
         /// <summary>
@@ -343,6 +483,12 @@ namespace ACE.Server.WorldObjects
                 PlayParticleEffect(PlayScript.LevelUp, Guid);
 
                 Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Advancement), currentCredits);
+
+                var trinket = GetEquippedTrinket();
+                if (trinket != null && trinket.WeenieType == WeenieType.CombatFocus)
+                {
+                    (trinket as CombatFocus).OnLevelUp(this, (int)startingLevel);
+                }
             }
         }
 
@@ -432,7 +578,12 @@ namespace ACE.Server.WorldObjects
         /// <param name="level">The player DeathLevel, their level on last death</param>
         private double VitaeCPPoolThreshold(float vitae, int level)
         {
-            return (Math.Pow(level, 2.5) * 2.5 + 20.0) * Math.Pow(vitae, 5.0) + 0.5;
+            // http://acpedia.org/wiki/Announcements_-_2005/07_-_Throne_of_Destiny_(expansion)#FAQ_-_AC:TD_Level_Cap_Update
+            // "The vitae system has not changed substantially since Asheron's Call launched in 1999.
+            // Since that time, the experience awarded by killing creatures has increased considerably.
+            // This means that a 5% vitae loss currently is much easier to work off now than it was in the past.
+            // In addition, the maximum cost to work off a point of vitae was capped at 12,500 experience points."
+            return Math.Min((Math.Pow(level, 2) * 5 + 20) * Math.Pow(vitae, 5.0) + 0.5, 12500);
         }
 
         /// <summary>
@@ -440,6 +591,9 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void GrantLevelProportionalXp(double percent, long min, long max)
         {
+            if (max == 0)
+                return;
+
             var nextLevelXP = GetXPBetweenLevels(Level.Value, Level.Value + 1);
 
             var scaledXP = (long)Math.Round(nextLevelXP * percent);
@@ -451,7 +605,7 @@ namespace ACE.Server.WorldObjects
                 scaledXP = Math.Max(scaledXP, min);
 
             // apply xp modifiers?
-            EarnXP(scaledXP, XpType.Quest, ShareType.Allegiance);
+            EarnXP(scaledXP, XpType.Quest, Level, ShareType.Allegiance);
         }
 
         /// <summary>
@@ -478,6 +632,12 @@ namespace ACE.Server.WorldObjects
             if (newItemLevel > prevItemLevel)
             {
                 OnItemLevelUp(item, prevItemLevel);
+
+                if (item.WeenieType == WeenieType.EmpoweredScarab)
+                {
+                    var empoweredScarab = item as EmpoweredScarab;
+                    empoweredScarab.OnLevelUp();
+                }
 
                 var actionChain = new ActionChain();
                 actionChain.AddAction(this, () =>
@@ -507,5 +667,80 @@ namespace ACE.Server.WorldObjects
 
             return modifier;
         }
+
+        /// <summary>
+        /// Returns XP modifier for having characters on your account that are higher than your current character level
+        /// </summary>
+        private float GetAltXpBonus()
+        {
+            var accountCharacters = GetAccountPlayers(Account.AccountId);
+            int? levelDifference = 0;
+
+            foreach(IPlayer character in accountCharacters)
+            {
+                if(character.Level > Level)
+                {
+                    //Console.WriteLine($"{character.Name}: Level {character.Level}");
+                    levelDifference += character.Level - Level;
+                }
+            }
+
+            var xpBonusMod = 1.0f;
+            if(levelDifference > 0)
+                xpBonusMod += (float)levelDifference / 100;
+
+            //Console.WriteLine($"Level Difference: {levelDifference}  XP Bonus Mod: {xpBonusMod}");
+
+            return xpBonusMod;
+        }
+
+        /// <summary>
+        /// Returns XP modifier for killing enemies below your level
+        /// </summary>
+        private float GetOverlevelPenalty(int xpSourceLevel)
+        {
+            var penalty = 1.0f;
+            var levelDifference = Level - xpSourceLevel;
+
+            if(levelDifference > 0)
+            {
+                for(int i = 0; i < levelDifference; i++)
+                {
+                    penalty *= 0.9f;
+                }
+            }
+            //Console.WriteLine($"LevelDifference: {levelDifference}.  Penalty: {Math.Round(penalty * 100)}%");
+
+            return penalty;
+        }
+
+        // TODO 
+        //private int GetQuestSourceLevel(int amount)
+        //{
+        //    var xpCost10 = (int)(DatManager.PortalDat.XpTable.CharacterLevelXPList[10 + 1]);
+        //    var constXpCost10 = xpCost10 * 0.25f;
+
+        //    switch (amount)
+        //    {
+        //        case < (int)constXpCost10:
+        //        default: return 10;
+        //        case < 10000: return 15;
+        //        case < 20000: return 20;
+        //    }
+        //}
+
+        //private int GetXpToLevel(int level)
+        //{
+        //    switch (level)
+        //    {
+        //        case < 10: return (int)DatManager.PortalDat.XpTable.CharacterLevelXPList[10 + 1];
+        //        case < 20: return (int)DatManager.PortalDat.XpTable.CharacterLevelXPList[15 + 1];
+        //        case < 30: return (int)DatManager.PortalDat.XpTable.CharacterLevelXPList[20 + 1];
+        //        case < 40: return (int)DatManager.PortalDat.XpTable.CharacterLevelXPList[20 + 1];
+        //        case < 50: return (int)DatManager.PortalDat.XpTable.CharacterLevelXPList[20 + 1];
+        //        case < 75: return (int)DatManager.PortalDat.XpTable.CharacterLevelXPList[20 + 1];
+        //        case < 100: return (int)DatManager.PortalDat.XpTable.CharacterLevelXPList[20 + 1];
+        //    }
+        //}
     }
 }

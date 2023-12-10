@@ -497,7 +497,7 @@ namespace ACE.Server.Entity
         /// <param name="amount">The input amount of XP</param>
         /// <param name="xpType">The type of XP (quest XP is handled differently)</param>
         /// <param name="player">The fellowship member who originated the XP</param>
-        public void SplitXp(ulong amount, XpType xpType, int? xpSourceLevel, uint? xpSourceId, ShareType shareType, Player player, string xpMessage = "")
+        public void SplitXp(ulong amount, XpType xpType, int? xpSourceLevel, ShareType shareType, Player player, string xpMessage = "")
         {
             // https://asheron.fandom.com/wiki/Announcements_-_2002/02_-_Fever_Dreams#Letter_to_the_Players_1
 
@@ -514,7 +514,7 @@ namespace ACE.Server.Entity
                 {
                     var fellowXpType = player == member ? XpType.Quest : XpType.Fellowship;
 
-                    member.GrantXP(perAmount, fellowXpType, xpSourceLevel, xpSourceId, shareType, player == member ? xpMessage : "");
+                    member.GrantXP(perAmount, fellowXpType, xpSourceLevel, shareType, player == member ? xpMessage : "");
                 }
             }
 
@@ -530,7 +530,7 @@ namespace ACE.Server.Entity
 
                     var fellowXpType = player == member ? xpType : XpType.Fellowship;
 
-                    member.GrantXP((long)shareAmount, fellowXpType, xpSourceLevel, xpSourceId, shareType, player == member ? xpMessage : "");
+                    member.GrantXP((long)shareAmount, fellowXpType, xpSourceLevel, shareType, player == member ? xpMessage : "");
                 }
 
                 return;
@@ -551,7 +551,7 @@ namespace ACE.Server.Entity
 
                     var fellowXpType = player == member ? xpType : XpType.Fellowship;
 
-                    member.GrantXP((long)playerTotal, fellowXpType, xpSourceLevel, xpSourceId, shareType, player == member ? xpMessage : "");
+                    member.GrantXP((long)playerTotal, fellowXpType, xpSourceLevel, shareType, player == member ? xpMessage : "");
                 }
             }
         }
