@@ -670,17 +670,14 @@ namespace ACE.Server.WorldObjects
             if (weapon == null || !weapon.IsMasterable)
                 return false;
 
-            //if (weapon == null || !weapon.IsMasterable)
-            //    return false;
-
-            //if (PropertyManager.GetBool("universal_masteries").Item)
-            //{
-            //    // https://asheron.fandom.com/wiki/Spring_2014_Update
-            //    // end of retail - universal masteries
-            //    return true;
-            //}
-            //else
-            //    return GetHeritageBonus(GetWeaponType(weapon));
+            if (PropertyManager.GetBool("universal_masteries").Item)
+            {
+                // https://asheron.fandom.com/wiki/Spring_2014_Update
+                // end of retail - universal masteries
+                return true;
+            }
+            else
+                return GetHeritageBonus(GetWeaponType(weapon));
         }
 
         public bool GetHeritageBonus(WeaponType weaponType)
