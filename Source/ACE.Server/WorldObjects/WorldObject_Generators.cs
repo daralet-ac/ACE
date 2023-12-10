@@ -488,7 +488,10 @@ namespace ACE.Server.WorldObjects
             else
             {
                 if (this is Container && this is not Creature || (!string.IsNullOrEmpty(GeneratorEvent) && RegenerationInterval == 0))
-                    Generator_Generate();
+                    if (Tier != null)
+                        Generator_Generate(Tier);
+                    else
+                        Generator_Generate();
 
                 if (InitCreate == 0)
                     CurrentlyPoweringUp = false;
@@ -642,7 +645,27 @@ namespace ACE.Server.WorldObjects
                 CheckGeneratorStatus(); // due to staging if generator hadn't entered world, reprocess CheckGeneratorStatus for first generator status to update
 
                 if (!GeneratorDisabled)
+                {
+                    if (PropertyManager.GetBool("increase_minimum_encounter_spawn_density").Item && (GetProperty(ACE.Entity.Enum.Properties.PropertyBool.IsPseudoRandomGenerator) ?? false == true))
+                    {
+                        // Disable the landscape pseudo random generators that are too close to lifestones or portals
+                        if (!Name.ToLower().Contains("harmless")) // Harmless generators can stay enabled
+                        {
+                            foreach (var obj in CurrentLandblock.GetAllWorldObjectsForDiagnostics())
+                            {
+                                PlayerKillerStatus pkStatus = (PlayerKillerStatus)(obj.GetProperty(ACE.Entity.Enum.Properties.PropertyInt.PlayerKillerStatus) ?? 0);
+                                if ((obj.ItemType == ItemType.LifeStone || obj.ItemType == ItemType.Portal || pkStatus == PlayerKillerStatus.Vendor || pkStatus == PlayerKillerStatus.RubberGlue) && PhysicsObj.get_distance_to_object(obj.PhysicsObj, true) < 50)
+                                {
+                                    GeneratorDisabled = true;
+                                    GeneratorEnteredWorld = true;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
                     StartGenerator();   // spawn initial objects for this generator
+                }
 
                 GeneratorEnteredWorld = true;
             }
@@ -652,7 +675,7 @@ namespace ACE.Server.WorldObjects
         /// Called every [RegenerationInterval] seconds<para />
         /// Also called from EmoteManager, Chest.Reset(), WorldObject.OnGenerate()
         /// </summary>
-        public void Generator_Generate()
+        public void Generator_Generate(int? tier = null)
         {
             //Console.WriteLine($"{Name}.Generator_Generate({RegenerationInterval})");
 
@@ -683,7 +706,7 @@ namespace ACE.Server.WorldObjects
             }
 
             foreach (var profile in GeneratorProfiles)
-                profile.Spawn_HeartBeat();
+                profile.Spawn_HeartBeat(tier);
         }
 
         public virtual void ResetGenerator()
