@@ -69,6 +69,20 @@ namespace ACE.Server.WorldObjects
 
         private bool SpendSkillXp(CreatureSkill creatureSkill, uint amount, bool sendNetworkUpdate = true)
         {
+            var cannotRaiseMsg = $"You cannot raise your {creatureSkill.Skill.ToSentence()} skill directly.";
+            switch (creatureSkill.Skill)
+            {
+                case Skill.Leadership: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " It raises automatically overtime if you have active vassals.", ChatMessageType.Advancement)); return false;
+                case Skill.Loyalty: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " It raises automatically overtime while you are active and have a patron.", ChatMessageType.Advancement)); return false;
+                case Skill.Alchemy: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Alchemy recipes. You may also purchase training from an Alchemist.", ChatMessageType.Advancement)); return false;
+                case Skill.Cooking: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Cooking recipes. You may also purchase training from a Chef or Provisioner.", ChatMessageType.Advancement)); return false;
+                case Skill.WeaponTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Blacksmithing recipes. You may also purchase training from a Blacksmith, Weaponsmith, or Armorer.", ChatMessageType.Advancement)); return false;
+                case Skill.ArmorTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Tailoring recipes. You may also purchase training from a Tailor.", ChatMessageType.Advancement)); return false;
+                case Skill.Fletching: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Woodworking recipes. You may also purchase training from a Bowyer or Fletcher.", ChatMessageType.Advancement)); return false;
+                case Skill.ItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Jewelcrafting recipes. You may also purchase training from a Jeweler.", ChatMessageType.Advancement)); return false;
+                case Skill.MagicItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Spellcrafting recipes. You may also purchase training from an Archmage.", ChatMessageType.Advancement)); return false;
+            }
+
             var skillXPTable = GetSkillXPTable(creatureSkill.AdvancementClass);
             if (skillXPTable == null)
             {
