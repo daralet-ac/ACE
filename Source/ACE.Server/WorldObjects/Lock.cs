@@ -30,14 +30,28 @@ namespace ACE.Server.WorldObjects
     {
         private static readonly ILogger _log = Log.ForContext(typeof(UnlockerHelper));
 
-        public static void ConsumeUnlocker(Player player, WorldObject unlocker, WorldObject target, bool success)
+        public static string GetConsumeUnlockerMessage(Player player, int structure, bool isLockpick)
         {
-            // is Sonic Screwdriver supposed to be consumed on use?
-            // it doesn't have a Structure, and it doesn't have PropertyBool.UnlimitedUse
+            var msg = "";
+            if (structure >= 0)
+            {
+                msg += $"Your {(isLockpick ? "lockpicks" : "key")} ";
 
-            var unlimitedUses = unlocker.Structure == null || (unlocker.GetProperty(PropertyBool.UnlimitedUse) ?? false);
-            var isLockpick = unlocker.WeenieType == WeenieType.Lockpick;
+                if (structure == 0)
+                {
+                    msg += $"{(isLockpick ? "are" : "is")} used up.";
+                }
+                else
+                {
+                    msg += $"{(isLockpick ? "have" : "has")} {structure} use{(structure > 1 ? "s" : "")} left.";
+                }
+            }
 
+            return msg;
+        }
+
+        public static void SendUnlockResultMessage(Player player, int structure, bool isLockpick, WorldObject target, bool success)
+        {
             var msg = "";
             if (isLockpick)
             {
@@ -55,33 +69,46 @@ namespace ACE.Server.WorldObjects
                 msg = $"The {target.Name} is still locked.\n";
             }
 
+            msg += GetConsumeUnlockerMessage(player, structure, isLockpick);
+
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+        }
+
+        public static void SendDisarmResultMessage(Player player, int unlockerStructure, WorldObject target, bool success)
+        {
+            var msg = "";
+            if (success)
+                msg = $"You have successfully disarmed the {target.Name}!  It is now disabled.\n ";
+            else
+                msg = $"You have failed to disarm the {target.Name}.  It is still active.  ";
+
+            msg += GetConsumeUnlockerMessage(player, unlockerStructure, true);
+
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+        }
+
+        public static int ConsumeUnlocker(Player player, WorldObject unlocker, WorldObject target)
+        {
+            // is Sonic Screwdriver supposed to be consumed on use?
+            // it doesn't have a Structure, and it doesn't have PropertyBool.UnlimitedUse
+
+            var unlimitedUses = unlocker.Structure == null || (unlocker.GetProperty(PropertyBool.UnlimitedUse) ?? false);
+
+            var structure = -1;
             if (!unlimitedUses)
             {
-                msg += $"Your {(isLockpick ? "lockpicks" : "key")} ";
-
                 if (unlocker.Structure > 0)
                     unlocker.Structure--;
                 else
                     unlocker.Structure = 0;
 
-                if (unlocker.Structure == 0)
-                {
-                    msg += $"{(isLockpick ? "are" : "is")} used up.";
-                }
-                else
-                {
-                    msg += $"{(isLockpick ? "have" : "has")} {unlocker.Structure} use{(unlocker.Structure > 1 ? "s" : "")} left.";
-                }
-
+                structure = unlocker.Structure ?? 0;
+                
                 unlocker.Value -= unlocker.StructureUnitValue;
 
                 if (unlocker.Value < 0) // fix negative value
                     unlocker.Value = 0;
-            }
 
-            player.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
-            if (!unlimitedUses)
-            {
                 if (unlocker.Structure == 0)
                 {
                     if (!player.TryConsumeFromInventoryWithNetworking(unlocker, 1))
@@ -93,7 +120,10 @@ namespace ACE.Server.WorldObjects
                 }
             }
             player.SendUseDoneEvent();
+
+            return structure;
         }
+
         public static uint GetEffectiveLockpickSkill(Player player, WorldObject unlocker)
         {
             var lockpickSkill = player.GetCreatureSkill(Skill.Lockpick).Current;
@@ -149,6 +179,7 @@ namespace ACE.Server.WorldObjects
                         result = @lock.Unlock(player.Guid.Full, woKey);
                     }
 
+                    var isLockpick = unlocker.WeenieType == WeenieType.Lockpick;
                     switch (result)
                     {
                         case UnlockResults.UnlockSuccess:
@@ -162,8 +193,7 @@ namespace ACE.Server.WorldObjects
                                 var lockpickSkill = player.GetCreatureSkill(Skill.Lockpick);
                                 Proficiency.OnSuccessUse(player, lockpickSkill, difficulty);
                             }
-
-                            ConsumeUnlocker(player, unlocker, target, true);
+                            SendUnlockResultMessage(player, ConsumeUnlocker(player, unlocker, target), isLockpick, target, true);
                             break;
 
                         case UnlockResults.Open:
@@ -174,7 +204,7 @@ namespace ACE.Server.WorldObjects
                             break;
                         case UnlockResults.PickLockFailed:
                             target.EnqueueBroadcast(new GameMessageSound(target.Guid, Sound.PicklockFail, 1.0f));
-                            ConsumeUnlocker(player, unlocker, target, false);
+                            SendUnlockResultMessage(player, ConsumeUnlocker(player, unlocker, target), isLockpick, target, false);
                             break;
                         case UnlockResults.CannotBePicked:
                             player.Session.Network.EnqueueSend(new GameEventUseDone(player.Session, WeenieError.YouCannotLockOrUnlockThat));
