@@ -25,7 +25,7 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public double NextHeartbeatTime;
 
-        private double cachedRegenerationInterval;
+        private double CachedRegenerationInterval;
         /// <summary>
         /// A value of Double.MaxValue indicates that there is no NextGeneratorHeartbeat
         /// </summary>
@@ -65,14 +65,14 @@ namespace ACE.Server.WorldObjects
                 NextHeartbeatTime = double.MaxValue; // Disable future HeartBeats
             }
 
-            cachedRegenerationInterval = RegenerationInterval;
+            CachedRegenerationInterval = RegenerationInterval;
 
             if (IsGenerator)
             {
                 NextGeneratorUpdateTime = currentUnixTime; // Generators start right away
                 //NextGeneratorUpdateTime = Time.GetFutureUnixTime(CachedHeartbeatInterval);
                 //NextGeneratorRegenerationTime = Time.GetFutureUnixTime(CachedHeartbeatInterval);
-                if (cachedRegenerationInterval == 0)
+                if (CachedRegenerationInterval == 0)
                     NextGeneratorRegenerationTime = double.MaxValue;
             }
             else
@@ -95,6 +95,9 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public virtual void Heartbeat(double currentUnixTime)
         {
+            if (ResistAwareness.HasValue)
+                AwarenessHeartbeat(currentUnixTime);
+
             if (EnchantmentManager.HasEnchantments)
                 EnchantmentManager.HeartBeat(CachedHeartbeatInterval);
 
@@ -128,8 +131,8 @@ namespace ACE.Server.WorldObjects
 
             SetProperty(PropertyFloat.RegenerationTimestamp, currentUnixTime);
 
-            if (cachedRegenerationInterval > 0)
-                NextGeneratorRegenerationTime = currentUnixTime + cachedRegenerationInterval;
+            if (CachedRegenerationInterval > 0)
+                NextGeneratorRegenerationTime = currentUnixTime + CachedRegenerationInterval;
 
             //Console.WriteLine($"{Name}.NextGeneratorRegenerationTime({NextGeneratorRegenerationTime})");
         }
