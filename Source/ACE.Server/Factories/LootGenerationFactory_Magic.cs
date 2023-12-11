@@ -751,17 +751,14 @@ namespace ACE.Server.Factories
                 {
                     case TreasureHeritageGroup.Aluvian:
                         wo.HeritageGroup = HeritageGroup.Aluvian;
-                        wo.ItemHeritageGroupRestriction = "Aluvian";
                         break;
 
                     case TreasureHeritageGroup.Gharundim:
                         wo.HeritageGroup = HeritageGroup.Gharundim;
-                        wo.ItemHeritageGroupRestriction = "Gharu'ndim";
                         break;
 
                     case TreasureHeritageGroup.Sho:
                         wo.HeritageGroup = HeritageGroup.Sho;
-                        wo.ItemHeritageGroupRestriction = "Sho";
                         break;
                 }
                 return true;
