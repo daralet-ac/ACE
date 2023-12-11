@@ -6,8 +6,11 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
+using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
+using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Spells;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
@@ -207,6 +210,11 @@ namespace ACE.Server.WorldObjects
         private int CountContainers()
         {
             return Inventory.Values.Count(wo => wo.UseBackpackSlot);
+        }
+        public int? MerchandiseItemTypes
+        {
+            get => GetProperty(PropertyInt.MerchandiseItemTypes);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.MerchandiseItemTypes); else SetProperty(PropertyInt.MerchandiseItemTypes, value.Value); }
         }
 
         public int GetFreeInventorySlots(bool includeSidePacks = true)
@@ -573,6 +581,15 @@ namespace ACE.Server.WorldObjects
             Value += (worldObject.Value ?? 0);
 
             container = this;
+
+            // Convert weapon skills to merged ones
+            if (worldObject.WieldRequirements != WieldRequirement.RawAttrib)
+            {
+                worldObject.WieldSkillType = worldObject.WieldSkillType.HasValue ? (int)worldObject.ConvertToMoASkill((Skill)worldObject.WieldSkillType) : null;
+                worldObject.WieldSkillType2 = worldObject.WieldSkillType2.HasValue ? (int)worldObject.ConvertToMoASkill((Skill)worldObject.WieldSkillType2) : null;
+                worldObject.WieldSkillType3 = worldObject.WieldSkillType3.HasValue ? (int)worldObject.ConvertToMoASkill((Skill)worldObject.WieldSkillType3) : null;
+                worldObject.WieldSkillType4 = worldObject.WieldSkillType4.HasValue ? (int)worldObject.ConvertToMoASkill((Skill)worldObject.WieldSkillType4) : null;
+            }
 
             OnAddItem();
 
