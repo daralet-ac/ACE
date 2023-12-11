@@ -1113,10 +1113,6 @@ namespace ACE.Server.Factories
             var rng = ThreadSafeRandom.Next(0.7f, 1.3f);
 
             wo.Value = (int)(baseValue * workmanshipMod * rng);
-
-            // For Appraise skill
-            wo.OriginalValue = wo.Value;
-            wo.Value = (int)ThreadSafeRandom.Next(wo.Value.Value * 0.7f, wo.Value.Value * 0.9f);
         }
 
         // increase for a wider variance in item value ranges
