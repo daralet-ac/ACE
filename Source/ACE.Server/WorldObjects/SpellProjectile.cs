@@ -497,7 +497,7 @@ namespace ACE.Server.WorldObjects
             // aegis mod, rend, and penetration
             var aegisRendingMod = 1.0f;
             if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.AegisRending))
-                aegisRendingMod = GetAegisRendingMod(attackSkill);
+                aegisRendingMod = 1.0f - GetAegisRendingMod(attackSkill);
 
             var aegisPenMod = 0.0f;
 
