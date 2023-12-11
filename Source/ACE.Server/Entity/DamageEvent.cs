@@ -519,9 +519,6 @@ namespace ACE.Server.Entity
 
             if (playerDefender != null)
             {
-                if (defenderCombatAbility == CombatAbility.Reckless)
-                    return 0.0f; // No evasion while using Reckless technique.
-
                 if (playerDefender != null && playerDefender.AttackHeight == AttackHeight.Low) // While using low height attacks players get an extra defence skill bonus.
                     EffectiveDefenseSkill = (uint)Math.Round(EffectiveDefenseSkill * 1.10f);
             }
@@ -563,17 +560,37 @@ namespace ACE.Server.Entity
                 // partial evade
                 else
                 {
-                    if (mostEvade > attackRoll)          // Evaded most of
+                    GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
+
+                    if (mostEvade > attackRoll) // Evaded most of
                     {
                         //Console.WriteLine($"Most Evade");
-                        evasionMod = 1 - 0.33f;
-                        PartialEvasion = PartialEvasion.Most;
+
+                        if (defenderCombatAbility == CombatAbility.Reckless) // Partial evades are always "Some"
+                        {
+                            evasionMod = 1 - 0.67f;
+                            PartialEvasion = PartialEvasion.Some;
+                        }
+                        else
+                        {
+                            evasionMod = 1 - 0.33f;
+                            PartialEvasion = PartialEvasion.Most;
+                        }
                     }
-                    else if (someEvade > attackRoll)    // Evaded some of
+                    else if (someEvade > attackRoll) // Evaded some of
                     {
                         //Console.WriteLine($"Some Evade");
-                        evasionMod = 1 - 0.67f;
-                        PartialEvasion = PartialEvasion.Some;
+
+                        if (defenderCombatAbility == CombatAbility.Provoke || defenderCombatAbility == CombatAbility.Phalanx) // Partial evades are always "Most"
+                        {
+                            evasionMod = 1 - 0.33f;
+                            PartialEvasion = PartialEvasion.Most;
+                        }
+                        else
+                        { 
+                            evasionMod = 1 - 0.67f;
+                            PartialEvasion = PartialEvasion.Some;
+                        }
                     }
                 }
                 //Console.WriteLine($"EvasionMod: {Math.Round(evasionMod * 100)}%");
