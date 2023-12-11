@@ -264,7 +264,7 @@ namespace ACE.Server.WorldObjects
                         if (DebugTaunt)
                             Console.WriteLine($"{target.Name} attempts to TAUNT {Name} - Failed! from random chance ({Math.Round(avoidChance, 2) * 100}%) (OnAttack? {onTakeDamage})");
 
-                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} sees through your taunt and is having none of it!", ChatMessageType.CombatSelf));
+                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} resisted your taunt attempt!", ChatMessageType.CombatSelf));
                         continue;
                     }
                     else
