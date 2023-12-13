@@ -39,9 +39,9 @@ namespace ACE.Server.WorldObjects
                 EnqueueBroadcast(true, new GameMessagePublicUpdatePropertyInt(this, PropertyInt.RadarBlipColor, (int)RadarColor));
             }
             else if(result == StealthTestResult.Failure)
-                Session.Network.EnqueueSend(new GameMessageSystemChat("You fail on your attempt to start sneaking.", ChatMessageType.Broadcast));
+                Session.Network.EnqueueSend(new GameMessageSystemChat("You fail on your attempt to enter stealth.", ChatMessageType.Broadcast));
             else
-                Session.Network.EnqueueSend(new GameMessageSystemChat("You are not trained in sneaking!", ChatMessageType.Broadcast));
+                Session.Network.EnqueueSend(new GameMessageSystemChat("You are not trained in thievery!", ChatMessageType.Broadcast));
         }
 
         public void EndStealth(string message = null, bool isAttackFromStealth = false)
@@ -161,13 +161,13 @@ namespace ACE.Server.WorldObjects
             return wo.IsAware(this);
         }
 
-        public bool TestAwareness(WorldObject wo)
+        public bool TestPerception(WorldObject wo)
         {
-            var awarenessSkill = GetCreatureSkill(Skill.Awareness);
-            var chance = SkillCheck.GetSkillChance(awarenessSkill.Current, (uint)(wo.ResistAwareness ?? 0));
+            var perceptionSkill = GetCreatureSkill(Skill.AssessCreature); // Perception
+            var chance = SkillCheck.GetSkillChance(perceptionSkill.Current, (uint)(wo.ResistPerception ?? 0));
             if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
             {
-                Proficiency.OnSuccessUse(this, awarenessSkill, (uint)(wo.ResistAwareness ?? 0));
+                Proficiency.OnSuccessUse(this, perceptionSkill, (uint)(wo.ResistPerception ?? 0));
                 return true;
             }
             return false;

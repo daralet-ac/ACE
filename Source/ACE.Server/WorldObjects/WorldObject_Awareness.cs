@@ -62,7 +62,7 @@ namespace ACE.Server.WorldObjects
                 var distSquared = Location.SquaredDistanceTo(player.Location);
                 if (distSquared <= RangeSquared)
                 {
-                    if (player.TestAwareness(this))
+                    if (player.TestPerception(this))
                         MakeAware(player);
                 }
             }
@@ -73,7 +73,7 @@ namespace ACE.Server.WorldObjects
             if (AwareList == null)
                 return false;
 
-            if (!ResistAwareness.HasValue)
+            if (!ResistPerception.HasValue)
                 return false;
 
             if ((Tier ?? 0) == 0)

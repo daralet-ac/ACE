@@ -3278,10 +3278,10 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.RotationSpeed); else SetProperty(PropertyFloat.RotationSpeed, value.Value); }
         }
 
-        public int? ResistAwareness
+        public int? ResistPerception
         {
-            get => GetProperty(PropertyInt.ResistAwareness);
-            set { if (!value.HasValue) RemoveProperty(PropertyInt.ResistAwareness); else SetProperty(PropertyInt.ResistAwareness, value.Value); }
+            get => GetProperty(PropertyInt.ResistPerception);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.ResistPerception); else SetProperty(PropertyInt.ResistPerception, value.Value); }
         }
 
         public int? Tier

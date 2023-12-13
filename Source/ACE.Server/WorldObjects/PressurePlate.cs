@@ -77,7 +77,7 @@ namespace ACE.Server.WorldObjects
             if (!(activator is Player player))
                 return;
 
-            if (!NextActivationIsFromUse && ResistAwareness.HasValue && player.TestStealth((uint)ResistAwareness, "You fail to avoid the trigger! You stop sneaking."))
+            if (!NextActivationIsFromUse && ResistPerception.HasValue && player.TestStealth((uint)ResistPerception, "You fail to avoid the trigger! You lose stealth."))
                 return;
             NextActivationIsFromUse = false;
 
@@ -174,7 +174,7 @@ namespace ACE.Server.WorldObjects
                 Tier = 3;
 
             ResistLockpick = Tier * 75;
-            ResistAwareness = Tier * 75;
+            ResistPerception = Tier * 75;
         }
 
         private bool DefaultActive;

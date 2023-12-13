@@ -655,7 +655,7 @@ namespace ACE.Entity.Enum.Properties
         [ServerOnly]
         CombatAbilityId                         = 10000,
         Tier                                     = 10007,
-        ResistAwareness                          = 10008,
+        ResistPerception                          = 10008,
         [ServerOnly]
         EmptyId                                  = 10009,
         [ServerOnly]
