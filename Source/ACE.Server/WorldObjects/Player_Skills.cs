@@ -981,28 +981,28 @@ namespace ACE.Server.WorldObjects
 
         static Player()
         {
-            AlwaysTrained.Remove(Skill.ArcaneLore);
-            AlwaysTrained.Remove(Skill.Salvaging);
+            AlwaysTrained.Add(Skill.ArcaneLore);
 
-            PlayerSkills.Add(Skill.Axe);
+            PlayerSkills.Add(Skill.HeavyWeapons);
             PlayerSkills.Add(Skill.Bow);
-            PlayerSkills.Add(Skill.Crossbow);
             PlayerSkills.Add(Skill.Dagger);
-            PlayerSkills.Add(Skill.Mace);
-            PlayerSkills.Add(Skill.Spear);
             PlayerSkills.Add(Skill.Staff);
-            PlayerSkills.Add(Skill.Sword);
             PlayerSkills.Add(Skill.ThrownWeapon);
             PlayerSkills.Add(Skill.UnarmedCombat);
-            PlayerSkills.Add(Skill.Salvaging);
-            PlayerSkills.Add(Skill.Awareness);
-            PlayerSkills.Add(Skill.Sneaking);
             PlayerSkills.Add(Skill.WeaponTinkering);
             PlayerSkills.Add(Skill.ArmorTinkering);
             PlayerSkills.Add(Skill.MagicItemTinkering);
             PlayerSkills.Add(Skill.PortalMagic);
+            PlayerSkills.Add(Skill.AssessPerson);
 
-            PlayerSkills.Remove(Skill.HeavyWeapons);
+            PlayerSkills.Remove(Skill.Axe);
+            PlayerSkills.Remove(Skill.Sword);
+            PlayerSkills.Remove(Skill.Mace);
+            PlayerSkills.Remove(Skill.Crossbow);
+            PlayerSkills.Remove(Skill.Spear);
+            PlayerSkills.Remove(Skill.Salvaging);
+            PlayerSkills.Remove(Skill.Awareness);
+            PlayerSkills.Remove(Skill.Sneaking);
             PlayerSkills.Remove(Skill.LightWeapons);
             PlayerSkills.Remove(Skill.FinesseWeapons);
             PlayerSkills.Remove(Skill.MissileWeapons);
@@ -1011,7 +1011,6 @@ namespace ACE.Server.WorldObjects
             PlayerSkills.Remove(Skill.DirtyFighting);
             PlayerSkills.Remove(Skill.VoidMagic);
             PlayerSkills.Remove(Skill.Summoning);
-            PlayerSkills.Remove(Skill.AssessPerson);
             PlayerSkills.Remove(Skill.CreatureEnchantment);
             PlayerSkills.Remove(Skill.Crossbow);
             PlayerSkills.Remove(Skill.Mace);
