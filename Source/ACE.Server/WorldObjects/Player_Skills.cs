@@ -966,7 +966,6 @@ namespace ACE.Server.WorldObjects
         public bool IsTradeSkill(Skill skill)
         {
             if (skill == Skill.Alchemy
-                || skill == Skill.Appraise
                 || skill == Skill.ArmorTinkering
                 || skill == Skill.Cooking
                 || skill == Skill.Fletching
@@ -997,7 +996,6 @@ namespace ACE.Server.WorldObjects
             PlayerSkills.Add(Skill.UnarmedCombat);
             PlayerSkills.Add(Skill.Salvaging);
             PlayerSkills.Add(Skill.Awareness);
-            PlayerSkills.Add(Skill.Appraise);
             PlayerSkills.Add(Skill.Sneaking);
             PlayerSkills.Add(Skill.WeaponTinkering);
             PlayerSkills.Add(Skill.ArmorTinkering);
