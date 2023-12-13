@@ -61,8 +61,8 @@ namespace ACE.Server.WorldObjects
 
             Session.Network.EnqueueSend(new GameMessageCreateObject(worldObject, Adminvision, Adminvision));
 
-            if(worldObject is Player player && player.IsSneaking)
-                Session.Network.EnqueueSend(new GameMessageScript(player.Guid, PlayScript.SneakingBegin)); // Show the player as half-translucent
+            if(worldObject is Player player && player.IsStealthed)
+                Session.Network.EnqueueSend(new GameMessageScript(player.Guid, PlayScript.StealthBegin)); // Show the player as half-translucent
 
             //Console.WriteLine($"Player {Name} - TrackObject({worldObject.Name})");
 

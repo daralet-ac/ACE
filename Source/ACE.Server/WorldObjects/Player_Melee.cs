@@ -280,13 +280,13 @@ namespace ACE.Server.WorldObjects
             // point of no return beyond this point -- cannot be cancelled
             Attacking = true;
 
-            if (IsSneaking)
+            if (IsStealthed)
             {
                 var angle = Math.Abs(creature.GetAngle(this));
                 if (angle < 90 || creature.CombatMode != CombatMode.NonCombat)
-                    EndSneaking();
+                    EndStealth();
                 else
-                    EndSneaking(null, true);
+                    EndStealth(null, true);
             }
 
             if (subsequent)

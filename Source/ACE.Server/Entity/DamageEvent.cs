@@ -189,8 +189,8 @@ namespace ACE.Server.Entity
             var isAttackFromSneaking = false;
             if (playerAttacker != null)
             {
-                isAttackFromSneaking = playerAttacker.IsAttackFromSneaking;
-                playerAttacker.IsAttackFromSneaking = false;
+                isAttackFromSneaking = playerAttacker.IsAttackFromStealth;
+                playerAttacker.IsAttackFromStealth = false;
             }
 
             // ---- LIFESTONE PROTECTION ----

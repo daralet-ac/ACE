@@ -1130,7 +1130,7 @@ namespace ACE.Server.WorldObjects
                             }
                             else if (containerRootOwner == this)
                             {
-                                EndSneaking();
+                                EndStealth();
 
                                 if (itemAsContainer != null) // We're picking up a pack
                                 {
@@ -1588,7 +1588,7 @@ namespace ACE.Server.WorldObjects
 
                         if (DoHandleActionGetAndWieldItem(item, fromContainer, rootOwner, wasEquipped, wieldedLocation))
                         {
-                            EndSneaking();
+                            EndStealth();
 
                             Session.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.EncumbranceVal, EncumbranceVal ?? 0));
 
@@ -3240,7 +3240,7 @@ namespace ACE.Server.WorldObjects
                     return;
                 }
 
-                EndSneaking();
+                EndStealth();
 
                 if (target is Player targetAsPlayer)
                     GiveObjectToPlayer(targetAsPlayer, item, itemFoundInContainer, itemRootOwner, itemWasEquipped, amount);

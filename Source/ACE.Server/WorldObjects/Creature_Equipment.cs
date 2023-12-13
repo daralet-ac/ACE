@@ -391,7 +391,7 @@ namespace ACE.Server.WorldObjects
         {
             if ((wo.ArmorHealthRegenMod ?? 0) == 0 && (wo.ArmorStaminaRegenMod ?? 0) == 0 && (wo.ArmorManaRegenMod ?? 0) == 0 && (wo.ArmorAttackMod ?? 0) == 0 &&
                 (wo.ArmorMeleeDefMod ?? 0) == 0 && (wo.ArmorMissileDefMod ?? 0) == 0 && (wo.ArmorMagicDefMod ?? 0) == 0 && (wo.ArmorRunMod ?? 0) == 0 &&
-                (wo.ArmorTwohandedCombatMod ?? 0) == 0 && (wo.ArmorDualWieldMod ?? 0) == 0 && (wo.ArmorSneakingMod ?? 0) == 0 && (wo.ArmorAssessMod ?? 0) == 0 && (wo.ArmorShieldMod ?? 0) == 0 && (wo.ArmorDeceptionMod ?? 0) == 0 &&
+                (wo.ArmorTwohandedCombatMod ?? 0) == 0 && (wo.ArmorDualWieldMod ?? 0) == 0 && (wo.ArmorThieveryMod ?? 0) == 0 && (wo.ArmorAssessMod ?? 0) == 0 && (wo.ArmorShieldMod ?? 0) == 0 && (wo.ArmorDeceptionMod ?? 0) == 0 &&
                 (wo.ArmorWarMagicMod ?? 0) == 0 && (wo.ArmorLifeMagicMod ?? 0) == 0 &&
                 (wo.WeaponWarMagicMod ?? 0) == 0 && (wo.WeaponLifeMagicMod ?? 0) == 0 && (wo.WeaponRestorationSpellsMod ?? 0) == 0 &&
                 (wo.ArmorHealthMod ?? 0) == 0 && (wo.ArmorStaminaMod ?? 0) == 0 && (wo.ArmorManaMod ?? 0) == 0 &&
@@ -412,7 +412,7 @@ namespace ACE.Server.WorldObjects
                     { PropertyFloat.ArmorRunMod, 0 },
                     { PropertyFloat.ArmorDualWieldMod, 0 },
                     { PropertyFloat.ArmorTwohandedCombatMod, 0 },
-                    { PropertyFloat.ArmorSneakingMod, 0 },
+                    { PropertyFloat.ArmorThieveryMod, 0 },
                     { PropertyFloat.ArmorAssessMod, 0 },
                     { PropertyFloat.ArmorDeceptionMod, 0 },
                     { PropertyFloat.ArmorShieldMod, 0 },
@@ -438,7 +438,7 @@ namespace ACE.Server.WorldObjects
             equippedItemsSkillModCache[PropertyFloat.ArmorRunMod] += (wo.ArmorRunMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorDualWieldMod] += (wo.ArmorDualWieldMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorTwohandedCombatMod] += (wo.ArmorTwohandedCombatMod ?? 0);
-            equippedItemsSkillModCache[PropertyFloat.ArmorSneakingMod] += (wo.ArmorSneakingMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorThieveryMod] += (wo.ArmorThieveryMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorAssessMod] += (wo.ArmorAssessMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorDeceptionMod] += (wo.ArmorDeceptionMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorShieldMod] += (wo.ArmorShieldMod ?? 0);
@@ -468,7 +468,7 @@ namespace ACE.Server.WorldObjects
             equippedItemsSkillModCache[PropertyFloat.ArmorRunMod] -= (wo.ArmorRunMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorDualWieldMod] -= (wo.ArmorDualWieldMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorTwohandedCombatMod] -= (wo.ArmorTwohandedCombatMod ?? 0);
-            equippedItemsSkillModCache[PropertyFloat.ArmorSneakingMod] -= (wo.ArmorSneakingMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorThieveryMod] -= (wo.ArmorThieveryMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorAssessMod] -= (wo.ArmorAssessMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorDeceptionMod] -= (wo.ArmorDeceptionMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorShieldMod] -= (wo.ArmorShieldMod ?? 0);

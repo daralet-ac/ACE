@@ -4,7 +4,7 @@ namespace ACE.Entity.Enum
     {
         None,
         Taunt,
-        Sneak,
+        Stealth,
         Phalanx,
         Provoke,
         Riposte,

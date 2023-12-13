@@ -990,7 +990,7 @@ namespace ACE.Server.Factories
                 wo.ArmorAttackMod = 0.0;
                 wo.ArmorDualWieldMod = 0.0;
                 wo.ArmorTwohandedCombatMod = 0.0;
-                wo.ArmorSneakingMod = 0.0;
+                wo.ArmorThieveryMod = 0.0;
                 wo.ArmorRunMod = 0.0;
                 wo.ArmorStaminaMod = 0.0;
                 wo.ArmorDeceptionMod = 0.0;
@@ -1013,7 +1013,7 @@ namespace ACE.Server.Factories
                             else
                                 wo.ArmorTwohandedCombatMod = amount;
                             break;
-                        case 3: wo.ArmorSneakingMod = amount; break;
+                        case 3: wo.ArmorThieveryMod = amount; break;
                         case 4: wo.ArmorRunMod = amount; break;
                         case 5: wo.ArmorStaminaRegenMod = amount; break;
                         case 6: wo.ArmorDeceptionMod = amount; break;

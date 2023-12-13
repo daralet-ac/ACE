@@ -180,11 +180,11 @@ namespace ACE.Server.WorldObjects
                         else
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You stop taunting nearby enemies.", ChatMessageType.Broadcast));
                         break;
-                    case CombatAbility.Sneak:
-                        if (!player.IsSneaking)
-                            player.BeginSneaking();
+                    case CombatAbility.Stealth:
+                        if (!player.IsStealthed)
+                            player.BeginStealth();
                         else
-                            player.EndSneaking();
+                            player.EndStealth();
                         break;
                 }
             }

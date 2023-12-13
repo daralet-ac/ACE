@@ -1136,10 +1136,10 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorRunMod); else SetProperty(PropertyFloat.ArmorRunMod, value.Value); }
         }
 
-        public double? ArmorSneakingMod
+        public double? ArmorThieveryMod
         {
-            get => GetProperty(PropertyFloat.ArmorSneakingMod);
-            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorSneakingMod); else SetProperty(PropertyFloat.ArmorSneakingMod, value.Value); }
+            get => GetProperty(PropertyFloat.ArmorThieveryMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorThieveryMod); else SetProperty(PropertyFloat.ArmorThieveryMod, value.Value); }
         }
 
         public double? ArmorAttackMod

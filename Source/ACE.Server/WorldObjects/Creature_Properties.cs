@@ -479,26 +479,26 @@ namespace ACE.Server.WorldObjects
             return moddedTwohandedCombatSkill;
         }
 
-        public double? GetArmorSneakingMod()
+        public double? GetArmorThieveryMod()
         {
             double? mod;
 
-            if (ArmorSneakingMod != null && ArmorSneakingMod.HasValue)
-                mod = ArmorSneakingMod;
+            if (ArmorThieveryMod != null && ArmorThieveryMod.HasValue)
+                mod = ArmorThieveryMod;
             else
-                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorSneakingMod);
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorThieveryMod);
 
             return mod;
         }
 
-        public uint GetModdedSneakingSkill()
+        public uint GetModdedThieverySkill()
         {
-            var sneakingSkill = GetCreatureSkill(Skill.Sneaking);
-            var armorSneakingSkillMod = GetArmorSneakingMod() + 1;
-            var tempSneakingSkill = sneakingSkill.Current * armorSneakingSkillMod;
-            var moddedSneakingSkill = (uint)tempSneakingSkill;
+            var thieverySkill = GetCreatureSkill(Skill.Lockpick); // Thievery
+            var armorThieverySkillMod = GetArmorThieveryMod() + 1;
+            var tempThieverySkill = thieverySkill.Current * armorThieverySkillMod;
+            var moddedThieverySkill = (uint)tempThieverySkill;
 
-            return moddedSneakingSkill;
+            return moddedThieverySkill;
         }
 
         public double? GetArmorShieldMod()

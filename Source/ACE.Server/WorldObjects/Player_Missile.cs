@@ -192,7 +192,7 @@ namespace ACE.Server.WorldObjects
             // point of no return beyond this point -- cannot be cancelled
             actionChain.AddAction(this, () => Attacking = true);
 
-            EndSneaking();
+            EndStealth();
 
             if (subsequent)
             {

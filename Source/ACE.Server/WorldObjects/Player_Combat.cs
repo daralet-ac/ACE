@@ -1043,7 +1043,7 @@ namespace ACE.Server.WorldObjects
                                     break;
                                 }
                         }
-                        if(!IsSneaking)
+                        if(!IsStealthed)
                             CombatModeRunPenalty(false);
                         break;
                     }

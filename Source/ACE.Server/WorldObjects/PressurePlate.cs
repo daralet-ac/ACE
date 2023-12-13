@@ -77,7 +77,7 @@ namespace ACE.Server.WorldObjects
             if (!(activator is Player player))
                 return;
 
-            if (!NextActivationIsFromUse && ResistAwareness.HasValue && player.TestSneaking((uint)ResistAwareness, "You fail to avoid the trigger! You stop sneaking."))
+            if (!NextActivationIsFromUse && ResistAwareness.HasValue && player.TestStealth((uint)ResistAwareness, "You fail to avoid the trigger! You stop sneaking."))
                 return;
             NextActivationIsFromUse = false;
 

@@ -12,22 +12,22 @@ namespace ACE.Server.WorldObjects
 {
     partial class Player
     {
-        private static uint EnterSneakingDifficulty = 50;
+        private static uint EnterStealthDifficulty = 50;
 
-        public bool IsSneaking = false;
-        public bool IsAttackFromSneaking = false;
+        public bool IsStealthed = false;
+        public bool IsAttackFromStealth = false;
 
-        public void BeginSneaking()
+        public void BeginStealth()
         {
-            if (IsSneaking)
+            if (IsStealthed)
                 return;
 
-            var result = TestSneakingInternal(EnterSneakingDifficulty);
-            if (result == SneakingTestResult.Success)
+            var result = TestStealthInternal(EnterStealthDifficulty);
+            if (result == StealthTestResult.Success)
             {
-                IsSneaking = true;
-                Session.Network.EnqueueSend(new GameMessageSystemChat("You start sneaking.", ChatMessageType.Broadcast));
-                EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.SneakingBegin));
+                IsStealthed = true;
+                Session.Network.EnqueueSend(new GameMessageSystemChat("You enter stealth.", ChatMessageType.Broadcast));
+                EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthBegin));
 
                 var spell = new Spell(SpellId.MireFoot);
                 var addResult = EnchantmentManager.Add(spell, null, null, true);
@@ -37,37 +37,29 @@ namespace ACE.Server.WorldObjects
 
                 RadarColor = ACE.Entity.Enum.RadarColor.Creature;
                 EnqueueBroadcast(true, new GameMessagePublicUpdatePropertyInt(this, PropertyInt.RadarBlipColor, (int)RadarColor));
-                //The following code would remove the player from radar but has the drawback of having to reload the player causing some twitchiness and other players to lose target, which would be fine when entering sneak state but it's rather annoying when leaving sneak state.
-                //SetProperty(PropertyInt.ShowableOnRadar, (int)ACE.Entity.Enum.RadarBehavior.ShowNever);
-                //EnqueueBroadcast(false, new GameMessageUpdateObject(this));
-                //var actionChain = new ActionChain();
-                //actionChain.AddDelaySeconds(0.25f);
-                //actionChain.AddAction(this, () => EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.SneakingBegin)));
-                //actionChain.EnqueueChain();
             }
-            else if(result == SneakingTestResult.Failure)
+            else if(result == StealthTestResult.Failure)
                 Session.Network.EnqueueSend(new GameMessageSystemChat("You fail on your attempt to start sneaking.", ChatMessageType.Broadcast));
             else
                 Session.Network.EnqueueSend(new GameMessageSystemChat("You are not trained in sneaking!", ChatMessageType.Broadcast));
         }
 
-        public void EndSneaking(string message = null, bool isAttackFromSneaking = false)
+        public void EndStealth(string message = null, bool isAttackFromStealth = false)
         {
-            if (!IsSneaking)
+            if (!IsStealthed)
                 return;
 
-            IsSneaking = false;
-            IsAttackFromSneaking = isAttackFromSneaking;
+            IsStealthed = false;
+            IsAttackFromStealth = isAttackFromStealth;
 
-            Session.Network.EnqueueSend(new GameMessageSystemChat(message == null ? "You stop sneaking." : message, ChatMessageType.Broadcast));
-            // Add delay here to avoid remaining translucent indefinitely when EndSneaking is called right after BeginSneaking(like when a creature detects the player instantly).
+            Session.Network.EnqueueSend(new GameMessageSystemChat(message == null ? "You lose stealth." : message, ChatMessageType.Broadcast));
             var actionChain = new ActionChain();
             actionChain.AddDelaySeconds(0.25f);
             if (!Teleporting)
             {
                 actionChain.AddAction(this, () =>
                 {
-                    EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.SneakingEnd));
+                    EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthEnd));
                 });
             }
             actionChain.AddAction(this, () =>
@@ -83,20 +75,13 @@ namespace ACE.Server.WorldObjects
 
             RadarColor = null;
             EnqueueBroadcast(true, new GameMessagePublicUpdatePropertyInt(this, PropertyInt.RadarBlipColor, 0));
-            //The following code would remove the player from radar but has the drawback of having to reload the player causing some twitchiness and other players to lose target, which would be fine when entering sneak state but it's rather annoying when leaving sneak state.
-            //actionChain.AddDelaySeconds(1.0f);
-            //actionChain.AddAction(this, () =>
-            //{
-            //    SetProperty(PropertyInt.ShowableOnRadar, (int)ACE.Entity.Enum.RadarBehavior.ShowAlways);
-            //    EnqueueBroadcast(false, new GameMessageUpdateObject(this));
-            //});
 
             actionChain.EnqueueChain();
         }
 
-        public bool TestSneaking(Creature creature, double distanceSquared, string failureMessage)
+        public bool TestStealth(Creature creature, double distanceSquared, string failureMessage)
         {
-            if (!IsSneaking)
+            if (!IsStealthed)
                 return false;
 
             if (creature == null || creature.PlayerKillerStatus == PlayerKillerStatus.RubberGlue || creature.PlayerKillerStatus == PlayerKillerStatus.Protected || distanceSquared > creature.VisualAwarenessRangeSq || !creature.IsDirectVisible(this))
@@ -109,7 +94,7 @@ namespace ACE.Server.WorldObjects
             {
                 if (distanceSquared < 2)
                 {
-                    EndSneaking(failureMessage);
+                    EndStealth(failureMessage);
                     return false;
                 }
                 else if (distanceSquared < creature.VisualAwarenessRangeSq / 10)
@@ -122,53 +107,53 @@ namespace ACE.Server.WorldObjects
             else
                 difficulty = (uint)((creature.Level ?? 1) * 0.5f);
 
-            return TestSneaking(difficulty, failureMessage);
+            return TestStealth(difficulty, failureMessage);
         }
 
-        public bool TestSneaking(Creature creature, string failureMessage)
+        public bool TestStealth(Creature creature, string failureMessage)
         {
-            if (!IsSneaking)
+            if (!IsStealthed)
                 return false;
 
             if (creature == null)
                 return true;
 
-            return TestSneaking(creature, PhysicsObj.get_distance_sq_to_object(creature.PhysicsObj, true), failureMessage);
+            return TestStealth(creature, PhysicsObj.get_distance_sq_to_object(creature.PhysicsObj, true), failureMessage);
         }
 
-        public bool TestSneaking(uint difficulty, string failureMessage)
+        public bool TestStealth(uint difficulty, string failureMessage)
         {
-            if(TestSneakingInternal(difficulty) != SneakingTestResult.Success)
+            if(TestStealthInternal(difficulty) != StealthTestResult.Success)
             {
-                EndSneaking(failureMessage);
+                EndStealth(failureMessage);
                 return false;
             }
             else
                 return true;
         }
 
-        private enum SneakingTestResult
+        private enum StealthTestResult
         {
             Untrained,
             Failure,
             Success
         }
 
-        private SneakingTestResult TestSneakingInternal(uint difficulty)
+        private StealthTestResult TestStealthInternal(uint difficulty)
         {
-            var sneakingSkill = GetCreatureSkill(Skill.Sneaking);
-            if (sneakingSkill.AdvancementClass < SkillAdvancementClass.Trained)
-                return SneakingTestResult.Untrained;
+            var stealthSkill = GetCreatureSkill(Skill.Lockpick); // Thievery
+            if (stealthSkill.AdvancementClass < SkillAdvancementClass.Trained)
+                return StealthTestResult.Untrained;
 
-            var moddedSneakingSkill = GetModdedSneakingSkill();
+            var moddedStealthSkill = GetModdedThieverySkill();
 
-            var chance = SkillCheck.GetSkillChance(moddedSneakingSkill, difficulty);
+            var chance = SkillCheck.GetSkillChance(moddedStealthSkill, difficulty);
             if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
             {
-                Proficiency.OnSuccessUse(this, sneakingSkill, difficulty);
-                return SneakingTestResult.Success;
+                Proficiency.OnSuccessUse(this, stealthSkill, difficulty);
+                return StealthTestResult.Success;
             }
-            return SneakingTestResult.Failure;
+            return StealthTestResult.Failure;
         }
 
         public bool IsAware(WorldObject wo)

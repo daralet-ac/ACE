@@ -66,13 +66,13 @@ namespace ACE.Server.WorldObjects
             var creatureTarget = AttackTarget as Creature;
             var playerTarget = AttackTarget as Player;
 
-            if (playerTarget != null && playerTarget.IsSneaking)
+            if (playerTarget != null && playerTarget.IsStealthed)
             {
                 if (IsDirectVisible(playerTarget))
-                    playerTarget.EndSneaking($"{Name} can still see you! You stop sneaking!");
+                    playerTarget.EndStealth($"{Name} can still see you! You stop sneaking!");
             }
 
-            if (creatureTarget != null && (creatureTarget.IsDead || (combatPet == null && !IsVisibleTarget(creatureTarget))) || (playerTarget != null && playerTarget.IsSneaking))
+            if (creatureTarget != null && (creatureTarget.IsDead || (combatPet == null && !IsVisibleTarget(creatureTarget))) || (playerTarget != null && playerTarget.IsStealthed))
             {
                 FindNextTarget(false);
                 return;

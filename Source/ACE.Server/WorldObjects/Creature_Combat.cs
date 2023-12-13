@@ -860,7 +860,7 @@ namespace ACE.Server.WorldObjects
             var angle = creatureTarget.GetAngle(this);
             var behind = Math.Abs(angle) > 90.0f;
 
-            var sneakAttack = GetCreatureSkill(Skill.Sneaking);
+            var sneakAttack = GetCreatureSkill(Skill.Lockpick); // Thievery
             if (sneakAttack.AdvancementClass < SkillAdvancementClass.Specialized)
             {
                 behind = Math.Abs(angle) > 45.0f;

@@ -844,18 +844,18 @@ namespace ACE.Server.Network.Structure
 
                 hasExtraPropertiesText = true;
             }
-            // Armor Mod - Sneaking
-            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorSneakingMod, out var armorSneakingMod) && armorSneakingMod >= 0.001)
+            // Armor Mod - Thievery
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorThieveryMod, out var armorThieveryMod) && armorThieveryMod >= 0.001)
             {
                 var wielder = (Creature)wo.Wielder;
 
                 if (wielder != null)
                 {
-                    var totalSneakMod = wielder.GetArmorSneakingMod();
-                    extraPropertiesText += $"Bonus to Stealth Skill: +{Math.Round((armorSneakingMod) * 100, 1)}%  ({Math.Round((double)totalSneakMod * 100, 1)}%)\n";
+                    var totalThieveryMod = wielder.GetArmorThieveryMod();
+                    extraPropertiesText += $"Bonus to Thievery Skill: +{Math.Round((armorThieveryMod) * 100, 1)}%  ({Math.Round((double)totalThieveryMod * 100, 1)}%)\n";
                 }
                 else
-                    extraPropertiesText += $"Bonus to Stealth Skill: +{Math.Round((armorSneakingMod) * 100, 1)}%\n";
+                    extraPropertiesText += $"Bonus to Thievery Skill: +{Math.Round((armorThieveryMod) * 100, 1)}%\n";
 
                 hasExtraPropertiesText = true;
             }
