@@ -65,9 +65,6 @@ namespace ACE.Entity.Enum
         DirtyFighting,
         Challenge,          /* Unimplemented */
         Summoning,
-        // CustomDM
-        Appraise,
-        Armor,
         Sneaking
     }
 
@@ -114,20 +111,14 @@ namespace ACE.Entity.Enum
 
         public static HashSet<Skill> ValidSkills = new HashSet<Skill>
         {
-            Skill.Axe,
-            Skill.Bow,
-            Skill.Crossbow,
+            Skill.HeavyWeapons,         // Martial Weapons
             Skill.Dagger,
-            Skill.Mace,
-            Skill.Sling,
-            Skill.Spear,
             Skill.Staff,
-            Skill.Sword,
-            Skill.ThrownWeapon,
             Skill.UnarmedCombat,
+            Skill.Bow,                  // Bows (and crossbows)
+            Skill.ThrownWeapon,
             Skill.TwoHandedCombat,
             Skill.DualWield,
-            Skill.SneakAttack,
 
             Skill.LifeMagic,
             Skill.WarMagic,
@@ -141,28 +132,34 @@ namespace ACE.Entity.Enum
             Skill.Shield,
             Skill.Healing,
 
-            Skill.AssessPerson,
+            Skill.AssessCreature,       // Perception
             Skill.Deception,
-            Skill.Lockpick,
+            Skill.Lockpick,             // Thievery
             Skill.Jump,
             Skill.Run,
 
             Skill.Leadership,
             Skill.Loyalty,
 
-            Skill.Fletching,
+            Skill.Fletching,            // Woodworking
             Skill.Alchemy,
             Skill.Cooking,
-            Skill.AssessCreature,
-            Skill.WeaponTinkering,
-            Skill.ArmorTinkering,
-            Skill.MagicItemTinkering,
-
-            //Skill.ItemTinkering,
+            Skill.WeaponTinkering,      // Blacksmithing
+            Skill.ArmorTinkering,       // Tailoring
+            Skill.MagicItemTinkering,   // Spellcrafting
+            Skill.ItemTinkering,        // Jewelcrafting
+            
+            //Skill.Axe,
+            //Skill.Crossbow,
+            //Skill.Mace,
+            //Skill.Sword,
+            //Skill.Sling,
+            //Skill.Spear,
+            //Skill.SneakAttack,
+            //Skill.AssessPerson,
             //Skill.CreatureEnchantment,
             //Skill.Salvaging,
             //Skill.VoidMagic,
-            //Skill.HeavyWeapons,
             //Skill.LightWeapons,
             //Skill.FinesseWeapons,
             //Skill.MissileWeapons,
@@ -173,29 +170,17 @@ namespace ACE.Entity.Enum
 
         public static HashSet<Skill> AttackSkills = new HashSet<Skill>
         {
-            Skill.Axe,
-            Skill.Bow,
-            Skill.Crossbow,
+
+            Skill.HeavyWeapons,         // Martial Weapons
             Skill.Dagger,
-            Skill.Mace,
-            Skill.Sling,
-            Skill.Spear,
             Skill.Staff,
-            Skill.Sword,
-            Skill.ThrownWeapon,
             Skill.UnarmedCombat,
-            Skill.FinesseWeapons,
-            Skill.HeavyWeapons,
-            Skill.LightWeapons,
-            Skill.MissileWeapons,
+            Skill.Bow,                  // Bows (and crossbows)
+            Skill.ThrownWeapon,
             Skill.TwoHandedCombat,
-            Skill.WarMagic,
-            Skill.LifeMagic,
-            Skill.VoidMagic,
             Skill.DualWield,
-            //Skill.Recklessness,   // confirmed not in client
-            //Skill.DirtyFighting,
-            //Skill.SneakAttack
+            Skill.LifeMagic,
+            Skill.WarMagic,
         };
 
         public static HashSet<Skill> DefenseSkills = new HashSet<Skill>()
