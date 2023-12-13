@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.22, for Linux (x86_64)
 --
--- Host: localhost    Database: ace_world_timeline
+-- Host: localhost    Database: ace_world
 -- ------------------------------------------------------
 -- Server version	8.0.22
 
@@ -16,14 +16,14 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Current Database: `ace_world_timeline`
+-- Current Database: `ace_world`
 --
 
-/*!40000 DROP DATABASE IF EXISTS `ace_world_timeline`*/;
+/*!40000 DROP DATABASE IF EXISTS `ace_world`*/;
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `ace_world_timeline` /*!40100 DEFAULT CHARACTER SET utf8mb4 */ /*!80016 DEFAULT ENCRYPTION='N' */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `ace_world` /*!40100 DEFAULT CHARACTER SET utf8mb4 */ /*!80016 DEFAULT ENCRYPTION='N' */;
 
-USE `ace_world_timeline`;
+USE `ace_world`;
 
 --
 -- Table structure for table `cook_book`
