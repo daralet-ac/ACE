@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
@@ -158,7 +159,7 @@ namespace ACE.Server.Factories
                 player.SetProperty(PropertyInt.AvailableSkillCredits, (int)heritageGroup.SkillCredits);
                 player.SetProperty(PropertyInt.TotalSkillCredits, (int)heritageGroup.SkillCredits);
 
-                if (characterCreateInfo.SkillAdvancementClasses.Count != (int)Skill.Sneaking + 1)
+                if (characterCreateInfo.SkillAdvancementClasses.Count != 50)
                     return CreateResult.ClientServerSkillsMismatch;
 
                 for (int i = 0; i < characterCreateInfo.SkillAdvancementClasses.Count; i++)
