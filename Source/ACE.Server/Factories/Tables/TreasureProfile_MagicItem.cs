@@ -232,7 +232,7 @@ namespace ACE.Server.Factories.Tables
             ( TreasureItemType_Orig.WeaponRogue,        0.11f ),
             ( TreasureItemType_Orig.ArmorCaster,        0.15f ),
             ( TreasureItemType_Orig.WeaponCaster,       0.11f ),
-            ( TreasureItemType_Orig.Clothing,           0.15f ),
+            ( TreasureItemType_Orig.Clothing,           0.12f ),
             ( TreasureItemType_Orig.Jewelry,            0.08f ),
             ( TreasureItemType_Orig.EmpoweredScarabs,   0.02f ),
         };
