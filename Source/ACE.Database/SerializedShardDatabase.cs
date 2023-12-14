@@ -251,21 +251,5 @@ namespace ACE.Database
                 callback?.Invoke(result);
             }));
         }
-
-        public void LogAccountSessionStart(uint accountId, string accountName, string sessionIP)
-        {
-            _queue.Add(new Task(() =>
-            {
-                BaseDatabase.LogAccountSessionStart(accountId, accountName, sessionIP);
-            }));
-        }
-
-        public void LogCharacterLogin(uint accountId, string accountName, string sessionIP, uint characterId, string characterName)
-        {
-            _queue.Add(new Task(() =>
-            {
-                BaseDatabase.LogCharacterLogin(accountId, accountName, sessionIP, characterId, characterName);
-            }));
-        }
     }
 }
