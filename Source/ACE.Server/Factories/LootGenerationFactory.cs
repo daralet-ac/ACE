@@ -1708,6 +1708,10 @@ namespace ACE.Server.Factories
                     MutateCaster(wo, treasureDeath, isMagical, GetWieldDifficultyPerTier(treasureDeath.Tier), treasureRoll);
                     break;
 
+                case TreasureItemType_Orig.EmpoweredScarabs:
+                    MutateEmpoweredanaScarab(wo, treasureDeath);
+                    break;
+
                     // other mundane items (mana stones, food/drink, healing kits, lockpicks, and spell components/peas) don't get mutated
             }
 
