@@ -204,7 +204,7 @@ namespace ACE.Server.Factories
                 empoweredScarab.EmpoweredScarabCastSpellId = Prot_SpellIds[color];
                 empoweredScarab.Use = $"Whenever the wielder casts a Heal, Revitalize, or Mana Boost spell, " +
                     $"there is a chance the target will also gain {Prot_SpellNames[color]}.\n\n" +
-                    $"The level of the debuff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
+                    $"The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
             }
 
             // VULN
