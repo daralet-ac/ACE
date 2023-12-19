@@ -682,7 +682,7 @@ namespace ACE.Server.WorldObjects
             if ((wieldedLocation & EquipMask.Selectable) != 0) // Is this equipped item visible to others?
                 EnqueueBroadcast(false, new GameMessageSound(Guid, Sound.UnwieldObject));
 
-            //EnqueueBroadcast(new GameMessageObjDescEvent(this));
+            EnqueueBroadcast(new GameMessageObjDescEvent(this));
 
             // handle combat focus dequip
             var combatFocus = worldObject as CombatFocus;
