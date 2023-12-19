@@ -653,7 +653,7 @@ namespace ACE.Server.Factories
             orb.WieldDifficulty = 355;
             // biota_properties_float
             orb.ManaRate = -0.033333;
-            orb.WeaponDefense = 1.15;
+            orb.WeaponPhysicalDefense = 1.15;
             orb.ObjScale = 1.3f;
             orb.Translucency = 0.6f;
             orb.ManaConversionMod = 0.31;

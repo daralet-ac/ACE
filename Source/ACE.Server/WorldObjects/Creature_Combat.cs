@@ -553,12 +553,12 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public uint GetEffectiveDefenseSkill(CombatType combatType)
         {
-            var defenseSkill = combatType == CombatType.Missile ? Skill.MissileDefense : Skill.MeleeDefense;
-            var armorDefenseMod = defenseSkill == Skill.MissileDefense ? GetArmorMissileDefMod() : GetArmorMeleeDefMod();
-            var defenseMod = defenseSkill == Skill.MissileDefense ? GetWeaponMissileDefenseModifier(this) + armorDefenseMod : GetWeaponMeleeDefenseModifier(this) + armorDefenseMod;
+            var defenseSkill = Skill.MeleeDefense;
+            var armorDefenseMod = GetArmorPhysicalDefMod();
+            var defenseMod = GetWeaponPhysicalDefenseModifier(this) + armorDefenseMod;
             var burdenMod = GetBurdenMod();
 
-            var imbuedEffectType = defenseSkill == Skill.MissileDefense ? ImbuedEffectType.MissileDefense : ImbuedEffectType.MeleeDefense;
+            var imbuedEffectType = ImbuedEffectType.MeleeDefense;
             var defenseImbues = GetDefenseImbues(imbuedEffectType);
 
             var stanceMod = this is Player player ? player.GetDefenseStanceMod() : 1.0f;

@@ -79,7 +79,7 @@ namespace ACE.Server.WorldObjects
                     Skills[ACE.Entity.Enum.Skill.LifeMagic] = new CreatureSkill(this, skillType, propertiesSkill);
                 }
 
-                // Melee Defense
+                // Physical Defense
                 {
                     var newSkill = GetNewMeleeDefenseSkill(tier, statWeight, toughness, physicality);
 
@@ -91,15 +91,15 @@ namespace ACE.Server.WorldObjects
                 }
 
                 // Missile Defense
-                {
-                    var newSkill = GetNewMissileDefenseSkill(tier, statWeight, toughness, dexterity);
+                //{
+                //    var newSkill = GetNewMissileDefenseSkill(tier, statWeight, toughness, dexterity);
 
-                    var skillType = ACE.Entity.Enum.Skill.MissileDefense;
+                //    var skillType = ACE.Entity.Enum.Skill.MissileDefense;
 
-                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Specialized };
+                //    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Specialized };
 
-                    Skills[ACE.Entity.Enum.Skill.MissileDefense] = new CreatureSkill(this, skillType, propertiesSkill);
-                }
+                //    Skills[ACE.Entity.Enum.Skill.MissileDefense] = new CreatureSkill(this, skillType, propertiesSkill);
+                //}
 
                 // Magic Defense
                 {

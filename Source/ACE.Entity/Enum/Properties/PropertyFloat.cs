@@ -213,6 +213,8 @@ namespace ACE.Entity.Enum.Properties
         EmpoweredScarabManaReserved    = 184,
         EmpoweredScarabIntensity       = 185,
         EmpoweredScarabReductionAmount = 186,
+        WeaponPhysicalDefense          = 187,
+        WeaponMagicalDefense           = 188,
 
         [ServerOnly]
         PCAPRecordedWorkmanship        = 8004,
@@ -246,7 +248,7 @@ namespace ACE.Entity.Enum.Properties
         ArmorWarMagicMod               = 20001,
         ArmorLifeMagicMod              = 20002,
         ArmorMagicDefMod               = 20003,
-        ArmorMeleeDefMod               = 20004,
+        ArmorPhysicalDefMod            = 20004,
         ArmorMissileDefMod             = 20005,
         ArmorDualWieldMod              = 20006,
         ArmorRunMod                    = 20007,

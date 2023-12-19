@@ -102,7 +102,7 @@ namespace ACE.Server.Factories
                 }
 
                 // WeaponDefense
-                wo.WeaponDefense = RollWeaponDefense(wieldDifficulty.Value, profile);
+                wo.WeaponPhysicalDefense = RollWeaponDefense(wieldDifficulty.Value, profile);
             }
 
             wo.Tier = GetTierValue(profile);

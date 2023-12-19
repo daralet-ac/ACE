@@ -126,7 +126,7 @@ namespace ACE.Server.Factories
             var qualityMod = treasureDeath.LootQualityMod != 0.0f ? treasureDeath.LootQualityMod : 0.0f;
 
             // Each weapon can 1 to 4 mod rolls
-            var potentialTypes = new List<int>() { 1, 2, 3, 4 };
+            var potentialTypes = new List<int>() { 1, 2, 3};
             var numTypes = potentialTypes.Count;
             var rolledTypes = GetRolledTypes(potentialTypes, qualityMod);
 
@@ -148,9 +148,8 @@ namespace ACE.Server.Factories
                     switch(type)
                     {
                         case 1: wo.ManaConversionMod = amount; break;
-                        case 2: wo.WeaponDefense = amount + 1; break;
-                        case 3: wo.WeaponMissileDefense = amount + 1; break;
-                        case 4: wo.WeaponMagicDefense = amount + 1; break;
+                        case 2: wo.WeaponPhysicalDefense = amount + 1; break;
+                        case 3: wo.WeaponMagicalDefense = amount + 1; break;
                     }
                 }
 
@@ -160,16 +159,16 @@ namespace ACE.Server.Factories
 
                 if (subtype == STAFF)
                 {
-                    if (wo.WeaponDefense > 0)
-                        wo.WeaponDefense += bonusAmount;
+                    if (wo.WeaponPhysicalDefense > 0)
+                        wo.WeaponPhysicalDefense += bonusAmount;
                     else
-                        wo.WeaponDefense = 1 + bonusAmount;
+                        wo.WeaponPhysicalDefense = 1 + bonusAmount;
                 }
                 else if (subtype == ORB)
-                    if (wo.WeaponMagicDefense > 0)
-                        wo.WeaponMagicDefense += bonusAmount;
+                    if (wo.WeaponMagicalDefense > 0)
+                        wo.WeaponMagicalDefense += bonusAmount;
                     else
-                        wo.WeaponMagicDefense= 1 + bonusAmount;
+                        wo.WeaponMagicalDefense = 1 + bonusAmount;
             }
             else
             {
@@ -181,9 +180,8 @@ namespace ACE.Server.Factories
                     switch (type)
                     {
                         case 1: wo.WeaponOffense = amount + 1; break;
-                        case 2: wo.WeaponDefense = amount + 1; break;
-                        case 3: wo.WeaponMissileDefense = amount + 1; break;
-                        case 4: wo.WeaponMagicDefense = amount + 1; break;
+                        case 2: wo.WeaponPhysicalDefense = amount + 1; break;
+                        case 3: wo.WeaponMagicalDefense = amount + 1; break;
                     }
                 }
             }

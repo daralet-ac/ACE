@@ -1052,10 +1052,22 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponMissileDefense); else SetProperty(PropertyFloat.WeaponMissileDefense, value.Value); }
         }
 
-        public double? WeaponMagicDefense
+        //public double? WeaponMagicDefense
+        //{
+        //    get => GetProperty(PropertyFloat.WeaponMagicDefense);
+        //    set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponMagicDefense); else SetProperty(PropertyFloat.WeaponMagicDefense, value.Value); }
+        //}
+
+        public double? WeaponPhysicalDefense
         {
-            get => GetProperty(PropertyFloat.WeaponMagicDefense);
-            set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponMagicDefense); else SetProperty(PropertyFloat.WeaponMagicDefense, value.Value); }
+            get => GetProperty(PropertyFloat.WeaponPhysicalDefense);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponPhysicalDefense); else SetProperty(PropertyFloat.WeaponPhysicalDefense, value.Value); }
+        }
+
+        public double? WeaponMagicalDefense
+        {
+            get => GetProperty(PropertyFloat.WeaponMagicalDefense);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponMagicalDefense); else SetProperty(PropertyFloat.WeaponMagicalDefense, value.Value); }
         }
 
         public double? WeaponOffense
@@ -1106,10 +1118,10 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorMagicDefMod); else SetProperty(PropertyFloat.ArmorMagicDefMod, value.Value); }
         }
 
-        public double? ArmorMeleeDefMod
+        public double? ArmorPhysicalDefMod
         {
-            get => GetProperty(PropertyFloat.ArmorMeleeDefMod);
-            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorMeleeDefMod); else SetProperty(PropertyFloat.ArmorMeleeDefMod, value.Value); }
+            get => GetProperty(PropertyFloat.ArmorPhysicalDefMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorPhysicalDefMod); else SetProperty(PropertyFloat.ArmorPhysicalDefMod, value.Value); }
         }
 
         public double? ArmorMissileDefMod
@@ -1190,7 +1202,7 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorShieldMod); else SetProperty(PropertyFloat.ArmorShieldMod, value.Value); }
         }
 
-        public double? ArmorAssessMod
+        public double? ArmorPerceptionMod
         {
             get => GetProperty(PropertyFloat.ArmorAssessMod);
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorAssessMod); else SetProperty(PropertyFloat.ArmorAssessMod, value.Value); }

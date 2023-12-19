@@ -963,7 +963,7 @@ namespace ACE.Server.Factories
                 wo.ArmorWarMagicMod = 0.0;
                 wo.ArmorLifeMagicMod = 0.0;
                 wo.ArmorMagicDefMod = 0.0;
-                wo.ArmorAssessMod = 0.0;
+                wo.ArmorPerceptionMod = 0.0;
                 wo.ArmorManaRegenMod = 0.0;
                 wo.ManaConversionMod = 0.0;
 
@@ -979,7 +979,7 @@ namespace ACE.Server.Factories
                         case 1: wo.ArmorWarMagicMod = amount; break;
                         case 2: wo.ArmorLifeMagicMod = amount; break;
                         case 3: wo.ArmorMagicDefMod = amount; break;
-                        case 4: wo.ArmorAssessMod = amount; break;
+                        case 4: wo.ArmorPerceptionMod = amount; break;
                         case 5: wo.ArmorManaRegenMod = amount; break;
                         case 6: wo.ManaConversionMod = amount; break;
                     }
@@ -989,7 +989,7 @@ namespace ACE.Server.Factories
             {
                 wo.ArmorAttackMod = 0.0;
                 wo.ArmorDualWieldMod = 0.0;
-                wo.ArmorTwohandedCombatMod = 0.0;
+                wo.ArmorShieldMod = 0.0;
                 wo.ArmorThieveryMod = 0.0;
                 wo.ArmorRunMod = 0.0;
                 wo.ArmorStaminaMod = 0.0;
@@ -1008,10 +1008,8 @@ namespace ACE.Server.Factories
                         case 2:
                             if (IsShieldWcid(wo))
                                 wo.ArmorShieldMod = amount;
-                            else if (ThreadSafeRandom.Next(0, 1) == 0)
-                                wo.ArmorDualWieldMod = amount;
                             else
-                                wo.ArmorTwohandedCombatMod = amount;
+                                wo.ArmorDualWieldMod = amount;
                             break;
                         case 3: wo.ArmorThieveryMod = amount; break;
                         case 4: wo.ArmorRunMod = amount; break;
@@ -1022,12 +1020,12 @@ namespace ACE.Server.Factories
             }
             else if (weightType == (int)ArmorWeightClass.Heavy)
             {
-                wo.ArmorMeleeDefMod = 0.0;
-                wo.ArmorMissileDefMod = 0.0;
+                wo.ArmorAttackMod = 0.0;
+                wo.ArmorPhysicalDefMod = 0.0;
                 wo.ArmorMagicDefMod = 0.0;
                 wo.ArmorShieldMod = 0.0;
                 wo.ArmorTwohandedCombatMod = 0.0;
-                wo.ArmorAssessMod = 0.0;
+                wo.ArmorPerceptionMod = 0.0;
                 wo.ArmorHealthRegenMod = 0.0;
 
                 //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
@@ -1039,8 +1037,8 @@ namespace ACE.Server.Factories
 
                     switch (type)
                     {
-                        case 1: wo.ArmorMeleeDefMod = amount; break;
-                        case 2: wo.ArmorMissileDefMod = amount; break;
+                        case 1: wo.ArmorAttackMod = amount; break;
+                        case 2: wo.ArmorPhysicalDefMod = amount; break;
                         case 3: wo.ArmorMagicDefMod = amount; break;
                         case 4:
                             if (IsShieldWcid(wo) || ThreadSafeRandom.Next(0, 1) == 0)
@@ -1048,7 +1046,7 @@ namespace ACE.Server.Factories
                             else
                                 wo.ArmorTwohandedCombatMod = amount;
                             break;
-                        case 5: wo.ArmorAssessMod = amount; break;
+                        case 5: wo.ArmorPerceptionMod = amount; break;
                         case 6: wo.ArmorHealthRegenMod = amount; break;
                     }
                 }

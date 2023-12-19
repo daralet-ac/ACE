@@ -82,7 +82,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Returns the Melee Defense skill modifier for the current weapon
         /// </summary>
-        public static float GetWeaponMeleeDefenseModifier(Creature wielder)
+        public static float GetWeaponPhysicalDefenseModifier(Creature wielder)
         {
             // creatures only receive defense bonus in combat mode
             if (wielder == null || wielder.CombatMode == CombatMode.NonCombat)
@@ -93,18 +93,18 @@ namespace ACE.Server.WorldObjects
 
             if (offhand == null)
             {
-                return GetWeaponMeleeDefenseModifier(wielder, mainhand);
+                return GetWeaponPhysicalDefenseModifier(wielder, mainhand);
             }
             else
             {
-                var mainhand_defenseMod = GetWeaponMeleeDefenseModifier(wielder, mainhand);
-                var offhand_defenseMod = GetWeaponMeleeDefenseModifier(wielder, offhand);
+                var mainhand_defenseMod = GetWeaponPhysicalDefenseModifier(wielder, mainhand);
+                var offhand_defenseMod = GetWeaponPhysicalDefenseModifier(wielder, offhand);
 
                 return Math.Max(mainhand_defenseMod, offhand_defenseMod);
             }
         }
 
-        private static float GetWeaponMeleeDefenseModifier(Creature wielder, WorldObject weapon)
+        private static float GetWeaponPhysicalDefenseModifier(Creature wielder, WorldObject weapon)
         {
             if (weapon == null)
                 return DefaultModifier;
@@ -115,41 +115,16 @@ namespace ACE.Server.WorldObjects
             // Because of the way ACE handles default base values in recipe system (or rather the lack thereof)
             // we need to check the following weapon properties to see if they're below expected minimum and adjust accordingly
             // The issue is that the recipe system likely added 0.01 to 0 instead of 1, which is what *should* have happened.
-            var baseWepDef = (float)(weapon.WeaponDefense ?? DefaultModifier);
-            if (weapon.WeaponDefense > 0 && weapon.WeaponDefense < 1 && ((weapon.GetProperty(PropertyInt.ImbueStackingBits) ?? 0) & 4) != 0)
+            var baseWepDef = (float)(weapon.WeaponPhysicalDefense ?? DefaultModifier);
+            if (weapon.WeaponPhysicalDefense > 0 && weapon.WeaponPhysicalDefense < 1 && ((weapon.GetProperty(PropertyInt.ImbueStackingBits) ?? 0) & 4) != 0)
                 baseWepDef += 1;
 
-            var defenseMod = baseWepDef + weapon.EnchantmentManager.GetDefenseMod();
+            var defenseMod = baseWepDef + weapon.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponAuraDefense);
 
             if (weapon.IsEnchantable)
-                defenseMod += wielder.EnchantmentManager.GetDefenseMod();
+                defenseMod += wielder.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponAuraDefense);
 
             return defenseMod;
-        }
-
-        /// <summary>
-        /// Returns the Missile Defense skill modifier for the current weapon
-        /// </summary>
-        public static float GetWeaponMissileDefenseModifier(Creature wielder)
-        {
-            WorldObject weapon = GetWeapon(wielder as Player);
-
-            if (weapon == null || wielder.CombatMode == CombatMode.NonCombat)
-                return DefaultModifier;
-
-            //// no enchantments?
-            //return (float)(weapon.WeaponMissileDefense ?? 1.0f);
-
-            var baseWepDef = (float)(weapon.WeaponMissileDefense ?? 1.0f);
-            // TODO: Resolve this issue a better way?
-            // Because of the way ACE handles default base values in recipe system (or rather the lack thereof)
-            // we need to check the following weapon properties to see if they're below expected minimum and adjust accordingly
-            // The issue is that the recipe system likely added 0.005 to 0 instead of 1, which is what *should* have happened.
-            if (weapon.WeaponMissileDefense > 0 && weapon.WeaponMissileDefense < 1 && ((weapon.GetProperty(PropertyInt.ImbueStackingBits) ?? 0) & 1) == 1)
-                baseWepDef += 1;
-
-            // no enchantments?
-            return baseWepDef;
         }
 
         /// <summary>
@@ -165,16 +140,21 @@ namespace ACE.Server.WorldObjects
             //// no enchantments?
             //return (float)(weapon.WeaponMagicDefense ?? 1.0f);
 
-            var baseWepDef = (float)(weapon.WeaponMagicDefense ?? 1.0f);
+            var baseWepDef = (float)(weapon.WeaponMagicalDefense ?? 1.0f);
             // TODO: Resolve this issue a better way?
             // Because of the way ACE handles default base values in recipe system (or rather the lack thereof)
             // we need to check the following weapon properties to see if they're below expected minimum and adjust accordingly
             // The issue is that the recipe system likely added 0.005 to 0 instead of 1, which is what *should* have happened.
-            if (weapon.WeaponMagicDefense > 0 && weapon.WeaponMagicDefense < 1 && ((weapon.GetProperty(PropertyInt.ImbueStackingBits) ?? 0) & 1) == 1)
+            if (weapon.WeaponMagicalDefense > 0 && weapon.WeaponMagicalDefense < 1 && ((weapon.GetProperty(PropertyInt.ImbueStackingBits) ?? 0) & 1) == 1)
                 baseWepDef += 1;
 
+            var defenseMod = baseWepDef + weapon.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponAuraDefense);
+
+            if (weapon.IsEnchantable)
+                defenseMod += wielder.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponAuraDefense);
+
             // no enchantments?
-            return baseWepDef;
+            return defenseMod;
         }
 
         /// <summary>

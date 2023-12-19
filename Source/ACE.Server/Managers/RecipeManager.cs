@@ -612,7 +612,7 @@ namespace ACE.Server.Managers
                     target.WeaponTime = Math.Max(0, (target.WeaponTime ?? 0) - 50);
                     break;
                 case 0x38000020:    // Brass
-                    target.WeaponDefense += 0.01f;
+                    target.WeaponPhysicalDefense += 0.01f;
                     break;
                 case 0x38000021:    // Velvet
                     target.WeaponOffense += 0.01f;

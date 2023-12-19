@@ -345,14 +345,14 @@ namespace ACE.Server.WorldObjects
             return mod;
         }
 
-        public double? GetArmorMeleeDefMod()
+        public double? GetArmorPhysicalDefMod()
         {
             double? mod;
 
-            if (ArmorMeleeDefMod != null && ArmorMeleeDefMod.HasValue)
-                mod = ArmorMeleeDefMod;
+            if (ArmorPhysicalDefMod != null && ArmorPhysicalDefMod.HasValue)
+                mod = ArmorPhysicalDefMod;
             else
-                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorMeleeDefMod);
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorPhysicalDefMod);
 
             return mod;
         }
@@ -360,7 +360,7 @@ namespace ACE.Server.WorldObjects
         public uint GetModdedMeleeDefSkill()
         {
             var meleeDefSkill = GetCreatureSkill(Skill.MeleeDefense);
-            var armorMeleeDefSkillMod = GetArmorMeleeDefMod() + 1;
+            var armorMeleeDefSkillMod = GetArmorPhysicalDefMod() + 1;
             var tempMeleeDefSkill = meleeDefSkill.Current * armorMeleeDefSkillMod;
             var moddedMeleeDefSkill = (uint)tempMeleeDefSkill;
 
@@ -527,8 +527,8 @@ namespace ACE.Server.WorldObjects
         {
             double? mod;
 
-            if (ArmorAssessMod != null && ArmorAssessMod.HasValue)
-                mod = ArmorAssessMod;
+            if (ArmorPerceptionMod != null && ArmorPerceptionMod.HasValue)
+                mod = ArmorPerceptionMod;
             else
                 mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorAssessMod);
 

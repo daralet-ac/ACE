@@ -10,6 +10,7 @@ using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.WorldObjects;
+using ACE.Server.WorldObjects.Managers;
 
 namespace ACE.Server.Network.Structure
 {
@@ -123,10 +124,11 @@ namespace ACE.Server.Network.Structure
             // Because of the way ACE handles default base values in recipe system (or rather the lack thereof)
             // we need to check the following weapon properties to see if they're below expected minimum and adjust accordingly
             // The issue is that the recipe system likely added 0.005 to 0 instead of 1, which is what *should* have happened.
-            if (wo.WeaponMagicDefense.HasValue && wo.WeaponMagicDefense.Value > 0 && wo.WeaponMagicDefense.Value < 1 && ((wo.GetProperty(PropertyInt.ImbueStackingBits) ?? 0) & 1) != 0)
-                PropertiesFloat[PropertyFloat.WeaponMagicDefense] += 1;
-            if (wo.WeaponMissileDefense.HasValue && wo.WeaponMissileDefense.Value > 0 && wo.WeaponMissileDefense.Value < 1 && ((wo.GetProperty(PropertyInt.ImbueStackingBits) ?? 0) & 1) != 0)
-                PropertiesFloat[PropertyFloat.WeaponMissileDefense] += 1;
+
+            //if (wo.WeaponMagicDefense.HasValue && wo.WeaponMagicDefense.Value > 0 && wo.WeaponMagicDefense.Value < 1 && ((wo.GetProperty(PropertyInt.ImbueStackingBits) ?? 0) & 1) != 0)
+            //    PropertiesFloat[PropertyFloat.WeaponMagicDefense] += 1;
+            //if (wo.WeaponMissileDefense.HasValue && wo.WeaponMissileDefense.Value > 0 && wo.WeaponMissileDefense.Value < 1 && ((wo.GetProperty(PropertyInt.ImbueStackingBits) ?? 0) & 1) != 0)
+            //    PropertiesFloat[PropertyFloat.WeaponMissileDefense] += 1;
 
             // Mask real value of AbsorbMagicDamage and/or Add AbsorbMagicDamage for ImbuedEffectType.IgnoreSomeMagicProjectileDamage
             if (PropertiesFloat.ContainsKey(PropertyFloat.AbsorbMagicDamage) || wo.HasImbuedEffect(ImbuedEffectType.IgnoreSomeMagicProjectileDamage))
@@ -448,13 +450,13 @@ namespace ACE.Server.Network.Structure
             else
                 PropertiesInt.Remove(PropertyInt.AppraisalItemSkill);
 
-            if (PropertiesFloat.ContainsKey(PropertyFloat.WeaponDefense) && !(wo is Ammunition))
-            {
-                var defenseMod = wo.EnchantmentManager.GetDefenseMod();
-                var auraDefenseMod = wo.Wielder != null && wo.IsEnchantable ? wo.Wielder.EnchantmentManager.GetDefenseMod() : 0.0f;
+            //if (PropertiesFloat.ContainsKey(PropertyFloat.WeaponDefense) && !(wo is Ammunition))
+            //{
+            //    var defenseMod = wo.EnchantmentManager.GetDefenseMod();
+            //    var auraDefenseMod = wo.Wielder != null && wo.IsEnchantable ? wo.Wielder.EnchantmentManager.GetDefenseMod() : 0.0f;
 
-                PropertiesFloat[PropertyFloat.WeaponDefense] += defenseMod + auraDefenseMod;
-            }
+            //    PropertiesFloat[PropertyFloat.WeaponDefense] += defenseMod + auraDefenseMod;
+            //}
 
             if (PropertiesFloat.ContainsKey(PropertyFloat.WeaponOffense))
             {
@@ -545,23 +547,43 @@ namespace ACE.Server.Network.Structure
 
                 hasExtraPropertiesText = true;
             }
+
+            // -------- WEAPON ATTACK/DEFENSE MODS --------
             // Attack Mod for Bows
             if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponOffense, out var weaponOffense) && weaponOffense > 1.001)
             {
                 var weaponMod = (weaponOffense - 1) * 100;
                 if (wo.WeaponSkill == Skill.Bow || wo.WeaponSkill == Skill.Crossbow)
                 {
-                    extraPropertiesText += $"Bonus to Attack Skill: +{(int)weaponMod}%\n";
+                    extraPropertiesText += $"Bonus to Attack Skill: +{Math.Round(weaponMod, 1)}%\n";
                 }
 
                 hasExtraPropertiesText = true;
             }
+            // Weapon Physical Defense
+            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponPhysicalDefense, out var weaponPhysicalDefense) && weaponPhysicalDefense > 1.001)
+            {
+                var weaponMod = (weaponPhysicalDefense + wo.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponPhysicalDefense) - 1) * 100;
+                extraPropertiesText += $"Bonus to Physical Defense: +{Math.Round(weaponMod, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Weapon Magic Defense
+            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponMagicalDefense, out var weaponMagicalDefense) && weaponMagicalDefense > 1.001)
+            {
+                var weaponMod = (weaponMagicalDefense + wo.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponPhysicalDefense) - 1) * 100;
+                extraPropertiesText += $"Bonus to Magic Defense: +{Math.Round(weaponMod, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+
+            // -------- ARMOR MODS --------
             // Weapon Mod - War Magic
             if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponWarMagicMod, out var weaponWarMagicMod) && weaponWarMagicMod >= 0.001)
             {
                 var wielder = (Creature)wo.Wielder;
 
-                extraPropertiesText += $"Bonus to War Magic Skill: +{Math.Round((weaponWarMagicMod) * 100, 1)}%\n";
+                extraPropertiesText += $"\nBonus to War Magic Skill: +{Math.Round((weaponWarMagicMod) * 100, 1)}%\n";
 
                 hasExtraPropertiesText = true;
             }
@@ -754,33 +776,18 @@ namespace ACE.Server.Network.Structure
 
                 hasExtraPropertiesText = true;
             }
-            // Armor Mod - Melee Def
-            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorMeleeDefMod, out var armorMeleeDefMod) && armorMeleeDefMod >= 0.001)
+            // Armor Mod - Physical Def
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorPhysicalDefMod, out var armorPhysicalDefMod) && armorPhysicalDefMod >= 0.001)
             {
                 var wielder = (Creature)wo.Wielder;
 
                 if (wielder != null)
                 {
-                    var totalMeleeDefMod = wielder.GetArmorMeleeDefMod();
-                    extraPropertiesText += $"Bonus to Melee Defense: +{Math.Round((armorMeleeDefMod) * 100, 1)}%  ({Math.Round((double)totalMeleeDefMod * 100, 1)}%)\n";
+                    var totalPhysicalDefMod = wielder.GetArmorPhysicalDefMod();
+                    extraPropertiesText += $"Bonus to Physical Defense: +{Math.Round((armorPhysicalDefMod) * 100, 1)}%  ({Math.Round((double)totalPhysicalDefMod * 100, 1)}%)\n";
                 }
                 else
-                    extraPropertiesText += $"Bonus to Melee Defense: +{Math.Round((armorMeleeDefMod) * 100, 1)}%\n";
-
-                hasExtraPropertiesText = true;
-            }
-            // Armor Mod - Missile Def
-            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorMissileDefMod, out var armorMissileDefMod) && armorMissileDefMod >= 0.001)
-            {
-                var wielder = (Creature)wo.Wielder;
-
-                if (wielder != null)
-                {
-                    var totalMissileDefMod = wielder.GetArmorMissileDefMod();
-                    extraPropertiesText += $"Bonus to Missile Defense: +{Math.Round((armorMissileDefMod) * 100, 1)}%  ({Math.Round((double)totalMissileDefMod * 100, 1)}%)\n";
-                }
-                else
-                    extraPropertiesText += $"Bonus to Missile Defense: +{Math.Round((armorMissileDefMod) * 100, 1)}%\n";
+                    extraPropertiesText += $"Bonus to Physical Defense: +{Math.Round((armorPhysicalDefMod) * 100, 1)}%\n";
 
                 hasExtraPropertiesText = true;
             }

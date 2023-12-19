@@ -282,7 +282,7 @@ namespace ACE.Server.WorldObjects
 
             var attackType = GetCombatType();
             var defenseSkill = attackType == CombatType.Missile ? Skill.MissileDefense : Skill.MeleeDefense;
-            var defenseMod = defenseSkill == Skill.MeleeDefense ? GetWeaponMeleeDefenseModifier(creature) : 1.0f;
+            var defenseMod = defenseSkill == Skill.MeleeDefense ? GetWeaponPhysicalDefenseModifier(creature) : 1.0f;
             var effectiveDefense = (uint)Math.Round(creature.GetCreatureSkill(defenseSkill).Current * defenseMod);
 
             if (creature.IsExhausted) effectiveDefense = 0;

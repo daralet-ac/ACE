@@ -126,8 +126,7 @@ namespace ACE.Entity.Enum
             Skill.ManaConversion,
             Skill.ArcaneLore,
 
-            Skill.MeleeDefense,
-            Skill.MissileDefense,
+            Skill.MeleeDefense,         // Physical Defense
             Skill.MagicDefense,
             Skill.Shield,
             Skill.Healing,
@@ -166,6 +165,7 @@ namespace ACE.Entity.Enum
             //Skill.Recklessness,
             //Skill.DirtyFighting,
             //Skill.Summoning
+            //Skill.MissileDefense,
         };
 
         public static HashSet<Skill> AttackSkills = new HashSet<Skill>
