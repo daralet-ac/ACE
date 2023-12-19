@@ -82,6 +82,7 @@ namespace ACE.Server.Entity
                 _log.Debug($"Spell.Init(spellID = {spellID}, loadDB = {loadDB}) failed! {(_spell == null ? "_spell was null" : "")} {(_spellBase == null ? "_spellBase was null" : "")}");
 
             SpellPowerMod = 1.0f;
+            SpellStatModVal = 1.0f;
         }
 
         /// <summary>
