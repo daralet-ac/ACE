@@ -877,6 +877,10 @@ namespace ACE.Server.WorldObjects
             if(GetCurrentWeaponSkill() == Skill.UnarmedCombat && GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
                 baseCost *= 0.8f;
 
+            // SPEC BONUS: Martial Weapons (Sword) - Stamina costs for melee attacks reduced by 20%
+            if (GetCurrentWeaponSkill() == Skill.Sword && GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized)
+                baseCost *= 0.8f;
+
             var staminaCost = Math.Max(baseCost, 1);
 
             //Console.WriteLine($"GetAttackStamina({powerAccuracy}) - burden: {burden}, baseCost: {baseCost}, staminaMod: {staminaMod}, staminaCost: {staminaCost}");

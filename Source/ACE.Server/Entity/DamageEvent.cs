@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using ACE.Common;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
@@ -247,12 +248,17 @@ namespace ACE.Server.Entity
 
             HeritageMod = attacker.GetHeritageBonus(Weapon) ? 1.05f : 1.0f;
 
-            // Attack Height Bonus - High (10 damage rating)
+            // ATTACK HEIGHT BONUS: High (10 damage rating, 20 if weapon is specialized)
             var extraDamageMod = 1.0f;
             if (playerAttacker != null)
             {
                 if (playerAttacker.AttackHeight == AttackHeight.High)
-                    extraDamageMod += 0.10f;
+                {
+                    if (WeaponIsSpecialized(playerAttacker))
+                        extraDamageMod += 0.20f;
+                    else
+                        extraDamageMod += 0.10f;
+                }
             }
 
             // Combat Technique - Reckless (20 damage rating, if active) 
@@ -310,9 +316,14 @@ namespace ACE.Server.Entity
                         SneakAttackMod = 3.0f;
                 }
 
-                // Axe and Mace Specialization Bonus - +10% crit chance for axes (additively)
+                // SPEC BONUS: Martial Weapons (Axe) - +10% crit chance (additively)
                 if (playerAttacker.GetEquippedWeapon() != null)
-                    if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Axe && playerAttacker.GetCreatureSkill(Skill.Axe).AdvancementClass == SkillAdvancementClass.Specialized)
+                    if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Axe && playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized)
+                        CriticalChance += 0.1f;
+
+                // SPEC BONUS: Dagger - +10% crit chance (additively)
+                if (playerAttacker.GetEquippedWeapon() != null)
+                    if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Dagger && playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass == SkillAdvancementClass.Specialized)
                         CriticalChance += 0.1f;
             }
 
@@ -359,12 +370,12 @@ namespace ACE.Server.Entity
 
                     if (playerAttacker != null && playerAttacker.GetEquippedWeapon() != null)
                     {
-                        // Axe and Mace Specialization Bonus - +100% crit damage for maces (additively)
-                        if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Mace && playerAttacker.GetCreatureSkill(Skill.Axe).AdvancementClass == SkillAdvancementClass.Specialized)
+                        // SPEC BONUS: Martial Weapons (Mace) - +100% crit damage (additively)
+                        if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Mace && playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized)
                             CriticalDamageMod += 1.0f;
 
-                        // Spear and Staff Specialization Bonus - +100% crit damage for staves (additively)
-                        if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Staff && playerAttacker.GetCreatureSkill(Skill.Spear).AdvancementClass == SkillAdvancementClass.Specialized)
+                        // SPEC BONUS: Staff - +100% crit damage (additively)
+                        if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Staff && playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass == SkillAdvancementClass.Specialized)
                             CriticalDamageMod += 1.0f;
                     }
 
@@ -397,12 +408,12 @@ namespace ACE.Server.Entity
 
             if (playerAttacker != null && playerAttacker.GetEquippedWeapon() != null)
             {
-                // Two-handed Combat Specialization Bonus - +10% armor penetration for spears (additively)
+                // SPEC BONUS: Two-handed combat (Spear) - +10% armor penetration (additively)
                 if (playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded && Weapon.WeaponSkill == Skill.Spear && playerAttacker.GetCreatureSkill(Skill.TwoHandedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
                     ignoreArmorMod -= 0.1f;
 
-                // Spear and Staff Specialization Bonus - +10% armor penetration for spears (additively)
-                if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Spear && playerAttacker.GetCreatureSkill(Skill.Spear).AdvancementClass == SkillAdvancementClass.Specialized)
+                // SPEC BONUS: Martial Weapons (Spear) - +10% armor penetration (additively)
+                if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Spear && playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized)
                     ignoreArmorMod -= 0.1f;
             }
 
@@ -511,16 +522,36 @@ namespace ACE.Server.Entity
 
             GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
 
+            // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +20% if weapon specialized)
             if (playerAttacker != null)
             {
-                if (playerAttacker.AttackHeight == AttackHeight.Medium) // Medium height attacks gives players 10% extra attack skill.
-                    EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * 1.10f);
+                if (playerAttacker.AttackHeight == AttackHeight.Medium)
+                {
+                    float bonus;
+
+                    if (WeaponIsSpecialized(playerAttacker))
+                        bonus = 1.2f;
+                    else
+                        bonus = 1.1f;
+
+                    EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
+                }
             }
 
+            // ATTACK HEIGHT BONUS: Low (+10% physical defense skill, +20% if weapon specialized)
             if (playerDefender != null)
             {
-                if (playerDefender != null && playerDefender.AttackHeight == AttackHeight.Low) // While using low height attacks players get an extra defence skill bonus.
-                    EffectiveDefenseSkill = (uint)Math.Round(EffectiveDefenseSkill * 1.10f);
+                if (playerDefender != null && playerDefender.AttackHeight == AttackHeight.Low) 
+                {
+                    float bonus;
+
+                    if (WeaponIsSpecialized(playerAttacker))
+                        bonus = 1.2f;
+                    else
+                        bonus = 1.1f;
+
+                    EffectiveDefenseSkill = (uint)Math.Round(EffectiveDefenseSkill * bonus);
+                }
             }
 
             var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, EffectiveDefenseSkill);
@@ -962,6 +993,24 @@ namespace ACE.Server.Entity
 
                 return attackConditions;
             }
+        }
+        private bool WeaponIsSpecialized(Player playerAttacker)
+        {
+            switch(Weapon.WeaponSkill)
+            {
+                case Skill.Axe: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
+                case Skill.Mace: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
+                case Skill.Sword: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
+                case Skill.Spear: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
+                case Skill.Dagger: return playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass == SkillAdvancementClass.Specialized;
+                case Skill.Staff: return playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass == SkillAdvancementClass.Specialized;
+                case Skill.UnarmedCombat: return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized;
+                case Skill.Bow: return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass == SkillAdvancementClass.Specialized;
+                case Skill.Crossbow: return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass == SkillAdvancementClass.Specialized;
+                case Skill.ThrownWeapon: return playerAttacker.GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass == SkillAdvancementClass.Specialized;
+            }
+
+            return false;
         }
     }
 }
