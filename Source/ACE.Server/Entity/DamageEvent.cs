@@ -475,11 +475,21 @@ namespace ACE.Server.Entity
                 DamageResistanceRatingMod = Creature.AdditiveCombine(DamageResistanceRatingMod, PkDamageResistanceMod);
             }
 
+            // SPEC BONUS: Physical Defense
+            var specDefenseMod = 1.0f;
+            if(playerDefender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
+            {
+                var physicalDefenseSkill = playerDefender.GetCreatureSkill(Skill.MeleeDefense);
+                var bonusAmount = (float)physicalDefenseSkill.Current / 50;
+
+                specDefenseMod = 0.9f - bonusAmount;
+            }
+
             // ---- SHIELD ----
             ShieldMod = defender.GetShieldMod(attacker, DamageType, Weapon);
 
             // ---- FINAL CALCULATIONS ----
-            Damage = DamageBeforeMitigation * ArmorMod * ShieldMod * ResistanceMod * DamageResistanceRatingMod * evasionMod * backstabPenalty;
+            Damage = DamageBeforeMitigation * ArmorMod * ShieldMod * ResistanceMod * DamageResistanceRatingMod * evasionMod * backstabPenalty * specDefenseMod;
             DamageMitigated = DamageBeforeMitigation - Damage;
 
             // ---- OPTIONAL GLOBAL MULTIPLIERS FOR PLAYERS or MONSTERS ----

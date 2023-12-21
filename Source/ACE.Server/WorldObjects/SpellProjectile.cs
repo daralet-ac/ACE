@@ -548,6 +548,16 @@ namespace ACE.Server.WorldObjects
                     combatFocusDamageMod = 0.5f;
             }
 
+            // SPEC BONUS: Magic Defense
+            var specDefenseMod = 1.0f;
+            if (targetPlayer != null && targetPlayer.GetCreatureSkill(Skill.MagicDefense).AdvancementClass == SkillAdvancementClass.Specialized)
+            {
+                var magicDefenseSkill = targetPlayer.GetCreatureSkill(Skill.MagicDefense);
+                var bonusAmount = (float)magicDefenseSkill.Current / 50;
+
+                specDefenseMod = 0.9f - bonusAmount;
+            }
+
             // life magic projectiles: ie., martyr's hecatomb
             if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
             {
@@ -571,7 +581,7 @@ namespace ACE.Server.WorldObjects
 
                 resistanceMod = (float)Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
-                finalDamage = (lifeMagicDamage + critDamageBonus) * elementalDamageMod * slayerMod * resistanceMod * absorbMod * aegisMod * resistedMod;
+                finalDamage = (lifeMagicDamage + critDamageBonus) * elementalDamageMod * slayerMod * resistanceMod * absorbMod * aegisMod * resistedMod * specDefenseMod;
             }
             // war/void magic projectiles
             else
@@ -691,7 +701,7 @@ namespace ACE.Server.WorldObjects
 
                 var testFinalDamage = finalDamage * elementalDamageMod * slayerMod * resistanceMod * absorbMod * testAegisMod * magicSkillMod;
 
-                finalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod * aegisMod * magicSkillMod * resistedMod * combatFocusDamageMod;
+                finalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod * aegisMod * magicSkillMod * resistedMod * combatFocusDamageMod * specDefenseMod;
                 oldFinalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod;
 
                 if (sourcePlayer != null)
