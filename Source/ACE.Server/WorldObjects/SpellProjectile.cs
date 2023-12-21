@@ -355,7 +355,8 @@ namespace ACE.Server.WorldObjects
                         sourceCreature.TryProcEquippedItems(sourceCreature, creatureTarget, false, ProjectileLauncher);
 
                         // EMPOWERED SCARAB - Detonate
-                        player.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, creatureTarget);
+                        if (player != null)
+                            player.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, creatureTarget);
                     }
                     else
                     {
