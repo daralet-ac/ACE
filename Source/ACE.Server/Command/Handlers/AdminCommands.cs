@@ -2965,7 +2965,7 @@ namespace ACE.Server.Command.Handlers
                     }
                 }
 
-                int correctLength = 210;
+                int correctLength = 205;
 
                 // Check string is correctly formatted before altering stats
                 // correctly formatted return string should have 240 entries
@@ -3060,7 +3060,7 @@ namespace ACE.Server.Command.Handlers
                 {
                     string[] returnStringArr = returnString.Split("=");
 
-                    int correctLength = 210;
+                    int correctLength = 205;
 
                     // correctly formatted return string should have 240 entries
                     // if the construction of the string changes - this will need to be updated to match
