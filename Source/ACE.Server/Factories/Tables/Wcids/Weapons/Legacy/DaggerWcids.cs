@@ -41,6 +41,12 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.khanjarelectric, 1.0f ),
             ( WeenieClassName.khanjarfire,     1.0f ),
             ( WeenieClassName.khanjarfrost,    1.0f ),
+
+            ( WeenieClassName.jitte,               4.0f ),
+            ( WeenieClassName.jitteacid,           1.0f ),
+            ( WeenieClassName.jitteelectric,       1.0f ),
+            ( WeenieClassName.jittefire,           1.0f ),
+            ( WeenieClassName.jittefrost,          1.0f ),
         };
 
         private static ChanceTable<WeenieClassName> DaggerWcids_Aluvian_T1 = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
@@ -103,7 +109,7 @@ namespace ACE.Server.Factories.Tables.Wcids
         {
             ( WeenieClassName.knife,          1.0f ),
             ( WeenieClassName.dagger,         1.0f ),
-            ( WeenieClassName.dirk,           1.0f ),
+            ( WeenieClassName.jitte,          1.0f ),
         };
 
         private static ChanceTable<WeenieClassName> DaggerWcids_Sho = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
@@ -125,6 +131,12 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.dirkelectric,   1.0f ),
             ( WeenieClassName.dirkfire,       1.0f ),
             ( WeenieClassName.dirkfrost,      1.0f ),
+
+            ( WeenieClassName.jitte,               4.0f ),
+            ( WeenieClassName.jitteacid,           1.0f ),
+            ( WeenieClassName.jitteelectric,       1.0f ),
+            ( WeenieClassName.jittefire,           1.0f ),
+            ( WeenieClassName.jittefrost,          1.0f ),
         };
 
         public static WeenieClassName Roll(TreasureHeritageGroup heritage, int tier, out TreasureWeaponType weaponType)

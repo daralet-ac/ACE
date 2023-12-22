@@ -36,12 +36,6 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.clubspikedfire,      1.0f ),
             ( WeenieClassName.clubspikedfrost,     1.0f ),
 
-            ( WeenieClassName.jitte,               4.0f ),
-            ( WeenieClassName.jitteacid,           1.0f ),
-            ( WeenieClassName.jitteelectric,       1.0f ),
-            ( WeenieClassName.jittefire,           1.0f ),
-            ( WeenieClassName.jittefrost,          1.0f ),
-
             ( WeenieClassName.tofun,               4.0f ),
             ( WeenieClassName.tofunacid,           1.0f ),
             ( WeenieClassName.tofunelectric,       1.0f ),
@@ -171,7 +165,6 @@ namespace ACE.Server.Factories.Tables.Wcids
         {
             ( WeenieClassName.clubspiked,       3.0f ),
 
-            ( WeenieClassName.jitte,            0.50f ),
             ( WeenieClassName.tofun,            0.50f ),
             ( WeenieClassName.morningstar,      0.50f ),
 
@@ -180,12 +173,6 @@ namespace ACE.Server.Factories.Tables.Wcids
 
         private static ChanceTable<WeenieClassName> MaceWcids_Sho = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
-            ( WeenieClassName.jitte,               4.0f ),
-            ( WeenieClassName.jitteacid,           1.0f ),
-            ( WeenieClassName.jitteelectric,       1.0f ),
-            ( WeenieClassName.jittefire,           1.0f ),
-            ( WeenieClassName.jittefrost,          1.0f ),
-
             ( WeenieClassName.tofun,               4.0f ),
             ( WeenieClassName.tofunacid,           1.0f ),
             ( WeenieClassName.tofunelectric,       1.0f ),

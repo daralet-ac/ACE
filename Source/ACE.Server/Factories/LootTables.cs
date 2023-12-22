@@ -302,19 +302,19 @@ namespace ACE.Server.Factories
             new int[] { 319, 3794, 3795, 3796, 3797 },       // 2 - Jambiya (MS)
             new int[] { 328, 3826, 3827, 3828, 3829 },       // 3 - Khanjar
             new int[] { 329, 3830, 3831, 3832, 3833 },       // 4 - Knife (MS)
-            new int[] { 22440, 22441, 22442, 22443, 22444 }  // 5 - Dirk
+            new int[] { 22440, 22441, 22442, 22443, 22444 }, // 5 - Dirk
+            new int[] { 321, 3802, 3803, 3804, 3805 }        // 6 - Jitte
         };
 
         public static readonly int[][] MacesMatrix =
         {
             new int[] { 309, 3766, 3767, 3768, 3769 },       // 0 - Club
             new int[] { 313, 3774, 3775, 3776, 3777 },       // 1 - Dabus
-            new int[] { 321, 3802, 3803, 3804, 3805 },       // 2 - Jitte
-            new int[] { 325, 3814, 3815, 3816, 3817 },       // 3 - Kasrullah
-            new int[] { 331, 3834, 3835, 3836, 3837 },       // 4 - Mace
-            new int[] { 332, 3937, 3938, 3939, 3940 },       // 5 - Morning Star
-            new int[] { 356, 3897, 3898, 3899, 3900 },       // 6 - Tofun
-            new int[] { 7768, 7787, 7788, 7789, 7790 }       // 7 - Spiked Club
+            new int[] { 325, 3814, 3815, 3816, 3817 },       // 2 - Kasrullah
+            new int[] { 331, 3834, 3835, 3836, 3837 },       // 3 - Mace
+            new int[] { 332, 3937, 3938, 3939, 3940 },       // 4 - Morning Star
+            new int[] { 356, 3897, 3898, 3899, 3900 },       // 5 - Tofun
+            new int[] { 7768, 7787, 7788, 7789, 7790 }       // 6 - Spiked Club
         };
 
         public static readonly int[][] SpearsMatrix =
