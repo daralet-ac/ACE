@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Entity;
@@ -58,16 +59,12 @@ namespace ACE.Server.WorldObjects
             SpellId.StrengthSelf1,
             SpellId.EnduranceSelf1,
             SpellId.ShieldMasterySelf1,
-            SpellId.HeavyWeaponsMasterySelf1, // Sword
-            SpellId.LightWeaponsMasterySelf1, // Axe and Mace
-            SpellId.SpearMasterySelf1,        // Spear and Staff
-            SpellId.UnarmedCombatMasterySelf1,
+            SpellId.HeavyWeaponsMasterySelf1, // Martial Weapons
             SpellId.InvulnerabilitySelf1,
-            SpellId.ImpregnabilitySelf1,
             SpellId.ThrownWeaponMasterySelf1,
             SpellId.TwoHandedMasterySelf1,
             SpellId.HealingMasterySelf1,
-            SpellId.MonsterAttunementSelf1   // Assess
+            SpellId.MonsterAttunementSelf1   // Perception
         };
 
         private static readonly List<SpellId> SwashbucklerSpells = new List<SpellId>()
@@ -75,19 +72,17 @@ namespace ACE.Server.WorldObjects
             SpellId.EnduranceSelf1,
             SpellId.CoordinationSelf1,
             SpellId.ShieldMasterySelf1,
-            SpellId.HeavyWeaponsMasterySelf1,   // Sword
-            SpellId.LightWeaponsMasterySelf1,   // Axe and Mace
-            SpellId.SpearMasterySelf1,          // Spear and Staff
+            SpellId.HeavyWeaponsMasterySelf1,           // Martial Weapons
+            SpellId.FinesseWeaponsIneptitudeSelf1,      // Dagger
+            SpellId.StaffMasterySelf1,                  
             SpellId.UnarmedCombatMasterySelf1,
             SpellId.InvulnerabilitySelf1,
-            SpellId.ImpregnabilitySelf1,
             SpellId.ThrownWeaponMasterySelf1,
             SpellId.TwoHandedMasterySelf1,
             SpellId.HealingMasterySelf1,
             SpellId.DualWieldMasterySelf1,
-            SpellId.MissileWeaponsMasterySelf1, // Bow and Crossbow
-            SpellId.SneakAttackMasterySelf1,    // Sneak
-            SpellId.FinesseWeaponsMasterySelf1, // Dagger
+            SpellId.MissileWeaponsMasterySelf1,         // Bows
+            SpellId.LockpickMasterySelf1,               // Thievery
         };
 
         private static readonly List<SpellId> VagabondSpells = new List<SpellId>()
@@ -96,13 +91,14 @@ namespace ACE.Server.WorldObjects
             SpellId.QuicknessSelf1,
             SpellId.DeceptionMasterySelf1,
             SpellId.InvulnerabilitySelf1,
-            SpellId.ImpregnabilitySelf1,
             SpellId.ThrownWeaponMasterySelf1,
             SpellId.HealingMasterySelf1,
             SpellId.DualWieldMasterySelf1,
-            SpellId.MissileWeaponsMasterySelf1, // Bow and Crossbow
-            SpellId.SneakAttackMasterySelf1,    // Sneak
-            SpellId.FinesseWeaponsMasterySelf1, // Dagger
+            SpellId.MissileWeaponsMasterySelf1,         // Bows
+            SpellId.LockpickMasterySelf1,               // Thievery
+            SpellId.FinesseWeaponsMasterySelf1,         // Dagger
+            SpellId.StaffMasterySelf1,                  
+            SpellId.UnarmedCombatMasterySelf1,
         };
 
         private static readonly List<SpellId> WayfayerSpells = new List<SpellId>()
@@ -116,9 +112,11 @@ namespace ACE.Server.WorldObjects
             SpellId.LifeMagicMasterySelf1,
             SpellId.ManaMasterySelf1,
             SpellId.DualWieldMasterySelf1,
-            SpellId.MissileWeaponsMasterySelf1, // Bow and Crossbow
-            SpellId.SneakAttackMasterySelf1,    // Sneak
-            SpellId.FinesseWeaponsMasterySelf1, // Dagger
+            SpellId.MissileWeaponsMasterySelf1,         // Bows
+            SpellId.LockpickMasterySelf1,               // Thievery
+            SpellId.FinesseWeaponsMasterySelf1,         // Dagger
+            SpellId.StaffMasterySelf1,
+            SpellId.UnarmedCombatMasterySelf1,
         };
 
         private static readonly List<SpellId> SorcererSpells = new List<SpellId>()
@@ -131,7 +129,7 @@ namespace ACE.Server.WorldObjects
             SpellId.WarMagicMasterySelf1,
             SpellId.LifeMagicMasterySelf1,
             SpellId.ManaMasterySelf1,
-            SpellId.MonsterAttunementSelf1      // Assess
+            SpellId.MonsterAttunementSelf1              // Perception
         };
 
         private static readonly List<SpellId> SwordscholarSpells = new List<SpellId>()
@@ -139,17 +137,14 @@ namespace ACE.Server.WorldObjects
             SpellId.WillpowerSelf1,
             SpellId.StrengthSelf1,
             SpellId.ShieldMasterySelf1,
-            SpellId.HeavyWeaponsMasterySelf1, // Sword
-            SpellId.LightWeaponsMasterySelf1, // Axe and Mace
-            SpellId.SpearMasterySelf1,        // Spear and Staff
-            SpellId.UnarmedCombatMasterySelf1,
+            SpellId.HeavyWeaponsMasterySelf1,           // Martial Weapons
             SpellId.TwoHandedMasterySelf1,
             SpellId.MagicResistanceSelf1,
             SpellId.ArcaneEnlightenmentSelf1,
             SpellId.WarMagicMasterySelf1,
             SpellId.LifeMagicMasterySelf1,
             SpellId.ManaMasterySelf1,
-            SpellId.MonsterAttunementSelf1   // Assess
+            SpellId.MonsterAttunementSelf1              // Perception
         };
 
         private static readonly List<List<SpellId>> CombatFocusSpells = new List<List<SpellId>>()
@@ -166,7 +161,7 @@ namespace ACE.Server.WorldObjects
         {
             if (player == null)
                 return;
-
+            
             var combatFocusType = CombatFocusType;
             if (combatFocusType == null || combatFocusType < 1)
                 return;
