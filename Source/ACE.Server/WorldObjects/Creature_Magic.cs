@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-
+using System.Runtime.CompilerServices;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
@@ -81,19 +81,16 @@ namespace ACE.Server.WorldObjects
             if (roll < successChance)
             {
                 var maxManaReduction = 0.5f;
+                var reductionRoll = maxManaReduction * ThreadSafeRandom.Next(0.0f, (float)successChance);
+                var savedMana = (uint)Math.Round(manaCost * reductionRoll);
+
+                manaCost = manaCost - savedMana;
 
                 if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized)
                 {
-                    maxManaReduction = 1;
-                    var reductionRoll = maxManaReduction * ThreadSafeRandom.Next(0.0f, (float)successChance);
-
-                    manaCost = (uint)Math.Round(manaCost * (1.0f - reductionRoll));
-                }
-                else
-                {
-                    var reductionRoll = maxManaReduction * ThreadSafeRandom.Next(0.0f, (float)successChance);
-
-                    manaCost = (uint)Math.Round(manaCost * (1.0f - reductionRoll));
+                    var conversionAmount = (int)Math.Round(savedMana * 0.5f);
+                    caster.UpdateVitalDelta(caster.Health, conversionAmount);
+                    caster.UpdateVitalDelta(caster.Stamina, conversionAmount);
                 }
             }
 
