@@ -484,9 +484,9 @@ namespace ACE.Server.Entity
             if(playerDefender != null && playerDefender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
                 var physicalDefenseSkill = playerDefender.GetCreatureSkill(Skill.MeleeDefense);
-                var bonusAmount = (float)physicalDefenseSkill.Current / 50;
+                var bonusAmount = (float)Math.Min(physicalDefenseSkill.Current, 500) / 50;
 
-                specDefenseMod = 0.9f - bonusAmount;
+                specDefenseMod = 0.9f - bonusAmount * 0.01f;
             }
 
             // ---- SHIELD ----

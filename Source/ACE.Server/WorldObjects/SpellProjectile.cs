@@ -554,9 +554,9 @@ namespace ACE.Server.WorldObjects
             if (targetPlayer != null && targetPlayer.GetCreatureSkill(Skill.MagicDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
                 var magicDefenseSkill = targetPlayer.GetCreatureSkill(Skill.MagicDefense);
-                var bonusAmount = (float)magicDefenseSkill.Current / 50;
+                var bonusAmount = (float)Math.Min(magicDefenseSkill.Current, 500) / 50;
 
-                specDefenseMod = 0.9f - bonusAmount;
+                specDefenseMod = 0.9f - bonusAmount * 0.01f;
             }
 
             // life magic projectiles: ie., martyr's hecatomb
@@ -704,7 +704,7 @@ namespace ACE.Server.WorldObjects
 
                 finalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod * aegisMod * magicSkillMod * resistedMod * combatFocusDamageMod * specDefenseMod;
                 oldFinalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod;
-
+                
                 if (sourcePlayer != null)
                 {
                     //Console.WriteLine($"\n{sourcePlayer.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
