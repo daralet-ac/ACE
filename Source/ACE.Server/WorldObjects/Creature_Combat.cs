@@ -606,6 +606,14 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
+        /// Called when a creature blocks an attack
+        /// </summary>
+        public virtual void OnBlock(WorldObject attacker, CombatType attackType)
+        {
+            // empty base for non-player creatures?
+        }
+
+        /// <summary>
         /// Called when a creature hits a target
         /// </summary>
         public virtual void OnDamageTarget(WorldObject target, CombatType attackType, bool critical)

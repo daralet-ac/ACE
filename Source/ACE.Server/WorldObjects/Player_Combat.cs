@@ -131,8 +131,8 @@ namespace ACE.Server.WorldObjects
 
             var damageEvent = DamageEvent.CalculateDamage(this, target, damageSource);
 
-            target.OnAttackReceived(this, (damageSource == null || damageSource.ProjectileSource == null) ? CombatType.Melee : CombatType.Missile, damageEvent.IsCritical, damageEvent.Evaded || damageEvent.PartialEvasion != PartialEvasion.None);
-
+            target.OnAttackReceived(this, (damageSource == null || damageSource.ProjectileSource == null) ? CombatType.Melee : CombatType.Missile, damageEvent.IsCritical, damageEvent.Evaded || damageEvent.Blocked || damageEvent.PartialEvasion != PartialEvasion.None);
+            
             var crit = damageEvent.IsCritical;
             var critMessage = crit == true ? "Critical Hit! " : "";
 
@@ -149,6 +149,8 @@ namespace ACE.Server.WorldObjects
             {
                 if (damageEvent.LifestoneProtection)
                     Session.Network.EnqueueSend(new GameMessageSystemChat($"The Lifestone's magic protects {target.Name} from the attack!", ChatMessageType.Magic));
+                else if (this != target && damageEvent.Blocked)
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{target.Name} blocked your attack!", ChatMessageType.CombatEnemy));
                 else if (!SquelchManager.Squelches.Contains(target, ChatMessageType.CombatSelf))
                     Session.Network.EnqueueSend(new GameEventEvasionAttackerNotification(Session, target.Name));
 
@@ -326,7 +328,7 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// Called when player successfully avoids an attack
+        /// Called when player successfully evades an attack
         /// </summary>
         public override void OnEvade(WorldObject attacker, CombatType attackType)
         {
@@ -345,8 +347,7 @@ namespace ACE.Server.WorldObjects
             // in order for this specific ability to work. This benefit is tied to Endurance only, and it caps out at around a 75% chance
             // to avoid losing a point of stamina per successful evasion.
 
-            var defenseSkillType = attackType == CombatType.Missile ? Skill.MissileDefense : Skill.MeleeDefense;
-            var defenseSkill = GetCreatureSkill(defenseSkillType);
+            var defenseSkill = GetCreatureSkill(Skill.MeleeDefense);
 
             if (CombatMode != CombatMode.NonCombat)
             {
@@ -380,10 +381,67 @@ namespace ACE.Server.WorldObjects
 
                 //UpdateVitalDelta(Stamina, -1);
             }
-
             if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
                 Session.Network.EnqueueSend(new GameEventEvasionDefenderNotification(Session, attacker.Name));
 
+            if (creatureAttacker == null)
+                return;
+
+            var difficulty = creatureAttacker.GetCreatureSkill(creatureAttacker.GetCurrentWeaponSkill()).Current;
+            // attackMod?
+            Proficiency.OnSuccessUse(this, defenseSkill, difficulty);
+        }
+
+        /// <summary>
+        /// Called when player successfully blocks an attack
+        /// </summary>
+        public override void OnBlock(WorldObject attacker, CombatType attackType)
+        {
+            var creatureAttacker = attacker as Creature;
+
+            if (creatureAttacker != null)
+                SetCurrentAttacker(creatureAttacker);
+
+            if (UnderLifestoneProtection)
+                return;
+
+            var defenseSkill = GetCreatureSkill(Skill.Shield);
+
+            if (CombatMode != CombatMode.NonCombat)
+            {
+                if (defenseSkill.AdvancementClass >= SkillAdvancementClass.Trained)
+                {
+                    var enduranceBase = (int)Endurance.Base;
+
+                    // TODO: find exact formula / where it caps out at 75%
+
+                    // more literal / linear formula
+                    //var noStaminaUseChance = (enduranceBase - 50) / 320.0f;
+
+                    // gdle curve-based formula, caps at 300 instead of 290
+                    var noStaminaUseChance = (enduranceBase * enduranceBase * 0.000005f) + (enduranceBase * 0.00124f) - 0.07f;
+
+                    noStaminaUseChance = Math.Clamp(noStaminaUseChance, 0.0f, 0.75f);
+
+                    //Console.WriteLine($"NoStaminaUseChance: {noStaminaUseChance}");
+
+                    if (noStaminaUseChance <= ThreadSafeRandom.Next(0.0f, 1.0f))
+                        UpdateVitalDelta(Stamina, -1);
+                }
+                else
+                    UpdateVitalDelta(Stamina, -1);
+            }
+            else
+            {
+                // if the player is in non-combat mode, no stamina is consumed on evade
+                // reference: https://youtu.be/uFoQVgmSggo?t=145
+                // from the dm guide, page 147: "if you are not in Combat mode, you lose no Stamina when an attack is thrown at you"
+
+                //UpdateVitalDelta(Stamina, -1);
+            }
+            if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"You blocked {attacker.Name}'s attack!", ChatMessageType.CombatEnemy));
+                    
             if (creatureAttacker == null)
                 return;
 
@@ -698,7 +756,7 @@ namespace ACE.Server.WorldObjects
             {
                 var critMessage = crit == true ? "Critical Hit! " : "";
 
-                if(!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature && partialEvasion == PartialEvasion.Some)
+                if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature && partialEvasion == PartialEvasion.Some)
                     Session.Network.EnqueueSend(new GameMessageSystemChat($"Minor Glancing Blow! {creature.Name} hit you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
                 else if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature && partialEvasion == PartialEvasion.Most)
                     Session.Network.EnqueueSend(new GameMessageSystemChat($"Major Glancing Blow! {creature.Name} hit you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));

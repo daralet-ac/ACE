@@ -64,6 +64,7 @@ namespace ACE.Server.Entity
         public uint EffectiveDefenseSkill;
         public float AccuracyMod;
 
+        public bool Blocked;
         public bool Evaded;
         public PartialEvasion PartialEvasion;
 
@@ -208,6 +209,9 @@ namespace ACE.Server.Entity
             // ---- OVERPOWER ----
             if (attacker.Overpower != null)
                 Overpower = Creature.GetOverpower(attacker, defender);
+
+            // ---- BLOCK ----
+            Blocked = IsBlocked(attacker, defender);
 
             // ---- EVASION ----
             var evasionMod = GetEvasionMod(attacker, defender);
@@ -435,7 +439,7 @@ namespace ACE.Server.Entity
 
                 // select random body part @ current attack height
                 GetBodyPart(Defender, Quadrant);
-                if (Evaded)
+                if (Evaded || Blocked)
                     return 0.0f;
 
                 Armor = CreaturePart.GetArmorLayers(PropertiesBodyPart.Key);
@@ -477,7 +481,7 @@ namespace ACE.Server.Entity
 
             // SPEC BONUS: Physical Defense
             var specDefenseMod = 1.0f;
-            if(playerDefender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
+            if(playerDefender != null && playerDefender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
                 var physicalDefenseSkill = playerDefender.GetCreatureSkill(Skill.MeleeDefense);
                 var bonusAmount = (float)physicalDefenseSkill.Current / 50;
@@ -570,7 +574,7 @@ namespace ACE.Server.Entity
             if (defenderCombatAbility == CombatAbility.Smokescreen)
                 evadeChance += 0.1f; // Gain 10% evade chance
 
-            return (float)Math.Min(evadeChance, 1.0f); ;
+            return (float)Math.Min(evadeChance, 1.0f);
         }
 
         /// <summary>
@@ -644,6 +648,49 @@ namespace ACE.Server.Entity
                 //        $" -EvasionMod: {Math.Round(evasionMod * 100)}% (IF PARTIAL EVADE)");
                 //}
             }
+            return false;
+        }
+
+        private bool IsBlocked(Creature attacker, Creature defender)
+        {
+            var defenderEquippedShield = defender.GetEquippedShield();
+
+            if (defenderEquippedShield == null || defender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass != SkillAdvancementClass.Specialized)
+                return false;
+
+            Player playerAttacker = attacker as Player;
+            Player playerDefender = defender as Player;
+
+            AccuracyMod = attacker.GetAccuracySkillMod(Weapon);
+            EffectiveAttackSkill = attacker.GetEffectiveAttackSkill();
+
+            GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
+
+            // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +20% if weapon specialized)
+            if (playerAttacker != null)
+            {
+                if (playerAttacker.AttackHeight == AttackHeight.Medium)
+                {
+                    float bonus;
+
+                    if (WeaponIsSpecialized(playerAttacker))
+                        bonus = 1.2f;
+                    else
+                        bonus = 1.1f;
+
+                    EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
+                }
+            }
+
+            var shieldArmorLevel = defenderEquippedShield.ArmorLevel ?? 0;
+
+            var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
+
+            var blockChance = 0.1f + 0.1f * blockChanceMod;
+
+            if (ThreadSafeRandom.Next(0.0f, 1.0f) < blockChance)
+                return true;
+
             return false;
         }
 
@@ -847,6 +894,7 @@ namespace ACE.Server.Entity
 
             info += $"EvasionChance: {EvasionChance}\n";
             info += $"Evaded: {Evaded}\n";
+            info += $"Blocked: {Blocked}\n";
             info += $"PartialEvaded: {PartialEvasion}\n";
 
             if (!(Attacker is Player))

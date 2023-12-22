@@ -96,7 +96,7 @@ namespace ACE.Server.WorldObjects
                     }
 
                     var damageEvent = DamageEvent.CalculateDamage(this, target, weapon, motionCommand, attackFrames[0].attackHook);
-                    target.OnAttackReceived(this, CombatType.Melee, damageEvent.IsCritical, damageEvent.Evaded);
+                    target.OnAttackReceived(this, CombatType.Melee, damageEvent.IsCritical, damageEvent.Evaded || damageEvent.Blocked);
 
                     //var damage = CalculateDamage(ref damageType, maneuver, bodyPart, ref critical, ref shieldMod);
 
@@ -136,6 +136,8 @@ namespace ACE.Server.WorldObjects
                             targetProc = true;
                         }
                     }
+                    else if (damageEvent.Blocked)
+                        target.OnBlock(this, CombatType.Melee);
                     else
                         target.OnEvade(this, CombatType.Melee);
 
