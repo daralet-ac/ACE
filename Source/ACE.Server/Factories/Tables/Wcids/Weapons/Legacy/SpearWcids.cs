@@ -23,23 +23,11 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.tridentfire,        1.0f ),
             ( WeenieClassName.tridentfrost,       1.0f ),
 
-            ( WeenieClassName.swordstaff,         4.0f ),
-            ( WeenieClassName.swordstaffacid,     1.0f ),
-            ( WeenieClassName.swordstaffelectric, 1.0f ),
-            ( WeenieClassName.swordstafffire,     1.0f ),
-            ( WeenieClassName.swordstafffrost,    1.0f ),
-
             ( WeenieClassName.budiaq,            4.0f ),
             ( WeenieClassName.budiaqacid,         1.0f ),
             ( WeenieClassName.budiaqelectric,     1.0f ),
             ( WeenieClassName.budiaqfire,         1.0f ),
             ( WeenieClassName.budiaqfrost,        1.0f ),
-
-            ( WeenieClassName.swordstaff,         4.0f ),
-            ( WeenieClassName.swordstaffacid,     1.0f ),
-            ( WeenieClassName.swordstaffelectric, 1.0f ),
-            ( WeenieClassName.swordstafffire,     1.0f ),
-            ( WeenieClassName.swordstafffrost,    1.0f ),
 
             ( WeenieClassName.yari,              4.0f ),
             ( WeenieClassName.yariacid,           1.0f ),
@@ -89,12 +77,6 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.tridentfire,        1.0f ),
             ( WeenieClassName.tridentfrost,       1.0f ),
 
-            ( WeenieClassName.swordstaff,         4.0f ),
-            ( WeenieClassName.swordstaffacid,     1.0f ),
-            ( WeenieClassName.swordstaffelectric, 1.0f ),
-            ( WeenieClassName.swordstafffire,     1.0f ),
-            ( WeenieClassName.swordstafffrost,    1.0f ),
-
             ( WeenieClassName.ace41046_pike,          4.0f ),
             ( WeenieClassName.ace41047_acidpike,      1.0f ),
             ( WeenieClassName.ace41048_lightningpike, 1.0f ),
@@ -125,12 +107,6 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.tridentfire,        1.0f ),
             ( WeenieClassName.tridentfrost,       1.0f ),
 
-            ( WeenieClassName.swordstaff,         4.0f ),
-            ( WeenieClassName.swordstaffacid,     1.0f ),
-            ( WeenieClassName.swordstaffelectric, 1.0f ),
-            ( WeenieClassName.swordstafffire,     1.0f ),
-            ( WeenieClassName.swordstafffrost,    1.0f ),
-
             ( WeenieClassName.ace41036_assagai,          4.0f ),
             ( WeenieClassName.ace41037_acidassagai,      1.0f ),
             ( WeenieClassName.ace41038_lightningassagai, 1.0f ),
@@ -160,12 +136,6 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.tridentelectric,    1.0f ),
             ( WeenieClassName.tridentfire,        1.0f ),
             ( WeenieClassName.tridentfrost,       1.0f ),
-
-            ( WeenieClassName.swordstaff,         4.0f ),
-            ( WeenieClassName.swordstaffacid,     1.0f ),
-            ( WeenieClassName.swordstaffelectric, 1.0f ),
-            ( WeenieClassName.swordstafffire,     1.0f ),
-            ( WeenieClassName.swordstafffrost,    1.0f ),
 
             ( WeenieClassName.ace41041_magariyari,          4.0f ),
             ( WeenieClassName.ace41042_acidmagariyari,      1.0f ),

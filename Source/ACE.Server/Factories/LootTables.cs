@@ -322,15 +322,15 @@ namespace ACE.Server.Factories
             new int[] { 308, 3762, 3763, 3764, 3765 },       // 0 - Budiaq
             new int[] { 348, 3873, 3874, 3875, 3876 },       // 1 - Spear
             new int[] { 362, 3913, 3914, 3915, 3916 },       // 2 - Yari
-            new int[] { 7771, 7795, 7796, 7797, 7798 },      // 3 - Naginata
-            new int[] { 7772, 7791, 7792, 7793, 7794 }       // 4 - Trident
+            new int[] { 7772, 7791, 7792, 7793, 7794 }       // 3 - Trident
         };
 
         public static readonly int[][] StavesMatrix =
         {
             new int[] { 22158, 22154, 22155, 22156, 22157 },   // 0 - Jo
             new int[] { 22163, 22159, 22160, 22161, 22162 },   // 1 - Nabut
-            new int[] { 22168, 22164, 22165, 22166, 22167 }    // 2 - Quarter Staff
+            new int[] { 22168, 22164, 22165, 22166, 22167 },   // 2 - Quarter Staff
+            new int[] { 7771, 7795, 7796, 7797, 7798 },        // 3 - Naginata
             //new int[] { 322, 3806, 3807, 3808, 3809 },         // 3 - Old Jo
             //new int[] { 333, 3838, 3839, 3840, 3841 },         // 4 - Old Nabut
             //new int[] { 338, 3846, 3847, 3848, 3936 }          // 5 - Old Quarter Staff
