@@ -1028,6 +1028,10 @@ namespace ACE.Server.WorldObjects
             if (isWeaponSpell && caster.ItemSpellcraft != null)
                 magicSkill = (uint)caster.ItemSpellcraft;
 
+            // SPEC BONUS - War/Life Magic: verify advanced spell
+            if (!VerifyAdvancedSpell(spell))
+                return false;
+
             // verify spell range
             if (!VerifySpellRange(target, targetCategory, spell, casterItem, magicSkill))
                 return false;
@@ -1449,6 +1453,43 @@ namespace ACE.Server.WorldObjects
         {
             if (!SquelchManager.Squelches.Contains(source, msgType))
                 Session.Network.EnqueueSend(new GameMessageSystemChat(msg, msgType));
+        }
+
+        private bool VerifyAdvancedSpell(Spell spell)
+        {
+            if (!IsAdvancedSpell(spell))
+                return true;
+
+            if (spell.School == MagicSchool.WarMagic && GetCreatureSkill(Skill.WarMagic).AdvancementClass != SkillAdvancementClass.Specialized)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"You must be specialized in War Magic to cast {spell.Name}", ChatMessageType.Broadcast));
+                SendUseDoneEvent(WeenieError.BadCast);
+                return false;
+            }
+            else if (spell.School == MagicSchool.LifeMagic && GetCreatureSkill(Skill.LifeMagic).AdvancementClass != SkillAdvancementClass.Specialized)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"You must be specialized in Life Magic to cast {spell.Name}", ChatMessageType.Broadcast));
+                SendUseDoneEvent(WeenieError.BadCast);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool IsAdvancedSpell(Spell spell)
+        {
+            SpellCategory[] advancedSpellCategories = {SpellCategory.AcidBlast, SpellCategory.BludgeoningBlast, SpellCategory.ColdBlast, SpellCategory.ElectricBlast, SpellCategory.FireBlast, SpellCategory.PiercingBlast, SpellCategory.SlashingBlast,
+            SpellCategory.AcidVolley, SpellCategory.BladeVolley, SpellCategory.BludgeoningVolley, SpellCategory.FlameVolley, SpellCategory.ForceVolley, SpellCategory.FrostVolley, SpellCategory.LightningVolley,
+            SpellCategory.AcidStreak, SpellCategory.BludgeoningStreak, SpellCategory.ColdStreak, SpellCategory.ElectricStreak, SpellCategory.FireStreak, SpellCategory.PiercingStreak, SpellCategory.SlashingStreak,
+            SpellCategory.AcidWall, SpellCategory.BludgeoningWall, SpellCategory.ColdWall, SpellCategory.ElectricWall, SpellCategory.FireWall, SpellCategory.PiercingWall, SpellCategory.SlashingWall,
+            SpellCategory.AcidRing, SpellCategory.BludgeoningRing, SpellCategory.ColdRing, SpellCategory.ElectricRing, SpellCategory.FireRing, SpellCategory.PiercingRing, SpellCategory.SlashingRing};
+
+            SpellId[] advancedSpellIds = { SpellId.HealFellow1, SpellId.DispelLifeBadFellow1 };
+
+            if (advancedSpellCategories.Contains(spell.Category) || advancedSpellIds.Contains((SpellId)spell.Id))
+                return true;
+
+            return false;
         }
     }
 }
