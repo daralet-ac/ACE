@@ -908,6 +908,13 @@ namespace ACE.Server.WorldObjects
             var creatureAttacker = attacker as Creature;
             var playerAttacker = attacker as Player;
 
+            // SPEC BONUS - Arcane Lore (double proc chance, max +20%)
+            if (playerAttacker != null)
+            {
+                if (playerAttacker.GetCreatureSkill(Skill.ArcaneLore).AdvancementClass == SkillAdvancementClass.Specialized)
+                    chance += Math.Min(0.2f, chance * 2.0f);
+            }
+
             // COMBAT ABILITY - Enchanted (double proc chance, max +20%)
             if (playerAttacker != null)
             {
