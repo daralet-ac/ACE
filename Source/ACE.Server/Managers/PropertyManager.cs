@@ -501,6 +501,7 @@ namespace ACE.Server.Managers
             PropertyManager.ModifyLong("fellowship_even_share_level", 50);                
 
             PropertyManager.ModifyBool("show_dat_warning", false);
+            PropertyManager.ModifyBool("show_mana_conv_bonus_0", false);
 
             PropertyManager.ModifyDouble("vendor_unique_rot_time", 1800);
         }

@@ -724,9 +724,9 @@ namespace ACE.Server.Network.Structure
             {
                 var wielder = (Creature)wo.Wielder;
 
-                if (wo.ItemType == ItemType.Jewelry)
+                if (wo.ItemType == ItemType.Jewelry || wo.ItemType == ItemType.Armor || wo.ItemType == ItemType.Clothing)
                 {
-                    extraPropertiesText += $"Bonus to Mana Conversion Skill: +{manaConversionMod}%\n";
+                    extraPropertiesText += $"Bonus to Mana Conversion Skill: +{Math.Round(manaConversionMod * 100, 1)}%\n";
                 }
 
                 hasExtraPropertiesText = true;
@@ -881,7 +881,7 @@ namespace ACE.Server.Network.Structure
 
                 hasExtraPropertiesText = true;
             }
-            // Armor Mod - Assess
+            // Armor Mod - Perception
             if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorAssessMod, out var armorAssessMod) && armorAssessMod >= 0.01)
             {
                 var wielder = (Creature)wo.Wielder;
@@ -889,10 +889,10 @@ namespace ACE.Server.Network.Structure
                 if (wielder != null)
                 {
                     var totalAssessMod = wielder.GetArmorAssessMod();
-                    extraPropertiesText += $"Bonus to Assess Skill: +{Math.Round((armorAssessMod) * 100, 1)}%  ({Math.Round((double)totalAssessMod * 100, 1)}%)\n";
+                    extraPropertiesText += $"Bonus to Perception Skill: +{Math.Round((armorAssessMod) * 100, 1)}%  ({Math.Round((double)totalAssessMod * 100, 1)}%)\n";
                 }
                 else
-                    extraPropertiesText += $"Bonus to Assess Skill: +{Math.Round((armorAssessMod) * 100, 1)}%\n";
+                    extraPropertiesText += $"Bonus to Perception Skill: +{Math.Round((armorAssessMod) * 100, 1)}%\n";
 
                 hasExtraPropertiesText = true;
             }
@@ -1012,8 +1012,7 @@ namespace ACE.Server.Network.Structure
                 hasExtraPropertiesText = true;
             }
 
-            // MANA SCARABS
-
+            // -------- EMPOWERED SCARABS --------
 
             // Max Level
             if (PropertiesInt.TryGetValue(PropertyInt.EmpoweredScarabMaxLevel, out var manaScarabMaxLevel) && manaScarabMaxLevel > 0)
