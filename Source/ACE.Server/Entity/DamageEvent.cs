@@ -1054,21 +1054,25 @@ namespace ACE.Server.Entity
         }
         private bool WeaponIsSpecialized(Player playerAttacker)
         {
-            switch(Weapon.WeaponSkill)
+            if (Weapon != null)
             {
-                case Skill.Axe: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
-                case Skill.Mace: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
-                case Skill.Sword: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
-                case Skill.Spear: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
-                case Skill.Dagger: return playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass == SkillAdvancementClass.Specialized;
-                case Skill.Staff: return playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass == SkillAdvancementClass.Specialized;
-                case Skill.UnarmedCombat: return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized;
-                case Skill.Bow: return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass == SkillAdvancementClass.Specialized;
-                case Skill.Crossbow: return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass == SkillAdvancementClass.Specialized;
-                case Skill.ThrownWeapon: return playerAttacker.GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass == SkillAdvancementClass.Specialized;
+                switch (Weapon.WeaponSkill)
+                {
+                    case Skill.Axe: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
+                    case Skill.Mace: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
+                    case Skill.Sword: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
+                    case Skill.Spear: return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized;
+                    case Skill.Dagger: return playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass == SkillAdvancementClass.Specialized;
+                    case Skill.Staff: return playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass == SkillAdvancementClass.Specialized;
+                    case Skill.UnarmedCombat: return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized;
+                    case Skill.Bow: return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass == SkillAdvancementClass.Specialized;
+                    case Skill.Crossbow: return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass == SkillAdvancementClass.Specialized;
+                    case Skill.ThrownWeapon: return playerAttacker.GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass == SkillAdvancementClass.Specialized;
+                    default: return false;
+                }
             }
-
-            return false;
+            else
+                return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized;
         }
     }
 }
