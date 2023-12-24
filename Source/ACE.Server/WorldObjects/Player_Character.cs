@@ -125,6 +125,15 @@ namespace ACE.Server.WorldObjects
             return newSetting;
         }
 
+        public bool ToggleDeceiveSetting()
+        {
+            bool newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed2);
+            SetCharacterOptions2(CharacterOptions2.NotUsed2, newSetting);
+
+            CachedAttemptToDeceive = newSetting;
+            return newSetting;
+        }
+
         // =====================================
         // CharacterPropertiesContract
         // =====================================

@@ -70,7 +70,7 @@ namespace ACE.Server.WorldObjects
                 FindNextTarget(false);
         }
 
-        public override bool FindNextTarget(bool onTakeDamage)
+        public override bool FindNextTarget(bool onTakeDamage, Creature untargetablePlayer = null)
         {
             var nearbyMonsters = GetNearbyMonsters();
             if (nearbyMonsters.Count == 0)

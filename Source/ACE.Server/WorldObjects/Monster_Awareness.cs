@@ -283,7 +283,7 @@ namespace ACE.Server.WorldObjects
             return null;
         }
 
-        public virtual bool FindNextTarget(bool onTakeDamage)
+        public virtual bool FindNextTarget(bool onTakeDamage, Creature untargetablePlayer = null)
         {
             stopwatch.Restart();
             try
@@ -299,6 +299,9 @@ namespace ACE.Server.WorldObjects
 
                     return false;
                 }
+
+                if(visibleTargets.Count > 1 && untargetablePlayer != null)
+                    visibleTargets.Remove(untargetablePlayer);
 
                 // Generally, a creature chooses whom to attack based on:
                 //  - who it was last attacking,
@@ -390,17 +393,34 @@ namespace ACE.Server.WorldObjects
                 if (player != null && !Visibility && player.AddTrackedObject(this))
                     _log.Error($"Fixed invisible attacker on player {player.Name}. (Landblock:{CurrentLandblock.Id} - {Name} ({Guid})");
 
-                // Combat Ability - Smokescreen (50% chance to avoid aggro when targeted, if there are multiple player targets)
-                if (player != null)
+                // If multiple player targets are nearby, check to see if the current target can force this monster to look for a new target
+                // Base chance to avoid monster aggro can be up to 25%, depending on monster perception and player deception.
+                // With Specialized Deception and the Smokescreen combat ability, it's possible for a player to receive 100% chance to avoid aggro.
+                if (visibleTargets.Count > 1 && player != null && player.IsAttemptingToDeceive)
                 {
-                    var playerCombatAbility = GetPlayerCombatAbility(player);
+                    var monsterPerception = GetCreatureSkill(Skill.AssessCreature).Current;
+                    var playerDeception = player.GetCreatureSkill(Skill.Deception).Current;
 
-                    if (playerCombatAbility == CombatAbility.Smokescreen && visibleTargets.Count > 1)
+                    var skillCheck = SkillCheck.GetSkillChance(monsterPerception, playerDeception);
+                    var chanceToDeceive = skillCheck * 0.25f;
+
+                    // SPEC BONUS - Deception (chanceToDeceive value doubled)
+                    if (player.GetCreatureSkill(Skill.Deception).AdvancementClass == SkillAdvancementClass.Specialized && visibleTargets.Count > 1)
+                        chanceToDeceive *= 2;
+
+                    // COMBAT ABILITY - Smokescreen (+50% to chanceToDeceive value, additively)
+                    var playerCombatAbility = GetPlayerCombatAbility(player);
+                    if (playerCombatAbility == CombatAbility.Smokescreen)
+                        chanceToDeceive += 0.5f;
+
+                    var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+                    if (rng < chanceToDeceive)
                     {
-                        var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
-                        if (rng > 0.5f)
-                            FindNextTarget(false);
+                        player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You successfully deceived {Name} into believing you aren't a threat! They don't attack you!", ChatMessageType.Broadcast));
+                        FindNextTarget(false, player);
                     }
+                    else
+                        player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your failed to deceive {Name} into believing you aren't a threat! They attack you!", ChatMessageType.Broadcast));
                 }
 
                 if (AttackTarget != null && AttackTarget != prevAttackTarget)

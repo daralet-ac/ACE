@@ -17,5 +17,6 @@ namespace ACE.Entity.Enum
         Battery,
         Reflect,
         EnchantedWeapon,
+        Deceive
     }
 }

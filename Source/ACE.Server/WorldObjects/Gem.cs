@@ -186,6 +186,12 @@ namespace ACE.Server.WorldObjects
                         else
                             player.EndStealth();
                         break;
+                    case CombatAbility.Deceive:
+                        if (player.ToggleDeceiveSetting())
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You start deceiving nearby enemies.", ChatMessageType.Broadcast));
+                        else
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You stop deceiving nearby enemies.", ChatMessageType.Broadcast));
+                        break;
                 }
             }
 

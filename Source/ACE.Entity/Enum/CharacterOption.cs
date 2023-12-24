@@ -177,8 +177,11 @@ namespace ACE.Entity.Enum
         [CharacterOptions2(CharacterOptions2.Default)]
         CharacterOptions2Default                = 0x36,
 
-        [CharacterOptions2(CharacterOptions2.NotUsed1)]
-        AttemptToTaunt                          = 0x37
+        [CharacterOptions2(CharacterOptions2.NotUsed1)] // AttemptToTaunt
+        AttemptToTaunt                          = 0x37,
+
+        [CharacterOptions2(CharacterOptions2.NotUsed2)] // AttemptToDeceive
+        AttemptToDeceive                        = 0x38
     }
 
     public static class CharacterOptionExtensions

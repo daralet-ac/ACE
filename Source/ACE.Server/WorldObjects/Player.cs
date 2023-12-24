@@ -81,6 +81,18 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        private bool? CachedAttemptToDeceive = null;
+        public bool IsAttemptingToDeceive
+        {
+            get
+            {
+                if (!CachedAttemptToDeceive.HasValue)
+                    CachedAttemptToDeceive = GetCharacterOption(CharacterOption.AttemptToDeceive);
+
+                return CachedAttemptToDeceive ?? false;
+            }
+        }
+
         public ConfirmationManager ConfirmationManager;
 
         public SquelchManager SquelchManager;
