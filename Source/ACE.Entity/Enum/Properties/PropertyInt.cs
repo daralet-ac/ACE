@@ -588,15 +588,15 @@ namespace ACE.Entity.Enum.Properties
         ArmorStyle                              = 398,
         WeaponSubtype                           = 399,
         ArmorPatchAmount                        = 400,
-        EmpoweredScarabColor                         = 401,
+        EmpoweredScarabColor                    = 401,
         [ServerOnly]
-        EmpoweredScarabSchool                        = 402,
+        EmpoweredScarabSchool                   = 402,
         [ServerOnly]
-        EmpoweredScarabEffectId                      = 403,
-        EmpoweredScarabMaxLevel                      = 404,
-        EmpoweredScarabElement              = 405,
-        EmpoweredScarabBonusStat = 406,
-        EmpoweredScarabBonusStatAmount = 407,
+        EmpoweredScarabEffectId                 = 403,
+        EmpoweredScarabMaxLevel                 = 404,
+        EmpoweredScarabElement                  = 405,
+        EmpoweredScarabBonusStat                = 406,
+        EmpoweredScarabBonusStatAmount          = 407,
 
 
         [ServerOnly]
