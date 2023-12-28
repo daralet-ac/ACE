@@ -12,7 +12,7 @@ namespace ACE.DatLoader
         private static int count;
 
         private static int ITERATION_CELL = 20005;
-        private static int ITERATION_PORTAL = 30006;
+        private static int ITERATION_PORTAL = 30007;
         private static int ITERATION_HIRES = 497;
         private static int ITERATION_LANGUAGE = 30003;
         public static CellDatDatabase CellDat { get; private set; }
