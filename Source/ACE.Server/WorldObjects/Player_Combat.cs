@@ -1208,6 +1208,7 @@ namespace ACE.Server.WorldObjects
         {
             if (enable)
             {
+                // SPEC BONUS - Run: Ignore combat mode movement penalty
                 var skill = GetCreatureSkill(Skill.Run);
                 if (skill.AdvancementClass != SkillAdvancementClass.Specialized)
                 {
