@@ -220,9 +220,11 @@ namespace ACE.Server.WorldObjects
             // monsters supposedly always used 0.5 PowerLevel according to anon docs,
             // which translates into a 1.0 PowerMod
 
+            var slashOrThrust = ThreadSafeRandom.Next(0, 1) == 0 ? false : true;
+
             if (weapon != null)
             {
-                AttackType = weapon.GetAttackType(CurrentMotionState.Stance, 0.5f, offhand);
+                AttackType = weapon.GetAttackType(CurrentMotionState.Stance, slashOrThrust, offhand);
             }
             else
             {

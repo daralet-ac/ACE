@@ -93,6 +93,18 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        private bool? CachedSlashThrustToggle = null;
+        public bool SlashThrustToggle
+        {
+            get
+            {
+                if (!CachedSlashThrustToggle.HasValue)
+                    CachedSlashThrustToggle = GetCharacterOption(CharacterOption.SlashThrustToggle);
+
+                return CachedSlashThrustToggle ?? false;
+            }
+        }
+
         public ConfirmationManager ConfirmationManager;
 
         public SquelchManager SquelchManager;

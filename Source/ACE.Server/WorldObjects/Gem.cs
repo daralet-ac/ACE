@@ -192,6 +192,12 @@ namespace ACE.Server.WorldObjects
                         else
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You stop deceiving nearby enemies.", ChatMessageType.Broadcast));
                         break;
+                    case CombatAbility.SlashThrustToggle:
+                        if (player.ToggleSlashThrustSetting())
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You switch to thrusting attacks.", ChatMessageType.Broadcast));
+                        else
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You switch to slashing attacks.", ChatMessageType.Broadcast));
+                        break;
                 }
             }
 

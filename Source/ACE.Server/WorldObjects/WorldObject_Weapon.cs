@@ -1024,10 +1024,10 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        public AttackType GetAttackType(MotionStance stance, float powerLevel, bool offhand)
+        public AttackType GetAttackType(MotionStance stance, bool slashThrustToggle, bool offhand)
         {
             if (offhand)
-                return GetOffhandAttackType(stance, powerLevel);
+                return GetOffhandAttackType(stance, slashThrustToggle);
 
             var attackType = W_AttackType;
 
@@ -1041,14 +1041,14 @@ namespace ACE.Server.WorldObjects
             {
                 if (attackType.HasFlag(AttackType.TripleThrust | AttackType.TripleSlash))
                 {
-                    if (powerLevel >= ThrustThreshold)
+                    if (!slashThrustToggle)
                         attackType = AttackType.TripleSlash;
                     else
                         attackType = AttackType.TripleThrust;
                 }
                 else if (attackType.HasFlag(AttackType.DoubleThrust | AttackType.DoubleSlash))
                 {
-                    if (powerLevel >= ThrustThreshold)
+                    if (!slashThrustToggle)
                         attackType = AttackType.DoubleSlash;
                     else
                         attackType = AttackType.DoubleThrust;
@@ -1058,7 +1058,7 @@ namespace ACE.Server.WorldObjects
                 // handle old bugged rapiers w/ Thrust, DoubleThrust
                 else if (attackType.HasFlag(AttackType.DoubleThrust))
                 {
-                    if (powerLevel >= ThrustThreshold || !attackType.HasFlag(AttackType.Thrust))
+                    if (!slashThrustToggle || !attackType.HasFlag(AttackType.Thrust))
                         attackType = AttackType.DoubleThrust;
                     else
                         attackType = AttackType.Thrust;
@@ -1067,7 +1067,7 @@ namespace ACE.Server.WorldObjects
                 // handle old bugged poniards and newer tachis
                 else if (attackType.HasFlag(AttackType.Thrust | AttackType.DoubleSlash))
                 {
-                    if (powerLevel >= ThrustThreshold)
+                    if (!slashThrustToggle)
                         attackType = AttackType.DoubleSlash;
                     else
                         attackType = AttackType.Thrust;
@@ -1076,7 +1076,7 @@ namespace ACE.Server.WorldObjects
                 // gaerlan sword / py16 (iasparailaun)
                 else if (attackType.HasFlag(AttackType.Thrust | AttackType.TripleSlash))
                 {
-                    if (powerLevel >= ThrustThreshold)
+                    if (slashThrustToggle)
                         attackType = AttackType.TripleSlash;
                     else
                         attackType = AttackType.Thrust;
@@ -1087,14 +1087,14 @@ namespace ACE.Server.WorldObjects
                 // force thrust animation when using a shield with a multi-strike weapon
                 if (attackType.HasFlag(AttackType.TripleThrust))
                 {
-                    if (powerLevel >= ThrustThreshold || !attackType.HasFlag(AttackType.Thrust))
+                    if (!slashThrustToggle || !attackType.HasFlag(AttackType.Thrust))
                         attackType = AttackType.TripleThrust;
                     else
                         attackType = AttackType.Thrust;
                 }
                 else if (attackType.HasFlag(AttackType.DoubleThrust))
                 {
-                    if (powerLevel >= ThrustThreshold || !attackType.HasFlag(AttackType.Thrust))
+                    if (!slashThrustToggle || !attackType.HasFlag(AttackType.Thrust))
                         attackType = AttackType.DoubleThrust;
                     else
                         attackType = AttackType.Thrust;
@@ -1110,14 +1110,14 @@ namespace ACE.Server.WorldObjects
                 // force slash animation when using no shield with a multi-strike weapon
                 if (attackType.HasFlag(AttackType.TripleSlash))
                 {
-                    if (powerLevel >= ThrustThreshold || !attackType.HasFlag(AttackType.Thrust))
+                    if (!slashThrustToggle || !attackType.HasFlag(AttackType.Thrust))
                         attackType = AttackType.TripleSlash;
                     else
                         attackType = AttackType.Thrust;
                 }
                 else if (attackType.HasFlag(AttackType.DoubleSlash))
                 {
-                    if (powerLevel >= ThrustThreshold || !attackType.HasFlag(AttackType.Thrust))
+                    if (!slashThrustToggle || !attackType.HasFlag(AttackType.Thrust))
                         attackType = AttackType.DoubleSlash;
                     else
                         attackType = AttackType.Thrust;
@@ -1130,7 +1130,7 @@ namespace ACE.Server.WorldObjects
 
             if (attackType.HasFlag(AttackType.Thrust | AttackType.Slash))
             {
-                if (powerLevel >= ThrustThreshold)
+                if (!slashThrustToggle)
                     attackType = AttackType.Slash;
                 else
                     attackType = AttackType.Thrust;
@@ -1139,7 +1139,7 @@ namespace ACE.Server.WorldObjects
             return attackType;
         }
 
-        public AttackType GetOffhandAttackType(MotionStance stance, float powerLevel)
+        public AttackType GetOffhandAttackType(MotionStance stance, bool slashThrustToggle)
         {
             var attackType = W_AttackType;
 
@@ -1151,14 +1151,14 @@ namespace ACE.Server.WorldObjects
 
             if (attackType.HasFlag(AttackType.TripleThrust | AttackType.TripleSlash))
             {
-                if (powerLevel >= ThrustThreshold)
+                if (!slashThrustToggle)
                     attackType = AttackType.OffhandTripleSlash;
                 else
                     attackType = AttackType.OffhandTripleThrust;
             }
             else if (attackType.HasFlag(AttackType.DoubleThrust | AttackType.DoubleSlash))
             {
-                if (powerLevel >= ThrustThreshold)
+                if (!slashThrustToggle)
                     attackType = AttackType.OffhandDoubleSlash;
                 else
                     attackType = AttackType.OffhandDoubleThrust;
@@ -1168,7 +1168,7 @@ namespace ACE.Server.WorldObjects
             // handle old bugged rapiers w/ Thrust, DoubleThrust
             else if (attackType.HasFlag(AttackType.DoubleThrust))
             {
-                if (powerLevel >= ThrustThreshold || !attackType.HasFlag(AttackType.Thrust))
+                if (!slashThrustToggle || !attackType.HasFlag(AttackType.Thrust))
                     attackType = AttackType.OffhandDoubleThrust;
                 else
                     attackType = AttackType.OffhandThrust;
@@ -1177,7 +1177,7 @@ namespace ACE.Server.WorldObjects
             // handle old bugged poniards and newer tachis w/ Thrust, DoubleSlash
             else if (attackType.HasFlag(AttackType.Thrust | AttackType.DoubleSlash))
             {
-                if (powerLevel >= ThrustThreshold)
+                if (!slashThrustToggle)
                     attackType = AttackType.OffhandDoubleSlash;
                 else
                     attackType = AttackType.OffhandThrust;
@@ -1186,7 +1186,7 @@ namespace ACE.Server.WorldObjects
             // gaerlan sword / py16 (iasparailaun) w/ Thrust, TripleSlash
             else if (attackType.HasFlag(AttackType.Thrust | AttackType.TripleSlash))
             {
-                if (powerLevel >= ThrustThreshold)
+                if (!slashThrustToggle)
                     attackType = AttackType.OffhandTripleSlash;
                 else
                     attackType = AttackType.OffhandThrust;
@@ -1194,7 +1194,7 @@ namespace ACE.Server.WorldObjects
 
             else if (attackType.HasFlag(AttackType.Thrust | AttackType.Slash))
             {
-                if (powerLevel >= ThrustThreshold)
+                if (!slashThrustToggle)
                     attackType = AttackType.OffhandSlash;
                 else
                     attackType = AttackType.OffhandThrust;

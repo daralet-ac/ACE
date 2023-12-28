@@ -181,7 +181,10 @@ namespace ACE.Entity.Enum
         AttemptToTaunt                          = 0x37,
 
         [CharacterOptions2(CharacterOptions2.NotUsed2)] // AttemptToDeceive
-        AttemptToDeceive                        = 0x38
+        AttemptToDeceive                        = 0x38,
+
+        [CharacterOptions2(CharacterOptions2.NotUsed3)] // SlashThrustToggle
+        SlashThrustToggle                       = 0x39
     }
 
     public static class CharacterOptionExtensions

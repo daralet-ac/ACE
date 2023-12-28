@@ -134,6 +134,15 @@ namespace ACE.Server.WorldObjects
             return newSetting;
         }
 
+        public bool ToggleSlashThrustSetting()
+        {
+            bool newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed3);
+            SetCharacterOptions2(CharacterOptions2.NotUsed3, newSetting);
+
+            CachedSlashThrustToggle = newSetting;
+            return newSetting;
+        }
+
         // =====================================
         // CharacterPropertiesContract
         // =====================================
