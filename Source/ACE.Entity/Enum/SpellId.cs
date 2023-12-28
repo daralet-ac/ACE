@@ -6381,7 +6381,9 @@ namespace ACE.Entity.Enum
         // Timeline
         EmpoweredScarabBlueCooldown         = 0x8000 | 10000,   // varies
         EmpoweredScarabYellowCooldown       = 0x8000 | 10001,   // varies
-        EmpoweredScarabRedCooldown          = 0x8000 | 10002   // varies
+        EmpoweredScarabRedCooldown          = 0x8000 | 10002,   // varies
+
+        HealingKitCooldown                  = 0x8000 | 10003   // varies
     }
 
     public static class SpellExtensions

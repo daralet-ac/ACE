@@ -9,6 +9,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Animation;
 using ACE.Server.WorldObjects.Entity;
@@ -24,6 +25,8 @@ namespace ACE.Server.WorldObjects
             get => Structure;
             set => Structure = value;
         }
+
+        private double NextHealKitUseTime = 0;
 
         /// <summary>
         /// A new biota be created taking all of its values from weenie.
@@ -44,6 +47,7 @@ namespace ACE.Server.WorldObjects
         private void SetEphemeralValues()
         {
             ObjectDescriptionFlags |= ObjectDescriptionFlag.Healer;
+            CooldownDuration = 15;
         }
 
         public override void HandleActionUseOnTarget(Player healer, WorldObject target)
@@ -113,6 +117,26 @@ namespace ACE.Server.WorldObjects
                 DoHealMotion(healer, targetPlayer, true);*/
 
             // MoveTo is now handled in base Player_Use
+
+            var currentTime = Time.GetUnixTime();
+
+            if (NextHealKitUseTime > currentTime)
+            {
+                healer.Session.Network.EnqueueSend(new GameEventCommunicationTransientString(healer.Session, $"{target.Name} is still on cooldown."));
+                healer.SendUseDoneEvent();
+                return;
+            }
+
+            var baseCooldown = CooldownDuration ?? 15.0f;
+
+            // SPEC BONUS - Healing: Cooldown reduced by 50%
+            if (healer.GetCreatureSkill(Skill.Healing).AdvancementClass == SkillAdvancementClass.Specialized)
+                CooldownDuration *= 0.5f;
+
+            NextHealKitUseTime = currentTime + CooldownDuration.Value;
+            StartCooldown(healer);
+            CooldownDuration = baseCooldown;
+
             DoHealMotion(healer, targetPlayer, true);
         }
 
@@ -174,13 +198,17 @@ namespace ACE.Server.WorldObjects
         {
             if (target.IsDead || target.Teleporting) return;
 
+            var canHealOverTime = UsesLeft > 0;
+
             var remainingMsg = "";
 
             if (!UnlimitedUse)
             {
-                UsesLeft--;
+                if (UsesLeft > 0)
+                    UsesLeft--;
+
                 var s = UsesLeft == 1 ? "" : "s";
-                remainingMsg = UsesLeft > 0 ? $" Your {Name} has {UsesLeft} use{s} left." : $" Your {Name} is used up.";
+                remainingMsg = UsesLeft > 0 ? $" Your {Name} has {UsesLeft} use{s} left before it will no long provide heal-over-time effects." : $" Your {Name} has run out of uses that provide heal-over-time effects.";
 
                 Value -= StructureUnitValue;
 
@@ -195,17 +223,6 @@ namespace ACE.Server.WorldObjects
 
             // skill check
             var difficulty = 0;
-            var skillCheck = DoSkillCheck(healer, target, missingVital, ref difficulty);
-            if (!skillCheck)
-            {
-                var failMsg = new GameMessageSystemChat($"You fail to heal {targetName}.{remainingMsg}", ChatMessageType.Broadcast);
-                healer.Session.Network.EnqueueSend(failMsg, stackSize);
-                if (healer != target)
-                    target.Session.Network.EnqueueSend(new GameMessageSystemChat($"{healer.Name} fails to heal you.", ChatMessageType.Broadcast));
-                if (UsesLeft <= 0 && !UnlimitedUse)
-                    healer.TryConsumeFromInventoryWithNetworking(this, 1);
-                return;
-            }
 
             // heal up
             var healAmount = GetHealAmount(healer, target, missingVital, out var critical, out var staminaCost);
@@ -215,6 +232,17 @@ namespace ACE.Server.WorldObjects
             var actualHealAmount = (uint)target.UpdateVitalDelta(vital, healAmount);
             if (vital.Vital == PropertyAttribute2nd.MaxHealth)
                 target.DamageHistory.OnHeal(actualHealAmount);
+
+            // heal-over-time if kit had uses remaining
+            if (canHealOverTime)
+            {
+                var healingSkillCurrent = healer.GetCreatureSkill(Skill.Healing).Current;
+
+                var spell = new Spell(5208); // healing kit regeneration (surge of regen)
+                spell.SpellStatModVal *=  (float)HealkitMod.Value * (healingSkillCurrent * 0.01f);
+
+                healer.TryCastSpell_Inner(spell, healer);
+            }
 
             //if (target.Fellowship != null)
             //target.Fellowship.OnVitalUpdate(target);
@@ -229,9 +257,6 @@ namespace ACE.Server.WorldObjects
 
             if (healer != target)
                 target.Session.Network.EnqueueSend(new GameMessageSystemChat($"{healer.Name} heals you for {healAmount} {BoosterEnum.ToString()} points.", ChatMessageType.Broadcast));
-
-            if (UsesLeft <= 0 && !UnlimitedUse)
-                healer.TryConsumeFromInventoryWithNetworking(this, 1);
         }
 
         /// <summary>
@@ -265,11 +290,13 @@ namespace ACE.Server.WorldObjects
 
             // todo: determine applicable range from pcaps
             var healMin = healBase * 0.2f;      // ??
-            var healMax = healBase * 0.5f;
+            var healMax = healBase * 0.4f;
             var healAmount = ThreadSafeRandom.Next(healMin, healMax);
 
             // chance for critical healing
-            criticalHeal = ThreadSafeRandom.Next(0.0f, 1.0f) < 0.1f;
+            // SPEC BONUS - Healing: double crit chance
+            var critChance = healer.GetCreatureSkill(Skill.Healing).AdvancementClass == SkillAdvancementClass.Specialized ? 0.2f : 0.1f;
+            criticalHeal = ThreadSafeRandom.Next(0.0f, 1.0f) < critChance;
             if (criticalHeal) healAmount *= 2;
 
             // cap to missing vital
@@ -279,12 +306,12 @@ namespace ACE.Server.WorldObjects
             // stamina check? On the Q&A board a dev posted that stamina directly effects the amount of damage you can heal
             // low stam = less vital healed. I don't have exact numbers for it. Working through forum archive.
 
-            // stamina cost: 1 stamina per 5 vital healed 
-            staminaCost = (uint)Math.Round(healAmount / 5.0f);
+            // stamina cost: 1 stamina per 2 vital healed 
+            staminaCost = (uint)Math.Round(healAmount / 2.0f);
             if (staminaCost > healer.Stamina.Current)
             {
                 staminaCost = healer.Stamina.Current;
-                healAmount = staminaCost * 5;
+                healAmount = staminaCost * 2;
             }
 
             // verify healing boost comes from target instead of healer?
@@ -294,6 +321,11 @@ namespace ACE.Server.WorldObjects
             healAmount *= ratingMod;
 
             return (uint)Math.Round(healAmount);
+        }
+
+        public void StartCooldown(Player player)
+        {
+            player.EnchantmentManager.StartCooldown(this);
         }
     }
 }
