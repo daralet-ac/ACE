@@ -1478,13 +1478,24 @@ namespace ACE.Server.WorldObjects
 
         private bool IsAdvancedSpell(Spell spell)
         {
-            SpellCategory[] advancedSpellCategories = {SpellCategory.AcidBlast, SpellCategory.BludgeoningBlast, SpellCategory.ColdBlast, SpellCategory.ElectricBlast, SpellCategory.FireBlast, SpellCategory.PiercingBlast, SpellCategory.SlashingBlast,
-            SpellCategory.AcidVolley, SpellCategory.BladeVolley, SpellCategory.BludgeoningVolley, SpellCategory.FlameVolley, SpellCategory.ForceVolley, SpellCategory.FrostVolley, SpellCategory.LightningVolley,
-            SpellCategory.AcidStreak, SpellCategory.BludgeoningStreak, SpellCategory.ColdStreak, SpellCategory.ElectricStreak, SpellCategory.FireStreak, SpellCategory.PiercingStreak, SpellCategory.SlashingStreak,
-            SpellCategory.AcidWall, SpellCategory.BludgeoningWall, SpellCategory.ColdWall, SpellCategory.ElectricWall, SpellCategory.FireWall, SpellCategory.PiercingWall, SpellCategory.SlashingWall,
-            SpellCategory.AcidRing, SpellCategory.BludgeoningRing, SpellCategory.ColdRing, SpellCategory.ElectricRing, SpellCategory.FireRing, SpellCategory.PiercingRing, SpellCategory.SlashingRing};
+            SpellCategory[] advancedSpellCategories = {
+                // War
+                SpellCategory.AcidBlast, SpellCategory.BludgeoningBlast, SpellCategory.ColdBlast, SpellCategory.ElectricBlast, SpellCategory.FireBlast, SpellCategory.PiercingBlast, SpellCategory.SlashingBlast,
+                SpellCategory.AcidVolley, SpellCategory.BladeVolley, SpellCategory.BludgeoningVolley, SpellCategory.FlameVolley, SpellCategory.ForceVolley, SpellCategory.FrostVolley, SpellCategory.LightningVolley,
+                SpellCategory.AcidStreak, SpellCategory.BludgeoningStreak, SpellCategory.ColdStreak, SpellCategory.ElectricStreak, SpellCategory.FireStreak, SpellCategory.PiercingStreak, SpellCategory.SlashingStreak,
+                SpellCategory.AcidWall, SpellCategory.BludgeoningWall, SpellCategory.ColdWall, SpellCategory.ElectricWall, SpellCategory.FireWall, SpellCategory.PiercingWall, SpellCategory.SlashingWall,
+                SpellCategory.AcidRing, SpellCategory.BludgeoningRing, SpellCategory.ColdRing, SpellCategory.ElectricRing, SpellCategory.FireRing, SpellCategory.PiercingRing, SpellCategory.SlashingRing,
+                // Life
+                };
 
-            SpellId[] advancedSpellIds = { SpellId.HealFellow1, SpellId.DispelLifeBadFellow1 };
+            SpellId[] advancedSpellIds = {
+                // War
+
+                // Life
+                SpellId.HealFellow1, SpellId.DispelLifeBadFellow1,
+                SpellId.HealthBolt1, SpellId.HealthBolt2, SpellId.HealthBolt3, SpellId.HealthBolt4, SpellId.HealthBolt5, SpellId.HealthBolt6, SpellId.HealthBolt7,
+                SpellId.StaminaBolt1, SpellId.StaminaBolt2, SpellId.StaminaBolt3, SpellId.StaminaBolt4, SpellId.StaminaBolt5, SpellId.StaminaBolt6, SpellId.StaminaBolt7,
+                SpellId.ManaBolt1, SpellId.ManaBolt2, SpellId.ManaBolt3, SpellId.ManaBolt4, SpellId.ManaBolt5, SpellId.ManaBolt6, SpellId.ManaBolt7 };
 
             if (advancedSpellCategories.Contains(spell.Category) || advancedSpellIds.Contains((SpellId)spell.Id))
                 return true;
