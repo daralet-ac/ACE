@@ -236,10 +236,12 @@ namespace ACE.Server.WorldObjects
         {
             var baseXp = 0.0;
 
-            ulong levelTotalXP = 0;
+            ulong levelTotalXP;
 
-            if(level <= 126)
+            if (level <= 125)
                 levelTotalXP = DatManager.PortalDat.XpTable.CharacterLevelXPList[level + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[level];
+            else
+                levelTotalXP = DatManager.PortalDat.XpTable.CharacterLevelXPList[126] - DatManager.PortalDat.XpTable.CharacterLevelXPList[125];
 
             switch (tier)
             {
