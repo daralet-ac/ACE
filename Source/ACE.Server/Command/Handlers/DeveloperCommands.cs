@@ -2303,6 +2303,8 @@ namespace ACE.Server.Command.Handlers
                 LootQualityMod = 0
             };
 
+            wo.Tier = tier;
+
             var success = LootGenerationFactory.MutateItem(wo, profile, true);
 
             session.Player.TryCreateInInventoryWithNetworking(wo);
