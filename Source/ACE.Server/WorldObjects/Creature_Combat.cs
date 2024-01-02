@@ -7,6 +7,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
@@ -397,27 +398,21 @@ namespace ACE.Server.WorldObjects
             if (!(this is Player) && CachedHighestMeleeSkill != Skill.None)
                 return CachedHighestMeleeSkill;
 
-            var axe = GetCreatureSkill(Skill.Axe);
-            var dagger = GetCreatureSkill(Skill.Dagger);
-            var mace = GetCreatureSkill(Skill.Mace);
-            var spear = GetCreatureSkill(Skill.Spear);
-            var staff = GetCreatureSkill(Skill.Staff);
-            var sword = GetCreatureSkill(Skill.Sword);
             var unarmed = GetCreatureSkill(Skill.UnarmedCombat);
+            var dagger = GetCreatureSkill(Skill.Dagger);
+            var staff = GetCreatureSkill(Skill.Staff);
+            var martialWeapons = GetCreatureSkill(Skill.HeavyWeapons);
+            var sword = GetCreatureSkill(Skill.Sword);
 
-            maxMelee = axe;
+            maxMelee = unarmed;
             if (dagger.Current > maxMelee.Current)
                 maxMelee = dagger;
-            if (mace.Current > maxMelee.Current)
-                maxMelee = mace;
-            if (spear.Current > maxMelee.Current)
-                maxMelee = spear;
             if (staff.Current > maxMelee.Current)
+                maxMelee = staff;
+            if (martialWeapons.Current > maxMelee.Current)
                 maxMelee = staff;
             if (sword.Current > maxMelee.Current)
                 maxMelee = sword;
-            if (unarmed.Current > maxMelee.Current)
-                maxMelee = unarmed;
 
             CachedHighestMeleeSkill = maxMelee.Skill;
 
@@ -1565,13 +1560,13 @@ namespace ACE.Server.WorldObjects
         {
             switch (skill)
             {
-                case Skill.Axe: return Coordination.Current * 0.0005f;
-                case Skill.Bow: return Strength.Current * 0.0005f;
-                case Skill.Dagger: return Coordination.Current * 0.0005f;
-                case Skill.Spear: return Strength.Current * 0.0005f;
-                case Skill.Sword: return Coordination.Current * 0.0005f;
-                case Skill.ThrownWeapon: return Coordination.Current * 0.0005f;
+                case Skill.HeavyWeapons: return Coordination.Current * 0.0005f;
+                case Skill.Dagger: return Quickness.Current * 0.0005f;
+                case Skill.Staff: return Strength.Current * 0.0005f;
                 case Skill.UnarmedCombat: return Strength.Current * 0.0005f;
+                case Skill.Bow: return Strength.Current * 0.0005f;
+                case Skill.ThrownWeapon: return Coordination.Current * 0.0005f;
+                case Skill.Sword: return Coordination.Current * 0.00005f; // only for monsters
             }
 
             _log.Warning($"DamageEvent.GetSecondaryAttributeMod() - Incorrect skill used ({skill}) for attacker ({Name})");
