@@ -265,11 +265,8 @@ namespace ACE.Server.Entity
                 }
             }
 
-            // Combat Technique - Reckless (20 damage rating, if active) 
+            // COMBAT ABILITY - Reckless (20 damage rating, if active) 
             var recklessMod = GetRecklessMod(attacker, defender, attackerCombatAbility);
-
-            // Combat Focus - Enchanted Weapon (Damage reduced to 75%, if active)
-            var enchantedWeaponMod = GetEnchantedWeaponMod(attacker, defender, attackerCombatAbility);
 
             // Dual Wield Damage Mod
             var dualWieldDamageMod = 1.0f;
@@ -291,7 +288,7 @@ namespace ACE.Server.Entity
             }
 
             // ---- DAMAGE BEFORE MITIGATION ----
-            DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * powershotMod * enchantedWeaponMod * dualWieldDamageMod * twohandedCombatDamageMod;
+            DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * powershotMod * dualWieldDamageMod * twohandedCombatDamageMod;
 
             // ---- CRIT ----
             var attackSkill = attacker.GetCreatureSkill(attacker.GetCurrentWeaponSkill());
@@ -714,21 +711,11 @@ namespace ACE.Server.Entity
 
             if (attackerAbility == CombatAbility.Reckless)
             {
-                if (CombatType == CombatType.Melee || attacker.GetDistance(defender) < 3) // Make sure we're close to each other.
+                if (CombatType == CombatType.Melee || attacker.GetDistance(defender) < 3) 
                 {
-                    mod = 1.20f; // Extra damage dealt while attacking with the Reckless technique.
+                    mod = 1.20f; 
                 }
             }
-
-            return mod;
-        }
-
-        private float GetEnchantedWeaponMod(Creature attacker, Creature defender, CombatAbility attackerAbility)
-        {
-            var mod = 1.0f;
-
-            if (attackerAbility == CombatAbility.EnchantedWeapon)
-                mod = 0.75f; // Reduced physical damage dealt while attacking with the Reckless technique.
 
             return mod;
         }

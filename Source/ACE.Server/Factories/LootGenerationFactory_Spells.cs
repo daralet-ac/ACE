@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
@@ -25,18 +26,38 @@ namespace ACE.Server.Factories
             }
             numSpells = spells.Count;
 
-            if (roll.IsMeleeWeapon || roll.IsMissileWeapon)
+            // 25% chance for a magical item to have a Proc Spell
+            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (rng < 0.25f)
             {
-                var itemProc = RollItemProc(wo, profile, roll);
-
-                if(itemProc != SpellId.Undef)
+                if (roll.IsMeleeWeapon || roll.IsMissileWeapon)
                 {
-                    Server.Entity.Spell spell = new Server.Entity.Spell(itemProc);
-                    wo.ProcSpellRate = 0.15f;
-                    wo.ProcSpell = (uint)itemProc;
-                    wo.ProcSpellSelfTargeted = spell.IsSelfTargeted;
+                    var itemProc = RollItemProc(wo, profile, roll);
 
-                    numSpells++;
+                    if (itemProc != SpellId.Undef)
+                    {
+                        var procRate = 0.1f + (0.2f * GetDiminishingRoll(profile)); // 10% to 20% base proc rate
+                        if (wo.IsTwoHanded)
+                            procRate *= 1.5f; // Two-handed weapons have 15% to 30% proc rate
+
+                        Server.Entity.Spell spell = new Server.Entity.Spell(itemProc);
+                        wo.ProcSpellRate = procRate;
+                        wo.ProcSpell = (uint)itemProc;
+                        wo.ProcSpellSelfTargeted = spell.IsSelfTargeted;
+
+                        // Weapons with proc spells deal less physical damage
+                        if (wo.W_WeaponType == WeaponType.Sword || wo.W_WeaponType == WeaponType.Axe || wo.W_WeaponType == WeaponType.Mace ||
+                            wo.W_WeaponType == WeaponType.Spear || wo.W_WeaponType == WeaponType.Staff || wo.W_WeaponType == WeaponType.Dagger || wo.W_WeaponType == WeaponType.Unarmed)
+                        {
+                            wo.Damage = (int)(wo.Damage.Value * 0.75f);
+                        }
+                        if (wo.W_WeaponType == WeaponType.Bow || wo.W_WeaponType == WeaponType.Crossbow || wo.W_WeaponType == WeaponType.Thrown)
+                        {
+                            wo.DamageMod = (int)(wo.Damage.Value * 0.75f);
+                        }
+
+                        numSpells++;
+                    }
                 }
             }
 
@@ -63,14 +84,19 @@ namespace ACE.Server.Factories
         {
             SpellId procSpellId = SpellId.Undef;
 
+            wo.WieldRequirements2 = WieldRequirement.Training;
+            wo.WieldDifficulty2 = 1;
+
+            var warSpell = ThreadSafeRandom.Next(0, 1) == 0 ? true : false;
+            if (warSpell)
+                wo.WieldSkillType2 = (int)Skill.WarMagic;
+            else
+                wo.WieldSkillType2 = (int)Skill.LifeMagic;
+
             if (roll.IsMeleeWeapon)
-            {
-                procSpellId = MeleeSpells.RollProc(profile);
-            }
+                procSpellId = MeleeSpells.RollProc(wo, profile, warSpell);
             else if (roll.IsMissileWeapon)
-            {
-               procSpellId = MissileSpells.RollProc(profile);
-            }
+                procSpellId = MissileSpells.RollProc(wo, profile, warSpell);
             else
             {
                 _log.Error($"RollItemProc({wo.Name}) - item is not melee or missile weapon");
@@ -84,7 +110,7 @@ namespace ACE.Server.Factories
 
         private static SpellId RollProcLevel(WorldObject wo, TreasureDeath profile, SpellId procSpellId)
         {
-            var spellLevel = wo.Tier.Value;
+            var spellLevel = Math.Max(profile.Tier - 1, 1);
 
             var spellLevels = SpellLevelProgression.GetSpellLevels(procSpellId);
 

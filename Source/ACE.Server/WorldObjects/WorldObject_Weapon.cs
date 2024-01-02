@@ -908,14 +908,7 @@ namespace ACE.Server.WorldObjects
             var creatureAttacker = attacker as Creature;
             var playerAttacker = attacker as Player;
 
-            // SPEC BONUS - Arcane Lore (double proc chance, max +20%)
-            if (playerAttacker != null)
-            {
-                if (playerAttacker.GetCreatureSkill(Skill.ArcaneLore).AdvancementClass == SkillAdvancementClass.Specialized)
-                    chance += Math.Min(0.2f, chance * 2.0f);
-            }
-
-            // COMBAT ABILITY - Enchanted (double proc chance, max +20%)
+            // COMBAT ABILITY - Enchanted: Full power attack has 100% proc chance
             if (playerAttacker != null)
             {
                 var combatAbility = CombatAbility.None;
@@ -923,8 +916,10 @@ namespace ACE.Server.WorldObjects
                 if (combatFocus != null)
                     combatAbility = combatFocus.GetCombatAbility();
 
-                if (combatAbility == CombatAbility.EnchantedWeapon)
-                    chance += Math.Min(0.2f, chance * 2.0f);
+                var fullPower = playerAttacker.PowerLevel == 1 || playerAttacker.AccuracyLevel == 1;
+
+                if (combatAbility == CombatAbility.EnchantedWeapon && fullPower)
+                    chance = 1.0f;
             }
 
             if (creatureAttacker != null)
@@ -981,7 +976,17 @@ namespace ACE.Server.WorldObjects
                 attacker.TryCastSpell_WithRedirects(spell, target, itemCaster, itemCaster, true, true);
             }
             else
+            {
+                if (playerAttacker != null)
+                {
+                    if (playerAttacker.Mana.Current < spell.BaseMana)
+                        return;
+
+                    playerAttacker.UpdateVitalDelta(playerAttacker.Mana, (int)(spell.BaseMana * -1));
+                }
+
                 attacker.TryCastSpell(spell, target, itemCaster, itemCaster, true, true);
+            }
         }
 
         private bool? isMasterable;

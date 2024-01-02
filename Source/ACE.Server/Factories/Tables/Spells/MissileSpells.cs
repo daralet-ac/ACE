@@ -3,6 +3,7 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Server.Factories.Entity;
+using ACE.Server.WorldObjects;
 using Serilog;
 
 namespace ACE.Server.Factories.Tables.Spells
@@ -83,36 +84,58 @@ namespace ACE.Server.Factories.Tables.Spells
             ( SpellId.BloodDrinkerSelf1, 1.00f ),
         };
 
-        public static ChanceTable<SpellId> missileProcs = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        public static ChanceTable<SpellId> missileProcsLife = new ChanceTable<SpellId>(ChanceTableType.Weight)
         {
-            ( SpellId.Undef,              150.0f ),
+            ( SpellId.StaminaToManaSelf1,   1.0f  ),
+            ( SpellId.ManaToStaminaSelf1,   1.0f  ),
+            ( SpellId.ManaToHealthSelf1,    1.0f  ),
 
-            ( SpellId.StaminaToManaSelf1,   2.0f ),
-            ( SpellId.ManaToStaminaSelf1,   2.0f ),
-            ( SpellId.ManaToHealthSelf1,    2.0f ),
+            ( SpellId.DrainMana1,           1.0f  ),
+            ( SpellId.DrainStamina1,        1.0f  ),
+            ( SpellId.DrainHealth1,         1.0f  ),
 
-            ( SpellId.DrainMana1,           2.0f ),
-            ( SpellId.DrainStamina1,        2.0f ),
-            ( SpellId.DrainHealth1,         2.0f ),
+            ( SpellId.ManaBoostSelf1,       1.0f  ),
+            ( SpellId.RevitalizeSelf1,      1.0f  ),
+            ( SpellId.HealSelf1,            1.0f  ),
 
-            ( SpellId.ManaBoostSelf1,       1.0f ),
-            ( SpellId.RevitalizeSelf1,      1.0f ),
-            ( SpellId.HealSelf1,            1.0f ),
+            ( SpellId.HarmOther1,           1.0f  ),
+            ( SpellId.ExhaustionOther1,     1.0f  ),
+            ( SpellId.ManaDrainOther1,      1.0f  ),
         };
 
-        private static ChanceTable<SpellId> missileProcsCertain = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        public static ChanceTable<SpellId> missileProcsWarSlash = new ChanceTable<SpellId>(ChanceTableType.Weight)
         {
-            ( SpellId.StaminaToManaSelf1,   2.0f ),
-            ( SpellId.ManaToStaminaSelf1,   2.0f ),
-            ( SpellId.ManaToHealthSelf1,    2.0f ),
+            ( SpellId.WhirlingBlade1,   1.0f  ),
+        };
 
-            ( SpellId.DrainMana1,           2.0f ),
-            ( SpellId.DrainStamina1,        2.0f ),
-            ( SpellId.DrainHealth1,         2.0f ),
+        public static ChanceTable<SpellId> missileProcsWarPierce = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        {
+            ( SpellId.ForceBolt1,   1.0f  ),
+        };
 
-            ( SpellId.ManaBoostSelf1,       1.0f ),
-            ( SpellId.RevitalizeSelf1,      1.0f ),
-            ( SpellId.HealSelf1,            1.0f ),
+        public static ChanceTable<SpellId> missileProcsWarBludgeon = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        {
+            ( SpellId.ShockWave1,   1.0f  ),
+        };
+
+        public static ChanceTable<SpellId> missileProcsWarAcid = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        {
+            ( SpellId.AcidStream1,   1.0f  ),
+        };
+
+        public static ChanceTable<SpellId> missileProcsWarFire = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        {
+            ( SpellId.FlameBolt1,   1.0f  ),
+        };
+
+        public static ChanceTable<SpellId> missileProcsWarCold = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        {
+            ( SpellId.FrostBolt1,   1.0f  ),
+        };
+
+        public static ChanceTable<SpellId> missileProcsWarElectric = new ChanceTable<SpellId>(ChanceTableType.Weight)
+        {
+            ( SpellId.LightningBolt1,   1.0f  ),
         };
 
         public static List<SpellId> Roll(TreasureDeath treasureDeath)
@@ -129,17 +152,33 @@ namespace ACE.Server.Factories.Tables.Spells
             return spells;
         }
 
-        public static SpellId RollProc(TreasureDeath treasureDeath)
+        public static SpellId RollProc(WorldObject wo, TreasureDeath treasureDeath, bool warSpell)
         {
-            float lootQualityMod = 0.0f;
-            if (treasureDeath != null)
-                lootQualityMod = treasureDeath.LootQualityMod;
-            return missileProcs.Roll(lootQualityMod);
+            if (warSpell)
+                return WarSpellProc(wo, treasureDeath);
+            else
+                return missileProcsLife.Roll(treasureDeath.LootQualityMod);
         }
 
-        public static SpellId PseudoRandomRollProc(int seed)
+        private static SpellId WarSpellProc(WorldObject wo, TreasureDeath treasureDeath)
         {
-            return missileProcsCertain.PseudoRandomRoll(seed);
+            switch (wo.W_DamageType)
+            {
+                default:
+                case DamageType.SlashPierce:
+                    var rng = ThreadSafeRandom.Next(0, 1) == 0 ? true : false;
+                    if (rng)
+                        return missileProcsWarSlash.Roll(treasureDeath.LootQualityMod);
+                    else
+                        return missileProcsWarPierce.Roll(treasureDeath.LootQualityMod);
+                case DamageType.Slash: return missileProcsWarSlash.Roll(treasureDeath.LootQualityMod);
+                case DamageType.Pierce: return missileProcsWarPierce.Roll(treasureDeath.LootQualityMod);
+                case DamageType.Bludgeon: return missileProcsWarBludgeon.Roll(treasureDeath.LootQualityMod);
+                case DamageType.Acid: return missileProcsWarAcid.Roll(treasureDeath.LootQualityMod);
+                case DamageType.Fire: return missileProcsWarFire.Roll(treasureDeath.LootQualityMod);
+                case DamageType.Cold: return missileProcsWarCold.Roll(treasureDeath.LootQualityMod);
+                case DamageType.Electric: return missileProcsWarElectric.Roll(treasureDeath.LootQualityMod);
+            }
         }
     }
 }

@@ -646,20 +646,35 @@ namespace ACE.Server.WorldObjects
                         var moddedMagicSkill = Spell.School == MagicSchool.WarMagic ? armorWarMagicMod : armorLifeMagicMod;
 
                         magicSkill = moddedMagicSkill;
+
+                        // When an item casts a spell while being wielded by a creature, average the spellcraft and wielder's magic skill
+                        if (sourcePlayer.GetEquippedMeleeWeapon() != null)
+                        {
+                            var spellcraft = sourceCreature.GetEquippedMeleeWeapon().ItemSpellcraft ?? 1;
                             
-                        if (magicSkill == 0)
-                        {  
-                            if (sourceCreature.GetEquippedMeleeWeapon() != null)
+                            // SPEC BONUS - Arcane Lore (spellcraft averaged with Arcane Lore)
+                            if (sourcePlayer != null)
                             {
-                                int? spellcraft = 0;
-                                if(sourceCreature.GetEquippedMeleeWeapon().ItemSpellcraft != null)
-                                    spellcraft = sourceCreature.GetEquippedMeleeWeapon().ItemSpellcraft;
-                                magicSkill = (uint)spellcraft;
+                                var arcaneLore = sourcePlayer.GetCreatureSkill(Skill.ArcaneLore);
+
+                                if (arcaneLore.AdvancementClass == SkillAdvancementClass.Specialized)
+                                    spellcraft = (int)Math.Max((spellcraft + arcaneLore.Current) * 0.5f, spellcraft);
                             }
-                            else
-                            {
-                                magicSkill = 1;
-                            }
+                            
+                            // COMBAT ABILITY - Enchant: Effective spellcraft increased by 10%
+                            var combatAbility = CombatAbility.None;
+                            var combatFocus = sourcePlayer.GetEquippedCombatFocus();
+                            if (combatFocus != null)
+                                combatAbility = combatFocus.GetCombatAbility();
+
+                            if (combatAbility == CombatAbility.EnchantedWeapon)
+                                spellcraft = (int)(spellcraft * 1.1f);
+                            
+                            magicSkill = (uint)((magicSkill + spellcraft) * 0.5);
+                        }
+                        else
+                        {
+                            magicSkill = 1;
                         }
                         //Console.WriteLine($"{sourceCreature.Name} casts a spell:\n" +
                         //    $" -BaseSkill: {sourceCreature.GetCreatureSkill(Spell.School).Current} -ArmorMod: {sourcePlayer.GetArmorWarMagicMod()} -FinalSkill: {magicSkill}");

@@ -193,6 +193,14 @@ namespace ACE.Server.WorldObjects
             {
                 // Retrieve casting item's spellcraft
                 magicSkill = (uint)caster.ItemSpellcraft;
+
+                // When an item with spellcraft casts a spell while being wielded by a creature, average the spellcraft and wielder's magic skill
+                if (caster.Wielder is Creature wielder)
+                {
+                    var casterMagicSkill = spell.School == MagicSchool.WarMagic ? wielder.GetModdedWarMagicSkill() : wielder.GetModdedLifeMagicSkill();
+
+                    magicSkill = (uint)((magicSkill + casterMagicSkill) * 0.5);
+                }
             }
             else if (caster.Wielder is Creature wielder)
             {

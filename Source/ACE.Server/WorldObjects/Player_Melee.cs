@@ -308,6 +308,15 @@ namespace ACE.Server.WorldObjects
             var staminaCost = GetAttackStamina(GetPowerRange());
             UpdateVitalDelta(Stamina, -staminaCost);
 
+            var combatAbility = CombatAbility.None;
+            var combatFocus = GetEquippedCombatFocus();
+            if (combatFocus != null)
+                combatAbility = combatFocus.GetCombatAbility();
+
+            // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
+            if(combatAbility == CombatAbility.EnchantedWeapon)
+                UpdateVitalDelta(Mana, -staminaCost);
+
             if (numStrikes != attackFrames.Count)
             {
                 //log.Warn($"{Name}.GetAttackFrames(): MotionTableId: {MotionTableId:X8}, MotionStance: {CurrentMotionState.Stance}, Motion: {GetSwingAnimation()}, AttackFrames.Count({attackFrames.Count}) != NumStrikes({numStrikes})");

@@ -888,19 +888,20 @@ namespace ACE.Server.Factories
                 }
             }
 
+            var tier = wo.Tier.Value - 1;
+
             if(wo.ProcSpell != null)
             {
                 numSpells++;
-                increasedDifficulty += 20;
+                increasedDifficulty += Math.Max(5 * tier, 5);
             }
 
             var finalDifficulty = 0;
             var armorSlots = wo.ArmorSlots ?? 1;
             var spellsPerSlot = (float)numSpells / armorSlots;
 
-            if(spellsPerSlot > 1)
+            if (spellsPerSlot > 1 || wo.ProcSpell != null)
             {
-                var tier = wo.Tier.Value - 1;
                 var baseDifficulty = ActivationDifficultyPerTier(tier);
 
                 finalDifficulty = baseDifficulty + (int)(increasedDifficulty / armorSlots);
