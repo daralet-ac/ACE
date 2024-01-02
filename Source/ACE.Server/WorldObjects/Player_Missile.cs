@@ -246,6 +246,15 @@ namespace ACE.Server.WorldObjects
                 var staminaCost = GetAttackStamina(GetAccuracyRange());
                 UpdateVitalDelta(Stamina, -staminaCost);
 
+                var combatAbility = CombatAbility.None;
+                var combatFocus = GetEquippedCombatFocus();
+                if (combatFocus != null)
+                    combatAbility = combatFocus.GetCombatAbility();
+
+                // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
+                if (combatAbility == CombatAbility.EnchantedWeapon)
+                    UpdateVitalDelta(Mana, -staminaCost);
+
                 var projectile = LaunchProjectile(launcher, ammo, target, origin, orientation, velocity);
                 UpdateAmmoAfterLaunch(ammo);
             });
