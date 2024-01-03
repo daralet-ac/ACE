@@ -6,6 +6,7 @@ using ACE.Database;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Entity.Models;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
@@ -68,6 +69,20 @@ namespace ACE.Server.WorldObjects
 
         private bool SpendSkillXp(CreatureSkill creatureSkill, uint amount, bool sendNetworkUpdate = true)
         {
+            var cannotRaiseMsg = $"You cannot raise your {creatureSkill.Skill.ToSentence()} skill directly.";
+            switch (creatureSkill.Skill)
+            {
+                case Skill.Leadership: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " It raises automatically overtime if you have active vassals.", ChatMessageType.Advancement)); return false;
+                case Skill.Loyalty: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " It raises automatically overtime while you are active and have a patron.", ChatMessageType.Advancement)); return false;
+                case Skill.Alchemy: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Alchemy recipes. You may also purchase training from an Alchemist.", ChatMessageType.Advancement)); return false;
+                case Skill.Cooking: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Cooking recipes. You may also purchase training from a Chef or Provisioner.", ChatMessageType.Advancement)); return false;
+                case Skill.WeaponTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Blacksmithing recipes. You may also purchase training from a Blacksmith, Weaponsmith, or Armorer.", ChatMessageType.Advancement)); return false;
+                case Skill.ArmorTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Tailoring recipes. You may also purchase training from a Tailor.", ChatMessageType.Advancement)); return false;
+                case Skill.Fletching: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Woodworking recipes. You may also purchase training from a Bowyer or Fletcher.", ChatMessageType.Advancement)); return false;
+                case Skill.ItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Jewelcrafting recipes. You may also purchase training from a Jeweler.", ChatMessageType.Advancement)); return false;
+                case Skill.MagicItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Spellcrafting recipes. You may also purchase training from an Archmage.", ChatMessageType.Advancement)); return false;
+            }
+
             var skillXPTable = GetSkillXPTable(creatureSkill.AdvancementClass);
             if (skillXPTable == null)
             {
@@ -270,6 +285,10 @@ namespace ACE.Server.WorldObjects
                 {
                     creatureSkill.AdvancementClass = SkillAdvancementClass.Untrained;
                     creatureSkill.InitLevel = 0;
+
+                    if(IsTradeSkill(skill))
+                        creditsSpent = 0;
+
                     AvailableSkillCredits += creditsSpent;
                 }
 
@@ -490,65 +509,65 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void HandleDBUpdates()
         {
-            // dirty fighting
-            var dfSkill = GetCreatureSkill(Skill.DirtyFighting);
-            if (dfSkill.AdvancementClass >= SkillAdvancementClass.Trained)
-            {
-                foreach (var spellID in SpellExtensions.DirtyFightingSpells)
-                {
-                    var spell = new Server.Entity.Spell(spellID);
-                    if (spell.NotFound)
-                    {
-                        var actionChain = new ActionChain();
-                        actionChain.AddDelaySeconds(3.0f);
-                        actionChain.AddAction(this, () =>
-                        {
-                            Session.Network.EnqueueSend(new GameMessageSystemChat("To install Dirty Fighting, please apply the latest patches from https://github.com/ACEmulator/ACE-World-16PY-Patches", ChatMessageType.Broadcast));
-                        });
-                        actionChain.EnqueueChain();
-                    }
-                    break;  // performance improvement: only check first spell
-                }
-            }
+            //// dirty fighting
+            //var dfSkill = GetCreatureSkill(Skill.DirtyFighting);
+            //if (dfSkill.AdvancementClass >= SkillAdvancementClass.Trained)
+            //{
+            //    foreach (var spellID in SpellExtensions.DirtyFightingSpells)
+            //    {
+            //        var spell = new Server.Entity.Spell(spellID);
+            //        if (spell.NotFound)
+            //        {
+            //            var actionChain = new ActionChain();
+            //            actionChain.AddDelaySeconds(3.0f);
+            //            actionChain.AddAction(this, () =>
+            //            {
+            //                Session.Network.EnqueueSend(new GameMessageSystemChat("To install Dirty Fighting, please apply the latest patches from https://github.com/ACEmulator/ACE-World-16PY-Patches", ChatMessageType.Broadcast));
+            //            });
+            //            actionChain.EnqueueChain();
+            //        }
+            //        break;  // performance improvement: only check first spell
+            //    }
+            //}
 
-            // void magic
-            var voidSkill = GetCreatureSkill(Skill.VoidMagic);
-            if (voidSkill.AdvancementClass >= SkillAdvancementClass.Trained)
-            {
-                foreach (var spellID in SpellExtensions.VoidMagicSpells)
-                {
-                    var spell = new Server.Entity.Spell(spellID);
-                    if (spell.NotFound)
-                    {
-                        var actionChain = new ActionChain();
-                        actionChain.AddDelaySeconds(3.0f);
-                        actionChain.AddAction(this, () =>
-                        {
-                            Session.Network.EnqueueSend(new GameMessageSystemChat("To install Void Magic, please apply the latest patches from https://github.com/ACEmulator/ACE-World-16PY-Patches", ChatMessageType.Broadcast));
-                        });
-                        actionChain.EnqueueChain();
-                    }
-                    break;  // performance improvement: only check first spell (measured 102ms to check 75 uncached void spells)
-                }
-            }
+            //// void magic
+            //var voidSkill = GetCreatureSkill(Skill.VoidMagic);
+            //if (voidSkill.AdvancementClass >= SkillAdvancementClass.Trained)
+            //{
+            //    foreach (var spellID in SpellExtensions.VoidMagicSpells)
+            //    {
+            //        var spell = new Server.Entity.Spell(spellID);
+            //        if (spell.NotFound)
+            //        {
+            //            var actionChain = new ActionChain();
+            //            actionChain.AddDelaySeconds(3.0f);
+            //            actionChain.AddAction(this, () =>
+            //            {
+            //                Session.Network.EnqueueSend(new GameMessageSystemChat("To install Void Magic, please apply the latest patches from https://github.com/ACEmulator/ACE-World-16PY-Patches", ChatMessageType.Broadcast));
+            //            });
+            //            actionChain.EnqueueChain();
+            //        }
+            //        break;  // performance improvement: only check first spell (measured 102ms to check 75 uncached void spells)
+            //    }
+            //}
 
-            // summoning
-            var summoning = GetCreatureSkill(Skill.Summoning);
-            if (summoning.AdvancementClass >= SkillAdvancementClass.Trained)
-            {
-                uint essenceWCID = 48878;
-                var weenie = DatabaseManager.World.GetCachedWeenie(essenceWCID);
-                if (weenie == null)
-                {
-                    var actionChain = new ActionChain();
-                    actionChain.AddDelaySeconds(3.0f);
-                    actionChain.AddAction(this, () =>
-                    {
-                        Session.Network.EnqueueSend(new GameMessageSystemChat("To install Summoning, please apply the latest patches from https://github.com/ACEmulator/ACE-World-16PY-Patches", ChatMessageType.Broadcast));
-                    });
-                    actionChain.EnqueueChain();
-                }
-            }
+            //// summoning
+            //var summoning = GetCreatureSkill(Skill.Summoning);
+            //if (summoning.AdvancementClass >= SkillAdvancementClass.Trained)
+            //{
+            //    uint essenceWCID = 48878;
+            //    var weenie = DatabaseManager.World.GetCachedWeenie(essenceWCID);
+            //    if (weenie == null)
+            //    {
+            //        var actionChain = new ActionChain();
+            //        actionChain.AddDelaySeconds(3.0f);
+            //        actionChain.AddAction(this, () =>
+            //        {
+            //            Session.Network.EnqueueSend(new GameMessageSystemChat("To install Summoning, please apply the latest patches from https://github.com/ACEmulator/ACE-World-16PY-Patches", ChatMessageType.Broadcast));
+            //        });
+            //        actionChain.EnqueueChain();
+            //    }
+            //}
         }
 
         public static HashSet<Skill> MeleeSkills = new HashSet<Skill>()
@@ -583,7 +602,7 @@ namespace ACE.Server.WorldObjects
         public static HashSet<Skill> MagicSkills = new HashSet<Skill>()
         {
             Skill.CreatureEnchantment,
-            Skill.ItemEnchantment,
+            Skill.PortalMagic,
             Skill.LifeMagic,
             Skill.VoidMagic,
             Skill.WarMagic
@@ -591,12 +610,11 @@ namespace ACE.Server.WorldObjects
 
         public static List<Skill> AlwaysTrained = new List<Skill>()
         {
-            Skill.ArcaneLore,
-            Skill.Jump,
-            Skill.Loyalty,
-            Skill.MagicDefense,
             Skill.Run,
-            Skill.Salvaging
+            Skill.Jump,
+            Skill.MeleeDefense,
+            Skill.MissileDefense,
+            Skill.MagicDefense,
         };
 
         public static List<Skill> AugSpecSkills = new List<Skill>()
@@ -611,6 +629,24 @@ namespace ACE.Server.WorldObjects
         public static bool IsSkillUntrainable(Skill skill)
         {
             return !AlwaysTrained.Contains(skill);
+
+            // Use this section if adding heritage starting skills
+            //switch (heritageGroup)
+            //{
+            //    case HeritageGroup.Aluvian:
+            //        if (skill == Skill.Dagger || skill == Skill.AssessPerson)
+            //            return false;
+            //        break;
+            //    case HeritageGroup.Gharundim:
+            //        if (skill == Skill.Staff || skill == Skill.ItemTinkering)
+            //            return false;
+            //        break;
+            //    case HeritageGroup.Sho:
+            //        if (skill == Skill.UnarmedCombat)
+            //            return false;
+            //        break;
+            //    }
+            //return true;
         }
 
         public bool IsSkillSpecializedViaAugmentation(Skill skill, out bool playerHasAugmentation)
@@ -746,7 +782,7 @@ namespace ACE.Server.WorldObjects
             { Skill.ThrownWeapon, WeaponType.Thrown },
             { Skill.TwoHandedCombat, WeaponType.TwoHanded },
             { Skill.CreatureEnchantment, WeaponType.Magic },    // only for war/void?
-            { Skill.ItemEnchantment, WeaponType.Magic },
+            { Skill.PortalMagic, WeaponType.Magic },
             { Skill.LifeMagic, WeaponType.Magic },
             { Skill.WarMagic, WeaponType.Magic },
             { Skill.VoidMagic, WeaponType.Magic },
@@ -836,6 +872,13 @@ namespace ACE.Server.WorldObjects
                 QuestManager.Erase("Forgetfulness6days");
                 QuestManager.Erase("Forgetfulness13days");
                 QuestManager.Erase("Forgetfulness20days");
+
+                QuestManager.Erase("AttributeLoweringGemPickedUp");
+                QuestManager.Erase("AttributeRaisingGemPickedUp");
+                QuestManager.Erase("SkillEnlightenmentGemPickedUp");
+                QuestManager.Erase("SkillForgetfulnessGemPickedUp");
+                QuestManager.Erase("SkillPrimaryGemPickedUp");
+                QuestManager.Erase("SkillSecondaryGemPickedUp");
             });
             actionChain.EnqueueChain();
         }
@@ -912,12 +955,78 @@ namespace ACE.Server.WorldObjects
             var msg = $"Your {(untrainable ? $"{typeOfSkill}" : "")}{skill.ToSentence()} skill has been {(untrainable ? "removed" : "reset")}. ";
             msg += $"All the experience {(creditRefund ? "and skill credits " : "")}that you spent on this skill have been refunded to you.";
 
-            if (refund)
+            if (refund && !IsTradeSkill(skill))
                 Session.Network.EnqueueSend(updateSkill, availableSkillCredits, new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
             else
                 Session.Network.EnqueueSend(updateSkill, new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
 
             return true;
+        }
+
+        public bool IsTradeSkill(Skill skill)
+        {
+            if (skill == Skill.Alchemy
+                || skill == Skill.ArmorTinkering
+                || skill == Skill.Cooking
+                || skill == Skill.Fletching
+                || skill == Skill.MagicItemTinkering
+                || skill == Skill.Spellcraft
+                || skill == Skill.WeaponTinkering)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        static Player()
+        {
+            AlwaysTrained.Add(Skill.ArcaneLore);
+
+            PlayerSkills.Add(Skill.HeavyWeapons);
+            PlayerSkills.Add(Skill.Bow);
+            PlayerSkills.Add(Skill.Dagger);
+            PlayerSkills.Add(Skill.Staff);
+            PlayerSkills.Add(Skill.ThrownWeapon);
+            PlayerSkills.Add(Skill.UnarmedCombat);
+            PlayerSkills.Add(Skill.WeaponTinkering);
+            PlayerSkills.Add(Skill.ArmorTinkering);
+            PlayerSkills.Add(Skill.MagicItemTinkering);
+            PlayerSkills.Add(Skill.PortalMagic);
+            PlayerSkills.Add(Skill.AssessPerson);
+
+            PlayerSkills.Remove(Skill.Axe);
+            PlayerSkills.Remove(Skill.Sword);
+            PlayerSkills.Remove(Skill.Mace);
+            PlayerSkills.Remove(Skill.Crossbow);
+            PlayerSkills.Remove(Skill.Spear);
+            PlayerSkills.Remove(Skill.Salvaging);
+            PlayerSkills.Remove(Skill.Awareness);
+            PlayerSkills.Remove(Skill.Sneaking);
+            PlayerSkills.Remove(Skill.LightWeapons);
+            PlayerSkills.Remove(Skill.FinesseWeapons);
+            PlayerSkills.Remove(Skill.MissileWeapons);
+            PlayerSkills.Remove(Skill.Recklessness);
+            PlayerSkills.Remove(Skill.SneakAttack);
+            PlayerSkills.Remove(Skill.DirtyFighting);
+            PlayerSkills.Remove(Skill.VoidMagic);
+            PlayerSkills.Remove(Skill.Summoning);
+            PlayerSkills.Remove(Skill.CreatureEnchantment);
+            PlayerSkills.Remove(Skill.Crossbow);
+            PlayerSkills.Remove(Skill.Mace);
+            PlayerSkills.Remove(Skill.Staff);
+            PlayerSkills.Remove(Skill.Salvaging);
+
+            //PlayerSkills.Add(Skill.Armor);
+            //PlayerSkills.Add(Skill.ItemTinkering);
+            //PlayerSkills.Remove(Skill.TwoHandedCombat);
+            //PlayerSkills.Remove(Skill.PortalMagic);
+            //PlayerSkills.Remove(Skill.WeaponTinkering);
+            //PlayerSkills.Remove(Skill.ArmorTinkering);
+            //PlayerSkills.Remove(Skill.MagicItemTinkering);
+            //PlayerSkills.Remove(Skill.ItemTinkering);
+
+            //NoLog_Landblocks.Add(0xB095); // Smuggler's Den
         }
 
         /// <summary>
@@ -942,7 +1051,7 @@ namespace ACE.Server.WorldObjects
             Skill.ArmorTinkering,
             Skill.MagicItemTinkering,
             Skill.CreatureEnchantment,
-            Skill.ItemEnchantment,
+            Skill.PortalMagic,
             Skill.LifeMagic,
             Skill.WarMagic,
             Skill.Leadership,

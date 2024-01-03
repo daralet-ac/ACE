@@ -258,7 +258,13 @@ namespace ACE.Server.WorldObjects
                 ResetGenerator();
                 CurrentlyPoweringUp = true;
                 if (InitCreate > 0)
-                    Generator_Generate();
+                {
+                    //Console.WriteLine(Tier);
+                    if (Tier != null)
+                        Generator_Generate(Tier);
+                    else
+                        Generator_Generate();
+                }
             }
 
             ResetTimestamp = Time.GetUnixTime();

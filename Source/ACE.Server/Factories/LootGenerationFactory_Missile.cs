@@ -1,8 +1,10 @@
+using System;
 using System.Linq;
 
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Mutations;
 using ACE.Server.Factories.Entity;
@@ -42,7 +44,6 @@ namespace ACE.Server.Factories
             if (roll == null)
             {
                 // previous method
-
                 // DamageMod
                 wo.DamageMod = GetMissileDamageMod(wieldDifficulty.Value, wo.W_WeaponType);
 
@@ -73,23 +74,47 @@ namespace ACE.Server.Factories
                 if (meleeDMod > 0.0f)
                     wo.WeaponDefense = meleeDMod;
             }
-            else
+
+            // Add element/material to weapons above starter tier:
+            // Longbow, Yumi, Nayin, Shortbow
+            // Shouyumi, War Bow, Yag
+            // Arbalest, Heavy Crossbow, Light Crossbow
+            // Atlatl, Royal Atlatl
+            if (wo.Tier > 1)
             {
-                // new method / mutation scripts
-                var isElemental = wo.W_DamageType != DamageType.Undef;
+                if (wo.WeenieClassId == 306 || wo.WeenieClassId == 363 || wo.WeenieClassId == 334 || wo.WeenieClassId == 307 ||
+                    wo.WeenieClassId == 341 || wo.WeenieClassId == 30625 || wo.WeenieClassId == 360 ||
+                    wo.WeenieClassId == 30616 || wo.WeenieClassId == 311 || wo.WeenieClassId == 312 ||
+                    wo.WeenieClassId == 12463 || wo.WeenieClassId == 20640)
+                {
+                    RollMissileElement(profile, wo);
+                }
+                else
+                {
+                    var materialType = GetMaterialType(wo, profile.Tier);
+                    if (materialType > 0)
+                        wo.MaterialType = materialType;
+                }
 
-                var scriptName = GetMissileScript(roll.WeaponType, isElemental);
-
-                // mutate DamageMod / ElementalDamageBonus / WieldRequirements
-                var mutationFilter = MutationCache.GetMutation(scriptName);
-
-                mutationFilter.TryMutate(wo, profile.Tier);
-
-                // mutate WeaponDefense
-                mutationFilter = MutationCache.GetMutation("MissileWeapons.weapon_defense.txt");
-
-                mutationFilter.TryMutate(wo, profile.Tier);
+                MutateColor(wo);
             }
+
+            // Wield Difficulty
+            wo.WieldDifficulty = RollWieldDifficulty(profile.Tier, TreasureWeaponType.MissileWeapon);
+            if (wo.WieldDifficulty > 0)
+            {
+                wo.WieldRequirements = WieldRequirement.RawSkill;
+                wo.WieldSkillType = (int)wo.WeaponSkill;
+            }
+
+            // Damage
+            TryMutateMissileWeaponDamage(wo, roll, profile, out var maxPossibleDamageMod, out var maxPossibleDamageBonus);
+
+            // Damage Percentile, for workmanship
+            var damageModPercentile = (wo.DamageMod - 1) / maxPossibleDamageMod;
+            var damageBonusPercentile = (float)(wo.ElementalDamageBonus > 0 ? wo.ElementalDamageBonus : wo.Damage) / maxPossibleDamageBonus;
+            var damagePercentile = (float)((damageModPercentile + damageBonusPercentile) / 2);
+            //Console.WriteLine($"mod: {wo.DamageMod - 1} maxMod: {maxPossibleDamageMod} modPercentile: {damageModPercentile}  bonus: { wo.ElementalDamageBonus} maxBonus: {maxPossibleDamageBonus} bonusPercentil: {damageBonusPercentile}");
 
             // weapon speed
             if (wo.WeaponTime != null)
@@ -98,10 +123,20 @@ namespace ACE.Server.Factories
                 wo.WeaponTime = (int)(wo.WeaponTime * weaponSpeedMod);
             }
 
-            // material type
-            var materialType = GetMaterialType(wo, profile.Tier);
-            if (materialType > 0)
-                wo.MaterialType = materialType;
+            // weapon mods
+            var totalModsPercentile = 0.0f;
+
+            TryMutateWeaponMods(wo, profile, out totalModsPercentile);
+
+            // Weapon Mods Percentile, for workmanship
+
+            //RollCrushingBlow(profile, wo);
+            //RollBitingStrike(profile, wo);
+            //RollHollow(profile, wo);
+            //RollArmorCleaving(profile, wo);
+            //RollResistanceCleaving(profile, wo);
+            //RollShieldCleaving(profile, wo);
+            //RollSlayer(profile, wo);
 
             // item color
             MutateColor(wo);
@@ -115,14 +150,10 @@ namespace ACE.Server.Factories
             wo.GemType = RollGemType(profile.Tier);
 
             // workmanship
-            wo.ItemWorkmanship = WorkmanshipChance.Roll(profile.Tier);
+            wo.ItemWorkmanship = GetWeaponWorkmanship(wo, damagePercentile, totalModsPercentile);
 
             // burden
             MutateBurden(wo, profile, true);
-
-            // missile / magic defense
-            wo.WeaponMissileDefense = MissileMagicDefense.Roll(profile.Tier);
-            wo.WeaponMagicDefense = MissileMagicDefense.Roll(profile.Tier);
 
             // spells
             if (!isMagical)
@@ -143,13 +174,6 @@ namespace ACE.Server.Factories
 
             // long description
             wo.LongDesc = GetLongDesc(wo);
-        }
-
-        private static string GetMissileScript(TreasureWeaponType weaponType, bool isElemental = false)
-        {
-            var elementalStr = isElemental ? "elemental" : "non_elemental";
-
-            return "MissileWeapons." + weaponType.GetScriptName() + "_" + elementalStr + ".txt";
         }
 
         private static bool GetMutateMissileWeaponData(uint wcid, int tier)
@@ -334,7 +358,7 @@ namespace ACE.Server.Factories
         private static int GetElementalMissileWeapon()
         {
             // Determine missile weapon type: 0 - Bow, 1 - Crossbows, 2 - Atlatl, 3 - Slingshot, 4 - Compound Bow, 5 - Compound Crossbow
-            int missileType = ThreadSafeRandom.Next(0, 5);
+            int missileType = ThreadSafeRandom.Next(0, ThreadSafeRandom.Next(0, LootTables.ElementalMissileWeaponsMatrix.Length - 1));
 
             // Determine element type: 0 - Slashing, 1 - Piercing, 2 - Blunt, 3 - Frost, 4 - Fire, 5 - Acid, 6 - Electric
             int element = ThreadSafeRandom.Next(0, 6);
@@ -349,15 +373,105 @@ namespace ACE.Server.Factories
         private static int GetNonElementalMissileWeapon()
         {
             // Determine missile weapon type: 0 - Bow, 1 - Crossbows, 2 - Atlatl
-            int missileType = ThreadSafeRandom.Next(0, 2);
-            var subType = missileType switch
-            {
-                0 => ThreadSafeRandom.Next(0, 6),
-                1 => ThreadSafeRandom.Next(0, 2),
-                2 => ThreadSafeRandom.Next(0, 1),
-                _ => 0, // Default/Else
-            };
+            int missileType = ThreadSafeRandom.Next(0, LootTables.NonElementalMissileWeaponsMatrix.Length - 1);
+            int subType = ThreadSafeRandom.Next(0, LootTables.NonElementalMissileWeaponsMatrix[missileType].Length - 1);
             return LootTables.NonElementalMissileWeaponsMatrix[missileType][subType];
+        }
+
+        private static void TryMutateMissileWeaponDamage(WorldObject wo, TreasureRoll roll, TreasureDeath profile, out double maxPossibleDamageMod, out int maxPossibleDamageBonus)
+        {
+            var MAX_TIER = 7;
+
+            // Damage Mod
+            var baseDamageMod = (wo.DamageMod - 1.0f) ?? 1;
+            var damageModMultiplier = GetMissileDamageModMutationMultiplier(roll)[profile.Tier - 1];
+            var damageModAdder = (float)GetMissileDamageModMutationAdder(roll)[profile.Tier - 1] / 100;
+
+            var maxDamageMod = baseDamageMod * damageModMultiplier + damageModAdder;
+            var minDamageMod = baseDamageMod * damageModMultiplier + (profile.Tier > 1 ? (GetMissileDamageModMutationAdder(roll)[profile.Tier - 2] - 5) / 100 : 0);
+            var diminishedDamageModRoll = (maxDamageMod - minDamageMod) * GetDiminishingRoll(profile);
+
+            wo.DamageMod = minDamageMod + diminishedDamageModRoll + 1;
+            maxPossibleDamageMod = baseDamageMod * GetMissileDamageModMutationMultiplier(roll)[7] + GetMissileDamageModMutationAdder(roll)[7] / 100;
+
+            // Damage Bonus
+            var baseDamageBonus = (wo.ElementalDamageBonus) ?? 0;
+            var damageBonusMultiplier = GetMissileDamageBonusMutationMultiplier(roll)[profile.Tier - 1];
+            var damageBonusAdder = (float)GetMissileDamageBonusMutationAdder(roll)[profile.Tier - 1];
+
+            var maxDamageBonus = baseDamageBonus * damageBonusMultiplier + damageBonusAdder;
+            var minDamageBonus = (baseDamageBonus * damageBonusMultiplier + damageBonusAdder) * 0.5f;
+            var diminishedDamageBonusRoll = (maxDamageBonus - minDamageBonus) * GetDiminishingRoll(profile);
+
+            if (wo.W_DamageType == DamageType.Undef)
+                wo.Damage = (int)((minDamageBonus + diminishedDamageBonusRoll) / 2);
+            else
+                wo.ElementalDamageBonus = (int)(minDamageBonus + diminishedDamageBonusRoll);
+
+            maxPossibleDamageBonus = (int)(baseDamageBonus * GetMissileDamageBonusMutationMultiplier(roll)[MAX_TIER] + GetMissileDamageBonusMutationAdder(roll)[MAX_TIER]);
+        }
+
+        /// <summary>
+        /// Rolls for the Element for casters
+        /// </summary>
+        private static void RollMissileElement(TreasureDeath profile, WorldObject wo)
+        {
+            var noElement = ThreadSafeRandom.Next(0, 3) == 0 ? true : false;
+            var roll = ThreadSafeRandom.Next(1, 7);
+            var elementType = 0;
+            var materialType = 0;
+            var uiEffect = 0;
+
+            if (noElement)
+            {
+                var material = GetMaterialType(wo, profile.Tier);
+                if (material > 0)
+                    wo.MaterialType = material;
+                wo.UiEffects = UiEffects.Undef;
+
+                return;
+            }
+            switch (roll)
+            {
+                case 1:
+                    elementType = 0x1; // slash
+                    materialType = 0x0000001A; // imperial topaz
+                    uiEffect = 0x0400;
+                    break;
+                case 2:
+                    elementType = 0x2; // pierce
+                    materialType = 0x0000000F; // black garnet
+                    uiEffect = 0x0800;
+                    break;
+                case 3:
+                    elementType = 0x4; // bludge
+                    materialType = 0x0000002F; // white saphhire
+                    uiEffect = 0x0200;
+                    break;
+                case 4:
+                    elementType = 0x8; // cold
+                    materialType = 0x0000000D; // aquamarine
+                    uiEffect = 0x0080;
+                    break;
+                case 5:
+                    elementType = 0x10; // fire
+                    materialType = 0x00000023; // red garnet
+                    uiEffect = 0x0020;
+                    break;
+                case 6:
+                    elementType = 0x20; // acid
+                    materialType = 0x00000015; // emerald
+                    uiEffect = 0x0100;
+                    break;
+                case 7:
+                    elementType = 0x40; // electric
+                    materialType = 0x0000001B; // jet
+                    uiEffect = 0x0040;
+                    break;
+            }
+            wo.W_DamageType = (DamageType)elementType;
+            wo.MaterialType = (MaterialType)materialType;
+            wo.UiEffects = (UiEffects)uiEffect;
         }
     }
 }

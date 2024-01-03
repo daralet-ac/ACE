@@ -120,7 +120,7 @@ namespace ACE.Server.Entity
                         return _spell.DotDuration.Value;
                 }
                 else
-                    return _spellBase.Duration;
+                    return _spellBase.Duration * SpellPowerMod;
             }
         }
 
@@ -232,6 +232,9 @@ namespace ACE.Server.Entity
         /// </summary>
         public uint ManaMod { get => _spellBase.ManaMod; }
 
+        public float SpellPowerMod;
+        public float SpellStatModVal;
+
         //==================================
         // Spell fields - from the server DB
         //==================================
@@ -249,7 +252,9 @@ namespace ACE.Server.Entity
         /// <summary>
         /// The amount to modify a stat
         /// </summary>
-        public float StatModVal { get => _spell.StatModVal ?? 0.0f; }
+        public float BaseStatModVal { get => _spell.StatModVal ?? 0.0f; }
+
+        public float StatModVal { get => (float)(BaseStatModVal * SpellStatModVal); }
 
         /// <summary>
         /// The damage type for this spell
@@ -261,14 +266,14 @@ namespace ACE.Server.Entity
         /// </summary>
         public int BaseIntensity { get => _spell.BaseIntensity ?? 0; }
 
-        public int MinDamage { get => BaseIntensity; }
+        public int MinDamage { get => (int)(BaseIntensity * SpellPowerMod); }
 
         /// <summary>
         /// The maximum additional daamage for this spell
         /// </summary>
         public int Variance { get => _spell.Variance ?? 0; }
 
-        public int MaxDamage { get => BaseIntensity + Variance; }
+        public int MaxDamage { get => (int)(BaseIntensity * SpellPowerMod) + Variance; }
 
         /// <summary>
         /// The weenie class ID associated for this spell, ie. the projectile weenie class id
@@ -373,7 +378,7 @@ namespace ACE.Server.Entity
         /// <summary>
         /// The percentage of DrainPercentage to damage a target for life projectiles
         /// </summary>
-        public float DamageRatio { get => _spell.DamageRatio ?? 1.0f; }
+        public float DamageRatio { get => (_spell.DamageRatio ?? 1.0f) * SpellPowerMod; }
 
         /// <summary>
         /// DamageType used by LifeMagic spells that specifies Health, Mana, or Stamina for the Boost type spells
@@ -383,14 +388,14 @@ namespace ACE.Server.Entity
         /// <summary>
         /// The minimum amount of vital boost from a life spell
         /// </summary>
-        public int Boost { get => _spell.Boost ?? 0; }
+        public int Boost { get => (int)((_spell.Boost ?? 0) * SpellPowerMod); }
 
         /// <summary>
         /// Boost + BoostVariance = the maximum amount of vital boost from a life spell
         /// </summary>
         public int BoostVariance { get => _spell.BoostVariance ?? 0; }
 
-        public int MaxBoost { get => Boost + BoostVariance; }
+        public int MaxBoost { get => (int)((_spell.Boost ?? 0) * SpellPowerMod) + BoostVariance; }
 
         /// <summary>
         /// The source vital for a life spell
@@ -405,7 +410,7 @@ namespace ACE.Server.Entity
         /// <summary>
         /// The propotion of source vital to transfer to destination vital
         /// </summary>
-        public float Proportion { get => _spell.Proportion ?? 1.0f; }
+        public float Proportion { get => (_spell.Proportion ?? 1.0f) * SpellPowerMod; }
 
         /// <summary>
         /// The percent of source vital loss for a life magic transfer spell
@@ -421,7 +426,7 @@ namespace ACE.Server.Entity
         /// <summary>
         /// The maximum amount of vital transferred by a life magic spell
         /// </summary>
-        public int TransferCap { get => _spell.TransferCap ?? 0; }
+        public int TransferCap { get => (int)((_spell.TransferCap ?? 0) * SpellPowerMod); }
 
         /// <summary>
         /// The maximum destination vital boost for a life magic transfer spell?
@@ -486,5 +491,6 @@ namespace ACE.Server.Entity
         /// Number * NumberVariance = the minimum # of spells to dispel
         /// </summary>
         public float NumberVariance { get => _spell.NumberVariance ?? 0; }
+
     }
 }

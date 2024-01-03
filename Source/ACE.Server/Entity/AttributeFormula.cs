@@ -4,6 +4,7 @@ using ACE.DatLoader.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects;
+using System;
 
 namespace ACE.Server.Entity
 {
@@ -60,7 +61,9 @@ namespace ACE.Server.Entity
             var attr2 = (PropertyAttribute)formula.Attr2;
             var divisor = formula.Z;
 
-            var total = current ? creature.Attributes[attr1].Current : creature.Attributes[attr1].Base;
+            uint total = 0;
+            if(attr1 != PropertyAttribute.Undef)
+                total = current ? creature.Attributes[attr1].Current : creature.Attributes[attr1].Base;
             if (attr2 != PropertyAttribute.Undef)
                 total += current ? creature.Attributes[attr2].Current : creature.Attributes[attr2].Base;
 

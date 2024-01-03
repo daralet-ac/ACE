@@ -135,6 +135,12 @@ namespace ACE.Server.Factories
                     return new CraftTool(weenie, guid);
                 case WeenieType.LightSource:
                     return new LightSource(weenie, guid);
+                case WeenieType.EmpoweredScarab:
+                    return new EmpoweredScarab(weenie, guid);
+                case WeenieType.CombatFocus:
+                    return new CombatFocus(weenie, guid);
+                case WeenieType.ArmorPatch:
+                    return new ArmorPatch(weenie, guid);
                 default:
                     return new GenericObject(weenie, guid);
             }
@@ -250,6 +256,12 @@ namespace ACE.Server.Factories
                     return new CraftTool(biota);
                 case WeenieType.LightSource:
                     return new LightSource(biota);
+                case WeenieType.EmpoweredScarab:
+                    return new EmpoweredScarab(biota);
+                case WeenieType.CombatFocus:
+                    return new CombatFocus(biota);
+                case WeenieType.ArmorPatch:
+                    return new ArmorPatch(biota);
                 default:
                     return new GenericObject(biota);
             }

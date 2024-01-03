@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using ACE.Common;
 using ACE.Database;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -105,7 +106,7 @@ namespace ACE.Server.Entity
         {
             get
             {
-                if (Generator is Chest)
+                if (Generator is Chest && (Generator.ActivationResponse == ActivationResponse.Use || FirstSpawn))
                     return 0;
 
                 return Biota.Delay ?? Generator.GeneratorProfiles[0].Biota.Delay ?? 0.0f;
@@ -149,10 +150,10 @@ namespace ACE.Server.Entity
         /// Called upon Generate request<para />
         /// Processes the SpawnQueue
         /// </summary>
-        public void Spawn_HeartBeat()
+        public void Spawn_HeartBeat(int? tier = null)
         {
             if (SpawnQueue.Count > 0)
-                ProcessQueue();
+                ProcessQueue(tier);
         }
 
         /// <summary>
@@ -161,7 +162,10 @@ namespace ACE.Server.Entity
         /// </summary>
         public DateTime GetSpawnTime()
         {
+            //if (Generator.CurrentlyPoweringUp || Generator.CachedRegenerationInterval >= Delay)
                 return DateTime.UtcNow;
+            //else
+            //    return DateTime.UtcNow.AddSeconds(Delay);
         }
 
         /// <summary>
@@ -185,7 +189,7 @@ namespace ACE.Server.Entity
         /// Spawns generator objects at the correct SpawnTime
         /// Called on when Generate is requested
         /// </summary>
-        public void ProcessQueue()
+        public void ProcessQueue(int? tier = null)
         {
             var index = 0;
 
@@ -202,7 +206,7 @@ namespace ACE.Server.Entity
 
                 if (MaxCreate == -1 || Spawned.Count < MaxCreate)
                 {
-                    var objects = Spawn();
+                    var objects = Spawn(tier);
 
                     if (objects != null)
                     {
@@ -231,13 +235,13 @@ namespace ACE.Server.Entity
         /// for RNG treasure, can spawn multiple objects
         /// If an object failed to spawn, but FirstSpawn is true, the object will still be returned as a spawned item, but, it will have been Destroy()'d first.
         /// </summary>
-        public List<WorldObject> Spawn()
+        public List<WorldObject> Spawn(int? tier = null)
         {
             var objects = new List<WorldObject>();
 
             if (RegenLocationType.HasFlag(RegenLocationType.Treasure))
             {
-                objects = TreasureGenerator();
+                objects = TreasureGenerator(tier);
 
                 if (objects != null && objects.Count > 0)
                 {
@@ -301,18 +305,10 @@ namespace ACE.Server.Entity
 
                 // If the object failed to spawn, we still destroy it. This cleans up the object and releases the GUID.
                 // This object still may be returned in the spawned collection if FirstSpawn is true. This is to prevent retry spam.
-                if (success) continue;
-
-                if (obj.Location != null)
+                if (!success)
                 {
                     _log.Debug("[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} {GeneratorName}.Spawn(): failed to spawn {WorldObjectName} (0x{WorldObjectGuid}:{WorldObjectWeenieClassId}) from profile {LinkId} at {RegenLocationType}\nGenerator Location: {GeneratorLocation}\nWorld Object Location: {WorldObjectLocation}",  Generator.Guid, Generator.WeenieClassId, Generator.Name, obj.Name, obj.Guid, obj.WeenieClassId, LinkId, RegenLocationType, Generator.Location?.ToLOCString(), obj.Location.ToLOCString());
                 }
-                else
-                {
-                    _log.Debug("[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} {GeneratorName}.Spawn(): failed to spawn {WorldObjectName} (0x{WorldObjectGuid}:{WorldObjectWeenieClassId}) from profile {LinkId} at {RegenLocationType}", Generator.Guid, Generator.WeenieClassId, Generator.Name, obj.Name, obj.Guid, obj.WeenieClassId, LinkId, RegenLocationType);
-                }
-                
-                obj.Destroy();
             }
 
             return spawned;
@@ -346,6 +342,8 @@ namespace ACE.Server.Entity
                 else
                     obj.Location = new ACE.Entity.Position(Generator.Location.Cell, Generator.Location.PositionX + Biota.OriginX ?? 0, Generator.Location.PositionY + Biota.OriginY ?? 0, Generator.Location.PositionZ + Biota.OriginZ ?? 0, Biota.AnglesX ?? 0, Biota.AnglesY ?? 0, Biota.AnglesZ ?? 0, Biota.AnglesW ?? 0);
             }
+
+            obj.Location.PositionZ += 0.05f;
 
             if (!VerifyLandblock(obj) || !VerifyWalkableSlope(obj))
                 return false;
@@ -426,6 +424,11 @@ namespace ACE.Server.Entity
 
             obj.Location = new ACE.Entity.Position(Generator.Location);
 
+            obj.Location.PositionZ += 0.05f;
+
+            if (!VerifyLandblock(obj) || !VerifyWalkableSlope(obj))
+                return false;
+
             return obj.EnterWorld();
         }
 
@@ -464,18 +467,35 @@ namespace ACE.Server.Entity
         /// <summary>
         /// Generates a randomized treasure from LootGenerationFactory
         /// </summary>
-        public List<WorldObject> TreasureGenerator()
+        public List<WorldObject> TreasureGenerator(int? tier = null)
         {
             // profile.WeenieClassId is not a weenieClassId,
             // it's a DeathTreasure or WieldedTreasure table DID
             // there is no overlap of DIDs between these 2 tables,
             // so they can be searched in any order..
-            var deathTreasure = DatabaseManager.World.GetCachedDeathTreasure(Biota.WeenieClassId);
+            var deathTreasure = LootGenerationFactory.GetTweakedDeathTreasureProfile(Biota.WeenieClassId, Generator);
+            //Console.WriteLine(deathTreasure.MundaneItemChance);
             if (deathTreasure != null)
             {
-                // TODO: get randomly generated death treasure from LootGenerationFactory
+                if (tier != null)
+                    deathTreasure.Tier = (int)tier;
+
+                // TODO Get LootQualityMod from Chest (just like Tier above) 
+
                 //log.Debug($"{_generator.Name}.TreasureGenerator(): found death treasure {Biota.WeenieClassId}");
-                return LootGenerationFactory.CreateRandomLootObjects(deathTreasure);
+                var generatedLoot = LootGenerationFactory.CreateRandomLootObjects(deathTreasure);
+
+                if ((RegenLocationType & RegenLocationType.Contain) == 0) // If we're not a container make sure we respect our generate limit.
+                {
+                    while (generatedLoot.Count > MaxCreate)
+                    {
+                        int index = ThreadSafeRandom.Next(0, generatedLoot.Count - 1);
+                        generatedLoot[index].DeleteObject();
+                        generatedLoot.RemoveAt(index);
+                    }
+                }
+
+                return generatedLoot;
             }
             else
             {
@@ -567,8 +587,10 @@ namespace ACE.Server.Entity
             NextAvailable = DateTime.UtcNow.AddSeconds(Delay);
         }
 
+        public bool GeneratorResetInProgress = false;
         public void Reset()
         {
+            GeneratorResetInProgress = true;
             foreach (var rNode in Spawned.Values)
             {
                 var wo = rNode.TryGetWorldObject();
@@ -588,6 +610,7 @@ namespace ACE.Server.Entity
                     wo.Destroy();
                 }
             }
+            GeneratorResetInProgress = false;
 
             CleanupProfile();
         }
@@ -616,6 +639,14 @@ namespace ACE.Server.Entity
             }
 
             CleanupProfile();
+        }
+
+        public void StartAllContainersDecay()
+        {
+            foreach (var rNode in Spawned.Values)
+            {
+                var wo = rNode.TryGetWorldObject();
+            }
         }
 
         private void CleanupProfile()

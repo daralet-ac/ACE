@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Database;
 using ACE.Database.Models.World;
+using ACE.DatLoader;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -19,7 +19,23 @@ namespace ACE.Server.WorldObjects
 {
     partial class Creature
     {
-        public TreasureDeath DeathTreasure { get => DeathTreasureType.HasValue ? DatabaseManager.World.GetCachedDeathTreasure(DeathTreasureType.Value) : null; }
+        public TreasureDeath DeathTreasure
+        {
+            get
+            {
+                var treasure = DeathTreasureType.HasValue
+                    ? LootGenerationFactory.GetTweakedDeathTreasureProfile(DeathTreasureType.Value, this)
+                    : null;
+
+                if (treasure != null)
+                {
+                    treasure.Tier = _deathTreasureTier;
+                }
+
+                return treasure;
+            }
+        }
+        private int _deathTreasureTier = 1;
 
         private bool onDeathEntered = false;
 
@@ -186,13 +202,27 @@ namespace ACE.Server.WorldObjects
                 if (playerDamager == null)
                     continue;
 
+                if (playerDamager == this)
+                    continue;
+
                 var totalDamage = kvp.Value.TotalDamage;
 
                 var damagePercent = totalDamage / totalHealth;
 
-                var totalXP = (XpOverride ?? 0) * damagePercent;
+                var killXpMod = KillXpMod ?? 1.0;
 
-                playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill);
+                var totalXP = GetCreatureDeathXP(Level ?? 0, Tier ?? 1) * damagePercent * (float)killXpMod;
+
+                if (BossKillXpReward == true)
+                {
+                    if( playerDamager.Fellowship != null)
+                        foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
+                            member.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                    else
+                        playerDamager.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                }
+                else
+                    playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill, Level, ShareType.All);
 
                 // handle luminance
                 if (LuminanceAward != null)
@@ -201,6 +231,31 @@ namespace ACE.Server.WorldObjects
                     playerDamager.EarnLuminance(totalLuminance, XpType.Kill);
                 }
             }
+        }
+        public static int GetCreatureDeathXP(int level, int tier = 1)
+        {
+            var baseXp = 0.0;
+
+            ulong levelTotalXP;
+
+            if (level <= 125)
+                levelTotalXP = DatManager.PortalDat.XpTable.CharacterLevelXPList[level + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[level];
+            else
+                levelTotalXP = DatManager.PortalDat.XpTable.CharacterLevelXPList[126] - DatManager.PortalDat.XpTable.CharacterLevelXPList[125];
+
+            switch (tier)
+            {
+                case 1: baseXp = levelTotalXP * 0.01f; break;
+                case 2: baseXp = levelTotalXP * 0.005f; break;
+                case 3: baseXp = levelTotalXP * 0.004f; break;
+                case 4: baseXp = levelTotalXP * 0.003f; break;
+                case 5: baseXp = levelTotalXP * 0.0025f; break;
+                case 6: baseXp = levelTotalXP * 0.002f; break;
+                case 7: baseXp = levelTotalXP * 0.0015f; break;
+                case 8: baseXp = levelTotalXP * 0.001f; break;
+            }
+
+            return (int)Math.Round(baseXp);
         }
 
         /// <summary>
@@ -607,8 +662,8 @@ namespace ACE.Server.WorldObjects
 
             corpse.RemoveProperty(PropertyInt.Value);
 
-            if (CanGenerateRare && killer != null)
-                corpse.TryGenerateRare(killer);
+            //if (CanGenerateRare && killer != null)
+            //    corpse.TryGenerateRare(killer);
 
             corpse.InitPhysicsObj();
 
@@ -650,15 +705,41 @@ namespace ACE.Server.WorldObjects
             // create death treasure from loot generation factory
             if (DeathTreasure != null)
             {
-                List<WorldObject> items = LootGenerationFactory.CreateRandomLootObjects(DeathTreasure);
-                foreach (WorldObject wo in items)
-                {
-                    if (corpse != null)
-                        corpse.TryAddToInventory(wo);
-                    else
-                        droppedItems.Add(wo);
+                if (Tier != null)
+                    _deathTreasureTier = Tier.Value;
 
-                    DoCantripLogging(killer, wo);
+                List<WorldObject> items = LootGenerationFactory.CreateRandomLootObjects(DeathTreasure);
+
+                for (int i = items.Count - 1; i >= 0; i--)
+                {
+                    var removed = false;
+                    
+                    if(items[i].MaxStackSize > 1)
+                    {
+                        foreach (WorldObject item in items.ToList())
+                        {
+                            if(items[i].Guid != item.Guid && items[i].WeenieClassId == item.WeenieClassId)
+                            {
+                                var newStack = items[i].StackSize + item.StackSize;
+                                item.SetStackSize(newStack);
+
+                                items.Remove(items[i]);
+
+                                removed = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!removed)
+                    {
+                        if (corpse != null)
+                            corpse.TryAddToInventory(items[i]);
+                        else
+                            droppedItems.Add(items[i]);
+
+                        DoCantripLogging(killer, items[i]);
+                    }
                 }
             }
 

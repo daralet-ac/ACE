@@ -137,7 +137,7 @@ namespace ACE.Server.WorldObjects.Managers
                 case EmoteType.AwardNoShareXP:
 
                     if (player != null)
-                        player.EarnXP(emote.Amount64 ?? emote.Amount ?? 0, XpType.Quest, ShareType.None);
+                        player.EarnXP(emote.Amount64 ?? emote.Amount ?? 0, XpType.Quest, player.Level, ShareType.None);
 
                     break;
 
@@ -169,7 +169,7 @@ namespace ACE.Server.WorldObjects.Managers
                         var amt = emote.Amount64 ?? emote.Amount ?? 0;
                         if (amt > 0)
                         {
-                            player.EarnXP(amt, XpType.Quest, ShareType.All);
+                            player.EarnXP(amt, XpType.Quest, player.Level, ShareType.All);
                         }
                         else if (amt < 0)
                         {
@@ -251,9 +251,10 @@ namespace ACE.Server.WorldObjects.Managers
                         var treasureClass = (TreasureItemType_Orig?)emote.TreasureClass ?? TreasureItemType_Orig.Undef;
 
                         // Create a dummy treasure profile for passing emote values
-                        var profile = new Database.Models.World.TreasureDeath
+                        var profile = new ACE.Server.Factories.Entity.TreasureDeathExtended
                         {
                             Tier = treasureTier,
+                            ForceTreasureItemType = treasureClass,
                             //TreasureType = (uint)treasureType,
                             LootQualityMod = 0,
                             ItemChance = 100,
@@ -271,7 +272,7 @@ namespace ACE.Server.WorldObjects.Managers
                             UnknownChances = 21
                         };
 
-                        var treasure = LootGenerationFactory.CreateRandomLootObjects_New(profile, treasureType, treasureClass);
+                        var treasure = LootGenerationFactory.CreateRandomLootObjects_New(profile, treasureType);
                         if (treasure != null)
                         {
                             player.TryCreateForGive(WorldObject, treasure);
@@ -343,6 +344,14 @@ namespace ACE.Server.WorldObjects.Managers
 
                     if (questTarget != null)
                         questTarget.QuestManager.Erase(emote.Message);
+
+                    break;
+
+                case EmoteType.EraseFellowQuest:
+
+                    if (player != null)
+                        if (player.Fellowship != null)
+                            player.Fellowship.QuestManager.Erase(emote.Message);
 
                     break;
 
@@ -508,6 +517,19 @@ namespace ACE.Server.WorldObjects.Managers
                         }
                         else
                             ExecuteEmoteSet(EmoteCategory.QuestNoFellow, emote.Message, targetObject, true);
+                    }
+                    break;
+
+                case EmoteType.InqFellowQuestSolves:
+
+                    if (player != null)
+                    {
+                        if(player.Fellowship != null)
+                        {
+                            var questSolves = player.Fellowship.QuestManager.HasQuestSolves(emote.Message, emote.Min, emote.Max);
+
+                            ExecuteEmoteSet(questSolves ? EmoteCategory.QuestSuccess : EmoteCategory.QuestFailure, emote.Message, targetObject, true);
+                        }
                     }
                     break;
 
@@ -1491,6 +1513,25 @@ namespace ACE.Server.WorldObjects.Managers
 
                 default:
                     _log.Debug($"EmoteManager.Execute - Encountered Unhandled EmoteType {(EmoteType)emote.Type} for {WorldObject.Name} ({WorldObject.WeenieClassId})");
+                    break;
+
+                case EmoteType.TrainSkill:
+
+                    if (player != null)
+                    {
+                        var trainedSuccessfully = player.TrainSkill((Skill)emote.Stat, 0);
+
+                        if (trainedSuccessfully)
+                        {
+                            var updateSkill = new GameMessagePrivateUpdateSkill(player, player.GetCreatureSkill((Skill)emote.Stat));
+
+                            var msg = new GameMessageSystemChat($"{((Skill)emote.Stat).ToSentence()} trained.", ChatMessageType.Advancement);
+
+                            player.Session.Network.EnqueueSend(updateSkill, msg);
+                        }
+                        else
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Failed to train {((Skill)emote.Stat).ToSentence()}!", ChatMessageType.Advancement));
+                    }
                     break;
             }
 

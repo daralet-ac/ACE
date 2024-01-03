@@ -169,6 +169,19 @@ namespace ACE.Server.WorldObjects
 
             var player = creature as Player;
 
+            var currentTime = Time.GetUnixTime();
+
+            if (creature.HotspotImmunityTimestamp > currentTime)
+                return;
+            else
+            {
+                var immunityTime = (CycleTime ?? 0) * (1.0f - CycleTimeVariance ?? 0.0f) * 0.9f; // Multiplying the minimum possible CycleTime by 0.9 just to be extra sure that we wont be immune for the next tick.
+                creature.HotspotImmunityTimestamp = currentTime + immunityTime;
+            }
+            
+            if (player != null)
+                player.RechargeEmpoweredScarabs(this);
+
             switch (DamageType)
             {
                 default:
@@ -178,7 +191,7 @@ namespace ACE.Server.WorldObjects
                     amount *= creature.GetResistanceMod(DamageType, this, null);
 
                     if (player != null)
-                        iAmount = player.TakeDamage(this, DamageType, amount, Server.Entity.BodyPart.Foot);
+                        iAmount = player.TakeDamage(this, DamageType, amount, Server.Entity.BodyPart.Foot, PartialEvasion.None);
                     else
                         iAmount = (int)creature.TakeDamage(this, DamageType, amount);
 

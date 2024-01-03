@@ -71,7 +71,7 @@ namespace ACE.Server.WorldObjects
         public bool IsShield { get => CombatUse != null && CombatUse == ACE.Entity.Enum.CombatUse.Shield; }
         // ValidLocations is bugged for some older two-handed weapons, still contains MeleeWeapon instead of TwoHanded?
         //public bool IsTwoHanded { get => CurrentWieldedLocation != null && CurrentWieldedLocation == EquipMask.TwoHanded; }
-        public bool IsTwoHanded => WeaponSkill == Skill.TwoHandedCombat;
+        public bool IsTwoHanded { get => DefaultCombatStyle != null && (DefaultCombatStyle == CombatStyle.TwoHanded ); }
         public bool IsBow { get => DefaultCombatStyle != null && (DefaultCombatStyle == CombatStyle.Bow || DefaultCombatStyle == CombatStyle.Crossbow); }
         public bool IsAtlatl { get => DefaultCombatStyle != null && DefaultCombatStyle == CombatStyle.Atlatl; }
         public bool IsAmmoLauncher { get => IsBow || IsAtlatl; }
@@ -252,6 +252,9 @@ namespace ACE.Server.WorldObjects
 
             if (MotionTableId != 0)
                 CurrentMotionState = new Motion(MotionStance.Invalid);
+
+            AwareList = null;
+            NextAwarenessCheck = 0;
         }
 
         /// <summary>
@@ -1021,15 +1024,16 @@ namespace ACE.Server.WorldObjects
 
         public Skill ConvertToMoASkill(Skill skill)
         {
-            if (this is Player player)
+            switch (skill)
             {
-                if (SkillExtensions.RetiredMelee.Contains(skill))
-                    return player.GetHighestMeleeSkill();
-                if (SkillExtensions.RetiredMissile.Contains(skill))
-                    return Skill.MissileWeapons;
+                case Skill.Crossbow: return Skill.Bow;
+                case Skill.Sword: return Skill.HeavyWeapons;
+                case Skill.Axe: return Skill.HeavyWeapons;
+                case Skill.Mace: return Skill.HeavyWeapons;
+                case Skill.Spear: return Skill.HeavyWeapons;
+                default: return skill;
             }
-
-            return skill;
+            
         }
 
         public void GetCurrentMotionState(out MotionStance currentStance, out MotionCommand currentMotion)
@@ -1093,6 +1097,102 @@ namespace ACE.Server.WorldObjects
 
                 return Math.Max(0, structureUnitValue);
             }
+        }
+
+        public double? LootQualityMod
+        {
+            get => GetProperty(PropertyFloat.LootQualityMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.LootQualityMod); else SetProperty(PropertyFloat.LootQualityMod, value.Value); }
+        }
+
+        public double? KillXpMod
+        {
+            get => GetProperty(PropertyFloat.KillXpMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.KillXpMod); else SetProperty(PropertyFloat.KillXpMod, value.Value); }
+        }
+
+        public bool? UseArchetypeSystem
+        {
+            get => GetProperty(PropertyBool.UseArchetypeSystem);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.UseArchetypeSystem); else SetProperty(PropertyBool.UseArchetypeSystem, value.Value); }
+        }
+
+        public double? ArchetypeToughness
+        {
+            get => GetProperty(PropertyFloat.ArchetypeToughness);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArchetypeToughness); else SetProperty(PropertyFloat.ArchetypeToughness, value.Value); }
+        }
+
+        public double? ArchetypePhysicality
+        {
+            get => GetProperty(PropertyFloat.ArchetypePhysicality);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArchetypePhysicality); else SetProperty(PropertyFloat.ArchetypePhysicality, value.Value); }
+        }
+
+        public double? ArchetypeDexterity
+        {
+            get => GetProperty(PropertyFloat.ArchetypeDexterity);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArchetypeDexterity); else SetProperty(PropertyFloat.ArchetypeDexterity, value.Value); }
+        }
+
+        public double? ArchetypeMagic
+        {
+            get => GetProperty(PropertyFloat.ArchetypeMagic);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArchetypeMagic); else SetProperty(PropertyFloat.ArchetypeMagic, value.Value); }
+        }
+
+        public double? ArchetypeIntelligence
+        {
+            get => GetProperty(PropertyFloat.ArchetypeIntelligence);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArchetypeIntelligence); else SetProperty(PropertyFloat.ArchetypeIntelligence, value.Value); }
+        }
+
+        public double? ArchetypeLethality
+        {
+            get => GetProperty(PropertyFloat.ArchetypeLethality);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArchetypeLethality); else SetProperty(PropertyFloat.ArchetypeLethality, value.Value); }
+        }
+
+        public double? BossKillXpMonsterMax
+        {
+            get => GetProperty(PropertyFloat.BossKillXpMonsterMax);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BossKillXpMonsterMax); else SetProperty(PropertyFloat.BossKillXpMonsterMax, value.Value); }
+        }
+
+        public double? BossKillXpPlayerMax
+        {
+            get => GetProperty(PropertyFloat.BossKillXpPlayerMax);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BossKillXpPlayerMax); else SetProperty(PropertyFloat.BossKillXpPlayerMax, value.Value); }
+        }
+
+        public bool? OverrideArchetypeXp
+        {
+            get => GetProperty(PropertyBool.OverrideArchetypeXp);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.OverrideArchetypeXp); else SetProperty(PropertyBool.OverrideArchetypeXp, value.Value); }
+        }
+
+        public bool? OverrideArchetypeHealth
+        {
+            get => GetProperty(PropertyBool.OverrideArchetypeHealth);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.OverrideArchetypeHealth); else SetProperty(PropertyBool.OverrideArchetypeHealth, value.Value); }
+        }
+
+        public bool? OverrideArchetypeStamina
+        {
+            get => GetProperty(PropertyBool.OverrideArchetypeStamina);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.OverrideArchetypeStamina); else SetProperty(PropertyBool.OverrideArchetypeStamina, value.Value); }
+        }
+
+        public bool? OverrideArchetypeMana
+        {
+            get => GetProperty(PropertyBool.OverrideArchetypeMana);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.OverrideArchetypeMana); else SetProperty(PropertyBool.OverrideArchetypeMana, value.Value); }
+        }
+
+        public bool? OverrideArchetypeSkills
+        {
+            get => GetProperty(PropertyBool.OverrideArchetypeSkills);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.OverrideArchetypeSkills); else SetProperty(PropertyBool.OverrideArchetypeSkills, value.Value); }
         }
     }
 }

@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
-
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Spells;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Factories
@@ -33,12 +33,10 @@ namespace ACE.Server.Factories
 
         private static void MutateGem(WorldObject wo, TreasureDeath profile, bool isMagical, TreasureRoll roll = null)
         {
-            // workmanship
-            wo.ItemWorkmanship = WorkmanshipChance.Roll(profile.Tier);
-
             // item color
             MutateColor(wo);
 
+            var level = 0;
             if (!isMagical)
             {
                 // TODO: verify if this is needed
@@ -57,11 +55,14 @@ namespace ACE.Server.Factories
                 if (roll == null)
                     AssignMagic_Gem(wo, profile);
                 else
-                    AssignMagic_Gem_New(wo, profile, roll);
+                    AssignMagic_Gem_New(wo, profile, roll, out level);
 
                 wo.UiEffects = UiEffects.Magical;
                 wo.ItemUseable = Usable.Contained;
             }
+
+            // workmanship
+            wo.ItemWorkmanship = WorkmanshipChance.Roll(profile.Tier, profile.LootQualityMod, level);
 
             // item value
             if (wo.HasMutateFilter(MutateFilter.Value))
@@ -69,6 +70,7 @@ namespace ACE.Server.Factories
 
             // long desc
             wo.LongDesc = GetLongDesc(wo);
+            wo.Name = wo.LongDesc;
         }
 
         private static void AssignMagic_Gem(WorldObject wo, TreasureDeath profile)
@@ -96,17 +98,18 @@ namespace ACE.Server.Factories
             wo.ItemManaCost = baseMana;
         }
 
-        private static bool AssignMagic_Gem_New(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
+        private static bool AssignMagic_Gem_New(WorldObject wo, TreasureDeath profile, TreasureRoll roll, out int level)
         {
             // TODO: move to standard AssignMagic() pipeline
 
             var spell = SpellSelectionTable.Roll(1);
 
             var spellLevel = SpellLevelChance.Roll(profile.Tier);
+            level = spellLevel;
 
             var spellLevels = SpellLevelProgression.GetSpellLevels(spell);
 
-            if (spellLevels == null || spellLevels.Count != 8)
+            if (spellLevels == null || spellLevels.Count != 4)
             {
                 _log.Error($"AssignMagic_Gem_New({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown spell {spell}");
                 return false;
@@ -119,7 +122,7 @@ namespace ACE.Server.Factories
             var _spell = new Server.Entity.Spell(finalSpellId);
 
             // retail spellcraft was capped at 370
-            wo.ItemSpellcraft = Math.Min((int)_spell.Power, 370);
+            wo.ItemSpellcraft = Math.Min(GetSpellPower(_spell), 370);
 
             var castableMana = (int)_spell.BaseMana * 5;
 
@@ -127,7 +130,7 @@ namespace ACE.Server.Factories
             wo.ItemCurMana = wo.ItemMaxMana;
 
             // verified
-            wo.ItemManaCost = castableMana;
+            //wo.ItemManaCost = castableMana;
 
             return true;
         }
@@ -144,11 +147,12 @@ namespace ACE.Server.Factories
 
         private static void MutateValue_Gem(WorldObject wo)
         {
+            var gemValue = GemMaterialChance.GemValue(wo.MaterialType);
             var materialMod = MaterialTable.GetValueMod(wo.MaterialType);
 
             var workmanshipMod = WorkmanshipChance.GetModifier(wo.ItemWorkmanship);
 
-            wo.Value = (int)(wo.Value * materialMod * workmanshipMod);
+            wo.Value = (int)(gemValue * materialMod * workmanshipMod);
         }
     }
 }

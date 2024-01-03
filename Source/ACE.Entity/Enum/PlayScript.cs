@@ -175,6 +175,8 @@ namespace ACE.Entity.Enum
         DirtyFightingHealDebuff     = 0xAA,
         DirtyFightingAttackDebuff   = 0xAB,
         DirtyFightingDefenseDebuff  = 0xAC,
-        DirtyFightingDamageOverTime = 0xAD
+        DirtyFightingDamageOverTime = 0xAD,
+        StealthBegin               = 0xAE,
+        StealthEnd                 = 0xAF,
     }
 }

@@ -133,6 +133,12 @@ namespace ACE.Entity.Enum.Properties
         [ServerOnly]
         OlthoiDeathTreasureType    = 61,
 
+        // Timeline
+        [ServerOnly]
+        EmpoweredScarabCastSpellId = 62,
+        [ServerOnly]
+        EmpoweredScarabTriggerSpellId = 63,
+
         [ServerOnly]
         PCAPRecordedWeenieHeader         = 8001,
         [ServerOnly]

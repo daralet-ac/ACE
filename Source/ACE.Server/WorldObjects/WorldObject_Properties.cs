@@ -1052,10 +1052,22 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponMissileDefense); else SetProperty(PropertyFloat.WeaponMissileDefense, value.Value); }
         }
 
-        public double? WeaponMagicDefense
+        //public double? WeaponMagicDefense
+        //{
+        //    get => GetProperty(PropertyFloat.WeaponMagicDefense);
+        //    set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponMagicDefense); else SetProperty(PropertyFloat.WeaponMagicDefense, value.Value); }
+        //}
+
+        public double? WeaponPhysicalDefense
         {
-            get => GetProperty(PropertyFloat.WeaponMagicDefense);
-            set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponMagicDefense); else SetProperty(PropertyFloat.WeaponMagicDefense, value.Value); }
+            get => GetProperty(PropertyFloat.WeaponPhysicalDefense);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponPhysicalDefense); else SetProperty(PropertyFloat.WeaponPhysicalDefense, value.Value); }
+        }
+
+        public double? WeaponMagicalDefense
+        {
+            get => GetProperty(PropertyFloat.WeaponMagicalDefense);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponMagicalDefense); else SetProperty(PropertyFloat.WeaponMagicalDefense, value.Value); }
         }
 
         public double? WeaponOffense
@@ -1068,6 +1080,138 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyFloat.ManaConversionMod);
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.ManaConversionMod); else SetProperty(PropertyFloat.ManaConversionMod, value.Value); }
+        }
+
+        public double? WeaponWarMagicMod
+        {
+            get => GetProperty(PropertyFloat.WeaponWarMagicMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponWarMagicMod); else SetProperty(PropertyFloat.WeaponWarMagicMod, value.Value); }
+        }
+
+        public double? WeaponLifeMagicMod
+        {
+            get => GetProperty(PropertyFloat.WeaponLifeMagicMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponLifeMagicMod); else SetProperty(PropertyFloat.WeaponLifeMagicMod, value.Value); }
+        }
+
+        public double? WeaponRestorationSpellsMod
+        {
+            get => GetProperty(PropertyFloat.WeaponRestorationSpellsMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.WeaponRestorationSpellsMod); else SetProperty(PropertyFloat.WeaponRestorationSpellsMod, value.Value); }
+        }
+
+        public double? ArmorWarMagicMod
+        {
+            get => GetProperty(PropertyFloat.ArmorWarMagicMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorWarMagicMod); else SetProperty(PropertyFloat.ArmorWarMagicMod, value.Value); }
+        }
+
+        public double? ArmorLifeMagicMod
+        {
+            get => GetProperty(PropertyFloat.ArmorLifeMagicMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorLifeMagicMod); else SetProperty(PropertyFloat.ArmorLifeMagicMod, value.Value); }
+        }
+
+        public double? ArmorMagicDefMod
+        {
+            get => GetProperty(PropertyFloat.ArmorMagicDefMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorMagicDefMod); else SetProperty(PropertyFloat.ArmorMagicDefMod, value.Value); }
+        }
+
+        public double? ArmorPhysicalDefMod
+        {
+            get => GetProperty(PropertyFloat.ArmorPhysicalDefMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorPhysicalDefMod); else SetProperty(PropertyFloat.ArmorPhysicalDefMod, value.Value); }
+        }
+
+        public double? ArmorMissileDefMod
+        {
+            get => GetProperty(PropertyFloat.ArmorMissileDefMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorMissileDefMod); else SetProperty(PropertyFloat.ArmorMissileDefMod, value.Value); }
+        }
+
+        public double? ArmorDualWieldMod
+        {
+            get => GetProperty(PropertyFloat.ArmorDualWieldMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorDualWieldMod); else SetProperty(PropertyFloat.ArmorDualWieldMod, value.Value); }
+        }
+
+        public double? ArmorTwohandedCombatMod
+        {
+            get => GetProperty(PropertyFloat.ArmorTwohandedCombatMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorTwohandedCombatMod); else SetProperty(PropertyFloat.ArmorTwohandedCombatMod, value.Value); }
+        }
+
+        public double? ArmorRunMod
+        {
+            get => GetProperty(PropertyFloat.ArmorRunMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorRunMod); else SetProperty(PropertyFloat.ArmorRunMod, value.Value); }
+        }
+
+        public double? ArmorThieveryMod
+        {
+            get => GetProperty(PropertyFloat.ArmorThieveryMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorThieveryMod); else SetProperty(PropertyFloat.ArmorThieveryMod, value.Value); }
+        }
+
+        public double? ArmorAttackMod
+        {
+            get => GetProperty(PropertyFloat.ArmorAttackMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorAttackMod); else SetProperty(PropertyFloat.ArmorAttackMod, value.Value); }
+        }
+
+        public double? ArmorHealthMod
+        {
+            get => GetProperty(PropertyFloat.ArmorHealthMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorHealthMod); else SetProperty(PropertyFloat.ArmorHealthMod, value.Value); }
+        }
+
+        public double? ArmorHealthRegenMod
+        {
+            get => GetProperty(PropertyFloat.ArmorHealthRegenMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorHealthRegenMod); else SetProperty(PropertyFloat.ArmorHealthRegenMod, value.Value); }
+        }
+
+        public double? ArmorStaminaMod
+        {
+            get => GetProperty(PropertyFloat.ArmorStaminaMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorStaminaMod); else SetProperty(PropertyFloat.ArmorStaminaMod, value.Value); }
+        }
+
+        public double? ArmorStaminaRegenMod
+        {
+            get => GetProperty(PropertyFloat.ArmorStaminaRegenMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorStaminaRegenMod); else SetProperty(PropertyFloat.ArmorStaminaRegenMod, value.Value); }
+        }
+
+        public double? ArmorManaMod
+        {
+            get => GetProperty(PropertyFloat.ArmorManaMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorManaMod); else SetProperty(PropertyFloat.ArmorManaMod, value.Value); }
+        }
+
+        public double? ArmorManaRegenMod
+        {
+            get => GetProperty(PropertyFloat.ArmorManaRegenMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorManaRegenMod); else SetProperty(PropertyFloat.ArmorManaRegenMod, value.Value); }
+        }
+
+        public double? ArmorShieldMod
+        {
+            get => GetProperty(PropertyFloat.ArmorShieldMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorShieldMod); else SetProperty(PropertyFloat.ArmorShieldMod, value.Value); }
+        }
+
+        public double? ArmorPerceptionMod
+        {
+            get => GetProperty(PropertyFloat.ArmorAssessMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorAssessMod); else SetProperty(PropertyFloat.ArmorAssessMod, value.Value); }
+        }
+
+        public double? ArmorDeceptionMod
+        {
+            get => GetProperty(PropertyFloat.ArmorDeceptionMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorDeceptionMod); else SetProperty(PropertyFloat.ArmorDeceptionMod, value.Value); }
         }
 
         // for missile launchers, additive
@@ -1767,10 +1911,46 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyInt.ArmorType); else SetProperty(PropertyInt.ArmorType, value.Value); }
         }
 
+        public int? ArmorStyle
+        {
+            get => GetProperty(PropertyInt.ArmorStyle);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.ArmorStyle); else SetProperty(PropertyInt.ArmorStyle, value.Value); }
+        }
+
         public int? ArmorLevel
         {
             get => GetProperty(PropertyInt.ArmorLevel);
             set { if (!value.HasValue) RemoveProperty(PropertyInt.ArmorLevel); else SetProperty(PropertyInt.ArmorLevel, value.Value); }
+        }
+
+        public int? AegisLevel
+        {
+            get => GetProperty(PropertyInt.AegisLevel);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.AegisLevel); else SetProperty(PropertyInt.AegisLevel, value.Value); }
+        }
+
+        public int? ArmorSlots
+        {
+            get => GetProperty(PropertyInt.ArmorSlots);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.ArmorSlots); else SetProperty(PropertyInt.ArmorSlots, value.Value); }
+        }
+
+        public int? ArmorWeightClass
+        {
+            get => GetProperty(PropertyInt.ArmorWeightClass);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.ArmorWeightClass); else SetProperty(PropertyInt.ArmorWeightClass, value.Value); }
+        }
+
+        public int? WeightClassReqAmount
+        {
+            get => GetProperty(PropertyInt.WeightClassReqAmount);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.WeightClassReqAmount); else SetProperty(PropertyInt.WeightClassReqAmount, value.Value); }
+        }
+
+        public double? ArmorResourcePenalty
+        {
+            get => GetProperty(PropertyFloat.ArmorResourcePenalty);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorResourcePenalty); else SetProperty(PropertyFloat.ArmorResourcePenalty, value.Value); }
         }
 
         public uint? CombatTableDID
@@ -1783,6 +1963,12 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyInt.UseCreatesContractId);
             set { if (!value.HasValue) RemoveProperty(PropertyInt.UseCreatesContractId); else SetProperty(PropertyInt.UseCreatesContractId, value.Value); }
+        }
+
+        public int? CombatAbilityId
+        {
+            get => GetProperty(PropertyInt.CombatAbilityId);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.CombatAbilityId); else SetProperty(PropertyInt.CombatAbilityId, value.Value); }
         }
 
         /// <summary>
@@ -1804,6 +1990,12 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyFloat.CheckpointTimestamp);
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.CheckpointTimestamp); else SetProperty(PropertyFloat.CheckpointTimestamp, value.Value); }
+        }
+
+        public double HotspotImmunityTimestamp
+        {
+            get => GetProperty(PropertyFloat.HotspotImmunityTimestamp) ?? 0.0;
+            set { if (value == 0.0) RemoveProperty(PropertyFloat.HotspotImmunityTimestamp); else SetProperty(PropertyFloat.HotspotImmunityTimestamp, value); }
         }
 
         public bool UseBackpackSlot => WeenieType == WeenieType.Container || RequiresPackSlot;
@@ -1877,6 +2069,12 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyInt.EncumbranceVal); else SetProperty(PropertyInt.EncumbranceVal, value.Value); }
         }
 
+        public int? Mass
+        {
+            get => GetProperty(PropertyInt.Mass);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.Mass); else SetProperty(PropertyInt.Mass, value.Value); }
+        }
+
         public double? BulkMod
         {
             get => GetProperty(PropertyFloat.BulkMod);
@@ -1913,7 +2111,7 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyDataId.ClothingBase); else SetProperty(PropertyDataId.ClothingBase, value.Value); }
         }
 
-        public int? ItemCurMana
+        public virtual int? ItemCurMana
         {
             get => GetProperty(PropertyInt.ItemCurMana);
             set { if (!value.HasValue) RemoveProperty(PropertyInt.ItemCurMana); else SetProperty(PropertyInt.ItemCurMana, value.Value); }
@@ -2521,6 +2719,15 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.TimeToRot); else SetProperty(PropertyFloat.TimeToRot, value.Value); }
         }
 
+        /// <summary>
+        /// If set to true will prevent an object from being able to rot even if it otherwise would. If set to false will force an object to be rottable.
+        /// </summary>
+        public bool? RotProof
+        {
+            get => GetProperty(PropertyBool.RotProof);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.RotProof); else SetProperty(PropertyBool.RotProof, value.Value); }
+        }
+
         public uint? AllowedActivator
         {
             get => GetProperty(PropertyInstanceId.AllowedActivator);
@@ -2656,6 +2863,15 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyString.ActivationTalk);
             set { if (value == null) RemoveProperty(PropertyString.ActivationTalk); else SetProperty(PropertyString.ActivationTalk, value); }
+        }
+
+        /// <summary>
+        /// The string that is sent to the player when activation fails due to the ResetInterval cooldown.
+        /// </summary>
+        public string ActivationFailure
+        {
+            get => GetProperty(PropertyString.ActivationFailure);
+            set { if (value == null) RemoveProperty(PropertyString.ActivationFailure); else SetProperty(PropertyString.ActivationFailure, value); }
         }
 
         public Sound UseSound
@@ -3074,6 +3290,24 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.RotationSpeed); else SetProperty(PropertyFloat.RotationSpeed, value.Value); }
         }
 
+        public int? ResistPerception
+        {
+            get => GetProperty(PropertyInt.ResistPerception);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.ResistPerception); else SetProperty(PropertyInt.ResistPerception, value.Value); }
+        }
+
+        public int? Tier
+        {
+            get => GetProperty(PropertyInt.Tier);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.Tier); else SetProperty(PropertyInt.Tier, value.Value); }
+        }
+
+        public int EmptyId
+        {
+            get => GetProperty(PropertyInt.EmptyId) ?? 0;
+            set { if (value == 0) RemoveProperty(PropertyInt.EmptyId); else SetProperty(PropertyInt.EmptyId, value); }
+        }
+
         public bool HasMissileFlightPlacement => CSetup.HasMissileFlightPlacement;
 
         /// <summary>
@@ -3082,5 +3316,47 @@ namespace ACE.Server.WorldObjects
         /// If not unlimited, client will only allow you to buy or add to buy list up this number of items for a single transaction.
         /// </summary>
         public int? VendorShopCreateListStackSize;
+
+        public int? WeaponSubtype
+        {
+            get => GetProperty(PropertyInt.WeaponSubtype);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.WeaponSubtype); else SetProperty(PropertyInt.WeaponSubtype, value.Value); }
+        }
+
+        public int? ArmorPatchAmount
+        {
+            get => GetProperty(PropertyInt.ArmorPatchAmount);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.ArmorPatchAmount); else SetProperty(PropertyInt.ArmorPatchAmount, value.Value); }
+        }
+
+        public bool? ArmorPatchApplied
+        {
+            get => GetProperty(PropertyBool.ArmorPatchApplied);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.ArmorPatchApplied); else SetProperty(PropertyBool.ArmorPatchApplied, value.Value); }
+        }
+
+        public bool? BossKillXpReward
+        {
+            get => GetProperty(PropertyBool.BossKillXpReward);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.BossKillXpReward); else SetProperty(PropertyBool.BossKillXpReward, value.Value); }
+        }
+
+        public int? EmpoweredScarabElement
+        {
+            get => GetProperty(PropertyInt.EmpoweredScarabElement);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.EmpoweredScarabElement); else SetProperty(PropertyInt.EmpoweredScarabElement, value.Value); }
+        }
+
+        public int? EmpoweredScarabBonusStat
+        {
+            get => GetProperty(PropertyInt.EmpoweredScarabBonusStat);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.EmpoweredScarabBonusStat); else SetProperty(PropertyInt.EmpoweredScarabBonusStat, value.Value); }
+        }
+
+        public int? EmpoweredScarabBonusStatAmount
+        {
+            get => GetProperty(PropertyInt.EmpoweredScarabBonusStatAmount);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.EmpoweredScarabBonusStatAmount); else SetProperty(PropertyInt.EmpoweredScarabBonusStatAmount, value.Value); }
+        }
     }
 }

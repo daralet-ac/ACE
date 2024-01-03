@@ -33,7 +33,7 @@ namespace ACE.Server.Managers
                     StartEvent(evnt.Name, null, null);
             }
 
-            _log.Debug("EventManager Initalized.");
+            _log.Debug("EventManager Initialized.");
         }
 
         public static bool StartEvent(string e, WorldObject source, WorldObject target)

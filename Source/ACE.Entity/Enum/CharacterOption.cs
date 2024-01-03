@@ -175,7 +175,16 @@ namespace ACE.Entity.Enum
         CharacterOptions1Default                = 0x35,
 
         [CharacterOptions2(CharacterOptions2.Default)]
-        CharacterOptions2Default                = 0x36
+        CharacterOptions2Default                = 0x36,
+
+        [CharacterOptions2(CharacterOptions2.NotUsed1)] // AttemptToTaunt
+        AttemptToTaunt                          = 0x37,
+
+        [CharacterOptions2(CharacterOptions2.NotUsed2)] // AttemptToDeceive
+        AttemptToDeceive                        = 0x38,
+
+        [CharacterOptions2(CharacterOptions2.NotUsed3)] // SlashThrustToggle
+        SlashThrustToggle                       = 0x39
     }
 
     public static class CharacterOptionExtensions

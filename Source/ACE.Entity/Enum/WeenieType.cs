@@ -73,6 +73,9 @@ namespace ACE.Entity.Enum
         SocialManager,
         Pet,
         PetDevice,
-        CombatPet        
+        CombatPet,
+        EmpoweredScarab,
+        CombatFocus,
+        ArmorPatch,
     }
 }

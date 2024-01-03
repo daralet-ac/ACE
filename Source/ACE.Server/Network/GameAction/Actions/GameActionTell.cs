@@ -3,11 +3,14 @@ using ACE.Entity.Enum;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.Network.GameAction.Actions
 {
     public static class GameActionTell
     {
+        private static readonly ILogger _log = Log.ForContext(typeof(GameActionTell));
+
         [GameAction(GameActionType.Tell)]
         public static void Handle(ClientMessage clientMessage, Session session)
         {

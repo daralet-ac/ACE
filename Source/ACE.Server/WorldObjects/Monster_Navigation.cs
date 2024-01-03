@@ -86,7 +86,7 @@ namespace ACE.Server.WorldObjects
 
             // send network actions
             var targetDist = GetDistanceToTarget();
-            var turnTo = IsRanged || (CurrentAttack == CombatType.Magic && targetDist <= GetSpellMaxRange()) || AiImmobile;
+            var turnTo = (IsRanged && targetDist <= MaxRange) || (CurrentAttack == CombatType.Magic && targetDist <= GetSpellMaxRange()) || AiImmobile;
             if (turnTo)
                 TurnTo(AttackTarget);
             else
@@ -244,7 +244,7 @@ namespace ACE.Server.WorldObjects
             if (MonsterState == State.Awake && GetDistanceToTarget() >= MaxChaseRange)
             {
                 CancelMoveTo();
-                FindNextTarget();
+                FindNextTarget(false);
                 return;
             }
 
@@ -515,7 +515,7 @@ namespace ACE.Server.WorldObjects
 
             ResetAttack();
 
-            FindNextTarget();
+            FindNextTarget(false);
         }
 
         public void ForceHome()

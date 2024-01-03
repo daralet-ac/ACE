@@ -36,6 +36,28 @@ namespace ACE.Server.Factories.Tables
             ( TreasureItemType.Dinnerware, 0.08f )
         };
 
+        public static readonly ChanceTable<TreasureItemType> TimelineDefaultMagical = new ChanceTable<TreasureItemType>(ChanceTableType.Weight)
+        {
+            ( TreasureItemType.Gem,             1.0f ),
+            ( TreasureItemType.Armor,           4.0f ),
+            ( TreasureItemType.Weapon,          5.0f ),
+            ( TreasureItemType.Clothing,        2.0f ),
+            //( TreasureItemType.Cloak,           0.25f ),
+            ( TreasureItemType.Jewelry,         1.0f ),
+            ( TreasureItemType.EmpoweredScarabs,     0.25f )
+        };
+
+        public static readonly ChanceTable<TreasureItemType> TimelineDefaultNonMagical = new ChanceTable<TreasureItemType>(ChanceTableType.Weight)
+        {
+            ( TreasureItemType.Gem,             1.0f ),
+            ( TreasureItemType.Armor,           4.0f ),
+            ( TreasureItemType.Weapon,          5.0f ),
+            ( TreasureItemType.Clothing,        2.0f ),
+            //( TreasureItemType.Cloak,           0.25f ),
+            ( TreasureItemType.Jewelry,         1.0f ),
+            ( TreasureItemType.EmpoweredScarabs,     0.25f )
+        };
+
         // LootBias.Armor
         public static readonly ChanceTable<TreasureItemType> Armor = new ChanceTable<TreasureItemType>()
         {

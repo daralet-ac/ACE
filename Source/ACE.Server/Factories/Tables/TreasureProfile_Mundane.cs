@@ -42,24 +42,112 @@ namespace ACE.Server.Factories.Tables
         /// <summary>
         /// The most common MundaneItem profile
         /// </summary>
-        private static ChanceTable<TreasureItemType_Orig> mundaneProfile7 = new ChanceTable<TreasureItemType_Orig>()
+        private static ChanceTable<TreasureItemType_Orig> mundaneProfile7 = new ChanceTable<TreasureItemType_Orig>(ChanceTableType.Weight)
         {
-            ( TreasureItemType_Orig.Pyreal,         0.17f ),
-            ( TreasureItemType_Orig.Consumable,     0.17f ),
-            ( TreasureItemType_Orig.HealKit,        0.16f ),
-            ( TreasureItemType_Orig.Lockpick,       0.16f ),
-            ( TreasureItemType_Orig.SpellComponent, 0.17f ),
-            ( TreasureItemType_Orig.ManaStone,      0.17f ),
+            ( TreasureItemType_Orig.Pyreal,         1.0f ),
+            ( TreasureItemType_Orig.Consumable,     1.0f ),
+            ( TreasureItemType_Orig.HealKit,        1.0f ),
+            ( TreasureItemType_Orig.Lockpick,       1.0f ),
+            ( TreasureItemType_Orig.SpellComponent, 1.0f ),
+            ( TreasureItemType_Orig.ManaStone,      1.0f ),
         };
 
         /// <summary>
         /// The second most common MundaneItem profile
         /// </summary>
-        private static ChanceTable<TreasureItemType_Orig> mundaneProfile8 = new ChanceTable<TreasureItemType_Orig>()
+        private static ChanceTable<TreasureItemType_Orig> mundaneProfile8 = new ChanceTable<TreasureItemType_Orig>(ChanceTableType.Weight)
         {
-            ( TreasureItemType_Orig.Pyreal,         0.34f ),
-            ( TreasureItemType_Orig.SpellComponent, 0.33f ),
-            ( TreasureItemType_Orig.ManaStone,      0.33f ),
+            ( TreasureItemType_Orig.Pyreal,         1.0f ),
+            ( TreasureItemType_Orig.SpellComponent, 1.0f ),
+            ( TreasureItemType_Orig.ManaStone,      1.0f ),
+        };
+
+        /// <summary>
+        /// Warrior Profile
+        /// </summary>
+        private static ChanceTable<TreasureItemType_Orig> mundaneProfile9 = new ChanceTable<TreasureItemType_Orig>()
+        {
+            ( TreasureItemType_Orig.Pyreal,       0.8f ),
+            ( TreasureItemType_Orig.HealKit,      0.1f ),
+            ( TreasureItemType_Orig.Consumable,   0.1f ),
+        };
+
+        /// <summary>
+        /// Rogue Profile
+        /// </summary>
+        private static ChanceTable<TreasureItemType_Orig> mundaneProfile10 = new ChanceTable<TreasureItemType_Orig>()
+        {
+            ( TreasureItemType_Orig.Pyreal,       0.79f ),
+            ( TreasureItemType_Orig.Lockpick,     0.1f ),
+            ( TreasureItemType_Orig.HealKit,      0.1f ),
+            ( TreasureItemType_Orig.Gem,          0.01f ),
+        };
+
+        /// <summary>
+        /// Caster Profile
+        /// </summary>
+        private static ChanceTable<TreasureItemType_Orig> mundaneProfile11 = new ChanceTable<TreasureItemType_Orig>()
+        {
+            ( TreasureItemType_Orig.Pyreal,         0.59f ),
+            ( TreasureItemType_Orig.SpellComponent, 0.2f ),
+            ( TreasureItemType_Orig.Gem,            0.01f ),
+            ( TreasureItemType_Orig.ManaStone,      0.1f ),
+            ( TreasureItemType_Orig.Scroll,         0.1f ),
+        };
+
+        /// <summary>
+        /// WarriorRogue Profile
+        /// </summary>
+        private static ChanceTable<TreasureItemType_Orig> mundaneProfile12 = new ChanceTable<TreasureItemType_Orig>()
+        {
+                ( TreasureItemType_Orig.Pyreal,       0.79f ),
+                ( TreasureItemType_Orig.HealKit,      0.1f ),
+                ( TreasureItemType_Orig.Consumable,   0.05f ),
+                ( TreasureItemType_Orig.Lockpick,     0.05f ),
+                ( TreasureItemType_Orig.Gem,          0.01f ),
+        };
+
+        /// <summary>
+        /// WarriorCaster Profile
+        /// </summary>
+        private static ChanceTable<TreasureItemType_Orig> mundaneProfile13 = new ChanceTable<TreasureItemType_Orig>()
+        {
+            ( TreasureItemType_Orig.Pyreal,         0.69f ),
+            ( TreasureItemType_Orig.HealKit,        0.05f ),
+            ( TreasureItemType_Orig.Consumable,     0.05f ),
+            ( TreasureItemType_Orig.SpellComponent, 0.1f ),
+            ( TreasureItemType_Orig.Gem,            0.01f ),
+            ( TreasureItemType_Orig.ManaStone,      0.05f ),
+            ( TreasureItemType_Orig.Scroll,         0.05f ),
+        };
+
+        /// <summary>
+        /// RogueCaster Profile
+        /// </summary>
+        private static ChanceTable<TreasureItemType_Orig> mundaneProfile14 = new ChanceTable<TreasureItemType_Orig>()
+        {
+            ( TreasureItemType_Orig.Pyreal,         0.69f ),
+            ( TreasureItemType_Orig.Lockpick,       0.05f ),
+            ( TreasureItemType_Orig.HealKit,        0.05f ),
+            ( TreasureItemType_Orig.SpellComponent, 0.125f ),
+            ( TreasureItemType_Orig.Gem,            0.01f ),
+            ( TreasureItemType_Orig.ManaStone,      0.025f ),
+            ( TreasureItemType_Orig.Scroll,         0.025f ),
+        };
+
+        /// <summary>
+        /// Balanced Profile
+        /// </summary>
+        private static ChanceTable<TreasureItemType_Orig> mundaneProfile15 = new ChanceTable<TreasureItemType_Orig>()
+        {
+             ( TreasureItemType_Orig.Pyreal,        0.59f ),
+            ( TreasureItemType_Orig.HealKit,         0.1f ),
+            ( TreasureItemType_Orig.Gem,            0.01f ),
+            ( TreasureItemType_Orig.SpellComponent,  0.1f ),
+            ( TreasureItemType_Orig.Consumable,     0.05f ),
+            ( TreasureItemType_Orig.Lockpick,       0.05f ),
+            ( TreasureItemType_Orig.ManaStone,      0.05f ),
+            ( TreasureItemType_Orig.Scroll,         0.05f ),
         };
 
         /// <summary>
@@ -75,6 +163,13 @@ namespace ACE.Server.Factories.Tables
             mundaneProfile6,
             mundaneProfile7,
             mundaneProfile8,
+            mundaneProfile9,
+            mundaneProfile10,
+            mundaneProfile11,
+            mundaneProfile12,
+            mundaneProfile13,
+            mundaneProfile14,
+            mundaneProfile15,
         };
 
         /// <summary>

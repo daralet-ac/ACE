@@ -2536,7 +2536,7 @@ namespace ACE.Entity.Enum
         CANTRIPPERSONATTUNEMENT2,
         CANTRIPSPEARAPTITUDE2,
         CANTRIPSPRINT2,
-        CANTRIPSTAFFAPTITUDE2,
+        CANTRIPTHROWNAPTITUDE4,
         CANTRIPHEAVYWEAPONSAPTITUDE2,       // CANTRIPSWORDAPTITUDE2
         CANTRIPTHROWNAPTITUDE2,
         CANTRIPUNARMEDAPTITUDE2,
@@ -2571,7 +2571,7 @@ namespace ACE.Entity.Enum
         CANTRIPPERSONATTUNEMENT1,
         CANTRIPSPEARAPTITUDE1,
         CANTRIPSPRINT1,
-        CANTRIPSTAFFAPTITUDE1,
+        CANTRIPSPEARAPTITUDE4,
         CANTRIPHEAVYWEAPONSAPTITUDE1,       // CANTRIPSWORDAPTITUDE1
         CANTRIPTHROWNAPTITUDE1,
         CANTRIPUNARMEDAPTITUDE1,
@@ -4717,7 +4717,7 @@ namespace ACE.Entity.Enum
         CANTRIPSALVAGING3,
         CANTRIPSPEARAPTITUDE3,
         CANTRIPSPRINT3,
-        CANTRIPSTAFFAPTITUDE3,
+        CANTRIPUNARMEDAPTITUDE4,
         CANTRIPHEAVYWEAPONSAPTITUDE3,       // CANTRIPSWORDAPTITUDE3
         CANTRIPTHROWNAPTITUDE3,
         CANTRIPUNARMEDAPTITUDE3,
@@ -6334,7 +6334,7 @@ namespace ACE.Entity.Enum
         CelestialHandStrongholdRecall,
         EldrytchWebStrongholdRecall,
         RadiantBloodStrongholdRecall,
-        GauntletCriticalDamageBoostI,
+        GauntletCriticalDamageBoostI,   // Surge of Crushing
         GauntletCriticalDamageBoostII,
         GauntletDamageBoostI,
         GauntletDamageBoostII,
@@ -6376,7 +6376,14 @@ namespace ACE.Entity.Enum
         // Skip 279
         ScryingRodCooldown                  = 0x8000 | 500,   // (Slave Master Quest)
         // Skip 500
-        PortalGemCooldown                   = 0x8000 | 1000   // 15 second cooldown
+        PortalGemCooldown                   = 0x8000 | 1000,   // 15 second cooldown
+
+        // Timeline
+        EmpoweredScarabBlueCooldown         = 0x8000 | 10000,   // varies
+        EmpoweredScarabYellowCooldown       = 0x8000 | 10001,   // varies
+        EmpoweredScarabRedCooldown          = 0x8000 | 10002,   // varies
+
+        HealingKitCooldown                  = 0x8000 | 10003   // varies
     }
 
     public static class SpellExtensions

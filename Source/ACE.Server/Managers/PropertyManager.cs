@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Timers;
 using ACE.Database;
+using ACE.Server.Factories.Tables.Cantrips;
 using Serilog;
 
 namespace ACE.Server.Managers
@@ -231,13 +232,13 @@ namespace ACE.Server.Managers
                 switch (key)
                 {
                     case "cantrip_drop_rate":
-                        Factories.Tables.CantripChance.ApplyNumCantripsMod();
+                        CantripChance.ApplyNumCantripsMod();
                         break;
                     case "minor_cantrip_drop_rate":
                     case "major_cantrip_drop_rate":
                     case "epic_cantrip_drop_rate":
                     case "legendary_cantrip_drop_rate":
-                        Factories.Tables.CantripChance.ApplyCantripLevelsMod();
+                        CantripChance.ApplyCantripLevelsMod();
                         break;
                 }
             }
@@ -487,6 +488,22 @@ namespace ACE.Server.Managers
             //string
             foreach (var item in DefaultStringProperties)
                 PropertyManager.ModifyString(item.Key, item.Value.Item);
+
+            // Alternative ruleset's default overrides
+            PropertyManager.ModifyBool("item_dispel", true);
+            PropertyManager.ModifyBool("vendor_shop_uses_generator", true);
+            PropertyManager.ModifyBool("allow_xp_at_max_level", true);
+            PropertyManager.ModifyBool("increase_minimum_encounter_spawn_density", true);
+            PropertyManager.ModifyBool("show_dot_messages", true);
+            PropertyManager.ModifyBool("spell_projectile_ethereal", true);
+
+            PropertyManager.ModifyLong("max_level", 126);
+            PropertyManager.ModifyLong("fellowship_even_share_level", 50);                
+
+            PropertyManager.ModifyBool("show_dat_warning", false);
+            PropertyManager.ModifyBool("show_mana_conv_bonus_0", false);
+
+            PropertyManager.ModifyDouble("vendor_unique_rot_time", 1800);
         }
 
         // ==================================================================================
@@ -538,7 +555,6 @@ namespace ACE.Server.Managers
                 ("chat_log_townchans", new Property<bool>(false, "log advocate town chat")),
                 ("chat_requires_account_15days", new Property<bool>(false, "global chat privileges requires accounts to be 15 days or older")),
                 ("chess_enabled", new Property<bool>(true, "if FALSE then chess will be disabled")),
-                ("use_cloak_proc_custom_scale", new Property<bool>(false, "If TRUE, the calculation for cloak procs will be based upon the values set by the server oeprator.")),
                 ("client_movement_formula", new Property<bool>(false, "If enabled, server uses DoMotion/StopMotion self-client movement methods instead of apply_raw_movement")),
                 ("container_opener_name", new Property<bool>(false, "If enabled, when a player tries to open a container that is already in use by someone else, replaces 'someone else' in the message with the actual name of the player")),
                 ("corpse_decay_tick_logging", new Property<bool>(false, "If ENABLED then player corpse ticks will be logged")),
@@ -595,7 +611,7 @@ namespace ACE.Server.Managers
                 ("show_mana_conv_bonus_0", new Property<bool>(true, "if disabled, only shows mana conversion bonus if not zero, during appraisal of casting items")),
                 ("smite_uses_takedamage", new Property<bool>(false, "if enabled, smite applies damage via TakeDamage")),
                 ("spellcast_recoil_queue", new Property<bool>(false, "if true, players can queue the next spell to cast during recoil animation")),
-                ("spell_projectile_ethereal", new Property<bool>(false, "broadcasts all spell projectiles as ethereal to clients only, and manually send stop velocity on collision. can fix various issues with client missing target id.")),
+                ("spell_projectile_ethereal", new Property<bool>(true, "broadcasts all spell projectiles as ethereal to clients only, and manually send stop velocity on collision. can fix various issues with client missing target id.")),
                 ("suicide_instant_death", new Property<bool>(false, "if enabled, @die command kills player instantly. defaults to disabled, as in retail")),
                 ("taboo_table", new Property<bool>(true, "if enabled, taboo table restricts player names during character creation")),
                 ("tailoring_intermediate_uieffects", new Property<bool>(false, "If true, tailoring intermediate icons retain the magical/elemental highlight of the original item")),
@@ -607,7 +623,11 @@ namespace ACE.Server.Managers
                 ("use_wield_requirements", new Property<bool>(true, "disable this to bypass wield requirements. mostly for dev debugging")),
                 ("version_info_enabled", new Property<bool>(false, "toggles the /aceversion player command")),
                 ("vendor_shop_uses_generator", new Property<bool>(false, "enables or disables vendors using generator system in addition to createlist to create artificial scarcity")),
-                ("world_closed", new Property<bool>(false, "enable this to startup world as a closed to players world"))
+                ("world_closed", new Property<bool>(false, "enable this to startup world as a closed to players world")),
+                ("allow_xp_at_max_level", new Property<bool>(false, "enable this to allow players to continue earning xp after reaching max level")),
+                ("block_vpn_connections", new Property<bool>(false, "enable this to block user sessions from IPs identified as VPN proxies")),
+                ("increase_minimum_encounter_spawn_density", new Property<bool>(true, "enable this to increase the density of random encounters that spawn in low density landblocks")),
+                ("command_who_enabled", new Property<bool>(true, "disable this to prevent players from listing online players in their allegiance"))
                 );
 
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
@@ -626,17 +646,15 @@ namespace ACE.Server.Managers
                 ("rares_max_days_between", new Property<long>(45, "for rares_real_time_v2: the maximum number of days a player can go before a rare is generated on rare eligible creature kills")),
                 ("rares_max_seconds_between", new Property<long>(5256000, "for rares_real_time: the maximum number of seconds a player can go before a second chance at a rare is allowed on rare eligible creature kills that did not generate a rare")),
                 ("summoning_killtask_multicredit_cap", new Property<long>(2, "if allow_summoning_killtask_multicredit is enabled, the maximum # of killtask credits a player can receive from 1 kill")),
-                ("teleport_visibility_fix", new Property<long>(0, "Fixes some possible issues with invisible players and mobs. 0 = default / disabled, 1 = players only, 2 = creatures, 3 = all world objects"))
+                ("teleport_visibility_fix", new Property<long>(0, "Fixes some possible issues with invisible players and mobs. 0 = default / disabled, 1 = players only, 2 = creatures, 3 = all world objects")),
+                ("max_level", new Property<long>(275, "Set the max character level."))
                 );
 
         public static readonly ReadOnlyDictionary<string, Property<double>> DefaultDoubleProperties =
             DictOf(
 
                 ("cantrip_drop_rate", new Property<double>(1.0, "Scales the chance for cantrips to drop in each tier. Defaults to 1.0, as per end of retail")),
-                ("cloak_cooldown_seconds", new Property<double>(5.0, "The number of seconds between possible cloak procs.")),
-                ("cloak_max_proc_base", new Property<double>(0.25, "The max proc chance of a cloak.")),
-                ("cloak_max_proc_damage_percentage", new Property<double>(0.30, "The damage percentage at which cloak proc chance plateaus.")),
-                ("cloak_min_proc", new Property<double>(0, "The minimum proc chance of a cloak.")),
+
                 ("minor_cantrip_drop_rate", new Property<double>(1.0, "Scales the chance for minor cantrips to drop, relative to other cantrip levels in the tier. Defaults to 1.0, as per end of retail")),
                 ("major_cantrip_drop_rate", new Property<double>(1.0, "Scales the chance for major cantrips to drop, relative to other cantrip levels in the tier. Defaults to 1.0, as per end of retail")),
                 ("epic_cantrip_drop_rate", new Property<double>(1.0, "Scales the chance for epic cantrips to drop, relative to other cantrip levels in the tier. Defaults to 1.0, as per end of retail")),
@@ -656,9 +674,7 @@ namespace ACE.Server.Managers
                 ("mob_awareness_range", new Property<double>(1.0, "Scales the distance the monsters become alerted and aggro the players")),
                 ("pk_new_character_grace_period", new Property<double>(300, "the number of seconds, in addition to pk_respite_timer, that a player killer is set to non-player killer status after first exiting training academy")),
                 ("pk_respite_timer", new Property<double>(300, "the number of seconds that a player killer is set to non-player killer status after dying to another player killer")),
-                ("quest_lum_modifier", new Property<double>(1.0, "Scale multiplier for amount of quest luminance received by players.  Quest lum is also modified by 'luminance_modifier'.")),
                 ("quest_mindelta_rate", new Property<double>(1.0, "scales all quest min delta time between solves, 1 being normal")),
-                ("quest_xp_modifier", new Property<double>(1.0, "Scale multiplier for amount of quest XP received by players.  Quest XP is also modified by 'xp_modifier'.")),
                 ("rare_drop_rate_percent", new Property<double>(0.04, "Adjust the chance of a rare to spawn as a percentage. Default is 0.04, or 1 in 2,500. Max is 100, or every eligible drop.")),
                 ("spellcast_max_angle", new Property<double>(20.0, "for advanced player spell casting, the maximum angle to target release a spell projectile. retail seemed to default to value of around 20, although some players seem to prefer a higher 45 degree angle")),
                 ("trophy_drop_rate", new Property<double>(1.0, "Modifier for trophies dropped on creature death")),

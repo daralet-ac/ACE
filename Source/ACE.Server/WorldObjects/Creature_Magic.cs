@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-
+using System.Runtime.CompilerServices;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
@@ -20,7 +20,7 @@ namespace ACE.Server.WorldObjects
             if (castItem != null && (castItem.SpellDID ?? 0) == spell.Id)
                 baseCost = (uint)(castItem.ItemManaCost ?? 0);
 
-            if ((spell.School == MagicSchool.ItemEnchantment) && (spell.MetaSpellType == SpellType.Enchantment) &&
+            if ((spell.School == MagicSchool.PortalMagic) && (spell.MetaSpellType == SpellType.Enchantment) &&
                 (spell.Category >= SpellCategory.ArmorValueRaising) && (spell.Category <= SpellCategory.AcidicResistanceLowering) && target is Player targetPlayer)
             {
                 var numTargetItems = 1;
@@ -38,55 +38,60 @@ namespace ACE.Server.WorldObjects
                 baseCost += spell.ManaMod * (uint)numFellows;
             }
 
+            // Check Overload and Battery Focuses
+            var combatAbility = CombatAbility.None;
+            var combatFocus = GetEquippedCombatFocus();
+            if (combatFocus != null)
+                combatAbility = combatFocus.GetCombatAbility();
+
+            if (combatAbility == CombatAbility.Overload)
+                baseCost *= 2;
+            else if (combatAbility == CombatAbility.Battery)
+                baseCost = (uint)(baseCost * 0.5f);
+
+            // Mana Conversion
             var manaConversion = caster.GetCreatureSkill(Skill.ManaConversion);
 
             if (manaConversion.AdvancementClass < SkillAdvancementClass.Trained || spell.Flags.HasFlag(SpellFlags.IgnoresManaConversion))
                 return baseCost;
 
-            var difficulty = spell.PowerMod;   // modified power difficulty
+            uint difficulty = spell.Level * 50;
 
-            var mana_conversion_skill = (uint)Math.Round(manaConversion.Current * GetWeaponManaConversionModifier(caster));
+            var robeManaConversionMod = 0.0;
+            var robe = EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.Armor);
+            if (robe != null)
+                robeManaConversionMod = robe.ManaConversionMod ?? 0;
 
-            var manaCost = GetManaCost(difficulty, baseCost, mana_conversion_skill);
+            var mana_conversion_skill = (uint)Math.Round(manaConversion.Current * (GetWeaponManaConversionModifier(caster) + robeManaConversionMod));
+
+            // Final Calculation
+            var manaCost = GetManaCost(caster, difficulty, baseCost, mana_conversion_skill);
 
             return manaCost;
         }
 
-        public static uint GetManaCost(uint difficulty, uint manaCost, uint manaConv)
+        public static uint GetManaCost(Creature caster, uint difficulty, uint manaCost, uint manaConv)
         {
-            // thanks to GDLE for this function!
-            if (manaConv == 0)
+            if (manaConv == 0 || manaCost <= 1)
                 return manaCost;
 
-            // Dropping diff by half as Specced ManaC is only 48 with starter Aug so 50 at level 1 means no bonus
-            //   easiest change without having to create two different formulas to try to emulate retail
-            var successChance = SkillCheck.GetSkillChance(manaConv, difficulty / 2);
+            var successChance = SkillCheck.GetSkillChance(manaConv, difficulty);
             var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-            // Luck lowers the roll value to give better outcome
-            // e.g. successChance = 0.83 & roll = 0.71 would still provide some savings.
-            //   but a luck roll of 0.19 will lower that 0.71 to 0.13 so the caster would
-            //   receive a 60% reduction in mana cost.  without the luck roll, 12%
-            //   so players will always have a level of "luck" in manacost if they make skill checks
-            var luck = ThreadSafeRandom.Next(0.0f, 1.0f);
 
             if (roll < successChance)
             {
-                manaCost = (uint)Math.Round(manaCost * (1.0f - (successChance - (roll * luck))));
-            }
+                var maxManaReduction = 0.5f;
+                var reductionRoll = maxManaReduction * ThreadSafeRandom.Next(0.0f, (float)successChance);
+                var savedMana = (uint)Math.Round(manaCost * reductionRoll);
 
-            // above seems to give a good middle of the range
-            // seen in pcaps for mana usage for low level chars
-            // bug still need a way to give a better reduction for the "lucky"
+                manaCost = manaCost - savedMana;
 
-            // save some calc time if already at 1 mana cost
-            if (manaCost > 1)
-            {
-                successChance = SkillCheck.GetSkillChance(manaConv, difficulty);
-                roll = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-                if (roll < successChance)
-                    manaCost = (uint)Math.Round(manaCost * (1.0f - (successChance - (roll * luck))));
+                if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized)
+                {
+                    var conversionAmount = (int)Math.Round(savedMana * 0.5f);
+                    caster.UpdateVitalDelta(caster.Health, conversionAmount);
+                    caster.UpdateVitalDelta(caster.Stamina, conversionAmount);
+                }
             }
 
             return Math.Max(manaCost, 1);
@@ -120,7 +125,7 @@ namespace ACE.Server.WorldObjects
                     HandleCastSpell(spell, this, item, equip: true);
                     break;
 
-                case MagicSchool.ItemEnchantment:
+                case MagicSchool.PortalMagic:
 
                     if (spell.HasItemCategory || spell.IsPortalSpell)
                         HandleCastSpell(spell, this, item, item, equip: true);
@@ -151,7 +156,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            var target = spell.School == MagicSchool.ItemEnchantment && !spell.HasItemCategory ? item : this;
+            var target = spell.School == MagicSchool.PortalMagic && !spell.HasItemCategory ? item : this;
 
             // Retrieve enchantment on target and remove it, if present
             var propertiesEnchantmentRegistry = target.EnchantmentManager.GetEnchantment(spellId, item.Guid.Full);

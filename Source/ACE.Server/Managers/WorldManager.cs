@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using ACE.Common;
@@ -251,7 +252,12 @@ namespace ACE.Server.Managers
 
             if (character.TotalLogins <= 1)
             {
-                if (player.IsOlthoiPlayer)
+                // Automatically use the welcome letter so it's already open for the new player to read.
+                WorldObject welcomeLetter = player.Inventory.Values.FirstOrDefault(i => i.WeenieClassId == 1077);
+                if (welcomeLetter != null)
+                    welcomeLetter.ActOnUse(player);
+
+                else if (player.IsOlthoiPlayer)
                     session.Network.EnqueueSend(new GameEventPopupString(session, AppendLines(popup_welcome, popup_motd)));
                 else
                     session.Network.EnqueueSend(new GameEventPopupString(session, AppendLines(popup_header, popup_motd, popup_welcome)));

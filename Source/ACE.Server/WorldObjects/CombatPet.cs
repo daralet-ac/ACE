@@ -67,10 +67,10 @@ namespace ACE.Server.WorldObjects
             var creature = AttackTarget as Creature;
 
             if (creature == null || creature.IsDead || !IsVisibleTarget(creature))
-                FindNextTarget();
+                FindNextTarget(false);
         }
 
-        public override bool FindNextTarget()
+        public override bool FindNextTarget(bool onTakeDamage, Creature untargetablePlayer = null)
         {
             var nearbyMonsters = GetNearbyMonsters();
             if (nearbyMonsters.Count == 0)

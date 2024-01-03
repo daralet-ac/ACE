@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using ACE.Entity;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ACE.Server.Entity
 {
@@ -68,6 +68,7 @@ namespace ACE.Server.Entity
 
         public void CalculateRank()
         {
+            /* (RETAIL)
             // http://asheron.wikia.com/wiki/Rank
 
             // A player's allegiance rank is a function of the number of Vassals and how they are
@@ -85,6 +86,133 @@ namespace ACE.Server.Entity
             var higher = Math.Max(r1, r2);
 
             Rank = Math.Min(10, Math.Max(lower + 1, higher));
+            (RETAIL) */
+
+
+            // NEW RANK FORMULA
+            // A player's allegiance rank depends on the number of unique accounts are under them in
+            // their allegiance tree. Accounts who are also above them in the chain do not count towards
+            // their rank. Additionally, up to 3 bonus rank may be obtained from the Leadership skill.
+            //
+            // Final Rank = FollowerRank + Leadership bonus.
+            //
+            // Leadership bonus = Leadership / 100
+            // Follower Rank:
+            // - 1 unique follower = 1
+            // - 3 = 2
+            // - 6 = 3
+            // - 10 = 4
+            // - 15 = 5
+            // - 25 - 6
+            // - 50 = 7
+
+            var followerIds = GetUniqueFollowerIds(this);
+            var patronIds = GetPatronIds(this);
+            
+            // Calculate Rank based on valid followers and Leadership skill
+            var uniqueFollowers = GetValidFollowers(followerIds, patronIds);
+            var leadershipBonus = Player.GetCurrentLeadership() / 100;
+
+            switch (uniqueFollowers)
+            {
+                case >= 50:
+                    Rank = 7 + leadershipBonus;
+                    break;
+                case >= 25:
+                    Rank = 6 + leadershipBonus;
+                    break;
+                case >= 15:
+                    Rank = 5 + leadershipBonus;
+                    break;
+                case >= 10:
+                    Rank = 4 + leadershipBonus;
+                    break;
+                case >= 6:
+                    Rank = 3 + leadershipBonus;
+                    break;
+                case >= 3:
+                    Rank = 2 + leadershipBonus;
+                    break;
+                case >= 1:
+                    Rank = 1 + leadershipBonus;
+                    break;
+                default:
+                    Rank = 0 + leadershipBonus;
+                    break;
+            }
+        }
+
+        public List<uint> GetUniqueFollowerIds(AllegianceNode player)
+        {
+            var uniqueFollowerIds = new List<uint>();
+
+            var vassals = player.Vassals.Values.ToList();
+            //Console.WriteLine($"Vassals Count: {vassals.Count}");
+
+            // Scan through each vassal
+            foreach (AllegianceNode vassal in vassals)
+            {
+                // Compare vassal ID to list of unique IDs
+                var idIsUnique = true;
+                foreach (uint accountId in uniqueFollowerIds)
+                {
+                    if (vassal.Player.Account.AccountId == accountId)
+                    {
+                        idIsUnique = false;
+                    }
+                }
+
+                // If we didn't see a matched ID in the list, add the vassal's ID to the list
+                if (idIsUnique)
+                {
+                    uniqueFollowerIds.Add(vassal.Player.Account.AccountId);
+                }
+
+                // If the vassal has vassals, run this function for their vassals as well
+                if (vassal.Vassals.Count > 0)
+                {
+                    foreach (uint accountId in GetUniqueFollowerIds(vassal))
+                    {
+                        uniqueFollowerIds.Add(accountId);
+                    }
+                }
+            }
+
+            //Console.WriteLine($"{player.Player.Name}'s UniqueFollowerIds Count: {uniqueFollowerIds.Count}");
+            return uniqueFollowerIds;
+        }
+
+        public List<uint> GetPatronIds (AllegianceNode player)
+        {
+            var patronIds = new List<uint>();
+            var patron = player.Patron;
+
+            if (patron != null)
+            {
+                Console.WriteLine($"Patron: {patron.Player.Name}. PatronIDs: {patronIds.Count}.");
+                patronIds.Add(patron.Player.Account.AccountId);
+                patronIds.AddRange(GetPatronIds(patron));
+            }
+
+            return patronIds;
+        }
+
+        public int GetValidFollowers(List<uint> followerIds, List<uint> patronIds)
+        {
+            var validFollowers = followerIds.Count;
+
+            foreach (var follower in followerIds)
+            {
+                foreach (var patron in patronIds)
+                {
+                    if (patron == follower)
+                    {
+                        validFollowers--;
+                    }
+                }
+            }
+
+            return validFollowers;
         }
 
         public void Walk(Action<AllegianceNode> action, bool self = true)

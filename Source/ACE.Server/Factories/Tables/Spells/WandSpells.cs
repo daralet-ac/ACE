@@ -5,7 +5,7 @@ using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
 using Serilog;
 
-namespace ACE.Server.Factories.Tables
+namespace ACE.Server.Factories.Tables.Spells
 {
     public static class WandSpells
     {
@@ -13,23 +13,23 @@ namespace ACE.Server.Factories.Tables
 
         private static readonly List<SpellId> spells = new List<SpellId>()
         {
-            SpellId.FocusSelf1,
-            SpellId.WillpowerSelf1,
+            //SpellId.FocusSelf1,
+            //SpellId.WillpowerSelf1,
 
-            SpellId.CreatureEnchantmentMasterySelf1,
-            SpellId.ItemEnchantmentMasterySelf1,
-            SpellId.LifeMagicMasterySelf1,
-            SpellId.WarMagicMasterySelf1,
-            SpellId.VoidMagicMasterySelf1,  // missing from original
+            //SpellId.CreatureEnchantmentMasterySelf1,
+            //SpellId.ItemEnchantmentMasterySelf1,
+            //SpellId.LifeMagicMasterySelf1,
+            //SpellId.WarMagicMasterySelf1,
+            //SpellId.VoidMagicMasterySelf1,  // missing from original
 
             SpellId.DefenderSelf1,
             SpellId.HermeticLinkSelf1,
             SpellId.SpiritDrinkerSelf1,     // added to match WandCantrips
 
-            SpellId.ArcaneEnlightenmentSelf1,
-            SpellId.ManaMasterySelf1,
+            //SpellId.ArcaneEnlightenmentSelf1,
+            //SpellId.ManaMasterySelf1,
 
-            SpellId.SneakAttackMasterySelf1,
+            //SpellId.SneakAttackMasterySelf1,
         };
 
         private static readonly int NumTiers = 8;
@@ -90,7 +90,7 @@ namespace ACE.Server.Factories.Tables
         private static readonly List<(SpellId spellId, float chance)> wandSpells = new List<(SpellId, float)>()
         {
             ( SpellId.DefenderSelf1,      0.25f ),
-            ( SpellId.HermeticLinkSelf1,  1.0f ),
+            ( SpellId.HermeticLinkSelf1,  0.5f ),
             ( SpellId.SpiritDrinkerSelf1, 0.25f ),      // retail appears to have had a flat 25% chance for Spirit Drinker for all casters,
                                                         // regardless if they had a DamageType
         };

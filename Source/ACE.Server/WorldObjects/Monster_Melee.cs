@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Common;
 using ACE.DatLoader;
 using ACE.DatLoader.Entity.AnimationHooks;
@@ -51,7 +50,7 @@ namespace ACE.Server.WorldObjects
 
             if (target == null || !target.IsAlive)
             {
-                FindNextTarget();
+                FindNextTarget(false);
                 return 0.0f;
             }
 
@@ -97,6 +96,7 @@ namespace ACE.Server.WorldObjects
                     }
 
                     var damageEvent = DamageEvent.CalculateDamage(this, target, weapon, motionCommand, attackFrames[0].attackHook);
+                    target.OnAttackReceived(this, CombatType.Melee, damageEvent.IsCritical, damageEvent.Evaded || damageEvent.Blocked);
 
                     //var damage = CalculateDamage(ref damageType, maneuver, bodyPart, ref critical, ref shieldMod);
 
@@ -110,7 +110,7 @@ namespace ACE.Server.WorldObjects
                             if (damageEvent.ShieldMod != 1.0f)
                             {
                                 var shieldSkill = targetPlayer.GetCreatureSkill(Skill.Shield);
-                                Proficiency.OnSuccessUse(targetPlayer, shieldSkill, shieldSkill.Current); // ?
+                                Proficiency.OnSuccessUse(targetPlayer, shieldSkill, damageEvent.EffectiveAttackSkill);
                             }
 
                             // handle Dirty Fighting
@@ -120,7 +120,6 @@ namespace ACE.Server.WorldObjects
                         else if (combatPet != null || targetPet != null || Faction1Bits != null || target.Faction1Bits != null || PotentialFoe(target))
                         {
                             // combat pet inflicting or receiving damage
-                            //Console.WriteLine($"{target.Name} taking {Math.Round(damage)} {damageType} damage from {Name}");
                             target.TakeDamage(this, damageEvent.DamageType, damageEvent.Damage);
 
                             EmitSplatter(target, damageEvent.Damage);
@@ -137,6 +136,8 @@ namespace ACE.Server.WorldObjects
                             targetProc = true;
                         }
                     }
+                    else if (damageEvent.Blocked)
+                        target.OnBlock(this, CombatType.Melee);
                     else
                         target.OnEvade(this, CombatType.Melee);
 
@@ -219,9 +220,11 @@ namespace ACE.Server.WorldObjects
             // monsters supposedly always used 0.5 PowerLevel according to anon docs,
             // which translates into a 1.0 PowerMod
 
+            var slashOrThrust = ThreadSafeRandom.Next(0, 1) == 0 ? false : true;
+
             if (weapon != null)
             {
-                AttackType = weapon.GetAttackType(CurrentMotionState.Stance, 0.5f, offhand);
+                AttackType = weapon.GetAttackType(CurrentMotionState.Stance, slashOrThrust, offhand);
             }
             else
             {
@@ -348,12 +351,17 @@ namespace ACE.Server.WorldObjects
             //Console.WriteLine($"{maneuver.Style} - {maneuver.Motion} - {maneuver.AttackHeight}");
 
             var baseSpeed = GetAnimSpeed();
-            var animSpeedMod = IsDualWieldAttack ? 1.2f : 1.0f;     // dual wield swing animation 20% faster
+            var animSpeedMod = 1.0f;
+            if (IsDualWieldAttack &&  GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized)
+                animSpeedMod = 1.25f;     // dual wield swing animation 25% faster
+
             var animSpeed = baseSpeed * animSpeedMod;
 
             animLength = MotionTable.GetAnimationLength(MotionTableId, CurrentMotionState.Stance, motionCommand, animSpeed);
 
             attackFrames = MotionTable.GetAttackFrames(MotionTableId, CurrentMotionState.Stance, motionCommand);
+
+            //Console.WriteLine($"MonsterMelee.DoSwingMotion() - AnimSpeed: {animSpeed} AnimLength: {animLength}");
 
             if (attackFrames.Count == 0)
             {
@@ -430,13 +438,14 @@ namespace ACE.Server.WorldObjects
             var effectiveAL = 0.0f;
 
             foreach (var armor in armors)
-                effectiveAL += GetArmorMod(armor, damageType, ignoreMagicArmor);
+                effectiveAL += defender.GetArmorMod(armor, damageType, ignoreMagicArmor);
 
             // life spells
             // additive: armor/imperil
             var bodyArmorMod = defender.EnchantmentManager.GetBodyArmorMod();
-            if (ignoreMagicResist)
-                bodyArmorMod = IgnoreMagicResistScaled(bodyArmorMod);
+
+            //if (ignoreMagicResist)
+            //    bodyArmorMod = IgnoreMagicResistScaled(bodyArmorMod);
 
             // handle armor rending mod here?
             //if (bodyArmorMod > 0)
@@ -484,6 +493,39 @@ namespace ACE.Server.WorldObjects
                 return 0;
         }
 
+        public float GetSkillModifiedShieldLevel(float shieldLevel)
+        {
+            if (shieldLevel == 0)
+                return 0;
+
+            var player = this as Player;
+            if (player != null) 
+            {
+                // Shield Level capped at Shield skill amount
+                var shieldSkill = GetCreatureSkill(Skill.Shield);
+                var shieldCap = shieldSkill.Current;
+
+                var currentSkill = GetModdedShieldSkill();
+
+                // Shield Level cap doubled if Shield skill is specialized
+                if (shieldSkill.AdvancementClass != SkillAdvancementClass.Specialized)
+                    currentSkill = currentSkill * 2;
+
+                // If Shield cap is greater than equipped shield level, shield gains +1 shield level per 10 points under cap
+                if (currentSkill > shieldLevel)
+                    shieldLevel += (currentSkill - shieldLevel) / 10;
+
+                return Math.Min(shieldLevel, shieldCap);
+            }
+            else
+                return shieldLevel;
+        }
+
+        public float GetSkillModifiedArmorLevel(float armorLevel, ArmorWeightClass armorWeightClass, float resistanceLevel = 1.0f)
+        {
+            return armorLevel * resistanceLevel;
+        }
+
         /// <summary>
         /// Returns the effective AL for 1 piece of armor/clothing
         /// </summary>
@@ -523,13 +565,13 @@ namespace ACE.Server.WorldObjects
 
             // TODO: could brittlemail / lures send a piece of armor or clothing's AL into the negatives?
             //if (effectiveAL < 0 && effectiveRL != 0)
-                //effectiveRL = 1.0f / effectiveRL;
+            //effectiveRL = 1.0f / effectiveRL;
 
             /*Console.WriteLine("Effective AL: " + effectiveAL);
             Console.WriteLine("Effective RL: " + effectiveRL);
             Console.WriteLine();*/
 
-            return effectiveAL * effectiveRL;
+            return GetSkillModifiedArmorLevel(effectiveAL, (ArmorWeightClass)(armor.ArmorWeightClass ?? 0), effectiveRL);
         }
 
         /// <summary>

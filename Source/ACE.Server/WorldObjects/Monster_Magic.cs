@@ -52,6 +52,11 @@ namespace ACE.Server.WorldObjects
         private bool HasKnownSpells => Biota.HasKnownSpell(BiotaDatabaseLock);
 
         /// <summary>
+        /// Returns TRUE if the modified monster has known spells
+        /// </summary>
+        private bool HasKnownSpellsModified => Weenie.PropertiesSpellBook != null && Weenie.PropertiesSpellBook.Count > 0;
+
+        /// <summary>
         /// The next spell the monster will attempt to cast
         /// </summary>
         private Spell CurrentSpell { get; set; }
@@ -140,7 +145,7 @@ namespace ACE.Server.WorldObjects
 
             if (target == null || !target.IsAlive)
             {
-                FindNextTarget();
+                FindNextTarget(false);
                 return;
             }
 
@@ -292,7 +297,7 @@ namespace ACE.Server.WorldObjects
                 return;
 
             // try to resist spell, if applicable
-            if (TryResistSpell(target, spell))
+            if (TryResistSpell(target, spell, out PartialEvasion partialResist))
             {
                 TryHandleFactionMob(target);
                 return;
@@ -315,7 +320,7 @@ namespace ACE.Server.WorldObjects
                     }
                     break;
 
-                case MagicSchool.ItemEnchantment:
+                case MagicSchool.PortalMagic:
 
                     TryCastItemEnchantment_WithRedirects(spell, target);
                     break;

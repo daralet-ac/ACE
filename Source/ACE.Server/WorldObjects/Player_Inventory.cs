@@ -17,6 +17,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects
 {
@@ -294,23 +295,34 @@ namespace ACE.Server.WorldObjects
                 new GameEventWieldItem(Session, item.Guid.Full, wieldedLocation),
                 new GameMessageSound(Guid, Sound.WieldObject));
 
-            if (item.GearMaxHealth != null)
+            if (item.GearMaxHealth != null || item.ArmorHealthRegenMod != null)
                 HandleMaxHealthUpdate();
 
             TryShuffleStance(wieldedLocation);
 
             // handle item spells
-            if (item.ItemCurMana > 0)
+            if (item.ItemCurMana > 0 || item is EmpoweredScarab || item.ValidLocations == EquipMask.TrinketOne || item.ArmorWeightClass == 1)
+            {
                 TryActivateSpells(item);
-
+            }
             // handle equipment sets
             if (item.HasItemSet)
                 EquipItemFromSet(item);
 
+            // handle combat focuses
+            var combatFocus = item as CombatFocus;
+            if (combatFocus != null)
+                combatFocus.OnEquip(this);
+
+            // handle mana scarabs
+            var manaScarab = item as EmpoweredScarab;
+            if (manaScarab != null)
+                manaScarab.OnEquip(this);
+
             return true;
         }
 
-        private bool TryActivateSpells(WorldObject item)
+        public bool TryActivateSpells(WorldObject item)
         {
             // check activation requirements
             var result = item.CheckUseRequirements(this);
@@ -397,7 +409,7 @@ namespace ACE.Server.WorldObjects
             if (item.HasItemSet)
                 DequipItemFromSet(item);
 
-            if (item.GearMaxHealth != null)
+            if (item.GearMaxHealth != null || item.ArmorHealthRegenMod != null)
                 HandleMaxHealthUpdate();
 
             if (dequipObjectAction == DequipObjectAction.ToCorpseOnDeath || dequipObjectAction == DequipObjectAction.TradeItem)
@@ -1118,6 +1130,8 @@ namespace ACE.Server.WorldObjects
                             }
                             else if (containerRootOwner == this)
                             {
+                                EndStealth();
+
                                 if (itemAsContainer != null) // We're picking up a pack
                                 {
                                     Session.Network.EnqueueSend(new GameEventViewContents(Session, itemAsContainer));
@@ -1574,6 +1588,8 @@ namespace ACE.Server.WorldObjects
 
                         if (DoHandleActionGetAndWieldItem(item, fromContainer, rootOwner, wasEquipped, wieldedLocation))
                         {
+                            EndStealth();
+
                             Session.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.EncumbranceVal, EncumbranceVal ?? 0));
 
                             EnqueueBroadcast(new GameMessageSound(Guid, Sound.PickUpItem));
@@ -2044,6 +2060,34 @@ namespace ACE.Server.WorldObjects
             if (allowedWielder != null && (allowedWielder != Guid.Full))
                 return WeenieError.YouDoNotOwnThatItem; // Unsure of the exact message
 
+            if (item.ArmorWeightClass != (int)ACE.Entity.Enum.ArmorWeightClass.None)
+            {
+                var req = item.WeightClassReqAmount ?? 0;
+                var attributeTotal = 0;
+
+                if (item.ArmorWeightClass == (int)ACE.Entity.Enum.ArmorWeightClass.Cloth)
+                {
+                    Attributes.TryGetValue(PropertyAttribute.Focus, out var focus);
+                    Attributes.TryGetValue(PropertyAttribute.Self, out var self);
+                    attributeTotal = (int)Math.Max(focus.Base, self.Base);
+                }
+                else if (item.ArmorWeightClass == (int)ACE.Entity.Enum.ArmorWeightClass.Light)
+                {
+                    Attributes.TryGetValue(PropertyAttribute.Coordination, out var coordination);
+                    Attributes.TryGetValue(PropertyAttribute.Quickness, out var quickness);
+                    attributeTotal = (int)Math.Max(coordination.Base, quickness.Base);
+                }
+                else if (item.ArmorWeightClass == (int)ACE.Entity.Enum.ArmorWeightClass.Heavy)
+                {
+                    Attributes.TryGetValue(PropertyAttribute.Strength, out var strength);
+                    Attributes.TryGetValue(PropertyAttribute.Endurance, out var endurance);
+                    attributeTotal = (int)Math.Max(strength.Base, endurance.Base);
+                }
+
+                if (attributeTotal < req)
+                    return WeenieError.SkillTooLow;
+
+            }
             var result = CheckWieldRequirement(item.WieldRequirements, item.WieldSkillType, item.WieldDifficulty);
             if (result != WeenieError.None)
                 return result;
@@ -3169,6 +3213,13 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            if (item is PetDevice petDevice && petDevice.Pet is not null)
+            {
+                Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "You must unsummon your pet before you can transfer this item!"));
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.AttunedItem));
+                return;
+            }
+
             if (IsTrading && item.IsBeingTradedOrContainsItemBeingTraded(ItemsInTradeWindow))
             {
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.TradeItemBeingTraded));
@@ -3189,6 +3240,8 @@ namespace ACE.Server.WorldObjects
                     return;
                 }
 
+                EndStealth();
+
                 if (target is Player targetAsPlayer)
                     GiveObjectToPlayer(targetAsPlayer, item, itemFoundInContainer, itemRootOwner, itemWasEquipped, amount);
                 else
@@ -3201,13 +3254,6 @@ namespace ACE.Server.WorldObjects
         {
             if (item.IsAttunedOrContainsAttuned)
             {
-                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.AttunedItem));
-                return;
-            }
-
-            if (item is PetDevice petDevice && petDevice.Pet is not null)
-            {
-                Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "You must unsummon your pet before you can transfer this item!"));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.AttunedItem));
                 return;
             }

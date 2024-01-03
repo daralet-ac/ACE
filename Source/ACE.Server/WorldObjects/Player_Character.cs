@@ -116,6 +116,32 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        public bool ToggleTauntSetting()
+        {
+            bool newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed1);
+            SetCharacterOptions2(CharacterOptions2.NotUsed1, newSetting);
+
+            CachedAttemptToTaunt = newSetting;
+            return newSetting;
+        }
+
+        public bool ToggleDeceiveSetting()
+        {
+            bool newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed2);
+            SetCharacterOptions2(CharacterOptions2.NotUsed2, newSetting);
+
+            CachedAttemptToDeceive = newSetting;
+            return newSetting;
+        }
+
+        public bool ToggleSlashThrustSetting()
+        {
+            bool newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed3);
+            SetCharacterOptions2(CharacterOptions2.NotUsed3, newSetting);
+
+            CachedSlashThrustToggle = newSetting;
+            return newSetting;
+        }
 
         // =====================================
         // CharacterPropertiesContract

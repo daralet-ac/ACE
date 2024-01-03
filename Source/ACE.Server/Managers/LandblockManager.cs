@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
@@ -5,9 +6,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ACE.Common;
+using ACE.Database;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
+using ACE.Server.Entity.Actions;
 using ACE.Server.WorldObjects;
 using Serilog;
 
@@ -418,6 +421,22 @@ namespace ACE.Server.Managers
                     landblockGroupPendingAdditions.Add(landblock);
 
                     landblock.Init();
+
+                    // Workaround for apartment chest contents not showing up on first landblock load.
+                    // TODO: find the issue and fix it.
+                    var id = landblockId.Raw | 0x0000FFFF;
+                    if (Array.Exists(apartmentLandblocks, e => e == id))
+                    {
+                        var actionChain = new ActionChain();
+                        actionChain.AddDelaySeconds(1);
+                        actionChain.AddAction(landblock, () =>
+                        {
+                            landblock.DestroyAllNonPlayerObjects();
+                            DatabaseManager.World.ClearCachedInstancesByLandblock(landblock.Id.Landblock);
+                            landblock.Init(true);
+                        });
+                        actionChain.EnqueueChain();
+                    }
 
                     setAdjacents = true;
                 }

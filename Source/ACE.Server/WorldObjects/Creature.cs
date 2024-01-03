@@ -18,6 +18,7 @@ namespace ACE.Server.WorldObjects
     {
         private static readonly ILogger _log = Log.ForContext(typeof(Creature));
 
+        public bool IsHumanoid { get => (this is Player || AiAllowedCombatStyle != CombatStyle.Undef); } // Our definition of humanoid in this case is a creature that can wield weapons.
         public bool IsExhausted { get => Stamina.Current == 0; }
 
         protected QuestManager _questManager;
@@ -42,6 +43,17 @@ namespace ACE.Server.WorldObjects
         /// A table of players who currently have their targeting reticule on this creature
         /// </summary>
         private Dictionary<uint, WorldObjectInfo> selectedTargets;
+
+        /// <summary>
+        /// A list of ammo types and amount that we've been hit with. Used so we can drop some of that on our corpse.
+        /// </summary>
+        public Dictionary<uint, int> ammoHitWith;
+
+        /// <summary>
+        /// A decaying count of attacks this creature has received recently.
+        /// </summary>
+        public int numRecentAttacksReceived;
+        public float attacksReceivedPerSecond;
 
         /// <summary>
         /// Currently used to handle some edge cases for faction mobs
@@ -124,6 +136,64 @@ namespace ACE.Server.WorldObjects
                 EquipInventoryItems();
 
                 GenerateInventoryTreasure();
+
+                SetMonsterState();
+
+                if (IsMonster)
+                {
+                    Tier = SetTierByCreatureLevel();
+                    var qualityMod = LootQualityMod;
+                    if (qualityMod != null)
+                        DeathTreasure.LootQualityMod = (float)qualityMod;
+                }
+
+                if (!Tier.HasValue && DeathTreasureType.HasValue)
+                {
+                    var treasure = DeathTreasure;
+                    if (treasure != null)
+                        Tier = DeathTreasure.Tier;
+                }
+
+                // Archetype System
+                var useArchetypeSystem = UseArchetypeSystem ?? false;
+                if(useArchetypeSystem)
+                {
+                    var statWeight = 0.0f;
+                    var level = (float)Level.Value;
+                    var tier = (Tier ?? 1) - 1;
+
+                    switch(tier)
+                    {
+                        case 0: statWeight = level / 9; break;
+                        case 1: statWeight = (level - 10) / 10; break;
+                        case 2: statWeight = (level - 20) / 10; break;
+                        case 3: statWeight = (level - 30) / 10; break;
+                        case 4: statWeight = (level - 40) / 10; break;
+                        case 5: statWeight = (level - 50) / 25; break;
+                        case 6: statWeight = (level - 75) / 25; break;
+                        case 7: statWeight = (level - 100) / 25; break;
+                    }
+
+                    var toughness = ArchetypeToughness ?? 1.0;
+                    var physicality = ArchetypePhysicality ?? 1.0;
+                    var dexterity = ArchetypeDexterity ?? 1.0;
+                    var magic = ArchetypeMagic ?? 1.0;
+                    var intelligence = ArchetypeIntelligence ?? 1.0;
+                    var lethality = ArchetypeLethality ?? 1.0;
+
+                    SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence);
+
+                    SetVitals(tier, statWeight, toughness, physicality, dexterity, magic);
+
+                    SetDamageArmorAegis(tier, statWeight, toughness, physicality, magic, lethality);
+
+                    var difficultyMod = (toughness * 3 + physicality + dexterity + magic + intelligence + lethality * 3) / 10.0;
+
+                    //Console.WriteLine($"\nDIFFICULTY MOD: {difficultyMod}\n" +
+                    //    $"Tough: {toughness}, Phys: {physicality}, Dex: {dexterity}, Magic: {magic}, Int: {intelligence}, Lethal: {lethality}");
+
+                    SetXp(difficultyMod);
+                }
 
                 // TODO: fix tod data
                 Health.Current = Health.MaxValue;
@@ -373,6 +443,22 @@ namespace ACE.Server.WorldObjects
                 else
                     selectedTargets.Remove(kvp.Key);
             }
+        }
+
+        public int SetTierByCreatureLevel()
+        {
+            switch (Level)
+            {
+                case < 10: return 1;
+                case < 20: return 2;
+                case < 30: return 3;
+                case < 40: return 4;
+                case < 50: return 5;
+                case < 75: return 6;
+                case < 100: return 7;
+                case <= 126: return 8;
+            }
+            return 1;
         }
     }
 }

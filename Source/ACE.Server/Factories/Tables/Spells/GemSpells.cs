@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using ACE.Entity.Enum;
 using Serilog;
 
-namespace ACE.Server.Factories.Tables
+namespace ACE.Server.Factories.Tables.Spells
 {
     public static class GemSpells
     {

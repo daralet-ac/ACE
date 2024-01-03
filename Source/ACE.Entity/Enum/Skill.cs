@@ -42,7 +42,7 @@ namespace ACE.Entity.Enum
         ArmorTinkering,
         MagicItemTinkering,
         CreatureEnchantment,
-        ItemEnchantment,
+        PortalMagic,
         LifeMagic,
         WarMagic,
         Leadership,
@@ -64,7 +64,8 @@ namespace ACE.Entity.Enum
         SneakAttack,
         DirtyFighting,
         Challenge,          /* Unimplemented */
-        Summoning
+        Summoning,
+        Sneaking
     }
 
     public static class SkillExtensions
@@ -103,73 +104,83 @@ namespace ACE.Entity.Enum
 
     public static class SkillHelper
     {
+        static SkillHelper()
+        {
+            
+        }
+
         public static HashSet<Skill> ValidSkills = new HashSet<Skill>
         {
-            Skill.MeleeDefense,
-            Skill.MissileDefense,
-            Skill.ArcaneLore,
-            Skill.MagicDefense,
-            Skill.ManaConversion,
-            Skill.ItemTinkering,
-            Skill.AssessPerson,
-            Skill.Deception,
-            Skill.Healing,
-            Skill.Jump,
-            Skill.Lockpick,
-            Skill.Run,
-            Skill.AssessCreature,
-            Skill.WeaponTinkering,
-            Skill.ArmorTinkering,
-            Skill.MagicItemTinkering,
-            Skill.CreatureEnchantment,
-            Skill.ItemEnchantment,
+            Skill.HeavyWeapons,         // Martial Weapons
+            Skill.Dagger,
+            Skill.Staff,
+            Skill.UnarmedCombat,
+            Skill.Bow,                  // Bows (and crossbows)
+            Skill.ThrownWeapon,
+            Skill.TwoHandedCombat,
+            Skill.DualWield,
+
             Skill.LifeMagic,
             Skill.WarMagic,
+            Skill.PortalMagic,
+            Skill.ManaConversion,
+            Skill.ArcaneLore,
+
+            Skill.MeleeDefense,         // Physical Defense
+            Skill.MagicDefense,
+            Skill.Shield,
+            Skill.Healing,
+
+            Skill.AssessCreature,       // Perception
+            Skill.Deception,
+            Skill.Lockpick,             // Thievery
+            Skill.Jump,
+            Skill.Run,
+
             Skill.Leadership,
             Skill.Loyalty,
-            Skill.Fletching,
+
+            Skill.Fletching,            // Woodworking
             Skill.Alchemy,
             Skill.Cooking,
-            Skill.Salvaging,
-            Skill.TwoHandedCombat,
-            Skill.VoidMagic,
-            Skill.HeavyWeapons,
-            Skill.LightWeapons,
-            Skill.FinesseWeapons,
-            Skill.MissileWeapons,
-            Skill.Shield,
-            Skill.DualWield,
-            Skill.Recklessness,
-            Skill.SneakAttack,
-            Skill.DirtyFighting,
-            Skill.Summoning
+            Skill.WeaponTinkering,      // Blacksmithing
+            Skill.ArmorTinkering,       // Tailoring
+            Skill.MagicItemTinkering,   // Spellcrafting
+            Skill.ItemTinkering,        // Jewelcrafting
+            
+            //Skill.Axe,
+            //Skill.Crossbow,
+            //Skill.Mace,
+            //Skill.Sword,
+            //Skill.Sling,
+            //Skill.Spear,
+            //Skill.SneakAttack,
+            //Skill.AssessPerson,
+            //Skill.CreatureEnchantment,
+            //Skill.Salvaging,
+            //Skill.VoidMagic,
+            //Skill.LightWeapons,
+            //Skill.FinesseWeapons,
+            //Skill.MissileWeapons,
+            //Skill.Recklessness,
+            //Skill.DirtyFighting,
+            //Skill.Summoning
+            //Skill.MissileDefense,
         };
 
         public static HashSet<Skill> AttackSkills = new HashSet<Skill>
         {
-            Skill.Axe,
-            Skill.Bow,
-            Skill.Crossbow,
+
+            Skill.HeavyWeapons,         // Martial Weapons
             Skill.Dagger,
-            Skill.Mace,
-            Skill.Sling,
-            Skill.Spear,
             Skill.Staff,
-            Skill.Sword,
-            Skill.ThrownWeapon,
             Skill.UnarmedCombat,
-            Skill.FinesseWeapons,
-            Skill.HeavyWeapons,
-            Skill.LightWeapons,
-            Skill.MissileWeapons,
+            Skill.Bow,                  // Bows (and crossbows)
+            Skill.ThrownWeapon,
             Skill.TwoHandedCombat,
-            Skill.WarMagic,
-            Skill.LifeMagic,
-            Skill.VoidMagic,
             Skill.DualWield,
-            //Skill.Recklessness,   // confirmed not in client
-            //Skill.DirtyFighting,
-            //Skill.SneakAttack
+            Skill.LifeMagic,
+            Skill.WarMagic,
         };
 
         public static HashSet<Skill> DefenseSkills = new HashSet<Skill>()

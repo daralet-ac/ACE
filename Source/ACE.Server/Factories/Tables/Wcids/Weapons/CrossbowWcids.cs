@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 using ACE.Server.Factories.Entity;
@@ -8,32 +7,33 @@ namespace ACE.Server.Factories.Tables.Wcids
 {
     public static class CrossbowWcids
     {
-        private static ChanceTable<WeenieClassName> T1_T4_Chances = new ChanceTable<WeenieClassName>()
+        private static ChanceTable<WeenieClassName> T1_T4_Chances = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
-            ( WeenieClassName.crossbowlight,    0.50f ),
-            ( WeenieClassName.crossbowheavy,    0.25f ),
-            ( WeenieClassName.crossbowarbalest, 0.25f ),
+            ( WeenieClassName.crossbowlight,    1.00f ),
+            ( WeenieClassName.crossbowheavy,    1.00f ),
+            ( WeenieClassName.crossbowarbalest, 1.00f ),
         };
 
-        private static ChanceTable<WeenieClassName> T5_Chances = new ChanceTable<WeenieClassName>()
+        private static ChanceTable<WeenieClassName> T5_Chances = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
-            ( WeenieClassName.crossbowlight,                     0.25f ),
-            ( WeenieClassName.crossbowheavy,                     0.13f ),
-            ( WeenieClassName.crossbowarbalest,                  0.13f ),
-            ( WeenieClassName.crossbowslashing,                  0.035f ),
-            ( WeenieClassName.crossbowpiercing,                  0.035f ),
-            ( WeenieClassName.crossbowblunt,                     0.035f ),
-            ( WeenieClassName.crossbowacid,                      0.035f ),
-            ( WeenieClassName.crossbowfire,                      0.035f ),
-            ( WeenieClassName.crossbowfrost,                     0.035f ),
-            ( WeenieClassName.crossbowelectric,                  0.035f ),
-            ( WeenieClassName.ace31805_slashingcompoundcrossbow, 0.035f ),
-            ( WeenieClassName.ace31811_piercingcompoundcrossbow, 0.035f ),
-            ( WeenieClassName.ace31807_bluntcompoundcrossbow,    0.035f ),
-            ( WeenieClassName.ace31806_acidcompoundcrossbow,     0.035f ),
-            ( WeenieClassName.ace31809_firecompoundcrossbow,     0.035f ),
-            ( WeenieClassName.ace31810_frostcompoundcrossbow,    0.035f ),
-            ( WeenieClassName.ace31808_electriccompoundcrossbow, 0.035f ),
+            ( WeenieClassName.crossbowlight,                    5.00f ),
+            ( WeenieClassName.crossbowheavy,                    5.00f ),
+            ( WeenieClassName.crossbowarbalest,                 5.00f ),
+
+            ( WeenieClassName.crossbowslashing,                  1.0f ),
+            ( WeenieClassName.crossbowpiercing,                  1.0f ),
+            ( WeenieClassName.crossbowblunt,                     1.0f ),
+            ( WeenieClassName.crossbowacid,                      1.0f ),
+            ( WeenieClassName.crossbowfire,                      1.0f ),
+            ( WeenieClassName.crossbowfrost,                     1.0f ),
+            ( WeenieClassName.crossbowelectric,                  1.0f ),
+            ( WeenieClassName.ace31805_slashingcompoundcrossbow, 1.0f ),
+            ( WeenieClassName.ace31811_piercingcompoundcrossbow, 1.0f ),
+            ( WeenieClassName.ace31807_bluntcompoundcrossbow,    1.0f ),
+            ( WeenieClassName.ace31806_acidcompoundcrossbow,     1.0f ),
+            ( WeenieClassName.ace31809_firecompoundcrossbow,     1.0f ),
+            ( WeenieClassName.ace31810_frostcompoundcrossbow,    1.0f ),
+            ( WeenieClassName.ace31808_electriccompoundcrossbow, 1.0f ),
         };
 
         private static ChanceTable<WeenieClassName> T6_T8_Chances = new ChanceTable<WeenieClassName>()
@@ -65,14 +65,21 @@ namespace ACE.Server.Factories.Tables.Wcids
             T6_T8_Chances,
             T6_T8_Chances,
         };
-
-        public static WeenieClassName Roll(int tier)
+        
+        public static WeenieClassName Roll(int tier, out TreasureWeaponType weaponType)
         {
-            return crossbowTiers[tier - 1].Roll();
+            var roll = crossbowTiers[tier - 1].Roll();
+
+            if (roll == WeenieClassName.crossbowlight)
+                weaponType = TreasureWeaponType.CrossbowLight; // Modify weapon type so we get correct mutations.
+            else
+                weaponType = TreasureWeaponType.Crossbow;
+
+            return roll;
         }
-
-        private static readonly Dictionary<WeenieClassName, TreasureWeaponType> _combined = new Dictionary<WeenieClassName, TreasureWeaponType>();
-
+        
+		private static readonly Dictionary<WeenieClassName, TreasureWeaponType> _combined = new Dictionary<WeenieClassName, TreasureWeaponType>();
+		
         static CrossbowWcids()
         {
             foreach (var crossbowTier in crossbowTiers)

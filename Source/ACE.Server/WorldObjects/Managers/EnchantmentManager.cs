@@ -981,7 +981,6 @@ namespace ACE.Server.WorldObjects.Managers
                 return auraOffenseMod;
             else
                 return offenseMod;*/
-
             return auraOffenseMod + offenseMod;
         }
 
@@ -1006,9 +1005,9 @@ namespace ACE.Server.WorldObjects.Managers
         /// </summary>
         public virtual float GetDefenseMod()
         {
-            var defenseMod = GetAdditiveMod(PropertyFloat.WeaponDefense);
+            var defenseMod = GetAdditiveMod(PropertyFloat.WeaponPhysicalDefense);
             var auraDefenseMod = GetAdditiveMod(PropertyFloat.WeaponAuraDefense);
-
+            
             /*if (WorldObject is Creature && auraDefenseMod != 0)
                 return auraDefenseMod;
             else

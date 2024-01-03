@@ -14,12 +14,13 @@ namespace ACE.Server.Network.Enum
         Speed           = 0x4,
         Damage          = 0x8,
         DamageVariance  = 0x10,
-        DamageMod       = 0x20
+        DamageMod       = 0x20,
+        Use             = 0x40
     }
 
     public static class WeaponMaskHelper
     {
-        public static WeaponMask GetHighlightMask(WeaponProfile profile)
+        public static WeaponMask GetHighlightMask(WeaponProfile profile, bool highlightUse)
         {
             WeaponMask highlightMask = 0;
 
@@ -32,6 +33,8 @@ namespace ACE.Server.Network.Enum
             // Following enchants do not apply to caster weapons
             if (weapon.WeenieType != WeenieType.Caster)
             {
+                if (profile.Enchantment_WeaponOffense != 0 && highlightUse)
+                    highlightMask |= WeaponMask.Use;
                 if (profile.Enchantment_WeaponOffense != 0)
                     highlightMask |= WeaponMask.AttackSkill;
                 if (profile.Enchantment_WeaponTime != 0)
@@ -47,7 +50,7 @@ namespace ACE.Server.Network.Enum
             return highlightMask;
         }
 
-        public static WeaponMask GetColorMask(WeaponProfile profile)
+        public static WeaponMask GetColorMask(WeaponProfile profile, bool highlightUse)
         {
             WeaponMask colorMask = 0;
 
@@ -61,6 +64,8 @@ namespace ACE.Server.Network.Enum
             if (weapon.WeenieType != WeenieType.Caster && (weapon.WeenieType != WeenieType.Ammunition || PropertyManager.GetBool("show_ammo_buff").Item))
             {
                 // item enchantments are currently being cast on wielder
+                if (profile.Enchantment_WeaponOffense > 0 && highlightUse)
+                    colorMask |= WeaponMask.Use;
                 if (profile.Enchantment_WeaponOffense > 0)
                     colorMask |= WeaponMask.AttackSkill;
                 if (profile.Enchantment_WeaponTime < 0)

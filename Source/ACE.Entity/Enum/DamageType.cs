@@ -23,6 +23,7 @@ namespace ACE.Entity.Enum
         Base        = 0x10000000,
 
         // helpers
+        SlashPierce = Slash | Pierce,
         Physical    = Slash | Pierce | Bludgeon,
         Elemental   = Cold | Fire | Acid | Electric,
     };

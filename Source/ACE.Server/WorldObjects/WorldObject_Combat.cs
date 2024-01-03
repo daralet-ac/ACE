@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -48,14 +49,30 @@ namespace ACE.Server.WorldObjects
                 attacker.TryProcItem(attacker, target, selfTarget);
             }
 
-            // handle aetheria procs
+            // handle aetheria/jewelry procs
             if (attacker is Creature wielder)
             {
                 var equippedAetheria = wielder.EquippedObjects.Values.Where(i => Aetheria.IsAetheria(i.WeenieClassId) && i.HasProc && i.ProcSpellSelfTargeted == selfTarget);
 
+                var equippedProcJewelry = wielder.EquippedObjects.Values.Where(i => i.ItemType == ItemType.Jewelry && i.HasProc);
+                
                 // aetheria
                 foreach (var aetheria in equippedAetheria)
                     aetheria.TryProcItem(attacker, target, selfTarget);
+
+                // jewelry
+                foreach (var jewelry in equippedProcJewelry)
+                {
+                    if(attacker is Player)
+                    {
+                        var player = attacker as Player;
+                        if(jewelry.ItemDifficulty != null && player.GetCreatureSkill(Skill.ArcaneLore).Current > jewelry.ItemDifficulty)
+                        {
+                            //Console.WriteLine($"equippedProcJewelry: {jewelry.Name}");
+                            jewelry.TryProcItem(attacker, target, selfTarget);
+                        }
+                    }
+                }
             }
         }
     }

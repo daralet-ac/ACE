@@ -13,13 +13,28 @@ namespace ACE.Server.WorldObjects
         // bows and crossbows
         public static readonly float BowMod = 0.008f;
 
-        public static readonly float ArmorMod = 200.0f / 3.0f;
+        // magic
+        public static readonly float SpellMod = 1000.0f;
 
-        public static float GetAttributeMod(int currentSkill, bool isBow = false)
+        // defenses
+        public static readonly float ArmorMod = 200.0f;
+        public static readonly float ShieldMod = 1000.0f;
+        public static readonly float AegisMod = 200.0f;
+
+        public static float GetAttributeMod(int currentAttribute, ACE.Entity.Enum.Skill skill = ACE.Entity.Enum.Skill.None)
         {
-            var factor = isBow ? BowMod : DefaultMod;
+            float factor = skill == ACE.Entity.Enum.Skill.Bow ? BowMod : DefaultMod;
 
-            return Math.Max(1.0f + (currentSkill - 55) * factor, 1.0f);
+            return Math.Max(1.0f + (currentAttribute - 55) * factor, 1.0f);
+        }
+
+        /// <summary>
+        /// Converts SpellMod from an additive linear value
+        /// to a scaled damage multiplier
+        /// </summary>
+        public static float CalcSpellMod(int magicSkill)
+        {
+            return 1 / (SpellMod / (magicSkill + SpellMod));
         }
 
         /// <summary>
@@ -32,6 +47,34 @@ namespace ACE.Server.WorldObjects
                 return ArmorMod / (armorLevel + ArmorMod);
             else if (armorLevel < 0)
                 return 1.0f - armorLevel / ArmorMod;
+            else
+                return 1.0f;
+        }
+
+        /// <summary>
+        /// Converts SL from an additive linear value
+        /// to a scaled damage multiplier
+        /// </summary>
+        public static float CalcShieldMod(float shieldLevel)
+        {
+            if (shieldLevel > 0)
+                return ShieldMod / (shieldLevel + ShieldMod);
+            else if (shieldLevel < 0)
+                return 1.0f - shieldLevel / ShieldMod;
+            else
+                return 1.0f;
+        }
+
+        /// <summary>
+        /// Converts Aegis Level from an additive linear value
+        /// to a scaled damage multiplier
+        /// </summary>
+        public static float CalcAegisMod(float aegisLevel)
+        {
+            if (aegisLevel > 0)
+                return AegisMod / (aegisLevel + AegisMod);
+            else if (aegisLevel < 0)
+                return 1.0f - aegisLevel / AegisMod;
             else
                 return 1.0f;
         }

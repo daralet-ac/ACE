@@ -23,66 +23,36 @@ namespace ACE.Server.Factories.Tables.Wcids
 
         private static ChanceTable<WeenieClassName> T1_T2_Chances = new ChanceTable<WeenieClassName>()
         {
-            ( WeenieClassName.amulet,        0.085f ),
-            ( WeenieClassName.bracelet,      0.255f ),
-            ( WeenieClassName.braceletheavy, 0.085f ),
-            ( WeenieClassName.necklace,      0.17f ),
-            ( WeenieClassName.ring,          0.2295f ),
-            ( WeenieClassName.ringjeweled,   0.0255f ),
-
-            ( WeenieClassName.ace41483_compass,          0.025f ),
-            ( WeenieClassName.ace41484_goggles,          0.025f ),
-            ( WeenieClassName.ace41487_mechanicalscarab, 0.025f ),
-            ( WeenieClassName.ace41486_puzzlebox,        0.025f ),
-            ( WeenieClassName.ace41485_pocketwatch,      0.025f ),
-            ( WeenieClassName.ace41488_top,              0.025f ),
+            ( WeenieClassName.amulet,        0.10f ),
+            ( WeenieClassName.bracelet,      0.30f ),
+            ( WeenieClassName.braceletheavy, 0.10f ),
+            ( WeenieClassName.necklace,      0.20f ),
+            ( WeenieClassName.ring,          0.25f ),
+            ( WeenieClassName.ringjeweled,   0.05f )
         };
 
         private static ChanceTable<WeenieClassName> T3_T4_Chances = new ChanceTable<WeenieClassName>()
         {
-            ( WeenieClassName.amulet,        0.085f ),
-            ( WeenieClassName.bracelet,      0.1275f ),
-            ( WeenieClassName.braceletheavy, 0.1275f ),
-            ( WeenieClassName.gorget,        0.085f ),
-            ( WeenieClassName.necklace,      0.1275f ),
-            ( WeenieClassName.necklaceheavy, 0.0425f ),
-            ( WeenieClassName.ring,          0.1275f ),
-            ( WeenieClassName.ringjeweled,   0.1275f ),
-
-            ( WeenieClassName.ace41483_compass,          0.025f ),
-            ( WeenieClassName.ace41484_goggles,          0.025f ),
-            ( WeenieClassName.ace41487_mechanicalscarab, 0.025f ),
-            ( WeenieClassName.ace41486_puzzlebox,        0.025f ),
-            ( WeenieClassName.ace41485_pocketwatch,      0.025f ),
-            ( WeenieClassName.ace41488_top,              0.025f ),
+            ( WeenieClassName.amulet,        0.10f ),
+            ( WeenieClassName.bracelet,      0.15f ),
+            ( WeenieClassName.braceletheavy, 0.15f ),
+            ( WeenieClassName.gorget,        0.10f ),
+            ( WeenieClassName.necklace,      0.15f ),
+            ( WeenieClassName.necklaceheavy, 0.05f ),
+            ( WeenieClassName.ring,          0.15f ),
+            ( WeenieClassName.ringjeweled,   0.15f )
         };
 
-        private static ChanceTable<WeenieClassName> T5_T6_Chances = new ChanceTable<WeenieClassName>()
+        private static ChanceTable<WeenieClassName> T5_T8_Chances = new ChanceTable<WeenieClassName>()
         {
-            ( WeenieClassName.amulet,        0.0425f ),
-            ( WeenieClassName.bracelet,      0.0425f ),
-            ( WeenieClassName.braceletheavy, 0.17f ),
-
-            //( WeenieClassName.crown,         0.085f ),
-            ( WeenieClassName.crown,                  0.015f ),     // todo: these possibly dropped in all tiers post-ucon
-            ( WeenieClassName.ace31864_teardropcrown, 0.014f ),
-            ( WeenieClassName.ace31865_circlet,       0.014f ),
-            ( WeenieClassName.ace31866_coronet,       0.014f ),
-            ( WeenieClassName.ace31867_diadem,        0.014f ),
-            ( WeenieClassName.ace31868_signetcrown,   0.014f ),
-
-            ( WeenieClassName.gorget,        0.085f ),
-            ( WeenieClassName.necklace,      0.0425f ),
-            ( WeenieClassName.necklaceheavy, 0.1275f ),
-            ( WeenieClassName.ring,          0.051f ),
-            ( WeenieClassName.ringjeweled,   0.204f ),
-
-            ( WeenieClassName.ace41483_compass,          0.025f ),
-            ( WeenieClassName.ace41484_goggles,          0.025f ),
-            ( WeenieClassName.ace41487_mechanicalscarab, 0.025f ),
-            ( WeenieClassName.ace41486_puzzlebox,        0.025f ),
-            ( WeenieClassName.ace41485_pocketwatch,      0.025f ),
-            ( WeenieClassName.ace41488_top,              0.025f ),
+            ( WeenieClassName.amulet,        0.10f ),
+            ( WeenieClassName.bracelet,      0.10f ),
+            ( WeenieClassName.braceletheavy, 0.20f ),
+            ( WeenieClassName.gorget,        0.10f ),
+            ( WeenieClassName.necklace,      0.05f ),
+            ( WeenieClassName.necklaceheavy, 0.15f ),
+            ( WeenieClassName.ring,          0.10f ),
+            ( WeenieClassName.ringjeweled,   0.20f ),
         };
 
         private static List<ChanceTable<WeenieClassName>> tierChances = new List<ChanceTable<WeenieClassName>>()
@@ -91,14 +61,16 @@ namespace ACE.Server.Factories.Tables.Wcids
             T1_T2_Chances,
             T3_T4_Chances,
             T3_T4_Chances,
-            T5_T6_Chances,
-            T5_T6_Chances,
+            T5_T8_Chances,
+            T5_T8_Chances,
+            T5_T8_Chances,
+            T5_T8_Chances,
         };
 
         public static WeenieClassName Roll(int tier)
         {
             // todo: add unique profiles for t7 / t8?
-            tier = Math.Clamp(tier, 1, 6);
+            tier = Math.Clamp(tier, 1, 8);
 
             return tierChances[tier - 1].Roll();
         }

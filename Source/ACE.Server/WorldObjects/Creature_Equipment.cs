@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.World;
@@ -13,7 +12,9 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
+using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects
 {
@@ -38,8 +39,12 @@ namespace ACE.Server.WorldObjects
                 EquippedObjects[worldObject.Guid] = worldObject;
 
                 AddItemToEquippedItemsRatingCache(worldObject);
+                AddItemToEquippedItemsSkillModCache(worldObject);
 
-                EncumbranceVal += (worldObject.EncumbranceVal ?? 0);
+                if (worldObject.WeenieType == WeenieType.Ammunition || worldObject.WeenieType == WeenieType.Missile)
+                    EncumbranceVal += (int)Math.Ceiling((worldObject.EncumbranceVal ?? 0) / 2.0f);
+                else
+                    EncumbranceVal += (worldObject.EncumbranceVal ?? 0);
             }
 
             EquippedObjectsLoaded = true;
@@ -193,6 +198,93 @@ namespace ACE.Server.WorldObjects
             return EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.MissileAmmo);
         }
 
+        public WorldObject GetEquippedTrinket()
+        {
+            return EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.TrinketOne);
+        }
+
+        public List<EmpoweredScarab> GetEquippedEmpoweredScarabs()
+        {
+            var empoweredScarabBlue = EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.SigilOne) as EmpoweredScarab;
+            var empoweredScarabYellow = EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.SigilTwo) as EmpoweredScarab;
+            var empoweredScarabRed = EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.SigilThree) as EmpoweredScarab;
+
+            List<EmpoweredScarab> equippedEmpoweredScarabs = new List<EmpoweredScarab>();
+
+            if(empoweredScarabBlue != null)
+                equippedEmpoweredScarabs.Add(empoweredScarabBlue);
+
+            if (empoweredScarabYellow != null)
+                equippedEmpoweredScarabs.Add(empoweredScarabYellow);
+
+            if (empoweredScarabRed != null)
+                equippedEmpoweredScarabs.Add(empoweredScarabRed);
+
+            return equippedEmpoweredScarabs;
+        }
+
+        public List<EmpoweredScarab> GetHeldEmpoweredScarabsBlue()
+        {
+            uint empoweredScarabBlue_Life_wcid = 1050250;
+            uint empoweredScarabBlue_War_wcid = 1050251;
+
+            var empoweredScarabsBlueLife = GetInventoryItemsOfWCID(empoweredScarabBlue_Life_wcid).ConvertAll(x => (EmpoweredScarab)x);
+            var empoweredScarabsBlueWar = GetInventoryItemsOfWCID(empoweredScarabBlue_War_wcid).ConvertAll(x => (EmpoweredScarab)x);
+
+            List<EmpoweredScarab> heldEmpoweredScarabsBlue = new List<EmpoweredScarab>();
+
+            if (empoweredScarabsBlueLife != null)
+                heldEmpoweredScarabsBlue.AddRange(empoweredScarabsBlueLife);
+
+            if (empoweredScarabsBlueWar != null)
+                heldEmpoweredScarabsBlue.AddRange(empoweredScarabsBlueWar);
+
+            return heldEmpoweredScarabsBlue;
+        }
+
+        public List<EmpoweredScarab> GetHeldEmpoweredScarabsYellow()
+        {
+            uint empoweredScarabYellow_Life_wcid = 1050252;
+            uint empoweredScarabYellow_War_wcid = 1050253;
+
+            var empoweredScarabsYellowLife = GetInventoryItemsOfWCID(empoweredScarabYellow_Life_wcid).ConvertAll(x => (EmpoweredScarab)x);
+            var empoweredScarabsYellowWar = GetInventoryItemsOfWCID(empoweredScarabYellow_War_wcid).ConvertAll(x => (EmpoweredScarab)x);
+
+            List<EmpoweredScarab> heldEmpoweredScarabsYellow = new List<EmpoweredScarab>();
+
+            if (empoweredScarabsYellowLife != null)
+                heldEmpoweredScarabsYellow.AddRange(empoweredScarabsYellowLife);
+
+            if (empoweredScarabsYellowWar != null)
+                heldEmpoweredScarabsYellow.AddRange(empoweredScarabsYellowWar);
+
+            return heldEmpoweredScarabsYellow;
+        }
+
+        public List<EmpoweredScarab> GetHeldEmpoweredScarabsRed()
+        {
+            uint empoweredScarabRed_Life_wcid = 1050254;
+            uint empoweredScarabRed_War_wcid = 1050255;
+
+            var empoweredScarabsRedLife = GetInventoryItemsOfWCID(empoweredScarabRed_Life_wcid).ConvertAll(x => (EmpoweredScarab)x);
+            var empoweredScarabsRedWar = GetInventoryItemsOfWCID(empoweredScarabRed_War_wcid).ConvertAll(x => (EmpoweredScarab)x);
+
+            List<EmpoweredScarab> heldEmpoweredScarabsRed = new List<EmpoweredScarab>();
+
+            if (empoweredScarabsRedLife != null)
+                heldEmpoweredScarabsRed.AddRange(empoweredScarabsRedLife);
+
+            if (empoweredScarabsRedWar != null)
+                heldEmpoweredScarabsRed.AddRange(empoweredScarabsRedWar);
+
+            return heldEmpoweredScarabsRed;
+        }
+
+        public CombatFocus GetEquippedCombatFocus()
+        {
+            return EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.TrinketOne) as CombatFocus;
+        }
+
         /// <summary>
         /// Returns the ammo slot item for bows / atlatls,
         /// or the missile weapon for thrown weapons
@@ -214,7 +306,7 @@ namespace ACE.Server.WorldObjects
 
         private void AddItemToEquippedItemsRatingCache(WorldObject wo)
         {
-            if ((wo.GearDamage ?? 0) == 0 && (wo.GearDamageResist ?? 0) == 0 && (wo.GearCrit ?? 0) == 0 && (wo.GearCritResist ?? 0) == 0 && (wo.GearCritDamage ?? 0) == 0 && (wo.GearCritDamageResist ?? 0) == 0 && (wo.GearHealingBoost ?? 0) == 0 && (wo.GearMaxHealth ?? 0) == 0 && (wo.GearPKDamageRating ?? 0) == 0 && (wo.GearPKDamageResistRating ?? 0) == 0)
+            if ((wo.GearDamage ?? 0) == 0 && (wo.GearDamageResist ?? 0) == 0 && (wo.GearCritDamage ?? 0) == 0 && (wo.GearCritDamageResist ?? 0) == 0 && (wo.GearHealingBoost ?? 0) == 0 && (wo.GearMaxHealth ?? 0) == 0 && (wo.GearPKDamageRating ?? 0) == 0 && (wo.GearPKDamageResistRating ?? 0) == 0 && (wo.AegisLevel ?? 0) == 0)
                 return;
 
             if (equippedItemsRatingCache == null)
@@ -231,19 +323,21 @@ namespace ACE.Server.WorldObjects
                     { PropertyInt.GearMaxHealth, 0 },
                     { PropertyInt.GearPKDamageRating, 0 },
                     { PropertyInt.GearPKDamageResistRating, 0 },
+                    { PropertyInt.AegisLevel, 0 }
                 };
             }
 
             equippedItemsRatingCache[PropertyInt.GearDamage] += (wo.GearDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearDamageResist] += (wo.GearDamageResist ?? 0);
-            equippedItemsRatingCache[PropertyInt.GearCrit] += (wo.GearCrit ?? 0);
-            equippedItemsRatingCache[PropertyInt.GearCritResist] += (wo.GearCritResist ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCrit] += (wo.GearCritDamage ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCritResist] += (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamage] += (wo.GearCritDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamageResist] += (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearHealingBoost] += (wo.GearHealingBoost ?? 0);
             equippedItemsRatingCache[PropertyInt.GearMaxHealth] += (wo.GearMaxHealth ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageRating] += (wo.GearPKDamageRating ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageResistRating] += (wo.GearPKDamageResistRating ?? 0);
+            equippedItemsRatingCache[PropertyInt.AegisLevel] += (wo.AegisLevel ?? 0);
         }
 
         private void RemoveItemFromEquippedItemsRatingCache(WorldObject wo)
@@ -253,14 +347,15 @@ namespace ACE.Server.WorldObjects
 
             equippedItemsRatingCache[PropertyInt.GearDamage] -= (wo.GearDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearDamageResist] -= (wo.GearDamageResist ?? 0);
-            equippedItemsRatingCache[PropertyInt.GearCrit] -= (wo.GearCrit ?? 0);
-            equippedItemsRatingCache[PropertyInt.GearCritResist] -= (wo.GearCritResist ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCrit] -= (wo.GearCritDamage ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCritResist] -= (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamage] -= (wo.GearCritDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamageResist] -= (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearHealingBoost] -= (wo.GearHealingBoost ?? 0);
             equippedItemsRatingCache[PropertyInt.GearMaxHealth] -= (wo.GearMaxHealth ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageRating] -= (wo.GearPKDamageRating ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageResistRating] -= (wo.GearPKDamageResistRating ?? 0);
+            equippedItemsRatingCache[PropertyInt.AegisLevel] -= (wo.AegisLevel ?? 0);
         }
 
         public int GetEquippedItemsRatingSum(PropertyInt rating)
@@ -269,12 +364,138 @@ namespace ACE.Server.WorldObjects
                 return 0;
 
             if (equippedItemsRatingCache.TryGetValue(rating, out var value))
-                return value;
+                    return value;
 
             _log.Error($"Creature_Equipment.GetEquippedItemsRatingsSum() does not support {rating}");
             return 0;
         }
 
+        public int GetEquippedItemsAegisSum(PropertyInt aegisLevel)
+        {
+            if (equippedItemsRatingCache == null)
+                return 0;
+
+            if (equippedItemsRatingCache.TryGetValue(aegisLevel, out var value))
+                return value;
+
+            _log.Error($"Creature_Equipment.GetEquippedItemsAegisSum() does not support {aegisLevel}");
+            return 0;
+        }
+
+        /// <summary>
+        /// This is initialized the first time an item is equipped that has a skill mod. If it is null, there are no equipped items with skill mods.
+        /// </summary>
+        private Dictionary<PropertyFloat, double> equippedItemsSkillModCache;
+
+        private void AddItemToEquippedItemsSkillModCache(WorldObject wo)
+        {
+            if ((wo.ArmorHealthRegenMod ?? 0) == 0 && (wo.ArmorStaminaRegenMod ?? 0) == 0 && (wo.ArmorManaRegenMod ?? 0) == 0 && (wo.ArmorAttackMod ?? 0) == 0 &&
+                (wo.ArmorPhysicalDefMod ?? 0) == 0 && (wo.ArmorMissileDefMod ?? 0) == 0 && (wo.ArmorMagicDefMod ?? 0) == 0 && (wo.ArmorRunMod ?? 0) == 0 &&
+                (wo.ArmorTwohandedCombatMod ?? 0) == 0 && (wo.ArmorDualWieldMod ?? 0) == 0 && (wo.ArmorThieveryMod ?? 0) == 0 && (wo.ArmorPerceptionMod ?? 0) == 0 && (wo.ArmorShieldMod ?? 0) == 0 && (wo.ArmorDeceptionMod ?? 0) == 0 &&
+                (wo.ArmorWarMagicMod ?? 0) == 0 && (wo.ArmorLifeMagicMod ?? 0) == 0 &&
+                (wo.WeaponWarMagicMod ?? 0) == 0 && (wo.WeaponLifeMagicMod ?? 0) == 0 && (wo.WeaponRestorationSpellsMod ?? 0) == 0 &&
+                (wo.ArmorHealthMod ?? 0) == 0 && (wo.ArmorStaminaMod ?? 0) == 0 && (wo.ArmorManaMod ?? 0) == 0 &&
+                (wo.ArmorResourcePenalty ?? 0) == 0)
+                return;
+
+            if (equippedItemsSkillModCache == null)
+            {
+                equippedItemsSkillModCache = new Dictionary<PropertyFloat, double>
+                {
+                    { PropertyFloat.ArmorHealthRegenMod, 0 },
+                    { PropertyFloat.ArmorStaminaRegenMod, 0 },
+                    { PropertyFloat.ArmorManaRegenMod, 0 },
+                    { PropertyFloat.ArmorAttackMod, 0 },
+                    { PropertyFloat.ArmorPhysicalDefMod, 0 },
+                    { PropertyFloat.ArmorMissileDefMod, 0 },
+                    { PropertyFloat.ArmorMagicDefMod, 0 },
+                    { PropertyFloat.ArmorRunMod, 0 },
+                    { PropertyFloat.ArmorDualWieldMod, 0 },
+                    { PropertyFloat.ArmorTwohandedCombatMod, 0 },
+                    { PropertyFloat.ArmorThieveryMod, 0 },
+                    { PropertyFloat.ArmorAssessMod, 0 },
+                    { PropertyFloat.ArmorDeceptionMod, 0 },
+                    { PropertyFloat.ArmorShieldMod, 0 },
+                    { PropertyFloat.ArmorWarMagicMod, 0 },
+                    { PropertyFloat.ArmorLifeMagicMod, 0 },
+                    { PropertyFloat.WeaponWarMagicMod, 0 },
+                    { PropertyFloat.WeaponLifeMagicMod, 0 },
+                    { PropertyFloat.WeaponRestorationSpellsMod, 0 },
+                    { PropertyFloat.ArmorHealthMod, 0 },
+                    { PropertyFloat.ArmorStaminaMod, 0 },
+                    { PropertyFloat.ArmorManaMod, 0 },
+                    { PropertyFloat.ArmorResourcePenalty, 0 },
+                };
+            }
+
+            equippedItemsSkillModCache[PropertyFloat.ArmorHealthRegenMod] += (wo.ArmorHealthRegenMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorStaminaRegenMod] += (wo.ArmorStaminaRegenMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorManaRegenMod] += (wo.ArmorManaRegenMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorAttackMod] += (wo.ArmorAttackMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorPhysicalDefMod] += (wo.ArmorPhysicalDefMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorMissileDefMod] += (wo.ArmorMissileDefMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorMagicDefMod] += (wo.ArmorMagicDefMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorRunMod] += (wo.ArmorRunMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorDualWieldMod] += (wo.ArmorDualWieldMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorTwohandedCombatMod] += (wo.ArmorTwohandedCombatMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorThieveryMod] += (wo.ArmorThieveryMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorAssessMod] += (wo.ArmorPerceptionMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorDeceptionMod] += (wo.ArmorDeceptionMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorShieldMod] += (wo.ArmorShieldMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorWarMagicMod] += (wo.ArmorWarMagicMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorLifeMagicMod] += (wo.ArmorLifeMagicMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.WeaponWarMagicMod] += (wo.WeaponWarMagicMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.WeaponLifeMagicMod] += (wo.WeaponLifeMagicMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.WeaponRestorationSpellsMod] += (wo.WeaponRestorationSpellsMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorHealthMod] += (wo.ArmorHealthMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorStaminaMod] += (wo.ArmorStaminaMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorManaMod] += (wo.ArmorManaMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorResourcePenalty] += (wo.ArmorResourcePenalty ?? 0);
+        }
+
+        private void RemoveItemFromEquippedItemsSkillModCache(WorldObject wo)
+        {
+            if (equippedItemsSkillModCache == null)
+                return;
+
+            equippedItemsSkillModCache[PropertyFloat.ArmorHealthRegenMod] -= (wo.ArmorHealthRegenMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorStaminaRegenMod] -= (wo.ArmorStaminaRegenMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorManaRegenMod] -= (wo.ArmorManaRegenMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorAttackMod] -= (wo.ArmorAttackMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorPhysicalDefMod] -= (wo.ArmorPhysicalDefMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorMissileDefMod] -= (wo.ArmorMissileDefMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorMagicDefMod] -= (wo.ArmorMagicDefMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorRunMod] -= (wo.ArmorRunMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorDualWieldMod] -= (wo.ArmorDualWieldMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorTwohandedCombatMod] -= (wo.ArmorTwohandedCombatMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorThieveryMod] -= (wo.ArmorThieveryMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorAssessMod] -= (wo.ArmorPerceptionMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorDeceptionMod] -= (wo.ArmorDeceptionMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorShieldMod] -= (wo.ArmorShieldMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorWarMagicMod] -= (wo.ArmorWarMagicMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorLifeMagicMod] -= (wo.ArmorLifeMagicMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.WeaponWarMagicMod] -= (wo.WeaponWarMagicMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.WeaponLifeMagicMod] -= (wo.WeaponLifeMagicMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.WeaponRestorationSpellsMod] -= (wo.WeaponRestorationSpellsMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorHealthMod] -= (wo.ArmorHealthMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorStaminaMod] -= (wo.ArmorStaminaMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorManaMod] -= (wo.ArmorManaMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorResourcePenalty] -= (wo.ArmorResourcePenalty ?? 0);
+        }
+
+        public double GetEquippedItemsSkillModSum(PropertyFloat skillMod)
+        {
+            if (equippedItemsSkillModCache == null)
+                return 0;
+
+            if (equippedItemsSkillModCache.TryGetValue(skillMod, out var value))
+            {
+                return value;
+            }
+            _log.Error($"Creature_Equipment.GetEquippedItemsSkillModSum() does not support {skillMod}");
+            return 0;
+        }
+        
         /// <summary>
         /// Try to wield an object for non-player creatures
         /// </summary>
@@ -325,8 +546,21 @@ namespace ACE.Server.WorldObjects
             EquippedObjects[worldObject.Guid] = worldObject;
 
             AddItemToEquippedItemsRatingCache(worldObject);
+            AddItemToEquippedItemsSkillModCache(worldObject);
 
-            EncumbranceVal += (worldObject.EncumbranceVal ?? 0);
+            if (this is Player)
+            {
+                Player player = this as Player;
+
+                //player.AuditItemSpells();
+
+                UpdateArmorModBuffs();
+            }
+
+            if (worldObject.WeenieType == WeenieType.Ammunition || worldObject.WeenieType == WeenieType.Missile)
+                EncumbranceVal += (int)Math.Ceiling((worldObject.EncumbranceVal ?? 0) / 2.0f);
+            else
+                EncumbranceVal += (worldObject.EncumbranceVal ?? 0);
             Value += (worldObject.Value ?? 0);
 
             TrySetChild(worldObject);
@@ -384,7 +618,17 @@ namespace ACE.Server.WorldObjects
             }
 
             RemoveItemFromEquippedItemsRatingCache(worldObject);
+            RemoveItemFromEquippedItemsSkillModCache(worldObject);
 
+            //Console.WriteLine($"{Name} - Unequip: {GetArmorRunMod() + 1}");
+            if (this is Player)
+            { 
+                Player player = this as Player;
+
+                //player.AuditItemSpells();
+
+                UpdateArmorModBuffs();
+            }
             wieldedLocation = worldObject.CurrentWieldedLocation ?? EquipMask.None;
 
             worldObject.RemoveProperty(PropertyInt.CurrentWieldedLocation);
@@ -393,7 +637,10 @@ namespace ACE.Server.WorldObjects
 
             worldObject.OnSpellsDeactivated();
 
-            EncumbranceVal -= (worldObject.EncumbranceVal ?? 0);
+            if ((worldObject.WeenieType == WeenieType.Ammunition || worldObject.WeenieType == WeenieType.Missile))
+                EncumbranceVal -= (int)Math.Ceiling((worldObject.EncumbranceVal ?? 0) / 2.0f);
+            else
+                EncumbranceVal -= (worldObject.EncumbranceVal ?? 0);
             Value -= (worldObject.Value ?? 0);
 
             ClearChild(worldObject);
@@ -436,6 +683,16 @@ namespace ACE.Server.WorldObjects
                 EnqueueBroadcast(false, new GameMessageSound(Guid, Sound.UnwieldObject));
 
             EnqueueBroadcast(new GameMessageObjDescEvent(this));
+
+            // handle combat focus dequip
+            var combatFocus = worldObject as CombatFocus;
+            if (combatFocus != null)
+                combatFocus.OnDequip(this as Player);
+
+            // handle mana scarabs
+            var manaScarab = worldObject as EmpoweredScarab;
+            if (manaScarab != null)
+                manaScarab.OnDequip(this as Player);
 
             // If item has any spells, remove them from the registry on unequip
             if (worldObject.Biota.PropertiesSpellBook != null)
@@ -803,6 +1060,103 @@ namespace ACE.Server.WorldObjects
 
                 if (!TryAddToInventory(item))
                     item.Destroy();
+            }
+        }
+
+        public void UpdateArmorModBuffs()
+        {
+            Player player = this as Player;
+
+            var enchantments = Biota.PropertiesEnchantmentRegistry.Clone(BiotaDatabaseLock).Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.Vitae).ToList();
+
+            // ARMOR RUN MOD
+            if (GetArmorRunMod() > 0.01 && this is Player)
+            {
+                var spell = new Server.Entity.Spell(SpellId.OntheRun);
+                var addResult = EnchantmentManager.Add(spell, null, null, true);
+                addResult.Enchantment.StatModValue = (float)GetArmorRunMod() + 1;
+
+                player.Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment)));
+                player.HandleRunRateUpdate(spell);
+            }
+            else
+            {
+                foreach(var enchantment in enchantments)
+                {
+                    var spellId = (uint)SpellId.OntheRun;
+                    if (enchantment.SpellId == spellId)
+                    {
+                        EnchantmentManager.Dispel(enchantment);
+                        player.HandleRunRateUpdate(new Server.Entity.Spell(SpellId.OntheRun));
+                    }
+                }
+            }
+            // ARMOR HEALTH MOD
+            if (GetArmorHealthMod() >= 0.01 && this is Player)
+            {
+                var spell = new Server.Entity.Spell(SpellId.Ardence);
+                var addResult = EnchantmentManager.Add(spell, null, null, true);
+                addResult.Enchantment.StatModValue = (float)GetArmorHealthMod() + 1;
+
+                player.Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment)));
+                player.HandleMaxVitalUpdate(spell);
+            }
+            else
+            {
+                foreach (var enchantment in enchantments)
+                {
+                    var spellId = (uint)SpellId.Ardence;
+                    if (enchantment.SpellId == spellId)
+                    {
+                        EnchantmentManager.Dispel(enchantment);
+                        player.HandleMaxVitalUpdate(new Server.Entity.Spell(SpellId.Ardence));
+                    }
+                }
+            }
+            // ARMOR STAMINA MOD
+            if (GetArmorStaminaMod() >= 0.01 && this is Player)
+            {
+                var spell = new Server.Entity.Spell(SpellId.Vim);
+                var addResult = EnchantmentManager.Add(spell, null, null, true);
+                addResult.Enchantment.StatModValue = (float)GetArmorStaminaMod() + 1;
+
+                player.Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment)));
+                player.HandleMaxVitalUpdate(spell);
+            }
+            else
+            {
+                foreach (var enchantment in enchantments)
+                {
+                    var spellId = (uint)SpellId.Vim;
+                    if (enchantment.SpellId == spellId)
+                    {
+                        EnchantmentManager.Dispel(enchantment);
+                        player.HandleMaxVitalUpdate(new Server.Entity.Spell(SpellId.Vim));
+                    }
+                }
+            }
+            // ARMOR MANA MOD
+            if (GetArmorManaMod() >= 0.01 && this is Player)
+            {
+                var spell = new Server.Entity.Spell(SpellId.Volition);
+                var addResult = EnchantmentManager.Add(spell, null, null, true);
+
+                addResult.Enchantment.StatModValue = (float)GetArmorManaMod() + 1;
+
+                player.Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment)));
+                player.HandleMaxVitalUpdate(spell);
+            }
+            else
+            {
+                foreach (var enchantment in enchantments)
+                {
+                    var spellId = (uint)SpellId.Volition;
+                    if (enchantment.SpellId == spellId)
+                    {
+                        EnchantmentManager.Dispel(enchantment);
+                        player.HandleMaxVitalUpdate(new Server.Entity.Spell(SpellId.Volition));
+                    }
+                }
             }
         }
     }

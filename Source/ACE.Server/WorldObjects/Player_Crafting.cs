@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using ACE.Common.Extensions;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
@@ -118,7 +116,7 @@ namespace ACE.Server.WorldObjects
         {
             Skill.ArmorTinkering,
             Skill.WeaponTinkering,
-            Skill.ItemTinkering,
+            //Skill.ItemTinkering,
             Skill.MagicItemTinkering
         };
 
@@ -196,8 +194,6 @@ namespace ACE.Server.WorldObjects
                 // increase value of salvage bag - salvage skill is a factor,
                 // if bags aren't being combined here
                 var valueFactor = (float)added / amountProduced;
-                if (item.ItemType != ItemType.TinkeringMaterial)
-                    valueFactor *= GetCreatureSkill(Skill.Salvaging).Current / 387.0f * (1.0f + 0.25f * AugmentationBonusSalvage);
 
                 var addedValue = (int)Math.Round((item.Value ?? 0) * valueFactor);
 
@@ -282,31 +278,13 @@ namespace ACE.Server.WorldObjects
 
             // is this a bag of salvage?
             // if so, return its existing structure
+
             if (salvageItem.ItemType == ItemType.TinkeringMaterial)
                 return salvageItem.Structure.Value;
 
-            var workmanship = salvageItem.Workmanship ?? 1.0f;
-            var stackSize = salvageItem.StackSize ?? 1;
+            var addStructure = 10 + (int)salvageItem.Workmanship;
 
-            // should this be getting the highest tinkering skill,
-            // or the tinkering skill for the material?
-            var salvageSkill = GetCreatureSkill(Skill.Salvaging).Current;
-            var highestTinkeringSkill = GetMaxSkill(TinkeringSkills);
-            var highestTrainedTinkeringSkill = highestTinkeringSkill.AdvancementClass >= SkillAdvancementClass.Trained ? highestTinkeringSkill.Current : 0;
-
-            // take augs into account for salvaging only
-            var salvageAmount = CalcNumUnits((int)salvageSkill, workmanship, AugmentationBonusSalvage) * stackSize;
-            var tinkeringAmount = CalcNumUnits((int)highestTrainedTinkeringSkill, workmanship, 0);
-
-            // cap tinkeringAmount to item workmanship
-            tinkeringAmount = Math.Min(tinkeringAmount, (int)Math.Round(salvageItem.Workmanship ?? 1.0f)) * stackSize;
-
-            // choose the best one
-            var addStructure = Math.Max(salvageAmount, tinkeringAmount);
-
-            var skill = salvageAmount > tinkeringAmount ? Skill.Salvaging : GetMaxSkill(TinkeringSkills).Skill;
-
-            message = salvageResults.GetMessage(salvageItem.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown, skill);
+            message = salvageResults.GetMessage(salvageItem.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown, GetMaxSkill(TinkeringSkills).Skill);
             message.Amount += (uint)addStructure;
 
             return addStructure;

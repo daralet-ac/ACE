@@ -6,6 +6,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Physics;
+using ACE.Common;
 
 namespace ACE.Server.WorldObjects
 {
@@ -122,6 +123,9 @@ namespace ACE.Server.WorldObjects
 
             var cleaveTargets = new List<Creature>();
             var totalCleaves = weapon.CleaveTargets;
+
+            if (totalCleaves > 0 && GetCreatureSkill(Skill.TwoHandedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
+                totalCleaves += ThreadSafeRandom.Next(0, 1);
 
             foreach (var obj in visible)
             {

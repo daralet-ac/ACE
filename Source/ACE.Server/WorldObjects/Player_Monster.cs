@@ -24,8 +24,10 @@ namespace ACE.Server.WorldObjects
             {
                 if (monster is Player) continue;
 
-                //if (Location.SquaredDistanceTo(monster.Location) <= monster.VisualAwarenessRangeSq)
-                if (PhysicsObj.get_distance_sq_to_object(monster.PhysicsObj, true) <= monster.VisualAwarenessRangeSq)
+                var distSq = PhysicsObj.get_distance_sq_to_object(monster.PhysicsObj, true);
+                //var distSq = Location.SquaredDistanceTo(monster.Location);
+
+                if (distSq <= monster.VisualAwarenessRangeSq &&!TestStealth(monster, distSq, $"{monster.Name} sees you! You lose stealth."))
                     AlertMonster(monster);
             }
         }

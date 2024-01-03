@@ -1,16 +1,20 @@
+using System;
 using System.Collections.Generic;
 using ACE.Entity.Enum;
+using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Entity
 {
     public class StaminaCost
     {
         public int Burden;
+        public int WeaponTier;
         public float Stamina;
 
-        public StaminaCost(int burden, float stamina)
+        public StaminaCost(int burden, int weaponTier, float stamina)
         {
             Burden = burden;
+            WeaponTier = weaponTier;
             Stamina = stamina;
         }
     }
@@ -30,38 +34,41 @@ namespace ACE.Server.Entity
 
             // must be in descending order
             var lowCosts = new List<StaminaCost>();
-            lowCosts.Add(new StaminaCost(1600, 1.5f));
-            lowCosts.Add(new StaminaCost(1200, 1));
-            lowCosts.Add(new StaminaCost(700, 1));
 
             var midCosts = new List<StaminaCost>();
-            midCosts.Add(new StaminaCost(1600, 3));
-            midCosts.Add(new StaminaCost(1200, 2));
-            midCosts.Add(new StaminaCost(700, 1));
 
             var highCosts = new List<StaminaCost>();
-            highCosts.Add(new StaminaCost(1600, 6));
-            highCosts.Add(new StaminaCost(1200, 4));
-            highCosts.Add(new StaminaCost(700, 2));
 
             Costs.Add(PowerAccuracy.Low, lowCosts);
             Costs.Add(PowerAccuracy.Medium, midCosts);
             Costs.Add(PowerAccuracy.High, highCosts);
         }
 
-        public static float GetStaminaCost(PowerAccuracy powerAccuracy, int burden)
+        public static float GetStaminaCost(int weaponTier, float powerAccuracyLevel = 0.0f, int weaponSpeed = 0, float? weightClassPenalty = null)
         {
-            var baseCost = 0.0f;
-            var attackCosts = Costs[powerAccuracy];
-            foreach (var attackCost in attackCosts)
-            {
-                if (burden >= attackCost.Burden)
-                {
-                    var numTimes = burden / attackCost.Burden;
-                    baseCost += attackCost.Stamina * numTimes;
-                    burden -= attackCost.Burden * numTimes;
-                }
-            }
+            // Max stamina cost per tier, then reduced by these factors (weapon speed, power/accuracy level, armor weight class penalties)
+            var maxCost = 20.0f;
+
+            // WeaponSpeed mod can range from 66.66% to 100%, depending on weapon speed (0-100)
+            var minSpeedMod = 200.0f / 3;  
+            var speedModRange = 100.0f / 3;
+            var weaponSpeedMod = minSpeedMod + (float)weaponSpeed / 100 * speedModRange;
+            weaponSpeedMod *= 0.01f;
+
+            // PowerLevel mod reduces stamina cost exponentially: i.e.  100% = 100% Cost,  75% = 56% Cost,  50% = 25% Cost,  25% = 6.25% Cost,  0% = 0% Cost (min 1)
+            var powerLevelMod = (float)Math.Pow(powerAccuracyLevel, 2);
+
+            var weightClassMod = weightClassPenalty ?? 1.0f;
+
+            weaponTier = Math.Max(weaponTier - 1, 1);
+
+            var baseCost = maxCost * powerLevelMod * weaponTier * weaponSpeedMod * weightClassMod;
+
+            //Console.WriteLine($"GetStaminaCost - Final Cost: {baseCost}\n" +
+            //    $" -WeaponTier: {weaponTier} WeightClassPenalty: {weightClassPenalty}\n" +
+            //    $" -PowerLevel: {powerAccuracyLevel} PowerLevelMod: {powerLevelMod}\n" +
+            //    $" -WeaponSpeed: {weaponSpeed} WeaponSpeedMod: {weaponSpeedMod}");
+
             return baseCost;
         }
     }

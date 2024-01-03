@@ -10,10 +10,9 @@ namespace ACE.Server.Factories
 
         // used by multiple item types
 
-        private static int RollWieldDifficulty(int tier, TreasureWeaponType weaponType)
+        private static int RollWieldDifficulty(int tier, TreasureWeaponType weaponType = TreasureWeaponType.MeleeWeapon)
         {
             int wield = 0;
-            int chance = ThreadSafeRandom.Next(1, 100);
 
             switch (weaponType)
             {
@@ -21,63 +20,14 @@ namespace ACE.Server.Factories
 
                     switch (tier)
                     {
-                        case 1:
-                            wield = 0;
-                            break;
-                        case 2:
-                            if (chance < 60)
-                                wield = 0;
-                            else
-                                wield = 250;
-                            break;
-                        case 3:
-                            if (chance < 60)
-                                wield = 0;
-                            else if (chance < 90)
-                                wield = 250;
-                            else
-                                wield = 300;
-                            break;
-                        case 4:
-                            if (chance < 60)
-                                wield = 0;
-                            else if (chance < 90)
-                                wield = 250;
-                            else
-                                wield = 300;
-                            break;
-                        case 5:
-                            if (chance < 60)
-                                wield = 300;
-                            else if (chance < 90)
-                                wield = 325;
-                            else
-                                wield = 350;
-                            break;
-                        case 6:
-                            if (chance < 60)
-                                wield = 350;
-                            else if (chance < 90)
-                                wield = 370;
-                            else
-                                wield = 400;
-                            break;
-                        case 7:
-                            if (chance < 60)
-                                wield = 370;
-                            else if (chance < 90)
-                                wield = 400;
-                            else
-                                wield = 420;
-                            break;
-                        case 8:
-                            if (chance < 60)
-                                wield = 400;
-                            else if (chance < 90)
-                                wield = 420;
-                            else
-                                wield = 430;
-                            break;
+                        case 1: wield = 50; break;
+                        case 2: wield = 100; break;
+                        case 3: wield = 150; break;
+                        case 4: wield = 200; break;
+                        case 5: wield = 225; break;
+                        case 6: wield = 250; break;
+                        case 7: wield = 275; break;
+                        case 8: wield = 300; break;
                     }
                     break;
 
@@ -85,63 +35,14 @@ namespace ACE.Server.Factories
 
                     switch (tier)
                     {
-                        case 1:
-                            wield = 0;
-                            break;
-                        case 2:
-                            if (chance < 60)
-                                wield = 0;
-                            else
-                                wield = 250;
-                            break;
-                        case 3:
-                            if (chance < 30)
-                                wield = 0;
-                            else if (chance < 80)
-                                wield = 250;
-                            else
-                                wield = 270;
-                            break;
-                        case 4:
-                            if (chance < 30)
-                                wield = 0;
-                            else if (chance < 80)
-                                wield = 250;
-                            else
-                                wield = 270;
-                            break;
-                        case 5:
-                            if (chance < 30)
-                                wield = 270;
-                            else if (chance < 80)
-                                wield = 290;
-                            else
-                                wield = 315;
-                            break;
-                        case 6:
-                            if (chance < 30)
-                                wield = 315;
-                            else if (chance < 80)
-                                wield = 335;
-                            else
-                                wield = 360;
-                            break;
-                        case 7:
-                            if (chance < 30)
-                                wield = 335;
-                            else if (chance < 80)
-                                wield = 360;
-                            else
-                                wield = 375;
-                            break;
-                        case 8:
-                            if (chance < 30)
-                                wield = 360;
-                            else if (chance < 80)
-                                wield = 375;
-                            else
-                                wield = 385;
-                            break;
+                        case 1: wield = 50; break;
+                        case 2: wield = 100; break;
+                        case 3: wield = 150; break;
+                        case 4: wield = 200; break;
+                        case 5: wield = 225; break;
+                        case 6: wield = 250; break;
+                        case 7: wield = 275; break;
+                        case 8: wield = 300; break;
                     }
                     break;
 
@@ -149,55 +50,14 @@ namespace ACE.Server.Factories
 
                     switch (tier)
                     {
-                        case 1:
-                        case 2:
-                        case 3:
-                            wield = 0;
-                            break;
-                        case 4:
-                            if (chance < 60)
-                                wield = 0;
-                            else
-                                wield = 290;
-                            break;
-                        case 5:
-                            if (chance < 40)
-                                wield = 0;
-                            else if (chance < 90)
-                                wield = 290;
-                            else
-                                wield = 310;
-                            break;
-                        case 6:
-                            if (chance < 20)
-                                wield = 0;
-                            else if (chance < 45)
-                                wield = 310;
-                            else if (chance < 90)
-                                wield = 330;
-                            else
-                                wield = 355;
-                            break;
-                        case 7:
-                            if (chance < 10)
-                                wield = 0;
-                            else if (chance < 40)
-                                wield = 330;
-                            else if (chance < 85)
-                                wield = 355;
-                            else
-                                wield = 375;
-                            break;
-                        case 8:
-                            if (chance < 25)
-                                wield = 0;
-                            else if (chance < 50)
-                                wield = 355;
-                            else if (chance < 85)
-                                wield = 375;
-                            else
-                                wield = 385;
-                            break;
+                        case 1: wield = 50; break;
+                        case 2: wield = 100; break;
+                        case 3: wield = 150; break;
+                        case 4: wield = 200; break;
+                        case 5: wield = 225; break;
+                        case 6: wield = 250; break;
+                        case 7: wield = 275; break;
+                        case 8: wield = 300; break;
                     }
                     break;
             }

@@ -290,9 +290,12 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            // SPEC BONUS - Jump: Reduce fall damage by 50%
+            var jumpSpecMod = GetCreatureSkill(Skill.Jump).AdvancementClass == SkillAdvancementClass.Specialized ? 0.5f : 1.0f;
+
             // scale by bludgeon protection
             var resistance = GetResistanceMod(DamageType.Bludgeon, null, null);
-            var damage = (uint)Math.Round(amount * resistance);
+            var damage = (uint)Math.Round(amount * resistance * jumpSpecMod);
 
             // update health
             var damageTaken = (uint)-UpdateVitalDelta(Health, (int)-damage);

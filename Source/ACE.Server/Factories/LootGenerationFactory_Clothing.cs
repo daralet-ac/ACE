@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Mutations;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -16,58 +17,119 @@ namespace ACE.Server.Factories
 {
     public static partial class LootGenerationFactory
     {
-        private static WorldObject CreateArmor(TreasureDeath profile, bool isMagical, bool isArmor, LootBias lootBias = LootBias.UnBiased, bool mutate = true)
+        private static WorldObject CreateArmor(TreasureDeath profile, bool isMagical, bool isArmor, TreasureItemType treasureItenmType = TreasureItemType.Undef, LootBias lootBias = LootBias.UnBiased, bool mutate = true)
         {
-            var minType = LootTables.ArmorType.Helms;
-            LootTables.ArmorType maxType;
+            var minType = 0;
+            var maxType = 1;
 
-            switch (profile.Tier)
+            var armorWeenie = 0;
+
+            if (treasureItenmType == TreasureItemType.ArmorWarrior)
             {
-                case 1:
-                default:
-                    maxType = LootTables.ArmorType.ChainmailArmor;
-                    break;
-                case 2:
-                    maxType = LootTables.ArmorType.DiforsaArmor;
-                    break;
-                case 3:
-                case 4:
-                    maxType = LootTables.ArmorType.CovenantArmor;
-                    break;
-                case 5:
-                    maxType = LootTables.ArmorType.AlduressaArmor;
-                    break;
-                case 6:
-                    maxType = LootTables.ArmorType.HaebreanArmor;
-                    break;
-                case 7:
-                case 8:
-                    maxType = LootTables.ArmorType.OlthoiAlduressaArmor;
-                    break;
+                switch (profile.Tier)
+                {
+                    case 1:
+                    case 2:
+                    default:
+                        maxType = (int)LootTables.ArmorTypeWarrior.ChainmailArmor;
+                        break;
+                    case 3:
+                    case 4:
+                        maxType = (int)LootTables.ArmorTypeWarrior.ScalemailArmor;
+                        break;
+                    case 5:
+                        maxType = (int)LootTables.ArmorTypeWarrior.CovenantArmor;
+                        break;
+                    case 6:
+                        maxType = (int)LootTables.ArmorTypeWarrior.NariyidArmor;
+                        break;
+                    case 7:
+                    case 8:
+                        maxType = (int)LootTables.ArmorTypeWarrior.OlthoiCeldonArmor;
+                        break;
+                }
+                LootTables.ArmorTypeWarrior armorType;
+
+                armorType = (LootTables.ArmorTypeWarrior)ThreadSafeRandom.Next(minType, maxType);
+                int[] table = LootTables.GetLootTable(armorType);
+                int rng = ThreadSafeRandom.Next(0, table.Length - 1);
+
+                armorWeenie = table[rng];
             }
+            else if (treasureItenmType == TreasureItemType.ArmorRogue)
+            {
+                switch (profile.Tier)
+                {
+                    case 1:
+                    case 2:
+                    default:
+                        maxType = (int)LootTables.ArmorTypeRogue.StuddedLeatherArmor;
+                        break;
+                    case 3:
+                    case 4:
+                        maxType = (int)LootTables.ArmorTypeRogue.YoroiArmor;
+                        break;
+                    case 5:
+                        maxType = (int)LootTables.ArmorTypeRogue.KoujiaArmor;
+                        break;
+                    case 6:
+                        maxType = (int)LootTables.ArmorTypeRogue.LoricaArmor;
+                        break;
+                    case 7:
+                    case 8:
+                        maxType = (int)LootTables.ArmorTypeRogue.OlthoiKoujiaArmor;
+                        break;
+                }
 
-            // Added for making clothing drops their own drop, and not involved in armor roll chance
-            LootTables.ArmorType armorType;
-            if (isArmor)
-                armorType = (LootTables.ArmorType)ThreadSafeRandom.Next((int)minType, (int)maxType);
-            else
-                armorType = LootTables.ArmorType.MiscClothing;
+                LootTables.ArmorTypeRogue armorType;
 
-            int[] table = LootTables.GetLootTable(armorType);
+                armorType = (LootTables.ArmorTypeRogue)ThreadSafeRandom.Next(minType, maxType);
+                int[] table = LootTables.GetLootTable(armorType);
+                int rng = ThreadSafeRandom.Next(0, table.Length - 1);
 
-            int rng = ThreadSafeRandom.Next(0, table.Length - 1);
+                armorWeenie = table[rng];
+            }
+            else if (treasureItenmType == TreasureItemType.ArmorCaster)
+            {
+                switch (profile.Tier)
+                {
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    default:
+                        maxType = (int)LootTables.ArmorTypeCaster.RobesAndCloth;
+                        break;
+                    case 5:
+                        maxType = (int)LootTables.ArmorTypeCaster.AmuliArmor;
+                        break;
+                    case 6:
+                        maxType = (int)LootTables.ArmorTypeCaster.ChiranArmor;
+                        break;
+                    case 7:
+                    case 8:
+                        maxType = (int)LootTables.ArmorTypeCaster.OlthoiAmuliArmor;
+                        break;
+                }
 
-            int armorWeenie = table[rng];
+                LootTables.ArmorTypeCaster armorType;
+
+                armorType = (LootTables.ArmorTypeCaster)ThreadSafeRandom.Next(minType, maxType);
+                int[] table = LootTables.GetLootTable(armorType);
+                int rng = ThreadSafeRandom.Next(0, table.Length - 1);
+
+                armorWeenie = table[rng];
+            }
 
             WorldObject wo = WorldObjectFactory.CreateNewWorldObject((uint)armorWeenie);
 
             if (wo != null && mutate)
-                MutateArmor(wo, profile, isMagical, armorType);
+                MutateArmor(wo, profile, isMagical);
 
             return wo;
         }
 
-        private static void MutateArmor(WorldObject wo, TreasureDeath profile, bool isMagical, LootTables.ArmorType armorType, TreasureRoll roll = null)
+        private static void MutateArmor(WorldObject wo, TreasureDeath profile, bool isMagical, LootTables.ArmorType armorType = LootTables.ArmorType.Undef, TreasureRoll roll = null)
         {
             // material type
             var materialType = GetMaterialType(wo, profile.Tier);
@@ -85,56 +147,43 @@ namespace ACE.Server.Factories
 
             wo.GemType = RollGemType(profile.Tier);
 
-            // workmanship
-            wo.ItemWorkmanship = WorkmanshipChance.Roll(profile.Tier);
-
             // burden
             if (wo.HasMutateFilter(MutateFilter.EncumbranceVal))  // fixme: data
                 MutateBurden(wo, profile, false);
 
-            if (roll == null)
-            {
-                if (armorType == LootTables.ArmorType.CovenantArmor || armorType == LootTables.ArmorType.OlthoiArmor)
-                {
-                    int chance = ThreadSafeRandom.Next(1, 3);
-                    var wieldSkill = chance switch
-                    {
-                        1 => Skill.MagicDefense,
-                        2 => Skill.MissileDefense,
-                        _ => Skill.MeleeDefense,
-                    };
+            // weight class
+            var armorWeightClass = GetArmorWeightClass(wo.WeenieClassId);
+            wo.ArmorWeightClass = (int)armorWeightClass;
 
-                    wo.WieldRequirements = WieldRequirement.RawSkill;
-                    wo.WieldSkillType = (int)wieldSkill;
-                    wo.WieldDifficulty = GetCovenantWieldReq(profile.Tier, wieldSkill);
-                }
-                else if (profile.Tier > 6)
+            // wield requirements (attibute, type, amount)
+            wo.WieldSkillType = 0;
+
+            if (profile.Tier > 0)
+            {
+                // clothing has a level requirement
+                if (wo.ArmorWeightClass == (int)ArmorWeightClass.None)
                 {
                     wo.WieldRequirements = WieldRequirement.Level;
-                    wo.WieldSkillType = (int)Skill.Axe;  // Set by examples from PCAP data
-
-                    wo.WieldDifficulty = profile.Tier switch
-                    {
-                        7 => 150,  // In this instance, used for indicating player level, rather than skill level
-                        _ => 180,  // In this instance, used for indicating player level, rather than skill level
-                    };
+                    wo.WieldDifficulty = GetArmorLevelReq(profile.Tier);
                 }
+                // armor uses a custom "weight class requirement", so we disable the standard wield reqs
+                else
+                {
+                    wo.WieldRequirements = WieldRequirement.Invalid;
+                    wo.WieldDifficulty = null;
+                }    
+
+                // Set WeightClassRequirement
+                wo.WeightClassReqAmount = GetWieldDifficultyPerTier(profile.Tier);
             }
-            else if (profile.Tier > 6 && !wo.HasArmorLevel())
-            {
-                // normally this is handled in the mutation script for armor
-                // for clothing, just calling the generic method here
-                RollWieldLevelReq_T7_T8(wo, profile);
-            }
 
-            if (roll == null)
-                AssignArmorLevel(wo, profile.Tier, armorType);
-            else
-                AssignArmorLevel_New(wo, profile, roll, armorType);
+            AssignArmorLevel(wo, profile.Tier, armorType);
 
-            if (wo.HasMutateFilter(MutateFilter.ArmorModVsType))
-                MutateArmorModVsType(wo, profile);
+            // Set Stamina/Mana Penalty
+            var mod = GetArmorResourcePenalty(wo) * (wo.ArmorSlots ?? 1);
+            wo.SetProperty(PropertyFloat.ArmorResourcePenalty, mod);
 
+            // Spells
             if (isMagical)
             {
                 AssignMagic(wo, profile, roll, true);
@@ -148,95 +197,36 @@ namespace ACE.Server.Factories
                 wo.ItemDifficulty = null;
             }
 
-            if (profile.Tier > 6 && armorType != LootTables.ArmorType.SocietyArmor)
-                TryRollEquipmentSet(wo, profile, roll);
+            if (wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth && wo.ArmorStyle != (int)ArmorStyle.Amuli && wo.ArmorStyle != (int)ArmorStyle.Chiran)
+            {
+                wo.Biota.GetOrAddKnownSpell((int)GetImpenetribilityLevel(wo), wo.BiotaDatabaseLock, out _);
+                wo.UiEffects = UiEffects.Magical;
+            }
 
-            if (roll != null && profile.Tier == 8)
-                TryMutateGearRating(wo, profile, roll);
+            var totalSkillModPercentile = 0.0;
+            var totalGearRatingPercentile = 0.0;
+            if (roll != null)
+            {
+                TryMutateGearRating(wo, profile, roll, out totalGearRatingPercentile);
+
+                TryMutateArmorSkillMod(wo, profile, roll, out totalSkillModPercentile);
+
+                MutateArmorModVsType(wo, profile);
+            }
+
+            // workmanship
+            //Console.WriteLine($"\n\n{wo.Name}");
+            wo.ItemWorkmanship = GetArmorWorkmanship(wo, totalSkillModPercentile, totalGearRatingPercentile);
 
             // item value
             //if (wo.HasMutateFilter(MutateFilter.Value))   // fixme: data
-                MutateValue(wo, profile.Tier, roll);
+            MutateValue(wo, profile.Tier, roll);
 
             wo.LongDesc = GetLongDesc(wo);
         }
 
-        private static bool AssignArmorLevel_New(WorldObject wo, TreasureDeath profile, TreasureRoll roll, LootTables.ArmorType armorType)
-        {
-            // retail was only divied up into a few different mutation scripts here
-            // anything with ArmorLevel ran these mutation scripts
-            // anything that covered extremities (head / hand / foot wear) started with a slightly higher base AL,
-            // but otherwise used the same mutation as anything that covered non-extremities
-            // shields also had their own mutation script
-
-            // only exceptions found: covenant armor, olthoi armor, metal cap
-
-            if (!roll.HasArmorLevel(wo))
-                return false;
-
-            var scriptName = GetMutationScript_ArmorLevel(wo, roll);
-
-            if (scriptName == null)
-            {
-                _log.Error($"AssignArmorLevel_New({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - unknown item type");
-                return false;
-            }
-
-            // persist original values for society armor
-            var wieldRequirements = wo.WieldRequirements;
-            var wieldSkillType = wo.WieldSkillType;
-            var wieldDifficulty = wo.WieldDifficulty;
-
-            //Console.WriteLine($"Mutating {wo.Name} with {scriptName}");
-
-            var mutationFilter = MutationCache.GetMutation(scriptName);
-
-            var success = mutationFilter.TryMutate(wo, profile.Tier);
-
-            if (armorType == LootTables.ArmorType.SocietyArmor)
-            {
-                wo.WieldRequirements = wieldRequirements;
-                wo.WieldSkillType = wieldSkillType;
-                wo.WieldDifficulty = wieldDifficulty;
-            }
-
-            return success;
-        }
-
-        private static string GetMutationScript_ArmorLevel(WorldObject wo, TreasureRoll roll)
-        {
-            switch (roll.ArmorType)
-            {
-                case TreasureArmorType.Covenant:
-
-                    if (wo.IsShield)
-                        return "ArmorLevel.covenant_shield.txt";
-                    else
-                        return "ArmorLevel.covenant_armor.txt";
-
-                case TreasureArmorType.Olthoi:
-
-                    if (wo.IsShield)
-                        return "ArmorLevel.olthoi_shield.txt";
-                    else
-                        return "ArmorLevel.olthoi_armor.txt";
-            }
-
-            if (wo.IsShield)
-                return "ArmorLevel.shield_level.txt";
-
-            var coverage = wo.ClothingPriority ?? 0;
-
-            if ((coverage & (CoverageMask)CoverageMaskHelper.Extremities) != 0)
-                return "ArmorLevel.armor_level_extremity.txt";
-            else if ((coverage & (CoverageMask)CoverageMaskHelper.Outerwear) != 0)
-                return "ArmorLevel.armor_level_non_extremity.txt";
-            else
-                return null;
-        }
-
         /// <summary>
-        /// Assign a final AL value based upon tier
+        /// Assign a final AL and Aegis value based upon tier
         /// Used values given at https://asheron.fandom.com/wiki/Loot#Armor_Levels for setting the AL mod values
         /// so as to not exceed the values listed in that table
         /// </summary>
@@ -250,154 +240,63 @@ namespace ACE.Server.Factories
 
             var baseArmorLevel = wo.ArmorLevel ?? 0;
 
-            if (((wo.ClothingPriority & (CoverageMask)CoverageMaskHelper.Underwear) == 0) || wo.IsShield)
-            {
-                int armorModValue = 0;
+                if (tier < 2)
+                    return;
 
-                // Account for ACE World Databases that have not yet been updated
-                if (wo.ArmorType != (int)ArmorType.Cloth && (wo.GetProperty(PropertyInt.Version) ?? 0) < 3)
-                    AssignArmorLevelCompat(wo, tier, armorType);
+                var armorSlots = wo.ArmorSlots ?? 1;
+                var armorMod = 1.0f;
+                var aegisMod = 1.0f;
 
-                // Sets AL variations based on weenie ArmorType field, such as cloth, leather, metal, etc.
-                switch (tier)
+                // Get Armor/Aegis Level
+                var baseAegisLevel = wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth ? 10 : 5;
+
+
+                switch (wo.ArmorStyle)
                 {
-                    case 1:
-                        if (wo.ArmorType == (int)ArmorType.Cloth)
-                            armorModValue = ThreadSafeRandom.Next(0, 25);
-                        if (wo.ArmorType == (int)ArmorType.Leather
-                            || wo.ArmorType == (int)ArmorType.StuddedLeather)
-                            armorModValue = ThreadSafeRandom.Next(0, 29);
-                        if (wo.ArmorType == (int)ArmorType.Metal
-                            || wo.ArmorType == (int)ArmorType.Chainmail
-                            || wo.ArmorType == (int)ArmorType.Scalemail)
-                            armorModValue = ThreadSafeRandom.Next(0, 26);
-                        // Covenant and Olthoi Armor (not Amuli, Celdon, Koujia, or Alduressa types of Olthoi Armor)
-                        // Does not drop at this tier level
-                        if (wo.ResistMagic != null && wo.ResistMagic == 9999)
-                            armorModValue = 0;
-                        if (wo.IsShield)
-                            armorModValue = ThreadSafeRandom.Next(5, 22);
+                    case (int)ArmorStyle.Amuli:
+                    case (int)ArmorStyle.Chiran:
+                        baseArmorLevel = 75;
+                        aegisMod = 0.5f;
                         break;
-                    case 2:
-                        if (wo.ArmorType == (int)ArmorType.Cloth)
-                            armorModValue = ThreadSafeRandom.Next(25, 50);
-                        if (wo.ArmorType == (int)ArmorType.Leather
-                            || wo.ArmorType == (int)ArmorType.StuddedLeather)
-                            armorModValue = ThreadSafeRandom.Next(29, 52);
-                        if (wo.ArmorType == (int)ArmorType.Metal
-                            || wo.ArmorType == (int)ArmorType.Chainmail
-                            || wo.ArmorType == (int)ArmorType.Scalemail)
-                            armorModValue = ThreadSafeRandom.Next(26, 50);
-                        // Covenant and Olthoi Armor (not Amuli, Celdon, Koujia, or Alduressa types of Olthoi Armor)
-                        // Does not drop at this tier level
-                        if (wo.ResistMagic != null && wo.ResistMagic == 9999)
-                            armorModValue = 0;
-                        if (wo.IsShield)
-                            armorModValue = ThreadSafeRandom.Next(22, 39);
+                    case (int)ArmorStyle.StuddedLeather:
+                    case (int)ArmorStyle.Koujia:
+                    case (int)ArmorStyle.Lorica:
+                        baseArmorLevel = 85;
                         break;
-                    case 3:
-                        if (wo.ArmorType == (int)ArmorType.Cloth)
-                            armorModValue = ThreadSafeRandom.Next(50, 75);
-                        if (wo.ArmorType == (int)ArmorType.Leather
-                            || wo.ArmorType == (int)ArmorType.StuddedLeather)
-                            armorModValue = ThreadSafeRandom.Next(52, 75);
-                        if (wo.ArmorType == (int)ArmorType.Metal
-                            || wo.ArmorType == (int)ArmorType.Chainmail
-                            || wo.ArmorType == (int)ArmorType.Scalemail)
-                            armorModValue = ThreadSafeRandom.Next(50, 74);
-                        // Covenant and Olthoi Armor (not Amuli, Celdon, Koujia, or Alduressa types of Olthoi Armor)
-                        if (wo.ResistMagic != null && wo.ResistMagic == 9999)
-                            armorModValue = ThreadSafeRandom.Next(190, 210);
-                        if (wo.IsShield)
-                            armorModValue = ThreadSafeRandom.Next(39, 56);
+                    case (int)ArmorStyle.Chainmail:
+                    case (int)ArmorStyle.Scalemail:
+                        baseArmorLevel = 90;
                         break;
-                    case 4:
-                        if (wo.ArmorType == (int)ArmorType.Cloth)
-                            armorModValue = ThreadSafeRandom.Next(75, 100);
-                        if (wo.ArmorType == (int)ArmorType.Leather
-                            || wo.ArmorType == (int)ArmorType.StuddedLeather)
-                            armorModValue = ThreadSafeRandom.Next(75, 98);
-                        if (wo.ArmorType == (int)ArmorType.Metal
-                            || wo.ArmorType == (int)ArmorType.Chainmail
-                            || wo.ArmorType == (int)ArmorType.Scalemail)
-                            armorModValue = ThreadSafeRandom.Next(74, 98);
-                        // Covenant and Olthoi Armor (not Amuli, Celdon, Koujia, or Alduressa types of Olthoi Armor)
-                        if (wo.ResistMagic != null && wo.ResistMagic == 9999)
-                            armorModValue = ThreadSafeRandom.Next(210, 230);
-                        if (wo.IsShield)
-                            armorModValue = ThreadSafeRandom.Next(56, 73);
-                        break;
-                    case 5:
-                        if (wo.ArmorType == (int)ArmorType.Cloth)
-                            armorModValue = ThreadSafeRandom.Next(100, 125);
-                        if (wo.ArmorType == (int)ArmorType.Leather
-                            || wo.ArmorType == (int)ArmorType.StuddedLeather)
-                            armorModValue = ThreadSafeRandom.Next(98, 121);
-                        if (wo.ArmorType == (int)ArmorType.Metal
-                            || wo.ArmorType == (int)ArmorType.Chainmail
-                            || wo.ArmorType == (int)ArmorType.Scalemail)
-                            armorModValue = ThreadSafeRandom.Next(98, 122);
-                        // Covenant and Olthoi Armor (not Amuli, Celdon, Koujia, or Alduressa types of Olthoi Armor)
-                        if (wo.ResistMagic != null && wo.ResistMagic == 9999)
-                            armorModValue = ThreadSafeRandom.Next(230, 250);
-                        if (wo.IsShield)
-                            armorModValue = ThreadSafeRandom.Next(73, 90);
-                        break;
-                    case 6:
-                        if (wo.ArmorType == (int)ArmorType.Cloth)
-                            armorModValue = ThreadSafeRandom.Next(125, 150);
-                        if (wo.ArmorType == (int)ArmorType.Leather
-                            || wo.ArmorType == (int)ArmorType.StuddedLeather)
-                            armorModValue = ThreadSafeRandom.Next(121, 144);
-                        if (wo.ArmorType == (int)ArmorType.Metal
-                            || wo.ArmorType == (int)ArmorType.Chainmail
-                            || wo.ArmorType == (int)ArmorType.Scalemail)
-                            armorModValue = ThreadSafeRandom.Next(122, 146);
-                        // Covenant and Olthoi Armor (not Amuli, Celdon, Koujia, or Alduressa types of Olthoi Armor)
-                        if (wo.ResistMagic != null && wo.ResistMagic == 9999)
-                            armorModValue = ThreadSafeRandom.Next(250, 270);
-                        if (wo.IsShield)
-                            armorModValue = ThreadSafeRandom.Next(90, 107);
-                        break;
-                    case 7:
-                        if (wo.ArmorType == (int)ArmorType.Cloth)
-                            armorModValue = ThreadSafeRandom.Next(150, 175);
-                        if (wo.ArmorType == (int)ArmorType.Leather
-                            || wo.ArmorType == (int)ArmorType.StuddedLeather)
-                            armorModValue = ThreadSafeRandom.Next(144, 167);
-                        if (wo.ArmorType == (int)ArmorType.Metal
-                            || wo.ArmorType == (int)ArmorType.Chainmail
-                            || wo.ArmorType == (int)ArmorType.Scalemail)
-                            armorModValue = ThreadSafeRandom.Next(146, 170);
-                        // Covenant and Olthoi Armor (not Amuli, Celdon, Koujia, or Alduressa types of Olthoi Armor)
-                        if (wo.ResistMagic != null && wo.ResistMagic == 9999)
-                            armorModValue = ThreadSafeRandom.Next(270, 290);
-                        if (wo.IsShield)
-                            armorModValue = ThreadSafeRandom.Next(107, 124);
-                        break;
-                    case 8:
-                        if (wo.ArmorType == (int)ArmorType.Cloth)
-                            armorModValue = ThreadSafeRandom.Next(175, 200);
-                        if (wo.ArmorType == (int)ArmorType.Leather
-                            || wo.ArmorType == (int)ArmorType.StuddedLeather)
-                            armorModValue = ThreadSafeRandom.Next(167, 190);
-                        if (wo.ArmorType == (int)ArmorType.Metal
-                            || wo.ArmorType == (int)ArmorType.Chainmail
-                            || wo.ArmorType == (int)ArmorType.Scalemail)
-                            armorModValue = ThreadSafeRandom.Next(170, 194);
-                        // Covenant and Olthoi Armor (not Amuli, Celdon, Koujia, or Alduressa types of Olthoi Armor)
-                        if (wo.ResistMagic != null && wo.ResistMagic == 9999)
-                            armorModValue = ThreadSafeRandom.Next(290, 310);
-                        if (wo.IsShield)
-                            armorModValue = ThreadSafeRandom.Next(124, 141);
+                    case (int)ArmorStyle.Covenant:
+                        baseArmorLevel = 125;
+                        baseAegisLevel = 0;
                         break;
                 }
 
-                int adjustedArmorLevel = baseArmorLevel + armorModValue;
-                wo.ArmorLevel = adjustedArmorLevel;
-            }
+                switch ((int)wo.WeenieClassId)
+                {
+                    case 44: // Buckler
+                    case 91: // Kite Shield
+                    case 93: // Round Shield
+                    case 92: // Large Kite Shield
+                    case 94: // Large Round Shield
+                    case 95: // Tower Shield
+                        baseAegisLevel = 0;
+                            break;
+                }
 
-            if ((wo.ResistMagic == null || wo.ResistMagic < 9999) && wo.ArmorLevel >= 345)
+                // Add some variance (+/- 10%)
+                var variance = 1.0f + ThreadSafeRandom.Next(-0.1f, 0.1f);
+
+                // Final Calculation
+                var newArmorLevel = baseArmorLevel * (tier - 1) * variance * armorMod;
+                var newAegisLevel = baseAegisLevel * (tier - 1) * armorSlots * variance * aegisMod;
+
+                // Assign levels
+                wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
+                wo.SetProperty(PropertyInt.AegisLevel, (int)newAegisLevel);
+
+            if ((wo.ResistMagic == null || wo.ResistMagic < 9999) && wo.ArmorLevel >= 1000)
                 _log.Warning($"[LOOT] Standard armor item exceeding upper AL threshold {wo.WeenieClassId} - {wo.Name}");
         }
 
@@ -744,7 +643,7 @@ namespace ACE.Server.Factories
 
             wo.GemType = RollGemType(profile.Tier);
 
-            wo.ItemWorkmanship = WorkmanshipChance.Roll(profile.Tier);
+            wo.ItemWorkmanship = WorkmanshipChance.Roll(profile.Tier, profile.LootQualityMod);
 
             wo.Value = Roll_ItemValue(wo, profile.Tier);
 
@@ -839,10 +738,10 @@ namespace ACE.Server.Factories
             wo.MaterialType = GetMaterialType(wo, profile.Tier);
 
             // workmanship
-            wo.Workmanship = WorkmanshipChance.Roll(profile.Tier);
+            wo.Workmanship = WorkmanshipChance.Roll(profile.Tier, profile.LootQualityMod);
 
             if (roll != null && profile.Tier == 8)
-                TryMutateGearRating(wo, profile, roll);
+                TryMutateGearRating(wo, profile, roll, out var totalGearRatingPercentile);
 
             // item value
             //if (wo.HasMutateFilter(MutateFilter.Value))
@@ -923,17 +822,7 @@ namespace ACE.Server.Factories
 
             var armorLevel = wo.ArmorLevel ?? 0;
 
-            // from the py16 mutation scripts
-            //wo.Value += (int)(armorLevel * armorLevel / 10.0f * bulkMod * sizeMod);
-
-            // still probably not how retail did it
-            // modified for armor values to match closer to retail pcaps
-            var minRng = (float)Math.Min(bulkMod, sizeMod);
-            var maxRng = (float)Math.Max(bulkMod, sizeMod);
-
-            var rng = ThreadSafeRandom.Next(minRng, maxRng);
-
-            wo.Value += (int)(armorLevel * armorLevel / 10.0f * rng);
+            wo.Value += (int)(armorLevel * bulkMod * sizeMod);
         }
 
         private static void MutateArmorModVsType(WorldObject wo, TreasureDeath profile)
@@ -946,6 +835,9 @@ namespace ACE.Server.Factories
             TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsCold);
             TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsAcid);
             TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsElectric);
+            TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsSlash);
+            TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsPierce);
+            TryMutateArmorModVsType(wo, profile, PropertyFloat.ArmorModVsBludgeon);
         }
 
         private static bool TryMutateArmorModVsType(WorldObject wo, TreasureDeath profile, PropertyFloat prop)
@@ -955,83 +847,268 @@ namespace ACE.Server.Factories
             if (armorModVsType == null)
                 return false;
 
-            // perform the initial roll to determine if this ArmorModVsType will mutate
-            var mutate = ArmorModVsTypeChance.Roll(profile.Tier);
+            var baseMod = wo.GetProperty(prop) ?? 0;
 
-            if (!mutate)
-                return false;
+            // Let's roll a value between -0.75 and 0.5, with lower chances of rolling a higher value. We will add this value to the base ArmorMod.
+            // If base ArmorMod is 1, the final mod will range from 0.25 (poor) to 1.5 (above average).
+            var roll = ThreadSafeRandom.Next(-1.25f, 1.0f);
+            roll *= Math.Abs(roll);
+            roll *= 0.5f;
+            roll = Math.Max(roll, -0.75f);
 
-            // get quality level 1-5 for tier
-            var qualityLevel = ArmorModVsTypeChance.RollQualityLevel(profile);
+            var newMod = (double)baseMod + roll;
 
-            // add in rng
-            // for t6+ / max quality level 5, the highest bonus found in eor data was ~0.9
-            var rng = ThreadSafeRandom.Next(-0.05f, 0.15f);
-
-            var bonusRL = qualityLevel * 0.15f + rng;
-
-            //Console.WriteLine($"Boosting {wo.Name}.{prop} by {bonusRL}");
-
-            armorModVsType += bonusRL;
-
-            // ensure between -2.0 / 2.0?
-            armorModVsType = Math.Clamp(armorModVsType.Value, -2.0f, 2.0f);
-
-            wo.SetProperty(prop, armorModVsType.Value);
+            wo.SetProperty(prop, newMod);
 
             return true;
         }
 
-        private static bool TryMutateGearRating(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
+        private static bool TryMutateGearRating(WorldObject wo, TreasureDeath profile, TreasureRoll roll, out double totalGearRatingPercentile)
         {
-            if (profile.Tier != 8)
+            totalGearRatingPercentile = 0;
+
+            if (profile.Tier < 2)
+                return false;
+            var tier = profile.Tier;
+            var weightType = wo.ArmorWeightClass;
+
+            var gearRatingAmount1 = GetGearRatingAmount(tier, profile, out var gearRatingPercentile1);
+            var gearRatingAmount2 = GetGearRatingAmount(tier, profile, out var gearRatingPercentile2);
+
+            totalGearRatingPercentile += gearRatingPercentile1;
+            totalGearRatingPercentile += gearRatingPercentile2;
+            totalGearRatingPercentile /= 2;
+
+            if (gearRatingAmount1 == 0 && gearRatingAmount2 == 0)
                 return false;
 
-            // shields don't have gear ratings
-            if (wo.IsShield) return false;
+            var armorSlots = wo.ArmorSlots ?? 1;
+            var variance1 = ThreadSafeRandom.Next(-armorSlots, armorSlots);
+            var variance2 = ThreadSafeRandom.Next(-armorSlots, armorSlots);
 
-            var gearRating = GearRatingChance.Roll(wo, profile, roll);
-
-            if (gearRating == 0)
+            if (weightType == (int)ArmorWeightClass.Cloth)
+            {
+                wo.GearDamage = gearRatingAmount1 * armorSlots + variance1;
+                wo.GearHealingBoost = gearRatingAmount2 * armorSlots + variance2;
+            }
+            else if (weightType == (int)ArmorWeightClass.Light)
+            {
+                wo.GearCritDamage = gearRatingAmount1 * armorSlots + variance1;
+                wo.GearCrit = 1 * armorSlots + variance2;
+            }
+            else if (weightType == (int)ArmorWeightClass.Heavy)
+            {
+                wo.GearDamageResist = gearRatingAmount1 * armorSlots + variance1;
+                wo.GearCritResist = (gearRatingAmount2 + 1) * armorSlots + variance2;
+            }
+            else if (roll.ItemType == TreasureItemType_Orig.Clothing)
+            {
                 return false;
-
-            //Console.WriteLine($"TryMutateGearRating({wo.Name}, {profile.TreasureType}, {roll.ItemType}): rolled gear rating {gearRating}");
-
-            var rng = ThreadSafeRandom.Next(0, 1);
-
-            if (roll.HasArmorLevel(wo))
-            {
-                // clothing w/ al, and crowns would be included in this group
-                if (rng == 0)
-                    wo.GearCritDamage = gearRating;
-                else
-                    wo.GearCritDamageResist = gearRating;
-            }
-            else if (roll.IsClothing || roll.IsCloak)
-            {
-                if (rng == 0)
-                    wo.GearDamage = gearRating;
-                else
-                    wo.GearDamageResist = gearRating;
-            }
-            else if (roll.IsJewelry)
-            {
-                if (rng == 0)
-                    wo.GearHealingBoost = gearRating;
-                else
-                    wo.GearMaxHealth = gearRating;
             }
             else
             {
-                _log.Error($"TryMutateGearRating({wo.Name}, {profile.TreasureType}, {roll.ItemType}): unknown item type");
+                _log.Error($"TryMutateGearRating({wo.Name}, {weightType}): unknown weight class");
                 return false;
             }
 
-            // ensure wield requirement is level 180?
-            if (roll.ArmorType != TreasureArmorType.Society)
-                SetWieldLevelReq(wo, 180);
+            return true;
+        }
+
+        private static bool TryMutateArmorSkillMod(WorldObject wo, TreasureDeath profile, TreasureRoll roll, out double totalModPercentile)
+        {
+            totalModPercentile = 0.0f;
+            
+            //if (profile.Tier < 2)
+            //    return false;
+
+            var tier = profile.Tier;
+            var weightType = wo.ArmorWeightClass;
+            var armorSlotsMod = (wo.ArmorSlots ?? 1.0f) / 10; ;
+            var qualityMod = profile.LootQualityMod != 0.0f ? profile.LootQualityMod : 0.0f;
+
+            // get number of potential types
+            var potentialTypes = new List<int>();
+            var numTypes = wo.ArmorType == (int)LootTables.ArmorType.MiscClothing ? 3 : 6;
+            for (int i = 1; i <= numTypes; i++)
+                potentialTypes.Add(i);
+
+            // roll for types
+            var rolledTypes = GetRolledTypes(potentialTypes, qualityMod);
+            var inverse = numTypes - rolledTypes.Count;
+            var percentile = (float)inverse / (numTypes - 1);
+            var multiplier = rolledTypes.Count > 0 ? (percentile + 1) / 2 : 1;
+
+            // roll mod values for types
+            if (wo.ArmorType == (int)LootTables.ArmorType.MiscClothing && wo.ArmorWeightClass == 0)
+            {
+                //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
+                var miscClothingMultiplier = 0.5f;
+
+                foreach (var type in rolledTypes)
+                {
+                    var amount = GetArmorSkillAmount(tier, profile, wo, multiplier, out var modPercentile) * miscClothingMultiplier * 0.01;
+                    totalModPercentile += modPercentile;
+
+                    switch(type)
+                    {
+                        case 1: wo.ArmorHealthMod = amount; break;
+                        case 2: wo.ArmorStaminaMod = amount; break;
+                        case 3: wo.ArmorManaMod = amount; break;
+                    }
+                }
+
+            }
+            else if (weightType == (int)ArmorWeightClass.Cloth)
+            {
+                wo.ArmorWarMagicMod = 0.0;
+                wo.ArmorLifeMagicMod = 0.0;
+                wo.ArmorMagicDefMod = 0.0;
+                wo.ArmorPerceptionMod = 0.0;
+                wo.ArmorManaRegenMod = 0.0;
+                wo.ManaConversionMod = 0.0;
+
+                //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
+                foreach (var type in rolledTypes)
+                {
+                    //Console.WriteLine($"Type: {type}");
+                    var amount = GetArmorSkillAmount(tier, profile, wo, multiplier, out var modPercentile) * armorSlotsMod * 0.01;
+                    totalModPercentile += modPercentile;
+
+                    switch (type)
+                    {
+                        case 1: wo.ArmorWarMagicMod = amount; break;
+                        case 2: wo.ArmorLifeMagicMod = amount; break;
+                        case 3: wo.ArmorMagicDefMod = amount; break;
+                        case 4: wo.ArmorPerceptionMod = amount; break;
+                        case 5: wo.ArmorManaRegenMod = amount; break;
+                        case 6: wo.ManaConversionMod = amount; break;
+                    }
+                }
+            }
+            else if (weightType == (int)ArmorWeightClass.Light)
+            {
+                wo.ArmorAttackMod = 0.0;
+                wo.ArmorDualWieldMod = 0.0;
+                wo.ArmorShieldMod = 0.0;
+                wo.ArmorThieveryMod = 0.0;
+                wo.ArmorRunMod = 0.0;
+                wo.ArmorStaminaMod = 0.0;
+                wo.ArmorDeceptionMod = 0.0;
+
+                //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
+                foreach (var type in rolledTypes)
+                {
+                    //Console.WriteLine($"Type: {type}");
+                    var amount = GetArmorSkillAmount(tier, profile, wo, multiplier, out var modPercentile) * armorSlotsMod * 0.01;
+                    totalModPercentile += modPercentile;
+
+                    switch (type)
+                    {
+                        case 1: wo.ArmorAttackMod = amount; break;
+                        case 2:
+                            if (IsShieldWcid(wo))
+                                wo.ArmorShieldMod = amount;
+                            else
+                                wo.ArmorDualWieldMod = amount;
+                            break;
+                        case 3: wo.ArmorThieveryMod = amount; break;
+                        case 4: wo.ArmorRunMod = amount; break;
+                        case 5: wo.ArmorStaminaRegenMod = amount; break;
+                        case 6: wo.ArmorDeceptionMod = amount; break;
+                    }
+                }
+            }
+            else if (weightType == (int)ArmorWeightClass.Heavy)
+            {
+                wo.ArmorAttackMod = 0.0;
+                wo.ArmorPhysicalDefMod = 0.0;
+                wo.ArmorMagicDefMod = 0.0;
+                wo.ArmorShieldMod = 0.0;
+                wo.ArmorTwohandedCombatMod = 0.0;
+                wo.ArmorPerceptionMod = 0.0;
+                wo.ArmorHealthRegenMod = 0.0;
+
+                //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
+                foreach (var type in rolledTypes)
+                {
+                    //Console.WriteLine($"Type: {type}");
+                    var amount = GetArmorSkillAmount(tier, profile, wo, multiplier, out var modPercentile) * armorSlotsMod * 0.01;
+                    totalModPercentile += modPercentile;
+
+                    switch (type)
+                    {
+                        case 1: wo.ArmorAttackMod = amount; break;
+                        case 2: wo.ArmorPhysicalDefMod = amount; break;
+                        case 3: wo.ArmorMagicDefMod = amount; break;
+                        case 4:
+                            if (IsShieldWcid(wo) || ThreadSafeRandom.Next(0, 1) == 0)
+                                wo.ArmorShieldMod = amount;
+                            else
+                                wo.ArmorTwohandedCombatMod = amount;
+                            break;
+                        case 5: wo.ArmorPerceptionMod = amount; break;
+                        case 6: wo.ArmorHealthRegenMod = amount; break;
+                    }
+                }
+            }
+            else
+            {
+                _log.Error($"TryMutateGearRating({wo.Name}, {weightType}): unknown weight class");
+                return false;
+            }
+
+            totalModPercentile /= rolledTypes.Count;
+            //Console.WriteLine($"RolledTypes: {rolledTypes.Count} totalModPercentile: {totalModPercentile}");
 
             return true;
+        }
+
+        private static int GetRollForArmorMod(float lootQualityMod)
+        {
+            var qualityMod = lootQualityMod * 100;
+            //var tempRateIncrease = 60;
+
+            return ThreadSafeRandom.Next((int)qualityMod, 100);
+        }
+
+        private static List<int> GetRolledTypes(List<int> potentialTypes, float qualityMod)
+        {
+            List<int> rolledTypes = new List<int>();
+            var numTypes = potentialTypes.Count;
+            var threshold = 50;
+
+            for (int i = 0; i < numTypes; i++)
+            {
+                var rng = GetRollForArmorMod(qualityMod);
+
+                if (rng > threshold)
+                {
+                    var type = potentialTypes[ThreadSafeRandom.Next(0, potentialTypes.Count - 1)];
+                    potentialTypes.Remove(type);
+                    rolledTypes.Add(type);
+
+                    threshold += GetThresholdAdjustment(threshold, true);
+                }
+                else
+                    threshold -= GetThresholdAdjustment(threshold, false);
+
+                
+            }
+
+            return rolledTypes;
+        }
+
+        /// <summary>
+        /// Gets the adjusted success chance of rolling the next mod
+        /// </summary>
+        /// <returns>Returns 50% of the difference between 100 and the current threshold if adding,
+        /// or 50% of the current threshold if subtracting</returns>
+        private static int GetThresholdAdjustment(int threshold, bool add)
+        {
+            var difference = add == true ? 100 - threshold : threshold;
+            var adjustment = difference * 0.5f;
+
+            return (int)adjustment;
         }
 
         private static void SetWieldLevelReq(WorldObject wo, int level)
@@ -1074,6 +1151,374 @@ namespace ACE.Server.Factories
                     return true;
             }
             armorType = null;
+            return false;
+        }
+
+        private static ArmorWeightClass GetArmorWeightClass(uint armorWcid)
+        {
+            foreach (int wcid in LootTables.Cloth)
+            {
+                if (wcid == armorWcid)
+                    return ArmorWeightClass.Cloth;
+            }
+            foreach (int wcid in LootTables.Light)
+            {
+                if (wcid == armorWcid)
+                    return ArmorWeightClass.Light;
+            }
+            foreach (int wcid in LootTables.Heavy)
+            {
+                if (wcid == armorWcid)
+                    return ArmorWeightClass.Heavy;
+            }
+            return ArmorWeightClass.None;
+        }
+
+        private static WieldAttributeType GetWieldAttributeType(ArmorWeightClass armorWeightClass)
+        {
+            switch (armorWeightClass)
+            {
+                case ArmorWeightClass.Cloth:
+                    return WieldAttributeType.Self;
+
+                case ArmorWeightClass.Light:
+                    return WieldAttributeType.Quickness;
+
+                case ArmorWeightClass.Heavy:
+                    return WieldAttributeType.Strength;
+
+                default:
+                    return WieldAttributeType.Invalid;
+            }
+        }
+
+        private static int GetWieldDifficultyPerTier(int armorTier)
+        {
+            switch (armorTier)
+            {
+                case 1:
+                    return 50;
+                case 2:
+                    return 100;
+                case 3:
+                    return 150;
+                case 4:
+                    return 175;
+                case 5:
+                    return 200;
+                case 6:
+                    return 220;
+                case 7:
+                    return 240;
+                case 8:
+                    return 260;
+                default:
+                    return 0;
+            }
+        }
+
+        private static int GetGearRatingAmount(int tier, TreasureDeath td, out float gearRatingPercentile)
+        {
+            var lootQualityMod = td.LootQualityMod * 100;
+            var rng = ThreadSafeRandom.Next(lootQualityMod, 100);
+
+            var mod = tier - 1;
+            
+            gearRatingPercentile = (float)mod / 7;
+
+            return mod;
+        }
+
+        private static double GetArmorSkillAmount(int tier, TreasureDeath treasureDeath ,WorldObject wo, float multiplier, out float modPercentile)
+        {
+            int[] maxModPerTier = { 5, 10, 15, 20, 22, 24, 26, 30 };
+
+            var diminishingMultiplier = GetDiminishingRoll(treasureDeath);
+            var doubleMod = wo.ValidLocations == EquipMask.HeadWear ? 2.0f : 1.0f; // Headwear gets double-value mods
+
+            var maxArmorMod = maxModPerTier[tier - 1] * multiplier * doubleMod;
+            var minArmorMod = maxArmorMod / 2;
+            var armorMod = 10 + (minArmorMod + (minArmorMod * diminishingMultiplier));
+
+            // maxMod is used for determining workmanship
+            var maxMod = 10 + (maxModPerTier[7] * multiplier * doubleMod);
+            var modRange = maxMod - 10.0f;
+            modPercentile = (armorMod - 10) / (modRange);
+
+            //Console.WriteLine($"GetArmorSkillAmount() \n" +
+            //    $" -Tier: {tier}\n" +
+            //    $" -MaxModBeforeMulti: {maxModPerTier[6]} Multiplier: {multiplier}  FinalMaxMod: {maxMod}\n" +
+            //    $" -DiminishingRoll: {diminishingMultiplier} Mod: {armorMod} ModPercentile: {modPercentile}");
+
+            return Math.Max(0.01f, armorMod);
+        }
+
+        /// <summary>
+        /// Returns the correct Impenetrbility SpellId, based on the world object's tier.
+        /// Used for Cloth armor only.
+        /// </summary>
+        /// <param name="wo"></param>
+        /// <returns></returns>
+        private static SpellId GetImpenetribilityLevel(WorldObject wo)
+        {
+            switch(wo.Tier)
+            {
+                case 3: return SpellId.Impenetrability2;
+                case 4: return SpellId.Impenetrability3;
+                case 5: return SpellId.Impenetrability4;
+                case 6: return SpellId.Impenetrability5;
+                case 7: return SpellId.Impenetrability6;
+                case 8: return SpellId.Impenetrability7;
+                default: return SpellId.Impenetrability1;
+            }
+        }
+
+        private static float GetArmorResourcePenalty(WorldObject wo)
+        {
+            var mod = 0.0f;
+
+            if (wo.ArmorWeightClass == (int)ArmorWeightClass.Heavy)
+                mod = 0.05f;
+
+            switch (wo.ArmorStyle)
+            {
+                case (int)ArmorStyle.Amuli:
+                case (int)ArmorStyle.Chiran:
+                    return 0.02f;
+                case (int)ArmorStyle.StuddedLeather:
+                case (int)ArmorStyle.Koujia:
+                case (int)ArmorStyle.Lorica:
+                    return 0.02f;
+                case (int)ArmorStyle.Chainmail:
+                case (int)ArmorStyle.Scalemail:
+                    return 0.03f;
+                case (int)ArmorStyle.Covenant:
+                    return 0.06f;
+            }
+
+            switch ((int)wo.WeenieClassId)
+            {
+                case 44: // Buckler
+                    return 0.05f;
+                case 91: // Kite Shield
+                case 93: // Round Shield
+                    return 0.1f;
+                case 92: // Large Kite Shield
+                case 94: // Large Round Shield
+                    return 0.15f;
+                case 95: // Tower Shield
+                    return 0.2f;
+                case 21158: // Covenant Shield
+                    return 0.25f;
+            }
+
+            return mod;
+        }
+
+        private static int GetArmorWorkmanship(WorldObject wo, double skillModsPercentile, double gearRatingPercentile)
+        {
+            var divisor = 0;
+            var sum = 0.0;
+
+            // Armor + Protection Levels
+            var maxArmorLevel = GetMaxArmorLevel(wo);
+            var armorLevelPercentile = 0.0f;
+
+            var avgProtectionLevel = GetAverageProtectionLevel(wo);
+            var minProtectionLevel = 0.25f;
+            var maxProtectionLevel = 1.5f;
+            var protectionLevelPercentile = 1.0f;
+            if (avgProtectionLevel != 0)
+                protectionLevelPercentile = (avgProtectionLevel - minProtectionLevel) / (maxProtectionLevel - minProtectionLevel);
+
+            if (wo.ItemType != ItemType.Clothing)
+            {
+                if (wo.ArmorLevel > 0 && maxArmorLevel > 0)
+                {
+                    armorLevelPercentile = (float)wo.ArmorLevel / maxArmorLevel;
+                    armorLevelPercentile += protectionLevelPercentile;
+                    armorLevelPercentile /= 2;
+
+                    sum += armorLevelPercentile;
+                    divisor++;
+                }
+                else
+                {
+                    armorLevelPercentile = (avgProtectionLevel - minProtectionLevel) / (maxProtectionLevel - minProtectionLevel);
+
+                    sum += armorLevelPercentile;
+                    divisor++;
+                }
+            }
+
+            // Aegis
+            var maxAegisLevel = GetMaxAegisLevel(wo);
+            var aegisLevelPercentile = 0.0f;
+            if (wo.AegisLevel > 0 && maxAegisLevel > 0)
+            { 
+                aegisLevelPercentile = (float)wo.AegisLevel / maxAegisLevel;
+
+                sum += aegisLevelPercentile;
+                divisor++;
+            }
+
+            // Armor Skill Mods
+            if (skillModsPercentile == float.NaN)
+                skillModsPercentile = 0;
+
+            sum += skillModsPercentile;
+            divisor++;
+
+            // Gear Ratings
+            if (wo.ItemType != ItemType.Clothing)
+            {
+                sum += gearRatingPercentile;
+                divisor++;
+            }
+            // Average Percentile
+            var finalPercentile = sum / divisor;
+            //Console.WriteLine($" -MaxArmor: {maxArmorLevel} - ArmorLevel: {wo.ArmorLevel} -MaxProt: 1.5 -ProtLevel: {avgProtectionLevel} -Armor/Protection %: {armorLevelPercentile}\n" + $" -MaxAegis: {maxAegisLevel} -AegisLevel: {wo.AegisLevel} -Aegis %: {aegisLevelPercentile}\n" + $" -Mods %: {skillModsPercentile}\n" + $" -Ratings %: {gearRatingPercentile}\n" + $" -Divisor: {divisor}\n" +
+            //    $" --FINAL: {finalPercentile}\n\n");
+
+            // Workmanship Calculation
+            return (int)Math.Max(Math.Round(finalPercentile * 10, 0), 1);
+
+            //switch (finalPercentile)
+            //{
+            //    case < 0.1f: return 1;
+            //    case < 0.2f: return 2;
+            //    case < 0.3f: return 3;
+            //    case < 0.4f: return 4;
+            //    case < 0.5f: return 5;
+            //    case < 0.6f: return 6;
+            //    case < 0.7f: return 7;
+            //    case < 0.8f: return 8;
+            //    case < 0.9f: return 9;
+            //    default: return 10;
+            //}
+        }
+
+        private static int GetMaxArmorLevel(WorldObject wo)
+        {
+            var weightClass = (ArmorWeightClass)(wo.ArmorWeightClass ?? 0);
+            var armorStyle = (ArmorStyle)(wo.ArmorStyle ?? 0);
+            int maxArmorLevel;
+
+            switch (weightClass)
+            {
+                case ArmorWeightClass.Cloth:
+                    maxArmorLevel = 0;
+                    break;
+                case ArmorWeightClass.Light:
+                    maxArmorLevel = 525;
+                    break;
+                case ArmorWeightClass.Heavy:
+                    maxArmorLevel = 700;
+                    break;
+                default:
+                    maxArmorLevel = 0;
+                    break;
+            }
+
+            switch (armorStyle)
+            {
+                case ArmorStyle.Cloth:
+                    maxArmorLevel = 0;
+                    break;
+                case ArmorStyle.Amuli:
+                case ArmorStyle.Chiran:
+                    maxArmorLevel = 525;
+                    break;
+                case ArmorStyle.Leather:
+                case ArmorStyle.Yoroi:
+                case ArmorStyle.Lorica:
+                    maxArmorLevel = 525;
+                    break;
+                case ArmorStyle.StuddedLeather:
+                case ArmorStyle.Koujia:
+                case ArmorStyle.OlthoiKoujia:
+                    maxArmorLevel = 595;
+                    break;
+                case ArmorStyle.Chainmail:
+                case ArmorStyle.Scalemail:
+                    maxArmorLevel = 630;
+                    break;
+                case ArmorStyle.Platemail:
+                case ArmorStyle.Celdon:
+                case ArmorStyle.OlthoiCeldon:
+                case ArmorStyle.Nariyid:
+                    maxArmorLevel = 700;
+                    break;
+                case ArmorStyle.OlthoiArmor:
+                case ArmorStyle.Covenant:
+                    maxArmorLevel = 875;
+                    break;
+            }
+
+            return (int)(maxArmorLevel * 1.1f);
+        }
+
+        private static int GetMaxAegisLevel(WorldObject wo)
+        {
+            var armorStyle = (ArmorStyle)(wo.ArmorStyle ?? 0);
+            var weightClass = (ArmorWeightClass)(wo.ArmorWeightClass ?? 0);
+            var armorSlots = wo.ArmorSlots ?? 1;
+
+            int aegisLevel;
+
+            switch(weightClass)
+            {
+                case ArmorWeightClass.Cloth:
+                    aegisLevel = 70;
+                    break;
+                default:
+                    aegisLevel = 35;
+                    break;
+            }
+
+            switch (armorStyle)
+            {
+                case ArmorStyle.OlthoiArmor:
+                case ArmorStyle.Covenant:
+                    aegisLevel = 0;
+                    break;
+                case ArmorStyle.Amuli:
+                case ArmorStyle.Chiran:
+                    aegisLevel = 35;
+                    break;
+            }
+
+            return (int)(aegisLevel * armorSlots * 1.1f);
+        }
+
+        private static float GetAverageProtectionLevel(WorldObject wo)
+        {
+            var amount = 0.0;
+            if (wo.ArmorModVsSlash != null)
+            {
+                amount += (float)wo.ArmorModVsSlash;
+                amount += (float)wo.ArmorModVsBludgeon;
+                amount += (float)wo.ArmorModVsPierce;
+                amount += (float)wo.ArmorModVsFire;
+                amount += (float)wo.ArmorModVsCold;
+                amount += (float)wo.ArmorModVsAcid;
+                amount += (float)wo.ArmorModVsElectric;
+
+                amount /= 7;
+            }
+            else
+                _log.Error($"Mutate Error during GetAverageProtectionLevel() - Armor Protection Levels returned null for {wo.ItemType} {wo.Name}.");
+
+            return (float)amount;
+        }
+
+        private static bool IsShieldWcid(WorldObject wo)
+        {
+            int[] shieldWcids = LootTables.Shields;
+
+            if (shieldWcids.Contains((int)wo.WeenieClassId))
+                return true;
+
             return false;
         }
     }

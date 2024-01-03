@@ -1,6 +1,6 @@
 using System;
 using System.Numerics;
-
+using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
@@ -192,6 +192,8 @@ namespace ACE.Server.WorldObjects
             // point of no return beyond this point -- cannot be cancelled
             actionChain.AddAction(this, () => Attacking = true);
 
+            EndStealth();
+
             if (subsequent)
             {
                 // client shows hourglass, until attack done is received
@@ -223,8 +225,11 @@ namespace ACE.Server.WorldObjects
                 OnAttackDone();
                 return;
             }
-
+            //Console.WriteLine("\n\n -- ANIMATION TEST START --");
+            var animSpeed = GetAnimSpeed();
             var launchTime = EnqueueMotionPersist(actionChain, aimLevel);
+            //Console.WriteLine("LaunchTime");
+            //Console.WriteLine($" -AddDelaySeconds({launchTime})");
 
             // launch projectile
             actionChain.AddAction(this, () =>
@@ -240,6 +245,15 @@ namespace ACE.Server.WorldObjects
                 // TODO: verify formulas - double/triple cost for bow/xbow?
                 var staminaCost = GetAttackStamina(GetAccuracyRange());
                 UpdateVitalDelta(Stamina, -staminaCost);
+
+                var combatAbility = CombatAbility.None;
+                var combatFocus = GetEquippedCombatFocus();
+                if (combatFocus != null)
+                    combatAbility = combatFocus.GetCombatAbility();
+
+                // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
+                if (combatAbility == CombatAbility.EnchantedWeapon)
+                    UpdateVitalDelta(Mana, -staminaCost);
 
                 var projectile = LaunchProjectile(launcher, ammo, target, origin, orientation, velocity);
                 UpdateAmmoAfterLaunch(ammo);
@@ -261,20 +275,34 @@ namespace ACE.Server.WorldObjects
             }
 
             // reload animation
-            var animSpeed = GetAnimSpeed();
+            //Console.WriteLine("Reload Animation");
             var reloadTime = EnqueueMotionPersist(actionChain, stance, MotionCommand.Reload, animSpeed);
+            //Console.WriteLine($" -Missile Anim Speed: {animSpeed} Reload Time: {reloadTime}");
 
             // reset for next projectile
+            //Console.WriteLine("Reset for next projectile");
             EnqueueMotionPersist(actionChain, stance, MotionCommand.Ready);
-            var linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
-            //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
+
+            //Console.WriteLine($"Link Time");
+            var linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready, animSpeed);
+
+            // Missile Weapon normalizing
+                var linkTimeBuffer = 0.5f;
+                var atlatlLaunchTime = 0.377777779f;
+                var crossbowLaunchTime = 0.06666667f;
+
+                if (stance == MotionStance.BowCombat || stance == MotionStance.CrossbowCombat)
+                    linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready, animSpeed) + linkTimeBuffer + (atlatlLaunchTime - crossbowLaunchTime);
+                else if (stance == MotionStance.AtlatlCombat)
+                    linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready, animSpeed) + linkTimeBuffer;
 
             actionChain.AddAction(this, () =>
             {
                 if (CombatMode == CombatMode.Missile)
                     EnqueueBroadcast(new GameMessageParentEvent(this, ammo, ACE.Entity.Enum.ParentLocation.RightHand, ACE.Entity.Enum.Placement.RightHandCombat));
-            }); 
-
+            });
+            //Console.WriteLine($" -AddDelaySeconds({linkTime})\n");
+            //Console.WriteLine($"TOTAL TIME: {launchTime+reloadTime+linkTime}\n\n");
             actionChain.AddDelaySeconds(linkTime);
 
             actionChain.AddAction(this, () =>
@@ -294,6 +322,7 @@ namespace ACE.Server.WorldObjects
 
                     NextRefillTime = DateTime.UtcNow.AddSeconds(nextRefillTime);
                     nextAttack.AddDelaySeconds(nextRefillTime);
+                    //Console.WriteLine($"NextAttack: {nextRefillTime}");
 
                     // perform next attack
                     nextAttack.AddAction(this, () => { LaunchMissile(target, attackSequence, stance, true); });

@@ -117,7 +117,7 @@ namespace ACE.Server.WorldObjects
             if (vital.RegenRate == 0.0) return false;
 
             // take attributes into consideration (strength, endurance)
-            var attributeMod = GetAttributeMod(vital);
+            // (RETAIL) var attributeMod = GetAttributeMod(vital); 
 
             // take stance into consideration (combat, crouch, sitting, sleeping)
             var stanceMod = GetStanceMod(vital);
@@ -131,7 +131,33 @@ namespace ACE.Server.WorldObjects
                 augMod += player.AugmentationFasterRegen;
 
             // cap rate?
-            var currentTick = vital.RegenRate * attributeMod * stanceMod * enchantmentMod * augMod;
+            // (RETAIL) var currentTick = vital.RegenRate * attributeMod * stanceMod * enchantmentMod * augMod;
+
+            // Player Regeneration is now based on Maximum Vitals
+            // Health = 10% per 5 seconds
+            // Stamina = 20% per 5 seconds
+            // Mana = 10% per 5 seconds
+            double currentTick = 0.0;
+
+            float maxVital = vital.MaxValue;
+            float diminishedMaxVital = maxVital * (500 / (500 + maxVital));
+
+            var vitalTypeBaseMod = vital == Stamina ? 5 : 10;
+
+            var vitalTypeArmorMod = 1.0;
+            if (vital == Health)
+                vitalTypeArmorMod = (double)GetArmorHealthRegenMod() + 1;
+            else if (vital == Stamina)
+                vitalTypeArmorMod = (double)GetArmorStaminaRegenMod() + 1;
+            else if (vital == Mana)
+                vitalTypeArmorMod = (double)GetArmorManaRegenMod() + 1;
+
+            if (this is Player)
+            {
+                currentTick = diminishedMaxVital / vitalTypeBaseMod * stanceMod * enchantmentMod * augMod * vitalTypeArmorMod;
+            }
+            else
+                currentTick = vital.RegenRate * stanceMod * enchantmentMod * augMod;
 
             // add in partially accumulated / rounded vitals from previous tick(s)
             var totalTick = currentTick + vital.PartialRegen;
@@ -224,11 +250,11 @@ namespace ACE.Server.WorldObjects
                 default:
                     return 1.0f;
                 case MotionCommand.Crouch:
-                    return 2.0f;
+                    return 1.1f;
                 case MotionCommand.Sitting:
-                    return 2.5f;
+                    return 1.25f;
                 case MotionCommand.Sleeping:
-                    return 3.0f;
+                    return 1.5f;
             }
         }
     }

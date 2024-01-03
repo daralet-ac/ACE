@@ -190,22 +190,33 @@ namespace ACE.Server.Factories.Tables
             heritageProfile23,
             heritageProfile24,
         };
-
-        public static TreasureHeritageGroup Roll(int heritageProfile, bool addViamontian = false)
+        static HeritageChance()
         {
-            if (heritageProfile < 1 || heritageProfile > heritageProfiles.Count)
+            
+        }
+
+        public static TreasureHeritageGroup Roll(int heritageProfile, TreasureRoll treasureRoll, bool addViamontian = false)
+        {
+            if (treasureRoll.Heritage != TreasureHeritageGroup.Invalid)
+                return treasureRoll.Heritage; // We have already been assigned an heritage, use that.
+            else
             {
-                // fallback method - fix the treasure_death.heritage_chances data for new rows
-                return (TreasureHeritageGroup)ThreadSafeRandom.Next(1, 3);
+                addViamontian = false;
+
+                if (heritageProfile < 1 || heritageProfile > heritageProfiles.Count)
+                {
+                    // fallback method - fix the treasure_death.heritage_chances data for new rows
+                    treasureRoll.Heritage = (TreasureHeritageGroup)ThreadSafeRandom.Next(1, 3);
+                    return treasureRoll.Heritage;
+                }
+
+                // convert profile 19 to 21 at runtime?
+                if (addViamontian && heritageProfile == 19)
+                    heritageProfile = 21;
+
+                treasureRoll.Heritage = heritageProfiles[heritageProfile - 1].Roll();
+                return treasureRoll.Heritage;
             }
-
-            // convert profile 19 to 21 at runtime?
-            if (addViamontian && heritageProfile == 19)
-                heritageProfile = 21;
-
-            var heritageGroup = heritageProfiles[heritageProfile - 1].Roll();
-
-            return heritageGroup;
         }
     }
 }

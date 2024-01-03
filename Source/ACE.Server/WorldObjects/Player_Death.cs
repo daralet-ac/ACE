@@ -33,6 +33,7 @@ namespace ACE.Server.WorldObjects
         public override DeathMessage OnDeath(DamageHistoryInfo lastDamager, DamageType damageType, bool criticalHit = false)
         {
             var topDamager = DamageHistory.GetTopDamager(false);
+            CombatModeRunPenalty(false);
 
             HandlePKDeathBroadcast(lastDamager, topDamager);
 

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using ACE.Common;
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
@@ -157,7 +159,7 @@ namespace ACE.Server.Factories
                 player.SetProperty(PropertyInt.AvailableSkillCredits, (int)heritageGroup.SkillCredits);
                 player.SetProperty(PropertyInt.TotalSkillCredits, (int)heritageGroup.SkillCredits);
 
-                if (characterCreateInfo.SkillAdvancementClasses.Count != 55)
+                if (characterCreateInfo.SkillAdvancementClasses.Count != 50)
                     return CreateResult.ClientServerSkillsMismatch;
 
                 for (int i = 0; i < characterCreateInfo.SkillAdvancementClasses.Count; i++)
@@ -169,7 +171,7 @@ namespace ACE.Server.Factories
 
                     if (!DatManager.PortalDat.SkillTable.SkillBaseHash.ContainsKey((uint)i))
                     {
-                        _log.Error("Character {Character} tried to create with skill {SkillId} that was not found in Portal dat.", characterCreateInfo.Name, i);
+                        _log.Error("Character {PlayerName} tried to create with skill {SkillId} that was not found in Portal dat.", characterCreateInfo.Name, i);
                         return CreateResult.InvalidSkillRequested;
                     }
 
@@ -204,21 +206,13 @@ namespace ACE.Server.Factories
                         player.UntrainSkill((Skill)i, 0);
                 }
 
-                // Set Heritage based Melee and Ranged Masteries
-                GetMasteries(player.HeritageGroup, out WeaponType meleeMastery, out WeaponType rangedMastery);
-
-                player.SetProperty(PropertyInt.MeleeMastery, (int)meleeMastery);
-                player.SetProperty(PropertyInt.RangedMastery, (int)rangedMastery);
-
-                // Set innate augs
-                SetInnateAugmentations(player);
-
                 var isDualWieldTrainedOrSpecialized = player.Skills.TryGetValue(Skill.DualWield, out var dualWield) && dualWield.AdvancementClass > SkillAdvancementClass.Untrained;
 
                 // grant starter items based on skills
                 var starterGearConfig = StarterGearFactory.GetStarterGearConfiguration();
                 var grantedWeenies = new List<uint>();
 
+                Container container = null;
                 foreach (var skillGear in starterGearConfig.Skills)
                 {
                     //var charSkill = player.Skills[(Skill)skillGear.SkillId];
@@ -229,6 +223,9 @@ namespace ACE.Server.Factories
                     {
                         foreach (var item in skillGear.Gear)
                         {
+                            if (charSkill.AdvancementClass == SkillAdvancementClass.Trained && item.SpecializedOnly == true)
+                                continue;
+
                             if (grantedWeenies.Contains(item.WeenieId))
                             {
                                 var existingItem = player.Inventory.Values.FirstOrDefault(i => i.WeenieClassId == item.WeenieId);
@@ -242,6 +239,9 @@ namespace ACE.Server.Factories
                             var loot = WorldObjectFactory.CreateNewWorldObject(item.WeenieId);
                             if (loot != null)
                             {
+                                if (container == null && loot.WeenieType == WeenieType.Container)
+                                    container = (Container)loot;
+
                                 if (loot.StackSize.HasValue && loot.MaxStackSize.HasValue)
                                     loot.SetStackSize((item.StackSize <= loot.MaxStackSize) ? item.StackSize : loot.MaxStackSize);
                             }
@@ -351,34 +351,49 @@ namespace ACE.Server.Factories
 
             var starterArea = DatManager.PortalDat.CharGen.StarterAreas[(int)startArea];
 
-            player.Location = new Position(starterArea.Locations[0].ObjCellID,
-                starterArea.Locations[0].Frame.Origin.X, starterArea.Locations[0].Frame.Origin.Y, starterArea.Locations[0].Frame.Origin.Z,
-                starterArea.Locations[0].Frame.Orientation.X, starterArea.Locations[0].Frame.Orientation.Y, starterArea.Locations[0].Frame.Orientation.Z, starterArea.Locations[0].Frame.Orientation.W);
-
             var instantiation = new Position(0xA9B40019, 84, 7.1f, 94, 0, 0, -0.0784591f, 0.996917f); // ultimate fallback.
-            var spellFreeRide = new Database.Models.World.Spell();
+
+            var starterAreaName = starterArea.Name;
+            if (starterAreaName != "Shoushi" && starterAreaName != "Yaraq" && starterAreaName != "Holtburg")
+            {
+                switch (ThreadSafeRandom.Next(1, 3))
+                {
+                    case 1:
+                        starterAreaName = "Shoushi";
+                        break;
+                    case 2:
+                        starterAreaName = "Yaraq";
+                        break;
+                    case 3:
+                        starterAreaName = "Holtburg";
+                        break;
+                }
+            }
+
             switch (starterArea.Name)
             {
-                case "OlthoiLair": //todo: check this when olthoi play is allowed in ace
-                    spellFreeRide = null; // no training area for olthoi, so they start and fall back to same place.
-                    instantiation = new Position(player.Location);
-                    break;
                 case "Shoushi":
-                    spellFreeRide = DatabaseManager.World.GetCachedSpell(3813); // Free Ride to Shoushi
+                    if (ThreadSafeRandom.Next(0, 1) == 1)
+                        player.Location = new Position(0xD6550023, 108.765625f, 62.215103f, 52.005001f, 0.000000f, 0.000000f, -0.300088f, 0.953912f); // Shoushi West
+                    else
+                        player.Location = new Position(0xDE51001D, 85.017159f, 107.291908f, 15.861228f, 0.000000f, 0.000000f, 0.323746f, 0.946144f); // Shoushi Southeast
                     break;
                 case "Yaraq":
-                    spellFreeRide = DatabaseManager.World.GetCachedSpell(3814); // Free Ride to Yaraq
-                    break;
-                case "Sanamar":
-                    spellFreeRide = DatabaseManager.World.GetCachedSpell(3535); // Free Ride to Sanamar
+                    if (ThreadSafeRandom.Next(0, 1) == 1)
+                        player.Location = new Position(0x7D680012, 65.508179f, 37.516647f, 16.257774f, 0.000000f, 0.000000f, -0.950714f, 0.310069f); // Yaraq North
+                    else
+                        player.Location = new Position(0x8164000D, 40.296101f, 107.638382f, 31.363008f, 0.000000f, 0.000000f, -0.699884f, -0.714257f); //Yaraq East
                     break;
                 case "Holtburg":
                 default:
-                    spellFreeRide = DatabaseManager.World.GetCachedSpell(3815); // Free Ride to Holtburg
+                    if (ThreadSafeRandom.Next(0, 1) == 1)
+                        player.Location = new Position(0xA5B4002A, 131.134338f, 33.602352f, 53.077141f, 0.000000f, 0.000000f, -0.263666f, 0.964614f); // Holtburg West
+                    else
+                        player.Location = new Position(0xA9B00015, 60.108139f, 103.333549f, 64.402885f, 0.000000f, 0.000000f, -0.381155f, -0.924511f); // Holtburg South
                     break;
             }
-            if (spellFreeRide != null && spellFreeRide.Name != "")
-                instantiation = new Position(spellFreeRide.PositionObjCellId.Value, spellFreeRide.PositionOriginX.Value, spellFreeRide.PositionOriginY.Value, spellFreeRide.PositionOriginZ.Value, spellFreeRide.PositionAnglesX.Value, spellFreeRide.PositionAnglesY.Value, spellFreeRide.PositionAnglesZ.Value, spellFreeRide.PositionAnglesW.Value);
+
+            instantiation = new Position(player.Location);
 
             player.Instantiation = new Position(instantiation);
 

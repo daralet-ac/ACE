@@ -6,7 +6,7 @@ using ACE.Server.Factories.Entity;
 using ACE.Server.Managers;
 using Serilog;
 
-namespace ACE.Server.Factories.Tables
+namespace ACE.Server.Factories.Tables.Cantrips
 {
     public static class CantripChance
     {
@@ -14,56 +14,47 @@ namespace ACE.Server.Factories.Tables
 
         private static ChanceTable<int> T1_NumCantrips = new ChanceTable<int>()
         {
-            ( 0, 0.95f ),
-            ( 1, 0.05f ),
+            ( 0, 1.0f ),
         };
 
         private static ChanceTable<int> T2_NumCantrips = new ChanceTable<int>()
         {
-            ( 0, 0.90f ),
-            ( 1, 0.10f ),
+            ( 1, 1.0f ),
         };
 
         private static ChanceTable<int> T3_NumCantrips = new ChanceTable<int>()
         {
-            ( 0, 0.725f ),
-            ( 1, 0.250f ),
-            ( 2, 0.025f ),
+            ( 1, 0.90f ),
+            ( 2, 0.10f ),
         };
 
         private static ChanceTable<int> T4_NumCantrips = new ChanceTable<int>()
         {
-            ( 0, 0.62f ),
-            ( 1, 0.32f ),
-            ( 2, 0.055f ),
-            ( 3, 0.005f ),
+            ( 1, 0.85f ),
+            ( 2, 0.10f ),
+            ( 3, 0.05f ),
         };
 
         private static ChanceTable<int> T5_NumCantrips = new ChanceTable<int>()
         {
-            ( 0, 0.40f ),
-            ( 1, 0.42f ),
-            ( 2, 0.155f ),
-            ( 3, 0.024f ),
-            ( 4, 0.001f ),
+            ( 1, 0.85f ),
+            ( 2, 0.10f ),
+            ( 3, 0.05f ),
         };
 
         private static ChanceTable<int> T6_NumCantrips = new ChanceTable<int>()
         {
-            ( 0, 0.25f ),
-            ( 1, 0.40f ),
-            ( 2, 0.25f ),
-            ( 3, 0.08f ),
-            ( 4, 0.019f ),
-            ( 5, 0.001f ),
+            ( 1, 0.85f ),
+            ( 2, 0.10f ),
+            ( 3, 0.05f ),
         };
 
         private static ChanceTable<int> T7_T8_NumCantrips = new ChanceTable<int>()
         {
-            ( 1, 0.81f ),
-            ( 2, 0.17f ),
-            ( 3, 0.016f ),
-            ( 4, 0.004f ),
+            ( 1, 0.7f ),
+            ( 2, 0.15f ),
+            ( 3, 0.1f ),
+            ( 4, 0.05f ),
         };
 
         private static readonly List<ChanceTable<int>> _numCantrips = new List<ChanceTable<int>>()
@@ -80,58 +71,62 @@ namespace ACE.Server.Factories.Tables
 
         public static int RollNumCantrips(TreasureDeath profile)
         {
-            return numCantrips[profile.Tier - 1].Roll(profile.LootQualityMod);
+            return _numCantrips[profile.Tier - 1].Roll(profile.LootQualityMod);
         }
 
+        private static ChanceTable<int> T1_CantripLevel = new ChanceTable<int>()
+        {
+            ( 1, 1.0f )
+        };
 
-        private static ChanceTable<int> T1_T2_CantripLevel = new ChanceTable<int>()
+        private static ChanceTable<int> T2_CantripLevel = new ChanceTable<int>()
         {
             ( 1, 1.0f )
         };
 
         private static ChanceTable<int> T3_CantripLevel = new ChanceTable<int>()
         {
-            ( 1, 0.97f ),
-            ( 2, 0.03f ),
+            ( 1, 1.0f ),
         };
 
         private static ChanceTable<int> T4_CantripLevel = new ChanceTable<int>()
         {
-            ( 1, 0.90f ),
-            ( 2, 0.10f ),
+            ( 1, 0.75f ),
+            ( 2, 0.25f ),
         };
 
         private static ChanceTable<int> T5_CantripLevel = new ChanceTable<int>()
         {
-            ( 1, 0.85f ),
-            ( 2, 0.15f ),
+            ( 1, 0.50f ),
+            ( 2, 0.50f ),
         };
 
         private static ChanceTable<int> T6_CantripLevel = new ChanceTable<int>()
         {
-            ( 1, 0.80f ),
-            ( 2, 0.20f ),
+            ( 1, 0.40f ),
+            ( 2, 0.50f ),
+            ( 3, 0.10f ),
         };
 
         private static ChanceTable<int> T7_CantripLevel = new ChanceTable<int>()
         {
-            ( 1, 0.15f ),
-            ( 2, 0.60f ),
-            ( 3, 0.25f )
+            ( 1, 0.20f ),
+            ( 2, 0.40f ),
+            ( 3, 0.40f ),
         };
 
         private static ChanceTable<int> T8_CantripLevel = new ChanceTable<int>()
         {
-            ( 1, 0.02f ),
-            ( 2, 0.46f ),
-            ( 3, 0.42f ),
+            ( 2, 0.40f ),
+            ( 3, 0.50f ),
             ( 4, 0.10f )
         };
 
         private static readonly List<ChanceTable<int>> _cantripLevels = new List<ChanceTable<int>>()
         {
-            T1_T2_CantripLevel,
-            T1_T2_CantripLevel,
+            T1_CantripLevel,
+            T2_CantripLevel,
+            T3_CantripLevel,
             T3_CantripLevel,
             T4_CantripLevel,
             T5_CantripLevel,

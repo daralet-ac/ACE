@@ -577,6 +577,28 @@ namespace ACE.Entity.Enum.Properties
         [SendOnLogin]
         Enlightenment                            = 390,
 
+        // Timeline
+        AegisLevel                              = 391,
+        ArmorSlots                              = 392,
+        ArmorWeightClass                        = 393,
+        GearMaxStamina                          = 394,
+        GearMaxMana                             = 395,
+        CombatFocusType                         = 396,
+        WeightClassReqAmount                    = 397,
+        ArmorStyle                              = 398,
+        WeaponSubtype                           = 399,
+        ArmorPatchAmount                        = 400,
+        EmpoweredScarabColor                    = 401,
+        [ServerOnly]
+        EmpoweredScarabSchool                   = 402,
+        [ServerOnly]
+        EmpoweredScarabEffectId                 = 403,
+        EmpoweredScarabMaxLevel                 = 404,
+        EmpoweredScarabElement                  = 405,
+        EmpoweredScarabBonusStat                = 406,
+        EmpoweredScarabBonusStatAmount          = 407,
+
+
         [ServerOnly]
         PCAPRecordedAutonomousMovement           = 8007,
         [ServerOnly]
@@ -629,6 +651,16 @@ namespace ACE.Entity.Enum.Properties
         /// </summary>
         [ServerOnly]
         InventoryOrder                          = 9015,
+
+        [ServerOnly]
+        CombatAbilityId                         = 10000,
+        Tier                                     = 10007,
+        ResistPerception                          = 10008,
+        [ServerOnly]
+        EmptyId                                  = 10009,
+        [ServerOnly]
+        VendorStockMaxAmount                     = 10010,
+
     }
 
     public static class PropertyIntExtensions

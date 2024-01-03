@@ -219,6 +219,455 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        public int GetAegisLevel()
+        {
+            var aegisLevel = 0;
+
+            if(AegisLevel != null && AegisLevel.HasValue)
+                aegisLevel = (int)AegisLevel;
+            else
+                aegisLevel = GetEquippedItemsAegisSum(PropertyInt.AegisLevel);
+
+            return aegisLevel;
+        }
+
+        public double? GetArmorHealthMod()
+        {
+            double? mod;
+
+            if (ArmorHealthMod != null && ArmorHealthMod.HasValue)
+                mod = ArmorHealthMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorHealthMod);
+
+            return mod;
+        }
+
+        public double? GetArmorHealthRegenMod()
+        {
+            double? mod;
+
+            if (ArmorHealthRegenMod != null && ArmorHealthRegenMod.HasValue)
+                mod = ArmorHealthRegenMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorHealthRegenMod);
+
+            return mod;
+        }
+
+        public uint GetModdedHealthRegenVital()
+        {
+            var healthVital = GetCreatureVital(PropertyAttribute2nd.Health);
+            var armorHealthVitalMod = GetArmorHealthRegenMod() + 1;
+            var tempHealthVital = healthVital.MaxValue * armorHealthVitalMod;
+            var moddedHealthVital = (uint)tempHealthVital;
+
+            return moddedHealthVital - healthVital.MaxValue;
+        }
+
+        public double? GetArmorStaminaMod()
+        {
+            double? mod;
+
+            if (ArmorStaminaMod != null && ArmorStaminaMod.HasValue)
+                mod = ArmorStaminaMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorStaminaMod);
+
+            return mod;
+        }
+
+        public double? GetArmorStaminaRegenMod()
+        {
+            double? mod;
+
+            if (ArmorStaminaRegenMod != null && ArmorStaminaRegenMod.HasValue)
+                mod = ArmorStaminaRegenMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorStaminaRegenMod);
+
+            return mod;
+        }
+
+        public uint GetModdedStaminaRegenVital()
+        {
+            var staminaVital = GetCreatureVital(PropertyAttribute2nd.MaxStamina);
+            var armorStaminaVitalMod = GetArmorStaminaRegenMod() + 1;
+            var tempStaminaVital = staminaVital.Current * armorStaminaVitalMod;
+            var moddedStaminaVital = (uint)tempStaminaVital;
+
+            return moddedStaminaVital;
+        }
+
+        public double? GetArmorManaMod()
+        {
+            double? mod;
+
+            if (ArmorManaMod != null && ArmorManaMod.HasValue)
+                mod = ArmorManaMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorManaMod);
+
+            return mod;
+        }
+
+        public double? GetArmorManaRegenMod()
+        {
+            double? mod;
+
+            if (ArmorManaRegenMod != null && ArmorManaRegenMod.HasValue)
+                mod = ArmorManaRegenMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorManaRegenMod);
+
+            return mod;
+        }
+
+        public uint GetModdedManaRegenVital()
+        {
+            var manaVital = GetCreatureVital(PropertyAttribute2nd.MaxMana);
+            var armorManaVitalMod = GetArmorManaRegenMod() + 1;
+            var tempManaVital = manaVital.Current * armorManaVitalMod;
+            var moddedManaVital = (uint)tempManaVital;
+
+            return moddedManaVital;
+        }
+
+        public double? GetArmorAttackMod()
+        {
+            double? mod;
+
+            if (ArmorAttackMod != null && ArmorAttackMod.HasValue)
+                mod = ArmorAttackMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorAttackMod);
+
+            return mod;
+        }
+
+        public double? GetArmorPhysicalDefMod()
+        {
+            double? mod;
+
+            if (ArmorPhysicalDefMod != null && ArmorPhysicalDefMod.HasValue)
+                mod = ArmorPhysicalDefMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorPhysicalDefMod);
+
+            return mod;
+        }
+
+        public uint GetModdedMeleeDefSkill()
+        {
+            var meleeDefSkill = GetCreatureSkill(Skill.MeleeDefense);
+            var armorMeleeDefSkillMod = GetArmorPhysicalDefMod() + 1;
+            var tempMeleeDefSkill = meleeDefSkill.Current * armorMeleeDefSkillMod;
+            var moddedMeleeDefSkill = (uint)tempMeleeDefSkill;
+
+            return moddedMeleeDefSkill;
+        }
+
+        public double? GetArmorMissileDefMod()
+        {
+            double? mod;
+
+            if (ArmorMissileDefMod != null && ArmorMissileDefMod.HasValue)
+                mod = ArmorMissileDefMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorMissileDefMod);
+
+            return mod;
+        }
+
+        public uint GetModdedMissileDefSkill()
+        {
+            var missileDefSkill = GetCreatureSkill(Skill.MissileDefense);
+            var armorMissileDefSkillMod = GetArmorMissileDefMod() + 1;
+            var tempMissileDefSkill = missileDefSkill.Current * armorMissileDefSkillMod;
+            var moddedMissileDefSkill = (uint)tempMissileDefSkill;
+
+            return moddedMissileDefSkill;
+        }
+
+        public double? GetArmorMagicDefMod()
+        {
+            double? mod;
+
+            if (ArmorMagicDefMod != null && ArmorMagicDefMod.HasValue)
+                mod = ArmorMagicDefMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorMagicDefMod);
+
+            return mod;
+        }
+
+        public uint GetModdedMagicDefSkill()
+        {
+            var magicDefSkill = GetCreatureSkill(Skill.MagicDefense);
+            var armorMagicDefSkillMod = GetArmorMagicDefMod() + 1;
+            var tempMagicDefSkill = magicDefSkill.Current * armorMagicDefSkillMod;
+            var moddedMagicDefSkill = (uint)tempMagicDefSkill;
+
+            return moddedMagicDefSkill;
+        }
+
+        public double? GetArmorRunMod()
+        {
+            double? mod;
+
+            //if (ArmorRunMod != null && ArmorRunMod.HasValue)
+            //    mod = ArmorRunMod;
+            if (ArmorRunMod != null && IsMonster)
+                mod = ArmorRunMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorRunMod);
+
+            return mod;
+        }
+
+        public uint GetModdedRunSkill()
+        {
+            var runSkill = GetCreatureSkill(Skill.Run);
+            var armorRunSkillMod = GetArmorRunMod() + 1;
+            var tempRunSkill = runSkill.Current * armorRunSkillMod;
+            var moddedRunSkill = (uint)tempRunSkill;
+
+            return moddedRunSkill;
+        }
+
+        public double? GetArmorDualWieldMod()
+        {
+            double? mod;
+
+            if (ArmorDualWieldMod != null && ArmorDualWieldMod.HasValue)
+                mod = ArmorDualWieldMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorDualWieldMod);
+
+            return mod;
+        }
+
+        public uint GetModdedDualWieldSkill()
+        {
+            var dualWieldSkill = GetCreatureSkill(Skill.DualWield);
+            var armorDualWieldSkillMod = GetArmorDualWieldMod() + 1;
+            var tempDualWieldSkill = dualWieldSkill.Current * armorDualWieldSkillMod;
+            var moddedDualWieldSkill = (uint)tempDualWieldSkill;
+
+            return moddedDualWieldSkill;
+        }
+
+        public double? GetArmorTwohandedCombatMod()
+        {
+            double? mod;
+
+            if (ArmorTwohandedCombatMod != null && ArmorTwohandedCombatMod.HasValue)
+                mod = ArmorTwohandedCombatMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorTwohandedCombatMod);
+
+            return mod;
+        }
+
+        public uint GetModdedTwohandedCombatSkill()
+        {
+            var twohandedCombatSkill = GetCreatureSkill(Skill.TwoHandedCombat);
+            var armorTwohandedCombatSkillMod = GetArmorTwohandedCombatMod() + 1;
+            var tempTwohandedCombatSkill = twohandedCombatSkill.Current * armorTwohandedCombatSkillMod;
+            var moddedTwohandedCombatSkill = (uint)tempTwohandedCombatSkill;
+
+            return moddedTwohandedCombatSkill;
+        }
+
+        public double? GetArmorThieveryMod()
+        {
+            double? mod;
+
+            if (ArmorThieveryMod != null && ArmorThieveryMod.HasValue)
+                mod = ArmorThieveryMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorThieveryMod);
+
+            return mod;
+        }
+
+        public uint GetModdedThieverySkill()
+        {
+            var thieverySkill = GetCreatureSkill(Skill.Lockpick); // Thievery
+            var armorThieverySkillMod = GetArmorThieveryMod() + 1;
+            var tempThieverySkill = thieverySkill.Current * armorThieverySkillMod;
+            var moddedThieverySkill = (uint)tempThieverySkill;
+
+            return moddedThieverySkill;
+        }
+
+        public double? GetArmorShieldMod()
+        {
+            double? mod;
+
+            if (ArmorShieldMod != null && ArmorShieldMod.HasValue)
+                mod = ArmorShieldMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorShieldMod);
+
+            return mod;
+        }
+
+        public uint GetModdedShieldSkill()
+        {
+            var shieldSkill = GetCreatureSkill(Skill.Shield);
+            var armorShieldSkillMod = GetArmorShieldMod() + 1;
+            var tempShieldSkill = shieldSkill.Current * armorShieldSkillMod;
+            var moddedShieldSkill = (uint)tempShieldSkill;
+
+            return moddedShieldSkill;
+        }
+
+        public double? GetArmorAssessMod()
+        {
+            double? mod;
+
+            if (ArmorPerceptionMod != null && ArmorPerceptionMod.HasValue)
+                mod = ArmorPerceptionMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorAssessMod);
+
+            return mod;
+        }
+
+        public uint GetModdedAssessSkill()
+        {
+            var assessSkill = GetCreatureSkill(Skill.AssessCreature);
+            var armorAssessSkillMod = GetArmorAssessMod() + 1;
+            var tempAssessSkill = assessSkill.Current * armorAssessSkillMod;
+            var moddedAssessSkill = (uint)tempAssessSkill;
+
+            return moddedAssessSkill;
+        }
+
+        public double? GetArmorDeceptionMod()
+        {
+            double? mod;
+
+            if (ArmorDeceptionMod != null && ArmorDeceptionMod.HasValue)
+                mod = ArmorDeceptionMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorDeceptionMod);
+
+            return mod;
+        }
+
+        public uint GetModdedDeceptionSkill()
+        {
+            var deceptionSkill = GetCreatureSkill(Skill.Deception);
+            var armorDeceptionSkillMod = GetArmorDeceptionMod() + 1;
+            var tempDeceptionSkill = deceptionSkill.Current * armorDeceptionSkillMod;
+            var moddedDeceptionSkill = (uint)tempDeceptionSkill;
+
+            return moddedDeceptionSkill;
+        }
+
+        public double? GetArmorWarMagicMod()
+        {
+            double? mod;
+
+            if (ArmorWarMagicMod != null && ArmorWarMagicMod.HasValue)
+                mod = ArmorWarMagicMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorWarMagicMod);
+
+            return mod;
+        }
+
+        public double? GetWeaponWarMagicMod()
+        {
+            double? mod;
+
+            if (ArmorWarMagicMod != null && WeaponWarMagicMod.HasValue)
+                mod = WeaponWarMagicMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.WeaponWarMagicMod);
+
+            return mod;
+        }
+
+        public uint GetModdedWarMagicSkill()
+        {
+            var warMagicSkill = GetCreatureSkill(Skill.WarMagic);
+            var warMagicSkillMod = GetArmorWarMagicMod() + GetWeaponWarMagicMod() + 1;
+            var tempWarMagicSkill = warMagicSkill.Current * warMagicSkillMod;
+            var moddedWarMagicSkill = (uint)tempWarMagicSkill;
+
+            return moddedWarMagicSkill;
+        }
+
+        public double? GetArmorLifeMagicMod()
+        {
+            double? mod;
+
+            if (ArmorLifeMagicMod != null && ArmorLifeMagicMod.HasValue)
+                mod = ArmorLifeMagicMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorLifeMagicMod);
+
+            return mod;
+        }
+
+        public double? GetWeaponLifeMagicMod()
+        {
+            double? mod;
+
+            if (WeaponLifeMagicMod != null && WeaponLifeMagicMod.HasValue)
+                mod = WeaponLifeMagicMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.WeaponLifeMagicMod);
+
+            return mod;
+        }
+
+        public uint GetModdedLifeMagicSkill()
+        {
+            var lifeMagicSkill = GetCreatureSkill(Skill.LifeMagic);
+            var lifeMagicSkillMod = GetArmorLifeMagicMod() + GetWeaponLifeMagicMod() + 1;
+            var tempLifeMagicSkill = lifeMagicSkill.Current * lifeMagicSkillMod;
+            var moddedLifeMagicSkill = (uint)tempLifeMagicSkill;
+
+            return moddedLifeMagicSkill;
+        }
+
+        public double? GetWeaponLifeMagicVitalMod()
+        {
+            double? mod;
+
+            if (WeaponRestorationSpellsMod != null && WeaponRestorationSpellsMod.HasValue)
+                mod = WeaponRestorationSpellsMod;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.WeaponRestorationSpellsMod);
+
+            return mod;
+        }
+
+        public double? GetArmorResourcePenalty()
+        {
+            double? mod;
+
+            if (ArmorResourcePenalty != null && ArmorResourcePenalty.HasValue)
+                mod = ArmorResourcePenalty;
+            else
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorResourcePenalty);
+
+            return mod;
+        }
+
+        public double? GetManaScarabReservedMana()
+        {
+            double? mod;
+
+            mod = GetEquippedItemsSkillModSum(PropertyFloat.EmpoweredScarabManaReserved);
+
+            return mod;
+        }
+
         public double? HealthRate
         {
             get => GetProperty(PropertyFloat.HealthRate);

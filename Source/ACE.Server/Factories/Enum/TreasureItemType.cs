@@ -12,6 +12,15 @@ namespace ACE.Server.Factories.Enum
         Cloak,
         Weapon,
         Jewelry,
-        Dinnerware
+        Dinnerware,
+        // Timeline
+        ArmorWarrior,
+        ArmorRogue,
+        ArmorCaster,
+        WeaponWarrior,
+        WeaponRogue,
+        WeaponCaster,
+        AnimalParts,
+        EmpoweredScarabs
     }
 }

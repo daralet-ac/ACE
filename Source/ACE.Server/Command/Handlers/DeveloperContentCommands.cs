@@ -1575,7 +1575,7 @@ namespace ACE.Server.Command.Handlers.Processors
             DatabaseManager.World.ClearCachedEncountersByLandblock(landblock);
 
             // get existing encounters for this landblock
-            var encounters = DatabaseManager.World.GetCachedEncountersByLandblock(landblock);
+            var encounters = DatabaseManager.World.GetCachedEncountersByLandblock(landblock, out var wasCached);
 
             // check for existing encounter
             if (encounters.Any(i => i.CellX == cellX && i.CellY == cellY))
@@ -1744,7 +1744,7 @@ namespace ACE.Server.Command.Handlers.Processors
             DatabaseManager.World.ClearCachedEncountersByLandblock(landblock);
 
             // get existing encounters for this landblock
-            var encounters = DatabaseManager.World.GetCachedEncountersByLandblock(landblock);
+            var encounters = DatabaseManager.World.GetCachedEncountersByLandblock(landblock, out var wasCached);
 
             // check for existing encounter
             var encounter = encounters.FirstOrDefault(i => i.CellX == cellX && i.CellY == cellY && i.WeenieClassId == obj.WeenieClassId);

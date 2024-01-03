@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Factories.Entity;
+using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Cantrips;
+using ACE.Server.Factories.Tables.Spells;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 
@@ -34,40 +37,61 @@ namespace ACE.Server.Factories
                     return;
             }
 
-            wo.UiEffects = UiEffects.Magical;
-
-            var maxBaseMana = GetMaxBaseMana(wo);
-
-            wo.ManaRate = CalculateManaRate(maxBaseMana);
-
-            if (roll == null)
+            if (numSpells == 0 && wo.SpellDID == null && wo.ProcSpell == null)
             {
-                wo.ItemMaxMana = RollItemMaxMana(profile.Tier, numSpells);
-                wo.ItemCurMana = wo.ItemMaxMana;
+                // we ended up without any spells, revert to non-magic item.
+                wo.ItemManaCost = null;
+                wo.ItemMaxMana = null;
+                wo.ItemCurMana = null;
+                wo.ItemSpellcraft = null;
+                wo.ItemDifficulty = null;
 
-                wo.ItemSpellcraft = RollSpellcraft(wo);
-                wo.ItemDifficulty = RollItemDifficulty(wo, numEpics, numLegendaries);
+                if (roll.IsClothArmor) // Non-magical robes do not need level requirements
+                {
+                    wo.RemoveProperty(PropertyInt.WieldRequirements);
+                    wo.RemoveProperty(PropertyInt.WieldSkillType);
+                    wo.RemoveProperty(PropertyInt.WieldDifficulty);
+                }
             }
             else
             {
-                var maxSpellMana = maxBaseMana;
+                if(!wo.UiEffects.HasValue) // Elemental effects take precendence over magical as it is more important to know the element of a weapon than if it has spells.
+                    wo.UiEffects = UiEffects.Magical;
 
-                if (wo.SpellDID != null)
+                var combinedSpellCost = GetCombinedSpellManaCost(wo);
+                
+                if(!wo.IsCaster)
+                    wo.ManaRate = CalculateManaRate(combinedSpellCost);
+
+                if (roll == null)
                 {
-                    var spell = new Server.Entity.Spell(wo.SpellDID.Value);
+                    wo.ItemMaxMana = RollItemMaxMana(profile.Tier, numSpells);
+                    wo.ItemCurMana = wo.ItemMaxMana;
 
-                    var castableMana = (int)spell.BaseMana * 5;
-
-                    if (castableMana > maxSpellMana)
-                        maxSpellMana = castableMana;
+                    wo.ItemSpellcraft = RollSpellcraft(wo);
+                    wo.ItemDifficulty = RollItemDifficulty(wo, numEpics, numLegendaries);
                 }
+                else
+                {
+                    var maxSpellMana = combinedSpellCost;
 
-                wo.ItemMaxMana = RollItemMaxMana_New(wo, roll, maxSpellMana);
-                wo.ItemCurMana = wo.ItemMaxMana;
+                    if (wo.SpellDID != null)
+                    {
+                        var spell = new Server.Entity.Spell(wo.SpellDID.Value);
 
-                wo.ItemSpellcraft = RollSpellcraft(wo, roll);
+                        var castableMana = (int)spell.BaseMana * 5;
 
-                AddActivationRequirements(wo, roll);
+                        if (castableMana > maxSpellMana)
+                            maxSpellMana = castableMana;
+                    }
+
+                    wo.ItemMaxMana = RollItemMaxMana_New(wo, roll, combinedSpellCost);
+                    wo.ItemCurMana = wo.ItemMaxMana;
+
+                    wo.ItemSpellcraft = RollSpellcraft(wo, roll);
+
+                    AddActivationRequirements(wo, profile, roll);
+                }
             }
         }
 
@@ -78,7 +102,7 @@ namespace ACE.Server.Factories
 
             int lowSpellTier = GetLowSpellTier(profile.Tier);
             int highSpellTier = GetHighSpellTier(profile.Tier);
-
+            
             switch (wo.WeenieType)
             {
                 case WeenieType.Clothing:
@@ -483,9 +507,16 @@ namespace ACE.Server.Factories
         /// <summary>
         /// Returns the maximum BaseMana from the spells in item's spellbook
         /// </summary>
-        public static int GetMaxBaseMana(WorldObject wo)
+        public static int GetCombinedSpellManaCost(WorldObject wo)
         {
             var maxBaseMana = 0;
+
+            if (wo.SpellDID != null)
+            {
+                var spell = new Server.Entity.Spell(wo.SpellDID.Value);
+
+                maxBaseMana += (int)spell.BaseMana;
+            }
 
             if (wo.Biota.PropertiesSpellBook != null)
             {
@@ -493,10 +524,17 @@ namespace ACE.Server.Factories
                 {
                     var spell = new Server.Entity.Spell(spellId);
 
-                    if (spell.BaseMana > maxBaseMana)
-                        maxBaseMana = (int)spell.BaseMana;
+                    maxBaseMana += (int)spell.BaseMana;
                 }
             }
+
+            if (wo.ProcSpell != null)
+            {
+                var spell = new Server.Entity.Spell(wo.ProcSpell.Value);
+
+                maxBaseMana += (int)spell.BaseMana;
+            }
+
             return maxBaseMana;
         }
 
@@ -526,23 +564,25 @@ namespace ACE.Server.Factories
         /// <summary>
         /// Rolls the ItemMaxMana for an object
         /// </summary>
-        private static int RollItemMaxMana_New(WorldObject wo, TreasureRoll roll, int maxSpellMana)
+        private static int RollItemMaxMana_New(WorldObject wo, TreasureRoll roll, int combinedSpellCost)
         {
-            // verified matches up with magloot eor logs
+            //Console.WriteLine($"{wo.Name}  maxSpellMana: {maxSpellMana}");
 
-            var workmanship = WorkmanshipChance.GetModifier(wo.ItemWorkmanship - 1);
+            var tier = wo.Tier ?? 1.0;
 
             (int min, int max) range;
 
-            if (roll.IsClothing || roll.IsArmor || roll.IsWeapon || roll.IsDinnerware)
+            if (roll.IsClothing || roll.IsArmor || roll.IsWeapon || roll.IsDinnerware ||
+                roll.ItemType == TreasureItemType_Orig.WeaponCaster || roll.ItemType == TreasureItemType_Orig.WeaponRogue || roll.ItemType == TreasureItemType_Orig.WeaponWarrior ||
+                roll.ItemType == TreasureItemType_Orig.ArmorCaster || roll.ItemType == TreasureItemType_Orig.ArmorRogue || roll.ItemType == TreasureItemType_Orig.ArmorWarrior)
             {
-                range.min = 6;
+                range.min = 10;
                 range.max = 15;
             }
             else if (roll.IsJewelry)
             {
                 // includes crowns
-                range.min = 12;
+                range.min = 15;
                 range.max = 20;
             }
             else if (roll.IsGem)
@@ -552,13 +592,13 @@ namespace ACE.Server.Factories
             }
             else
             {
-                _log.Error($"RollItemMaxMana({wo.Name}, {roll.ItemType}, {maxSpellMana}) - unknown item type");
+                _log.Error($"RollItemMaxMana({wo.Name}, {roll.ItemType}, {combinedSpellCost}) - unknown item type");
                 return 1;
             }
 
             var rng = ThreadSafeRandom.Next(range.min, range.max);
 
-            return (int)Math.Ceiling(maxSpellMana * workmanship * rng);
+            return (int)Math.Ceiling(combinedSpellCost * tier * rng);
         }
 
         /// <summary>
@@ -568,14 +608,14 @@ namespace ACE.Server.Factories
         {
             if (maxBaseMana <= 0)
                 maxBaseMana = 1;
-
+            
             // verified with eor data
-            return -1.0f / (float)Math.Ceiling(1200.0f / maxBaseMana);
+            return -1.0f / (float)Math.Ceiling(10000.0f / maxBaseMana);
         }
 
         // old method / based on item type
 
-        private static int RollSpellcraft(WorldObject wo)
+        public static int RollSpellcraft(WorldObject wo)
         {
             var maxSpellPower = GetMaxSpellPower(wo);
 
@@ -600,7 +640,7 @@ namespace ACE.Server.Factories
             var spellcraft = (int)Math.Ceiling(maxSpellPower * rng);
 
             // retail was capped at 370
-            spellcraft = Math.Min(spellcraft, 370);
+            spellcraft = Math.Min(spellcraft, 500);
 
             return spellcraft;
         }
@@ -613,7 +653,9 @@ namespace ACE.Server.Factories
 
             (float min, float max) range = (1.0f, 1.0f);
 
-            if (roll.IsClothing || roll.IsArmor || roll.IsWeapon || roll.IsJewelry || roll.IsDinnerware)
+            if (roll.IsClothing || roll.IsArmor || roll.IsWeapon || roll.IsJewelry || roll.IsDinnerware ||
+                roll.ItemType == TreasureItemType_Orig.WeaponCaster || roll.ItemType == TreasureItemType_Orig.WeaponRogue || roll.ItemType == TreasureItemType_Orig.WeaponWarrior ||
+                roll.ItemType == TreasureItemType_Orig.ArmorCaster || roll.ItemType == TreasureItemType_Orig.ArmorRogue || roll.ItemType == TreasureItemType_Orig.ArmorWarrior)
             {
                 range.min = 0.9f;
                 range.max = 1.1f;
@@ -628,13 +670,28 @@ namespace ACE.Server.Factories
             var spellcraft = (int)Math.Ceiling(maxSpellPower * rng);
 
             // retail was capped at 370
-            spellcraft = Math.Min(spellcraft, 370);
+            spellcraft = Math.Min(spellcraft, 500);
 
             return spellcraft;
         }
 
+        public static int GetSpellPower(Server.Entity.Spell spell)
+        {
+            switch (spell.Formula.Level)
+            {
+                case 1: return 20; // EoR is 1
+                case 2: return 150; // EoR is 50
+                case 3: return 200; // EoR is 100
+                case 4: return 250; // EoR is 150
+                case 5: return 300; // EoR is 200
+                case 6: return 350; // EoR is 250
+                case 7:
+                default: return 400; // EoR is 300
+                }
+        }
+
         /// <summary>
-        /// Returns the maximum power from the spells in item's SpellDID / spellbook
+        /// Returns the maximum power from the spells in item's SpellDID / spellbook / ProcSpell
         /// </summary>
         public static int GetMaxSpellPower(WorldObject wo)
         {
@@ -644,8 +701,9 @@ namespace ACE.Server.Factories
             {
                 var spell = new Server.Entity.Spell(wo.SpellDID.Value);
 
-                if (spell.Power > maxSpellPower)
-                    maxSpellPower = (int)spell.Power;
+                int spellPower = GetSpellPower(spell);
+                if (spellPower > maxSpellPower)
+                    maxSpellPower = spellPower;
             }
 
             if (wo.Biota.PropertiesSpellBook != null)
@@ -654,20 +712,58 @@ namespace ACE.Server.Factories
                 {
                     var spell = new Server.Entity.Spell(spellId);
 
-                    if (spell.Power > maxSpellPower)
-                        maxSpellPower = (int)spell.Power;
+                    int spellPower = GetSpellPower(spell);
+                    if (spellPower > maxSpellPower)
+                        maxSpellPower = spellPower;
                 }
             }
+
+            if (wo.ProcSpell != null)
+            {
+                var spell = new Server.Entity.Spell(wo.ProcSpell.Value);
+
+                int spellPower = GetSpellPower(spell);
+                if (spellPower > maxSpellPower)
+                    maxSpellPower = spellPower;
+            }
+
             return maxSpellPower;
         }
 
-        private static void AddActivationRequirements(WorldObject wo, TreasureRoll roll)
+        private static void AddActivationRequirements(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
         {
-            // ItemSkill/LevelLimit
-            TryMutate_ItemSkillLimit(wo, roll);
-
             // Arcane Lore / ItemDifficulty
             wo.ItemDifficulty = CalculateArcaneLore(wo, roll);
+        }
+
+        private static bool TryMutate_HeritageRequirement(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
+        {
+            if (wo.Biota.PropertiesSpellBook == null && (wo.SpellDID ?? 0) == 0 && (wo.ProcSpell ?? 0) == 0)
+                return false;
+
+            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (rng < 0.05)
+            {
+                if(roll.Heritage == TreasureHeritageGroup.Invalid)
+                    roll.Heritage = (TreasureHeritageGroup)ThreadSafeRandom.Next(1, 3);
+
+                switch (roll.Heritage)
+                {
+                    case TreasureHeritageGroup.Aluvian:
+                        wo.HeritageGroup = HeritageGroup.Aluvian;
+                        break;
+
+                    case TreasureHeritageGroup.Gharundim:
+                        wo.HeritageGroup = HeritageGroup.Gharundim;
+                        break;
+
+                    case TreasureHeritageGroup.Sho:
+                        wo.HeritageGroup = HeritageGroup.Sho;
+                        break;
+                }
+                return true;
+            }
+            return false;
         }
 
         private static bool TryMutate_ItemSkillLimit(WorldObject wo, TreasureRoll roll)
@@ -682,6 +778,8 @@ namespace ACE.Server.Factories
             if (roll.IsMeleeWeapon || roll.IsMissileWeapon)
             {
                 skill = wo.WeaponSkill;
+                if (wo.WieldRequirements == WieldRequirement.RawSkill && wo.WieldDifficulty > wo.ItemSkillLevelLimit)
+                    wo.ItemSkillLevelLimit = wo.WieldDifficulty + ThreadSafeRandom.Next(5, 20);
             }
             else if (roll.IsArmor)
             {
@@ -702,8 +800,10 @@ namespace ACE.Server.Factories
                 _log.Error($"RollItemSkillLimit({wo.Name}, {roll.ItemType}) - unknown item type");
                 return false;
             }
-
-            wo.ItemSkillLimit = skill;
+            if (wo.WieldRequirements != WieldRequirement.RawAttrib)
+            {
+                wo.ItemSkillLimit = wo.ConvertToMoASkill(skill);
+            }
             return true;
         }
 
@@ -713,7 +813,7 @@ namespace ACE.Server.Factories
             {
                 return true;
             }
-            else if (roll.IsArmor)
+            else if (roll.IsArmor && !roll.IsClothArmor)
             {
                 var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
 
@@ -730,12 +830,15 @@ namespace ACE.Server.Factories
             // - # of spells on item
             var num_spells = wo.Biota.PropertiesSpellBook.Count();
 
+            if (wo.ProcSpell != null)
+                num_spells++;
+
             var spellAddonChance = num_spells * (20.0f / (num_spells + 2.0f));
             var spellAddon = (float)ThreadSafeRandom.Next(1.0f, spellAddonChance) * num_spells;
 
             // - # of epics / legendaries on item
-            var epicAddon = numEpics > 0 ? ThreadSafeRandom.Next(1, 5) * numEpics : 0;
-            var legAddon = numLegendaries > 0 ? ThreadSafeRandom.Next(5, 10) * numLegendaries : 0;
+            var epicAddon = 0;
+            var legAddon =  0;
 
             // wield difficulty - skill requirement
             var wieldFactor = 0.0f;
@@ -754,26 +857,72 @@ namespace ACE.Server.Factories
         /// <summary>
         /// Calculates the Arcane Lore requirement / ItemDifficulty
         /// </summary>
-        private static int CalculateArcaneLore(WorldObject wo, TreasureRoll roll)
+        public static int CalculateArcaneLore(WorldObject wo, TreasureRoll roll)
         {
-            // spellcraft - (itemSkillLevelLimit / 2.0f) + creatureLifeEnchantments + cantrips
+            var numSpells = 0;
+            var increasedDifficulty = 0.0f;
 
-            var spellcraft = wo.ItemSpellcraft.Value;
+            if(wo.Biota.PropertiesSpellBook !=  null)
+            {
+                int MINOR = 0, MAJOR = 1, EPIC = 2, LEGENDARY = 3;
 
-            // - mutates 100% of the time for melee / missile weapons
-            // - mutates 55% of the time for armor
-            // - mutates 0% of the time for all other item types
-            var itemSkillLevelFactor = 0.0f;
+                foreach (SpellId spellId in wo.Biota.PropertiesSpellBook.Keys)
+                {
+                    numSpells++;
 
-            if (wo.ItemSkillLevelLimit > 0)
-                itemSkillLevelFactor = wo.ItemSkillLevelLimit.Value / 2.0f;
+                    var cantripLevels = SpellLevelProgression.GetSpellLevels(spellId);
 
-            var fArcane = spellcraft - itemSkillLevelFactor;
+                    var cantripLevel = cantripLevels.IndexOf(spellId);
 
-            if (fArcane < 0)
-                fArcane = 0;
+                    if (cantripLevel == MINOR)
+                        increasedDifficulty += 5;
+                    else if (cantripLevel == MAJOR)
+                        increasedDifficulty += 10;
+                    else if (cantripLevel == EPIC)
+                        increasedDifficulty += 15;
+                    else if (cantripLevel == LEGENDARY)
+                        increasedDifficulty += 20;
+                    else
+                        _log.Warning($"LootGenerationFactory_Magic.CalculateArcaneLore({wo.Name}, {roll}) - SpellId did not have correct cantrip level");
 
-            return (int)Math.Floor(fArcane + roll.ItemDifficulty);
+                }
+            }
+
+            var tier = wo.Tier.Value - 1;
+
+            if(wo.ProcSpell != null)
+            {
+                numSpells++;
+                increasedDifficulty += Math.Max(5 * tier, 5);
+            }
+
+            var finalDifficulty = 0;
+            var armorSlots = wo.ArmorSlots ?? 1;
+            var spellsPerSlot = (float)numSpells / armorSlots;
+
+            if (spellsPerSlot > 1 || wo.ProcSpell != null)
+            {
+                var baseDifficulty = ActivationDifficultyPerTier(tier);
+
+                finalDifficulty = baseDifficulty + (int)(increasedDifficulty / armorSlots);
+            }
+
+            return finalDifficulty;
+        }
+
+        private static int ActivationDifficultyPerTier(int tier)
+        {
+            switch(tier)
+            {
+                case 1: return 100;
+                case 2: return 200;
+                case 3: return 250;
+                case 4: return 300;
+                case 5: return 350;
+                case 6: return 400;
+                case 7: return 450;
+                default: return 50;
+            }
         }
     }
 }

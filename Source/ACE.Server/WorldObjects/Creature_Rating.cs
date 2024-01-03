@@ -259,6 +259,21 @@ namespace ACE.Server.WorldObjects
         public float GetDamageResistRatingMod(CombatType? combatType = null, bool directDamage = true)
         {
             var damageResistRating = GetDamageResistRating(combatType, directDamage);
+           
+            // Battery Combat Ability
+            var combatAbility = CombatAbility.None;
+            var combatFocus = GetEquippedCombatFocus();
+            if (combatFocus != null)
+                combatAbility = combatFocus.GetCombatAbility();
+
+            if (combatAbility == CombatAbility.Battery)
+            {
+                var maxMana = Mana.MaxValue;
+                var currentMana = Mana.Current;
+                var bonus = 20 * (currentMana / maxMana);
+
+                damageResistRating += (int)bonus;
+            }
 
             var allowBug = PropertyManager.GetBool("allow_negative_rating_curve").Item;
 

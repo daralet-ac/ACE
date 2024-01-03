@@ -10,6 +10,9 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
+using ACE.Server.Network.GameMessages.Messages;
+using Google.Protobuf.Collections;
+using Google.Protobuf.WellKnownTypes;
 
 namespace ACE.Server.WorldObjects
 {
@@ -18,6 +21,8 @@ namespace ACE.Server.WorldObjects
     /// </summary>
     partial class Creature
     {
+        private static bool DebugTaunt = false;
+
         /// <summary>
         /// Monsters wake up when players are in visual range
         /// </summary>
@@ -118,7 +123,7 @@ namespace ACE.Server.WorldObjects
             if (Timers.RunningTime < NextFindTarget)
                 return;
 
-            FindNextTarget();
+            FindNextTarget(false);
         }
 
         public void SetNextTargetTime()
@@ -131,10 +136,156 @@ namespace ACE.Server.WorldObjects
             NextFindTarget = Timers.RunningTime + rng;
         }
 
-        public virtual bool FindNextTarget()
+        public Creature CheckForTauntingTargets(List<TargetDistance> targetDistances, bool onTakeDamage)
+        {
+            if (targetDistances.Count <= 1)
+                return null;
+
+            var monsterTier = Math.Max((Tier ?? 1) - 1, 1);
+
+            var initialTauntStaminaCost = monsterTier * 10; // Cost to attempt taunting an enemy that isn't attacking the taunter.
+            var maintainTauntStaminaCost = monsterTier * 2; // Cost to maintain taunt on an enemy that has already been taunted.
+
+            var combatAbility = CombatAbility.None;
+            var combatFocus = GetEquippedCombatFocus();
+            if (combatFocus != null)
+                combatAbility = combatFocus.GetCombatAbility();
+
+            Player target = AttackTarget as Player;
+            if (target != null && target.IsAttemptingToTaunt && IsDirectVisible(target) && !onTakeDamage)
+            {
+                // Current target is already trying to taunt and is visible, so he has priority over everyone else and we also skip the activation chance step.
+
+                Entity.CreatureSkill skill = target.GetCreatureSkill(Skill.AssessCreature);
+
+                var moddedAssessSkill = target.GetModdedAssessSkill();
+
+                if (target.Stamina.Current < maintainTauntStaminaCost)
+                {
+                    if(DebugTaunt)
+                        Console.WriteLine($"{target.Name} attempts to MAINTAIN taunt on {Name} - FAILED (Stamina)");
+
+                    // Not enough stamina, stop taunting, remove from targetDistances to incentivize the monster to switch targets.
+                    target.Session.Network.EnqueueSend(new GameMessageSystemChat($"You falter in your attempt at taunting {Name}.", ChatMessageType.CombatSelf));
+                    var entry = targetDistances.FirstOrDefault(r => r.Target == AttackTarget);
+                    if (entry != default(TargetDistance))
+                        targetDistances.Remove(entry);
+                }
+                else if (target.attacksReceivedPerSecond >= Math.Ceiling(moddedAssessSkill / 50.0f))
+                {
+                    if (DebugTaunt)
+                        Console.WriteLine($"{target.Name} attempts to MAINTAIN taunt on {Name} - FAILED (attacks per second)");
+
+                    // We're too busy to keep this taunt going, remove from targetDistances to incentivize the monster to switch targets.
+                    target.Session.Network.EnqueueSend(new GameMessageSystemChat($"You're too busy to keep taunting {Name}!", ChatMessageType.CombatSelf));
+                    var entry = targetDistances.FirstOrDefault(r => r.Target == AttackTarget);
+                    if (entry != default(TargetDistance))
+                        targetDistances.Remove(entry);
+                }
+                else
+                {
+                    var moddedDeceptionSkill = GetModdedDeceptionSkill();
+                    var avoidChance = 1.0f - SkillCheck.GetSkillChance(moddedAssessSkill, moddedDeceptionSkill);
+                    //var avoidChance = 0.0f;
+
+                    // COMBAT ABILITY: Check for Provoke Focus
+                    if (combatAbility == CombatAbility.Provoke)
+                        avoidChance -= 0.1f;
+
+                    if (avoidChance > ThreadSafeRandom.Next(0.0f, 1.0f))
+                    {
+                        if (DebugTaunt)
+                            Console.WriteLine($"{target.Name} attempts to MAINTAIN taunt on {Name} - FAILED (Random chance: {Math.Round(avoidChance, 2) * 100}%  Assess: {moddedAssessSkill} vs Deception: {moddedDeceptionSkill})");
+
+                        // The current taunter has lost the taunt! Give other taunters a shot, remove from targetDistances to incentivize the monster to switch targets.
+                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your taunt loses its effect on {Name}!", ChatMessageType.CombatSelf));
+                        var entry = targetDistances.FirstOrDefault(r => r.Target == AttackTarget);
+                        if (entry != default(TargetDistance))
+                            targetDistances.Remove(entry);
+                    }
+                    else
+                    {
+                        if (DebugTaunt)
+                            Console.WriteLine($"{target.Name} attempts to MAINTAIN taunt on {Name} - SUCCESS!");
+
+                        // The current taunter keeps the taunt.
+                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your taunt maintains its effect on {Name}!", ChatMessageType.CombatSelf));
+                        target.UpdateVitalDelta(target.Mana, -maintainTauntStaminaCost);
+                        return target;
+                    }
+                }
+            }
+
+            foreach (var targetDistance in targetDistances)
+            {
+                target = targetDistance.Target as Player;
+                if (target == AttackTarget)
+                    continue;
+                else if (target != null && target.IsAttemptingToTaunt)
+                {
+                    if (target.Stamina.Current < initialTauntStaminaCost)
+                        continue;
+                    if (!IsDirectVisible(target))
+                        continue;
+
+                    Entity.CreatureSkill skill = target.GetCreatureSkill(Skill.AssessCreature);
+
+                    var activationChance = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+                    if (combatAbility == CombatAbility.Provoke)
+                        activationChance -= 0.1f;
+
+                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized && activationChance > 0.75f)
+                        continue;
+                    else if (skill.AdvancementClass == SkillAdvancementClass.Trained && activationChance > 0.5f)
+                        continue;
+                    else if (activationChance > 0.1f)
+                        continue;
+
+                    if (target.attacksReceivedPerSecond >= skill.Current / 50.0f)
+                    {
+                        if (DebugTaunt)
+                            Console.WriteLine($"{target.Name} attempts to TAUNT {Name} - Failed! from attacks per second (Attack? {onTakeDamage})");
+
+                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"You're too busy with your current targets to attempt to taunt any others!", ChatMessageType.CombatSelf));
+                        continue;
+                    }
+
+                    target.UpdateVitalDelta(target.Stamina, -initialTauntStaminaCost);
+
+                    Entity.CreatureSkill defenseSkill = GetCreatureSkill(Skill.Deception);
+                    var avoidChance = 1.0f - SkillCheck.GetSkillChance(skill.Current, defenseSkill.Current);
+
+                    if (combatAbility == CombatAbility.Provoke)
+                        avoidChance -= 0.1f;
+
+                    if (avoidChance > ThreadSafeRandom.Next(0.0f, 1.0f))
+                    {
+                        if (DebugTaunt)
+                            Console.WriteLine($"{target.Name} attempts to TAUNT {Name} - Failed! from random chance ({Math.Round(avoidChance, 2) * 100}%) (OnAttack? {onTakeDamage})");
+
+                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} resisted your taunt attempt!", ChatMessageType.CombatSelf));
+                        continue;
+                    }
+                    else
+                    {
+                        if (DebugTaunt)
+                            Console.WriteLine($"{target.Name} attempts to TAUNT {Name} - Success! (OnAttack? {onTakeDamage})");
+
+                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your taunt successfully attracts the attention of {Name}!", ChatMessageType.CombatSelf));
+
+                        Proficiency.OnSuccessUse(target, skill, defenseSkill.Current);
+                        return target;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public virtual bool FindNextTarget(bool onTakeDamage, Creature untargetablePlayer = null)
         {
             stopwatch.Restart();
-
             try
             {
                 SelectTargetingTactic();
@@ -149,6 +300,9 @@ namespace ACE.Server.WorldObjects
                     return false;
                 }
 
+                if(visibleTargets.Count > 1 && untargetablePlayer != null)
+                    visibleTargets.Remove(untargetablePlayer);
+
                 // Generally, a creature chooses whom to attack based on:
                 //  - who it was last attacking,
                 //  - who attacked it last,
@@ -162,64 +316,112 @@ namespace ACE.Server.WorldObjects
 
                 var prevAttackTarget = AttackTarget;
 
-                switch (CurrentTargetingTactic)
+                var targetDistances = BuildTargetDistance(visibleTargets);
+                var tauntedBy = CheckForTauntingTargets(targetDistances, onTakeDamage); // Closer targets roll first and thus have higher chance of taunting the monster.
+
+                if (tauntedBy != null)
                 {
-                    case TargetingTactic.None:
-
-                        Console.WriteLine($"{Name}.FindNextTarget(): TargetingTactic.None");
-                        break; // same as focused?
-
-                    case TargetingTactic.Random:
-
-                        // this is a very common tactic with monsters,
-                        // although it is not truly random, it is weighted by distance
-                        var targetDistances = BuildTargetDistance(visibleTargets);
-                        AttackTarget = SelectWeightedDistance(targetDistances);
-                        break;
-
-                    case TargetingTactic.Focused:
-
-                        break; // always stick with original target?
-
-                    case TargetingTactic.LastDamager:
-
-                        var lastDamager = DamageHistory.LastDamager?.TryGetAttacker() as Creature;
-                        if (lastDamager != null)
-                            AttackTarget = lastDamager;
-                        break;
-
-                    case TargetingTactic.TopDamager:
-
-                        var topDamager = DamageHistory.TopDamager?.TryGetAttacker() as Creature;
-                        if (topDamager != null)
-                            AttackTarget = topDamager;
-                        break;
-
-                    // these below don't seem to be used in PY16 yet...
-
-                    case TargetingTactic.Weakest:
-
-                        // should probably shuffle the list beforehand,
-                        // in case a bunch of levels of same level are in a group,
-                        // so the same player isn't always selected
-                        var lowestLevel = visibleTargets.OrderBy(p => p.Level).FirstOrDefault();
-                        AttackTarget = lowestLevel;
-                        break;
-
-                    case TargetingTactic.Strongest:
-
-                        var highestLevel = visibleTargets.OrderByDescending(p => p.Level).FirstOrDefault();
-                        AttackTarget = highestLevel;
-                        break;
-
-                    case TargetingTactic.Nearest:
-
-                        var nearest = BuildTargetDistance(visibleTargets);
-                        AttackTarget = nearest[0].Target;
-                        break;
+                    // We've been taunted! Ignore our default tactic!
+                    AttackTarget = tauntedBy;
                 }
+                else
+                {
+                    //var currentTactic = CurrentTargetingTactic;
+                    if (onTakeDamage)
+                        return false;
 
+                    switch (CurrentTargetingTactic)
+                    {
+                        case TargetingTactic.None:
+
+                            //Console.WriteLine($"{Name}.FindNextTarget(): TargetingTactic.None");
+                            break; // same as focused?
+
+                        case TargetingTactic.Random:
+
+                            // this is a very common tactic with monsters,
+                            // although it is not truly random, it is weighted by distance
+                            //var targetDistances = BuildTargetDistance(visibleTargets);
+                            AttackTarget = SelectWeightedDistance(targetDistances);
+                            break;
+
+                        case TargetingTactic.Focused:
+
+                            break; // always stick with original target?
+
+                        case TargetingTactic.LastDamager:
+
+                            var lastDamager = DamageHistory.LastDamager?.TryGetAttacker() as Creature;
+                            if (lastDamager != null)
+                                AttackTarget = lastDamager;
+                            break;
+
+                        case TargetingTactic.TopDamager:
+
+                            var topDamager = DamageHistory.TopDamager?.TryGetAttacker() as Creature;
+                            if (topDamager != null)
+                                AttackTarget = topDamager;
+                            break;
+
+                        // these below don't seem to be used in PY16 yet...
+
+                        case TargetingTactic.Weakest:
+
+                            // should probably shuffle the list beforehand,
+                            // in case a bunch of levels of same level are in a group,
+                            // so the same player isn't always selected
+                            var lowestLevel = visibleTargets.OrderBy(p => p.Level).FirstOrDefault();
+                            AttackTarget = lowestLevel;
+                            break;
+
+                        case TargetingTactic.Strongest:
+
+                            var highestLevel = visibleTargets.OrderByDescending(p => p.Level).FirstOrDefault();
+                            AttackTarget = highestLevel;
+                            break;
+
+                        case TargetingTactic.Nearest:
+
+                            var nearest = BuildTargetDistance(visibleTargets);
+                            AttackTarget = nearest[0].Target;
+                            break;
+                    }
+                }
                 //Console.WriteLine($"{Name}.FindNextTarget = {AttackTarget.Name}");
+
+                Player player = AttackTarget as Player;
+                if (player != null && !Visibility && player.AddTrackedObject(this))
+                    _log.Error($"Fixed invisible attacker on player {player.Name}. (Landblock:{CurrentLandblock.Id} - {Name} ({Guid})");
+
+                // If multiple player targets are nearby, check to see if the current target can force this monster to look for a new target
+                // Base chance to avoid monster aggro can be up to 25%, depending on monster perception and player deception.
+                // With Specialized Deception and the Smokescreen combat ability, it's possible for a player to receive 100% chance to avoid aggro.
+                if (visibleTargets.Count > 1 && player != null && player.IsAttemptingToDeceive)
+                {
+                    var monsterPerception = GetCreatureSkill(Skill.AssessCreature).Current;
+                    var playerDeception = player.GetCreatureSkill(Skill.Deception).Current;
+
+                    var skillCheck = SkillCheck.GetSkillChance(monsterPerception, playerDeception);
+                    var chanceToDeceive = skillCheck * 0.25f;
+
+                    // SPEC BONUS - Deception (chanceToDeceive value doubled)
+                    if (player.GetCreatureSkill(Skill.Deception).AdvancementClass == SkillAdvancementClass.Specialized && visibleTargets.Count > 1)
+                        chanceToDeceive *= 2;
+
+                    // COMBAT ABILITY - Smokescreen (+50% to chanceToDeceive value, additively)
+                    var playerCombatAbility = GetPlayerCombatAbility(player);
+                    if (playerCombatAbility == CombatAbility.Smokescreen)
+                        chanceToDeceive += 0.5f;
+
+                    var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+                    if (rng < chanceToDeceive)
+                    {
+                        player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You successfully deceived {Name} into believing you aren't a threat! They don't attack you!", ChatMessageType.Broadcast));
+                        FindNextTarget(false, player);
+                    }
+                    else
+                        player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your failed to deceive {Name} into believing you aren't a threat! They attack you!", ChatMessageType.Broadcast));
+                }
 
                 if (AttackTarget != null && AttackTarget != prevAttackTarget)
                     EmoteManager.OnNewEnemy(AttackTarget);
@@ -250,7 +452,12 @@ namespace ACE.Server.WorldObjects
                 /*if (Location.SquaredDistanceTo(creature.Location) > chaseDistSq)
                     continue;*/
 
-                if (PhysicsObj.get_distance_sq_to_object(creature.PhysicsObj, true) > chaseDistSq)
+                var distSq = PhysicsObj.get_distance_sq_to_object(creature.PhysicsObj, true);
+
+                if (creature is Player player && player.TestStealth(this, distSq, $"{Name} sees you! You lose stealth."))
+                    continue;
+
+                if (distSq > chaseDistSq)
                     continue;
 
                 // if this monster belongs to a faction,
@@ -350,7 +557,8 @@ namespace ACE.Server.WorldObjects
 
             foreach (var creature in PhysicsObj.ObjMaint.GetVisibleTargetsValuesOfTypeCreature())
             {
-                if (creature is Player player && (!player.Attackable || player.Teleporting || (player.Hidden ?? false)))
+                var player = creature as Player;
+                if (player != null && (!player.Attackable || player.Teleporting || (player.Hidden ?? false)))
                     continue;
 
                 if (Tolerance.HasFlag(Tolerance.Monster) && (creature is Player || creature is CombatPet))
@@ -358,6 +566,9 @@ namespace ACE.Server.WorldObjects
 
                 //var distSq = Location.SquaredDistanceTo(creature.Location);
                 var distSq = PhysicsObj.get_distance_sq_to_object(creature.PhysicsObj, true);
+                if (player != null && player.TestStealth(this, distSq, $"{creature.Name} sees you! You lose stealth."))
+                    continue;
+
                 if (distSq < closestDistSq)
                 {
                     closestDistSq = (float)distSq;
@@ -533,6 +744,17 @@ namespace ACE.Server.WorldObjects
                 creature.AlertMonster(this);
                 break;
             }
+        }
+
+        private CombatAbility GetPlayerCombatAbility(Player player)
+        {
+            var playerCombatAbility = CombatAbility.None;
+
+            var playerCombatFocus = player.GetEquippedCombatFocus();
+            if (playerCombatFocus != null)
+                playerCombatAbility = playerCombatFocus.GetCombatAbility();
+
+            return playerCombatAbility;
         }
     }
 }
