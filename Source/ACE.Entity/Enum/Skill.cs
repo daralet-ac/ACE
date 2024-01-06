@@ -68,6 +68,66 @@ namespace ACE.Entity.Enum
         Sneaking
     }
 
+    public enum NewSkillNames
+    {
+        None,
+        Axe,                 /* Retired */
+        Bow,                 /* Retired */
+        Crossbow,            /* Retired */
+        Dagger,              /* Retired */
+        Mace,                /* Retired */
+        PhysicalDefense,
+        MissileDefense,
+        Sling,               /* Retired */
+        Spear,               /* Retired */
+        Staff,               /* Retired */
+        Sword,               /* Retired */
+        ThrownWeapon,        /* Retired */
+        UnarmedCombat,       /* Retired */
+        ArcaneLore,
+        MagicDefense,
+        ManaConversion,
+        Spellcraft,          /* Unimplemented */
+        Jewelcrafting,
+        AssessPerson,
+        Deception,
+        Healing,
+        Jump,
+        Thievery,
+        Run,
+        Awareness,           /* Unimplemented */
+        ArmsAndArmorRepair,  /* Unimplemented */
+        Perception,
+        Blacksmithing,
+        Tailoring,
+        Spellcrafting,
+        CreatureEnchantment,
+        PortalMagic,
+        LifeMagic,
+        WarMagic,
+        Leadership,
+        Loyalty,
+        Woodworking,
+        Alchemy,
+        Cooking,
+        Salvaging,
+        TwoHandedCombat,
+        Gearcraft,           /* Retired */
+        VoidMagic,
+        MartialWeapons,
+        LightWeapons,
+        FinesseWeapons,
+        MissileWeapons,
+        Shield,
+        DualWield,
+        Recklessness,
+        SneakAttack,
+        DirtyFighting,
+        Challenge,          /* Unimplemented */
+        Summoning,
+        Stealth
+    }
+
     public static class SkillExtensions
     {
         public static List<Skill> RetiredMelee = new List<Skill>()
@@ -97,6 +157,16 @@ namespace ACE.Entity.Enum
         /// <param name="skill"></param>
         /// <returns>string with spaces infront of capital letters</returns>
         public static string ToSentence(this Skill skill)
+        {
+            return new string(skill.ToString().ToCharArray().SelectMany((c, i) => i > 0 && char.IsUpper(c) ? new char[] { ' ', c } : new char[] { c }).ToArray());
+        }
+
+        /// <summary>
+        /// Will add a space infront of capital letter words in a string
+        /// </summary>
+        /// <param name="skill"></param>
+        /// <returns>string with spaces infront of capital letters</returns>
+        public static string ToSentence(this NewSkillNames skill)
         {
             return new string(skill.ToString().ToCharArray().SelectMany((c, i) => i > 0 && char.IsUpper(c) ? new char[] { ' ', c } : new char[] { c }).ToArray());
         }

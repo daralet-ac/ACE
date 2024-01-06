@@ -1525,12 +1525,12 @@ namespace ACE.Server.WorldObjects.Managers
                         {
                             var updateSkill = new GameMessagePrivateUpdateSkill(player, player.GetCreatureSkill((Skill)emote.Stat));
 
-                            var msg = new GameMessageSystemChat($"{((Skill)emote.Stat).ToSentence()} trained.", ChatMessageType.Advancement);
+                            var msg = new GameMessageSystemChat($"{((NewSkillNames)emote.Stat).ToSentence()} trained.", ChatMessageType.Advancement);
 
                             player.Session.Network.EnqueueSend(updateSkill, msg);
                         }
                         else
-                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Failed to train {((Skill)emote.Stat).ToSentence()}!", ChatMessageType.Advancement));
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Failed to train {((NewSkillNames)emote.Stat).ToSentence()}!", ChatMessageType.Advancement));
                     }
                     break;
             }
