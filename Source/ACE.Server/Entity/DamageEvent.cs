@@ -328,13 +328,6 @@ namespace ACE.Server.Entity
                         CriticalChance += 0.1f;
             }
 
-            if (playerDefender != null)
-            {
-                // Combat Technique - Riposte
-                if (defenderCombatAbility == CombatAbility.Riposte)
-                    CriticalChance += 0.20f; // Extra chance of receiving critical hits while using the Riposte technique.
-            }
-
             // https://asheron.fandom.com/wiki/Announcements_-_2002/08_-_Atonement
             // It should be noted that any time a character is logging off, PK or not, all physical attacks against them become automatically critical.
             // (Note that spells do not share this behavior.) We hope this will stress the need to log off in a safe place.
@@ -650,40 +643,53 @@ namespace ACE.Server.Entity
 
         private bool IsBlocked(Creature attacker, Creature defender)
         {
+            var blockChance = 0.0f;
+
+            var combatAbility = CombatAbility.None;
+            var combatFocus = defender.GetEquippedCombatFocus();
+            if (combatFocus != null)
+                combatAbility = combatFocus.GetCombatAbility();
+
             var defenderEquippedShield = defender.GetEquippedShield();
-
-            if (defenderEquippedShield == null || defender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass != SkillAdvancementClass.Specialized)
-                return false;
-
-            Player playerAttacker = attacker as Player;
-            Player playerDefender = defender as Player;
-
-            AccuracyMod = attacker.GetAccuracySkillMod(Weapon);
-            EffectiveAttackSkill = attacker.GetEffectiveAttackSkill();
-
-            GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
-
-            // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +20% if weapon specialized)
-            if (playerAttacker != null)
+            if (defenderEquippedShield != null || defender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass != SkillAdvancementClass.Specialized)
             {
-                if (playerAttacker.AttackHeight == AttackHeight.Medium)
+
+                Player playerAttacker = attacker as Player;
+                Player playerDefender = defender as Player;
+
+                AccuracyMod = attacker.GetAccuracySkillMod(Weapon);
+                EffectiveAttackSkill = attacker.GetEffectiveAttackSkill();
+
+                GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
+
+                // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +20% if weapon specialized)
+                if (playerAttacker != null)
                 {
-                    float bonus;
+                    if (playerAttacker.AttackHeight == AttackHeight.Medium)
+                    {
+                        float bonus;
 
-                    if (WeaponIsSpecialized(playerAttacker))
-                        bonus = 1.2f;
-                    else
-                        bonus = 1.1f;
+                        if (WeaponIsSpecialized(playerAttacker))
+                            bonus = 1.2f;
+                        else
+                            bonus = 1.1f;
 
-                    EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
+                        EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
+                    }
                 }
+
+                var shieldArmorLevel = defenderEquippedShield.ArmorLevel ?? 0;
+
+                var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
+
+                blockChance = 0.1f + 0.1f * (float)blockChanceMod;
             }
-
-            var shieldArmorLevel = defenderEquippedShield.ArmorLevel ?? 0;
-
-            var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
-
-            var blockChance = 0.1f + 0.1f * blockChanceMod;
+            // COMBAT ABILITY - Parry: 20% chance to block attacks while using a two-handed weapon or dual-wielding
+            else if (combatAbility == CombatAbility.Parry)
+            {
+                if (defender.TwoHandedCombat || defender.IsDualWieldAttack)
+                    blockChance = 0.2f;
+            }
 
             if (ThreadSafeRandom.Next(0.0f, 1.0f) < blockChance)
                 return true;
