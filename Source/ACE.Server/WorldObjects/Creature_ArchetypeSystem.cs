@@ -20,6 +20,7 @@ namespace ACE.Server.WorldObjects
         private static readonly int[] enemyArmorAegis = { 10, 100, 200, 300, 400, 500, 750, 1000, 2000 };
         private static readonly int[] enemyAttackDefense = { 10, 75, 150, 200, 225, 250, 300, 350, 500};
         private static readonly int[] enemyAssessDeception = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
+        private static readonly int[] enemyRun = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
 
         private static readonly float[] enemyDamage = { 2.0f, 2.5f, 3.0f, 3.3f, 3.6f, 3.9f, 4.2f, 5.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
 
@@ -39,11 +40,11 @@ namespace ACE.Server.WorldObjects
                 {
                     var newSkill = GetNewMeleeAttackSkill(tier, statWeight, physicality, dexterity);
 
-                    var skillType = ACE.Entity.Enum.Skill.Sword;
+                    var skillType = ACE.Entity.Enum.Skill.HeavyWeapons;
 
                     var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Specialized };
 
-                    Skills[ACE.Entity.Enum.Skill.Sword] = new CreatureSkill(this, skillType, propertiesSkill);
+                    Skills[ACE.Entity.Enum.Skill.HeavyWeapons] = new CreatureSkill(this, skillType, propertiesSkill);
                 }
 
                 // Missile Attack Skill
@@ -81,7 +82,7 @@ namespace ACE.Server.WorldObjects
 
                 // Physical Defense
                 {
-                    var newSkill = GetNewMeleeDefenseSkill(tier, statWeight, toughness, physicality);
+                    var newSkill = GetNewPhysicalDefenseSkill(tier, statWeight, toughness, (physicality + dexterity) / 2);
 
                     var skillType = ACE.Entity.Enum.Skill.MeleeDefense;
 
@@ -112,9 +113,9 @@ namespace ACE.Server.WorldObjects
                     Skills[ACE.Entity.Enum.Skill.MagicDefense] = new CreatureSkill(this, skillType, propertiesSkill);
                 }
 
-                // Assess
+                // Perception
                 {
-                    var newSkill = GetNewAssessSkill(tier, statWeight, intelligence);
+                    var newSkill = GetNewPerceptionSkill(tier, statWeight, intelligence);
 
                     var skillType = ACE.Entity.Enum.Skill.AssessCreature;
 
@@ -133,10 +134,21 @@ namespace ACE.Server.WorldObjects
 
                     Skills[ACE.Entity.Enum.Skill.Deception] = new CreatureSkill(this, skillType, propertiesSkill);
                 }
+
+                // Run
+                {
+                    var newSkill = GetNewRunSkill(tier, statWeight, dexterity);
+
+                    var skillType = ACE.Entity.Enum.Skill.Run;
+
+                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained };
+
+                    Skills[ACE.Entity.Enum.Skill.Run] = new CreatureSkill(this, skillType, propertiesSkill);
+                }
             }
         }
 
-        private void SetVitals(int tier, float statWeight, double toughness, double physicality, double dexerity, double magic)
+        private void SetVitals(int tier, float statWeight, double toughness, double physicality, double dexterity, double magic)
         {
 
             if (Debug)
@@ -166,7 +178,7 @@ namespace ACE.Server.WorldObjects
             {
                 if ((OverrideArchetypeStamina ?? false) != true)
                 {
-                    var newVital = GetNewStaminaLevel(tier, statWeight, physicality, dexerity);
+                    var newVital = GetNewStaminaLevel(tier, statWeight, physicality, dexterity);
 
                     Vitals[PropertyAttribute2nd.MaxStamina].StartingValue = newVital;
                 }
@@ -176,7 +188,7 @@ namespace ACE.Server.WorldObjects
             {
                 if ((OverrideArchetypeStamina ?? false) != true)
                 {
-                    var newVital = GetNewStaminaRegenLevel(tier, statWeight, physicality, dexerity);
+                    var newVital = GetNewStaminaRegenLevel(tier, statWeight, physicality, dexterity);
 
                     StaminaRate = newVital;
                 }
@@ -298,7 +310,7 @@ namespace ACE.Server.WorldObjects
             var skillFromAttributes = Strength.Base / 2;
 
             if (skillFromAttributes > tweakedSkill)
-                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Sword skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Strength attribute should be lowered on the {Name} weenie file.");
+                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Martial Weapons skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Strength attribute should be lowered on the {Name} weenie file.");
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
@@ -385,10 +397,10 @@ namespace ACE.Server.WorldObjects
             return newSkill;
         }
 
-        private uint GetNewMeleeDefenseSkill(int tier, float statWeight, double toughness, double physicality)
+        private uint GetNewPhysicalDefenseSkill(int tier, float statWeight, double toughness, double physicalityDexterity)
         {
                 var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
-                var multiplier = (toughness + physicality) / 2;
+                var multiplier = (toughness + physicalityDexterity) / 2;
                 var tweakedSkill = (uint)(target * multiplier);
 
                 var skillFromAttributes = (Coordination.Base + Quickness.Base) / 4;
@@ -399,7 +411,7 @@ namespace ACE.Server.WorldObjects
                 var newSkill = tweakedSkill - skillFromAttributes;
 
                 if (Debug)
-                    Console.Write($"\n-Melee Defense\n" +
+                    Console.Write($"\n-Physical Defense\n" +
                     $" Target: {target}\n" +
                     $" Multiplier: {multiplier}\n" +
                     $" TweakedSkill: {tweakedSkill}\n" +
@@ -457,7 +469,7 @@ namespace ACE.Server.WorldObjects
             return newSkill;
         }
 
-        private uint GetNewAssessSkill(int tier, float statWeight, double intelligence)
+        private uint GetNewPerceptionSkill(int tier, float statWeight, double intelligence)
         {
             var target = enemyAssessDeception[tier] + (enemyAssessDeception[tier + 1] - enemyAssessDeception[tier]) * statWeight;
             var multiplier = intelligence;
@@ -466,12 +478,12 @@ namespace ACE.Server.WorldObjects
             var skillFromAttributes = Focus.Base / 2;
 
             if (skillFromAttributes > tweakedSkill)
-                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Assess skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Focus attribute should be lowered on the {Name} weenie file.");
+                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Perception skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Focus attribute should be lowered on the {Name} weenie file.");
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
             if (Debug)
-                Console.Write($"\n-Assess\n" +
+                Console.Write($"\n-Perception\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
                 $" TweakedSkill: {tweakedSkill}\n" +
@@ -496,6 +508,30 @@ namespace ACE.Server.WorldObjects
 
             if (Debug)
                 Console.Write($"\n-Deception\n" +
+                $" Target: {target}\n" +
+                $" Multiplier: {multiplier}\n" +
+                $" TweakedSkill: {tweakedSkill}\n" +
+                $" SkillFromAttributes: {skillFromAttributes}\n" +
+                $" NewSkill: {newSkill}");
+
+            return newSkill;
+        }
+
+        private uint GetNewRunSkill(int tier, float statWeight, double dexterity)
+        {
+            var target = enemyRun[tier] + (enemyRun[tier + 1] - enemyRun[tier]) * statWeight;
+            var multiplier = dexterity;
+            var tweakedSkill = (uint)(target * multiplier);
+
+            var skillFromAttributes = Quickness.Base / 2;
+
+            if (skillFromAttributes > tweakedSkill)
+                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Run skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Quickness attribute should be lowered on the {Name} weenie file.");
+
+            var newSkill = tweakedSkill - skillFromAttributes;
+
+            if (Debug)
+                Console.Write($"\n-Run\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
                 $" TweakedSkill: {tweakedSkill}\n" +
@@ -662,7 +698,7 @@ namespace ACE.Server.WorldObjects
 
             // player melee def
             var weightedPlayerMeleeDef = avgPlayerMeleeDefense[tier] + (avgPlayerMeleeDefense[tier + 1] - avgPlayerMeleeDefense[tier]) * statWeight;
-            var enemyAttackSkill = Skills[Skill.Sword].Current;
+            var enemyAttackSkill = Skills[Skill.HeavyWeapons].Current;
 
             // player evade
             var playerEvadeChance = 1 - SkillCheck.GetSkillChance((int)enemyAttackSkill, (int)weightedPlayerMeleeDef);
