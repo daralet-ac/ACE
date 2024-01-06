@@ -7,7 +7,7 @@ namespace ACE.Entity.Enum
         Stealth,
         Phalanx,
         Provoke,
-        Riposte,
+        Parry,
         Reckless,
         Backstab,
         Powershot,

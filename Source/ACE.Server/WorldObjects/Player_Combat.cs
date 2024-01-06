@@ -78,26 +78,6 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public override void OnAttackReceived(WorldObject attacker, CombatType attackType, bool critical, bool avoided)
         {
-            // COMBAT ABILITY - Riposte
-            if (CombatMode == CombatMode.Melee && avoided && AttackTarget == attacker)
-            {
-                var currentTime = Time.GetUnixTime();
-                if (NextCombatAbilityActivationTime <= currentTime)
-                {
-                    var combatAbilityTrinket = GetEquippedTrinket();
-                    if (combatAbilityTrinket != null && combatAbilityTrinket.CombatAbilityId == (int)CombatAbility.Riposte)
-                    {
-                        Creature creatureAttacker = attacker as Creature;
-                        if (creatureAttacker != null)
-                        {
-                            // Chance of striking back at the target when successfully evading an attack while using the Riposte technique.
-                            Session.Network.EnqueueSend(new GameMessageSystemChat($"You see an opening and quickly strike back at the {attacker.Name}!", ChatMessageType.CombatSelf));
-                            DamageTarget(creatureAttacker, GetEquippedMeleeWeapon());
-                            NextCombatAbilityActivationTime = currentTime + CombatAbilityActivationInterval;
-                        }
-                    }
-                }
-            }
             base.OnAttackReceived(attacker, attackType, critical, avoided);
         }
 
