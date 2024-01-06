@@ -12,6 +12,7 @@ using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
+using WeenieClassName = ACE.Entity.Enum.WeenieClassName;
 
 namespace ACE.Server.Factories
 {
@@ -197,12 +198,6 @@ namespace ACE.Server.Factories
                 wo.ItemDifficulty = null;
             }
 
-            if (wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth && wo.ArmorStyle != (int)ArmorStyle.Amuli && wo.ArmorStyle != (int)ArmorStyle.Chiran)
-            {
-                wo.Biota.GetOrAddKnownSpell((int)GetImpenetribilityLevel(wo), wo.BiotaDatabaseLock, out _);
-                wo.UiEffects = UiEffects.Magical;
-            }
-
             var totalSkillModPercentile = 0.0;
             var totalGearRatingPercentile = 0.0;
             if (roll != null)
@@ -244,8 +239,6 @@ namespace ACE.Server.Factories
                     return;
 
                 var armorSlots = wo.ArmorSlots ?? 1;
-                var armorMod = 1.0f;
-                var aegisMod = 1.0f;
 
                 // Get Armor/Aegis Level
                 var baseAegisLevel = wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth ? 10 : 5;
@@ -255,42 +248,68 @@ namespace ACE.Server.Factories
                 {
                     case (int)ArmorStyle.Amuli:
                     case (int)ArmorStyle.Chiran:
+                    case (int)ArmorStyle.OlthoiAmuli:
                         baseArmorLevel = 75;
-                        aegisMod = 0.5f;
+                        baseAegisLevel = 7;
+                        break;
+                    case (int)ArmorStyle.Leather:
+                    case (int)ArmorStyle.Yoroi:
+                    case (int)ArmorStyle.Lorica:
+                        baseArmorLevel = 75;
                         break;
                     case (int)ArmorStyle.StuddedLeather:
                     case (int)ArmorStyle.Koujia:
-                    case (int)ArmorStyle.Lorica:
-                        baseArmorLevel = 85;
+                    case (int)ArmorStyle.OlthoiKoujia:
+                        baseArmorLevel = 90;
                         break;
                     case (int)ArmorStyle.Chainmail:
                     case (int)ArmorStyle.Scalemail:
-                        baseArmorLevel = 90;
+                    case (int)ArmorStyle.Nariyid:
+                        baseArmorLevel = 100;
+                        break;
+                    case (int)ArmorStyle.Platemail:
+                    case (int)ArmorStyle.Celdon:
+                    case (int)ArmorStyle.OlthoiCeldon:
+                        baseArmorLevel = 110;
                         break;
                     case (int)ArmorStyle.Covenant:
+                    case (int)ArmorStyle.OlthoiArmor:
                         baseArmorLevel = 125;
-                        baseAegisLevel = 0;
                         break;
                 }
 
                 switch ((int)wo.WeenieClassId)
                 {
-                    case 44: // Buckler
-                    case 91: // Kite Shield
-                    case 93: // Round Shield
-                    case 92: // Large Kite Shield
-                    case 94: // Large Round Shield
-                    case 95: // Tower Shield
-                        baseAegisLevel = 0;
-                            break;
-                }
+                    case (int)WeenieClassName.W_BUCKLER_CLASS: // Buckler
+                        baseArmorLevel = 75;
+                        baseAegisLevel = 5;
+                        break;
+                    case (int)WeenieClassName.W_SHIELDKITE_CLASS: // Kite Shield
+                    case (int)WeenieClassName.W_SHIELDROUND_CLASS: // Round Shield
+                        baseArmorLevel = 100;
+                        baseAegisLevel = 6;
+                        break;
+                    case (int)WeenieClassName.W_SHIELDKITELARGE_CLASS: // Large Kite Shield
+                    case (int)WeenieClassName.W_SHIELDROUNDLARGE_CLASS: // Large Round Shield
+                        baseArmorLevel = 105;
+                        baseAegisLevel = 7;
+                        break;
+                    case (int)WeenieClassName.W_SHIELDTOWER_CLASS: // Tower Shield
+                        baseArmorLevel = 110;
+                        baseAegisLevel = 8;
+                     break;
+                    case (int)WeenieClassName.W_SHIELDCOVENANT_CLASS: // Covenant Shield
+                        baseArmorLevel = 125;
+                        baseAegisLevel = 10;
+                        break;
+            }
 
                 // Add some variance (+/- 10%)
                 var variance = 1.0f + ThreadSafeRandom.Next(-0.1f, 0.1f);
 
                 // Final Calculation
-                var newArmorLevel = baseArmorLevel * (tier - 1) * variance * armorMod;
-                var newAegisLevel = baseAegisLevel * (tier - 1) * armorSlots * variance * aegisMod;
+                var newArmorLevel = baseArmorLevel * (tier - 1) * variance;
+                var newAegisLevel = baseAegisLevel * (tier - 1) * armorSlots * variance;
 
                 // Assign levels
                 wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
@@ -1284,16 +1303,23 @@ namespace ACE.Server.Factories
             {
                 case (int)ArmorStyle.Amuli:
                 case (int)ArmorStyle.Chiran:
+                case (int)ArmorStyle.OlthoiAmuli:
                     return 0.02f;
                 case (int)ArmorStyle.StuddedLeather:
                 case (int)ArmorStyle.Koujia:
-                case (int)ArmorStyle.Lorica:
+                case (int)ArmorStyle.OlthoiKoujia:
                     return 0.02f;
                 case (int)ArmorStyle.Chainmail:
                 case (int)ArmorStyle.Scalemail:
+                case (int)ArmorStyle.Nariyid:
                     return 0.03f;
+                case (int)ArmorStyle.Platemail:
+                case (int)ArmorStyle.Celdon:
+                case (int)ArmorStyle.OlthoiCeldon:
+                    return 0.04f;
                 case (int)ArmorStyle.Covenant:
-                    return 0.06f;
+                case (int)ArmorStyle.OlthoiArmor:
+                    return 0.05f;
             }
 
             switch ((int)wo.WeenieClassId)
