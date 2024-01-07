@@ -251,6 +251,11 @@ namespace ACE.Server.WorldObjects
                         case Skill.MagicItemTinkering:
                         case Skill.WeaponTinkering:
                         case Skill.Salvaging:
+
+                        // removed skills
+                        case Skill.MissileDefense:
+                        case Skill.DirtyFighting:
+                        case Skill.Recklessness:
                             continue;
                     }
 
@@ -269,7 +274,6 @@ namespace ACE.Server.WorldObjects
                     specializedCreditsTotal += specializedCost;
                 }
             }
-
             return specializedCreditsTotal;
         }
 
