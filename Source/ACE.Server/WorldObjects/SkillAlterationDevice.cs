@@ -82,14 +82,15 @@ namespace ACE.Server.WorldObjects
 
             if (!confirmed)
             {
+                var newSkill = (NewSkillNames)skill.Skill;
                 var msg = "This action will ";
                 switch (TypeOfAlteration)
                 {
                     case SkillAlterationType.Specialize:
-                        msg += $"specialize your {skill.Skill.ToSentence()} skill and cost {skillBase.UpgradeCostFromTrainedToSpecialized} credits.";
+                        msg += $"specialize your {newSkill.ToSentence()} skill and cost {skillBase.UpgradeCostFromTrainedToSpecialized} credits.";
                         break;
                     case SkillAlterationType.Lower:
-                        msg += $"lower your {skill.Skill.ToSentence()} skill from {(skill.AdvancementClass == SkillAdvancementClass.Specialized ? "specialized to trained" : "trained to untrained")} and refund the skill credits and experience invested in this skill.";
+                        msg += $"lower your {newSkill.ToSentence()} skill from {(skill.AdvancementClass == SkillAdvancementClass.Specialized ? "specialized to trained" : "trained to untrained")} and refund the skill credits and experience invested in this skill.";
                         break;
                 }
 
@@ -104,6 +105,8 @@ namespace ACE.Server.WorldObjects
 
         public bool VerifyRequirements(Player player, CreatureSkill skill, SkillBase skillBase)
         {
+            var newSkill = (NewSkillNames)skill.Skill;
+
             switch (TypeOfAlteration)
             {
                 // Gem of Enlightenment
@@ -112,14 +115,14 @@ namespace ACE.Server.WorldObjects
                     // ensure skill is trained
                     if (skill.AdvancementClass != SkillAdvancementClass.Trained)
                     {
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.Your_SkillMustBeTrained, skill.Skill.ToSentence()));
+                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.Your_SkillMustBeTrained, newSkill.ToSentence()));
                         return false;
                     }
 
                     // ensure player has enough available skill credits
                     if (player.AvailableSkillCredits < skillBase.UpgradeCostFromTrainedToSpecialized)
                     {
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.NotEnoughSkillCreditsToSpecialize, skill.Skill.ToSentence()));
+                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.NotEnoughSkillCreditsToSpecialize, newSkill.ToSentence()));
                         return false;
                     }
 
@@ -137,7 +140,7 @@ namespace ACE.Server.WorldObjects
 
                     if (GetTotalSpecializedCredits(player) + specializedCost > 70)
                     {
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.TooManyCreditsInSpecializedSkills, skill.Skill.ToSentence()));
+                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.TooManyCreditsInSpecializedSkills, newSkill.ToSentence()));
                         return false;
                     }
                     break;
@@ -148,7 +151,7 @@ namespace ACE.Server.WorldObjects
                     // ensure skill is trained or specialized
                     if (skill.AdvancementClass < SkillAdvancementClass.Trained)
                     {
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.Your_SkillIsAlreadyUntrained, skill.Skill.ToSentence()));
+                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.Your_SkillIsAlreadyUntrained, newSkill.ToSentence()));
                         return false;
                     }
 
@@ -156,7 +159,7 @@ namespace ACE.Server.WorldObjects
                     if (CheckWieldedItems(player))
                     {
                         // Items are wielded which might be affected by a lowering operation
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.CannotLowerSkillWhileWieldingItem, skill.Skill.ToSentence()));
+                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.CannotLowerSkillWhileWieldingItem, newSkill.ToSentence()));
                         return false;
                     }
 
@@ -168,6 +171,8 @@ namespace ACE.Server.WorldObjects
 
         public void AlterSkill(Player player, CreatureSkill skill, SkillBase skillBase)
         {
+            var newSkill = (NewSkillNames)skill.Skill;
+
             switch (TypeOfAlteration)
             {
                 // Gem of Enlightenment
@@ -177,7 +182,8 @@ namespace ACE.Server.WorldObjects
                     {
                         var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
                         var availableSkillCredits = new GameMessagePrivateUpdatePropertyInt(player, PropertyInt.AvailableSkillCredits, player.AvailableSkillCredits ?? 0);
-                        var msg = new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.YouHaveSucceededSpecializing_Skill, skill.Skill.ToSentence());
+
+                        var msg = new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.YouHaveSucceededSpecializing_Skill, newSkill.ToSentence());
 
                         player.Session.Network.EnqueueSend(updateSkill, availableSkillCredits, msg);
 
@@ -198,7 +204,7 @@ namespace ACE.Server.WorldObjects
                             var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
                             var availableSkillCredits = new GameMessagePrivateUpdatePropertyInt(player, PropertyInt.AvailableSkillCredits, player.AvailableSkillCredits ?? 0);
                             var msg = specializedViaAugmentation ? WeenieErrorWithString.YouSucceededRecoveringXPFromSkill_AugmentationNotUntrainable : WeenieErrorWithString.YouHaveSucceededUnspecializing_Skill;
-                            var message = new GameEventWeenieErrorWithString(player.Session, msg, skill.Skill.ToSentence());
+                            var message = new GameEventWeenieErrorWithString(player.Session, msg, newSkill.ToSentence());
 
                             player.Session.Network.EnqueueSend(updateSkill, availableSkillCredits, message);
 
@@ -218,7 +224,7 @@ namespace ACE.Server.WorldObjects
                             var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
                             var availableSkillCredits = new GameMessagePrivateUpdatePropertyInt(player, PropertyInt.AvailableSkillCredits, player.AvailableSkillCredits ?? 0);
                             var msg = untrainable ? WeenieErrorWithString.YouHaveSucceededUntraining_Skill : WeenieErrorWithString.CannotUntrain_SkillButRecoveredXP;
-                            var message = new GameEventWeenieErrorWithString(player.Session, msg, skill.Skill.ToSentence());
+                            var message = new GameEventWeenieErrorWithString(player.Session, msg, newSkill.ToSentence());
 
                             player.Session.Network.EnqueueSend(updateSkill, availableSkillCredits, message);
 
