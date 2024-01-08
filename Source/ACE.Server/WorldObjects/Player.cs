@@ -352,7 +352,7 @@ namespace ACE.Server.WorldObjects
                 Skill skill;
                 skill = Skill.AssessCreature;
 
-                var currentSkill = (int)GetModdedAssessSkill();
+                var currentSkill = (int)GetModdedPerceptionSkill();
                 int difficulty = (int)creature.GetCreatureSkill(Skill.Deception).Current;
 
                 if (PropertyManager.GetBool("assess_creature_mod").Item && skill == Skill.AssessCreature

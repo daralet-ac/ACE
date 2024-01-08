@@ -5121,13 +5121,13 @@ namespace ACE.Entity.Enum
         SetGearCraftAptitude2,
         SetGearCraftAptitude3,
         ExposeWeakness8,
-        ExposeWeakness1,
-        ExposeWeakness2,
-        ExposeWeakness3,
-        ExposeWeakness4,
-        ExposeWeakness5,
-        ExposeWeakness6,
-        ExposeWeakness7,
+        ExposeWeakness1, // Succumb Other I
+        ExposeWeakness2, // Succumb Other II
+        ExposeWeakness3, // Succumb Other III
+        ExposeWeakness4, // Succumb Other IV
+        ExposeWeakness5, // Succumb Other V
+        ExposeWeakness6, // Succumb Other VI
+        ExposeWeakness7, // Succumb Other VII
         CallOfLeadership5,
         AnswerOfLoyaltyMana1,
         AnswerOfLoyaltyMana2,

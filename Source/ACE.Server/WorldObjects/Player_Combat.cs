@@ -76,7 +76,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Called when a player receives an attack, evaded or not
         /// </summary>
-        public override void OnAttackReceived(WorldObject attacker, CombatType attackType, bool critical, bool avoided)
+        public override void OnAttackReceived(WorldObject attacker, CombatType attackType, bool critical, bool avoided, int spellLevel = 1)
         {
             base.OnAttackReceived(attacker, attackType, critical, avoided);
         }

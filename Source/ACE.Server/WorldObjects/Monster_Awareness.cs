@@ -158,7 +158,7 @@ namespace ACE.Server.WorldObjects
 
                 Entity.CreatureSkill skill = target.GetCreatureSkill(Skill.AssessCreature);
 
-                var moddedAssessSkill = target.GetModdedAssessSkill();
+                var moddedAssessSkill = target.GetModdedPerceptionSkill();
 
                 if (target.Stamina.Current < maintainTauntStaminaCost)
                 {
