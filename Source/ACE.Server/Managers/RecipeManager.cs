@@ -774,6 +774,17 @@ namespace ACE.Server.Managers
 
         public static bool VerifyRequirements(Recipe recipe, Player player, WorldObject source, WorldObject target)
         {
+            if (player != null)
+            {
+                uint[] disabledCraftingSkills = { (uint)Skill.ArmorTinkering, (uint)Skill.WeaponTinkering, (uint)Skill.MagicItemTinkering, (uint)Skill.ItemTinkering };
+                if (disabledCraftingSkills.Contains(recipe.Skill))
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Blacksmithing, Jewelcrafting, Spellcrafting, and Tailoring recipes are currently disabled.", ChatMessageType.Broadcast));
+
+                    return false;
+                }
+            }
+
             if (!VerifyUse(player, source, target))
                 return false;
 
