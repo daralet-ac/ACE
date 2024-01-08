@@ -743,5 +743,9 @@ namespace ACE.Entity.Enum
         ExtraSpearSkillRaising = 746,
         ExtraMaceSkillRaising = 747,
         ExtraStaffSkillRaising = 748,
+        TrinketDamageReductionRating = 749,
+        TrinketCriticalDamageRating = 750,
+        AegisRaising = 751,
+        AegisLowering = 752,
     }
 }

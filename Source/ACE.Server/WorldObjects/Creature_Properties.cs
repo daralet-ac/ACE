@@ -535,7 +535,7 @@ namespace ACE.Server.WorldObjects
             return mod;
         }
 
-        public uint GetModdedAssessSkill()
+        public uint GetModdedPerceptionSkill()
         {
             var assessSkill = GetCreatureSkill(Skill.AssessCreature);
             var armorAssessSkillMod = GetArmorAssessMod() + 1;

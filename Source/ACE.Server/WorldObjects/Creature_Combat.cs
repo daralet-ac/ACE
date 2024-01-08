@@ -619,12 +619,12 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Called when a creature receives an attack, evaded or not
         /// </summary>
-        public virtual void OnAttackReceived(WorldObject attacker, CombatType attackType, bool critical, bool avoided)
+        public virtual void OnAttackReceived(WorldObject attacker, CombatType attackType, bool critical, bool avoided, int spellLevel = 1)
         {
             var attackerAsCreature = attacker as Creature;
             if (!avoided && attackerAsCreature != null)
                 if (attackerAsCreature != null)
-                    attackerAsCreature.TryCastAssessDebuff(this, attackType);
+                    attackerAsCreature.TryPerceiveWeaknesses(this, attackType, spellLevel);
 
             numRecentAttacksReceived++;
         }
@@ -1056,66 +1056,60 @@ namespace ACE.Server.WorldObjects
                 playerTarget.SendMessage(msg, ChatMessageType.Combat, this);
         }
 
-        private double NextAssessDebuffActivationTime = 0;
-        private static double AssessDebuffActivationInterval = 5;
-        public void TryCastAssessDebuff(Creature target, CombatType combatType)
+        private double NextExposeWeaknessActivationTime = 0;
+        private static double ExposeWeaknessActivationInterval = 10;
+        public void TryPerceiveWeaknesses(Creature target, CombatType combatType, int castedSpellLevel)
         {
-            if (this == target)
-                return;
-
-            if (target.IsDead)
+            if (this == target || target.IsDead)
                 return;
 
             var currentTime = Time.GetUnixTime();
-
-            if (NextAssessDebuffActivationTime > currentTime)
+            if (NextExposeWeaknessActivationTime > currentTime)
                 return;
 
             var skill = GetCreatureSkill(Skill.AssessCreature);
-            if (skill.AdvancementClass == SkillAdvancementClass.Untrained || skill.AdvancementClass == SkillAdvancementClass.Inactive)
+            if (skill.AdvancementClass < SkillAdvancementClass.Trained)
                 return;
 
-            var moddedAssessSkill = GetModdedAssessSkill();
+            var attackerEffectivePerceptionSkill = GetModdedPerceptionSkill();
 
             var sourceAsPlayer = this as Player;
             var targetAsPlayer = target as Player;
 
             var activationChance = 0.5f;
             if(sourceAsPlayer != null)
-                activationChance += sourceAsPlayer.ScaleWithPowerAccuracyBar(0.25f); // Up to 25% added to activation chance
+                activationChance += sourceAsPlayer.ScaleWithPowerAccuracyBar(0.5f); // Up to 50% added to activation chance
 
             if (activationChance < ThreadSafeRandom.Next(0.0f, 1.0f))
                 return;
 
-            NextAssessDebuffActivationTime = currentTime + AssessDebuffActivationInterval;
+            NextExposeWeaknessActivationTime = currentTime + ExposeWeaknessActivationInterval;
 
             var defenseSkill = target.GetCreatureSkill(Skill.Deception);
-            var moddedDeceptionSkill = target.GetModdedDeceptionSkill();
+            var targetEffecitveDeceptionSkill = target.GetModdedDeceptionSkill();
 
+            var avoidChance = 1.0f - SkillCheck.GetSkillChance(attackerEffectivePerceptionSkill, targetEffecitveDeceptionSkill);
 
-
-            var avoidChance = 1.0f - SkillCheck.GetSkillChance(moddedAssessSkill, moddedDeceptionSkill);
-
-            // Iron Fist combat ability bonus
             var combatAbility = CombatAbility.None;
             var combatFocus = GetEquippedCombatFocus();
             if (combatFocus != null)
                 combatAbility = combatFocus.GetCombatAbility();
 
+            // COMBAT ABILITY - Iron Fist: 20% increased chance to expose enemy weaknesses
             if (combatAbility == CombatAbility.IronFist)
-                avoidChance -= 0.1f;
+                avoidChance -= 0.2f;
 
-            if (avoidChance > ThreadSafeRandom.Next(0.0f, 1.0f))
+            var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (avoidChance > roll)
             {
                 if (sourceAsPlayer != null)
-                    sourceAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"{target.Name}'s deception stops you from finding a vulnerability!", ChatMessageType.Magic));
+                    sourceAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"{target.Name}'s deception prevents you from exposing a weakness!", ChatMessageType.Broadcast));
 
                 if (targetAsPlayer != null)
                 {
-                    Proficiency.OnSuccessUse(targetAsPlayer, defenseSkill, moddedAssessSkill);
-                    targetAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your deception stops {Name} from finding a vulnerability!", ChatMessageType.Magic));
+                    Proficiency.OnSuccessUse(targetAsPlayer, defenseSkill, attackerEffectivePerceptionSkill);
+                    targetAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your deception prevents {Name} from exposing a weakness!", ChatMessageType.Broadcast));
                 }
-
                 return;
             }
             else if(sourceAsPlayer != null)
@@ -1123,57 +1117,68 @@ namespace ACE.Server.WorldObjects
 
             string spellType;
             SpellId spellId;
+            SpellId spellIdSpec;
             switch (combatType)
             {
                 default:
                 case CombatType.Melee:
-                    spellId = SpellId.VulnerabilityOther1;
-                    spellType = "melee";
-                    break;
                 case CombatType.Missile:
-                    spellId = SpellId.DefenselessnessOther1;
-                    spellType = "missile";
+                    spellId = SpellId.VulnerabilityOther1;
+                    spellIdSpec = SpellId.ImperilOther1;
+                    spellType = "physical";
                     break;
                 case CombatType.Magic:
                     spellId = SpellId.MagicYieldOther1;
-                    spellType = "magic";
+                    spellIdSpec = SpellId.ExposeWeakness1;
+                    spellType = "magical";
                     break;
             }
 
             var spellLevels = SpellLevelProgression.GetSpellLevels(spellId);
-            int maxUsableSpellLevel = Math.Min(spellLevels.Count, 6);
+            var spellLevelsSpec = SpellLevelProgression.GetSpellLevels(spellIdSpec);
 
-            if (spellLevels.Count == 0)
+            if (spellLevels.Count == 0 || spellLevelsSpec.Count == 0)
                 return;
 
-            int minSpellLevel = Math.Min(Math.Max(0, (int)Math.Floor(((float)moddedAssessSkill - 150) / 50.0)), maxUsableSpellLevel);
-            int maxSpellLevel = Math.Max(0, Math.Min((int)Math.Floor(((float)moddedAssessSkill - 50) / 50.0), maxUsableSpellLevel));
+            var overRoll = roll - avoidChance;
+            int maxSpellLevel = (int)Math.Clamp(Math.Floor((double)attackerEffectivePerceptionSkill / 50), 1, 7);
+            int spellLevel = (int)Math.Clamp(Math.Floor(overRoll * 10), 1, maxSpellLevel);
+            if (combatType == CombatType.Magic)
+                spellLevel = Math.Min(spellLevel, castedSpellLevel);
 
-            int spellLevel = ThreadSafeRandom.Next(minSpellLevel, maxSpellLevel);
-            var spell = new Spell(spellLevels[spellLevel]);
+            var spell = new Spell(spellLevels[spellLevel - 1]);
+            var spellSpec = new Spell(spellLevelsSpec[spellLevel - 1]);
+
+            string spellTypePrefix;
+            switch(spellLevel)
+            {
+                case 1: spellTypePrefix = "a SLIGHT"; break;
+                default:
+                case 2: spellTypePrefix = "a MINOR"; break;
+                case 3: spellTypePrefix = "a MODERATE"; break;
+                case 4: spellTypePrefix = "a MAJOR"; break;
+                case 5: spellTypePrefix = "a SEVERE"; break;
+                case 6: spellTypePrefix = "a CRIPPLING"; break;
+                case 7: spellTypePrefix = "a TREMENDOUS"; break;
+            }
+
+            if (sourceAsPlayer != null)
+                sourceAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your perception allows you to expose {spellTypePrefix} {spellType} weakness on {target.Name}!", ChatMessageType.Broadcast));
+            if (targetAsPlayer != null)
+                targetAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name}'s perception exposes {spellTypePrefix} {spellType} weakness on you!", ChatMessageType.Broadcast));
 
             if (spell.NonComponentTargetType == ItemType.None)
                 TryCastSpell(spell, null, this, null, false, false, false, false);
             else
                 TryCastSpell(spell, target, this, null, false, false, false, false);
 
-            string spellTypePrefix;
-            switch(spellLevel + 1)
+            if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
             {
-                case 1: spellTypePrefix = "a minor"; break;
-                default:
-                case 2: spellTypePrefix = "a"; break;
-                case 3: spellTypePrefix = "a moderate"; break;
-                case 4: spellTypePrefix = "a severe"; break;
-                case 5: spellTypePrefix = "a major"; break;
-                case 6: spellTypePrefix = "a crippling"; break;
-                case 7: spellTypePrefix = "a tremendous"; break;
+                if (spell.NonComponentTargetType == ItemType.None)
+                    TryCastSpell(spellSpec, null, this, null, false, false, false, false);
+                else
+                    TryCastSpell(spellSpec, target, this, null, false, false, false, false);
             }
-
-            if (sourceAsPlayer != null)
-                sourceAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your assess knowledge allows you to expose {spellTypePrefix} {spellType} vulnerability on {target.Name}!", ChatMessageType.Magic));
-            if (targetAsPlayer != null)
-                targetAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name}'s assess knowledge exposes {spellTypePrefix} {spellType} vulnerability on you!", ChatMessageType.Magic));
         }
 
         /// <summary>

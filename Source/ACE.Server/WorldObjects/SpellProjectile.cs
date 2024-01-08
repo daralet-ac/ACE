@@ -310,7 +310,7 @@ namespace ACE.Server.WorldObjects
 
             var damage = CalculateDamage(ProjectileSource, creatureTarget, ref critical, ref critDefended, ref overpower, ref resisted);
 
-            creatureTarget.OnAttackReceived(sourceCreature, CombatType.Magic, critical, resisted);
+            creatureTarget.OnAttackReceived(sourceCreature, CombatType.Magic, critical, resisted, (int)Spell.Level);
 
             if (damage != null)
             {
