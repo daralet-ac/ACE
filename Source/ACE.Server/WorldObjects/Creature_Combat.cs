@@ -860,15 +860,25 @@ namespace ACE.Server.WorldObjects
             if (creatureTarget == null)
                 return 1.0f;
 
+            // SPEC BONUS - Perception: Reduced chance to receive sneak attacks
+            var attackerThievery = creatureTarget.GetCreatureSkill(Skill.Lockpick);
+            var targetPerception = creatureTarget.GetCreatureSkill(Skill.AssessCreature); // Perception
+            if(targetPerception.AdvancementClass == SkillAdvancementClass.Specialized)
+            {
+                var skillCheck = SkillCheck.GetSkillChance(targetPerception.Current, attackerThievery.Current);
+                if (skillCheck > ThreadSafeRandom.Next(0.0f, 1.0f))
+                    return 1.0f;
+            }
+
             var angle = creatureTarget.GetAngle(this);
             var behind = Math.Abs(angle) > 90.0f;
 
-            var sneakAttack = GetCreatureSkill(Skill.Lockpick); // Thievery
-            if (sneakAttack.AdvancementClass < SkillAdvancementClass.Specialized)
+            // SPEC BONUS - Thievery: Increase sneak attack angle
+            var thievery = GetCreatureSkill(Skill.Lockpick); // Thievery
+            if (thievery.AdvancementClass < SkillAdvancementClass.Specialized)
             {
                 behind = Math.Abs(angle) > 45.0f;
             }
-
 
             if (behind)
             {
