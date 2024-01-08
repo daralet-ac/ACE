@@ -678,12 +678,16 @@ namespace ACE.Server.Entity
                     }
                 }
 
-                var shieldArmorLevel = defenderEquippedShield.ArmorLevel ?? 0;
+                if (defenderEquippedShield != null)
+                {
+                    var shieldArmorLevel = defenderEquippedShield.ArmorLevel ?? 0;
 
-                var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
+                    var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
 
-                blockChance = 0.1f + 0.1f * (float)blockChanceMod;
+                    blockChance = 0.1f + 0.1f * (float)blockChanceMod;
+                }
             }
+
             // COMBAT ABILITY - Parry: 20% chance to block attacks while using a two-handed weapon or dual-wielding
             else if (combatAbility == CombatAbility.Parry)
             {
