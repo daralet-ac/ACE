@@ -5,6 +5,7 @@ using System.Numerics;
 
 using ACE.Common;
 using ACE.Common.Extensions;
+using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
@@ -136,151 +137,50 @@ namespace ACE.Server.WorldObjects
             NextFindTarget = Timers.RunningTime + rng;
         }
 
-        public Creature CheckForTauntingTargets(List<TargetDistance> targetDistances, bool onTakeDamage)
+
+        private static bool DebugThreatSystem = false;
+        private static int ThreatStartingAmount = 100;
+        public Dictionary<Creature, int> ThreatLevel;
+
+        private double FocusedTauntDuration = 10;
+        private double FeignWeaknessDuration = 10;
+
+        public void IncreaseTargetThreatLevel(Creature targetCreature, int amount)
         {
-            if (targetDistances.Count <= 1)
-                return null;
+            if (!ThreatLevel.ContainsKey(targetCreature))
+                ThreatLevel.Add(targetCreature, ThreatStartingAmount);
 
-            var monsterTier = Math.Max((Tier ?? 1) - 1, 1);
+            // check for modifiers
+            var modifier = 1.0f;
 
-            var initialTauntStaminaCost = monsterTier * 10; // Cost to attempt taunting an enemy that isn't attacking the taunter.
-            var maintainTauntStaminaCost = monsterTier * 2; // Cost to maintain taunt on an enemy that has already been taunted.
+            var targetPlayer = targetCreature as Player;
 
-            var combatAbility = CombatAbility.None;
-            var combatFocus = GetEquippedCombatFocus();
-            if (combatFocus != null)
-                combatAbility = combatFocus.GetCombatAbility();
+            if (targetPlayer != null && targetPlayer.LastFocusedTaunt > Time.GetUnixTime() - FocusedTauntDuration)
+                modifier = 2.0f;
 
-            Player target = AttackTarget as Player;
-            if (target != null && target.IsAttemptingToTaunt && IsDirectVisible(target) && !onTakeDamage)
+            if (targetPlayer != null && targetPlayer.LastFeignWeakness > Time.GetUnixTime() - FeignWeaknessDuration)
+                modifier = 0.5f;
+
+            amount = (int)(amount * modifier);
+
+            ThreatLevel[targetCreature] += amount;
+
+            if(DebugThreatSystem)
+                Console.WriteLine($"{Name} threat increased towards {targetCreature.Name} by +{amount}");
+        }
+
+        public void TickDownAllTargetThreatLevels()
+        {
+            foreach (Creature key in ThreatLevel.Keys)
             {
-                // Current target is already trying to taunt and is visible, so he has priority over everyone else and we also skip the activation chance step.
+                if (ThreatLevel[key] > 1)
+                    ThreatLevel[key] -= 5;
 
-                Entity.CreatureSkill skill = target.GetCreatureSkill(Skill.AssessCreature);
+                if (ThreatLevel[key] < 1)
+                    ThreatLevel[key] = 1;
 
-                var moddedAssessSkill = target.GetModdedPerceptionSkill();
-
-                if (target.Stamina.Current < maintainTauntStaminaCost)
-                {
-                    if(DebugTaunt)
-                        Console.WriteLine($"{target.Name} attempts to MAINTAIN taunt on {Name} - FAILED (Stamina)");
-
-                    // Not enough stamina, stop taunting, remove from targetDistances to incentivize the monster to switch targets.
-                    target.Session.Network.EnqueueSend(new GameMessageSystemChat($"You falter in your attempt at taunting {Name}.", ChatMessageType.CombatSelf));
-                    var entry = targetDistances.FirstOrDefault(r => r.Target == AttackTarget);
-                    if (entry != default(TargetDistance))
-                        targetDistances.Remove(entry);
-                }
-                else if (target.attacksReceivedPerSecond >= Math.Ceiling(moddedAssessSkill / 50.0f))
-                {
-                    if (DebugTaunt)
-                        Console.WriteLine($"{target.Name} attempts to MAINTAIN taunt on {Name} - FAILED (attacks per second)");
-
-                    // We're too busy to keep this taunt going, remove from targetDistances to incentivize the monster to switch targets.
-                    target.Session.Network.EnqueueSend(new GameMessageSystemChat($"You're too busy to keep taunting {Name}!", ChatMessageType.CombatSelf));
-                    var entry = targetDistances.FirstOrDefault(r => r.Target == AttackTarget);
-                    if (entry != default(TargetDistance))
-                        targetDistances.Remove(entry);
-                }
-                else
-                {
-                    var moddedDeceptionSkill = GetModdedDeceptionSkill();
-                    var avoidChance = 1.0f - SkillCheck.GetSkillChance(moddedAssessSkill, moddedDeceptionSkill);
-                    //var avoidChance = 0.0f;
-
-                    // COMBAT ABILITY: Check for Provoke Focus
-                    if (combatAbility == CombatAbility.Provoke)
-                        avoidChance -= 0.1f;
-
-                    if (avoidChance > ThreadSafeRandom.Next(0.0f, 1.0f))
-                    {
-                        if (DebugTaunt)
-                            Console.WriteLine($"{target.Name} attempts to MAINTAIN taunt on {Name} - FAILED (Random chance: {Math.Round(avoidChance, 2) * 100}%  Assess: {moddedAssessSkill} vs Deception: {moddedDeceptionSkill})");
-
-                        // The current taunter has lost the taunt! Give other taunters a shot, remove from targetDistances to incentivize the monster to switch targets.
-                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your taunt loses its effect on {Name}!", ChatMessageType.CombatSelf));
-                        var entry = targetDistances.FirstOrDefault(r => r.Target == AttackTarget);
-                        if (entry != default(TargetDistance))
-                            targetDistances.Remove(entry);
-                    }
-                    else
-                    {
-                        if (DebugTaunt)
-                            Console.WriteLine($"{target.Name} attempts to MAINTAIN taunt on {Name} - SUCCESS!");
-
-                        // The current taunter keeps the taunt.
-                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your taunt maintains its effect on {Name}!", ChatMessageType.CombatSelf));
-                        target.UpdateVitalDelta(target.Mana, -maintainTauntStaminaCost);
-                        return target;
-                    }
-                }
+                //Console.WriteLine($"{key.Name} threat reduced by 1. Total threat now {ThreatLevel[key]}.");
             }
-
-            foreach (var targetDistance in targetDistances)
-            {
-                target = targetDistance.Target as Player;
-                if (target == AttackTarget)
-                    continue;
-                else if (target != null && target.IsAttemptingToTaunt)
-                {
-                    if (target.Stamina.Current < initialTauntStaminaCost)
-                        continue;
-                    if (!IsDirectVisible(target))
-                        continue;
-
-                    Entity.CreatureSkill skill = target.GetCreatureSkill(Skill.AssessCreature);
-
-                    var activationChance = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-                    if (combatAbility == CombatAbility.Provoke)
-                        activationChance -= 0.1f;
-
-                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized && activationChance > 0.75f)
-                        continue;
-                    else if (skill.AdvancementClass == SkillAdvancementClass.Trained && activationChance > 0.5f)
-                        continue;
-                    else if (activationChance > 0.1f)
-                        continue;
-
-                    if (target.attacksReceivedPerSecond >= skill.Current / 50.0f)
-                    {
-                        if (DebugTaunt)
-                            Console.WriteLine($"{target.Name} attempts to TAUNT {Name} - Failed! from attacks per second (Attack? {onTakeDamage})");
-
-                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"You're too busy with your current targets to attempt to taunt any others!", ChatMessageType.CombatSelf));
-                        continue;
-                    }
-
-                    target.UpdateVitalDelta(target.Stamina, -initialTauntStaminaCost);
-
-                    Entity.CreatureSkill defenseSkill = GetCreatureSkill(Skill.Deception);
-                    var avoidChance = 1.0f - SkillCheck.GetSkillChance(skill.Current, defenseSkill.Current);
-
-                    if (combatAbility == CombatAbility.Provoke)
-                        avoidChance -= 0.1f;
-
-                    if (avoidChance > ThreadSafeRandom.Next(0.0f, 1.0f))
-                    {
-                        if (DebugTaunt)
-                            Console.WriteLine($"{target.Name} attempts to TAUNT {Name} - Failed! from random chance ({Math.Round(avoidChance, 2) * 100}%) (OnAttack? {onTakeDamage})");
-
-                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} resisted your taunt attempt!", ChatMessageType.CombatSelf));
-                        continue;
-                    }
-                    else
-                    {
-                        if (DebugTaunt)
-                            Console.WriteLine($"{target.Name} attempts to TAUNT {Name} - Success! (OnAttack? {onTakeDamage})");
-
-                        target.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your taunt successfully attracts the attention of {Name}!", ChatMessageType.CombatSelf));
-
-                        Proficiency.OnSuccessUse(target, skill, defenseSkill.Current);
-                        return target;
-                    }
-                }
-            }
-
-            return null;
         }
 
         public virtual bool FindNextTarget(bool onTakeDamage, Creature untargetablePlayer = null)
@@ -317,12 +217,102 @@ namespace ACE.Server.WorldObjects
                 var prevAttackTarget = AttackTarget;
 
                 var targetDistances = BuildTargetDistance(visibleTargets);
-                var tauntedBy = CheckForTauntingTargets(targetDistances, onTakeDamage); // Closer targets roll first and thus have higher chance of taunting the monster.
 
-                if (tauntedBy != null)
+                // New Threat System
+                if (!(UseLegacyThreatSystem ?? false))
                 {
-                    // We've been taunted! Ignore our default tactic!
-                    AttackTarget = tauntedBy;
+                    // Manage Threat Level list
+                    foreach (Creature targetCreature in visibleTargets)
+                    {
+                        // skip targets that are already in list
+                        if (ThreatLevel.ContainsKey(targetCreature))
+                            continue;
+
+                        // Add new visible targets to threat list
+                        ThreatLevel.Add(targetCreature, ThreatStartingAmount);
+                    }
+
+                    if (DebugThreatSystem)
+                    {
+                        Console.WriteLine($"\nThreatLevel list for {Name}:");
+                        foreach (Creature targetCreature in ThreatLevel.Keys)
+                        {
+                            Console.WriteLine($"-{targetCreature.Name}: {ThreatLevel[targetCreature]}");
+                        }
+                    }
+
+                    // Set potential threat value range based on 50% of highest player's threat
+                    var maxThreatValue = ThreatLevel.Values.Max();
+
+                    if (maxThreatValue <= 1)
+                    {
+                        AttackTarget = SelectWeightedDistance(targetDistances);
+                    }
+                    else
+                    {
+                        var minimumAggroRange = maxThreatValue * 0.5f;
+
+                        // Add all player's witin the potential threat range to a new dictionary
+                        Dictionary<Creature, int> potentialTargetList = new Dictionary<Creature, int>();
+
+                        foreach (var targetCreature in ThreatLevel)
+                        {
+                            if (targetCreature.Value > minimumAggroRange)
+                                potentialTargetList.Add(targetCreature.Key, targetCreature.Value);
+                        }
+
+                        if (DebugThreatSystem)
+                        {
+                            Console.WriteLine($"\nUnsorted Potential Target List {Name}:");
+                            foreach (Creature targetCreature in potentialTargetList.Keys)
+                            {
+                                Console.WriteLine($"-{targetCreature.Name}: {potentialTargetList[targetCreature]}");
+                            }
+                        }
+
+                        // Sort dictionary by threat value
+                        var sortedTargetList = potentialTargetList.OrderBy(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+
+                        if (DebugThreatSystem)
+                        {
+                            Console.WriteLine($"\nSorted Potential Target List {Name}:");
+                            foreach (Creature targetCreature in sortedTargetList.Keys)
+                            {
+                                Console.WriteLine($"-{targetCreature.Name}: {sortedTargetList[targetCreature]}");
+                            }
+                        }
+
+                        // Adjust values for each entry in the sorted list so that entry's value includes the sum of all previous values.
+                        // i.e. KVPs of <1,30>, <2,38>, <3,45>
+                        // would become <1,30>, <2,68>, <3,113>
+
+                        var lastValue = 0;
+                        foreach (var entry in sortedTargetList)
+                        {
+                            entry.Key.Value += lastValue;
+                            lastValue = entry.Value;
+                        }
+
+                        // Roll a number based on the threat range. Player who's value is next above the roll becomes the new target.
+                        var sortedMaxValue = sortedTargetList.Values.Max();
+                        var roll = ThreadSafeRandom.Next(minimumAggroRange, sortedMaxValue);
+
+                        if (DebugThreatSystem)
+                            Console.WriteLine($"\nRollRange: {minimumAggroRange}-{sortedMaxValue} Roll: {roll}");
+
+                        foreach (var targetCreatureKey in sortedTargetList)
+                        {
+                            if (DebugThreatSystem)
+                                Console.WriteLine($"{targetCreatureKey.Key.Name} ThreatLevel: {targetCreatureKey.Value}, Percentile: {(targetCreatureKey.Value - minimumAggroRange) / minimumAggroRange * 100}%");
+
+                            if (targetCreatureKey.Value > roll)
+                                AttackTarget = targetCreatureKey.Key;
+                        }
+                        if (DebugThreatSystem)
+                        {
+                            Console.WriteLine($"Selected Creature: {AttackTarget.Name}");
+                        }
+                    }
                 }
                 else
                 {

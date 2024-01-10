@@ -5,8 +5,10 @@ namespace ACE.Server.WorldObjects
     partial class Creature
     {
         protected const double monsterTickInterval = 0.2;
+        protected const double monsterThreatTickInterval = 1.0;
 
         public double NextMonsterTickTime;
+        public double NextMonsterThreatTickTime;
 
         private bool firstUpdate = true;
 
@@ -48,6 +50,13 @@ namespace ACE.Server.WorldObjects
             HandleFindTarget();
 
             CheckMissHome();    // tickrate?
+
+            if (currentUnixTime > NextMonsterThreatTickTime)
+            {
+                TickDownAllTargetThreatLevels();
+
+                NextMonsterThreatTickTime = currentUnixTime + monsterThreatTickInterval;
+            }
 
             if (AttackTarget == null && MonsterState != State.Return)
             {

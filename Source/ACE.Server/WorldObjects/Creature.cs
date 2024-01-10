@@ -9,6 +9,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
+using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects.Entity;
 using Serilog;
 
@@ -145,6 +146,8 @@ namespace ACE.Server.WorldObjects
                     var qualityMod = LootQualityMod;
                     if (qualityMod != null)
                         DeathTreasure.LootQualityMod = (float)qualityMod;
+
+                    ThreatLevel = new Dictionary<Creature, int>();
                 }
 
                 if (!Tier.HasValue && DeathTreasureType.HasValue)
@@ -358,7 +361,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Sends the network commands to move a player towards a position
         /// </summary>
-        public void MoveToPosition(Position position)
+        public void MoveToPosition(ACE.Entity.Position position)
         {
             var moveToPosition = new Motion(this, position);
             moveToPosition.MoveToParameters.DistanceToObject = 0.0f;
@@ -368,7 +371,7 @@ namespace ACE.Server.WorldObjects
             EnqueueBroadcastMotion(moveToPosition);
         }
 
-        public void SetWalkRunThreshold(Motion motion, Position targetLocation)
+        public void SetWalkRunThreshold(Motion motion, ACE.Entity.Position targetLocation)
         {
             // FIXME: WalkRunThreshold (default 15 distance) seems to not be used automatically by client
             // player will always walk instead of run, and if MovementParams.CanCharge is sent, they will always charge
@@ -459,6 +462,31 @@ namespace ACE.Server.WorldObjects
                 case <= 126: return 8;
             }
             return 1;
+        }
+
+        public List<Creature> GetNearbyMonsters(double distance)
+        {
+            var visibleTargets = new List<Creature>();
+
+            foreach (var obj in PhysicsObj.ObjMaint.GetVisibleObjects(PhysicsObj.CurCell, ObjectMaint.VisibleObjectType.All))
+            {
+                var creature = obj.WeenieObj.WorldObject as Creature;
+
+                if (creature == null)
+                    continue;
+
+                if (!creature.IsMonster)
+                    continue;
+
+                if (GetDistance(creature) > distance)
+                    continue;
+
+                visibleTargets.Add(creature);
+            }
+
+            BuildTargetDistance(visibleTargets);
+
+            return visibleTargets;
         }
     }
 }

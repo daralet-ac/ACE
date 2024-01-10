@@ -18,6 +18,10 @@ namespace ACE.Entity.Enum
         Reflect,
         EnchantedWeapon,
         Deceive,
-        SlashThrustToggle
+        SlashThrustToggle,
+        FocusedTaunt,
+        AreaTaunt,
+        FeignInjury,
+        Vanish,
     }
 }

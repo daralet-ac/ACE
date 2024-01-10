@@ -198,6 +198,18 @@ namespace ACE.Server.WorldObjects
                         else
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You switch to slashing attacks.", ChatMessageType.Broadcast));
                         break;
+                    case CombatAbility.FocusedTaunt:
+                        player.TryUseFocusedTaunt(this);
+                        break;
+                    case CombatAbility.AreaTaunt:
+                        player.TryUseAreaTaunt(this);
+                        break;
+                    case CombatAbility.FeignInjury:
+                        player.TryUseFeignInjury(this);
+                        break;
+                    case CombatAbility.Vanish:
+                        player.TryUseVanish(this);
+                        break;
                 }
             }
 
