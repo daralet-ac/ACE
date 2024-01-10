@@ -155,9 +155,16 @@ namespace ACE.Server.WorldObjects
 
                     m_amount = Math.Min(m_amount, maxXpPerKill);
                 }
-                else if (Level.Value <= 126)
+                else if (Level.Value < 126)
                 {
                     var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerKill = (long)(currentLevelCost * 0.01);
+
+                    m_amount = Math.Min(m_amount, maxXpPerKill);
+                }
+                else if (Level.Value == 126)
+                {
+                    var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
                     var maxXpPerKill = (long)(currentLevelCost * 0.01);
 
                     m_amount = Math.Min(m_amount, maxXpPerKill);
