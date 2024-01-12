@@ -396,7 +396,7 @@ namespace ACE.Server.WorldObjects
 
             // Try Taunt
             Player player = source as Player;
-            if(player != null && player.IsAttemptingToTaunt)
+            if(player != null && player.IsAttemptingToPerceiveThreats)
             {
                 FindNextTarget(true);
             }

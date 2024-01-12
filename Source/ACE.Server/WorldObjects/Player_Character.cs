@@ -116,12 +116,12 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        public bool ToggleTauntSetting()
+        public bool TogglePerceiveThreatsSetting()
         {
             bool newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed1);
             SetCharacterOptions2(CharacterOptions2.NotUsed1, newSetting);
 
-            CachedAttemptToTaunt = newSetting;
+            CachedAttemptToPerceiveThreats = newSetting;
             return newSetting;
         }
 

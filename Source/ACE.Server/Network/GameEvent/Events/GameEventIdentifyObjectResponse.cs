@@ -1,6 +1,7 @@
 using ACE.Entity.Enum;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
+using System;
 
 namespace ACE.Server.Network.GameEvent.Events
 {
@@ -9,6 +10,10 @@ namespace ACE.Server.Network.GameEvent.Events
         public GameEventIdentifyObjectResponse(Session session, WorldObject obj, bool success)
             : base(GameEventType.IdentifyObjectResponse, GameMessageGroup.UIQueue, session)
         {
+            var creature = obj as Creature;
+            if (creature != null && creature.IsMonster)
+                session.Player.GetMonsterThreatTable(creature);
+
             var appraiseInfo = new AppraiseInfo(obj, session.Player, success);
 
             Writer.Write(obj.Guid.Full);

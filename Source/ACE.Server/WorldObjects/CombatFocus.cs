@@ -73,7 +73,7 @@ namespace ACE.Server.WorldObjects
             SpellId.CoordinationSelf1,
             SpellId.ShieldMasterySelf1,
             SpellId.HeavyWeaponsMasterySelf1,           // Martial Weapons
-            SpellId.FinesseWeaponsIneptitudeSelf1,      // Dagger
+            SpellId.FinesseWeaponsMasterySelf1,         // Dagger
             SpellId.StaffMasterySelf1,                  
             SpellId.UnarmedCombatMasterySelf1,
             SpellId.InvulnerabilitySelf1,

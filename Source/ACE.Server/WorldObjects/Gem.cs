@@ -174,11 +174,11 @@ namespace ACE.Server.WorldObjects
             {
                 switch ((CombatAbility)CombatAbilityId)
                 {
-                    case CombatAbility.Taunt:
-                        if (player.ToggleTauntSetting())
-                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You start taunting nearby enemies.", ChatMessageType.Broadcast));
+                    case CombatAbility.PerceiveThreats:
+                        if (player.TogglePerceiveThreatsSetting())
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You are now attempting to perceive enemy threats.", ChatMessageType.Broadcast));
                         else
-                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You stop taunting nearby enemies.", ChatMessageType.Broadcast));
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You stop attempting to perceive enemy threats.", ChatMessageType.Broadcast));
                         break;
                     case CombatAbility.Stealth:
                         if (!player.IsStealthed)

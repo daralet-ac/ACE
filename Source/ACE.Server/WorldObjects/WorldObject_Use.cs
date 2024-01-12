@@ -344,46 +344,59 @@ namespace ACE.Server.WorldObjects
                 switch ((CombatAbility)CombatAbilityId)
                 {
                     case CombatAbility.FocusedTaunt:
-
-                        Creature target = null;
-                        if (player.LastAttackedCreatureTime > Time.GetUnixTime() - 5.0 && player.LastAttackedCreature != null)
-                            target = player.LastAttackedCreature;
-
-                        if (target == null)
                         {
-                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have not recently attacked a creature.", ChatMessageType.Broadcast));
-                            return new ActivationResult(false); ;
+                            Creature target = null;
+                            if (player.LastAttackedCreatureTime > Time.GetUnixTime() - 5.0 && player.LastAttackedCreature != null)
+                                target = player.LastAttackedCreature;
+
+                            if (target == null)
+                            {
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have not recently attacked a creature.", ChatMessageType.Broadcast));
+                                return new ActivationResult(false); ;
+                            }
+
+                            if (target.IsDead)
+                            {
+                                //player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your target no longer exists.", ChatMessageType.Broadcast));
+                                return new ActivationResult(false); ;
+                            }
+
+                            if (player.GetDistance(target) > 5)
+                            {
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You are too far away from your target.", ChatMessageType.Broadcast));
+                                return new ActivationResult(false); ;
+                            }
+
+                            var targetTier = target.Tier ?? 1;
+                            var staminaCost = 10 * Math.Clamp(targetTier, 1, 7);
+
+                            if (player.Stamina.Current < staminaCost)
+                            {
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You do not have enough stamina.", ChatMessageType.Broadcast));
+                                return new ActivationResult(false); ;
+                            }
+
+
                         }
-
-                        if (target.IsDead)
-                        {
-                            //player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your target no longer exists.", ChatMessageType.Broadcast));
-                            return new ActivationResult(false); ;
-                        }
-
-                        if (player.GetDistance(target) > 5)
-                        {
-                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You are too far away from your target.", ChatMessageType.Broadcast));
-                            return new ActivationResult(false); ;
-                        }
-
-                        var targetTier = target.Tier ?? 1;
-                        var staminaCost = 10 * Math.Clamp(targetTier, 1, 7);
-
-                        if (player.Stamina.Current < staminaCost)
-                        {
-                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You do not have enough stamina.", ChatMessageType.Broadcast));
-                            return new ActivationResult(false); ;
-                        }
-
-                        
-
                         break;
                     case CombatAbility.AreaTaunt:
-
-                        break;
                     case CombatAbility.FeignInjury:
+                        {
+                            var nearbyMonsters = player.GetNearbyMonsters(5);
 
+                            var staminaCost = 0;
+                            foreach (var target in nearbyMonsters)
+                            {
+                                var targetTier = target.Tier ?? 1;
+                                staminaCost += 2 * Math.Clamp(targetTier, 1, 7);
+                            }
+
+                            if (player.Stamina.Current < staminaCost)
+                            {
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You do not have enough stamina.", ChatMessageType.Broadcast));
+                                return new ActivationResult(false); ;
+                            }
+                        }
                         break;
                     case CombatAbility.Vanish:
 

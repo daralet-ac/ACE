@@ -3,7 +3,7 @@ namespace ACE.Entity.Enum
     public enum CombatAbility
     {
         None,
-        Taunt,
+        PerceiveThreats,
         Stealth,
         Phalanx,
         Provoke,

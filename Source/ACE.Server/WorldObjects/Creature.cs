@@ -148,6 +148,8 @@ namespace ACE.Server.WorldObjects
                         DeathTreasure.LootQualityMod = (float)qualityMod;
 
                     ThreatLevel = new Dictionary<Creature, int>();
+                    PositiveThreat = new Dictionary<Creature, float>();
+                    NegativeThreat = new Dictionary<Creature, float>();
                 }
 
                 if (!Tier.HasValue && DeathTreasureType.HasValue)
