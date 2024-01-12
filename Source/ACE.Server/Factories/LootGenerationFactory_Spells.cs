@@ -53,7 +53,10 @@ namespace ACE.Server.Factories
                         }
                         if (wo.W_WeaponType == WeaponType.Bow || wo.W_WeaponType == WeaponType.Crossbow || wo.W_WeaponType == WeaponType.Thrown)
                         {
-                            wo.DamageMod = (int)(wo.DamageMod.Value * 0.75f);
+                            var difference = wo.DamageMod - 1.0;
+                            var newMod = difference * 0.75;
+
+                            wo.DamageMod = 1.0 + newMod;
                         }
 
                         numSpells++;
