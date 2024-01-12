@@ -25,7 +25,6 @@ namespace ACE.Server.Factories.Tables.Spells
             SpellId.TwoHandedMasterySelf1,
 
             SpellId.InvulnerabilitySelf1,
-            SpellId.ImpregnabilitySelf1,
             SpellId.MagicResistanceSelf1,
 
             SpellId.CreatureEnchantmentMasterySelf1,
