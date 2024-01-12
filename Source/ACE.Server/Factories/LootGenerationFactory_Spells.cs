@@ -53,7 +53,6 @@ namespace ACE.Server.Factories
                         }
                         if (wo.W_WeaponType == WeaponType.Bow || wo.W_WeaponType == WeaponType.Crossbow || wo.W_WeaponType == WeaponType.Thrown)
                         {
-                            Console.WriteLine($"{wo.Name} {wo.DamageMod.Value}");
                             wo.DamageMod = (wo.DamageMod.Value * 0.75f);
                         }
 
