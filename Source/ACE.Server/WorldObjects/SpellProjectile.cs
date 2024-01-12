@@ -974,6 +974,10 @@ namespace ACE.Server.WorldObjects
 
             amount = (uint)Math.Round(damage);    // full amount for debugging
 
+            // add threat to damaged targets
+            var percentOfTargetMaxHealth = (float)amount / target.Health.MaxValue;
+            target.IncreaseTargetThreatLevel(sourceCreature, (int)(percentOfTargetMaxHealth * 1000));
+
             // show debug info
             if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
             {

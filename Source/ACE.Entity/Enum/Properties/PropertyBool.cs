@@ -179,6 +179,7 @@ namespace ACE.Entity.Enum.Properties
         OverrideArchetypeSkills          = 136,
         ArmorPatchApplied                = 137,
         BossKillXpReward                 = 138,
+        UseLegacyThreatSystem            = 139,
 
         /* custom */
         [ServerOnly]

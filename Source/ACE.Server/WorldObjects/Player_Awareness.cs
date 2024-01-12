@@ -7,6 +7,7 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using System;
+using System.Linq;
 
 namespace ACE.Server.WorldObjects
 {
@@ -171,6 +172,67 @@ namespace ACE.Server.WorldObjects
                 return true;
             }
             return false;
+        }
+
+        private double NextThreatTableTime = 0.0;
+        public void GetMonsterThreatTable(Creature monster)
+        {
+
+            if (monster != null && IsAttemptingToPerceiveThreats && NextThreatTableTime < Time.GetUnixTime())
+            {
+                var skillCheck = SkillCheck.GetSkillChance(GetModdedPerceptionSkill(), monster.GetCreatureSkill(Skill.Deception).Current);
+
+                if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
+                {
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You fail to perceive {monster.Name}'s current threats.", ChatMessageType.Broadcast));
+                    return;
+                }
+                else
+                {
+                    if (monster.PositiveThreat.Count > 0)
+                    {
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"{monster.Name}'s Threat Table:", ChatMessageType.Broadcast));
+
+                        var sortedDict = from entry in monster.PositiveThreat orderby entry.Value descending select entry;
+
+                        foreach (var entry in sortedDict)
+                        {
+                            string threatLevel;
+
+                            switch (entry.Value)
+                            {
+                                case > 0.5f: threatLevel = $"Major threat"; break;
+                                case > 0.25f: threatLevel = $"Moderate threat"; break;
+                                case > 0.0f:
+                                default: threatLevel = $"Minor threat"; break;
+                            }
+                            Session.Network.EnqueueSend(new GameMessageSystemChat($"   {entry.Key.Name}: {threatLevel}", ChatMessageType.Broadcast));
+                        }
+                    }
+
+                    if (monster.NegativeThreat.Count > 0)
+                    {
+                        //Session.Network.EnqueueSend(new GameMessageSystemChat($"  ----------------", ChatMessageType.Broadcast));
+
+                        var sortedDict = from entry in monster.NegativeThreat orderby entry.Value descending select entry;
+
+                        foreach (var entry in sortedDict)
+                        {
+                            string threatLevel;
+                            switch (entry.Value)
+                            {
+                                case > -0.25f: threatLevel = $"Potential threat"; break;
+                                case > -0.5f: threatLevel = $"Unthreatening"; break;
+                                case > -1.0f:
+                                default: threatLevel = $"Harmless"; break;
+                            }
+                            Session.Network.EnqueueSend(new GameMessageSystemChat($"   {entry.Key.Name}: {threatLevel}", ChatMessageType.Broadcast));
+                        }
+                    }
+
+                    NextThreatTableTime = Time.GetUnixTime() + 10;
+                }
+            }
         }
     }
 }

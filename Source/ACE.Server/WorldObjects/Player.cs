@@ -69,15 +69,15 @@ namespace ACE.Server.WorldObjects
         public static double CombatAbilityActivationInterval = 2.5;
         public static double CombatAbilityNegativeActivationInterval = 10;
 
-        private bool? CachedAttemptToTaunt = null;
-        public bool IsAttemptingToTaunt
+        private bool? CachedAttemptToPerceiveThreats = null;
+        public bool IsAttemptingToPerceiveThreats
         {
             get
             {
-                if (!CachedAttemptToTaunt.HasValue)
-                    CachedAttemptToTaunt = GetCharacterOption(CharacterOption.AttemptToTaunt);
+                if (!CachedAttemptToPerceiveThreats.HasValue)
+                    CachedAttemptToPerceiveThreats = GetCharacterOption(CharacterOption.AttemptToTaunt);
 
-                return CachedAttemptToTaunt ?? false;
+                return CachedAttemptToPerceiveThreats ?? false;
             }
         }
 

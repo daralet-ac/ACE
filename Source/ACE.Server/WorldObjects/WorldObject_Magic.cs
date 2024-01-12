@@ -336,6 +336,8 @@ namespace ACE.Server.WorldObjects
             if (this is Gem || this is Food || this is Hook)
                 targetCreature = target as Creature;
 
+            //Player playerCaster = itemCaster as Player;
+
             if (spell.School == MagicSchool.LifeMagic || spell.MetaSpellType == SpellType.Dispel)
             {
                 // NonComponentTargetType should be 0 for untargeted spells.
@@ -352,6 +354,9 @@ namespace ACE.Server.WorldObjects
                 case SpellType.Enchantment:
                 case SpellType.FellowEnchantment:
 
+                    if(itemCaster == null && targetCreature != null)
+                        GenerateSupportSpellThreat(spell, targetCreature);
+
                     // TODO: replace with some kind of 'rootOwner unless equip' concept?
                     if (itemCaster != null && (equip || itemCaster is Gem || itemCaster is Food))
                         CreateEnchantment(targetCreature ?? target, itemCaster, itemCaster, spell, equip, false, showMsg);
@@ -367,6 +372,9 @@ namespace ACE.Server.WorldObjects
                     break;
 
                 case SpellType.Transfer:
+
+                    if (itemCaster == null && targetCreature != null)
+                        GenerateSupportSpellThreat(spell, targetCreature);
 
                     HandleCastSpell_Transfer(spell, targetCreature, showMsg);
                     break;
@@ -405,6 +413,9 @@ namespace ACE.Server.WorldObjects
 
                 case SpellType.Dispel:
                 case SpellType.FellowDispel:
+
+                    if (itemCaster == null && targetCreature != null)
+                        GenerateSupportSpellThreat(spell, targetCreature);
 
                     HandleCastSpell_Dispel(spell, targetCreature ?? target, showMsg);
                     break;
@@ -656,10 +667,15 @@ namespace ACE.Server.WorldObjects
                     srcVital = "health";
 
                     if (boost >= 0)
+                    {
                         targetCreature.DamageHistory.OnHeal((uint)boost);
+                        GenerateSupportSpellThreat(spell, targetCreature, boost);
+                    }
                     else
+                    {
                         targetCreature.DamageHistory.Add(this, DamageType.Health, (uint)-boost);
-
+                        targetCreature.IncreaseTargetThreatLevel(player, boost);
+                    }
                     //if (targetPlayer != null && targetPlayer.Fellowship != null)
                         //targetPlayer.Fellowship.OnVitalUpdate(targetPlayer);
 
@@ -2365,6 +2381,50 @@ namespace ACE.Server.WorldObjects
                     return target.EquippedObjects.Values.Where(i => (i.ItemType & spell.NonComponentTargetType) != 0 && (i.ValidLocations & EquipMask.Selectable) != 0 && i.IsEnchantable).ToList();
             }
             return null;
+        }
+
+        private void GenerateSupportSpellThreat(Spell spell, Creature playerTarget, int amount = 0)
+        {
+            var player = this as Player;
+
+            if (player == null)
+                return;
+
+            var targetThreatRange = 3.0; // casting support spells on another player adds threat to monsters that are close to the targeted player
+            var casterThreatRange = 20.0; // casting any support spell adds threat to all creatures in the area
+
+            var nearbyMonstersOfTarget = playerTarget.GetNearbyMonsters(targetThreatRange);
+            var nearbyMonstersOfCaster = player.GetNearbyMonsters(casterThreatRange);
+
+            var threatAmount = 5 * spell.Level;
+
+            if (spell.MetaSpellType == SpellType.Boost)
+                threatAmount = (uint)(amount / 2);
+
+            List<Creature> threatenedByTargetSupport = new List<Creature>();
+
+            if (playerTarget != player)
+                foreach (var creature in nearbyMonstersOfTarget)
+                {
+                    creature.IncreaseTargetThreatLevel(player, (int)threatAmount * 2);
+                    threatenedByTargetSupport.Add(creature);
+                }
+
+            // don't increase a monster's threat towards a caster again if they already received threat from a targeted support spell
+            foreach (var creature in nearbyMonstersOfCaster)
+            {
+                var skip = false;
+
+                foreach (var threatenedCreature in threatenedByTargetSupport)
+                    if (creature.Guid == threatenedCreature.Guid)
+                        skip = true;
+
+                if (skip)
+                    continue;
+
+                creature.IncreaseTargetThreatLevel(player, (int)threatAmount);
+            }
+            
         }
     }
 }

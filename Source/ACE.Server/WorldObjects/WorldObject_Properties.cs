@@ -3341,6 +3341,12 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyBool.BossKillXpReward); else SetProperty(PropertyBool.BossKillXpReward, value.Value); }
         }
 
+        public bool? UseLegacyThreatSystem
+        {
+            get => GetProperty(PropertyBool.UseLegacyThreatSystem);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.UseLegacyThreatSystem); else SetProperty(PropertyBool.UseLegacyThreatSystem, value.Value); }
+        }
+
         public int? EmpoweredScarabElement
         {
             get => GetProperty(PropertyInt.EmpoweredScarabElement);

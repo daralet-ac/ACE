@@ -35,6 +35,9 @@ namespace ACE.Server.WorldObjects
 
         public DateTime NextRefillTime;
 
+        public Creature LastAttackedCreature;
+        public double LastAttackedCreatureTime;
+
         public double LastPkAttackTimestamp
         {
             get => GetProperty(PropertyFloat.LastPkAttackTimestamp) ?? 0;
@@ -112,7 +115,21 @@ namespace ACE.Server.WorldObjects
             var damageEvent = DamageEvent.CalculateDamage(this, target, damageSource);
 
             target.OnAttackReceived(this, (damageSource == null || damageSource.ProjectileSource == null) ? CombatType.Melee : CombatType.Missile, damageEvent.IsCritical, damageEvent.Evaded || damageEvent.Blocked || damageEvent.PartialEvasion != PartialEvasion.None);
-            
+
+            if(target.IsMonster)
+            {
+                var damage = damageEvent.Damage;
+                var targetMaxHealth = target.Health.MaxValue;
+                var percentDamageDealt = damage / targetMaxHealth;
+
+                var threat = percentDamageDealt * 1000; 
+
+                target.IncreaseTargetThreatLevel(this, (int)threat);
+
+                LastAttackedCreature = target;
+                LastAttackedCreatureTime = Time.GetUnixTime();
+            }
+
             var crit = damageEvent.IsCritical;
             var critMessage = crit == true ? "Critical Hit! " : "";
 

@@ -9,7 +9,7 @@ namespace ACE.Server.WorldObjects
 {
     partial class Creature
     {
-        private static bool Debug = false;
+        private static bool DebugArchetypeSystem = false;
 
         // Stat ranges by tier
         private static readonly int[] enemyHealth = { 10, 50, 100, 175, 275, 400, 600, 900, 1200};
@@ -31,7 +31,7 @@ namespace ACE.Server.WorldObjects
 
         private void SetSkills(int tier, float statWeight, double toughness, double physicality, double dexterity, double magic, double intelligence)
         {
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.WriteLine($"\n\n---- {Name} ----  \n\n-- SetSkills() for {Name} ({WeenieClassId}) (statWeight: {statWeight}) --");
 
             if ((OverrideArchetypeSkills ?? false) != true)
@@ -195,7 +195,7 @@ namespace ACE.Server.WorldObjects
         private void SetVitals(int tier, float statWeight, double toughness, double physicality, double dexterity, double magic)
         {
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.WriteLine($"\n-- SetVitals() for {Name} ({WeenieClassId}) (statWeight: {statWeight}) --");
 
             // Health
@@ -261,7 +261,7 @@ namespace ACE.Server.WorldObjects
 
         private void SetDamageArmorAegis(int tier, float statWeight, double toughness, double physicality, double magic, double lethality)
         {
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.WriteLine($"\n-- SetDamageArmorAegus() for {Name} ({WeenieClassId}) (statWeight: {statWeight}) --");
 
             // Damage + Armor
@@ -276,7 +276,7 @@ namespace ACE.Server.WorldObjects
                 var damageMed = Math.Max((int)(baseAvgDamage / (1.0f - (0.5f / 2))), 1);
                 var damageLow = Math.Max((int)(baseAvgDamage / (1.0f - (0.3f / 2))), 1);
 
-                if (Debug)
+                if (DebugArchetypeSystem)
                     Console.WriteLine($"Final: Damage(0.75): {damageHigh}, Damage(0.5): {damageMed}, Damage(0.3): {damageLow}\n" +
                         $"-Update Armor/Damage Body Values");
 
@@ -291,7 +291,7 @@ namespace ACE.Server.WorldObjects
                             var bodyPart = kvp.Value;
 
                             // Armor
-                            if (Debug)
+                            if (DebugArchetypeSystem)
                                 Console.WriteLine($" Old/New Armor: {bodyPart.BaseArmor} -> {newArmorLevel}");
 
                             bodyPart.BaseArmor = newArmorLevel;
@@ -308,7 +308,7 @@ namespace ACE.Server.WorldObjects
                                 else
                                     bodyPart.DVal = damageLow;
 
-                                if (Debug)
+                                if (DebugArchetypeSystem)
                                     Console.WriteLine($" Old/New Damage: {oldDamage} -> {bodyPart.DVal}");
                             }
                         }
@@ -336,7 +336,7 @@ namespace ACE.Server.WorldObjects
 
                 KillXpMod = killXpMod * difficltyMod;
 
-                if (Debug)
+                if (DebugArchetypeSystem)
                     Console.Write($"\n-- SetXpMod() for {Name} ({WeenieClassId}) --\n" +
                     $" Old/New Xp mod: {killXpMod} -> {KillXpMod.Value}");
             }
@@ -358,7 +358,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"-Melee Attack\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -454,7 +454,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Missile Attack\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -502,7 +502,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-War Magic\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -526,7 +526,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Life Magic\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -550,7 +550,7 @@ namespace ACE.Server.WorldObjects
 
                 var newSkill = tweakedSkill - skillFromAttributes;
 
-                if (Debug)
+                if (DebugArchetypeSystem)
                     Console.Write($"\n-Physical Defense\n" +
                     $" Target: {target}\n" +
                     $" Multiplier: {multiplier}\n" +
@@ -574,7 +574,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Missile Defense\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -598,7 +598,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Magic Defense\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -622,7 +622,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Perception\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -646,7 +646,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Deception\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -670,7 +670,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Run\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -688,7 +688,7 @@ namespace ACE.Server.WorldObjects
             var multiplier = (toughness + physicality) / 2;
             var newArmor = (int)(target * multiplier);
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Armor\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -703,7 +703,7 @@ namespace ACE.Server.WorldObjects
             var multiplier = (toughness + magic) / 2;
             var newAegis = (int)(target * multiplier);
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Aegis\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -725,7 +725,7 @@ namespace ACE.Server.WorldObjects
 
             var newVital = tweakedVital - vitalFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Health\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -742,7 +742,7 @@ namespace ACE.Server.WorldObjects
             var multiplier = (toughness + physicality) / 2;
             var newVital = (target * multiplier);
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Health Regen\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -764,7 +764,7 @@ namespace ACE.Server.WorldObjects
 
             var newVital = tweakedVital - vitalFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Stamina\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -781,7 +781,7 @@ namespace ACE.Server.WorldObjects
             var multiplier = (physicality + dexterity) / 2;
             var newVital = (target * multiplier);
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Stamina Regen\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -803,7 +803,7 @@ namespace ACE.Server.WorldObjects
 
             var newVital = tweakedVital - vitalFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Mana\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -820,7 +820,7 @@ namespace ACE.Server.WorldObjects
             var multiplier = magic;
             var newVital = (target * multiplier);
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Mana Regen\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -860,7 +860,7 @@ namespace ACE.Server.WorldObjects
             // final base damage
             var baseAvgDamage = targetEnemyDamage / weightedPlayerArmorReduction / playerLifeProtReduction / playerEvadeDamageReduction / enemyAvgAttackSpeed / enemyAttributeMod * lethality;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.WriteLine($"\nDamage Calc for {Name} ({WeenieClassId})\n " +
                     $" BaseAvgDamge: {Math.Round(baseAvgDamage, 1)} = \n" +
                     $"  targetEnemyDamage ({Math.Round(targetEnemyDamage, 1)}) - weightedEnemyDamage ({Math.Round(weightedEnemyDamage, 1)}% per second), weightedPlayerHealth ({Math.Round(weightedPlayerHealth, 1)}) \n" +
