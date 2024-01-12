@@ -382,7 +382,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"-Unarmed Combat\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -406,7 +406,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"-Dagger\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -430,7 +430,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"-Staff\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
@@ -478,7 +478,7 @@ namespace ACE.Server.WorldObjects
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
-            if (Debug)
+            if (DebugArchetypeSystem)
                 Console.Write($"\n-Thrown Weapons\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
