@@ -36,15 +36,48 @@ namespace ACE.Server.WorldObjects
 
             if ((OverrideArchetypeSkills ?? false) != true)
             {
-                // Melee Attack Skill
+                // Martial Weapons Skill
                 {
                     var newSkill = GetNewMeleeAttackSkill(tier, statWeight, physicality, dexterity);
 
                     var skillType = ACE.Entity.Enum.Skill.HeavyWeapons;
 
-                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Specialized };
+                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained };
 
                     Skills[ACE.Entity.Enum.Skill.HeavyWeapons] = new CreatureSkill(this, skillType, propertiesSkill);
+                }
+
+                // Unarmed Attack Skill
+                {
+                    var newSkill = GetNewUnarmedCombatSkill(tier, statWeight, physicality, dexterity);
+
+                    var skillType = ACE.Entity.Enum.Skill.UnarmedCombat;
+
+                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained };
+
+                    Skills[ACE.Entity.Enum.Skill.UnarmedCombat] = new CreatureSkill(this, skillType, propertiesSkill);
+                }
+
+                // Dagger Skill
+                {
+                    var newSkill = GetNewDaggerSkill(tier, statWeight, physicality, dexterity);
+
+                    var skillType = ACE.Entity.Enum.Skill.Dagger;
+
+                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained };
+
+                    Skills[ACE.Entity.Enum.Skill.Dagger] = new CreatureSkill(this, skillType, propertiesSkill);
+                }
+
+                // Staff Skill
+                {
+                    var newSkill = GetNewStaffSkill(tier, statWeight, physicality, dexterity);
+
+                    var skillType = ACE.Entity.Enum.Skill.Staff;
+
+                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained };
+
+                    Skills[ACE.Entity.Enum.Skill.Staff] = new CreatureSkill(this, skillType, propertiesSkill);
                 }
 
                 // Missile Attack Skill
@@ -53,9 +86,20 @@ namespace ACE.Server.WorldObjects
 
                     var skillType = ACE.Entity.Enum.Skill.Bow;
 
-                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Specialized };
+                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained };
 
                     Skills[ACE.Entity.Enum.Skill.Bow] = new CreatureSkill(this, skillType, propertiesSkill);
+                }
+
+                // Thrown Weapons Skill
+                {
+                    var newSkill = GetNewMissileAttackSkill(tier, statWeight, dexterity);
+
+                    var skillType = ACE.Entity.Enum.Skill.ThrownWeapon;
+
+                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained };
+
+                    Skills[ACE.Entity.Enum.Skill.ThrownWeapon] = new CreatureSkill(this, skillType, propertiesSkill);
                 }
 
                 // War Magic Skill
@@ -64,7 +108,7 @@ namespace ACE.Server.WorldObjects
 
                     var skillType = ACE.Entity.Enum.Skill.WarMagic;
 
-                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Specialized };
+                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained };
 
                     Skills[ACE.Entity.Enum.Skill.WarMagic] = new CreatureSkill(this, skillType, propertiesSkill);
                 }
@@ -75,7 +119,7 @@ namespace ACE.Server.WorldObjects
 
                     var skillType = ACE.Entity.Enum.Skill.LifeMagic;
 
-                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Specialized };
+                    var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained };
 
                     Skills[ACE.Entity.Enum.Skill.LifeMagic] = new CreatureSkill(this, skillType, propertiesSkill);
                 }
@@ -325,6 +369,78 @@ namespace ACE.Server.WorldObjects
             return newSkill;
         }
 
+        private uint GetNewUnarmedCombatSkill(int tier, float statWeight, double physicality, double dexterity)
+        {
+            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var multiplier = (physicality + dexterity) / 2;
+            var tweakedSkill = (uint)(target * multiplier);
+
+            var skillFromAttributes = Coordination.Base / 2;
+
+            if (skillFromAttributes > tweakedSkill)
+                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Unarmed Combat skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Coordination attribute should be lowered on the {Name} weenie file.");
+
+            var newSkill = tweakedSkill - skillFromAttributes;
+
+            if (Debug)
+                Console.Write($"-Unarmed Combat\n" +
+                $" Target: {target}\n" +
+                $" Multiplier: {multiplier}\n" +
+                $" TweakedSkill: {tweakedSkill}\n" +
+                $" SkillFromAttributes: {skillFromAttributes}\n" +
+                $" NewSkill: {newSkill}");
+
+            return newSkill;
+        }
+
+        private uint GetNewDaggerSkill(int tier, float statWeight, double physicality, double dexterity)
+        {
+            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var multiplier = (physicality + dexterity) / 2;
+            var tweakedSkill = (uint)(target * multiplier);
+
+            var skillFromAttributes = Coordination.Base / 2;
+
+            if (skillFromAttributes > tweakedSkill)
+                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Dagger skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Coordination attribute should be lowered on the {Name} weenie file.");
+
+            var newSkill = tweakedSkill - skillFromAttributes;
+
+            if (Debug)
+                Console.Write($"-Dagger\n" +
+                $" Target: {target}\n" +
+                $" Multiplier: {multiplier}\n" +
+                $" TweakedSkill: {tweakedSkill}\n" +
+                $" SkillFromAttributes: {skillFromAttributes}\n" +
+                $" NewSkill: {newSkill}");
+
+            return newSkill;
+        }
+
+        private uint GetNewStaffSkill(int tier, float statWeight, double physicality, double dexterity)
+        {
+            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var multiplier = (physicality + dexterity) / 2;
+            var tweakedSkill = (uint)(target * multiplier);
+
+            var skillFromAttributes = Coordination.Base / 2;
+
+            if (skillFromAttributes > tweakedSkill)
+                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Staff skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Coordination attribute should be lowered on the {Name} weenie file.");
+
+            var newSkill = tweakedSkill - skillFromAttributes;
+
+            if (Debug)
+                Console.Write($"-Staff\n" +
+                $" Target: {target}\n" +
+                $" Multiplier: {multiplier}\n" +
+                $" TweakedSkill: {tweakedSkill}\n" +
+                $" SkillFromAttributes: {skillFromAttributes}\n" +
+                $" NewSkill: {newSkill}");
+
+            return newSkill;
+        }
+
         private uint GetNewMissileAttackSkill(int tier, float statWeight, double dexterity)
         {
             var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
@@ -334,12 +450,36 @@ namespace ACE.Server.WorldObjects
             var skillFromAttributes = Coordination.Base / 2;
 
             if (skillFromAttributes > tweakedSkill)
-                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Bow skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). SCoordination attribute should be lowered on the {Name} weenie file.");
+                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Bow skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Coordination attribute should be lowered on the {Name} weenie file.");
 
             var newSkill = tweakedSkill - skillFromAttributes;
 
             if (Debug)
                 Console.Write($"\n-Missile Attack\n" +
+                $" Target: {target}\n" +
+                $" Multiplier: {multiplier}\n" +
+                $" TweakedSkill: {tweakedSkill}\n" +
+                $" SkillFromAttributes: {skillFromAttributes}\n" +
+                $" NewSkill: {newSkill}");
+
+            return newSkill;
+        }
+
+        private uint GetNewThrownWeaponsSkill(int tier, float statWeight, double dexterity)
+        {
+            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var multiplier = dexterity;
+            var tweakedSkill = (uint)(target * multiplier);
+
+            var skillFromAttributes = Strength.Base / 2;
+
+            if (skillFromAttributes > tweakedSkill)
+                _log.Warning($"Creature.SetSkills() - Archetype system is attempting to set the base Thrown Weapons skill to {(int)tweakedSkill - skillFromAttributes} for {Name} ({WeenieClassId}) (defaulting to 1). Strength attribute should be lowered on the {Name} weenie file.");
+
+            var newSkill = tweakedSkill - skillFromAttributes;
+
+            if (Debug)
+                Console.Write($"\n-Thrown Weapons\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
                 $" TweakedSkill: {tweakedSkill}\n" +
