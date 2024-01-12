@@ -233,7 +233,7 @@ namespace ACE.Server.Factories
                 return;
             }
 
-            var baseArmorLevel = wo.ArmorLevel ?? 0;
+            var baseArmorLevel = wo.ArmorLevel ?? 50;
 
                 if (tier < 2)
                     return;
