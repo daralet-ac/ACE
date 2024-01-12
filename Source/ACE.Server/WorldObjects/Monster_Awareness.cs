@@ -138,7 +138,7 @@ namespace ACE.Server.WorldObjects
         }
 
 
-        private static bool DebugThreatSystem = true;
+        private static bool DebugThreatSystem = false;
         private static int ThreatStartingAmount = 100;
         private double ThreatGainedSinceLastTick = 1;
 
