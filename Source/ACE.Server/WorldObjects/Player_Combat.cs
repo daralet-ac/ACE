@@ -1465,7 +1465,7 @@ namespace ACE.Server.WorldObjects
             {
                 if ((AttackType & AttackType.Punches) != 0)
                 {
-                    if (PowerLevel < ThrustThreshold)
+                    if (SlashThrustToggle)
                         return DamageType.Pierce;
                     else
                         return DamageType.Slash;
