@@ -7,7 +7,6 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories.Tables;
-using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
@@ -623,9 +622,16 @@ namespace ACE.Server.WorldObjects
         {
             var attackerAsCreature = attacker as Creature;
             if (!avoided && attackerAsCreature != null)
-                if (attackerAsCreature != null)
+                if (attackerAsCreature != null && attackerAsCreature.IsMonster)
                     attackerAsCreature.TryPerceiveWeaknesses(this, attackType, spellLevel);
 
+            var playerAttacker = attacker as Player;
+            if(playerAttacker != null)
+            {
+                playerAttacker.LastAttackedCreature = this;
+                playerAttacker.LastAttackedCreatureTime = Time.GetUnixTime();
+            }
+            
             numRecentAttacksReceived++;
         }
 

@@ -6389,6 +6389,7 @@ namespace ACE.Entity.Enum
         AreaTaunt                           = 0x8000 | 10050,   // 15 second cooldown
         FeignWeakness                       = 0x8000 | 10051,   // 15 second cooldown
         Vanish                              = 0x8000 | 10052,   // 60 second cooldown
+        ExposeWeakness                      = 0x8000 | 10053,   // 15 second cooldown
 
     }
 

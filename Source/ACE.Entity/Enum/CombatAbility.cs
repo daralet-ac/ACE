@@ -23,5 +23,7 @@ namespace ACE.Entity.Enum
         AreaTaunt,
         FeignInjury,
         Vanish,
+        ExposePhysicalWeakness,
+        ExposeMagicalWeakness,
     }
 }
