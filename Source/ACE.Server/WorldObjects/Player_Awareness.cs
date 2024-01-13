@@ -229,9 +229,9 @@ namespace ACE.Server.WorldObjects
                             Session.Network.EnqueueSend(new GameMessageSystemChat($"   {entry.Key.Name}: {threatLevel}", ChatMessageType.Broadcast));
                         }
                     }
-
-                    NextThreatTableTime = Time.GetUnixTime() + 10;
                 }
+
+                NextThreatTableTime = Time.GetUnixTime() + 10;
             }
         }
     }
