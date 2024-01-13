@@ -666,12 +666,12 @@ namespace ACE.Server.WorldObjects
                     boost = targetCreature.UpdateVitalDelta(targetCreature.Health, tryBoost);
                     srcVital = "health";
 
-                    if (boost >= 0)
+                    if (boost >= 0 && !targetCreature.IsMonster)
                     {
                         targetCreature.DamageHistory.OnHeal((uint)boost);
                         GenerateSupportSpellThreat(spell, targetCreature, boost);
                     }
-                    else
+                    else if (targetCreature.IsMonster)
                     {
                         targetCreature.DamageHistory.Add(this, DamageType.Health, (uint)-boost);
                         targetCreature.IncreaseTargetThreatLevel(player, boost);
