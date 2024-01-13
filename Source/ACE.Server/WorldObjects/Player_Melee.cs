@@ -486,11 +486,12 @@ namespace ACE.Server.WorldObjects
 
             var motions = CombatTable.GetMotion(CurrentMotionState.Stance, AttackHeight.Value, AttackType, PrevMotionCommand);
 
+            MotionCommand motion;
             // higher-powered animation always in first slot ?
-            //var motion = motions.Count > 1 && PowerLevel < subdivision ? motions[1] : motions[0];
-
-            // Default to Slash animation. When SlashThrustToggle is activated, use Thrust
-            var motion = motions[0];
+            if (AttackType == AttackType.Punch)
+                motion = motions.Count > 1 && SlashThrustToggle ? motions[1] : motions[0];
+            else
+                motion = motions.Count > 1 && PowerLevel < subdivision ? motions[1] : motions[0];
 
             PrevMotionCommand = motion;
 
