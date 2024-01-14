@@ -1024,7 +1024,14 @@ namespace ACE.Server.WorldObjects
             var isWeaponSpell = casterItem != null && IsWeaponSpell(spell.Id, casterItem);
 
             // Grab player's skill level in the spell's Magic School
-            var magicSkill = GetCreatureSkill(spell.School).Current;
+            uint magicSkill;
+            if (spell.School == MagicSchool.WarMagic)
+                magicSkill = GetModdedWarMagicSkill();
+            else if (spell.School == MagicSchool.LifeMagic)
+                magicSkill = GetModdedLifeMagicSkill();
+            else
+                magicSkill = GetCreatureSkill(spell.School).Current;
+
             if (isWeaponSpell && caster.ItemSpellcraft != null)
                 magicSkill = (uint)caster.ItemSpellcraft;
 

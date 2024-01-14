@@ -671,7 +671,7 @@ namespace ACE.Server.WorldObjects
                         targetCreature.DamageHistory.OnHeal((uint)boost);
                         GenerateSupportSpellThreat(spell, targetCreature, boost);
                     }
-                    else if (targetCreature.IsMonster)
+                    else if (targetCreature.IsMonster && !creature.IsMonster)
                     {
                         targetCreature.DamageHistory.Add(this, DamageType.Health, (uint)-boost);
                         targetCreature.IncreaseTargetThreatLevel(player, boost);
