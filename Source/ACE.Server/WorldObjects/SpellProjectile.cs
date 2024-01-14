@@ -463,16 +463,6 @@ namespace ACE.Server.WorldObjects
             if (sourceCreature != null)
                 attackSkill = sourceCreature.GetCreatureSkill(Spell.School);
 
-            CombatAbility combatAbilityId = CombatAbility.None;
-            WorldObject combatAbilityTrinket = null;
-
-            if (sourcePlayer != null)
-            {
-                combatAbilityTrinket = sourcePlayer.GetEquippedTrinket();
-                if (combatAbilityTrinket != null)
-                    combatAbilityId = (CombatAbility)combatAbilityTrinket.CombatAbilityId;
-            }
-
             // critical hit
             var criticalChance = GetWeaponMagicCritFrequency(weapon, sourceCreature, attackSkill, target);
 
