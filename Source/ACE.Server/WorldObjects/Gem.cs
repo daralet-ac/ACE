@@ -210,6 +210,12 @@ namespace ACE.Server.WorldObjects
                     case CombatAbility.Vanish:
                         player.TryUseVanish(this);
                         break;
+                    case CombatAbility.ExposePhysicalWeakness:
+                        player.TryUseExposePhysicalWeakness(this);
+                        break;
+                    case CombatAbility.ExposeMagicalWeakness:
+                        player.TryUseExposeMagicalWeakness(this);
+                        break;
                 }
             }
 
