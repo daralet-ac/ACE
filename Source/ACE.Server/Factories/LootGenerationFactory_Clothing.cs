@@ -983,6 +983,7 @@ namespace ACE.Server.Factories
                 wo.ArmorLifeMagicMod = 0.0;
                 wo.ArmorMagicDefMod = 0.0;
                 wo.ArmorPerceptionMod = 0.0;
+                wo.ArmorDeceptionMod = 0.0;
                 wo.ArmorManaRegenMod = 0.0;
                 wo.ManaConversionMod = 0.0;
 
@@ -998,7 +999,12 @@ namespace ACE.Server.Factories
                         case 1: wo.ArmorWarMagicMod = amount; break;
                         case 2: wo.ArmorLifeMagicMod = amount; break;
                         case 3: wo.ArmorMagicDefMod = amount; break;
-                        case 4: wo.ArmorPerceptionMod = amount; break;
+                        case 4:
+                            if (ThreadSafeRandom.Next(0, 1) == 0)
+                                wo.ArmorPerceptionMod = amount;
+                            else
+                                wo.ArmorDeceptionMod = amount;
+                            break;
                         case 5: wo.ArmorManaRegenMod = amount; break;
                         case 6: wo.ManaConversionMod = amount; break;
                     }
@@ -1012,6 +1018,7 @@ namespace ACE.Server.Factories
                 wo.ArmorThieveryMod = 0.0;
                 wo.ArmorRunMod = 0.0;
                 wo.ArmorStaminaMod = 0.0;
+                wo.ArmorPerceptionMod = 0.0;
                 wo.ArmorDeceptionMod = 0.0;
 
                 //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
@@ -1033,7 +1040,12 @@ namespace ACE.Server.Factories
                         case 3: wo.ArmorThieveryMod = amount; break;
                         case 4: wo.ArmorRunMod = amount; break;
                         case 5: wo.ArmorStaminaRegenMod = amount; break;
-                        case 6: wo.ArmorDeceptionMod = amount; break;
+                        case 6:
+                            if (ThreadSafeRandom.Next(0, 1) == 0)
+                                wo.ArmorPerceptionMod = amount;
+                            else
+                                wo.ArmorDeceptionMod = amount;
+                            break;
                     }
                 }
             }
@@ -1045,6 +1057,7 @@ namespace ACE.Server.Factories
                 wo.ArmorShieldMod = 0.0;
                 wo.ArmorTwohandedCombatMod = 0.0;
                 wo.ArmorPerceptionMod = 0.0;
+                wo.ArmorDeceptionMod = 0.0;
                 wo.ArmorHealthRegenMod = 0.0;
 
                 //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
@@ -1065,7 +1078,12 @@ namespace ACE.Server.Factories
                             else
                                 wo.ArmorTwohandedCombatMod = amount;
                             break;
-                        case 5: wo.ArmorPerceptionMod = amount; break;
+                        case 5:
+                            if (ThreadSafeRandom.Next(0, 1) == 0)
+                                wo.ArmorPerceptionMod = amount;
+                            else
+                                wo.ArmorDeceptionMod = amount;
+                            break;
                         case 6: wo.ArmorHealthRegenMod = amount; break;
                     }
                 }
