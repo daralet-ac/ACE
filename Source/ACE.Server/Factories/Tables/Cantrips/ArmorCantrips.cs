@@ -13,50 +13,49 @@ namespace ACE.Server.Factories.Tables.Cantrips
         {
             // creature cantrips
 
-            //SpellId.CANTRIPSTRENGTH1,
-            //SpellId.CANTRIPENDURANCE1,
-            //SpellId.CANTRIPCOORDINATION1,
-            //SpellId.CANTRIPQUICKNESS1,
-            //SpellId.CANTRIPFOCUS1,
-            //SpellId.CANTRIPWILLPOWER1,
+            SpellId.CANTRIPSTRENGTH1,
+            SpellId.CANTRIPENDURANCE1,
+            SpellId.CANTRIPCOORDINATION1,
+            SpellId.CANTRIPQUICKNESS1,
+            SpellId.CANTRIPFOCUS1,
+            SpellId.CANTRIPWILLPOWER1,
 
-            //SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1,
-            //SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1,
-            //SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1,
-            //SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1,
-            //SpellId.CANTRIPTWOHANDEDAPTITUDE1,
+            SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1,   // Martial Weapons
+            SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1,   // Staff
+            SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1, // Dagger
+            SpellId.CANTRIPUNARMEDAPTITUDE1,        
+            SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1, // Bows
+            SpellId.CANTRIPTHROWNAPTITUDE1,         
 
-            //SpellId.CANTRIPINVULNERABILITY1,
+            SpellId.CANTRIPTWOHANDEDAPTITUDE1,
+            SpellId.CantripDualWieldAptitude1,
+            SpellId.CantripShieldAptitude1,
+
+            SpellId.CANTRIPINVULNERABILITY1,
             //SpellId.CANTRIPIMPREGNABILITY1,
-            //SpellId.CANTRIPMAGICRESISTANCE1,
+            SpellId.CANTRIPMAGICRESISTANCE1,
 
+            SpellId.CANTRIPLIFEMAGICAPTITUDE1,
+            SpellId.CANTRIPWARMAGICAPTITUDE1,
+            SpellId.CANTRIPMANACONVERSIONPROWESS1,
             //SpellId.CANTRIPCREATUREENCHANTMENTAPTITUDE1,
             //SpellId.CANTRIPITEMENCHANTMENTAPTITUDE1,
-            //SpellId.CANTRIPLIFEMAGICAPTITUDE1,
-            //SpellId.CANTRIPWARMAGICAPTITUDE1,
             //SpellId.CantripVoidMagicAptitude1,
             //SpellId.CantripSummoningProwess1,
-
-            //SpellId.CANTRIPARCANEPROWESS1,
-            //SpellId.CANTRIPDECEPTIONPROWESS1,
-            //SpellId.CANTRIPHEALINGPROWESS1,
-            //SpellId.CANTRIPJUMPINGPROWESS1,         // missing from original cantrips, but was in spells
-            //                                        // should a separate lower armor cantrips table be added for this?
-            //SpellId.CANTRIPMANACONVERSIONPROWESS1,
-            //SpellId.CANTRIPLOCKPICKPROWESS1,
-            //SpellId.CANTRIPSPRINT1,                 // missing from original cantrips, but was in spells
-            //                                        // should a separate lower armor cantrips table be added for this?
+            
+            SpellId.CANTRIPLOCKPICKPROWESS1,    // Thievery
+            SpellId.CANTRIPMONSTERATTUNEMENT1,
+            SpellId.CANTRIPARCANEPROWESS1,
+            SpellId.CANTRIPDECEPTIONPROWESS1,
+            SpellId.CANTRIPHEALINGPROWESS1,
+            SpellId.CANTRIPJUMPINGPROWESS1,         // missing from original cantrips, but was in spells
+                                                    // should a separate lower armor cantrips table be added for this?
+            SpellId.CANTRIPSPRINT1,                 // missing from original cantrips, but was in spells
+                                                    // should a separate lower armor cantrips table be added for this?
 
             //SpellId.CantripDirtyFightingProwess1,
-            //SpellId.CantripDualWieldAptitude1,
             //SpellId.CantripRecklessnessProwess1,    // was in original twice
             //SpellId.CantripSneakAttackProwess1,
-
-            //SpellId.CantripShieldAptitude1,
-
-            //SpellId.CANTRIPALCHEMICALPROWESS1,
-            //SpellId.CANTRIPCOOKINGPROWESS1,
-            //SpellId.CANTRIPFLETCHINGPROWESS1,
 
             //SpellId.CANTRIPLEADERSHIP1,
             //SpellId.CANTRIPFEALTY1,
@@ -66,20 +65,21 @@ namespace ACE.Server.Factories.Tables.Cantrips
             //SpellId.CANTRIPITEMEXPERTISE1,
             //SpellId.CANTRIPMAGICITEMEXPERTISE1,
             //SpellId.CANTRIPWEAPONEXPERTISE1,
+            //SpellId.CANTRIPFLETCHINGPROWESS1,
+            //SpellId.CANTRIPALCHEMICALPROWESS1,
+            //SpellId.CANTRIPCOOKINGPROWESS1,
 
-            //SpellId.CANTRIPMONSTERATTUNEMENT1,
-            //SpellId.CANTRIPPERSONATTUNEMENT1,
 
             // life cantrips
 
-            SpellId.CANTRIPARMOR1,      // was in original twice
-            SpellId.CANTRIPACIDWARD1,
-            SpellId.CANTRIPBLUDGEONINGWARD1,
-            SpellId.CANTRIPFROSTWARD1,
-            SpellId.CANTRIPSTORMWARD1,
-            SpellId.CANTRIPFLAMEWARD1,
-            SpellId.CANTRIPSLASHINGWARD1,
-            SpellId.CANTRIPPIERCINGWARD1,
+            //SpellId.CANTRIPARMOR1,      // was in original twice
+            //SpellId.CANTRIPACIDWARD1,
+            //SpellId.CANTRIPBLUDGEONINGWARD1,
+            //SpellId.CANTRIPFROSTWARD1,
+            //SpellId.CANTRIPSTORMWARD1,
+            //SpellId.CANTRIPFLAMEWARD1,
+            //SpellId.CANTRIPSLASHINGWARD1,
+            //SpellId.CANTRIPPIERCINGWARD1,
 
             // item cantrips
 
@@ -134,37 +134,37 @@ namespace ACE.Server.Factories.Tables.Cantrips
 
         private static ChanceTable<SpellId> armorCantrips = new ChanceTable<SpellId>(ChanceTableType.Weight)
         {
-            //( SpellId.CANTRIPSTRENGTH1,                    0.02f ),
-            //( SpellId.CANTRIPENDURANCE1,                   0.02f ),
-            //( SpellId.CANTRIPCOORDINATION1,                0.02f ),
-            //( SpellId.CANTRIPQUICKNESS1,                   0.02f ),
-            //( SpellId.CANTRIPFOCUS1,                       0.02f ),
-            //( SpellId.CANTRIPWILLPOWER1,                   0.02f ),
+            ( SpellId.CANTRIPSTRENGTH1,                    1.0f ),
+            ( SpellId.CANTRIPENDURANCE1,                   1.0f ),
+            ( SpellId.CANTRIPCOORDINATION1,                1.0f ),
+            ( SpellId.CANTRIPQUICKNESS1,                   1.0f ),
+            ( SpellId.CANTRIPFOCUS1,                       1.0f ),
+            ( SpellId.CANTRIPWILLPOWER1,                   1.0f ),
 
-            //( SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1,        0.02f ),
-            //( SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1,        0.02f ),
-            //( SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1,      0.02f ),
-            //( SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1,      0.02f ),
-            //( SpellId.CANTRIPTWOHANDEDAPTITUDE1,           0.02f ),
+            ( SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1,        1.0f ),
+            ( SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1,        1.0f ),
+            ( SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1,      1.0f ),
+            ( SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1,      1.0f ),
+            ( SpellId.CANTRIPTWOHANDEDAPTITUDE1,           1.0f ),
 
-            //( SpellId.CANTRIPIMPREGNABILITY1,              0.02f ),
-            //( SpellId.CANTRIPINVULNERABILITY1,             0.02f ),
-            //( SpellId.CANTRIPMAGICRESISTANCE1,             0.02f ),
+            //( SpellId.CANTRIPIMPREGNABILITY1,              1.0f ),
+            ( SpellId.CANTRIPINVULNERABILITY1,             1.0f ),
+            ( SpellId.CANTRIPMAGICRESISTANCE1,             1.0f ),
 
-            //( SpellId.CANTRIPCREATUREENCHANTMENTAPTITUDE1, 0.02f ),
-            //( SpellId.CANTRIPITEMENCHANTMENTAPTITUDE1,     0.02f ),
-            //( SpellId.CANTRIPLIFEMAGICAPTITUDE1,           0.02f ),
-            //( SpellId.CANTRIPWARMAGICAPTITUDE1,            0.02f ),
-            //( SpellId.CantripVoidMagicAptitude1,           0.02f ),
+            //( SpellId.CANTRIPCREATUREENCHANTMENTAPTITUDE1, 1.0f ),
+            //( SpellId.CANTRIPITEMENCHANTMENTAPTITUDE1,     1.0f ),
+            ( SpellId.CANTRIPLIFEMAGICAPTITUDE1,           1.0f ),
+            ( SpellId.CANTRIPWARMAGICAPTITUDE1,            1.0f ),
+            //( SpellId.CantripVoidMagicAptitude1,           1.0f ),
 
-            //( SpellId.CANTRIPIMPENETRABILITY1,             0.02f ),
-            //( SpellId.CANTRIPACIDBANE1,                    0.02f ),
-            //( SpellId.CANTRIPBLUDGEONINGBANE1,             0.02f ),
-            //( SpellId.CANTRIPFLAMEBANE1,                   0.02f ),
-            //( SpellId.CANTRIPFROSTBANE1,                   0.02f ),
-            //( SpellId.CANTRIPPIERCINGBANE1,                0.02f ),
-            //( SpellId.CANTRIPSLASHINGBANE1,                0.02f ),
-            //( SpellId.CANTRIPSTORMBANE1,                   0.02f ),
+            //( SpellId.CANTRIPIMPENETRABILITY1,             1.0f ),
+            //( SpellId.CANTRIPACIDBANE1,                    1.0f ),
+            //( SpellId.CANTRIPBLUDGEONINGBANE1,             1.0f ),
+            //( SpellId.CANTRIPFLAMEBANE1,                   1.0f ),
+            //( SpellId.CANTRIPFROSTBANE1,                   1.0f ),
+            //( SpellId.CANTRIPPIERCINGBANE1,                1.0f ),
+            //( SpellId.CANTRIPSLASHINGBANE1,                1.0f ),
+            //( SpellId.CANTRIPSTORMBANE1,                   1.0f ),
 
             ( SpellId.CANTRIPARMOR1,                       1.0f ),
             ( SpellId.CANTRIPACIDWARD1,                    1.0f ),
@@ -184,23 +184,23 @@ namespace ACE.Server.Factories.Tables.Cantrips
             //( SpellId.CANTRIPFLETCHINGPROWESS1,            0.01f ),
             //( SpellId.CANTRIPHEALINGPROWESS1,              0.01f ),
             //( SpellId.CANTRIPITEMEXPERTISE1,               0.01f ),
-            //( SpellId.CANTRIPJUMPINGPROWESS1,              0.01f ),
+            ( SpellId.CANTRIPJUMPINGPROWESS1,              1.0f ),
             //( SpellId.CANTRIPLEADERSHIP1,                  0.01f ),
-            //( SpellId.CANTRIPLOCKPICKPROWESS1,             0.01f ),
+            ( SpellId.CANTRIPLOCKPICKPROWESS1,             1.0f ),
             //( SpellId.CANTRIPMAGICITEMEXPERTISE1,          0.01f ),
             //( SpellId.CANTRIPMANACONVERSIONPROWESS1,       0.01f ),
-            //( SpellId.CANTRIPMONSTERATTUNEMENT1,           0.005f ),
+            ( SpellId.CANTRIPMONSTERATTUNEMENT1,           1.0f ),
             //( SpellId.CANTRIPPERSONATTUNEMENT1,            0.005f ),
             //( SpellId.CantripSalvaging1,                   0.01f ),
-            //( SpellId.CANTRIPSPRINT1,                      0.01f ),
+            ( SpellId.CANTRIPSPRINT1,                      1.0f ),
             //( SpellId.CANTRIPWEAPONEXPERTISE1,             0.01f ),
 
-            //( SpellId.CantripDirtyFightingProwess1,        0.02f ),
-            //( SpellId.CantripDualWieldAptitude1,           0.02f ),
-            //( SpellId.CantripRecklessnessProwess1,         0.02f ),
-            //( SpellId.CantripShieldAptitude1,              0.02f ),
-            //( SpellId.CantripSneakAttackProwess1,          0.02f ),
-            //( SpellId.CantripSummoningProwess1,            0.02f ),
+            //( SpellId.CantripDirtyFightingProwess1,        1.0f ),
+            ( SpellId.CantripDualWieldAptitude1,           1.0f ),
+            //( SpellId.CantripRecklessnessProwess1,         1.0f ),
+            ( SpellId.CantripShieldAptitude1,              1.0f ),
+            //( SpellId.CantripSneakAttackProwess1,          1.0f ),
+            //( SpellId.CantripSummoningProwess1,            1.0f ),
         };
 
         public static SpellId Roll()
