@@ -298,30 +298,30 @@ namespace ACE.Entity.Enum
         MagicYieldSelf4,
         MagicYieldSelf5,
         MagicYieldSelf6,
-        LightWeaponsMasteryOther1,      // AxeMasteryOther1
-        LightWeaponsMasteryOther2,      // AxeMasteryOther2
-        LightWeaponsMasteryOther3,      // AxeMasteryOther3
-        LightWeaponsMasteryOther4,      // AxeMasteryOther4
-        LightWeaponsMasteryOther5,      // AxeMasteryOther5
-        LightWeaponsMasteryOther6,      // AxeMasteryOther6
-        LightWeaponsMasterySelf1,       // AxeMasterySelf1
-        LightWeaponsMasterySelf2,       // AxeMasterySelf2
-        LightWeaponsMasterySelf3,       // AxeMasterySelf3
-        LightWeaponsMasterySelf4,       // AxeMasterySelf4
-        LightWeaponsMasterySelf5,       // AxeMasterySelf5
-        LightWeaponsMasterySelf6,       // AxeMasterySelf6
-        LightWeaponsIneptitudeOther1,   // AxeIneptitudeOther1
-        LightWeaponsIneptitudeOther2,   // AxeIneptitudeOther2
-        LightWeaponsIneptitudeOther3,   // AxeIneptitudeOther3
-        LightWeaponsIneptitudeOther4,   // AxeIneptitudeOther4
-        LightWeaponsIneptitudeOther5,   // AxeIneptitudeOther5
-        LightWeaponsIneptitudeOther6,   // AxeIneptitudeOther6
-        LightWeaponsIneptitudeSelf1,    // AxeIneptitudeSelf1
-        LightWeaponsIneptitudeSelf2,    // AxeIneptitudeSelf2
-        LightWeaponsIneptitudeSelf3,    // AxeIneptitudeSelf3
-        LightWeaponsIneptitudeSelf4,    // AxeIneptitudeSelf4
-        LightWeaponsIneptitudeSelf5,    // AxeIneptitudeSelf5
-        LightWeaponsIneptitudeSelf6,    // AxeIneptitudeSelf6
+        LightWeaponsMasteryOther1,      // MartialWeaponsMasteryOther1
+        LightWeaponsMasteryOther2,      // MartialWeaponsMasteryOther2
+        LightWeaponsMasteryOther3,      // MartialWeaponsMasteryOther3
+        LightWeaponsMasteryOther4,      // MartialWeaponsMasteryOther4
+        LightWeaponsMasteryOther5,      // MartialWeaponsMasteryOther5
+        LightWeaponsMasteryOther6,      // MartialWeaponsMasteryOther6
+        LightWeaponsMasterySelf1,       // MartialWeaponsMasterySelf1
+        LightWeaponsMasterySelf2,       // MartialWeaponsMasterySelf2
+        LightWeaponsMasterySelf3,       // MartialWeaponsMasterySelf3
+        LightWeaponsMasterySelf4,       // MartialWeaponsMasterySelf4
+        LightWeaponsMasterySelf5,       // MartialWeaponsMasterySelf5
+        LightWeaponsMasterySelf6,       // MartialWeaponsMasterySelf6
+        LightWeaponsIneptitudeOther1,   // MartialWeaponsIneptitudeOther1
+        LightWeaponsIneptitudeOther2,   // MartialWeaponsIneptitudeOther2
+        LightWeaponsIneptitudeOther3,   // MartialWeaponsIneptitudeOther3
+        LightWeaponsIneptitudeOther4,   // MartialWeaponsIneptitudeOther4
+        LightWeaponsIneptitudeOther5,   // MartialWeaponsIneptitudeOther5
+        LightWeaponsIneptitudeOther6,   // MartialWeaponsIneptitudeOther6
+        LightWeaponsIneptitudeSelf1,    // MartialWeaponsIneptitudeSelf1
+        LightWeaponsIneptitudeSelf2,    // MartialWeaponsIneptitudeSelf2
+        LightWeaponsIneptitudeSelf3,    // MartialWeaponsIneptitudeSelf3
+        LightWeaponsIneptitudeSelf4,    // MartialWeaponsIneptitudeSelf4
+        LightWeaponsIneptitudeSelf5,    // MartialWeaponsIneptitudeSelf5
+        LightWeaponsIneptitudeSelf6,    // MartialWeaponsIneptitudeSelf6
         FinesseWeaponsMasteryOther1,    // DaggerMasteryOther1
         FinesseWeaponsMasteryOther2,    // DaggerMasteryOther2
         FinesseWeaponsMasteryOther3,    // DaggerMasteryOther3
@@ -418,31 +418,31 @@ namespace ACE.Entity.Enum
         StaffIneptitudeSelf4,
         StaffIneptitudeSelf5,
         StaffIneptitudeSelf6,
-        HeavyWeaponsMasteryOther1,      // SwordMasteryOther1
-        HeavyWeaponsMasteryOther2,      // SwordMasteryOther2
-        HeavyWeaponsMasteryOther3,      // SwordMasteryOther3
-        HeavyWeaponsMasteryOther4,      // SwordMasteryOther4
-        HeavyWeaponsMasteryOther5,      // SwordMasteryOther5
-        HeavyWeaponsMasteryOther6,      // SwordMasteryOther6
-        HeavyWeaponsMasterySelf1,       // SwordMasterySelf1
-        HeavyWeaponsMasterySelf2,       // SwordMasterySelf2
-        HeavyWeaponsMasterySelf3,       // SwordMasterySelf3
-        HeavyWeaponsMasterySelf4,       // SwordMasterySelf4
-        HeavyWeaponsMasterySelf5,       // SwordMasterySelf5
-        HeavyWeaponsMasterySelf6,       // SwordMasterySelf6
-        HeavyWeaponsIneptitudeOther1,   // SwordIneptitudeOther1
-        HeavyWeaponsIneptitudeOther2,   // SwordIneptitudeOther2
-        HeavyWeaponsIneptitudeOther3,   // SwordIneptitudeOther3
-        HeavyWeaponsIneptitudeOther4,   // SwordIneptitudeOther4
-        HeavyWeaponsIneptitudeOther5,   // SwordIneptitudeOther5
-        HeavyWeaponsIneptitudeOther6,   // SwordIneptitudeOther6
-        HeavyWeaponsIneptitudeSelf1,    // SwordIneptitudeSelf1
-        HeavyWeaponsIneptitudeSelf2,    // SwordIneptitudeSelf2
-        HeavyWeaponsIneptitudeSelf3,    // SwordIneptitudeSelf3
-        HeavyWeaponsIneptitudeSelf4,    // SwordIneptitudeSelf4
+        HeavyWeaponsMasteryOther1,      // MartialWeaponsMasteryOther1
+        HeavyWeaponsMasteryOther2,      // MartialWeaponsMasteryOther2
+        HeavyWeaponsMasteryOther3,      // MartialWeaponsMasteryOther3
+        HeavyWeaponsMasteryOther4,      // MartialWeaponsMasteryOther4
+        HeavyWeaponsMasteryOther5,      // MartialWeaponsMasteryOther5
+        HeavyWeaponsMasteryOther6,      // MartialWeaponsMasteryOther6
+        HeavyWeaponsMasterySelf1,       // MartialWeaponsMasterySelf1
+        HeavyWeaponsMasterySelf2,       // MartialWeaponsMasterySelf2
+        HeavyWeaponsMasterySelf3,       // MartialWeaponsMasterySelf3
+        HeavyWeaponsMasterySelf4,       // MartialWeaponsMasterySelf4
+        HeavyWeaponsMasterySelf5,       // MartialWeaponsMasterySelf5
+        HeavyWeaponsMasterySelf6,       // MartialWeaponsMasterySelf6
+        HeavyWeaponsIneptitudeOther1,   // MartialWeaponsIneptitudeOther1
+        HeavyWeaponsIneptitudeOther2,   // MartialWeaponsIneptitudeOther2
+        HeavyWeaponsIneptitudeOther3,   // MartialWeaponsIneptitudeOther3
+        HeavyWeaponsIneptitudeOther4,   // MartialWeaponsIneptitudeOther4
+        HeavyWeaponsIneptitudeOther5,   // MartialWeaponsIneptitudeOther5
+        HeavyWeaponsIneptitudeOther6,   // MartialWeaponsIneptitudeOther6
+        HeavyWeaponsIneptitudeSelf1,    // MartialWeaponsIneptitudeSelf1
+        HeavyWeaponsIneptitudeSelf2,    // MartialWeaponsIneptitudeSelf2
+        HeavyWeaponsIneptitudeSelf3,    // MartialWeaponsIneptitudeSelf3
+        HeavyWeaponsIneptitudeSelf4,    // MartialWeaponsIneptitudeSelf4
         UNKNOWN__GUESSEDNAME434,        // NOTE: Missing 1
-        HeavyWeaponsIneptitudeSelf5,    // SwordIneptitudeSelf5
-        HeavyWeaponsIneptitudeSelf6,    // SwordIneptitudeSelf6
+        HeavyWeaponsIneptitudeSelf5,    // MartialWeaponsIneptitudeSelf5
+        HeavyWeaponsIneptitudeSelf6,    // MartialWeaponsIneptitudeSelf6
         UnarmedCombatMasteryOther1,
         UnarmedCombatMasteryOther2,
         UnarmedCombatMasteryOther3,
@@ -2206,10 +2206,10 @@ namespace ACE.Entity.Enum
         ArmorExpertiseSelf7,
         ArmorIgnoranceOther7,
         ArmorIgnoranceSelf7,
-        LightWeaponsIneptitudeOther7,       // AxeIneptitudeOther7
-        LightWeaponsIneptitudeSelf7,        // AxeIneptitudeSelf7
-        LightWeaponsMasteryOther7,          // AxeMasteryOther7
-        LightWeaponsMasterySelf7,           // AxeMasterySelf7
+        LightWeaponsIneptitudeOther7,       // MartialWeaponsIneptitudeOther7
+        LightWeaponsIneptitudeSelf7,        // MartialWeaponsIneptitudeSelf7
+        LightWeaponsMasteryOther7,          // MartialWeaponsMasteryOther7
+        LightWeaponsMasterySelf7,           // MartialWeaponsMasterySelf7
         MissileWeaponsIneptitudeOther7,     // BowIneptitudeOther7
         MissileWeaponsIneptitudeSelf7,      // BowIneptitudeSelf7
         MissileWeaponsMasteryOther7,        // BowMasteryOther7
@@ -2312,10 +2312,10 @@ namespace ACE.Entity.Enum
         StaffIneptitudeSelf7,
         StaffMasteryOther7,
         StaffMasterySelf7,
-        HeavyWeaponsIneptitudeOther7,       // SwordIneptitudeOther7
-        HeavyWeaponsIneptitudeSelf7,        // SwordIneptitudeSelf7
-        HeavyWeaponsMasteryOther7,          // SwordMasteryOther7
-        HeavyWeaponsMasterySelf7,           // SwordMasterySelf7
+        HeavyWeaponsIneptitudeOther7,       // MartialWeaponsIneptitudeOther7
+        HeavyWeaponsIneptitudeSelf7,        // MartialWeaponsIneptitudeSelf7
+        HeavyWeaponsMasteryOther7,          // MartialWeaponsMasteryOther7
+        HeavyWeaponsMasterySelf7,           // MartialWeaponsMasterySelf7
         ThrownWeaponIneptitudeOther7,
         ThrownWeaponIneptitudeSelf7,
         ThrownWeaponMasteryOther7,
@@ -2510,7 +2510,7 @@ namespace ACE.Entity.Enum
         CANTRIPALCHEMICALPROWESS2,
         CANTRIPARCANEPROWESS2,
         CANTRIPARMOREXPERTISE2,
-        CANTRIPLIGHTWEAPONSAPTITUDE2,       // CANTRIPAXEAPTITUDE2
+        CANTRIPLIGHTWEAPONSAPTITUDE2,       // CANTRIPMARTIALWEAPONSAPTITUDE2
         CANTRIPMISSILEWEAPONSAPTITUDE2,     // CANTRIPBOWAPTITUDE2
         CANTRIPCOOKINGPROWESS2,
         CANTRIPCREATUREENCHANTMENTAPTITUDE2,
@@ -2537,7 +2537,7 @@ namespace ACE.Entity.Enum
         CANTRIPSPEARAPTITUDE2,
         CANTRIPSPRINT2,
         CANTRIPTHROWNAPTITUDE4,
-        CANTRIPHEAVYWEAPONSAPTITUDE2,       // CANTRIPSWORDAPTITUDE2
+        CANTRIPHEAVYWEAPONSAPTITUDE2,       // CANTRIPMARTIALWEAPONSAPTITUDE2
         CANTRIPTHROWNAPTITUDE2,
         CANTRIPUNARMEDAPTITUDE2,
         CANTRIPWARMAGICAPTITUDE2,
@@ -2545,7 +2545,7 @@ namespace ACE.Entity.Enum
         CANTRIPALCHEMICALPROWESS1,
         CANTRIPARCANEPROWESS1,
         CANTRIPARMOREXPERTISE1,
-        CANTRIPLIGHTWEAPONSAPTITUDE1,       // CANTRIPAXEAPTITUDE1
+        CANTRIPLIGHTWEAPONSAPTITUDE1,       // CANTRIPMARTIALWEAPONSAPTITUDE1
         CANTRIPMISSILEWEAPONSAPTITUDE1,     // CANTRIPBOWAPTITUDE1
         CANTRIPCOOKINGPROWESS1,
         CANTRIPCREATUREENCHANTMENTAPTITUDE1,
@@ -2572,7 +2572,7 @@ namespace ACE.Entity.Enum
         CANTRIPSPEARAPTITUDE1,
         CANTRIPSPRINT1,
         CANTRIPSPEARAPTITUDE4,
-        CANTRIPHEAVYWEAPONSAPTITUDE1,       // CANTRIPSWORDAPTITUDE1
+        CANTRIPHEAVYWEAPONSAPTITUDE1,       // CANTRIPMARTIALWEAPONSAPTITUDE1
         CANTRIPTHROWNAPTITUDE1,
         CANTRIPUNARMEDAPTITUDE1,
         CANTRIPWARMAGICAPTITUDE1,
@@ -4692,7 +4692,7 @@ namespace ACE.Entity.Enum
         CANTRIPALCHEMICALPROWESS3,
         CANTRIPARCANEPROWESS3,
         CANTRIPARMOREXPERTISE3,
-        CANTRIPLIGHTWEAPONSAPTITUDE3,       // CANTRIPAXEAPTITUDE3
+        CANTRIPLIGHTWEAPONSAPTITUDE3,       // CANTRIPMARTIALWEAPONSAPTITUDE3
         CANTRIPMISSILEWEAPONSAPTITUDE3,     // CANTRIPBOWAPTITUDE3
         CANTRIPCOOKINGPROWESS3,
         CANTRIPCREATUREENCHANTMENTAPTITUDE3,
@@ -6049,7 +6049,7 @@ namespace ACE.Entity.Enum
         CantripAlchemicalProwess4,
         CantripArcaneProwess4,
         CantripArmorExpertise4,
-        CantripLightWeaponsAptitude4,       // CantripAxeAptitude4
+        CantripLightWeaponsAptitude4,       // CantripMARTIALWEAPONSAptitude4
         CantripMissileWeaponsAptitude4,     // CantripBowAptitude4
         CantripCookingProwess4,
         CantripCreatureEnchantmentAptitude4,
@@ -6078,7 +6078,7 @@ namespace ACE.Entity.Enum
         CantripShieldAptitude4,
         CantripSneakAttackProwess4,
         CantripSprint4,
-        CantripHeavyWeaponsAptitude4,       // CantripSwordAptitude4
+        CantripHeavyWeaponsAptitude4,       // CantripMartialWeaponsAptitude4
         CantripTwoHandedAptitude4,
         CantripVoidMagicAptitude4,
         CantripWarMagicAptitude4,
