@@ -19,7 +19,7 @@ namespace ACE.Server.WorldObjects
 
         private static readonly int[] enemyArmorAegis = { 10, 100, 200, 300, 400, 500, 750, 1000, 2000 };
         private static readonly int[] enemyAttackDefense = { 10, 75, 150, 200, 225, 250, 300, 350, 500};
-        private static readonly int[] enemyAssessDeception = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
+        private static readonly int[] enemyAssessDeception = { 10, 50, 100, 150, 200, 250, 300, 350, 400 };
         private static readonly int[] enemyRun = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
 
         private static readonly float[] enemyDamage = { 2.0f, 2.5f, 3.0f, 3.3f, 3.6f, 3.9f, 4.2f, 5.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
