@@ -140,6 +140,15 @@ namespace ACE.Server.WorldObjects
             if (equippedEmpoweredScarabs.Count < 1)
                 return;
 
+            if (creatureToCastSpellFrom != null)
+            {
+                foreach (var scarab in equippedEmpoweredScarabs)
+                {
+                    if (scarab.EmpoweredScarabEffectId != (int)EmpoweredScarabEffect.Detonate)
+                        creatureToCastSpellFrom = null;
+                }
+            }
+
             CheckForReadyEmpoweredScarabEffects(equippedEmpoweredScarabs, target, spell, isWeaponSpell, creatureToCastSpellFrom, onCrit);
         }
 
@@ -315,6 +324,7 @@ namespace ACE.Server.WorldObjects
             SpellChain.AddDelaySeconds(delay);
             SpellChain.AddAction(this, () =>
             {
+                Console.WriteLine($"{empoweredScarab.Name}  {empoweredScarab.CreatureToCastSpellFrom != null}");
                 // DETONATE
                 if (empoweredScarab.CreatureToCastSpellFrom != null)
                     CreateSpellProjectiles(castSpell, empoweredScarab.CreatureToCastSpellFrom, this, false, false, 0, true);
