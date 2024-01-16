@@ -11,19 +11,19 @@ namespace ACE.Server.Factories.Tables.Cantrips
 
         private static readonly List<SpellId> spells = new List<SpellId>()
         {
-            SpellId.CANTRIPFOCUS1,
-            SpellId.CANTRIPWILLPOWER1,
+            //SpellId.CANTRIPFOCUS1,
+            //SpellId.CANTRIPWILLPOWER1,
 
-            SpellId.CANTRIPCREATUREENCHANTMENTAPTITUDE1,
-            SpellId.CANTRIPITEMENCHANTMENTAPTITUDE1,
-            SpellId.CANTRIPLIFEMAGICAPTITUDE1,
-            SpellId.CANTRIPWARMAGICAPTITUDE1,
-            SpellId.CantripVoidMagicAptitude1,      // missing from original
+            //SpellId.CANTRIPCREATUREENCHANTMENTAPTITUDE1,
+            //SpellId.CANTRIPITEMENCHANTMENTAPTITUDE1,
+            //SpellId.CANTRIPLIFEMAGICAPTITUDE1,
+            //SpellId.CANTRIPWARMAGICAPTITUDE1,
+            //SpellId.CantripVoidMagicAptitude1,      // missing from original
 
-            SpellId.CANTRIPARCANEPROWESS1,
-            SpellId.CANTRIPMANACONVERSIONPROWESS1,
+            //SpellId.CANTRIPARCANEPROWESS1,
+            //SpellId.CANTRIPMANACONVERSIONPROWESS1,
 
-            SpellId.CantripSneakAttackProwess1,
+            //SpellId.CantripSneakAttackProwess1,
 
             SpellId.CANTRIPDEFENDER1,
             SpellId.CantripHermeticLink1,

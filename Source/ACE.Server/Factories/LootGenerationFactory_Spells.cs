@@ -337,6 +337,12 @@ namespace ACE.Server.Factories
             if (numCantrips == 0)
                 return null;
 
+            if ((wo.ArmorStyle == (int)ArmorStyle.Covenant || wo.ArmorStyle == (int)ArmorStyle.OlthoiArmor) && numCantrips > 1)
+                numCantrips = 1;
+
+            if (wo.ArmorSlots > 1)
+                numCantrips *= wo.ArmorSlots ?? 1;
+
             var numAttempts = numCantrips * 3;
 
             var cantrips = new HashSet<SpellId>();
@@ -496,23 +502,23 @@ namespace ACE.Server.Factories
                 case Skill.MissileWeapons:
                     return SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1;
                 case Skill.Axe:
-                    return SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1; // CANTRIPAXEAPTITUDE1
+                    return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1; 
                 case Skill.Dagger:
                     return SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1; // CANTRIPDAGGERAPTITUDE1
                 case Skill.Mace:
-                    return SpellId.CANTRIPMACEAPTITUDE1;
+                    return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1;
                 case Skill.Spear:
-                    return SpellId.CANTRIPSPEARAPTITUDE1;
+                    return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1;
                 case Skill.Staff:
-                    return SpellId.CANTRIPSPEARAPTITUDE4;
+                    return SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1; // CANTRIPSTAFFAPTITUDE1
                 case Skill.Sword:
-                    return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1; // CANTRIPSWORDAPTITUDE1
+                    return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1; // CANTRIPMARTIALWEAPONSAPTITUDE1
                 case Skill.UnarmedCombat:
                     return SpellId.CANTRIPUNARMEDAPTITUDE1;
                 case Skill.Bow:
                     return SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1; // CANTRIPBOWAPTITUDE1
                 case Skill.Crossbow:
-                    return SpellId.CANTRIPCROSSBOWAPTITUDE1;
+                    return SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1;
                 case Skill.ThrownWeapon:
                     return SpellId.CANTRIPTHROWNAPTITUDE1;
             }
