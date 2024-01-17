@@ -324,7 +324,6 @@ namespace ACE.Server.WorldObjects
             SpellChain.AddDelaySeconds(delay);
             SpellChain.AddAction(this, () =>
             {
-                Console.WriteLine($"{empoweredScarab.Name}  {empoweredScarab.CreatureToCastSpellFrom != null}");
                 // DETONATE
                 if (empoweredScarab.CreatureToCastSpellFrom != null)
                     CreateSpellProjectiles(castSpell, empoweredScarab.CreatureToCastSpellFrom, this, false, false, 0, true);
