@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Runtime.CompilerServices;
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
@@ -281,7 +281,7 @@ namespace ACE.Server.WorldObjects
 
                 // temple untraining 'always trained' skills:
                 // cannot be untrained, but skill XP can be recovered
-                if (IsSkillUntrainable(skill))
+                if (IsSkillUntrainable(skill, (HeritageGroup)Heritage))
                 {
                     creatureSkill.AdvancementClass = SkillAdvancementClass.Untrained;
                     creatureSkill.InitLevel = 0;
@@ -611,10 +611,7 @@ namespace ACE.Server.WorldObjects
         public static List<Skill> AlwaysTrained = new List<Skill>()
         {
             Skill.Run,
-            Skill.Jump,
-            Skill.MeleeDefense,
-            Skill.MissileDefense,
-            Skill.MagicDefense,
+            Skill.Jump
         };
 
         public static List<Skill> AugSpecSkills = new List<Skill>()
@@ -626,27 +623,29 @@ namespace ACE.Server.WorldObjects
             Skill.Salvaging
         };
 
-        public static bool IsSkillUntrainable(Skill skill)
+        public static bool IsSkillUntrainable(Skill skill, HeritageGroup heritageGroup)
         {
-            return !AlwaysTrained.Contains(skill);
+            if (!AlwaysTrained.Contains(skill))
+                return false;
 
             // Use this section if adding heritage starting skills
-            //switch (heritageGroup)
-            //{
-            //    case HeritageGroup.Aluvian:
-            //        if (skill == Skill.Dagger || skill == Skill.AssessPerson)
-            //            return false;
-            //        break;
-            //    case HeritageGroup.Gharundim:
-            //        if (skill == Skill.Staff || skill == Skill.ItemTinkering)
-            //            return false;
-            //        break;
-            //    case HeritageGroup.Sho:
-            //        if (skill == Skill.UnarmedCombat)
-            //            return false;
-            //        break;
-            //    }
-            //return true;
+            switch (heritageGroup)
+            {
+                case HeritageGroup.Aluvian:
+                    if (skill == Skill.Dagger)
+                        return false;
+                    break;
+                case HeritageGroup.Gharundim:
+                    if (skill == Skill.Staff)
+                        return false;
+                    break;
+                case HeritageGroup.Sho:
+                    if (skill == Skill.UnarmedCombat)
+                        return false;
+                    break;
+            }
+
+            return true;
         }
 
         public bool IsSkillSpecializedViaAugmentation(Skill skill, out bool playerHasAugmentation)
@@ -923,7 +922,7 @@ namespace ACE.Server.WorldObjects
             IsSkillSpecializedViaAugmentation(creatureSkill.Skill, out var skillIsSpecializedViaAugmentation);
 
             var typeOfSkill = creatureSkill.AdvancementClass.ToString().ToLower() + " ";
-            var untrainable = IsSkillUntrainable(skill);
+            var untrainable = IsSkillUntrainable(skill, (HeritageGroup)Heritage);
             var creditRefund = (creatureSkill.AdvancementClass == SkillAdvancementClass.Specialized && !(skillIsSpecializedViaAugmentation && !untrainable)) || untrainable;
 
             if (creatureSkill.AdvancementClass == SkillAdvancementClass.Specialized && !(skillIsSpecializedViaAugmentation && !untrainable))
