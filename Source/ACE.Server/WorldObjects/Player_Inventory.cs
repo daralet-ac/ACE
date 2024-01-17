@@ -1619,7 +1619,7 @@ namespace ACE.Server.WorldObjects
 
                             if (isFromAPlayerCorpse)
                             {
-                                log.Debug($"[CORPSE] {Name} (0x{Guid}) picked up and wielded {item.Name} (0x{item.Guid}) from {rootOwner.Name} (0x{rootOwner.Guid})");
+                                _log.Debug($"[CORPSE] {Name} (0x{Guid}) picked up and wielded {item.Name} (0x{item.Guid}) from {rootOwner.Name} (0x{rootOwner.Guid})");
                                 item.SaveBiotaToDatabase();
                             }
                         }
