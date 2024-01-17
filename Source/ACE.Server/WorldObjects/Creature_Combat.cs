@@ -1579,6 +1579,9 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public float GetSecondaryAttributeMod(Skill skill)
         {
+            if (IsMonster)
+                return 0.0f;
+
             switch (skill)
             {
                 case Skill.HeavyWeapons: return Coordination.Current * 0.0005f;
@@ -1587,11 +1590,10 @@ namespace ACE.Server.WorldObjects
                 case Skill.UnarmedCombat: return Strength.Current * 0.0005f;
                 case Skill.Bow: return Strength.Current * 0.0005f;
                 case Skill.ThrownWeapon: return Coordination.Current * 0.0005f;
-                case Skill.Sword: return Coordination.Current * 0.00005f; // only for monsters
             }
 
             _log.Warning($"DamageEvent.GetSecondaryAttributeMod() - Incorrect skill used ({skill}) for attacker ({Name})");
-            return 1.0f;
+            return 0.0f;
         }
     }
 }
