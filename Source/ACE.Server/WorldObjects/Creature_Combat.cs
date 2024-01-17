@@ -1089,13 +1089,9 @@ namespace ACE.Server.WorldObjects
 
             var attackerEffectivePerceptionSkill = GetModdedPerceptionSkill();
 
-            var sourceAsPlayer = this as Player;
             var targetAsPlayer = target as Player;
 
-            var activationChance = 0.5f;
-            if(sourceAsPlayer != null)
-                activationChance += sourceAsPlayer.ScaleWithPowerAccuracyBar(0.5f); // Up to 50% added to activation chance
-
+            var activationChance = 0.1f;
             if (activationChance < ThreadSafeRandom.Next(0.0f, 1.0f))
                 return;
 
@@ -1118,9 +1114,6 @@ namespace ACE.Server.WorldObjects
             var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
             if (avoidChance > roll)
             {
-                if (sourceAsPlayer != null)
-                    sourceAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"{target.Name}'s deception prevents you from exposing a weakness!", ChatMessageType.Broadcast));
-
                 if (targetAsPlayer != null)
                 {
                     Proficiency.OnSuccessUse(targetAsPlayer, defenseSkill, attackerEffectivePerceptionSkill);
@@ -1128,8 +1121,6 @@ namespace ACE.Server.WorldObjects
                 }
                 return;
             }
-            else if(sourceAsPlayer != null)
-                Proficiency.OnSuccessUse(sourceAsPlayer, skill, defenseSkill.Current);
 
             string spellType;
             SpellId spellId;
@@ -1168,18 +1159,16 @@ namespace ACE.Server.WorldObjects
             string spellTypePrefix;
             switch(spellLevel)
             {
-                case 1: spellTypePrefix = "a SLIGHT"; break;
+                case 1: spellTypePrefix = "a slight"; break;
                 default:
-                case 2: spellTypePrefix = "a MINOR"; break;
-                case 3: spellTypePrefix = "a MODERATE"; break;
-                case 4: spellTypePrefix = "a MAJOR"; break;
-                case 5: spellTypePrefix = "a SEVERE"; break;
-                case 6: spellTypePrefix = "a CRIPPLING"; break;
-                case 7: spellTypePrefix = "a TREMENDOUS"; break;
+                case 2: spellTypePrefix = "a minor"; break;
+                case 3: spellTypePrefix = "a moderate"; break;
+                case 4: spellTypePrefix = "a major"; break;
+                case 5: spellTypePrefix = "a severe"; break;
+                case 6: spellTypePrefix = "a crippling"; break;
+                case 7: spellTypePrefix = "a tremendous"; break;
             }
 
-            if (sourceAsPlayer != null)
-                sourceAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your perception allows you to expose {spellTypePrefix} {spellType} weakness on {target.Name}!", ChatMessageType.Broadcast));
             if (targetAsPlayer != null)
                 targetAsPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name}'s perception exposes {spellTypePrefix} {spellType} weakness on you!", ChatMessageType.Broadcast));
 
