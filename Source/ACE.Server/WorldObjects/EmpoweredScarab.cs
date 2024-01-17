@@ -263,7 +263,6 @@ namespace ACE.Server.WorldObjects
 
         public virtual void RechargeEmpoweredScarab(Hotspot manaField)
         {
-            Console.WriteLine("Recharge");
             if (manaField == null)
                 return;
 
