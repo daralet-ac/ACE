@@ -1,5 +1,6 @@
+using Serilog;
 using System;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace ACE.Server
 {
@@ -18,9 +19,9 @@ namespace ACE.Server
                 using var client = new WebClient();
                 var html = client.GetStringFromURL(url).Result;
 
-                dynamic json = JsonConvert.DeserializeObject(html);
+                var json = JsonSerializer.Deserialize<JsonElement>(html);
 
-                string tag = json.tag_name;
+                string tag = json.GetProperty("tag_name").GetString();
                
                 //Split the tag from "v{version}.{build}" into discrete components  - "tag_name": "v1.39.4192"
                 Version v = new Version(tag.Remove(0, 1));
@@ -31,10 +32,10 @@ namespace ACE.Server
                 if (versionStatus > 0)
                 {
                     _log.Warning("There is a newer version of ACE available!");
-                    _log.Warning("Please visit {RepositoryUrl} for more information.", json.html_url);
+                    _log.Warning($"Please visit {json.GetProperty("html_url").GetString()} for more information.");
 
                     // the Console.Title.Get() only works on Windows...
-                    #pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CA1416 // Validate platform compatibility
                     Console.Title += " -- Server Binary Update Available";
                     #pragma warning restore CA1416 // Validate platform compatibility
                 }

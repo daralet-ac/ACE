@@ -473,7 +473,7 @@ namespace ACE.Server.Network
                     {
                         // The buffer is complete, so we can go ahead and handle
                         _log.Verbose("[{LoggingIdentifier}] Buffer {BufferSequence} is complete", session.LoggingIdentifier, buffer.Sequence);
-                        message = buffer.GetMessage();
+                        message = buffer.TryGetMessage();
                         MessageBuffer removed = null;
                         partialFragments.TryRemove(fragment.Header.Sequence, out removed);
                     }

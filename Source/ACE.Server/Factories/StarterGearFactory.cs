@@ -1,8 +1,9 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text.Json;
 using ACE.Server.Entity;
-using Newtonsoft.Json;
+using ACE.Common;
 using Serilog;
 
 namespace ACE.Server.Factories
@@ -33,7 +34,7 @@ namespace ACE.Server.Factories
             {
                 var starterGearText = File.ReadAllText(starterGearFile);
 
-                config = JsonConvert.DeserializeObject<StarterGearConfiguration>(starterGearText);
+                config = JsonSerializer.Deserialize<StarterGearConfiguration>(starterGearText, ConfigManager.SerializerOptions);
 
                 return config;
             }
