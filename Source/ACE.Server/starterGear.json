@@ -156,20 +156,17 @@
         {
           "weenieId": "747",
           "name": "Hemlock Talisman",
-          "stacksize": "3",
-          "specializedOnly": "false"
+          "stacksize": "3"
         },
         {
           "weenieId": "741",
           "name": "Birch Talisman",
-          "stacksize": "3",
-          "specializedOnly": "false"
+          "stacksize": "3"
         },
         {
           "weenieId": "627",
           "name": "Alder Talisman",
-          "stacksize": "3",
-          "specializedOnly": "false"
+          "stacksize": "3"
         },
         {
           "weenieId": "743",
@@ -219,8 +216,7 @@
         {
           "weenieId": "775",
           "name": "Mandrake",
-          "stacksize": "10",
-          "specializedOnly": "false"
+          "stacksize": "10"
         },
         {
           "weenieId": "774",
@@ -230,8 +226,7 @@
         {
           "weenieId": "768",
           "name": "Damiana",
-          "stacksize": "10",
-          "specializedOnly": "false"
+          "stacksize": "10"
         },
         {
           "weenieId": "780",
@@ -282,38 +277,31 @@
       "spells": [
         {
           "spellId": "5",
-          "name": "Heal Other I",
-          "specializedOnly": "false"
+          "name": "Heal Other I"
         },
         {
           "spellId": "6",
-          "name": "Heal Self I",
-          "specializedOnly": "false"
+          "name": "Heal Self I"
         },
         {
           "spellId": "1183",
-          "name": "Revitalize Other I",
-          "specializedOnly": "false"
+          "name": "Revitalize Other I"
         },
         {
           "spellId": "1177",
-          "name": "Revitalize Self I",
-          "specializedOnly": "false"
+          "name": "Revitalize Self I"
         },
         {
           "spellId": "1676",
-          "name": "Stamina to Mana I",
-          "specializedOnly": "false"
+          "name": "Stamina to Mana I"
         },
         {
           "spellId": "7",
-          "name": "Harm Other I",
-          "specializedOnly": "false"
+          "name": "Harm Other I"
         },
         {
           "spellId": "1237",
-          "name": "Drain Health Other I",
-          "specializedOnly": "false"
+          "name": "Drain Health Other I"
         },
         {
           "spellId": "2760",
@@ -349,32 +337,27 @@
         {
           "weenieId": "756",
           "name": "Cobalt",
-          "stacksize": "10",
-          "specializedOnly": "false"
+          "stacksize": "10"
         },
         {
           "weenieId": "753",
           "name": "Brimstone",
-          "stacksize": "10",
-          "specializedOnly": "false"
+          "stacksize": "10"
         },
         {
           "weenieId": "753",
           "name": "Realgar",
-          "stacksize": "10",
-          "specializedOnly": "false"
+          "stacksize": "10"
         },
         {
           "weenieId": "753",
           "name": "Vitriol",
-          "stacksize": "10",
-          "specializedOnly": "false"
+          "stacksize": "10"
         },
         {
           "weenieId": "753",
           "name": "Verdigris",
-          "stacksize": "10",
-          "specializedOnly": "false"
+          "stacksize": "10"
         },
         {
           "weenieId": "772",
@@ -425,38 +408,31 @@
       "spells": [
         {
           "spellId": "27",
-          "name": "Flame Bolt I",
-          "specializedOnly": "false"
+          "name": "Flame Bolt I"
         },
         {
           "spellId": "28",
-          "name": "Frost Bolt I",
-          "specializedOnly": "false"
+          "name": "Frost Bolt I"
         },
         {
           "spellId": "58",
-          "name": "Acid Stream I",
-          "specializedOnly": "false"
+          "name": "Acid Stream I"
         },
         {
           "spellId": "75",
-          "name": "Lightning Bolt I",
-          "specializedOnly": "false"
+          "name": "Lightning Bolt I"
         },
         {
           "spellId": "92",
-          "name": "Whirling Blade I",
-          "specializedOnly": "false"
+          "name": "Whirling Blade I"
         },
         {
           "spellId": "86",
-          "name": "Force Bolt I",
-          "specializedOnly": "false"
+          "name": "Force Bolt I"
         },
         {
           "spellId": "64",
-          "name": "Shock Wave I",
-          "specializedOnly": "false"
+          "name": "Shock Wave I"
         }
       ]
     },
