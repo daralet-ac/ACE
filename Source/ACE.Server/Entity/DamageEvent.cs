@@ -701,7 +701,7 @@ namespace ACE.Server.Entity
             return false;
         }
 
-        private void GetCombatAbilities(Creature attacker, Creature defender, out CombatAbility attackerCombatAbility, out CombatAbility defenderCombatAbility)
+        public static void GetCombatAbilities(Creature attacker, Creature defender, out CombatAbility attackerCombatAbility, out CombatAbility defenderCombatAbility)
         {
             attackerCombatAbility = CombatAbility.None;
             defenderCombatAbility = CombatAbility.None;

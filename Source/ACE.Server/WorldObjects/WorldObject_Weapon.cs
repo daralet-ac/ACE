@@ -325,10 +325,15 @@ namespace ACE.Server.WorldObjects
 
             critRate += wielder.GetCritRating() * 0.01f;
 
+            // COMBAT ABILITY - Iron Fist: +10% crit chance
+            DamageEvent.GetCombatAbilities(wielder, target, out var attackerCombatAbility, out var _);
+            if (attackerCombatAbility == CombatAbility.IronFist)
+                critRate += 0.1f;
+            
             // mitigation
             var critResistRatingMod = Creature.GetNegativeRatingMod(target.GetCritResistRating());
             critRate *= critResistRatingMod;
-
+            
             return critRate;
         }
 
@@ -347,6 +352,12 @@ namespace ACE.Server.WorldObjects
 
                 critDamageMod = Math.Max(critDamageMod, cripplingBlowMod); 
             }
+
+            // COMBAT ABILITY - Iron Fist: -20% crit damage
+            DamageEvent.GetCombatAbilities(wielder, target, out var attackerCombatAbility, out var _);
+            if (attackerCombatAbility == CombatAbility.IronFist)
+                critDamageMod -= 0.2f;
+
             return critDamageMod;
         }
 
