@@ -625,9 +625,6 @@ namespace ACE.Server.WorldObjects
 
         public static bool IsSkillUntrainable(Skill skill, HeritageGroup heritageGroup)
         {
-            if (!AlwaysTrained.Contains(skill))
-                return false;
-
             // Use this section if adding heritage starting skills
             switch (heritageGroup)
             {
@@ -644,8 +641,8 @@ namespace ACE.Server.WorldObjects
                         return false;
                     break;
             }
-
-            return true;
+            
+            return !AlwaysTrained.Contains(skill);
         }
 
         public bool IsSkillSpecializedViaAugmentation(Skill skill, out bool playerHasAugmentation)
