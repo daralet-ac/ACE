@@ -624,7 +624,7 @@ namespace ACE.Server.Command.Handlers
 
                 var sac = skill.Value.SAC;
 
-                if (sac != SkillAdvancementClass.Trained || !Player.IsSkillUntrainable(skill.Key))
+                if (sac != SkillAdvancementClass.Trained || !Player.IsSkillUntrainable(skill.Key, (HeritageGroup)player.Heritage))
                     continue;
 
                 refundXP += skill.Value.PP;
