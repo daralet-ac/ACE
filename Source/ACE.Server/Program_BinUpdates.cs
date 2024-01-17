@@ -1,5 +1,5 @@
 using System;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace ACE.Server
 {
@@ -18,9 +18,9 @@ namespace ACE.Server
                 using var client = new WebClient();
                 var html = client.GetStringFromURL(url).Result;
 
-                dynamic json = JsonConvert.DeserializeObject(html);
+                var json = JsonSerializer.Deserialize<JsonElement>(html);
 
-                string tag = json.tag_name;
+                string tag = json.GetProperty("tag_name").GetString();
                
                 //Split the tag from "v{version}.{build}" into discrete components  - "tag_name": "v1.39.4192"
                 Version v = new Version(tag.Remove(0, 1));
