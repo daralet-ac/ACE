@@ -493,7 +493,8 @@ namespace ACE.Server.Network
             {
                 // Packet is not split, proceed with handling it.
                 _log.Verbose("[{LoggingIdentifier}] Fragment {FragmentSequence} is not split", session.LoggingIdentifier, fragment.Header.Sequence);
-                message = new ClientMessage(fragment.Data);
+                if (fragment.Data.Length >= 4) // ClientMessage must be a minimum of 4 bytes in length
+                    message = new ClientMessage(fragment.Data);
             }
 
             // If message is not null, we have a complete message to handle
