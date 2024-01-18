@@ -243,7 +243,8 @@ namespace ACE.Server.WorldObjects
                 // stamina usage
                 // TODO: ensure enough stamina for attack
                 // TODO: verify formulas - double/triple cost for bow/xbow?
-                var staminaCost = GetAttackStamina(GetAccuracyRange());
+                var missileLauncherAnimLength = 2.93f;
+                var staminaCost = GetAttackStamina(GetAccuracyRange(), missileLauncherAnimLength);
                 UpdateVitalDelta(Stamina, -staminaCost);
 
                 var combatAbility = CombatAbility.None;

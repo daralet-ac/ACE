@@ -44,10 +44,20 @@ namespace ACE.Server.Entity
             Costs.Add(PowerAccuracy.High, highCosts);
         }
 
-        public static float GetStaminaCost(int weaponTier, float powerAccuracyLevel = 0.0f, int weaponSpeed = 0, float? weightClassPenalty = null)
+        public static float GetStaminaCost(int weaponTier, bool dualWieldStaminaBonus, float animLength = 3.0f, float powerAccuracyLevel = 0.0f, int weaponSpeed = 0, float? weightClassPenalty = null)
         {
-            // Max stamina cost per tier, then reduced by these factors (weapon speed, power/accuracy level, armor weight class penalties)
-            var maxCost = 20.0f;
+            // Weapon tier mod
+            weaponTier = Math.Clamp(weaponTier - 1, 0, 7);
+
+            // Tier Cost
+            var baseCost = (weaponTier + 1) * 20;
+
+            // PowerLevel mod reduces stamina cost exponentially: i.e.  100% = 100% Cost,  75% = 56% Cost,  50% = 25% Cost,  25% = 6.25% Cost,  0% = 0% Cost (min 1)
+            var powerLevelMod = (float)Math.Pow(powerAccuracyLevel, 2);
+
+            // WeaponAnimationLength mod
+            var maxAnimLength = 3.0f;
+            var animLengthMod = animLength / maxAnimLength;
 
             // WeaponSpeed mod can range from 66.66% to 100%, depending on weapon speed (0-100)
             var minSpeedMod = 200.0f / 3;  
@@ -55,21 +65,23 @@ namespace ACE.Server.Entity
             var weaponSpeedMod = minSpeedMod + (float)weaponSpeed / 100 * speedModRange;
             weaponSpeedMod *= 0.01f;
 
-            // PowerLevel mod reduces stamina cost exponentially: i.e.  100% = 100% Cost,  75% = 56% Cost,  50% = 25% Cost,  25% = 6.25% Cost,  0% = 0% Cost (min 1)
-            var powerLevelMod = (float)Math.Pow(powerAccuracyLevel, 2);
+            // Weight class resource penalty mod
+            var weightClassPenaltyMod = weightClassPenalty ?? 1.0f;
 
-            var weightClassMod = weightClassPenalty ?? 1.0f;
+            // Dual wield spec mod
+            var dualWieldSpecMod = dualWieldStaminaBonus ? 0.75f : 1.0f;
 
-            weaponTier = Math.Max(weaponTier - 1, 1);
+            // Final calculation
+            var finalCost = baseCost * powerLevelMod * weaponSpeedMod * animLengthMod * weightClassPenaltyMod * dualWieldSpecMod;
 
-            var baseCost = maxCost * powerLevelMod * weaponTier * weaponSpeedMod * weightClassMod;
-
-            //Console.WriteLine($"GetStaminaCost - Final Cost: {baseCost}\n" +
+            //Console.WriteLine($"GetStaminaCost - Final Cost: {finalCost}\n" +
             //    $" -WeaponTier: {weaponTier} WeightClassPenalty: {weightClassPenalty}\n" +
             //    $" -PowerLevel: {powerAccuracyLevel} PowerLevelMod: {powerLevelMod}\n" +
-            //    $" -WeaponSpeed: {weaponSpeed} WeaponSpeedMod: {weaponSpeedMod}");
+            //    $" -WeaponSpeed: {weaponSpeed} WeaponSpeedMod: {weaponSpeedMod}\n" +
+            //    $" -WeaponAnim: {animLength} AnimLengthMod: {animLengthMod}\n" +
+            //    $" -DualWield: {dualWieldSpecMod}");
 
-            return baseCost;
+            return finalCost;
         }
     }
 }
