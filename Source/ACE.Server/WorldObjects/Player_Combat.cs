@@ -885,7 +885,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Calculates the amount of stamina required to perform this attack
         /// </summary>
-        public int GetAttackStamina(PowerAccuracy powerAccuracy)
+        public int GetAttackStamina(PowerAccuracy powerAccuracy, float attackAnimLength, bool dualWieldStaminaBonus = false)
         {
             // Stamina cost for melee and missile attacks is based on the total burden of what you are holding
             // in your hands (main hand and offhand), and your power/accuracy bar.
@@ -922,7 +922,7 @@ namespace ACE.Server.WorldObjects
 
             var weightClassPenalty = (float)(1 + GetArmorResourcePenalty());
             
-            var baseCost = StaminaTable.GetStaminaCost(weaponTier, powerAccuracyLevel, weaponSpeed, weightClassPenalty);
+            var baseCost = StaminaTable.GetStaminaCost(weaponTier, dualWieldStaminaBonus, attackAnimLength, powerAccuracyLevel, weaponSpeed, weightClassPenalty);
 
             // COMBAT ABILITY - Power Shot
             if (combatAbility == CombatAbility.Powershot && AccuracyLevel == 1.0f)

@@ -301,11 +301,14 @@ namespace ACE.Server.WorldObjects
             var numStrikes = GetNumStrikes(attackType);
             var swingTime = animLength / numStrikes / 1.5f;
 
+            var dualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
+            var dualWieldStaminaBonus = dualWieldSpec && IsDualWieldAttack;
+
             var actionChain = new ActionChain();
 
             // stamina usage
             // TODO: ensure enough stamina for attack
-            var staminaCost = GetAttackStamina(GetPowerRange());
+            var staminaCost = GetAttackStamina(GetPowerRange(), MotionTable.GetAnimationLength(MotionTableId, CurrentMotionState.Stance, GetSwingMotion()), dualWieldStaminaBonus);
             UpdateVitalDelta(Stamina, -staminaCost);
 
             var combatAbility = CombatAbility.None;
@@ -496,6 +499,43 @@ namespace ACE.Server.WorldObjects
             PrevMotionCommand = motion;
 
             //Console.WriteLine($"{motion}");
+
+            return motion;
+        }
+
+        /// <summary>
+        /// Returns the melee swing motion - based on weapon,
+        /// current stance, power bar, and attack height
+        /// </summary>
+        public MotionCommand GetSwingMotion()
+        {
+            var offhand = IsDualWieldAttack && !DualWieldAlternate;
+
+            var weapon = GetEquippedMeleeWeapon();
+
+            var subdivision = 0.33f;
+
+            if (weapon != null)
+            {
+                AttackType = weapon.GetAttackType(CurrentMotionState.Stance, SlashThrustToggle, offhand);
+                if (weapon.IsThrustSlash)
+                    subdivision = 0.66f;
+            }
+            else
+            {
+                AttackType = PowerLevel > KickThreshold && !IsDualWieldAttack ? AttackType.Kick : AttackType.Punch;
+            }
+
+            var motions = CombatTable.GetMotion(CurrentMotionState.Stance, AttackHeight.Value, AttackType, PrevMotionCommand);
+
+            MotionCommand motion;
+            // higher-powered animation always in first slot ?
+            if (AttackType == AttackType.Punch)
+                motion = motions.Count > 1 && SlashThrustToggle ? motions[1] : motions[0];
+            else
+                motion = motions.Count > 1 && PowerLevel < subdivision ? motions[1] : motions[0];
+
+            PrevMotionCommand = motion;
 
             return motion;
         }

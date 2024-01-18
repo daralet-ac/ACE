@@ -140,7 +140,7 @@ namespace ACE.Server.WorldObjects
             double currentTick = 0.0;
 
             float maxVital = vital.MaxValue;
-            float diminishedMaxVital = maxVital * (500 / (500 + maxVital));
+            float diminishedMaxVital = maxVital * (1000 / (1000 + maxVital));
 
             var vitalTypeBaseMod = vital == Stamina ? 5 : 10;
 
