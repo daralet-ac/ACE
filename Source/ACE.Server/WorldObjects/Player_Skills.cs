@@ -961,12 +961,12 @@ namespace ACE.Server.WorldObjects
 
         public bool IsTradeSkill(Skill skill)
         {
-            if (skill == Skill.Alchemy
+            if (   skill == Skill.Alchemy
                 || skill == Skill.ArmorTinkering
                 || skill == Skill.Cooking
                 || skill == Skill.Fletching
                 || skill == Skill.MagicItemTinkering
-                || skill == Skill.Spellcraft
+                || skill == Skill.ItemTinkering
                 || skill == Skill.WeaponTinkering)
             {
                 return true;
@@ -977,20 +977,43 @@ namespace ACE.Server.WorldObjects
 
         static Player()
         {
-            AlwaysTrained.Add(Skill.ArcaneLore);
-
-            PlayerSkills.Add(Skill.HeavyWeapons);
-            PlayerSkills.Add(Skill.Bow);
+            PlayerSkills.Add(Skill.HeavyWeapons); // Martial Weapons
             PlayerSkills.Add(Skill.Dagger);
             PlayerSkills.Add(Skill.Staff);
-            PlayerSkills.Add(Skill.ThrownWeapon);
             PlayerSkills.Add(Skill.UnarmedCombat);
-            PlayerSkills.Add(Skill.WeaponTinkering);
-            PlayerSkills.Add(Skill.ArmorTinkering);
-            PlayerSkills.Add(Skill.MagicItemTinkering);
-            PlayerSkills.Add(Skill.PortalMagic);
-            PlayerSkills.Add(Skill.AssessPerson);
+            PlayerSkills.Add(Skill.Bow); // Bows
+            PlayerSkills.Add(Skill.ThrownWeapon);
 
+            PlayerSkills.Add(Skill.TwoHandedCombat);
+            PlayerSkills.Add(Skill.DualWield);
+            PlayerSkills.Add(Skill.Shield);
+            PlayerSkills.Add(Skill.Healing);
+
+            PlayerSkills.Add(Skill.WarMagic);
+            PlayerSkills.Add(Skill.LifeMagic);
+            PlayerSkills.Add(Skill.ManaConversion);
+            PlayerSkills.Add(Skill.ArcaneLore);
+
+            PlayerSkills.Add(Skill.AssessCreature); // Perception
+            PlayerSkills.Add(Skill.Deception);
+            PlayerSkills.Add(Skill.Lockpick); // Thievery
+
+            PlayerSkills.Add(Skill.Leadership);
+            PlayerSkills.Add(Skill.Loyalty);
+
+            PlayerSkills.Add(Skill.MeleeDefense);
+            PlayerSkills.Add(Skill.MagicDefense);
+
+            PlayerSkills.Add(Skill.Alchemy);
+            PlayerSkills.Add(Skill.Cooking);
+            PlayerSkills.Add(Skill.Fletching); // Woodworking
+            PlayerSkills.Add(Skill.WeaponTinkering); // Blacksmithing
+            PlayerSkills.Add(Skill.ArmorTinkering); // Tailoring
+            PlayerSkills.Add(Skill.MagicItemTinkering); // Spellcrafting
+            PlayerSkills.Add(Skill.ItemTinkering); // Jewelcrafting
+            PlayerSkills.Add(Skill.PortalMagic);
+
+            PlayerSkills.Remove(Skill.AssessPerson);
             PlayerSkills.Remove(Skill.Axe);
             PlayerSkills.Remove(Skill.Sword);
             PlayerSkills.Remove(Skill.Mace);
@@ -998,7 +1021,6 @@ namespace ACE.Server.WorldObjects
             PlayerSkills.Remove(Skill.Spear);
             PlayerSkills.Remove(Skill.Salvaging);
             PlayerSkills.Remove(Skill.Awareness);
-            PlayerSkills.Remove(Skill.Sneaking);
             PlayerSkills.Remove(Skill.LightWeapons);
             PlayerSkills.Remove(Skill.FinesseWeapons);
             PlayerSkills.Remove(Skill.MissileWeapons);
@@ -1008,21 +1030,6 @@ namespace ACE.Server.WorldObjects
             PlayerSkills.Remove(Skill.VoidMagic);
             PlayerSkills.Remove(Skill.Summoning);
             PlayerSkills.Remove(Skill.CreatureEnchantment);
-            PlayerSkills.Remove(Skill.Crossbow);
-            PlayerSkills.Remove(Skill.Mace);
-            PlayerSkills.Remove(Skill.Staff);
-            PlayerSkills.Remove(Skill.Salvaging);
-
-            //PlayerSkills.Add(Skill.Armor);
-            //PlayerSkills.Add(Skill.ItemTinkering);
-            //PlayerSkills.Remove(Skill.TwoHandedCombat);
-            //PlayerSkills.Remove(Skill.PortalMagic);
-            //PlayerSkills.Remove(Skill.WeaponTinkering);
-            //PlayerSkills.Remove(Skill.ArmorTinkering);
-            //PlayerSkills.Remove(Skill.MagicItemTinkering);
-            //PlayerSkills.Remove(Skill.ItemTinkering);
-
-            //NoLog_Landblocks.Add(0xB095); // Smuggler's Den
         }
 
         /// <summary>
