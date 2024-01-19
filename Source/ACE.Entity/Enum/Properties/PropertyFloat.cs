@@ -215,6 +215,8 @@ namespace ACE.Entity.Enum.Properties
         EmpoweredScarabReductionAmount = 186,
         WeaponPhysicalDefense          = 187,
         WeaponMagicalDefense           = 188,
+        Damage                         = 189,
+        WeaponAuraDamage               = 190,
 
         [ServerOnly]
         PCAPRecordedWorkmanship        = 8004,

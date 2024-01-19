@@ -489,19 +489,20 @@ namespace ACE.Server.Managers
             foreach (var item in DefaultStringProperties)
                 PropertyManager.ModifyString(item.Key, item.Value.Item);
 
-            // Alternative ruleset's default overrides
+            // Default overrides
             PropertyManager.ModifyBool("item_dispel", true);
             PropertyManager.ModifyBool("vendor_shop_uses_generator", true);
             PropertyManager.ModifyBool("allow_xp_at_max_level", true);
             PropertyManager.ModifyBool("increase_minimum_encounter_spawn_density", true);
             PropertyManager.ModifyBool("show_dot_messages", true);
             PropertyManager.ModifyBool("spell_projectile_ethereal", true);
-
-            PropertyManager.ModifyLong("max_level", 126);
-            PropertyManager.ModifyLong("fellowship_even_share_level", 50);                
+            PropertyManager.ModifyBool("show_ammo_buff", true);
 
             PropertyManager.ModifyBool("show_dat_warning", false);
             PropertyManager.ModifyBool("show_mana_conv_bonus_0", false);
+
+            PropertyManager.ModifyLong("max_level", 126);
+            PropertyManager.ModifyLong("fellowship_even_share_level", 50);
 
             PropertyManager.ModifyDouble("vendor_unique_rot_time", 1800);
         }

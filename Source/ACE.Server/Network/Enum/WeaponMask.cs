@@ -39,12 +39,12 @@ namespace ACE.Server.Network.Enum
                     highlightMask |= WeaponMask.AttackSkill;
                 if (profile.Enchantment_WeaponTime != 0)
                     highlightMask |= WeaponMask.Speed;
-                if (profile.Enchantment_Damage != 0)
+                if (profile.Enchantment_Damage != 1.0f && !weapon.IsAmmoLauncher)
                     highlightMask |= WeaponMask.Damage;
                 if (profile.Enchantment_DamageVariance != 1.0f)
                     highlightMask |= WeaponMask.DamageVariance;
-                if (profile.Enchantment_DamageMod != 0)
-                    highlightMask |= WeaponMask.DamageMod;
+                //if (profile.Enchantment_DamageMod != 1.0f)
+                //    highlightMask |= WeaponMask.DamageMod;
             }
 
             return highlightMask;
@@ -70,12 +70,12 @@ namespace ACE.Server.Network.Enum
                     colorMask |= WeaponMask.AttackSkill;
                 if (profile.Enchantment_WeaponTime < 0)
                     colorMask |= WeaponMask.Speed;
-                if (profile.Enchantment_Damage > 0)
+                if (profile.Enchantment_Damage > 1.0f && !weapon.IsAmmoLauncher)
                     colorMask |= WeaponMask.Damage;
                 if (profile.Enchantment_DamageVariance < 1.0f)
                     colorMask |= WeaponMask.DamageVariance;
-                if (profile.Enchantment_DamageMod > 0)
-                    colorMask |= WeaponMask.DamageMod;
+                //if (profile.Enchantment_DamageMod > 1.0f)
+                //    colorMask |= WeaponMask.DamageMod;
             }
 
             return colorMask;
