@@ -46,38 +46,28 @@ namespace ACE.Server.Entity
 
         public static float GetStaminaCost(int weaponTier, bool dualWieldStaminaBonus, float animLength = 3.0f, float powerAccuracyLevel = 0.0f, int weaponSpeed = 0, float? weightClassPenalty = null)
         {
-            // Weapon tier mod
+            // Weapon tier and base cost
             weaponTier = Math.Clamp(weaponTier - 1, 0, 7);
-
-            // Tier Cost
-            var baseCost = (weaponTier + 1) * 20;
+            var baseCost = weaponTier * 20 + 20;
 
             // PowerLevel mod reduces stamina cost exponentially: i.e.  100% = 100% Cost,  75% = 56% Cost,  50% = 25% Cost,  25% = 6.25% Cost,  0% = 0% Cost (min 1)
             var powerLevelMod = (float)Math.Pow(powerAccuracyLevel, 2);
 
             // WeaponAnimationLength mod
             var maxAnimLength = 3.0f;
-            var animLengthMod = animLength / maxAnimLength;
-
-            // WeaponSpeed mod can range from 66.66% to 100%, depending on weapon speed (0-100)
-            var minSpeedMod = 200.0f / 3;  
-            var speedModRange = 100.0f / 3;
-            var weaponSpeedMod = minSpeedMod + (float)weaponSpeed / 100 * speedModRange;
-            weaponSpeedMod *= 0.01f;
+            var animLengthMod = (animLength + powerAccuracyLevel) / maxAnimLength;
 
             // Weight class resource penalty mod
             var weightClassPenaltyMod = weightClassPenalty ?? 1.0f;
 
-            // Dual wield spec mod
-            var dualWieldSpecMod = dualWieldStaminaBonus ? 0.75f : 1.0f;
-
             // Final calculation
-            var finalCost = baseCost * powerLevelMod * weaponSpeedMod * animLengthMod * weightClassPenaltyMod * dualWieldSpecMod;
+            var finalCost = baseCost * powerLevelMod * animLengthMod * weightClassPenaltyMod;
 
             //Console.WriteLine($"GetStaminaCost - Final Cost: {finalCost}\n" +
-            //    $" -WeaponTier: {weaponTier} WeightClassPenalty: {weightClassPenalty}\n" +
+            //    $" -Base Cost: {baseCost}\n" +
+            //    $" -WeaponTier: {weaponTier}\n" +
+            //    $" -WeightClassPenalty: {weightClassPenalty}\n" +
             //    $" -PowerLevel: {powerAccuracyLevel} PowerLevelMod: {powerLevelMod}\n" +
-            //    $" -WeaponSpeed: {weaponSpeed} WeaponSpeedMod: {weaponSpeedMod}\n" +
             //    $" -WeaponAnim: {animLength} AnimLengthMod: {animLengthMod}\n" +
             //    $" -DualWield: {dualWieldSpecMod}");
 
