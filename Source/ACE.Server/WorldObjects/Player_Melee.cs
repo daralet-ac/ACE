@@ -308,7 +308,7 @@ namespace ACE.Server.WorldObjects
 
             // stamina usage
             // TODO: ensure enough stamina for attack
-            var staminaCost = GetAttackStamina(GetPowerRange(), MotionTable.GetAnimationLength(MotionTableId, CurrentMotionState.Stance, GetSwingMotion()), dualWieldStaminaBonus);
+            var staminaCost = GetAttackStamina(GetPowerRange(), animLength, dualWieldStaminaBonus);
             UpdateVitalDelta(Stamina, -staminaCost);
 
             var combatAbility = CombatAbility.None;

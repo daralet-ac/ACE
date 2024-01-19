@@ -882,6 +882,8 @@ namespace ACE.Server.WorldObjects
             return weaponTier;
         }
 
+        //private double TimeSinceLastStaminaUse = 0;
+
         /// <summary>
         /// Calculates the amount of stamina required to perform this attack
         /// </summary>
@@ -939,6 +941,12 @@ namespace ACE.Server.WorldObjects
             var staminaCost = Math.Max(baseCost, 1);
 
             //Console.WriteLine($"GetAttackStamina({powerAccuracy}) - burden: {burden}, baseCost: {baseCost}, staminaMod: {staminaMod}, staminaCost: {staminaCost}");
+
+            //var currentTime = Time.GetUnixTime();
+            //var difference = currentTime - TimeSinceLastStaminaUse;
+            //TimeSinceLastStaminaUse = currentTime;
+            //var staminaPerTime = baseCost / difference;
+            //Console.WriteLine($"StaminaUsed: {Math.Round(baseCost, 2)}, TimeBetweenAttacks: {Math.Round(difference, 2)},  StaminaPerTime: {Math.Round(staminaPerTime, 2)}");
 
             return (int)Math.Round(staminaCost);
         }
