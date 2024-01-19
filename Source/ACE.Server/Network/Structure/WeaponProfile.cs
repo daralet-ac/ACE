@@ -28,7 +28,7 @@ namespace ACE.Server.Network.Structure
         public uint MaxVelocityEstimated;   // ??
 
         public int Enchantment_WeaponTime;
-        public int Enchantment_Damage;
+        public double Enchantment_Damage;
         public double Enchantment_DamageVariance;
         public double Enchantment_DamageMod;
         public double Enchantment_WeaponOffense;
@@ -67,8 +67,8 @@ namespace ACE.Server.Network.Structure
             var baseDamage = weapon.GetProperty(PropertyInt.Damage) ?? 0;
             var damageBonus = weapon.EnchantmentManager.GetDamageBonus();
             var auraDamageBonus = weapon.Wielder != null && (weapon.WeenieType != WeenieType.Ammunition || PropertyManager.GetBool("show_ammo_buff").Item) ? weapon.Wielder.EnchantmentManager.GetDamageBonus() : 0;
-            Enchantment_Damage = weapon.IsEnchantable ? damageBonus + auraDamageBonus : damageBonus;
-            return (uint)Math.Max(0, baseDamage + Enchantment_Damage);
+            Enchantment_Damage = weapon.IsEnchantable ? Math.Max(auraDamageBonus + damageBonus - 1.0f, 1.0f) : damageBonus;
+            return (uint)Math.Max(0, !weapon.IsAmmoLauncher ? baseDamage * Enchantment_Damage : baseDamage);
         }
 
         /// <summary>
@@ -103,9 +103,11 @@ namespace ACE.Server.Network.Structure
         {
             var baseMultiplier = weapon.GetProperty(PropertyFloat.DamageMod) ?? 1.0f;
             var damageMod = weapon.EnchantmentManager.GetDamageMod();
-            var auraDamageMod = weapon.Wielder != null ? weapon.Wielder.EnchantmentManager.GetDamageMod() : 0.0f;
-            Enchantment_DamageMod = weapon.IsEnchantable ? damageMod + auraDamageMod : damageMod;
-            return (float)(baseMultiplier + Enchantment_DamageMod);
+            var auraDamageMod = weapon.Wielder != null ? weapon.Wielder.EnchantmentManager.GetDamageMod() : 1.0f;
+            Enchantment_DamageMod = weapon.IsEnchantable ? Math.Max(auraDamageMod + damageMod - 1.0f, 1.0f) : damageMod;
+
+            //return (float)(baseMultiplier * Enchantment_DamageMod);
+            return (float)baseMultiplier;
         }
 
         /// <summary>

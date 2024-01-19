@@ -376,12 +376,12 @@ namespace ACE.Server.WorldObjects.Managers
         }
 
 
-        private int? damageBonusCache;
+        private float? damageBonusCache;
 
         /// <summary>
         /// Returns the weapon damage modifier, ie. Blood Drinker
         /// </summary>
-        public override int GetDamageBonus()
+        public override float GetDamageBonus()
         {
             if (damageBonusCache.HasValue)
                 return damageBonusCache.Value;

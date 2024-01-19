@@ -832,6 +832,20 @@ namespace ACE.Server.WorldObjects.Managers
         }
 
         /// <summary>
+        /// Returns the sum of the modifiers for a StatModKey
+        /// </summary>
+        public float GetMultiplicativeMod(PropertyInt statModKey)
+        {
+            var enchantments = GetEnchantments_TopLayer(EnchantmentTypeFlags.Multiplicative, (uint)statModKey);
+
+            var modifier = 1.0f;
+            foreach (var enchantment in enchantments.Where(e => (e.StatModType & EnchantmentTypeFlags.Skill) == 0))
+                modifier *= (int)enchantment.StatModValue;
+            
+            return (int)modifier;
+        }
+
+        /// <summary>
         /// Returns the product of the modifiers for a StatModKey
         /// </summary>
         public float GetMultiplicativeMod(PropertyFloat statModKey)
@@ -943,10 +957,13 @@ namespace ACE.Server.WorldObjects.Managers
         /// <summary>
         /// Returns the weapon damage bonus, ie. Blood Drinker
         /// </summary>
-        public virtual int GetDamageBonus()
+        public virtual float GetDamageBonus()
         {
-            var damageMod = GetAdditiveMod(PropertyInt.Damage);
-            var auraDamageMod = GetAdditiveMod(PropertyInt.WeaponAuraDamage);
+            //var damageMod = GetAdditiveMod(PropertyInt.Damage);
+            //var auraDamageMod = GetAdditiveMod(PropertyInt.WeaponAuraDamage);
+
+            var damageMod = GetMultiplicativeMod(PropertyFloat.Damage);
+            var auraDamageMod = GetMultiplicativeMod(PropertyFloat.WeaponAuraDamage);
 
             // there is an unfortunate situation in the spell db,
             // where blood drinker 1-7 are defined as PropertyInt.Damage
@@ -957,8 +974,8 @@ namespace ACE.Server.WorldObjects.Managers
                 return auraDamageMod;
             else
                 return damageMod;*/
-
-            return auraDamageMod + damageMod;
+            
+            return auraDamageMod + damageMod - 1.0f;
         }
 
         /// <summary>
@@ -966,7 +983,10 @@ namespace ACE.Server.WorldObjects.Managers
         /// </summary>
         public virtual float GetDamageMod()
         {
-            return GetAdditiveMod(PropertyFloat.DamageMod);
+            var damageMod = GetMultiplicativeMod(PropertyFloat.Damage);
+            var auraDamageMod = GetMultiplicativeMod(PropertyFloat.WeaponAuraDamage);
+
+            return auraDamageMod + damageMod - 1.0f;
         }
 
         /// <summary>
@@ -1037,8 +1057,8 @@ namespace ACE.Server.WorldObjects.Managers
         /// </summary>
         public virtual float GetElementalDamageMod()
         {
-            var elementalDamageMod = GetAdditiveMod(PropertyFloat.ElementalDamageMod);
-            var elementalDamageAuraMod = GetAdditiveMod(PropertyFloat.WeaponAuraElemental);
+            var elementalDamageMod = GetMultiplicativeMod(PropertyFloat.ElementalDamageMod);
+            var elementalDamageAuraMod = GetMultiplicativeMod(PropertyFloat.WeaponAuraElemental);
 
             /*if (WorldObject is Creature && elementalDamageAuraMod != 0)
                 return elementalDamageAuraMod;

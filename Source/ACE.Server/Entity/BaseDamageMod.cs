@@ -46,18 +46,25 @@ namespace ACE.Server.Entity
             if (weapon == null)
                 return;
 
-            DamageBonus += weapon.EnchantmentManager.GetDamageBonus();
+            if (weapon.IsAmmoLauncher)
+                BaseDamage.MaxDamage = (int)Math.Round(BaseDamage.MaxDamage * weapon.EnchantmentManager.GetDamageBonus());
+
+            DamageBonus *= weapon.EnchantmentManager.GetDamageBonus();
             VarianceMod *= weapon.EnchantmentManager.GetVarianceMod();
 
-            DamageMod = (float)(weapon.GetProperty(PropertyFloat.DamageMod) ?? 1.0f) + weapon.EnchantmentManager.GetDamageMod();
+            //DamageMod = (float)(weapon.GetProperty(PropertyFloat.DamageMod) ?? 1.0f) + (((float)(weapon.GetProperty(PropertyFloat.DamageMod) ?? 1.0f) - 1.0f) * (weapon.EnchantmentManager.GetDamageMod() - 1.0f));
+            DamageMod = (float)(weapon.GetProperty(PropertyFloat.DamageMod) ?? 1.0f);
 
             if (weapon.IsEnchantable)
             {
+                if (weapon.IsAmmoLauncher)
+                    BaseDamage.MaxDamage = (int)Math.Round(BaseDamage.MaxDamage * wielder.EnchantmentManager.GetDamageBonus());
+
                 // factor in wielder auras for enchantable weapons
-                DamageBonus += wielder.EnchantmentManager.GetDamageBonus();
+                DamageBonus *= wielder.EnchantmentManager.GetDamageBonus();
                 VarianceMod *= wielder.EnchantmentManager.GetVarianceMod();
 
-                DamageMod += wielder.EnchantmentManager.GetDamageMod();
+                //DamageMod += (DamageMod - 1.0f) * (wielder.EnchantmentManager.GetDamageMod() - 1.0f);;
             }
         }
     }
