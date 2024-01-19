@@ -306,7 +306,16 @@ namespace ACE.Server.WorldObjects
 
         private void AddItemToEquippedItemsRatingCache(WorldObject wo)
         {
-            if ((wo.GearDamage ?? 0) == 0 && (wo.GearDamageResist ?? 0) == 0 && (wo.GearCritDamage ?? 0) == 0 && (wo.GearCritDamageResist ?? 0) == 0 && (wo.GearHealingBoost ?? 0) == 0 && (wo.GearMaxHealth ?? 0) == 0 && (wo.GearPKDamageRating ?? 0) == 0 && (wo.GearPKDamageResistRating ?? 0) == 0 && (wo.AegisLevel ?? 0) == 0)
+            if ((wo.GearDamage ?? 0) == 0 &&
+                (wo.GearDamageResist ?? 0) == 0 &&
+                (wo.GearCrit ?? 0) == 0 &&
+                (wo.GearCritDamage ?? 0) == 0 &&
+                (wo.GearCritDamageResist ?? 0) == 0 &&
+                (wo.GearHealingBoost ?? 0) == 0 &&
+                (wo.GearMaxHealth ?? 0) == 0 &&
+                (wo.GearPKDamageRating ?? 0) == 0 &&
+                (wo.GearPKDamageResistRating ?? 0) == 0 &&
+                (wo.AegisLevel ?? 0) == 0)
                 return;
 
             if (equippedItemsRatingCache == null)
@@ -329,7 +338,7 @@ namespace ACE.Server.WorldObjects
 
             equippedItemsRatingCache[PropertyInt.GearDamage] += (wo.GearDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearDamageResist] += (wo.GearDamageResist ?? 0);
-            equippedItemsRatingCache[PropertyInt.GearCrit] += (wo.GearCritDamage ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCrit] += (wo.GearCrit ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritResist] += (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamage] += (wo.GearCritDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamageResist] += (wo.GearCritDamageResist ?? 0);
@@ -347,7 +356,7 @@ namespace ACE.Server.WorldObjects
 
             equippedItemsRatingCache[PropertyInt.GearDamage] -= (wo.GearDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearDamageResist] -= (wo.GearDamageResist ?? 0);
-            equippedItemsRatingCache[PropertyInt.GearCrit] -= (wo.GearCritDamage ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCrit] -= (wo.GearCrit ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritResist] -= (wo.GearCritDamageResist ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamage] -= (wo.GearCritDamage ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCritDamageResist] -= (wo.GearCritDamageResist ?? 0);
