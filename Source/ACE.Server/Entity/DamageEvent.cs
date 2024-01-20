@@ -131,7 +131,7 @@ namespace ACE.Server.Entity
 
         public bool GeneralFailure;
 
-        public bool HasDamage => !Evaded && !LifestoneProtection;
+        public bool HasDamage => !Evaded && !Blocked && !LifestoneProtection;
 
         public bool CriticalDefended;
 
@@ -651,7 +651,7 @@ namespace ACE.Server.Entity
                 combatAbility = combatFocus.GetCombatAbility();
 
             var defenderEquippedShield = defender.GetEquippedShield();
-            if (defenderEquippedShield != null || defender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass != SkillAdvancementClass.Specialized)
+            if (defenderEquippedShield != null && defender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
 
                 Player playerAttacker = attacker as Player;
