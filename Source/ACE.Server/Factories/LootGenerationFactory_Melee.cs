@@ -1,4 +1,3 @@
-using System.Linq;
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
@@ -6,6 +5,8 @@ using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.WorldObjects;
+using System;
+using System.Linq;
 
 namespace ACE.Server.Factories
 {
@@ -1285,16 +1286,82 @@ namespace ACE.Server.Factories
 
         private static void TryMutateMeleeWeaponDamage(WorldObject wo, TreasureRoll roll, TreasureDeath profile, out int maxPossibleDamage)
         {
-            var baseDamage = (wo.Damage) ?? 1;
-            var multiplier = GetWeaponMutationMultiplier(roll)[profile.Tier - 1];
-            var adder = GetWeaponMutationAdder(roll)[profile.Tier - 1];
+            maxPossibleDamage = 0;
 
-            var maxDamage = (baseDamage * multiplier + adder) * 1.2f;
-            var minDamage = (baseDamage * multiplier + adder) * 0.8f;
-            var diminishedRoll = (maxDamage - minDamage) * GetDiminishingRoll(profile);
+            if (wo.DamageVariance == null)
+            {
+                _log.Error("TryMutateMeleeWeaponDamage({WeaponName}, {TreasureRoll}, {TreasureDeath}) - DamageVariance is null.", wo.Name, roll, profile);
+                return;
+            }
 
-            wo.Damage = (int)(minDamage + diminishedRoll);
-            maxPossibleDamage = (int)((baseDamage * GetWeaponMutationMultiplier(roll)[7] + GetWeaponMutationAdder(roll)[7]) * 1.2f);
+            if (wo.WeaponTime == null)
+            {
+                _log.Error("TryMutateMeleeWeaponDamage({WeaponName}, {TreasureRoll}, {TreasureDeath}) - WeaponTime is null.", wo.Name, roll, profile);
+                return;
+            }
+
+            var targetBaseDps = GetWeaponBaseDps(wo.Tier ?? 1);
+            if (wo.CleaveTargets > 1)
+                targetBaseDps *= 0.6f;
+
+            var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
+            var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0));
+            var effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
+            if (wo.IsTwoHanded)
+                effectiveAttacksPerSecond *= 2;
+            if (wo.W_AttackType == AttackType.MultiStrike)
+                effectiveAttacksPerSecond *= 3;
+
+            var avgWeaponDamage = targetBaseDps / effectiveAttacksPerSecond;
+            var weaponVariance = wo.DamageVariance.Value;
+            var averageBaseMaxDamage = (avgWeaponDamage * 2) / (1.0 + (1 - weaponVariance));
+
+            var rangePerTier = 0.75;
+            var maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + rangePerTier);
+
+            var minimumBaseMaxDamage = maximumBaseMaxDamage * rangePerTier;
+            var diminishedRoll = (averageBaseMaxDamage - minimumBaseMaxDamage) * GetDiminishingRoll(profile);
+            var finalMaxDamage = minimumBaseMaxDamage + diminishedRoll;
+
+            // debug
+            //var averageHitDamage = (averageBaseMaxDamage + (averageBaseMaxDamage * (1 - weaponVariance))) / 2;
+            //Console.WriteLine($"\nTryMutateMeleeWeaponDamage()\n" +
+            //    $" TargetBaseDps: {targetBaseDps}\n" +
+            //    $" BaseAnimLength: {baseAnimLength}\n" +
+            //    $" SpeedMod: {speedMod}\n" +
+            //    $" AttacksPerSecond: {effectiveAttacksPerSecond}\n" +
+            //    $" TargetAvgWeaponDamage: {avgWeaponDamage}\n" +
+            //    $" WeaponVariance: {weaponVariance}\n\n" +
+            //    $" AverageBaseMaxDamage: {averageBaseMaxDamage}\n" +
+            //    $" MaximumBaseMaxDamage: {maximumBaseMaxDamage}\n" +
+            //    $" MinimumBaseMaxDamage: {minimumBaseMaxDamage}\n" +
+            //    $" DiminishedRoll: {diminishedRoll}\n" +
+            //    $" FinalMaxDamage: {finalMaxDamage}\n\n" +
+            //    $" Avg Hit Damage: {averageHitDamage}\n" +
+            //    $" Avg DPS: {averageHitDamage * effectiveAttacksPerSecond}");
+
+            // max possible damage (for workmanship)
+            targetBaseDps = GetWeaponBaseDps(8);
+            if (wo.CleaveTargets > 1)
+                targetBaseDps *= 0.6f;
+
+            baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
+            speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0));
+            effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
+            if (wo.IsTwoHanded)
+                effectiveAttacksPerSecond *= 2;
+            if (wo.W_AttackType == AttackType.MultiStrike)
+                effectiveAttacksPerSecond *= 3;
+
+            avgWeaponDamage = targetBaseDps / effectiveAttacksPerSecond;
+            weaponVariance = wo.DamageVariance.Value;
+            averageBaseMaxDamage = (avgWeaponDamage * 2) / (1.0 + (1 - weaponVariance));
+            rangePerTier = 0.75;
+            maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + rangePerTier);
+            maxPossibleDamage = (int)maximumBaseMaxDamage;
+
+            // assign damage to weapon
+            wo.Damage = (int)Math.Round(finalMaxDamage);
         }
     }
 }

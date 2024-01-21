@@ -236,7 +236,8 @@ namespace ACE.Server.Entity
 
             // ---- DAMAGE RATING ----
             PowerMod = attacker.GetPowerMod(Weapon);
-
+            //Console.WriteLine($"PowerMod: {PowerMod}");
+            
             AttributeMod = attacker.GetAttributeMod(Weapon);
 
             SlayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
@@ -492,6 +493,19 @@ namespace ACE.Server.Entity
 
             if(!attacker.IsMonster)
                 Damage *= 1.0f;
+
+            // DPS logging
+            //var currentTime = Time.GetUnixTime();
+            //var timeSinceLastAttack = currentTime - playerAttacker.LastAttackedCreatureTime;
+            //Console.WriteLine($"\nCurrentTime: {currentTime}, LastAttackTime: {playerAttacker.LastAttackedCreatureTime}");
+            //playerAttacker.LastAttackedCreatureTime = currentTime;
+
+            //var averageDamage = (BaseDamageMod.MaxDamage + BaseDamageMod.MinDamage) / 2;
+            //var powModDamage = averageDamage * PowerMod;
+            //var dps = averageDamage / timeSinceLastAttack;
+            //var powerModDps = dps * PowerMod;
+
+            //Console.WriteLine($"TimeSinceLastAttack: {timeSinceLastAttack}, AverageDamage: {averageDamage}, DPS: {dps}\n PowModDamage: {powModDamage}, PowDPS: {powerModDps}");
 
             return Damage;
         }

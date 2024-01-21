@@ -49,6 +49,8 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public double LastWeaponSwap;
 
+        public double LastAttackAnimationLength = 0.0;
+
         public float SetCombatMode(CombatMode combatMode)
         {
             return SetCombatMode(combatMode, out var _);

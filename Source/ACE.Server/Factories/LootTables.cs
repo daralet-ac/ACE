@@ -301,7 +301,7 @@ namespace ACE.Server.Factories
             new int[] { 314, 3778, 3779, 3780, 3781 },       // 1 - Dagger (MS)
             new int[] { 319, 3794, 3795, 3796, 3797 },       // 2 - Jambiya (MS)
             new int[] { 328, 3826, 3827, 3828, 3829 },       // 3 - Khanjar
-            new int[] { 329, 3830, 3831, 3832, 3833 },       // 4 - Knife (MS)
+            //new int[] { 329, 3830, 3831, 3832, 3833 },       // 4 - Knife (MS)
             new int[] { 22440, 22441, 22442, 22443, 22444 }, // 5 - Dirk
             new int[] { 321, 3802, 3803, 3804, 3805 }        // 6 - Jitte
         };
@@ -320,7 +320,7 @@ namespace ACE.Server.Factories
         public static readonly int[][] SpearsMatrix =
         {
             new int[] { 308, 3762, 3763, 3764, 3765 },       // 0 - Budiaq
-            new int[] { 348, 3873, 3874, 3875, 3876 },       // 1 - Spear
+            //new int[] { 348, 3873, 3874, 3875, 3876 },       // 1 - Spear
             new int[] { 362, 3913, 3914, 3915, 3916 },       // 2 - Yari
             new int[] { 7772, 7791, 7792, 7793, 7794 }       // 3 - Trident
         };
@@ -339,11 +339,11 @@ namespace ACE.Server.Factories
         public static readonly int[][] SwordsMatrix =
         {
             new int[] { 324, 3810, 3811, 3812, 3813 },       //  0 - Kaskara
-            new int[] { 327, 3822, 3823, 3824, 3825 },       //  1 - Ken
+            //new int[] { 327, 3822, 3823, 3824, 3825 },       //  1 - Ken
             new int[] { 339, 3849, 3850, 3851, 3852 },       //  2 - Scimitar
-            new int[] { 340, 3853, 3854, 3855, 3856 },       //  3 - Shamshir
+            //new int[] { 340, 3853, 3854, 3855, 3856 },       //  3 - Shamshir
             new int[] { 345, 3869, 3870, 3871, 3872 },       //  4 - Simi
-            new int[] { 350, 3877, 3878, 3879, 3880 },       //  5 - Broad Sword
+            //new int[] { 350, 3877, 3878, 3879, 3880 },       //  5 - Broad Sword
             new int[] { 351, 3881, 3882, 3883, 3884 },       //  6 - Long Sword
             new int[] { 352, 3885, 3886, 3887, 3888 },       //  7 - Short Sword
             new int[] { 353, 3889, 3890, 3891, 3892 },       //  8 - Tachi

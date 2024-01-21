@@ -432,6 +432,8 @@ namespace ACE.Server.WorldObjects
             var animLength = MotionTable.GetAnimationLength(MotionTableId, CurrentMotionState.Stance, swingAnimation, animSpeed);
             //Console.WriteLine($"AnimSpeed: {animSpeed}, AnimLength: {animLength}");
 
+            LastAttackAnimationLength = animLength;
+            
             attackFrames = MotionTable.GetAttackFrames(MotionTableId, CurrentMotionState.Stance, swingAnimation);
             //Console.WriteLine($"Attack frames: {string.Join(",", attackFrames)}");
 

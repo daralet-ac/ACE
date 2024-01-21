@@ -8,6 +8,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
@@ -37,7 +38,6 @@ namespace ACE.Server.WorldObjects
 
         public Creature LastAttackedCreature;
         public double LastAttackedCreatureTime;
-
         public double LastPkAttackTimestamp
         {
             get => GetProperty(PropertyFloat.LastPkAttackTimestamp) ?? 0;
@@ -483,10 +483,22 @@ namespace ACE.Server.WorldObjects
             if (weapon == null)
                 return 1.0f;
 
+            var currentAnimLength = LastAttackAnimationLength;
+            
+            if (weapon.IsTwoHanded)
+                currentAnimLength /= 2;
+            if (weapon.W_AttackType == AttackType.MultiStrike)
+                currentAnimLength /= 3;
+
+            var animMod = (float)((currentAnimLength + PowerLevel) / currentAnimLength);
+            //Console.WriteLine($"\n--------- {weapon.Name} {Math.Round(PowerLevel * 100, 0)}% ---------\n" +
+            //    $"CurrentAnimLength: {currentAnimLength}\n" +
+            //    $"AnimMod: {animMod}");
+
             if (weapon.IsRanged)
-                return PowerLevel <= 0.5 ? PowerLevel + 0.5f : PowerLevel * 1.5f;
+                return (float)(Math.Pow(PowerLevel / 2, 2) + 0.5) * animMod;
             else
-                return PowerLevel <= 0.5 ? PowerLevel + 0.5f : PowerLevel * 2.0f;
+                return (float)(Math.Pow(PowerLevel / 2, 2) + 0.5) * animMod;
         }
 
         /// <summary>

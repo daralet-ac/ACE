@@ -344,6 +344,22 @@ namespace ACE.Server.Factories
         {
             return LootTables.CasterMaxDamageMod;
         }
+
+        private static float GetWeaponBaseDps(int tier)
+        {
+            switch(tier)
+            {
+                default:
+                case 1: return 5.0f;
+                case 2: return 10.0f;
+                case 3: return 20.0f;
+                case 4: return 30.0f;
+                case 5: return 40.0f;
+                case 6: return 50.0f;
+                case 7: return 75.0f;
+                case 8: return 100.0f;
+            }
+        }
     }
 }
 
