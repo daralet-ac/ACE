@@ -485,9 +485,19 @@ namespace ACE.Server.WorldObjects
 
             var currentAnimLength = LastAttackAnimationLength;
             
-            if (weapon.IsTwoHanded)
+            if (weapon.IsTwoHanded || 
+                weapon.W_AttackType == AttackType.DoubleStrike || 
+                weapon.W_AttackType == AttackType.DoubleSlash ||
+                weapon.W_AttackType == AttackType.DoubleThrust ||
+                weapon.W_AttackType == AttackType.OffhandDoubleSlash ||
+                weapon.W_AttackType == AttackType.OffhandDoubleThrust)
                 currentAnimLength /= 2;
-            if (weapon.W_AttackType == AttackType.MultiStrike)
+            if (weapon.W_AttackType == AttackType.MultiStrike || 
+                weapon.W_AttackType == AttackType.TripleStrike ||
+                weapon.W_AttackType == AttackType.TripleSlash ||
+                weapon.W_AttackType == AttackType.TripleThrust ||
+                weapon.W_AttackType == AttackType.OffhandTripleSlash ||
+                weapon.W_AttackType == AttackType.OffhandTripleThrust)
                 currentAnimLength /= 3;
 
             var animMod = (float)((currentAnimLength + PowerLevel) / currentAnimLength);
