@@ -814,10 +814,6 @@ namespace ACE.Server.WorldObjects
 
             var effectiveLevel = effectiveSL;
 
-            // Bucklers don't get capped by Shield skill
-            if (shield.WeenieClassId != 44) 
-                effectiveLevel = GetSkillModifiedShieldLevel(effectiveSL);
-
             effectiveLevel *= effectiveRL;
 
             var ignoreShieldMod = attacker.GetIgnoreShieldMod(weapon);

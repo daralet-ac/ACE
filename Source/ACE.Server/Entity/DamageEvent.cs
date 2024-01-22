@@ -578,6 +578,10 @@ namespace ACE.Server.Entity
             if (defenderCombatAbility == CombatAbility.Smokescreen)
                 evadeChance += 0.1f; // Gain 10% evade chance
 
+            //Console.WriteLine($"\n{attacker.Name} attack skill: {EffectiveAttackSkill}\n" +
+            //    $"{defender.Name} defense skill: {EffectiveDefenseSkill}\n" +
+            //    $"Evade Chance: {(float)Math.Min(evadeChance, 1.0f)}");
+
             return (float)Math.Min(evadeChance, 1.0f);
         }
 

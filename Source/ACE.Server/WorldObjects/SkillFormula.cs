@@ -18,7 +18,7 @@ namespace ACE.Server.WorldObjects
 
         // defenses
         public static readonly float ArmorMod = 100.0f;
-        public static readonly float ShieldMod = 500.0f;
+        public static readonly float ShieldMod = 2000.0f;
         public static readonly float AegisMod = 100.0f;
 
         public static float GetAttributeMod(int currentAttribute, ACE.Entity.Enum.Skill skill = ACE.Entity.Enum.Skill.None)
