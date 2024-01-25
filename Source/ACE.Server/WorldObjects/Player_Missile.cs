@@ -236,6 +236,8 @@ namespace ACE.Server.WorldObjects
             var linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
             //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
 
+            LastAttackAnimationLength = reloadTime + linkTime;
+
             // launch projectile
             actionChain.AddAction(this, () =>
             {

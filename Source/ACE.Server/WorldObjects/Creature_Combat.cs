@@ -480,19 +480,13 @@ namespace ACE.Server.WorldObjects
         /// <param name="attackType">Uses strength for melee, coordination for missile</param>
         public float GetAttributeMod(WorldObject weapon)
         {
-            var isBow = weapon != null && weapon.IsBow;
-
             Entity.CreatureAttribute attribute;
 
-            if(weapon?.WeaponSkill == Skill.Dagger)
-                attribute = Quickness;
-            else
-                attribute = isBow || weapon?.WeaponSkill == Skill.UnarmedCombat || weapon?.WeaponSkill == Skill.Spear || weapon?.WeaponSkill == Skill.Staff ? Coordination : Strength;
+            Skill[] coordinationSkills = { Skill.Dagger, Skill.Staff, Skill.UnarmedCombat, Skill.Bow, Skill.Crossbow };
+            attribute = coordinationSkills.Contains(weapon.WeaponSkill) ? Coordination : Strength;
 
             Skill skill = GetCurrentWeaponSkill();
-            if (isBow)
-                skill = Skill.Bow; // Group up bows and crossbows while excluding thrown weapons.
-            else if (skill == Skill.UnarmedCombat && !IsHumanoid)
+            if (skill == Skill.UnarmedCombat && !IsHumanoid)
                 skill = Skill.None; // Non humanoids(creatures that aren't able to wield weapons) use unarmed combat but still have the regular weapon factor.
 
             return SkillFormula.GetAttributeMod((int)attribute.Current, skill);

@@ -1300,10 +1300,12 @@ namespace ACE.Server.Factories
                 return;
             }
 
+            // target dps per tier
             var targetBaseDps = GetWeaponBaseDps(wo.Tier ?? 1);
             if (wo.CleaveTargets > 1)
                 targetBaseDps *= 0.6f;
 
+            // animation speed
             var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
             var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0));
             var effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
@@ -1312,19 +1314,23 @@ namespace ACE.Server.Factories
             if (wo.W_AttackType == AttackType.MultiStrike)
                 effectiveAttacksPerSecond *= 3;
 
+            // target weapon hit damage
             var avgWeaponDamage = targetBaseDps / effectiveAttacksPerSecond;
             var weaponVariance = wo.DamageVariance.Value;
             var averageBaseMaxDamage = (avgWeaponDamage * 2) / (1.0 + (1 - weaponVariance));
 
-            var rangePerTier = 0.75;
-            var maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + rangePerTier);
+            // get low-end and high-end max damage range
+            var damageRangePerTier = 0.75;
+            var maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + damageRangePerTier);
+            var minimumBaseMaxDamage = maximumBaseMaxDamage * damageRangePerTier;
 
-            var minimumBaseMaxDamage = maximumBaseMaxDamage * rangePerTier;
+            // roll and assign weapon damage
             var diminishedRoll = (averageBaseMaxDamage - minimumBaseMaxDamage) * GetDiminishingRoll(profile);
             var finalMaxDamage = minimumBaseMaxDamage + diminishedRoll;
+            wo.Damage = (int)Math.Round(finalMaxDamage);
 
             // debug
-            //var averageHitDamage = (averageBaseMaxDamage + (averageBaseMaxDamage * (1 - weaponVariance))) / 2;
+            var averageHitDamage = (averageBaseMaxDamage + (averageBaseMaxDamage * (1 - weaponVariance))) / 2;
             //Console.WriteLine($"\nTryMutateMeleeWeaponDamage()\n" +
             //    $" TargetBaseDps: {targetBaseDps}\n" +
             //    $" BaseAnimLength: {baseAnimLength}\n" +
@@ -1345,23 +1351,10 @@ namespace ACE.Server.Factories
             if (wo.CleaveTargets > 1)
                 targetBaseDps *= 0.6f;
 
-            baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
-            speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0));
-            effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
-            if (wo.IsTwoHanded)
-                effectiveAttacksPerSecond *= 2;
-            if (wo.W_AttackType == AttackType.MultiStrike)
-                effectiveAttacksPerSecond *= 3;
-
             avgWeaponDamage = targetBaseDps / effectiveAttacksPerSecond;
-            weaponVariance = wo.DamageVariance.Value;
             averageBaseMaxDamage = (avgWeaponDamage * 2) / (1.0 + (1 - weaponVariance));
-            rangePerTier = 0.75;
-            maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + rangePerTier);
+            maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + damageRangePerTier);
             maxPossibleDamage = (int)maximumBaseMaxDamage;
-
-            // assign damage to weapon
-            wo.Damage = (int)Math.Round(finalMaxDamage);
         }
     }
 }

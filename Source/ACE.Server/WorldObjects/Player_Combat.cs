@@ -500,15 +500,16 @@ namespace ACE.Server.WorldObjects
                 weapon.W_AttackType == AttackType.OffhandTripleThrust)
                 currentAnimLength /= 3;
 
-            var animMod = (float)((currentAnimLength + PowerLevel) / currentAnimLength);
-            //Console.WriteLine($"\n--------- {weapon.Name} {Math.Round(PowerLevel * 100, 0)}% ---------\n" +
+            var animMod = (float)((currentAnimLength + GetPowerAccuracyBar()) / currentAnimLength);
+
+            //Console.WriteLine($"\n--------- {weapon.Name} {Math.Round(GetPowerAccuracyBar() * 100, 0)}% ---------\n" +
             //    $"CurrentAnimLength: {currentAnimLength}\n" +
             //    $"AnimMod: {animMod}");
 
             if (weapon.IsRanged)
-                return (float)(Math.Pow(PowerLevel / 2, 2) + 0.5) * animMod;
+                return (float)(Math.Pow(GetPowerAccuracyBar() / 2, 2) + 0.5) * animMod;
             else
-                return (float)(Math.Pow(PowerLevel / 2, 2) + 0.5) * animMod;
+                return (float)(Math.Pow(GetPowerAccuracyBar() / 2, 2) + 0.5) * animMod;
         }
 
         /// <summary>

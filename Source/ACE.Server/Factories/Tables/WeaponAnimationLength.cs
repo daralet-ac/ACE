@@ -35,9 +35,20 @@ namespace ACE.Server.Factories.Tables
             { AttackType.Unarmed,               1.10f },
         };
 
+        private static readonly Dictionary<Skill, float> MissileAnimLength = new Dictionary<Skill, float>()
+        {
+            { Skill.Bow,                        2.065f },
+            { Skill.Crossbow,                   2.952f },
+            { Skill.ThrownWeapon,               3.089f }
+        };
+
         public static float GetAnimLength(WorldObject weapon)
         {
-            if (weapon != null && !weapon.IsAmmoLauncher && MeleeAnimLength.TryGetValue(weapon.W_AttackType, out var valueMod))
+            float valueMod;
+
+            if (weapon != null && !weapon.IsAmmoLauncher && MeleeAnimLength.TryGetValue(weapon.W_AttackType, out valueMod))
+                return valueMod;
+            else if (weapon != null && weapon.IsAmmoLauncher && MissileAnimLength.TryGetValue(weapon.WeaponSkill, out valueMod))
                 return valueMod;
             else
                 return 1.0f;    // default?
