@@ -88,8 +88,8 @@ namespace ACE.Server.Factories
 
             var rng = (float)ThreadSafeRandom.Next(-0.025f, 0.025f);
 
-            // min/max range: 67.5% - 100%
-            var weaponSpeedMod = 1.0f - (qualityLevel * 0.025f + rng);
+            // min/max range: 97.5% - 102.5%
+            var weaponSpeedMod = 1.0f - (qualityLevel * 0.005f + rng);
 
             //Console.WriteLine($"WeaponSpeedMod: {weaponSpeedMod}");
 

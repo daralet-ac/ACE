@@ -112,7 +112,7 @@ namespace ACE.Server.Factories
 
             // Damage Percentile, for workmanship
             var damageModPercentile = (wo.DamageMod - 1) / maxPossibleDamageMod;
-            //Console.WriteLine($"mod: {wo.DamageMod - 1} maxMod: {maxPossibleDamageMod} modPercentile: {damageModPercentile}  bonus: { wo.ElementalDamageBonus} maxBonus: {maxPossibleDamageBonus} bonusPercentil: {damageBonusPercentile}");
+            //Console.WriteLine($"damMod: {wo.DamageMod - 1} maxDamMod: {maxPossibleDamageMod} damModPercentile: {damageModPercentile}");
 
             // weapon speed
             if (wo.WeaponTime != null)
@@ -432,7 +432,11 @@ namespace ACE.Server.Factories
 
             // max possible damage (for workmanship)
             targetBaseDps = GetWeaponBaseDps(8);
-            averageBaseDamageMod = targetBaseDps / ammoAverageDamage;
+            ammoMaxDamage = GetAmmoBaseMaxDamage(wo.Tier.Value);
+            ammoMinDamage = ammoMaxDamage * weaponVariance;
+            ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
+            targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
+            averageBaseDamageMod = targetAvgHitDamage / ammoAverageDamage;
             maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + damageRangePerTier);
             maxPossibleDamageMod = (int)maximumBaseMaxDamageMod;
         }
