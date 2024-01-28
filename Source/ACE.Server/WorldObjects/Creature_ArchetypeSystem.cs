@@ -12,12 +12,12 @@ namespace ACE.Server.WorldObjects
         private static bool DebugArchetypeSystem = false;
 
         // Stat ranges by tier
-        private static readonly int[] enemyHealth = { 10, 100, 200, 300, 400, 500, 750, 1000, 2000};
+        private static readonly int[] enemyHealth = { 10, 100, 200, 350, 500, 800, 1200, 1600, 2000};
         private static readonly int[] enemyStaminaMana = { 20, 100, 150, 225, 325, 450, 650, 950, 1250 };
         private static readonly int[] enemyHealthRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
         private static readonly int[] enemyStaminaManaRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
 
-        private static readonly int[] enemyArmorAegis = { 10, 100, 200, 300, 400, 500, 750, 1000, 1500 };
+        private static readonly int[] enemyArmorAegis = { 20, 30, 45, 68, 101, 152, 228, 342, 513 };
         private static readonly int[] enemyAttack = { 10, 75, 150, 200, 250, 300, 400, 500, 1000};
         private static readonly int[] enemyDefense = { 10, 100, 200, 300, 400, 500, 600, 700, 1000 };
         private static readonly int[] enemyAssessDeception = { 10, 50, 100, 150, 200, 250, 300, 350, 400 };
