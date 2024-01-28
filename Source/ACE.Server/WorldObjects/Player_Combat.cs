@@ -8,6 +8,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
@@ -37,7 +38,6 @@ namespace ACE.Server.WorldObjects
 
         public Creature LastAttackedCreature;
         public double LastAttackedCreatureTime;
-
         public double LastPkAttackTimestamp
         {
             get => GetProperty(PropertyFloat.LastPkAttackTimestamp) ?? 0;
@@ -483,10 +483,33 @@ namespace ACE.Server.WorldObjects
             if (weapon == null)
                 return 1.0f;
 
+            var currentAnimLength = LastAttackAnimationLength;
+            
+            if (weapon.IsTwoHanded || 
+                weapon.W_AttackType == AttackType.DoubleStrike || 
+                weapon.W_AttackType == AttackType.DoubleSlash ||
+                weapon.W_AttackType == AttackType.DoubleThrust ||
+                weapon.W_AttackType == AttackType.OffhandDoubleSlash ||
+                weapon.W_AttackType == AttackType.OffhandDoubleThrust)
+                currentAnimLength /= 2;
+            if (weapon.W_AttackType == AttackType.MultiStrike || 
+                weapon.W_AttackType == AttackType.TripleStrike ||
+                weapon.W_AttackType == AttackType.TripleSlash ||
+                weapon.W_AttackType == AttackType.TripleThrust ||
+                weapon.W_AttackType == AttackType.OffhandTripleSlash ||
+                weapon.W_AttackType == AttackType.OffhandTripleThrust)
+                currentAnimLength /= 3;
+
+            var animMod = (float)((currentAnimLength + GetPowerAccuracyBar()) / currentAnimLength);
+
+            //Console.WriteLine($"\n--------- {weapon.Name} {Math.Round(GetPowerAccuracyBar() * 100, 0)}% ---------\n" +
+            //    $"CurrentAnimLength: {currentAnimLength}\n" +
+            //    $"AnimMod: {animMod}");
+
             if (weapon.IsRanged)
-                return PowerLevel <= 0.5 ? PowerLevel + 0.5f : PowerLevel * 1.5f;
+                return (float)(Math.Pow(GetPowerAccuracyBar() / 2, 2) + 0.5) * animMod;
             else
-                return PowerLevel <= 0.5 ? PowerLevel + 0.5f : PowerLevel * 2.0f;
+                return (float)(Math.Pow(GetPowerAccuracyBar() / 2, 2) + 0.5) * animMod;
         }
 
         /// <summary>

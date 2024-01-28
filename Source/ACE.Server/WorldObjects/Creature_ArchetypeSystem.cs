@@ -12,22 +12,23 @@ namespace ACE.Server.WorldObjects
         private static bool DebugArchetypeSystem = false;
 
         // Stat ranges by tier
-        private static readonly int[] enemyHealth = { 10, 50, 100, 175, 275, 400, 600, 900, 1200};
+        private static readonly int[] enemyHealth = { 10, 100, 200, 350, 500, 800, 1200, 1600, 2000};
         private static readonly int[] enemyStaminaMana = { 20, 100, 150, 225, 325, 450, 650, 950, 1250 };
-        private static readonly int[] enemyHealthRegen = { 1, 2, 4, 6, 8, 10, 12, 14, 16 };
-        private static readonly int[] enemyStaminaManaRegen = { 2, 4, 8, 12, 16, 20, 24, 28, 32 };
+        private static readonly int[] enemyHealthRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
+        private static readonly int[] enemyStaminaManaRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
 
-        private static readonly int[] enemyArmorAegis = { 10, 100, 200, 300, 400, 500, 750, 1000, 2000 };
-        private static readonly int[] enemyAttackDefense = { 10, 75, 150, 200, 225, 250, 300, 350, 500};
+        private static readonly int[] enemyArmorAegis = { 20, 30, 45, 68, 101, 152, 228, 342, 513 };
+        private static readonly int[] enemyAttack = { 10, 75, 150, 200, 250, 300, 400, 500, 1000};
+        private static readonly int[] enemyDefense = { 10, 100, 200, 300, 400, 500, 600, 700, 1000 };
         private static readonly int[] enemyAssessDeception = { 10, 50, 100, 150, 200, 250, 300, 350, 400 };
         private static readonly int[] enemyRun = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
 
-        private static readonly float[] enemyDamage = { 2.0f, 2.5f, 3.0f, 3.3f, 3.6f, 3.9f, 4.2f, 5.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
+        private static readonly float[] enemyDamage = { 2.0f, 2.5f, 3.0f, 3.3f, 3.6f, 3.9f, 4.2f, 5.0f, 6.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
 
         private static readonly int[] avgPlayerHealth = { 25, 45, 95, 125, 155, 185, 215, 245, 320 };
-        private static readonly float[] avgPlayerArmorReduction = { 0.72f, 0.72f, 0.57f, 0.47f, 0.4f, 0.35f, 0.3f, 0.275f, 0.25f };
+        private static readonly float[] avgPlayerArmorReduction = { 0.57f, 0.57f, 0.40f, 0.31f, 0.25f, 0.21f, 0.18f, 0.16f, 0.1f };
         private static readonly float[] avgPlayerLifeProtReduction = { 1.0f, 0.9f, 0.9f, 0.85f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
-        private static readonly int[] avgPlayerMeleeDefense = { 10, 75, 150, 200, 225, 250, 300, 350, 500 };
+        private static readonly int[] avgPlayerMeleeDefense = { 10, 75, 150, 175, 200, 225, 275, 350, 500 };
 
         private void SetSkills(int tier, float statWeight, double toughness, double physicality, double dexterity, double magic, double intelligence)
         {
@@ -347,7 +348,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewMeleeAttackSkill(int tier, float statWeight, double physicality, double dexterity)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyAttack[tier] + (enemyAttack[tier + 1] - enemyAttack[tier]) * statWeight;
             var multiplier = (physicality + dexterity) / 2;
             var tweakedSkill = (uint)(target * multiplier);
 
@@ -371,7 +372,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewUnarmedCombatSkill(int tier, float statWeight, double physicality, double dexterity)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyAttack[tier] + (enemyAttack[tier + 1] - enemyAttack[tier]) * statWeight;
             var multiplier = (physicality + dexterity) / 2;
             var tweakedSkill = (uint)(target * multiplier);
 
@@ -395,7 +396,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewDaggerSkill(int tier, float statWeight, double physicality, double dexterity)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyAttack[tier] + (enemyAttack[tier + 1] - enemyAttack[tier]) * statWeight;
             var multiplier = (physicality + dexterity) / 2;
             var tweakedSkill = (uint)(target * multiplier);
 
@@ -419,7 +420,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewStaffSkill(int tier, float statWeight, double physicality, double dexterity)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyAttack[tier] + (enemyAttack[tier + 1] - enemyAttack[tier]) * statWeight;
             var multiplier = (physicality + dexterity) / 2;
             var tweakedSkill = (uint)(target * multiplier);
 
@@ -443,7 +444,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewMissileAttackSkill(int tier, float statWeight, double dexterity)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyAttack[tier] + (enemyAttack[tier + 1] - enemyAttack[tier]) * statWeight;
             var multiplier = dexterity;
             var tweakedSkill = (uint)(target * multiplier);
 
@@ -467,7 +468,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewThrownWeaponsSkill(int tier, float statWeight, double dexterity)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyAttack[tier] + (enemyAttack[tier + 1] - enemyAttack[tier]) * statWeight;
             var multiplier = dexterity;
             var tweakedSkill = (uint)(target * multiplier);
 
@@ -491,7 +492,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewWarMagicSkill(int tier, float statWeight, double magic)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyAttack[tier] + (enemyAttack[tier + 1] - enemyAttack[tier]) * statWeight;
             var multiplier = magic;
             var tweakedSkill = (uint)(target * multiplier);
 
@@ -515,7 +516,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewLifeMagicSkill(int tier, float statWeight, double magic)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyAttack[tier] + (enemyAttack[tier + 1] - enemyAttack[tier]) * statWeight;
             var multiplier = magic;
             var tweakedSkill = (uint)(target * multiplier);
 
@@ -539,7 +540,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewPhysicalDefenseSkill(int tier, float statWeight, double toughness, double physicalityDexterity)
         {
-                var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+                var target = enemyDefense[tier] + (enemyDefense[tier + 1] - enemyDefense[tier]) * statWeight;
                 var multiplier = (toughness + physicalityDexterity) / 2;
                 var tweakedSkill = (uint)(target * multiplier);
 
@@ -563,7 +564,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewMissileDefenseSkill(int tier, float statWeight, double toughness, double dexterity)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyDefense[tier] + (enemyDefense[tier + 1] - enemyDefense[tier]) * statWeight;
             var multiplier = (toughness + dexterity) / 2;
             var tweakedSkill = (uint)(target * multiplier);
 
@@ -587,7 +588,7 @@ namespace ACE.Server.WorldObjects
 
         private uint GetNewMagicDefenseSkill(int tier, float statWeight, double toughness, double magic)
         {
-            var target = enemyAttackDefense[tier] + (enemyAttackDefense[tier + 1] - enemyAttackDefense[tier]) * statWeight;
+            var target = enemyDefense[tier] + (enemyDefense[tier + 1] - enemyDefense[tier]) * statWeight;
             var multiplier = (toughness + magic) / 2;
             var tweakedSkill = (uint)(target * multiplier);
 
