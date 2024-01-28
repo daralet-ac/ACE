@@ -401,20 +401,22 @@ namespace ACE.Server.Factories
             var ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
 
             var targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
-            var averageBaseDamageMod = targetAvgHitDamage / ammoAverageDamage;
+
+            // find average damage mod, considering ammo and critical strikes
+            var averageBaseDamageMod = targetAvgHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
 
             // get low-end and high-end max damage range
-            var damageRangePerTier = 0.75;
-            var maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + damageRangePerTier);
+            var damageRangePerTier = 0.25;
+            var maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + (1 - damageRangePerTier));
 
             // roll and assign weapon damage
-            var minimumBaseMaxDamageMod = maximumBaseMaxDamageMod * damageRangePerTier;
+            var minimumBaseMaxDamageMod = maximumBaseMaxDamageMod * (1 - damageRangePerTier);
             var diminishedRoll = (averageBaseDamageMod - minimumBaseMaxDamageMod) * GetDiminishingRoll(profile);
             var finalMaxDamageMod = minimumBaseMaxDamageMod + diminishedRoll;
             wo.DamageMod = finalMaxDamageMod;
 
             // debug
-            //var averageHitDamage = ammoMaxDamage * 0.75 * averageBaseDamageMod;
+            //var averageHitDamage = ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2)) * averageBaseDamageMod;
             //Console.WriteLine($"\nTryMutateMissileWeaponDamage()\n" +
             //    $" TargetBaseDps: {targetBaseDps}\n" +
             //    $" BaseAnimLength: {baseAnimLength}\n" +
@@ -427,7 +429,8 @@ namespace ACE.Server.Factories
             //    $" MinimumBaseMaxDamageMod: {minimumBaseMaxDamageMod}\n" +
             //    $" DiminishedRoll: {diminishedRoll}\n" +
             //    $" FinalMaxDamageMod: {finalMaxDamageMod}\n\n" +
-            //    $" Avg Hit Damage: {averageHitDamage}\n" +
+            //    $" Non-Crit average Hit Damage: {ammoAverageDamage * averageBaseDamageMod}\n" +
+            //    $" Average Hit Damage: {averageHitDamage}\n" +
             //    $" Avg DPS: {averageHitDamage * effectiveAttacksPerSecond}");
 
             // max possible damage (for workmanship)

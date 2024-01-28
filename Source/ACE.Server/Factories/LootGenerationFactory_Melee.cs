@@ -1309,20 +1309,22 @@ namespace ACE.Server.Factories
             var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
             var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0));
             var effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
-            if (wo.IsTwoHanded)
+            if (wo.IsTwoHanded || wo.W_AttackType == AttackType.DoubleStrike)
                 effectiveAttacksPerSecond *= 2;
             if (wo.W_AttackType == AttackType.MultiStrike)
                 effectiveAttacksPerSecond *= 3;
-
+            
             // target weapon hit damage
-            var avgWeaponDamage = targetBaseDps / effectiveAttacksPerSecond;
+            var targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
+
+            // find average max damage, considering variance and critical strikes
             var weaponVariance = wo.DamageVariance.Value;
-            var averageBaseMaxDamage = (avgWeaponDamage * 2) / (1.0 + (1 - weaponVariance));
+            var averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
 
             // get low-end and high-end max damage range
-            var damageRangePerTier = 0.75;
-            var maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + damageRangePerTier);
-            var minimumBaseMaxDamage = maximumBaseMaxDamage * damageRangePerTier;
+            var damageRangePerTier = 0.25;
+            var maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + (1 - damageRangePerTier));
+            var minimumBaseMaxDamage = maximumBaseMaxDamage * (1 - damageRangePerTier);
 
             // roll and assign weapon damage
             var diminishedRoll = (averageBaseMaxDamage - minimumBaseMaxDamage) * GetDiminishingRoll(profile);
@@ -1330,29 +1332,31 @@ namespace ACE.Server.Factories
             wo.Damage = (int)Math.Round(finalMaxDamage);
 
             // debug
-            var averageHitDamage = (averageBaseMaxDamage + (averageBaseMaxDamage * (1 - weaponVariance))) / 2;
+            //var averageDamage = (averageBaseMaxDamage + (averageBaseMaxDamage * (1 - weaponVariance))) / 2;
+            //var averageDamageWithCrits = (averageDamage * 0.9) + (averageBaseMaxDamage * 0.2);
             //Console.WriteLine($"\nTryMutateMeleeWeaponDamage()\n" +
             //    $" TargetBaseDps: {targetBaseDps}\n" +
             //    $" BaseAnimLength: {baseAnimLength}\n" +
             //    $" SpeedMod: {speedMod}\n" +
             //    $" AttacksPerSecond: {effectiveAttacksPerSecond}\n" +
-            //    $" TargetAvgWeaponDamage: {avgWeaponDamage}\n" +
+            //    $" TargetAvgWeaponDamage: {targetAverageHitDamage}\n" +
             //    $" WeaponVariance: {weaponVariance}\n\n" +
             //    $" AverageBaseMaxDamage: {averageBaseMaxDamage}\n" +
             //    $" MaximumBaseMaxDamage: {maximumBaseMaxDamage}\n" +
             //    $" MinimumBaseMaxDamage: {minimumBaseMaxDamage}\n" +
             //    $" DiminishedRoll: {diminishedRoll}\n" +
             //    $" FinalMaxDamage: {finalMaxDamage}\n\n" +
-            //    $" Avg Hit Damage: {averageHitDamage}\n" +
-            //    $" Avg DPS: {averageHitDamage * effectiveAttacksPerSecond}");
+            //    $" Non-Crit average Hit Damage: {averageDamage}\n" +
+            //    $" Average Hit Damage with Crits: {averageDamageWithCrits}\n" +
+            //    $" Avg DPS: {averageDamageWithCrits * effectiveAttacksPerSecond}");
 
             // max possible damage (for workmanship)
             targetBaseDps = GetWeaponBaseDps(8);
             if (wo.CleaveTargets > 1)
                 targetBaseDps *= 0.6f;
 
-            avgWeaponDamage = targetBaseDps / effectiveAttacksPerSecond;
-            averageBaseMaxDamage = (avgWeaponDamage * 2) / (1.0 + (1 - weaponVariance));
+            targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
+            averageBaseMaxDamage = (targetAverageHitDamage * 2) / (1.0 + (1 - weaponVariance));
             maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + damageRangePerTier);
             maxPossibleDamage = (int)maximumBaseMaxDamage;
         }
