@@ -8,6 +8,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
@@ -37,7 +38,6 @@ namespace ACE.Server.WorldObjects
 
         public Creature LastAttackedCreature;
         public double LastAttackedCreatureTime;
-
         public double LastPkAttackTimestamp
         {
             get => GetProperty(PropertyFloat.LastPkAttackTimestamp) ?? 0;
@@ -514,9 +514,9 @@ namespace ACE.Server.WorldObjects
             //    $"AnimMod: {animMod}");
 
             if (weapon.IsRanged)
-                return PowerLevel <= 0.5 ? PowerLevel + 0.5f : PowerLevel * 1.5f;
+                return (float)(Math.Pow(GetPowerAccuracyBar() / 2, 2) + 0.5) * animMod;
             else
-                return PowerLevel <= 0.5 ? PowerLevel + 0.5f : PowerLevel * 2.0f;
+                return (float)(Math.Pow(GetPowerAccuracyBar() / 2, 2) + 0.5) * animMod;
         }
 
         /// <summary>

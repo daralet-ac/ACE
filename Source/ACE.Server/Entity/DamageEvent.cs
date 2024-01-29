@@ -236,7 +236,7 @@ namespace ACE.Server.Entity
 
             // ---- DAMAGE RATING ----
             PowerMod = attacker.GetPowerMod(Weapon);
-
+            
             AttributeMod = attacker.GetAttributeMod(Weapon);
 
             SlayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
@@ -493,6 +493,8 @@ namespace ACE.Server.Entity
             if(!attacker.IsMonster)
                 Damage *= 1.0f;
 
+            //DpsLogging(playerAttacker);
+
             return Damage;
         }
 
@@ -563,6 +565,10 @@ namespace ACE.Server.Entity
             // Combat Focus - Smokescreen (+10% chance to evade)
             if (defenderCombatAbility == CombatAbility.Smokescreen)
                 evadeChance += 0.1f; // Gain 10% evade chance
+
+            //Console.WriteLine($"\n{attacker.Name} attack skill: {EffectiveAttackSkill}\n" +
+            //    $"{defender.Name} defense skill: {EffectiveDefenseSkill}\n" +
+            //    $"Evade Chance: {(float)Math.Min(evadeChance, 1.0f)}");
 
             return (float)Math.Min(evadeChance, 1.0f);
         }

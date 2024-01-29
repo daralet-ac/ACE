@@ -64,11 +64,15 @@ namespace ACE.Server.Network.Structure
         /// </summary>
         public uint GetDamage(WorldObject weapon)
         {
-            var baseDamage = weapon.GetProperty(PropertyInt.Damage) ?? 0;
-            var damageBonus = weapon.EnchantmentManager.GetDamageBonus();
+            var creatureWielder = weapon.Wielder as Creature;
+            var mainHandEnchantmentDamageBonus = creatureWielder != null && creatureWielder.GetEquippedWeapon() != null ? creatureWielder.GetEquippedWeapon().EnchantmentManager.GetDamageBonus() : 1;
+
+            var baseDamage =  weapon.GetProperty(PropertyInt.Damage) ?? 0;
+            var damageBonus = weapon.Wielder != null && (weapon.WeenieType == WeenieType.Ammunition && PropertyManager.GetBool("show_ammo_buff").Item) ? mainHandEnchantmentDamageBonus : weapon.EnchantmentManager.GetDamageBonus();
             var auraDamageBonus = weapon.Wielder != null && (weapon.WeenieType != WeenieType.Ammunition || PropertyManager.GetBool("show_ammo_buff").Item) ? weapon.Wielder.EnchantmentManager.GetDamageBonus() : 0;
             Enchantment_Damage = weapon.IsEnchantable ? Math.Max(auraDamageBonus + damageBonus - 1.0f, 1.0f) : damageBonus;
-            return (uint)Math.Max(0, !weapon.IsAmmoLauncher ? baseDamage * Enchantment_Damage : baseDamage);
+            
+            return (uint)Math.Max(0, Math.Ceiling(baseDamage * Enchantment_Damage));
         }
 
         /// <summary>

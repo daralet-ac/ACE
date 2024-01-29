@@ -31,6 +31,7 @@ namespace ACE.Entity.Enum
         Thrusts             = Thrust | DoubleThrust | TripleThrust | OffhandThrust | OffhandDoubleThrust | OffhandTripleThrust,
         Slashes             = Slash | DoubleSlash | TripleSlash | OffhandSlash | OffhandDoubleSlash | OffhandTripleSlash,
         Punches             = Punch | OffhandPunch,
+        ThrustSlash         = Thrust | Slash,
 
         MultiStrike         = DoubleStrike | TripleStrike
     }

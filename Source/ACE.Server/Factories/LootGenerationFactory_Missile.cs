@@ -108,13 +108,11 @@ namespace ACE.Server.Factories
             }
 
             // Damage
-            TryMutateMissileWeaponDamage(wo, roll, profile, out var maxPossibleDamageMod, out var maxPossibleDamageBonus);
+            TryMutateMissileWeaponDamage(wo, roll, profile, out var maxPossibleDamageMod);
 
             // Damage Percentile, for workmanship
             var damageModPercentile = (wo.DamageMod - 1) / maxPossibleDamageMod;
-            var damageBonusPercentile = (float)(wo.ElementalDamageBonus > 0 ? wo.ElementalDamageBonus : wo.Damage) / maxPossibleDamageBonus;
-            var damagePercentile = (float)((damageModPercentile + damageBonusPercentile) / 2);
-            //Console.WriteLine($"mod: {wo.DamageMod - 1} maxMod: {maxPossibleDamageMod} modPercentile: {damageModPercentile}  bonus: { wo.ElementalDamageBonus} maxBonus: {maxPossibleDamageBonus} bonusPercentil: {damageBonusPercentile}");
+            //Console.WriteLine($"damMod: {wo.DamageMod - 1} maxDamMod: {maxPossibleDamageMod} damModPercentile: {damageModPercentile}");
 
             // weapon speed
             if (wo.WeaponTime != null)
@@ -150,7 +148,7 @@ namespace ACE.Server.Factories
             wo.GemType = RollGemType(profile.Tier);
 
             // workmanship
-            wo.ItemWorkmanship = GetWeaponWorkmanship(wo, damagePercentile, totalModsPercentile);
+            wo.ItemWorkmanship = GetWeaponWorkmanship(wo, (float)damageModPercentile, totalModsPercentile);
 
             // burden
             MutateBurden(wo, profile, true);
@@ -378,37 +376,72 @@ namespace ACE.Server.Factories
             return LootTables.NonElementalMissileWeaponsMatrix[missileType][subType];
         }
 
-        private static void TryMutateMissileWeaponDamage(WorldObject wo, TreasureRoll roll, TreasureDeath profile, out double maxPossibleDamageMod, out int maxPossibleDamageBonus)
+        private static void TryMutateMissileWeaponDamage(WorldObject wo, TreasureRoll roll, TreasureDeath profile, out double maxPossibleDamageMod)
         {
-            var MAX_TIER = 7;
+            maxPossibleDamageMod = 0;
 
-            // Damage Mod
-            var baseDamageMod = (wo.DamageMod - 1.0f) ?? 1;
-            var damageModMultiplier = GetMissileDamageModMutationMultiplier(roll)[profile.Tier - 1];
-            var damageModAdder = (float)GetMissileDamageModMutationAdder(roll)[profile.Tier - 1] / 100;
+            if (wo.WeaponTime == null)
+            {
+                _log.Error("TryMutateMissileWeaponDamage({WeaponName}, {TreasureRoll}, {TreasureDeath}) - WeaponTime is null.", wo.Name, roll, profile);
+                return;
+            }
 
-            var maxDamageMod = baseDamageMod * damageModMultiplier + damageModAdder;
-            var minDamageMod = baseDamageMod * damageModMultiplier + (profile.Tier > 1 ? (GetMissileDamageModMutationAdder(roll)[profile.Tier - 2] - 5) / 100 : 0);
-            var diminishedDamageModRoll = (maxDamageMod - minDamageMod) * GetDiminishingRoll(profile);
+            // target dps per tier
+            var targetBaseDps = GetWeaponBaseDps(wo.Tier.Value);
 
-            wo.DamageMod = minDamageMod + diminishedDamageModRoll + 1;
-            maxPossibleDamageMod = baseDamageMod * GetMissileDamageModMutationMultiplier(roll)[7] + GetMissileDamageModMutationAdder(roll)[7] / 100;
+            // animation speed
+            var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
+            var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0));
+            var effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
 
-            // Damage Bonus
-            var baseDamageBonus = (wo.ElementalDamageBonus) ?? 0;
-            var damageBonusMultiplier = GetMissileDamageBonusMutationMultiplier(roll)[profile.Tier - 1];
-            var damageBonusAdder = (float)GetMissileDamageBonusMutationAdder(roll)[profile.Tier - 1];
+            // target weapon hit damage
+            var ammoMaxDamage = GetAmmoBaseMaxDamage(wo.Tier.Value);
+            var weaponVariance = 0.5f;
+            var ammoMinDamage = ammoMaxDamage * weaponVariance;
+            var ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
 
-            var maxDamageBonus = baseDamageBonus * damageBonusMultiplier + damageBonusAdder;
-            var minDamageBonus = (baseDamageBonus * damageBonusMultiplier + damageBonusAdder) * 0.5f;
-            var diminishedDamageBonusRoll = (maxDamageBonus - minDamageBonus) * GetDiminishingRoll(profile);
+            var targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
 
-            if (wo.W_DamageType == DamageType.Undef)
-                wo.Damage = (int)((minDamageBonus + diminishedDamageBonusRoll) / 2);
-            else
-                wo.ElementalDamageBonus = (int)(minDamageBonus + diminishedDamageBonusRoll);
+            // find average damage mod, considering ammo and critical strikes
+            var averageBaseDamageMod = targetAvgHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
 
-            maxPossibleDamageBonus = (int)(baseDamageBonus * GetMissileDamageBonusMutationMultiplier(roll)[MAX_TIER] + GetMissileDamageBonusMutationAdder(roll)[MAX_TIER]);
+            // get low-end and high-end max damage range
+            var damageRangePerTier = 0.25;
+            var maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + (1 - damageRangePerTier));
+
+            // roll and assign weapon damage
+            var minimumBaseMaxDamageMod = maximumBaseMaxDamageMod * (1 - damageRangePerTier);
+            var diminishedRoll = (averageBaseDamageMod - minimumBaseMaxDamageMod) * GetDiminishingRoll(profile);
+            var finalMaxDamageMod = minimumBaseMaxDamageMod + diminishedRoll;
+            wo.DamageMod = finalMaxDamageMod;
+
+            // debug
+            //var averageHitDamage = ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2)) * averageBaseDamageMod;
+            //Console.WriteLine($"\nTryMutateMissileWeaponDamage()\n" +
+            //    $" TargetBaseDps: {targetBaseDps}\n" +
+            //    $" BaseAnimLength: {baseAnimLength}\n" +
+            //    $" SpeedMod: {speedMod}\n" +
+            //    $" AttacksPerSecond: {effectiveAttacksPerSecond}\n" +
+            //    $" TargetAvgHitDamage: {targetAvgHitDamage}\n" +
+            //    $" AmmoMaxDamage: {ammoMaxDamage} AmmoAvgDamage: {ammoAverageDamage} WeaponVariance: {weaponVariance}\n\n" +
+            //    $" AverageBaseMaxDamageMod: {averageBaseDamageMod}\n" +
+            //    $" MaximumBaseMaxDamageMod: {maximumBaseMaxDamageMod}\n" +
+            //    $" MinimumBaseMaxDamageMod: {minimumBaseMaxDamageMod}\n" +
+            //    $" DiminishedRoll: {diminishedRoll}\n" +
+            //    $" FinalMaxDamageMod: {finalMaxDamageMod}\n\n" +
+            //    $" Non-Crit average Hit Damage: {ammoAverageDamage * averageBaseDamageMod}\n" +
+            //    $" Average Hit Damage: {averageHitDamage}\n" +
+            //    $" Avg DPS: {averageHitDamage * effectiveAttacksPerSecond}");
+
+            // max possible damage (for workmanship)
+            targetBaseDps = GetWeaponBaseDps(8);
+            ammoMaxDamage = GetAmmoBaseMaxDamage(wo.Tier.Value);
+            ammoMinDamage = ammoMaxDamage * weaponVariance;
+            ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
+            targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
+            averageBaseDamageMod = targetAvgHitDamage / ammoAverageDamage;
+            maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + damageRangePerTier);
+            maxPossibleDamageMod = (int)maximumBaseMaxDamageMod;
         }
 
         /// <summary>
@@ -472,6 +505,22 @@ namespace ACE.Server.Factories
             wo.W_DamageType = (DamageType)elementType;
             wo.MaterialType = (MaterialType)materialType;
             wo.UiEffects = (UiEffects)uiEffect;
+        }
+
+        private static int GetAmmoBaseMaxDamage(int tier)
+        {
+            switch(tier)
+            {
+                default:
+                case 1: return 8;
+                case 2: return 12;
+                case 3: return 15;
+                case 4: return 18;
+                case 5: return 21;
+                case 6: return 24;
+                case 7: return 27;
+                case 8: return 30;
+            }
         }
     }
 }
