@@ -43,6 +43,7 @@ namespace ACE.Server.Network.Managers
 
                 listeners[(i * 2) + 0].Start();
                 listeners[(i * 2) + 1].Start();
+                listeners[(i * 2) + 0].Start();
             }
         }
 
