@@ -24,12 +24,6 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.swordlongfire,      1.0f ),
             ( WeenieClassName.swordlongfrost,     1.0f ),
 
-            ( WeenieClassName.swordbroad,         4.0f ),
-            ( WeenieClassName.swordbroadacid,     1.0f ),
-            ( WeenieClassName.swordbroadelectric, 1.0f ),
-            ( WeenieClassName.swordbroadfire,     1.0f ),
-            ( WeenieClassName.swordbroadfrost,    1.0f ),
-
             ( WeenieClassName.swordrapier,        4.0f ),
 
             ( WeenieClassName.ace40618_spadone,          4.0f ), // Greatsword 
@@ -63,12 +57,6 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.swordlongfire,      1.0f ),
             ( WeenieClassName.swordlongfrost,     1.0f ),
 
-            ( WeenieClassName.swordbroad,         4.0f ),
-            ( WeenieClassName.swordbroadacid,     1.0f ),
-            ( WeenieClassName.swordbroadelectric, 1.0f ),
-            ( WeenieClassName.swordbroadfire,     1.0f ),
-            ( WeenieClassName.swordbroadfrost,    1.0f ),
-
             ( WeenieClassName.swordrapier,        4.0f ),
 
             ( WeenieClassName.ace40618_spadone,          4.0f ), // Greatsword 
@@ -82,7 +70,6 @@ namespace ACE.Server.Factories.Tables.Wcids
         {
             ( WeenieClassName.simi,                 3.0f ),
             ( WeenieClassName.kaskara,              0.5f ),
-            ( WeenieClassName.shamshir,             0.5f ),
             ( WeenieClassName.takuba,               0.5f ),
             ( WeenieClassName.scimitar,             0.5f ),
 
@@ -110,12 +97,6 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.scimitarfire,      1.0f ),
             ( WeenieClassName.scimitarfrost,     1.0f ),
 
-            ( WeenieClassName.shamshir,         4.0f ),
-            ( WeenieClassName.shamshiracid,     1.0f ),
-            ( WeenieClassName.shamshirelectric, 1.0f ),
-            ( WeenieClassName.shamshirfire,     1.0f ),
-            ( WeenieClassName.shamshirfrost,    1.0f ),
-
             ( WeenieClassName.takuba,           4.0f ),
             ( WeenieClassName.takubaacid,       1.0f ),
             ( WeenieClassName.takubaelectric,   1.0f ),
@@ -134,7 +115,6 @@ namespace ACE.Server.Factories.Tables.Wcids
         private static ChanceTable<WeenieClassName> SwordWcids_Sho_T1 = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
             ( WeenieClassName.yaoji,                3.0f ),
-            ( WeenieClassName.ken,                  0.5f ),
             ( WeenieClassName.tachi,                0.5f ),
 
             ( WeenieClassName.swordrapier,          0.5f ),
@@ -148,12 +128,6 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.yaojielectric,     1.0f ),
             ( WeenieClassName.yaojifire,         1.0f ),
             ( WeenieClassName.yaojifrost,        1.0f ),
-
-            ( WeenieClassName.ken,         4.0f ),
-            ( WeenieClassName.kenacid,     1.0f ),
-            ( WeenieClassName.kenelectric, 1.0f ),
-            ( WeenieClassName.kenfire,     1.0f ),
-            ( WeenieClassName.kenfrost,    1.0f ),
 
             ( WeenieClassName.tachi,           4.0f ),
             ( WeenieClassName.tachiacid,       1.0f ),

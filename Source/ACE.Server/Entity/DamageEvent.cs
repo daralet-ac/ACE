@@ -1075,5 +1075,25 @@ namespace ACE.Server.Entity
             }
             return false;
         }
+
+        private void DpsLogging(Player playerAttacker)
+        {
+            var currentTime = Time.GetUnixTime();
+            var timeSinceLastAttack = currentTime - playerAttacker.LastAttackedCreatureTime;
+            Console.WriteLine($"\nCurrentTime: {currentTime}, LastAttackTime: {playerAttacker.LastAttackedCreatureTime} TimeBetweenAttacks: {timeSinceLastAttack}");
+            playerAttacker.LastAttackedCreatureTime = currentTime;
+
+            var averageDamage = (BaseDamageMod.MaxDamage + BaseDamageMod.MinDamage) / 2;
+            if (Weapon.IsAmmoLauncher) averageDamage = 7.5f * (float)(Weapon.DamageMod ?? 1.0);
+
+            var powModDamage = averageDamage * PowerMod * AttributeMod;
+            var dps = averageDamage / timeSinceLastAttack;
+            var powerModDps = dps * PowerMod;
+
+            Console.WriteLine($"TimeSinceLastAttack: {timeSinceLastAttack}\n" +
+                $"BaseDamageMod.MaxDamage: {BaseDamageMod.MaxDamage}, BaseDamageMod.MinDamage: {BaseDamageMod.MinDamage}, LiveBaseDamage: {BaseDamage}\n" +
+                $"AverageDamage: {averageDamage}, DPS: {dps}\n " +
+                $"PowModDamage: {powModDamage}, PowDPS: {powerModDps}");
+        }
     }
 }
