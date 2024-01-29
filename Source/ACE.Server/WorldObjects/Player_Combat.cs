@@ -484,23 +484,30 @@ namespace ACE.Server.WorldObjects
                 return 1.0f;
 
             var currentAnimLength = LastAttackAnimationLength;
-            
-            if (weapon.IsTwoHanded || 
-                weapon.W_AttackType == AttackType.DoubleStrike || 
+            var multistrike = 1;
+
+            if (weapon.IsTwoHanded ||
+                weapon.W_AttackType == AttackType.DoubleStrike ||
                 weapon.W_AttackType == AttackType.DoubleSlash ||
                 weapon.W_AttackType == AttackType.DoubleThrust ||
                 weapon.W_AttackType == AttackType.OffhandDoubleSlash ||
                 weapon.W_AttackType == AttackType.OffhandDoubleThrust)
+            {
                 currentAnimLength /= 2;
-            if (weapon.W_AttackType == AttackType.MultiStrike || 
+                multistrike = 2;
+            }
+            if (weapon.W_AttackType == AttackType.MultiStrike ||
                 weapon.W_AttackType == AttackType.TripleStrike ||
                 weapon.W_AttackType == AttackType.TripleSlash ||
                 weapon.W_AttackType == AttackType.TripleThrust ||
                 weapon.W_AttackType == AttackType.OffhandTripleSlash ||
                 weapon.W_AttackType == AttackType.OffhandTripleThrust)
+            {
                 currentAnimLength /= 3;
+                multistrike = 3;
+            }
 
-            var animMod = (float)((currentAnimLength + GetPowerAccuracyBar()) / currentAnimLength);
+            var animMod = (float)((currentAnimLength + GetPowerAccuracyBar() / multistrike) / currentAnimLength);
 
             //Console.WriteLine($"\n--------- {weapon.Name} {Math.Round(GetPowerAccuracyBar() * 100, 0)}% ---------\n" +
             //    $"CurrentAnimLength: {currentAnimLength}\n" +

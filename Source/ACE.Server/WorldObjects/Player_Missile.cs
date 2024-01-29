@@ -236,7 +236,7 @@ namespace ACE.Server.WorldObjects
             var linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
             //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
 
-            LastAttackAnimationLength = reloadTime + linkTime;
+            LastAttackAnimationLength = reloadTime + linkTime + launchTime;
 
             // launch projectile
             actionChain.AddAction(this, () =>
@@ -250,7 +250,8 @@ namespace ACE.Server.WorldObjects
                 // stamina usage
                 // TODO: ensure enough stamina for attack
                 // TODO: verify formulas - double/triple cost for bow/xbow?
-                var missileLauncherAnimLength = reloadTime + linkTime;
+                var missileLauncherAnimLength = (float)LastAttackAnimationLength;
+                //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime}, Link: {linkTime}, Total: {missileLauncherAnimLength}");
                 var staminaCost = GetAttackStamina(GetAccuracyRange(), missileLauncherAnimLength);
                 UpdateVitalDelta(Stamina, -staminaCost);
 

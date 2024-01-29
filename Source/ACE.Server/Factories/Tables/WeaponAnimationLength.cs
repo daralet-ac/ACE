@@ -37,9 +37,9 @@ namespace ACE.Server.Factories.Tables
 
         private static readonly Dictionary<Skill, float> MissileAnimLength = new Dictionary<Skill, float>()
         {
-            { Skill.Bow,                        2.065f },
-            { Skill.Crossbow,                   2.952f },
-            { Skill.ThrownWeapon,               3.089f }
+            { Skill.Bow,                        1.057f },
+            { Skill.Crossbow,                   1.59f },
+            { Skill.ThrownWeapon,               1.85f }
         };
 
         public static float GetAnimLength(WorldObject weapon)

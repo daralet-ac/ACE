@@ -1086,7 +1086,7 @@ namespace ACE.Server.Entity
         {
             var currentTime = Time.GetUnixTime();
             var timeSinceLastAttack = currentTime - playerAttacker.LastAttackedCreatureTime;
-            Console.WriteLine($"\nCurrentTime: {currentTime}, LastAttackTime: {playerAttacker.LastAttackedCreatureTime}");
+            Console.WriteLine($"\nCurrentTime: {currentTime}, LastAttackTime: {playerAttacker.LastAttackedCreatureTime} TimeBetweenAttacks: {timeSinceLastAttack}");
             playerAttacker.LastAttackedCreatureTime = currentTime;
 
             var averageDamage = (BaseDamageMod.MaxDamage + BaseDamageMod.MinDamage) / 2;
