@@ -41,7 +41,6 @@ namespace ACE.Server.Network.Managers
                 listeners[(i * 2) + 1] = new ConnectionListener(hosts[i], ConfigManager.Config.Server.Network.Port + 1);
                 _log.Information($"Binding ConnectionListener to {hosts[i]}:{ConfigManager.Config.Server.Network.Port + 1}");
 
-                listeners[(i * 2) + 0].Start();
                 listeners[(i * 2) + 1].Start();
                 listeners[(i * 2) + 0].Start();
             }
