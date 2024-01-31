@@ -1302,7 +1302,7 @@ namespace ACE.Server.Factories
 
             // target dps per tier
             var targetBaseDps = GetWeaponBaseDps(wo.Tier ?? 1);
-            if (wo.CleaveTargets > 1)
+            if (wo.CleaveTargets > 0)
                 targetBaseDps *= 0.6f;
 
             // animation speed
