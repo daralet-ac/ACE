@@ -45,8 +45,9 @@ namespace ACE.Server.Factories.Tables
         public static float GetAnimLength(WorldObject weapon)
         {
             float valueMod;
-
-            if (weapon != null && !weapon.IsAmmoLauncher && MeleeAnimLength.TryGetValue(weapon.W_AttackType, out valueMod))
+            if (weapon.IsTwoHanded)
+                return 1.85f;
+            else if (weapon != null && !weapon.IsAmmoLauncher && MeleeAnimLength.TryGetValue(weapon.W_AttackType, out valueMod))
                 return valueMod;
             else if (weapon != null && weapon.IsAmmoLauncher && MissileAnimLength.TryGetValue(weapon.WeaponSkill, out valueMod))
                 return valueMod;
