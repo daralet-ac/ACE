@@ -954,7 +954,7 @@ namespace ACE.Server.WorldObjects
 
             var weightClassPenalty = (float)(1 + GetArmorResourcePenalty());
             
-            var baseCost = StaminaTable.GetStaminaCost(weaponTier, dualWieldStaminaBonus, attackAnimLength, powerAccuracyLevel, weaponSpeed, weightClassPenalty);
+            var baseCost = StaminaTable.GetStaminaCost(weaponTier, attackAnimLength, powerAccuracyLevel, weightClassPenalty);
 
             // COMBAT ABILITY - Power Shot
             if (combatAbility == CombatAbility.Powershot && AccuracyLevel == 1.0f)

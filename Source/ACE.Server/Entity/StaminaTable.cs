@@ -44,7 +44,7 @@ namespace ACE.Server.Entity
             Costs.Add(PowerAccuracy.High, highCosts);
         }
 
-        public static float GetStaminaCost(int weaponTier, bool dualWieldStaminaBonus, float animLength = 3.0f, float powerAccuracyLevel = 0.0f, int weaponSpeed = 0, float? weightClassPenalty = null)
+        public static float GetStaminaCost(int weaponTier, float animLength = 3.0f, float powerAccuracyLevel = 0.0f, float? weightClassPenalty = null)
         {
             // Weapon tier and base cost
             weaponTier = Math.Clamp(weaponTier - 1, 0, 7);
@@ -54,8 +54,8 @@ namespace ACE.Server.Entity
             var powerLevelMod = (float)Math.Pow(powerAccuracyLevel, 2);
 
             // WeaponAnimationLength mod
-            var maxAnimLength = 3.0f;
-            var animLengthMod = (animLength + powerAccuracyLevel) / maxAnimLength;
+            var divisor = 4.0f;
+            var animLengthMod = (animLength + powerAccuracyLevel) / (divisor + powerAccuracyLevel);
 
             // Weight class resource penalty mod
             var weightClassPenaltyMod = weightClassPenalty ?? 1.0f;
@@ -63,13 +63,14 @@ namespace ACE.Server.Entity
             // Final calculation
             var finalCost = baseCost * powerLevelMod * animLengthMod * weightClassPenaltyMod;
 
-            //Console.WriteLine($"GetStaminaCost - Final Cost: {finalCost}\n" +
+            //Console.WriteLine($"GetStaminaCost()\n" +
             //    $" -Base Cost: {baseCost}\n" +
             //    $" -WeaponTier: {weaponTier}\n" +
             //    $" -WeightClassPenalty: {weightClassPenalty}\n" +
             //    $" -PowerLevel: {powerAccuracyLevel} PowerLevelMod: {powerLevelMod}\n" +
             //    $" -WeaponAnim: {animLength} AnimLengthMod: {animLengthMod}\n" +
-            //    $" -DualWield: {dualWieldSpecMod}");
+            //    $" -Final Cost: {finalCost}\n\n" +
+            //    $" Cost per min: {60 / (animLength + powerAccuracyLevel) * finalCost}");
 
             return finalCost;
         }
