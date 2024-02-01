@@ -146,6 +146,9 @@ namespace ACE.Server.WorldObjects
                 if (creature is CombatPet && (player != null || this is CombatPet))
                     continue;
 
+                if (creature.Translucency == 1.0 || creature.Visibility == true)
+                    continue;
+
                 // no objects in cleave range
                 var cylDist = GetCylinderDistance(creature);
                 if (cylDist > CleaveCylRange)
