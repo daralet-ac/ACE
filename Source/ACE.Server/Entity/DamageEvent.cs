@@ -1101,6 +1101,7 @@ namespace ACE.Server.Entity
 
             Console.WriteLine($"TimeSinceLastAttack: {timeSinceLastAttack}\n" +
                 $"BaseDamageMod.MaxDamage: {BaseDamageMod.MaxDamage}, BaseDamageMod.MinDamage: {BaseDamageMod.MinDamage}, LiveBaseDamage: {BaseDamage}\n" +
+                $"PowerMod: {PowerMod}, AttributeMod: {AttributeMod}\n" +
                 $"AverageDamage: {averageDamage}, DPS: {dps}\n " +
                 $"PowModDamage: {powModDamage}, PowDPS: {powerModDps}");
         }
