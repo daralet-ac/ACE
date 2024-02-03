@@ -11,7 +11,7 @@ namespace ACE.Server.WorldObjects
         public static readonly float DefaultMod = 0.011f;
 
         // bows and crossbows
-        public static readonly float BowMod = 0.008f;
+        public static readonly float BowMod = 0.011f;
 
         // magic
         public static readonly float SpellMod = 1000.0f;
