@@ -39,17 +39,23 @@ namespace ACE.Server.Factories.Tables
         {
             { Skill.Bow,                        1.057f },
             { Skill.Crossbow,                   1.59f },
-            { Skill.ThrownWeapon,               1.85f }
+            { Skill.ThrownWeapon,               1.85f } // Atlatl
         };
 
         public static float GetAnimLength(WorldObject weapon)
         {
+            if (weapon == null)
+                return 1.0f;
+
             float valueMod;
+
             if (weapon.IsTwoHanded)
                 return 1.85f;
-            else if (weapon != null && !weapon.IsAmmoLauncher && MeleeAnimLength.TryGetValue(weapon.W_AttackType, out valueMod))
+            else if (!weapon.IsAmmoLauncher && weapon.WeaponSkill == Skill.ThrownWeapon)
+                return 2.33f;
+            else if (!weapon.IsAmmoLauncher  && MeleeAnimLength.TryGetValue(weapon.W_AttackType, out valueMod))
                 return valueMod;
-            else if (weapon != null && weapon.IsAmmoLauncher && MissileAnimLength.TryGetValue(weapon.WeaponSkill, out valueMod))
+            else if (weapon.IsAmmoLauncher && MissileAnimLength.TryGetValue(weapon.WeaponSkill, out valueMod))
                 return valueMod;
             else
                 return 1.0f;    // default?

@@ -26,10 +26,15 @@ namespace ACE.Server.Factories
             int wieldDifficulty = RollWieldDifficulty(profile.Tier, TreasureWeaponType.MissileWeapon);
 
             // Changing based on wield, not tier. Refactored, less code, best results.  HarliQ 11/18/19
-            if (wieldDifficulty < 315)
+            if (wieldDifficulty < 250) // under t5
                 weaponWeenie = GetNonElementalMissileWeapon();
             else
-                weaponWeenie = GetElementalMissileWeapon();
+            {
+                if (ThreadSafeRandom.Next(0, 1) == 0)
+                    weaponWeenie = GetElementalMissileWeapon();
+                else
+                    weaponWeenie = GetNonElementalMissileWeapon();
+            }
 
             WorldObject wo = WorldObjectFactory.CreateNewWorldObject((uint)weaponWeenie);
 
@@ -76,27 +81,20 @@ namespace ACE.Server.Factories
             }
 
             // Add element/material to weapons above starter tier:
-            // Longbow, Yumi, Nayin, Shortbow
-            // Shouyumi, War Bow, Yag
-            // Arbalest, Heavy Crossbow, Light Crossbow
-            // Atlatl, Royal Atlatl
+            // Longbow, Shortbow, Nayin, Shouyumi, Yag, Yumi, Warbow, Heavy Xbow, Light Xbow, Atlatl, Royal Atlatl
             if (wo.Tier > 1)
             {
-                if (wo.WeenieClassId == 306 || wo.WeenieClassId == 363 || wo.WeenieClassId == 334 || wo.WeenieClassId == 307 ||
-                    wo.WeenieClassId == 341 || wo.WeenieClassId == 30625 || wo.WeenieClassId == 360 ||
-                    wo.WeenieClassId == 30616 || wo.WeenieClassId == 311 || wo.WeenieClassId == 312 ||
-                    wo.WeenieClassId == 12463 || wo.WeenieClassId == 20640)
-                {
+                uint[] nonElementalMissileWeapons = { 306, 307, 334, 341, 360, 363, 30625, 311, 312, 12463, 20640 }; 
+                if (nonElementalMissileWeapons.Contains(wo.WeenieClassId))
                     RollMissileElement(profile, wo);
-                }
-                else
-                {
-                    var materialType = GetMaterialType(wo, profile.Tier);
-                    if (materialType > 0)
-                        wo.MaterialType = materialType;
-                }
+
+                var material = GetMaterialType(wo, profile.Tier);
+                if (material > 0)
+                    wo.MaterialType = material;
 
                 MutateColor(wo);
+
+                wo.Name = wo.NameWithMaterialAndElement;
             }
 
             // Wield Difficulty
@@ -391,15 +389,25 @@ namespace ACE.Server.Factories
 
             // animation speed
             var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
-            var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0));
-            var effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
+            float reloadAnimLength;
+
+            if (wo.WeaponSkill == Skill.Bow)
+                reloadAnimLength = 0.32f;
+            else if (wo.WeaponSkill == Skill.Crossbow)
+                reloadAnimLength = 0.26f;
+            else
+                reloadAnimLength = 0.73f; // atlatl
+
+            int[] avgQuickPerTier = { 45, 65, 93, 118, 140, 160, 180, 195 };
+            var quick = avgQuickPerTier[profile.Tier - 1];
+            var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0)) + quick / 600;
+            var effectiveAttacksPerSecond = 1 / (baseAnimLength - reloadAnimLength + (reloadAnimLength / speedMod));
 
             // target weapon hit damage
-            var ammoMaxDamage = GetAmmoBaseMaxDamage(wo.Tier.Value);
-            var weaponVariance = 0.5f;
+            var ammoMaxDamage = GetAmmoBaseMaxDamage(wo.WeaponSkill, wo.Tier.Value);
+            var weaponVariance = GetAmmoVariance(wo.WeaponSkill);
             var ammoMinDamage = ammoMaxDamage * weaponVariance;
             var ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
-
             var targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
 
             // find average damage mod, considering ammo and critical strikes
@@ -435,7 +443,7 @@ namespace ACE.Server.Factories
 
             // max possible damage (for workmanship)
             targetBaseDps = GetWeaponBaseDps(8);
-            ammoMaxDamage = GetAmmoBaseMaxDamage(wo.Tier.Value);
+            ammoMaxDamage = GetAmmoBaseMaxDamage(wo.WeaponSkill, 8);
             ammoMinDamage = ammoMaxDamage * weaponVariance;
             ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
             targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
@@ -449,77 +457,109 @@ namespace ACE.Server.Factories
         /// </summary>
         private static void RollMissileElement(TreasureDeath profile, WorldObject wo)
         {
-            var noElement = ThreadSafeRandom.Next(0, 3) == 0 ? true : false;
             var roll = ThreadSafeRandom.Next(1, 7);
             var elementType = 0;
-            var materialType = 0;
+            //var materialType = 0;
             var uiEffect = 0;
 
-            if (noElement)
-            {
-                var material = GetMaterialType(wo, profile.Tier);
-                if (material > 0)
-                    wo.MaterialType = material;
-                wo.UiEffects = UiEffects.Undef;
-
-                return;
-            }
             switch (roll)
             {
                 case 1:
                     elementType = 0x1; // slash
-                    materialType = 0x0000001A; // imperial topaz
+                    //materialType = 0x0000001A; // imperial topaz
                     uiEffect = 0x0400;
                     break;
                 case 2:
                     elementType = 0x2; // pierce
-                    materialType = 0x0000000F; // black garnet
+                    //materialType = 0x0000000F; // black garnet
                     uiEffect = 0x0800;
                     break;
                 case 3:
                     elementType = 0x4; // bludge
-                    materialType = 0x0000002F; // white saphhire
+                    //materialType = 0x0000002F; // white sapphire
                     uiEffect = 0x0200;
                     break;
                 case 4:
                     elementType = 0x8; // cold
-                    materialType = 0x0000000D; // aquamarine
+                    //materialType = 0x0000000D; // aquamarine
                     uiEffect = 0x0080;
                     break;
                 case 5:
                     elementType = 0x10; // fire
-                    materialType = 0x00000023; // red garnet
+                    //materialType = 0x00000023; // red garnet
                     uiEffect = 0x0020;
                     break;
                 case 6:
                     elementType = 0x20; // acid
-                    materialType = 0x00000015; // emerald
+                    //materialType = 0x00000015; // emerald
                     uiEffect = 0x0100;
                     break;
                 case 7:
                     elementType = 0x40; // electric
-                    materialType = 0x0000001B; // jet
+                    //materialType = 0x0000001B; // jet
                     uiEffect = 0x0040;
                     break;
             }
             wo.W_DamageType = (DamageType)elementType;
-            wo.MaterialType = (MaterialType)materialType;
+            //wo.MaterialType = (MaterialType)materialType;
             wo.UiEffects = (UiEffects)uiEffect;
         }
 
-        private static int GetAmmoBaseMaxDamage(int tier)
+        private static int GetAmmoBaseMaxDamage(Skill weaponSkill, int tier)
         {
-            switch(tier)
+            switch (weaponSkill)
             {
                 default:
-                case 1: return 8;
-                case 2: return 12;
-                case 3: return 15;
-                case 4: return 18;
-                case 5: return 21;
-                case 6: return 24;
-                case 7: return 27;
-                case 8: return 30;
+                case Skill.Bow:
+                    switch (tier)
+                    {
+                        default:
+                        case 1: return 6;
+                        case 2: return 8;
+                        case 3: return 10;
+                        case 4: return 12;
+                        case 5: return 14;
+                        case 6: return 16;
+                        case 7: return 18;
+                        case 8: return 20;
+                    }
+                case Skill.Crossbow:
+                    switch (tier)
+                    {
+                        default:
+                        case 1: return 9;
+                        case 2: return 12;
+                        case 3: return 15;
+                        case 4: return 18;
+                        case 5: return 21;
+                        case 6: return 24;
+                        case 7: return 27;
+                        case 8: return 30;
+                    }
+                case Skill.ThrownWeapon:
+                    switch (tier)
+                    {
+                        default:
+                        case 1: return 12;
+                        case 2: return 16;
+                        case 3: return 20;
+                        case 4: return 24;
+                        case 5: return 28;
+                        case 6: return 32;
+                        case 7: return 36;
+                        case 8: return 40;
+                    }
+            }
+        }
+
+        private static float GetAmmoVariance(Skill weaponSkill)
+        {
+            switch (weaponSkill)
+            {
+                default:
+                case Skill.Bow: return 0.6f;
+                case Skill.Crossbow: return 0.4f;
+                case Skill.MissileWeapons: return 0.75f;
             }
         }
     }

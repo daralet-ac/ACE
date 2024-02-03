@@ -1307,13 +1307,22 @@ namespace ACE.Server.Factories
 
             // animation speed
             var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
-            var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0));
+
+            int[] avgQuickPerTier = { 45, 65, 93, 118, 140, 160, 180, 195 };
+            var quick = avgQuickPerTier[profile.Tier - 1];
+            var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0)) + quick / 600;
             var effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
+
             if (wo.IsTwoHanded || wo.W_AttackType == AttackType.DoubleStrike)
                 effectiveAttacksPerSecond *= 2;
-            if (wo.W_AttackType == AttackType.MultiStrike)
+            else if (wo.W_AttackType == AttackType.TripleStrike)
                 effectiveAttacksPerSecond *= 3;
-            
+            else if (wo.W_WeaponType == WeaponType.Thrown)
+            {
+                var reloadLength = 0.9777778f;
+                effectiveAttacksPerSecond = 1 / (baseAnimLength - reloadLength + (reloadLength * speedMod));
+            }
+
             // target weapon hit damage
             var targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
 

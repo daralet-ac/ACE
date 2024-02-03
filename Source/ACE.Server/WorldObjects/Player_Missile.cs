@@ -227,17 +227,6 @@ namespace ACE.Server.WorldObjects
 
             var launchTime = EnqueueMotionPersist(actionChain, aimLevel);
 
-            // reload animation
-            var animSpeed = GetAnimSpeed();
-            var reloadTime = EnqueueMotionPersist(actionChain, stance, MotionCommand.Reload, animSpeed);
-
-            // reset for next projectile
-            EnqueueMotionPersist(actionChain, stance, MotionCommand.Ready);
-            var linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
-            //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
-
-            LastAttackAnimationLength = reloadTime + linkTime + launchTime;
-
             // launch projectile
             actionChain.AddAction(this, () =>
             {
@@ -250,19 +239,7 @@ namespace ACE.Server.WorldObjects
                 // stamina usage
                 // TODO: ensure enough stamina for attack
                 // TODO: verify formulas - double/triple cost for bow/xbow?
-                var missileLauncherAnimLength = (float)LastAttackAnimationLength;
-                //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime}, Link: {linkTime}, Total: {missileLauncherAnimLength}");
-                var staminaCost = GetAttackStamina(GetAccuracyRange(), missileLauncherAnimLength);
-                UpdateVitalDelta(Stamina, -staminaCost);
-
-                var combatAbility = CombatAbility.None;
-                var combatFocus = GetEquippedCombatFocus();
-                if (combatFocus != null)
-                    combatAbility = combatFocus.GetCombatAbility();
-
-                // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
-                if (combatAbility == CombatAbility.EnchantedWeapon)
-                    UpdateVitalDelta(Mana, -staminaCost);
+                
 
                 var projectile = LaunchProjectile(launcher, ammo, target, origin, orientation, velocity);
                 UpdateAmmoAfterLaunch(ammo);
@@ -282,6 +259,30 @@ namespace ACE.Server.WorldObjects
                 actionChain.EnqueueChain();
                 return;
             }
+
+            // reload animation
+            var animSpeed = GetAnimSpeed();
+            var reloadTime = EnqueueMotionPersist(actionChain, stance, MotionCommand.Reload, animSpeed);
+
+            // reset for next projectile
+            EnqueueMotionPersist(actionChain, stance, MotionCommand.Ready);
+            var linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
+            //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
+
+            LastAttackAnimationLength = launchTime + reloadTime + linkTime;
+            //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}");
+
+            var staminaCost = GetAttackStamina(GetAccuracyRange(), (float)LastAttackAnimationLength);
+            UpdateVitalDelta(Stamina, -staminaCost);
+
+            var combatAbility = CombatAbility.None;
+            var combatFocus = GetEquippedCombatFocus();
+            if (combatFocus != null)
+                combatAbility = combatFocus.GetCombatAbility();
+
+            // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
+            if (combatAbility == CombatAbility.EnchantedWeapon)
+                UpdateVitalDelta(Mana, -staminaCost);
 
             actionChain.AddAction(this, () =>
             {
