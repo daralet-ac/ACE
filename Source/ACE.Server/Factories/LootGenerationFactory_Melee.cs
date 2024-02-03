@@ -1309,7 +1309,7 @@ namespace ACE.Server.Factories
             var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
 
             int[] avgQuickPerTier = { 45, 65, 93, 118, 140, 160, 180, 195 };
-            var quick = avgQuickPerTier[profile.Tier - 1];
+            var quick = (float)avgQuickPerTier[profile.Tier - 1];
             var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0)) + quick / 600;
             var effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
 

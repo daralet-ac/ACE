@@ -399,14 +399,14 @@ namespace ACE.Server.Factories
                 reloadAnimLength = 0.73f; // atlatl
 
             int[] avgQuickPerTier = { 45, 65, 93, 118, 140, 160, 180, 195 };
-            var quick = avgQuickPerTier[profile.Tier - 1];
-            var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0)) + quick / 600;
+            var quick = (float)avgQuickPerTier[profile.Tier - 1];
+            var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0)) + (quick / 600);
             var effectiveAttacksPerSecond = 1 / (baseAnimLength - reloadAnimLength + (reloadAnimLength / speedMod));
 
             // target weapon hit damage
             var ammoMaxDamage = GetAmmoBaseMaxDamage(wo.WeaponSkill, wo.Tier.Value);
             var weaponVariance = GetAmmoVariance(wo.WeaponSkill);
-            var ammoMinDamage = ammoMaxDamage * weaponVariance;
+            var ammoMinDamage = ammoMaxDamage * (1 - weaponVariance);
             var ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
             var targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
 
@@ -428,7 +428,9 @@ namespace ACE.Server.Factories
             //Console.WriteLine($"\nTryMutateMissileWeaponDamage()\n" +
             //    $" TargetBaseDps: {targetBaseDps}\n" +
             //    $" BaseAnimLength: {baseAnimLength}\n" +
-            //    $" SpeedMod: {speedMod}\n" +
+            //    $" WeaponTime: {wo.WeaponTime.Value}\n" +
+            //    $" Quick: {quick}\n" +
+            //    $" SpeedMod: {speedMod} FullFormula: 0.8f + ({1 - (wo.WeaponTime.Value /100.0)}) + ({quick / 600})\n" +
             //    $" AttacksPerSecond: {effectiveAttacksPerSecond}\n" +
             //    $" TargetAvgHitDamage: {targetAvgHitDamage}\n" +
             //    $" AmmoMaxDamage: {ammoMaxDamage} AmmoAvgDamage: {ammoAverageDamage} WeaponVariance: {weaponVariance}\n\n" +
