@@ -49,11 +49,11 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.shurikenfrost,             1.0f ),
             ( WeenieClassName.shurikenelectric,          1.0f ),
 
-            ( WeenieClassName.djarid,                    4.0f ),
-            ( WeenieClassName.djaridacid,                1.0f ),
-            ( WeenieClassName.djaridfire,                1.0f ),
-            ( WeenieClassName.djaridfrost,               1.0f ),
-            ( WeenieClassName.djaridelectric,            1.0f ),
+            //( WeenieClassName.djarid,                    4.0f ),
+            //( WeenieClassName.djaridacid,                1.0f ),
+            //( WeenieClassName.djaridfire,                1.0f ),
+            //( WeenieClassName.djaridfrost,               1.0f ),
+            //( WeenieClassName.djaridelectric,            1.0f ),
         };
 
         private static ChanceTable<WeenieClassName> T5_Chances = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
@@ -104,11 +104,11 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.shurikenfrost,               1.0f ),
             ( WeenieClassName.shurikenelectric,            1.0f ),
 
-            ( WeenieClassName.djarid,                     4.0f ),
-            ( WeenieClassName.djaridacid,                  1.0f ),
-            ( WeenieClassName.djaridfire,                  1.0f ),
-            ( WeenieClassName.djaridfrost,                 1.0f ),
-            ( WeenieClassName.djaridelectric,              1.0f ),
+            //( WeenieClassName.djarid,                     4.0f ),
+            //( WeenieClassName.djaridacid,                  1.0f ),
+            //( WeenieClassName.djaridfire,                  1.0f ),
+            //( WeenieClassName.djaridfrost,                 1.0f ),
+            //( WeenieClassName.djaridelectric,              1.0f ),
         };
 
         private static ChanceTable<WeenieClassName> T6_T8_Chances = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
@@ -157,11 +157,11 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.shurikenfrost,              1.0f ),
             ( WeenieClassName.shurikenelectric,           1.0f ),
 
-            ( WeenieClassName.djarid,                     1.0f ),
-            ( WeenieClassName.djaridacid,                 1.0f ),
-            ( WeenieClassName.djaridfire,                 1.0f ),
-            ( WeenieClassName.djaridfrost,                1.0f ),
-            ( WeenieClassName.djaridelectric,             1.0f ),
+            //( WeenieClassName.djarid,                     1.0f ),
+            //( WeenieClassName.djaridacid,                 1.0f ),
+            //( WeenieClassName.djaridfire,                 1.0f ),
+            //( WeenieClassName.djaridfrost,                1.0f ),
+            //( WeenieClassName.djaridelectric,             1.0f ),
         };
 
         private static readonly List<ChanceTable<WeenieClassName>> atlatlTiers = new List<ChanceTable<WeenieClassName>>()

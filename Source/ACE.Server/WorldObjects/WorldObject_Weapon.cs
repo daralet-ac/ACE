@@ -405,6 +405,21 @@ namespace ACE.Server.WorldObjects
             return 0;
         }
 
+        /// <summary>
+        /// Returns an additive elemental damage bonus for the missile launcher weapon type
+        /// </summary>
+        public static float GetMissileElementalDamageModifier(WorldObject weapon, DamageType damageType)
+        {
+            if (weapon is MissileLauncher && weapon.W_DamageType != DamageType.Undef)
+            {
+                var elementalDamageType = weapon.W_DamageType;
+
+                if (elementalDamageType != DamageType.Undef && elementalDamageType == damageType)
+                    return (float)weapon.DamageMod.Value;
+            }
+            return 1.0f;
+        }
+
         public CreatureType? SlayerCreatureType
         {
             get => (CreatureType?)GetProperty(PropertyInt.SlayerCreatureType);

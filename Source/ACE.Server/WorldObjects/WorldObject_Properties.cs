@@ -915,6 +915,40 @@ namespace ACE.Server.WorldObjects
             return $"{material} {name}";
         }
 
+        public string NameWithMaterialAndElement => GetNameWithMaterialAndElement();
+
+        public string GetNameWithMaterialAndElement(int? stackSize = null)
+        {
+            var name = stackSize != null && stackSize != 1 ? GetPluralName() : Name;
+
+            if (MaterialType == null)
+                return name;
+
+            var material = RecipeManager.GetMaterialName(MaterialType ?? 0);
+
+            if (name.Contains(material))
+                name = name.Replace(material, "");
+
+            string element;
+            switch(W_DamageType)
+            {
+                default: element = ""; break;
+                case DamageType.Slash: element = "Slashing"; break;
+                case DamageType.Pierce: element = "Piercing"; break;
+                case DamageType.Bludgeon: element = "Blunt"; break;
+                case DamageType.Acid: element = "Acid"; break;
+                case DamageType.Fire: element = "Fire"; break;
+                case DamageType.Cold: element = "Frost"; break;
+                case DamageType.Electric: element = "Lightning"; break;
+            }
+
+            if (W_DamageType == DamageType.Undef || name.Contains(element))
+                return $"{material} {name}";
+            else
+                return $"{material} {element} {name}";
+
+        }
+
         public string DisplayName
         {
             get => GetProperty(PropertyString.DisplayName);

@@ -1026,6 +1026,7 @@ namespace ACE.Server.WorldObjects
         {
             switch (skill)
             {
+                case Skill.MissileWeapons:
                 case Skill.Crossbow: return Skill.Bow;
                 case Skill.Sword: return Skill.HeavyWeapons;
                 case Skill.Axe: return Skill.HeavyWeapons;

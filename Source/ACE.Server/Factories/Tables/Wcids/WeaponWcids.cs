@@ -190,7 +190,7 @@ namespace ACE.Server.Factories.Tables.Wcids
 
         public static WeenieClassName RollAtlatlWcid(TreasureDeath treasureDeath, TreasureRoll treasureRoll)
         {
-            return AtlatlWcids.Roll(treasureDeath.Tier, out treasureRoll.WeaponType);
+            return AtlatlWcids.Roll(treasureDeath.Tier, out treasureRoll.WeaponType); // all thrown weapons
         }
 
         public static WeenieClassName RollCaster(TreasureDeath treasureDeath)
