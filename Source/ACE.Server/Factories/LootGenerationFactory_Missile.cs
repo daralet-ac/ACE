@@ -559,7 +559,7 @@ namespace ACE.Server.Factories
                 default:
                 case Skill.Bow: return 0.6f;
                 case Skill.Crossbow: return 0.4f;
-                case Skill.ThrownWeapon: return 0.75f;
+                case Skill.MissileWeapons: return 0.75f;
             }
         }
     }
