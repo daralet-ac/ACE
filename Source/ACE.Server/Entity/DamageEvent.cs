@@ -387,7 +387,7 @@ namespace ACE.Server.Entity
                     if (pkBattle)
                         DamageRatingMod = Creature.AdditiveCombine(DamageRatingMod, PkDamageMod);
 
-                    DamageBeforeMitigation = BaseDamageMod.MaxDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * CriticalDamageMod;
+                    DamageBeforeMitigation = BaseDamageMod.MaxDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * CriticalDamageMod * powershotMod * dualWieldDamageMod * twohandedCombatDamageMod;
                 }
             }
 
@@ -1087,6 +1087,7 @@ namespace ACE.Server.Entity
 
         private void DpsLogging(Player playerAttacker)
         {
+            Console.WriteLine($"\n---- {Weapon.Name} ----");
             var currentTime = Time.GetUnixTime();
             var timeSinceLastAttack = currentTime - playerAttacker.LastAttackedCreatureTime;
             Console.WriteLine($"\nCurrentTime: {currentTime}, LastAttackTime: {playerAttacker.LastAttackedCreatureTime} TimeBetweenAttacks: {timeSinceLastAttack}");
