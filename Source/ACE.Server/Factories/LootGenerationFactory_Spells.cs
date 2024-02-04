@@ -87,14 +87,14 @@ namespace ACE.Server.Factories
         {
             SpellId procSpellId = SpellId.Undef;
 
-            wo.WieldRequirements2 = WieldRequirement.Training;
-            wo.WieldDifficulty2 = 1;
+            wo.WieldRequirements3 = WieldRequirement.Training;
+            wo.WieldDifficulty3 = 1;
 
             var warSpell = ThreadSafeRandom.Next(0, 1) == 0 ? true : false;
             if (warSpell)
-                wo.WieldSkillType2 = (int)Skill.WarMagic;
+                wo.WieldSkillType3 = (int)Skill.WarMagic;
             else
-                wo.WieldSkillType2 = (int)Skill.LifeMagic;
+                wo.WieldSkillType3 = (int)Skill.LifeMagic;
 
             if (roll.IsMeleeWeapon)
                 procSpellId = MeleeSpells.RollProc(wo, profile, warSpell);

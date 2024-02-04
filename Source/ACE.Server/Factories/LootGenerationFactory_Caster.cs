@@ -132,17 +132,20 @@ namespace ACE.Server.Factories
                 MutateColor(wo);
             }
 
-            // Wield Reqs
-            wo.WieldRequirements = WieldRequirement.RawSkill;
-            var wieldDiff = RollWieldDifficulty(profile.Tier, TreasureWeaponType.Caster);
-            wo.WieldDifficulty = wieldDiff > 0 ? wieldDiff : null;
-
             // Bonus Resto/Elemental %
             var damagePercentile = 0.0;
             if (wo.W_DamageType == DamageType.Undef)
-                wo.WieldSkillType = (int)Skill.LifeMagic;
+                wo.WieldSkillType2 = (int)Skill.LifeMagic;
             else
-                wo.WieldSkillType = (int)Skill.WarMagic;
+                wo.WieldSkillType2 = (int)Skill.WarMagic;
+
+            // Wield Reqs
+            wo.WieldRequirements = WieldRequirement.RawAttrib;
+            wo.WieldDifficulty = RollWieldDifficulty(profile.Tier, TreasureWeaponType.MeleeWeapon);
+            wo.WieldSkillType = GetWeaponPrimaryAttribute((Skill)wo.WieldSkillType2);
+
+            wo.WieldRequirements2 = WieldRequirement.Training;
+            wo.WieldDifficulty2 = 1;
 
             // Roll Elemental Damage Mod
             TryMutateCasterWeaponDamage(wo, roll, profile, out damagePercentile);
