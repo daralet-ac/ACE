@@ -23,11 +23,11 @@ namespace ACE.Server.Factories
                         case 1: wield = 50; break;
                         case 2: wield = 100; break;
                         case 3: wield = 150; break;
-                        case 4: wield = 200; break;
-                        case 5: wield = 225; break;
-                        case 6: wield = 250; break;
-                        case 7: wield = 275; break;
-                        case 8: wield = 300; break;
+                        case 4: wield = 175; break;
+                        case 5: wield = 200; break;
+                        case 6: wield = 220; break;
+                        case 7: wield = 240; break;
+                        case 8: wield = 360; break;
                     }
                     break;
 
@@ -38,11 +38,11 @@ namespace ACE.Server.Factories
                         case 1: wield = 50; break;
                         case 2: wield = 100; break;
                         case 3: wield = 150; break;
-                        case 4: wield = 200; break;
-                        case 5: wield = 225; break;
-                        case 6: wield = 250; break;
-                        case 7: wield = 275; break;
-                        case 8: wield = 300; break;
+                        case 4: wield = 175; break;
+                        case 5: wield = 200; break;
+                        case 6: wield = 220; break;
+                        case 7: wield = 240; break;
+                        case 8: wield = 360; break;
                     }
                     break;
 
@@ -53,11 +53,11 @@ namespace ACE.Server.Factories
                         case 1: wield = 50; break;
                         case 2: wield = 100; break;
                         case 3: wield = 150; break;
-                        case 4: wield = 200; break;
-                        case 5: wield = 225; break;
-                        case 6: wield = 250; break;
-                        case 7: wield = 275; break;
-                        case 8: wield = 300; break;
+                        case 4: wield = 175; break;
+                        case 5: wield = 200; break;
+                        case 6: wield = 220; break;
+                        case 7: wield = 240; break;
+                        case 8: wield = 360; break;
                     }
                     break;
             }

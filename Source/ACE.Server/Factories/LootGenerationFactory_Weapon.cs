@@ -361,6 +361,60 @@ namespace ACE.Server.Factories
                 case 8: return 110.0f;
             }
         }
+
+        private static int GetWeaponPrimaryAttribute(Skill weaponSkill)
+        {
+            switch(weaponSkill)
+            {
+                default:
+                case Skill.Sword:
+                case Skill.Axe:
+                case Skill.Mace:
+                case Skill.Spear:
+                case Skill.TwoHandedCombat:
+                case Skill.ThrownWeapon:
+                    return 1;
+                case Skill.Bow:
+                case Skill.Crossbow:
+                case Skill.MissileWeapons:
+                case Skill.Dagger:
+                case Skill.Staff:
+                case Skill.UnarmedCombat:
+                    return 4;
+                case Skill.WarMagic:
+                case Skill.LifeMagic:
+                    return 6;
+            }
+        }
+
+        private static int GetWeaponWieldSkill(Skill weaponSkill)
+        {
+            switch (weaponSkill)
+            {
+                default:
+                case Skill.Sword:
+                case Skill.Axe:
+                case Skill.Mace:
+                case Skill.Spear:
+                    return (int)Skill.HeavyWeapons;
+                case Skill.ThrownWeapon:
+                    return (int)Skill.ThrownWeapon;
+                case Skill.Bow:
+                case Skill.Crossbow:
+                case Skill.MissileWeapons:
+                    return (int)Skill.Bow;
+                case Skill.Dagger:
+                    return (int)Skill.Dagger;
+                case Skill.Staff:
+                    return (int)Skill.Staff;
+                case Skill.UnarmedCombat:
+                    return (int)Skill.UnarmedCombat;
+                case Skill.WarMagic:
+                    return (int)Skill.WarMagic;
+                case Skill.LifeMagic:
+                    return (int)Skill.LifeMagic;
+            }
+        }
     }
 }
 

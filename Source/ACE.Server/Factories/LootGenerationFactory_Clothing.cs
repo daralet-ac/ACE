@@ -156,7 +156,7 @@ namespace ACE.Server.Factories
             var armorWeightClass = GetArmorWeightClass(wo.WeenieClassId);
             wo.ArmorWeightClass = (int)armorWeightClass;
 
-            // wield requirements (attibute, type, amount)
+            // wield requirements (attribute, type, amount)
             wo.WieldSkillType = 0;
 
             if (profile.Tier > 0)
@@ -167,15 +167,13 @@ namespace ACE.Server.Factories
                     wo.WieldRequirements = WieldRequirement.Level;
                     wo.WieldDifficulty = GetArmorLevelReq(profile.Tier);
                 }
-                // armor uses a custom "weight class requirement", so we disable the standard wield reqs
+                // armor req based on weight class
                 else
                 {
-                    wo.WieldRequirements = WieldRequirement.Invalid;
-                    wo.WieldDifficulty = null;
-                }    
-
-                // Set WeightClassRequirement
-                wo.WeightClassReqAmount = GetWieldDifficultyPerTier(profile.Tier);
+                    wo.WieldRequirements = WieldRequirement.RawAttrib;
+                    wo.WieldSkillType = GetWeightClassAttributeReq((ArmorWeightClass)wo.ArmorWeightClass);
+                    wo.WieldDifficulty = GetWieldDifficultyPerTier(profile.Tier);
+                }
             }
 
             AssignArmorLevel(wo, profile.Tier, armorType);
@@ -1564,6 +1562,17 @@ namespace ACE.Server.Factories
                 return true;
 
             return false;
+        }
+
+        private static int GetWeightClassAttributeReq(ArmorWeightClass weightClass)
+        {
+            switch (weightClass)
+            {
+                default:
+                case ArmorWeightClass.Heavy: return 1; // Strength
+                case ArmorWeightClass.Light: return 4; // Coordination
+                case ArmorWeightClass.Cloth: return 6; // Self
+            }
         }
     }
 }

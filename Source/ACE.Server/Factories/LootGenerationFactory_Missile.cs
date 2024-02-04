@@ -98,12 +98,13 @@ namespace ACE.Server.Factories
             }
 
             // Wield Difficulty
+            wo.WieldRequirements = WieldRequirement.RawAttrib;
             wo.WieldDifficulty = RollWieldDifficulty(profile.Tier, TreasureWeaponType.MissileWeapon);
-            if (wo.WieldDifficulty > 0)
-            {
-                wo.WieldRequirements = WieldRequirement.RawSkill;
-                wo.WieldSkillType = (int)wo.WeaponSkill;
-            }
+            wo.WieldSkillType = GetWeaponPrimaryAttribute(wo.WeaponSkill);
+
+            wo.WieldRequirements2 = WieldRequirement.Training;
+            wo.WieldDifficulty2 = 1;
+            wo.WieldSkillType2 = GetWeaponWieldSkill(wo.WeaponSkill);
 
             // Damage
             TryMutateMissileWeaponDamage(wo, roll, profile, out var maxPossibleDamageMod);

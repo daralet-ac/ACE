@@ -658,35 +658,42 @@ namespace ACE.Server.Network.Structure
 
             // -- ARMOR --
 
+            // Aegis Level
+            if (PropertiesInt.TryGetValue(PropertyInt.AegisLevel, out var aegisLevel) && aegisLevel != 0)
+            {
+                var wielder = (Creature)wo.Wielder;
+                if (wielder != null)
+                {
+                    var totalAegisLevel = wielder.GetAegisLevel();
+                    extraPropertiesText += $"Aegis Level: {aegisLevel}  ({totalAegisLevel})\n";
+                }
+                else
+                    extraPropertiesText += $"Aegis Level: {aegisLevel}\n\n";
+
+                hasExtraPropertiesText = true;
+            }
+
             // Armor Weight Class
             if (PropertiesInt.TryGetValue(PropertyInt.ArmorWeightClass, out var armorWieghtClass) && armorWieghtClass > 0)
             {
-                if (PropertiesInt.TryGetValue(PropertyInt.WeightClassReqAmount, out var weightClassReqAmount) && weightClassReqAmount > 0)
+                var weightClassText = "";
+
+                if (wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth)
                 {
-                    var weightClassText = "";
-                    var wieldAttributeText = "";
-
-                    if (wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth)
-                    {
-                        weightClassText = "Cloth";
-                        wieldAttributeText = "base Focus or base Self";
-                    }
-                    else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Light)
-                    {
-                        weightClassText = "Light";
-                        wieldAttributeText = "base Coordination or base Quickness";
-                    }
-                    else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Heavy)
-                    {
-                        weightClassText = "Heavy";
-                        wieldAttributeText = "base Strength or base Endurance";
-                    }
-
-                    extraPropertiesText += $"Weight Class: {weightClassText}\n" +
-                        $"Wield requires {wieldAttributeText}: {weightClassReqAmount}\n";
-
-                    hasExtraPropertiesText = true;
+                    weightClassText = "Cloth";
                 }
+                else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Light)
+                {
+                    weightClassText = "Light";
+                }
+                else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Heavy)
+                {
+                    weightClassText = "Heavy";
+                }
+
+                extraPropertiesText += $"Weight Class: {weightClassText}\n";
+
+                hasExtraPropertiesText = true;
             }
 
             // Armor Penalty - Attack Resource
@@ -700,22 +707,7 @@ namespace ACE.Server.Network.Structure
                     extraPropertiesText += $"Penalty to Stamina/Mana usage: {Math.Round((armoResourcePenalty) * 100, 1)}%  ({Math.Round((double)(totalArmorResourcePenalty * 100), 2)}%)\n";
                 }
                 else
-                    extraPropertiesText += $"Penalty to Stamina/Mana usage: {Math.Round((armoResourcePenalty) * 100, 1)}%\n\n";
-
-                hasExtraPropertiesText = true;
-            }
-
-            // Aegis Level
-            if (PropertiesInt.TryGetValue(PropertyInt.AegisLevel, out var aegisLevel) && aegisLevel != 0)
-            {
-                var wielder = (Creature)wo.Wielder;
-                if (wielder != null)
-                {
-                    var totalAegisLevel = wielder.GetAegisLevel();
-                    extraPropertiesText += $"Aegis Level: {aegisLevel}  ({totalAegisLevel})\n";
-                }
-                else
-                    extraPropertiesText += $"Aegis Level: {aegisLevel}\n";
+                    extraPropertiesText += $"Penalty to Stamina/Mana usage: {Math.Round((armoResourcePenalty) * 100, 1)}%\n";
 
                 hasExtraPropertiesText = true;
             }
