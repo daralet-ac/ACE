@@ -16,6 +16,8 @@ namespace ACE.Server.Entity
 
         public readonly WeakReference<Player> PetOwner;
 
+        public readonly WeakReference<Player> HotspotOwner;
+
         public bool IsPlayer => Guid.IsPlayer();
 
         public readonly bool IsOlthoiPlayer;
@@ -33,6 +35,12 @@ namespace ACE.Server.Entity
 
             if (attacker is CombatPet combatPet && combatPet.P_PetOwner != null)
                 PetOwner = new WeakReference<Player>(combatPet.P_PetOwner);
+
+            if (attacker is Hotspot hotspot && hotspot.P_HotspotOwner != null)
+            {
+                HotspotOwner = new WeakReference<Player>(hotspot.P_HotspotOwner);
+                // Console.WriteLine("Referenced hotspot owner)");
+            }
         }
 
         public WorldObject TryGetAttacker()
@@ -47,6 +55,13 @@ namespace ACE.Server.Entity
             PetOwner.TryGetTarget(out var petOwner);
 
             return petOwner;
+        }
+
+        public Player TryGetHotspotOwner()
+        {
+            HotspotOwner.TryGetTarget(out var hotspotOwner);
+
+            return hotspotOwner;
         }
 
         public WorldObject TryGetPetOwnerOrAttacker()

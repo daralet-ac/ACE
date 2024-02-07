@@ -217,6 +217,9 @@ namespace ACE.Server.WorldObjects
             if ((weenieFlags2 & WeenieHeaderFlag2.PetOwner) != 0)
                 writer.Write(PetOwner ?? 0);
 
+            if ((weenieFlags2 & WeenieHeaderFlag2.HotspotOwner) != 0)
+                writer.Write(HotspotOwner ?? 0);
+
             writer.Align();
         }
 
@@ -816,6 +819,9 @@ namespace ACE.Server.WorldObjects
 
             if ((PetOwner != null) && (PetOwner != 0))
                 weenieHeaderFlag2 |= WeenieHeaderFlag2.PetOwner;
+
+            if ((HotspotOwner != null) && (HotspotOwner != 0))
+                weenieHeaderFlag2 |= WeenieHeaderFlag2.HotspotOwner;
 
             return weenieHeaderFlag2;
         }

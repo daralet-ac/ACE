@@ -11,6 +11,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Managers;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace ACE.Server.Network.Structure
 {
@@ -108,6 +109,16 @@ namespace ACE.Server.Network.Structure
                     else
                         PropertiesInt.Remove(PropertyInt.Faction1Bits);
                 }
+            }
+
+            // salvage bag cleanup
+            if (wo.WeenieType == WeenieType.Tinkering)
+            {
+                if (wo.GetProperty(PropertyInt.Structure).HasValue)
+                    PropertiesInt.Remove(PropertyInt.Structure);
+
+                if(wo.GetProperty(PropertyInt.MaxStructure).HasValue)
+                    PropertiesInt.Remove(PropertyInt.MaxStructure);
             }
 
             // armor / clothing / shield
@@ -505,19 +516,120 @@ namespace ACE.Server.Network.Structure
                 }
             }
 
-            var appraisalLongDescDecoration = AppraisalLongDescDecorations.None;
+            // LONG DESCRIPTION
 
-            if (wo.ItemWorkmanship > 0)
-                appraisalLongDescDecoration |= AppraisalLongDescDecorations.PrependWorkmanship;
-            if (wo.MaterialType > 0)
-                appraisalLongDescDecoration |= AppraisalLongDescDecorations.PrependMaterial;
-            if (wo.GemType > 0 && wo.GemCount > 0)
-                appraisalLongDescDecoration |= AppraisalLongDescDecorations.AppendGemInfo;
+            if (wo.NumTimesTinkered <= 0)
+            {
 
-            if (appraisalLongDescDecoration > 0 && wo.LongDesc != null && wo.LongDesc.StartsWith(wo.Name))
-                PropertiesInt[PropertyInt.AppraisalLongDescDecoration] = (int)appraisalLongDescDecoration;
-            else
-                PropertiesInt.Remove(PropertyInt.AppraisalLongDescDecoration);
+                var appraisalLongDescDecoration = AppraisalLongDescDecorations.None;
+
+                if (wo.ItemWorkmanship > 0)
+                    appraisalLongDescDecoration |= AppraisalLongDescDecorations.PrependWorkmanship;
+                if (wo.MaterialType > 0)
+                    appraisalLongDescDecoration |= AppraisalLongDescDecorations.PrependMaterial;
+                if (wo.GemType > 0 && wo.GemCount > 0)
+                    appraisalLongDescDecoration |= wo.NumTimesTinkered > 0 ? 0 : AppraisalLongDescDecorations.AppendGemInfo;
+                if (appraisalLongDescDecoration > 0 && wo.LongDesc != null && wo.LongDesc.StartsWith(wo.Name))
+                    PropertiesInt[PropertyInt.AppraisalLongDescDecoration] = (int)appraisalLongDescDecoration;
+                else
+                    PropertiesInt.Remove(PropertyInt.AppraisalLongDescDecoration);
+            }
+
+            if (wo.NumTimesTinkered >= 1)
+            {
+                // for tinkered items, we need to replace the Decorations
+
+                string prependMaterial = RecipeManager.GetMaterialName((MaterialType)wo.MaterialType);
+
+                string prependWorkmanship = Tinkering.WorkmanshipNames[(int)wo.ItemWorkmanship - 1];
+
+                string modifiedGemType = RecipeManager.GetMaterialName(wo.GemType ?? MaterialType.Unknown);
+
+                if (wo.GemCount > 1)
+                    if ((int)wo.GemType == 26 || (int)wo.GemType == 37 || (int)wo.GemType == 40 || (int)wo.GemType == 46 || (int)wo.GemType == 49)
+                        modifiedGemType += "es";
+                    else if ((int)wo.GemType == 38)
+                        modifiedGemType = "Rubies";
+                    else
+                        modifiedGemType += "s";
+
+                // then we need to check the tinker log array, parse it and convert values to items to write to long desc
+
+                string longDescAdditions;
+                bool hasLongDescAdditions = false;
+
+                if (wo.NumTimesTinkered > 0 && wo.TinkerLog != null)
+                {
+                    hasLongDescAdditions = true;
+
+                    string[] tinkerLogArray = wo.TinkerLog.Split(',');
+
+                    int[] tinkeringTypes = new int[80];
+
+                    if (wo.GemCount != null && wo.GemCount >= 1)
+                    {
+                        longDescAdditions = $"{prependWorkmanship} {prependMaterial} {wo.Name}, set with {wo.GemCount} {modifiedGemType}\n\nThis item has been tinkered with:\n";
+                    }
+                    else
+                        longDescAdditions = $"{prependWorkmanship} {prependMaterial} {wo.Name}\n\nThis item has been tinkered with:\n";
+
+                    foreach (string s in tinkerLogArray)
+                    {
+                        if (int.TryParse(s, out int index))
+
+                            if (index >= 0 && index < tinkeringTypes.Length)
+                            {
+                                tinkeringTypes[index] += 1;
+                            }
+                    }
+
+                    int sumofTinksinLog = 0;
+
+                    // cycle through the parsed tinkering log, adding Material Name and value stored in the element (num times that salvage has been applied)
+
+                    for (int index = 0; index < tinkeringTypes.Length; index++)
+                    {
+                        int value = tinkeringTypes[index];
+                        if (value > 0)
+                        {
+                            if (ACE.Entity.Enum.MaterialType.IsDefined(typeof(MaterialType), (MaterialType)index))
+                            {
+                                MaterialType materialType = (MaterialType)index;
+                                longDescAdditions += $"\n \t    {RecipeManager.GetMaterialName(materialType)}:  {value}";
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Unknown variable at index {index}: {value}");
+                            }
+                            sumofTinksinLog += value;
+
+                        }
+
+                    }
+
+                    // check for failure on first tink, or string of failures with no success
+                    if (sumofTinksinLog == 0 && wo.NumTimesTinkered >= 1)
+                        longDescAdditions += $"\n\n \t    Failures:    {wo.NumTimesTinkered}";
+
+                    // check for any failures whatsoever by comparing sumofTinksInLog to NumTimesTinkered
+                    else
+                    {
+                        sumofTinksinLog -= wo.NumTimesTinkered;
+                        if (sumofTinksinLog < 0)
+                            longDescAdditions += $"\n\n \t    Failures:  {Math.Abs(sumofTinksinLog)}";
+                    }
+
+                    if (hasLongDescAdditions)
+                    {
+                        longDescAdditions += "";
+                        PropertiesString[PropertyString.LongDesc] = longDescAdditions;
+                    }
+                }
+                
+            }
+
+
+            // ----------------------- USE FIELD ------------------------
 
             string extraPropertiesText;
             if (PropertiesString.TryGetValue(PropertyString.Use, out var useText) && useText.Length > 0)
@@ -885,7 +997,7 @@ namespace ACE.Server.Network.Structure
                 hasExtraPropertiesText = true;
             }
             // Armor Mod - Perception
-            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorAssessMod, out var armorAssessMod) && armorAssessMod >= 0.01)
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorAssessMod, out var armorAssessMod) && armorAssessMod >= 0.001)
             {
                 var wielder = (Creature)wo.Wielder;
 
@@ -900,7 +1012,7 @@ namespace ACE.Server.Network.Structure
                 hasExtraPropertiesText = true;
             }
             // Armor Mod - Deception
-            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorDeceptionMod, out var armorDeceptionMod) && armorDeceptionMod >= 0.01)
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorDeceptionMod, out var armorDeceptionMod) && armorDeceptionMod >= 0.001)
             {
                 var wielder = (Creature)wo.Wielder;
 
@@ -1015,6 +1127,59 @@ namespace ACE.Server.Network.Structure
                 hasExtraPropertiesText = true;
             }
 
+            // ----- JEWELCRAFTING ------
+             if (PropertiesString.TryGetValue(PropertyString.JewelSocket1, out string jewelSocket1))
+            {
+                string[] parts = jewelSocket1.Split('/');
+
+                hasExtraPropertiesText = true;
+
+                if (wo.WeenieType == WeenieType.Jewelcrafting)
+                {
+                    extraPropertiesText += Jewelcrafting.GetJewelDescription(jewelSocket1);
+                    extraPropertiesText += $"Once socketed into an item, this jewel becomes permanently attuned to your character. Items with contained jewels become attuned and will remain so until all jewels are removed.\n\nJewels may be unsocketed using an Intricate Carving Tool. There is no skill check or destruction chance.";
+
+                }
+                if (wo.WeenieType != WeenieType.Jewelcrafting)
+                {
+                    if (jewelSocket1.StartsWith("Empty"))
+                        extraPropertiesText += "\n\t  Empty Jewel Socket\n";
+
+                    else
+                    {
+                        extraPropertiesText += Jewelcrafting.GetSocketDescription(jewelSocket1);
+                    }
+                }
+            }
+
+            if (PropertiesString.TryGetValue(PropertyString.JewelSocket2, out string jewelSocket2))
+            {
+                string[] parts = jewelSocket2.Split('/');
+
+                hasExtraPropertiesText = true;
+
+                if (wo.WeenieType != WeenieType.Jewelcrafting)
+                {
+                    if (jewelSocket2.StartsWith("Empty"))
+                        extraPropertiesText += "\n\t  Empty Jewel Socket\n";
+
+                    else
+                    {
+                        extraPropertiesText += Jewelcrafting.GetSocketDescription(jewelSocket2);
+                    }
+                }
+            }
+
+            // -------- SALVAGE BAGS ---
+
+            if (PropertiesInt.TryGetValue(PropertyInt.Structure, out var structure) && structure >= 0)
+            {
+                if (wo.WeenieType == WeenieType.Tinkering)
+                {
+                    extraPropertiesText += $"\nThis bag contains {structure} units of salvage.\n";
+                    hasExtraPropertiesText = true;
+                }
+            }
             // -------- EMPOWERED SCARABS --------
 
             // Max Level
@@ -1047,7 +1212,8 @@ namespace ACE.Server.Network.Structure
             // Max Level
             if (PropertiesInt.TryGetValue(PropertyInt.MaxStructure, out var maxStructure) && maxStructure > 0)
             {
-                extraPropertiesText += $"Max Number of Uses: {maxStructure}\n";
+                if (wo.WeenieType != WeenieType.Tinkering)
+                    extraPropertiesText += $"Max Number of Uses: {maxStructure}\n";
 
                 hasExtraPropertiesText = true;
             }

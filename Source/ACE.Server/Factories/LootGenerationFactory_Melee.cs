@@ -205,6 +205,11 @@ namespace ACE.Server.Factories
             // workmanship
             wo.ItemWorkmanship = GetWeaponWorkmanship(wo, damagePercentile, modsPercentile, subtypeBonusesPercentile);
 
+            wo.BaseDamage = (wo.Damage == null ? 0 : wo.Damage);
+            wo.BaseWeaponTime = (wo.WeaponTime == null ? 0 : wo.WeaponTime);
+            // assign jewel slots
+            AssignJewelSlots(wo);
+
             return true;
         }
 

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using ACE.Common;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
@@ -247,6 +249,9 @@ namespace ACE.Server.WorldObjects
             PhysicsObj.cancel_moveto();
         }
 
+        public bool JewelCleave = false;
+        public double LastJewelCleave = 0;
+
         /// <summary>
         /// Performs a player melee attack against a target
         /// </summary>
@@ -316,6 +321,22 @@ namespace ACE.Server.WorldObjects
                 float recklessMod = 1 + (recklessStacks / 500);
                 staminaCost = (int)(staminaCost * recklessMod);
             }
+
+            // JEWELCRAFTING - Third Wind
+            if (this is Player)
+            {
+                if (this.GetEquippedItemsRatingSum(PropertyInt.GearStamReduction) > 0)
+                {
+                    if (this.QuestManager.HasQuest($"{this.Name},StamReduction"))
+                    {
+                        var jewelRampMod = (float)this.QuestManager.GetCurrentSolves($"{this.Name},StamReduction") / 500;
+                        var stamReductionMod = 1f - (jewelRampMod * (float)this.GetEquippedItemsRatingSum(PropertyInt.GearStamReduction) / 100);
+                        var modifiedStamCost = (float)staminaCost * stamReductionMod;
+                        staminaCost = (int)modifiedStamCost;
+                    }
+                }   
+            }
+
             UpdateVitalDelta(Stamina, -staminaCost);
 
             var combatAbility = CombatAbility.None;
@@ -365,16 +386,20 @@ namespace ACE.Server.WorldObjects
                         targetProc = true;
                     }
 
-                    if (weapon != null && weapon.IsCleaving)
+                    if (weapon != null && weapon.IsCleaving || (GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0) && damageEvent.DamageType == DamageType.Slash)
                     {
                         var cleave = GetCleaveTarget(creature, weapon);
 
-                        foreach (var cleaveHit in cleave)
+                        if (cleave != null)
                         {
-                            // target procs don't happen for cleaving
-                            DamageTarget(cleaveHit, weapon);
+                            foreach (var cleaveHit in cleave)
+                            {
+                                // target procs don't happen for cleaving
+                                DamageTarget(cleaveHit, weapon);
+                            }
                         }
                     }
+
                 });
 
                 //if (numStrikes == 1 || TwoHandedCombat)

@@ -141,6 +141,12 @@ namespace ACE.Server.Factories
                     return new CombatFocus(weenie, guid);
                 case WeenieType.ArmorPatch:
                     return new ArmorPatch(weenie, guid);
+                case WeenieType.Jewelcrafting:
+                    return new Jewelcrafting(weenie, guid);
+                case WeenieType.Tinkering:
+                    return new Tinkering(weenie, guid);
+                case WeenieType.SpellTransference:
+                    return new SpellTransference(weenie, guid);
                 default:
                     return new GenericObject(weenie, guid);
             }
@@ -262,6 +268,12 @@ namespace ACE.Server.Factories
                     return new CombatFocus(biota);
                 case WeenieType.ArmorPatch:
                     return new ArmorPatch(biota);
+                case WeenieType.Jewelcrafting:
+                    return new Jewelcrafting(biota);
+                case WeenieType.Tinkering:
+                    return new Tinkering(biota);
+                case WeenieType.SpellTransference:
+                    return new SpellTransference(biota);
                 default:
                     return new GenericObject(biota);
             }

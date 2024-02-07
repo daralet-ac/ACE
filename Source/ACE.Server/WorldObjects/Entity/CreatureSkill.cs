@@ -3,6 +3,7 @@ using System;
 using ACE.Common.Extensions;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 
@@ -145,7 +146,10 @@ namespace ACE.Server.WorldObjects.Entity
                 total += InitLevel + Ranks;
 
                 if (creature is Player player)
+                {
                     total += GetAugBonus_Base(player);
+                    total += GetJewelcraftingBonus_Base(player);
+                }
 
                 return total;
             }
@@ -238,6 +242,20 @@ namespace ACE.Server.WorldObjects.Entity
 
             if (AdvancementClass == SkillAdvancementClass.Specialized && player.LumAugSkilledSpec != 0)
                 total += (uint)player.LumAugSkilledSpec * 2;
+
+            return total;
+        }
+
+        // Jewelcrafting Bonus - Heritage Skills
+
+        public uint GetJewelcraftingBonus_Base(Player player)
+        {
+            
+            uint total = 0;
+
+            if ((player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) != 0
+                && Player.HeritageSkills.Contains(Skill)))
+                total += (uint)player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer);
 
             return total;
         }

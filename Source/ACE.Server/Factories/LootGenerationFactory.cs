@@ -14,6 +14,7 @@ using ACE.Server.Factories.Tables;
 using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
+using Pomelo.EntityFrameworkCore.MySql.Query.ExpressionVisitors.Internal;
 using Serilog;
 using WeenieClassName = ACE.Server.Factories.Enum.WeenieClassName;
 
@@ -58,7 +59,7 @@ namespace ACE.Server.Factories
 
         public static Database.Models.World.TreasureDeath GetTweakedDeathTreasureProfile(uint deathTreasureId, object tweakedFor)
         {
-            if(deathTreasureId == 338) // Leave Steel Chests alone!
+            if (deathTreasureId == 338) // Leave Steel Chests alone!
                 return DatabaseManager.World.GetCachedDeathTreasure(deathTreasureId);
 
             // Tweaks to make the loot system more akin to Infiltration Era and CustomDM
@@ -140,8 +141,18 @@ namespace ACE.Server.Factories
                 mod -= 0.75f; // range of 0.0 to 0.25
                 var qualityBonus = (1 - tweakedDeathTreasure.LootQualityMod) * mod;
 
+                // Jewelcrafting --- Magic Find
+               var updatedQualityMod = creature.QuestManager.HandleMagicFind();
+
+                qualityBonus += (float)updatedQualityMod; // this line breaks it
+
                 tweakedDeathTreasure.LootQualityMod += qualityBonus;
-                
+
+                var prosperityMod = creature.QuestManager.HandleProsperity();
+
+                if (prosperityMod >= ThreadSafeRandom.Next(0f, 1f))
+                    tweakedDeathTreasure.ItemMinAmount += 1; 
+
                 return tweakedDeathTreasure;
             }
 
@@ -155,14 +166,14 @@ namespace ACE.Server.Factories
                 tweakedDeathTreasure = new Database.Models.World.TreasureDeath(deathTreasure);
 
                 return tweakedDeathTreasure;
-                    
+
             }
             else if (tweakedFor is GenericObject generic && generic.GeneratorProfiles != null) // Ground item spawners
             {
                 tweakedDeathTreasure = new Database.Models.World.TreasureDeath(deathTreasure);
 
                 return tweakedDeathTreasure;
-                    
+
             }
             else
                 return deathTreasure;
@@ -264,7 +275,7 @@ namespace ACE.Server.Factories
                     // https://asheron.fandom.com/wiki/Announcements_-_2010/04_-_Shedding_Skin :: May 5th, 2010 entry
                     if (profile.Tier > 4 && lootBias != LootBias.Weapons && dropRate > 0)
                     {
-                        if (ThreadSafeRandom.Next(1, (int) (100 * dropRateMod)) <= 2) // base 1% to drop aetheria?
+                        if (ThreadSafeRandom.Next(1, (int)(100 * dropRateMod)) <= 2) // base 1% to drop aetheria?
                         {
                             lootWorldObject = CreateAetheria(profile.Tier);
                             if (lootWorldObject != null)
@@ -415,7 +426,7 @@ namespace ACE.Server.Factories
                     if (lootWorldObject != null)
                         loot.Add(lootWorldObject);
                 }
-                else if(profile.MundaneItemChance > 0)
+                else if (profile.MundaneItemChance > 0)
                 {
                     itemChance = ThreadSafeRandom.NextInterval(profile.LootQualityMod);
 
@@ -580,9 +591,9 @@ namespace ACE.Server.Factories
                 case TreasureItemType.WeaponWarrior:
                     type = ThreadSafeRandom.Next(0, 5);
 
-                    switch(type)
+                    switch (type)
                     {
-                        default: 
+                        default:
                         case 0: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.Axe); break;
                         case 1: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.Mace); break;
                         case 2: wo = CreateMeleeWeapon(profile, isMagical, MeleeWeaponSkill.Spear); break;
@@ -1269,9 +1280,9 @@ namespace ACE.Server.Factories
 
                 case TreasureItemType_Orig.Weapon:
 
-                    if(treasureRoll.WeaponType == TreasureWeaponType.Undef)
+                    if (treasureRoll.WeaponType == TreasureWeaponType.Undef)
                         treasureRoll.WeaponType = WeaponTypeChance.Roll(treasureDeath.Tier);
-                    else if(treasureRoll.WeaponType == TreasureWeaponType.MeleeWeapon || treasureRoll.WeaponType == TreasureWeaponType.MissileWeapon)
+                    else if (treasureRoll.WeaponType == TreasureWeaponType.MeleeWeapon || treasureRoll.WeaponType == TreasureWeaponType.MissileWeapon)
                         treasureRoll.WeaponType = WeaponTypeChance.Roll(treasureDeath.Tier, treasureRoll.WeaponType);
                     treasureRoll.Wcid = WeaponWcids.Roll(treasureDeath, treasureRoll);
                     break;
@@ -1508,7 +1519,7 @@ namespace ACE.Server.Factories
         public static WorldObject CreateRandomLootObjects_New(TreasureDeath treasureDeath, TreasureItemCategory category)
         {
             var treasureRoll = RollWcid(treasureDeath, category);
-            
+
             if (treasureRoll == null) return null;
 
             var wo = CreateAndMutateWcid(treasureDeath, treasureRoll, category == TreasureItemCategory.MagicItem);
@@ -1519,11 +1530,11 @@ namespace ACE.Server.Factories
         public static WorldObject CreateAndMutateWcid(TreasureDeath treasureDeath, TreasureRoll treasureRoll, bool isMagical)
         {
             WorldObject wo = null;
-            
+
             if (treasureRoll.ItemType != TreasureItemType_Orig.Scroll)
             {
                 wo = WorldObjectFactory.CreateNewWorldObject((uint)treasureRoll.Wcid);
-                if(wo != null)
+                if (wo != null)
                     // ADD wo.Tier = Monster.Tier
                     wo.Tier = treasureDeath.Tier;
 
@@ -1812,7 +1823,7 @@ namespace ACE.Server.Factories
             wo.WieldDifficulty = wieldLevelReq;
 
             // as per retail pcaps, must be set to appear in client
-            wo.WieldSkillType = 1;  
+            wo.WieldSkillType = 1;
         }
 
         private static int GetTierValue(TreasureDeath treasureDeath)
@@ -1867,5 +1878,90 @@ namespace ACE.Server.Factories
 
             }
         }
-    }         
+        public static void AssignJewelSlots(WorldObject wo)
+        {
+            if (wo.Tier >= 2)
+            {
+                wo.JewelSockets = 1;
+                wo.JewelSocket1 = "Empty";
+
+                if (wo.DefaultCombatStyle != null)
+                {
+                    if ((int)wo.DefaultCombatStyle == 8 || (int)wo.DefaultCombatStyle == 16 || (int)wo.DefaultCombatStyle == 32 || (int)wo.DefaultCombatStyle == 512 || (int)wo.DefaultCombatStyle == 1024)
+                    {
+                        wo.JewelSockets = 2;
+                        wo.JewelSocket2 = "Empty";
+                    }
+
+                }
+
+            }
+            return;
+
+            /*  // Determine the number of jewel slots based on ArmorSlots
+              int maxJewelSlots = 1;
+              wo.JewelSockets = 0;
+
+              // account for multiple slots
+              if (wo.ArmorSlots != null)
+                  maxJewelSlots = (int)wo.ArmorSlots;
+
+              // two-slots for missile, casters, 2h
+              if (wo.DefaultCombatStyle != null)
+              {
+                  if ((int)wo.DefaultCombatStyle == 8 || (int)wo.DefaultCombatStyle == 16 || (int)wo.DefaultCombatStyle == 32 || (int)wo.DefaultCombatStyle == 512 || (int)wo.DefaultCombatStyle == 1024)
+                      maxJewelSlots = 2;
+
+              }
+
+              for (int i = 0; i < maxJewelSlots; i++)
+              {
+                  double chance = rand.NextDouble();
+                  double baseChance = 0.1; 
+                  double modifiedChance = baseChance + (double)wo.Tier / 10;
+
+                  // Check if the random chance allows assigning a socket
+                  if (chance < modifiedChance)
+                  {
+                      wo.JewelSockets++;
+                  }
+
+              }
+
+
+              for (int i = 0; i <= wo.JewelSockets; i++)
+              {
+                  switch (i)
+                  {
+                      case 1:
+                          wo.JewelSocket1 = "Empty";
+                          break;
+                      case 2:
+                          wo.JewelSocket2 = "Empty";
+                          break;
+                      case 3:
+                          wo.JewelSocket3 = "Empty";
+                          break;
+                      case 4:
+                          wo.JewelSocket4 = "Empty";
+                          break;
+                      case 5:
+                          wo.JewelSocket5 = "Empty";
+                          break;
+                      case 6:
+                          wo.JewelSocket6 = "Empty";
+                          break;
+                      case 7:
+                          wo.JewelSocket7 = "Empty";
+                          break;
+                      case 8:
+                          wo.JewelSocket8 = "Empty";
+                          break;
+                      default:
+                          break;
+                  }
+              } */
+
+        }
+    }
 }

@@ -125,6 +125,7 @@ namespace ACE.Server.WorldObjects
                 actionChain.AddAction(player, () =>
                 {
                     target.ArmorLevel += source.ArmorPatchAmount;
+                    target.ArmorPatchAmount = source.ArmorPatchAmount;
                     target.ArmorPatchApplied = true;
                     target.LongDesc += "\n\nThis item has had an armor patch applied and cannot receive another.";
 

@@ -114,19 +114,32 @@ namespace ACE.Server.WorldObjects
         public List<Creature> GetCleaveTarget(Creature target, WorldObject weapon)
         {
             var player = this as Player;
+            var jewelCleave = false;
 
-            if (!weapon.IsCleaving) return null;
+            if (GetEquippedItemsRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 100))
+                jewelCleave = true;
+
+            if (!weapon.IsCleaving && !jewelCleave) return null;
 
             // sort visible objects by ascending distance
             var visible = PhysicsObj.ObjMaint.GetVisibleObjectsValuesWhere(o => o.WeenieObj.WorldObject != null);
             visible.Sort(DistanceComparator);
 
             var cleaveTargets = new List<Creature>();
-            var totalCleaves = weapon.CleaveTargets;
+
+            var totalCleaves = 0;
+
+            if (jewelCleave)
+            {
+                totalCleaves += 1;
+                jewelCleave = false;
+            }
+            if (weapon.IsCleaving)
+               totalCleaves += weapon.CleaveTargets;
 
             if (totalCleaves > 0 && GetCreatureSkill(Skill.TwoHandedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
                 totalCleaves += ThreadSafeRandom.Next(0, 1);
-
+           
             foreach (var obj in visible)
             {
                 // cleaving skips original target

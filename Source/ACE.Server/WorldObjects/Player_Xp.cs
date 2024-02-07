@@ -719,6 +719,11 @@ namespace ACE.Server.WorldObjects
             if (xpType == XpType.Kill && AugmentationBonusXp > 0)
                 augBonus = AugmentationBonusXp * 0.05f;
 
+            // JEWELCRAFTING BONUS  ------------------
+
+            if (xpType == XpType.Kill && GetEquippedItemsRatingSum(PropertyInt.GearExperienceGain) > 0)
+                augBonus *= GetEquippedItemsRatingSum(PropertyInt.GearExperienceGain) / 2;
+
             var modifier = 1.0f + enchantmentBonus + augBonus;
             //Console.WriteLine($"XPAndLuminanceModifier: {modifier}");
 

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using ACE.Common;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Factories.Tables.Spells;
 
 namespace ACE.Server.WorldObjects
 {
@@ -55,7 +57,7 @@ namespace ACE.Server.WorldObjects
                 var equippedAetheria = wielder.EquippedObjects.Values.Where(i => Aetheria.IsAetheria(i.WeenieClassId) && i.HasProc && i.ProcSpellSelfTargeted == selfTarget);
 
                 var equippedProcJewelry = wielder.EquippedObjects.Values.Where(i => i.ItemType == ItemType.Jewelry && i.HasProc);
-                
+
                 // aetheria
                 foreach (var aetheria in equippedAetheria)
                     aetheria.TryProcItem(attacker, target, selfTarget);
@@ -63,10 +65,10 @@ namespace ACE.Server.WorldObjects
                 // jewelry
                 foreach (var jewelry in equippedProcJewelry)
                 {
-                    if(attacker is Player)
+                    if (attacker is Player)
                     {
                         var player = attacker as Player;
-                        if(jewelry.ItemDifficulty != null && player.GetCreatureSkill(Skill.ArcaneLore).Current > jewelry.ItemDifficulty)
+                        if (jewelry.ItemDifficulty != null && player.GetCreatureSkill(Skill.ArcaneLore).Current > jewelry.ItemDifficulty)
                         {
                             //Console.WriteLine($"equippedProcJewelry: {jewelry.Name}");
                             jewelry.TryProcItem(attacker, target, selfTarget);
@@ -74,6 +76,8 @@ namespace ACE.Server.WorldObjects
                     }
                 }
             }
+
+
         }
     }
 }

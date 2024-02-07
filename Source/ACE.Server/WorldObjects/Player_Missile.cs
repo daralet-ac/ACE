@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Numerics;
 using ACE.Common;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics.Animation;
+using Lifestoned.DataModel.Shared;
 using Serilog;
+using MotionCommand = ACE.Entity.Enum.MotionCommand;
 
 namespace ACE.Server.WorldObjects
 {
@@ -244,10 +247,6 @@ namespace ACE.Server.WorldObjects
 
                 var projectile = LaunchProjectile(launcher, ammo, target, origin, orientation, velocity);
 
-                UpdateAmmoAfterLaunch(ammo);
-
-                Console.WriteLine(EquippedCombatAbility);
-
                 // Check for missile cleaves
                 var numCleaves = 0;
 
@@ -256,14 +255,19 @@ namespace ACE.Server.WorldObjects
                 if (EquippedCombatAbility == CombatAbility.Multishot && LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration)
                     numCleaves = 2;
 
+                if (this.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0 && launcher.W_DamageType == ACE.Entity.Enum.DamageType.Slash && ammo.W_DamageType == ACE.Entity.Enum.DamageType.Slash)
+                    if (GetEquippedItemsRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 200))
+                        numCleaves += 1;
+
                 var cleaveTargets = creature.GetNearbyMonsters(10);
                 var cleaveCount = 0;
-                Console.WriteLine(numCleaves);
 
                 foreach (var cleave in cleaveTargets)
                 {
                     if (cleaveCount == numCleaves)
                         break;
+                    if (cleave.Translucency == 1 || cleave.Visibility == true)
+                        continue;
 
                     var ammoCheck = weapon.IsAmmoLauncher ? GetEquippedAmmo() : weapon;
                     if (ammoCheck == null)

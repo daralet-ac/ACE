@@ -106,8 +106,6 @@ namespace ACE.Server.Entity
         public ObjectGuid SourceGuid;
         public ObjectGuid TargetGuid;
 
-        public bool Tinkering;
-
         public Confirmation_CraftInteration(ObjectGuid playerGuid, ObjectGuid sourceGuid, ObjectGuid targetGuid)
             : base (playerGuid, ConfirmationType.CraftInteraction)
         {
@@ -133,10 +131,17 @@ namespace ACE.Server.Entity
 
             if (source == null || target == null) return;
 
-            if (source.WeenieType == WeenieType.ArmorPatch)
+            if (source.WeenieType == WeenieType.SpellTransference)
+                SpellTransference.UseObjectOnTarget(player, source, target, true);
+            else if (source.WeenieType == WeenieType.Jewelcrafting)
+                Jewelcrafting.UseObjectOnTarget(player, source, target, true);
+            else if (source.WeenieType == WeenieType.ArmorPatch)
                 ArmorPatch.UseObjectOnTarget(player, source, target, true);
+            else if (source.WeenieType == WeenieType.Tinkering)
+                Tinkering.UseObjectOnTarget(player, source, target, true);
             else
                 RecipeManager.UseObjectOnTarget(player, source, target, true);
+
         }
     }
 

@@ -315,7 +315,50 @@ namespace ACE.Server.WorldObjects
                 (wo.GearMaxHealth ?? 0) == 0 &&
                 (wo.GearPKDamageRating ?? 0) == 0 &&
                 (wo.GearPKDamageResistRating ?? 0) == 0 &&
-                (wo.AegisLevel ?? 0) == 0)
+                (wo.AegisLevel ?? 0) == 0 &&
+                (wo.GearStrength ?? 0) == 0 &&
+                (wo.GearEndurance ?? 0) == 0 &&
+                (wo.GearQuickness ?? 0) == 0 &&
+                (wo.GearFocus ?? 0) == 0 &&
+                (wo.GearSelf ?? 0) == 0 &&
+                (wo.GearThreatGain ?? 0) == 0 &&
+                (wo.GearThreatReduction ?? 0) == 0 &&
+                (wo.GearElementalWard ?? 0) == 0 &&
+                (wo.GearPhysicalWard ?? 0) == 0 &&
+                (wo.GearMagicFind ?? 0) == 0 &&
+                (wo.GearBlock ?? 0) == 0 &&
+                (wo.GearItemManaUseage ?? 0) == 0 &&
+                (wo.GearLifesteal ?? 0) == 0 &&
+                (wo.GearSelfHarm ?? 0) == 0 &&
+                (wo.GearThorns ?? 0) == 0 &&
+                (wo.GearVitalsTransfer ?? 0) == 0 &&
+                (wo.GearLastStand ?? 0) == 0 &&
+                (wo.GearSelflessness ?? 0) == 0 &&
+                (wo.GearVipersStrike ?? 0) == 0 &&
+                (wo.GearFamiliarity ?? 0) == 0 &&
+                (wo.GearBravado ?? 0) == 0 &&
+                (wo.GearHealthToStamina ?? 0) == 0 &&
+                (wo.GearHealthToMana ?? 0) == 0 &&
+                (wo.GearExperienceGain ?? 0) == 0 &&
+                (wo.GearManasteal ?? 0) == 0 &&
+                (wo.GearBludgeon ?? 0) == 0 &&
+                (wo.GearPierce ?? 0) == 0 &&
+                (wo.GearSlash ?? 0) == 0 &&
+                (wo.GearFire ?? 0) == 0 &&
+                (wo.GearFrost ?? 0) == 0 &&
+                (wo.GearAcid ?? 0) == 0 &&
+                (wo.GearLightning ?? 0) == 0 &&
+                (wo.GearHealBubble ?? 0) == 0 &&
+                (wo.GearCompBurn ?? 0) == 0 &&
+                (wo.GearPyrealFind ?? 0) == 0 &&
+                (wo.GearNullification ?? 0) == 0 &&
+                (wo.GearAegisPen ?? 0) == 0 &&
+                (wo.GearStamReduction ?? 0) == 0 &&
+                (wo.GearHardenedDefense ?? 0) == 0 &&
+                (wo.GearReprisal ?? 0) == 0 &&
+                (wo.GearElementalist ?? 0) == 0)
+
+
                 return;
 
             if (equippedItemsRatingCache == null)
@@ -332,7 +375,52 @@ namespace ACE.Server.WorldObjects
                     { PropertyInt.GearMaxHealth, 0 },
                     { PropertyInt.GearPKDamageRating, 0 },
                     { PropertyInt.GearPKDamageResistRating, 0 },
-                    { PropertyInt.AegisLevel, 0 }
+                    { PropertyInt.AegisLevel, 0 },
+                    { PropertyInt.GearStrength, 0 },
+                    { PropertyInt.GearEndurance, 0 },
+                    { PropertyInt.GearCoordination, 0 },
+                    { PropertyInt.GearQuickness, 0 },
+                    { PropertyInt.GearFocus, 0 },
+                    { PropertyInt.GearSelf, 0 },
+                    { PropertyInt.GearMaxStamina, 0 },
+                    { PropertyInt.GearMaxMana, 0 },
+                    { PropertyInt.GearThreatGain, 0 },
+                    { PropertyInt.GearThreatReduction, 0 },
+                    { PropertyInt.GearElementalWard, 0 },
+                    { PropertyInt.GearPhysicalWard, 0 },
+                    { PropertyInt.GearMagicFind, 0 },
+                    { PropertyInt.GearBlock, 0 },
+                    { PropertyInt.GearItemManaUseage, 0 },
+                    { PropertyInt.GearLifesteal, 0 },
+                    { PropertyInt.GearSelfHarm, 0 },
+                    { PropertyInt.GearThorns, 0 },
+                    { PropertyInt.GearVitalsTransfer, 0 },
+                    { PropertyInt.GearLastStand, 0 },
+                    { PropertyInt.GearSelflessness, 0 },
+                    { PropertyInt.GearVipersStrike, 0 },
+                    { PropertyInt.GearFamiliarity, 0 },
+                    { PropertyInt.GearBravado, 0 },
+                    { PropertyInt.GearHealthToStamina, 0 },
+                    { PropertyInt.GearHealthToMana, 0 },
+                    { PropertyInt.GearExperienceGain, 0 },
+                    { PropertyInt.GearManasteal, 0 },
+                    { PropertyInt.GearBludgeon, 0 },
+                    { PropertyInt.GearPierce, 0 },
+                    { PropertyInt.GearSlash, 0 },
+                    { PropertyInt.GearFire, 0 },
+                    { PropertyInt.GearFrost, 0 },
+                    { PropertyInt.GearAcid, 0 },
+                    { PropertyInt.GearLightning, 0 },
+                    { PropertyInt.GearHealBubble, 0 },
+                    { PropertyInt.GearCompBurn, 0 },
+                    { PropertyInt.GearPyrealFind, 0 },
+                    { PropertyInt.GearNullification, 0 },
+                    { PropertyInt.GearAegisPen, 0 },
+                    { PropertyInt.GearStamReduction, 0 },
+                    {PropertyInt.GearHardenedDefense, 0 },
+                    {PropertyInt.GearReprisal, 0 },
+                    {PropertyInt.GearElementalist, 0 }
+
                 };
             }
 
@@ -347,6 +435,50 @@ namespace ACE.Server.WorldObjects
             equippedItemsRatingCache[PropertyInt.GearPKDamageRating] += (wo.GearPKDamageRating ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageResistRating] += (wo.GearPKDamageResistRating ?? 0);
             equippedItemsRatingCache[PropertyInt.AegisLevel] += (wo.AegisLevel ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearStrength] += (wo.GearStrength ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearEndurance] += (wo.GearEndurance ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCoordination] += (wo.GearCoordination ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearQuickness] += (wo.GearQuickness ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearFocus] += (wo.GearFocus ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearSelf] += (wo.GearSelf ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearMaxStamina] += (wo.GearMaxStamina ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearMaxMana] += (wo.GearMaxMana ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearThreatGain] += (wo.GearThreatGain ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearThreatReduction] += (wo.GearThreatReduction ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearElementalWard] += (wo.GearElementalWard ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearPhysicalWard] += (wo.GearPhysicalWard ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearMagicFind] += (wo.GearMagicFind ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearBlock] += (wo.GearBlock ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearItemManaUseage] += (wo.GearItemManaUseage ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearLifesteal] += (wo.GearLifesteal ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearSelfHarm] += (wo.GearSelfHarm ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearThorns] += (wo.GearThorns ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearVitalsTransfer] += (wo.GearVitalsTransfer ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearLastStand] += (wo.GearLastStand ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearSelflessness] += (wo.GearSelflessness ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearVipersStrike] += (wo.GearVipersStrike ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearFamiliarity] += (wo.GearFamiliarity ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearBravado] += (wo.GearBravado ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearHealthToStamina] += (wo.GearHealthToStamina ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearHealthToMana] += (wo.GearHealthToMana ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearExperienceGain] += (wo.GearExperienceGain ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearManasteal] += (wo.GearManasteal ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearBludgeon] += (wo.GearBludgeon ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearPierce] += (wo.GearPierce ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearSlash] += (wo.GearSlash ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearFire] += (wo.GearFire ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearFrost] += (wo.GearFrost ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearAcid] += (wo.GearAcid ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearLightning] += (wo.GearLightning ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearHealBubble] += (wo.GearHealBubble ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCompBurn] += (wo.GearCompBurn ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearPyrealFind] += (wo.GearPyrealFind ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearNullification] += (wo.GearNullification ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearAegisPen] += (wo.GearAegisPen ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearStamReduction] += (wo.GearStamReduction ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearHardenedDefense] += (wo.GearHardenedDefense ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearReprisal] += (wo.GearReprisal ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearElementalist] += (wo.GearElementalist ?? 0);
         }
 
         private void RemoveItemFromEquippedItemsRatingCache(WorldObject wo)
@@ -365,6 +497,50 @@ namespace ACE.Server.WorldObjects
             equippedItemsRatingCache[PropertyInt.GearPKDamageRating] -= (wo.GearPKDamageRating ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageResistRating] -= (wo.GearPKDamageResistRating ?? 0);
             equippedItemsRatingCache[PropertyInt.AegisLevel] -= (wo.AegisLevel ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearStrength] -= (wo.GearStrength ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearEndurance] -= (wo.GearEndurance ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCoordination] -= (wo.GearCoordination ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearQuickness] -= (wo.GearQuickness ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearFocus] -= (wo.GearFocus ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearSelf] -= (wo.GearSelf ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearMaxStamina] -= (wo.GearMaxStamina ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearMaxMana] -= (wo.GearMaxMana ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearThreatGain] -= (wo.GearThreatGain ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearThreatReduction] -= (wo.GearThreatReduction ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearElementalWard] -= (wo.GearElementalWard ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearPhysicalWard] -= (wo.GearPhysicalWard ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearMagicFind] -= (wo.GearMagicFind ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearBlock] -= (wo.GearBlock ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearItemManaUseage] -= (wo.GearItemManaUseage ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearLifesteal] -= (wo.GearLifesteal ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearSelfHarm] -= (wo.GearSelfHarm ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearThorns] -= (wo.GearThorns ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearVitalsTransfer] -= (wo.GearVitalsTransfer ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearLastStand] -= (wo.GearLastStand ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearSelflessness] -= (wo.GearSelflessness ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearVipersStrike] -= (wo.GearVipersStrike ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearFamiliarity] -= (wo.GearFamiliarity ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearBravado] -= (wo.GearBravado ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearHealthToStamina] -= (wo.GearHealthToStamina ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearHealthToMana] -= (wo.GearHealthToMana ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearExperienceGain] -= (wo.GearExperienceGain ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearManasteal] -= (wo.GearManasteal ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearBludgeon] -= (wo.GearBludgeon ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearPierce] -= (wo.GearPierce ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearSlash] -= (wo.GearSlash ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearFire] -= (wo.GearFire ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearFrost] -= (wo.GearFrost ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearAcid] -= (wo.GearAcid ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearLightning] -= (wo.GearLightning ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearHealBubble] -= (wo.GearHealBubble ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearCompBurn] -= (wo.GearCompBurn ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearPyrealFind] -= (wo.GearPyrealFind ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearNullification] -= (wo.GearNullification ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearAegisPen] -= (wo.GearAegisPen ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearStamReduction] -= (wo.GearStamReduction ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearHardenedDefense] -= (wo.GearHardenedDefense ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearReprisal] -= (wo.GearReprisal ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearElementalist] -= (wo.GearElementalist ?? 0);
         }
 
         public int GetEquippedItemsRatingSum(PropertyInt rating)

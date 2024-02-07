@@ -15,6 +15,9 @@ namespace ACE.Server.WorldObjects
         {
             uint baseCost = spell.BaseMana;
 
+            var manaResourcePen = (float)(1 + GetArmorResourcePenalty());
+            baseCost = (uint)(baseCost * manaResourcePen);
+
             // for casting spells built into a casting implement, use the ItemManaCost
             var castItem = caster.GetEquippedWand();
             if (castItem != null && (castItem.SpellDID ?? 0) == spell.Id)

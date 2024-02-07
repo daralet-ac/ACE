@@ -149,6 +149,13 @@ namespace ACE.Server.Entity
 
             //DebugComponents();
 
+            var jewelcraftingCompBurn = 1f;
+
+            if (player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn) > 0)
+            {
+                jewelcraftingCompBurn = 1f - ((float)(player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn)) / 30);
+            }
+
             foreach (var component in Formula.CurrentFormula)
             {
                 if (!SpellFormula.SpellComponentsTable.SpellComponents.TryGetValue(component, out var spellComponent))
@@ -158,7 +165,7 @@ namespace ACE.Server.Entity
                 }
 
                 // component burn rate = spell base rate * component destruction modifier * skillMod?
-                var burnRate = baseRate * spellComponent.CDM * skillMod;
+                var burnRate = baseRate * spellComponent.CDM * skillMod * jewelcraftingCompBurn;
 
                 // TODO: curve?
                 var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
