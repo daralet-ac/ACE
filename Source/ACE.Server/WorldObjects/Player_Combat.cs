@@ -436,8 +436,21 @@ namespace ACE.Server.WorldObjects
 
                 //UpdateVitalDelta(Stamina, -1);
             }
-            if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You blocked {attacker.Name}'s attack!", ChatMessageType.CombatEnemy));
+
+            // if no shield, combat log readout changed to "parried"
+
+            if (GetEquippedShield() == null)
+            {
+                if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You parried {attacker.Name}'s attack!", ChatMessageType.CombatEnemy));
+            }
+
+            if (GetEquippedShield() != null)
+            {
+                if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You blocked {attacker.Name}'s attack!", ChatMessageType.CombatEnemy));
+            }
+
                     
             if (creatureAttacker == null)
                 return;
