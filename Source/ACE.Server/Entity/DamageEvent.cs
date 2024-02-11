@@ -649,6 +649,13 @@ namespace ACE.Server.Entity
 
         private bool IsBlocked(Creature attacker, Creature defender)
         {
+            // check for frontal radius prior to allowing a block/parry
+
+            var effectiveAngle = 180.0f;
+            var angle = defender.GetAngle(attacker);
+            if (Math.Abs(angle) > effectiveAngle / 2.0f)
+                return false;
+
             var blockChance = 0.0f;
 
             var combatAbility = CombatAbility.None;
