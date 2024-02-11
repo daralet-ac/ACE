@@ -483,7 +483,7 @@ namespace ACE.Server.WorldObjects
             Entity.CreatureAttribute attribute;
 
             Skill[] coordinationSkills = { Skill.Dagger, Skill.Staff, Skill.UnarmedCombat, Skill.Bow, Skill.Crossbow };
-            attribute = coordinationSkills.Contains(weapon.WeaponSkill) ? Coordination : Strength;
+            attribute = weapon != null && coordinationSkills.Contains(weapon.WeaponSkill) ? Coordination : Strength;
 
             Skill skill = GetCurrentWeaponSkill();
             if (skill == Skill.UnarmedCombat && !IsHumanoid)
