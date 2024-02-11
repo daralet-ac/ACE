@@ -56,7 +56,7 @@ namespace ACE.Server.WorldObjects
                 foreach (var fellow in fellows.Values)
                     TryCastSpell_Inner(spell, fellow, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg);
             }
-            else
+ 
                 TryCastSpell_Inner(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg);
         }
 
@@ -349,6 +349,16 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
+            // Empowered Scarabs
+
+            if (this is Player)
+            {
+                if (targetCreature != null)
+                {
+                    var player = this as Player;
+                    player.CheckForEmpoweredScarabOnCastEffects(targetCreature, spell, true, null, false);
+                }
+            }
             switch (spell.MetaSpellType)
             {
                 case SpellType.Enchantment:

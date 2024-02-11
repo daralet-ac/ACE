@@ -337,7 +337,13 @@ namespace ACE.Server.WorldObjects
                 // TODO: instead of ProjectileLauncher is Caster, perhaps a SpellProjectile.CanProc bool that defaults to true,
                 // but is set to false if the source of a spell is from a proc, to prevent multi procs?
 
-                if (sourceCreature != null && ProjectileTarget != null && !FromProc)
+                // EMPOWERED SCARAB - Detonation Check for Cast-On-Strike
+                if (player != null && FromProc)
+                {
+                    player.CheckForEmpoweredScarabOnCastEffects(target, Spell, true, creatureTarget);
+                }
+
+                if (sourceCreature != null && ProjectileTarget != null && !FromProc) // From proc prevents detonation
                 {
                     // TODO figure out why cross-landblock group operations are happening here. We shouldn't need this code Mag-nus 2021-02-09
                     bool threadSafe = true;
@@ -357,6 +363,8 @@ namespace ACE.Server.WorldObjects
                         // EMPOWERED SCARAB - Detonate
                         if (player != null)
                             player.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, creatureTarget);
+
+                     
                     }
                     else
                     {

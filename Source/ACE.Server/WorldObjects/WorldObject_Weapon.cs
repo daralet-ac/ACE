@@ -1005,10 +1005,11 @@ namespace ACE.Server.WorldObjects
             {
                 if (playerAttacker != null)
                 {
+                    var scarabReduction = playerAttacker.GetEmpoweredScarabManaReductionMod();
                     if (playerAttacker.Mana.Current < spell.BaseMana)
                         return;
 
-                    playerAttacker.UpdateVitalDelta(playerAttacker.Mana, (int)(spell.BaseMana * -1));
+                     playerAttacker.UpdateVitalDelta(playerAttacker.Mana, (int)(spell.BaseMana * (scarabReduction * -1)));
                 }
 
                 attacker.TryCastSpell(spell, target, itemCaster, itemCaster, true, true);
