@@ -56,7 +56,7 @@ namespace ACE.Server.WorldObjects
                 foreach (var fellow in fellows.Values)
                     TryCastSpell_Inner(spell, fellow, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg);
             }
- 
+            else
                 TryCastSpell_Inner(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg);
         }
 

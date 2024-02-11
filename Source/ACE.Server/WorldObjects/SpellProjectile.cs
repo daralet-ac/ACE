@@ -343,7 +343,7 @@ namespace ACE.Server.WorldObjects
                     player.CheckForEmpoweredScarabOnCastEffects(target, Spell, true, creatureTarget);
                 }
 
-                if (sourceCreature != null && ProjectileTarget != null && !FromProc) // From proc prevents detonation
+                if (sourceCreature != null && ProjectileTarget != null && !FromProc)
                 {
                     // TODO figure out why cross-landblock group operations are happening here. We shouldn't need this code Mag-nus 2021-02-09
                     bool threadSafe = true;
@@ -363,8 +363,6 @@ namespace ACE.Server.WorldObjects
                         // EMPOWERED SCARAB - Detonate
                         if (player != null)
                             player.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, creatureTarget);
-
-                     
                     }
                     else
                     {
