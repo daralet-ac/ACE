@@ -349,6 +349,16 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
+            // Empowered Scarabs
+
+            if (this is Player)
+            {
+                if (targetCreature != null)
+                {
+                    var player = this as Player;
+                    player.CheckForEmpoweredScarabOnCastEffects(targetCreature, spell, true, null, false);
+                }
+            }
             switch (spell.MetaSpellType)
             {
                 case SpellType.Enchantment:
