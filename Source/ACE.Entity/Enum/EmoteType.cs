@@ -138,5 +138,7 @@ namespace ACE.Entity.Enum
         TrainSkill                    = 10000,
         InqFellowQuestSolves          = 10001,
         EraseFellowQuest              = 10002,
+
+        RelieveVitaePenalty           = 10004,
     }
 }
