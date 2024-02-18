@@ -86,6 +86,20 @@ namespace ACE.Server.WorldObjects
 
                 var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
 
+                // Simplified Ai-Acquire Health - place heals/drains at top of Spellbook with probability of 2, as health decreases prob of casting increases.
+
+                if (spell.Value == 2.0f)
+                {
+                    var maxHealth = (float)this.Health.MaxValue;
+                    var currentHealth = (float)this.Health.Current;
+
+                    var maxProbability = 0.33f;
+                    var reciprocal = 1 / maxProbability;
+
+                    probability = ((maxHealth - currentHealth) / maxHealth) / reciprocal;
+
+                }
+
                 if (rng < probability)
                 {
                     CurrentSpell = new Spell(spell.Key);
