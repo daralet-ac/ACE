@@ -93,7 +93,10 @@ namespace ACE.Server.WorldObjects
                     var maxHealth = (float)this.Health.MaxValue;
                     var currentHealth = (float)this.Health.Current;
 
-                    probability = ((maxHealth - currentHealth) / maxHealth) / 3;
+                    var maxProbability = 0.33f;
+                    var reciprocal = 1 / maxProbability;
+
+                    probability = ((maxHealth - currentHealth) / maxHealth) / reciprocal;
 
                 }
 
