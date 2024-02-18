@@ -346,16 +346,18 @@ namespace ACE.Server.WorldObjects
             }
 
             var vitaePenalty = vitae.StatModValue;
+            var vitaeRelieved = 0;
 
             while (amount > 0)
             {
                 amount -= 1;
+                vitaeRelieved += 1;
                 vitaePenalty = EnchantmentManager.ReduceVitae();
                 if (vitaePenalty == 1.0f)
                     break;                 
             }
 
-            Session.Network.EnqueueSend(new GameMessageSystemChat("Your Vitae penalty has been relieved by 5%!", ChatMessageType.Magic));
+            Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Vitae penalty has been relieved by {vitaeRelieved}%!", ChatMessageType.Magic));
             EnchantmentManager.SendUpdateVitae();
 
             if (vitaePenalty.EpsilonEquals(1.0f) || vitaePenalty > 1.0f)
