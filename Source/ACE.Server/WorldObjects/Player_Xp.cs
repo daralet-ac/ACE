@@ -328,6 +328,56 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        public void RelieveVitaePenalty(int? amount)
+        {
+            if (HasVitae)
+                RelieveVitae(amount);
+        }
+
+        private void RelieveVitae(int? amount)
+        {
+            var vitae = EnchantmentManager.GetVitae();
+
+            if (vitae == null)
+            {
+                _log.Error($"{Name}.UpdateXpVitae({amount}) vitae null, likely due to cross-thread operation or corrupt EnchantmentManager cache. Please report this.");
+                _log.Error(Environment.StackTrace);
+                return;
+            }
+
+            var vitaePenalty = vitae.StatModValue;
+            var vitaeRelieved = 0;
+
+            while (amount > 0)
+            {
+                amount -= 1;
+                vitaeRelieved += 1;
+                vitaePenalty = EnchantmentManager.ReduceVitae();
+                if (vitaePenalty == 1.0f)
+                    break;                 
+            }
+
+            Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Vitae penalty has been relieved by {vitaeRelieved}%!", ChatMessageType.Magic));
+            EnchantmentManager.SendUpdateVitae();
+
+            if (vitaePenalty.EpsilonEquals(1.0f) || vitaePenalty > 1.0f)
+            {
+                var actionChain = new ActionChain();
+                actionChain.AddDelaySeconds(2.0f);
+                actionChain.AddAction(this, () =>
+                {
+                    var vitae = EnchantmentManager.GetVitae();
+                    if (vitae != null)
+                    {
+                        var curPenalty = vitae.StatModValue;
+                        if (curPenalty.EpsilonEquals(1.0f) || curPenalty > 1.0f)
+                            EnchantmentManager.RemoveVitae();
+                    }
+                });
+                actionChain.EnqueueChain();
+            }
+        }
+
         /// <summary>
         /// Returns the maximum possible character level
         /// </summary>

@@ -1148,6 +1148,13 @@ namespace ACE.Server.WorldObjects.Managers
                         player.Session.Network.EnqueueSend(new GameEventPopupString(player.Session, emote.Message));
                     break;
 
+                case EmoteType.RelieveVitaePenalty:
+
+                    if (player != null)
+                        player.RelieveVitaePenalty(emote.Amount);
+
+                    break;
+
                 case EmoteType.RemoveContract:
 
                     if (player != null && emote.Stat.HasValue && emote.Stat.Value > 0)
