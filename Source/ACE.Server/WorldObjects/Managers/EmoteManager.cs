@@ -1239,6 +1239,30 @@ namespace ACE.Server.WorldObjects.Managers
                     }
                     break;
 
+                case EmoteType.SetLBEnviron:
+                    {
+                        if (creature != null)
+                        {
+                            EnvironChangeType environChange = EnvironChangeType.Clear;
+
+                            if (emote.Amount != null)
+                            {
+                                if (Enum.IsDefined(typeof(EnvironChangeType), emote.Amount))
+                                {
+                                    environChange = (EnvironChangeType)emote.Amount;
+                                }
+                                else
+                                {
+                                    environChange = EnvironChangeType.Clear;
+                                }
+                            }
+
+                            creature.CurrentLandblock?.DoEnvironChange(environChange);
+                        }
+                    }
+                
+                    break;
+
                 case EmoteType.SetMouthPalette:
                     break;
 

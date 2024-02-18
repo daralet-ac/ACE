@@ -138,5 +138,6 @@ namespace ACE.Entity.Enum
         TrainSkill                    = 10000,
         InqFellowQuestSolves          = 10001,
         EraseFellowQuest              = 10002,
+        SetLBEnviron                  = 10003,
     }
 }
