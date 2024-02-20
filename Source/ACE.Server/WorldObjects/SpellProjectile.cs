@@ -404,6 +404,7 @@ namespace ACE.Server.WorldObjects
             }
 
             var critDamageBonus = 0.0f;
+            var criticalDamageMod = 1.0f;
             var weaponCritDamageMod = 1.0f;
             var weaponResistanceMod = 1.0f;
             var resistanceMod = 1.0f;
@@ -414,10 +415,8 @@ namespace ACE.Server.WorldObjects
             // war/void magic
             var baseDamage = 0;
             var skillBonus = 0.0f;
-            var oldSkillBonus = 0.0f; //For Testing
            
             var finalDamage = 0.0f;
-            var oldFinalDamage = 0.0f;
 
             var resistanceType = Creature.GetResistanceType(Spell.DamageType);
 
@@ -501,9 +500,6 @@ namespace ACE.Server.WorldObjects
 
             //Console.WriteLine($"TargetAegis: {target.AegisLevel} AegisRend: {aegisRendingMod} AegisPen: {aegisPenMod} AegisMod: {aegisMod}");
 
-            var testAegis = target.GetAegisLevel();
-            var testAegisMod = GetAegisMod(target, 1.0f);
-
             // absorb mod
             bool isPVP = sourcePlayer != null && targetPlayer != null;
             var absorbMod = GetAbsorbMod(target, this);
@@ -518,6 +514,8 @@ namespace ACE.Server.WorldObjects
 
             if (isPVP && Spell.IsHarmful)
                 Player.UpdatePKTimers(sourcePlayer, targetPlayer);
+
+            var attributeMod = sourcePlayer.GetAttributeMod(weapon, true);
 
             var elementalDamageMod = GetCasterElementalDamageModifier(weapon, sourceCreature, target, Spell.DamageType);
 
@@ -562,7 +560,7 @@ namespace ACE.Server.WorldObjects
                     // whereas CD/CDR applied to the total damage (base damage + additional crit damage)
                     weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
 
-                    critDamageBonus = lifeMagicDamage * 0.5f * weaponCritDamageMod;
+                    criticalDamageMod = 2.0f + weaponCritDamageMod;
                 }
 
                 weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType);
@@ -572,7 +570,7 @@ namespace ACE.Server.WorldObjects
 
                 resistanceMod = (float)Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
-                finalDamage = (lifeMagicDamage + critDamageBonus) * elementalDamageMod * slayerMod * resistanceMod * absorbMod * aegisMod * resistedMod * specDefenseMod;
+                finalDamage = lifeMagicDamage * criticalDamageMod * elementalDamageMod * slayerMod * attributeMod * resistanceMod * absorbMod * aegisMod * resistedMod * specDefenseMod;
             }
             // war/void magic projectiles
             else
@@ -605,85 +603,10 @@ namespace ACE.Server.WorldObjects
                     weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
 
                     critDamageBonus *= weaponCritDamageMod;
+
+                    criticalDamageMod = 1.0f + weaponCritDamageMod;
                 }
 
-                /* War Magic skill-based damage bonus
-                 * (RETAIL)
-                 * http://acpedia.org/wiki/Announcements_-_2002/08_-_Atonement#Letter_to_the_Players
-                 * (RETAIL)
-                 * 
-                 * NEW
-                 * Currently, Aegis provides 50% damage reduction at 200 Aegis Level.
-                 * 
-                 * To counter this, War Magic now has a modifier with the reverse formula,
-                 * providing +100% damage at 200 War Magic.
-                 * 
-                 * War Magic skill scales evenly against Aegis. If a caster's War Magic is equal 
-                 * to the target's Aegis, the damage will be the same as the old formula. However, War
-                 * Magic can now deal heavy damage to enemies with little to no Aegis, and vice versa to 
-                 * high Aegis enemies.
-                 */
-
-                uint magicSkill = 0;
-
-                if (sourcePlayer != null)
-                {
-                    if (Spell.School == MagicSchool.WarMagic || Spell.School == MagicSchool.LifeMagic)
-                    {
-                        var armorWarMagicMod = sourcePlayer.GetModdedWarMagicSkill();
-                        var armorLifeMagicMod = sourcePlayer.GetModdedLifeMagicSkill();
-
-                        var moddedMagicSkill = Spell.School == MagicSchool.WarMagic ? armorWarMagicMod : armorLifeMagicMod;
-
-                        magicSkill = moddedMagicSkill;
-
-                        // When an item casts a spell while being wielded by a creature, average the spellcraft and wielder's magic skill
-                        if (sourcePlayer.GetEquippedMeleeWeapon() != null)
-                        {
-                            var spellcraft = sourceCreature.GetEquippedMeleeWeapon().ItemSpellcraft ?? 1;
-                            
-                            // SPEC BONUS - Arcane Lore (spellcraft averaged with Arcane Lore)
-                            if (sourcePlayer != null)
-                            {
-                                var arcaneLore = sourcePlayer.GetCreatureSkill(Skill.ArcaneLore);
-
-                                if (arcaneLore.AdvancementClass == SkillAdvancementClass.Specialized)
-                                    spellcraft = (int)Math.Max((spellcraft + arcaneLore.Current) * 0.5f, spellcraft);
-                            }
-                            
-                            // COMBAT ABILITY - Enchant: Effective spellcraft increased by 10%
-                            var combatAbility = CombatAbility.None;
-                            var combatFocus = sourcePlayer.GetEquippedCombatFocus();
-                            if (combatFocus != null)
-                                combatAbility = combatFocus.GetCombatAbility();
-
-                            if (combatAbility == CombatAbility.EnchantedWeapon)
-                                spellcraft = (int)(spellcraft * 1.1f);
-                            
-                            magicSkill = (uint)((magicSkill + spellcraft) * 0.5);
-                        }
-                        else
-                        {
-                            magicSkill = 1;
-                        }
-                        //Console.WriteLine($"{sourceCreature.Name} casts a spell:\n" +
-                        //    $" -BaseSkill: {sourceCreature.GetCreatureSkill(Spell.School).Current} -ArmorMod: {sourcePlayer.GetArmorWarMagicMod()} -FinalSkill: {magicSkill}");
-                    }
-                }
-
-                var magicSkillMod = SkillFormula.CalcSpellMod((int)magicSkill);
-
-                if (sourcePlayer != null)
-                {
-                    if (magicSkill > Spell.Power)
-                    {
-                        var percentageBonus = (magicSkill - Spell.Power) / 100.0f;
-                        skillBonus = Spell.MinDamage * percentageBonus;
-
-                        var oldPercentageBonus = (magicSkill - Spell.Power) / 1000.0f; // for testing
-                        oldSkillBonus = Spell.MinDamage * oldPercentageBonus; // for testing
-                    }
-                }
                 baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
 
                 weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType);
@@ -702,19 +625,24 @@ namespace ACE.Server.WorldObjects
                     resistanceMod *= (float)PropertyManager.GetDouble("void_pvp_modifier").Item;
                 }
 
-                finalDamage = baseDamage + critDamageBonus + skillBonus;
-                oldFinalDamage = baseDamage + critDamageBonus + oldSkillBonus;
+                var damageBeforeMitigation = baseDamage * criticalDamageMod * attributeMod * elementalDamageMod * slayerMod * combatFocusDamageMod;
 
-                var testFinalDamage = finalDamage * elementalDamageMod * slayerMod * resistanceMod * absorbMod * testAegisMod * magicSkillMod;
-
-                finalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod * aegisMod * magicSkillMod * resistedMod * combatFocusDamageMod * specDefenseMod;
-                oldFinalDamage *= elementalDamageMod * slayerMod * resistanceMod * absorbMod;
+                finalDamage = damageBeforeMitigation * absorbMod * aegisMod * resistanceMod * resistedMod * specDefenseMod;
                 
                 if (sourcePlayer != null)
                 {
                     //Console.WriteLine($"\n{sourcePlayer.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
-                    //    $"  -Ignored {Math.Round((1 - aegisPenMod) * 100, 0)}% of target's {testAegis} Aegis, increasing total damage by {Math.Round(finalDamage - testFinalDamage, 0)}.  DekarutideDamage: {Math.Round(oldFinalDamage, 0)}.\n" +
-                    //    $"  -magicSkillMod: {magicSkillMod} -elementalDamageMod: {elementalDamageMod} -slayerMod {slayerMod} -resistanceMod {resistanceMod} -absorbMod: {absorbMod} -aegisMod {aegisMod} -skillBonus {skillBonus} -baseDamage {baseDamage}");
+                    //    $" -baseDamage: {baseDamage}\n" +
+                    //    $" -critMultiplier: {criticalDamageMod}\n" +
+                    //    $" -attributeMod: {attributeMod}\n" +
+                    //    $" -elementalDamageMod: {elementalDamageMod}\n" +
+                    //    $" -slayerMod: {slayerMod}\n" +
+                    //    $" -absorbMod: {absorbMod}\n" +
+                    //    $" -aegisMod: {aegisMod}\n" +
+                    //    $" -resistanceMod: {resistanceMod}\n" +
+                    //    $" -resistedMod: {resistedMod}\n" +
+                    //    $" -specDefMod: {specDefenseMod}\n" +
+                    //    $" -FinalBeforeRatings: {finalDamage}");
                 }
             }
 
@@ -921,11 +849,8 @@ namespace ACE.Server.WorldObjects
 
                 if (critical)
                 {
-                    critDamageRatingMod = Creature.GetPositiveRatingMod(sourceCreature?.GetCritDamageRating() ?? 0);
-                    critDamageResistRatingMod = Creature.GetNegativeRatingMod(target.GetCritDamageResistRating());
-
-                    damageRatingMod = Creature.AdditiveCombine(damageRatingMod, critDamageRatingMod);
-                    damageResistRatingMod = Creature.AdditiveCombine(damageResistRatingMod, critDamageResistRatingMod);
+                    damageRatingMod = Creature.GetPositiveRatingMod(sourceCreature?.GetCritDamageRating() ?? 0);
+                    damageResistRatingMod = Creature.GetNegativeRatingMod(target.GetCritDamageResistRating());
                 }
 
                 if (pkBattle)
@@ -963,6 +888,11 @@ namespace ACE.Server.WorldObjects
             }
 
             amount = (uint)Math.Round(damage);    // full amount for debugging
+
+            Console.WriteLine($" -criticalHit? {critical}\n" +
+                $" -damageRatingMod: {damageRatingMod}\n" +
+                $" -damageResistRatingMod: {damageResistRatingMod}\n" +
+                $" -FINAL: {amount}");
 
             // add threat to damaged targets
             if (target.IsMonster)

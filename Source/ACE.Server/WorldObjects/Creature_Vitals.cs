@@ -136,13 +136,13 @@ namespace ACE.Server.WorldObjects
             // Player Regeneration is now based on Maximum Vitals
             // Health = 10% per 5 seconds
             // Stamina = 20% per 5 seconds
-            // Mana = 10% per 5 seconds
+            // Mana = 20% per 5 seconds
             double currentTick = 0.0;
 
             float maxVital = vital.MaxValue;
             float diminishedMaxVital = maxVital * (1000 / (1000 + maxVital));
 
-            var vitalTypeBaseMod = vital == Stamina ? 5 : 10;
+            var vitalTypeBaseMod = vital == Health ? 10 : 5;
 
             var vitalTypeArmorMod = 1.0;
             if (vital == Health)

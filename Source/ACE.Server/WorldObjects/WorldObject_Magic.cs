@@ -192,14 +192,32 @@ namespace ACE.Server.WorldObjects
             else if (caster.ItemSpellcraft != null)
             {
                 // Retrieve casting item's spellcraft
-                magicSkill = (uint)caster.ItemSpellcraft;
+                var spellcraft = (uint)caster.ItemSpellcraft.Value;
 
                 // When an item with spellcraft casts a spell while being wielded by a creature, average the spellcraft and wielder's magic skill
                 if (caster.Wielder is Creature wielder)
                 {
                     var casterMagicSkill = spell.School == MagicSchool.WarMagic ? wielder.GetModdedWarMagicSkill() : wielder.GetModdedLifeMagicSkill();
 
-                    magicSkill = (uint)((magicSkill + casterMagicSkill) * 0.5);
+                    // SPEC BONUS - Arcane Lore (spellcraft averaged with Arcane Lore)
+                    if (wielder != null)
+                    {
+                        var arcaneLore = wielder.GetCreatureSkill(Skill.ArcaneLore);
+
+                        if (arcaneLore.AdvancementClass == SkillAdvancementClass.Specialized)
+                            spellcraft = (uint)Math.Max((spellcraft + arcaneLore.Current) * 0.5f, spellcraft);
+                    }
+
+                    // COMBAT ABILITY - Enchant: Effective spellcraft increased by 10%
+                    var combatAbility = CombatAbility.None;
+                    var combatFocus = wielder.GetEquippedCombatFocus();
+                    if (combatFocus != null)
+                        combatAbility = combatFocus.GetCombatAbility();
+
+                    if (combatAbility == CombatAbility.EnchantedWeapon)
+                        spellcraft = (uint)(spellcraft * 1.1f);
+
+                    magicSkill = (uint)((spellcraft + casterMagicSkill) * 0.5);
                 }
             }
             else if (caster.Wielder is Creature wielder)

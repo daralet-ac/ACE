@@ -475,19 +475,44 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// Returns the attribute damage bonus for a physical attack
+        /// Returns the attribute damage bonus for a physical and magical attacks
         /// </summary>
         /// <param name="attackType">Uses strength for melee, coordination for missile</param>
-        public float GetAttributeMod(WorldObject weapon)
+        public float GetAttributeMod(WorldObject weapon, bool isSpell)
         {
             Entity.CreatureAttribute attribute;
 
-            Skill[] coordinationSkills = { Skill.Dagger, Skill.Staff, Skill.UnarmedCombat, Skill.Bow, Skill.Crossbow };
-            attribute = coordinationSkills.Contains(weapon.WeaponSkill) ? Coordination : Strength;
+            if (weapon == null)
+                attribute = isSpell ? Self : Coordination;
+            else
+            {
+                switch(weapon.WeaponSkill)
+                {
+                    default:
+                    case Skill.Bow:
+                    case Skill.Crossbow:
+                    case Skill.Dagger:
+                    case Skill.Staff:
+                    case Skill.MissileWeapons:
+                    case Skill.UnarmedCombat:
+                        attribute = Coordination;
+                        break;
+                    case Skill.Axe:
+                    case Skill.HeavyWeapons:
+                    case Skill.Mace:
+                    case Skill.Spear:
+                    case Skill.Sword:
+                    case Skill.ThrownWeapon:
+                        attribute = Strength;
+                        break;
+                    case Skill.LifeMagic:
+                    case Skill.WarMagic:
+                        attribute = Self;
+                        break;
+                }
+            }
 
             Skill skill = GetCurrentWeaponSkill();
-            if (skill == Skill.UnarmedCombat && !IsHumanoid)
-                skill = Skill.None; // Non humanoids(creatures that aren't able to wield weapons) use unarmed combat but still have the regular weapon factor.
 
             return SkillFormula.GetAttributeMod((int)attribute.Current, skill);
         }
