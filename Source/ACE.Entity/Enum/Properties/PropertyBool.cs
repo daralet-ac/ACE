@@ -180,6 +180,7 @@ namespace ACE.Entity.Enum.Properties
         ArmorPatchApplied                = 137,
         BossKillXpReward                 = 138,
         UseLegacyThreatSystem            = 139,
+        OverrideVisualRange              = 140,
 
         /* custom */
         [ServerOnly]
