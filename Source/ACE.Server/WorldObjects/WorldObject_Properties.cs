@@ -3398,5 +3398,12 @@ namespace ACE.Server.WorldObjects
             get => GetProperty(PropertyInt.EmpoweredScarabBonusStatAmount);
             set { if (!value.HasValue) RemoveProperty(PropertyInt.EmpoweredScarabBonusStatAmount); else SetProperty(PropertyInt.EmpoweredScarabBonusStatAmount, value.Value); }
         }
+
+        public bool? OverrideVisualRange
+        {
+            get => GetProperty(PropertyBool.OverrideVisualRange);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.OverrideVisualRange); else SetProperty(PropertyBool.OverrideVisualRange, value.Value); }
+        }
+
     }
 }
