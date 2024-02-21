@@ -3,7 +3,9 @@ using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Network.GameMessages.Messages;
+using Org.BouncyCastle.Asn1.X509;
 using System;
+using Time = ACE.Common.Time;
 
 namespace ACE.Server.WorldObjects
 {
@@ -11,6 +13,19 @@ namespace ACE.Server.WorldObjects
     {
         public double LastFocusedTaunt = 0;
         public double LastFeignWeakness = 0;
+        public double LastProvokeActivated = 0; 
+        public double LastPhalanxActivated = 0;
+        public double LastRecklessActivated = 0;
+        public double LastParryActivated = 0;
+        public double LastBackstabActivated = 0;
+        public double LastSteadyShotActivated = 0;
+        public double LastMultishotActivated = 0;
+        public double LastSmokescreenActivated = 0;
+        public double LastIronFistActivated = 0;
+        public double LastOverloadActivated = 0;
+        public double LastBatteryActivated = 0;
+        public double LastReflectActivated = 0;
+        public double LastEnchantedWeaponActivated = 0;
 
         public void TryUseFocusedTaunt(WorldObject ability)
         {
@@ -262,5 +277,66 @@ namespace ACE.Server.WorldObjects
                 }
             }
         }
+
+        public void TryUseProvokeActivated(WorldObject ability)
+        {
+
+        }
+        public void TryUsePhalanxActivated(WorldObject ability)
+        {
+            LastPhalanxActivated = Time.GetUnixTime();
+
+            Session.Network.EnqueueSend(new GameMessageSystemChat($"You raise your shield, ready to serve any who would test it with the rebuke they so richly deserve.", ChatMessageType.Broadcast));
+
+        }
+        public void TryUseRecklessActivated(WorldObject ability)
+        {
+
+        }
+        public void TryUseParryActivated(WorldObject ability)
+        {
+
+        }
+        public void TryUseBackstabActivated(WorldObject ability)
+        {
+
+        }
+        public void TryUseSteadyShotActivated(WorldObject ability)
+        {
+
+        }
+        public void TryUseMultishotActivated(WorldObject ability)
+        {
+
+        }
+        public void TryUseSmokescreenActivated(WorldObject ability)
+        {
+
+        }
+        public void TryUseIronFistActivated(WorldObject ability)
+        {
+
+        }
+        public void TryUseOverloadActivated(WorldObject ability)
+        {
+
+        }
+        public void TryUseBatteryActivated(WorldObject ability)
+        {
+
+
+        }
+
+        public void TryUseReflectActivated(WorldObject ability)
+        {
+
+
+        }
+        public void TryUseEnchantedWeaponActivated(WorldObject ability)
+        {
+
+
+        }
+
     }
 }

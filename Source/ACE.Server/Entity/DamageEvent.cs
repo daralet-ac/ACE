@@ -150,6 +150,8 @@ namespace ACE.Server.Entity
             40301,  // Verdant Moar
         };
 
+        private double PhalanxActivatedDuration = 10;
+
         public static DamageEvent CalculateDamage(Creature attacker, Creature defender, WorldObject damageSource, MotionCommand? attackMotion = null, AttackHook attackHook = null)
         {
             var damageEvent = new DamageEvent();
@@ -214,6 +216,12 @@ namespace ACE.Server.Entity
 
             // ---- BLOCK ----
             Blocked = IsBlocked(attacker, defender);
+
+            // PhalanxActivated Shield Reprisal
+            if (Blocked && playerDefender != null && playerDefender.LastPhalanxActivated > Time.GetUnixTime() - PhalanxActivatedDuration && playerDefender.GetEquippedShield != null)
+            {
+                   
+            } 
 
             // ---- EVASION ----
             var evasionMod = GetEvasionMod(attacker, defender);
@@ -652,12 +660,19 @@ namespace ACE.Server.Entity
         private bool IsBlocked(Creature attacker, Creature defender)
         {
             // check for frontal radius prior to allowing a block/parry
+            // unless PhalanxActive
 
-            var effectiveAngle = 180.0f;
-            var angle = defender.GetAngle(attacker);
-            if (Math.Abs(angle) > effectiveAngle / 2.0f)
-                return false;
+            Player playerAttacker = attacker as Player;
+            Player playerDefender = defender as Player;
 
+            if (playerDefender == null || playerDefender.LastPhalanxActivated < Time.GetUnixTime() - PhalanxActivatedDuration || playerDefender.GetEquippedShield == null)
+            { 
+                var effectiveAngle = 180.0f;
+                var angle = defender.GetAngle(attacker);
+                if (Math.Abs(angle) > effectiveAngle / 2.0f)
+                    return false;
+            }
+            
             var blockChance = 0.0f;
 
             var combatAbility = CombatAbility.None;
@@ -668,10 +683,6 @@ namespace ACE.Server.Entity
             var defenderEquippedShield = defender.GetEquippedShield();
             if (defenderEquippedShield != null && defender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
-
-                Player playerAttacker = attacker as Player;
-                Player playerDefender = defender as Player;
-
                 AccuracyMod = attacker.GetAccuracySkillMod(Weapon);
                 EffectiveAttackSkill = attacker.GetEffectiveAttackSkill();
 
