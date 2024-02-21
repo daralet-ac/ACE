@@ -884,8 +884,9 @@ namespace ACE.Server.Factories
         {
             totalGearRatingPercentile = 0;
 
-            if (profile.Tier < 2)
+            if (profile.Tier < 6)
                 return false;
+
             var tier = profile.Tier;
             var weightType = wo.ArmorWeightClass;
 
@@ -900,23 +901,21 @@ namespace ACE.Server.Factories
                 return false;
 
             var armorSlots = wo.ArmorSlots ?? 1;
-            var variance1 = ThreadSafeRandom.Next(-armorSlots, armorSlots);
-            var variance2 = ThreadSafeRandom.Next(-armorSlots, armorSlots);
 
             if (weightType == (int)ArmorWeightClass.Cloth)
             {
-                wo.GearDamage = gearRatingAmount1 * armorSlots + variance1;
-                wo.GearHealingBoost = gearRatingAmount2 * armorSlots + variance2;
+                wo.GearDamage = gearRatingAmount1 * armorSlots;
+                wo.GearHealingBoost = gearRatingAmount2 * armorSlots;
             }
             else if (weightType == (int)ArmorWeightClass.Light)
             {
-                wo.GearCritDamage = gearRatingAmount1 * armorSlots + variance1;
-                wo.GearCrit = 1 * armorSlots + variance2;
+                wo.GearCritDamage = gearRatingAmount1 * armorSlots;
+                wo.GearCrit = gearRatingAmount2 * armorSlots;
             }
             else if (weightType == (int)ArmorWeightClass.Heavy)
             {
-                wo.GearDamageResist = gearRatingAmount1 * armorSlots + variance1;
-                wo.GearCritResist = (gearRatingAmount2 + 1) * armorSlots + variance2;
+                wo.GearDamageResist = gearRatingAmount1 * armorSlots;
+                wo.GearCritResist = (gearRatingAmount2 + 1) * armorSlots;
             }
             else if (roll.ItemType == TreasureItemType_Orig.Clothing)
             {
@@ -931,40 +930,42 @@ namespace ACE.Server.Factories
             return true;
         }
 
-        private static bool TryMutateArmorSkillMod(WorldObject wo, TreasureDeath profile, TreasureRoll roll, out double totalModPercentile)
+        private static bool TryMutateArmorSkillMod(WorldObject wo, TreasureDeath profile, TreasureRoll roll, out double highestModPercentile)
         {
-            totalModPercentile = 0.0f;
-            
-            //if (profile.Tier < 2)
-            //    return false;
+            highestModPercentile = 0.0f;
+            var modPercentile = 0.0f;
 
-            var tier = profile.Tier;
-            var weightType = wo.ArmorWeightClass;
-            var armorSlotsMod = (wo.ArmorSlots ?? 1.0f) / 10; ;
             var qualityMod = profile.LootQualityMod != 0.0f ? profile.LootQualityMod : 0.0f;
 
-            // get number of potential types
             var potentialTypes = new List<int>();
-            var numTypes = wo.ArmorType == (int)LootTables.ArmorType.MiscClothing ? 3 : 6;
+            var numTypes = wo.ArmorType == (int)LootTables.ArmorType.MiscClothing ? 3 : 5;
             for (int i = 1; i <= numTypes; i++)
                 potentialTypes.Add(i);
-
-            // roll for types
             var rolledTypes = GetRolledTypes(potentialTypes, qualityMod);
-            var inverse = numTypes - rolledTypes.Count;
-            var percentile = (float)inverse / (numTypes - 1);
-            var multiplier = rolledTypes.Count > 0 ? (percentile + 1) / 2 : 1;
+
+            float numRolledTypesMultiplier;
+            switch (rolledTypes.Count)
+            {
+                default:
+                case 1: numRolledTypesMultiplier = 1.0f; break; // 100% per mod, 100% total.
+                case 2: numRolledTypesMultiplier = 0.75f; break; // 75% per mod, 150% total.
+                case 3: numRolledTypesMultiplier = 0.5833f; break; // 58.33% per mod, 175% total.
+                case 4: numRolledTypesMultiplier = 0.475f; break; // 47.5% per mod, 190% total.
+                case 5: numRolledTypesMultiplier = 0.4f; break; // 40% per mod, 200% total.
+            }
+
+            var weightType = wo.ArmorWeightClass;
+            var armorSlotsMod = (wo.ArmorSlots ?? 1.0f) / 10;
 
             // roll mod values for types
             if (wo.ArmorType == (int)LootTables.ArmorType.MiscClothing && wo.ArmorWeightClass == 0)
             {
-                //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
                 var miscClothingMultiplier = 0.5f;
 
                 foreach (var type in rolledTypes)
                 {
-                    var amount = GetArmorSkillAmount(tier, profile, wo, multiplier, out var modPercentile) * miscClothingMultiplier * 0.01;
-                    totalModPercentile += modPercentile;
+                    var amount = GetArmorSkillAmount(profile, wo, out modPercentile) * numRolledTypesMultiplier * miscClothingMultiplier;
+                    highestModPercentile = modPercentile > highestModPercentile ? modPercentile : highestModPercentile;
 
                     switch(type)
                     {
@@ -979,32 +980,28 @@ namespace ACE.Server.Factories
             {
                 wo.ArmorWarMagicMod = 0.0;
                 wo.ArmorLifeMagicMod = 0.0;
-                wo.ArmorMagicDefMod = 0.0;
                 wo.ArmorPerceptionMod = 0.0;
                 wo.ArmorDeceptionMod = 0.0;
                 wo.ArmorManaRegenMod = 0.0;
                 wo.ManaConversionMod = 0.0;
 
-                //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
                 foreach (var type in rolledTypes)
                 {
-                    //Console.WriteLine($"Type: {type}");
-                    var amount = GetArmorSkillAmount(tier, profile, wo, multiplier, out var modPercentile) * armorSlotsMod * 0.01;
-                    totalModPercentile += modPercentile;
+                    var amount = GetArmorSkillAmount(profile, wo, out modPercentile) * numRolledTypesMultiplier * armorSlotsMod;
+                    highestModPercentile = modPercentile > highestModPercentile ? modPercentile : highestModPercentile;
 
                     switch (type)
                     {
                         case 1: wo.ArmorWarMagicMod = amount; break;
                         case 2: wo.ArmorLifeMagicMod = amount; break;
-                        case 3: wo.ArmorMagicDefMod = amount; break;
-                        case 4:
+                        case 3:
                             if (ThreadSafeRandom.Next(0, 1) == 0)
                                 wo.ArmorPerceptionMod = amount;
                             else
                                 wo.ArmorDeceptionMod = amount;
                             break;
-                        case 5: wo.ArmorManaRegenMod = amount; break;
-                        case 6: wo.ManaConversionMod = amount; break;
+                        case 4: wo.ArmorManaRegenMod = amount; break;
+                        case 5: wo.ManaConversionMod = amount; break;
                     }
                 }
             }
@@ -1019,12 +1016,10 @@ namespace ACE.Server.Factories
                 wo.ArmorPerceptionMod = 0.0;
                 wo.ArmorDeceptionMod = 0.0;
 
-                //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
                 foreach (var type in rolledTypes)
                 {
-                    //Console.WriteLine($"Type: {type}");
-                    var amount = GetArmorSkillAmount(tier, profile, wo, multiplier, out var modPercentile) * armorSlotsMod * 0.01;
-                    totalModPercentile += modPercentile;
+                    var amount = GetArmorSkillAmount(profile, wo, out modPercentile) * numRolledTypesMultiplier * armorSlotsMod;
+                    highestModPercentile = modPercentile > highestModPercentile ? modPercentile : highestModPercentile;
 
                     switch (type)
                     {
@@ -1035,10 +1030,14 @@ namespace ACE.Server.Factories
                             else
                                 wo.ArmorDualWieldMod = amount;
                             break;
-                        case 3: wo.ArmorThieveryMod = amount; break;
-                        case 4: wo.ArmorRunMod = amount; break;
-                        case 5: wo.ArmorStaminaRegenMod = amount; break;
-                        case 6:
+                        case 3:
+                            if (ThreadSafeRandom.Next(0, 1) == 0)
+                                wo.ArmorThieveryMod = amount;
+                            else
+                                wo.ArmorRunMod = amount;
+                            break;
+                        case 4: wo.ArmorStaminaRegenMod = amount; break;
+                        case 5:
                             if (ThreadSafeRandom.Next(0, 1) == 0)
                                 wo.ArmorPerceptionMod = amount;
                             else
@@ -1058,31 +1057,32 @@ namespace ACE.Server.Factories
                 wo.ArmorDeceptionMod = 0.0;
                 wo.ArmorHealthRegenMod = 0.0;
 
-                //Console.WriteLine($"RolledCount: {rolledTypes.Count} PotentialCount: {numTypes} Inverse: {inverse} percentile: {percentile} multiplier: {multiplier}");
                 foreach (var type in rolledTypes)
                 {
-                    //Console.WriteLine($"Type: {type}");
-                    var amount = GetArmorSkillAmount(tier, profile, wo, multiplier, out var modPercentile) * armorSlotsMod * 0.01;
-                    totalModPercentile += modPercentile;
+                    var amount = GetArmorSkillAmount(profile, wo, out modPercentile) * numRolledTypesMultiplier * armorSlotsMod;
+                    highestModPercentile = modPercentile > highestModPercentile ? modPercentile : highestModPercentile;
 
                     switch (type)
                     {
-                        case 1: wo.ArmorAttackMod = amount; break;
-                        case 2: wo.ArmorPhysicalDefMod = amount; break;
-                        case 3: wo.ArmorMagicDefMod = amount; break;
-                        case 4:
+                        case 1:
+                            wo.ArmorAttackMod = amount; break;
+                        case 2:
+                            wo.ArmorPhysicalDefMod = amount;
+                            wo.ArmorMagicDefMod = amount; break;
+                        case 3:
                             if (IsShieldWcid(wo) || ThreadSafeRandom.Next(0, 1) == 0)
                                 wo.ArmorShieldMod = amount;
                             else
                                 wo.ArmorTwohandedCombatMod = amount;
                             break;
-                        case 5:
+                        case 4:
                             if (ThreadSafeRandom.Next(0, 1) == 0)
                                 wo.ArmorPerceptionMod = amount;
                             else
                                 wo.ArmorDeceptionMod = amount;
                             break;
-                        case 6: wo.ArmorHealthRegenMod = amount; break;
+                        case 5:
+                            wo.ArmorHealthRegenMod = amount; break;
                     }
                 }
             }
@@ -1091,9 +1091,6 @@ namespace ACE.Server.Factories
                 _log.Error($"TryMutateGearRating({wo.Name}, {weightType}): unknown weight class");
                 return false;
             }
-
-            totalModPercentile /= rolledTypes.Count;
-            //Console.WriteLine($"RolledTypes: {rolledTypes.Count} totalModPercentile: {totalModPercentile}");
 
             return true;
         }
@@ -1254,38 +1251,37 @@ namespace ACE.Server.Factories
 
         private static int GetGearRatingAmount(int tier, TreasureDeath td, out float gearRatingPercentile)
         {
-            var lootQualityMod = td.LootQualityMod * 100;
-            var rng = ThreadSafeRandom.Next(lootQualityMod, 100);
+            var lootQualityMod = td.LootQualityMod;
+            var roll = ThreadSafeRandom.Next(lootQualityMod, 1);
 
-            var mod = tier - 1;
-            
-            gearRatingPercentile = (float)mod / 7;
+            var maxMod = Math.Max(tier - 4, 0);
+            var mod = (int)(maxMod * roll);
+
+            var maxPossibleMod = 3;
+            gearRatingPercentile = (float)mod / maxPossibleMod;
 
             return mod;
         }
 
-        private static double GetArmorSkillAmount(int tier, TreasureDeath treasureDeath ,WorldObject wo, float multiplier, out float modPercentile)
+        private static double GetArmorSkillAmount(TreasureDeath treasureDeath ,WorldObject wo, out float modPercentile)
         {
-            int[] maxModPerTier = { 5, 10, 15, 20, 22, 24, 26, 30 };
+            var tier = Math.Clamp(treasureDeath.Tier - 1, 0, 7);
+            float[] bonusModRollPerTier = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
 
-            var diminishingMultiplier = GetDiminishingRoll(treasureDeath);
             var doubleMod = wo.ValidLocations == EquipMask.HeadWear ? 2.0f : 1.0f; // Headwear gets double-value mods
+            var minMod = 0.1f * doubleMod;
+            var rollPercentile = GetDiminishingRoll(treasureDeath);
+            var statRoll = minMod * rollPercentile;
+            var armorMod = minMod + statRoll + bonusModRollPerTier[tier];
 
-            var maxArmorMod = maxModPerTier[tier - 1] * multiplier * doubleMod;
-            var minArmorMod = maxArmorMod / 2;
-            var armorMod = 10 + (minArmorMod + (minArmorMod * diminishingMultiplier));
-
-            // maxMod is used for determining workmanship
-            var maxMod = 10 + (maxModPerTier[7] * multiplier * doubleMod);
-            var modRange = maxMod - 10.0f;
-            modPercentile = (armorMod - 10) / (modRange);
+            var maxPossibleMod = minMod + minMod + bonusModRollPerTier[7];
+            modPercentile = (armorMod - minMod) / (maxPossibleMod - minMod);
 
             //Console.WriteLine($"GetArmorSkillAmount() \n" +
             //    $" -Tier: {tier}\n" +
-            //    $" -MaxModBeforeMulti: {maxModPerTier[6]} Multiplier: {multiplier}  FinalMaxMod: {maxMod}\n" +
-            //    $" -DiminishingRoll: {diminishingMultiplier} Mod: {armorMod} ModPercentile: {modPercentile}");
+            //    $" -DiminishingRoll: {statRoll}, Mod: {armorMod}, MaxMod: {maxPossibleMod}, ModPercentile: {modPercentile}");
 
-            return Math.Max(0.01f, armorMod);
+            return armorMod;
         }
 
         /// <summary>
