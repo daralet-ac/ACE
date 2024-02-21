@@ -1109,41 +1109,17 @@ namespace ACE.Server.Factories
         private static List<int> GetRolledTypes(List<int> potentialTypes, float qualityMod)
         {
             List<int> rolledTypes = new List<int>();
-            var numTypes = potentialTypes.Count;
-            var threshold = 50;
+            var numPotentialTypes = potentialTypes.Count;
+            var numTypes = ThreadSafeRandom.Next(1, numPotentialTypes);
 
             for (int i = 0; i < numTypes; i++)
             {
-                var rng = GetRollForArmorMod(qualityMod);
-
-                if (rng > threshold)
-                {
-                    var type = potentialTypes[ThreadSafeRandom.Next(0, potentialTypes.Count - 1)];
-                    potentialTypes.Remove(type);
-                    rolledTypes.Add(type);
-
-                    threshold += GetThresholdAdjustment(threshold, true);
-                }
-                else
-                    threshold -= GetThresholdAdjustment(threshold, false);
-
-                
+                var type = potentialTypes[ThreadSafeRandom.Next(0, potentialTypes.Count - 1)];
+                potentialTypes.Remove(type);
+                rolledTypes.Add(type);
             }
 
             return rolledTypes;
-        }
-
-        /// <summary>
-        /// Gets the adjusted success chance of rolling the next mod
-        /// </summary>
-        /// <returns>Returns 50% of the difference between 100 and the current threshold if adding,
-        /// or 50% of the current threshold if subtracting</returns>
-        private static int GetThresholdAdjustment(int threshold, bool add)
-        {
-            var difference = add == true ? 100 - threshold : threshold;
-            var adjustment = difference * 0.5f;
-
-            return (int)adjustment;
         }
 
         private static void SetWieldLevelReq(WorldObject wo, int level)

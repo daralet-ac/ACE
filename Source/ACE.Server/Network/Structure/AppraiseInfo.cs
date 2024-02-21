@@ -548,15 +548,86 @@ namespace ACE.Server.Network.Structure
                 hasExtraPropertiesText = true;
             }
 
+            // -------- WEAPON PROPERTIES --------
+            // Aegis Rending
+            if (PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffect) && imbuedEffect == 0x8000)
+            {
+                extraPropertiesText += $"Additional Properties: Aegis Rending\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Ignore Armor
+            if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreArmor, out var ignoreArmor) && ignoreArmor != 0)
+            {
+                var wielder = (Creature)wo.Wielder;
+                extraPropertiesText += $"+{Math.Round((ignoreArmor * 100), 0)} Ignored Armor%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Aegis Cleaving
+            if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreAegis, out var ignoreAegis) && ignoreAegis != 0)
+            {
+                var wielder = (Creature)wo.Wielder;
+                extraPropertiesText += $"+{Math.Round((ignoreAegis * 100), 0)}% Ignored Aegis\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Crit Multiplier
+            if (PropertiesFloat.TryGetValue(PropertyFloat.CriticalMultiplier, out var critMultiplier) && critMultiplier > 1)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"+{Math.Round((critMultiplier - 1) * 100, 0)}% Critical Damage\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Crit Chance
+            if (PropertiesFloat.TryGetValue(PropertyFloat.CriticalFrequency, out var critFrequency) && critFrequency > 0.0f)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"+{Math.Round((critFrequency - 0.1) * 100, 1)}% Critical Chance\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Spell Proc Rate
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ProcSpellRate, out var procSpellRate) && procSpellRate > 0.0f)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Cast on strike chance: {Math.Round(procSpellRate * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+
             // -------- WEAPON ATTACK/DEFENSE MODS --------
+            extraPropertiesText += "\n";
             // Attack Mod for Bows
             if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponOffense, out var weaponOffense) && weaponOffense > 1.001)
             {
                 var weaponMod = (weaponOffense - 1) * 100;
-                if (wo.WeaponSkill == Skill.Bow || wo.WeaponSkill == Skill.Crossbow)
+                if (wo.WeaponSkill == Skill.Bow || wo.WeaponSkill == Skill.Crossbow || wo.WeaponSkill == Skill.MissileWeapons)
                 {
                     extraPropertiesText += $"Bonus to Attack Skill: +{Math.Round(weaponMod, 1)}%\n";
                 }
+
+                hasExtraPropertiesText = true;
+            }
+            // Weapon Mod - War Magic
+            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponWarMagicMod, out var weaponWarMagicMod) && weaponWarMagicMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Bonus to War Magic Skill: +{Math.Round((weaponWarMagicMod) * 100, 1)}%\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Weapon Mod - Life Magic
+            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponLifeMagicMod, out var weaponLifeMagicMod) && weaponLifeMagicMod >= 0.001)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"Bonus to Life Magic Skill: +{Math.Round((weaponLifeMagicMod) * 100, 1)}%\n";
 
                 hasExtraPropertiesText = true;
             }
@@ -577,81 +648,12 @@ namespace ACE.Server.Network.Structure
                 hasExtraPropertiesText = true;
             }
 
-            // -------- ARMOR MODS --------
-            // Weapon Mod - War Magic
-            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponWarMagicMod, out var weaponWarMagicMod) && weaponWarMagicMod >= 0.001)
-            {
-                var wielder = (Creature)wo.Wielder;
-
-                extraPropertiesText += $"\nBonus to War Magic Skill: +{Math.Round((weaponWarMagicMod) * 100, 1)}%\n";
-
-                hasExtraPropertiesText = true;
-            }
-            // Weapon Mod - Life Magic
-            if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponLifeMagicMod, out var weaponLifeMagicMod) && weaponLifeMagicMod >= 0.001)
-            {
-                var wielder = (Creature)wo.Wielder;
-
-                extraPropertiesText += $"Bonus to Life Magic Skill: +{Math.Round((weaponLifeMagicMod) * 100, 1)}%\n";
-
-                hasExtraPropertiesText = true;
-            }
-            // Weapon Mod - Restoration Spell Magic
+            // Weapon Mod - Life Spell Restoration Mod
             if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponRestorationSpellsMod, out var weaponLifeMagicVitalMod) && weaponLifeMagicVitalMod >= 1.001)
             {
                 var wielder = (Creature)wo.Wielder;
 
-                extraPropertiesText += $"Bonus to Restoration Spells: +{Math.Round((weaponLifeMagicVitalMod - 1) * 100, 1)}%\n";
-
-                hasExtraPropertiesText = true;
-            }
-            // Aegis Rending
-            if (PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffect) && imbuedEffect == 0x8000)
-            {
-                extraPropertiesText += $"Additional Properties: Aegis Rending\n";
-
-                hasExtraPropertiesText = true;
-            }
-            // Aegis Penetration
-            if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreAegis, out var ignoreAegis) && ignoreAegis != 0)
-            {
-                var wielder = (Creature)wo.Wielder;
-                extraPropertiesText += $"Aegis Penetration: {Math.Round(100.0f - (ignoreAegis * 100), 0)}%\n";
-
-                hasExtraPropertiesText = true;
-            }
-            // Ignore Armor
-            if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreArmor, out var ignoreArmor) && ignoreArmor != 0)
-            {
-                var wielder = (Creature)wo.Wielder;
-                extraPropertiesText += $"Armor Penetration: +{Math.Round(100.0f - (ignoreArmor * 100), 0)}%\n";
-
-                hasExtraPropertiesText = true;
-            }
-            // Crit Multiplier
-            if (PropertiesFloat.TryGetValue(PropertyFloat.CriticalMultiplier, out var critMultiplier) && critMultiplier > 1)
-            {
-                var wielder = (Creature)wo.Wielder;
-
-                extraPropertiesText += $"Crit Damage: +{Math.Round(critMultiplier * 100, 0)}%\n";
-
-                hasExtraPropertiesText = true;
-            }
-            // Crit Chance
-            if (PropertiesFloat.TryGetValue(PropertyFloat.CriticalFrequency, out var critFrequency) && critFrequency > 0.0f)
-            {
-                var wielder = (Creature)wo.Wielder;
-
-                extraPropertiesText += $"Crit Chance: +{Math.Round(critFrequency * 100, 1)}%\n";
-
-                hasExtraPropertiesText = true;
-            }
-            // Spell Proc Rate
-            if (PropertiesFloat.TryGetValue(PropertyFloat.ProcSpellRate, out var procSpellRate) && procSpellRate > 0.0f)
-            {
-                var wielder = (Creature)wo.Wielder;
-
-                extraPropertiesText += $"Cast on strike chance: {Math.Round(procSpellRate * 100, 1)}%\n";
+                extraPropertiesText += $"Healing Bonus for Restoration Spells: +{Math.Round((weaponLifeMagicVitalMod - 1) * 100, 1)}%\n";
 
                 hasExtraPropertiesText = true;
             }

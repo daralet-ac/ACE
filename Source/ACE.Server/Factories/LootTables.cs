@@ -568,8 +568,11 @@ namespace ACE.Server.Factories
                 { 5, 10, 20, 30, 40, 50, 75, 100 };
 
         // Caster
-        public static readonly int[] CasterMaxDamageMod =
-                { 5, 10, 20, 30, 40, 50, 75, 100  };
+        public static readonly float[] CasterMaxDamageMod =
+                { 1.0f, 1.3f, 1.6f, 2.1f, 2.75f, 3.75f, 4.75f, 6.00f  };
+
+        public static readonly float[] CasterMinDamageMod =
+                { 0.75f, 1.0f, 1.2f, 1.4f, 1.9f, 2.5f, 3.5f, 4.5f  };
 
 
         public static readonly int[][] CasterWeaponsMatrix =
@@ -583,10 +586,10 @@ namespace ACE.Server.Factories
         public static readonly int[][] TimelineCasterWeaponsMatrix =
         {
             new int[] { 2366, 2548, 2472, 2547 }, // Orb, Wand, Scepter, Staff
-            new int[] { 1050100, 1050101, 1050102, 1050103, 1050104, 1050105, 1050106, 1050107 }, // Orb: Life, Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
-            new int[] { 1050108, 29265, 29264, 29260, 29263, 29262, 29259, 29261 }, // Sceptre: Life, Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
-            new int[] { 1050110, 31819, 31825, 31821, 31824, 31823, 31820, 31822 }, // Wand/Baton: Life, Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
-            new int[] { 1050109, 37223, 37222, 37225, 37221, 37220, 37224, 37219 }  // Staff: Life, Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
+            new int[] { 1050101, 1050102, 1050103, 1050104, 1050105, 1050106, 1050107 }, // Orb: Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
+            new int[] { 29265, 29264, 29260, 29263, 29262, 29259, 29261 }, // Sceptre: Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
+            new int[] { 31819, 31825, 31821, 31824, 31823, 31820, 31822 }, // Wand/Baton: Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
+            new int[] { 37223, 37222, 37225, 37221, 37220, 37224, 37219 }  // Staff: Slashing, Piercing, Blunt, Frost, Fire, Acid, Electric
         };
 
         public static readonly float[][] MissileDamageMod =

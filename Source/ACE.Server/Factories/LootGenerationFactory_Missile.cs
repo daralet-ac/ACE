@@ -107,11 +107,7 @@ namespace ACE.Server.Factories
             wo.WieldSkillType2 = GetWeaponWieldSkill(wo.WeaponSkill);
 
             // Damage
-            TryMutateMissileWeaponDamage(wo, roll, profile, out var maxPossibleDamageMod);
-
-            // Damage Percentile, for workmanship
-            var damageModPercentile = (wo.DamageMod - 1) / maxPossibleDamageMod;
-            //Console.WriteLine($"damMod: {wo.DamageMod - 1} maxDamMod: {maxPossibleDamageMod} damModPercentile: {damageModPercentile}");
+            TryMutateMissileWeaponDamage(wo, roll, profile, out var damageModPercentile);
 
             // weapon speed
             if (wo.WeaponTime != null)
@@ -124,8 +120,6 @@ namespace ACE.Server.Factories
             var totalModsPercentile = 0.0f;
 
             TryMutateWeaponMods(wo, profile, out totalModsPercentile);
-
-            // Weapon Mods Percentile, for workmanship
 
             //RollCrushingBlow(profile, wo);
             //RollBitingStrike(profile, wo);
@@ -375,9 +369,9 @@ namespace ACE.Server.Factories
             return LootTables.NonElementalMissileWeaponsMatrix[missileType][subType];
         }
 
-        private static void TryMutateMissileWeaponDamage(WorldObject wo, TreasureRoll roll, TreasureDeath profile, out double maxPossibleDamageMod)
+        private static void TryMutateMissileWeaponDamage(WorldObject wo, TreasureRoll roll, TreasureDeath profile, out double damageModPercentile)
         {
-            maxPossibleDamageMod = 0;
+            damageModPercentile = 0;
 
             if (wo.WeaponTime == null)
             {
@@ -447,12 +441,14 @@ namespace ACE.Server.Factories
             // max possible damage (for workmanship)
             targetBaseDps = GetWeaponBaseDps(8);
             ammoMaxDamage = GetAmmoBaseMaxDamage(wo.WeaponSkill, 8);
-            ammoMinDamage = ammoMaxDamage * weaponVariance;
+            ammoMinDamage = ammoMaxDamage * (1 - weaponVariance);
             ammoAverageDamage = (ammoMaxDamage + ammoMinDamage) / 2;
             targetAvgHitDamage = targetBaseDps / effectiveAttacksPerSecond;
-            averageBaseDamageMod = targetAvgHitDamage / ammoAverageDamage;
-            maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + damageRangePerTier);
-            maxPossibleDamageMod = (int)maximumBaseMaxDamageMod;
+            averageBaseDamageMod = targetAvgHitDamage / ((ammoAverageDamage * 0.9) + (ammoMaxDamage * 0.2));
+            maximumBaseMaxDamageMod = (averageBaseDamageMod * 2) / (1.0 + (1 - damageRangePerTier));
+
+            damageModPercentile = (finalMaxDamageMod - 1) / (maximumBaseMaxDamageMod - 1);
+            //Console.WriteLine($"damMod: {wo.DamageMod - 1} maxDamMod: {maxPossibleDamageMod} damModPercentile: {damageModPercentile}");
         }
 
         /// <summary>

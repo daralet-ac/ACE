@@ -115,115 +115,97 @@ namespace ACE.Server.Factories
             return false;
         }
 
-        private static bool TryMutateWeaponMods(WorldObject wo, TreasureDeath treasureDeath, out float totalModPercentile, bool caster = false)
+        private static bool TryMutateWeaponMods(WorldObject wo, TreasureDeath treasureDeath, out float highestModPercentile, bool caster = false)
         {
-            var tier = treasureDeath.Tier;
-            totalModPercentile = 0.0f;
-
-            //if (tier < 2)
-            //    return false;
+            highestModPercentile = 0.0f;
 
             var qualityMod = treasureDeath.LootQualityMod != 0.0f ? treasureDeath.LootQualityMod : 0.0f;
 
-            // Each weapon can 1 to 4 mod rolls
-            var potentialTypes = new List<int>() { 1, 2, 3};
-            var numTypes = potentialTypes.Count;
+            var potentialTypes = new List<int>() { 1, 2};
             var rolledTypes = GetRolledTypes(potentialTypes, qualityMod);
 
-            // The more mods rolled, the lower value each one can roll (1 = 100%, 2 = 83.33%, 3 = 66.67%, 4 = 50%)
-            var inverse = numTypes - rolledTypes.Count;
-            var percentile = (float)inverse / (numTypes - 1);
-            var multiplier = rolledTypes.Count > 0 ? (percentile + 1) / 2 : 1;
-
-            if (caster)
+            // Multiplier for weapons that rolled multiple mods. Currently limited to 2 mod rolls, but ready for more.
+            float numRolledTypesMultiplier;
+            switch (rolledTypes.Count)
             {
-                var bonusAmount = GetCasterSubType(wo) == 0 || GetCasterSubType(wo) == 3 ? BonusDefenseMod(treasureDeath, wo) : 0;
-
-                foreach (var type in rolledTypes)
-                {
-                    var amount = GetWeaponModAmount(wo, treasureDeath, multiplier, out var modPercentile, bonusAmount) * multiplier;
-
-                    totalModPercentile += modPercentile;
-
-                    switch(type)
-                    {
-                        case 1: wo.ManaConversionMod = amount; break;
-                        case 2: wo.WeaponPhysicalDefense = amount + 1; break;
-                        case 3: wo.WeaponMagicalDefense = amount + 1; break;
-                    }
-                }
-
-                var subtype = GetCasterSubType(wo);
-                var ORB = 0;
-                var STAFF = 3;
-
-                if (subtype == STAFF)
-                {
-                    if (wo.WeaponPhysicalDefense > 0)
-                        wo.WeaponPhysicalDefense += bonusAmount;
-                    else
-                        wo.WeaponPhysicalDefense = 1 + bonusAmount;
-                }
-                else if (subtype == ORB)
-                    if (wo.WeaponMagicalDefense > 0)
-                        wo.WeaponMagicalDefense += bonusAmount;
-                    else
-                        wo.WeaponMagicalDefense = 1 + bonusAmount;
+                default:
+                case 1: numRolledTypesMultiplier = 1.0f; break; // 100% per mod, 100% total.
+                case 2: numRolledTypesMultiplier = 0.75f; break; // 75% per mod, 150% total.
+                case 3: numRolledTypesMultiplier = 0.5833f; break; // 58.33% per mod, 175% total.
+                case 4: numRolledTypesMultiplier = 0.475f; break; // 47.5% per mod, 190% total.
+                case 5: numRolledTypesMultiplier = 0.4f; break; // 40% per mod, 200% total.
             }
-            else
-            {
-                foreach (var type in rolledTypes)
-                {
-                    var amount = GetWeaponModAmount(wo, treasureDeath, multiplier, out var modPercentile) * multiplier;
-                    totalModPercentile += modPercentile;
 
-                    switch (type)
-                    {
-                        case 1: wo.WeaponOffense = amount + 1; break;
-                        case 2: wo.WeaponPhysicalDefense = amount + 1; break;
-                        case 3: wo.WeaponMagicalDefense = amount + 1; break;
-                    }
+            foreach (var type in rolledTypes)
+            {
+                float modPercentile;
+                    
+                switch(type)
+                {
+                    case 1: // Offense Mods
+                        if(!caster)
+                            wo.WeaponOffense = GetWeaponModAmount(wo, treasureDeath, out modPercentile) * numRolledTypesMultiplier + 1;
+                        else
+                        {
+                            if(wo.WieldSkillType2 == (int)Skill.WarMagic)
+                                wo.WeaponWarMagicMod = GetWeaponModAmount(wo, treasureDeath, out modPercentile) * numRolledTypesMultiplier;
+                            else
+                                wo.WeaponLifeMagicMod = GetWeaponModAmount(wo, treasureDeath, out modPercentile) * numRolledTypesMultiplier;
+                        }
+
+                        if(modPercentile > highestModPercentile)
+                            highestModPercentile = modPercentile;
+                        break;
+                    case 2: // Defense Mods
+                        float defenseModPercetile;
+                        wo.WeaponPhysicalDefense = GetWeaponModAmount(wo, treasureDeath, out modPercentile) * numRolledTypesMultiplier + 1;
+                        defenseModPercetile = modPercentile;
+
+                        wo.WeaponMagicalDefense = GetWeaponModAmount(wo, treasureDeath, out modPercentile) * numRolledTypesMultiplier + 1;
+                        defenseModPercetile += modPercentile;
+
+                        defenseModPercetile /= 2;
+                        if (defenseModPercetile > highestModPercentile)
+                            highestModPercentile = modPercentile;
+                        break;
                 }
             }
-            totalModPercentile /= rolledTypes.Count;
+
+            var isStaff = caster ? GetCasterSubType(wo) == 3 : false;
+            if (isStaff)
+            {
+                wo.WeaponPhysicalDefense += BonusDefenseMod(treasureDeath, wo);
+                wo.WeaponMagicalDefense += BonusDefenseMod(treasureDeath, wo);
+            }
 
             return true;
         }
 
-        private static double GetWeaponModAmount(WorldObject wo, TreasureDeath treasureDeath, float multiplier, out float modPercentile, float bonusAmount = 0.0f)
+        private static double GetWeaponModAmount(WorldObject wo, TreasureDeath treasureDeath, out float modPercentile)
         {
-            var tier = treasureDeath.Tier;
-            var diminishingMultiplier = GetDiminishingRoll(treasureDeath);
-            int[] maxModPerTier = { 5, 10, 15, 20, 22, 24, 26, 30 };
+            var tier = Math.Clamp(treasureDeath.Tier - 1, 0, 7);
+            float[] bonusModRollPerTier = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
 
-            var minMod = maxModPerTier[tier - 1] * multiplier / 2 / 100;
-            var weaponMod = minMod + minMod * diminishingMultiplier;
+            var minMod = 0.1f;
+            var weaponMod = minMod + minMod * GetDiminishingRoll(treasureDeath) + bonusModRollPerTier[tier];
 
-            // If weapon is a caster staff or orb, the max possible defense mod is 20 more
-            var bonusMax = (bonusAmount > 0 ? 20.0f : 0.0f) / 100;
-            var maxPossibleModBeforeBonus = (float)maxModPerTier[6] / 100;
+            var maxPossibleMod = minMod + minMod + bonusModRollPerTier[7];
 
-            modPercentile = (float)weaponMod / ((maxPossibleModBeforeBonus + bonusMax) * multiplier);
-
+            modPercentile = (weaponMod - minMod) / (maxPossibleMod - minMod);
             return weaponMod;
         }
 
         private static int GetWeaponWorkmanship(WorldObject wo, float damagePercentile, float skillModsPercentile)
         {
-            var divisor = 0;
-
-            // Damage
-            divisor++;
-
-            // Weapon Mods
-            divisor++;
+            var divisor = 3; // damage x2 + mods
 
             // Average Percentile
-            var finalPercentile = (damagePercentile + skillModsPercentile) / divisor;
-            //Console.WriteLine($"{wo.Name}\n -Mods %: {skillModsPercentile}\n" + $" -Damage %: {damagePercentile}\n" + $" -Divisor: {divisor}\n" +
+            var finalPercentile = (damagePercentile * 2 + skillModsPercentile) / divisor;
+            //Console.WriteLine($"{wo.NameWithMaterialAndElement}\n -Mods %: {skillModsPercentile}\n" + $" -Damage %: {damagePercentile}\n" + $" -Divisor: {divisor}\n" +
             //    $" --FINAL: {finalPercentile}\n\n");
 
             // Workmanship Calculation
+            //Console.WriteLine($"{wo.NameWithMaterialAndElement} - {Math.Max((int)(finalPercentile * 10), 1)}");
             return Math.Max((int)(finalPercentile * 10), 1);
         }
 
@@ -340,9 +322,14 @@ namespace ACE.Server.Factories
             return null;
         }
 
-        private static int[] GetCasterMaxDamageMod(WorldObject wo)
+        private static float[] GetCasterMaxDamageMod()
         {
             return LootTables.CasterMaxDamageMod;
+        }
+
+        private static float[] GetCasterMinDamageMod()
+        {
+            return LootTables.CasterMinDamageMod;
         }
 
         private static float GetWeaponBaseDps(int tier)

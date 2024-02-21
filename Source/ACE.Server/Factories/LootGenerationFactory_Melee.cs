@@ -148,12 +148,12 @@ namespace ACE.Server.Factories
             wo.DamageVariance = baseVariance + ThreadSafeRandom.Next(-0.1f, 0.1f);
 
             // Damage Percentile (for workmanship)
-            var lowerMaxPossibleDamage = maxPossibleDamage * (1 - (baseVariance - 0.1f));
-            var averageMaxPossibleDamage = (maxPossibleDamage + lowerMaxPossibleDamage) / 2;
-            var weaponAverageDamage = ((wo.Damage * (1 - wo.DamageVariance)) + wo.Damage) / 2;
-            var damagePercentile = (float)(weaponAverageDamage / averageMaxPossibleDamage);
+            //var lowerMaxPossibleDamage = maxPossibleDamage * (1 - (baseVariance - 0.1f));
+            //var averageMaxPossibleDamage = (maxPossibleDamage + lowerMaxPossibleDamage) / 2;
+            //var weaponAverageDamage = ((wo.Damage * (1 - wo.DamageVariance)) + wo.Damage) / 2;
+            var damagePercentile = ((float)wo.Damage / maxPossibleDamage);
 
-            //Console.WriteLine($"lower: {lowerMaxPossibleDamage} upper: {maxPossibleDamage} average: {averageMaxPossibleDamage} weaponAvg: {weaponAverageDamage} percentile: {damagePercentile}");
+            //Console.WriteLine($"{wo.NameWithMaterialAndElement}  lower: {lowerMaxPossibleDamage} upper: {maxPossibleDamage} average: {averageMaxPossibleDamage} weaponAvg: {weaponAverageDamage} percentile: {damagePercentile}");
 
             // weapon speed
             if (wo.WeaponTime != null)
@@ -1369,8 +1369,8 @@ namespace ACE.Server.Factories
                 targetBaseDps *= 0.6f;
 
             targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
-            averageBaseMaxDamage = (targetAverageHitDamage * 2) / (1.0 + (1 - weaponVariance));
-            maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + damageRangePerTier);
+            averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
+            maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + (1 - damageRangePerTier));
             maxPossibleDamage = (int)maximumBaseMaxDamage;
         }
     }

@@ -16,13 +16,6 @@ namespace ACE.Server.Factories.Tables.Wcids
 
         private static ChanceTable<WeenieClassName> T6_T7_T8_Chances = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
-            // Life only
-            ( WeenieClassName.orblife,                     3.0f ),
-            ( WeenieClassName.scepterlife,                 3.0f ),
-            ( WeenieClassName.stafflife,                   3.0f ),
-            ( WeenieClassName.batonlife,                   3.0f ),
-
-            //War only
             ( WeenieClassName.orbslash,               1.0f ),
             ( WeenieClassName.orbpierce,              1.0f ),
             ( WeenieClassName.orbblunt,               1.0f ),

@@ -237,7 +237,7 @@ namespace ACE.Server.Entity
             // ---- DAMAGE RATING ----
             PowerMod = attacker.GetPowerMod(Weapon);
             
-            AttributeMod = attacker.GetAttributeMod(Weapon);
+            AttributeMod = attacker.GetAttributeMod(Weapon, false);
 
             SlayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
 

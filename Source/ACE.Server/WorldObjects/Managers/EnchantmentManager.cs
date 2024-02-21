@@ -1064,8 +1064,8 @@ namespace ACE.Server.WorldObjects.Managers
                 return elementalDamageAuraMod;
             else
                 return elementalDamageMod;*/
-
-            return elementalDamageAuraMod + elementalDamageMod;
+            
+            return elementalDamageAuraMod + elementalDamageMod - 2;
         }
 
         /// <summary>

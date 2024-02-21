@@ -27,7 +27,7 @@ namespace ACE.Server.Factories
                         case 5: wield = 200; break;
                         case 6: wield = 220; break;
                         case 7: wield = 240; break;
-                        case 8: wield = 360; break;
+                        case 8: wield = 260; break;
                     }
                     break;
 
@@ -42,7 +42,7 @@ namespace ACE.Server.Factories
                         case 5: wield = 200; break;
                         case 6: wield = 220; break;
                         case 7: wield = 240; break;
-                        case 8: wield = 360; break;
+                        case 8: wield = 260; break;
                     }
                     break;
 
@@ -57,7 +57,7 @@ namespace ACE.Server.Factories
                         case 5: wield = 200; break;
                         case 6: wield = 220; break;
                         case 7: wield = 240; break;
-                        case 8: wield = 360; break;
+                        case 8: wield = 260; break;
                     }
                     break;
             }
