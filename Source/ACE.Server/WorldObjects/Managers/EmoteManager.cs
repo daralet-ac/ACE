@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Database;
+using ACE.Database.Models.Shard;
 using ACE.DatLoader;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -637,13 +638,52 @@ namespace ACE.Server.WorldObjects.Managers
 
                     if (questTarget != null)
                     {
+                        // Do normal Emote Checks for the quest and solves
                         var hasQuest = questTarget.QuestManager.HasQuest(emote.Message);
                         var canSolve = questTarget.QuestManager.CanSolve(emote.Message);
 
-                        //  verify: QuestSuccess = player has quest, but their quest timer is currently still on cooldown
-                        success = hasQuest && !canSolve;
+                        var questName = emote.Message.ToString();
+                        questName = QuestManager.GetQuestName(questName);
 
-                        ExecuteEmoteSet(success ? EmoteCategory.QuestSuccess : EmoteCategory.QuestFailure, emote.Message, targetObject, true);
+                        // Now check if it's an account quest
+
+                        if (canSolve == true && questName.StartsWith("ACCOUNT_"))
+                        {
+                            if (questTarget is Player)
+                            {
+                                Database.Models.Auth.Account account;
+                                var quester = questTarget as Player;
+                                account = quester.Account;
+
+                                var characters = DatabaseManager.Shard.BaseDatabase.GetCharacters(account.AccountId, true);
+
+                                var questFile = DatabaseManager.World.GetCachedQuest(questName);
+
+                                foreach (var character in characters)
+                                {
+                                   var matchingQuest = character.CharacterPropertiesQuestRegistry.FirstOrDefault(q => q.QuestName.Equals(questName, StringComparison.OrdinalIgnoreCase));
+
+                                   if (matchingQuest != null && questFile != null)
+                                    {
+                                        // if there's a matching stamp on another chararacter, check whether it's on cooldown or not
+                                        var currentTime = (uint)Time.GetUnixTime();
+                                        uint nextSolveTime;
+
+                                        nextSolveTime = matchingQuest.LastTimeCompleted + questFile.MinDelta;
+
+                                        if (currentTime <= nextSolveTime)
+                                            canSolve = true;
+                                        
+                                    }
+                                }
+                            }
+                        }
+                           //  verify: QuestSuccess = player has quest, but their quest timer is currently still on cooldown.
+                           // for account quests, finding any account on cooldown means canSolve = true;
+
+                            success = hasQuest && !canSolve;
+
+                            ExecuteEmoteSet(success ? EmoteCategory.QuestSuccess : EmoteCategory.QuestFailure, emote.Message, targetObject, true);
                     }
 
                     break;
@@ -1108,6 +1148,13 @@ namespace ACE.Server.WorldObjects.Managers
                         player.Session.Network.EnqueueSend(new GameEventPopupString(player.Session, emote.Message));
                     break;
 
+                case EmoteType.RelieveVitaePenalty:
+
+                    if (player != null)
+                        player.RelieveVitaePenalty(emote.Amount);
+
+                    break;
+
                 case EmoteType.RemoveContract:
 
                     if (player != null && emote.Stat.HasValue && emote.Stat.Value > 0)
@@ -1197,6 +1244,30 @@ namespace ACE.Server.WorldObjects.Managers
                         player.UpdateProperty(player, (PropertyInt)emote.Stat, emote.Amount);
                         player.EnqueueBroadcast(false, new GameMessagePublicUpdatePropertyInt(player, (PropertyInt)emote.Stat, Convert.ToInt32(emote.Amount)));
                     }
+                    break;
+
+                case EmoteType.SetLBEnviron:
+                    {
+                        if (creature != null)
+                        {
+                            EnvironChangeType environChange = EnvironChangeType.Clear;
+
+                            if (emote.Amount != null)
+                            {
+                                if (Enum.IsDefined(typeof(EnvironChangeType), emote.Amount))
+                                {
+                                    environChange = (EnvironChangeType)emote.Amount;
+                                }
+                                else
+                                {
+                                    environChange = EnvironChangeType.Clear;
+                                }
+                            }
+
+                            creature.CurrentLandblock?.DoEnvironChange(environChange);
+                        }
+                    }
+                
                     break;
 
                 case EmoteType.SetMouthPalette:
