@@ -1845,21 +1845,10 @@ namespace ACE.Server.Factories
 
         public static float GetDiminishingRoll(TreasureDeath treasureDeath)
         {
-            var result = 0.0f;
-            var lootQualityMod = treasureDeath.LootQualityMod > 0 ? treasureDeath.LootQualityMod * 100 : 1;
-            var roll = ThreadSafeRandom.Next(lootQualityMod, 100);
+            var lootQualityMod = treasureDeath.LootQualityMod > 0 ? treasureDeath.LootQualityMod : 0;
+            var roll = ThreadSafeRandom.Next(lootQualityMod, 1);
 
-            switch (roll)
-            {
-                case <= 50: result = (float)ThreadSafeRandom.Next(0, 20) / 100; break;
-                case <= 75: result = (float)ThreadSafeRandom.Next(20, 40) / 100; break;
-                case <= 90: result = (float)ThreadSafeRandom.Next(40, 60) / 100; break;
-                case <= 95: result = (float)ThreadSafeRandom.Next(60, 80) / 100; break;
-                case <= 99: result = (float)ThreadSafeRandom.Next(80, 90) / 100; break;
-                case 100: result = (float)ThreadSafeRandom.Next(90, 100) / 100; break;
-            }
-
-            return result;
+            return (float)Math.Pow(roll, 2);
         }
 
         private static int GetMaxValueOfTier(int tier)
