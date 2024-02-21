@@ -150,8 +150,6 @@ namespace ACE.Server.Entity
             40301,  // Verdant Moar
         };
 
-        private double PhalanxActivatedDuration = 10;
-
         public static DamageEvent CalculateDamage(Creature attacker, Creature defender, WorldObject damageSource, MotionCommand? attackMotion = null, AttackHook attackHook = null)
         {
             var damageEvent = new DamageEvent();
@@ -164,13 +162,11 @@ namespace ACE.Server.Entity
 
             damageEvent.HandleLogging(attacker, defender);
 
-            //Console.WriteLine(damageEvent.Evaded);
-
             return damageEvent;
         }
 
         private float DoCalculateDamage(Creature attacker, Creature defender, WorldObject damageSource)
-        {
+        { 
             var playerAttacker = attacker as Player;
             var playerDefender = defender as Player;
 
@@ -217,15 +213,30 @@ namespace ACE.Server.Entity
             // ---- BLOCK ----
             Blocked = IsBlocked(attacker, defender);
 
-            // PhalanxActivated Shield Reprisal
-            if (Blocked && playerDefender != null && playerDefender.LastPhalanxActivated > Time.GetUnixTime() - PhalanxActivatedDuration && playerDefender.GetEquippedShield != null)
+            if (Blocked && playerDefender != null)
             {
-                   
-            } 
+                if (defenderCombatAbility == CombatAbility.Parry && playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration && attacker.GetDistance(playerDefender) < 3)
+                {
+                    if (playerDefender.TwoHandedCombat || playerDefender.IsDualWieldAttack)
+                        playerDefender.DamageTarget(attacker, damageSource);
+                }
+
+            }
 
             // ---- EVASION ----
             var evasionMod = GetEvasionMod(attacker, defender);
             //Console.WriteLine(EvasionChance + " " + partialEvasion);
+
+            var steadyShotActivatedMod = 1f;
+            if (playerAttacker != null)
+            {
+                if (attackerCombatAbility == CombatAbility.SteadyShot && playerAttacker.GetEquippedMissileLauncher() != null && playerAttacker.LastSteadyShotActivated > Time.GetUnixTime() - playerAttacker.SteadyShotActivatedDuration)
+                {
+                    Evaded = false;
+                    PartialEvasion = PartialEvasion.None;
+                    steadyShotActivatedMod = 1.25f;
+                }
+            }
 
             // ---- BASE DAMAGE ----
             if (playerAttacker != null)
@@ -258,7 +269,15 @@ namespace ACE.Server.Entity
             SneakAttackMod = attacker.GetSneakAttackMod(defender, out var backstabMod);
             var backstabPenalty = backstabMod > 0.0f ? 0.8f : 1.0f;
 
-            var powershotMod = attacker.IsPowerShot(Weapon, attackerCombatAbility) ? 2.0f : 1.0f;
+            // Backstab Activated - If behind, can't be evaded
+            if (playerAttacker != null)
+            {
+                if (playerAttacker.EquippedCombatAbility == CombatAbility.Backstab && backstabMod > 0.0f && playerAttacker.LastBackstabActivated > Time.GetUnixTime() - playerAttacker.BackstabActivatedDuration)
+                {
+                    Evaded = false;
+                    PartialEvasion = PartialEvasion.None;
+                }
+            }
 
             HeritageMod = attacker.GetHeritageBonus(Weapon) ? 1.05f : 1.0f;
 
@@ -275,9 +294,6 @@ namespace ACE.Server.Entity
                 }
             }
 
-            // COMBAT ABILITY - Reckless (20 damage rating, if active) 
-            var recklessMod = GetRecklessMod(attacker, defender, attackerCombatAbility);
-
             // Dual Wield Damage Mod
             var dualWieldDamageMod = 1.0f;
             if (playerAttacker != null && playerAttacker.IsDualWieldAttack && !playerAttacker.DualWieldAlternate)
@@ -289,6 +305,45 @@ namespace ACE.Server.Entity
                 if(playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded)
                     twohandedCombatDamageMod = playerAttacker.GetTwoHandedCombatDamageMod();
 
+            // COMBAT ABILITY DAMAGE FACTORS
+            var recklessMod = 1f;
+            var multishotPenalty = 1f;
+            var provokeMod = 1f;
+            if (playerAttacker != null)
+            {
+                if (playerAttacker.EquippedCombatAbility == CombatAbility.Multishot)
+                    multishotPenalty = 0.75f;
+
+                if (playerAttacker.EquippedCombatAbility == CombatAbility.Provoke)
+                {
+                    if (playerAttacker.LastProvokeActivated > Time.GetUnixTime() - playerAttacker.ProvokeActivatedDuration)
+                        provokeMod += 0.2f;
+                }
+                // Reckless -- Stamp and apply bonus only if target not self, and melee / short range
+                if (playerAttacker.EquippedCombatAbility == CombatAbility.Reckless && defender != playerAttacker)
+                {
+                    if (CombatType == CombatType.Melee || attacker.GetDistance(defender) < 3)
+                    {
+                        // 500 stacks is max, out of 2000 for a max of 25%
+                        var recklessStacks = Player.HandleRecklessStamps(playerAttacker);
+
+                        if (!playerAttacker.RecklessActivated && playerAttacker.LastRecklessActivated < Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration)
+                            recklessMod += (float)recklessStacks / 2000f;
+                        if (playerAttacker.RecklessActivated && playerAttacker.LastRecklessActivated < Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration)
+                        {
+                            playerAttacker.RecklessActivated = false;
+                            playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
+                        }
+                        if (playerAttacker.RecklessActivated && playerAttacker.LastRecklessActivated > Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration)
+                        {
+                            playerAttacker.RecklessActivated = false;
+                            recklessMod += (float)recklessStacks / 1000f;
+                            playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
+                        }
+                    }
+                }
+            }
+
             DamageRatingMod = Creature.AdditiveCombine(DamageRatingBaseMod, RecklessnessMod, SneakAttackMod, HeritageMod, extraDamageMod, recklessMod);
 
             if (pkBattle)
@@ -298,7 +353,7 @@ namespace ACE.Server.Entity
             }
 
             // ---- DAMAGE BEFORE MITIGATION ----
-            DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * powershotMod * dualWieldDamageMod * twohandedCombatDamageMod;
+            DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * dualWieldDamageMod * twohandedCombatDamageMod * steadyShotActivatedMod * multishotPenalty * provokeMod;
 
             // ---- CRIT ----
             var attackSkill = attacker.GetCreatureSkill(attacker.GetCurrentWeaponSkill());
@@ -312,7 +367,12 @@ namespace ACE.Server.Entity
 
                 // Iron Fist combat ability bonus
                 if (attackerCombatAbility == CombatAbility.IronFist)
-                    CriticalChance += 0.1f;
+                {
+                    if (playerAttacker.LastIronFistActivated > Time.GetUnixTime() - playerAttacker.IronFistActivatedDuration)
+                        CriticalChance += 0.25f;
+                    else
+                        CriticalChance += 0.1f;
+                }
 
                 if (CombatType == CombatType.Missile)
                 {
@@ -344,10 +404,6 @@ namespace ACE.Server.Entity
 
             if (playerDefender != null && (playerDefender.IsLoggingOut || playerDefender.PKLogout))
                 CriticalChance = 1.0f;
-
-            // Cannot crit if Phalanx is equipped
-            if (defenderCombatAbility == CombatAbility.Phalanx)
-                CriticalChance = 0.0f;
 
             if (CriticalChance > ThreadSafeRandom.Next(0.0f, 1.0f))
             {
@@ -397,7 +453,7 @@ namespace ACE.Server.Entity
                     if (pkBattle)
                         DamageRatingMod = Creature.AdditiveCombine(DamageRatingMod, PkDamageMod);
 
-                    DamageBeforeMitigation = BaseDamageMod.MaxDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * CriticalDamageMod * powershotMod * dualWieldDamageMod * twohandedCombatDamageMod;
+                    DamageBeforeMitigation = BaseDamageMod.MaxDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * CriticalDamageMod * dualWieldDamageMod * twohandedCombatDamageMod *  steadyShotActivatedMod * multishotPenalty;
                 }
             }
 
@@ -570,11 +626,30 @@ namespace ACE.Server.Entity
                 }
             }
 
+            // Combat Focus - Steady Shot 
+            if (playerAttacker != null)
+            {
+                if (attackerCombatAbility == CombatAbility.SteadyShot)
+                {
+                    float bonus = 1.2f;                   
+
+                    EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
+                }
+            }
+
             var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, EffectiveDefenseSkill);
 
-            // Combat Focus - Smokescreen (+10% chance to evade)
+            // Combat Focus - Smokescreen (+10% chance to evade, +40% on Activated)
             if (defenderCombatAbility == CombatAbility.Smokescreen)
-                evadeChance += 0.1f; // Gain 10% evade chance
+            {
+                evadeChance += 0.1f;
+
+                if (playerDefender != null && playerDefender.LastSmokescreenActivated > Time.GetUnixTime() - playerDefender.SmokescreenActivatedDuration)
+                {
+                    evadeChance += 0.3f;
+                }
+
+            }
 
             //Console.WriteLine($"\n{attacker.Name} attack skill: {EffectiveAttackSkill}\n" +
             //    $"{defender.Name} defense skill: {EffectiveDefenseSkill}\n" +
@@ -602,6 +677,7 @@ namespace ACE.Server.Entity
                 //Console.WriteLine($"FullEvadeChance: {Math.Round(fullEvade * 100)}% MostEvadeChance: {Math.Round(mostEvade * 100)}% SomeEvadeChance: {Math.Round(someEvade * 100)}");
 
                 // full evade
+
                 if (attacker != defender && fullEvade > attackRoll)
                 {
                     //Console.WriteLine($"Full Evade");
@@ -617,22 +693,15 @@ namespace ACE.Server.Entity
                     {
                         //Console.WriteLine($"Most Evade");
 
-                        if (defenderCombatAbility == CombatAbility.Reckless) // Partial evades are always "Some"
-                        {
-                            evasionMod = 1 - 0.67f;
-                            PartialEvasion = PartialEvasion.Some;
-                        }
-                        else
-                        {
-                            evasionMod = 1 - 0.33f;
-                            PartialEvasion = PartialEvasion.Most;
-                        }
+                        evasionMod = 1 - 0.33f;
+                        PartialEvasion = PartialEvasion.Most;
+                        
                     }
                     else if (someEvade > attackRoll) // Evaded some of
                     {
                         //Console.WriteLine($"Some Evade");
 
-                        if (defenderCombatAbility == CombatAbility.Provoke || defenderCombatAbility == CombatAbility.Phalanx) // Partial evades are always "Most"
+                        if (defenderCombatAbility == CombatAbility.Provoke) // Partial evades are always "Most"
                         {
                             evasionMod = 1 - 0.33f;
                             PartialEvasion = PartialEvasion.Most;
@@ -659,26 +728,19 @@ namespace ACE.Server.Entity
 
         private bool IsBlocked(Creature attacker, Creature defender)
         {
-            // check for frontal radius prior to allowing a block/parry
-            // unless PhalanxActive
-
             Player playerAttacker = attacker as Player;
             Player playerDefender = defender as Player;
+                        
+            var blockChance = 0.0f;
 
-            if (playerDefender == null || playerDefender.LastPhalanxActivated < Time.GetUnixTime() - PhalanxActivatedDuration || playerDefender.GetEquippedShield == null)
-            { 
+            // check for frontal radius prior to allowing a block unless PhalanxActivated
+            if (playerDefender == null || playerDefender.EquippedCombatAbility != CombatAbility.Phalanx || playerDefender.LastPhalanxActivated < Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration || playerDefender.GetEquippedShield == null)
+            {
                 var effectiveAngle = 180.0f;
                 var angle = defender.GetAngle(attacker);
                 if (Math.Abs(angle) > effectiveAngle / 2.0f)
                     return false;
             }
-            
-            var blockChance = 0.0f;
-
-            var combatAbility = CombatAbility.None;
-            var combatFocus = defender.GetEquippedCombatFocus();
-            if (combatFocus != null)
-                combatAbility = combatFocus.GetCombatAbility();
 
             var defenderEquippedShield = defender.GetEquippedShield();
             if (defenderEquippedShield != null && defender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
@@ -715,14 +777,23 @@ namespace ACE.Server.Entity
             }
 
             // COMBAT ABILITY - Parry: 20% chance to block attacks while using a two-handed weapon or dual-wielding
-            else if (combatAbility == CombatAbility.Parry)
+            else if (playerDefender != null && playerDefender.EquippedCombatAbility == CombatAbility.Parry)
             {
-                if (defender.TwoHandedCombat || defender.IsDualWieldAttack)
+                if (playerDefender.TwoHandedCombat || playerDefender.IsDualWieldAttack)
+                {
                     blockChance = 0.2f;
+
+                    if (playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration)
+                        blockChance += 0.15f;
+                }
             }
 
-            if (ThreadSafeRandom.Next(0.0f, 1.0f) < blockChance)
-                return true;
+            // Phalanx Activated Block Bonus
+            if (playerDefender != null && playerDefender.LastPhalanxActivated > Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration && playerDefender.GetEquippedShield != null)
+                blockChance += 0.5f;
+
+            if (ThreadSafeRandom.Next(0f, 1f) < blockChance)
+            return true;
 
             return false;
         }
@@ -739,21 +810,6 @@ namespace ACE.Server.Entity
             var defenderCombatFocus = defender.GetEquippedCombatFocus();
             if (defenderCombatFocus != null)
                 defenderCombatAbility = defenderCombatFocus.GetCombatAbility();
-        }
-
-        private float GetRecklessMod(Creature attacker, Creature defender, CombatAbility attackerAbility)
-        {
-            var mod = 1.0f;
-
-            if (attackerAbility == CombatAbility.Reckless)
-            {
-                if (CombatType == CombatType.Melee || attacker.GetDistance(defender) < 3) 
-                {
-                    mod = 1.20f; 
-                }
-            }
-
-            return mod;
         }
 
         private float GetEvasionMod(Creature attacker, Creature defender)

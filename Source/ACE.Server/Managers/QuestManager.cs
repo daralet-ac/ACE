@@ -681,5 +681,28 @@ namespace ACE.Server.Managers
 
             SetQuestCompletions(questFormat, questBits);
         }
+
+        public void DecrementRampQuest()
+        {
+            var quests = GetQuests();
+
+            if (quests.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var quest in quests)
+            {
+                var questName = quest.QuestName.ToString();
+
+                if (quest.NumTimesCompleted <= 0)
+                    Erase(questName);
+
+                if (questName.Contains(","))
+                    Decrement(questName, 25);
+
+            }
+
+        }
     }
 }

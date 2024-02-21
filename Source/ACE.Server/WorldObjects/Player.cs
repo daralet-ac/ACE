@@ -105,6 +105,18 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        private bool? CachedManaBarrierToggle = null;
+        public bool ManaBarrierToggle
+        {
+            get
+            {
+                if (!CachedManaBarrierToggle.HasValue)
+                    CachedManaBarrierToggle = GetCharacterOption(CharacterOption.ManaBarrierToggle);
+
+                return CachedManaBarrierToggle ?? false;
+            }
+        }
+
         public ConfirmationManager ConfirmationManager;
 
         public SquelchManager SquelchManager;

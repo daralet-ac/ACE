@@ -6390,6 +6390,8 @@ namespace ACE.Entity.Enum
         FeignWeakness                       = 0x8000 | 10051,   // 15 second cooldown
         Vanish                              = 0x8000 | 10052,   // 60 second cooldown
         ExposeWeakness                      = 0x8000 | 10053,   // 15 second cooldown
+        ActivatedCombatAbilities            = 0x8000 | 10054,   // 120 second shared cooldown
+        ManaBarrier                         = 0x8000 | 10055,   // 60 second cooldown, triggered only on breaking/deactivation of shield
 
     }
 

@@ -14,6 +14,8 @@ using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
+using Org.BouncyCastle.Asn1.X509;
+using Time = ACE.Common.Time;
 
 namespace ACE.Server.WorldObjects
 {
@@ -122,7 +124,15 @@ namespace ACE.Server.WorldObjects
                 var targetMaxHealth = target.Health.MaxValue;
                 var percentDamageDealt = damage / targetMaxHealth;
 
-                var threat = percentDamageDealt * 1000; 
+                var threat = percentDamageDealt * 1000;
+
+                if (EquippedCombatAbility == CombatAbility.Provoke)
+                {
+                    if (LastProvokeActivated > Time.GetUnixTime() - ProvokeActivatedDuration)
+                        threat *= 1.5f;
+                    else
+                        threat *= 1.2f;
+                }       
 
                 target.IncreaseTargetThreatLevel(this, (int)threat);
 
@@ -190,10 +200,36 @@ namespace ACE.Server.WorldObjects
                     
                 if (!SquelchManager.Squelches.Contains(this, ChatMessageType.CombatSelf))
                 {
+                    var recklessMsg = "";
+                    var recklessPercent = 0;
+                    var critMsg = damageEvent.IsCritical ? "Critical Hit! " : "";
+                    var sneakMsg = damageEvent.SneakAttackMod > 1.0f ? "Sneak Attack! " : "";
+
+                    var percent = intDamage / target.Health.MaxValue;
+                    string verb = null, single = null;
+                    Strings.GetAttackVerb(damageEvent.DamageType, percent, ref verb, ref single);
+
+                    if (this != target)
+                    {
+                        if (this.EquippedCombatAbility == CombatAbility.Reckless)
+                        {
+                            if (this.GetEquippedMeleeWeapon() != null || this.GetDistance(target) < 3)
+                            {
+                                recklessPercent = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless") / 5;
+                                if (recklessPercent > 100)
+                                    recklessPercent = 100;
+
+                                recklessMsg = $"{recklessPercent} Fury! ";
+                            }
+                        }
+                    }
+                        
                     if (this != target && damageEvent.PartialEvasion == PartialEvasion.Most)
-                        Session.Network.EnqueueSend(new GameMessageSystemChat($"Major Glancing Blow! You hit {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"{recklessMsg}{sneakMsg}Major Glancing Blow! You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
                     else if (this != target && damageEvent.PartialEvasion == PartialEvasion.Some)
-                        Session.Network.EnqueueSend(new GameMessageSystemChat($"Minor Glancing Blow! You hit {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"{recklessMsg}{sneakMsg}Minor Glancing Blow! You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
+                    else if (this != target && recklessMsg != "")
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"{recklessMsg}{critMsg}{sneakMsg}You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
                     else if (this != target)
                         Session.Network.EnqueueSend(new GameEventAttackerNotification(Session, target.Name, damageEvent.DamageType, (float)intDamage / target.Health.MaxValue, intDamage, damageEvent.IsCritical, damageEvent.AttackConditions));
                     else
@@ -448,7 +484,9 @@ namespace ACE.Server.WorldObjects
             if (GetEquippedShield() != null)
             {
                 if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You blocked {attacker.Name}'s attack!", ChatMessageType.CombatEnemy));
+                {
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"You blocked {attacker.Name}'s attack!", ChatMessageType.CombatEnemy));
+                }
             }
 
                     
@@ -552,16 +590,6 @@ namespace ACE.Server.WorldObjects
                 return 1.0f;
         }
 
-        public override bool IsPowerShot(WorldObject weapon, CombatAbility combatAbilityType)
-        {
-            if (weapon == null || !weapon.IsRanged)
-                return false;
-
-            if (combatAbilityType == CombatAbility.Powershot && AccuracyLevel == 1.0f)
-                return true;
-
-            return false;
-        }
 
         /// <summary>
         /// Accuracy Crit Chance Mod ranges from 0 to 0.1. This is added to DamageEvent.CriticalChance
@@ -696,16 +724,15 @@ namespace ACE.Server.WorldObjects
 
                 // Combat Focus - Smokescreen (50% to force attacker to search for a new target when hit, if more than one player is available)
                 var playerCombatFocus = GetPlayerCombatAbility(this);
-                if(playerCombatFocus == CombatAbility.Smokescreen)
+                if (playerCombatFocus == CombatAbility.Smokescreen)
                 {
                     var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
                     if (rng > 0.5f)
                         creatureAttacker.FindNextTarget(false);
                 }
             }
-
-            // check lifestone protection
-            if (UnderLifestoneProtection)
+                // check lifestone protection
+                if (UnderLifestoneProtection)
             {
                 HandleLifestoneProtection();
                 return 0;
@@ -732,9 +759,67 @@ namespace ACE.Server.WorldObjects
                 percent = (float)amount / Health.MaxValue;
             }
 
-            // update health
-            var damageTaken = (uint)-UpdateVitalDelta(Health, (int)-amount);
-            DamageHistory.Add(source, damageType, damageTaken);
+            uint damageTaken = 0;
+
+            if (!ManaBarrierToggle)
+            {
+                // update health
+                damageTaken = (uint)-UpdateVitalDelta(Health, (int)-amount);
+                DamageHistory.Add(source, damageType, damageTaken);
+            }
+
+            if (ManaBarrierToggle)
+            {
+                var toggles = GetInventoryItemsOfWCID(1051110);
+                var skill = GetCreatureSkill((Skill)16);
+
+                var expectedSkill = (float)(Level * 5);
+                var currentSkill = (float)skill.Current;
+
+                // create a scaling mod. if expected skill is much higher than currentSkill, you will be multiplying the amount of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
+                // capped at 1f so high skill gets the proper ratio of health-to-mana, but no better than that.
+
+                var skillModifier = expectedSkill / currentSkill <= 1f ? 1f : expectedSkill / currentSkill;
+
+                // 25% of damage taken as mana, x3 for trained
+                var manaDamage = (amount * 0.25) * 3 * skillModifier;
+                if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                    manaDamage = (amount * 0.25) * 1.5 * skillModifier; 
+
+                if (ManaBarrierToggle && Mana.Current >= manaDamage)
+                {
+                    damageTaken = (uint)(amount * 0.75f);
+                    Console.WriteLine(amount);
+                    Console.WriteLine(damageTaken);
+                    PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
+                    UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
+                    UpdateVitalDelta(Health, (int)-damageTaken);
+                    DamageHistory.Add(source, damageType, (uint)damageTaken);
+                }
+                // if not enough mana, barrier falls and player takes remainder of damage as health
+                if (ManaBarrierToggle && Mana.Current < manaDamage)
+                {
+                    ToggleManaBarrierSetting();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic));
+                    if (toggles != null)
+                    {
+                        foreach (var toggle in toggles)
+                            EnchantmentManager.StartCooldown(toggle);
+                    }
+                    PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
+
+                    // find mana damage overage and reconvert to HP damage
+                    var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
+                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                        manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
+
+                    damageTaken = (uint)((amount * 0.75) + manaRemainder);
+                    UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
+                    UpdateVitalDelta(Health, (int)-(damageTaken));
+                    DamageHistory.Add(source, damageType, damageTaken);
+                }
+
+            }
 
             // update stamina
             if (CombatMode != CombatMode.NonCombat)
@@ -796,12 +881,19 @@ namespace ACE.Server.WorldObjects
             {
                 var critMessage = crit == true ? "Critical Hit! " : "";
 
+                var sneakAttackMod = creature.GetSneakAttackMod(this, out var backstabMod);
+                var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
+
+                var percentHp = damageTaken / Health.MaxValue;
+                string verb = null, plural = null;
+                Strings.GetAttackVerb(damageType, percentHp, ref verb, ref plural);
+
                 if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature && partialEvasion == PartialEvasion.Some)
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Minor Glancing Blow! {creature.Name} hit you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{sneakMsg}Minor Glancing Blow! {creature.Name} {plural} you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
                 else if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature && partialEvasion == PartialEvasion.Most)
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Major Glancing Blow! {creature.Name} hit you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{sneakMsg}Major Glancing Blow! {creature.Name} {plural} you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
                 else if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature)
-                    Session.Network.EnqueueSend(new GameEventDefenderNotification(Session, creature.Name, damageType, percent, amount, damageLocation, crit, attackConditions));
+                    Session.Network.EnqueueSend(new GameEventDefenderNotification(Session, creature.Name, damageType, percent, damageTaken, damageLocation, crit, attackConditions));
     
                 var hitSound = new GameMessageSound(Guid, GetHitSound(source, bodyPart), 1.0f);
                 var splatter = new GameMessageScript(Guid, (PlayScript)Enum.Parse(typeof(PlayScript), "Splatter" + creature.GetSplatterHeight() + creature.GetSplatterDir(this)));
@@ -968,10 +1060,6 @@ namespace ACE.Server.WorldObjects
             var weightClassPenalty = (float)(1 + GetArmorResourcePenalty());
             
             var baseCost = StaminaTable.GetStaminaCost(weaponTier, attackAnimLength, powerAccuracyLevel, weightClassPenalty);
-
-            // COMBAT ABILITY - Power Shot
-            if (combatAbility == CombatAbility.Powershot && AccuracyLevel == 1.0f)
-                baseCost *= 2;
 
             var staminaCostReductionMod = 1.0f;
 

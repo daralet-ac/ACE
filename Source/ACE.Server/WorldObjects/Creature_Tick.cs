@@ -36,6 +36,8 @@ namespace ACE.Server.WorldObjects
 
             DamageHistory.TryPrune();
 
+            QuestManager.DecrementRampQuest();
+
             if (numRecentAttacksReceived > 0)
             {
                 attacksReceivedPerSecond = numRecentAttacksReceived / (float)CachedHeartbeatInterval;

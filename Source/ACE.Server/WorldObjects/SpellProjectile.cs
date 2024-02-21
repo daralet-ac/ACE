@@ -1,4 +1,5 @@
 using ACE.Common;
+using ACE.DatLoader.Entity;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -10,8 +11,11 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
+using Lifestoned.DataModel.Shared;
+using Mono.Cecil;
 using System;
 using System.Numerics;
+using Position = ACE.Entity.Position;
 
 namespace ACE.Server.WorldObjects
 {
@@ -440,14 +444,9 @@ namespace ACE.Server.WorldObjects
             // Combat Ability - Reflect (reflect resisted spells back to the caster)
             if (resisted && targetPlayer != null && sourceCreature != null)
             {
-                var combatAbility = CombatAbility.None;
-                var combatFocus = targetPlayer.GetEquippedCombatFocus();
-                if (combatFocus != null)
-                    combatAbility = combatFocus.GetCombatAbility();
-
-                if(combatAbility == CombatAbility.Reflect)
+                if (targetPlayer.EquippedCombatAbility == CombatAbility.Reflect)
                 {
-                    TryCastSpell(Spell, sourceCreature, null, null, false, false, false, true);
+                    targetPlayer.TryCastSpell(Spell, sourceCreature, null, null, false, false, false, true);
                 }
             }
 
@@ -476,6 +475,17 @@ namespace ACE.Server.WorldObjects
             if (sourcePlayer != null && weapon != null)
                 if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 1)
                     criticalChance += 0.05f;
+            // Iron Fist Crit Rate Bonus
+            if (sourcePlayer != null)
+            {
+                if (sourcePlayer.EquippedCombatAbility == CombatAbility.IronFist)
+                {
+                    if (sourcePlayer.LastIronFistActivated > Time.GetUnixTime() - sourcePlayer.IronFistActivatedDuration)
+                        criticalChance += 0.25f;
+                    else
+                        criticalChance += 0.1f;
+                }
+            }
 
             if (ThreadSafeRandom.Next(0.0f, 1.0f) < criticalChance)
             {
@@ -532,26 +542,62 @@ namespace ACE.Server.WorldObjects
             if (isPVP && Spell.IsHarmful)
                 Player.UpdatePKTimers(sourcePlayer, targetPlayer);
 
-            var attributeMod = sourcePlayer.GetAttributeMod(weapon, true);
+            var attributeMod = 1f;
+            if (sourcePlayer != null)
+                attributeMod = sourcePlayer.GetAttributeMod(weapon, true);
 
             var elementalDamageMod = GetCasterElementalDamageModifier(weapon, sourceCreature, target, Spell.DamageType);
 
             // Possible 2x + damage bonus for the slayer property
             var slayerMod = GetWeaponCreatureSlayerModifier(weapon, sourceCreature, target);
 
-            // COMBAT ABILITY - Overload (x1.5) and Battery (x0.5)
+            // COMBAT ABILITY - Overload (x1.5) and Battery (scaling penalty with mana lost, 0 penalty when activated)
             var combatFocusDamageMod = 1.0f;
-            if (sourceCreature != null)
+            if (sourcePlayer != null)
             {
-                var combatAbility = CombatAbility.None;
-                var combatFocus = sourceCreature.GetEquippedCombatFocus();
-                if (combatFocus != null)
-                    combatAbility = combatFocus.GetCombatAbility();
+                // Overload - Increased effectiveness up to 50%+ with Overload stacks, double bonus + erase stacks on activated ability
+                if (sourcePlayer.EquippedCombatAbility == CombatAbility.Overload && sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload"))
+                {
+                    if (sourcePlayer.OverloadActivated == false)
+                    {
+                        var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
+                        var overloadMod = (float)overloadStacks / 1000;
+                        combatFocusDamageMod += overloadMod;
+                    }
+                    if (sourcePlayer.OverloadActivated && sourcePlayer.LastOverloadActivated > Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration)
+                    {
+                        sourcePlayer.OverloadActivated = false;
+                        var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
+                        var overloadMod = (float)overloadStacks / 500;
+                        combatFocusDamageMod += overloadMod;
+                        sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
+                    }
+                    // reset if player didn't cast overload discharge within ten sec
+                    if (sourcePlayer.OverloadActivated && sourcePlayer.LastOverloadActivated < Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration)
+                    {
+                        sourcePlayer.OverloadActivated = false;
+                        sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
+                    }
+                }
+                else if (sourcePlayer.EquippedCombatAbility == CombatAbility.Battery && sourcePlayer.LastBatteryActivated < Time.GetUnixTime() - sourcePlayer.BatteryActivatedDuration)
+                {
+                    var maxMana = (float)sourcePlayer.Mana.MaxValue;
+                    var currentMana = (float)sourcePlayer.Mana.Current == 0 ? 1 : (float)sourcePlayer.Mana.Current;
 
-                if (combatAbility == CombatAbility.Overload)
-                    combatFocusDamageMod = 1.5f;
-                else if (combatAbility == CombatAbility.Battery)
-                    combatFocusDamageMod = 0.5f;
+                    if ((currentMana / maxMana) > 0.75)
+                        combatFocusDamageMod = 1f;
+                    else
+                    {
+                        var newMax = maxMana * 0.75;
+                        var manaMod = 1f - 0.25f * ((newMax - currentMana) / newMax);
+                        combatFocusDamageMod -= (float)manaMod;
+                    }
+                }
+                else if (sourcePlayer.EquippedCombatAbility == CombatAbility.EnchantedWeapon && sourcePlayer.LastEnchantedWeaponActivated > Time.GetUnixTime() - sourcePlayer.EnchantedWeaponActivatedDuration)
+                {
+                    if (sourcePlayer.GetEquippedMeleeWeapon != null || sourcePlayer.GetEquippedMissileLauncher != null || sourcePlayer.GetEquippedMissileWeapon != null)
+                        combatFocusDamageMod += 0.25f;
+                }
             }
 
             // SPEC BONUS - Magic Defense
@@ -578,6 +624,9 @@ namespace ACE.Server.WorldObjects
                     weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
 
                     criticalDamageMod = 2.0f + weaponCritDamageMod;
+
+                    if (sourcePlayer != null && sourcePlayer.EquippedCombatAbility == CombatAbility.IronFist)
+                        criticalDamageMod -= 0.2f;
                 }
 
                 weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType);
@@ -627,6 +676,9 @@ namespace ACE.Server.WorldObjects
                             weaponCritDamageMod += 0.5f;
 
                     criticalDamageMod = 2.0f + weaponCritDamageMod;
+
+                    if (sourcePlayer != null && sourcePlayer.EquippedCombatAbility == CombatAbility.IronFist)
+                        criticalDamageMod -= 0.2f;
                 }
 
                 baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
@@ -638,7 +690,7 @@ namespace ACE.Server.WorldObjects
 
                 resistanceMod = (float)Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
-                if (sourcePlayer != null && targetPlayer != null && Spell.DamageType == DamageType.Nether)
+                if (sourcePlayer != null && targetPlayer != null && Spell.DamageType == ACE.Entity.Enum.DamageType.Nether)
                 {
                     // for direct damage from void spells in pvp,
                     // apply void_pvp_modifier *on top of* the player's natural resistance to nether
@@ -863,6 +915,9 @@ namespace ACE.Server.WorldObjects
                     //Console.WriteLine("Magic sneak attack:  + sneakAttackMod);
                     heritageMod = sourcePlayer.GetHeritageBonus(sourcePlayer.GetEquippedWand()) ? 1.05f : 1.0f;
                 }
+                // Calc sneak bonus for monsters
+                if (targetPlayer != null && sourceCreature != null)
+                    sneakAttackMod = sourceCreature.GetSneakAttackMod(targetPlayer, out var backstabMod);
 
                 var damageRating = sourceCreature?.GetDamageRating() ?? 0;
                 damageRatingMod = Creature.AdditiveCombine(Creature.GetPositiveRatingMod(damageRating), heritageMod, sneakAttackMod);
@@ -902,20 +957,103 @@ namespace ACE.Server.WorldObjects
                     percent = damage / target.Health.MaxValue;
                 }
 
-                amount = (uint)-target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
-                target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+                // Mana Barrier 
+                if (targetPlayer == null || !targetPlayer.ManaBarrierToggle)
+                {
+                    amount = (uint)-target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
+                    target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+                }
+                if (targetPlayer != null && targetPlayer.ManaBarrierToggle)
+                {
+                    var toggles = targetPlayer.GetInventoryItemsOfWCID(1051110);
+                    var skill = targetPlayer.GetCreatureSkill((Skill)16);
 
-                //if (targetPlayer != null && targetPlayer.Fellowship != null)
-                    //targetPlayer.Fellowship.OnVitalUpdate(targetPlayer);
+                    var expectedSkill = (float)(targetPlayer.Level * 5);
+                    var currentSkill = (float)skill.Current;
+
+                    // create a scaling mod. if expected skill is much higher than currentSkill, you will be multiplying the amount of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
+                    // capped at 1f so high skill gets the proper ratio of health-to-mana, but no better than that.
+
+                    var skillModifier = expectedSkill / currentSkill <= 1f ? 1f : expectedSkill / currentSkill;
+
+                    var manaDamage = (damage * 0.25) * 3 * skillModifier;
+                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                        manaDamage = (damage * 0.25) * 1.5 * skillModifier;
+
+                    if (targetPlayer.ManaBarrierToggle && targetPlayer.Mana.Current >= manaDamage)
+                    {
+                        amount = (uint)(damage * 0.75);
+                        PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
+                        targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-Math.Round(manaDamage));
+                        targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
+                        targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+                    }
+                    // if not enough mana, barrier falls and player takes remainder of damage as health
+                    if (targetPlayer.ManaBarrierToggle && targetPlayer.Mana.Current < manaDamage)
+                    {
+                        targetPlayer.ToggleManaBarrierSetting();
+                        targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic));
+                        if (toggles != null)
+                        {
+                            foreach (var toggle in toggles)
+                                EnchantmentManager.StartCooldown(toggle);
+                        }
+
+                        PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
+                        // find mana damage overage and reconvert to HP damage
+                        var manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 1.5;
+                        if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                            manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 3;
+
+                        amount = (uint)((damage * 0.75) + manaRemainder);
+                        targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-(targetPlayer.Mana.Current - 1));
+                        targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-(amount));
+                        targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+                    }
+                }
             }
+                
+                    //if (targetPlayer != null && targetPlayer.Fellowship != null)
+                    //targetPlayer.Fellowship.OnVitalUpdate(targetPlayer);
+            
+       
+                    /* amount = (uint)Math.Round(damage);    // full amount for debugging
 
-            amount = (uint)Math.Round(damage);    // full amount for debugging
+                    Console.WriteLine($" -criticalHit? {critical}\n" +
+                        $" -damageRatingMod: {damageRatingMod}\n" +
+                        $" -damageResistRatingMod: {damageResistRatingMod}\n" +
+                        $" -FINAL: {amount}"); */
 
+            // Overload Stamps + Messages
+            var overloadPercent = 0;
+            var overload = false;
+
+            if (sourcePlayer != null)
+            {
+                var combatAbility = CombatAbility.None;
+                var combatFocus = sourceCreature.GetEquippedCombatFocus();
+                if (combatFocus != null)
+                    combatAbility = combatFocus.GetCombatAbility();
+
+                if (combatAbility == CombatAbility.Overload)
+                {
+                    overload = true;
+                    var projectileScaler = 1;
+                    if (SpellType == ProjectileSpellType.Streak)
+                        projectileScaler = 5;
+                    if (SpellType == ProjectileSpellType.Volley || SpellType == ProjectileSpellType.Blast)
+                        projectileScaler = 3;
+                    if (SpellType == ProjectileSpellType.Ring || SpellType == ProjectileSpellType.Wall)
+                        projectileScaler = 6;
+
+                    overloadPercent = Player.HandleOverloadStamps(sourcePlayer, projectileScaler, Spell.Level);
+                }
+            }
             // add threat to damaged targets
-            if (target.IsMonster)
+            if (target.IsMonster && sourcePlayer != null)
             {
                 var percentOfTargetMaxHealth = (float)amount / target.Health.MaxValue;
-                target.IncreaseTargetThreatLevel(sourceCreature, (int)(percentOfTargetMaxHealth * 1000));
+                target.IncreaseTargetThreatLevel(sourcePlayer, (int)(percentOfTargetMaxHealth * 1000));
             }
 
             // show debug info
@@ -937,6 +1075,7 @@ namespace ACE.Server.WorldObjects
                 var critMsg = critical ? "Critical hit! " : "";
                 var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
                 var overpowerMsg = overpower ? "Overpower! " : "";
+                var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
                 var resistSome = PartialEvasion == PartialEvasion.Some ? "Minor resist! " : "";
                 var resistMost = PartialEvasion == PartialEvasion.Most ? "Major resist! " : "";
 
@@ -946,7 +1085,7 @@ namespace ACE.Server.WorldObjects
                 {
                     var critProt = critDefended ? " Your critical hit was avoided with their augmentation!" : "";
 
-                    var attackerMsg = $"{resistMost}{resistSome}{critMsg}{overpowerMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
+                    var attackerMsg = $"{resistMost}{resistSome}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
                     // could these crit / sneak attack?
                     if (nonHealth)

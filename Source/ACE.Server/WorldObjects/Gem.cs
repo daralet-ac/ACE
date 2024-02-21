@@ -216,56 +216,14 @@ namespace ACE.Server.WorldObjects
                     case CombatAbility.ExposeMagicalWeakness:
                         player.TryUseExposeMagicalWeakness(this);
                         break;
-                    case CombatAbility.ProvokeActivated:
-                        player.TryUseProvokeActivated(this);
+                    case CombatAbility.ActivatedCombatAbilities:
+                        player.TryUseActivated(this);
                         break;
-
-                    case CombatAbility.PhalanxActivated:
-                        player.TryUsePhalanxActivated(this);
-                        break;
-
-                    case CombatAbility.RecklessActivated:
-                        player.TryUseRecklessActivated(this);
-                        break;
-
-                    case CombatAbility.ParryActivated:
-                        player.TryUseParryActivated(this);
-                        break;
-
-                    case CombatAbility.BackstabActivated:
-                        player.TryUseBackstabActivated(this);
-                        break;
-
-                    case CombatAbility.SteadyShotActivated:
-                        player.TryUseSteadyShotActivated(this);
-                        break;
-
-                    case CombatAbility.MultishotActivated:
-                        player.TryUseMultishotActivated(this);
-                        break;
-
-                    case CombatAbility.SmokescreenActivated:
-                        player.TryUseSmokescreenActivated(this);
-                        break;
-
-                    case CombatAbility.IronFistActivated:
-                        player.TryUseIronFistActivated(this);
-                        break;
-
-                    case CombatAbility.OverloadActivated:
-                        player.TryUseOverloadActivated(this);
-                        break;
-
-                    case CombatAbility.BatteryActivated:
-                        player.TryUseBatteryActivated(this);
-                        break;
-
-                    case CombatAbility.ReflectActivated:
-                        player.TryUseReflectActivated(this);
-                        break;
-
-                    case CombatAbility.EnchantedWeaponActivated:
-                        player.TryUseEnchantedWeaponActivated(this);
+                    case CombatAbility.ManaBarrier:
+                        if (player.ToggleManaBarrierSetting())
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You draw on your stored mana to form an enchanted shield around yourself!", ChatMessageType.Broadcast));
+                        else
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast));
                         break;
                 }
             }
@@ -390,6 +348,7 @@ namespace ACE.Server.WorldObjects
                         player.EnchantmentManager.StartCooldown(this);
                         return;
                     }
+
                 }
                 else
                     return;

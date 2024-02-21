@@ -246,13 +246,13 @@ namespace ACE.Server.WorldObjects
             // Combat Ability - Spell Reflect (gain 20% increased magic defense while attempting to resist a spell)
             if (targetPlayer  != null)
             {
-                var combatAbility = CombatAbility.None;
-                var combatFocus = targetPlayer.GetEquippedCombatFocus();
-                if (combatFocus != null)
-                    combatAbility = combatFocus.GetCombatAbility();
-
-                if (combatAbility == CombatAbility.Reflect)
+                if (targetPlayer.EquippedCombatAbility == CombatAbility.Reflect)
+                {
                     resistChanceMod = 1.2f;
+
+                    if (targetPlayer.LastReflectActivated > Time.GetUnixTime() - targetPlayer.ReflectActivatedDuration)
+                        resistChanceMod = 1.5f;
+                }
             }
 
             //Console.WriteLine($"{target.Name}.ResistSpell({Name}, {spell.Name}): magicSkill: {magicSkill}, difficulty: {difficulty}");
@@ -270,6 +270,17 @@ namespace ACE.Server.WorldObjects
                 {
                     targetPlayer.HandleLifestoneProtection();
                     resisted = true;
+                }
+
+            }
+
+            // Overload Discharge is unresistable 
+            if (player != null)
+            {
+                if (player.EquippedCombatAbility == CombatAbility.Overload && player.OverloadActivated && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration)
+                {
+                    resisted = false;
+                    pResist = PartialEvasion.None;
                 }
             }
 
@@ -368,7 +379,6 @@ namespace ACE.Server.WorldObjects
             }
 
             // Empowered Scarabs
-
             if (this is Player)
             {
                 if (targetCreature != null)
@@ -678,6 +688,72 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
+            // Combat Focus - Battery - Effectiveness Penalty - Overload - Effectiveness Bonus
+            var overload = false;
+            var overloadPercent = 0;
+
+            if (player != null)
+            {
+                var combatAbility = CombatAbility.None;
+                var combatFocus = player.GetEquippedCombatFocus();
+                if (combatFocus != null)
+                    combatAbility = combatFocus.GetCombatAbility();
+
+                // Overload - Increased effectiveness up to 50%+ with Overload stacks
+                if (combatAbility == CombatAbility.Overload)
+                {
+                    overload = true;
+
+                    if (player.OverloadActivated == false)
+                    {
+                       overloadPercent = Player.HandleOverloadStamps(player, null, spell.Level);
+
+                        if (player.QuestManager.HasQuest($"{player.Name},Overload"))
+                        {
+                            var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
+                            var overloadMod = 1 + (float)overloadStacks / 1000;
+                            tryBoost = (int)(tryBoost * overloadMod);
+                        }
+                    }
+                    if (player.OverloadActivated && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration)
+                    {
+                        player.OverloadActivated = false;
+                        if (player.QuestManager.HasQuest($"{player.Name},Overload"))
+                        {
+                            var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
+                            var overloadMod = 1 + (float)overloadStacks / 500;
+                            tryBoost = (int)(tryBoost * overloadMod);
+                            player.QuestManager.Erase($"{player.Name},Overload");
+                        }
+                    }
+                    if (player.OverloadActivated && player.LastOverloadActivated < Time.GetUnixTime() - player.OverloadActivatedDuration)
+                    {
+                        player.OverloadActivated = false;
+                        if (player.QuestManager.HasQuest($"{player.Name},Overload"))
+                            player.QuestManager.Erase($"{player.Name},Overload");
+                    }
+                }
+                // Battery - Reduced Effectiveness below 75% mana, down to 50%, but not when Activated is up
+                if (combatAbility == CombatAbility.Battery && player.LastBatteryActivated < Time.GetUnixTime() - player.BatteryActivatedDuration)
+                {
+                    var maxMana = (float)player.Mana.MaxValue;
+                    var currentMana = (float)player.Mana.Current == 0 ? 1 : (float)player.Mana.Current;
+
+                    if ((currentMana / maxMana) < 0.75)
+                    {
+                        var newMax = maxMana * 0.75;
+                        var batteryMod = 1f - 0.25f * ((newMax - currentMana) / newMax);
+
+                        tryBoost = (int)(tryBoost * batteryMod);
+                    }
+                }
+
+                if (player.EquippedCombatAbility == CombatAbility.EnchantedWeapon && player.LastEnchantedWeaponActivated > Time.GetUnixTime() - player.EnchantedWeaponActivatedDuration)
+                {
+                    if (player.GetEquippedMeleeWeapon != null || player.GetEquippedMissileLauncher != null || player.GetEquippedMissileWeapon != null)
+                        tryBoost = (int)(tryBoost * 1.25f);
+                }
+            }
             string srcVital;
 
             switch (spell.VitalDamageType)
@@ -713,19 +789,20 @@ namespace ACE.Server.WorldObjects
             if (player != null)
             {
                 string casterMessage;
+                var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
 
                 if (player != targetCreature)
                 {
                     if (spell.IsBeneficial)
-                        casterMessage = $"{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
+                        casterMessage = $"{overloadMsg}{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
                     else
-                        casterMessage = $"{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
+                        casterMessage = $"{overloadMsg}{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
                 }
                 else
                 {
                     var verb = spell.IsBeneficial ? "restore" : "drain";
 
-                    casterMessage = $"{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
+                    casterMessage = $"{overloadMsg}{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
                 }
 
                 if (showMsg)
@@ -941,6 +1018,81 @@ namespace ACE.Server.WorldObjects
             }
 
             string srcVital, destVital;
+            var overload = false;
+            var overloadPercent = 0;
+
+            // Combat Focuses - Spell Effectiveness Mods
+            if (player != null)
+            {
+                var combatAbility = CombatAbility.None;
+                var combatFocus = player.GetEquippedCombatFocus();
+                if (combatFocus != null)
+                    combatAbility = combatFocus.GetCombatAbility();
+
+                // Overload - Increased effectiveness up to 50%+ with Overload stacks, double bonus + erase stacks on activated
+                if (combatAbility == CombatAbility.Overload)
+                {
+                    overload = true;
+
+                    if (player.OverloadActivated == false)
+                    {
+                        overloadPercent = Player.HandleOverloadStamps(player, null, spell.Level);
+
+                        if (player.QuestManager.HasQuest($"{player.Name},Overload"))
+                        {
+                            var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
+                            var overloadMod = 1 + (float)overloadStacks / 1000;
+                            srcVitalChange = (uint)(srcVitalChange * overloadMod);
+                            destVitalChange = (uint)(destVitalChange * overloadMod);
+                        }
+                    }
+                    if (player.OverloadActivated == true && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration)
+                    {
+                        player.OverloadActivated = false;
+
+                        if (player.QuestManager.HasQuest($"{player.Name},Overload"))
+                        {
+                            var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
+                            var overloadMod = 1 + (float)overloadStacks / 500;
+                            srcVitalChange = (uint)(srcVitalChange * overloadMod);
+                            destVitalChange = (uint)(destVitalChange * overloadMod);
+                            player.QuestManager.Erase($"{player.Name},Overload");
+                        }
+                    }
+                    if (player.OverloadActivated == true && player.LastOverloadActivated < Time.GetUnixTime() - player.OverloadActivatedDuration)
+                    {
+                        player.OverloadActivated = false;
+
+                        if (player.QuestManager.HasQuest($"{player.Name},Overload"))                           
+                            player.QuestManager.Erase($"{player.Name},Overload");
+                    }
+                }
+                // Battery - Decrease to as little as 25% effectiveness scaling with mana
+                if (combatAbility == CombatAbility.Battery && player.LastBatteryActivated < Time.GetUnixTime() - player.BatteryActivatedDuration)
+                {
+                    var maxMana = (float)player.Mana.MaxValue;
+                    var currentMana = (float)player.Mana.Current == 0 ? 1 : (float)player.Mana.Current;
+
+                    if ((currentMana / maxMana) < 0.75)
+                    {
+                        var newMax = maxMana * 0.75;
+                        var batteryMod = 1f - 0.25f * ((newMax - currentMana) / newMax);
+
+                        srcVitalChange = (uint)(srcVitalChange * batteryMod);
+                        destVitalChange = (uint)(destVitalChange * batteryMod);
+                    }
+                }
+                // Enchanted Weapon Activated - Bonus 25% effectiveness
+                if (player.EquippedCombatAbility == CombatAbility.EnchantedWeapon && player.LastEnchantedWeaponActivated > Time.GetUnixTime() - player.EnchantedWeaponActivatedDuration)
+                {
+                    if (player.GetEquippedMeleeWeapon != null || player.GetEquippedMissileLauncher != null || player.GetEquippedMissileWeapon != null)
+                    {
+                        srcVitalChange = (uint)(srcVitalChange * 1.25);
+                        destVitalChange = (uint)(destVitalChange * 1.25);
+                    }
+                }
+
+            }
 
             // Apply the change in vitals to the source
             switch (spell.Source)
@@ -1006,18 +1158,20 @@ namespace ACE.Server.WorldObjects
 
             string sourceMsg = null, targetMsg = null;
 
+            var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
+
             if (playerSource != null && playerDestination != null && transferSource.Guid == destination.Guid)
             {
-                sourceMsg = $"You cast {spell.Name} on yourself and lose {srcVitalChange} points of {srcVital} and also gain {destVitalChange} points of {destVital}";
+                sourceMsg = $"{overloadMsg}You cast {spell.Name} on yourself and lose {srcVitalChange} points of {srcVital} and also gain {destVitalChange} points of {destVital}";
             }
             else
             {
                 if (playerSource != null)
                 {
                     if (transferSource == this)
-                        sourceMsg = $"You lose {srcVitalChange} points of {srcVital} due to casting {spell.Name} on {targetCreature.Name}";
+                        sourceMsg = $"{overloadMsg}You lose {srcVitalChange} points of {srcVital} due to casting {spell.Name} on {targetCreature.Name}";
                     else
-                        targetMsg = $"You lose {srcVitalChange} points of {srcVital} due to {caster.Name} casting {spell.Name} on you";
+                        targetMsg = $"{overloadMsg}You lose {srcVitalChange} points of {srcVital} due to {caster.Name} casting {spell.Name} on you";
 
                     if (destination is Creature creatureDestination)
                         playerSource.SetCurrentAttacker(creatureDestination);

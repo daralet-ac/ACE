@@ -13,7 +13,7 @@ namespace ACE.Server.WorldObjects
     {
         public uint CalculateManaUsage(Creature caster, Spell spell, WorldObject target = null)
         {
-            var baseCost = spell.BaseMana;
+            uint baseCost = spell.BaseMana;
 
             // for casting spells built into a casting implement, use the ItemManaCost
             var castItem = caster.GetEquippedWand();
@@ -44,10 +44,33 @@ namespace ACE.Server.WorldObjects
             if (combatFocus != null)
                 combatAbility = combatFocus.GetCombatAbility();
 
-            if (combatAbility == CombatAbility.Overload)
-                baseCost *= 2;
+            // Overload - Increased cost up to 100%+ with Overload stacks
+            if (combatAbility == CombatAbility.Overload && this.QuestManager.HasQuest($"{this.Name},Overload"))
+            {
+                if (spell.Flags.HasFlag(SpellFlags.FastCast))
+                    baseCost = 5 * spell.Level;
+
+                var overloadStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Overload");
+                float overloadMod = 1 + (overloadStacks / 500);
+                baseCost = (uint)(baseCost * overloadMod);
+            }
+            // Battery - 20% mana cost reduction minimum, increasing with lower mana or 0 cost during Battery Activated
             else if (combatAbility == CombatAbility.Battery)
-                baseCost = (uint)(baseCost * 0.5f);
+            {
+                if (this is Player player && player.LastBatteryActivated > Time.GetUnixTime() - player.BatteryActivatedDuration)
+                {
+                    baseCost = 0;
+                }
+                else
+                {
+                    var maxMana = (float)Mana.MaxValue;
+                    var currentMana = (float)Mana.Current == 0 ? 1 : (float)Mana.Current;
+
+                    float manaMod = 1 - (maxMana - currentMana) / maxMana;
+                    var batteryMod = manaMod > 0.8f ? 0.8f : manaMod;
+                    baseCost = (uint)(baseCost * batteryMod);
+                }
+            }
 
             // Mana Conversion
             var manaConversion = caster.GetCreatureSkill(Skill.ManaConversion);
