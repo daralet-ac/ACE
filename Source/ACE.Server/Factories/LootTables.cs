@@ -439,133 +439,34 @@ namespace ACE.Server.Factories
         //  0|100|150|200|225|250|275|300
 
         // Axe
-        public static readonly float[] AxeMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] AxeMutationAdder =
-                { 1, 2, 4, 6, 10, 16, 24, 50 };
 
         // Dagger
-        public static readonly float[] DaggerMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] DaggerMutationAdder =
-                { 1, 2, 4, 6, 10, 16, 24, 50 };
-
-        public static readonly float[] DaggerMsMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] DaggerMsMutationAdder =
-                { 1, 2, 4, 6, 10, 16, 24, 50 };
 
         // Mace
-        public static readonly float[] MaceMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] MaceMutationAdder =
-                { 1, 2, 4, 6, 10, 16, 24, 50 };
 
         // Spear
-        public static readonly float[] SpearMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] SpearMutationAdder =
-                { 1, 2, 4, 6, 10, 16, 24, 50 };
 
         // Staff
-        public static readonly float[] StaffMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] StaffMutationAdder =
-                {1, 2, 4, 6, 10, 16, 24, 50};
 
         // Sword
-        public static readonly float[] SwordMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] SwordMutationAdder =
-                {1, 2, 4, 6, 10, 16, 24, 50};
 
         // Sword MS
-        public static readonly float[] SwordMSMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] SwordMSMutationAdder =
-                {1, 2, 4, 6, 10, 16, 24, 50};
 
         // UA
-        public static readonly float[] UnarmedMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] UnarmedMutationAdder =
-                {1, 2, 4, 6, 10, 16, 24, 50 };
 
         // 2H Axe
-        public static readonly float[] TwohandAxeMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] TwohandAxeMutationAdder =
-                { 1, 2, 4, 6, 10, 16, 24, 50 };
 
         // 2H Mace
-        public static readonly float[] TwohandMaceMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] TwohandMaceMutationAdder =
-                { 1, 2, 4, 6, 10, 16, 24, 50 };
 
         // 2H Spear
-        public static readonly float[] TwohandSpearMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] TwohandSpearMutationAdder =
-                {1, 2, 4, 6, 10, 16, 24, 50};
 
         // 2H Sword
-        public static readonly float[] TwohandSwordMutationMultiplier =
-                { 0.5f, 1.0f, 2.0f, 3.0f, 5.0f, 8.0f, 12.0f, 18.0f };
-
-        public static readonly int[] TwohandSwordMutationAdder =
-                { 1, 2, 4 , 6, 10, 16, 24, 50 };
 
         // Atlatl
-        public static readonly float[] AtlatlDamageBonusMutationMultiplier =
-                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
-
-        public static readonly int[] AtlatlDamageBonusMutationAdder =
-                { 4, 4, 8, 12, 16, 20, 30, 40 };
-
-        public static readonly float[] AtlatlDamageModMutationMultiplier =
-                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
-
-        public static readonly int[] AtlatlDamageModMutationAdder =
-                { 5, 10, 20, 30, 40, 50, 75, 100};
 
         // Bow
-        public static readonly float[] BowDamageBonusMutationMultiplier =
-                { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
-
-        public static readonly int[] BowDamageBonusMutationAdder =
-                { 4, 4, 8, 12, 16, 20, 30, 40 };
-
-        public static readonly float[] BowDamageModMutationMultiplier =
-                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
-
-        public static readonly int[] BowDamageModMutationAdder =
-                { 5, 10, 20, 30, 40, 50, 75, 100 };
 
         // Crossbow
-        public static readonly float[] CrossbowDamageBonusMutationMultiplier =
-                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
-
-        public static readonly int[] CrossbowDamageBonusMutationAdder =
-                { 4, 4, 8, 12, 16, 20, 30, 40 };
-
-        public static readonly float[] CrossbowDamageModMutationMultiplier =
-                { 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f  };
-
-        public static readonly int[] CrossbowDamageModMutationAdder =
-                { 5, 10, 20, 30, 40, 50, 75, 100 };
 
         // Caster
         public static readonly float[] CasterMaxDamageMod =
