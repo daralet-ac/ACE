@@ -560,7 +560,7 @@ namespace ACE.Server.Network.Structure
             if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreArmor, out var ignoreArmor) && ignoreArmor != 0)
             {
                 var wielder = (Creature)wo.Wielder;
-                extraPropertiesText += $"+{Math.Round((ignoreArmor * 100), 0)} Ignored Armor%\n";
+                extraPropertiesText += $"+{Math.Round((ignoreArmor * 100), 0)}% Armor Cleaving\n";
 
                 hasExtraPropertiesText = true;
             }
@@ -568,7 +568,7 @@ namespace ACE.Server.Network.Structure
             if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreAegis, out var ignoreAegis) && ignoreAegis != 0)
             {
                 var wielder = (Creature)wo.Wielder;
-                extraPropertiesText += $"+{Math.Round((ignoreAegis * 100), 0)}% Ignored Aegis\n";
+                extraPropertiesText += $"+{Math.Round((ignoreAegis * 100), 0)}% Aegis Cleaving\n";
 
                 hasExtraPropertiesText = true;
             }
@@ -587,6 +587,15 @@ namespace ACE.Server.Network.Structure
                 var wielder = (Creature)wo.Wielder;
 
                 extraPropertiesText += $"+{Math.Round((critFrequency - 0.1) * 100, 1)}% Critical Chance\n";
+
+                hasExtraPropertiesText = true;
+            }
+            // Stamina Reduction Mod
+            if (PropertiesFloat.TryGetValue(PropertyFloat.StaminaCostReductionMod, out var staminaCostReductionMod) && staminaCostReductionMod > 0.001f)
+            {
+                var wielder = (Creature)wo.Wielder;
+
+                extraPropertiesText += $"{Math.Round((staminaCostReductionMod - 0.1) * 100, 1)}% Stamina Cost Reduction\n";
 
                 hasExtraPropertiesText = true;
             }

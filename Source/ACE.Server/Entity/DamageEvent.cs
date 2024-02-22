@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using ACE.Common;
+using ACE.DatLoader.Entity;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
+using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
@@ -316,16 +318,16 @@ namespace ACE.Server.Entity
                     if (playerDefender == null)
                         SneakAttackMod = 3.0f;
                 }
-
-                // SPEC BONUS: Martial Weapons (Axe) - +10% crit chance (additively)
                 if (playerAttacker.GetEquippedWeapon() != null)
+                {
+                    // SPEC BONUS - Martial Weapons (Axe): +5% crit chance (additively)
                     if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Axe && playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized)
-                        CriticalChance += 0.1f;
+                        CriticalChance += 0.05f;
 
-                // SPEC BONUS: Dagger - +10% crit chance (additively)
-                if (playerAttacker.GetEquippedWeapon() != null)
+                    // SPEC BONUS - Dagger: +5% crit chance (additively)
                     if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Dagger && playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass == SkillAdvancementClass.Specialized)
-                        CriticalChance += 0.1f;
+                        CriticalChance += 0.05f;
+                }
             }
 
             // https://asheron.fandom.com/wiki/Announcements_-_2002/08_-_Atonement
@@ -364,13 +366,13 @@ namespace ACE.Server.Entity
 
                     if (playerAttacker != null && playerAttacker.GetEquippedWeapon() != null)
                     {
-                        // SPEC BONUS: Martial Weapons (Mace) - +100% crit damage (additively)
+                        // SPEC BONUS - Martial Weapons (Mace): +50% crit damage (additively)
                         if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Mace && playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized)
-                            CriticalDamageMod += 1.0f;
+                            CriticalDamageMod += 0.5f;
 
-                        // SPEC BONUS: Staff - +100% crit damage (additively)
+                        // SPEC BONUS - Staff: +50% crit damage (additively)
                         if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Staff && playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass == SkillAdvancementClass.Specialized)
-                            CriticalDamageMod += 1.0f;
+                            CriticalDamageMod += 0.5f;
                     }
 
                     if (CombatType == CombatType.Missile && playerAttacker != null)
@@ -402,11 +404,11 @@ namespace ACE.Server.Entity
 
             if (playerAttacker != null && playerAttacker.GetEquippedWeapon() != null)
             {
-                // SPEC BONUS: Two-handed combat (Spear) - +10% armor penetration (additively)
+                // SPEC BONUS - Two-handed combat (Spear): +10% armor penetration (additively)
                 if (playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded && Weapon.WeaponSkill == Skill.Spear && playerAttacker.GetCreatureSkill(Skill.TwoHandedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
                     ignoreArmorMod -= 0.1f;
 
-                // SPEC BONUS: Martial Weapons (Spear) - +10% armor penetration (additively)
+                // SPEC BONUS - Martial Weapons (Spear): +10% armor penetration (additively)
                 if (playerAttacker.GetEquippedWeapon().WeaponSkill == Skill.Spear && playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized)
                     ignoreArmorMod -= 0.1f;
             }
@@ -469,7 +471,7 @@ namespace ACE.Server.Entity
                 DamageResistanceRatingMod = Creature.AdditiveCombine(DamageResistanceRatingMod, PkDamageResistanceMod);
             }
 
-            // SPEC BONUS: Physical Defense
+            // SPEC BONUS - Physical Defense
             var specDefenseMod = 1.0f;
             if(playerDefender != null && playerDefender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {

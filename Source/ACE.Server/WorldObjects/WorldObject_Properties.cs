@@ -1987,6 +1987,12 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorResourcePenalty); else SetProperty(PropertyFloat.ArmorResourcePenalty, value.Value); }
         }
 
+        public double? StaminaCostReductionMod
+        {
+            get => GetProperty(PropertyFloat.StaminaCostReductionMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.StaminaCostReductionMod); else SetProperty(PropertyFloat.StaminaCostReductionMod, value.Value); }
+        }
+
         public uint? CombatTableDID
         {
             get => GetProperty(PropertyDataId.CombatTable);

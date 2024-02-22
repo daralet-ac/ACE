@@ -1395,21 +1395,7 @@ namespace ACE.Server.Factories
             //    $" --FINAL: {finalPercentile}\n\n");
 
             // Workmanship Calculation
-            return (int)Math.Max(Math.Round(finalPercentile * 10, 0), 1);
-
-            //switch (finalPercentile)
-            //{
-            //    case < 0.1f: return 1;
-            //    case < 0.2f: return 2;
-            //    case < 0.3f: return 3;
-            //    case < 0.4f: return 4;
-            //    case < 0.5f: return 5;
-            //    case < 0.6f: return 6;
-            //    case < 0.7f: return 7;
-            //    case < 0.8f: return 8;
-            //    case < 0.9f: return 9;
-            //    default: return 10;
-            //}
+            return (int)Math.Clamp(Math.Round(finalPercentile * 10, 0), 1, 10);
         }
 
         private static int GetMaxArmorLevel(WorldObject wo)
@@ -1421,7 +1407,7 @@ namespace ACE.Server.Factories
             switch (weightClass)
             {
                 case ArmorWeightClass.Cloth:
-                    maxArmorLevel = 0;
+                    maxArmorLevel = 350;
                     break;
                 case ArmorWeightClass.Light:
                     maxArmorLevel = 525;

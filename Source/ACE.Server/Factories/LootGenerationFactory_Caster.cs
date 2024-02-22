@@ -107,10 +107,6 @@ namespace ACE.Server.Factories
 
             wo.Tier = GetTierValue(profile);
 
-            // Determine caster type: 0 = Orb, 1 = Scepter, 2 = Wand/Baton, 3 = Staff
-            int ORB = 0, SCEPTER = 1, WAND = 2, STAFF = 3;
-            var subType = GetCasterSubType(wo);
-
             // Add element/material to low tier orb/wand/scepter/staff
             if (wo.WeenieClassId == 2366 || wo.WeenieClassId == 2547 || wo.WeenieClassId == 2548 || wo.WeenieClassId == 2472)
                 RollCasterElement(profile, wo);
@@ -130,9 +126,15 @@ namespace ACE.Server.Factories
             }
 
             if (ThreadSafeRandom.Next(0, 1) == 0)
+            {
                 wo.WieldSkillType2 = (int)Skill.LifeMagic;
+                wo.WeaponSkill = Skill.LifeMagic;
+            }
             else
+            { 
                 wo.WieldSkillType2 = (int)Skill.WarMagic;
+                wo.WeaponSkill = Skill.WarMagic;
+            }
 
             // Wield Reqs
             wo.WieldRequirements = WieldRequirement.RawAttrib;
@@ -157,13 +159,7 @@ namespace ACE.Server.Factories
             // Roll Weapon Mods
             TryMutateWeaponMods(wo, profile, out var modsPercentile, true);
 
-            if (subType == ORB)
-                RollBonusAegisCleaving(profile, wo);
-            else if (subType == SCEPTER)
-                RollBonusCritDamage(profile, wo);
-            else if (subType == WAND)
-                RollBonusCritChance(profile, wo);
-
+            TryMutateWeaponSubtypeBonuses(wo, profile, out var subtypeBonusPercentile);
 
             // gem count / gem material
             if (wo.GemCode != null)
@@ -174,7 +170,7 @@ namespace ACE.Server.Factories
             wo.GemType = RollGemType(profile.Tier);
 
             // workmanship
-            wo.ItemWorkmanship = GetCasterWorkmanship(wo, damagePercentile, modsPercentile);
+            wo.ItemWorkmanship = GetCasterWorkmanship(wo, damagePercentile, modsPercentile, subtypeBonusPercentile);
 
             // burden?
 
@@ -271,7 +267,7 @@ namespace ACE.Server.Factories
         /// Return caster subtype
         /// Orb = 0, Scepter = 1, Wand/Baton = 2, Staff = 3
         /// </summary>
-        private static int GetCasterSubType(WorldObject wo)
+        public static int GetCasterSubType(WorldObject wo)
         {
             var subType = 0;
             if (wo.Tier <= 5)
@@ -406,39 +402,87 @@ namespace ACE.Server.Factories
 
         /// <summary>
         /// Rolls Bonus Aegis Cleaving for Orbs
+        /// 0% to 20% (up to 10% based on tier)
         /// </summary>
-        private static void RollBonusAegisCleaving(TreasureDeath treasureDeath, WorldObject wo)
+        private static void RollBonusAegisCleaving(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
         {
-            float[] minMod = { 0.10f, 0.11f, 0.12f, 0.13f, 0.14f, 0.15f, 0.175f, 0.2f };
+            float[] minMod = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
 
             var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
-            var aegisCleavingMod = minMod[tier] + 0.1f * GetDiminishingRoll(treasureDeath);
+            var aegisCleavingMod = 0.1f * GetDiminishingRoll(treasureDeath);
+            aegisCleavingMod += minMod[tier];
 
             wo.SetProperty(PropertyFloat.IgnoreAegis, aegisCleavingMod);
+
+            var maxMod = 0.2f;
+            percentile = aegisCleavingMod / maxMod;
         }
 
         /// <summary>
-        /// Rolls Bonus Crit Chance for Scepters
+        /// Rolls Bonus Armor Cleaving for Spears
+        /// 0% to 20% (up to 10% based on tier)
         /// </summary>
-        private static void RollBonusCritChance(TreasureDeath treasureDeath, WorldObject wo)
+        private static void RollBonusArmorCleaving(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
         {
-            float[] minMod = { 0.05f, 0.055f, 0.06f, 0.065f, 0.07f, 0.075f, 0.0875f, 0.1f };
+            float[] minMod = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
 
             var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
-            var critChanceMod = minMod[tier] + 0.05f * GetDiminishingRoll(treasureDeath);
+            var armorCleavingMod = 0.1f * GetDiminishingRoll(treasureDeath);
+            armorCleavingMod += minMod[tier];
+
+            wo.SetProperty(PropertyFloat.IgnoreArmor, armorCleavingMod);
+
+            var maxMod = 0.2f;
+            percentile = armorCleavingMod / maxMod;
+        }
+
+        /// <summary>
+        /// Rolls Bonus Stamina Cost Reduction for Swords and UA
+        /// 0% to 20% (up to 10% based on tier)
+        /// </summary>
+        private static void RollBonusStaminaCostReduction(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
+        {
+            float[] minMod = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
+
+            var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
+            var staminaCostReductionMod = 0.1f * GetDiminishingRoll(treasureDeath);
+            staminaCostReductionMod += minMod[tier];
+
+            wo.SetProperty(PropertyFloat.StaminaCostReductionMod, staminaCostReductionMod);
+
+            var maxMod = 0.2f;
+            percentile = staminaCostReductionMod / maxMod;
+        }
+
+        /// <summary>
+        /// Rolls Bonus Crit Chance for Axes, Daggers, and Scepters
+        /// 0% to 10% (up to 5% based on tier) 
+        /// </summary>
+        private static void RollBonusCritChance(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
+        {
+            float[] minMod = { 0.0f, 0.01f, 0.015f, 0.02f, 0.025f, 0.03f, 0.0375f, 0.05f };
+
+            var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
+            var critChanceMod = 0.05f * GetDiminishingRoll(treasureDeath);
+            critChanceMod += minMod[tier];
 
             wo.SetProperty(PropertyFloat.CriticalFrequency, 0.1f + critChanceMod);
+
+            var maxMod = 0.1f;
+            percentile = critChanceMod / maxMod;
         }
 
         /// <summary>
-        /// Rolls Bonus Crit Chance for Batons
+        /// Rolls Bonus Crit Damage for Maces, Staves (melee), and Wands/Batons
+        /// 0% to 100% (up to 50% based on tier) 
         /// </summary>
-        private static void RollBonusCritDamage(TreasureDeath treasureDeath, WorldObject wo)
+        private static void RollBonusCritDamage(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
         {
-            float[] minMod = { 0.5f, 0.55f, 0.6f, 0.65f, 0.7f, 0.75f, 0.875f, 1.0f };
+            float[] minMod = { 0.0f, 0.1f, 0.15f, 0.2f, 0.25f, 0.3f, 0.375f, 0.5f };
 
             var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
-            var critDamageMod = minMod[tier] + 0.5f * GetDiminishingRoll(treasureDeath);
+            var critDamageMod = 0.5f * GetDiminishingRoll(treasureDeath);
+            critDamageMod += minMod[tier];
 
             if (wo.GetProperty(PropertyFloat.CriticalMultiplier) != null)
             {
@@ -451,14 +495,20 @@ namespace ACE.Server.Factories
                 var newCritMultipier = 1.0f + critDamageMod;
                 wo.SetProperty(PropertyFloat.CriticalMultiplier, (float)newCritMultipier);
             }
+
+            var maxMod = 1.0f;
+            percentile = critDamageMod / maxMod;
         }
 
         /// <summary>
-        /// Rolls Bonus Defense Mods for Staffs
+        /// Rolls Bonus Defense Mods for Staves (caster)
         /// </summary>
-        private static float BonusDefenseMod(TreasureDeath treasureDeath, WorldObject wo)
+        private static float RollBonusDefenseMod(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
         {
             var defenseMod = 0.1f * GetDiminishingRoll(treasureDeath);
+
+            var maxMod = 0.1f;
+            percentile = defenseMod / maxMod;
 
             return defenseMod;
         }
@@ -690,18 +740,18 @@ namespace ACE.Server.Factories
             }
         }
 
-        private static int GetCasterWorkmanship(WorldObject wo, double damagePercentile, double modsPercentile)
+        private static int GetCasterWorkmanship(WorldObject wo, double damagePercentile, double modsPercentile, float subtypeBonusesPercentile)
         {
-            var divisor = 3; // Damage x2 + Mods
+            var divisor = 4; // Damage x2 + Mods + Subtype
 
             // Average Percentile
-            var finalPercentile = (damagePercentile * 2 + modsPercentile) / divisor;
+            var finalPercentile = (damagePercentile * 2 + modsPercentile + subtypeBonusesPercentile) / divisor;
 
             //Console.WriteLine($"{wo.Name}\n -Mods %: {modsPercentile}\n" + $" -Damage %: {damagePercentile}\n" + $" -Divisor: {divisor}\n" +
             //    $" --FINAL: {finalPercentile}\n\n");
 
             // Workmanship Calculation
-            return Math.Max((int)Math.Round(finalPercentile * 10, 0), 1);
+            return Math.Clamp((int)Math.Round(finalPercentile * 10, 0), 1, 10);
         }
     }
 }

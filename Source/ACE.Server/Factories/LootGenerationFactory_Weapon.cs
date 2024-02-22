@@ -171,13 +171,6 @@ namespace ACE.Server.Factories
                 }
             }
 
-            var isStaff = caster ? GetCasterSubType(wo) == 3 : false;
-            if (isStaff)
-            {
-                wo.WeaponPhysicalDefense += BonusDefenseMod(treasureDeath, wo);
-                wo.WeaponMagicalDefense += BonusDefenseMod(treasureDeath, wo);
-            }
-
             return true;
         }
 
@@ -195,18 +188,20 @@ namespace ACE.Server.Factories
             return weaponMod;
         }
 
-        private static int GetWeaponWorkmanship(WorldObject wo, float damagePercentile, float skillModsPercentile)
+        private static int GetWeaponWorkmanship(WorldObject wo, float damagePercentile, float skillModsPercentile, float subtypeBonusesPercentile)
         {
-            var divisor = 3; // damage x2 + mods
+            var divisor = 4; // damage x2 + mods + subtype
 
             // Average Percentile
-            var finalPercentile = (damagePercentile * 2 + skillModsPercentile) / divisor;
+            var finalPercentile = (damagePercentile * 2 + skillModsPercentile + subtypeBonusesPercentile) / divisor;
+
             //Console.WriteLine($"{wo.NameWithMaterialAndElement}\n -Mods %: {skillModsPercentile}\n" + $" -Damage %: {damagePercentile}\n" + $" -Divisor: {divisor}\n" +
             //    $" --FINAL: {finalPercentile}\n\n");
 
             // Workmanship Calculation
             //Console.WriteLine($"{wo.NameWithMaterialAndElement} - {Math.Max((int)(finalPercentile * 10), 1)}");
-            return Math.Max((int)(finalPercentile * 10), 1);
+
+            return Math.Clamp((int)(finalPercentile * 10), 1, 10);
         }
 
         
@@ -289,6 +284,55 @@ namespace ACE.Server.Factories
                     return (int)Skill.WarMagic;
                 case Skill.LifeMagic:
                     return (int)Skill.LifeMagic;
+            }
+        }
+
+        private static void TryMutateWeaponSubtypeBonuses(WorldObject wo, TreasureDeath treasureDeath, out float subtypeBonusPercentile)
+        {
+            subtypeBonusPercentile = 0.0f;
+
+            switch (wo.WeaponSkill)
+            {
+                case Skill.Axe:
+                case Skill.Dagger:
+                case Skill.Bow:
+                    RollBonusCritChance(treasureDeath, wo, out subtypeBonusPercentile);
+                    break;
+                case Skill.Mace:
+                case Skill.Staff:
+                case Skill.MissileWeapons:
+                    RollBonusCritDamage(treasureDeath, wo, out subtypeBonusPercentile);
+                    break;
+                case Skill.Sword:
+                case Skill.UnarmedCombat:
+                    RollBonusStaminaCostReduction(treasureDeath, wo, out subtypeBonusPercentile);
+                    break;
+                case Skill.Spear:
+                case Skill.Crossbow:
+                    RollBonusArmorCleaving(treasureDeath, wo, out subtypeBonusPercentile);
+                    break;
+                case Skill.ThrownWeapon:
+                    // Add TW subtype bonuses
+                    break;
+                case Skill.WarMagic:
+                case Skill.LifeMagic:
+                    var subtype = GetCasterSubType(wo);
+                    const int ORB = 0, SCEPTER = 1, WAND = 2, STAFF = 3;
+                    switch (subtype)
+                    {
+                        case ORB: RollBonusAegisCleaving(treasureDeath, wo, out subtypeBonusPercentile); break;
+                        case SCEPTER: RollBonusCritChance(treasureDeath, wo, out subtypeBonusPercentile); break;
+                        case WAND: RollBonusCritDamage(treasureDeath, wo, out subtypeBonusPercentile); break;
+                        case STAFF:
+                            wo.WeaponPhysicalDefense += RollBonusDefenseMod(treasureDeath, wo, out var physicalDefenseBonusPercentile);
+                            wo.WeaponMagicalDefense += RollBonusDefenseMod(treasureDeath, wo, out var magicDefenseBonusPercentile);
+                            subtypeBonusPercentile = physicalDefenseBonusPercentile > magicDefenseBonusPercentile ? physicalDefenseBonusPercentile : magicDefenseBonusPercentile;
+                            break;
+                    }
+                    break;
+                default:
+                    _log.Error("TryMutateWeaponSubtypeBonuses() - {Name} does not have a correct weapon skill set ({WeaponSkill}). Cannot add subtype bonus.", wo.Name, wo.WeaponSkill);
+                    break;
             }
         }
     }

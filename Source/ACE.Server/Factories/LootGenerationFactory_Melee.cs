@@ -138,8 +138,6 @@ namespace ACE.Server.Factories
             wo.WieldDifficulty2 = 1;
             wo.WieldSkillType2 = GetWeaponWieldSkill(wo.WeaponSkill);
 
-            //Console.WriteLine($"{wo.Name} WieldDiff: {wo.WieldDifficulty} WieldReq: {wo.WieldRequirements} WieldSkill: { wo.WieldSkillType}");
-
             // Max damage
             TryMutateMeleeWeaponDamage(wo, roll, profile, out var maxPossibleDamage);
 
@@ -147,13 +145,7 @@ namespace ACE.Server.Factories
             var baseVariance = wo.DamageVariance ?? 1.0f;
             wo.DamageVariance = baseVariance + ThreadSafeRandom.Next(-0.1f, 0.1f);
 
-            // Damage Percentile (for workmanship)
-            //var lowerMaxPossibleDamage = maxPossibleDamage * (1 - (baseVariance - 0.1f));
-            //var averageMaxPossibleDamage = (maxPossibleDamage + lowerMaxPossibleDamage) / 2;
-            //var weaponAverageDamage = ((wo.Damage * (1 - wo.DamageVariance)) + wo.Damage) / 2;
             var damagePercentile = ((float)wo.Damage / maxPossibleDamage);
-
-            //Console.WriteLine($"{wo.NameWithMaterialAndElement}  lower: {lowerMaxPossibleDamage} upper: {maxPossibleDamage} average: {averageMaxPossibleDamage} weaponAvg: {weaponAverageDamage} percentile: {damagePercentile}");
 
             // weapon speed
             if (wo.WeaponTime != null)
@@ -166,16 +158,9 @@ namespace ACE.Server.Factories
             }
 
             // weapon mods
-            var modsPercentile = 0.0f;
-            TryMutateWeaponMods(wo, profile, out modsPercentile);
+            TryMutateWeaponMods(wo, profile, out var modsPercentile);
 
-            //RollCrushingBlow(profile, wo);
-            //RollBitingStrike(profile, wo);
-            //RollHollow(profile, wo);
-            //RollArmorCleaving(profile, wo);
-            //RollResistanceCleaving(profile, wo);
-            //RollShieldCleaving(profile, wo);
-            //RollSlayer(profile, wo);
+            TryMutateWeaponSubtypeBonuses(wo, profile, out var subtypeBonusesPercentile);
 
             // material type
             var materialType = GetMaterialType(wo, profile.Tier);
@@ -218,7 +203,7 @@ namespace ACE.Server.Factories
             wo.LongDesc = GetLongDesc(wo);
 
             // workmanship
-            wo.ItemWorkmanship = GetWeaponWorkmanship(wo, damagePercentile, modsPercentile);
+            wo.ItemWorkmanship = GetWeaponWorkmanship(wo, damagePercentile, modsPercentile, subtypeBonusesPercentile);
 
             return true;
         }

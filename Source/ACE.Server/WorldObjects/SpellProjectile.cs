@@ -5,6 +5,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
@@ -471,6 +472,11 @@ namespace ACE.Server.WorldObjects
             // critical hit
             var criticalChance = GetWeaponMagicCritFrequency(weapon, sourceCreature, attackSkill, target);
 
+            // SPEC BONUS - War Magic (Scepter): +5% crit chance (additively)
+            if (sourcePlayer != null && weapon != null)
+                if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 1)
+                    criticalChance += 0.05f;
+
             if (ThreadSafeRandom.Next(0.0f, 1.0f) < criticalChance)
             {
                 if (targetPlayer != null && targetPlayer.AugmentationCriticalDefense > 0)
@@ -501,6 +507,11 @@ namespace ACE.Server.WorldObjects
                 aegisPenMod = sourcePlayer.GetIgnoreAegisMod(weapon);
 
             var ignoreAegisMod = Math.Min(aegisRendingMod, aegisPenMod);
+
+            // SPEC BONUS - War Magic (Orb): +10% aegis penetration (additively)
+            if (sourcePlayer != null && weapon != null)
+                if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 0)
+                    ignoreAegisMod -= 0.1f;
 
             var aegisMod = GetAegisMod(target, ignoreAegisMod);
 
@@ -543,7 +554,7 @@ namespace ACE.Server.WorldObjects
                     combatFocusDamageMod = 0.5f;
             }
 
-            // SPEC BONUS: Magic Defense
+            // SPEC BONUS - Magic Defense
             var specDefenseMod = 1.0f;
             if (targetPlayer != null && targetPlayer.GetCreatureSkill(Skill.MagicDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
@@ -610,7 +621,12 @@ namespace ACE.Server.WorldObjects
 
                     critDamageBonus *= weaponCritDamageMod;
 
-                    criticalDamageMod = 1.0f + weaponCritDamageMod;
+                    // SPEC BONUS - War Magic (Wand/Baton): +50% crit damage (additively)
+                    if(sourcePlayer != null && weapon != null)
+                        if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 2)
+                            weaponCritDamageMod += 0.5f;
+
+                    criticalDamageMod = 2.0f + weaponCritDamageMod;
                 }
 
                 baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
@@ -894,11 +910,6 @@ namespace ACE.Server.WorldObjects
             }
 
             amount = (uint)Math.Round(damage);    // full amount for debugging
-
-            Console.WriteLine($" -criticalHit? {critical}\n" +
-                $" -damageRatingMod: {damageRatingMod}\n" +
-                $" -damageResistRatingMod: {damageResistRatingMod}\n" +
-                $" -FINAL: {amount}");
 
             // add threat to damaged targets
             if (target.IsMonster)

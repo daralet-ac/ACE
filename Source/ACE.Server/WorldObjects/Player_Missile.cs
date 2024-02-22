@@ -272,7 +272,7 @@ namespace ACE.Server.WorldObjects
             LastAttackAnimationLength = launchTime + reloadTime + linkTime;
             //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}");
 
-            var staminaCost = GetAttackStamina(GetAccuracyRange(), (float)LastAttackAnimationLength);
+            var staminaCost = GetAttackStamina(GetAccuracyRange(), (float)LastAttackAnimationLength, weapon);
             UpdateVitalDelta(Stamina, -staminaCost);
 
             var combatAbility = CombatAbility.None;

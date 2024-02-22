@@ -116,18 +116,12 @@ namespace ACE.Server.Factories
                 wo.WeaponTime = (int)(wo.WeaponTime * weaponSpeedMod);
             }
 
-            // weapon mods
-            var totalModsPercentile = 0.0f;
-
+            // weapon mods and subtype bonuses
+            float totalModsPercentile;
             TryMutateWeaponMods(wo, profile, out totalModsPercentile);
 
-            //RollCrushingBlow(profile, wo);
-            //RollBitingStrike(profile, wo);
-            //RollHollow(profile, wo);
-            //RollArmorCleaving(profile, wo);
-            //RollResistanceCleaving(profile, wo);
-            //RollShieldCleaving(profile, wo);
-            //RollSlayer(profile, wo);
+            float subtypeBonusesPercentile;
+            TryMutateWeaponSubtypeBonuses(wo, profile, out subtypeBonusesPercentile);
 
             // item color
             MutateColor(wo);
@@ -141,7 +135,7 @@ namespace ACE.Server.Factories
             wo.GemType = RollGemType(profile.Tier);
 
             // workmanship
-            wo.ItemWorkmanship = GetWeaponWorkmanship(wo, (float)damageModPercentile, totalModsPercentile);
+            wo.ItemWorkmanship = GetWeaponWorkmanship(wo, (float)damageModPercentile, totalModsPercentile, subtypeBonusesPercentile);
 
             // burden
             MutateBurden(wo, profile, true);
