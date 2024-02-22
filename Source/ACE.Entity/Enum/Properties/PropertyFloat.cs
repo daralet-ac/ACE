@@ -217,6 +217,7 @@ namespace ACE.Entity.Enum.Properties
         WeaponMagicalDefense           = 188,
         Damage                         = 189,
         WeaponAuraDamage               = 190,
+        StaminaCostReductionMod        = 191,
 
         [ServerOnly]
         PCAPRecordedWorkmanship        = 8004,

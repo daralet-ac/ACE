@@ -930,7 +930,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Calculates the amount of stamina required to perform this attack
         /// </summary>
-        public int GetAttackStamina(PowerAccuracy powerAccuracy, float attackAnimLength, bool dualWieldStaminaBonus = false)
+        public int GetAttackStamina(PowerAccuracy powerAccuracy, float attackAnimLength, WorldObject weapon, bool dualWieldStaminaBonus = false)
         {
             // Stamina cost for melee and missile attacks is based on the total burden of what you are holding
             // in your hands (main hand and offhand), and your power/accuracy bar.
@@ -973,13 +973,21 @@ namespace ACE.Server.WorldObjects
             if (combatAbility == CombatAbility.Powershot && AccuracyLevel == 1.0f)
                 baseCost *= 2;
 
-            // SPEC BONUS: UA - Stamina costs for melee attacks reduced by 20%
-            if(GetCurrentWeaponSkill() == Skill.UnarmedCombat && GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
-                baseCost *= 0.8f;
+            var staminaCostReductionMod = 1.0f;
 
-            // SPEC BONUS: Martial Weapons (Sword) - Stamina costs for melee attacks reduced by 20%
+            // Sword/UA implicit rolled bonuses
+            if (weapon.StaminaCostReductionMod != null)
+                staminaCostReductionMod -= (float)weapon.StaminaCostReductionMod;
+
+            // SPEC BONUS - UA: Stamina costs for melee attacks reduced by 10%
+            if (GetCurrentWeaponSkill() == Skill.UnarmedCombat && GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
+                staminaCostReductionMod -= 0.1f;
+
+            // SPEC BONUS - Martial Weapons (Sword): Stamina costs for melee attacks reduced by 10%
             if (GetCurrentWeaponSkill() == Skill.Sword && GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized)
-                baseCost *= 0.8f;
+                staminaCostReductionMod -= 0.1f;
+
+            baseCost *= staminaCostReductionMod;
 
             var staminaCost = Math.Max(baseCost, 1);
 

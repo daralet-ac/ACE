@@ -3,6 +3,7 @@ using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Factories;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 
@@ -764,6 +765,13 @@ namespace ACE.Server.WorldObjects
             var creatureMod = IgnoreAegis ?? 0.0f;
             var weaponMod = weapon.IgnoreAegis ?? 0.0f;
 
+            var player = weapon.Wielder as Player;
+
+            // SPEC BONUS - War Magic (Orb): +10% aegis penetration (additively)
+            if (player != null)
+                if (weapon.WeaponSkill == Skill.WarMagic && player.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 0)
+                    creatureMod -= 0.1f;
+
             var finalMod = 1.0f - (float)Math.Max(creatureMod, weaponMod);
             //Console.WriteLine($"FinalMod = {finalMod}"); 
 
@@ -772,7 +780,7 @@ namespace ACE.Server.WorldObjects
 
         public bool HasIgnoreAegis()
         {
-            return IgnoreAegis != null ? true : false; ;
+            return IgnoreAegis != null ? true : false;
         }
 
         public static int GetBaseSkillImbued(CreatureSkill skill)
