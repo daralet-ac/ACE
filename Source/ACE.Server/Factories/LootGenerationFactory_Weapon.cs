@@ -187,7 +187,7 @@ namespace ACE.Server.Factories
             float[] bonusModRollPerTier = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
 
             var minMod = 0.1f;
-            var weaponMod = minMod + minMod * GetDiminishingRoll(treasureDeath) + bonusModRollPerTier[tier];
+            var weaponMod = minMod + minMod * GetDiminishingRoll(treasureDeath) +bonusModRollPerTier[tier];
 
             var maxPossibleMod = minMod + minMod + bonusModRollPerTier[7];
 
@@ -209,118 +209,7 @@ namespace ACE.Server.Factories
             return Math.Max((int)(finalPercentile * 10), 1);
         }
 
-        private static float[] GetWeaponMutationMultiplier(TreasureRoll roll)
-        {
-            var weaponType = roll.WeaponType;
-            switch (weaponType)
-            {
-                case TreasureWeaponType.Axe: return LootTables.AxeMutationMultiplier;
-                case TreasureWeaponType.Dagger: return LootTables.DaggerMutationMultiplier;
-                case TreasureWeaponType.DaggerMS: return LootTables.DaggerMsMutationMultiplier;
-                case TreasureWeaponType.Mace: return LootTables.MaceMutationMultiplier;
-                case TreasureWeaponType.MaceJitte: return LootTables.MaceMutationMultiplier;
-                case TreasureWeaponType.Spear: return LootTables.SpearMutationMultiplier;
-                case TreasureWeaponType.Staff: return LootTables.StaffMutationMultiplier;
-                case TreasureWeaponType.Sword: return LootTables.SwordMutationMultiplier;
-                case TreasureWeaponType.SwordMS: return LootTables.SwordMSMutationMultiplier;
-                case TreasureWeaponType.Unarmed: return LootTables.UnarmedMutationMultiplier;
-                case TreasureWeaponType.Thrown: return LootTables.AtlatlDamageModMutationMultiplier;
-                case TreasureWeaponType.TwoHandedAxe: return LootTables.TwohandAxeMutationMultiplier;
-                case TreasureWeaponType.TwoHandedMace: return LootTables.TwohandMaceMutationMultiplier;
-                case TreasureWeaponType.TwoHandedSpear: return LootTables.TwohandSpearMutationMultiplier;
-                case TreasureWeaponType.TwoHandedSword: return LootTables.TwohandSwordMutationMultiplier;
-            }
-            return null;
-        }
-
-        private static int[] GetWeaponMutationAdder(TreasureRoll roll)
-        {
-            var weaponType = roll.WeaponType;
-            switch (weaponType)
-            {
-                case TreasureWeaponType.Axe: return LootTables.AxeMutationAdder;
-                case TreasureWeaponType.Dagger: return LootTables.DaggerMutationAdder;
-                case TreasureWeaponType.DaggerMS: return LootTables.DaggerMsMutationAdder;
-                case TreasureWeaponType.Mace: return LootTables.MaceMutationAdder;
-                case TreasureWeaponType.MaceJitte: return LootTables.MaceMutationAdder;
-                case TreasureWeaponType.Spear: return LootTables.SpearMutationAdder;
-                case TreasureWeaponType.Staff: return LootTables.StaffMutationAdder;
-                case TreasureWeaponType.Sword: return LootTables.SwordMutationAdder;
-                case TreasureWeaponType.SwordMS: return LootTables.SwordMSMutationAdder;
-                case TreasureWeaponType.Unarmed: return LootTables.UnarmedMutationAdder;
-                case TreasureWeaponType.Thrown: return LootTables.AtlatlDamageModMutationAdder;
-                case TreasureWeaponType.TwoHandedAxe: return LootTables.TwohandAxeMutationAdder;
-                case TreasureWeaponType.TwoHandedMace: return LootTables.TwohandMaceMutationAdder;
-                case TreasureWeaponType.TwoHandedSpear: return LootTables.TwohandSpearMutationAdder;
-                case TreasureWeaponType.TwoHandedSword: return LootTables.TwohandSwordMutationAdder;
-            }
-
-            return null;
-        }
-
-        private static float[] GetMissileDamageModMutationMultiplier(TreasureRoll roll)
-        {
-            var weaponType = roll.WeaponType;
-            switch (weaponType)
-            {
-                case TreasureWeaponType.Bow: return LootTables.BowDamageModMutationMultiplier;
-                case TreasureWeaponType.BowShort: return LootTables.BowDamageModMutationMultiplier;
-                case TreasureWeaponType.Crossbow: return LootTables.CrossbowDamageModMutationMultiplier;
-                case TreasureWeaponType.CrossbowLight: return LootTables.CrossbowDamageModMutationMultiplier;
-                case TreasureWeaponType.Atlatl: return LootTables.AtlatlDamageModMutationMultiplier;
-                case TreasureWeaponType.AtlatlRegular: return LootTables.AtlatlDamageModMutationMultiplier;
-                case TreasureWeaponType.Thrown: return LootTables.AtlatlDamageModMutationMultiplier;
-            }
-            return null;
-        }
-
-        private static int[] GetMissileDamageModMutationAdder(TreasureRoll roll)
-        {
-            var weaponType = roll.WeaponType;
-            switch (weaponType)
-            {
-                case TreasureWeaponType.Bow: return LootTables.BowDamageModMutationAdder;
-                case TreasureWeaponType.BowShort: return LootTables.BowDamageModMutationAdder;
-                case TreasureWeaponType.Crossbow: return LootTables.CrossbowDamageModMutationAdder;
-                case TreasureWeaponType.CrossbowLight: return LootTables.CrossbowDamageModMutationAdder;
-                case TreasureWeaponType.Atlatl: return LootTables.AtlatlDamageModMutationAdder;
-                case TreasureWeaponType.AtlatlRegular: return LootTables.AtlatlDamageModMutationAdder;
-                case TreasureWeaponType.Thrown: return LootTables.AtlatlDamageModMutationAdder;
-            }
-            return null;
-        }
-
-        private static float[] GetMissileDamageBonusMutationMultiplier(TreasureRoll roll)
-        {
-            var weaponType = roll.WeaponType;
-            switch (weaponType)
-            {
-                case TreasureWeaponType.Bow: return LootTables.BowDamageBonusMutationMultiplier;
-                case TreasureWeaponType.BowShort: return LootTables.BowDamageBonusMutationMultiplier;
-                case TreasureWeaponType.Crossbow: return LootTables.CrossbowDamageBonusMutationMultiplier;
-                case TreasureWeaponType.CrossbowLight: return LootTables.CrossbowDamageBonusMutationMultiplier;
-                case TreasureWeaponType.Atlatl: return LootTables.AtlatlDamageBonusMutationMultiplier;
-                case TreasureWeaponType.AtlatlRegular: return LootTables.AtlatlDamageBonusMutationMultiplier;
-                case TreasureWeaponType.Thrown: return LootTables.AtlatlDamageBonusMutationMultiplier;
-            }
-            return null;
-        }
-
-        private static int[] GetMissileDamageBonusMutationAdder(TreasureRoll roll)
-        {
-            var weaponType = roll.WeaponType;
-            switch (weaponType)
-            {
-                case TreasureWeaponType.Bow: return LootTables.BowDamageBonusMutationAdder;
-                case TreasureWeaponType.BowShort: return LootTables.BowDamageBonusMutationAdder;
-                case TreasureWeaponType.Crossbow: return LootTables.CrossbowDamageBonusMutationAdder;
-                case TreasureWeaponType.CrossbowLight: return LootTables.CrossbowDamageBonusMutationAdder;
-                case TreasureWeaponType.Atlatl: return LootTables.AtlatlDamageBonusMutationAdder;
-                case TreasureWeaponType.AtlatlRegular: return LootTables.AtlatlDamageBonusMutationAdder;
-                case TreasureWeaponType.Thrown: return LootTables.AtlatlDamageBonusMutationAdder;
-            }
-            return null;
-        }
+        
 
         private static float[] GetCasterMaxDamageMod()
         {
