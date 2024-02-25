@@ -10,7 +10,7 @@ namespace ACE.Entity.Enum
         Parry,
         Reckless,
         Backstab,
-        Powershot,
+        SteadyShot,
         Smokescreen,
         IronFist,
         Overload,
@@ -25,5 +25,8 @@ namespace ACE.Entity.Enum
         Vanish,
         ExposePhysicalWeakness,
         ExposeMagicalWeakness,
+        Multishot,
+        ActivatedCombatAbilities,
+        ManaBarrier
     }
 }

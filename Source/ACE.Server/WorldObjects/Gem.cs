@@ -216,6 +216,15 @@ namespace ACE.Server.WorldObjects
                     case CombatAbility.ExposeMagicalWeakness:
                         player.TryUseExposeMagicalWeakness(this);
                         break;
+                    case CombatAbility.ActivatedCombatAbilities:
+                        player.TryUseActivated(this);
+                        break;
+                    case CombatAbility.ManaBarrier:
+                        if (player.ToggleManaBarrierSetting())
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You draw on your stored mana to form an enchanted shield around yourself!", ChatMessageType.Broadcast));
+                        else
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast));
+                        break;
                 }
             }
 
@@ -339,6 +348,7 @@ namespace ACE.Server.WorldObjects
                         player.EnchantmentManager.StartCooldown(this);
                         return;
                     }
+
                 }
                 else
                     return;

@@ -184,7 +184,10 @@ namespace ACE.Entity.Enum
         AttemptToDeceive                        = 0x38,
 
         [CharacterOptions2(CharacterOptions2.NotUsed3)] // SlashThrustToggle
-        SlashThrustToggle                       = 0x39
+        SlashThrustToggle                       = 0x39,
+
+        [CharacterOptions2(CharacterOptions2.NotUsed4)] // Mana Barrier Toggle
+        ManaBarrierToggle                       = 0x3A
     }
 
     public static class CharacterOptionExtensions

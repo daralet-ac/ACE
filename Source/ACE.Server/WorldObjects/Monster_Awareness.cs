@@ -165,6 +165,14 @@ namespace ACE.Server.WorldObjects
             if (targetPlayer != null && targetPlayer.LastFeignWeakness > Time.GetUnixTime() - FeignWeaknessDuration)
                 modifier = 0.5f;
 
+            if (targetPlayer.EquippedCombatAbility == CombatAbility.Provoke)
+            {
+                if (targetPlayer.LastProvokeActivated > Time.GetUnixTime() - targetPlayer.ProvokeActivatedDuration)
+                    modifier += 0.5f;
+                else
+                    modifier += 0.2f;
+            }
+
             amount = (int)(amount * modifier);
             amount = amount < 2 ? 2 : amount;
 

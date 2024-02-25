@@ -146,6 +146,15 @@ namespace ACE.Server.WorldObjects
             return newSetting;
         }
 
+        public bool ToggleManaBarrierSetting()
+        {
+            bool newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed4);
+            SetCharacterOptions2(CharacterOptions2.NotUsed4, newSetting);
+
+            CachedManaBarrierToggle = newSetting;
+            return newSetting;
+        }
+
         // =====================================
         // CharacterPropertiesContract
         // =====================================

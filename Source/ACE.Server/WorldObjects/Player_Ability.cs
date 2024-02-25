@@ -1,9 +1,15 @@
 using ACE.Common;
+using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Factories;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Network.GameMessages.Messages;
+using Org.BouncyCastle.Asn1.X509;
 using System;
+using Spell = ACE.Server.Entity.Spell;
+using Time = ACE.Common.Time;
 
 namespace ACE.Server.WorldObjects
 {
@@ -11,17 +17,63 @@ namespace ACE.Server.WorldObjects
     {
         public double LastFocusedTaunt = 0;
         public double LastFeignWeakness = 0;
+        public double LastProvokeActivated = 0;
+        public double LastPhalanxActivated = 0;
+        public double LastRecklessActivated = 0;
+        public double LastParryActivated = 0;
+        public double LastBackstabActivated = 0;
+        public double LastSteadyShotActivated = 0;
+        public double LastMultishotActivated = 0;
+        public double LastSmokescreenActivated = 0;
+        public double LastIronFistActivated = 0;
+        public double LastOverloadActivated = 0;
+        public double LastBatteryActivated = 0;
+        public double LastReflectActivated = 0;
+        public double LastEnchantedWeaponActivated = 0;
 
+        public bool OverloadActivated = false;
+        public bool RecklessActivated = false;
+
+        public double MultishotActivatedDuration = 10;
+        public double PhalanxActivatedDuration = 10;
+        public double ParryActivatedDuration = 10;
+        public double SteadyShotActivatedDuration = 10;
+        public double SmokescreenActivatedDuration = 10;
+        public double BackstabActivatedDuration = 10;
+        public double IronFistActivatedDuration = 10;
+        public double ProvokeActivatedDuration = 10;
+        public double ReflectActivatedDuration = 10;
+        public double BatteryActivatedDuration = 10;
+        public double OverloadActivatedDuration = 10;
+        public double EnchantedWeaponActivatedDuration = 10;
+        public double RecklessActivatedDuration = 10;
+
+        public CombatAbility EquippedCombatAbility
+        {
+            get
+            {
+                var combatFocus = GetEquippedCombatFocus();
+                if (combatFocus != null)
+                {
+                    var combatAbility = combatFocus.GetCombatAbility();
+                    return combatAbility;
+                }
+                else
+                    return CombatAbility.None;
+
+            }
+        }
+        
         public void TryUseFocusedTaunt(WorldObject ability)
         {
             Creature target = LastAttackedCreature;
 
             var skillCheck = SkillCheck.GetSkillChance(Strength.Current * 2, target.GetCreatureSkill(Skill.AssessCreature).Current);
-            
+
             if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
             {
                 Session.Network.EnqueueSend(new GameMessageSystemChat($"{target.Name} can see right through you. Your taunt failed.", ChatMessageType.Broadcast));
-                return; 
+                return;
             }
 
             var targetTier = target.Tier ?? 1;
@@ -41,7 +93,7 @@ namespace ACE.Server.WorldObjects
         {
             var nearbyMonsters = GetNearbyMonsters(5);
 
-            foreach  (var target in nearbyMonsters)
+            foreach (var target in nearbyMonsters)
             {
                 var skillCheck = SkillCheck.GetSkillChance(Strength.Current * 2, target.GetCreatureSkill(Skill.AssessCreature).Current);
 
@@ -261,6 +313,206 @@ namespace ACE.Server.WorldObjects
                         TryCastSpell(succumbSpellLevel, target, this, null, false, false, false, false);
                 }
             }
+        }
+
+        public void TryUseActivated(WorldObject ability)
+        {
+            switch (EquippedCombatAbility)
+            {
+                case CombatAbility.Provoke:
+                    LastProvokeActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Give them cause for provocation! For the next ten seconds, your damage is increased by an additional 20% and your threat generation by an additional 50%.", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.Phalanx:
+                    LastPhalanxActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You raise your shield! For the next ten seconds, your chance to block is increased, and applies to attacks from any angle.", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.Reckless:
+                    RecklessActivated = true;
+                    LastRecklessActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You pour your rage into a mighty blow! The first attack you make within the next ten seconds will have increased damage and exhaust all of your Fury!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.Parry:
+                    LastParryActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"En garde! For the next ten seconds, you will riposte any attack you parry, damaging your foe!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.Backstab:
+                    LastBackstabActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You set aside what little mercy you possess. For the next ten seconds, your attacks from behind are utterly ruthless, and cannot be evaded!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.SteadyShot:
+                    LastSteadyShotActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"For the next ten seconds, you summon all your powers of concentration, firing arrows of spectacular accuracy and damage!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.Multishot:
+                    LastMultishotActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"For the next ten seconds, you nock a third arrow, quarrel or dart, hitting an additional target!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.Smokescreen:
+                    LastSmokescreenActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"For the next ten seconds, you shroud yourself in darkness, increasing your chance to evade by an additional 30%!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.IronFist:
+                    LastIronFistActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"For the next ten seconds, you focus your strikes on your enemy's most vital points, increasing your critical chance by an additional 15%!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.Overload:
+                    OverloadActivated = true;
+                    LastOverloadActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You channel your accumulated energies! The first spell you cast within the next ten seconds will have increased potency and discharge all of your Overload!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.Battery:
+                    LastBatteryActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You summon an untapped reserve of willpower! For the next ten seconds, your spells are free to cast and suffer no effectiveness penalty!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.Reflect:
+                    LastReflectActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You harden your resolve to repel malign sorceries! For the next ten seconds, your chance to resist spells is increased by an additional 30%!", ChatMessageType.Broadcast));
+                    break;
+
+                case CombatAbility.EnchantedWeapon:
+                    LastEnchantedWeaponActivated = Time.GetUnixTime();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You touch a rune carved into your weapon! For the next ten seconds, your proc spells are 25% more effective!", ChatMessageType.Broadcast));
+                    break;
+
+                default:
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You must equip an upgraded Combat Focus to activate an ability!", ChatMessageType.Broadcast));
+                    break;
+            }
+            
+        }
+
+        public static int HandleRecklessStamps(Player playerAttacker)
+        {
+            var scaledStamps = Math.Round(playerAttacker.ScaleWithPowerAccuracyBar(20f));
+
+            scaledStamps += 10f;
+
+            var numStrikes = playerAttacker.GetNumStrikes(playerAttacker.AttackType);
+            if (numStrikes == 2)
+            {
+                if (playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded)
+                    scaledStamps /= 2f;
+                else
+                    scaledStamps /= 1.5f;
+            }
+
+            if (playerAttacker.AttackType == AttackType.OffhandPunch || playerAttacker.AttackType == AttackType.Punch || playerAttacker.AttackType == AttackType.Punches)
+                scaledStamps /= 1.25f;
+
+            if (!playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Reckless"))
+            {
+                playerAttacker.QuestManager.Stamp($"{playerAttacker.Name},Reckless");
+                playerAttacker.QuestManager.Increment($"{playerAttacker.Name},Reckless", (int)scaledStamps);
+            }
+            else if (playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless") < 500)
+                playerAttacker.QuestManager.Increment($"{playerAttacker.Name},Reckless", (int)scaledStamps);
+
+            var stacks = playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless");
+            if (stacks > 250)
+            {
+                var recklessChance = 0.1f * (stacks - 250) / 250;
+                if (recklessChance > ThreadSafeRandom.Next(0, 1))
+                    playerAttacker.DamageTarget(playerAttacker, playerAttacker);
+            }
+            return stacks;
+        }
+
+        public static int HandleOverloadStamps(Player sourcePlayer, int? spellTypeScaler, uint spellLevel)
+        {
+            var baseStamps = 25;
+            var playerLevel = (int)(sourcePlayer.Level / 10);
+
+            if (playerLevel > 7)
+                playerLevel = 7;
+
+            if (spellLevel == 1)
+            {
+                if (playerLevel > 2)
+                    baseStamps /= playerLevel;
+            }
+            if (spellLevel == 2)
+            {
+                baseStamps = (int)(baseStamps * 1.5);
+
+                if (playerLevel > 3)
+                    baseStamps /= playerLevel;
+            }
+            if (spellLevel == 3)
+            {
+                baseStamps = (int)(baseStamps * 2);
+
+                if (playerLevel > 4)
+                    baseStamps /= playerLevel;
+            }
+            if (spellLevel == 4)
+            {
+                baseStamps = (int)(baseStamps * 2.25);
+
+                if (playerLevel > 5)
+                    baseStamps /= playerLevel;
+            }
+            if (spellLevel == 5)
+            {
+                baseStamps = (int)(baseStamps * 2.5);
+
+                if (playerLevel > 6)
+                    baseStamps /= playerLevel;
+            }
+            if (spellLevel == 6)
+            {
+                baseStamps = (int)(baseStamps * 2.5);
+
+                if (playerLevel > 7)
+                    baseStamps /= playerLevel;
+            }
+            if (spellLevel == 7)
+                baseStamps = (int)(baseStamps * 2.5);
+
+            if (spellTypeScaler != null)
+                baseStamps = baseStamps/(int)spellTypeScaler;
+
+            if (!sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload"))
+            {
+                sourcePlayer.QuestManager.Stamp($"{sourcePlayer.Name},Overload");
+                sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Overload", (int)baseStamps);                    
+            }
+            else if (sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload") < 500)
+                sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Overload", (int)baseStamps);
+
+            var stacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
+            if (stacks > 250)
+            { 
+                var overloadChance = 0.1f * (stacks - 250) / 250;
+                if (overloadChance > ThreadSafeRandom.Next(0, 1))
+                {
+                    var damage = sourcePlayer.Health.MaxValue / 10;
+                    sourcePlayer.UpdateVitalDelta(sourcePlayer.Health, damage);
+                    sourcePlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Overloaded! You lose control of the energies flowing through you, suffering {damage} points of damage!", ChatMessageType.Magic));
+                    sourcePlayer.PlayParticleEffect(PlayScript.Fizzle, sourcePlayer.Guid);
+
+                }
+            }
+
+            // Max Stacks = 500, so a percentage is stacks / 5
+            var overloadPercent = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload") / 5;
+            if (overloadPercent > 100)
+                overloadPercent = 100;
+            if (overloadPercent < 0)
+                overloadPercent = 0;
+
+            return overloadPercent;
         }
     }
 }

@@ -468,11 +468,6 @@ namespace ACE.Server.WorldObjects
             // doesn't apply for non-player creatures?
             return 1.0f;
         }
-        public virtual bool IsPowerShot(WorldObject weapon, CombatAbility combatAbilityType)
-        {
-            // doesn't apply for non-player creatures?
-            return false;
-        }
 
         /// <summary>
         /// Returns the attribute damage bonus for a physical and magical attacks
@@ -905,6 +900,14 @@ namespace ACE.Server.WorldObjects
 
             if (behind)
             {
+                var targetPlayer = target as Player;
+
+                if (targetPlayer != null)
+                {
+                    if (targetPlayer.EquippedCombatAbility == CombatAbility.Phalanx && targetPlayer.GetEquippedShield() != null)
+                        return 1.0f;
+                }
+
                 var combatAbilityTrinket = GetEquippedTrinket();
                 if (combatAbilityTrinket != null && combatAbilityTrinket.CombatAbilityId == (int)CombatAbility.Backstab)
                     backstabMod = 0.2f;

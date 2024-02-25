@@ -95,8 +95,15 @@ namespace ACE.Server.WorldObjects
             }
 
             if (player != null)
-                player.EnchantmentManager.StartCooldown(this);
-
+            {
+                if (!player.ManaBarrierToggle && this.WeenieClassId == 1051110)
+                {
+                    // Console.WriteLine("No Cooldown");
+                }
+                else
+                    player.EnchantmentManager.StartCooldown(this);
+            }
+                
             // perform motion animation - rarely used (only 4 instances in PY16 db)
             if (ActivationResponse.HasFlag(ActivationResponse.Animate))
                 OnAnimate(activator);

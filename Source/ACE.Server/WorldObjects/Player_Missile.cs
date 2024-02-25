@@ -1,6 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
-
+using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
@@ -242,7 +243,59 @@ namespace ACE.Server.WorldObjects
                 
 
                 var projectile = LaunchProjectile(launcher, ammo, target, origin, orientation, velocity);
+
                 UpdateAmmoAfterLaunch(ammo);
+
+                Console.WriteLine(EquippedCombatAbility);
+
+                // Check for missile cleaves
+                var numCleaves = 0;
+
+                if (EquippedCombatAbility == CombatAbility.Multishot && LastMultishotActivated < Time.GetUnixTime() - MultishotActivatedDuration)
+                    numCleaves = 1;
+                if (EquippedCombatAbility == CombatAbility.Multishot && LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration)
+                    numCleaves = 2;
+
+                var cleaveTargets = creature.GetNearbyMonsters(10);
+                var cleaveCount = 0;
+                Console.WriteLine(numCleaves);
+
+                foreach (var cleave in cleaveTargets)
+                {
+                    if (cleaveCount == numCleaves)
+                        break;
+
+                    var ammoCheck = weapon.IsAmmoLauncher ? GetEquippedAmmo() : weapon;
+                    if (ammoCheck == null)
+                    {
+                        OnAttackDone();
+                        return;
+                    }
+
+                    var angle = GetAngle(cleave);
+                    bool angleWrong = false;
+
+                    if (Math.Abs(angle) > CleaveAngle / 2.0f)
+                        angleWrong = true;
+
+                    if (!angleWrong)
+                    {
+                        var newaimVelocity = GetAimVelocity(cleave, projectileSpeed);
+
+                        var newaimLevel = GetAimLevel(newaimVelocity);
+
+                        var newlocalOrigin = GetProjectileSpawnOrigin(ammo.WeenieClassId, newaimLevel);
+
+                        var newvelocity = CalculateProjectileVelocity(newlocalOrigin, cleave, projectileSpeed, out Vector3 neworigin, out Quaternion neworientation);
+
+                        var bonusProjectile = LaunchProjectile(launcher, ammo, cleave, neworigin, neworientation, newvelocity);
+
+                        UpdateAmmoAfterLaunch(ammo);
+
+                        cleaveCount++;
+                    }
+                }
+                
             });
 
             // ammo remaining?

@@ -309,6 +309,13 @@ namespace ACE.Server.WorldObjects
             // stamina usage
             // TODO: ensure enough stamina for attack
             var staminaCost = GetAttackStamina(GetPowerRange(), (float)LastAttackAnimationLength, weapon, dualWieldStaminaBonus);
+            
+            if (EquippedCombatAbility == CombatAbility.Reckless && QuestManager.HasQuest($"{this.Name},Reckless"))
+            {
+                var recklessStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless");
+                float recklessMod = 1 + (recklessStacks / 500);
+                staminaCost = (int)(staminaCost * recklessMod);
+            }
             UpdateVitalDelta(Stamina, -staminaCost);
 
             var combatAbility = CombatAbility.None;
