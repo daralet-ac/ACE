@@ -135,7 +135,7 @@ namespace ACE.Server.Managers
                 playersLock.ExitReadLock();
             }
 
-            DatabaseManager.Shard.SaveBiotasInParallel(biotas, null, true);
+            DatabaseManager.Shard.SaveBiotasInParallel(biotas, result => { });
         }
         
 

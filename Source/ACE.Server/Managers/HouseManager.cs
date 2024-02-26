@@ -398,14 +398,11 @@ namespace ACE.Server.Managers
 
             player.SaveBiotaToDatabase();
 
-            if (playerHouse.House.HouseStatus == HouseStatus.Active)
-            {
-                // clear out slumlord inventory
-                var slumlord = playerHouse.House.SlumLord;
-                slumlord.ClearInventory();
+            // clear out slumlord inventory
+            var slumlord = playerHouse.House.SlumLord;
+            slumlord.ClearInventory();
 
-                slumlord.SaveBiotaToDatabase();
-            }
+            slumlord.SaveBiotaToDatabase();
 
             _log.Debug($"[HOUSE] HouseManager.HandleRentPaid({playerHouse.PlayerName}): rent payment successful!");
 

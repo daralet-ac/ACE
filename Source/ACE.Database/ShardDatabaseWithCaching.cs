@@ -134,7 +134,7 @@ namespace ACE.Database
             return base.GetBiota(id, doNotAddToCache);
         }
 
-        public override bool SaveBiota(ACE.Entity.Models.Biota biota, ReaderWriterLockSlim rwLock, bool doNotAddToCache = false)
+        public override bool SaveBiota(ACE.Entity.Models.Biota biota, ReaderWriterLockSlim rwLock)
         {
             CacheObject<Biota> cachedBiota;
 
@@ -162,7 +162,7 @@ namespace ACE.Database
 
             var context = new ShardDbContext();
 
-            var existingBiota = base.GetBiota(context, biota.Id, doNotAddToCache);
+            var existingBiota = base.GetBiota(context, biota.Id);
 
             rwLock.EnterReadLock();
             try
@@ -185,8 +185,7 @@ namespace ACE.Database
 
             if (DoSaveBiota(context, existingBiota))
             {
-                if (!doNotAddToCache)
-                    TryAddToCache(context, existingBiota);
+                TryAddToCache(context, existingBiota);
 
                 return true;
             }

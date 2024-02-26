@@ -306,11 +306,11 @@ namespace ACE.Database
             }
         }
 
-        public virtual bool SaveBiota(ACE.Entity.Models.Biota biota, ReaderWriterLockSlim rwLock, bool doNotAddToCache = false)
+        public virtual bool SaveBiota(ACE.Entity.Models.Biota biota, ReaderWriterLockSlim rwLock)
         {
             using (var context = new ShardDbContext())
             {
-                var existingBiota = GetBiota(context, biota.Id, doNotAddToCache);
+                var existingBiota = GetBiota(context, biota.Id);
 
                 rwLock.EnterReadLock();
                 try
@@ -335,13 +335,13 @@ namespace ACE.Database
             }
         }
 
-        public bool SaveBiotasInParallel(IEnumerable<(ACE.Entity.Models.Biota biota, ReaderWriterLockSlim rwLock)> biotas, bool doNotAddToCache = false)
+        public bool SaveBiotasInParallel(IEnumerable<(ACE.Entity.Models.Biota biota, ReaderWriterLockSlim rwLock)> biotas)
         {
             var result = true;
 
             Parallel.ForEach(biotas, ConfigManager.Config.Server.Threading.DatabaseParallelOptions, biota =>
             {
-                if (!SaveBiota(biota.biota, biota.rwLock, doNotAddToCache))
+                if (!SaveBiota(biota.biota, biota.rwLock))
                     result = false;
             });
 
