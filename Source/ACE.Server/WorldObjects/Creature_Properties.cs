@@ -2,6 +2,7 @@ using System;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Managers;
+using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects
 {
@@ -804,5 +805,37 @@ namespace ACE.Server.WorldObjects
         }
 
         public FactionBits Society => Faction1Bits ?? FactionBits.None;
+
+        public void UpdateProperty(WorldObject obj, PropertyInt prop, int? value, bool broadcast = false)
+        {
+            if (value != null)
+                obj.SetProperty(prop, value.Value);
+            else
+                obj.RemoveProperty(prop);
+
+            var msg = new GameMessagePublicUpdatePropertyInt(obj, prop, value ?? 0);
+        }
+
+        public void UpdateProperty(WorldObject obj, PropertyBool prop, bool? value, bool broadcast = false)
+        {
+            if (value != null)
+                obj.SetProperty(prop, value.Value);
+            else
+                obj.RemoveProperty(prop);
+
+            var msg = new GameMessagePublicUpdatePropertyBool(obj, prop, value ?? false);
+
+        }
+
+        public void UpdateProperty(WorldObject obj, PropertyFloat prop, double? value, bool broadcast = false)
+        {
+            if (value != null)
+                obj.SetProperty(prop, value.Value);
+            else
+                obj.RemoveProperty(prop);
+
+            var msg = new GameMessagePublicUpdatePropertyFloat(obj, prop, value ?? 0.0);
+
+        }
     }
 }
