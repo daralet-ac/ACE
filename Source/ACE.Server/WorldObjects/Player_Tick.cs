@@ -638,8 +638,7 @@ namespace ACE.Server.WorldObjects
                 if (LumAugItemManaUsage != 0)
                     burnRate *= GetNegativeRatingMod(LumAugItemManaUsage * 5);
 
-                // Jewelcrafting Bonus ----
-
+                // JEWEL - Moonstone: Reduced Item Mana Useage
                 if (GetEquippedItemsRatingSum(PropertyInt.GearItemManaUseage) > 0)
                 {
                     var moonstone = GetEquippedItemsRatingSum(PropertyInt.GearItemManaUseage);

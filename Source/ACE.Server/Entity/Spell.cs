@@ -150,7 +150,7 @@ namespace ACE.Server.Entity
             //DebugComponents();
 
             var jewelcraftingCompBurn = 1f;
-
+            // JEWEL - Malachite: Reduced comp burn chance
             if (player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn) > 0)
             {
                 jewelcraftingCompBurn = 1f - ((float)(player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn)) / 30);

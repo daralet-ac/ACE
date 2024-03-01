@@ -322,7 +322,7 @@ namespace ACE.Server.WorldObjects
                 staminaCost = (int)(staminaCost * recklessMod);
             }
 
-            // JEWELCRAFTING - Third Wind
+            // JEWEL - Citrine: Stamina cost reduction
             if (this is Player)
             {
                 if (this.GetEquippedItemsRatingSum(PropertyInt.GearStamReduction) > 0)

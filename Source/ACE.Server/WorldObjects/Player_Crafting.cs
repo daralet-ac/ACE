@@ -365,8 +365,7 @@ public void AddSalvage(List<WorldObject> salvageBags, WorldObject item, SalvageR
                 return salvageItem.Structure.Value;
 
             var addStructure = 1;
-            Random random = new Random();
-            double randomSalvageBonus = random.Next(1, 11);
+            double randomSalvageBonus = ThreadSafeRandom.Next(1, 10);
             if (randomSalvageBonus <= salvageItem.Workmanship)
             {
                 addStructure++;

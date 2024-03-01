@@ -556,7 +556,7 @@ namespace ACE.Server.WorldObjects
 
             var ignoreAegisMod = Math.Min(aegisRendingMod, aegisPenMod);
 
-            // Jewelcrafting Ramping Aegis Pen
+            // JEWEL - Tourmaline: Ramping Aegis Pen
             if (sourcePlayer != null)
             {
                 if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearAegisPen) > 0)
@@ -580,6 +580,7 @@ namespace ACE.Server.WorldObjects
             bool isPVP = sourcePlayer != null && targetPlayer != null;
             var absorbMod = GetAbsorbMod(target, this);
 
+            // JEWEL - Amethyst: Ramping Magic Absorb
             if (targetPlayer != null)
             {
                 if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
@@ -763,34 +764,32 @@ namespace ACE.Server.WorldObjects
                 float jewelcraftingProtection = 1f;
 
                 if (targetPlayer != null)
-                {
+                {   // JEWEL - Onyx: Protection vs. Slash/Pierce/Bludgeon
                     if (Spell.DamageType == DamageType.Slash || Spell.DamageType == DamageType.Pierce || Spell.DamageType == DamageType.Bludgeon)
                     {
                         if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) > 0)
                             jewelcraftingProtection = (1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) / 100));
                     }
+                    // JEWEL - Zircon: Protection vs. Acid/Fire/Cold/Electric
                     if (Spell.DamageType == DamageType.Acid || Spell.DamageType == DamageType.Fire || Spell.DamageType == DamageType.Cold || Spell.DamageType == DamageType.Electric)
                     {
                         if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) > 0)
                             jewelcraftingProtection = (1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) / 100));
                     }
                 }
-
-                // --- Jewelcrafting Bonuses -----
-
                 var jewelElementalist = 1f;
                 var jewelElemental = 1f;
                 var jewelLastStand = 1f;
                 var jewelSelfHarm = 1f;
 
                 if (sourcePlayer != null)
-                {
+                {   // JEWEL - Green Garnet: Ramping War Magic Damage
                     if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) > 0)
                     {
                         var jewelRampMod = (float)sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") / 500;
                         jewelElementalist += jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) / 66);
                     }
- 
+                    // JEWEL - White Sapphire: Ramping Bludgeon Crit Damage Bonus
                     if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
                     {
                         if (Spell.DamageType == DamageType.Bludgeon)
@@ -800,6 +799,7 @@ namespace ACE.Server.WorldObjects
                         }
                         
                     }
+                    // JEWEL - Black Garnet - Ramping Piercing Resistance Penetration
                     if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0)
                     {
                         if (Spell.DamageType == DamageType.Pierce)
@@ -808,12 +808,14 @@ namespace ACE.Server.WorldObjects
                             resistanceMod += jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) / 66);
                         }
                     }
-
+                    // JEWEL - Hematite: Deal bonus damage but take the same amount
                     if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
                         jewelSelfHarm += (float)(sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
 
+                    // JEWEL - Aquamarine, Emerald, Jet, Red Garnet: Bonus elemental damage
                     jewelElemental = Jewelcrafting.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
 
+                    // JEWEL - Ruby: Bonus damage below 50% HP, reduced damage above
                     if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
                         jewelLastStand += Jewelcrafting.GetJewelLastStand(sourcePlayer, target);
                 }

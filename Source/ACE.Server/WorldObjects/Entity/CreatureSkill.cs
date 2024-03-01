@@ -245,19 +245,5 @@ namespace ACE.Server.WorldObjects.Entity
 
             return total;
         }
-
-        // Jewelcrafting Bonus - Heritage Skills
-
-        public uint GetJewelcraftingBonus_Base(Player player)
-        {
-            
-            uint total = 0;
-
-            if ((player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) != 0
-                && Player.HeritageSkills.Contains(Skill)))
-                total += (uint)player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer);
-
-            return total;
-        }
     }
 }

@@ -360,7 +360,7 @@ namespace ACE.Server.Entity
             // ---- DAMAGE BEFORE MITIGATION ----
             DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * dualWieldDamageMod * twohandedCombatDamageMod * steadyShotActivatedMod * multishotPenalty * provokeMod;
 
-            // Jewelcrafting Bonus --- Shield Deflection ---
+            // JEWEL - White Quartz: Deflects damage at attacker on Block
             if (Blocked == true && playerDefender != null && attacker.GetDistance(playerDefender) < 10)
             {
                 if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearThorns) > 0)
@@ -491,10 +491,10 @@ namespace ACE.Server.Entity
                         CriticalDamageMod += playerAttacker.GetAccuracyCritDamageMod(Weapon);
                     }
 
-                    // JEWELCRAFTING --- Ramping Bludgeon Crit Damage 
+                   
 
                     if (playerAttacker != null)
-                    {
+                    {   // JEWEL - White Sapphire: Ramping Bludgeon Crit Damage Bonus
                         if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
                         {
                             var jewelcraftingRampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bludgeon") / 500;
@@ -506,7 +506,7 @@ namespace ACE.Server.Entity
 
                     // Jewelcrafting Reprisal -- Evade an Incoming Crit, auto crit in return
                     if (playerDefender != null)
-                    {
+                    {    
                         if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
                         {
                             if ((playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) / 2) >= ThreadSafeRandom.Next(0, 100))
@@ -599,7 +599,7 @@ namespace ACE.Server.Entity
             }
 
             if (playerAttacker != null)
-            {
+            {   // JEWEL - Black Garnet - Ramping Piercing Resistance Penetration
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0 && DamageType == DamageType.Pierce)
                 {
                     var jewelcraftingRampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Pierce") / 500;
@@ -621,7 +621,7 @@ namespace ACE.Server.Entity
                 PkDamageResistanceMod = Creature.GetNegativeRatingMod(defender.GetPKDamageResistRating());
                 DamageResistanceRatingMod = Creature.AdditiveCombine(DamageResistanceRatingMod, PkDamageResistanceMod);
             }
-
+            // JEWEL - Diamond: Ramping Physical Damage Reduction
             if (playerDefender != null)
             {
                 if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) > 0)
@@ -644,36 +644,36 @@ namespace ACE.Server.Entity
             // ---- SHIELD ----
             ShieldMod = defender.GetShieldMod(attacker, DamageType, Weapon);
 
-
-            // ---- JEWELCRAFTING PROTECTIONS ---
             float jewelProtection = 1f;
             if (playerDefender != null)
             {
+                // JEWEL - Onyx: Protection vs. Slash/Pierce/Bludgeon
                 if (DamageType == DamageType.Slash || DamageType == DamageType.Pierce || DamageType == DamageType.Bludgeon)
                 {
                     if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) > 0)
                         jewelProtection = (1 - ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) / 100));
                 }
-
+                // JEWEL - Zircon: Protection vs. Acid/Fire/Cold/Electric
                 if (DamageType == DamageType.Acid || DamageType == DamageType.Fire || DamageType == DamageType.Cold || DamageType == DamageType.Electric)
                 {
                     if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) > 0)
                         jewelProtection = (1 - ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) / 100));
                 }
             }
-            // ---- JEWEL DAMAGE BONUSES ---
+
             var jewelSelfHarm = 1f;
             var jewelLastStand = 1f;
             var jewelElemental = 1f;
 
             if (playerAttacker != null)
             {
+                // JEWEL - Hematite: Deal bonus damage but take the same amount
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
                     jewelSelfHarm += (float)(playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
-
+                // JEWEL - Ruby: Bonus damage below 50% HP, reduced damage above
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
                     jewelLastStand += Jewelcrafting.GetJewelLastStand(playerAttacker, defender);
-
+                // JEWEL - Aquamarine, Emerald, Jet, Red Garnet: Bonus elemental damage
                 jewelElemental = Jewelcrafting.HandleElementalBonuses(playerAttacker, DamageType);
             }
 
@@ -686,7 +686,6 @@ namespace ACE.Server.Entity
 
 
             // --- JEWELCRAFTING POST-DAMAGE STAMPS / PROCS / BONUSES
-
             if (playerAttacker != null)
             {
                 Jewelcrafting.HandlePlayerAttackerBonuses(playerAttacker, defender, Damage, DamageType);
@@ -786,10 +785,8 @@ namespace ACE.Server.Entity
                 }
             }
            
-            // Jewelcrafting Bonus -- Familiarity -- Chance of evading a target increases the more you attack it
-            // when you attack them, they get stamped with your name + fam, when they attack you, you check their stamps with your name and scale/calculate
             if (playerDefender != null)
-            {
+            {   // JEWEL - Fire Opal: Evade chance bonus for having attacked target creature
                 if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
                 {
                     if (attacker.QuestManager.HasQuest($"{playerDefender.Name},Familiarity"))
@@ -803,9 +800,9 @@ namespace ACE.Server.Entity
                 }
 
             }
-           // Jewelcrafting Bonus --- Bravado -- Chance of hitting a target increase the more it attacks you
+           
             if (playerAttacker != null)
-            {
+            {   // JEWEL - Yellow Garnet: Hit chance bonus for having been attacked frequently 
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) > 0)
                 {
                     if (playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Bravado"))
@@ -969,10 +966,11 @@ namespace ACE.Server.Entity
                 }
             }
 
-            // Phalanx Activated Block Bonus
+            // COMBAT ABILITY - Phalanx: Activated Block Bonus
             if (playerDefender != null && playerDefender.LastPhalanxActivated > Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration && playerDefender.GetEquippedShield != null)
                 blockChance += 0.5f;
 
+            // JEWEL - Turquoise: Passive Block %
             if (defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) > 0)
                     blockChance += (float)(defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) / 100);
 

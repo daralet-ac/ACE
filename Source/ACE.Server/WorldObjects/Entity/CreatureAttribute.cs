@@ -96,7 +96,7 @@ namespace ACE.Server.WorldObjects.Entity
             {
                 uint total = Ranks + StartingValue;
 
-                // adds GearAttribute ratings for Jewelcrafting
+                // JEWEL - Attributes: Adds to Base
 
                 if (creature is Creature player)
                 {

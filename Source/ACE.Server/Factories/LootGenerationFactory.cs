@@ -141,13 +141,14 @@ namespace ACE.Server.Factories
                 mod -= 0.75f; // range of 0.0 to 0.25
                 var qualityBonus = (1 - tweakedDeathTreasure.LootQualityMod) * mod;
 
-                // Jewelcrafting --- Magic Find
-               var updatedQualityMod = creature.QuestManager.HandleMagicFind();
+                // JEWEL - Sappphire: Bonus Loot Quality
+                var updatedQualityMod = creature.QuestManager.HandleMagicFind();
 
-                qualityBonus += (float)updatedQualityMod; // this line breaks it
+                qualityBonus += (float)updatedQualityMod; 
 
                 tweakedDeathTreasure.LootQualityMod += qualityBonus;
 
+                // JEWEL - Green Jade: Bonus Min Item Chance
                 var prosperityMod = creature.QuestManager.HandleProsperity();
 
                 if (prosperityMod >= ThreadSafeRandom.Next(0f, 1f))

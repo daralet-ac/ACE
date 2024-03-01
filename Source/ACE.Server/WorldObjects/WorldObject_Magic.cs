@@ -259,6 +259,7 @@ namespace ACE.Server.WorldObjects
 
             if (targetPlayer != null)
             {
+                // JEWEL - Fire Opal: Bonus resist chance for having attacked target creature
                 if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
                 {
                     if (casterCreature.QuestManager.HasQuest($"{targetPlayer.Name},Familiarity"))
@@ -779,9 +780,9 @@ namespace ACE.Server.WorldObjects
             }
             string srcVital;
 
-            // Jewelcrafting Bonus ---- Selflessness --- Reduces resto for self, increases for others
+           
             if (player != null)
-            {
+            {   // JEWEL - Lavender Jade: Bonus restoration to other players, reduced to self
                 if (player.GetEquippedItemsRatingSum(PropertyInt.GearSelflessness) > 0 && tryBoost > 0 && !targetCreature.IsMonster)
                 {
                     var selflessnessModifier = (1f + ((float)player.GetEquippedItemsRatingSum(PropertyInt.GearSelflessness) / 66));
@@ -791,7 +792,7 @@ namespace ACE.Server.WorldObjects
 
                     tryBoost = (int)(tryBoost * selflessnessModifier);
                 }
-                // Jewelcrafting Bonus ----- HealBubble
+                // JEWEL - White Jade: Bonus to restoration, chance of healing hotspot
                 if (player.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) > 0 && tryBoost > 0 && !targetCreature.IsMonster)
                 {
                     var healModifier = 1f + ((float)player.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) / 100) * 0.75;
@@ -800,7 +801,7 @@ namespace ACE.Server.WorldObjects
                     if (weapon.Tier != null)
                         Hotspot.TryGenHotspot(player, targetCreature, (int)weapon.Tier, spell.VitalDamageType);
                 }
-
+                // JEWEL - Rose Quartz: Penalty to restoration spells
                 if (player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) > 0)
                     {
                         var jewelcraftingBoostPenaltyMod = 1 - (float)player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) / 66;
@@ -809,7 +810,7 @@ namespace ACE.Server.WorldObjects
                         tryBoost = (int)boostPenalty;
                     }
             }
-
+            // JEWEL - Amethyst: Ramping Magic Absorb
             if (player != null && tryBoost < 0)
             {
                 if (player.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
@@ -1069,10 +1070,8 @@ namespace ACE.Server.WorldObjects
                 destVitalChange = maxDestVitalChange;
             }
 
-            // Jewelcrafting Bonus --- Vitals Transfer Improvement
-
-            if (player != null)
-            {
+             if (player != null)
+            {   // JEWEL - Rose Quartz: Bonus to transfer spells
                 if (player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) > 0)
                 {
                     var jewelcraftingVitalsTransferMod = 1 + (float)player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) / 66;
@@ -1090,7 +1089,7 @@ namespace ACE.Server.WorldObjects
                 if (player.QuestManager.HasQuest($"{player.Name},Elementalist"))
                     player.QuestManager.Erase($"{player.Name},Elementalist");
             }
-
+            // JEWEL - Amethyst: Ramping Magic Absorb
             if (player != null && player != targetCreature)
             {
                 if (spell.TransferFlags.HasFlag(TransferFlags.TargetSource | TransferFlags.CasterDestination))
@@ -1362,13 +1361,13 @@ namespace ACE.Server.WorldObjects
             }
 
             CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage);
-            
+            // JEWEL - Imperial Topaz - Bonus cleave chance
             if (caster != null)
             {
                 if (spell.DamageType == DamageType.Slash)
                 {   
                     if (spell.NumProjectiles <= 1)
-                    {
+                    {   
                         if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0)
                         {
                             if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > ThreadSafeRandom.Next(1, 100))

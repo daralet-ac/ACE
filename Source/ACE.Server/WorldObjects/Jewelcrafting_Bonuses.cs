@@ -41,8 +41,7 @@ namespace ACE.Server.WorldObjects
         // Caster and Physical Overlapping Bonuses
         public static void HandlePlayerAttackerBonuses(Player playerAttacker, Creature defender, float damage, ACE.Entity.Enum.DamageType damageType)
         {
-            // Jewelcrafting Bonus -- Lifesteal Chance
-
+            // JEWEL - Bloodstone: Gain life on hit
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLifesteal) > 0)
             {
                 var lifeStealChance = ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLifesteal) / 100);
@@ -55,7 +54,7 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
-            // Jewelcrafting Bonus --- Manasteal
+            // JEWEL - Opal: Gain mana on hit
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearManasteal) > 0)
             {
                 var manaStealChance = ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearManasteal) / 100);
@@ -68,7 +67,7 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
-            // Self-Harm
+            // JEWEL - Hematite: Self-harm damage
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
             {
                 var jewelSelfHarm = 1f + (float)(playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
@@ -77,8 +76,7 @@ namespace ACE.Server.WorldObjects
                 playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, (uint)selfHarm);
             }
 
-            // Jewelcrafting Bonus -- Check for Elemental Weapon Hotspot Procs
-
+            // JEWEL - Aquamarine, Emerald, Jet, Red Garnet: Check hotspot chance
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) > 0 || playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) > 0
                 || playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) > 0 || playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) > 0)
             {
@@ -86,7 +84,7 @@ namespace ACE.Server.WorldObjects
                 Hotspot.TryGenHotspot(playerAttacker, defender, (int)tier, damageType);
             }
 
-            // Magic Find Stamps
+            // JEWEL - Sapphire: Magic Find stamps
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearMagicFind) > 0)
             {
                 var magicFind = playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearMagicFind);
@@ -94,7 +92,7 @@ namespace ACE.Server.WorldObjects
                 defender.QuestManager.Stamp($"{playerAttacker.Name}/MagicFind/{magicFind}/{damage}");
             }
 
-            // Pyreal Find Stamps
+            // JEWEL - Green Jade: Prosperity stamps
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPyrealFind) > 0)
             {
                 var pyrealFind = playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPyrealFind);
@@ -106,10 +104,9 @@ namespace ACE.Server.WorldObjects
         // Caster and Physical Overlapping Defender Bonuses
         public static void HandlePlayerDefenderBonuses(Player playerDefender, Creature attacker, float damage)
         {
-            // vitals swaps
 
             var percentOfHealth = damage / (float)playerDefender.Health.MaxValue;
-
+            // JEWEL - Amber: Chance to gain stamina on taking damage
             if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHealthToStamina) > 0)
             {
                 var healthToStamChance = ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHealthToStamina) / 100);
@@ -126,7 +123,7 @@ namespace ACE.Server.WorldObjects
                     playerDefender.DamageHistory.OnHeal(stamAmount);
                 }
             }
-
+            // JEWEL - Lapis Lazuli: Chance to gain mana on taking damage
             if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHealthToMana) > 0)
             {
                 var healthToManaChance = ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHealthToMana) / 100);
@@ -164,7 +161,7 @@ namespace ACE.Server.WorldObjects
 
             if (playerAttacker.AttackType == AttackType.OffhandPunch || playerAttacker.AttackType == AttackType.Punch || playerAttacker.AttackType == AttackType.Punches)
                 scaledStamps /= 1.25f;
-
+            
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0 || playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0 || playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
             {
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
@@ -199,7 +196,7 @@ namespace ACE.Server.WorldObjects
                         defender.QuestManager.Increment($"{playerAttacker.Name},{rampProperty}", (int)scaledStamps);
                     }
                 }
-
+                // JEWEL - Fire Opal: Ramping Hit chance stamps
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
                     rampProperty = "Familiarity";
 
@@ -222,8 +219,7 @@ namespace ACE.Server.WorldObjects
 
             }
 
-            // Ramp Stamp Stamina Reduction -- Self-Stamp / Check Only
-
+            // JEWEL - Citrine: Stam reduction stamps
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearStamReduction) > 0)
             { 
                 if (playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},StamReduction"))
@@ -244,7 +240,7 @@ namespace ACE.Server.WorldObjects
         public static void HandleMeleeDefenderBonuses(Player playerDefender, Creature attacker, float damage)
         {
 
-            // Hardened Defense Stamps -- ramps up to full benefit upon receiving 10 monster attacks
+            // JEWEL - Diamond: Ramping Damage Reduction stamps
             if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) > 0)
             {
                 if (playerDefender.QuestManager.HasQuest($"{playerDefender.Name},Hardened Defense"))
@@ -261,7 +257,7 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
-            // Bravado Stamps
+            // JEWEL - Yellow Garnet: Ramping Hit Chance stamps
             if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearBravado) > 0)
             {
                 if (playerDefender.QuestManager.HasQuest($"{playerDefender.Name},Bravado"))
@@ -367,8 +363,7 @@ namespace ACE.Server.WorldObjects
                     targetCreature.QuestManager.Increment($"{targetCreature.Name},{propertyType}", (int)baseStamps);
                 }
             }
-            // familiarity (layerable)
-
+            // JEWEL - Fire Opal: Ramping Evade/Resist chance stamps
             if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
                 propertyType = "Familiarity";
 
@@ -388,7 +383,7 @@ namespace ACE.Server.WorldObjects
                     targetCreature.QuestManager.Increment($"{sourcePlayer.Name},{propertyType}", (int)baseStamps);
                 }
             }
-            // Aegis Pen (layerable)
+            // JEWEL - Tourmaline: Ramping Aegis Pen stamps
             if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearAegisPen) > 0)
             {
                 if (targetCreature.QuestManager.HasQuest($"{sourcePlayer.Name},AegisPen"))
@@ -404,7 +399,7 @@ namespace ACE.Server.WorldObjects
                     targetCreature.QuestManager.Increment($"{sourcePlayer.Name},AegisPen", (int)baseStamps);
                 }
             }
-            // Elementalist Applies to Self-Only and can be layered, so stamp separately
+            // JEWEL - Green Garnet: Ramping War Damage stamps
             if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) > 0)
             {
                 if (sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Elementalist"))
@@ -424,8 +419,7 @@ namespace ACE.Server.WorldObjects
         public static void HandleCasterDefenderBonuses(Player targetPlayer, Creature sourceCreature, ProjectileSpellType spellType)
         {
 
-            // Jewelcrafting Bonus -- AbsorbMod Bonus -- only concerned with targetPlayer stamps to provide raw ramping absorb regardless of source
-            // 50 stamps per hit, so full benefit after being hit 4 times by war spells
+            // JEWEL - Amethyst: Ramping Magic Absorb stamps
             if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
             {
                 if (targetPlayer.QuestManager.HasQuest($"{targetPlayer.Name},Nullification"))
