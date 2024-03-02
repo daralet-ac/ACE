@@ -13,6 +13,7 @@ namespace ACE.Server.WorldObjects
 {
     partial class Player
     {
+        public double CampfireTimer = 0;
         /// <summary>
         /// A lookup table for MaterialType => Salvage Bag WCIDs
         /// </summary>

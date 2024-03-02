@@ -1405,9 +1405,12 @@ namespace ACE.Server.WorldObjects.Managers
                             {
                                 var amount = amountToTake == -1 ? "all" : amountToTake.ToString();
 
-                                var msg = $"You hand over {amount} of your {itemTaken.GetPluralName()}.";
-
-                                player.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+                                if (!WorldObject.TakeItemsSilently.HasValue || WorldObject.TakeItemsSilently == false)
+                                {
+                                    var msg = $"You hand over {amount} of your {itemTaken.GetPluralName()}.";
+                                    player.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+                                }
+                                  
                             }
                         }
                     }

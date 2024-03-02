@@ -3411,5 +3411,16 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyBool.OverrideVisualRange); else SetProperty(PropertyBool.OverrideVisualRange, value.Value); }
         }
 
+        public bool? ExamineItemsSilently
+        {
+            get => GetProperty(PropertyBool.ExamineItemsSilently);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.ExamineItemsSilently); else SetProperty(PropertyBool.ExamineItemsSilently, value.Value); }
+        }
+
+        public bool? TakeItemsSilently
+        {
+            get => GetProperty(PropertyBool.TakeItemsSilently);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.TakeItemsSilently); else SetProperty(PropertyBool.TakeItemsSilently, value.Value); }
+        }
     }
 }
