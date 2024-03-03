@@ -135,6 +135,8 @@ namespace ACE.Server.Entity
 
             if (source.WeenieType == WeenieType.ArmorPatch)
                 ArmorPatch.UseObjectOnTarget(player, source, target, true);
+            else if (source.WeenieType == WeenieType.TailoringKit)
+                TailoringKit.UseObjectOnTarget(player, source, target, true);
             else
                 RecipeManager.UseObjectOnTarget(player, source, target, true);
         }

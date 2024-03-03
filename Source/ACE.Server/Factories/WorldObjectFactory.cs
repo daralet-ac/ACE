@@ -141,6 +141,8 @@ namespace ACE.Server.Factories
                     return new CombatFocus(weenie, guid);
                 case WeenieType.ArmorPatch:
                     return new ArmorPatch(weenie, guid);
+                case WeenieType.TailoringKit:
+                    return new TailoringKit(weenie, guid);
                 default:
                     return new GenericObject(weenie, guid);
             }
@@ -262,6 +264,8 @@ namespace ACE.Server.Factories
                     return new CombatFocus(biota);
                 case WeenieType.ArmorPatch:
                     return new ArmorPatch(biota);
+                case WeenieType.TailoringKit:
+                    return new TailoringKit(biota);
                 default:
                     return new GenericObject(biota);
             }

@@ -77,5 +77,6 @@ namespace ACE.Entity.Enum
         EmpoweredScarab,
         CombatFocus,
         ArmorPatch,
+        TailoringKit,
     }
 }
