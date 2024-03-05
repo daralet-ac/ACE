@@ -3427,6 +3427,7 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyBool.TakeItemsSilently);
             set { if (!value.HasValue) RemoveProperty(PropertyBool.TakeItemsSilently); else SetProperty(PropertyBool.TakeItemsSilently, value.Value); }
+        }
 
         public string JewelSocket1
         {
