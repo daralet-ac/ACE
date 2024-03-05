@@ -94,7 +94,7 @@ namespace ACE.Server.Factories
 
                 MutateColor(wo);
 
-                wo.Name = wo.NameWithMaterialAndElement;
+                wo.Name = wo.NameWithMaterialAndElement == null ? wo.Name : wo.NameWithMaterial;
             }
 
             // Wield Difficulty
@@ -159,6 +159,11 @@ namespace ACE.Server.Factories
 
             // long description
             wo.LongDesc = GetLongDesc(wo);
+
+            wo.BaseDamageMod = (wo.DamageMod == null ? 0 : wo.DamageMod);
+            wo.BaseWeaponTime = (wo.WeaponTime == null ? 0 : wo.WeaponTime);
+            // assign jewel slots
+            AssignJewelSlots(wo);
         }
 
         private static bool GetMutateMissileWeaponData(uint wcid, int tier)

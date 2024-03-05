@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace ACE.Entity.Enum
 {
@@ -47,6 +47,7 @@ namespace ACE.Entity.Enum
         IconUnderlay      = 0x01,
         Cooldown          = 0x02,
         CooldownDuration  = 0x04,
-        PetOwner          = 0x08
+        PetOwner          = 0x08,
+        HotspotOwner      = 0x12,
     }
 }

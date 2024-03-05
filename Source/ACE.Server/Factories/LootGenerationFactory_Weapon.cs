@@ -171,6 +171,11 @@ namespace ACE.Server.Factories
                 }
             }
 
+            wo.BaseWeaponOffense = (wo.WeaponOffense == null ? 0 : wo.WeaponOffense);
+            wo.BaseManaConversionMod = (wo.ManaConversionMod == null ? 0 : wo.ManaConversionMod);
+            wo.BaseWeaponPhysicalDefense = (wo.WeaponPhysicalDefense == null ? 0 : wo.WeaponPhysicalDefense);
+            wo.BaseWeaponMagicalDefense = (wo.WeaponMagicalDefense == null ? 0 : wo.WeaponMagicalDefense);
+
             return true;
         }
 

@@ -570,7 +570,7 @@ namespace ACE.Server.WorldObjects
         public void SetPosition(PositionType positionType, Position position)
         {
             //if (position != null && !position.Rotation.IsRotationValid())
-                //position.AttemptToFixRotation(this, positionType);
+            //position.AttemptToFixRotation(this, positionType);
 
             if (EphemeralProperties.PositionTypes.Contains(positionType))
                 ephemeralPositions[positionType] = position;
@@ -1675,6 +1675,12 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyInstanceId.PetOwner);
             set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.PetOwner); else SetProperty(PropertyInstanceId.PetOwner, value.Value); }
+        }
+
+        public uint? HotspotOwner
+        {
+            get => GetProperty(PropertyInstanceId.HotspotOwner);
+            set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.HotspotOwner); else SetProperty(PropertyInstanceId.HotspotOwner, value.Value); }
         }
 
 
@@ -3085,7 +3091,7 @@ namespace ACE.Server.WorldObjects
             get => GetProperty(PropertyString.TinkerLog);
             set { if (value == null) RemoveProperty(PropertyString.TinkerLog); else SetProperty(PropertyString.TinkerLog, value); }
         }
-        
+
         public int? CreatureKills
         {
             get => GetProperty(PropertyInt.CreatureKills);
@@ -3421,6 +3427,533 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyBool.TakeItemsSilently);
             set { if (!value.HasValue) RemoveProperty(PropertyBool.TakeItemsSilently); else SetProperty(PropertyBool.TakeItemsSilently, value.Value); }
+
+        public string JewelSocket1
+        {
+            get => GetProperty(PropertyString.JewelSocket1);
+            set { if (value == null) RemoveProperty(PropertyString.JewelSocket1); else SetProperty(PropertyString.JewelSocket1, value); }
+        }
+
+        public string JewelSocket2
+        {
+            get => GetProperty(PropertyString.JewelSocket2);
+            set { if (value == null) RemoveProperty(PropertyString.JewelSocket2); else SetProperty(PropertyString.JewelSocket2, value); }
+        }
+
+        public string JewelSocket3
+        {
+            get => GetProperty(PropertyString.JewelSocket3);
+            set { if (value == null) RemoveProperty(PropertyString.JewelSocket3); else SetProperty(PropertyString.JewelSocket3, value); }
+        }
+
+        public string JewelSocket4
+        {
+            get => GetProperty(PropertyString.JewelSocket4);
+            set { if (value == null) RemoveProperty(PropertyString.JewelSocket4); else SetProperty(PropertyString.JewelSocket4, value); }
+        }
+
+        public string JewelSocket5
+        {
+            get => GetProperty(PropertyString.JewelSocket5);
+            set { if (value == null) RemoveProperty(PropertyString.JewelSocket5); else SetProperty(PropertyString.JewelSocket5, value); }
+        }
+
+        public string JewelSocket6
+        {
+            get => GetProperty(PropertyString.JewelSocket6);
+            set { if (value == null) RemoveProperty(PropertyString.JewelSocket6); else SetProperty(PropertyString.JewelSocket6, value); }
+        }
+
+        public string JewelSocket7
+        {
+            get => GetProperty(PropertyString.JewelSocket7);
+            set { if (value == null) RemoveProperty(PropertyString.JewelSocket7); else SetProperty(PropertyString.JewelSocket7, value); }
+        }
+
+        public string JewelSocket8
+        {
+            get => GetProperty(PropertyString.JewelSocket8);
+            set { if (value == null) RemoveProperty(PropertyString.JewelSocket8); else SetProperty(PropertyString.JewelSocket8, value); }
+        }
+
+        public int? JewelSockets
+        {
+            get => GetProperty(PropertyInt.JewelSockets);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.JewelSockets); else SetProperty(PropertyInt.JewelSockets, value.Value); }
+        }
+
+        public int? GearStrength
+        {
+            get => GetProperty(PropertyInt.GearStrength);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearStrength); else SetProperty(PropertyInt.GearStrength, value.Value); }
+        }
+
+        public int? GearEndurance
+        {
+            get => GetProperty(PropertyInt.GearEndurance);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearEndurance); else SetProperty(PropertyInt.GearEndurance, value.Value); }
+        }
+
+        public int? GearCoordination
+        {
+            get => GetProperty(PropertyInt.GearCoordination);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearCoordination); else SetProperty(PropertyInt.GearCoordination, value.Value); }
+        }
+
+        public int? GearQuickness
+        {
+            get => GetProperty(PropertyInt.GearQuickness);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearQuickness); else SetProperty(PropertyInt.GearQuickness, value.Value); }
+        }
+
+        public int? GearFocus
+        {
+            get => GetProperty(PropertyInt.GearFocus);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearFocus); else SetProperty(PropertyInt.GearFocus, value.Value); }
+        }
+
+        public int? GearSelf
+        {
+            get => GetProperty(PropertyInt.GearSelf);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearSelf); else SetProperty(PropertyInt.GearSelf, value.Value); }
+        }
+
+        public int? GearMaxStamina
+        {
+            get => GetProperty(PropertyInt.GearMaxStamina);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearMaxStamina); else SetProperty(PropertyInt.GearMaxStamina, value.Value); }
+        }
+
+        public int? GearMaxMana
+        {
+            get => GetProperty(PropertyInt.GearMaxMana);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearMaxMana); else SetProperty(PropertyInt.GearMaxMana, value.Value); }
+        }
+
+        public int? GearThreatGain
+        {
+            get => GetProperty(PropertyInt.GearThreatGain);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearThreatGain); else SetProperty(PropertyInt.GearThreatGain, value.Value); }
+        }
+
+        public int? GearThreatReduction
+        {
+            get => GetProperty(PropertyInt.GearThreatReduction);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearThreatReduction); else SetProperty(PropertyInt.GearThreatReduction, value.Value); }
+        }
+
+        public int? GearElementalWard
+        {
+            get => GetProperty(PropertyInt.GearElementalWard);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearElementalWard); else SetProperty(PropertyInt.GearElementalWard, value.Value); }
+        }
+
+        public int? GearPhysicalWard
+        {
+            get => GetProperty(PropertyInt.GearPhysicalWard);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearPhysicalWard); else SetProperty(PropertyInt.GearPhysicalWard, value.Value); }
+        }
+
+        public int? GearMagicFind
+        {
+            get => GetProperty(PropertyInt.GearMagicFind);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearMagicFind); else SetProperty(PropertyInt.GearMagicFind, value.Value); }
+        }
+
+        public int? GearBlock
+        {
+            get => GetProperty(PropertyInt.GearBlock);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearBlock); else SetProperty(PropertyInt.GearBlock, value.Value); }
+        }
+
+        public int? GearItemManaUseage
+        {
+            get => GetProperty(PropertyInt.GearItemManaUseage);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearItemManaUseage); else SetProperty(PropertyInt.GearItemManaUseage, value.Value); }
+        }
+
+
+        public int? GearLifesteal
+        {
+            get => GetProperty(PropertyInt.GearLifesteal);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearLifesteal); else SetProperty(PropertyInt.GearLifesteal, value.Value); }
+        }
+
+        public int? GearSelfHarm
+        {
+            get => GetProperty(PropertyInt.GearSelfHarm);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearSelfHarm); else SetProperty(PropertyInt.GearSelfHarm, value.Value); }
+        }
+
+        public int? GearThorns
+        {
+            get => GetProperty(PropertyInt.GearThorns);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearThorns); else SetProperty(PropertyInt.GearThorns, value.Value); }
+        }
+
+        public int? GearVitalsTransfer
+        {
+            get => GetProperty(PropertyInt.GearVitalsTransfer);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearVitalsTransfer); else SetProperty(PropertyInt.GearVitalsTransfer, value.Value); }
+        }
+
+        public int? GearLastStand
+        {
+            get => GetProperty(PropertyInt.GearLastStand);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearLastStand); else SetProperty(PropertyInt.GearLastStand, value.Value); }
+        }
+
+        public int? GearSelflessness
+        {
+            get => GetProperty(PropertyInt.GearSelflessness);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearSelflessness); else SetProperty(PropertyInt.GearSelflessness, value.Value); }
+        }
+
+        public int? GearVipersStrike
+        {
+            get => GetProperty(PropertyInt.GearVipersStrike);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearVipersStrike); else SetProperty(PropertyInt.GearVipersStrike, value.Value); }
+        }
+
+        public int? GearFamiliarity
+        {
+            get => GetProperty(PropertyInt.GearFamiliarity);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearFamiliarity); else SetProperty(PropertyInt.GearFamiliarity, value.Value); }
+        }
+
+        public int? GearBravado
+        {
+            get => GetProperty(PropertyInt.GearBravado);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearBravado); else SetProperty(PropertyInt.GearBravado, value.Value); }
+        }
+
+        public int? GearHealthToStamina
+        {
+            get => GetProperty(PropertyInt.GearHealthToStamina);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearHealthToStamina); else SetProperty(PropertyInt.GearHealthToStamina, value.Value); }
+        }
+
+        public int? GearHealthToMana
+        {
+            get => GetProperty(PropertyInt.GearHealthToMana);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearHealthToMana); else SetProperty(PropertyInt.GearHealthToMana, value.Value); }
+        }
+
+        public int? GearExperienceGain
+        {
+            get => GetProperty(PropertyInt.GearExperienceGain);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearExperienceGain); else SetProperty(PropertyInt.GearExperienceGain, value.Value); }
+        }
+
+        public int? GearManasteal
+        {
+            get => GetProperty(PropertyInt.GearManasteal);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearManasteal); else SetProperty(PropertyInt.GearManasteal, value.Value); }
+        }
+
+        public int? GearBludgeon
+        {
+            get => GetProperty(PropertyInt.GearBludgeon);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearBludgeon); else SetProperty(PropertyInt.GearBludgeon, value.Value); }
+        }
+
+        public int? GearPierce
+        {
+            get => GetProperty(PropertyInt.GearPierce);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearPierce); else SetProperty(PropertyInt.GearPierce, value.Value); }
+        }
+
+        public int? GearSlash
+        {
+            get => GetProperty(PropertyInt.GearSlash);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearSlash); else SetProperty(PropertyInt.GearSlash, value.Value); }
+        }
+
+        public int? GearFire
+        {
+            get => GetProperty(PropertyInt.GearFire);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearFire); else SetProperty(PropertyInt.GearFire, value.Value); }
+        }
+
+        public int? GearFrost
+        {
+            get => GetProperty(PropertyInt.GearFrost);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearFrost); else SetProperty(PropertyInt.GearFrost, value.Value); }
+        }
+
+        public int? GearAcid
+        {
+            get => GetProperty(PropertyInt.GearAcid);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearAcid); else SetProperty(PropertyInt.GearAcid, value.Value); }
+        }
+
+        public int? GearLightning
+        {
+            get => GetProperty(PropertyInt.GearLightning);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearLightning); else SetProperty(PropertyInt.GearLightning, value.Value); }
+        }
+
+        public int? GearHealBubble
+        {
+            get => GetProperty(PropertyInt.GearHealBubble);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearHealBubble); else SetProperty(PropertyInt.GearHealBubble, value.Value); }
+        }
+
+        public int? GearCompBurn
+        {
+            get => GetProperty(PropertyInt.GearCompBurn);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearCompBurn); else SetProperty(PropertyInt.GearCompBurn, value.Value); }
+        }
+
+        public int? GearPyrealFind
+        {
+            get => GetProperty(PropertyInt.GearPyrealFind);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearPyrealFind); else SetProperty(PropertyInt.GearPyrealFind, value.Value); }
+        }
+
+        public int? GearNullification
+        {
+            get => GetProperty(PropertyInt.GearNullification);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearNullification); else SetProperty(PropertyInt.GearNullification, value.Value); }
+        }
+
+        public int? GearAegisPen
+        {
+            get => GetProperty(PropertyInt.GearAegisPen);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearAegisPen); else SetProperty(PropertyInt.GearAegisPen, value.Value); }
+        }
+
+        public int? GearStamReduction
+        {
+            get => GetProperty(PropertyInt.GearStamReduction);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearStamReduction); else SetProperty(PropertyInt.GearStamReduction, value.Value); }
+        }
+
+        public int? GearHardenedDefense
+        {
+            get => GetProperty(PropertyInt.GearHardenedDefense);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearHardenedDefense); else SetProperty(PropertyInt.GearHardenedDefense, value.Value); }
+        }
+
+        public int? GearReprisal
+        {
+            get => GetProperty(PropertyInt.GearReprisal);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearReprisal); else SetProperty(PropertyInt.GearReprisal, value.Value); }
+        }
+
+        public int? GearElementalist
+        {
+            get => GetProperty(PropertyInt.GearElementalist);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearElementalist); else SetProperty(PropertyInt.GearElementalist, value.Value); }
+        }
+        public int? BaseArmor
+        {
+            get => GetProperty(PropertyInt.BaseArmor);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseArmor); else SetProperty(PropertyInt.BaseArmor, value.Value); }
+        }
+
+        public int? BaseAegis
+        {
+            get => GetProperty(PropertyInt.BaseAegis);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseAegis); else SetProperty(PropertyInt.BaseAegis, value.Value); }
+        }
+
+        public int? BaseMaxMana
+        {
+            get => GetProperty(PropertyInt.BaseMaxMana);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseMaxMana); else SetProperty(PropertyInt.BaseMaxMana, value.Value); }
+        }
+
+        public int? BaseDamage
+        {
+            get => GetProperty(PropertyInt.BaseDamage);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseDamage); else SetProperty(PropertyInt.BaseDamage, value.Value); }
+        }
+
+        public uint? SpellExtracted
+        {
+            get => GetProperty(PropertyDataId.SpellExtracted);
+            set { if (!value.HasValue) RemoveProperty(PropertyDataId.SpellExtracted); else SetProperty(PropertyDataId.SpellExtracted, value.Value); }
+        }
+
+        public double? BaseArmorWarMagicMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorWarMagicMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorWarMagicMod); else SetProperty(PropertyFloat.BaseArmorWarMagicMod, value.Value); }
+        }
+
+        public double? BaseArmorLifeMagicMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorLifeMagicMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorLifeMagicMod); else SetProperty(PropertyFloat.BaseArmorLifeMagicMod, value.Value); }
+        }
+
+        public double? BaseArmorMagicDefMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorMagicDefMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorMagicDefMod); else SetProperty(PropertyFloat.BaseArmorMagicDefMod, value.Value); }
+        }
+
+        public double? BaseArmorPhysicalDefMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorPhysicalDefMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorPhysicalDefMod); else SetProperty(PropertyFloat.BaseArmorPhysicalDefMod, value.Value); }
+        }
+
+        public double? BaseArmorMissileDefMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorMissileDefMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorMissileDefMod); else SetProperty(PropertyFloat.BaseArmorMissileDefMod, value.Value); }
+        }
+
+        public double? BaseArmorDualWieldMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorDualWieldMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorDualWieldMod); else SetProperty(PropertyFloat.BaseArmorDualWieldMod, value.Value); }
+        }
+
+        public double? BaseArmorRunMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorRunMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorRunMod); else SetProperty(PropertyFloat.BaseArmorRunMod, value.Value); }
+        }
+
+        public double? BaseArmorAttackMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorAttackMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorAttackMod); else SetProperty(PropertyFloat.BaseArmorAttackMod, value.Value); }
+        }
+
+        public double? BaseArmorHealthRegenMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorHealthRegenMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorHealthRegenMod); else SetProperty(PropertyFloat.BaseArmorHealthRegenMod, value.Value); }
+        }
+
+        public double? BaseArmorStaminaRegenMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorStaminaRegenMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorStaminaRegenMod); else SetProperty(PropertyFloat.BaseArmorStaminaRegenMod, value.Value); }
+        }
+
+        public double? BaseArmorManaRegenMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorManaRegenMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorManaRegenMod); else SetProperty(PropertyFloat.BaseArmorManaRegenMod, value.Value); }
+        }
+
+        public double? BaseArmorShieldMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorShieldMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorShieldMod); else SetProperty(PropertyFloat.BaseArmorShieldMod, value.Value); }
+        }
+
+        public double? BaseArmorPerceptionMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorPerceptionMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorPerceptionMod); else SetProperty(PropertyFloat.BaseArmorPerceptionMod, value.Value); }
+        }
+
+        public double? BaseArmorThieveryMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorThieveryMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorThieveryMod); else SetProperty(PropertyFloat.BaseArmorThieveryMod, value.Value); }
+        }
+
+        public double? BaseWeaponWarMagicMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseWeaponWarMagicMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseWeaponWarMagicMod); else SetProperty(PropertyFloat.BaseWeaponWarMagicMod, value.Value); }
+        }
+
+        public double? BaseWeaponLifeMagicMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseWeaponLifeMagicMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseWeaponLifeMagicMod); else SetProperty(PropertyFloat.BaseWeaponLifeMagicMod, value.Value); }
+        }
+
+        public double? BaseWeaponRestorationSpellsMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseWeaponRestorationSpellsMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseWeaponRestorationSpellsMod); else SetProperty(PropertyFloat.BaseWeaponRestorationSpellsMod, value.Value); }
+        }
+
+        public double? BaseArmorHealthMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorHealthMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorHealthMod); else SetProperty(PropertyFloat.BaseArmorHealthMod, value.Value); }
+        }
+
+        public double? BaseArmorStaminaMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorStaminaMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorStaminaMod); else SetProperty(PropertyFloat.BaseArmorStaminaMod, value.Value); }
+        }
+
+        public double? BaseArmorManaMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorManaMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorManaMod); else SetProperty(PropertyFloat.BaseArmorManaMod, value.Value); }
+        }
+
+        public double? BaseArmorResourcePenalty
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorResourcePenalty);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorResourcePenalty); else SetProperty(PropertyFloat.BaseArmorResourcePenalty, value.Value); }
+        }
+
+        public double? BaseArmorDeceptionMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorDeceptionMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorDeceptionMod); else SetProperty(PropertyFloat.BaseArmorDeceptionMod, value.Value); }
+        }
+
+        public double? BaseArmorTwohandedCombatMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseArmorTwohandedCombatMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseArmorTwohandedCombatMod); else SetProperty(PropertyFloat.BaseArmorTwohandedCombatMod, value.Value); }
+        }
+
+        public double? BaseWeaponPhysicalDefense
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseWeaponPhysicalDefense);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseWeaponPhysicalDefense); else SetProperty(PropertyFloat.BaseWeaponPhysicalDefense, value.Value); }
+        }
+
+        public double? BaseWeaponMagicalDefense
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseWeaponMagicalDefense);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseWeaponMagicalDefense); else SetProperty(PropertyFloat.BaseWeaponMagicalDefense, value.Value); }
+        }
+
+        public double? BaseWeaponOffense
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseWeaponOffense);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseWeaponOffense); else SetProperty(PropertyFloat.BaseWeaponOffense, value.Value); }
+        }
+
+        public double? BaseDamageMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseDamageMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseDamageMod); else SetProperty(PropertyFloat.BaseDamageMod, value.Value); }
+        }
+
+        public double? BaseElementalDamageMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseElementalDamageMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseElementalDamageMod); else SetProperty(PropertyFloat.BaseElementalDamageMod, value.Value); }
+        }
+
+        public double? BaseManaConversionMod
+        {
+            get => (double?)GetProperty(PropertyFloat.BaseManaConversionMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.BaseManaConversionMod); else SetProperty(PropertyFloat.BaseManaConversionMod, value.Value); }
+        }
+
+        public int? BaseWeaponTime
+        {
+            get => (int?)GetProperty(PropertyInt.BaseWeaponTime);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseWeaponTime); else SetProperty(PropertyInt.BaseWeaponTime, value.Value); }
         }
     }
 }

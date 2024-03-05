@@ -48,8 +48,8 @@ namespace ACE.Server.Managers
                 if (Creature != null)
                     return Creature.Guid.Full;
                 else
-                    return 1; 
-                    //return Fellowship.FellowshipLeaderGuid;
+                    return 1;
+                //return Fellowship.FellowshipLeaderGuid;
             }
         }
 
@@ -175,7 +175,7 @@ namespace ACE.Server.Managers
 
             if (questRegistryWasCreated)
             {
-                quest.LastTimeCompleted = (uint) Time.GetUnixTime();
+                quest.LastTimeCompleted = (uint)Time.GetUnixTime();
                 quest.NumTimesCompleted = 1; // initial add / first solve
 
                 quest.CharacterId = IDtoUseForQuestRegistry;
@@ -227,7 +227,7 @@ namespace ACE.Server.Managers
 
             if (questRegistryWasCreated)
             {
-                quest.LastTimeCompleted = (uint) Time.GetUnixTime();
+                quest.LastTimeCompleted = (uint)Time.GetUnixTime();
                 quest.NumTimesCompleted = numTimesCompleted; // initialize the quest to the given completions
 
                 quest.CharacterId = IDtoUseForQuestRegistry;
@@ -682,6 +682,9 @@ namespace ACE.Server.Managers
             SetQuestCompletions(questFormat, questBits);
         }
 
+        // Get QuestRegistry info for creature. Then for each of the entries, check to see if completions are > 0.
+        // If not, erase quest. If so, convert to the QuestName parameter to string, check for "," and decrement if it contains.
+
         public void DecrementRampQuest()
         {
             var quests = GetQuests();
@@ -702,6 +705,111 @@ namespace ACE.Server.Managers
                     Decrement(questName, 25);
 
             }
+
+        }
+
+        public void HandleReprisalQuest()
+        {
+            var quests = GetQuests();
+
+            if (quests.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var quest in quests)
+            {
+                var questName = quest.QuestName.ToString();
+
+                if (questName.Contains("/Reprisal"))
+                    Erase(questName);
+            }
+        }
+
+        public float HandleProsperity()
+        {
+            var quests = GetQuests();
+
+            if (quests.Count == 0)
+            {
+                return 0f;
+            }
+
+            float totalDamage = 0f;
+            float totalModifiedDamage = 0f;
+
+            foreach (var quest in quests)
+            {
+                var questName = quest.QuestName.ToString();
+
+                if (questName.Contains("Prosperity"))
+                {
+                    string[] prosperity = questName.Split("/");
+
+                    if (float.TryParse(prosperity[3], out var damage))
+                    {
+                        totalDamage += damage;
+
+                        if (float.TryParse(prosperity[2], out var prosperityMod))
+                        {
+                            var modifiedDamage = damage * (prosperityMod / 100);
+                            totalModifiedDamage += modifiedDamage;
+                        }
+                    }
+                }
+            }
+
+            float prosMod = (totalModifiedDamage / totalDamage) / 2;
+
+            return prosMod;
+
+        }
+        public double? HandleMagicFind()
+        {
+            var quests = GetQuests();
+
+            if (quests.Count == 0)
+            {
+                return 0f;
+            }
+
+            float totalDamage = 0f;
+            float totalModifiedDamage = 0f;
+            bool magicFound = false;
+
+            foreach (var quest in quests)
+            {
+                var questName = quest.QuestName.ToString();
+
+                if (questName.Contains("MagicFind"))
+                {
+                    magicFound = true;
+                    string[] magicFind = questName.Split("/");
+
+                    // part 4 of the array is damage, part 3 the magic find rating
+                    // sum raw damage and damage modified by the magic find rating
+
+                    if (float.TryParse(magicFind[3], out var damage))
+                    {
+                        totalDamage += damage;
+
+                        if (float.TryParse(magicFind[2], out var magicFindMod))
+                        {
+                            var modifiedDamage = damage * (magicFindMod / 100);
+                            totalModifiedDamage += modifiedDamage;
+                        }
+                    }
+                }
+            }
+
+            // divide modified total by the total taken altogether to get the proportionate MF rating bonus, add to existing LQM
+            
+            double? updatedQualityMod = (double?)(totalModifiedDamage / totalDamage);
+
+            if (magicFound)
+                return updatedQualityMod;
+            else
+                return 0f;
 
         }
     }

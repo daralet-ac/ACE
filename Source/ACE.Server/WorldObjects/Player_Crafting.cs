@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
@@ -95,7 +96,8 @@ namespace ACE.Server.WorldObjects
             {74, 20988},    // Mahogany
             {75, 20989},    // Oak
             {76, 20990},    // Pine
-            {77, 21080}     // Teak
+            {77, 21080},     // Teak
+
         };
 
         /// <summary>
@@ -149,7 +151,38 @@ namespace ACE.Server.WorldObjects
 
                 if (item.Workmanship == null || item.Retained) continue;
 
-                AddSalvage(salvageBags, item, salvageResults);
+                // random chance of receiving a jewelcrafting gem in salvage, higher based on gem count and tier
+
+                if (item.GemType != null)
+                {
+                    Random random = new Random();
+                    double roll = random.NextDouble();
+                    double basechance = 0.001 * (double)item.GemCount;
+                    double tierModifier = 1.0 / Math.Pow(2, (double)item.Tier);  
+
+                    double gemBonusWithTier = (basechance * tierModifier);
+
+                    if (gemBonusWithTier > roll)
+                    {
+                        if (SalvagedGems.ContainsKey((int)item.GemType))
+                        {
+                            int wcid = SalvagedGems[(int)item.GemType];
+
+                            var wo = WorldObjectFactory.CreateNewWorldObject((uint)wcid);
+                            wo.Tier = item.Tier;
+                            wo.Workmanship = item.Workmanship;
+
+                            //player.Session.Network.EnqueueSend(new GameMessageSystemChat($"While salvaging the weapon, you recover a {wo.Name}.", ChatMessageType.Craft));
+
+                            TryCreateInInventoryWithNetworking(wo);
+                        }
+                    }
+                }
+                // can any salvagable items be stacked?
+                TryConsumeFromInventoryWithNetworking(item);
+            
+
+             AddSalvage(salvageBags, item, salvageResults);
 
                 // can any salvagable items be stacked?
                 TryConsumeFromInventoryWithNetworking(item);
@@ -167,7 +200,53 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        public void AddSalvage(List<WorldObject> salvageBags, WorldObject item, SalvageResults salvageResults)
+
+    public static Dictionary<int, int> SalvagedGems = new Dictionary<int, int>()
+        {
+            {10,  2413},    // Agate
+            {11,  2426},    // Amber
+            {12,  2393},    // Amethyst
+            {13,  2421},    // Aquamarine
+            {14,  2414},    // Azurite
+            {15,  2394},    // Black Garnet
+            {16,  2402},    // Black Opal
+            {17,  2427},    // Bloodstone
+            {18,  2428},    // Carnelian
+            {19,  2429},    // Citrine
+            {20,  2409},    // Diamond
+            {21,  2410},    // Emerald
+            {22,  2403},    // Fire Opal
+            {23,  2422},    // Green Garnet
+            {24,  2395},    // Green Jade
+            {25,  2430},    // Hematite
+            {26,  2404},    // Imperial Topaz
+            {27,  2396},    // Jet
+            {28,  2415},    // Lapis Lazuli
+            {29,  2405},    // Lavender Jade
+            {30,  2416},    // Malachite
+            {31,  2431},    // Moonstone
+            {32,  2432},    // Onyx
+            {33,  2423},    // Opal
+            {34,  2424},    // Peridot
+            {35,  2397},    // Red Garnet
+            {36,  2406},    // Red Jade
+            {37,  2433},    // Rose Quartz
+            {38,  2411},    // Ruby
+            {39,  2412},    // Sapphire
+            {40,  2417},    // Smokey Quartz
+            {41,  2407},    // Sunstone
+            {42,  2418},    // Tiger Eye
+            {43,  2398},    // Tourmaline
+            {44,  2419},    // Turquoise
+            {45,  2399},    // White Jade
+            {46,  2420},    // White Quartz
+            {47,  2408},    // White Sapphire
+            {48,  2400},    // Yellow Garnet
+            {49,  2425},    // Yellow Topaz
+            {50,  2401},    // Zircon
+        };
+
+public void AddSalvage(List<WorldObject> salvageBags, WorldObject item, SalvageResults salvageResults)
         {
             var materialType = (MaterialType)item.MaterialType;
 
@@ -283,7 +362,13 @@ namespace ACE.Server.WorldObjects
             if (salvageItem.ItemType == ItemType.TinkeringMaterial)
                 return salvageItem.Structure.Value;
 
-            var addStructure = 10 + (int)salvageItem.Workmanship;
+            var addStructure = 1;
+            double randomSalvageBonus = ThreadSafeRandom.Next(1, 10);
+            if (randomSalvageBonus <= salvageItem.Workmanship)
+            {
+                addStructure++;
+              // Console.WriteLine("Added bonus unit of salvage.");
+            }
 
             message = salvageResults.GetMessage(salvageItem.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown, GetMaxSkill(TinkeringSkills).Skill);
             message.Amount += (uint)addStructure;
