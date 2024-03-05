@@ -1,5 +1,4 @@
 using System;
-
 using ACE.Common.Extensions;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
@@ -145,7 +144,9 @@ namespace ACE.Server.WorldObjects.Entity
                 total += InitLevel + Ranks;
 
                 if (creature is Player player)
+                {
                     total += GetAugBonus_Base(player);
+                }
 
                 return total;
             }

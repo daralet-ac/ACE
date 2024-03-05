@@ -119,12 +119,21 @@ namespace ACE.Server.WorldObjects
             {
                 KillerId = topDamager.Guid.Full;
 
+                //  Console.WriteLine(topDamager.HotspotOwner);  
+
                 if (topDamager.IsPlayer)
                 {
                     var topDamagerPlayer = topDamager.TryGetAttacker();
                     if (topDamagerPlayer != null)
                         topDamagerPlayer.CreatureKills = (topDamagerPlayer.CreatureKills ?? 0) + 1;
                 }
+
+                if (topDamager.HotspotOwner != null)
+                {
+                    var hotspotOwner = topDamager.TryGetHotspotOwner();
+                    KillerId = hotspotOwner.Guid.Full;
+                }
+
             }
 
             CurrentMotionState = new Motion(MotionStance.NonCombat, MotionCommand.Ready);
@@ -198,6 +207,9 @@ namespace ACE.Server.WorldObjects
 
                 if (playerDamager == null && kvp.Value.PetOwner != null)
                     playerDamager = kvp.Value.TryGetPetOwner();
+
+                if (playerDamager == null && kvp.Value.HotspotOwner != null)
+                    playerDamager = kvp.Value.TryGetHotspotOwner();
 
                 if (playerDamager == null)
                     continue;
@@ -552,6 +564,7 @@ namespace ACE.Server.WorldObjects
 
             // set 'killed by' for looting rights
             var killerName = "misadventure";
+
             if (killer != null)
             {
                 if (!(Generator != null && Generator.Guid == killer.Guid) && Guid != killer.Guid)
@@ -567,6 +580,13 @@ namespace ACE.Server.WorldObjects
                         if (petOwner != null)
                             corpse.KillerId = petOwner.Guid.Full;
                     }
+
+                    if (killer.HotspotOwner != null)
+                    {
+                        var hotspotOwner = killer.TryGetHotspotOwner();
+                        corpse.KillerId = hotspotOwner.Guid.Full;
+                    }
+
                 }
             }
 

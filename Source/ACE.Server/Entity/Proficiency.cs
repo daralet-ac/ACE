@@ -22,7 +22,7 @@ namespace ACE.Server.Entity
             // possible todo: does this only apply to players?
             // ie., can monsters still level up from skill usage, or killing players?
             // it was possible on release, but i think they might have removed that feature?
-
+           
             if (player.IsOlthoiPlayer)
                 return;
 
@@ -47,7 +47,7 @@ namespace ACE.Server.Entity
 
             var difficulty_check = difficulty > last_difficulty;
             var time_check = timeDiff >= FullTime.TotalSeconds;
-
+            
             if (difficulty_check || time_check)
             {
                 // todo: not independent variables?
@@ -105,7 +105,7 @@ namespace ACE.Server.Entity
                 // send PP to player as skill XP, which gets spent from the CP sent
                 if (pp > 0)
                 {
-                    player.HandleActionRaiseSkill(skill.Skill, pp);
+                    player.HandleActionRaiseSkill(skill.Skill, pp, false);
                 }
             }
         }
@@ -118,6 +118,19 @@ namespace ACE.Server.Entity
                 return;
             }
             OnSuccessUse(player, skill, (uint)difficulty);
+        }
+
+        // CRAFTING - Proficiency XP: Gain 10% xp (1% for failure) directly into skill, max cap set at recipe difficulty.
+        public static void OnCraftingSuccessUse(Player player, CreatureSkill skill, uint difficulty, bool success, Skill playerSkill)
+        {
+            var percent = success ? .2 : 0.05;
+            long min = 0;
+            var max = player.GetXPBetweenSkillLevels(skill.AdvancementClass, (int)difficulty, (int)difficulty + 1);
+
+            if (percent <= 0 || !max.HasValue)
+                return;
+
+            player.GrantLevelProportionalSkillXP(playerSkill, percent, min, (long)max);
         }
     }
 }

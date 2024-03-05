@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-
 using ACE.Entity.Enum;
 using ACE.Server.Network.GameMessages.Messages;
 

@@ -3458,11 +3458,11 @@ namespace ACE.Server.WorldObjects
                     }
                 }
                 else if (emoteResult.Category == EmoteCategory.Refuse)
-                {
-                    // Item rejected by npc
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You allow {target.Name} to examine your {item.NameWithMaterial}.", ChatMessageType.Broadcast));
-                    Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.TradeAiRefuseEmote));
+                {    
+                    if (!target.ExamineItemsSilently.HasValue || target.ExamineItemsSilently == false)
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"You allow {target.Name} to examine your {item.NameWithMaterial}.", ChatMessageType.Broadcast));
 
+                    Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full, WeenieError.TradeAiRefuseEmote));
                     target.EmoteManager.ExecuteEmoteSet(emoteResult, this);
                 }
                 else

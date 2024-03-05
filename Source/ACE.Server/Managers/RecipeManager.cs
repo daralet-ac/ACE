@@ -379,11 +379,12 @@ namespace ACE.Server.Managers
                 if (modified.Contains(target.Guid.Full))
                     UpdateObj(player, target);
             }
-
-            if (success && recipe.Skill > 0 && recipe.Difficulty > 0)
+            // regardless of success, grant proficiency xp
+            if (recipe.Skill > 0 && recipe.Difficulty > 0)
             {
                 var skill = player.GetCreatureSkill((Skill)recipe.Skill);
-                Proficiency.OnSuccessUse(player, skill, recipe.Difficulty);
+                var playerSkill = (Skill)recipe.Skill;
+                Proficiency.OnCraftingSuccessUse(player, skill, recipe.Difficulty, success, playerSkill);
             }
         }
 
@@ -670,6 +671,18 @@ namespace ACE.Server.Managers
                     target.ItemTotalXp = target.ItemTotalXp ?? 0;
                     break;
 
+                case 0x39000001:    // Scouring Stone
+                    Salvage.ReverseTinkers(player, target);
+                    break;
+
+                case 0x39000002:    // JewelCarving
+                    Jewel.HandleJewelcarving(player, source, target);
+                    break;
+
+                case 0x39000003:
+                    Jewel.HandleUnsocketing(player, source, target);
+                    break;
+
                 default:
                     _log.Error($"{player.Name}.RecipeManager.Tinkering_ModifyItem({source.Name} ({source.Guid}), {target.Name} ({target.Guid})) - unknown mutation id: {dataId:X8}");
                     return false;
@@ -774,7 +787,7 @@ namespace ACE.Server.Managers
 
         public static bool VerifyRequirements(Recipe recipe, Player player, WorldObject source, WorldObject target)
         {
-            if (player != null)
+           /* if (player != null)
             {
                 uint[] disabledCraftingSkills = { (uint)Skill.ArmorTinkering, (uint)Skill.WeaponTinkering, (uint)Skill.MagicItemTinkering, (uint)Skill.ItemTinkering };
                 if (disabledCraftingSkills.Contains(recipe.Skill))
@@ -783,7 +796,7 @@ namespace ACE.Server.Managers
 
                     return false;
                 }
-            }
+            } */
 
             if (!VerifyUse(player, source, target))
                 return false;
@@ -794,7 +807,7 @@ namespace ACE.Server.Managers
 
             if (!VerifyRequirements(recipe, player, player, RequirementType.Player)) return false;
 
-            if (!RequiresEqualOrGreaterWork(player, source, target)) return false;
+           // if (!RequiresEqualOrGreaterWork(player, source, target)) return false;
 
             return true;
         }
@@ -1564,7 +1577,7 @@ namespace ACE.Server.Managers
         /// <summary>
         /// flag to use c# logic instead of mutate script logic
         /// </summary>
-        private static readonly bool useMutateNative = false;
+        private static readonly bool useMutateNative = true;
 
         public static bool TryMutate(Player player, WorldObject source, WorldObject target, Recipe recipe, uint dataId, HashSet<uint> modified)
         {

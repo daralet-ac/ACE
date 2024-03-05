@@ -43,6 +43,7 @@ namespace ACE.Server.WorldObjects
 
         public bool LastContact = true;
 
+        public Player P_PetOwner;
         public bool IsJumping
         {
             get

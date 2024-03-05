@@ -1,5 +1,4 @@
 using ACE.Common;
-using ACE.DatLoader.Entity;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -12,9 +11,9 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 using Lifestoned.DataModel.Shared;
-using Mono.Cecil;
 using System;
 using System.Numerics;
+using DamageType = ACE.Entity.Enum.DamageType;
 using Position = ACE.Entity.Position;
 
 namespace ACE.Server.WorldObjects
@@ -475,6 +474,7 @@ namespace ACE.Server.WorldObjects
             if (sourcePlayer != null && weapon != null)
                 if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 1)
                     criticalChance += 0.05f;
+
             // Iron Fist Crit Rate Bonus
             if (sourcePlayer != null)
             {
@@ -484,6 +484,19 @@ namespace ACE.Server.WorldObjects
                         criticalChance += 0.25f;
                     else
                         criticalChance += 0.1f;
+                }
+            }
+            // Jewelcrafting Reprisal Bonus - Autocrit
+
+            if (sourcePlayer != null)
+            {
+                if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
+                {
+                    if (sourcePlayer.QuestManager.HasQuest($"{target.Guid}/Reprisal"))
+                    {
+                        criticalChance = 1f;
+                        sourcePlayer.QuestManager.Erase($"{target.Guid}/Reprisal");
+                    }
                 }
             }
 
@@ -501,8 +514,31 @@ namespace ACE.Server.WorldObjects
                 if (!critDefended)
                     criticalHit = true;
 
+                // Jewelcrafting Reprisal-- Chance to resist an incoming critical
+
+                if (criticalHit)
+                {
+                    if (targetPlayer != null && sourceCreature != null)
+                    {
+                        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
+                        {
+                            if ((targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) / 2) >= ThreadSafeRandom.Next(0, 100))
+                            {
+                                targetPlayer.QuestManager.HandleReprisalQuest();
+                                targetPlayer.QuestManager.Stamp($"{sourceCreature.Guid}/Reprisal");
+                                resisted = true;
+                                targetPlayer.Reprisal = true;
+                                PartialEvasion = PartialEvasion.All;
+                                targetPlayer.SendChatMessage(this, $"Reprisal! You resist the spell cast by {sourceCreature.Name}.", ChatMessageType.Magic);
+                                targetPlayer.Session.Network.EnqueueSend(new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell, 1.0f));
+                                return null;
+                            }
+                        }
+                    }
+                }
+
                 // EMPOWERED SCARAB - Crushing
-                if(criticalHit && sourcePlayer != null && Spell.School == MagicSchool.WarMagic)
+                if (criticalHit && sourcePlayer != null && Spell.School == MagicSchool.WarMagic)
                     sourcePlayer.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, null, true);
             }
 
@@ -518,6 +554,17 @@ namespace ACE.Server.WorldObjects
 
             var ignoreAegisMod = Math.Min(aegisRendingMod, aegisPenMod);
 
+            // JEWEL - Tourmaline: Ramping Aegis Pen
+            if (sourcePlayer != null)
+            {
+                if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearAegisPen) > 0)
+                {
+                    var jewelAegisPenMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},AegisPen") / 500;
+                    jewelAegisPenMod *= ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearAegisPen) / 66);
+                    ignoreAegisMod -= jewelAegisPenMod;
+                }
+            }
+
             // SPEC BONUS - War Magic (Orb): +10% aegis penetration (additively)
             if (sourcePlayer != null && weapon != null)
                 if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 0)
@@ -525,11 +572,21 @@ namespace ACE.Server.WorldObjects
 
             var aegisMod = GetAegisMod(target, ignoreAegisMod);
 
-            //Console.WriteLine($"TargetAegis: {target.AegisLevel} AegisRend: {aegisRendingMod} AegisPen: {aegisPenMod} AegisMod: {aegisMod}");
+            //Console.WriteLine($"TargetAegis: {target.AegisLevel} AegisRend: {aegisRendingMod} Nullification: {NullificationMod} AegisMod: {aegisMod}");
 
             // absorb mod
             bool isPVP = sourcePlayer != null && targetPlayer != null;
             var absorbMod = GetAbsorbMod(target, this);
+
+            // JEWEL - Amethyst: Ramping Magic Absorb
+            if (targetPlayer != null)
+            {
+                if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
+                {
+                    var jewelRampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200;
+                    absorbMod -= jewelRampMod * ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66);
+                }
+            } 
 
             //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
             if (isPVP && (target.CombatMode == CombatMode.Melee || target.CombatMode == CombatMode.Missile))
@@ -699,10 +756,72 @@ namespace ACE.Server.WorldObjects
                     resistanceMod *= (float)PropertyManager.GetDouble("void_pvp_modifier").Item;
                 }
 
-                var damageBeforeMitigation = baseDamage * criticalDamageMod * attributeMod * elementalDamageMod * slayerMod * combatFocusDamageMod;
 
-                finalDamage = damageBeforeMitigation * absorbMod * aegisMod * resistanceMod * resistedMod * specDefenseMod;
-                
+                // ----- Jewelcrafting Protection -----
+
+                float jewelcraftingProtection = 1f;
+
+                if (targetPlayer != null)
+                {   // JEWEL - Onyx: Protection vs. Slash/Pierce/Bludgeon
+                    if (Spell.DamageType == DamageType.Slash || Spell.DamageType == DamageType.Pierce || Spell.DamageType == DamageType.Bludgeon)
+                    {
+                        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) > 0)
+                            jewelcraftingProtection = (1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) / 100));
+                    }
+                    // JEWEL - Zircon: Protection vs. Acid/Fire/Cold/Electric
+                    if (Spell.DamageType == DamageType.Acid || Spell.DamageType == DamageType.Fire || Spell.DamageType == DamageType.Cold || Spell.DamageType == DamageType.Electric)
+                    {
+                        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) > 0)
+                            jewelcraftingProtection = (1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) / 100));
+                    }
+                }
+                var jewelElementalist = 1f;
+                var jewelElemental = 1f;
+                var jewelLastStand = 1f;
+                var jewelSelfHarm = 1f;
+
+                if (sourcePlayer != null)
+                {   // JEWEL - Green Garnet: Ramping War Magic Damage
+                    if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) > 0)
+                    {
+                        var jewelRampMod = (float)sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") / 500;
+                        jewelElementalist += jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) / 66);
+                    }
+                    // JEWEL - White Sapphire: Ramping Bludgeon Crit Damage Bonus
+                    if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
+                    {
+                        if (Spell.DamageType == DamageType.Bludgeon)
+                        {
+                            var jewelRampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Bludgeon") / 500;
+                            critDamageBonus *= jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) / 50);
+                        }
+                        
+                    }
+                    // JEWEL - Black Garnet - Ramping Piercing Resistance Penetration
+                    if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0)
+                    {
+                        if (Spell.DamageType == DamageType.Pierce)
+                        {
+                            var jewelRampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Pierce") / 500;
+                            resistanceMod += jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) / 66);
+                        }
+                    }
+                    // JEWEL - Hematite: Deal bonus damage but take the same amount
+                    if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
+                        jewelSelfHarm += (float)(sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
+
+                    // JEWEL - Aquamarine, Emerald, Jet, Red Garnet: Bonus elemental damage
+                    jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
+
+                    // JEWEL - Ruby: Bonus damage below 50% HP, reduced damage above
+                    if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
+                        jewelLastStand += Jewel.GetJewelLastStand(sourcePlayer, target);
+                }
+                // ----- FINAL CALCULATION ------------
+                var damageBeforeMitigation = baseDamage * criticalDamageMod * attributeMod * elementalDamageMod * slayerMod * combatFocusDamageMod * jewelElementalist * jewelElemental * jewelSelfHarm * jewelLastStand;
+
+                finalDamage = damageBeforeMitigation * absorbMod * aegisMod * resistanceMod * resistedMod * specDefenseMod * jewelcraftingProtection;
+
                 if (sourcePlayer != null)
                 {
                     //Console.WriteLine($"\n{sourcePlayer.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
@@ -719,6 +838,7 @@ namespace ACE.Server.WorldObjects
                     //    $" -FinalBeforeRatings: {finalDamage}");
                 }
             }
+
 
             // show debug info
             if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
@@ -929,7 +1049,6 @@ namespace ACE.Server.WorldObjects
                     damageRatingMod = Creature.GetPositiveRatingMod(sourceCreature?.GetCritDamageRating() ?? 0);
                     damageResistRatingMod = Creature.GetNegativeRatingMod(target.GetCritDamageResistRating());
                 }
-
                 if (pkBattle)
                 {
                     pkDamageRatingMod = Creature.GetPositiveRatingMod(sourceCreature?.GetPKDamageRating() ?? 0);
@@ -1056,6 +1175,27 @@ namespace ACE.Server.WorldObjects
                 target.IncreaseTargetThreatLevel(sourcePlayer, (int)(percentOfTargetMaxHealth * 1000));
             }
 
+            // Jewelcrafting Post-Damage Handling
+
+            if (sourcePlayer != null)
+            {
+                var projectileScaler = 1;
+                if (SpellType == ProjectileSpellType.Streak)
+                    projectileScaler = 5;
+                if (SpellType == ProjectileSpellType.Volley || SpellType == ProjectileSpellType.Blast)
+                    projectileScaler = 3;
+                if (SpellType == ProjectileSpellType.Ring || SpellType == ProjectileSpellType.Wall)
+                    projectileScaler = 6;
+                Jewel.HandleCasterAttackerBonuses(sourcePlayer, target, SpellType, Spell.DamageType, Spell.Level, projectileScaler);
+                Jewel.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, Spell.DamageType);
+            }
+
+            if (targetPlayer != null)
+            {
+                Jewel.HandleCasterDefenderBonuses(targetPlayer, sourceCreature, SpellType);
+                Jewel.HandlePlayerDefenderBonuses(targetPlayer, target, damage);
+            }
+
             // show debug info
             if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
             {
@@ -1134,7 +1274,9 @@ namespace ACE.Server.WorldObjects
                 target.OnDeath(lastDamager, Spell.DamageType, critical);
                 target.Die();
             }
+
         }
+
 
         /// <summary>
         /// Sets the physics state for a launched projectile

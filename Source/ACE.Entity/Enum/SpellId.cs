@@ -6392,6 +6392,12 @@ namespace ACE.Entity.Enum
         ExposeWeakness                      = 0x8000 | 10053,   // 15 second cooldown
         ActivatedCombatAbilities            = 0x8000 | 10054,   // 120 second shared cooldown
         ManaBarrier                         = 0x8000 | 10055,   // 60 second cooldown, triggered only on breaking/deactivation of shield
+        HealingFood                         = 0x8000 | 10056,
+        StaminaFood                         = 0x8000 | 10057,
+        ManaFood                            = 0x8000 | 10058,
+        HealingPotion                       = 0x8000 | 10059,
+        StaminaPotion                       = 0x8000 | 10060,
+        ManaPotion                          = 0x8000 | 10061,
 
     }
 

@@ -37,6 +37,7 @@ namespace ACE.Server.Entity
         /// <summary>
         /// Returns the DamageHistoryInfo for the last damager
         /// </summary>
+
         public DamageHistoryInfo LastDamager
         {
             get
@@ -74,6 +75,7 @@ namespace ACE.Server.Entity
             Creature = creature;
         }
 
+ 
         /// <summary>
         /// Logs a damaging event for this player or creature
         /// </summary>
@@ -91,8 +93,9 @@ namespace ACE.Server.Entity
             AddInternal(attacker, amount);
 
             Creature.OnHealthUpdate();
-        }
 
+        }
+        
         /// <summary>
         /// Internally increments the total damage table
         /// </summary>
@@ -260,5 +263,6 @@ namespace ACE.Server.Entity
 
             return table;
         }
+
     }
 }

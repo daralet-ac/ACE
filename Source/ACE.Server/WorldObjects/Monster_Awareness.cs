@@ -173,6 +173,16 @@ namespace ACE.Server.WorldObjects
                     modifier += 0.2f;
             }
 
+            // JEWEL - Agate: Increase Threat Gain
+            if (targetPlayer != null && targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatGain) > 0)
+                modifier += (float)(targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatGain)) / 10;
+            // JEWEL - Smokey Quartz: Reduce Threat Gain
+            if (targetPlayer != null && targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatReduction) > 0)
+                modifier -= (float)(targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatReduction)) / 10;
+
+            if (modifier <= 0.1f)
+                modifier = 0.1f;
+
             amount = (int)(amount * modifier);
             amount = amount < 2 ? 2 : amount;
 

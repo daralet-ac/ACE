@@ -78,5 +78,8 @@ namespace ACE.Entity.Enum
         CombatFocus,
         ArmorPatch,
         TailoringKit,
+        Jewel,
+        Salvage,
+        SpellTransference,
     }
 }
