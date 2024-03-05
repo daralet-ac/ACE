@@ -379,11 +379,12 @@ namespace ACE.Server.Managers
                 if (modified.Contains(target.Guid.Full))
                     UpdateObj(player, target);
             }
-
-            if (success && recipe.Skill > 0 && recipe.Difficulty > 0)
+            // regardless of success, grant proficiency xp
+            if (recipe.Skill > 0 && recipe.Difficulty > 0)
             {
                 var skill = player.GetCreatureSkill((Skill)recipe.Skill);
-                Proficiency.OnSuccessUse(player, skill, recipe.Difficulty);
+                var playerSkill = (Skill)recipe.Skill;
+                Proficiency.OnCraftingSuccessUse(player, skill, recipe.Difficulty, success, playerSkill);
             }
         }
 

@@ -182,6 +182,8 @@ namespace ACE.Entity.Enum.Properties
         UseLegacyThreatSystem            = 139,
         OverrideVisualRange              = 140,
         AffectsOnlyAis                   = 141,
+        ExamineItemsSilently             = 142, // allows for no/custom message upon NPC Emote Refuse examination of items
+        TakeItemsSilently                = 143, // allows for no/custom messages for NPC TakeItems emote
 
         /* custom */
         [ServerOnly]

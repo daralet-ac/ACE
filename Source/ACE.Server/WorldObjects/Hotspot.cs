@@ -10,7 +10,9 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
+using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects
 {
@@ -175,7 +177,7 @@ namespace ACE.Server.WorldObjects
                 Activate(creature);
             }
         }
-
+         
         private void Activate(Creature creature)
         {
             if (!IsHot) return;
@@ -198,6 +200,30 @@ namespace ACE.Server.WorldObjects
             if (player != null)
                 player.RechargeEmpoweredScarabs(this);
 
+            if (player != null && this.Tier != null)
+            {   
+                var forwardCommand = player.CurrentMovementData.MovementType == MovementType.Invalid && player.CurrentMovementData.Invalid != null ? player.CurrentMovementData.Invalid.State.ForwardCommand : MotionCommand.Invalid;
+                if (forwardCommand == MotionCommand.Sitting || forwardCommand == MotionCommand.Sleeping || forwardCommand == MotionCommand.Crouch)
+                {
+
+                    if (player.CampfireTimer == 0)
+                        player.CampfireTimer = Time.GetUnixTime() + 10;
+
+                    if (player.CampfireTimer < Time.GetUnixTime())
+                    {
+                      
+                        var spell = new ACE.Server.Entity.Spell(SpellId.SprintOther1);  // placeholder
+                        player.CreateEnchantment(player, this, null, spell);
+                        player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Gazing into the fire calms your soul.", ChatMessageType.Magic));
+                        player.CampfireTimer = 0;
+                    }
+                    
+                        
+                }
+                else
+                    player.CampfireTimer = 0;
+                    
+            }
             switch (DamageType)
             {
                 default:
