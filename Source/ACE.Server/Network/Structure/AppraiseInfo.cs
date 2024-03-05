@@ -10,8 +10,6 @@ using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.WorldObjects;
-using ACE.Server.WorldObjects.Managers;
-using Org.BouncyCastle.Asn1.X509;
 
 namespace ACE.Server.Network.Structure
 {
@@ -112,7 +110,7 @@ namespace ACE.Server.Network.Structure
             }
 
             // salvage bag cleanup
-            if (wo.WeenieType == WeenieType.Tinkering)
+            if (wo.WeenieType == WeenieType.Salvage)
             {
                 if (wo.GetProperty(PropertyInt.Structure).HasValue)
                     PropertiesInt.Remove(PropertyInt.Structure);
@@ -541,7 +539,7 @@ namespace ACE.Server.Network.Structure
 
                 string prependMaterial = RecipeManager.GetMaterialName((MaterialType)wo.MaterialType);
 
-                string prependWorkmanship = Tinkering.WorkmanshipNames[(int)wo.ItemWorkmanship - 1];
+                string prependWorkmanship = Salvage.WorkmanshipNames[(int)wo.ItemWorkmanship - 1];
 
                 string modifiedGemType = RecipeManager.GetMaterialName(wo.GemType ?? MaterialType.Unknown);
 
@@ -629,7 +627,7 @@ namespace ACE.Server.Network.Structure
             }
 
 
-            // ----------------------- USE FIELD ------------------------
+            // USE 
 
             string extraPropertiesText;
             if (PropertiesString.TryGetValue(PropertyString.Use, out var useText) && useText.Length > 0)
@@ -1134,20 +1132,20 @@ namespace ACE.Server.Network.Structure
 
                 hasExtraPropertiesText = true;
 
-                if (wo.WeenieType == WeenieType.Jewelcrafting)
+                if (wo.WeenieType == WeenieType.Jewel)
                 {
-                    extraPropertiesText += Jewelcrafting.GetJewelDescription(jewelSocket1);
+                    extraPropertiesText += Jewel.GetJewelDescription(jewelSocket1);
                     extraPropertiesText += $"Once socketed into an item, this jewel becomes permanently attuned to your character. Items with contained jewels become attuned and will remain so until all jewels are removed.\n\nJewels may be unsocketed using an Intricate Carving Tool. There is no skill check or destruction chance.";
 
                 }
-                if (wo.WeenieType != WeenieType.Jewelcrafting)
+                if (wo.WeenieType != WeenieType.Jewel)
                 {
                     if (jewelSocket1.StartsWith("Empty"))
                         extraPropertiesText += "\n\t  Empty Jewel Socket\n";
 
                     else
                     {
-                        extraPropertiesText += Jewelcrafting.GetSocketDescription(jewelSocket1);
+                        extraPropertiesText += Jewel.GetSocketDescription(jewelSocket1);
                     }
                 }
             }
@@ -1158,14 +1156,14 @@ namespace ACE.Server.Network.Structure
 
                 hasExtraPropertiesText = true;
 
-                if (wo.WeenieType != WeenieType.Jewelcrafting)
+                if (wo.WeenieType != WeenieType.Jewel)
                 {
                     if (jewelSocket2.StartsWith("Empty"))
                         extraPropertiesText += "\n\t  Empty Jewel Socket\n";
 
                     else
                     {
-                        extraPropertiesText += Jewelcrafting.GetSocketDescription(jewelSocket2);
+                        extraPropertiesText += Jewel.GetSocketDescription(jewelSocket2);
                     }
                 }
             }
@@ -1174,7 +1172,7 @@ namespace ACE.Server.Network.Structure
 
             if (PropertiesInt.TryGetValue(PropertyInt.Structure, out var structure) && structure >= 0)
             {
-                if (wo.WeenieType == WeenieType.Tinkering)
+                if (wo.WeenieType == WeenieType.Salvage)
                 {
                     extraPropertiesText += $"\nThis bag contains {structure} units of salvage.\n";
                     hasExtraPropertiesText = true;
@@ -1212,7 +1210,7 @@ namespace ACE.Server.Network.Structure
             // Max Level
             if (PropertiesInt.TryGetValue(PropertyInt.MaxStructure, out var maxStructure) && maxStructure > 0)
             {
-                if (wo.WeenieType != WeenieType.Tinkering)
+                if (wo.WeenieType != WeenieType.Salvage)
                     extraPropertiesText += $"Max Number of Uses: {maxStructure}\n";
 
                 hasExtraPropertiesText = true;

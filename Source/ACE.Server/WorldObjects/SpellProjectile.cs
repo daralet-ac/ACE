@@ -1,5 +1,4 @@
 using ACE.Common;
-using ACE.DatLoader.Entity;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -12,7 +11,6 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 using Lifestoned.DataModel.Shared;
-using Mono.Cecil;
 using System;
 using System.Numerics;
 using DamageType = ACE.Entity.Enum.DamageType;
@@ -813,11 +811,11 @@ namespace ACE.Server.WorldObjects
                         jewelSelfHarm += (float)(sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
 
                     // JEWEL - Aquamarine, Emerald, Jet, Red Garnet: Bonus elemental damage
-                    jewelElemental = Jewelcrafting.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
+                    jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
 
                     // JEWEL - Ruby: Bonus damage below 50% HP, reduced damage above
                     if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
-                        jewelLastStand += Jewelcrafting.GetJewelLastStand(sourcePlayer, target);
+                        jewelLastStand += Jewel.GetJewelLastStand(sourcePlayer, target);
                 }
                 // ----- FINAL CALCULATION ------------
                 var damageBeforeMitigation = baseDamage * criticalDamageMod * attributeMod * elementalDamageMod * slayerMod * combatFocusDamageMod * jewelElementalist * jewelElemental * jewelSelfHarm * jewelLastStand;
@@ -1188,14 +1186,14 @@ namespace ACE.Server.WorldObjects
                     projectileScaler = 3;
                 if (SpellType == ProjectileSpellType.Ring || SpellType == ProjectileSpellType.Wall)
                     projectileScaler = 6;
-                Jewelcrafting.HandleCasterAttackerBonuses(sourcePlayer, target, SpellType, Spell.DamageType, Spell.Level, projectileScaler);
-                Jewelcrafting.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, Spell.DamageType);
+                Jewel.HandleCasterAttackerBonuses(sourcePlayer, target, SpellType, Spell.DamageType, Spell.Level, projectileScaler);
+                Jewel.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, Spell.DamageType);
             }
 
             if (targetPlayer != null)
             {
-                Jewelcrafting.HandleCasterDefenderBonuses(targetPlayer, sourceCreature, SpellType);
-                Jewelcrafting.HandlePlayerDefenderBonuses(targetPlayer, target, damage);
+                Jewel.HandleCasterDefenderBonuses(targetPlayer, sourceCreature, SpellType);
+                Jewel.HandlePlayerDefenderBonuses(targetPlayer, target, damage);
             }
 
             // show debug info

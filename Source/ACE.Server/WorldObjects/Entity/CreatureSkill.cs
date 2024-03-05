@@ -1,9 +1,7 @@
 using System;
-
 using ACE.Common.Extensions;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 
@@ -148,7 +146,6 @@ namespace ACE.Server.WorldObjects.Entity
                 if (creature is Player player)
                 {
                     total += GetAugBonus_Base(player);
-                    total += GetJewelcraftingBonus_Base(player);
                 }
 
                 return total;

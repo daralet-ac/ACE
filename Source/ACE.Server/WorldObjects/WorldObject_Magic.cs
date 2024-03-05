@@ -24,8 +24,6 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Extensions;
 using ACE.Server.WorldObjects.Managers;
-using ACE.Server.Factories.Tables;
-using Org.BouncyCastle.Asn1.X509;
 using Time = ACE.Common.Time;
 
 namespace ACE.Server.WorldObjects

@@ -1,28 +1,17 @@
 using ACE.Common;
-using ACE.Common.Extensions;
-using ACE.Database;
 using ACE.Entity;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Tables;
-using ACE.Server.Factories.Tables.Spells;
 using ACE.Server.Managers;
-using ACE.Server.Mods;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.WorldObjects;
-using Lifestoned.DataModel.Shared;
-using Microsoft.Extensions.Logging.Abstractions;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using ItemType = ACE.Entity.Enum.ItemType;
 using MotionCommand = ACE.Entity.Enum.MotionCommand;
 using SpellId = ACE.Entity.Enum.SpellId;
@@ -57,8 +46,6 @@ namespace ACE.Server.WorldObjects
                 player.EnqueueBroadcast(new GameMessageSystemChat($"{player.Name} successfully transfers {spellName} to the {target.NameWithMaterial}.", ChatMessageType.Craft), 8f, ChatMessageType.Craft);
             else
                 player.EnqueueBroadcast(new GameMessageSystemChat($"{player.Name} fails to transfer {spellName} to the {target.NameWithMaterial}. The target is destroyed.", ChatMessageType.Craft), 8f, ChatMessageType.Craft);
-
-
         }
 
         public static void BroadcastSpellExtraction(Player player, string spellName, WorldObject target, double chance, bool success)
@@ -205,32 +192,34 @@ namespace ACE.Server.WorldObjects
                         pearl.SpellExtracted = (uint?)spellToExtractId;
 
                         var itemType = "";
-                        if (target.ItemType == ACE.Entity.Enum.ItemType.Jewelry)
+                        if (target.ItemType == ItemType.Jewelry)
                         {
                             itemType = "a piece of jewelry";
                         }
-                        if (target.ItemType == ACE.Entity.Enum.ItemType.Armor)
+                        if (target.ItemType == ItemType.Armor)
                         {
                             itemType = "a piece of armor";
                         }
-                        if (target.ItemType == ACE.Entity.Enum.ItemType.MissileWeapon || target.ItemType == ACE.Entity.Enum.ItemType.MeleeWeapon)
+                        if (target.ItemType == ItemType.MissileWeapon || target.ItemType == ItemType.MeleeWeapon)
                         {
                             itemType = "a missile or melee weapon";
                         }
-                        if (target.ItemType == ACE.Entity.Enum.ItemType.Caster)
+                        if (target.ItemType == ItemType.Caster)
                         {
                             itemType = "a magic caster";
                         }
-                        if (target.ItemType == ACE.Entity.Enum.ItemType.Clothing)
+                        if (target.ItemType == ItemType.Clothing)
                         {
                             itemType = "a piece of clothing";
                         }
 
                         player.TryConsumeFromInventoryWithNetworking(source, amountToAdd);
-                        pearl.LongDesc = $"This pearl contains the spell {spell.Name}.\n\nIt may only be applied to {itemType} of Loot Tier {target.Tier - 1} or greater.\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character.\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
+
+                        var wieldReq = LootGenerationFactory.GetWieldDifficultyPerTier(pearl.Tier ?? 1);
+                        pearl.LongDesc = $"This pearl contains the spell {spell.Name}.\n\nIt may only be applied to {itemType} of Wield Requirement of {wieldReq} or greater.\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character.\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
                         pearl.TinkerLog = $"{target.ItemType}";
-                        pearl.Tier = target.Tier - 1;
-                        pearl.UiEffects = (ACE.Entity.Enum.UiEffects?)8;
+                        pearl.Tier = target.Tier;
+                        pearl.UiEffects = ACE.Entity.Enum.UiEffects.BoostMana;
                         player.EnqueueBroadcast(new GameMessageUpdateObject(source));
                         player.PlayParticleEffect(PlayScript.EnchantUpBlue, player.Guid);
                         
@@ -284,7 +273,7 @@ namespace ACE.Server.WorldObjects
 
                 if (target.Tier < source.Tier)
                 {
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {source.Name} contains a spell too powerful to transfer to the Loot Tier {target.Tier} {target.NameWithMaterial}.", ChatMessageType.Craft));
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {target.NameWithMaterial} is not powerful enough to contain the spell.", ChatMessageType.Craft));
                     player.SendUseDoneEvent();
                     return;
                 }
@@ -319,7 +308,7 @@ namespace ACE.Server.WorldObjects
                 if (validType)
                 {
                     var spellToAddId = (uint)source.SpellExtracted;
-                    var spellToAddlevel1Id = SpellLevelProgression.GetLevel1SpellId((ACE.Entity.Enum.SpellId)spellToAddId);
+                    var spellToAddlevel1Id = SpellLevelProgression.GetLevel1SpellId((SpellId)spellToAddId);
                     Spell spellToAdd = new Spell(spellToAddId);
 
                     var isProc = false;
@@ -327,7 +316,7 @@ namespace ACE.Server.WorldObjects
                     {
                         isProc = true;
 
-                        if (target.ItemType != ACE.Entity.Enum.ItemType.MeleeWeapon && target.ItemType != ACE.Entity.Enum.ItemType.MissileWeapon)
+                        if (target.ItemType != ItemType.MeleeWeapon && target.ItemType != ItemType.MissileWeapon)
                         {
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {target.NameWithMaterial} cannot contain {spellToAdd.Name}.", ChatMessageType.Craft));
                             player.SendUseDoneEvent();

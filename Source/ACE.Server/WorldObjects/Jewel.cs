@@ -1,44 +1,26 @@
-using ACE.Common;
-using ACE.DatLoader.Entity;
 using ACE.Entity;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
-using ACE.Server.Factories.Entity;
-using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
-using Google.Protobuf.WellKnownTypes;
-using Lifestoned.DataModel.Shared;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
-using Mono.Cecil;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Pqc.Crypto.Utilities;
 using Serilog;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.Numerics;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 using DamageType = ACE.Entity.Enum.DamageType;
 using MotionCommand = ACE.Entity.Enum.MotionCommand;
 
 namespace ACE.Server.WorldObjects
 {
-    partial class Jewelcrafting : WorldObject
+    partial class Jewel : WorldObject
     { 
-        private static readonly ILogger _log = Log.ForContext(typeof(Jewelcrafting));
+        private static readonly ILogger _log = Log.ForContext(typeof(Jewel));
 
         /// <summary>
         /// A new biota be created taking all of its values from weenie.
         /// </summary>
-        public Jewelcrafting(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
+        public Jewel(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
         {
             SetEphemeralValues();
         }
@@ -46,7 +28,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Restore a WorldObject from the database.
         /// </summary>
-        public Jewelcrafting(Biota biota) : base(biota)
+        public Jewel(Biota biota) : base(biota)
         {
             SetEphemeralValues();
         }

@@ -672,9 +672,9 @@ namespace ACE.Server.Entity
                     jewelSelfHarm += (float)(playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
                 // JEWEL - Ruby: Bonus damage below 50% HP, reduced damage above
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
-                    jewelLastStand += Jewelcrafting.GetJewelLastStand(playerAttacker, defender);
+                    jewelLastStand += Jewel.GetJewelLastStand(playerAttacker, defender);
                 // JEWEL - Aquamarine, Emerald, Jet, Red Garnet: Bonus elemental damage
-                jewelElemental = Jewelcrafting.HandleElementalBonuses(playerAttacker, DamageType);
+                jewelElemental = Jewel.HandleElementalBonuses(playerAttacker, DamageType);
             }
 
             // ---- FINAL CALCULATIONS ----
@@ -688,14 +688,14 @@ namespace ACE.Server.Entity
             // --- JEWELCRAFTING POST-DAMAGE STAMPS / PROCS / BONUSES
             if (playerAttacker != null)
             {
-                Jewelcrafting.HandlePlayerAttackerBonuses(playerAttacker, defender, Damage, DamageType);
-                Jewelcrafting.HandleMeleeAttackerBonuses(playerAttacker, defender, Damage, damageSource, DamageType);
+                Jewel.HandlePlayerAttackerBonuses(playerAttacker, defender, Damage, DamageType);
+                Jewel.HandleMeleeAttackerBonuses(playerAttacker, defender, Damage, damageSource, DamageType);
             }
 
             if (playerDefender != null)
             {
-                Jewelcrafting.HandleMeleeDefenderBonuses(playerDefender, attacker, Damage);
-                Jewelcrafting.HandlePlayerDefenderBonuses(playerDefender, attacker, Damage);
+                Jewel.HandleMeleeDefenderBonuses(playerDefender, attacker, Damage);
+                Jewel.HandlePlayerDefenderBonuses(playerDefender, attacker, Damage);
             }
 
             // ---- OPTIONAL GLOBAL MULTIPLIERS FOR PLAYERS or MONSTERS ----

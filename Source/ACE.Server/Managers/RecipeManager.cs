@@ -671,15 +671,15 @@ namespace ACE.Server.Managers
                     break;
 
                 case 0x39000001:    // Scouring Stone
-                    Tinkering.ReverseTinkers(player, target);
+                    Salvage.ReverseTinkers(player, target);
                     break;
 
                 case 0x39000002:    // JewelCarving
-                    Jewelcrafting.HandleJewelcarving(player, source, target);
+                    Jewel.HandleJewelcarving(player, source, target);
                     break;
 
                 case 0x39000003:
-                    Jewelcrafting.HandleUnsocketing(player, source, target);
+                    Jewel.HandleUnsocketing(player, source, target);
                     break;
 
                 default:

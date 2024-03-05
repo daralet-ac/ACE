@@ -4,10 +4,7 @@ using System.Linq;
 
 using ACE.Entity;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects;
-using Org.BouncyCastle.Crypto.Generators;
-using Serilog;
 
 namespace ACE.Server.Entity
 {

@@ -8,10 +8,7 @@ using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
-using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
-using Mono.Cecil;
-using Org.BouncyCastle.Asn1.X509;
 
 namespace ACE.Server.WorldObjects
 {

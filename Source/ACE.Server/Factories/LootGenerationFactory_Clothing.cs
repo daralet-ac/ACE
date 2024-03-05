@@ -5,14 +5,12 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
-using Org.BouncyCastle.Asn1.X509;
 using WeenieClassName = ACE.Entity.Enum.WeenieClassName;
 
 namespace ACE.Server.Factories
@@ -1272,9 +1270,9 @@ namespace ACE.Server.Factories
             }
         }
 
-        private static int GetWieldDifficultyPerTier(int armorTier)
+        public static int GetWieldDifficultyPerTier(int tier)
         {
-            switch (armorTier)
+            switch (tier)
             {
                 case 1:
                     return 50;

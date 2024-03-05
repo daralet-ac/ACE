@@ -6,23 +6,21 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
-using Google.Protobuf.WellKnownTypes;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace ACE.Server.WorldObjects
 {
-    public class Tinkering : WorldObject
+    public class Salvage : WorldObject
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(Tinkering));
+        private static readonly ILogger _log = Log.ForContext(typeof(Salvage));
 
         /// <summary>
         /// A new biota be created taking all of its values from weenie.
         /// </summary>
-        public Tinkering(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
+        public Salvage(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
         {
             SetEphemeralValues();
         }
@@ -30,7 +28,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Restore a WorldObject from the database.
         /// </summary>
-        public Tinkering(Biota biota) : base(biota)
+        public Salvage(Biota biota) : base(biota)
         {
             SetEphemeralValues();
         }
@@ -209,8 +207,6 @@ namespace ACE.Server.WorldObjects
 
             var attemptMod = TinkeringDifficulty[tinkeredCount];
 
-            double successChance;
-
             var skill = player.GetCreatureSkill(tinkeringSkill);
             
             var salvageMod = 10.0f;
@@ -221,7 +217,7 @@ namespace ACE.Server.WorldObjects
 
             var difficulty = (int)Math.Floor(((salvageMod * 5.0f) + (itemWorkmanship * salvageMod * 2.0f) - (sourceWorkmanship * workmanshipMod * salvageMod / 5.0f)) * attemptMod);
 
-            successChance = SkillCheck.GetSkillChance((int)skill.Current, difficulty);
+            var successChance = SkillCheck.GetSkillChance((int)skill.Current, difficulty);
 
             if (ImbueSalvage.Contains((MaterialType)source.MaterialType))
             {
@@ -1117,7 +1113,7 @@ namespace ACE.Server.WorldObjects
         ACE.Entity.Enum.MaterialType.WhiteSapphire
     };
 
-        public static Dictionary<ACE.Entity.Enum.MaterialType?, Skill> TinkeringTarget = new Dictionary<ACE.Entity.Enum.MaterialType?, Skill>
+        public static Dictionary<MaterialType?, Skill> TinkeringTarget = new Dictionary<MaterialType?, Skill>
         {
             // Spellcrafting
 

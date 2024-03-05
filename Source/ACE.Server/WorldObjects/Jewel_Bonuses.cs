@@ -1,42 +1,17 @@
 using ACE.Common;
-using ACE.DatLoader.Entity;
-using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
-using ACE.Server.Factories;
-using ACE.Server.Factories.Entity;
-using ACE.Server.Factories.Tables;
-using ACE.Server.Managers;
-using ACE.Server.Network.GameMessages.Messages;
-using Google.Protobuf.WellKnownTypes;
-using Lifestoned.DataModel.Shared;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
-using Microsoft.VisualBasic;
-using Mono.Cecil;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Pqc.Crypto.Utilities;
-using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.Drawing.Drawing2D;
-using System.Numerics;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using static Org.BouncyCastle.Asn1.Cmp.Challenge;
 using AttackType = ACE.Entity.Enum.AttackType;
 using DamageType = ACE.Entity.Enum.DamageType;
-using MotionCommand = ACE.Entity.Enum.MotionCommand;
 using WeaponType = ACE.Entity.Enum.WeaponType;
 
 
 namespace ACE.Server.WorldObjects
 {
-    partial class Jewelcrafting : WorldObject
+    partial class Jewel : WorldObject
     {
         // Caster and Physical Overlapping Bonuses
         public static void HandlePlayerAttackerBonuses(Player playerAttacker, Creature defender, float damage, ACE.Entity.Enum.DamageType damageType)

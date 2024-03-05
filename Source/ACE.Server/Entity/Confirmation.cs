@@ -133,12 +133,12 @@ namespace ACE.Server.Entity
 
             if (source.WeenieType == WeenieType.SpellTransference)
                 SpellTransference.UseObjectOnTarget(player, source, target, true);
-            else if (source.WeenieType == WeenieType.Jewelcrafting)
-                Jewelcrafting.UseObjectOnTarget(player, source, target, true);
+            else if (source.WeenieType == WeenieType.Jewel)
+                Jewel.UseObjectOnTarget(player, source, target, true);
             else if (source.WeenieType == WeenieType.ArmorPatch)
                 ArmorPatch.UseObjectOnTarget(player, source, target, true);
-            else if (source.WeenieType == WeenieType.Tinkering)
-                Tinkering.UseObjectOnTarget(player, source, target, true);
+            else if (source.WeenieType == WeenieType.Salvage)
+                Salvage.UseObjectOnTarget(player, source, target, true);
             else
                 RecipeManager.UseObjectOnTarget(player, source, target, true);
 
