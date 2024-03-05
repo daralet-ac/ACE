@@ -77,5 +77,8 @@ namespace ACE.Entity.Enum
         EmpoweredScarab,
         CombatFocus,
         ArmorPatch,
+        Jewel,
+        Salvage,
+        SpellTransference,
     }
 }

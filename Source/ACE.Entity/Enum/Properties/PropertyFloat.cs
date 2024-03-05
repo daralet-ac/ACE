@@ -272,6 +272,37 @@ namespace ACE.Entity.Enum.Properties
         ArmorDeceptionMod              = 20022,
         ArmorTwohandedCombatMod        = 20023,
 
+        BaseArmorWarMagicMod           = 20024,
+        BaseArmorLifeMagicMod          = 20025,
+        BaseArmorMagicDefMod           = 20026,
+        BaseArmorPhysicalDefMod        = 20027,
+        BaseArmorMissileDefMod         = 20028,
+        BaseArmorDualWieldMod          = 20029,
+        BaseArmorRunMod                = 20030,
+        BaseArmorAttackMod             = 20031,
+        BaseArmorHealthRegenMod        = 20032,
+        BaseArmorStaminaRegenMod       = 20033,
+        BaseArmorManaRegenMod          = 20034,
+        BaseArmorShieldMod             = 20035,
+        BaseArmorPerceptionMod         = 20036,
+        BaseArmorThieveryMod           = 20037,
+        BaseWeaponWarMagicMod          = 20038,
+        BaseWeaponLifeMagicMod         = 20039,
+        BaseWeaponRestorationSpellsMod = 20040,
+        BaseArmorHealthMod             = 20041,
+        BaseArmorStaminaMod            = 20042,
+        BaseArmorManaMod               = 20043,
+        BaseArmorResourcePenalty       = 20044,
+        BaseArmorDeceptionMod          = 20045,
+        BaseArmorTwohandedCombatMod    = 20046,
+
+        BaseWeaponPhysicalDefense     = 20047,
+        BaseWeaponMagicalDefense      = 20048,
+        BaseWeaponOffense             = 20049,
+        BaseDamageMod                 = 20050,
+        BaseElementalDamageMod        = 20051,
+        BaseManaConversionMod         = 20052,
+
     }
 
     public static class PropertyFloatExtensions

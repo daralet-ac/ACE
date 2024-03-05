@@ -96,41 +96,39 @@ namespace ACE.Server.WorldObjects.Entity
             {
                 uint total = Ranks + StartingValue;
 
-                // TODO: cap at 10x of these augs across the board elsewhere
-                // verify this with client formula
+                // JEWEL - Attributes: Adds to Base
 
-                // NOTE: this has been moved to InitLevel
-
-                /*if (creature is Player player)
+                if (creature is Creature player)
                 {
                     switch (Attribute)
                     {
                         case PropertyAttribute.Strength:
-                            if (player.AugmentationInnateStrength > 0)
-                                total += (uint)(player.AugmentationInnateStrength * 5);
+                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearStrength) > 0)
+                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearStrength));
                             break;
                         case PropertyAttribute.Endurance:
-                            if (player.AugmentationInnateEndurance > 0)
-                                total += (uint)(player.AugmentationInnateEndurance * 5);
+                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearEndurance) > 0)
+                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearEndurance));
                             break;
                         case PropertyAttribute.Coordination:
-                            if (player.AugmentationInnateCoordination > 0)
-                                total += (uint)(player.AugmentationInnateCoordination * 5);
+                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearCoordination) > 0)
+                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearCoordination));
                             break;
                         case PropertyAttribute.Quickness:
-                            if (player.AugmentationInnateQuickness > 0)
-                                total += (uint)(player.AugmentationInnateQuickness * 5);
+                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearQuickness) > 0)
+                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearQuickness));
                             break;
                         case PropertyAttribute.Focus:
-                            if (player.AugmentationInnateFocus > 0)
-                                total += (uint)(player.AugmentationInnateFocus * 5);
+                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearFocus) > 0)
+                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearFocus));
                             break;
                         case PropertyAttribute.Self:
-                            if (player.AugmentationInnateSelf > 0)
-                                total += (uint)(player.AugmentationInnateSelf * 5);
+                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearSelf) > 0)
+                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearSelf));
                             break;
                     }
-                }*/
+                }
+                
 
                 return total;
             }

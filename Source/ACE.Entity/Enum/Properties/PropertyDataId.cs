@@ -138,6 +138,9 @@ namespace ACE.Entity.Enum.Properties
         EmpoweredScarabCastSpellId = 62,
         [ServerOnly]
         EmpoweredScarabTriggerSpellId = 63,
+        [ServerOnly]
+        SpellExtracted = 64,
+
 
         [ServerOnly]
         PCAPRecordedWeenieHeader         = 8001,

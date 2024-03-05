@@ -24,7 +24,7 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Extensions;
 using ACE.Server.WorldObjects.Managers;
-using ACE.Server.Factories.Tables;
+using Time = ACE.Common.Time;
 
 namespace ACE.Server.WorldObjects
 {
@@ -255,6 +255,23 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
+            if (targetPlayer != null)
+            {
+                // JEWEL - Fire Opal: Bonus resist chance for having attacked target creature
+                if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
+                {
+                    if (casterCreature.QuestManager.HasQuest($"{targetPlayer.Name},Familiarity"))
+                    {
+                        var rampMod = (float)casterCreature.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Familiarity") / 500;
+
+                        var familiarityPenalty = (rampMod * ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) / 100));
+
+                        resistChanceMod += familiarityPenalty;
+                    }
+                }
+
+            }
+
             //Console.WriteLine($"{target.Name}.ResistSpell({Name}, {spell.Name}): magicSkill: {magicSkill}, difficulty: {difficulty}");
 
             bool resisted = MagicDefenseCheck(magicSkill, difficulty, out PartialEvasion pResist, out float resistChance, resistChanceMod);
@@ -298,6 +315,11 @@ namespace ACE.Server.WorldObjects
 
                 if (targetPlayer != null)
                 {
+                    if (targetPlayer.Reprisal)
+                    {
+                        targetPlayer.Reprisal = false;
+                        targetPlayer.SendChatMessage(this, $"Reprisal! You resist the spell cast by {Name}", ChatMessageType.Magic);
+                    }
                     targetPlayer.SendChatMessage(this, $"You resist the spell cast by {Name}", ChatMessageType.Magic);
 
                     targetPlayer.Session.Network.EnqueueSend(new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell, 1.0f));
@@ -756,6 +778,53 @@ namespace ACE.Server.WorldObjects
             }
             string srcVital;
 
+           
+            if (player != null)
+            {   // JEWEL - Lavender Jade: Bonus restoration to other players, reduced to self
+                if (player.GetEquippedItemsRatingSum(PropertyInt.GearSelflessness) > 0 && tryBoost > 0 && !targetCreature.IsMonster)
+                {
+                    var selflessnessModifier = (1f + ((float)player.GetEquippedItemsRatingSum(PropertyInt.GearSelflessness) / 66));
+
+                    if (targetCreature == this)
+                        selflessnessModifier = (1f - ((float)player.GetEquippedItemsRatingSum(PropertyInt.GearSelflessness) / 66));
+
+                    tryBoost = (int)(tryBoost * selflessnessModifier);
+                }
+                // JEWEL - White Jade: Bonus to restoration, chance of healing hotspot
+                if (player.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) > 0 && tryBoost > 0 && !targetCreature.IsMonster)
+                {
+                    var healModifier = 1f + ((float)player.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) / 100) * 0.75;
+                    tryBoost = (int)(tryBoost * healModifier);
+
+                    if (weapon.Tier != null)
+                        Hotspot.TryGenHotspot(player, targetCreature, (int)weapon.Tier, spell.VitalDamageType);
+                }
+                // JEWEL - Rose Quartz: Penalty to restoration spells
+                if (player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) > 0)
+                    {
+                        var jewelcraftingBoostPenaltyMod = 1 - (float)player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) / 66;
+                        var boostPenalty = tryBoost * jewelcraftingBoostPenaltyMod;
+                        
+                        tryBoost = (int)boostPenalty;
+                    }
+            }
+            // JEWEL - Amethyst: Ramping Magic Absorb
+            if (player != null && tryBoost < 0)
+            {
+                if (player.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
+                {
+                    var jewelRampMod = (float)player.QuestManager.GetCurrentSolves($"{player.Name},Nullification") / 200;
+                    tryBoost *= (int)(jewelRampMod * ((float)player.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66));
+                }
+            }
+
+            // Jewelcrafting Elementalist Reset
+            if (player != null)
+            {
+                if (player.QuestManager.HasQuest($"{player.Name},Elementalist"))
+                    player.QuestManager.Erase($"{player.Name},Elementalist");
+            }
+
             switch (spell.VitalDamageType)
             {
                 case DamageType.Mana:
@@ -997,6 +1066,40 @@ namespace ACE.Server.WorldObjects
 
                 srcVitalChange = (uint)Math.Round(srcVitalChange * scalar);
                 destVitalChange = maxDestVitalChange;
+            }
+
+             if (player != null)
+            {   // JEWEL - Rose Quartz: Bonus to transfer spells
+                if (player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) > 0)
+                {
+                    var jewelcraftingVitalsTransferMod = 1 + (float)player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) / 66;
+                    var sourceChange = (float)srcVitalChange * jewelcraftingVitalsTransferMod;
+                    var destChange = (float)destVitalChange * jewelcraftingVitalsTransferMod;
+
+                    srcVitalChange = (uint)sourceChange;
+                    destVitalChange = (uint)destChange;
+                }
+            }
+
+            // Jewelcrafting Elementalist Reset
+            if (player != null)
+            {
+                if (player.QuestManager.HasQuest($"{player.Name},Elementalist"))
+                    player.QuestManager.Erase($"{player.Name},Elementalist");
+            }
+            // JEWEL - Amethyst: Ramping Magic Absorb
+            if (player != null && player != targetCreature)
+            {
+                if (spell.TransferFlags.HasFlag(TransferFlags.TargetSource | TransferFlags.CasterDestination))
+                {
+                    if (player.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
+                    {
+                        var jewelRampMod = (float)player.QuestManager.GetCurrentSolves($"{player.Name},Nullification") / 200;
+                        var xferReduction = (int)(jewelRampMod * ((float)player.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66));
+                        srcVitalChange = (uint)(srcVitalChange * xferReduction);
+                        destVitalChange = (uint)(destVitalChange * xferReduction);
+                    }
+                }
             }
 
             // handle cloak damage procs for drain health other
@@ -1256,7 +1359,44 @@ namespace ACE.Server.WorldObjects
             }
 
             CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage);
+            // JEWEL - Imperial Topaz - Bonus cleave chance
+            if (caster != null)
+            {
+                if (spell.DamageType == DamageType.Slash)
+                {   
+                    if (spell.NumProjectiles <= 1)
+                    {   
+                        if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0)
+                        {
+                            if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > ThreadSafeRandom.Next(1, 100))
+                            {
+                               
+                                var targetCreature = target as Creature;
+                                var cleave = targetCreature.GetNearbyMonsters(10);
 
+                                foreach (var cleaveHit in cleave)
+                                {
+
+                                    if (cleaveHit.Translucency == 1 || cleaveHit.Visibility == true)
+                                        continue;
+
+                                    var angle = caster.GetAngle(cleaveHit);
+                                    bool angleWrong = false;
+
+                                    if (Math.Abs(angle) > 90.0f)
+                                        angleWrong = true;
+
+                                    if (!angleWrong)
+                                        CreateSpellProjectiles(spell, cleaveHit, weapon, isWeaponSpell, fromProc, damage);
+                                    break;
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+            }
             if (spell.School == MagicSchool.LifeMagic)
             {
                 if (caster.Health.Current <= 0)

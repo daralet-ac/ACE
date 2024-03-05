@@ -623,6 +623,13 @@ namespace ACE.Server.WorldObjects
             Skill.Salvaging
         };
 
+        public static HashSet<Skill> HeritageSkills = new HashSet<Skill>()
+        {
+            Skill.Dagger,
+            Skill.Staff,
+            Skill.UnarmedCombat
+        };
+
         public static bool IsSkillUntrainable(Skill skill, HeritageGroup heritageGroup)
         {
             // Use this section if adding heritage starting skills

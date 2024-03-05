@@ -181,6 +181,7 @@ namespace ACE.Entity.Enum.Properties
         BossKillXpReward                 = 138,
         UseLegacyThreatSystem            = 139,
         OverrideVisualRange              = 140,
+        AffectsOnlyAis                   = 141,
 
         /* custom */
         [ServerOnly]

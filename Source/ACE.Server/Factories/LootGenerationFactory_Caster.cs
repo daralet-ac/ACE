@@ -2,7 +2,6 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Server.Entity.Mutations;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -204,6 +203,17 @@ namespace ACE.Server.Factories
             {
                 wo.Name += " (damaged)";
             }
+
+            // assign jewel slots
+            AssignJewelSlots(wo);
+
+            wo.BaseElementalDamageMod = (wo.ElementalDamageMod == null ? 0 : wo.ElementalDamageMod);
+            wo.BaseWeaponRestorationSpellsMod = (wo.WeaponRestorationSpellsMod == null ? 0 : wo.WeaponRestorationSpellsMod);
+            wo.BaseWeaponPhysicalDefense = (wo.WeaponPhysicalDefense == null ? 0 : wo.WeaponPhysicalDefense);
+            wo.BaseWeaponMagicalDefense = (wo.WeaponMagicalDefense == null ? 0 : wo.WeaponMagicalDefense);
+            wo.BaseManaConversionMod = (wo.ManaConversionMod == null ? 0 : wo.ManaConversionMod);
+            wo.BaseWeaponWarMagicMod = (wo.WeaponWarMagicMod == null ? 0 : wo.WeaponWarMagicMod);
+            wo.BaseWeaponLifeMagicMod = (wo.WeaponLifeMagicMod == null ? 0 : wo.WeaponLifeMagicMod);
         }
 
         private static void MutateCaster_SpellDID(WorldObject wo, TreasureDeath profile)
