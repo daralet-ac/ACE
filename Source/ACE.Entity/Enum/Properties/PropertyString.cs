@@ -100,6 +100,14 @@ namespace ACE.Entity.Enum.Properties
         VendorBroadcastPrepend = 9008,
         [ServerOnly]
         VendorBroadcastAppend = 9009,
+        JewelSocket1 = 9010,
+        JewelSocket2 = 9011,
+        JewelSocket3 = 9012,
+        JewelSocket4 = 9013,
+        JewelSocket5 = 9014,
+        JewelSocket6 = 9015,
+        JewelSocket7 = 9016,
+        JewelSocket8 = 9017
     }
 
     public static class PropertyStringExtensions

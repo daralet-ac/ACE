@@ -4,14 +4,20 @@ using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using ACE.Common;
 using ACE.DatLoader.Entity;
+using ACE.Database.Models.Auth;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Factories;
+using ACE.Server.Factories.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
+using Google.Protobuf.WellKnownTypes;
+using Org.BouncyCastle.Asn1.X509;
 using Serilog;
+using Time = ACE.Common.Time;
 
 namespace ACE.Server.Entity
 {
@@ -43,7 +49,7 @@ namespace ACE.Server.Entity
         //   - resistance cleaving
         // - shield mod
         // - rending mod
-
+        
         public Creature Attacker;
         public Creature Defender;
 
@@ -114,7 +120,7 @@ namespace ACE.Server.Entity
         // creature defender
         public Quadrant Quadrant;
 
-        public bool IgnoreMagicArmor =>  (Weapon?.IgnoreMagicArmor ?? false) || (Attacker?.IgnoreMagicArmor ?? false);      // ignores impen / banes
+        public bool IgnoreMagicArmor => (Weapon?.IgnoreMagicArmor ?? false) || (Attacker?.IgnoreMagicArmor ?? false);      // ignores impen / banes
 
         public bool IgnoreMagicResist => (Weapon?.IgnoreMagicResist ?? false) || (Attacker?.IgnoreMagicResist ?? false);    // ignores life armor / prots
 
@@ -220,7 +226,6 @@ namespace ACE.Server.Entity
                     if (playerDefender.TwoHandedCombat || playerDefender.IsDualWieldAttack)
                         playerDefender.DamageTarget(attacker, damageSource);
                 }
-
             }
 
             // ---- EVASION ----
@@ -302,7 +307,7 @@ namespace ACE.Server.Entity
             // Two-handed Combat Damage Mod
             var twohandedCombatDamageMod = 1.0f;
             if (playerAttacker != null && playerAttacker.GetEquippedWeapon() != null)
-                if(playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded)
+                if (playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded)
                     twohandedCombatDamageMod = playerAttacker.GetTwoHandedCombatDamageMod();
 
             // COMBAT ABILITY DAMAGE FACTORS
@@ -355,6 +360,23 @@ namespace ACE.Server.Entity
             // ---- DAMAGE BEFORE MITIGATION ----
             DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * dualWieldDamageMod * twohandedCombatDamageMod * steadyShotActivatedMod * multishotPenalty * provokeMod;
 
+            // JEWEL - White Quartz: Deflects damage at attacker on Block
+            if (Blocked == true && playerDefender != null && attacker.GetDistance(playerDefender) < 10)
+            {
+                if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearThorns) > 0)
+                {
+                    var thornsAmount = DamageBeforeMitigation * (float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearThorns) / 20;
+                    attacker.UpdateVitalDelta(attacker.Health, -(int)thornsAmount);
+                    attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)thornsAmount);
+                    playerDefender.ShieldReprisal = (int)thornsAmount;
+                    if (attacker != null && attacker.IsDead)
+                    {
+                        attacker.OnDeath(attacker.DamageHistory.LastDamager, DamageType.Health, false);
+                        attacker.Die();
+                    }
+                }
+            }
+
             // ---- CRIT ----
             var attackSkill = attacker.GetCreatureSkill(attacker.GetCurrentWeaponSkill());
 
@@ -379,7 +401,7 @@ namespace ACE.Server.Entity
                     // critical chance bonus from accuracy bar
                     CriticalChance += playerAttacker.GetAccuracyCritChanceMod(Weapon);
                 }
-                        
+
                 if (isAttackFromSneaking)
                 {
                     CriticalChance = 1.0f;
@@ -404,6 +426,31 @@ namespace ACE.Server.Entity
 
             if (playerDefender != null && (playerDefender.IsLoggingOut || playerDefender.PKLogout))
                 CriticalChance = 1.0f;
+
+            // Jewelcrafting Reprisal
+
+            if (playerAttacker != null)
+            {
+                if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
+                {
+                    if (playerAttacker.QuestManager.HasQuest($"{defender.Guid}/Reprisal"))
+                        CriticalChance = 1.0f;
+                }
+            }
+
+            // Jewelcrafting Reprisal -- Auto crit in return
+
+            if (playerAttacker != null)
+            {
+                if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
+                {
+                    if (playerAttacker.QuestManager.HasQuest($"{defender.Guid}/Reprisal"))
+                    {
+                        CriticalChance = 1f;
+                        playerAttacker.QuestManager.Erase($"{defender.Guid}/Reprisal");
+                    }
+                }
+            }
 
             if (CriticalChance > ThreadSafeRandom.Next(0.0f, 1.0f))
             {
@@ -444,6 +491,35 @@ namespace ACE.Server.Entity
                         CriticalDamageMod += playerAttacker.GetAccuracyCritDamageMod(Weapon);
                     }
 
+                   
+
+                    if (playerAttacker != null)
+                    {   // JEWEL - White Sapphire: Ramping Bludgeon Crit Damage Bonus
+                        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
+                        {
+                            var jewelcraftingRampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bludgeon") / 500;
+                            var jewelcraftingBludgeMod = (float)jewelcraftingRampMod * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) / 50);
+
+                            CriticalDamageMod += jewelcraftingBludgeMod;
+                        }
+                    }
+
+                    // Jewelcrafting Reprisal -- Evade an Incoming Crit, auto crit in return
+                    if (playerDefender != null)
+                    {    
+                        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
+                        {
+                            if ((playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) / 2) >= ThreadSafeRandom.Next(0, 100))
+                            {
+                                playerDefender.QuestManager.HandleReprisalQuest();
+                                playerDefender.QuestManager.Stamp($"{attacker.Guid}/Reprisal");
+                                Evaded = true;
+                                PartialEvasion = PartialEvasion.All;
+                                playerDefender.Reprisal = true;
+                            }
+                        }
+                    }
+
                     CriticalDamageRatingMod = Creature.GetPositiveRatingMod(attacker.GetCritDamageRating());
 
                     // recklessness excluded from crits
@@ -454,6 +530,8 @@ namespace ACE.Server.Entity
                         DamageRatingMod = Creature.AdditiveCombine(DamageRatingMod, PkDamageMod);
 
                     DamageBeforeMitigation = BaseDamageMod.MaxDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * CriticalDamageMod * dualWieldDamageMod * twohandedCombatDamageMod *  steadyShotActivatedMod * multishotPenalty;
+
+                   
                 }
             }
 
@@ -520,6 +598,15 @@ namespace ACE.Server.Entity
                 ResistanceMod = (float)Math.Max(0.0f, defender.GetResistanceMod(resistanceType, Attacker, Weapon, WeaponResistanceMod));
             }
 
+            if (playerAttacker != null)
+            {   // JEWEL - Black Garnet - Ramping Piercing Resistance Penetration
+                if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0 && DamageType == DamageType.Pierce)
+                {
+                    var jewelcraftingRampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Pierce") / 500;
+                    ResistanceMod += (float)jewelcraftingRampMod * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) / 66);
+                }
+            }
+
             // ---- DAMAGE RESIST RATING ----
             DamageResistanceRatingMod = DamageResistanceRatingBaseMod = defender.GetDamageResistRatingMod(CombatType);
 
@@ -534,10 +621,19 @@ namespace ACE.Server.Entity
                 PkDamageResistanceMod = Creature.GetNegativeRatingMod(defender.GetPKDamageResistRating());
                 DamageResistanceRatingMod = Creature.AdditiveCombine(DamageResistanceRatingMod, PkDamageResistanceMod);
             }
+            // JEWEL - Diamond: Ramping Physical Damage Reduction
+            if (playerDefender != null)
+            {
+                if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) > 0)
+                {
+                    var jewelcraftingRampMod = (float)playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") / 200;
+                    DamageResistanceRatingMod *= jewelcraftingRampMod * ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) / 66);
+                }
+            }
 
-            // SPEC BONUS - Physical Defense
+            // SPEC BONUS: Physical Defense
             var specDefenseMod = 1.0f;
-            if(playerDefender != null && playerDefender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
+            if (playerDefender != null && playerDefender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
                 var physicalDefenseSkill = playerDefender.GetCreatureSkill(Skill.MeleeDefense);
                 var bonusAmount = (float)Math.Min(physicalDefenseSkill.Current, 500) / 50;
@@ -548,23 +644,74 @@ namespace ACE.Server.Entity
             // ---- SHIELD ----
             ShieldMod = defender.GetShieldMod(attacker, DamageType, Weapon);
 
+            float jewelProtection = 1f;
+            if (playerDefender != null)
+            {
+                // JEWEL - Onyx: Protection vs. Slash/Pierce/Bludgeon
+                if (DamageType == DamageType.Slash || DamageType == DamageType.Pierce || DamageType == DamageType.Bludgeon)
+                {
+                    if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) > 0)
+                        jewelProtection = (1 - ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) / 100));
+                }
+                // JEWEL - Zircon: Protection vs. Acid/Fire/Cold/Electric
+                if (DamageType == DamageType.Acid || DamageType == DamageType.Fire || DamageType == DamageType.Cold || DamageType == DamageType.Electric)
+                {
+                    if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) > 0)
+                        jewelProtection = (1 - ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) / 100));
+                }
+            }
+
+            var jewelSelfHarm = 1f;
+            var jewelLastStand = 1f;
+            var jewelElemental = 1f;
+
+            if (playerAttacker != null)
+            {
+                // JEWEL - Hematite: Deal bonus damage but take the same amount
+                if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
+                    jewelSelfHarm += (float)(playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
+                // JEWEL - Ruby: Bonus damage below 50% HP, reduced damage above
+                if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
+                    jewelLastStand += Jewel.GetJewelLastStand(playerAttacker, defender);
+                // JEWEL - Aquamarine, Emerald, Jet, Red Garnet: Bonus elemental damage
+                jewelElemental = Jewel.HandleElementalBonuses(playerAttacker, DamageType);
+            }
+
             // ---- FINAL CALCULATIONS ----
-            Damage = DamageBeforeMitigation * ArmorMod * ShieldMod * ResistanceMod * DamageResistanceRatingMod * evasionMod * backstabPenalty * specDefenseMod;
+            Damage = DamageBeforeMitigation * ArmorMod * ShieldMod * ResistanceMod * DamageResistanceRatingMod
+                * evasionMod * backstabPenalty * specDefenseMod
+                * jewelProtection * jewelSelfHarm * jewelLastStand * jewelElemental;
+
             DamageMitigated = DamageBeforeMitigation - Damage;
 
+
+            // --- JEWELCRAFTING POST-DAMAGE STAMPS / PROCS / BONUSES
+            if (playerAttacker != null)
+            {
+                Jewel.HandlePlayerAttackerBonuses(playerAttacker, defender, Damage, DamageType);
+                Jewel.HandleMeleeAttackerBonuses(playerAttacker, defender, Damage, damageSource, DamageType);
+            }
+
+            if (playerDefender != null)
+            {
+                Jewel.HandleMeleeDefenderBonuses(playerDefender, attacker, Damage);
+                Jewel.HandlePlayerDefenderBonuses(playerDefender, attacker, Damage);
+            }
+
             // ---- OPTIONAL GLOBAL MULTIPLIERS FOR PLAYERS or MONSTERS ----
-            if(attacker.IsMonster)
+            if (attacker.IsMonster)
                 Damage *= 1.0f;
 
-            if(!attacker.IsMonster)
+            if (!attacker.IsMonster)
                 Damage *= 1.0f;
 
             //DpsLogging(playerAttacker);
 
             return Damage;
         }
+    
 
-        public Quadrant GetQuadrant(Creature defender, Creature attacker, AttackHeight attackHeight, WorldObject damageSource)
+            public Quadrant GetQuadrant(Creature defender, Creature attacker, AttackHeight attackHeight, WorldObject damageSource)
         {
             var quadrant = attackHeight.ToQuadrant();
 
@@ -575,6 +722,7 @@ namespace ACE.Server.Entity
             return quadrant;
         }
 
+        
         /// <summary>
         /// Returns the chance for creature to avoid monster attack
         /// </summary>
@@ -631,9 +779,39 @@ namespace ACE.Server.Entity
             {
                 if (attackerCombatAbility == CombatAbility.SteadyShot)
                 {
-                    float bonus = 1.2f;                   
+                    float bonus = 1.2f;
 
                     EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
+                }
+            }
+           
+            if (playerDefender != null)
+            {   // JEWEL - Fire Opal: Evade chance bonus for having attacked target creature
+                if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
+                {
+                    if (attacker.QuestManager.HasQuest($"{playerDefender.Name},Familiarity"))
+                    {
+                        var rampMod = (float)attacker.QuestManager.GetCurrentSolves($"{playerDefender.Name},Familiarity") / 500;
+
+                        var familiarityPenalty = 1f - (rampMod * ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) / 100));
+
+                        EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * familiarityPenalty);
+                    }
+                }
+
+            }
+           
+            if (playerAttacker != null)
+            {   // JEWEL - Yellow Garnet: Hit chance bonus for having been attacked frequently 
+                if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) > 0)
+                {
+                    if (playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Bravado"))
+                    {
+                        var rampMod = (float)playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bravado") / 1000;
+                        var bravadoBonus = 1f + (rampMod * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) / 100));
+                        EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bravadoBonus);
+                    }
+
                 }
             }
 
@@ -788,9 +966,13 @@ namespace ACE.Server.Entity
                 }
             }
 
-            // Phalanx Activated Block Bonus
+            // COMBAT ABILITY - Phalanx: Activated Block Bonus
             if (playerDefender != null && playerDefender.LastPhalanxActivated > Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration && playerDefender.GetEquippedShield != null)
                 blockChance += 0.5f;
+
+            // JEWEL - Turquoise: Passive Block %
+            if (defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) > 0)
+                    blockChance += (float)(defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) / 100);
 
             if (ThreadSafeRandom.Next(0f, 1f) < blockChance)
             return true;

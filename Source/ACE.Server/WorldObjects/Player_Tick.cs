@@ -638,6 +638,14 @@ namespace ACE.Server.WorldObjects
                 if (LumAugItemManaUsage != 0)
                     burnRate *= GetNegativeRatingMod(LumAugItemManaUsage * 5);
 
+                // JEWEL - Moonstone: Reduced Item Mana Useage
+                if (GetEquippedItemsRatingSum(PropertyInt.GearItemManaUseage) > 0)
+                {
+                    var moonstone = GetEquippedItemsRatingSum(PropertyInt.GearItemManaUseage);
+                    var moonstoneMod = 100f / (100 + moonstone * 5);
+                    burnRate *= moonstoneMod;
+                }
+
                 item.ItemManaRateAccumulator += (float)(burnRate * CachedHeartbeatInterval);
 
                 if (item.ItemManaRateAccumulator < 1)

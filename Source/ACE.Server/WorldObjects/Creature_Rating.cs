@@ -459,6 +459,7 @@ namespace ACE.Server.WorldObjects
             return GetEquippedItemsRatingSum(PropertyInt.GearMaxHealth);
         }
 
+
         public int GetPKDamageRating()
         {
             var pkDamageRating = PKDamageRating ?? 0;

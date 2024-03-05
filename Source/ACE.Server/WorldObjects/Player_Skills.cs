@@ -19,7 +19,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Handles the GameAction 0x46 - RaiseSkill network message from client
         /// </summary>
-        public bool HandleActionRaiseSkill(Skill skill, uint amount)
+        public bool HandleActionRaiseSkill(Skill skill, uint amount, bool crafting)
         {
             var creatureSkill = GetCreatureSkill(skill, false);
 
@@ -37,7 +37,7 @@ namespace ACE.Server.WorldObjects
 
             var prevRank = creatureSkill.Ranks;
 
-            if (!SpendSkillXp(creatureSkill, amount))
+            if (!SpendSkillXp(creatureSkill, amount, crafting))
                 return false;
 
             Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
@@ -53,9 +53,9 @@ namespace ACE.Server.WorldObjects
                     PlayParticleEffect(PlayScript.WeddingBliss, Guid);
                     suffix = $" and has reached its upper limit";
                 }
-
+                var newSkill = (NewSkillNames)skill;
                 var sound = new GameMessageSound(Guid, Sound.RaiseTrait);
-                var msg = new GameMessageSystemChat($"Your base {skill.ToSentence()} skill is now {creatureSkill.Base}{suffix}!", ChatMessageType.Advancement);
+                var msg = new GameMessageSystemChat($"Your base {newSkill.ToSentence()} skill is now {creatureSkill.Base}{suffix}!", ChatMessageType.Advancement);
 
                 Session.Network.EnqueueSend(sound, msg);
 
@@ -67,20 +67,23 @@ namespace ACE.Server.WorldObjects
             return true;
         }
 
-        private bool SpendSkillXp(CreatureSkill creatureSkill, uint amount, bool sendNetworkUpdate = true)
+        private bool SpendSkillXp(CreatureSkill creatureSkill, uint amount, bool crafting, bool sendNetworkUpdate = true)
         {
-            var cannotRaiseMsg = $"You cannot raise your {creatureSkill.Skill.ToSentence()} skill directly.";
-            switch (creatureSkill.Skill)
+            if (!crafting)
             {
-                case Skill.Leadership: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " It raises automatically overtime if you have active vassals.", ChatMessageType.Advancement)); return false;
-                case Skill.Loyalty: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " It raises automatically overtime while you are active and have a patron.", ChatMessageType.Advancement)); return false;
-                case Skill.Alchemy: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Alchemy recipes. You may also purchase training from an Alchemist.", ChatMessageType.Advancement)); return false;
-                case Skill.Cooking: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Cooking recipes. You may also purchase training from a Chef or Provisioner.", ChatMessageType.Advancement)); return false;
-                case Skill.WeaponTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Blacksmithing recipes. You may also purchase training from a Blacksmith, Weaponsmith, or Armorer.", ChatMessageType.Advancement)); return false;
-                case Skill.ArmorTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Tailoring recipes. You may also purchase training from a Tailor.", ChatMessageType.Advancement)); return false;
-                case Skill.Fletching: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Woodworking recipes. You may also purchase training from a Bowyer or Fletcher.", ChatMessageType.Advancement)); return false;
-                case Skill.ItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Jewelcrafting recipes. You may also purchase training from a Jeweler.", ChatMessageType.Advancement)); return false;
-                case Skill.MagicItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Spellcrafting recipes. You may also purchase training from an Archmage.", ChatMessageType.Advancement)); return false;
+                var cannotRaiseMsg = $"You cannot raise your {creatureSkill.Skill.ToSentence()} skill directly.";
+                switch (creatureSkill.Skill)
+                {
+                    case Skill.Leadership: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " It raises automatically overtime if you have active vassals.", ChatMessageType.Advancement)); return false;
+                    case Skill.Loyalty: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " It raises automatically overtime while you are active and have a patron.", ChatMessageType.Advancement)); return false;
+                    case Skill.Alchemy: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Alchemy recipes. You may also purchase training from an Alchemist.", ChatMessageType.Advancement)); return false;
+                    case Skill.Cooking: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Cooking recipes. You may also purchase training from a Chef or Provisioner.", ChatMessageType.Advancement)); return false;
+                    case Skill.WeaponTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Blacksmithing recipes. You may also purchase training from a Blacksmith, Weaponsmith, or Armorer.", ChatMessageType.Advancement)); return false;
+                    case Skill.ArmorTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Tailoring recipes. You may also purchase training from a Tailor.", ChatMessageType.Advancement)); return false;
+                    case Skill.Fletching: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Woodworking recipes. You may also purchase training from a Bowyer or Fletcher.", ChatMessageType.Advancement)); return false;
+                    case Skill.ItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Jewelcrafting recipes. You may also purchase training from a Jeweler.", ChatMessageType.Advancement)); return false;
+                    case Skill.MagicItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Spellcrafting recipes. You may also purchase training from an Archmage.", ChatMessageType.Advancement)); return false;
+                }
             }
 
             var skillXPTable = GetSkillXPTable(creatureSkill.AdvancementClass);
@@ -152,17 +155,18 @@ namespace ACE.Server.WorldObjects
 
             var availableSkillCredits = $"You now have {AvailableSkillCredits} credits available.";
 
+            var newSkill = (NewSkillNames)skill;
             if (success)
             {
                 var updateSkill = new GameMessagePrivateUpdateSkill(this, GetCreatureSkill(skill));
                 var skillCredits = new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.AvailableSkillCredits, AvailableSkillCredits ?? 0);
 
-                var msg = new GameMessageSystemChat($"{skill.ToSentence()} trained. {availableSkillCredits}", ChatMessageType.Advancement);
+                var msg = new GameMessageSystemChat($"{newSkill.ToSentence()} trained. {availableSkillCredits}", ChatMessageType.Advancement);
 
                 Session.Network.EnqueueSend(updateSkill, skillCredits, msg);
             }
             else
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"Failed to train {skill.ToSentence()}! {availableSkillCredits}", ChatMessageType.Advancement));
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"Failed to train {newSkill.ToSentence()}! {availableSkillCredits}", ChatMessageType.Advancement));
 
             return success;
         }
@@ -356,14 +360,17 @@ namespace ACE.Server.WorldObjects
             if (playerSkill.AdvancementClass < SkillAdvancementClass.Trained || playerSkill.IsMaxRank)
                 return;
 
+            bool crafting = IsTradeSkill(skill);
+
             amount = Math.Min(amount, playerSkill.ExperienceLeft);
 
-            GrantXP(amount, XpType.Emote, ShareType.None);
+            if (!crafting)
+                GrantXP(amount, XpType.Emote, ShareType.None);
             var raiseChain = new ActionChain();
             raiseChain.AddDelayForOneTick();
             raiseChain.AddAction(this, () =>
             {
-                HandleActionRaiseSkill(skill, amount);
+                HandleActionRaiseSkill(skill, amount, crafting);
             });
             raiseChain.EnqueueChain();
 
@@ -378,7 +385,7 @@ namespace ACE.Server.WorldObjects
             if (amountRemaining > AvailableExperience)
                 amountRemaining = (uint)AvailableExperience;
 
-            SpendSkillXp(creatureSkill, amountRemaining, sendNetworkUpdate);
+            SpendSkillXp(creatureSkill, amountRemaining, false, sendNetworkUpdate);
         }
 
         /// <summary>
@@ -621,6 +628,13 @@ namespace ACE.Server.WorldObjects
             Skill.MagicItemTinkering,
             Skill.WeaponTinkering,
             Skill.Salvaging
+        };
+
+        public static HashSet<Skill> HeritageSkills = new HashSet<Skill>()
+        {
+            Skill.Dagger,
+            Skill.Staff,
+            Skill.UnarmedCombat
         };
 
         public static bool IsSkillUntrainable(Skill skill, HeritageGroup heritageGroup)
@@ -938,6 +952,9 @@ namespace ACE.Server.WorldObjects
                 creatureSkill.InitLevel = 0;
                 AvailableSkillCredits += skillBase.TrainedCost;
             }
+
+            // CRAFTING - Untraining: Gain no gained crafting experience back (it is not included in max amount)
+            refund = !IsTradeSkill(skill); 
 
             if (refund)
                 RefundXP(creatureSkill.ExperienceSpent);

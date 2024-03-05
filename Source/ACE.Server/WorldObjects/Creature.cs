@@ -490,5 +490,6 @@ namespace ACE.Server.WorldObjects
 
             return visibleTargets;
         }
+
     }
 }

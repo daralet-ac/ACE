@@ -84,6 +84,9 @@ namespace ACE.Server.Factories
 
             // Workmanship
             wo.Workmanship = GetJewelryWorkmanship(wo, totalGearRatingPercentile);
+            AssignJewelSlots(wo);
+            wo.BaseAegis = (wo.AegisLevel == null ? 0 : wo.AegisLevel);
+            wo.BaseMaxMana = (wo.ItemMaxMana == null ? 0 : wo.ItemMaxMana);
         }
 
         private static bool GetMutateJewelryData(uint wcid)

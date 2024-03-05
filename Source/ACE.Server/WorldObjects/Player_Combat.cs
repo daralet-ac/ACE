@@ -360,6 +360,9 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+
+        public bool Reprisal = false;
+
         /// <summary>
         /// Called when player successfully evades an attack
         /// </summary>
@@ -414,7 +417,12 @@ namespace ACE.Server.WorldObjects
 
                 //UpdateVitalDelta(Stamina, -1);
             }
-            if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
+            if (Reprisal)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"Reprisal! You evaded {attacker.Name}'s critical strike!", ChatMessageType.CombatEnemy));
+                Reprisal = false;
+            }
+            else if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
                 Session.Network.EnqueueSend(new GameEventEvasionDefenderNotification(Session, attacker.Name));
 
             if (creatureAttacker == null)
@@ -424,6 +432,8 @@ namespace ACE.Server.WorldObjects
             // attackMod?
             Proficiency.OnSuccessUse(this, defenseSkill, difficulty);
         }
+
+        public int? ShieldReprisal = null;
 
         /// <summary>
         /// Called when player successfully blocks an attack
@@ -485,6 +495,12 @@ namespace ACE.Server.WorldObjects
             {
                 if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
                 {
+                    if (ShieldReprisal.HasValue)
+                    {
+                      Session.Network.EnqueueSend(new GameMessageSystemChat($"You blocked {attacker.Name}'s attack, deflecting {ShieldReprisal} damage back at them!", ChatMessageType.CombatEnemy));
+                      ShieldReprisal = null;
+                    }
+                    else
                         Session.Network.EnqueueSend(new GameMessageSystemChat($"You blocked {attacker.Name}'s attack!", ChatMessageType.CombatEnemy));
                 }
             }
@@ -1064,8 +1080,11 @@ namespace ACE.Server.WorldObjects
             var staminaCostReductionMod = 1.0f;
 
             // Sword/UA implicit rolled bonuses
-            if (weapon.StaminaCostReductionMod != null)
-                staminaCostReductionMod -= (float)weapon.StaminaCostReductionMod;
+            if (weapon != null)
+            {
+                if (weapon.StaminaCostReductionMod != null)
+                    staminaCostReductionMod -= (float)weapon.StaminaCostReductionMod;
+            }
 
             // SPEC BONUS - UA: Stamina costs for melee attacks reduced by 10%
             if (GetCurrentWeaponSkill() == Skill.UnarmedCombat && GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized)

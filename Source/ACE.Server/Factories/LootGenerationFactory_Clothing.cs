@@ -5,7 +5,6 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
@@ -216,6 +215,10 @@ namespace ACE.Server.Factories
             MutateValue(wo, profile.Tier, roll);
 
             wo.LongDesc = GetLongDesc(wo);
+
+            if (wo.IsShield)
+                AssignJewelSlots(wo);
+
         }
 
         /// <summary>
@@ -967,7 +970,7 @@ namespace ACE.Server.Factories
                     var amount = GetArmorSkillAmount(profile, wo, out modPercentile) * numRolledTypesMultiplier * miscClothingMultiplier;
                     highestModPercentile = modPercentile > highestModPercentile ? modPercentile : highestModPercentile;
 
-                    switch(type)
+                    switch (type)
                     {
                         case 1: wo.ArmorHealthMod = amount; break;
                         case 2: wo.ArmorStaminaMod = amount; break;
@@ -1092,6 +1095,73 @@ namespace ACE.Server.Factories
                 return false;
             }
 
+            if (wo.ArmorLevel != null)
+                wo.BaseArmor = wo.ArmorLevel;
+
+            if (wo.AegisLevel != null)
+                wo.BaseAegis = wo.AegisLevel;
+
+            if (wo.ArmorWarMagicMod != null)
+                wo.BaseArmorWarMagicMod = wo.ArmorWarMagicMod;
+
+            if (wo.ArmorLifeMagicMod != null)
+                wo.BaseArmorLifeMagicMod = wo.ArmorLifeMagicMod;
+
+            if (wo.ArmorMagicDefMod != null)
+                wo.BaseArmorMagicDefMod = wo.ArmorMagicDefMod;
+
+            if (wo.ArmorPhysicalDefMod != null)
+                wo.BaseArmorPhysicalDefMod = wo.ArmorPhysicalDefMod;
+
+            if (wo.ArmorMissileDefMod != null)
+                wo.BaseArmorMissileDefMod = wo.ArmorMissileDefMod;
+
+            if (wo.ArmorDualWieldMod != null)
+                wo.BaseArmorDualWieldMod = wo.ArmorDualWieldMod;
+
+            if (wo.ArmorRunMod != null)
+                wo.BaseArmorRunMod = wo.ArmorRunMod;
+
+            if (wo.ArmorAttackMod != null)
+                wo.BaseArmorAttackMod = wo.ArmorAttackMod;
+
+            if (wo.ArmorHealthRegenMod != null)
+                wo.BaseArmorHealthRegenMod = wo.ArmorHealthRegenMod;
+
+            if (wo.ArmorStaminaRegenMod != null)
+                wo.BaseArmorStaminaRegenMod = wo.ArmorStaminaRegenMod;
+
+            if (wo.ArmorManaRegenMod != null)
+                wo.BaseArmorManaRegenMod = wo.ArmorManaRegenMod;
+
+            if (wo.ArmorShieldMod != null)
+                wo.BaseArmorShieldMod = wo.ArmorShieldMod;
+
+            if (wo.ArmorPerceptionMod != null)
+                wo.BaseArmorPerceptionMod = wo.ArmorPerceptionMod;
+
+            if (wo.ArmorThieveryMod != null)
+                wo.BaseArmorThieveryMod = wo.ArmorThieveryMod;
+
+            if (wo.ArmorHealthMod != null)
+                wo.BaseArmorHealthMod = wo.ArmorHealthMod;
+
+            if (wo.ArmorStaminaMod != null)
+                wo.BaseArmorStaminaMod = wo.ArmorStaminaMod;
+
+            if (wo.ArmorManaMod != null)
+                wo.BaseArmorManaMod = wo.ArmorManaMod ;
+
+            if (wo.ArmorResourcePenalty != null)
+                wo.BaseArmorResourcePenalty = wo.ArmorResourcePenalty;
+
+            if (wo.ArmorDeceptionMod != null)
+                wo.BaseArmorDeceptionMod = wo.ArmorDeceptionMod;
+
+            if (wo.ArmorTwohandedCombatMod != null)
+                wo.BaseArmorTwohandedCombatMod = wo.ArmorTwohandedCombatMod;
+
+
             return true;
         }
 
@@ -1200,9 +1270,9 @@ namespace ACE.Server.Factories
             }
         }
 
-        private static int GetWieldDifficultyPerTier(int armorTier)
+        public static int GetWieldDifficultyPerTier(int tier)
         {
-            switch (armorTier)
+            switch (tier)
             {
                 case 1:
                     return 50;
