@@ -1285,6 +1285,27 @@ namespace ACE.Server.WorldObjects.Managers
                     //if (creature != null)
                     //    creature.NoseTextureDID = (uint)emote.Display;
                     break;
+                case EmoteType.SetMyIntStat:
+
+                    if (creature != null)
+                    {
+                        creature.UpdateProperty(creature, (PropertyInt)emote.Stat, emote.Amount);
+                    }
+                    break;
+                case EmoteType.SetMyFloatStat:
+
+                    if (creature != null)
+                    {
+                        creature.UpdateProperty(creature, (PropertyFloat)emote.Stat, emote.Percent);
+                    }
+                    break;
+                case EmoteType.SetMyBoolStat:
+
+                    if (creature != null)
+                    {
+                        creature.UpdateProperty(creature, (PropertyBool)emote.Stat, emote.Amount == 0 ? false : true);
+                    }
+                    break;
 
                 case EmoteType.SetMyQuestBitsOff:
                 case EmoteType.SetQuestBitsOff:

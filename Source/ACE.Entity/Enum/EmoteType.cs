@@ -140,5 +140,8 @@ namespace ACE.Entity.Enum
         EraseFellowQuest              = 10002,
         SetLBEnviron                  = 10003,
         RelieveVitaePenalty           = 10004,
+        SetMyIntStat                  = 10005,
+        SetMyBoolStat                 = 10006,
+        SetMyFloatStat                = 10007,
     }
 }
