@@ -216,7 +216,7 @@ namespace ACE.Server.WorldObjects
                         player.TryConsumeFromInventoryWithNetworking(source, amountToAdd);
 
                         var wieldReq = LootGenerationFactory.GetWieldDifficultyPerTier(pearl.Tier ?? 1);
-                        pearl.LongDesc = $"This pearl contains the spell {spell.Name}.\n\nIt may only be applied to {itemType} of Wield Requirement of {wieldReq} or greater.\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character.\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
+                        pearl.LongDesc = $"This pearl contains the spell {spell.Name}.\n\nIt may only be applied to {itemType} with a Wield Requirement of {wieldReq} or greater.\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character.\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
                         pearl.TinkerLog = $"{target.ItemType}";
                         pearl.Tier = target.Tier;
                         pearl.UiEffects = ACE.Entity.Enum.UiEffects.BoostMana;
