@@ -137,6 +137,8 @@ namespace ACE.Server.Entity
                 Jewel.UseObjectOnTarget(player, source, target, true);
             else if (source.WeenieType == WeenieType.ArmorPatch)
                 ArmorPatch.UseObjectOnTarget(player, source, target, true);
+            else if (source.WeenieType == WeenieType.TailoringKit)
+                TailoringKit.UseObjectOnTarget(player, source, target, true);
             else if (source.WeenieType == WeenieType.Salvage)
                 Salvage.UseObjectOnTarget(player, source, target, true);
             else

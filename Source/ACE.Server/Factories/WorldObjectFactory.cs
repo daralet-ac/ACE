@@ -141,6 +141,8 @@ namespace ACE.Server.Factories
                     return new CombatFocus(weenie, guid);
                 case WeenieType.ArmorPatch:
                     return new ArmorPatch(weenie, guid);
+                case WeenieType.TailoringKit:
+                    return new TailoringKit(weenie, guid);
                 case WeenieType.Jewel:
                     return new Jewel(weenie, guid);
                 case WeenieType.Salvage:
@@ -268,6 +270,8 @@ namespace ACE.Server.Factories
                     return new CombatFocus(biota);
                 case WeenieType.ArmorPatch:
                     return new ArmorPatch(biota);
+                case WeenieType.TailoringKit:
+                    return new TailoringKit(biota);
                 case WeenieType.Jewel:
                     return new Jewel(biota);
                 case WeenieType.Salvage:
