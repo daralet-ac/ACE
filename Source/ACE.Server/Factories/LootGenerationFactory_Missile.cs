@@ -88,9 +88,9 @@ namespace ACE.Server.Factories
                 if (nonElementalMissileWeapons.Contains(wo.WeenieClassId))
                     RollMissileElement(profile, wo);
 
-                var material = GetMaterialType(wo, profile.Tier);
-                if (material > 0)
-                    wo.MaterialType = material;
+                MaterialType[] material = { MaterialType.Ebony, MaterialType.Mahogany, MaterialType.Oak, MaterialType.Pine, MaterialType.Teak };
+                var materialType = ThreadSafeRandom.Next(0, 4);
+                wo.MaterialType = material[materialType];
 
                 MutateColor(wo);
 
