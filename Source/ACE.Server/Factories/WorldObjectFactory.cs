@@ -149,6 +149,8 @@ namespace ACE.Server.Factories
                     return new Salvage(weenie, guid);
                 case WeenieType.SpellTransference:
                     return new SpellTransference(weenie, guid);
+                case WeenieType.RetainingChisel:
+                    return new RetainingChisel(weenie, guid);
                 default:
                     return new GenericObject(weenie, guid);
             }
@@ -278,6 +280,8 @@ namespace ACE.Server.Factories
                     return new Salvage(biota);
                 case WeenieType.SpellTransference:
                     return new SpellTransference(biota);
+                case WeenieType.RetainingChisel:
+                    return new RetainingChisel(biota);
                 default:
                     return new GenericObject(biota);
             }
