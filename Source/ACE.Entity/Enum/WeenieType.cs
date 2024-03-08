@@ -77,10 +77,10 @@ namespace ACE.Entity.Enum
         EmpoweredScarab,
         CombatFocus,
         ArmorPatch,
-        TailoringKit,
         Jewel,
         Salvage,
         SpellTransference,
         RetainingChisel,
+        TailoringKit,
     }
 }
