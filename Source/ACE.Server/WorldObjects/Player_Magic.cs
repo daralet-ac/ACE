@@ -537,6 +537,10 @@ namespace ACE.Server.WorldObjects
                     castingPreCheckStatus = CastingPreCheckStatus.Success;
             }
 
+            // portal spells never fizzle
+            if (spell.School == MagicSchool.PortalMagic)
+                castingPreCheckStatus = CastingPreCheckStatus.Success;
+
             // build-in spells never fizzle
             if (isWeaponSpell)
                 castingPreCheckStatus = CastingPreCheckStatus.Success;
