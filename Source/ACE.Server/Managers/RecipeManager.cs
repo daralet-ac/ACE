@@ -62,6 +62,13 @@ namespace ACE.Server.Managers
                 return;
             }
 
+            if (target.Wielder != null)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot use the {source.NameWithMaterial} on a wielded item.", ChatMessageType.Craft));
+                player.SendUseDoneEvent();
+                return;
+            }
+
             var recipe = GetRecipe(player, source, target);
 
             if (recipe == null)
