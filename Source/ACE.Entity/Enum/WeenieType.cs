@@ -80,6 +80,7 @@ namespace ACE.Entity.Enum
         Jewel,
         Salvage,
         SpellTransference,
+        RetainingChisel,
         TailoringKit,
     }
 }

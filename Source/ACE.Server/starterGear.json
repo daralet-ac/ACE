@@ -92,6 +92,16 @@
           "weenieId": "4746",
           "name": "Water",
           "stacksize": "10"
+        },
+        {
+          "weenieId": "20646",
+          "name": "Ust",
+          "stacksize": "1"
+        },
+        {
+          "weenieId": "1053974",
+          "name": "Retaining Chisel",
+          "stacksize": "1"
         }
       ],
       "heritage": [
