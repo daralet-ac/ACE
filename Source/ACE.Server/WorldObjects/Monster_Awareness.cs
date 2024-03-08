@@ -45,7 +45,6 @@ namespace ACE.Server.WorldObjects
             if (DeathTreasure != null)
             {
                 var chance = ThreadSafeRandom.Next(1, 10);
-                Console.WriteLine(chance);
                 if (chance == 10)
                 {
                     var wo = WorldObjectFactory.CreateNewWorldObject(1020001);
