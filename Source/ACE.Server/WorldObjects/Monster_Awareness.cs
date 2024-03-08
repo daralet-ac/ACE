@@ -10,6 +10,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using Google.Protobuf.Collections;
@@ -40,6 +41,17 @@ namespace ACE.Server.WorldObjects
             EmoteManager.OnWakeUp(AttackTarget as Creature);
             EmoteManager.OnNewEnemy(AttackTarget as Creature);
             //SelectTargetingTactic();
+
+            if (DeathTreasure != null)
+            {
+                var chance = ThreadSafeRandom.Next(1, 10);
+                if (chance == 10)
+                {
+                    var wo = WorldObjectFactory.CreateNewWorldObject(1020001);
+                    wo.Location = Location;
+                    wo.EnterWorld();
+                }
+            }
 
             if (alertNearby)
                 AlertFriendly();
