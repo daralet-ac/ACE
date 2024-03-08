@@ -3431,7 +3431,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            var acceptAll = target.AiAcceptEverything && !item.IsStickyAttunedOrContainsStickyAttuned;
+            var acceptAll = target.AiAcceptEverything && !item.IsStickyAttunedOrContainsStickyAttuned && !item.Retained;
 
             if (target.HasGiveOrRefuseEmoteForItem(item, out var emoteResult) || acceptAll)
             {
