@@ -3956,5 +3956,23 @@ namespace ACE.Server.WorldObjects
             get => (int?)GetProperty(PropertyInt.BaseWeaponTime);
             set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseWeaponTime); else SetProperty(PropertyInt.BaseWeaponTime, value.Value); }
         }
+
+        public bool Ivoryable
+        {
+            get => GetProperty(PropertyBool.Ivoryable) ?? true;
+            set { if (value) RemoveProperty(PropertyBool.Ivoryable); else SetProperty(PropertyBool.Ivoryable, value); }
+        }
+
+        public uint? AllowedWielder
+        {
+            get => GetProperty(PropertyInstanceId.AllowedWielder);
+            set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.AllowedWielder); else SetProperty(PropertyInstanceId.AllowedWielder, value.Value); }
+        }
+
+        public string CraftsmanName
+        {
+            get => GetProperty(PropertyString.CraftsmanName);
+            set { if (value == null) RemoveProperty(PropertyString.CraftsmanName); else SetProperty(PropertyString.CraftsmanName, value); }
+        }
     }
 }
