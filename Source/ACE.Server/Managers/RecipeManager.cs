@@ -386,12 +386,17 @@ namespace ACE.Server.Managers
                 if (modified.Contains(target.Guid.Full))
                     UpdateObj(player, target);
             }
-            // regardless of success, grant proficiency xp
-            if (recipe.Skill > 0 && recipe.Difficulty > 0)
+            // CUSTOM CRAFTING - Ranking Up - On success, grant a 20% chance to rank up the skill, up to 10 higher than difficulty
+            if (recipe.Skill > 0 && recipe.Difficulty > 0 && success)
             {
                 var skill = player.GetCreatureSkill((Skill)recipe.Skill);
                 var playerSkill = (Skill)recipe.Skill;
-                Proficiency.OnCraftingSuccessUse(player, skill, recipe.Difficulty, success, playerSkill);
+                if (skill.Ranks < recipe.Difficulty + 10)
+                {
+                    var chance = ThreadSafeRandom.Next(1, 5);
+                    if (chance == 5)
+                        player.GrantSkillRanks(playerSkill, 1);
+                }
             }
         }
 
