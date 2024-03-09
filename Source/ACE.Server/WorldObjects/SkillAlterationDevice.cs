@@ -219,6 +219,18 @@ namespace ACE.Server.WorldObjects
                     {
                         var untrainable = Player.IsSkillUntrainable(skill.Skill, (HeritageGroup)player.Heritage);
 
+                       if (player.IsTradeSkill(skill.Skill))
+                        {
+                            if (player.UntrainSkill(skill.Skill, 0))
+                            {
+                                var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
+                                var msg = untrainable ? WeenieErrorWithString.YouHaveSucceededUntraining_Skill : WeenieErrorWithString.CannotUntrain_SkillButRecoveredXP;
+                                var message = new GameEventWeenieErrorWithString(player.Session, msg, newSkill.ToSentence());
+
+                                player.Session.Network.EnqueueSend(updateSkill, message);
+                                player.TryConsumeFromInventoryWithNetworking(this, 1);
+                            }
+                        } 
                         if (player.UntrainSkill(skill.Skill, skillBase.TrainedCost))
                         {
                             var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
