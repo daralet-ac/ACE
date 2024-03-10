@@ -128,6 +128,11 @@ namespace ACE.Server.WorldObjects.Managers
                         player.GrantLevelProportionalXp(emote.Percent ?? 0, min, max);
                     break;
 
+                case EmoteType.AwardSkillRanks:
+                    if (player != null)
+                        player.GrantSkillRanks((Skill)emote.Stat, (int)emote.Amount);
+
+                   break;
                 case EmoteType.AwardLuminance:
 
                     if (player != null)
