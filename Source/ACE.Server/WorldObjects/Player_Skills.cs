@@ -69,7 +69,9 @@ namespace ACE.Server.WorldObjects
 
         private bool SpendSkillXp(CreatureSkill creatureSkill, uint amount, bool sendNetworkUpdate = true)
         {
-            var cannotRaiseMsg = $"You cannot raise your {creatureSkill.Skill.ToSentence()} skill directly.";
+            var newSkill = (NewSkillNames)creatureSkill.Skill;
+            var cannotRaiseMsg = $"You cannot raise your {newSkill.ToSentence()} skill directly.";
+
             switch (creatureSkill.Skill)
             {
                 case Skill.PortalMagic: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when you attune yourself to a new portal magic attunement device.", ChatMessageType.Advancement)); return false;
@@ -83,8 +85,7 @@ namespace ACE.Server.WorldObjects
                 case Skill.ItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Jewelcrafting recipes. You may also purchase training from a Jeweler.", ChatMessageType.Advancement)); return false;
                 case Skill.MagicItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Spellcrafting recipes. You may also purchase training from an Archmage.", ChatMessageType.Advancement)); return false;
             }
-
-
+          
             var skillXPTable = GetSkillXPTable(creatureSkill.AdvancementClass);
             if (skillXPTable == null)
             {
