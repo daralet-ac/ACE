@@ -71,6 +71,7 @@ namespace ACE.Server.WorldObjects
         {
             var newSkill = (NewSkillNames)creatureSkill.Skill;
             var cannotRaiseMsg = $"You cannot raise your {newSkill.ToSentence()} skill directly.";
+
             switch (creatureSkill.Skill)
             {
                 case Skill.PortalMagic: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when you attune yourself to a new portal magic attunement device.", ChatMessageType.Advancement)); return false;
@@ -289,14 +290,25 @@ namespace ACE.Server.WorldObjects
                     creatureSkill.AdvancementClass = SkillAdvancementClass.Untrained;
                     creatureSkill.InitLevel = 0;
 
-                    if(IsTradeSkill(skill))
-                        creditsSpent = 0;
-
                     AvailableSkillCredits += creditsSpent;
                 }
 
                 creatureSkill.Ranks = 0;
                 creatureSkill.ExperienceSpent = 0;
+
+                // CUSTOM - Trade Skills - Handle Quest Stamps on Untrain
+                if (IsTradeSkill(skill))
+                {
+                   if (QuestManager.HasQuest("TradeSkill"))
+                    {
+                        var solves = QuestManager.GetCurrentSolves("TradeSkill");
+                        if (solves == 1)
+                            QuestManager.Erase("TradeSkill");
+                        else
+                            QuestManager.Decrement("TradeSkill");
+                    }
+
+                }
             }
 
             return true;
@@ -965,9 +977,6 @@ namespace ACE.Server.WorldObjects
                 creatureSkill.InitLevel = 0;
                 AvailableSkillCredits += skillBase.TrainedCost;
             }
-
-            // CRAFTING - Untraining: Gain no gained crafting experience back (it is not included in max amount)
-            refund = !IsTradeSkill(skill); 
 
             if (refund)
                 RefundXP(creatureSkill.ExperienceSpent);
