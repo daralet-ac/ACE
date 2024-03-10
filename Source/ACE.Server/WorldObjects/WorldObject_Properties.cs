@@ -3957,10 +3957,10 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseWeaponTime); else SetProperty(PropertyInt.BaseWeaponTime, value.Value); }
         }
 
-        public bool Ivoryable
+        public bool? Ivoryable
         {
             get => GetProperty(PropertyBool.Ivoryable) ?? true;
-            set { if (value) RemoveProperty(PropertyBool.Ivoryable); else SetProperty(PropertyBool.Ivoryable, value); }
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.Ivoryable); else SetProperty(PropertyBool.Ivoryable, value.Value); }
         }
 
         public uint? AllowedWielder

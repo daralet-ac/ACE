@@ -1090,12 +1090,17 @@ namespace ACE.Server.WorldObjects
                                 item.NotifyOfEvent(RegenerationType.PickUp);
 
                                 // CUSTOM - Automatic Ivorying
-                                if (item.Attuned == AttunedStatus.Attuned && item.Ivoryable == true)
+                                if (item.Attuned == AttunedStatus.Attuned)
                                 {
-                                    item.Attuned = AttunedStatus.Normal;
-                                    item.AllowedWielder = this.Guid.Full;
-                                    item.CraftsmanName = this.Name;
+                                    if (item.GetProperty(PropertyBool.Ivoryable) ?? false)
+                                    {
+                                        item.Attuned = AttunedStatus.Normal;
+                                        item.AllowedWielder = this.Guid.Full;
+                                        item.CraftsmanName = this.Name;
+                                        item.Ivoryable = null;
+                                    }
                                 }
+
 
                                 if (questSolve)
                                     item.EmoteManager.OnQuest(this);
