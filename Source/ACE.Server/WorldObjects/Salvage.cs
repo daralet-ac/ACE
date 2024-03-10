@@ -6,6 +6,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.WorldObjects.Entity;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -100,7 +101,28 @@ namespace ACE.Server.WorldObjects
 
             // calculate chance + crafting dialog
 
-            var successChance = GetTinkerChance(player, source, target, tinkeringSkill);
+            var sourceWorkmanship = source.Workmanship ?? 0;
+            var itemWorkmanship = target.Workmanship ?? 0;
+
+            var tinkeredCount = target.NumTimesTinkered;
+
+            var attemptMod = TinkeringDifficulty[tinkeredCount];
+
+            var creatureSkill = player.GetCreatureSkill(tinkeringSkill);
+
+            var workmanshipMod = 1.0f;
+            if (sourceWorkmanship >= itemWorkmanship)
+                workmanshipMod = 2.0f;
+
+            var difficulty = (int)Math.Floor((((50f) + (itemWorkmanship * 20f) - (sourceWorkmanship * workmanshipMod * 2f)) * attemptMod) / 2);
+
+            // weight player base by 50+ to account for no buffs + 0 skill start, halve difficulty of EOR formula
+            var successChance = SkillCheck.GetSkillChance((int)creatureSkill.Current + 50, difficulty);
+
+            if (ImbueSalvage.Contains((MaterialType)source.MaterialType))
+            {
+                successChance /= 3.0f;
+            }
 
             var percent = (int)(successChance * 100);
 
@@ -134,7 +156,7 @@ namespace ACE.Server.WorldObjects
 
             actionChain.AddAction(player, () =>
             {
-                HandleTinkering(player, source, target, (double)successChance);
+                HandleTinkering(player, source, target, (double)successChance, difficulty, creatureSkill, tinkeringSkill);
 
             });
 
@@ -194,40 +216,7 @@ namespace ACE.Server.WorldObjects
                 return false;
         }
 
-        public static double? GetTinkerChance(Player player, WorldObject source, WorldObject target, Skill tinkeringSkill)
-        {
-            // calculate % success chance
-
-            var sourceWorkmanship = source.Workmanship ?? 0;
-            var itemWorkmanship = target.Workmanship ?? 0;
-
-            var tinkeredCount = target.NumTimesTinkered;
-
-            var materialType = source.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown;
-
-            var attemptMod = TinkeringDifficulty[tinkeredCount];
-
-            var skill = player.GetCreatureSkill(tinkeringSkill);
-            
-            var salvageMod = 10.0f;
-
-            var workmanshipMod = 1.0f;
-            if (sourceWorkmanship >= itemWorkmanship)
-                workmanshipMod = 2.0f;
-
-            var difficulty = (int)Math.Floor(((salvageMod * 5.0f) + (itemWorkmanship * salvageMod * 2.0f) - (sourceWorkmanship * workmanshipMod * salvageMod / 5.0f)) * attemptMod);
-
-            var successChance = SkillCheck.GetSkillChance((int)skill.Current, difficulty);
-
-            if (ImbueSalvage.Contains((MaterialType)source.MaterialType))
-            {
-                successChance /= 3.0f;
-            }
-
-            return successChance;
-        }
-
-        public static void HandleTinkering(Player player, WorldObject source, WorldObject target, double successChance)
+        public static void HandleTinkering(Player player, WorldObject source, WorldObject target, double successChance, int difficulty, CreatureSkill skill, Skill tinkeringSkill)
         {
 
             var successAmount = "";
@@ -878,11 +867,15 @@ namespace ACE.Server.WorldObjects
                         break;
                  */
                 }
-
-                if (target.ImbuedEffect > 0)
+                // rank chance of 25% per armor slot, quartered for failure
+                var rankChance = success ? 0.25f * armorSlots : 0.0625f * armorSlots;
+                // check to ensure appropriately difficult tinker before granting (is player skill no more than 50 over adjusted diff)
+                if (skill.Current < difficulty)
                 {
-
+                    if (rankChance >= ThreadSafeRandom.Next(0f, 1f))
+                        player.GrantSkillRanks(tinkeringSkill, 1);
                 }
+
                 BroadcastTinkering(player, source, target, successChance, success, successAmount);
                 TinkeringCleanup(player, source, target);
             }
@@ -1077,11 +1070,11 @@ namespace ACE.Server.WorldObjects
             1.3f,   // 3
             1.6f,   // 4
             2.0f,   // 5
-            2.5f,   // 6
-            3.0f,   // 7
-            3.5f,   // 8
-            4.0f,   // 9
-            4.5f    // 10
+            2.25f,   // 6
+            2.5f,   // 7
+            2.75f,   // 8
+            3.0f,   // 9
+            3.25f    // 10
         };
 
         public static List<string> WorkmanshipNames = new List<string>()
