@@ -191,6 +191,42 @@ namespace ACE.Server.WorldObjects.Managers
                     _log.Information($"0x{WorldObject.Guid}:{WorldObject.Name}({WorldObject.WeenieClassId}).EmoteManager.BLog - {text}");
                     break;
 
+                case EmoteType.CapstoneCacheReward:
+
+                    if (player != null && WorldObject.Tier != null)
+                    {
+                        if (player.GetFreeInventorySlots() < 5)
+                        {
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You must have at least 5 free inventory slots in your main pack to receive a reward.", ChatMessageType.Broadcast));
+                            break;
+                        }
+
+                        var numRewards = emote.Amount;
+
+                        // could have a basic item pool, then vary it by tier if need be, or a specific cache value passed in via the emote, etc.
+                        List<uint> itemPool = new List<uint> { 1054000, 1054002, 1054003, 1053972, 2626 };
+                        var items = new Dictionary<uint, int>();
+
+                        for (int i = 0; i < numRewards; i++)
+                        {
+                            var randomIndex = ThreadSafeRandom.Next(0, itemPool.Count - 1);
+
+                            var randomItem = itemPool[randomIndex];
+
+                            var tier = (int)WorldObject.Tier - 1;
+
+                            var amount = tier >= 3 ? ThreadSafeRandom.Next(1, tier) : 1;
+
+                            player.GiveFromEmote(WorldObject, randomItem, amount);
+                        }
+
+                        player.QuestManager.Stamp(emote.Message);
+
+                        player.SaveBiotaToDatabase();
+                    }
+
+                    break;
+
                 case EmoteType.CastSpell:
 
                     if (WorldObject != null)
