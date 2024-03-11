@@ -669,7 +669,7 @@ namespace ACE.Server.WorldObjects
                     var visualAwarenessRange = (float)((VisualAwarenessRange ?? VisualAwarenessRange_Default) * PropertyManager.GetDouble("mob_awareness_range").Item);
 
                     if (!Location.Indoors && visualAwarenessRange < 45f && Level > 10 && !OverrideVisualRange.HasValue || OverrideVisualRange == false)
-                        visualAwarenessRange = 45f;
+                       visualAwarenessRange = PropertyManager.GetLong("monster_visual_awareness_range").Item;
 
                     _visualAwarenessRangeSq = visualAwarenessRange * visualAwarenessRange;
                 }
