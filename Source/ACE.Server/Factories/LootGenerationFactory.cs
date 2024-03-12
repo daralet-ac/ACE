@@ -62,7 +62,6 @@ namespace ACE.Server.Factories
             if (deathTreasureId == 338) // Leave Steel Chests alone!
                 return DatabaseManager.World.GetCachedDeathTreasure(deathTreasureId);
 
-            // Tweaks to make the loot system more akin to Infiltration Era and CustomDM
             TreasureDeath deathTreasure;
             TreasureDeath tweakedDeathTreasure;
 
