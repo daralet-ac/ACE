@@ -1369,11 +1369,6 @@ namespace ACE.Server.Factories
                     treasureRoll.Wcid = WeenieClassName.ace49485_encapsulatedspirit;
                     break;
 
-                case TreasureItemType_Orig.Salvage:
-
-                    treasureRoll.Wcid = SalvageWcids.Roll(treasureDeath);
-                    break;
-
                 case TreasureItemType_Orig.ArmorWarrior:
 
                     if (treasureRoll.ArmorType == TreasureArmorType.Undef)
@@ -1662,10 +1657,6 @@ namespace ACE.Server.Factories
 
                 case TreasureItemType_Orig.PetDevice:
                     MutatePetDevice(wo, treasureDeath.Tier);
-                    break;
-
-                case TreasureItemType_Orig.Salvage:
-                    MutateSalvage(wo, treasureDeath.Tier);
                     break;
 
                 case TreasureItemType_Orig.ArmorWarrior:
