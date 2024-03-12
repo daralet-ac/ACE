@@ -63,11 +63,6 @@ namespace ACE.Server.Factories.Enum
         PetDevice,
         EncapsulatedSpirit,
 
-        // CustomDM
-        Salvage,
-        SpecialItem,
-        SpecialItem_Unmutated,
-
         // Timeline
         ArmorWarrior,
         ArmorRogue,

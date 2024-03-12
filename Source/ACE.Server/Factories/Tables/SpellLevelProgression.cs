@@ -8439,11 +8439,6 @@ namespace ACE.Server.Factories.Tables
             AddSpells(CantripWarriorVitality);
             AddSpells(CantripWarriorVigor);
             AddSpells(CantripWizardIntelect);
-            //CustomDM
-            //AddSpells(ArmorMasterySelf);
-            //AddSpells(ArmorMasteryOther);
-            //AddSpells(ArmorIneptitudeOther);
-            //AddSpells(CantripArmorAptitude);
         }
 
         private static void AddSpells(List<SpellId> spells)
