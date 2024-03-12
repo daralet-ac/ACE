@@ -1671,6 +1671,54 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
+            // SPEC BONUS - Thrown Weapons: Allow shield to be equipped while wielding a thrown weapon
+            if (item.IsShield)
+            {
+                var mainHandWeapon = GetEquippedMainHand();
+                if(mainHandWeapon != null && mainHandWeapon.WeaponSkill == Skill.ThrownWeapon)
+                {
+                    // prevent non-buckler shields from ever being equipped with thrown weapons
+                    if (item.WeenieClassId != (uint)Factories.Enum.WeenieClassName.buckler)
+                    {
+                        Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"Non-buckler shields cannot be equipped with thrown weapons."));
+                        Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
+                        return false;
+                    }
+
+                    // only allow bucklers to equip with thrown weapons if TW is specialized
+                    if (GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass != SkillAdvancementClass.Specialized)
+                    {
+                        Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"Your Thrown Weapons skill must be specialized to equip a buckler with thrown weapons."));
+                        Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
+                        return false;
+                    }
+                }
+            }
+
+            // SPEC BONUS - Thrown Weapons: Allow a thrown weapon to be equipped while wielding a shield
+            if (item.WeaponSkill == Skill.ThrownWeapon)
+            {
+                var shield = GetEquippedShield();
+                if (shield != null)
+                {
+                    // prevent thrown weapons from ever being equipped with non-buckler shields
+                    if (shield.WeenieClassId != (uint)Factories.Enum.WeenieClassName.buckler)
+                    {
+                        Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"Thrown weapons cannot be equipped with non-buckler shields."));
+                        Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
+                        return false;
+                    }
+
+                    // only allow thrown weapons to equip with bucklers if TW is specialized
+                    if (GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass != SkillAdvancementClass.Specialized)
+                    {
+                        Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, $"Your Thrown Weapons skill must be specialized to equip thrown weapons with a buckler."));
+                        Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
+                        return false;
+                    }
+                }
+            }
+
             // Unwield wand/missile launcher/two-handed if dual wielding
             if (wieldedLocation == EquipMask.Shield && !item.IsShield)
             {
