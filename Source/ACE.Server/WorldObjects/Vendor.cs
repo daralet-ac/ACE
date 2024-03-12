@@ -1003,16 +1003,6 @@ namespace ACE.Server.WorldObjects
                     AddRandomItem(TreasureItemType_Orig.Scroll, TreasureArmorType.Undef, TreasureWeaponType.Undef);
                     added++;
                 }
-                if (sellsSalvage && added < itemsToGenerate)
-                {
-                    AddRandomItem(TreasureItemType_Orig.Salvage, TreasureArmorType.Undef, TreasureWeaponType.Undef);
-                    added++;
-                }
-                if (sellsSpecialItems && added < itemsToGenerate)
-                {
-                    AddRandomItem(TreasureItemType_Orig.SpecialItem, TreasureArmorType.Undef, TreasureWeaponType.Undef);
-                    added++;
-                }
             }
             
             UniqueItemsForSale = new Dictionary<ObjectGuid, WorldObject>(UniqueItemsForSale.OrderBy(key => key.Value, VendorItemComparer));
