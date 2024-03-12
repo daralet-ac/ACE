@@ -16,10 +16,10 @@ namespace ACE.Server.WorldObjects
     public enum CombatFocusType
     {
         None,
-        Soldier,
-        Swashbuckler,
+        Warrior,
+        Blademaster,
+        Archer,
         Vagabond,
-        Wayfayer,
         Sorcerer,
         Spellsword
     }
@@ -54,7 +54,7 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyInt.CombatFocusType); else SetProperty(PropertyInt.CombatFocusType, value.Value); }
         }
 
-        private static readonly List<SpellId> SoldierSpells = new List<SpellId>()
+        private static readonly List<SpellId> WarriorSpells = new List<SpellId>()
         {
             SpellId.StrengthSelf1,
             SpellId.EnduranceSelf1,
@@ -67,7 +67,7 @@ namespace ACE.Server.WorldObjects
             SpellId.MonsterAttunementSelf1   // Perception
         };
 
-        private static readonly List<SpellId> SwashbucklerSpells = new List<SpellId>()
+        private static readonly List<SpellId> BlademasterSpells = new List<SpellId>()
         {
             SpellId.EnduranceSelf1,
             SpellId.CoordinationSelf1,
@@ -85,7 +85,7 @@ namespace ACE.Server.WorldObjects
             SpellId.LockpickMasterySelf1,               // Thievery
         };
 
-        private static readonly List<SpellId> VagabondSpells = new List<SpellId>()
+        private static readonly List<SpellId> ArcherSpells = new List<SpellId>()
         {
             SpellId.CoordinationSelf1,
             SpellId.QuicknessSelf1,
@@ -101,7 +101,7 @@ namespace ACE.Server.WorldObjects
             SpellId.UnarmedCombatMasterySelf1,
         };
 
-        private static readonly List<SpellId> WayfayerSpells = new List<SpellId>()
+        private static readonly List<SpellId> VagabondSpells = new List<SpellId>()
         {
             SpellId.QuicknessSelf1,
             SpellId.FocusSelf1,
@@ -132,7 +132,7 @@ namespace ACE.Server.WorldObjects
             SpellId.MonsterAttunementSelf1              // Perception
         };
 
-        private static readonly List<SpellId> SwordscholarSpells = new List<SpellId>()
+        private static readonly List<SpellId> SpellswordSpells = new List<SpellId>()
         {
             SpellId.WillpowerSelf1,
             SpellId.StrengthSelf1,
@@ -149,12 +149,12 @@ namespace ACE.Server.WorldObjects
 
         private static readonly List<List<SpellId>> CombatFocusSpells = new List<List<SpellId>>()
         {
-            SoldierSpells,
-            SwashbucklerSpells,
+            WarriorSpells,
+            BlademasterSpells,
+            ArcherSpells,
             VagabondSpells,
-            WayfayerSpells,
             SorcererSpells,
-            SwordscholarSpells
+            SpellswordSpells
         };
 
         public void OnEquip(Player player)
@@ -424,12 +424,12 @@ namespace ACE.Server.WorldObjects
         {
             switch (combatFocusType)
             {
-                case WorldObjects.CombatFocusType.Soldier: return SoldierSpells;
-                case WorldObjects.CombatFocusType.Swashbuckler: return SwashbucklerSpells;
+                case WorldObjects.CombatFocusType.Warrior: return WarriorSpells;
+                case WorldObjects.CombatFocusType.Blademaster: return BlademasterSpells;
+                case WorldObjects.CombatFocusType.Archer: return ArcherSpells;
                 case WorldObjects.CombatFocusType.Vagabond: return VagabondSpells;
-                case WorldObjects.CombatFocusType.Wayfayer: return WayfayerSpells;
                 case WorldObjects.CombatFocusType.Sorcerer: return SorcererSpells;
-                case WorldObjects.CombatFocusType.Spellsword: return SwordscholarSpells;
+                case WorldObjects.CombatFocusType.Spellsword: return SpellswordSpells;
                 default: return null;
             }    
         }
