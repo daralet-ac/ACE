@@ -645,7 +645,6 @@ namespace ACE.Entity.Enum.Properties
         BaseAegis                               = 453,
         BaseWeaponTime                          = 454,
         BaseMaxMana                             = 455,
-        VendorItemSharedCooldown                = 456,
 
 
         [ServerOnly]

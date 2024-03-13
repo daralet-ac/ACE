@@ -590,10 +590,6 @@ namespace ACE.Server.WorldObjects
                 worldObject.WieldSkillType3 = worldObject.WieldSkillType3.HasValue ? (int)worldObject.ConvertToMoASkill((Skill)worldObject.WieldSkillType3) : null;
                 worldObject.WieldSkillType4 = worldObject.WieldSkillType4.HasValue ? (int)worldObject.ConvertToMoASkill((Skill)worldObject.WieldSkillType4) : null;
             }
-            
-            // If item has a TempSharedCooldown, set SharedCooldown to the same value
-            if (worldObject.VendorItemSharedCooldown != null)
-                worldObject.CooldownId = worldObject.VendorItemSharedCooldown;
 
             OnAddItem();
 
