@@ -721,8 +721,6 @@ namespace ACE.Server.WorldObjects
         private bool sellsRandomJewelry;
         private bool sellsRandomGems;
         private bool sellsRandomScrolls;
-        private bool sellsSalvage;
-        private bool sellsSpecialItems;
 
         private TreasureHeritageGroup ShopHeritage;
 
@@ -832,8 +830,6 @@ namespace ACE.Server.WorldObjects
             sellsRandomMeleeWeapons = ((ItemType)MerchandiseItemTypes & ItemType.MeleeWeapon) == ItemType.MeleeWeapon;
             sellsRandomMissileWeapons = ((ItemType)MerchandiseItemTypes & ItemType.MissileWeapon) == ItemType.MissileWeapon;
             sellsRandomCasters = ((ItemType)MerchandiseItemTypes & ItemType.Caster) == ItemType.Caster;
-            sellsSalvage = VendorSellsSalvage;
-            sellsSpecialItems = VendorSellsSpecialItems;
 
             if (!IsStarterOutpostVendor)
             {
@@ -859,10 +855,6 @@ namespace ACE.Server.WorldObjects
             if (sellsRandomGems)
                 categoriesSold++;
             if (sellsRandomScrolls)
-                categoriesSold++;
-            if (sellsSalvage)
-                categoriesSold++;
-            if (sellsSpecialItems)
                 categoriesSold++;
 
             if (VendorStockMaxAmount == 0)
@@ -1185,18 +1177,6 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyInt.MoneyOutflow) ?? 0;
             set { if (value == 0) RemoveProperty(PropertyInt.MoneyOutflow); else SetProperty(PropertyInt.MoneyOutflow, value); }
-        }
-
-        public bool VendorSellsSalvage
-        {
-            get => GetProperty(PropertyBool.VendorSellsSalvage) ?? false;
-            set { if (value == false) RemoveProperty(PropertyBool.VendorSellsSalvage); else SetProperty(PropertyBool.VendorSellsSalvage, value); }
-        }
-
-        public bool VendorSellsSpecialItems
-        {
-            get => GetProperty(PropertyBool.VendorSellsSpecialItems) ?? false;
-            set { if (value == false) RemoveProperty(PropertyBool.VendorSellsSpecialItems); else SetProperty(PropertyBool.VendorSellsSpecialItems, value); }
         }
 
         protected double VendorRestockInterval
