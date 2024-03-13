@@ -6385,8 +6385,7 @@ namespace ACE.Entity.Enum
 
         HealingKitCooldown                  = 0x8000 | 10003,   // varies
 
-        FocusedTaunt                        = 0x8000 | 10050,   // 15 second cooldown
-        AreaTaunt                           = 0x8000 | 10050,   // 15 second cooldown
+        Taunts                              = 0x8000 | 10050,   // 15 second cooldown (Focus Taunt and Area Taunt)
         FeignWeakness                       = 0x8000 | 10051,   // 15 second cooldown
         Vanish                              = 0x8000 | 10052,   // 60 second cooldown
         ExposeWeakness                      = 0x8000 | 10053,   // 15 second cooldown

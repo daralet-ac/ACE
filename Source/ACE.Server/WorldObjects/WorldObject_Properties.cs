@@ -1665,6 +1665,12 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyInt.SharedCooldown); else SetProperty(PropertyInt.SharedCooldown, value.Value); }
         }
 
+        public int? VendorItemSharedCooldown
+        {
+            get => GetProperty(PropertyInt.VendorItemSharedCooldown);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.VendorItemSharedCooldown); else SetProperty(PropertyInt.VendorItemSharedCooldown, value.Value); }
+        }
+
         public double? CooldownDuration
         {
             get => GetProperty(PropertyFloat.CooldownDuration);
