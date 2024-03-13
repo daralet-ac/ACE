@@ -286,14 +286,14 @@ namespace ACE.Server.Entity
 
             HeritageMod = attacker.GetHeritageBonus(Weapon) ? 1.05f : 1.0f;
 
-            // ATTACK HEIGHT BONUS: High (10 damage rating, 20 if weapon is specialized)
+            // ATTACK HEIGHT BONUS: High (10 damage rating, 15 if weapon is specialized)
             var extraDamageMod = 1.0f;
             if (playerAttacker != null)
             {
                 if (playerAttacker.AttackHeight == AttackHeight.High)
                 {
                     if (WeaponIsSpecialized(playerAttacker))
-                        extraDamageMod += 0.20f;
+                        extraDamageMod += 0.15f;
                     else
                         extraDamageMod += 0.10f;
                 }
@@ -742,7 +742,7 @@ namespace ACE.Server.Entity
 
             GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
 
-            // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +20% if weapon specialized)
+            // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +15% if weapon specialized)
             if (playerAttacker != null)
             {
                 if (playerAttacker.AttackHeight == AttackHeight.Medium)
@@ -750,7 +750,7 @@ namespace ACE.Server.Entity
                     float bonus;
 
                     if (WeaponIsSpecialized(playerAttacker))
-                        bonus = 1.2f;
+                        bonus = 1.15f;
                     else
                         bonus = 1.1f;
 
@@ -758,7 +758,7 @@ namespace ACE.Server.Entity
                 }
             }
 
-            // ATTACK HEIGHT BONUS: Low (+10% physical defense skill, +20% if weapon specialized)
+            // ATTACK HEIGHT BONUS: Low (+10% physical defense skill, +15% if weapon specialized)
             if (playerDefender != null)
             {
                 if (playerDefender != null && playerDefender.AttackHeight == AttackHeight.Low) 
@@ -766,7 +766,7 @@ namespace ACE.Server.Entity
                     float bonus;
 
                     if (WeaponIsSpecialized(playerAttacker))
-                        bonus = 1.2f;
+                        bonus = 1.15f;
                     else
                         bonus = 1.1f;
 
@@ -928,7 +928,7 @@ namespace ACE.Server.Entity
 
                 GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
 
-                // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +20% if weapon specialized)
+                // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +15% if weapon specialized)
                 if (playerAttacker != null)
                 {
                     if (playerAttacker.AttackHeight == AttackHeight.Medium)
@@ -936,7 +936,7 @@ namespace ACE.Server.Entity
                         float bonus;
 
                         if (WeaponIsSpecialized(playerAttacker))
-                            bonus = 1.2f;
+                            bonus = 1.15f;
                         else
                             bonus = 1.1f;
 
