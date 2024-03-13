@@ -48,6 +48,6 @@ namespace ACE.Entity.Enum
         Cooldown          = 0x02,
         CooldownDuration  = 0x04,
         PetOwner          = 0x08,
-        HotspotOwner      = 0x12,
+        HotspotOwner      = 0x10,
     }
 }
