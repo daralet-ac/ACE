@@ -1634,8 +1634,11 @@ namespace ACE.Server.WorldObjects
                         AdjustDungeon(teleportDest);
 
                         targetPlayer.Teleport(teleportDest);
+
+                        portal.EmoteManager.OnPortal(player);
                     });
                     portalRecall.EnqueueChain();
+
                 }
             }
         }

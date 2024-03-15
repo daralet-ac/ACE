@@ -43,6 +43,8 @@ namespace ACE.Server.Entity
 
         public QuestManager QuestManager;
 
+        public LandblockId? CapstoneDungeon;
+
         /// <summary>
         /// Called when a player first creates a Fellowship
         /// </summary>
