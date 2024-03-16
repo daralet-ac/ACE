@@ -141,6 +141,8 @@ namespace ACE.Server.Entity
                 TailoringKit.UseObjectOnTarget(player, source, target, true);
             else if (source.WeenieType == WeenieType.Salvage)
                 Salvage.UseObjectOnTarget(player, source, target, true);
+            else if (source.WeenieType == WeenieType.CombatFocusAlterationGem)
+                CombatFocusAlterationGem.UseObjectOnTarget(player, source, target, true);
             else
                 RecipeManager.UseObjectOnTarget(player, source, target, true);
 

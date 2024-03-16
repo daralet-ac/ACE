@@ -645,6 +645,11 @@ namespace ACE.Entity.Enum.Properties
         BaseAegis                               = 453,
         BaseWeaponTime                          = 454,
         BaseMaxMana                             = 455,
+        ItemSpellId                             = 456,
+        CombatFocusAttributeSpellRemoved        = 457,
+        CombatFocusAttributeSpellAdded          = 458,
+        CombatFocusSkillSpellRemoved            = 459,
+        CombatFocusSkillSpellAdded              = 460,
 
 
         [ServerOnly]

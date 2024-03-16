@@ -329,7 +329,7 @@ namespace ACE.Server.WorldObjects
                     Session.Network.EnqueueSend(new GameMessageSystemChat($"You raise your shield! For the next ten seconds, your chance to block is increased, and applies to attacks from any angle.", ChatMessageType.Broadcast));
                     break;
 
-                case CombatAbility.Reckless:
+                case CombatAbility.Fury:
                     RecklessActivated = true;
                     LastRecklessActivated = Time.GetUnixTime();
                     Session.Network.EnqueueSend(new GameMessageSystemChat($"You pour your rage into a mighty blow! The first attack you make within the next ten seconds will have increased damage and exhaust all of your Fury!", ChatMessageType.Broadcast));
