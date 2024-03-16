@@ -54,26 +54,97 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            //if (!RecipeManager.VerifyUse(player, source, target, true) || target.Workmanship == null)
-            //{
-            //    player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
-            //    return;
-            //}
+            if (combatFocus.Wielder != null)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You must first unwield the Combat Focus before altering it.", ChatMessageType.Craft));
+                player.SendUseDoneEvent();
+                return;
+            }
+
+            if (source.ItemSpellId == null)
+            {
+                if (!confirmed)
+                {
+                    if (!player.ConfirmationManager.EnqueueSend(new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid), $"Use {source.Name} gem on {target.Name} to reset it to its base state?"))
+                        player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
+                    else
+                        player.SendUseDoneEvent();
+
+                    return;
+                }
+
+                var newFocus = Factories.WorldObjectFactory.CreateNewWorldObject(target.WeenieClassId);
+                if (newFocus != null)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You reset the {target.Name} to its base state.", ChatMessageType.Craft));
+                    player.TryConsumeFromInventoryWithNetworking(source);
+                    player.TryConsumeFromInventoryWithNetworking(target);
+                    player.TryCreateInInventoryWithNetworking(newFocus);
+                }
+            }
+
+            var spellId = (SpellId)source.ItemSpellId;
+            var spellMatch = combatFocus.GetCurrentSpellList().Contains(spellId) ? true : false;
+            var isAttribute = IsAttribute(spellId);
+
+            if (isAttribute)
+            {
+                if (!spellMatch && combatFocus.CombatFocusAttributeSpellRemoved == null)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You must remove an attribute spell from {combatFocus.Name} before a new attribute spell can be added.", ChatMessageType.Craft));
+                    player.SendUseDoneEvent();
+                    return;
+                }
+                if (!spellMatch && combatFocus.CombatFocusAttributeSpellAdded != null)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have already added an attribute spell once to {combatFocus.Name}.", ChatMessageType.Craft));
+                    player.SendUseDoneEvent();
+                    return;
+                }
+                if (spellMatch && combatFocus.CombatFocusAttributeSpellRemoved != null)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have already removed an attribute spell once from {combatFocus.Name}.", ChatMessageType.Craft));
+                    player.SendUseDoneEvent();
+                    return;
+                }
+            }
+
+            if (!isAttribute)
+            {
+                if (!spellMatch && combatFocus.CombatFocusSkillSpellRemoved == null)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You must remove a skill spell from {combatFocus.Name} before a new skill spell can be added.", ChatMessageType.Craft));
+                    player.SendUseDoneEvent();
+                    return;
+                }
+                if (!spellMatch && combatFocus.CombatFocusSkillSpellAdded != null)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have already added a skill spell once to {combatFocus.Name}.", ChatMessageType.Craft));
+                    player.SendUseDoneEvent();
+                    return;
+                }
+                if (spellMatch && combatFocus.CombatFocusSkillSpellRemoved != null)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have already removed a skill spell once from {combatFocus.Name}.", ChatMessageType.Craft));
+                    player.SendUseDoneEvent();
+                    return;
+                }
+            }
+
+            var change = spellMatch ? "remove" : "add";
+            var property = isAttribute ? "attribute" : "skill";
 
             if (!confirmed)
             {
-                if (!player.ConfirmationManager.EnqueueSend(new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid), $"Use {source.Name} gem on {target.Name}?"))
+                if (!player.ConfirmationManager.EnqueueSend(new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid), $"Use {source.Name} gem on {target.Name} to {change} this {property}?"))
                     player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
                 else
                     player.SendUseDoneEvent();
 
                 return;
             }
-            
-            var spellId = (SpellId)source.ItemSpellId;
-            var isAttribute = IsAttribute(spellId);
 
-            if (combatFocus.GetCurrentSpellList().Contains(spellId))
+            if (spellMatch)
                 combatFocus.RemoveSpell(player, source, spellId, isAttribute);
             else
                 combatFocus.AddSpell(player, source, spellId, isAttribute);
@@ -82,6 +153,7 @@ namespace ACE.Server.WorldObjects
 
             UpdateObj(player, target);
         }
+        
 
         private static bool IsAttribute(SpellId spellId)
         {
