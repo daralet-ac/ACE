@@ -211,7 +211,7 @@ namespace ACE.Server.WorldObjects
 
                     if (this != target)
                     {
-                        if (this.EquippedCombatAbility == CombatAbility.Reckless)
+                        if (this.EquippedCombatAbility == CombatAbility.Fury)
                         {
                             if (this.GetEquippedMeleeWeapon() != null || this.GetDistance(target) < 3)
                             {

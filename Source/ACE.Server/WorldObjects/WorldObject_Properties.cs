@@ -3974,5 +3974,11 @@ namespace ACE.Server.WorldObjects
             get => GetProperty(PropertyString.CraftsmanName);
             set { if (value == null) RemoveProperty(PropertyString.CraftsmanName); else SetProperty(PropertyString.CraftsmanName, value); }
         }
+
+        public int? ItemSpellId
+        {
+            get => (int?)GetProperty(PropertyInt.ItemSpellId);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.ItemSpellId); else SetProperty(PropertyInt.ItemSpellId, value.Value); }
+        }
     }
 }

@@ -608,20 +608,7 @@ namespace ACE.Server.WorldObjects
 
             var combatFocus = trinket as CombatFocus;
 
-            var spellList = new List<SpellId>();
-
-            if (combatFocus.CombatFocusType == (int)CombatFocusType.Warrior)
-                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Warrior);
-            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Blademaster)
-                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Blademaster);
-            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Archer)
-                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Archer);
-            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Vagabond)
-                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Vagabond);
-            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Sorcerer)
-                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Sorcerer);
-            else if (combatFocus.CombatFocusType == (int)CombatFocusType.Spellsword)
-                spellList = combatFocus.GetCombatFocusSpellList(CombatFocusType.Spellsword);
+            var spellList = combatFocus.GetCurrentSpellList();
 
             foreach (var spellId in spellList)
             {

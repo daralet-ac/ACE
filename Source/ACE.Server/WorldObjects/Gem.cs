@@ -311,6 +311,12 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            if (target.WeenieType == WeenieType.CombatFocusAlterationGem)
+            {
+                CombatFocusAlterationGem.UseObjectOnTarget(player, this, target);
+                return;
+            }
+
             // fallback on recipe manager?
             base.HandleActionUseOnTarget(player, target);
         }
