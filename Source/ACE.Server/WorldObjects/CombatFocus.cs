@@ -306,18 +306,6 @@ namespace ACE.Server.WorldObjects
 
         public void RemoveSpell(Player player, WorldObject source, SpellId spellId, bool isAttribute)
         {
-            if (isAttribute && CombatFocusAttributeSpellRemoved != null)
-            {
-                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have already removed an attribute spell once from {Name}.", ChatMessageType.Craft));
-                return;
-            }
-
-            if (!isAttribute && CombatFocusSkillSpellRemoved != null)
-            {
-                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have already removed a skill spell once from {Name}.", ChatMessageType.Craft));
-                return;
-            }
-
             var spellName = GetSpellName(spellId) + " spell";
 
             // remove spell (if a heritage skill, remove all 3)
@@ -344,43 +332,6 @@ namespace ACE.Server.WorldObjects
 
         public void AddSpell(Player player, WorldObject source, SpellId spellId, bool isAttribute)
         {
-            if (isAttribute)
-            {
-                if(CombatFocusAttributeSpellAdded != null)
-                {
-                    // error message: "You have already added an attribute spell to this Combat Focus."
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have already added an attribute spell to {Name}.", ChatMessageType.Craft));
-                    //player.SendUseDoneEvent();
-                    return;
-                }
-
-                if (CombatFocusAttributeSpellRemoved == null)
-                {
-                    // error message: "You must remove an attribute spell from the Combat Focus before adding another."
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You must remove an attribute spell from {Name} before a new attribute spell can be added.", ChatMessageType.Craft));
-                    //player.SendUseDoneEvent();
-                    return;
-                }
-            }
-            else
-            {
-                if (CombatFocusSkillSpellAdded != null)
-                {
-                    // error message: "You have already added a skill spell to this Combat Focus."
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have already added a skill spell to {Name}.", ChatMessageType.Craft));
-                    //player.SendUseDoneEvent();
-                    return;
-                }
-
-                if (CombatFocusSkillSpellRemoved == null)
-                {
-                    // error message: "You must remove a skill spell from the Combat Focus before adding another."
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You must remove a skill spell from {Name} before a new skill spell can be added.", ChatMessageType.Craft));
-                    //player.SendUseDoneEvent();
-                    return;
-                }
-            }
-
             // Add spell
             CurrentSpells.Add(spellId);
 
