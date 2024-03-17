@@ -1049,7 +1049,23 @@ namespace ACE.Server.WorldObjects
                     if (playerAttacker.Mana.Current < (uint)(baseCost * scarabReduction))
                         return;
 
-                     playerAttacker.UpdateVitalDelta(playerAttacker.Mana, (int)(baseCost * (scarabReduction * -1)));
+                    // SPEC BONUS - Arcane Lore: 25% chance to reduce the mana cost of a proc spell by up to half, scaled for skill.
+                    var loreScaler = 1f;
+                    var lore = playerAttacker.GetCreatureSkill(Skill.ArcaneLore);
+                    if (lore.AdvancementClass == SkillAdvancementClass.Specialized)
+                    {
+                        var attackSkill = playerAttacker.GetCreatureSkill(playerAttacker.GetCurrentAttackSkill());
+                        var skillCheck = (float)lore.Current / (float)attackSkill.Current;
+                        var reductionChance = skillCheck > 1f ? 0.25f : skillCheck * 0.25f;
+
+                        if (reductionChance >= ThreadSafeRandom.Next(0f, 1f))
+                        {
+                            loreScaler = 0.5f;
+                            if (lore.Current < attackSkill.Current)
+                                loreScaler = 1f - skillCheck;
+                        }
+                    }
+                         playerAttacker.UpdateVitalDelta(playerAttacker.Mana, (int)(baseCost * (scarabReduction * -1) * loreScaler));
                 }
 
                 attacker.TryCastSpell(spell, target, itemCaster, itemCaster, true, true);
