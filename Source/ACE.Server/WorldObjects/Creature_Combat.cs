@@ -904,7 +904,7 @@ namespace ACE.Server.WorldObjects
             {
                 var attackSkill = GetCreatureSkill(GetCurrentAttackSkill());
                 var skillChance = (float)(deception.Current / attackSkill.Current);
-                var chance = skillChance > 1f ? 1f : skillChance * 0.5f;
+                var chance = skillChance > 1f ? 0.5f : skillChance * 0.5f;
 
                 if (chance >= ThreadSafeRandom.Next(0f, 1f))
                 {
