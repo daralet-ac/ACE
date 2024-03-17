@@ -898,6 +898,26 @@ namespace ACE.Server.WorldObjects
                 behind = Math.Abs(angle) > 45.0f;
             }
 
+            // SPEC BONUS - Deception: Up to 50% chance to sneak attack from the front. Both chance and damage bonus scaled for skill.
+            var deception = GetCreatureSkill(Skill.Deception);
+            if (deception.AdvancementClass == SkillAdvancementClass.Specialized)
+            {
+                var attackSkill = GetCreatureSkill(GetCurrentAttackSkill());
+                var skillChance = (float)(deception.Current / attackSkill.Current);
+                var chance = skillChance > 1f ? 1f : skillChance * 0.5f;
+
+                if (chance >= ThreadSafeRandom.Next(0f, 1f))
+                {
+                    if (deception.Current < attackSkill.Current)
+                    {
+                        var bonusPenalty = (float)(deception.Current / attackSkill.Current);
+                        return 1.2f * bonusPenalty;
+                    }
+                    else
+                        return 1.2f;
+                }
+            }
+
             if (behind)
             {
                 var targetPlayer = target as Player;
