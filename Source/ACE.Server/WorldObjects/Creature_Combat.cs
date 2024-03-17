@@ -903,7 +903,7 @@ namespace ACE.Server.WorldObjects
             if (deception.AdvancementClass == SkillAdvancementClass.Specialized)
             {
                 var attackSkill = GetCreatureSkill(GetCurrentAttackSkill());
-                var skillChance = (float)(deception.Current / attackSkill.Current);
+                var skillChance = (float)deception.Current / (float)attackSkill.Current;
                 var chance = skillChance > 1f ? 0.5f : skillChance * 0.5f;
 
                 if (chance >= ThreadSafeRandom.Next(0f, 1f))
