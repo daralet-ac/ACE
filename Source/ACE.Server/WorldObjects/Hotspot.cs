@@ -182,6 +182,10 @@ namespace ACE.Server.WorldObjects
         {
             if (!IsHot) return;
 
+            if (!(creature is Player))
+                if (!AffectsAis && !AffectsOnlyAis)
+                    return;
+
             var amount = DamageNext;
             var iAmount = (int)Math.Round(amount);
 
