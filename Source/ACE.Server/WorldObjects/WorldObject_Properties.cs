@@ -3948,6 +3948,11 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyString.CacheLog);
             set { if (value == null) RemoveProperty(PropertyString.CacheLog); else SetProperty(PropertyString.CacheLog, value); }
+
+        public int? ItemSpellId
+        {
+            get => (int?)GetProperty(PropertyInt.ItemSpellId);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.ItemSpellId); else SetProperty(PropertyInt.ItemSpellId, value.Value); }
         }
     }
 }

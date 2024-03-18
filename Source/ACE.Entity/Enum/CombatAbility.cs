@@ -8,7 +8,7 @@ namespace ACE.Entity.Enum
         Phalanx,
         Provoke,
         Parry,
-        Reckless,
+        Fury,
         Backstab,
         SteadyShot,
         Smokescreen,

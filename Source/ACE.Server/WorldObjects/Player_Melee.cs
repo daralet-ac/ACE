@@ -314,7 +314,7 @@ namespace ACE.Server.WorldObjects
             // TODO: ensure enough stamina for attack
             var staminaCost = GetAttackStamina(GetPowerRange(), (float)LastAttackAnimationLength, weapon, dualWieldStaminaBonus);
             
-            if (EquippedCombatAbility == CombatAbility.Reckless && QuestManager.HasQuest($"{this.Name},Reckless"))
+            if (EquippedCombatAbility == CombatAbility.Fury && QuestManager.HasQuest($"{this.Name},Reckless"))
             {
                 var recklessStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless");
                 float recklessMod = 1 + (recklessStacks / 500);

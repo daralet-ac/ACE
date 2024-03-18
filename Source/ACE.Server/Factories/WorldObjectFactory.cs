@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Database;
@@ -151,6 +152,8 @@ namespace ACE.Server.Factories
                     return new SpellTransference(weenie, guid);
                 case WeenieType.RetainingChisel:
                     return new RetainingChisel(weenie, guid);
+                case WeenieType.CombatFocusAlterationGem:
+                    return new CombatFocusAlterationGem(weenie, guid);
                 default:
                     return new GenericObject(weenie, guid);
             }
@@ -282,6 +285,8 @@ namespace ACE.Server.Factories
                     return new SpellTransference(biota);
                 case WeenieType.RetainingChisel:
                     return new RetainingChisel(biota);
+                case WeenieType.CombatFocusAlterationGem:
+                    return new CombatFocusAlterationGem(biota);
                 default:
                     return new GenericObject(biota);
             }

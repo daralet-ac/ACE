@@ -325,7 +325,7 @@ namespace ACE.Server.Entity
                         provokeMod += 0.2f;
                 }
                 // Reckless -- Stamp and apply bonus only if target not self, and melee / short range
-                if (playerAttacker.EquippedCombatAbility == CombatAbility.Reckless && defender != playerAttacker)
+                if (playerAttacker.EquippedCombatAbility == CombatAbility.Fury && defender != playerAttacker)
                 {
                     if (CombatType == CombatType.Melee || attacker.GetDistance(defender) < 3)
                     {

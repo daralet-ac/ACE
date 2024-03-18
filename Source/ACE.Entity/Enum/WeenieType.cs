@@ -82,5 +82,6 @@ namespace ACE.Entity.Enum
         SpellTransference,
         RetainingChisel,
         TailoringKit,
+        CombatFocusAlterationGem
     }
 }
