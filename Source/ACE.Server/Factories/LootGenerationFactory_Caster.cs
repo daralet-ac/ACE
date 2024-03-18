@@ -511,13 +511,17 @@ namespace ACE.Server.Factories
         }
 
         /// <summary>
-        /// Rolls Bonus Defense Mods for Staves (caster)
+        /// Rolls Bonus Defense Mods for Staves (caster). (Up to +20% based on tier)
         /// </summary>
         private static float RollBonusDefenseMod(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
         {
-            var defenseMod = 0.1f * GetDiminishingRoll(treasureDeath);
+            float[] minMod = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
 
-            var maxMod = 0.1f;
+            var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
+            var defenseMod = 0.1f * GetDiminishingRoll(treasureDeath);
+            defenseMod += minMod[tier];
+
+            var maxMod = 0.2f;
             percentile = defenseMod / maxMod;
 
             return defenseMod;
