@@ -21,10 +21,15 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages;
+using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Encounter = ACE.Database.Models.World.Encounter;
 using Position = ACE.Entity.Position;
+using Quaternion = System.Numerics.Quaternion;
+using RegenerationType = ACE.Entity.Enum.RegenerationType;
+using WeenieType = ACE.Entity.Enum.WeenieType;
 
 namespace ACE.Server.Entity
 {
@@ -44,7 +49,6 @@ namespace ACE.Server.Entity
         public static float MaxXY { get; } = 192f;
         public static float MaxObjectRange { get; } = 192f;
         public static float MaxObjectGhostRange { get; } = 250f;
-
 
         public LandblockId Id { get; }
 
@@ -115,7 +119,6 @@ namespace ACE.Server.Entity
         /// </summary>
         public static readonly TimeSpan UnloadInterval = TimeSpan.FromMinutes(5);
 
-
         /// <summary>
         /// The clientlib backing store landblock
         /// Eventually these classes could be merged, but for now they are separate...
@@ -162,6 +165,24 @@ namespace ACE.Server.Entity
             set => fogColor = value;
         }
 
+        public List<Player> ActivePlayers
+        {
+            get
+            {
+                var PlayerList = new List<Player>();
+                PlayerList = players;
+                return PlayerList;
+            }
+        }
+        public Dictionary<string, double> CapstonePlayers = new Dictionary<string, double>();
+
+        public bool CapstoneLockout = false;
+
+        public static int CapstoneMax = 10;
+
+        public static readonly double CapstoneSeatHolder = 600;
+
+        public double CapstoneUptime = 0;
 
         public Landblock(LandblockId id)
         {
@@ -337,7 +358,7 @@ namespace ACE.Server.Entity
 
                                 if (!encountersToDuplicate.ContainsKey(coords)) // Only add cells that do not yet contain encounters.
                                 {
-                                    ushort terrainType = getTerrainType(cellX,cellY);
+                                    ushort terrainType = getTerrainType(cellX, cellY);
 
                                     if (terrainTypeMap.TryGetValue(terrainType, out var entry))
                                         entry.Add(new AvailableCell(cellX, cellY, terrainType));
@@ -416,7 +437,7 @@ namespace ACE.Server.Entity
                     {
                         wo.Destroy();
                         return;
-					}
+                    }
 
                     if (PropertyManager.GetBool("increase_minimum_encounter_spawn_density").Item)
                     {
@@ -656,6 +677,45 @@ namespace ACE.Server.Entity
                     {
                         if (wo.IsDecayable())
                             wo.Decay(thisHeartBeat - lastHeartBeat);
+                    }
+                }
+
+                // Check and update capstone player list and check for lockout
+                if (CapstoneTeleportLocations.Keys.Contains(Id))
+                {
+                    CapstoneUptime += 5;
+
+                    foreach (var playerName in CapstonePlayers.Keys)
+                    {
+                        if (CapstonePlayers.TryGetValue(playerName, out double timer))
+                        {
+                            var activePlayers = new List<string> { };
+
+                            foreach (var activePlayer in players)
+                                activePlayers.Add(activePlayer.Name);
+
+                            if (!activePlayers.Contains(playerName))
+                            {
+                                if (timer == 0)
+                                    CapstonePlayers[playerName] = Time.GetUnixTime();
+                                else if (timer + CapstoneSeatHolder < Time.GetUnixTime())
+                                    CapstonePlayers.Remove(playerName);
+                            }
+                        }
+                    }
+                    if (CapstoneLockout == false)
+                    {
+                        foreach (var wo in worldObjects.Values)
+                        {
+                            if (wo.DungeonLockout.HasValue)
+                            {
+                                if (wo.DungeonLockout == true)
+                                {
+                                    CapstoneLockout = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -1199,7 +1259,7 @@ namespace ACE.Server.Entity
                 var wieldedItem = creature.GetEquippedItem(guid);
                 if (wieldedItem != null)
                 {
-                    if ((wieldedItem.CurrentWieldedLocation & EquipMask.Selectable) != 0)
+                    if ((wieldedItem.CurrentWieldedLocation & ACE.Entity.Enum.EquipMask.Selectable) != 0)
                         return wieldedItem;
 
                     return null;
@@ -1431,7 +1491,7 @@ namespace ACE.Server.Entity
                 foreach (var lb in Adjacents)
                     lb.FogColor = environChangeType;
 
-                foreach(var player in players)
+                foreach (var player in players)
                 {
                     player.SetFogColor(FogColor);
                 }
@@ -1479,5 +1539,322 @@ namespace ACE.Server.Entity
             else
                 SendEnvironSound(environChangeType);
         }
+
+
+        public static void AssignCapstoneDungeon(Player player, string dungeonName)
+        {
+            var dungeonLandblocks = CapstoneDungeonLists(dungeonName);
+
+            if (dungeonLandblocks != null)
+            {
+                if (player.Fellowship != null)
+                {
+                    var fellow = player.Fellowship;
+
+                    if (fellow.CapstoneDungeon.HasValue && dungeonLandblocks.Contains((LandblockId)fellow.CapstoneDungeon))
+                    {
+                        var landblock = LandblockManager.GetLandblock((LandblockId)fellow.CapstoneDungeon, false);
+
+                        if (landblock.CapstonePlayers.Keys.Contains(player.Name))
+                            CapstoneTeleport(player, landblock);
+                        else if (landblock.CapstoneLockout == false)
+                        {
+                            var openSlots = landblock.CapstonePlayers.Keys.Count >= CapstoneMax ? false : true;
+
+                            if (openSlots)
+                                CapstoneTeleport(player, landblock);
+                            else
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot join your fellowship at this time, as their instance of the dungeon is full. You may choose to either leave your fellowship and try again or wait for a slot to open, up to ten minutes after a player leaves the dungeon.", ChatMessageType.Broadcast));
+                        }
+                    }
+                    else
+                        FindOpenInstanceFellowship(player, dungeonLandblocks, dungeonName);
+                }
+                // No Fellowship
+                else
+                {
+                    if (player.CapstoneDungeon.HasValue && dungeonLandblocks.Contains((LandblockId)player.CapstoneDungeon))
+                    {
+                        var landblock = LandblockManager.GetLandblock((LandblockId)player.CapstoneDungeon, false);
+
+                        if (landblock.CapstonePlayers.Keys.Contains(player.Name))
+                            CapstoneTeleport(player, landblock);
+                        else if (landblock.CapstonePlayers.Count < CapstoneMax && landblock.CapstoneLockout == false)
+                            CapstoneTeleport(player, landblock);
+                        else
+                            FindOpenInstance(player, dungeonLandblocks);
+                    }
+                    else
+                        FindOpenInstance(player, dungeonLandblocks);
+                }
+            }
+        }
+        public static void FindOpenInstance(Player player, List<LandblockId> dungeonLandblocks)
+        {
+            foreach (var landblockId in dungeonLandblocks)
+            {
+                var landblock = LandblockManager.GetLandblock(landblockId, false);
+
+                if (landblock.CapstoneLockout)
+                    continue;
+
+                if (landblock.CapstonePlayers.Count < CapstoneMax)
+                {
+                    CapstoneTeleport(player, landblock);
+                    return;
+                }
+            }
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Unfortunately, there are no open slots in any instance of this dungeon. That's a lot of players, wow! Sorry, but wow!", ChatMessageType.Broadcast));
+            return;
+        }
+
+        public static void FindOpenInstanceFellowship(Player player, List<LandblockId> dungeonLandblocks, string dungeonName)
+        {
+            var fellow = player.Fellowship;
+            var fellowCount = fellow.FellowshipMembers.Count;
+
+            foreach (var landblockId in dungeonLandblocks)
+            {
+                var landblock = LandblockManager.GetLandblock(landblockId, false);
+
+                if (landblock.CapstoneLockout)
+                    continue;
+
+                if (landblock.CapstonePlayers.Count + fellowCount <= CapstoneMax)
+                {
+                    fellow.CapstoneDungeon = landblock.Id;
+
+                    var fellowMembers = fellow.GetFellowshipMembers();
+                    foreach (var member in fellowMembers.Values)
+                    {
+                        landblock.CapstonePlayers.Add(member.Name, Time.GetUnixTime());
+                        if (member.Guid != player.Guid)
+                            member.Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has entered {dungeonName}. If you join them in the next ten minutes, you will be guaranteed a place in the same instance. After the time limit has expired, another player may take your slot.", ChatMessageType.Broadcast));
+                    }
+                    CapstoneTeleport(player, landblock);
+                    break;
+                }
+            }
+            if (fellow.CapstoneDungeon == null)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"There are no instances of this dungeon with enough open slots to fit your entire fellowship.", ChatMessageType.Broadcast));
+                return;
+            }
+
+        }
+        public static void CapstoneTeleport(Player player, Landblock landblock)
+        {
+            if (!landblock.CapstonePlayers.Keys.Contains(player.Name))
+                landblock.CapstonePlayers.Add(player.Name, 0);
+            if (landblock.CapstonePlayers.Keys.Contains(player.Name) && landblock.CapstonePlayers[player.Name] > 0)
+                landblock.CapstonePlayers[player.Name] = 0;
+
+            // checks active instances of this dungeon and player's previous capstone, and removes them from permitted list
+            // this is to prevent potential griefing (however unlikely) and ensure slots open speedily
+           /* if (player.CapstoneDungeon.HasValue)
+                dungeonLandblocks.Add((LandblockId)player.CapstoneDungeon);
+
+            foreach (var landblockId in dungeonLandblocks)
+            {
+                if (landblockId != landblock.Id && LandblockManager.IsLoaded(landblockId))
+                { 
+                    var otherDungeon = LandblockManager.GetLandblock(landblockId, false);
+                    if (otherDungeon.CapstonePlayers.Keys.Contains(player))
+                        otherDungeon.CapstonePlayers.Remove(player); 
+                }
+            } */
+            player.CapstoneDungeon = landblock.Id;
+
+            if (CapstoneTeleportLocations.TryGetValue(landblock.Id, out var destination))
+            {
+                WorldObject.AdjustDungeon(destination);
+                WorldManager.ThreadSafeTeleport(player, destination);
+            }
+        }
+
+        public static List<LandblockId> CapstoneDungeonLists(string dungeonName)
+        {
+            uint[] dungeonLandblocks = new uint[] { };
+
+            switch (dungeonName)
+            {
+                //T0
+                case "Glenden Wood Dungeon": dungeonLandblocks = new uint[] { 0x01E3, 0x13FE, 0x13FD, 0x13FC, 0x13FB, 0x13FA }; break;
+                case "Green Mire Grave": dungeonLandblocks = new uint[] { 0x01E5, 0x09FE, 0x09FD, 0x09FC, 0x09FB, 0x09FA }; break;
+                case "Sand Shallow": dungeonLandblocks = new uint[] { 0x02A0, 0x0EFE, 0x0EFD, 0x0EFC, 0x0EFB, 0x0EFA }; break;
+                // T1
+                case "Manse of Panderlou": dungeonLandblocks = new uint[] { 0x01ED, 0x14FE, 0x14FD, 0x14FC, 0x14FB, 0x14FA }; break;
+                case "Smugglers Hideaway": dungeonLandblocks = new uint[] { 0x014E, 0x0AFE, 0x0AFD, 0x0AFC, 0x0AFB, 0x0AFA }; break;
+                case "Halls of the Helm": dungeonLandblocks = new uint[] { 0x01CC, 0x0FFE, 0x0FFD, 0x0FFC, 0x0FFB, 0x0FFA }; break;
+                // T2
+                case "Colier Mine": dungeonLandblocks = new uint[] { 0x01AE, 0x18FE, 0x18FD, 0x18FC, 0x18FB, 0x18FA }; break;
+                case "Empyrean Garrison": dungeonLandblocks = new uint[] { 0x0161, 0x0BFE, 0x0BFD, 0x0BFC, 0x0BFB, 0x0BFA }; break;
+                case "Grievous Vault": dungeonLandblocks = new uint[] { 0x0189, 0x10FE, 0x10FD, 0x10FC, 0x10FB, 0x10FA }; break;
+                // T3
+                case "Folthid Cellar": dungeonLandblocks = new uint[] { 0x013B, 0x19FE, 0x19FD, 0x19FC, 0x19FB, 0x19FA}; break;
+                case "Mines of Despair": dungeonLandblocks = new uint[] { 0x0188, 0x0CFE, 0x0CFD, 0x0CFC, 0x0CFB, 0x0CFA }; break;
+                case "Beyond the Mines": dungeonLandblocks = new uint[] { 0x02AB, 0x0DFE, 0x0DFD, 0x0DFC, 0x0DFB, 0x0DFA }; break;
+                case "Gredaline Consulate": dungeonLandblocks = new uint[] { 0x029B, 0x11FE, 0x11FD, 0x11FC, 0x11FB, 0x11FA }; break;
+                // T4
+                case "Mage Academy": dungeonLandblocks = new uint[] { 0x0139, 0x15FE, 0x15FD, 0x15FC, 0x15FB, 0x15FA }; break;
+                case "Lugian Mines": dungeonLandblocks = new uint[] { 0x02E9, 0x16FE, 0x16FD, 0x16FC, 0x16FB, 0x16FA }; break;
+                case "Lugian Mines2": dungeonLandblocks = new uint[] { 0x02E7, 0x17FE, 0x17FD, 0x17FC, 0x17FB, 0x17FA }; break;
+                case "Mountain Fortress": dungeonLandblocks = new uint[] { 0x011C, 0x12FE, 0x12FD, 0x12FC, 0x12FB, 0x12FA }; break;
+                default: return null;
+            }
+
+            if (dungeonLandblocks.Length > 0)
+            {
+                var landblockIds = new List<LandblockId> { };
+                foreach (var id in dungeonLandblocks)
+                {
+                    var landblockId = new LandblockId(id << 16 | 0xFFFF);
+                    landblockIds.Add(landblockId);
+                }
+                return landblockIds;
+            }
+            return null;
+        }
+
+        public static Dictionary<LandblockId, Position> CapstoneTeleportLocations = new Dictionary<LandblockId, Position>
+        {
+            // Glenden Wood Dungeon
+            {new LandblockId(0x01E3 << 16 | 0xFFFF), new Position(0x01E303B9, 159.847f, -165.469f, 6.005f, 0, 0, 0, 1) },
+            {new LandblockId(0x13FE << 16 | 0xFFFF), new Position(0x13FE30B9, 159.847f, -165.469f, 6.005f, 0, 0, 0, 1) },
+            {new LandblockId(0x13FD << 16 | 0xFFFF), new Position(0x13FD30B9, 159.847f, -165.469f, 6.005f, 0, 0, 0, 1) },
+            {new LandblockId(0x13FC << 16 | 0xFFFF), new Position(0x13FC30B9, 159.847f, -165.469f, 6.005f, 0, 0, 0, 1) },
+            {new LandblockId(0x13FB << 16 | 0xFFFF), new Position(0x13FB30B9, 159.847f, -165.469f, 6.005f, 0, 0, 0, 1) },
+            {new LandblockId(0x13FA << 16 | 0xFFFF), new Position(0x13FA30B9, 159.847f, -165.469f, 6.005f, 0, 0, 0, 1) },
+
+            // Green Mire Grave   0x09FE020F [80.487862 -79.122993 0.005000] -0.000000 0.000000 0.000000 1.000000
+            {new LandblockId(0x01E5 << 16 | 0xFFFF), new Position(0x01E5020F, 80.1099f, -80.136284f, 0.005f, 0, 0, 1, 0) },
+            {new LandblockId(0x09FE << 16 | 0xFFFF), new Position(0x09FE020F, 80.1099f, -80.136284f, 0.005f, 0, 0, 1, 0) },
+            {new LandblockId(0x09FD << 16 | 0xFFFF), new Position(0x09FD020F, 80.1099f, -80.136284f, 0.005f, 0, 0, 1, 0) },
+            {new LandblockId(0x09FC << 16 | 0xFFFF), new Position(0x09FC020F, 80.1099f, -80.136284f, 0.005f, 0, 0, 1, 0) },
+            {new LandblockId(0x09FB << 16 | 0xFFFF), new Position(0x09FB020F, 80.1099f, -80.136284f, 0.005f, 0, 0, 1, 0) },
+            {new LandblockId(0x09FA << 16 | 0xFFFF), new Position(0x09FA020F, 80.1099f, -80.136284f, 0.005f, 0, 0, 1, 0) },
+
+            // Sand Shallow 0x02A0, 0x0EFE, 0x0EFD, 0x0EFC, 0x0EFB, 0x0EFA  0x2A002F5, 290, -340, 0, 1, 0, 0, 0
+            {new LandblockId(0x02A0 << 16 | 0xFFFF), new Position(0x02A002F5, 290f, -340f, 0.005f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0EFE << 16 | 0xFFFF), new Position(0x0EFE02F5, 290f, -340f, 0.005f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0EFD << 16 | 0xFFFF), new Position(0x0EFD02F5, 290f, -340f, 0.005f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0EFC << 16 | 0xFFFF), new Position(0x0EFC02F5, 290f, -340f, 0.005f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0EFB << 16 | 0xFFFF), new Position(0x0EFB02F5, 290f, -340f, 0.005f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0EFA << 16 | 0xFFFF), new Position(0x0EFA02F5, 290f, -340f, 0.005f, 0f, 0f, 0f, 1f) },
+
+            // Manse of Panderlou 0x01ED, 0x14FE, 0x14FD, 0x14FC, 0x14FB, 0x14FA
+            {new LandblockId(0x01ED << 16 | 0xFFFF), new Position(0x01ED0310, 120.1193f, -3.697473f, 12.004999f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x14FE << 16 | 0xFFFF), new Position(0x14FE0310, 120.1193f, -3.697473f, 12.004999f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x14FD << 16 | 0xFFFF), new Position(0x14FD0310, 120.1193f, -3.697473f, 12.004999f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x14FC << 16 | 0xFFFF), new Position(0x14FC0310, 120.1193f, -3.697473f, 12.004999f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x14FB << 16 | 0xFFFF), new Position(0x14FB0310, 120.1193f, -3.697473f, 12.004999f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x14FA << 16 | 0xFFFF), new Position(0x14FA0310, 120.1193f, -3.697473f, 12.004999f, 0f, 0f, -1f, 0f) },
+
+            // Smuggler's Hideaway  0x014E, 0x0AFE, 0x0AFD, 0x0AFC, 0x0AFB, 0x0AFA
+            {new LandblockId(0x014E << 16 | 0xFFFF), new Position(0x014E025C, 190f, -10f, 0f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0AFE << 16 | 0xFFFF), new Position(0x0AFE025C, 190f, -10f, 0f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0AFD << 16 | 0xFFFF), new Position(0x0AFD025C, 190f, -10f, 0f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0AFC << 16 | 0xFFFF), new Position(0x0AFC025C, 190f, -10f, 0f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0AFB << 16 | 0xFFFF), new Position(0x0AFB025C, 190f, -10f, 0f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0AFA << 16 | 0xFFFF), new Position(0x0AFA025C, 190f, -10f, 0f, 0f, 0f, -1f, 0f) },
+
+            // Halls of the Helm 0x01CC, 0x0FFE, 0x0FFD, 0x0FFC, 0x0FFB, 0x0FFA
+            {new LandblockId(0x01CC << 16 | 0xFFFF), new Position(0x01CC01E5, 70.5f, -71f, 12f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0FFE << 16 | 0xFFFF), new Position(0x0FFE01E5, 70.5f, -71f, 12f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0FFD << 16 | 0xFFFF), new Position(0x0FFD01E5, 70.5f, -71f, 12f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0FFC << 16 | 0xFFFF), new Position(0x0FFC01E5, 70.5f, -71f, 12f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0FFB << 16 | 0xFFFF), new Position(0x0FFB01E5, 70.5f, -71f, 12f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x0FFA << 16 | 0xFFFF), new Position(0x0FFA01E5, 70.5f, -71f, 12f, 0f, 0f, -1f, 0f) },
+
+            // Colier Mine 0x01AE, 0x18FE, 0x18FD, 0x18FC, 0x18FB, 0x18FA
+            {new LandblockId(0x01AE << 16 | 0xFFFF), new Position(0x01AE032C, 76.59f, -97.36f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x18FE << 16 | 0xFFFF), new Position(0x18FE032C, 76.59f, -97.36f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x18FD << 16 | 0xFFFF), new Position(0x18FD032C, 76.59f, -97.36f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x18FC << 16 | 0xFFFF), new Position(0x18FC032C, 76.59f, -97.36f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x18FB << 16 | 0xFFFF), new Position(0x18FB032C, 76.59f, -97.36f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x18FA << 16 | 0xFFFF), new Position(0x18FA032C, 76.59f, -97.36f, 0f, 0f, 0f, 0f, 1f) },
+
+            // Empyrean Garrison  0x0161, 0x0BFE, 0x0BFD, 0x0BFC, 0x0BFB, 0x0BFA
+            {new LandblockId(0x0161 << 16 | 0xFFFF), new Position(0x01610264, 80f, -80f, 0f, 0f, 0f, -0.707107f, -0.707107f) },
+            {new LandblockId(0x0BFE << 16 | 0xFFFF), new Position(0x0BFE0264, 80f, -80f, 0f, 0f, 0f, -0.707107f, -0.707107f) },
+            {new LandblockId(0x0BFD << 16 | 0xFFFF), new Position(0x0BFD0264, 80f, -80f, 0f, 0f, 0f, -0.707107f, -0.707107f) },
+            {new LandblockId(0x0BFC << 16 | 0xFFFF), new Position(0x0BFC0264, 80f, -80f, 0f, 0f, 0f, -0.707107f, -0.707107f) },
+            {new LandblockId(0x0BFB << 16 | 0xFFFF), new Position(0x0BFB0264, 80f, -80f, 0f, 0f, 0f, -0.707107f, -0.707107f) },
+            {new LandblockId(0x0BFA << 16 | 0xFFFF), new Position(0x0BFA0264, 80f, -80f, 0f, 0f, 0f, -0.707107f, -0.707107f) },
+
+            // Grievous Vault 0x0189, 0x10FE, 0x10FD, 0x10FC, 0x10FB, 0x10FA
+            {new LandblockId(0x0189 << 16 | 0xFFFF), new Position(0x01890321, 139.792f, -66.582f, 6.005f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x10FE << 16 | 0xFFFF), new Position(0x10FE0321, 139.792f, -66.582f, 6.005f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x10FD << 16 | 0xFFFF), new Position(0x10FD0321, 139.792f, -66.582f, 6.005f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x10FC << 16 | 0xFFFF), new Position(0x10FC0321, 139.792f, -66.582f, 6.005f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x10FB << 16 | 0xFFFF), new Position(0x10FB0321, 139.792f, -66.582f, 6.005f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x10FA << 16 | 0xFFFF), new Position(0x10FA0321, 139.792f, -66.582f, 6.005f, 0f, 0f, -1f, 0f) },
+
+            // Folthid Cellar 0x013B, 0x19FE, 0x19FD, 0x19FC, 0x19FB, 0x19FA
+            {new LandblockId(0x013B << 16 | 0xFFFF), new Position(0x013B0336, 62.5684F, -109.99126F, 0.005F, 0, 0, -0.707107f, 0.707107f) },
+            {new LandblockId(0x19FE << 16 | 0xFFFF), new Position(0x19FE0336, 62.5684F, -109.99126F, 0.005F, 0, 0, -0.707107f, 0.707107f) },
+            {new LandblockId(0x19FD << 16 | 0xFFFF), new Position(0x19FD0336, 62.5684F, -109.99126F, 0.005F, 0, 0, -0.707107f, 0.707107f) },
+            {new LandblockId(0x19FC << 16 | 0xFFFF), new Position(0x19FC0336, 62.5684F, -109.99126F, 0.005F, 0, 0, -0.707107f, 0.707107f) },
+            {new LandblockId(0x19FB << 16 | 0xFFFF), new Position(0x19FB0336, 62.5684F, -109.99126F, 0.005F, 0, 0, -0.707107f, 0.707107f) },
+            {new LandblockId(0x19FA << 16 | 0xFFFF), new Position(0x19FA0336, 62.5684F, -109.99126F, 0.005F, 0, 0, -0.707107f, 0.707107f) },
+            
+            // Mines of Despair 0x0188, 0x0CFE, 0x0CFD, 0x0CFC, 0x0CFB, 0x0CFA
+            {new LandblockId(0x0188 << 16 | 0xFFFF), new Position(0x01880307, 30f, -70f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0CFE << 16 | 0xFFFF), new Position(0x0CFE0307, 30f, -70f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0CFD << 16 | 0xFFFF), new Position(0x0CFD0307, 30f, -70f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0CFC << 16 | 0xFFFF), new Position(0x0CFC0307, 30f, -70f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0CFB << 16 | 0xFFFF), new Position(0x0CFB0307, 30f, -70f, 0f, 0f, 0f, 0f, 1f) },
+            {new LandblockId(0x0CFA << 16 | 0xFFFF), new Position(0x0CFA0307, 30f, -70f, 0f, 0f, 0f, 0f, 1f) },
+
+            // Beyond the Mines of Despair  0x02AB, 0x0DFE, 0x0DFD, 0x0DFC, 0x0DFB, 0x0DFA
+            {new LandblockId(0x02AB << 16 | 0xFFFF), new Position(0x02AB0160, 110f, -10f, 0f,  0f, 0f, -0.707107f, 0.707107f) },
+            {new LandblockId(0x0DFE << 16 | 0xFFFF), new Position(0x0DFE0160, 110f, -10f, 0f,  0f, 0f, -0.707107f, 0.707107f) },
+            {new LandblockId(0x0DFD << 16 | 0xFFFF), new Position(0x0DFD0160, 110f, -10f, 0f,  0f, 0f, -0.707107f, 0.707107f) },
+            {new LandblockId(0x0DFC << 16 | 0xFFFF), new Position(0x0DFC0160, 110f, -10f, 0f,  0f, 0f, -0.707107f, 0.707107f) },
+            {new LandblockId(0x0DFB << 16 | 0xFFFF), new Position(0x0DFB0160, 110f, -10f, 0f,  0f, 0f, -0.707107f, 0.707107f) },
+            {new LandblockId(0x0DFA << 16 | 0xFFFF), new Position(0x0DFA0160, 110f, -10f, 0f,  0f, 0f, -0.707107f, 0.707107f) },
+
+            // Gredaline Consulate   0x029B, 0x11FE, 0x11FD, 0x11FC, 0x11FB, 0x11FA 
+            {new LandblockId(0x029B << 16 | 0xFFFF), new Position(0x029B0317, 279.8409f, -292.3339f, 6.005f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x11FE << 16 | 0xFFFF), new Position(0x11FE0317, 279.8409f, -292.3339f, 6.005f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x11FD << 16 | 0xFFFF), new Position(0x11FD0317, 279.8409f, -292.3339f, 6.005f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x11FC << 16 | 0xFFFF), new Position(0x11FC0317, 279.8409f, -292.3339f, 6.005f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x11FB << 16 | 0xFFFF), new Position(0x11FB0317, 279.8409f, -292.3339f, 6.005f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x11FA << 16 | 0xFFFF), new Position(0x11FA0317, 279.8409f, -292.3339f, 6.005f, 0f, 0f, 1f, 0f) },
+
+            // Mage Academy 0x0139, 0x15FE, 0x15FD, 0x15FC, 0x15FB, 0x15FA
+            {new LandblockId(0x0139 << 16 | 0xFFFF), new Position(0x01390396, 40f, -60f, 6f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x15FE << 16 | 0xFFFF), new Position(0x15FE0396, 40f, -60f, 6f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x15FD << 16 | 0xFFFF), new Position(0x15FD0396, 40f, -60f, 6f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x15FC << 16 | 0xFFFF), new Position(0x15FC0396, 40f, -60f, 6f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x15FB << 16 | 0xFFFF), new Position(0x15FB0396, 40f, -60f, 6f, 0f, 0f, -1f, 0f) },
+            {new LandblockId(0x15FA << 16 | 0xFFFF), new Position(0x15FA0396, 40f, -60f, 6f, 0f, 0f, -1f, 0f) },
+
+            // Lugian Mines 0x02E9, 0x16FE, 0x16FD, 0x16FC, 0x16FB, 0x16FA
+            {new LandblockId(0x02E9 << 16 | 0xFFFF), new Position(0x02E9010E, 70.0493f, -480.134f, -11.995f, 0f, 0f, -0.701483f, 0.712686f) },
+            {new LandblockId(0x16FE << 16 | 0xFFFF), new Position(0x16FE010E, 70.0493f, -480.134f, -11.995f, 0f, 0f, -0.701483f, 0.712686f) },
+            {new LandblockId(0x16FD << 16 | 0xFFFF), new Position(0x16FD010E, 70.0493f, -480.134f, -11.995f, 0f, 0f, -0.701483f, 0.712686f) },
+            {new LandblockId(0x16FC << 16 | 0xFFFF), new Position(0x16FC010E, 70.0493f, -480.134f, -11.995f, 0f, 0f, -0.701483f, 0.712686f) },
+            {new LandblockId(0x16FB << 16 | 0xFFFF), new Position(0x16FB010E, 70.0493f, -480.134f, -11.995f, 0f, 0f, -0.701483f, 0.712686f) },
+            {new LandblockId(0x16FA << 16 | 0xFFFF), new Position(0x16FA010E, 70.0493f, -480.134f, -11.995f, 0f, 0f, -0.701483f, 0.712686f) },
+             
+            // Deeper into Lugian Mines 0x02E7, 0x17FE, 0x17FD, 0x17FC, 0x17FB, 0x17FA
+            {new LandblockId(0x02E7 << 16 | 0xFFFF), new Position(0x02E70282, 509.92538f, -13.700772f, 12.004999f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x17FE << 16 | 0xFFFF), new Position(0x17FE0282, 509.92538f, -13.700772f, 12.004999f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x17FD << 16 | 0xFFFF), new Position(0x17FD0282, 509.92538f, -13.700772f, 12.004999f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x17FC << 16 | 0xFFFF), new Position(0x17FC0282, 509.92538f, -13.700772f, 12.004999f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x17FB << 16 | 0xFFFF), new Position(0x17FB0282, 509.92538f, -13.700772f, 12.004999f, 0f, 0f, 1f, 0f) },
+            {new LandblockId(0x17FA << 16 | 0xFFFF), new Position(0x17FA0282, 509.92538f, -13.700772f, 12.004999f, 0f, 0f, 1f, 0f) },
+
+           // Mountain Fortress 0x011C, 0x12FE, 0x12FD, 0x12FC, 0x12FB, 0x12FA
+            {new LandblockId(0x011C << 16 | 0xFFFF), new Position(0x011C030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
+            {new LandblockId(0x12FE << 16 | 0xFFFF), new Position(0x12FE030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
+            {new LandblockId(0x12FD << 16 | 0xFFFF), new Position(0x12FD030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
+            {new LandblockId(0x12FC << 16 | 0xFFFF), new Position(0x12FC030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
+            {new LandblockId(0x12FB << 16 | 0xFFFF), new Position(0x12FB030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
+            {new LandblockId(0x12FA << 16 | 0xFFFF), new Position(0x12FA030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
+
+        };
+
     }
 }

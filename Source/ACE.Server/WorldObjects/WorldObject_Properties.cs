@@ -3440,43 +3440,6 @@ namespace ACE.Server.WorldObjects
             get => GetProperty(PropertyString.JewelSocket2);
             set { if (value == null) RemoveProperty(PropertyString.JewelSocket2); else SetProperty(PropertyString.JewelSocket2, value); }
         }
-
-        public string JewelSocket3
-        {
-            get => GetProperty(PropertyString.JewelSocket3);
-            set { if (value == null) RemoveProperty(PropertyString.JewelSocket3); else SetProperty(PropertyString.JewelSocket3, value); }
-        }
-
-        public string JewelSocket4
-        {
-            get => GetProperty(PropertyString.JewelSocket4);
-            set { if (value == null) RemoveProperty(PropertyString.JewelSocket4); else SetProperty(PropertyString.JewelSocket4, value); }
-        }
-
-        public string JewelSocket5
-        {
-            get => GetProperty(PropertyString.JewelSocket5);
-            set { if (value == null) RemoveProperty(PropertyString.JewelSocket5); else SetProperty(PropertyString.JewelSocket5, value); }
-        }
-
-        public string JewelSocket6
-        {
-            get => GetProperty(PropertyString.JewelSocket6);
-            set { if (value == null) RemoveProperty(PropertyString.JewelSocket6); else SetProperty(PropertyString.JewelSocket6, value); }
-        }
-
-        public string JewelSocket7
-        {
-            get => GetProperty(PropertyString.JewelSocket7);
-            set { if (value == null) RemoveProperty(PropertyString.JewelSocket7); else SetProperty(PropertyString.JewelSocket7, value); }
-        }
-
-        public string JewelSocket8
-        {
-            get => GetProperty(PropertyString.JewelSocket8);
-            set { if (value == null) RemoveProperty(PropertyString.JewelSocket8); else SetProperty(PropertyString.JewelSocket8, value); }
-        }
-
         public int? JewelSockets
         {
             get => GetProperty(PropertyInt.JewelSockets);
@@ -3959,7 +3922,7 @@ namespace ACE.Server.WorldObjects
 
         public bool? Ivoryable
         {
-            get => GetProperty(PropertyBool.Ivoryable) ?? true;
+            get => GetProperty(PropertyBool.Ivoryable);
             set { if (!value.HasValue) RemoveProperty(PropertyBool.Ivoryable); else SetProperty(PropertyBool.Ivoryable, value.Value); }
         }
 
@@ -3974,6 +3937,17 @@ namespace ACE.Server.WorldObjects
             get => GetProperty(PropertyString.CraftsmanName);
             set { if (value == null) RemoveProperty(PropertyString.CraftsmanName); else SetProperty(PropertyString.CraftsmanName, value); }
         }
+
+        public bool? DungeonLockout
+        {
+            get => GetProperty(PropertyBool.DungeonLockout);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.DungeonLockout); else SetProperty(PropertyBool.DungeonLockout, value.Value); }
+        }
+
+        public string CacheLog
+        {
+            get => GetProperty(PropertyString.CacheLog);
+            set { if (value == null) RemoveProperty(PropertyString.CacheLog); else SetProperty(PropertyString.CacheLog, value); }
 
         public int? ItemSpellId
         {

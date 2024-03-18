@@ -22,7 +22,6 @@ using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.Network.Handlers;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Entity;
@@ -1823,6 +1822,105 @@ namespace ACE.Server.Command.Handlers
                 CommandHandlerHelper.WriteOutputInfo(session, "Error, cannot restore. You must include an existing character id in hex form.\nExample: @copychar 0x500000AC\n         @copychar 0x500000AC, Newly Restored\n         @copychar 0x500000AC, Newly Restored, differentaccount\n", ChatMessageType.Broadcast);
             }
         }
+
+        [CommandHandler("capstone", AccessLevel.Admin, CommandHandlerFlag.RequiresWorld, 0, "Capstone Dungeon Information Readout.")]
+        public static void HandleCapstone(Session session, params string[] parameters)
+        {
+            // @capstone -- outputs a list of capstone dungeons with active instances and player counts
+            // @capstone
+
+            if (parameters.Length < 1)
+            {
+                session.Player.SendMessage("-----------Active Capstone Dungeons-----------", ChatMessageType.System);
+                string[] capstones = { "Glenden Wood Dungeon", "Green Mire Grave", "Sand Shallow", "Manse of Panderlou", "Smugglers Hideaway", "Halls of the Helm", "Colier Mine", "Empyrean Garrison", "Grievous Vault", "Folthid Cellar", "Mines of Despair", "Gredaline Consulate", "Mage Academy", "Lugian Mines", "Mountain Fortress" };
+                foreach (var capstone in capstones)
+                {
+                    var instanceList = Landblock.CapstoneDungeonLists(capstone);
+                    var output = "";
+                    foreach (var instance in instanceList)
+                    {
+                        var active = LandblockManager.IsLoaded(instance);
+                        if (active)
+                            output += $"{instance}, ";
+                    }
+
+                    if (!string.IsNullOrEmpty(output))
+                    {
+                        var outputMsg = $"{capstone}:   " + output + "\n";
+                        session.Player.SendMessage(outputMsg, ChatMessageType.System);
+                    }
+
+                }
+                session.Player.SendMessage("For more detailed information about a specific dungeon, use @capstone followed by the dungeon name.", ChatMessageType.System);
+            }
+
+            if (parameters.Length >= 1)
+            {
+                string input = string.Join(" ", parameters);
+
+                var dungeonName = "";
+
+                switch (input.ToLower())
+                {
+                    case "glenden": case "glenden wood": case "glenden wood dungeon":  case "gw": case "gwd": dungeonName = "Glenden Wood Dungeon"; break;
+                    case "green mire grave": case "green mire": case "green": case "gmg": dungeonName ="Green Mire Grave"; break;
+                    case "sand shallow": case "sand shallows": case "sand": case "shallow": dungeonName = "Sand Shallow"; break;
+                    case "manse of panderlou": case "manse": case "panderlou": case "dungeon of shadows": dungeonName = "Manse of Panderlou"; break;
+                    case "smuggler's hideaway": case "smugglers hideaway": case "smuggler's": case "smugglers": case "smuggler": dungeonName = "Smugglers Hideaway"; break;
+                    case "halls of the helm": case "halls of helm": case "halls": dungeonName = "Halls of the Helm" ; break;
+                    case "colier mine": case "colier mines": case "mines of colier": case "colier": dungeonName = "Colier Mine"; break;
+                    case "empyrean garrison": case "garrison": case "empyrean": dungeonName = "Empyrean Garrison"; break;
+                    case "grievous vault": case "grievous": case "vault": dungeonName = "Grievous Vault"; break;
+                    case "folthid cellar": case "folthid": case "cellar": dungeonName = "Folthid Cellar"; break;
+                    case "mines of despair": case "despair": case "focusing stone": dungeonName = "Mines of Despair"; break;
+                    case "gredaline consulate": case "gredaline": case "consulate": dungeonName = "Gredaline Consulate"; break;
+                    case "mage academy": case "academy": case "mage": dungeonName = "Mage Academy"; break;
+                    case "lugian mines": case "lugian": case "lugians": case "quarry": case "lugian quarry": dungeonName = "Lugian Mines"; break;
+                    case "mountain fortress": case "mountain": case "fortress": case "hamud": dungeonName = "Mountain Fortress"; break;
+
+                }
+
+                if (dungeonName.Length > 0)
+                {
+                    var instanceList = Landblock.CapstoneDungeonLists(dungeonName);
+                    var instanceNum = 0;
+                    foreach (var instance in instanceList)
+                    {
+                        var active = LandblockManager.IsLoaded(instance);
+                        if (active)
+                        {
+                            var landblock = LandblockManager.GetLandblock(instance, false);
+
+                            var permittedPlayers = "";
+                            foreach (var playerName in landblock.CapstonePlayers.Keys)
+                            {
+                                if (landblock.CapstonePlayers.TryGetValue(playerName, out var timer))
+                                    if (timer != 0)
+                                    {
+                                        var convertedTime = (timer + 60 - Time.GetUnixTime()) / 60;
+                                        permittedPlayers += $"{playerName} ({Math.Round(convertedTime, 1)} min.), ";
+                                    }
+                                    else
+                                        permittedPlayers += $"{playerName}, ";
+                            }
+                            var activePlayers = "";
+                            foreach (var activePlayer in landblock.ActivePlayers)
+                                activePlayers += $"{activePlayer.Name}, ";
+
+                            instanceNum++;
+                            var dormant = landblock.IsDormant ? "|    Dormant" : "";
+                            var uptime = landblock.CapstoneUptime / 60;
+                            var lockout = landblock.CapstoneLockout ? "|   Locked" : "";
+                            session.Player.SendMessage($"----------{dungeonName}----------\nInstance Number: {instanceNum}   |  Uptime: {Math.Round(uptime, 1)} min.   {dormant}     {lockout}\nPermitted Players ({landblock.CapstonePlayers.Count}): {permittedPlayers} \nActive Players ({landblock.ActivePlayers.Count}): {activePlayers} ", ChatMessageType.System);
+                        }
+                    }
+                    if (instanceNum == 0)
+                        session.Player.SendMessage($"No instances of {dungeonName} are active at this time.", ChatMessageType.System);
+                }
+            }
+        }
+
+
 
         // copychar < character name >, < copy name >
         [CommandHandler("copychar", AccessLevel.Developer, CommandHandlerFlag.RequiresWorld, 2,

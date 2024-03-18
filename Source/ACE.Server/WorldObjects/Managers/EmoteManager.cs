@@ -19,6 +19,7 @@ using ACE.Server.Factories.Enum;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using Mono.Cecil;
 using Serilog;
 
 namespace ACE.Server.WorldObjects.Managers
@@ -110,6 +111,11 @@ namespace ACE.Server.WorldObjects.Managers
                     PlayerManager.BroadcastToChannelFromEmote(Channel.Admin, text);
                     break;
 
+                case EmoteType.AssignCapstoneDungeon:
+                    if (player != null)
+                        Landblock.AssignCapstoneDungeon(player, emote.Message);
+                    break;
+
                 case EmoteType.AwardLevelProportionalSkillXP:
 
                     var min = emote.Min64 ?? emote.Min ?? 0;
@@ -195,9 +201,30 @@ namespace ACE.Server.WorldObjects.Managers
 
                     if (player != null && WorldObject.Tier != null)
                     {
+                        var reward = true;
+
+                        if (WorldObject.CacheLog != null)
+                        {
+                            string[] accountIds = WorldObject.CacheLog.Split('/');
+
+                            foreach (var accountId in accountIds)
+                            {
+                                if (uint.TryParse(accountId, out var account))
+                                    if (account == player.Account.AccountId)
+                                        reward = false;
+                            }
+                            if (reward == false)
+                            {
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have already received a reward from this cache.", ChatMessageType.Broadcast));
+                                ExecuteEmoteSet(reward ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure, emote.Message, targetObject, true);
+                                break;
+                            }
+                        }
                         if (player.GetFreeInventorySlots() < 5)
                         {
+                            reward = false;
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You must have at least 5 free inventory slots in your main pack to receive a reward.", ChatMessageType.Broadcast));
+                            ExecuteEmoteSet(reward ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure, emote.Message, targetObject, true);
                             break;
                         }
 
@@ -220,9 +247,16 @@ namespace ACE.Server.WorldObjects.Managers
                             player.GiveFromEmote(WorldObject, randomItem, amount);
                         }
 
+                        if (WorldObject.CacheLog == null)
+                            WorldObject.CacheLog = $"{player.Account.AccountId}/";
+                        else
+                            WorldObject.CacheLog += $"{player.Account.AccountId}/";
+
                         player.QuestManager.Stamp(emote.Message);
 
                         player.SaveBiotaToDatabase();
+
+                        ExecuteEmoteSet(reward ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure, emote.Message, targetObject, true);
                     }
 
                     break;

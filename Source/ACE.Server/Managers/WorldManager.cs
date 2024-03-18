@@ -156,6 +156,8 @@ namespace ACE.Server.Managers
 
             session.SetPlayer(player);
 
+            Player.HandleCapstoneLandblockLogin(session, player);
+
             if (stripAdminProperties) // continue stripping properties
             {
                 player.CloakStatus = CloakStatus.Undef;

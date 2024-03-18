@@ -13,6 +13,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Managers;
@@ -890,6 +891,30 @@ namespace ACE.Server.WorldObjects
             playerWasMovedFromNoLogLandblock = true;
 
             return;
+        }
+
+        public static void HandleCapstoneLandblockLogin(Session session, Player player)
+        {
+            var landblockId = new LandblockId(player.Location.Landblock << 16 | 0xFFFF);
+
+            if (!Landblock.CapstoneTeleportLocations.Keys.Contains(landblockId))
+                return;
+
+            var landblock = LandblockManager.GetLandblock(landblockId, false);
+
+            if (landblock.CapstonePlayers.Keys.Contains(player.Name))
+            {
+                landblock.CapstonePlayers[player.Name] = 0;
+                return;
+            }
+
+            if (!landblock.CapstonePlayers.Keys.Contains(player.Name))
+            {
+                if (landblock.CapstoneLockout == false && landblock.CapstonePlayers.Keys.Count < Landblock.CapstoneMax)
+                    Landblock.CapstoneTeleport(player, landblock);
+                else
+                    session.Player.Location = new Position(session.Player.Sanctuary);
+            }
         }
     }
 }

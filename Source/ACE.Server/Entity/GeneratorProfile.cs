@@ -12,6 +12,7 @@ using ACE.Server.Managers;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Quaternion = System.Numerics.Quaternion;
 
 namespace ACE.Server.Entity
 {
@@ -321,8 +322,20 @@ namespace ACE.Server.Entity
         {
             // specific position
             if ((Biota.ObjCellId ?? 0) > 0)
-                obj.Location = new ACE.Entity.Position(Biota.ObjCellId ?? 0, Biota.OriginX ?? 0, Biota.OriginY ?? 0, Biota.OriginZ ?? 0, Biota.AnglesX ?? 0, Biota.AnglesY ?? 0, Biota.AnglesZ ?? 0, Biota.AnglesW ?? 0);
+            {
+                var loc = Biota.ObjCellId;
+                // allow generator slots to use whichever lb the generator is on, while keeping the cellId
+                if (Biota.ObjCellId != Generator.Location.LandblockId.Raw)
+                {
+                    var originalCellId = ((int)Biota.ObjCellId).ToString("X8");
+                    var generatorLandblockId = ((int)Generator.Location.LandblockId.Raw).ToString("X8");
+                    
+                    var modifiedCellId = generatorLandblockId.Substring(0, 4) + originalCellId.Substring(4);
 
+                    loc = uint.Parse(modifiedCellId, System.Globalization.NumberStyles.HexNumber);
+                }
+                obj.Location = new ACE.Entity.Position(loc ?? 0, Biota.OriginX ?? 0, Biota.OriginY ?? 0, Biota.OriginZ ?? 0, Biota.AnglesX ?? 0, Biota.AnglesY ?? 0, Biota.AnglesZ ?? 0, Biota.AnglesW ?? 0);
+            }
             // offset from generator location
             else
             {
