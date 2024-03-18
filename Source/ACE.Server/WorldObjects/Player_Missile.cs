@@ -246,6 +246,7 @@ namespace ACE.Server.WorldObjects
                 
 
                 var projectile = LaunchProjectile(launcher, ammo, target, origin, orientation, velocity);
+                UpdateAmmoAfterLaunch(ammo);
 
                 // Check for missile cleaves
                 var numCleaves = 0;
