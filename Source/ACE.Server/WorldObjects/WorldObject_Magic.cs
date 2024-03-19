@@ -1358,9 +1358,47 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
-            CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage);
+            var projectileSpellType = SpellProjectile.GetProjectileSpellType(spell.Id);
+
+            if (projectileSpellType != ProjectileSpellType.Blast)
+                CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage);
+
+            var player = this as Player;
+            var targetCreature = target as Creature;
+
+            if (player != null && targetCreature != null && projectileSpellType == ProjectileSpellType.Blast)
+            {
+                var nearbyTargets = targetCreature.GetNearbyMonsters(10);
+                var blastTargets = new List<Creature> {targetCreature};
+                
+                if (nearbyTargets != null)
+                {  
+                    var blastCount = 0;
+                    foreach (var nearbyTarget in nearbyTargets)
+                    {
+                        if (blastCount == 2) break;
+
+                        if (nearbyTarget.Translucency == 1 || nearbyTarget.Visibility == true) continue;
+
+                        var angle = player.GetAngle(nearbyTarget);
+                        if (Math.Abs(angle) > Creature.CleaveAngle / 4.0f) continue;
+
+                        blastTargets.Add(nearbyTarget);
+                        blastCount++;
+                    }
+                }
+
+                if (blastTargets.Count >= 3)
+                    spell.SpellPowerMod = 0.67f;
+                if (blastTargets.Count == 2)
+                    spell.SpellPowerMod = 0.75f;
+
+                foreach (var blastTarget in blastTargets)
+                    CreateSpellProjectiles(spell, blastTarget, weapon, isWeaponSpell, fromProc, damage);
+            }
+
             // JEWEL - Imperial Topaz - Bonus cleave chance
-            if (caster != null)
+            if (caster != null && targetCreature != null)
             {
                 if (spell.DamageType == DamageType.Slash)
                 {   
@@ -1369,9 +1407,7 @@ namespace ACE.Server.WorldObjects
                         if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0)
                         {
                             if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > ThreadSafeRandom.Next(1, 100))
-                            {
-                               
-                                var targetCreature = target as Creature;
+                            {                                
                                 var cleave = targetCreature.GetNearbyMonsters(10);
 
                                 foreach (var cleaveHit in cleave)
@@ -2042,6 +2078,10 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public List<Vector3> CalculateProjectileOrigins(Spell spell, ProjectileSpellType spellType, WorldObject target, bool castAtTarget = false)
         {
+            var numProjectiles = spell.NumProjectiles;
+            if (spellType == ProjectileSpellType.Blast)
+                numProjectiles = 1;
+
             var origins = new List<Vector3>();
 
             var radius = GetProjectileRadius(spell);
@@ -2073,18 +2113,18 @@ namespace ACE.Server.WorldObjects
             var anglePerStep = GetSpreadAnglePerStep(spell);
 
             // TODO: normalize data
-            var dims = new Vector3(spell._spell.DimsOriginX ?? spell.NumProjectiles, spell._spell.DimsOriginY ?? 1, spell._spell.DimsOriginZ ?? 1);
+            var dims = new Vector3(spell._spell.DimsOriginX ?? numProjectiles, spell._spell.DimsOriginY ?? 1, spell._spell.DimsOriginZ ?? 1);
 
             var i = 0;
             for (var z = 0; z < dims.Z; z++)
             {
                 for (var y = 0; y < dims.Y; y++)
                 {
-                    var oddRow = (int)Math.Min(dims.X, spell.NumProjectiles - i) % 2 == 1;
+                    var oddRow = (int)Math.Min(dims.X, numProjectiles - i) % 2 == 1;
 
                     for (var x = 0; x < dims.X; x++)
                     {
-                        if (i >= spell.NumProjectiles)
+                        if (i >= numProjectiles)
                             break;
 
                         var curOffset = baseOffset;
@@ -2128,11 +2168,11 @@ namespace ACE.Server.WorldObjects
                         i++;
                     }
 
-                    if (i >= spell.NumProjectiles)
+                    if (i >= numProjectiles)
                         break;
                 }
 
-                if (i >= spell.NumProjectiles)
+                if (i >= numProjectiles)
                     break;
             }
 

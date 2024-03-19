@@ -3948,6 +3948,7 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyString.CacheLog);
             set { if (value == null) RemoveProperty(PropertyString.CacheLog); else SetProperty(PropertyString.CacheLog, value); }
+        }
 
         public int? ItemSpellId
         {
