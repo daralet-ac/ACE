@@ -511,11 +511,25 @@ namespace ACE.Server.WorldObjects
                         critDefended = true;
                 }
 
-                if (!critDefended)
-                    criticalHit = true;
+                // SPEC BONUS: Perception - 50% chance to prevent a critical hit
+                var perceptionDefended = false;
+                var perception = targetPlayer.GetCreatureSkill(Skill.AssessCreature);
+                if (perception.AdvancementClass == SkillAdvancementClass.Specialized)
+                {
+                    var skillCheck = (float)perception.Current / (float)attackSkill.Current;
+                    var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
+
+                    if (criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f))
+                    {
+                        perceptionDefended = true;
+                        targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your perception skill allowed you to prevent a critical strike!", ChatMessageType.Magic));
+                    }
+                }
+
+                if (!critDefended && perceptionDefended == false)
+                criticalHit = true;
 
                 // Jewelcrafting Reprisal-- Chance to resist an incoming critical
-
                 if (criticalHit)
                 {
                     if (targetPlayer != null && sourceCreature != null)
