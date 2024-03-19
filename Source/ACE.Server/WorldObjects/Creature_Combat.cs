@@ -789,6 +789,11 @@ namespace ACE.Server.WorldObjects
                 // is monster in front of player,
                 // within shield effectiveness area?
                 var effectiveAngle = 180.0f;
+
+                // SPEC BONUS - Shield: Increase shield effective angle to 225 degrees
+                if (GetCreatureSkill(Skill.Shield).AdvancementClass == SkillAdvancementClass.Specialized)
+                    effectiveAngle = 225.0f;
+
                 var angle = GetAngle(attacker);
                 if (Math.Abs(angle) > effectiveAngle / 2.0f)
                     return 1.0f;
