@@ -12,6 +12,7 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 using Lifestoned.DataModel.Shared;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using DamageType = ACE.Entity.Enum.DamageType;
 using Position = ACE.Entity.Position;
@@ -28,6 +29,10 @@ namespace ACE.Server.WorldObjects
         public uint LifeProjectileDamage { get; set; }
 
         public PartialEvasion PartialEvasion;
+
+        public double Strikethrough = 0;
+
+        public List<uint> StrikethroughTargets = new List<uint>();
 
         public SpellProjectileInfo Info { get; set; }
 
@@ -269,6 +274,8 @@ namespace ACE.Server.WorldObjects
         {
             //Console.WriteLine($"{Name}.OnCollideObject({target.Name})");
 
+            if (StrikethroughTargets.Contains(target.Guid.Full)) return;
+
             var player = ProjectileSource as Player;
 
             if (Info != null && player != null && player.DebugSpell)
@@ -277,7 +284,11 @@ namespace ACE.Server.WorldObjects
                 player.Session.Network.EnqueueSend(new GameMessageSystemChat(Info.ToString(), ChatMessageType.Broadcast));
             }
 
-            ProjectileImpact();
+            var spellType = GetProjectileSpellType(Spell.Id);
+            if (spellType != ProjectileSpellType.Volley)
+                 ProjectileImpact();
+            if (spellType == ProjectileSpellType.Volley && Strikethrough == 3)
+                ProjectileImpact();
 
             // ensure valid creature target
             var creatureTarget = target as Creature;
@@ -323,10 +334,15 @@ namespace ACE.Server.WorldObjects
                     // handle EnchantmentProjectile successfully landing on target
                     ProjectileSource.CreateEnchantment(creatureTarget, ProjectileSource, ProjectileLauncher, Spell, false, FromProc);
                 }
-                else
+                else 
                 {
                     DamageTarget(creatureTarget, damage.Value, critical, critDefended, overpower);
                 }
+
+                Strikethrough++;
+
+                if (creatureTarget != null)
+                    StrikethroughTargets.Add(creatureTarget.Guid.Full);
 
                 // if this SpellProjectile has a TargetEffect, play it on successful hit
                 DoSpellEffects(Spell, ProjectileSource, creatureTarget, true);
@@ -795,7 +811,7 @@ namespace ACE.Server.WorldObjects
                             var jewelRampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Bludgeon") / 500;
                             critDamageBonus *= jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) / 50);
                         }
-                        
+
                     }
                     // JEWEL - Black Garnet - Ramping Piercing Resistance Penetration
                     if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0)
@@ -817,8 +833,14 @@ namespace ACE.Server.WorldObjects
                     if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
                         jewelLastStand += Jewel.GetJewelLastStand(sourcePlayer, target);
                 }
+
+                var strikethroughMod = 1f;
+                if (Strikethrough == 1) strikethroughMod = 0.5f;
+                if (Strikethrough == 2) strikethroughMod = 0.33f;
+                if (Strikethrough >= 3) strikethroughMod = 0.1f;
+
                 // ----- FINAL CALCULATION ------------
-                var damageBeforeMitigation = baseDamage * criticalDamageMod * attributeMod * elementalDamageMod * slayerMod * combatFocusDamageMod * jewelElementalist * jewelElemental * jewelSelfHarm * jewelLastStand;
+                var damageBeforeMitigation = baseDamage * criticalDamageMod * attributeMod * elementalDamageMod * slayerMod * combatFocusDamageMod * jewelElementalist * jewelElemental * jewelSelfHarm * jewelLastStand * strikethroughMod;
 
                 finalDamage = damageBeforeMitigation * absorbMod * aegisMod * resistanceMod * resistedMod * specDefenseMod * jewelcraftingProtection;
 
@@ -1218,6 +1240,7 @@ namespace ACE.Server.WorldObjects
                 var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
                 var resistSome = PartialEvasion == PartialEvasion.Some ? "Minor resist! " : "";
                 var resistMost = PartialEvasion == PartialEvasion.Most ? "Major resist! " : "";
+                var strikeThrough = Strikethrough > 0 ? "Strikethrough: " : "";
 
                 var nonHealth = Spell.Category == SpellCategory.StaminaLowering || Spell.Category == SpellCategory.ManaLowering;
 
@@ -1225,7 +1248,7 @@ namespace ACE.Server.WorldObjects
                 {
                     var critProt = critDefended ? " Your critical hit was avoided with their augmentation!" : "";
 
-                    var attackerMsg = $"{resistMost}{resistSome}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
+                    var attackerMsg = $"{resistMost}{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
                     // could these crit / sneak attack?
                     if (nonHealth)
