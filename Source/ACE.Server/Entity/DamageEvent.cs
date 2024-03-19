@@ -924,6 +924,11 @@ namespace ACE.Server.Entity
             if (playerDefender == null || playerDefender.EquippedCombatAbility != CombatAbility.Phalanx || playerDefender.LastPhalanxActivated < Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration || playerDefender.GetEquippedShield == null)
             {
                 var effectiveAngle = 180.0f;
+
+                // SPEC BONUS - Shield: Increase shield effective angle to 225 degrees
+                if (playerDefender.GetCreatureSkill(Skill.Shield).AdvancementClass == SkillAdvancementClass.Specialized)
+                    effectiveAngle = 225.0f;
+
                 var angle = defender.GetAngle(attacker);
                 if (Math.Abs(angle) > effectiveAngle / 2.0f)
                     return false;
