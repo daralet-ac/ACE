@@ -192,6 +192,39 @@ namespace ACE.Server.WorldObjects
 
                                 var lockpickSkill = player.GetCreatureSkill(Skill.Lockpick);
                                 Proficiency.OnSuccessUse(player, lockpickSkill, difficulty);
+
+                                // SPEC BONUS - Thievery: Up to 50% chance to receive a loot quality bonus when successfully picking a locked chest (25% bonus towards "remaining" loot quality mod
+                                if(target.WeenieType == WeenieType.Chest)
+                                {
+                                    var thievery = player.GetCreatureSkill(Skill.Lockpick);
+                                    if (thievery.AdvancementClass == SkillAdvancementClass.Specialized)
+                                    {
+                                        var chest = target as Chest;
+                                        var lockDifficulty = LockHelper.GetResistLockpick(target);
+
+                                        var effectiveLockpickSkill = GetEffectiveLockpickSkill(player, unlocker);
+                                        var skillCheck = (float)effectiveLockpickSkill / lockDifficulty;
+                                        var lootQualityBonusCheck = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
+
+                                        if (lootQualityBonusCheck > ThreadSafeRandom.Next(0f, 1f))
+                                        {
+                                            var baseLootQualityMod = chest.LootQualityMod;
+                                            var difference = 1 - (baseLootQualityMod ?? 0);
+                                            var bonus = difference * 0.25f;
+
+                                            if(chest.LootQualityMod != null)
+                                                chest.LootQualityMod += bonus;
+                                            else
+                                                chest.LootQualityMod = bonus;
+
+                                            chest.Reset();
+
+                                            chest.LootQualityMod = baseLootQualityMod;
+
+                                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your thievery skill allowed you to find higher quality loot!", ChatMessageType.Broadcast));
+                                        }
+                                    }
+                                }
                             }
                             SendUnlockResultMessage(player, ConsumeUnlocker(player, unlocker, target), isLockpick, target, true);
                             break;
