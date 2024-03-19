@@ -202,7 +202,8 @@ namespace ACE.Server.WorldObjects
                                         var chest = target as Chest;
                                         var lockDifficulty = LockHelper.GetResistLockpick(target);
 
-                                        var skillCheck = (float)thievery.Current / lockDifficulty;
+                                        var effectiveLockpickSkill = GetEffectiveLockpickSkill(player, unlocker);
+                                        var skillCheck = (float)effectiveLockpickSkill / lockDifficulty;
                                         var lootQualityBonusCheck = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
 
                                         if (lootQualityBonusCheck > ThreadSafeRandom.Next(0f, 1f))
