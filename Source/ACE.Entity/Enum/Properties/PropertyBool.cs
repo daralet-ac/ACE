@@ -185,6 +185,7 @@ namespace ACE.Entity.Enum.Properties
         ExamineItemsSilently             = 142, // allows for no/custom message upon NPC Emote Refuse examination of items
         TakeItemsSilently                = 143, // allows for no/custom messages for NPC TakeItems emote
         DungeonLockout                   = 144, // if object is on landblock, no new players will be added to permitted list
+        CannotBreakStealth               = 145,
 
         /* custom */
         [ServerOnly]

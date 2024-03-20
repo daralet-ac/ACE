@@ -1,12 +1,15 @@
 using ACE.Common;
+using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ACE.Server.WorldObjects
@@ -80,33 +83,43 @@ namespace ACE.Server.WorldObjects
             actionChain.EnqueueChain();
         }
 
-        public bool TestStealth(Creature creature, double distanceSquared, string failureMessage)
+        private const double CreatureRetestDelay = 3.0;
+        private Dictionary<ObjectGuid, double> RecentStealthTests = new Dictionary<ObjectGuid, double>();
+
+        public bool TestStealth(Creature creature, double distance, string failureMessage)
         {
             if (!IsStealthed)
                 return false;
 
-            if (creature == null || creature.PlayerKillerStatus == PlayerKillerStatus.RubberGlue || creature.PlayerKillerStatus == PlayerKillerStatus.Protected || distanceSquared > creature.VisualAwarenessRangeSq || !creature.IsDirectVisible(this))
+            if (creature == null || creature.PlayerKillerStatus == PlayerKillerStatus.RubberGlue || creature.PlayerKillerStatus == PlayerKillerStatus.Protected || distance > creature.VisualAwarenessRangeSq || !creature.IsDirectVisible(this))
                 return true;
 
-            uint difficulty;
+            if (creature.CannotBreakStealth == true || creature.WeenieClassId == 1020001) // watchers
+                return true;
+
+            foreach (var kvp in RecentStealthTests)
+            {
+                if (creature.Guid == kvp.Key)
+                {
+                    if (Time.GetUnixTime() < kvp.Value + CreatureRetestDelay)
+                        return true;
+                    else
+                        RecentStealthTests.Remove(kvp.Key);
+                }
+            }
+
+            RecentStealthTests.Add(creature.Guid, Time.GetUnixTime());
+
+            var maxDistance = creature.VisualAwarenessRangeSq;
+            var monsterDistanceBonus = Math.Min(2.0f, (float)(maxDistance / distance));
 
             var angle = Math.Abs(creature.GetAngle(this));
-            if (angle < 90)
-            {
-                if (distanceSquared < 2)
-                {
-                    EndStealth(failureMessage);
-                    return false;
-                }
-                else if (distanceSquared < creature.VisualAwarenessRangeSq / 10)
-                    difficulty = (uint)((creature.Level ?? 1) * 3.0f);
-                else if (distanceSquared < creature.VisualAwarenessRangeSq / 5)
-                    difficulty = (uint)((creature.Level ?? 1) * 2.0f);
-                else
-                    difficulty = (uint)((creature.Level ?? 1) * 1.0f);
-            }
-            else
-                difficulty = (uint)((creature.Level ?? 1) * 0.5f);
+
+            var angleMod = 2.0f - angle / 90.0f; // mod ranges from 0.0 (180 angle) to 2.0 (0 angle)
+
+            var difficulty = (uint)(GetCreatureSkill(Skill.AssessCreature).Current * monsterDistanceBonus * angleMod);
+
+            //Console.WriteLine($"\nCreature: {creature.Name} {creature.WeenieClassId} - distance: {distance}, distanceBonus: {monsterDistanceBonus}, angle: {angle}, angleBonus: {angleMod}");
 
             return TestStealth(difficulty, failureMessage);
         }
@@ -142,16 +155,21 @@ namespace ACE.Server.WorldObjects
 
         private StealthTestResult TestStealthInternal(uint difficulty)
         {
-            var stealthSkill = GetCreatureSkill(Skill.Lockpick); // Thievery
-            if (stealthSkill.AdvancementClass < SkillAdvancementClass.Trained)
+            var thieverySkill = GetCreatureSkill(Skill.Lockpick); // Thievery
+            if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
                 return StealthTestResult.Untrained;
 
-            var moddedStealthSkill = GetModdedThieverySkill();
+            var moddedThieverySkill = GetModdedThieverySkill();
 
-            var chance = SkillCheck.GetSkillChance(moddedStealthSkill, difficulty);
-            if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
+            var chance = SkillCheck.GetSkillChance(moddedThieverySkill, difficulty);
+
+            var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+            //Console.WriteLine($"playerEffectiveSkill: {moddedThieverySkill}, difficulty: {difficulty}, chance: {chance}, roll: {roll}");
+
+            if (chance > roll)
             {
-                Proficiency.OnSuccessUse(this, stealthSkill, difficulty);
+                Proficiency.OnSuccessUse(this, thieverySkill, difficulty);
                 return StealthTestResult.Success;
             }
             return StealthTestResult.Failure;

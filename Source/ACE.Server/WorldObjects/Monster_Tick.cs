@@ -1,4 +1,7 @@
+using ACE.Common;
 using ACE.Entity.Enum;
+using ACE.Server.Managers;
+using System;
 
 namespace ACE.Server.WorldObjects
 {
@@ -78,7 +81,7 @@ namespace ACE.Server.WorldObjects
             if (playerTarget != null && playerTarget.IsStealthed)
             {
                 if (IsDirectVisible(playerTarget))
-                    playerTarget.EndStealth($"{Name} can still see you! You stop sneaking!");
+                    playerTarget.TestStealth(this, $"{Name} detects you! You lose stealth.");
             }
 
             if (creatureTarget != null && (creatureTarget.IsDead || (combatPet == null && !IsVisibleTarget(creatureTarget))) || (playerTarget != null && playerTarget.IsStealthed))
