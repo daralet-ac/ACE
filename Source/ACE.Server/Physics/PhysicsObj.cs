@@ -6,6 +6,7 @@ using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Physics.Animation;
@@ -16,6 +17,7 @@ using ACE.Server.Physics.Hooks;
 using ACE.Server.Physics.Managers;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Landblock = ACE.Server.Physics.Common.Landblock;
 using Plane = System.Numerics.Plane;
 using Position = ACE.Server.Physics.Common.Position;
 
@@ -392,6 +394,13 @@ namespace ACE.Server.Physics
                     return TransitionState.OK;
                 ethereal = true;
             }
+            // CUSTOM - Strikethrough: permits strikethrough projectiles to travel cleanly through monsters, even if they're not ethereal
+            if (WeenieObj.WorldObject != null && WeenieObj.WorldObject.Attackable == true)
+            {
+                if (transition.ObjectInfo.Object.WeenieObj.WorldObject != null && transition.ObjectInfo.Object.WeenieObj.WorldObject is SpellProjectile)
+                    ethereal = true;
+            }
+
             transition.SpherePath.ObstructionEthereal = ethereal;
 
             var state = transition.ObjectInfo.State;
@@ -2674,9 +2683,23 @@ namespace ACE.Server.Physics
                     retval = true;
             }
 
+            // CUSTOM - Strikethrough: Allow volley projectiles to continue traveling until they hit 3 targets
+            var spellProjectile = WeenieObj.WorldObject is SpellProjectile ? WeenieObj.WorldObject as SpellProjectile : null;
+            var spellType = spellProjectile != null ? SpellProjectile.GetProjectileSpellType(spellProjectile.Spell.Id) : ProjectileSpellType.Undef;
+
+            var strikethrough = false;
+
+            if (spellProjectile != null && spellType == ProjectileSpellType.Volley)
+            {
+                strikethrough = true;
+
+                if (spellProjectile.Strikethrough >= spellProjectile.StrikethroughLimit)
+                    strikethrough = false;
+            }
+
             if (collisions.FramesStationaryFall <= 1)
             {
-                if (apply_bounce && collisions.CollisionNormalValid)
+                if (apply_bounce && collisions.CollisionNormalValid && !strikethrough)
                 {
                     if (State.HasFlag(PhysicsState.Inelastic))
                     {
@@ -2705,6 +2728,7 @@ namespace ACE.Server.Physics
                     return retval;
                 }
             }
+
 
             if (collisions.FramesStationaryFall == 0)
                 TransientState &= ~TransientStateFlags.StationaryComplete;

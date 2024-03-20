@@ -3950,6 +3950,7 @@ namespace ACE.Server.WorldObjects
             set { if (value == null) RemoveProperty(PropertyString.CacheLog); else SetProperty(PropertyString.CacheLog, value); }
         }
 
+        }
         public int? ItemSpellId
         {
             get => (int?)GetProperty(PropertyInt.ItemSpellId);
