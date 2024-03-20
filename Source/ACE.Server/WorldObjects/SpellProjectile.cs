@@ -529,23 +529,26 @@ namespace ACE.Server.WorldObjects
                         critDefended = true;
                 }
 
-                // SPEC BONUS: Perception - 50% chance to prevent a critical hit
                 var perceptionDefended = false;
-                var perception = targetPlayer.GetCreatureSkill(Skill.AssessCreature);
-                if (perception.AdvancementClass == SkillAdvancementClass.Specialized)
+                // SPEC BONUS: Perception - 50% chance to prevent a critical hit
+                if (targetPlayer != null)
                 {
-                    var skillCheck = (float)perception.Current / (float)attackSkill.Current;
-                    var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
-
-                    if (criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f))
+                    var perception = targetPlayer.GetCreatureSkill(Skill.AssessCreature);
+                    if (perception.AdvancementClass == SkillAdvancementClass.Specialized)
                     {
-                        perceptionDefended = true;
-                        targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your perception skill allowed you to prevent a critical strike!", ChatMessageType.Magic));
+                        var skillCheck = (float)perception.Current / (float)attackSkill.Current;
+                        var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
+
+                        if (criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f))
+                        {
+                            perceptionDefended = true;
+                            targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your perception skill allowed you to prevent a critical strike!", ChatMessageType.Magic));
+                        }
                     }
                 }
 
                 if (!critDefended && perceptionDefended == false)
-                criticalHit = true;
+                    criticalHit = true;
 
                 // Jewelcrafting Reprisal-- Chance to resist an incoming critical
                 if (criticalHit)
