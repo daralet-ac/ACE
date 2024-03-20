@@ -32,6 +32,7 @@ namespace ACE.Server.WorldObjects
 
         public int Strikethrough = 0;
         public int StrikethroughLimit = 3;
+        public double StrikethroughChance = 0.5f;
 
         public List<uint> StrikethroughTargets = new List<uint>();
 
@@ -288,7 +289,7 @@ namespace ACE.Server.WorldObjects
             var spellType = GetProjectileSpellType(Spell.Id);
             if (spellType != ProjectileSpellType.Volley)
                 ProjectileImpact();
-            if (spellType == ProjectileSpellType.Volley && Strikethrough == StrikethroughLimit || ThreadSafeRandom.Next(0, 1) == 0)
+            if (spellType == ProjectileSpellType.Volley && Strikethrough == StrikethroughLimit || ThreadSafeRandom.Next(0.0f, 1.0f) < StrikethroughChance)
                 ProjectileImpact();
 
             // ensure valid creature target
