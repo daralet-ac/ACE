@@ -1195,5 +1195,11 @@ namespace ACE.Server.WorldObjects
             get => GetProperty(PropertyBool.OverrideArchetypeSkills);
             set { if (!value.HasValue) RemoveProperty(PropertyBool.OverrideArchetypeSkills); else SetProperty(PropertyBool.OverrideArchetypeSkills, value.Value); }
         }
+
+        public bool? CannotBreakStealth
+        {
+            get => GetProperty(PropertyBool.CannotBreakStealth);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.CannotBreakStealth); else SetProperty(PropertyBool.CannotBreakStealth, value.Value); }
+        }
     }
 }
