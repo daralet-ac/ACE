@@ -103,9 +103,6 @@ namespace ACE.Server.Factories
         {
             totalRollPercentile = 0.0f;
 
-            //if (td.Tier < 2)
-            //    return false;
-
             var tier = td.Tier;
             var jewelryType = wo.ValidLocations;
             var qualityMod = td.LootQualityMod != 0.0f ? td.LootQualityMod : 0.0f;
@@ -124,7 +121,7 @@ namespace ACE.Server.Factories
                 var finalAmount = ratingRoll + minRating;
                 var ratingPercentile = finalAmount / 14.0;
 
-                var type = ThreadSafeRandom.Next(1, 3);
+                var type = ThreadSafeRandom.Next(1, 2); // disabled case 3 until finished development
                 switch (type)
                 {
                     case 1: wo.GearHealingBoost = (int)finalAmount * 2; break;
@@ -161,7 +158,7 @@ namespace ACE.Server.Factories
                 var finalAmount = ratingRoll + minRating;
                 var ratingPercentile = finalAmount / 7.0;
 
-                var type = ThreadSafeRandom.Next(1, 3);
+                var type = ThreadSafeRandom.Next(1, 2); // disabled case 3 until finished development
                 switch (type)
                 {
                     case 1: wo.GearCritDamage = (int)finalAmount; break;
@@ -198,7 +195,7 @@ namespace ACE.Server.Factories
                 var finalAmount = ratingRoll + minRating;
                 var ratingPercentile = finalAmount / 7.0;
 
-                var type = ThreadSafeRandom.Next(1, 3);
+                var type = ThreadSafeRandom.Next(1, 2); // disabled case 3 until finished development
                 switch (type)
                 {
                     case 1: wo.GearDamage = (int)finalAmount; break;
@@ -220,7 +217,6 @@ namespace ACE.Server.Factories
                 }
                 totalRollPercentile += ratingPercentile;
                 
-
                 totalRollPercentile = (totalRollPercentile + maxAegisRollPercentile) / 2;
 
                 return true;
