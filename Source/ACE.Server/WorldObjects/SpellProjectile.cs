@@ -30,7 +30,8 @@ namespace ACE.Server.WorldObjects
 
         public PartialEvasion PartialEvasion;
 
-        public double Strikethrough = 0;
+        public int Strikethrough = 0;
+        public int StrikethroughLimit = 3;
 
         public List<uint> StrikethroughTargets = new List<uint>();
 
@@ -286,8 +287,8 @@ namespace ACE.Server.WorldObjects
 
             var spellType = GetProjectileSpellType(Spell.Id);
             if (spellType != ProjectileSpellType.Volley)
-                 ProjectileImpact();
-            if (spellType == ProjectileSpellType.Volley && Strikethrough == 3)
+                ProjectileImpact();
+            if (spellType == ProjectileSpellType.Volley && Strikethrough == StrikethroughLimit || ThreadSafeRandom.Next(0, 1) == 0)
                 ProjectileImpact();
 
             // ensure valid creature target
@@ -834,10 +835,7 @@ namespace ACE.Server.WorldObjects
                         jewelLastStand += Jewel.GetJewelLastStand(sourcePlayer, target);
                 }
 
-                var strikethroughMod = 1f;
-                if (Strikethrough == 1) strikethroughMod = 0.5f;
-                if (Strikethrough == 2) strikethroughMod = 0.33f;
-                if (Strikethrough >= 3) strikethroughMod = 0.1f;
+                var strikethroughMod = 1f / (Strikethrough + 1);
 
                 // ----- FINAL CALCULATION ------------
                 var damageBeforeMitigation = baseDamage * criticalDamageMod * attributeMod * elementalDamageMod * slayerMod * combatFocusDamageMod * jewelElementalist * jewelElemental * jewelSelfHarm * jewelLastStand * strikethroughMod;
@@ -1240,7 +1238,7 @@ namespace ACE.Server.WorldObjects
                 var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
                 var resistSome = PartialEvasion == PartialEvasion.Some ? "Minor resist! " : "";
                 var resistMost = PartialEvasion == PartialEvasion.Most ? "Major resist! " : "";
-                var strikeThrough = Strikethrough > 0 ? "Strikethrough: " : "";
+                var strikeThrough = Strikethrough > 0 ? "Strikethrough! " : "";
 
                 var nonHealth = Spell.Category == SpellCategory.StaminaLowering || Spell.Category == SpellCategory.ManaLowering;
 

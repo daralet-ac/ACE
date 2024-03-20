@@ -2690,9 +2690,10 @@ namespace ACE.Server.Physics
             var strikethrough = false;
 
             if (spellProjectile != null && spellType == ProjectileSpellType.Volley)
-            { 
+            {
                 strikethrough = true;
-                if (spellProjectile.Strikethrough >= 3)
+
+                if (spellProjectile.Strikethrough >= spellProjectile.StrikethroughLimit)
                     strikethrough = false;
             }
 
