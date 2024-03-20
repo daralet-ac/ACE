@@ -921,7 +921,7 @@ namespace ACE.Server.Entity
             var blockChance = 0.0f;
 
             // check for frontal radius prior to allowing a block unless PhalanxActivated
-            if (playerDefender == null || playerDefender.EquippedCombatAbility != CombatAbility.Phalanx || playerDefender.LastPhalanxActivated < Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration || playerDefender.GetEquippedShield == null)
+            if (playerDefender != null || playerDefender.EquippedCombatAbility != CombatAbility.Phalanx || playerDefender.LastPhalanxActivated < Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration || playerDefender.GetEquippedShield == null)
             {
                 var effectiveAngle = 180.0f;
 
