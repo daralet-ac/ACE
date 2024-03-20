@@ -852,8 +852,6 @@ namespace ACE.Server.Factories
             var materialCloth = LootTables.DefaultMaterial[4];
             var materialLeather = LootTables.DefaultMaterial[5];
 
-            var random = ThreadSafeRandom.Next(0, 1);
-
             WeenieType weenieType = wo.WeenieType;
             switch (weenieType)
             {
@@ -867,7 +865,7 @@ namespace ACE.Server.Factories
                         }
                         else
                         {
-                            if (random == 0)
+                            if (ThreadSafeRandom.Next(0, 1) == 0)
                             {
                                 int roll = ThreadSafeRandom.Next(0, materialWoods.Length - 1);
                                 material = (MaterialType)materialWoods[roll];
