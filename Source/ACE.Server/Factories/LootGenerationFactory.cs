@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.Text;
 using System.Linq;
 using System.Threading;
 using ACE.Common;
@@ -14,7 +15,6 @@ using ACE.Server.Factories.Tables;
 using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
-using Pomelo.EntityFrameworkCore.MySql.Query.ExpressionVisitors.Internal;
 using Serilog;
 using WeenieClassName = ACE.Server.Factories.Enum.WeenieClassName;
 
@@ -786,6 +786,8 @@ namespace ACE.Server.Factories
         /// </summary>
         private static MaterialType GetMaterialType(WorldObject wo, int tier)
         {
+            return GetDefaultMaterialType(wo);
+
             if (wo.TsysMutationData == null)
             {
                 _log.Warning($"[LOOT] Missing PropertyInt.TsysMutationData on loot item {wo.WeenieClassId} - {wo.Name}");
@@ -842,32 +844,92 @@ namespace ACE.Server.Factories
                 return MaterialType.Unknown;
 
             MaterialType material = MaterialType.Unknown;
-            int defaultMaterialEntry = ThreadSafeRandom.Next(0, 4);
+
+            var materialWoods = LootTables.DefaultMaterial[0];
+            var materialMetals = LootTables.DefaultMaterial[1];
+            var materialGems = LootTables.DefaultMaterial[2];
+            var materialStones = LootTables.DefaultMaterial[3];
+            var materialCloth = LootTables.DefaultMaterial[4];
+            var materialLeather = LootTables.DefaultMaterial[5];
 
             WeenieType weenieType = wo.WeenieType;
             switch (weenieType)
             {
                 case WeenieType.Caster:
-                    material = (MaterialType)LootTables.DefaultMaterial[3][defaultMaterialEntry];
+                    {
+                        uint[] orbs = { 2366, 1050101, 1050102, 1050103, 1050104, 1050105, 1050106, 1050107 };
+                        if (orbs.Contains(wo.WeenieClassId))
+                        {
+                            int roll = ThreadSafeRandom.Next(0, materialGems.Length - 1);
+                            material = (MaterialType)materialGems[roll];
+                        }
+                        else
+                        {
+                            if (ThreadSafeRandom.Next(0, 1) == 0)
+                            {
+                                int roll = ThreadSafeRandom.Next(0, materialWoods.Length - 1);
+                                material = (MaterialType)materialWoods[roll];
+                            }
+                            else
+                            {
+                                int roll = ThreadSafeRandom.Next(0, materialMetals.Length - 1);
+                                material = (MaterialType)materialMetals[roll];
+                            }
+                        }
+                    }
                     break;
                 case WeenieType.Clothing:
-                    if (wo.ItemType == ItemType.Armor)
-                        material = (MaterialType)LootTables.DefaultMaterial[0][defaultMaterialEntry];
-                    if (wo.ItemType == ItemType.Clothing)
-                        material = (MaterialType)LootTables.DefaultMaterial[5][defaultMaterialEntry];
+                    {
+                        if (wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth)
+                        {
+                            int roll = ThreadSafeRandom.Next(0, materialCloth.Length - 1);
+                            material = (MaterialType)materialCloth[roll];
+                        }
+                        else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Light)
+                        {
+                            int roll = ThreadSafeRandom.Next(0, materialLeather.Length - 1);
+                            material = (MaterialType)materialLeather[roll];
+                        }
+                        else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Heavy)
+                        {
+                            int roll = ThreadSafeRandom.Next(0, materialMetals.Length - 1);
+                            material = (MaterialType)materialMetals[roll];
+                        }
+                    }
                     break;
                 case WeenieType.MissileLauncher:
                 case WeenieType.Missile:
-                    material = (MaterialType)LootTables.DefaultMaterial[1][defaultMaterialEntry];
+                    {
+                        uint[] metalThrownWeapons = { };
+                        if (metalThrownWeapons.Contains(wo.WeenieClassId))
+                        {
+                            int roll = ThreadSafeRandom.Next(0, materialMetals.Length - 1);
+                            material = (MaterialType)materialMetals[roll];
+                        }
+                        else
+                        {
+                            int roll = ThreadSafeRandom.Next(0, materialWoods.Length - 1);
+                            material = (MaterialType)materialWoods[roll];
+                        }
+                    }
                     break;
                 case WeenieType.MeleeWeapon:
-                    material = (MaterialType)LootTables.DefaultMaterial[2][defaultMaterialEntry];
+                    {
+                        uint[] woodMeleeWeapons = { 309, 3766, 3767, 3768, 3769, 7768, 7787, 7788, 7789, 7790 };  
+                        if(wo.WeaponSkill == Skill.Staff || wo.WeaponSkill == Skill.Spear || woodMeleeWeapons.Contains(wo.WeenieClassId))
+                        {
+                            int roll = ThreadSafeRandom.Next(0, materialWoods.Length - 1);
+                            material = (MaterialType)materialWoods[roll];
+                        }
+                        else
+                        {
+                            int roll = ThreadSafeRandom.Next(0, materialMetals.Length - 1);
+                            material = (MaterialType)materialMetals[roll];
+                        }
+                    }
                     break;
                 case WeenieType.Generic:
-                    if (wo.ItemType == ItemType.Jewelry)
-                        material = (MaterialType)LootTables.DefaultMaterial[3][defaultMaterialEntry];
-                    if (wo.ItemType == ItemType.MissileWeapon)
-                        material = (MaterialType)LootTables.DefaultMaterial[4][defaultMaterialEntry];
+                    material = MaterialType.Unknown;
                     break;
                 default:
                     material = MaterialType.Unknown;

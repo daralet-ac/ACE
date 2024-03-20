@@ -1985,12 +1985,23 @@ namespace ACE.Server.Factories
 
         public static readonly int[][] DefaultMaterial =
         {
-            new int[] { (int)MaterialType.Copper, (int)MaterialType.Bronze, (int)MaterialType.Iron, (int)MaterialType.Steel, (int)MaterialType.Silver },            // Armor
-            new int[] { (int)MaterialType.Oak, (int)MaterialType.Teak, (int)MaterialType.Mahogany, (int)MaterialType.Pine, (int)MaterialType.Ebony },               // Missile
-            new int[] { (int)MaterialType.Brass, (int)MaterialType.Ivory, (int)MaterialType.Gold, (int)MaterialType.Steel, (int)MaterialType.Diamond },             // Melee
-            new int[] { (int)MaterialType.RedGarnet, (int)MaterialType.Jet, (int)MaterialType.BlackOpal, (int)MaterialType.FireOpal, (int)MaterialType.Emerald },   // Caster
-            new int[] { (int)MaterialType.Granite, (int)MaterialType.Ceramic, (int)MaterialType.Porcelain, (int)MaterialType.Alabaster, (int)MaterialType.Marble }, // Dinnerware
-            new int[] { (int)MaterialType.Linen, (int)MaterialType.Wool, (int)MaterialType.Velvet, (int)MaterialType.Satin, (int)MaterialType.Silk }                // Clothes
+            // Wood
+            new int[] { (int)MaterialType.Oak, (int)MaterialType.Teak, (int)MaterialType.Mahogany, (int)MaterialType.Pine, (int)MaterialType.Ebony },               
+
+            // Metal 
+            new int[] { (int)MaterialType.Iron, (int)MaterialType.Steel, (int)MaterialType.Copper, (int)MaterialType.Bronze, (int)MaterialType.Brass, (int)MaterialType.Pyreal, },             
+
+            // Common Gems
+            new int[] { (int)MaterialType.Amethyst, (int)MaterialType.GreenGarnet, (int)MaterialType.LavenderJade, (int)MaterialType.Malachite, (int)MaterialType.Opal, (int)MaterialType.RoseQuartz },   
+
+            // Stone
+            new int[] { (int)MaterialType.Granite, (int)MaterialType.Ceramic, (int)MaterialType.Porcelain, (int)MaterialType.Alabaster, (int)MaterialType.Marble, (int)MaterialType.Sandstone, (int)MaterialType.Ivory }, 
+
+            // Cloth
+            new int[] { (int)MaterialType.Linen, (int)MaterialType.Wool, (int)MaterialType.Velvet, (int)MaterialType.Satin, (int)MaterialType.Silk },               
+
+            // Leather
+            new int[] { (int)MaterialType.Leather, (int)MaterialType.ArmoredilloHide, (int)MaterialType.GromnieHide, (int)MaterialType.ReedSharkHide },             
         };
 
         public enum ArmorType
