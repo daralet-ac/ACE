@@ -929,7 +929,13 @@ namespace ACE.Server.Factories
                     }
                     break;
                 case WeenieType.Generic:
-                    material = MaterialType.Unknown;
+                    if (wo.ItemType == ItemType.Jewelry)
+                    {
+                        int roll = ThreadSafeRandom.Next(0, materialMetals.Length - 1);
+                        material = (MaterialType)materialMetals[roll];
+                    }
+                    else
+                        material = MaterialType.Unknown;
                     break;
                 default:
                     material = MaterialType.Unknown;
@@ -1099,9 +1105,9 @@ namespace ACE.Server.Factories
             //return (MaterialType)ThreadSafeRandom.Next(10, 50);
 
             // the gem class value can be further utilized for determining the item's monetary value
-            var gemClass = GemClassChance.Roll(tier);
+            //var gemClass = GemClassChance.Roll(tier);
 
-            var gemResult = GemMaterialChance.Roll(gemClass);
+            var gemResult = GemMaterialChance.Roll(1);
 
             return gemResult.MaterialType;
         }
@@ -1324,8 +1330,8 @@ namespace ACE.Server.Factories
 
                 case TreasureItemType_Orig.Gem:
 
-                    var gemClass = GemClassChance.Roll(treasureDeath.Tier);
-                    var gemResult = GemMaterialChance.Roll(gemClass);
+                    //var gemClass = GemClassChance.Roll(treasureDeath.Tier);
+                    var gemResult = GemMaterialChance.Roll(1);
 
                     treasureRoll.Wcid = gemResult.ClassName;
                     break;
