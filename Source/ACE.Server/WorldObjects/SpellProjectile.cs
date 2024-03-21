@@ -1198,9 +1198,9 @@ namespace ACE.Server.WorldObjects
                     var projectileScaler = 1;
                     if (SpellType == ProjectileSpellType.Streak)
                         projectileScaler = 5;
-                    if (SpellType == ProjectileSpellType.Volley || SpellType == ProjectileSpellType.Blast)
+                    if (SpellType == ProjectileSpellType.Blast)
                         projectileScaler = 3;
-                    if (SpellType == ProjectileSpellType.Ring || SpellType == ProjectileSpellType.Wall)
+                    if (SpellType == ProjectileSpellType.Volley || SpellType == ProjectileSpellType.Ring || SpellType == ProjectileSpellType.Wall)
                         projectileScaler = 6;
 
                     overloadPercent = Player.HandleOverloadStamps(sourcePlayer, projectileScaler, Spell.Level);
@@ -1220,9 +1220,9 @@ namespace ACE.Server.WorldObjects
                 var projectileScaler = 1;
                 if (SpellType == ProjectileSpellType.Streak)
                     projectileScaler = 5;
-                if (SpellType == ProjectileSpellType.Volley || SpellType == ProjectileSpellType.Blast)
+                if (SpellType == ProjectileSpellType.Blast)
                     projectileScaler = 3;
-                if (SpellType == ProjectileSpellType.Ring || SpellType == ProjectileSpellType.Wall)
+                if (SpellType == ProjectileSpellType.Volley || SpellType == ProjectileSpellType.Ring || SpellType == ProjectileSpellType.Wall)
                     projectileScaler = 6;
                 Jewel.HandleCasterAttackerBonuses(sourcePlayer, target, SpellType, Spell.DamageType, Spell.Level, projectileScaler);
                 Jewel.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, Spell.DamageType);

@@ -94,7 +94,7 @@ namespace ACE.Server.WorldObjects
             if (creature == null || creature.PlayerKillerStatus == PlayerKillerStatus.RubberGlue || creature.PlayerKillerStatus == PlayerKillerStatus.Protected || distance > creature.VisualAwarenessRangeSq || !creature.IsDirectVisible(this))
                 return true;
 
-            if (creature.CannotBreakStealth == true || creature.WeenieClassId == 1020001) // watchers
+            if (creature.CannotBreakStealth == true || creature.Translucency == 1.0 || creature.Visibility == true) // watchers
                 return true;
 
             foreach (var kvp in RecentStealthTests)
