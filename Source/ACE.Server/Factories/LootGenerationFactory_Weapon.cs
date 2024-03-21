@@ -295,6 +295,7 @@ namespace ACE.Server.Factories
         private static void TryMutateWeaponSubtypeBonuses(WorldObject wo, TreasureDeath treasureDeath, out float subtypeBonusPercentile)
         {
             subtypeBonusPercentile = 0.0f;
+            int subtype;
 
             switch (wo.WeaponSkill)
             {
@@ -317,11 +318,21 @@ namespace ACE.Server.Factories
                     RollBonusArmorCleaving(treasureDeath, wo, out subtypeBonusPercentile);
                     break;
                 case Skill.ThrownWeapon:
-                    // Add TW subtype bonuses
+                    subtype = GetThrownWeaponsSubType(wo);
+                    const int AXE = 0, CLUB = 1, DAGGER = 2, DART = 3, JAVELIN = 4, SHOUKEN = 5;
+                    switch(subtype)
+                    {
+                        case AXE:
+                        case DAGGER: RollBonusCritChance(treasureDeath, wo, out subtypeBonusPercentile); break;
+                        case CLUB:
+                        case SHOUKEN: RollBonusCritDamage(treasureDeath, wo, out subtypeBonusPercentile); break;
+                        case DART:
+                        case JAVELIN: RollBonusArmorCleaving(treasureDeath, wo, out subtypeBonusPercentile); break;
+                    }
                     break;
                 case Skill.WarMagic:
                 case Skill.LifeMagic:
-                    var subtype = GetCasterSubType(wo);
+                    subtype = GetCasterSubType(wo);
                     const int ORB = 0, SCEPTER = 1, WAND = 2, STAFF = 3;
                     switch (subtype)
                     {

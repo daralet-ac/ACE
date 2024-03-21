@@ -560,5 +560,23 @@ namespace ACE.Server.Factories
                 case Skill.MissileWeapons: return 0.75f;
             }
         }
+
+        /// <summary>
+        /// Return caster subtype
+        /// Axe = 0, Club = 1, Dagger = 2, Javelin = 3, Dart = 4, Shouken = 5
+        /// </summary>
+        public static int GetThrownWeaponsSubType(WorldObject wo)
+        {
+            var subType = 0;
+
+            foreach (var type in LootTables.ThrownWeaponMatrix)
+            {
+                    break;
+
+                subType++;
+            }
+
+            return subType;
+        }
     }
 }

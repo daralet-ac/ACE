@@ -523,6 +523,16 @@ namespace ACE.Server.Factories
             ElementalMissileWeaponsMatrix,
         };
 
+        public static readonly uint[][] ThrownWeaponMatrix =
+        {
+            new uint[] { 304, 3758, 3759, 3760, 3761 }, // axes
+            new uint[] { 310, 3770, 3771, 3772, 3773 }, // clubs
+            new uint[] { 315, 3782, 3783, 3784, 3785 }, // daggers
+            new uint[] { 316, 3786, 3787, 3788, 3789 }, // darts
+            new uint[] { 320, 3798, 3799, 3800, 3801 }, // Javelins
+            new uint[] { 343, 3861, 3862, 3863, 3864 }, // Shouken
+        };
+
         public static readonly int[] DinnerwareLootMatrix = { 141, 142, 148, 149, 150, 154, 161, 163, 168, 243, 254, 7940 };
 
         /*public static readonly int[][] GemCreatureSpellMatrix =
