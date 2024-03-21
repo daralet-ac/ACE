@@ -11,10 +11,9 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Enum;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
-using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.WorldObjects.Entity;
 using Serilog;
 
 namespace ACE.Server.WorldObjects
@@ -172,11 +171,41 @@ namespace ACE.Server.WorldObjects
         {
             if (inventoryloaded) return;
 
+            SetShopTier();
+
             var itemsForSale = new Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint>();
 
-            foreach (var item in Biota.PropertiesCreateList.Where(x => x.DestinationType == DestinationType.Shop))
-                LoadInventoryItem(itemsForSale, item.WeenieClassId, item.Palette, item.Shade, item.StackSize);
+            switch(GetProperty(PropertyString.Template))
+            {
+                case "Healer": LoadHealerItems(itemsForSale, ShopTier); break;
+                case "Scribe": break;
+                case "Shopkeeper": break;
+                case "Grocer": break;
+                case "Barkeeper": break;
+                case "Archmage": break;
+                case "Tailor": break;
+                case "Blacksmith": break;
+                case "Armorer": break;
+                case "Weaponsmith": break;
+                case "Bowyer": break;
+                case "Jeweler": break;
+                case "Ivory Trader": break;
+                case "Leather Trader": break;
+                case "Butcher": break;
+            }
 
+            foreach (var item in Biota.PropertiesCreateList.Where(x => x.DestinationType == DestinationType.Shop))
+            {
+                var addItem = true;
+                foreach (var defaultItem in DefaultItemsForSale)
+                {
+                    if (item.WeenieClassId == defaultItem.Value.WeenieClassId)
+                        addItem = false;
+                }
+
+                if(addItem)
+                    LoadInventoryItem(itemsForSale, item.WeenieClassId, item.Palette, item.Shade, item.StackSize);
+            }
             //if (Biota.PropertiesGenerator != null && !PropertyManager.GetBool("vendor_shop_uses_generator").Item)
             //{
             //    foreach (var item in Biota.PropertiesGenerator.Where(x => x.WhereCreate.HasFlag(RegenLocationType.Shop)))
@@ -728,103 +757,7 @@ namespace ACE.Server.WorldObjects
         {
             RandomItemGenerationInitialized = true;
 
-            ShopTier = Tier ?? 0;
-
-            string townName = GetProperty(PropertyString.TownName);
-
-            switch (townName)
-            {
-                case "South Holtburg Outpost":
-                case "West Holtburg Outpost":
-                case "Southeast Shoushi Outpost":
-                case "West Shoushi Outpost":
-                case "East Yaraq Outpost":
-                case "North Yaraq Outpost":
-                    if (ShopTier == 0)
-                        ShopTier = 1;
-                    ShopQualityMod = -0.5f;
-                    IsStarterOutpostVendor = true;
-                    break;
-                case "Holtburg":
-                case "Shoushi":
-                case "Yaraq":
-                    if (ShopTier == 0)
-                        ShopTier = 1;
-                    ShopQualityMod = 0.0f;
-                    break;
-                case "Cragstone":
-                case "Glenden Wood":
-                case "Arwic":
-                case "Hebian-to":
-                case "Sawato":
-                case "Tou-Tou":
-                case "Zaikhal":
-                case "Al-Arqas":
-                case "Tufa":
-                    if (ShopTier == 0)
-                        ShopTier = 2;
-                    ShopQualityMod = 0.0f;
-                    break;
-                case "Rithwic":
-                case "Eastham":
-                case "Lytelthorpe":
-                case "Yanshi":
-                case "Lin":
-                case "Nanto":
-                case "Al-Jalima":
-                case "Samsur":
-                case "Uziz":
-                    if (ShopTier == 0)
-                        ShopTier = 3;
-                    ShopQualityMod = 0.0f;
-                    break;
-                case "Dryreach":
-                case "Baishi":
-                case "Mayoi":
-                case "Xarabydun":
-                case "Underground City":
-                case "Khayyaban":
-                    if (ShopTier == 0)
-                        ShopTier = 4;
-                    ShopQualityMod = 0.0f;
-                    break;
-                case "Qalaba'r":
-                case "Kara":
-                case "Coiler":
-                case "Mountain Retreat":
-                case "Danby's Outpost":
-                    if (ShopTier == 0)
-                        ShopTier = 5;
-                    ShopQualityMod = 0.0f;
-                    break;
-                case "Crater":
-                case "Bandit Castle":
-                case "Neydisa Castle":
-                case "Stonehold":
-                case "Plateau":
-                case "Linvak Tukal":
-                    if (ShopTier == 0)
-                        ShopTier = 6;
-                    ShopQualityMod = 0.0f;
-                    break;
-                case "Fort Tethana":
-                case "Wai Jhou":
-                case "Ayan Baqur":
-                case "Candeth Keep":
-                    if (ShopTier == 0)
-                        ShopTier = 7;
-                    ShopQualityMod = 0.0f;
-                    break;
-                //case "Bluespire":
-                //case "Greenspire":
-                //case "Ahurenga":
-                //case "Redspire":
-                //case "Martine's Retreat":
-                //case "Oolutanga's Refuge":
-                //case "MacNiall's Freehold":
-                //case "Kryst":
-                //case "Timaru":
-            }
+            SetShopTier();
 
             sellsRandomArmor = ((ItemType)MerchandiseItemTypes & ItemType.Armor) == ItemType.Armor;
             sellsRandomMeleeWeapons = ((ItemType)MerchandiseItemTypes & ItemType.MeleeWeapon) == ItemType.MeleeWeapon;
@@ -1082,6 +1015,124 @@ namespace ACE.Server.WorldObjects
                 }
             }
         }
+
+        private void SetShopTier()
+        {
+            ShopTier = Tier ?? 0;
+
+            string townName = GetProperty(PropertyString.TownName);
+
+            switch (townName)
+            {
+                case "South Holtburg Outpost":
+                case "West Holtburg Outpost":
+                case "Southeast Shoushi Outpost":
+                case "West Shoushi Outpost":
+                case "East Yaraq Outpost":
+                case "North Yaraq Outpost":
+                    if (ShopTier == 0)
+                        ShopTier = 1;
+                    ShopQualityMod = -0.5f;
+                    IsStarterOutpostVendor = true;
+                    break;
+                case "Holtburg":
+                case "Shoushi":
+                case "Yaraq":
+                    if (ShopTier == 0)
+                        ShopTier = 1;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Cragstone":
+                case "Glenden Wood":
+                case "Arwic":
+                case "Hebian-to":
+                case "Sawato":
+                case "Tou-Tou":
+                case "Zaikhal":
+                case "Al-Arqas":
+                case "Tufa":
+                    if (ShopTier == 0)
+                        ShopTier = 2;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Rithwic":
+                case "Eastham":
+                case "Lytelthorpe":
+                case "Yanshi":
+                case "Lin":
+                case "Nanto":
+                case "Al-Jalima":
+                case "Samsur":
+                case "Uziz":
+                    if (ShopTier == 0)
+                        ShopTier = 3;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Dryreach":
+                case "Baishi":
+                case "Mayoi":
+                case "Xarabydun":
+                case "Underground City":
+                case "Khayyaban":
+                    if (ShopTier == 0)
+                        ShopTier = 4;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Qalaba'r":
+                case "Kara":
+                case "Coiler":
+                case "Mountain Retreat":
+                case "Danby's Outpost":
+                    if (ShopTier == 0)
+                        ShopTier = 5;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Crater":
+                case "Bandit Castle":
+                case "Neydisa Castle":
+                case "Stonehold":
+                case "Plateau":
+                case "Linvak Tukal":
+                case "Bluespire":
+                case "Greenspire":
+                case "Ahurenga":
+                case "Redspire":
+                    if (ShopTier == 0)
+                        ShopTier = 6;
+                    ShopQualityMod = 0.0f;
+                    break;
+                case "Fort Tethana":
+                case "Wai Jhou":
+                case "Ayan Baqur":
+                case "Candeth Keep":
+                case "Timaru":
+                    if (ShopTier == 0)
+                        ShopTier = 7;
+                    ShopQualityMod = 0.0f;
+                    break;
+                    //case "Martine's Retreat":
+                    //case "Oolutanga's Refuge":
+                    //case "MacNiall's Freehold":
+                    //case "Kryst":
+            }
+        }
+
+        private void LoadHealerItems(Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint> itemsForSale, int vendorTier)
+        {
+            var baseItems = VendorBaseItems.HealerItems;
+            
+            foreach (var item in baseItems)
+            {
+                var (itemTier, itemWcid, itemPaletteTemplate, itemShade, itemStackSize) = item;
+                
+                if (vendorTier - 1 >= itemTier)
+                {
+                    LoadInventoryItem(itemsForSale, itemWcid, itemPaletteTemplate, (float)itemShade, itemStackSize);
+                }
+            }
+        }
+
+
 
         private static void CleanupCreatedItems(List<WorldObject> createdItems)
         {
