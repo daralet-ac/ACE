@@ -571,6 +571,7 @@ namespace ACE.Server.Factories
 
             foreach (var type in LootTables.ThrownWeaponMatrix)
             {
+                if (type.Contains(wo.WeenieClassId))
                     break;
 
                 subType++;
