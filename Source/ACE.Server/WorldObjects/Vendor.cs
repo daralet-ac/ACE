@@ -70,6 +70,7 @@ namespace ACE.Server.WorldObjects
         private static readonly VendorItemComparer VendorItemComparer = new VendorItemComparer();
 
         public readonly Dictionary<ObjectGuid, WorldObject> DefaultItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
+        private Dictionary<ObjectGuid, WorldObject> TempDefaultItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
 
         // unique items purchased from other players
         public Dictionary<ObjectGuid, WorldObject> UniqueItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
@@ -175,37 +176,33 @@ namespace ACE.Server.WorldObjects
 
             var itemsForSale = new Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint>();
 
+            var templateDefaultItems = new List<(int, uint, int, double, int)>();
+
             switch(GetProperty(PropertyString.Template))
             {
-                case "Healer": LoadHealerItems(itemsForSale, ShopTier); break;
+                case "Archmage": break;
+                case "Armorer": break;
+                case "Barkeeper": break;
+                case "Blacksmith": break;
+                case "Bowyer": break;
+                case "Butcher": break;
+                case "Grocer": break;
+                case "Healer": templateDefaultItems = VendorBaseItems.HealerItems; break;
+                case "Ivory Trader": break;
+                case "Jeweler": break;
+                case "Leather Trader": break;
+                case "Provisioner": break;
                 case "Scribe": break;
                 case "Shopkeeper": break;
-                case "Grocer": break;
-                case "Barkeeper": break;
-                case "Archmage": break;
                 case "Tailor": break;
-                case "Blacksmith": break;
-                case "Armorer": break;
                 case "Weaponsmith": break;
-                case "Bowyer": break;
-                case "Jeweler": break;
-                case "Ivory Trader": break;
-                case "Leather Trader": break;
-                case "Butcher": break;
             }
+
+            LoadDefaultItems(itemsForSale, templateDefaultItems);
 
             foreach (var item in Biota.PropertiesCreateList.Where(x => x.DestinationType == DestinationType.Shop))
-            {
-                var addItem = true;
-                foreach (var defaultItem in DefaultItemsForSale)
-                {
-                    if (item.WeenieClassId == defaultItem.Value.WeenieClassId)
-                        addItem = false;
-                }
+                LoadInventoryItem(itemsForSale, item.WeenieClassId, item.Palette, item.Shade, item.StackSize);
 
-                if(addItem)
-                    LoadInventoryItem(itemsForSale, item.WeenieClassId, item.Palette, item.Shade, item.StackSize);
-            }
             //if (Biota.PropertiesGenerator != null && !PropertyManager.GetBool("vendor_shop_uses_generator").Item)
             //{
             //    foreach (var item in Biota.PropertiesGenerator.Where(x => x.WhereCreate.HasFlag(RegenLocationType.Shop)))
@@ -216,13 +213,13 @@ namespace ACE.Server.WorldObjects
         }
 
         private void LoadInventoryItem(Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint> itemsForSale,
-            uint weenieClassId, int? palette, float? shade, int? stackSize)
+            uint weenieClassId, int? palette, double? shade, int? stackSize)
         {
-            //var itemProfile = (weenieClassId, palette ?? 0, shade ?? 0);
-
+            var itemProfile = (weenieClassId, palette ?? 0, shade ?? 0);
+            
             // let's skip dupes if there are any
-            //if (itemsForSale.ContainsKey(itemProfile))
-            //    return;
+            if (itemsForSale.ContainsKey(itemProfile))
+                return;
 
             var wo = WorldObjectFactory.CreateNewWorldObject(weenieClassId);
 
@@ -238,7 +235,7 @@ namespace ACE.Server.WorldObjects
 
             wo.CalculateObjDesc();
 
-            //itemsForSale.Add(itemProfile, wo.Guid.Full);
+            itemsForSale.Add(itemProfile, wo.Guid.Full);
 
             wo.VendorShopCreateListStackSize = stackSize ?? -1;
 
@@ -1117,15 +1114,13 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        private void LoadHealerItems(Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint> itemsForSale, int vendorTier)
-        {
-            var baseItems = VendorBaseItems.HealerItems;
-            
-            foreach (var item in baseItems)
+        private void LoadDefaultItems(Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint> itemsForSale, List<(int, uint, int, double, int)> defaultItems)
+        { 
+            foreach (var item in defaultItems)
             {
                 var (itemTier, itemWcid, itemPaletteTemplate, itemShade, itemStackSize) = item;
                 
-                if (vendorTier - 1 >= itemTier)
+                if (ShopTier - 1 >= itemTier)
                 {
                     LoadInventoryItem(itemsForSale, itemWcid, itemPaletteTemplate, (float)itemShade, itemStackSize);
                 }
