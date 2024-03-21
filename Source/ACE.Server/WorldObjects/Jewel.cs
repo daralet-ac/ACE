@@ -648,7 +648,7 @@ namespace ACE.Server.WorldObjects
                 }
                 // cycle through slots, emptying out ones that aren't already
 
-                for (int i = 1; i <= 8; i++)
+                for (int i = 1; i <= 2; i++)
                 {
                     string currentSocket = (string)target.GetType().GetProperty($"JewelSocket{i}").GetValue(target);
 

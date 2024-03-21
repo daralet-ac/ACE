@@ -174,7 +174,7 @@ namespace ACE.Server.WorldObjects
 
         public static bool CheckTinkerType(Player player, WorldObject source, WorldObject target, Skill tinkeringSkill)
         {
-            if (tinkeringSkill == Skill.WeaponTinkering && target.ItemType == ItemType.MeleeWeapon || target.ArmorWeightClass == 4)
+            if (tinkeringSkill == Skill.WeaponTinkering && target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile || target.ArmorWeightClass == 4)
                 return true;
 
             if (tinkeringSkill == Skill.ItemTinkering && target.ItemType == ItemType.Jewelry)
@@ -195,11 +195,14 @@ namespace ACE.Server.WorldObjects
             if (tinkeringSkill == Skill.ArmorTinkering && target.ArmorWeightClass == 1 && target.ArmorLevel > 0)
                 return true;
 
-            if (tinkeringSkill == Skill.Fletching && target.ItemType == ItemType.MissileWeapon)
+            if (tinkeringSkill == Skill.Fletching && target.WeenieType == WeenieType.MissileLauncher)
                 return true;
 
-            if (ImbueSalvage.Contains((MaterialType)source.MaterialType) && target.ItemType == ItemType.MeleeWeapon || target.ItemType == ItemType.MissileWeapon || target.ItemType == ItemType.Caster)
-                return true;
+            if (ImbueSalvage.Contains((MaterialType)source.MaterialType))
+            {
+                if (target.ItemType == ItemType.MeleeWeapon || target.ItemType == ItemType.MissileWeapon || target.ItemType == ItemType.Caster)
+                    return true;
+            }
 
             // wand checks
             if (source.MaterialType == ACE.Entity.Enum.MaterialType.Malachite || source.MaterialType == ACE.Entity.Enum.MaterialType.Amethyst
@@ -243,7 +246,7 @@ namespace ACE.Server.WorldObjects
                 {
                     // Weapon - 1% Defense | Armor - 0.25% Defense + Shield Mod
                     case ACE.Entity.Enum.MaterialType.Brass:    // Brass
-                        if (target.ItemType == ItemType.MeleeWeapon)
+                        if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
                             if (target.WeaponPhysicalDefense == null)
                             {
@@ -265,7 +268,7 @@ namespace ACE.Server.WorldObjects
 
                         // Weapon - 5% base damage + 0.5% Defense | Armor - 0.125% Defense + Shield Mod and 5% Armor Level
                     case ACE.Entity.Enum.MaterialType.Bronze:    // Bronze
-                        if (target.ItemType == ItemType.MeleeWeapon)
+                        if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
                             if (target.WeaponPhysicalDefense == null)
                             {
@@ -292,7 +295,7 @@ namespace ACE.Server.WorldObjects
 
                         // Weapon - 1% attack | Armor - 0.25% AttackMod + 2H mod
                     case ACE.Entity.Enum.MaterialType.Copper:    // Copper
-                        if (target.ItemType == ItemType.MeleeWeapon)
+                        if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
                             if (target.WeaponOffense == null)
                             {
@@ -314,7 +317,7 @@ namespace ACE.Server.WorldObjects
 
                         // Weapon - 0.5% Attack and 5% damage | Armor - 0.125% Attack and 2h Mods + 5% ArmorLevel
                     case ACE.Entity.Enum.MaterialType.Gold:    // Gold
-                        if (target.ItemType == ItemType.MeleeWeapon)
+                        if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
                             if (target.WeaponOffense == null)
                             {
@@ -343,7 +346,7 @@ namespace ACE.Server.WorldObjects
 
                         // Weapon - 7.5% Damage but +5 WeaponTime | Armor - 7.5% ArmorLevel but -0.25% Stam Penalty
                     case ACE.Entity.Enum.MaterialType.Iron:    // Iron
-                        if (target.ItemType == ItemType.MeleeWeapon)
+                        if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
                             var damageBonus = (int)(target.BaseDamage * 0.075) < 1 ? 1 : (int)(target.BaseDamage * 0.075);
                             target.Damage += damageBonus;
@@ -364,7 +367,7 @@ namespace ACE.Server.WorldObjects
 
                         // Weapon - 0.5% MagicD Mod + 5% Damage | Armor - 2 Aegis and 5% ArmorLevel
                     case ACE.Entity.Enum.MaterialType.Pyreal:    // Pyreal
-                        if (target.ItemType == ItemType.MeleeWeapon)
+                        if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
                             if (target.WeaponMagicalDefense == null)
                             {
@@ -390,7 +393,7 @@ namespace ACE.Server.WorldObjects
 
                         // Weapon - 1% MagicD Mod | Armor - 3 Aegis + 0.25% HP Regen
                     case ACE.Entity.Enum.MaterialType.Silver:    // Silver
-                        if (target.ItemType == ItemType.MeleeWeapon)
+                        if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
                             if (target.WeaponMagicalDefense == null)
                             {
@@ -412,7 +415,7 @@ namespace ACE.Server.WorldObjects
 
                         // Weapon - 0.5% Defense + 0.5% Offense    | Armor - 5% Armor + 0.25% HP Regen
                     case ACE.Entity.Enum.MaterialType.Steel:    // Steel
-                        if (target.ItemType == ItemType.MeleeWeapon)
+                        if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
                             if (target.WeaponOffense == null)
                             {
