@@ -89,6 +89,13 @@ namespace ACE.Server.WorldObjects
 
             var proj = WorldObjectFactory.CreateNewWorldObject(ammo.WeenieClassId);
 
+            if (ammo.WeenieType == WeenieType.Missile && ammo.MaterialType != null)
+            {
+                proj.Damage = ammo.Damage;
+                proj.DamageVariance = ammo.DamageVariance;
+                proj.WeaponOffense = ammo.WeaponOffense;
+            }
+
             proj.ProjectileSource = this;
             proj.ProjectileTarget = target;
 
