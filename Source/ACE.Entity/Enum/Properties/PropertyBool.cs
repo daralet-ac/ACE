@@ -186,6 +186,7 @@ namespace ACE.Entity.Enum.Properties
         TakeItemsSilently                = 143, // allows for no/custom messages for NPC TakeItems emote
         DungeonLockout                   = 144, // if object is on landblock, no new players will be added to permitted list
         CannotBreakStealth               = 145,
+        CampfireHotspot                  = 146,
 
         /* custom */
         [ServerOnly]

@@ -1201,5 +1201,11 @@ namespace ACE.Server.WorldObjects
             get => GetProperty(PropertyBool.CannotBreakStealth);
             set { if (!value.HasValue) RemoveProperty(PropertyBool.CannotBreakStealth); else SetProperty(PropertyBool.CannotBreakStealth, value.Value); }
         }
+
+        public bool? CampfireHotspot
+        {
+            get => GetProperty(PropertyBool.CampfireHotspot);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.CampfireHotspot); else SetProperty(PropertyBool.CampfireHotspot, value.Value); }
+        }
     }
 }

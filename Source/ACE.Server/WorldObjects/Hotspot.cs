@@ -203,8 +203,8 @@ namespace ACE.Server.WorldObjects
             
             if (player != null)
                 player.RechargeEmpoweredScarabs(this);
-
-            if (player != null && this.Tier != null)
+            
+            if (player != null && CampfireHotspot == true)
             {   
                 var forwardCommand = player.CurrentMovementData.MovementType == MovementType.Invalid && player.CurrentMovementData.Invalid != null ? player.CurrentMovementData.Invalid.State.ForwardCommand : MotionCommand.Invalid;
                 if (forwardCommand == MotionCommand.Sitting || forwardCommand == MotionCommand.Sleeping || forwardCommand == MotionCommand.Crouch)
@@ -215,19 +215,17 @@ namespace ACE.Server.WorldObjects
 
                     if (player.CampfireTimer < Time.GetUnixTime())
                     {
-                      
-                        var spell = new ACE.Server.Entity.Spell(SpellId.SprintOther1);  // placeholder
-                        player.CreateEnchantment(player, this, null, spell);
-                        player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Gazing into the fire calms your soul.", ChatMessageType.Magic));
+                        if(player.WellRestedHotspot == null)
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Gazing into the fire calms your soul.", ChatMessageType.Magic));
+
                         player.CampfireTimer = 0;
+                        player.WellRestedHotspot = this;
                     }
-                    
-                        
                 }
                 else
                     player.CampfireTimer = 0;
-                    
             }
+
             switch (DamageType)
             {
                 default:
