@@ -630,6 +630,9 @@ namespace ACE.Server.WorldObjects
                 if (!item.IsAffecting)
                     continue;
 
+                if (CombatMode == CombatMode.NonCombat)
+                    continue;
+
                 if (item.ItemCurMana == null || item.ItemMaxMana == null || item.ManaRate == null)
                     continue;
 
