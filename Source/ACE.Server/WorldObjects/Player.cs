@@ -121,6 +121,8 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        public Hotspot? WellRestedHotspot = null;
+
         public ConfirmationManager ConfirmationManager;
 
         public SquelchManager SquelchManager;

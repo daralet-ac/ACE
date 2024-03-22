@@ -371,6 +371,18 @@ namespace ACE.Server.WorldObjects
             // TODO: use real motion / animation system from physics
             //CurrentMotionCommand = movementData.Invalid.State.ForwardCommand;
             CurrentMovementData = movementData;
+
+            if (WellRestedHotspot != null)
+            {
+                var forwardCommand =  CurrentMovementData.Invalid.State.ForwardCommand;
+                if (forwardCommand != MotionCommand.Crouch && forwardCommand != MotionCommand.Sitting && forwardCommand != MotionCommand.Sleeping)
+                {
+                    var spell = new ACE.Server.Entity.Spell(SpellId.TrinketXPBoost1);  // placeholder
+                    CreateEnchantment(this, WellRestedHotspot, null, spell);
+
+                    WellRestedHotspot = null;
+                }
+            }
         }
 
         private EnvironChangeType? currentFogColor;
