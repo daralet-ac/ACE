@@ -1663,8 +1663,6 @@ namespace ACE.Server.Command.Handlers
                 house = house1.RootHouse;
             else if (target is Hook hook)
                 house = hook.House.RootHouse;
-            else if (target is Storage storage)
-                house = storage.House.RootHouse;
             else if (target is SlumLord slumLord1)
                 house = slumLord1.House.RootHouse;
             else if (target is HousePortal housePortal)

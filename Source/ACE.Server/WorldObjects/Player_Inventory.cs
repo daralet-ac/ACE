@@ -659,6 +659,8 @@ namespace ACE.Server.WorldObjects
             if (objectWereReachingToward.Location == null)
                 return MotionCommand.Invalid;
 
+            if (objectWereReachingToward is Storage)
+                return MotionCommand.Invalid;
             // hack for jump looting --
 
             // in retail, this bug was a result of actions running on motion callbacks,
@@ -926,6 +928,9 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
+            if (item != null && itemRootOwner != null && itemRootOwner is Player player && container != null && container is Storage storage)
+                item.BankAccountId = player.Account.AccountId;
+
             //if (container is Storage storage)
             //{
             //    if (!storage.IsOpen || storage.Viewer != Guid.Full)
@@ -1071,6 +1076,13 @@ namespace ACE.Server.WorldObjects
                             {
                                 item.EmoteManager.OnDrop(this);
                                 EnqueueBroadcast(new GameMessageSound(Guid, Sound.DropItem));
+
+                                // when placing a pack in a storage chest, we need to save all the contained items to ensure they are accurate in DB
+                                if (itemAsContainer != null && container != null && container.WeenieType == WeenieType.Storage)
+                                {
+                                    foreach (var wo in itemAsContainer.Inventory.Values)
+                                        wo.SaveBiotaToDatabase();
+                                }
                             }
                             else if (containerRootOwner == this)
                             {
@@ -1082,12 +1094,29 @@ namespace ACE.Server.WorldObjects
 
                                     foreach (var packItem in itemAsContainer.Inventory)
                                         Session.Network.EnqueueSend(new GameMessageCreateObject(packItem.Value));
+
+                                    // when removing a pack from storage chest, we need to save all the items inside
+                                    foreach (var wo in itemAsContainer.Inventory.Values)
+                                    {
+                                        wo.SaveBiotaToDatabase();
+                                    } 
                                 }
 
                                 EnqueueBroadcast(new GameMessageSound(Guid, Sound.PickUpItem));
 
                                 item.EmoteManager.OnPickup(this);
                                 item.NotifyOfEvent(RegenerationType.PickUp);
+                                item.BankAccountId = 0;
+                                item.SaveBiotaToDatabase();
+
+                                // when removing an item from a storage chest, we need to check to see if it's in the inventory of any other storage instances and remove if so
+                                foreach (var bank in Storage.BankChests)
+                                {
+                                    if (bank.Inventory.Keys.Contains(item.Guid))
+                                    {
+                                        bank.Inventory.Remove(item.Guid);
+                                    }
+                                }
 
                                 // CUSTOM - Automatic Ivorying
                                 if (item.Attuned == AttunedStatus.Attuned)
@@ -1359,6 +1388,30 @@ namespace ACE.Server.WorldObjects
             {
                 containerRootOwner.EncumbranceVal += (item.EncumbranceVal ?? 0);
                 containerRootOwner.Value += (item.Value ?? 0);
+            }
+
+            // for moving objects within the main pack of a storage chest, we need to save to ensure they retain their placement position on next opening another bank
+            if (container != null && container.WeenieType == WeenieType.Storage) 
+               {
+                foreach (var wo in container.Inventory.Values)
+                    DeepSave(wo);
+                }
+
+            // for moving objects from main pack of storage chest into another container, we need to remove the bank account ID stamp. This is handled at the contained container level.
+            if (containerRootOwner != null && containerRootOwner.WeenieType == WeenieType.Storage)
+            {
+                foreach (var wo in container.Inventory.Values)
+                {
+                    wo.BankAccountId = 0;
+                    DeepSave(wo);
+                }
+            }
+
+            // for moving objects from side pack to main storage, we need to stamp with BankAccountId
+            if (prevContainer != null && prevContainer.WeenieType != WeenieType.Storage && container != null && container.WeenieType == WeenieType.Storage)
+            {
+                item.BankAccountId = this.Account.AccountId;
+                DeepSave(item);
             }
 
             // when moving from a non-stuck container to a different container,

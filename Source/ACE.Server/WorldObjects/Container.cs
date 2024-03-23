@@ -88,7 +88,7 @@ namespace ACE.Server.WorldObjects
             SetEphemeralValues(true);
 
             // A player has their possessions passed via the ctor. All other world objects must load their own inventory
-            if (!(this is Player) && !ObjectGuid.IsPlayer(ContainerId ?? 0))
+            if (!(this is Player) && !ObjectGuid.IsPlayer(ContainerId ?? 0) && this.WeenieType != WeenieType.Storage)
             {
                 DatabaseManager.Shard.GetInventoryInParallel(biota.Id, false, biotas =>
                 {
@@ -153,7 +153,7 @@ namespace ACE.Server.WorldObjects
         /// The only time this should be used is to populate Inventory from the ctor.
         /// This will remove from worldObjects as they're sorted.
         /// </summary>
-        private void SortWorldObjectsIntoInventory(IList<WorldObject> worldObjects)
+        public void SortWorldObjectsIntoInventory(IList<WorldObject> worldObjects)
         {
             // This will pull out all of our main pack items and side slot items (foci & containers)
             for (int i = worldObjects.Count - 1; i >= 0; i--)

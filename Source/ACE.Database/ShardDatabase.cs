@@ -446,6 +446,45 @@ namespace ACE.Database
             return inventory.ToList();
         }
 
+        public List<Biota> GetBankInventoryInParallel(uint storageId, uint bankAccountId, bool includedNestedItems)
+        {
+            var inventory = new ConcurrentBag<Biota>();
+
+            using (var context = new ShardDbContext())
+            {
+                context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+                var results = context.BiotaPropertiesIID
+                    .Where(r => r.Type == (ushort)PropertyInstanceId.BankAccountId && r.Value == bankAccountId)
+                    .ToList();
+
+                Parallel.ForEach(results, ConfigManager.Config.Server.Threading.DatabaseParallelOptions, result =>
+                {
+                    var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(result.ObjectId);
+
+                    if (biota != null)
+                    {
+                        //update ownership to new storage chest
+                        biota.SetProperty(PropertyInstanceId.Owner, storageId);
+                        biota.SetProperty(PropertyInstanceId.Container, storageId);
+                        
+                        inventory.Add(biota);
+
+                        if (includedNestedItems && biota.WeenieType == (int)WeenieType.Container)
+                        {
+                            var subItems = GetInventoryInParallel(biota.Id, false);
+
+                            foreach (var subItem in subItems)
+                                inventory.Add(subItem);
+                        }
+                    }
+                });
+
+                context.SaveChanges();
+            }
+
+            return inventory.ToList();
+        }
         public List<Biota> GetWieldedItemsInParallel(uint parentId)
         {
             var wieldedItems = new ConcurrentBag<Biota>();
