@@ -23,8 +23,6 @@ namespace ACE.Server.WorldObjects
     /// </summary>
     partial class Creature
     {
-        private static bool DebugTaunt = false;
-
         /// <summary>
         /// Monsters wake up when players are in visual range
         /// </summary>

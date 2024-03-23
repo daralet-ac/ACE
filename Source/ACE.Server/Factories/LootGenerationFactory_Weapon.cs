@@ -223,7 +223,6 @@ namespace ACE.Server.Factories
 
         private static float GetWeaponBaseDps(int tier)
         {
-            var dps = 10.0f;
             switch(tier)
             {
                 default:

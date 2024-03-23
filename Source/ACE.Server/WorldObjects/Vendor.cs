@@ -574,7 +574,6 @@ namespace ACE.Server.WorldObjects
 
             // calculate price
             uint totalPrice = 0;
-            uint totalPriceAfterHaggling = 0;
 
             foreach (var item in purchaseItems)
             {
