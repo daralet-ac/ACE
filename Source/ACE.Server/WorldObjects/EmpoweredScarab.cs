@@ -235,7 +235,6 @@ namespace ACE.Server.WorldObjects
         public float SpellStatModValMultiplier { get; set; }
 
         public double NextEmpoweredScarabTriggerTime = 0;
-        private static ushort MaxEmpoweredScarabStructure = 500;
 
         /// <summary>
         /// A new biota be created taking all of its values from weenie.

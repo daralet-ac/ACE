@@ -167,8 +167,6 @@ namespace ACE.Server.WorldObjects
 
             var casterCreature = caster as Creature;
 
-            EmpoweredScarab amulet = null;
-
             if (casterCreature != null)
             {
                 // Retrieve caster's skill level in the Magic School

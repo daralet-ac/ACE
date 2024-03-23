@@ -787,52 +787,6 @@ namespace ACE.Server.Factories
         private static MaterialType GetMaterialType(WorldObject wo, int tier)
         {
             return GetDefaultMaterialType(wo);
-
-            if (wo.TsysMutationData == null)
-            {
-                _log.Warning($"[LOOT] Missing PropertyInt.TsysMutationData on loot item {wo.WeenieClassId} - {wo.Name}");
-                return GetDefaultMaterialType(wo);
-            }
-
-            int materialCode = (int)wo.TsysMutationData & 0xFF;
-
-            // Enforce some bounds
-            // Data only goes to Tier 6 at the moment... Just in case the loot gem goes above this first, we'll cap it here for now.
-            tier = Math.Clamp(tier, 1, 6);
-
-            var materialBase = DatabaseManager.World.GetCachedTreasureMaterialBase(materialCode, tier);
-
-            if (materialBase == null)
-                return GetDefaultMaterialType(wo);
-
-            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
-            float probability = 0.0f;
-            foreach (var m in materialBase)
-            {
-                probability += m.Probability;
-                if (rng < probability)
-                {
-                    // Ivory is unique... It doesn't have a group
-                    if (m.MaterialId == (uint)MaterialType.Ivory)
-                        return (MaterialType)m.MaterialId;
-
-                    var materialGroup = DatabaseManager.World.GetCachedTreasureMaterialGroup((int)m.MaterialId, tier);
-
-                    if (materialGroup == null)
-                        return GetDefaultMaterialType(wo);
-
-                    var groupRng = ThreadSafeRandom.Next(0.0f, 1.0f);
-                    float groupProbability = 0.0f;
-                    foreach (var g in materialGroup)
-                    {
-                        groupProbability += g.Probability;
-                        if (groupRng < groupProbability)
-                            return (MaterialType)g.MaterialId;
-                    }
-                    break;
-                }
-            }
-            return GetDefaultMaterialType(wo);
         }
 
         /// <summary>
