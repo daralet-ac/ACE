@@ -3955,5 +3955,11 @@ namespace ACE.Server.WorldObjects
             get => (int?)GetProperty(PropertyInt.ItemSpellId);
             set { if (!value.HasValue) RemoveProperty(PropertyInt.ItemSpellId); else SetProperty(PropertyInt.ItemSpellId, value.Value); }
         }
+
+        public uint? BankAccountId
+        {
+            get => GetProperty(PropertyInstanceId.BankAccountId);
+            set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.BankAccountId); else SetProperty(PropertyInstanceId.BankAccountId, value.Value); }
+        }
     }
 }
