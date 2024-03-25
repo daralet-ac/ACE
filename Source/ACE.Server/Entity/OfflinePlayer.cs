@@ -200,6 +200,12 @@ namespace ACE.Server.Entity
             set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.Patron); else SetProperty(PropertyInstanceId.Patron, value.Value); }
         }
 
+        public uint? PatronAccountId
+        {
+            get => GetProperty(PropertyInstanceId.PatronAccountId);
+            set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.PatronAccountId); else SetProperty(PropertyInstanceId.PatronAccountId, value.Value); }
+        }
+
         public ulong AllegianceXPCached
         {
             get => (ulong)(GetProperty(PropertyInt64.AllegianceXPCached) ?? 0);
@@ -222,6 +228,11 @@ namespace ACE.Server.Entity
         {
             get => GetProperty(PropertyInt.AllegianceOfficerRank);
             set { if (!value.HasValue) RemoveProperty(PropertyInt.AllegianceOfficerRank); else SetProperty(PropertyInt.AllegianceOfficerRank, value.Value); }
+        }
+        public double? SworeAllegiance
+        {
+            get => GetProperty(PropertyFloat.SworeAllegiance);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.SworeAllegiance); else SetProperty(PropertyFloat.SworeAllegiance, value.Value); }
         }
 
         /// <summary>

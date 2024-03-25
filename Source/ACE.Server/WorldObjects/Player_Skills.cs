@@ -374,6 +374,7 @@ namespace ACE.Server.WorldObjects
             amount = Math.Min(amount, playerSkill.ExperienceLeft);
 
             GrantXP(amount, XpType.Emote, ShareType.None);
+
             var raiseChain = new ActionChain();
             raiseChain.AddDelayForOneTick();
             raiseChain.AddAction(this, () =>
@@ -994,6 +995,102 @@ namespace ACE.Server.WorldObjects
                 Session.Network.EnqueueSend(updateSkill, availableSkillCredits, new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
             else
                 Session.Network.EnqueueSend(updateSkill, new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+
+            return true;
+        }
+
+        private void AwardNoContribSkillXP(Skill skill, uint amount, bool reduce)
+        {
+            var playerSkill = GetCreatureSkill(skill);
+
+            if (playerSkill.AdvancementClass < SkillAdvancementClass.Trained || playerSkill.IsMaxRank)
+                return;
+
+            amount = Math.Min(amount, playerSkill.ExperienceLeft);
+
+            var raiseChain = new ActionChain();
+            raiseChain.AddDelayForOneTick();
+            raiseChain.AddAction(this, () =>
+            {
+                HandleActionModifyNoContribSkill(skill, amount, reduce);
+            });
+            raiseChain.EnqueueChain();
+
+            if (skill != Skill.Loyalty && skill != Skill.Leadership)
+            {
+                if (!reduce)
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You've earned {amount:N0} experience in your {playerSkill.Skill.ToSentence()} skill.", ChatMessageType.Broadcast));
+                if (reduce)
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You've lost {amount:N0} experience in your {playerSkill.Skill.ToSentence()} skill.", ChatMessageType.Broadcast));
+            }
+        }
+
+        private bool HandleActionModifyNoContribSkill(Skill skill, uint amount, bool reduce)
+        {
+            var creatureSkill = GetCreatureSkill(skill, false);
+
+            if (creatureSkill == null || creatureSkill.AdvancementClass < SkillAdvancementClass.Trained)
+            {
+                _log.Error($"{Name}.HandleActionRaiseNoContribSkill({skill}, {amount}) - trained or specialized skill not found");
+                return false;
+            }
+
+            var prevRank = creatureSkill.Ranks;
+
+            if (!ModifyNoContribSkill(creatureSkill, amount, reduce))
+                return false;
+
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
+
+            if (prevRank != creatureSkill.Ranks)
+            {
+                var suffix = "";
+                if (creatureSkill.IsMaxRank)
+                {
+                    PlayParticleEffect(PlayScript.WeddingBliss, Guid);
+                    suffix = $" and has reached its upper limit";
+                }
+                var newSkill = (NewSkillNames)skill;
+                var sound = new GameMessageSound(Guid, Sound.RaiseTrait);
+                var msg = new GameMessageSystemChat($"Your base {newSkill.ToSentence()} skill is now {creatureSkill.Base}{suffix}!", ChatMessageType.Advancement);
+
+                Session.Network.EnqueueSend(sound, msg);
+            }
+
+            return true;
+        }
+
+        private bool ModifyNoContribSkill(CreatureSkill creatureSkill, uint amount, bool reduce)
+        {
+            var skillXPTable = GetSkillXPTable(creatureSkill.AdvancementClass);
+            if (skillXPTable == null)
+            {
+                _log.Error($"{Name}.SpendSkillXp({creatureSkill.Skill}, {amount}) - player tried to raise {creatureSkill.AdvancementClass} skill");
+                return false;
+            }
+            if (creatureSkill.IsMaxRank)
+            {
+                _log.Error($"{Name}.SpendSkillXp({creatureSkill.Skill}, {amount}) - player tried to raise skill beyond max rank");
+                return false;
+            }
+
+            var amountToEnd = creatureSkill.ExperienceLeft;
+
+            if (amount > amountToEnd)
+            {
+                //log.Error($"{Name}.SpendSkillXp({creatureSkill.Skill}, {amount}) - player tried to raise skill beyond {amountToEnd} experience");
+                return false;   // returning error here, instead of setting amount to amountToEnd
+            }
+
+            if (reduce)
+                creatureSkill.ExperienceSpent -= amount;
+            else
+                creatureSkill.ExperienceSpent += amount;
+
+            if (creatureSkill.ExperienceSpent < 0)
+                creatureSkill.ExperienceSpent = 0;
+
+            creatureSkill.Ranks = (ushort)CalcSkillRank(creatureSkill.AdvancementClass, creatureSkill.ExperienceSpent);
 
             return true;
         }

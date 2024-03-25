@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
@@ -9,6 +10,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.WorldObjects.Entity;
 
 namespace ACE.Server.WorldObjects
 {
@@ -203,7 +205,33 @@ namespace ACE.Server.WorldObjects
             // for passing XP up the allegiance chain,
             // this function is only called at the very beginning, to start the process.
             if (shareType.HasFlag(ShareType.Allegiance))
+            {
+                if (!WithPatron || !FellowedWithPatron)
+                    amount /= 2;
+
+                // if fellowship, we reverse the fellow sharing bonus to find the base amount, then split it evenly
+                if (Fellowship != null && Fellowship.ShareXP)
+                {
+                    double reciprocal = 0;
+                    var members = Fellowship.TotalMembers;
+
+                    switch (members)
+                    {
+                        case 1: reciprocal = 1; break;
+                        case 2: reciprocal = 1 / 0.75; break;
+                        case 3: reciprocal = 1 / 0.6; break;
+                        case 4: reciprocal = 1 / .55; break;
+                        case 5: reciprocal = 1 / .5; break;
+                        case 6: reciprocal = 1 / .45; break;
+                        case 7: reciprocal = 1 / .4; break;
+                        case 8: reciprocal = 1 / .35; break;
+                        case 9: reciprocal = 1 / .3; break;
+                    }
+                    amount = (long)((amount * reciprocal) / members);
+                }
+
                 UpdateXpAllegiance(amount);
+            }
 
             // only certain types of XP are granted to items
             if (xpType == XpType.Kill || xpType == XpType.Quest)
@@ -260,8 +288,41 @@ namespace ACE.Server.WorldObjects
 
             if (HasVitae && xpType != XpType.Allegiance)
                 UpdateXpVitae(amount);
-        }
 
+            var loyalty = GetCreatureSkill(Skill.Loyalty);
+            if (loyalty.AdvancementClass >= SkillAdvancementClass.Trained && !loyalty.IsMaxRank)
+                UpdateLoyalty(loyalty, amount);
+
+        }
+        // calculate the amount of loyalty XP to grant based on: proportion 100% of rank up : level up / is patron on landblock / time sworn to patron
+        private void UpdateLoyalty(Entity.CreatureSkill loyalty, long amount)
+        {
+            var nextLevelXP = GetXPBetweenLevels(Level.Value, Level.Value + 1);
+            var proportion = (double)amount / (double)nextLevelXP;
+
+            var nextRankXP = GetXPBetweenSkillLevels(loyalty.AdvancementClass, loyalty.Ranks, loyalty.Ranks + 1);
+            var baseLoyaltyXP = (long)nextRankXP * proportion;
+
+            double loyaltyMods = 1;
+            // if patron is on same LB and in same fellow, grant double bonus
+            if (WithPatron && FellowedWithPatron)
+                loyaltyMods += 1;
+
+            if (SworeAllegiance != null)
+            {
+                // find how much time has elapsed between swearing to patron and now, then use proportion of that over 3 months (789235 seconds)
+                var timeMod = (Time.GetUnixTime() - (double)SworeAllegiance) / 7892352;
+                if (timeMod > 1)
+                    timeMod = 1;
+
+                loyaltyMods += timeMod;
+            }
+
+            var loyaltyXp = (uint)(baseLoyaltyXP * loyaltyMods);
+
+            AwardNoContribSkillXP(Skill.Loyalty, loyaltyXp, false);
+
+        }
         /// <summary>
         /// Optionally passes XP up the Allegiance tree
         /// </summary>

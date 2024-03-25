@@ -103,6 +103,7 @@ namespace ACE.Entity.Enum.Properties
         JewelSocket1 = 9010,
         JewelSocket2 = 9011,
         CacheLog     = 9012,
+        AllegianceLog = 9013,
     }
 
     public static class PropertyStringExtensions

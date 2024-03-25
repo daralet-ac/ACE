@@ -218,6 +218,8 @@ namespace ACE.Entity.Enum.Properties
         Damage                         = 189,
         WeaponAuraDamage               = 190,
         StaminaCostReductionMod        = 191,
+        RankContribution               = 192,
+        SworeAllegiance                = 193,
 
         [ServerOnly]
         PCAPRecordedWorkmanship        = 8004,

@@ -1594,6 +1594,18 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.Patron); else SetProperty(PropertyInstanceId.Patron, value.Value); }
         }
 
+        public uint? PatronAccountId
+        {
+            get => GetProperty(PropertyInstanceId.PatronAccountId);
+            set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.PatronAccountId); else SetProperty(PropertyInstanceId.PatronAccountId, value.Value); }
+        }
+
+        public double? SworeAllegiance
+        {
+            get => GetProperty(PropertyFloat.SworeAllegiance);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.SworeAllegiance); else SetProperty(PropertyFloat.SworeAllegiance, value.Value); }
+        }
+
         public ushort? HookType
         {
             get => (ushort?)GetProperty(PropertyInt.HookType);
@@ -3955,5 +3967,12 @@ namespace ACE.Server.WorldObjects
             get => (int?)GetProperty(PropertyInt.ItemSpellId);
             set { if (!value.HasValue) RemoveProperty(PropertyInt.ItemSpellId); else SetProperty(PropertyInt.ItemSpellId, value.Value); }
         }
+
+        public string AllegianceLog
+        {
+            get => GetProperty(PropertyString.AllegianceLog);
+            set { if (value == null) RemoveProperty(PropertyString.AllegianceLog); else SetProperty(PropertyString.AllegianceLog, value); }
+        }
+
     }
 }

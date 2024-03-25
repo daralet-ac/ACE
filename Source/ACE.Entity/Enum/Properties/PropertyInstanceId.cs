@@ -75,6 +75,7 @@ namespace ACE.Entity.Enum.Properties
         [ServerOnly][Ephemeral]
         PetDevice                        = 45,
         HotspotOwner                     = 46,
+        PatronAccountId                  = 47,
 
         [ServerOnly]
         PCAPRecordedObjectIID            = 8000,

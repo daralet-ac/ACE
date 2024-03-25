@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using ACE.Common;
 using ACE.Database;
 using ACE.Entity;
 using ACE.Entity.Enum.Properties;
@@ -264,6 +264,8 @@ namespace ACE.Server.Managers
 
             var loyalty = Math.Min(vassal.GetCurrentLoyalty(), SkillCap);
             var leadership = Math.Min(patron.GetCurrentLeadership(), SkillCap);
+            if (loyalty < 1) loyalty = 1;
+            if (leadership < 1) leadership = 1;
 
             // NEW SYSTEM
             // Vassal Generated XP Mod = (Loyalty / 300) * 0.5
@@ -286,7 +288,7 @@ namespace ACE.Server.Managers
             //var directFactor = direct ? 1.0f : 0.5f; // Currently not in use. May not be needed. Requires further testing.
             var loyaltyMod = loyalty / SkillCap;
             var leadershipMod = leadership / SkillCap;
-            var rankMod = (float)patron.AllegianceRank.Value / 10;
+            var rankMod = (float)patron.AllegianceRank.Value == 0 ? 1 : (float)patron.AllegianceRank.Value / 10;
 
             var generated = loyaltyMod * 0.5f; // directFactor to be used here if needed.
             var received = leadershipMod * rankMod;
@@ -305,10 +307,14 @@ namespace ACE.Server.Managers
 
                 vassal.AllegianceXPGenerated += generatedAmount;
 
-                if (PropertyManager.GetBool("offline_xp_passup_limit").Item)
-                    patron.AllegianceXPCached = Math.Min(patron.AllegianceXPCached + passupAmount, uint.MaxValue);
-                else
-                    patron.AllegianceXPCached += passupAmount;
+                // add XP to cache for offline patrons only if they've logged in within the past 2 weeks
+                if (patron.GetProperty(PropertyFloat.LoginTimestamp) + 1209600 > Time.GetUnixTime())
+                {
+                    if (PropertyManager.GetBool("offline_xp_passup_limit").Item)
+                        patron.AllegianceXPCached = Math.Min(patron.AllegianceXPCached + passupAmount, uint.MaxValue);
+                    else
+                        patron.AllegianceXPCached += passupAmount;
+                }
 
                 var onlinePatron = PlayerManager.GetOnlinePlayer(patron.Guid);
                 if (onlinePatron != null)
