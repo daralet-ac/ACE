@@ -3974,5 +3974,10 @@ namespace ACE.Server.WorldObjects
             set { if (value == null) RemoveProperty(PropertyString.AllegianceLog); else SetProperty(PropertyString.AllegianceLog, value); }
         }
 
+        public uint? BankAccountId
+        {
+            get => GetProperty(PropertyInstanceId.BankAccountId);
+            set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.BankAccountId); else SetProperty(PropertyInstanceId.BankAccountId, value.Value); }
+        }
     }
 }

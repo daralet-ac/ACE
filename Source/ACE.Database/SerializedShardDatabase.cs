@@ -190,7 +190,15 @@ namespace ACE.Database
 
         }
 
+        public void GetBankInventoryInParallel(uint storageId, uint parentId, bool includedNestedItems, Action<List<Biota>> callback)
+        {
+            _queue.Add(new Task(() =>
+            {
+                var c = BaseDatabase.GetBankInventoryInParallel(storageId, parentId, includedNestedItems);
+                callback?.Invoke(c);
+            }));
 
+        }
         public void IsCharacterNameAvailable(string name, Action<bool> callback)
         {
             _queue.Add(new Task(() =>

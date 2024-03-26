@@ -76,6 +76,7 @@ namespace ACE.Entity.Enum.Properties
         PetDevice                        = 45,
         HotspotOwner                     = 46,
         PatronAccountId                  = 47,
+        BankAccountId                    = 48,
 
         [ServerOnly]
         PCAPRecordedObjectIID            = 8000,
