@@ -155,7 +155,7 @@ namespace ACE.Server.Entity
                 if (vassal.Player.GetProperty(PropertyFloat.LoginTimestamp) + 1209600 < Time.GetUnixTime()) continue;
 
                 // check to see if this character is an alt on the same account
-                if (vassal.Player.Account.AccountId == player.Player.Account.AccountId) continue;
+                if (vassal.Player.Account.AccountId == Player.Account.AccountId) continue;
 
                 var rankContrib = vassal.Player.GetProperty(PropertyFloat.RankContribution);
 
