@@ -1,4 +1,6 @@
+using ACE.Common;
 using ACE.Entity;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using System;
@@ -105,12 +107,9 @@ namespace ACE.Server.Entity
             // - 15 = 5
             // - 25 - 6
             // - 50 = 7
-
-            var followerIds = GetUniqueFollowerIds(this);
-            var patronIds = GetPatronIds(this);
             
-            // Calculate Rank based on valid followers and Leadership skill
-            var uniqueFollowers = GetValidFollowers(followerIds, patronIds);
+            var uniqueFollowers = GetUniqueFollowers(this);
+
             var leadershipBonus = Player.GetCurrentLeadership() / 100;
 
             switch (uniqueFollowers)
@@ -142,77 +141,37 @@ namespace ACE.Server.Entity
             }
         }
 
-        public List<uint> GetUniqueFollowerIds(AllegianceNode player)
+        public double GetUniqueFollowers(AllegianceNode player)
         {
-            var uniqueFollowerIds = new List<uint>();
+            double uniqueFollowers = 0;
 
             var vassals = player.Vassals.Values.ToList();
-            //Console.WriteLine($"Vassals Count: {vassals.Count}");
 
-            // Scan through each vassal
+            if (vassals == null || Vassals.Count == 0) return 0;
+
             foreach (AllegianceNode vassal in vassals)
             {
-                // Compare vassal ID to list of unique IDs
-                var idIsUnique = true;
-                foreach (uint accountId in uniqueFollowerIds)
-                {
-                    if (vassal.Player.Account.AccountId == accountId)
-                    {
-                        idIsUnique = false;
-                    }
-                }
+                // check to see if player has logged in within the past 2 weeks
+                if (vassal.Player.GetProperty(PropertyFloat.LoginTimestamp) + 1209600 < Time.GetUnixTime()) continue;
 
-                // If we didn't see a matched ID in the list, add the vassal's ID to the list
-                if (idIsUnique)
-                {
-                    uniqueFollowerIds.Add(vassal.Player.Account.AccountId);
-                }
+                // check to see if this character is an alt on the same account
+                if (vassal.Player.Account.AccountId == Player.Account.AccountId) continue;
 
-                // If the vassal has vassals, run this function for their vassals as well
+                var rankContrib = vassal.Player.GetProperty(PropertyFloat.RankContribution);
+
+                if (rankContrib != null)
+                    uniqueFollowers += (double)rankContrib;
+
                 if (vassal.Vassals.Count > 0)
                 {
-                    foreach (uint accountId in GetUniqueFollowerIds(vassal))
+                    foreach (var follower in vassal.Vassals.Values)
                     {
-                        uniqueFollowerIds.Add(accountId);
+                        uniqueFollowers += GetUniqueFollowers(vassal);
                     }
                 }
             }
 
-            //Console.WriteLine($"{player.Player.Name}'s UniqueFollowerIds Count: {uniqueFollowerIds.Count}");
-            return uniqueFollowerIds;
-        }
-
-        public List<uint> GetPatronIds (AllegianceNode player)
-        {
-            var patronIds = new List<uint>();
-            var patron = player.Patron;
-
-            if (patron != null)
-            {
-                Console.WriteLine($"Patron: {patron.Player.Name}. PatronIDs: {patronIds.Count}.");
-                patronIds.Add(patron.Player.Account.AccountId);
-                patronIds.AddRange(GetPatronIds(patron));
-            }
-
-            return patronIds;
-        }
-
-        public int GetValidFollowers(List<uint> followerIds, List<uint> patronIds)
-        {
-            var validFollowers = followerIds.Count;
-
-            foreach (var follower in followerIds)
-            {
-                foreach (var patron in patronIds)
-                {
-                    if (patron == follower)
-                    {
-                        validFollowers--;
-                    }
-                }
-            }
-
-            return validFollowers;
+            return uniqueFollowers;
         }
 
         public void Walk(Action<AllegianceNode> action, bool self = true)

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
-
+using ACE.Common;
+using ACE.Database.Models.Auth;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -59,6 +60,16 @@ namespace ACE.Server.WorldObjects
             set { if (value) RemoveProperty(PropertyBool.ExistedBeforeAllegianceXpChanges); else SetProperty(PropertyBool.ExistedBeforeAllegianceXpChanges, value); }
         }
 
+        public double? RankContribution
+        {
+            get => GetProperty(PropertyFloat.RankContribution);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.RankContribution); else SetProperty(PropertyFloat.RankContribution, value.Value); }
+        }
+
+        public bool WithPatron = false;
+
+        public bool FellowedWithPatron = false;
+
         /// <summary>
         /// Called when a player tries to Swear Allegiance to a target
         /// </summary>
@@ -97,6 +108,7 @@ namespace ACE.Server.WorldObjects
             _log.Debug($"[ALLEGIANCE] {Name} ({Level}) swearing allegiance to {patron.Name} ({patron.Level})");
 
             PatronId = targetGuid;
+            AllegianceLog += $"{patron.Name}/{patron.Account.AccountId}/{Time.GetUnixTime()}";
 
             var monarchGuid = AllegianceManager.GetMonarch(patron).Guid.Full;
 
@@ -107,6 +119,45 @@ namespace ACE.Server.WorldObjects
             // handle special case: monarch swearing into another allegiance
             if (Allegiance != null && Allegiance.MonarchId == Guid.Full)
                 HandleMonarchSwear();
+
+            // handle swearing for the first time
+            var loyalty = this.GetCreatureSkill(Skill.Loyalty);
+            if (loyalty.AdvancementClass == SkillAdvancementClass.Untrained)
+            {
+                loyalty.AdvancementClass = SkillAdvancementClass.Trained;
+
+                this.Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, this.GetCreatureSkill(Skill.Loyalty)));
+
+                this.Session.Network.EnqueueSend(new GameMessageSystemChat($"Loyalty trained.", ChatMessageType.Advancement));
+
+                PatronAccountId = patron.Account.AccountId;
+                SworeAllegiance = Time.GetUnixTime();
+            }
+            // handle reswearing to a new patron, reducing Loyalty XP by half
+            else if (PatronAccountId != null && patron.Account.AccountId != PatronAccountId)
+            {
+                PatronAccountId = patron.Account.AccountId;
+                SworeAllegiance = Time.GetUnixTime();
+
+                var reducedRanks = loyalty.Ranks - (loyalty.Ranks / 2);
+                var reducedXP = GetXPBetweenSkillLevels(loyalty.AdvancementClass, reducedRanks, loyalty.Ranks);
+                AwardNoContribSkillXP(Skill.Loyalty, (uint)reducedXP, true);
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"Your oath of fealty is still fresh, and your loyalty to your new patron has yet to be tested. Your Loyalty skill has been lowered as a result.", ChatMessageType.Advancement));
+            }
+            else if (PatronAccountId == null)
+                PatronAccountId = patron.Account.AccountId;
+            // check patron for leadership and train
+            var leadership = patron.GetCreatureSkill(Skill.Leadership);
+            if (leadership.AdvancementClass == SkillAdvancementClass.Untrained)
+            {
+                leadership.AdvancementClass = SkillAdvancementClass.Trained;
+
+                patron.Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(patron, patron.GetCreatureSkill(Skill.Leadership)));
+
+                patron.Session.Network.EnqueueSend(new GameMessageSystemChat($"Leadership trained.", ChatMessageType.Advancement));
+
+                patron.SaveBiotaToDatabase();
+            }
 
             SaveBiotaToDatabase();
 
@@ -441,6 +492,7 @@ namespace ACE.Server.WorldObjects
 
                 if (AllegianceXPCached != 0)
                 {
+                    AllegianceXPCached = (ulong)(AllegianceXPCached * 0.75);
                     Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Vassals have produced experience points for you.\nTaking your skills as a leader into account, you gain {AllegianceXPCached:N0} xp.", ChatMessageType.Broadcast));
                     AddAllegianceXP();
                 }
@@ -466,6 +518,30 @@ namespace ACE.Server.WorldObjects
                     if (member.Guid != Guid && member.GetCharacterOption(CharacterOption.ShowAllegianceLogons))
                         member.Session.Network.EnqueueSend(new GameEventAllegianceLoginNotification(member.Session, Guid.Full, isLoggedIn: false));
                 }
+
+                var accountPlayers = PlayerManager.GetAccountPlayers(Account.AccountId);
+
+                double totalLevels = 0;
+
+                foreach (var accountPlayer in accountPlayers.Values)
+                {
+                    if (accountPlayer.Level < 10) continue;
+
+                    totalLevels += (double)accountPlayer.Level;
+                }
+
+                foreach (var player in accountPlayers.Values)
+                {
+                    if (player.Level < 10) continue;
+
+                    var rankContrib = ((double)player.Level / totalLevels);
+
+                    player.SetProperty(PropertyFloat.RankContribution, rankContrib);
+
+                    player.SaveBiotaToDatabase();
+                }
+
+               
             }
         }
 
@@ -494,6 +570,14 @@ namespace ACE.Server.WorldObjects
             // TODO: handle ulong -> long?
             GrantXP((long)AllegianceXPCached, XpType.Allegiance, ShareType.None);
 
+            // handle increase leadership
+            var leadership = GetCreatureSkill(Skill.Leadership);
+            if (leadership.AdvancementClass >= SkillAdvancementClass.Trained)
+            {
+                var cachedXP = AllegianceXPCached * 0.05 < 1 ? 1 : (uint)(AllegianceXPCached * 0.05);
+                AwardNoContribSkillXP(Skill.Leadership, cachedXP, false);
+            }
+            
             AllegianceXPReceived += AllegianceXPCached;
 
             AllegianceXPCached = 0;

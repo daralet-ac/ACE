@@ -59,6 +59,8 @@ namespace ACE.Server.Entity
 
         uint? PatronId { get; set; }
 
+        uint? PatronAccountId { get; set; }
+
         ulong AllegianceXPCached { get; set; }
 
         ulong AllegianceXPGenerated { get; set; }
@@ -68,6 +70,8 @@ namespace ACE.Server.Entity
         int? AllegianceOfficerRank { get; set; }
 
         bool ExistedBeforeAllegianceXpChanges { get; set; }
+
+        double? SworeAllegiance { get; set; }
 
         uint? HouseId { get; set; }
 

@@ -45,6 +45,16 @@ namespace ACE.Server.Entity
 
         public LandblockId? CapstoneDungeon;
 
+        public int TotalMembers
+        {
+            get
+            {
+                var members = GetFellowshipMembers();
+                if (members == null) return 0;
+                else
+                    return members.Count;
+            }
+        }
         /// <summary>
         /// Called when a player first creates a Fellowship
         /// </summary>
@@ -180,6 +190,18 @@ namespace ACE.Server.Entity
 
             if (inviter.CurrentMotionState.Stance == MotionStance.NonCombat) // only do this motion if inviter is at peace, other times motion is skipped. 
                 inviter.SendMotionAsCommands(MotionCommand.BowDeep, MotionStance.NonCombat);
+
+            var accountIds = new List<uint> { };
+            foreach (var member in fellowshipMembers.Values)
+                accountIds.Add(member.Account.AccountId);
+            foreach (var memb in fellowshipMembers.Values)
+            {
+                if (memb.PatronAccountId != null)
+                {
+                    if (accountIds.Contains((uint)memb.PatronAccountId))
+                        memb.FellowedWithPatron = true;
+                }
+            }
         }
 
         public void RemoveFellowshipMember(Player player, Player leader)
@@ -216,6 +238,7 @@ namespace ACE.Server.Entity
 
             FellowshipMembers.Remove(player.Guid.Full);
             player.Fellowship = null;
+            player.FellowedWithPatron = false;
 
             CalculateXPSharing();
 
@@ -306,6 +329,8 @@ namespace ACE.Server.Entity
                         }
 
                         member.Fellowship = null;
+                        member.FellowedWithPatron = false;
+
                     }
                 }
                 else
@@ -320,6 +345,7 @@ namespace ACE.Server.Entity
                     }
 
                     player.Fellowship = null;
+                    player.FellowedWithPatron = false;
 
                     player.Session.Network.EnqueueSend(new GameEventFellowshipQuit(player.Session, player.Guid.Full));
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat("You no longer have permission to loot anyone else's kills.", ChatMessageType.Broadcast));
@@ -369,6 +395,7 @@ namespace ACE.Server.Entity
                 }
 
                 player.Fellowship = null;
+                player.FellowedWithPatron = false;
 
                 CalculateXPSharing();
             }

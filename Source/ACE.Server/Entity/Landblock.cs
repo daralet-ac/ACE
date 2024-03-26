@@ -184,6 +184,8 @@ namespace ACE.Server.Entity
 
         public double CapstoneUptime = 0;
 
+        public List<uint> PlayerAccountIds = new List<uint>();
+
         public Landblock(LandblockId id)
         {
             //log.Debug($"Landblock({(id.Raw | 0xFFFF):X8})");
@@ -718,7 +720,16 @@ namespace ACE.Server.Entity
                         }
                     }
                 }
-
+                foreach (var player in players)
+                {
+                    if (player.PatronAccountId != null)
+                    {
+                        if (PlayerAccountIds.Contains((uint)player.PatronAccountId))
+                            player.WithPatron = true;
+                        else
+                            player.WithPatron = false;
+                    }
+                }
                 if (!Permaload && HasNoKeepAliveObjects)
                 {
                     if (lastActiveTime + dormantInterval < thisHeartBeat)
@@ -828,7 +839,10 @@ namespace ACE.Server.Entity
                     worldObjects[kvp.Key] = kvp.Value;
 
                     if (kvp.Value is Player player)
+                    {
                         players.Add(player);
+                        PlayerAccountIds.Add(player.Account.AccountId);
+                    } 
                     else if (kvp.Value is Creature creature)
                         sortedCreaturesByNextTick.AddLast(creature);
 
@@ -850,7 +864,10 @@ namespace ACE.Server.Entity
                     if (worldObjects.Remove(objectGuid, out var wo))
                     {
                         if (wo is Player player)
+                        {
                             players.Remove(player);
+                            PlayerAccountIds.Remove(player.Account.AccountId);
+                        }
                         else if (wo is Creature creature)
                             sortedCreaturesByNextTick.Remove(creature);
 
@@ -1855,6 +1872,5 @@ namespace ACE.Server.Entity
             {new LandblockId(0x12FA << 16 | 0xFFFF), new Position(0x12FA030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
 
         };
-
     }
 }
