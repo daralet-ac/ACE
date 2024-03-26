@@ -154,6 +154,9 @@ namespace ACE.Server.Entity
                 // check to see if player has logged in within the past 2 weeks
                 if (vassal.Player.GetProperty(PropertyFloat.LoginTimestamp) + 1209600 < Time.GetUnixTime()) continue;
 
+                // check to see if this character is an alt on the same account
+                if (vassal.Player.Account.AccountId == player.Player.Account.AccountId) continue;
+
                 var rankContrib = vassal.Player.GetProperty(PropertyFloat.RankContribution);
 
                 if (rankContrib != null)
