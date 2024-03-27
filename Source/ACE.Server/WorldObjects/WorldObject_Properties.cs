@@ -1238,8 +1238,8 @@ namespace ACE.Server.WorldObjects
 
         public double? ArmorPerceptionMod
         {
-            get => GetProperty(PropertyFloat.ArmorAssessMod);
-            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorAssessMod); else SetProperty(PropertyFloat.ArmorAssessMod, value.Value); }
+            get => GetProperty(PropertyFloat.ArmorPerceptionMod);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.ArmorPerceptionMod); else SetProperty(PropertyFloat.ArmorPerceptionMod, value.Value); }
         }
 
         public double? ArmorDeceptionMod

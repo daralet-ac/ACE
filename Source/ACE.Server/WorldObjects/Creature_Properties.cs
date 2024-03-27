@@ -531,7 +531,7 @@ namespace ACE.Server.WorldObjects
             if (ArmorPerceptionMod != null && ArmorPerceptionMod.HasValue)
                 mod = ArmorPerceptionMod;
             else
-                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorAssessMod);
+                mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorPerceptionMod);
 
             return mod;
         }
