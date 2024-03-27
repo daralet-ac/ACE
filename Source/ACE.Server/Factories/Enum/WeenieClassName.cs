@@ -41947,5 +41947,17 @@ namespace ACE.Server.Factories.Enum
         meat_normal = 1052509,
         meat_tender = 1052510,
         meat_choice = 1052511,
+        manaDraught = 1053957,
+        healthDraught = 1053958,
+        staminaDraught = 1053959,
+        manaPotion = 1053961,
+        healthPotion = 1053962,
+        staminaPotion = 1053963,
+        manaTonic = 1053965,
+        healthTonic = 1053966,
+        staminaTonic = 1053967,
+        manaTincture = 1053969,
+        healthTincture = 1053970,
+        staminaTincture = 1053971,
     }
 }
