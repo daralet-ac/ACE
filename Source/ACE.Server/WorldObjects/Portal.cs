@@ -167,7 +167,7 @@ namespace ACE.Server.WorldObjects
                     return new ActivationResult(new GameEventWeenieError(player.Session, WeenieError.YouAreNotPowerfulEnoughToUsePortal));
                 }
 
-                if (player.Level > MaxLevel && MaxLevel != 0)
+                if (player.Level > MaxLevel && MaxLevel != 0 && !player.EnchantmentManager.HasSpell(5379))
                 {
                     // You are too powerful to interact with that portal!
                     return new ActivationResult(new GameEventWeenieError(player.Session, WeenieError.YouAreTooPowerfulToUsePortal));

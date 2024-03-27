@@ -9,6 +9,7 @@ using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects
 {
@@ -224,6 +225,40 @@ namespace ACE.Server.WorldObjects
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You draw on your stored mana to form an enchanted shield around yourself!", ChatMessageType.Broadcast));
                         else
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast));
+                        break;
+                    case CombatAbility.PowerScaler:
+                        if (player.EnchantmentManager.HasSpell(5379))
+                        {
+                            if (player.CurrentLandblock != null && player.CurrentLandblock.IsDungeon)
+                            { 
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot dispel the Shroud while inside a dungeon.", ChatMessageType.Broadcast));
+                                return;
+                            }
+
+                            if (player.Fellowship != null)
+                            {
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You must leave your Fellowship before you can dispel the Shroud.", ChatMessageType.Broadcast));
+                                return;
+                            }
+                            else
+                            {
+                                var enchantment = player.EnchantmentManager.GetEnchantment(5379);
+                                if (enchantment != null)
+                                {
+                                    player.EnchantmentManager.Dispel(enchantment);
+                                    player.HandleSpellHooks(new Spell(5379));
+                                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You dispel the Shroud, and your innate strength returns.", ChatMessageType.Broadcast));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var spell = new Spell(5379);
+                            var addResult = player.EnchantmentManager.Add(spell, null, null, true);
+                            player.Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(player, addResult.Enchantment)));
+                            player.HandleSpellHooks(spell);
+                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You activate the crystal, shrouding yourself and reducing your innate power.", ChatMessageType.Broadcast));
+                        }
                         break;
                 }
             }

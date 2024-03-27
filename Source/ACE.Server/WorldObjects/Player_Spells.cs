@@ -540,8 +540,8 @@ namespace ACE.Server.WorldObjects
 
             // this is a legacy method, but is still a decent failsafe to catch any existing issues
 
-            // get active item enchantments
-            var enchantments = Biota.PropertiesEnchantmentRegistry.Clone(BiotaDatabaseLock).Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.Vitae).ToList();
+            // get active item enchantments -- exclude vitae and level scaler
+            var enchantments = Biota.PropertiesEnchantmentRegistry.Clone(BiotaDatabaseLock).Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.Vitae && i.SpellId != 5379).ToList();
 
             foreach (var enchantment in enchantments)
             {

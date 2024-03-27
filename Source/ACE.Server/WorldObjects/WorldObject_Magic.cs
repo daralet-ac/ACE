@@ -269,7 +269,15 @@ namespace ACE.Server.WorldObjects
                 }
 
             }
+            // LEVEL SCALING - If player is scaled, we increase resist chance when they're casting, and reduce when they're target
+            if (player != null && player.EnchantmentManager.HasSpell(5379) && player.Level.HasValue && targetCreature.Level.HasValue && player.Level > targetCreature.Level)
+                resistChanceMod += 0.15f;
 
+            if (targetPlayer != null && targetPlayer.EnchantmentManager.HasSpell(5379) && targetPlayer.Level.HasValue && casterCreature != null && casterCreature.Level.HasValue && targetPlayer.Level > casterCreature.Level)
+            {
+                resistChanceMod -= 0.15f;
+                if (resistChanceMod < 0) resistChanceMod = 0;
+            }
             //Console.WriteLine($"{target.Name}.ResistSpell({Name}, {spell.Name}): magicSkill: {magicSkill}, difficulty: {difficulty}");
 
             bool resisted = MagicDefenseCheck(magicSkill, difficulty, out PartialEvasion pResist, out float resistChance, resistChanceMod);
@@ -816,14 +824,26 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
-            // Jewelcrafting Elementalist Reset
+            // JEWEL - Elementalist Reset
             if (player != null)
             {
                 if (player.QuestManager.HasQuest($"{player.Name},Elementalist"))
                     player.QuestManager.Erase($"{player.Name},Elementalist");
             }
 
-            switch (spell.VitalDamageType)
+            // LEVEL SCALING - Reduces harms against enemies, and restoration for players
+            if (player != null && player.EnchantmentManager.HasSpell(5379) && player.Level.HasValue && targetCreature.Level.HasValue && player.Level > targetCreature.Level)
+            {
+                var scaler = Creature.GetPlayerDamageScaler((int)player.Level, (int)targetCreature.Level);
+                tryBoost = (int)(tryBoost * scaler);
+            }
+            if (targetCreature is Player && targetCreature.EnchantmentManager.HasSpell(5379) && targetCreature.Level.HasValue && this.Level.HasValue && targetCreature.Level > this.Level)
+            {
+                var scaler = Creature.GetMonsterDamageScaler((int)targetCreature.Level, (int)this.Level);
+                tryBoost = (int)(tryBoost * scaler);
+            }
+
+                switch (spell.VitalDamageType)
             {
                 case DamageType.Mana:
                     boost = targetCreature.UpdateVitalDelta(targetCreature.Mana, tryBoost);
@@ -1122,7 +1142,7 @@ namespace ACE.Server.WorldObjects
             var overload = false;
             var overloadPercent = 0;
 
-            // Combat Focuses - Spell Effectiveness Mods
+            // COMBAT ABILITIES: Spell Effectiveness Mods
             if (player != null)
             {
                 var combatAbility = CombatAbility.None;
@@ -1130,7 +1150,7 @@ namespace ACE.Server.WorldObjects
                 if (combatFocus != null)
                     combatAbility = combatFocus.GetCombatAbility();
 
-                // Overload - Increased effectiveness up to 50%+ with Overload stacks, double bonus + erase stacks on activated
+                // COMBAT ABILITY: Overload - Increased effectiveness up to 50%+ with Overload stacks, double bonus + erase stacks on activated
                 if (combatAbility == CombatAbility.Overload)
                 {
                     overload = true;
@@ -1168,7 +1188,7 @@ namespace ACE.Server.WorldObjects
                             player.QuestManager.Erase($"{player.Name},Overload");
                     }
                 }
-                // Battery - Decrease to as little as 25% effectiveness scaling with mana
+                // COMBAT ABILITY: Battery - Decrease to as little as 25% effectiveness scaling with mana
                 if (combatAbility == CombatAbility.Battery && player.LastBatteryActivated < Time.GetUnixTime() - player.BatteryActivatedDuration)
                 {
                     var maxMana = (float)player.Mana.MaxValue;
@@ -1183,7 +1203,7 @@ namespace ACE.Server.WorldObjects
                         destVitalChange = (uint)(destVitalChange * batteryMod);
                     }
                 }
-                // Enchanted Weapon Activated - Bonus 25% effectiveness
+                // COMBAT ABILITY: Enchant - Bonus 25% effectiveness
                 if (player.EquippedCombatAbility == CombatAbility.EnchantedWeapon && player.LastEnchantedWeaponActivated > Time.GetUnixTime() - player.EnchantedWeaponActivatedDuration)
                 {
                     if (player.GetEquippedMeleeWeapon != null || player.GetEquippedMissileLauncher != null || player.GetEquippedMissileWeapon != null)
@@ -1192,8 +1212,24 @@ namespace ACE.Server.WorldObjects
                         destVitalChange = (uint)(destVitalChange * 1.25);
                     }
                 }
+            }
+
+            // LEVEL SCALING - Reduce Drain effectiveness vs. monsters, and increase vs. player
+            if (spell.TransferFlags.HasFlag(TransferFlags.TargetSource | TransferFlags.CasterDestination))
+            {
+                float levelScalingMod = 1f;
+
+                if (player != null && player.EnchantmentManager.HasSpell(5379) && player.Level.HasValue && targetCreature.Level.HasValue && player.Level > targetCreature.Level)
+                    levelScalingMod = Creature.GetPlayerDamageScaler((int)player.Level, (int)targetCreature.Level);
+
+                if (targetPlayer != null && targetPlayer.EnchantmentManager.HasSpell(5379) && targetPlayer.Level.HasValue && creature != null && creature.Level.HasValue && targetPlayer.Level > creature.Level)
+                    levelScalingMod = Creature.GetMonsterDamageScaler((int)targetPlayer.Level, (int)creature.Level);
+
+                srcVitalChange  = (uint)(srcVitalChange * levelScalingMod);
+                destVitalChange = (uint)(destVitalChange * levelScalingMod);  
 
             }
+
 
             // Apply the change in vitals to the source
             switch (spell.Source)
