@@ -1207,5 +1207,11 @@ namespace ACE.Server.WorldObjects
             get => GetProperty(PropertyBool.CampfireHotspot);
             set { if (!value.HasValue) RemoveProperty(PropertyBool.CampfireHotspot); else SetProperty(PropertyBool.CampfireHotspot, value.Value); }
         }
+
+        public bool? MutableQuestItem
+        {
+            get => GetProperty(PropertyBool.MutableQuestItem);
+            set { if (!value.HasValue) RemoveProperty(PropertyBool.MutableQuestItem); else SetProperty(PropertyBool.MutableQuestItem, value.Value); }
+        }
     }
 }

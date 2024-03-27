@@ -187,6 +187,7 @@ namespace ACE.Entity.Enum.Properties
         DungeonLockout                   = 144, // if object is on landblock, no new players will be added to permitted list
         CannotBreakStealth               = 145,
         CampfireHotspot                  = 146,
+        MutableQuestItem                 = 147,
 
         /* custom */
         [ServerOnly]

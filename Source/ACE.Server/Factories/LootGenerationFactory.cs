@@ -766,6 +766,387 @@ namespace ACE.Server.Factories
             return true;
         }
 
+        public static void MutateQuestItem(WorldObject wo)
+        {
+            wo.SetProperty(PropertyBool.MutableQuestItem, false);
+
+            var roll = GetDiminishingRoll();
+            var maxBonus = 0.2;
+
+            // Weapon Stats
+            if (wo.Damage != null)
+            {
+                var baseStat = wo.Damage.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = (int)Math.Round(baseStat + bonus);
+                
+                wo.SetProperty(PropertyInt.Damage, final);
+            }
+
+            if (wo.ElementalDamageBonus != null)
+            {
+                var baseStat = wo.ElementalDamageBonus.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = (int)Math.Round(baseStat + bonus);
+
+                wo.SetProperty(PropertyInt.ElementalDamageBonus, final);
+            }
+
+            if (wo.DamageMod != null)
+            {
+                var baseStat = wo.DamageMod.Value;
+                var bonusRange = (baseStat - 1) * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.DamageMod, final);
+            }
+
+            if (wo.ElementalDamageMod != null)
+            {
+                var baseStat = wo.ElementalDamageMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ElementalDamageMod, final);
+            }
+
+            if (wo.WeaponOffense != null)
+            {
+                var baseStat = wo.WeaponOffense.Value;
+                var bonusRange = (baseStat - 1) * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.WeaponOffense, final);
+            }
+
+            if (wo.WeaponPhysicalDefense != null)
+            {
+                var baseStat = wo.WeaponPhysicalDefense.Value;
+                var bonusRange = (baseStat - 1) * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.WeaponPhysicalDefense, final);
+            }
+
+            if (wo.WeaponMagicalDefense != null)
+            {
+                var baseStat = wo.WeaponMagicalDefense.Value;
+                var bonusRange = (baseStat - 1) * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.WeaponMagicalDefense, final);
+            }
+
+            if (wo.WeaponLifeMagicMod != null)
+            {
+                var baseStat = wo.WeaponLifeMagicMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.WeaponLifeMagicMod, final);
+            }
+
+            if (wo.WeaponWarMagicMod != null)
+            {
+                var baseStat = wo.WeaponWarMagicMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.WeaponWarMagicMod, final);
+            }
+
+            if (wo.WeaponRestorationSpellsMod != null)
+            {
+                var baseStat = wo.WeaponRestorationSpellsMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
+            }
+
+            // Armor Base Stats
+            if (wo.ArmorLevel != null)
+            {
+                var baseStat = wo.ArmorLevel.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = (int)Math.Round(baseStat + bonus);
+
+                wo.SetProperty(PropertyInt.ArmorLevel, final);
+            }
+
+            if (wo.AegisLevel != null)
+            {
+                var baseStat = wo.AegisLevel.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = (int)Math.Round(baseStat + bonus);
+
+                wo.SetProperty(PropertyInt.AegisLevel, final);
+            }
+
+            if (wo.ArmorModVsAcid != null)
+            {
+                var baseStat = wo.ArmorModVsAcid.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorModVsAcid, final);
+            }
+
+            if (wo.ArmorModVsBludgeon != null)
+            {
+                var baseStat = wo.ArmorModVsBludgeon.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorModVsBludgeon, final);
+            }
+
+            if (wo.ArmorModVsCold != null)
+            {
+                var baseStat = wo.ArmorModVsCold.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorModVsCold, final);
+            }
+
+            if (wo.ArmorModVsElectric != null)
+            {
+                var baseStat = wo.ArmorModVsElectric.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorModVsElectric, final);
+            }
+
+            if (wo.ArmorModVsFire != null)
+            {
+                var baseStat = wo.ArmorModVsFire.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorModVsFire, final);
+            }
+
+            if (wo.ArmorModVsPierce != null)
+            {
+                var baseStat = wo.ArmorModVsPierce.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorModVsPierce, final);
+            }
+
+            if (wo.ArmorModVsSlash != null)
+            {
+                var baseStat = wo.ArmorModVsSlash.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorModVsSlash, final);
+            }
+
+            // Armor Mods
+            if (wo.ArmorAttackMod != null)
+            {
+                var baseStat = wo.ArmorAttackMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorAttackMod, final);
+            }
+
+            if (wo.ArmorDeceptionMod != null)
+            {
+                var baseStat = wo.ArmorDeceptionMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorDeceptionMod, final);
+            }
+
+            if (wo.ArmorDualWieldMod != null)
+            {
+                var baseStat = wo.ArmorDualWieldMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorDualWieldMod, final);
+            }
+
+            if (wo.ArmorHealthMod != null)
+            {
+                var baseStat = wo.ArmorHealthMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorHealthMod, final);
+            }
+
+            if (wo.ArmorHealthRegenMod != null)
+            {
+                var baseStat = wo.ArmorHealthRegenMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorHealthRegenMod, final);
+            }
+
+            if (wo.ArmorLifeMagicMod != null)
+            {
+                var baseStat = wo.ArmorLifeMagicMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorLifeMagicMod, final);
+            }
+
+            if (wo.ArmorMagicDefMod != null)
+            {
+                var baseStat = wo.ArmorMagicDefMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorMagicDefMod, final);
+            }
+
+            if (wo.ArmorManaMod != null)
+            {
+                var baseStat = wo.ArmorManaMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorManaMod, final);
+            }
+
+            if (wo.ArmorManaRegenMod != null)
+            {
+                var baseStat = wo.ArmorManaRegenMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorManaRegenMod, final);
+            }
+
+            if (wo.ArmorPerceptionMod != null)
+            {
+                var baseStat = wo.ArmorPerceptionMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorPerceptionMod, final);
+            }
+
+            if (wo.ArmorPhysicalDefMod != null)
+            {
+                var baseStat = wo.ArmorPhysicalDefMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorPhysicalDefMod, final);
+            }
+
+            if (wo.ArmorRunMod != null)
+            {
+                var baseStat = wo.ArmorRunMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorRunMod, final);
+            }
+
+            if (wo.ArmorShieldMod != null)
+            {
+                var baseStat = wo.ArmorShieldMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorShieldMod, final);
+            }
+
+            if (wo.ArmorStaminaMod != null)
+            {
+                var baseStat = wo.ArmorStaminaMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorStaminaMod, final);
+            }
+
+            if (wo.ArmorStaminaRegenMod != null)
+            {
+                var baseStat = wo.ArmorStaminaRegenMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorStaminaRegenMod, final);
+            }
+
+            if (wo.ArmorThieveryMod != null)
+            {
+                var baseStat = wo.ArmorThieveryMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorThieveryMod, final);
+            }
+
+            if (wo.ArmorTwohandedCombatMod != null)
+            {
+                var baseStat = wo.ArmorTwohandedCombatMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorTwohandedCombatMod, final);
+            }
+
+            if (wo.ArmorWarMagicMod != null)
+            {
+                var baseStat = wo.ArmorWarMagicMod.Value;
+                var bonusRange = baseStat * maxBonus;
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ArmorWarMagicMod, final);
+            }
+        }
+
         public static List<WorldObject> CreateRandomObjectsOfType(WeenieType type, int count)
         {
             var weenies = DatabaseManager.World.GetRandomWeeniesOfType((int)type, count);
@@ -1867,10 +2248,14 @@ namespace ACE.Server.Factories
             }
         }
 
-        public static float GetDiminishingRoll(TreasureDeath treasureDeath)
+        public static float GetDiminishingRoll(TreasureDeath treasureDeath = null)
         {
-            var lootQualityMod = treasureDeath.LootQualityMod > 0 ? treasureDeath.LootQualityMod : 0;
-            var roll = ThreadSafeRandom.Next(lootQualityMod, 1);
+            var lootQualityMod = 0.0f;
+
+            if (treasureDeath != null)
+                lootQualityMod = treasureDeath.LootQualityMod > 0 ? treasureDeath.LootQualityMod : 0;
+
+            var roll = ThreadSafeRandom.Next(lootQualityMod, 1.0f);
 
             return (float)Math.Pow(roll, 2);
         }
