@@ -995,7 +995,7 @@ namespace ACE.Server.Network.Structure
                 hasExtraPropertiesText = true;
             }
             // Armor Mod - Perception
-            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorAssessMod, out var armorAssessMod) && armorAssessMod >= 0.001)
+            if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorPerceptionMod, out var armorAssessMod) && armorAssessMod >= 0.001)
             {
                 var wielder = (Creature)wo.Wielder;
 

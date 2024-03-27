@@ -262,7 +262,7 @@ namespace ACE.Entity.Enum.Properties
         ArmorStaminaRegenMod           = 20010,
         ArmorManaRegenMod              = 20011,
         ArmorShieldMod                 = 20012,
-        ArmorAssessMod                 = 20013,
+        ArmorPerceptionMod                 = 20013,
         ArmorThieveryMod               = 20014,
         WeaponWarMagicMod              = 20015,
         WeaponLifeMagicMod             = 20016,

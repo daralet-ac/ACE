@@ -598,7 +598,7 @@ namespace ACE.Server.WorldObjects
                     { PropertyFloat.ArmorDualWieldMod, 0 },
                     { PropertyFloat.ArmorTwohandedCombatMod, 0 },
                     { PropertyFloat.ArmorThieveryMod, 0 },
-                    { PropertyFloat.ArmorAssessMod, 0 },
+                    { PropertyFloat.ArmorPerceptionMod, 0 },
                     { PropertyFloat.ArmorDeceptionMod, 0 },
                     { PropertyFloat.ArmorShieldMod, 0 },
                     { PropertyFloat.ArmorWarMagicMod, 0 },
@@ -624,7 +624,7 @@ namespace ACE.Server.WorldObjects
             equippedItemsSkillModCache[PropertyFloat.ArmorDualWieldMod] += (wo.ArmorDualWieldMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorTwohandedCombatMod] += (wo.ArmorTwohandedCombatMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorThieveryMod] += (wo.ArmorThieveryMod ?? 0);
-            equippedItemsSkillModCache[PropertyFloat.ArmorAssessMod] += (wo.ArmorPerceptionMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorPerceptionMod] += (wo.ArmorPerceptionMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorDeceptionMod] += (wo.ArmorDeceptionMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorShieldMod] += (wo.ArmorShieldMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorWarMagicMod] += (wo.ArmorWarMagicMod ?? 0);
@@ -654,7 +654,7 @@ namespace ACE.Server.WorldObjects
             equippedItemsSkillModCache[PropertyFloat.ArmorDualWieldMod] -= (wo.ArmorDualWieldMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorTwohandedCombatMod] -= (wo.ArmorTwohandedCombatMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorThieveryMod] -= (wo.ArmorThieveryMod ?? 0);
-            equippedItemsSkillModCache[PropertyFloat.ArmorAssessMod] -= (wo.ArmorPerceptionMod ?? 0);
+            equippedItemsSkillModCache[PropertyFloat.ArmorPerceptionMod] -= (wo.ArmorPerceptionMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorDeceptionMod] -= (wo.ArmorDeceptionMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorShieldMod] -= (wo.ArmorShieldMod ?? 0);
             equippedItemsSkillModCache[PropertyFloat.ArmorWarMagicMod] -= (wo.ArmorWarMagicMod ?? 0);
