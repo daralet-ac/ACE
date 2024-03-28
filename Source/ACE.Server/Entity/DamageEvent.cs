@@ -350,8 +350,17 @@ namespace ACE.Server.Entity
                 DamageRatingMod = Creature.AdditiveCombine(DamageRatingMod, PkDamageMod);
             }
 
+            // LEVEL SCALING - If player has Scaling Spell, check to ensure their level is greater than the monster in question, then scale their damage done/damage taken if so
+            float levelScalingMod = 1f;
+
+            if (playerAttacker != null && playerAttacker.EnchantmentManager.HasSpell(5379) && playerAttacker.Level.HasValue && defender.Level.HasValue && playerAttacker.Level > defender.Level)
+                levelScalingMod = Creature.GetPlayerDamageScaler((int)playerAttacker.Level, (int)defender.Level);
+
+            if (playerDefender != null && playerDefender.EnchantmentManager.HasSpell(5379) && playerDefender.Level.HasValue && attacker.Level.HasValue && playerDefender.Level > attacker.Level)
+                levelScalingMod = Creature.GetMonsterDamageScaler((int)playerDefender.Level, (int)attacker.Level);
+
             // ---- DAMAGE BEFORE MITIGATION ----
-            DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * dualWieldDamageMod * twohandedCombatDamageMod * steadyShotActivatedMod * multishotPenalty * provokeMod;
+            DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * dualWieldDamageMod * twohandedCombatDamageMod * steadyShotActivatedMod * multishotPenalty * provokeMod * levelScalingMod;
 
             // JEWEL - White Quartz: Deflects damage at attacker on Block
             if (Blocked == true && playerDefender != null && attacker.GetDistance(playerDefender) < 10)
@@ -528,6 +537,9 @@ namespace ACE.Server.Entity
                             }
                         }
                     }
+
+                    // LEVEL SCALING - Reduce critical damage by the same amount
+                    CriticalDamageMod *= levelScalingMod;
 
                     CriticalDamageRatingMod = Creature.GetPositiveRatingMod(attacker.GetCritDamageRating());
 
@@ -783,7 +795,7 @@ namespace ACE.Server.Entity
                 }
             }
 
-            // Combat Focus - Steady Shot 
+            // COMBAT FOCUS - Steady Shot 
             if (playerAttacker != null)
             {
                 if (attackerCombatAbility == CombatAbility.SteadyShot)
@@ -826,7 +838,7 @@ namespace ACE.Server.Entity
 
             var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, EffectiveDefenseSkill);
 
-            // Combat Focus - Smokescreen (+10% chance to evade, +40% on Activated)
+            // COMBAT FOCUS - Smokescreen (+10% chance to evade, +40% on Activated)
             if (defenderCombatAbility == CombatAbility.Smokescreen)
             {
                 evadeChance += 0.1f;
@@ -837,6 +849,15 @@ namespace ACE.Server.Entity
                 }
 
             }
+
+            // LEVEL SCALING - Add 15% flat evade chance penalty to scaled player's interactions
+            if (playerAttacker != null && playerAttacker.EnchantmentManager.HasSpell(5379) && playerAttacker.Level.HasValue && defender.Level.HasValue && playerAttacker.Level > defender.Level)
+                evadeChance += 0.15f;
+
+            if (playerDefender != null && playerDefender.EnchantmentManager.HasSpell(5379) && playerDefender.Level.HasValue && attacker.Level.HasValue && playerDefender.Level > attacker.Level)
+                evadeChance -= 0.15f;
+
+            if (evadeChance < 0) evadeChance = 0;
 
             //Console.WriteLine($"\n{attacker.Name} attack skill: {EffectiveAttackSkill}\n" +
             //    $"{defender.Name} defense skill: {EffectiveDefenseSkill}\n" +

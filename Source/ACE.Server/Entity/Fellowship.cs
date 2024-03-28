@@ -10,6 +10,7 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
+using ACE.Server.WorldObjects.Managers;
 using Serilog;
 
 namespace ACE.Server.Entity
@@ -365,6 +366,7 @@ namespace ACE.Server.Entity
                     AssignNewLeader(null, null);
 
                     CalculateXPSharing();
+                    UpdateAllMembers();
                 }
             }
             else if (!disband)
@@ -398,6 +400,7 @@ namespace ACE.Server.Entity
                 player.FellowedWithPatron = false;
 
                 CalculateXPSharing();
+                UpdateAllMembers();
             }
         }
 
@@ -501,7 +504,23 @@ namespace ACE.Server.Entity
             if (leader == null)
                 return;
 
-            var maxLevelDiff = fellows.Values.Max(f => Math.Abs((leader.Level ?? 1) - (f.Level ?? 1)));
+            //var maxLevelDiff = fellows.Values.Max(f => Math.Abs((leader.Level ?? 1) - (f.Level ?? 1)));
+
+            // instead of comparing to leader level, we now find the lowest level in the fellowship and compare to it.
+            // Anyone with scaling and no more than 25 levels higher is reduced to their level for the purposes of comparison.
+            // If there are non-scaled higher level players in the fellow, it will share unevenly as intended
+            var lowestLevel = fellows.Values.Min(f =>  f.Level ?? 1);
+
+            var maxLevelDiff = fellows.Values.Max(f =>
+            {
+                int fLevel = f.Level ?? 1;
+                var fromMax = fLevel - lowestLevel;
+
+                if (fromMax <= 25 && f.EnchantmentManager.HasSpell(5379))
+                    fLevel = lowestLevel;
+
+                return Math.Abs(lowestLevel - fLevel);  
+            }); 
 
             if (maxLevelDiff <= 5)
             {

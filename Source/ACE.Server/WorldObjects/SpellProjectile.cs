@@ -331,6 +331,17 @@ namespace ACE.Server.WorldObjects
 
             if (damage != null)
             {
+                // LEVEL SCALING - If player has Scaling Spell, check to ensure their level is greater than the monster in question, then scale their damage done/damage taken if so
+                float levelScalingMod = 1f;
+
+                if (player != null && player.EnchantmentManager.HasSpell(5379) && player.Level.HasValue && creatureTarget.Level.HasValue && player.Level > creatureTarget.Level)
+                    levelScalingMod = Creature.GetPlayerDamageScaler((int)player.Level, (int)creatureTarget.Level);
+
+                if (targetPlayer != null && targetPlayer.EnchantmentManager.HasSpell(5379) && targetPlayer.Level.HasValue && sourceCreature.Level.HasValue && targetPlayer.Level > sourceCreature.Level)
+                    levelScalingMod = Creature.GetMonsterDamageScaler((int)targetPlayer.Level, (int)sourceCreature.Level);
+
+                damage *= levelScalingMod;
+
                 if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.EnchantmentProjectile)
                 {
                     // handle EnchantmentProjectile successfully landing on target

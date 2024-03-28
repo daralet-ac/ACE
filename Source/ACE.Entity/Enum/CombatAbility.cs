@@ -27,6 +27,7 @@ namespace ACE.Entity.Enum
         ExposeMagicalWeakness,
         Multishot,
         ActivatedCombatAbilities,
-        ManaBarrier
+        ManaBarrier,
+        PowerScaler
     }
 }

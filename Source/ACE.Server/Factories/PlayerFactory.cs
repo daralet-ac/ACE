@@ -394,7 +394,7 @@ namespace ACE.Server.Factories
             if (!player.IsOlthoiPlayer)
             {
                 player.Sanctuary = new Position(player.Location);
-                player.SetProperty(PropertyBool.RecallsDisabled, true);
+                player.SetProperty(PropertyBool.RecallsDisabled, false);
 
                 if (PropertyManager.GetBool("pk_server").Item)
                     player.SetProperty(PropertyInt.PlayerKillerStatus, (int)PlayerKillerStatus.PK);
