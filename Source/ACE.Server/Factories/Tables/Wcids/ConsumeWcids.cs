@@ -82,7 +82,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.staminaTincture, 1.0f ),
         };
 
-        private static ChanceTable<WeenieClassName> T8_Chances = new ChanceTable<WeenieClassName>()
+        private static ChanceTable<WeenieClassName> T8_Chances = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
             ( WeenieClassName.healthTincture,  1.0f ),
             ( WeenieClassName.manaTincture,    1.0f ),
