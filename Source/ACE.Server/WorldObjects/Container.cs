@@ -594,6 +594,18 @@ namespace ACE.Server.WorldObjects
             if (this is Player && worldObject.MutableQuestItem == true)
                 LootGenerationFactory.MutateQuestItem(worldObject);
 
+            // CUSTOM - Automatic Ivorying
+            if (this is Player && worldObject.Attuned == AttunedStatus.Attuned)
+            {
+                if (worldObject.GetProperty(PropertyBool.Ivoryable) ?? false)
+                {
+                    worldObject.Attuned = AttunedStatus.Normal;
+                    worldObject.AllowedWielder = this.Guid.Full;
+                    worldObject.CraftsmanName = this.Name;
+                    worldObject.Ivoryable = null;
+                }
+            }
+
             OnAddItem();
 
            if (this is Player containerPlayer)
