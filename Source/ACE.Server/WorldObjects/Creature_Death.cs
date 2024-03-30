@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.World;
 using ACE.DatLoader;
@@ -66,6 +68,9 @@ namespace ACE.Server.WorldObjects
 
             if (!IsOnNoDeathXPLandblock)
                 OnDeath_GrantXP();
+
+            if (!StruckByUnshrouded)
+                HandleShroudRewards();
 
             return GetDeathMessage(lastDamager, damageType, criticalHit);
         }
@@ -227,7 +232,7 @@ namespace ACE.Server.WorldObjects
 
                 if (BossKillXpReward == true)
                 {
-                    if( playerDamager.Fellowship != null)
+                    if (playerDamager.Fellowship != null)
                         foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
                             member.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
                     else
@@ -346,7 +351,7 @@ namespace ACE.Server.WorldObjects
                     TryHandleKillTask(playerDamager, killQuest, killTaskCredits, cap);
                 }
                 // check option that requires killer to have killtask to pass to fellows
-                else if (!PropertyManager.GetBool("fellow_kt_killer").Item)   
+                else if (!PropertyManager.GetBool("fellow_kt_killer").Item)
                 {
                     continue;
                 }
@@ -489,6 +494,7 @@ namespace ACE.Server.WorldObjects
             return receivers;
         }
 
+
         /// <summary>
         /// Create a corpse for both creatures and players currently
         /// </summary>
@@ -500,10 +506,10 @@ namespace ACE.Server.WorldObjects
 
                 var loot = GenerateTreasure(killer, null);
 
-                foreach(var item in loot)
+                foreach (var item in loot)
                 {
                     if (!string.IsNullOrEmpty(item.Quest)) // if the item has a Quest string, make the creature a "generator" of the item so that the pickup action applies the quest. 
-                        item.GeneratorId = Guid.Full; 
+                        item.GeneratorId = Guid.Full;
                     item.Location = new Position(Location);
                     LandblockManager.AddObject(item);
                 }
@@ -519,10 +525,10 @@ namespace ACE.Server.WorldObjects
             if (TreasureCorpse)
             {
                 // Hardcoded values from PCAPs of Treasure Pile Corpses, everything else lines up exactly with existing corpse weenie
-                corpse.SetupTableId  = 0x02000EC4;
+                corpse.SetupTableId = 0x02000EC4;
                 corpse.MotionTableId = 0x0900019B;
-                corpse.SoundTableId  = 0x200000C2;
-                corpse.ObjScale      = 0.4f;
+                corpse.SoundTableId = 0x200000C2;
+                corpse.ObjScale = 0.4f;
 
                 prefix = "Treasure";
             }
@@ -733,12 +739,12 @@ namespace ACE.Server.WorldObjects
                 for (int i = items.Count - 1; i >= 0; i--)
                 {
                     var removed = false;
-                    
-                    if(items[i].MaxStackSize > 1)
+
+                    if (items[i].MaxStackSize > 1)
                     {
                         foreach (WorldObject item in items.ToList())
                         {
-                            if(items[i].Guid != item.Guid && items[i].WeenieClassId == item.WeenieClassId)
+                            if (items[i].Guid != item.Guid && items[i].WeenieClassId == item.WeenieClassId)
                             {
                                 var newStack = items[i].StackSize + item.StackSize;
                                 item.SetStackSize(newStack);
@@ -808,6 +814,44 @@ namespace ACE.Server.WorldObjects
             }
 
             return droppedItems;
+        }
+
+        public void HandleShroudRewards()
+        {
+            var scaledDamagers = DamageHistory.TotalDamage.Values.Where(d => (d.Level > Level + 10) && d.TotalDamage >= DamageHistory.TotalHealth / 3);
+
+            if (scaledDamagers.Any())
+            {
+                var chance = 0.05f;
+
+                var accompaniedLowbie = DamageHistory.TotalDamage.Values.Where(d => (d.Level < Level + 5) && (d.Level > Level - 5) && d.TotalDamage >= DamageHistory.TotalHealth / 3);
+
+                if (accompaniedLowbie.Any())
+                    chance += 0.05f;
+
+                foreach (var damageInfo in scaledDamagers)
+                {
+                    if (DamageHistory.TotalDamage.ContainsValue(damageInfo))
+                    {
+                        var matchingGuid = DamageHistory.TotalDamage.FirstOrDefault(x => x.Value == damageInfo).Key;
+                        if (matchingGuid.IsPlayer())
+                        {
+                            var player = PlayerManager.GetOnlinePlayer(matchingGuid);
+                            if (player != null && chance >= ThreadSafeRandom.Next(0f, 1f))
+                            {
+                                var reward = WorldObjectFactory.CreateNewWorldObject(1054175);
+                                player.TryCreateInInventoryWithNetworking(reward);
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Shard of Shrouding glimmers, and produces a small fragment of crystallized energy!", ChatMessageType.Broadcast));
+                                player.PlayParticleEffect(PlayScript.EnchantUpPurple, player.Guid);
+
+                            }
+                        }
+
+                    }
+
+                }
+            }
+
         }
 
         /// <summary>

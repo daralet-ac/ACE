@@ -188,6 +188,7 @@ namespace ACE.Entity.Enum.Properties
         CannotBreakStealth               = 145,
         CampfireHotspot                  = 146,
         MutableQuestItem                 = 147,
+        StruckByUnshrouded               = 148,
 
         /* custom */
         [ServerOnly]
