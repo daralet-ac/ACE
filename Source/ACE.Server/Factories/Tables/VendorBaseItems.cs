@@ -15,6 +15,9 @@ namespace ACE.Server.Factories.Tables
             //{ (5, 1, 0, 0.0, -1) },
             //{ (6, 1, 0, 0.0, -1) },
             //{ (7, 1, 0, 0.0, -1) },
+            { (0, 1055003, 0, 0.0, 1) }, // Component Pouches
+            { (2, 1055004, 0, 0.0, 1) },
+            { (4, 1055005, 0, 0.0, 1) },
         };
 
         // <(tier, wcid, paletteTemplate, shade, stackSize)>
@@ -67,6 +70,9 @@ namespace ACE.Server.Factories.Tables
             //{ (5, 1, 0, 0.0, -1) },
             //{ (6, 1, 0, 0.0, -1) },
             //{ (7, 1, 0, 0.0, -1) },
+            { (0, 1055000, 0, 0.0, 1) }, // Quivers
+            { (2, 1055001, 0, 0.0, 1) },
+            { (4, 1055002, 0, 0.0, 1) },
         };
 
         // <(tier, wcid, paletteTemplate, shade, stackSize)>
@@ -171,6 +177,9 @@ namespace ACE.Server.Factories.Tables
             //{ (5, 1, 0, 0.0, -1) },
             //{ (6, 1, 0, 0.0, -1) },
             //{ (7, 1, 0, 0.0, -1) },
+            { (0, 1055006, 0, 0.0, 1) }, // Salvage Sacks
+            { (2, 1055007, 0, 0.0, 1) },
+            { (4, 1055008, 0, 0.0, 1) },
         };
 
         // <(tier, wcid, paletteTemplate, shade, stackSize)>
@@ -197,6 +206,9 @@ namespace ACE.Server.Factories.Tables
             //{ (5, 1, 0, 0.0, -1) },
             //{ (6, 1, 0, 0.0, -1) },
             //{ (7, 1, 0, 0.0, -1) },
+            { (0, 1055006, 0, 0.0, 1) }, // Salvage Sacks
+            { (2, 1055007, 0, 0.0, 1) },
+            { (4, 1055008, 0, 0.0, 1) },
         };
 
         // <(tier, wcid, paletteTemplate, shade, stackSize)>
