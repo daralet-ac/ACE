@@ -94,6 +94,10 @@ namespace ACE.Server.Entity
 
             Creature.OnHealthUpdate();
 
+            if (!Creature.StruckByUnshrouded)
+                if (attacker is Player && attacker.Level > Creature.Level + 10 && !attacker.EnchantmentManager.HasSpell(5379))
+                    Creature.StruckByUnshrouded = true;
+
         }
         
         /// <summary>

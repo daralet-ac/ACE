@@ -22,12 +22,15 @@ namespace ACE.Server.Entity
 
         public readonly bool IsOlthoiPlayer;
 
+        public int Level;
+
         public DamageHistoryInfo(WorldObject attacker, float totalDamage = 0.0f)
         {
             Attacker = new WeakReference<WorldObject>(attacker);
 
             Guid = attacker.Guid;
             Name = attacker.Name;
+            Level = attacker.Level ?? 1;
 
             IsOlthoiPlayer = attacker is Player player && player.IsOlthoiPlayer;
 

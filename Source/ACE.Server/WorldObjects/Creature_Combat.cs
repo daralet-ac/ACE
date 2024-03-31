@@ -1708,5 +1708,7 @@ namespace ACE.Server.WorldObjects
 
             return 1;
         }
+
+        public bool StruckByUnshrouded = false;
     }
 }
