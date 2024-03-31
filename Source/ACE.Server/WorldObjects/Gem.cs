@@ -222,9 +222,15 @@ namespace ACE.Server.WorldObjects
                         break;
                     case CombatAbility.ManaBarrier:
                         if (player.ToggleManaBarrierSetting())
+                        {
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You draw on your stored mana to form an enchanted shield around yourself!", ChatMessageType.Broadcast));
+                            player.PlayParticleEffect(PlayScript.ShieldUpBlue, player.Guid);
+                        }
                         else
+                        {
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast));
+                            player.PlayParticleEffect(PlayScript.DispelLife, player.Guid);
+                        }
                         break;
                     case CombatAbility.PowerScaler:
                         if (player.EnchantmentManager.HasSpell(5379))
@@ -247,6 +253,7 @@ namespace ACE.Server.WorldObjects
                                 {
                                     player.EnchantmentManager.Dispel(enchantment);
                                     player.HandleSpellHooks(new Spell(5379));
+                                    player.PlayParticleEffect(PlayScript.DispelCreature, player.Guid);
                                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You dispel the Shroud, and your innate strength returns.", ChatMessageType.Broadcast));
                                 }
                             }
@@ -257,6 +264,7 @@ namespace ACE.Server.WorldObjects
                             var addResult = player.EnchantmentManager.Add(spell, null, null, true);
                             player.Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(player, addResult.Enchantment)));
                             player.HandleSpellHooks(spell);
+                            player.PlayParticleEffect(PlayScript.SkillDownVoid, player.Guid);
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You activate the crystal, shrouding yourself and reducing your innate power.", ChatMessageType.Broadcast));
                         }
                         break;
