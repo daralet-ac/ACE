@@ -180,22 +180,22 @@ namespace ACE.Server.WorldObjects
 
             switch(GetProperty(PropertyString.Template))
             {
-                case "Archmage": break;
-                case "Armorer": break;
-                case "Barkeeper": break;
-                case "Blacksmith": break;
-                case "Bowyer": break;
-                case "Butcher": break;
-                case "Grocer": break;
+                case "Archmage": templateDefaultItems = VendorBaseItems.ArchmageItems; break;
+                case "Armorer": templateDefaultItems = VendorBaseItems.ArmorerItems; break;
+                case "Barkeeper": templateDefaultItems = VendorBaseItems.BarkeeperItems; break;
+                case "Blacksmith": templateDefaultItems = VendorBaseItems.BlacksmithItems; break;
+                case "Bowyer": templateDefaultItems = VendorBaseItems.BowyerItems; break;
+                case "Butcher": templateDefaultItems = VendorBaseItems.ButcherItems; break;
+                case "Grocer": templateDefaultItems = VendorBaseItems.GrocerItems; break;
                 case "Healer": templateDefaultItems = VendorBaseItems.HealerItems; break;
-                case "Ivory Trader": break;
-                case "Jeweler": break;
-                case "Leather Trader": break;
-                case "Provisioner": break;
-                case "Scribe": break;
-                case "Shopkeeper": break;
-                case "Tailor": break;
-                case "Weaponsmith": break;
+                case "Ivory Trader": templateDefaultItems = VendorBaseItems.IvoryTraderItems; break;
+                case "Jeweler": templateDefaultItems = VendorBaseItems.JewelerItems; break;
+                case "Leather Trader": templateDefaultItems = VendorBaseItems.LeatherTraderItems; break;
+                case "Provisioner": templateDefaultItems = VendorBaseItems.ProvisionerItems; break;
+                case "Scribe": templateDefaultItems = VendorBaseItems.ScribeItems; break;
+                case "Shopkeeper": templateDefaultItems = VendorBaseItems.ShopkeeperItems; break;
+                case "Tailor": templateDefaultItems = VendorBaseItems.TailorItems; break;
+                case "Weaponsmith": templateDefaultItems = VendorBaseItems.WeaponsmithItems; break;
             }
 
             LoadDefaultItems(itemsForSale, templateDefaultItems);
