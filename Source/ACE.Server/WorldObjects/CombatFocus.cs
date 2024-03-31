@@ -430,7 +430,7 @@ namespace ACE.Server.WorldObjects
                         "Activated Combat Ability: For the next 10 seconds, increase your chance to evade by an additional 30%.\n\n"; break;
                 case CombatAbility.Multishot: description += "With this focus equipped, to shoot an extra arrow, quarrel or dart at another monster near your main target, if there are any. Your damage is reduced by 75%.\n\n" +
                         "Activated Combat Ability: For the next 10 seconds, each time you attack you will fire at an additional enemy near your primary target.\n\n"; break;
-                case CombatAbility.Overload: description += "With this focus equipped, your spells build Overload. As Overload increases, so does your spell effectiveness up to a maximum of 50%. " +
+                case CombatAbility.Overload: description += "With this focus equipped, your spells build Overload. As Overload increases, so does your spell effectiveness up to a maximum of 25%. " +
                         "However, your mana costs also increase by up to 100%. Beyond 50% Overpower, you have an increasing chance to harm yourself on spellcast.\n\n" +
                         "Activated Combat Ability: The first spell you cast within the next 10 seconds will gain a double effectiveness bonus and discharge all of your Overload.\n\n"; break;
                 case CombatAbility.Battery: description += "With this focus equipped, your mana costs are reduced by 20%, the reduction increasing as your mana pool is depleted. However, below 75% mana, your spell effectiveness also begins to decrease to as little as 25% at 0 mana.\n\n" +
