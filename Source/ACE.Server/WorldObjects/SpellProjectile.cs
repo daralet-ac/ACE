@@ -664,7 +664,7 @@ namespace ACE.Server.WorldObjects
                     if (sourcePlayer.OverloadActivated == false)
                     {
                         var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-                        var overloadMod = (float)overloadStacks / 1000;
+                        var overloadMod = (float)overloadStacks / 2000;
                         combatFocusDamageMod += overloadMod;
                     }
                     if (sourcePlayer.OverloadActivated && sourcePlayer.LastOverloadActivated > Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration)

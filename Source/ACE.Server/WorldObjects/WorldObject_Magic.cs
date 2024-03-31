@@ -739,7 +739,7 @@ namespace ACE.Server.WorldObjects
                         if (player.QuestManager.HasQuest($"{player.Name},Overload"))
                         {
                             var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
-                            var overloadMod = 1 + (float)overloadStacks / 1000;
+                            var overloadMod = 1 + (float)overloadStacks / 2000;
                             tryBoost = (int)(tryBoost * overloadMod);
                         }
                     }
@@ -1162,7 +1162,7 @@ namespace ACE.Server.WorldObjects
                         if (player.QuestManager.HasQuest($"{player.Name},Overload"))
                         {
                             var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
-                            var overloadMod = 1 + (float)overloadStacks / 1000;
+                            var overloadMod = 1 + (float)overloadStacks / 2000;
                             srcVitalChange = (uint)(srcVitalChange * overloadMod);
                             destVitalChange = (uint)(destVitalChange * overloadMod);
                         }
