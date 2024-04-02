@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -105,7 +106,7 @@ namespace ACE.Server.WorldObjects
                 TimeToRot = EmptyDecayTime;
             else
                 // a player corpse decays after 5 mins * playerLevel with a minimum of 1 hour
-                TimeToRot = Math.Max(3600, (player.Level ?? 1) * 300);
+                TimeToRot = Math.Max(3600, (player.Level ?? 1) * 1800);
 
             var dtTimeToRot = DateTime.UtcNow.AddSeconds(TimeToRot ?? 0);
             var tsDecay = dtTimeToRot - DateTime.UtcNow;
@@ -238,6 +239,20 @@ namespace ACE.Server.WorldObjects
         }
 
         public bool IsOnNoDropLandblock => Location != null ? NoDrop_Landblocks.Contains(Location.LandblockId.Landblock) : false;
+
+        public bool IsOnCapstoneLandblock
+        {
+            get
+            {
+                var landblockId = new LandblockId(Location.Landblock << 16 | 0xFFFF);
+
+                if (Landblock.CapstoneTeleportLocations.Keys.Contains(landblockId))
+                    return true;
+                else
+                    return false;
+            }
+        }
+
 
         public override bool EnterWorld()
         {

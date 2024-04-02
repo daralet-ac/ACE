@@ -1378,5 +1378,11 @@ namespace ACE.Server.WorldObjects
             get => GetProperty(PropertyInt.ImbueSuccesses) ?? 0;
             set { if (value == 0) RemoveProperty(PropertyInt.ImbueSuccesses); else SetProperty(PropertyInt.ImbueSuccesses, value); }
         }
+
+        public string CorpseLog
+        {
+            get => GetProperty(PropertyString.CorpseLog);
+            set { if (value == null) RemoveProperty(PropertyString.CorpseLog); else SetProperty(PropertyString.CorpseLog, value); }
+        }
     }
 }

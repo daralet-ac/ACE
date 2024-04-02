@@ -472,15 +472,14 @@ namespace ACE.Server.WorldObjects
             // if player dies on a No Drop landblock,
             // they don't drop any items
 
-            if (corpse.IsOnNoDropLandblock || IsPKLiteDeath(corpse.KillerId))
-                return new List<WorldObject>();
+            if (corpse.IsOnNoDropLandblock || corpse.IsOnCapstoneLandblock || IsPKLiteDeath(corpse.KillerId))
+                return new List<WorldObject>();            
 
             var numItemsDropped = GetNumItemsDropped(corpse);
 
             var numCoinsDropped = GetNumCoinsDropped();
 
             var level = Level ?? 1;
-            var canDropWielded = level >= 35;
 
             // get all items in inventory
             var inventory = GetAllPossessions();
@@ -488,9 +487,8 @@ namespace ACE.Server.WorldObjects
             // exclude pyreals from randomized death item calculation
             inventory = inventory.Where(i => i.WeenieClassId != coinStackWcid).ToList();
 
-            // exclude wielded items if < level 35
-            if (!canDropWielded)
-                inventory = inventory.Where(i => i.CurrentWieldedLocation == null).ToList();
+            // exclude wielded items
+            inventory = inventory.Where(i => i.CurrentWieldedLocation == null).ToList();
 
             // exclude bonded items
             inventory = inventory.Where(i => (i.GetProperty(PropertyInt.Bonded) ?? 0) == 0).ToList();

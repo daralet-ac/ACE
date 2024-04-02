@@ -16,6 +16,7 @@ using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using static ACE.Common.DerethDateTime;
 
 namespace ACE.Server.WorldObjects
 {
@@ -604,8 +605,6 @@ namespace ACE.Server.WorldObjects
 
             if (player != null)
             {
-                corpse.SetPosition(PositionType.Location, corpse.Location);
-
                 var killerIsOlthoiPlayer = killer != null && killer.IsOlthoiPlayer;
                 var killerIsPkPlayer = killer != null && killer.IsPlayer && killer.Guid != Guid;
 
@@ -633,6 +632,30 @@ namespace ACE.Server.WorldObjects
 
                     if (dropped.Count > 0)
                         saveCorpse = true;
+
+                    var position = player.Location;
+                    var location = "";
+
+                    var landblock = LandblockManager.GetLandblock(position.LandblockId, false);
+
+                    if (Player.DungeonList.TryGetValue((int)position.Landblock, out var dungeonName))
+                        location = dungeonName;
+                    else if (landblock.IsDungeon)
+                         location = "Unknown Dungeon";
+                    else
+                        location = corpse.Location.GetMapCoordStr();
+
+                    var minutesToDecay = (int)player.Level * 30;
+                    var decayTime = DateTime.UtcNow.AddMinutes(minutesToDecay);
+
+                    // Corpse GUID, Killer, DateTime (now), Location, DecayTime, Lost Items
+                    if (player.CorpseLog == null)
+                        player.CorpseLog = $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
+                    else
+                       player.CorpseLog += $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
+
+
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Use the @corpses command for a list of recent corpses. To query items dropped, type '@corpses' followed by the corpse number on the list. To remove a corpse you do not plan on retrieving, type '@corpses remove' followed by the corpse number.", ChatMessageType.Broadcast));
 
                     if ((player.Location.Cell & 0xFFFF) < 0x100)
                     {
