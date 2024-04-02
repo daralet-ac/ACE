@@ -650,9 +650,9 @@ namespace ACE.Server.WorldObjects
 
                     // Corpse GUID, Killer, DateTime (now), Location, DecayTime, Lost Items
                     if (player.CorpseLog == null)
-                        player.CorpseLog = $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)}";
+                        player.CorpseLog = $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
                     else
-                       player.CorpseLog += $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)}";
+                       player.CorpseLog += $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
 
 
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Use the @corpses command for a list of recent corpses. To query items dropped, type '@corpses' followed by the corpse number on the list. To remove a corpse you do not plan on retrieving, type '@corpses remove' followed by the corpse number.", ChatMessageType.Broadcast));
