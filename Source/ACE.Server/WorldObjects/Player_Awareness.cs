@@ -30,7 +30,10 @@ namespace ACE.Server.WorldObjects
             if (result == StealthTestResult.Success)
             {
                 IsStealthed = true;
-                Session.Network.EnqueueSend(new GameMessageSystemChat("You enter stealth.", ChatMessageType.Broadcast));
+                if (Time.GetUnixTime() < LastVanishActivated + 5)
+                    Session.Network.EnqueueSend(new GameMessageSystemChat("You vanish in a cloud of smoke, and you cannot be detected for the next 5 seconds!", ChatMessageType.Broadcast));
+                else
+                    Session.Network.EnqueueSend(new GameMessageSystemChat("You enter stealth.", ChatMessageType.Broadcast));
                 EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthBegin));
 
                 var spell = new Spell(SpellId.MireFoot);
@@ -69,13 +72,14 @@ namespace ACE.Server.WorldObjects
             actionChain.AddAction(this, () =>
             {
                 var propertiesEnchantmentRegistry = EnchantmentManager.GetEnchantment((uint)SpellId.MireFoot, null);
-                if (propertiesEnchantmentRegistry != null)
+                if (propertiesEnchantmentRegistry != null && CombatMode == CombatMode.NonCombat)
                 {
                     EnchantmentManager.Dispel(propertiesEnchantmentRegistry);
                     if (!Teleporting)
                         HandleRunRateUpdate(new Spell(propertiesEnchantmentRegistry.SpellId));
                 }
             });
+
 
             RadarColor = null;
             EnqueueBroadcast(true, new GameMessagePublicUpdatePropertyInt(this, PropertyInt.RadarBlipColor, 0));
@@ -90,6 +94,9 @@ namespace ACE.Server.WorldObjects
         {
             if (!IsStealthed)
                 return false;
+
+            if (Time.GetUnixTime() < LastVanishActivated + 5)
+                return true;
 
             if (creature == null || creature.PlayerKillerStatus == PlayerKillerStatus.RubberGlue || creature.PlayerKillerStatus == PlayerKillerStatus.Protected || distance > creature.VisualAwarenessRangeSq || !creature.IsDirectVisible(this))
                 return true;
@@ -172,7 +179,10 @@ namespace ACE.Server.WorldObjects
                 Proficiency.OnSuccessUse(this, thieverySkill, difficulty);
                 return StealthTestResult.Success;
             }
-            return StealthTestResult.Failure;
+            else if (Time.GetUnixTime() < LastVanishActivated + 5)
+                return StealthTestResult.Success;
+            else
+                return StealthTestResult.Failure;
         }
 
         public bool IsAware(WorldObject wo)

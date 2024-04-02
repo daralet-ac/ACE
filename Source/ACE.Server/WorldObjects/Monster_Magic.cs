@@ -163,6 +163,12 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
+            if (target != null && target is Player player && Time.GetUnixTime() < player.LastVanishActivated + 5)
+            {
+                FindNextTarget(false, player);
+                return;
+            }
+
             var spell = CurrentSpell;
 
             // turn to?

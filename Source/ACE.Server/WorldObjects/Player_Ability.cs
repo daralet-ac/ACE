@@ -145,8 +145,22 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        public double LastVanishActivated = 0;
+
         public void TryUseVanish(WorldObject ability)
         {
+            if (IsStealthed)
+                return;
+            var thieverySkill = GetCreatureSkill(Skill.Lockpick); // Thievery
+            if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
+                return;
+
+            var smoke = WorldObjectFactory.CreateNewWorldObject(1051113);
+            smoke.Location = Location;
+            smoke.EnterWorld();
+
+            this.LastVanishActivated = Time.GetUnixTime();
+            this.BeginStealth();
         }
 
         public void TryUseExposePhysicalWeakness(WorldObject ability)

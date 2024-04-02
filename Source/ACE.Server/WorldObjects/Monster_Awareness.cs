@@ -239,6 +239,21 @@ namespace ACE.Server.WorldObjects
                 if(visibleTargets.Count > 1 && untargetablePlayer != null)
                     visibleTargets.Remove(untargetablePlayer);
 
+                if (untargetablePlayer != null && untargetablePlayer is Player vanishedPlayer && Time.GetUnixTime() < vanishedPlayer.LastVanishActivated + 5)
+                {
+                    visibleTargets.Remove(untargetablePlayer);
+
+                     if (ThreatLevel != null && ThreatLevel.ContainsKey(untargetablePlayer))
+                        ThreatLevel.Remove(untargetablePlayer);
+
+                    if (visibleTargets.Count == 0)
+                    {
+                        MoveToHome();
+                        return false;
+                    }
+
+                }
+
                 // Generally, a creature chooses whom to attack based on:
                 //  - who it was last attacking,
                 //  - who attacked it last,
