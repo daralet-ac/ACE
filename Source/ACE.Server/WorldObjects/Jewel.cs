@@ -586,12 +586,13 @@ namespace ACE.Server.WorldObjects
             if (modifiedBase < 1)
                 modifiedBase = 1;
 
-            // Rank chance - if skill is no higher than 40 above difficulty, you get a 25% chance for a rank.
-            if (skillLevel < difficulty + 40)
+            // Rank chance - if skill is no more/less than 25 above or below difficulty, earn 20% of rank in XP.
+            if (Math.Abs(difficulty - skillLevel) < 25)
             {
-                var rankChance = 2.5f;
-                if (rankChance >= ThreadSafeRandom.Next(0f, 10f))
-                    player.GrantSkillRanks(Skill.ItemTinkering, 1);
+                var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
+                        xP /= 5;
+
+                player.NoContribSkillXp(player, Skill.ItemTinkering, (uint)xP, false);
             }
 
 

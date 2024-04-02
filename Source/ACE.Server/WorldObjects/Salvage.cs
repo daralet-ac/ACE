@@ -870,13 +870,18 @@ namespace ACE.Server.WorldObjects
                         break;
                  */
                 }
-                // rank chance of 25% per armor slot, quartered for failure
-                var rankChance = success ? 0.25f * armorSlots : 0.0625f * armorSlots;
-                // check to ensure appropriately difficult tinker before granting (is player skill no more than 50 over adjusted diff)
-                if (skill.Current < difficulty)
+
+                // 20% of ranks worth of XP per armor slot, quartered for failure
+                var rankXP = success ? 0.20f * armorSlots : 0.0625f * armorSlots;
+               
+                // check to ensure appropriately difficult tinker before granting (is player skill no more than 50 points away from adjusted diff)
+                if (Math.Abs(skill.Current - difficulty) < 50)
                 {
-                    if (rankChance >= ThreadSafeRandom.Next(0f, 1f))
-                        player.GrantSkillRanks(tinkeringSkill, 1);
+                    var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
+
+                    var totalXP = (uint)(xP * rankXP);
+
+                        player.NoContribSkillXp(player, tinkeringSkill, totalXP, false);
                 }
 
                 BroadcastTinkering(player, source, target, successChance, success, successAmount);

@@ -146,6 +146,21 @@ namespace ACE.Server.WorldObjects.Managers
 
                     break;
 
+                case EmoteType.AwardNoContribSkillXP:
+
+                    if (player != null)
+                    {
+                        var playerSkill = (Skill)emote.Stat;
+                        var skill = player.GetCreatureSkill(playerSkill);
+                        var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
+                        xP /= 5;
+
+                        player.NoContribSkillXp(player, playerSkill, (uint)xP, false);
+
+                    }
+                    break;
+                        
+
                 case EmoteType.AwardNoShareXP:
 
                     if (player != null)

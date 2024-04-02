@@ -999,6 +999,10 @@ namespace ACE.Server.WorldObjects
             return true;
         }
 
+        public void NoContribSkillXp(Player player, Skill skill, uint amount, bool reduce)
+        {
+            player.AwardNoContribSkillXP(skill, amount, reduce);
+        }
         private void AwardNoContribSkillXP(Skill skill, uint amount, bool reduce)
         {
             var playerSkill = GetCreatureSkill(skill);

@@ -146,5 +146,6 @@ namespace ACE.Entity.Enum
         AwardSkillRanks               = 10008,
         CapstoneCacheReward           = 10009,
         AssignCapstoneDungeon         = 10010,
+        AwardNoContribSkillXP         = 10011,
     }
 }
