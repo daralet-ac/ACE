@@ -70,7 +70,7 @@ namespace ACE.Server.WorldObjects
             if (!IsOnNoDeathXPLandblock)
                 OnDeath_GrantXP();
 
-            if (!StruckByUnshrouded)
+            if (!StruckByUnshrouded && !(this is Player))
                 HandleShroudRewards();
 
             return GetDeathMessage(lastDamager, damageType, criticalHit);
@@ -841,16 +841,16 @@ namespace ACE.Server.WorldObjects
 
         public void HandleShroudRewards()
         {
-            var scaledDamagers = DamageHistory.TotalDamage.Values.Where(d => (d.Level > Level + 10) && d.TotalDamage >= DamageHistory.TotalHealth / 3);
+            var scaledDamagers = DamageHistory.TotalDamage.Values.Where(d => (d.Level > Level + 10) && d.TotalDamage >= DamageHistory.TotalHealth / 10);
 
             if (scaledDamagers.Any())
             {
-                var chance = 0.05f;
+                var bonusChance = 0f;
 
-                var accompaniedLowbie = DamageHistory.TotalDamage.Values.Where(d => (d.Level < Level + 5) && (d.Level > Level - 5) && d.TotalDamage >= DamageHistory.TotalHealth / 3);
+                var accompaniedLowbie = DamageHistory.TotalDamage.Values.Where(d => (d.Level < Level + 5) && (d.Level > Level - 5)).Sum(d => d.TotalDamage);
 
-                if (accompaniedLowbie.Any())
-                    chance += 0.05f;
+                if (accompaniedLowbie >= DamageHistory.TotalHealth / 5)
+                    bonusChance += 0.05f;
 
                 foreach (var damageInfo in scaledDamagers)
                 {
@@ -860,13 +860,31 @@ namespace ACE.Server.WorldObjects
                         if (matchingGuid.IsPlayer())
                         {
                             var player = PlayerManager.GetOnlinePlayer(matchingGuid);
-                            if (player != null && chance >= ThreadSafeRandom.Next(0f, 1f))
-                            {
-                                var reward = WorldObjectFactory.CreateNewWorldObject(1054175);
-                                player.TryCreateInInventoryWithNetworking(reward);
-                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Shard of Shrouding glimmers, and produces a small fragment of crystallized energy!", ChatMessageType.Broadcast));
-                                player.PlayParticleEffect(PlayScript.EnchantUpPurple, player.Guid);
 
+                            if (player != null)
+                            {
+                                float proportion = damageInfo.TotalDamage / DamageHistory.TotalHealth;
+                                if (proportion >= 0.5f)
+                                    proportion = 0.5f;
+
+                                float baseChance = 0;
+
+                                if (proportion >= 0.1f && proportion <= 0.24f)
+                                    baseChance = proportion / 20;
+                                if (proportion >= 0.25f && proportion <= 0.39f)
+                                    baseChance = proportion / 15;
+                                else
+                                    baseChance = proportion / 10;
+
+                                baseChance += bonusChance;
+
+                                if (baseChance >= ThreadSafeRandom.Next(0f, 1f))
+                                {
+                                    var reward = WorldObjectFactory.CreateNewWorldObject(1054175);
+                                    player.TryCreateInInventoryWithNetworking(reward);
+                                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Shard of Shrouding glimmers, and produces a small fragment of crystallized energy!", ChatMessageType.Broadcast));
+                                    player.PlayParticleEffect(PlayScript.EnchantUpPurple, player.Guid);
+                                }
                             }
                         }
 
