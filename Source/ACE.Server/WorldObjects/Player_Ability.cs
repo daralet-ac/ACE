@@ -155,12 +155,35 @@ namespace ACE.Server.WorldObjects
             if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
                 return;
 
-            var smoke = WorldObjectFactory.CreateNewWorldObject(1051113);
-            smoke.Location = Location;
-            smoke.EnterWorld();
+            // the smoke is enough to fool monsters from far away?
+            var nearbyMonsters = GetNearbyMonsters(15);
 
-            this.LastVanishActivated = Time.GetUnixTime();
-            this.BeginStealth();
+            var success = true;
+            foreach (var target in nearbyMonsters)
+            {
+                // generous bonus to skill check to start 
+                var skillCheck = SkillCheck.GetSkillChance(GetModdedThieverySkill() + 50, target.GetCreatureSkill(Skill.AssessCreature).Current);
+
+                if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
+                {
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Some thief you are! {target.Name} was not fooled by your attempt to vanish, and prevents you from entering stealth.", ChatMessageType.Broadcast));
+                    success = false;
+                    break;
+                }
+
+                var targetTier = target.Tier ?? 1;
+                var staminaCost = -2 * Math.Clamp(targetTier, 1, 7);
+                UpdateVitalDelta(Stamina, staminaCost);
+            }
+            if (success)
+            {
+                var smoke = WorldObjectFactory.CreateNewWorldObject(1051113);
+                smoke.Location = Location;
+                smoke.EnterWorld();
+
+                this.LastVanishActivated = Time.GetUnixTime();
+                this.BeginStealth();
+            }
         }
 
         public void TryUseExposePhysicalWeakness(WorldObject ability)
@@ -331,9 +354,7 @@ namespace ACE.Server.WorldObjects
 
         public void TryUseActivated(WorldObject ability)
         {
-
-           
-            switch (EquippedCombatAbility)
+           switch (EquippedCombatAbility)
             {
                 case CombatAbility.Provoke:
                     LastProvokeActivated = Time.GetUnixTime();
@@ -342,9 +363,9 @@ namespace ACE.Server.WorldObjects
                     break;
 
                 case CombatAbility.Phalanx:
-                    LastPhalanxActivated = Time.GetUnixTime();
-                    PlayParticleEffect(PlayScript.ShieldUpGrey, this.Guid);
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You raise your shield! For the next ten seconds, your chance to block is increased, and applies to attacks from any angle.", ChatMessageType.Broadcast));
+                        LastPhalanxActivated = Time.GetUnixTime();
+                        PlayParticleEffect(PlayScript.ShieldUpGrey, this.Guid);
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"Raise your shield! For the next ten seconds, your chance to block is increased, and applies to attacks from any angle.", ChatMessageType.Broadcast));
                     break;
 
                 case CombatAbility.Fury:
@@ -369,7 +390,7 @@ namespace ACE.Server.WorldObjects
                 case CombatAbility.SteadyShot:
                     LastSteadyShotActivated = Time.GetUnixTime();
                     PlayParticleEffect(PlayScript.VisionUpWhite, this.Guid);
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"For the next ten seconds, you summon all your powers of concentration, firing arrows of spectacular accuracy and damage!", ChatMessageType.Broadcast));
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"For the next ten seconds, you summon all your powers of concentration, firing missiles of spectacular accuracy and damage!", ChatMessageType.Broadcast));
                     break;
 
                 case CombatAbility.Multishot:
