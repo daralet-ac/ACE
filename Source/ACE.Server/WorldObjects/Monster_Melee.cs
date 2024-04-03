@@ -53,6 +53,11 @@ namespace ACE.Server.WorldObjects
                 FindNextTarget(false);
                 return 0.0f;
             }
+            if (targetPlayer != null && Time.GetUnixTime() < targetPlayer.LastVanishActivated + 5)
+            {
+                FindNextTarget(false, targetPlayer);
+                return 0.0f;
+            }
 
             if (CurrentMotionState.Stance == MotionStance.NonCombat)
                 DoAttackStance();
