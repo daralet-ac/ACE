@@ -14,258 +14,290 @@ namespace ACE.Server.Factories.Tables.Wcids
     {
         private static ChanceTable<WeenieClassName> LeatherWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
-            ( WeenieClassName.buckler,                 2.0f ),
+            // shield
+            ( WeenieClassName.buckler,                1f ),
 
-            ( WeenieClassName.capleather,              1.0f ),
+            // headgear
+            ( WeenieClassName.capleather,              0.2f ),
+            ( WeenieClassName.cowlleather,             0.2f ),
+            ( WeenieClassName.basinetleather,          0.2f ),
+            ( WeenieClassName.cowlleathernew,          0.2f ),
+            ( WeenieClassName.basinetleathernew,       0.2f ),
 
-            ( WeenieClassName.cowlleather,             1.0f ),
-            ( WeenieClassName.basinetleather,          1.0f ),
+            // handwear
+            ( WeenieClassName.gauntletsleather,        0.33f ),
+            ( WeenieClassName.gauntletsleathernew,     0.33f ),
+            ( WeenieClassName.longgauntletsleathernew, 0.33f ),
 
-            ( WeenieClassName.gauntletsleather,        2.0f ),
-            ( WeenieClassName.bootsleather,            2.0f ),
+            // footwear
+            ( WeenieClassName.bootsleather,            0.5f ),
+            ( WeenieClassName.bootsleathernew,         0.5f ),
 
-            ( WeenieClassName.coatleather,             1.0f ),
-            ( WeenieClassName.cuirassleather,          1.0f ),
-            ( WeenieClassName.shirtleather,            1.0f ),
-            ( WeenieClassName.breastplateleather,      1.0f ),
+            // single slot 0.25f to account for multislot overlap + old and new types
+            ( WeenieClassName.breastplateleather,      0.25f ),
+            ( WeenieClassName.girthleather,            0.25f ),
+            ( WeenieClassName.tassetsleather,          0.25f ),
+            ( WeenieClassName.greavesleather,          0.25f ),
+            ( WeenieClassName.pauldronsleather,        0.25f ),
+            ( WeenieClassName.bracersleather,          0.25f ),
 
-            ( WeenieClassName.girthleather,            1.0f ),
+            ( WeenieClassName.girthleathernew,         0.25f ),
+            ( WeenieClassName.pauldronsleathernew,     0.25f ),
+            ( WeenieClassName.bracersleathernew,       0.25f ),
+            ( WeenieClassName.tassetsleathernew,       0.25f ),
+            ( WeenieClassName.greavesleathernew,       0.25f ),
 
-            ( WeenieClassName.leggingsleather,         1.0f ),
-            ( WeenieClassName.tassetsleather,          1.0f ),
-            ( WeenieClassName.greavesleather,          1.0f ),
-
-            ( WeenieClassName.sleevesleather,          1.0f ),
-            ( WeenieClassName.pauldronsleather,        1.0f ),
-            ( WeenieClassName.bracersleather,          1.0f ),
-
-            ( WeenieClassName.cowlleathernew,          1.0f ),
-            ( WeenieClassName.basinetleathernew,       1.0f ),
-
-            ( WeenieClassName.gauntletsleathernew,     2.0f ),
-            ( WeenieClassName.longgauntletsleathernew, 2.0f ),
-            ( WeenieClassName.bootsleathernew,         2.0f ),
-
-            ( WeenieClassName.coatleathernew,          1.0f ),
-            ( WeenieClassName.cuirassleathernew,       1.0f ),
-            ( WeenieClassName.shirtleathernew,         1.0f ),
-            ( WeenieClassName.breastplateleathernew,   1.0f ),
-
-            ( WeenieClassName.girthleathernew,         1.0f ),
-            ( WeenieClassName.shortsleathernew,        1.0f ),
-
-            ( WeenieClassName.pantsleathernew,         1.0f ),
-            ( WeenieClassName.leggingsleathernew,      1.0f ),
-            ( WeenieClassName.tassetsleathernew,       1.0f ),
-            ( WeenieClassName.greavesleathernew,       1.0f ),
-
-            ( WeenieClassName.sleevesleathernew,       1.0f ),
-            ( WeenieClassName.pauldronsleathernew,     1.0f ),
-            ( WeenieClassName.bracersleathernew,       1.0f ),
+            // multislot
+            ( WeenieClassName.coatleather,             0.125f ),
+            ( WeenieClassName.cuirassleather,          0.125f ),
+            ( WeenieClassName.shirtleather,            0.125f ),
+            ( WeenieClassName.leggingsleather,         0.125f ),
+            ( WeenieClassName.sleevesleather,          0.125f ),
+            
+            ( WeenieClassName.coatleathernew,          0.125f ),
+            ( WeenieClassName.cuirassleathernew,       0.125f ),
+            ( WeenieClassName.shirtleathernew,         0.125f ),
+            ( WeenieClassName.breastplateleathernew,   0.125f ),
+            ( WeenieClassName.shortsleathernew,        0.125f ),
+            ( WeenieClassName.pantsleathernew,         0.125f ),
+            ( WeenieClassName.leggingsleathernew,      0.125f ),
+            ( WeenieClassName.sleevesleathernew,       0.125f ),
+            
         };
 
         private static ChanceTable<WeenieClassName> StuddedLeatherWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
+            ( WeenieClassName.buckler,              0.25f ),
+            // headgear
+            ( WeenieClassName.cowlstuddedleather,        0.5f ),
+            ( WeenieClassName.basinetstuddedleather,     0.5f ),
 
-            ( WeenieClassName.cowlstuddedleather,        1.0f ),
-            ( WeenieClassName.basinetstuddedleather,     1.0f ),
+            // handwear
+            ( WeenieClassName.gauntletsstuddedleather,   1.0f ),
 
-            ( WeenieClassName.gauntletsstuddedleather,   2.0f ),
-            ( WeenieClassName.bootsreinforcedleather,    2.0f ),
+            // footwear
+            ( WeenieClassName.bootsreinforcedleather,    1.0f ),
 
-            ( WeenieClassName.coatstuddedleather,        1.0f ),
-            ( WeenieClassName.shirtstuddedleather,       1.0f ),
-            ( WeenieClassName.cuirassstuddedleather,     1.0f ),
-            ( WeenieClassName.breastplatestuddedleather, 1.0f ),
+            // single slot
+            ( WeenieClassName.breastplatestuddedleather, 0.25f ),
+            ( WeenieClassName.girthstuddedleather,       0.5f ),
+            ( WeenieClassName.tassetsstuddedleather,     0.5f ),
+            ( WeenieClassName.greavesstuddedleather,     0.5f ),
+            ( WeenieClassName.pauldronsstuddedleather,   0.5f ),
+            ( WeenieClassName.bracersstuddedleather,     0.5f ),
 
-            ( WeenieClassName.girthstuddedleather,       1.0f ),
+            // multislot
+            ( WeenieClassName.coatstuddedleather,        0.25f ),
+            ( WeenieClassName.shirtstuddedleather,       0.25f ),
+            ( WeenieClassName.cuirassstuddedleather,     0.25f ),
+            ( WeenieClassName.leggingsstuddedleather,    0.25f ),
+            ( WeenieClassName.sleevesstuddedleather,     0.25f ),
 
-            ( WeenieClassName.leggingsstuddedleather,    1.0f ),
-            ( WeenieClassName.tassetsstuddedleather,     1.0f ),
-            ( WeenieClassName.greavesstuddedleather,     1.0f ),
-
-            ( WeenieClassName.sleevesstuddedleather,     1.0f ),
-            ( WeenieClassName.pauldronsstuddedleather,   1.0f ),
-            ( WeenieClassName.bracersstuddedleather,     1.0f ),
+            
         };
+
+        private static ChanceTable<WeenieClassName> YoroiWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        {
+            ( WeenieClassName.buckler,              0.25f ),
+            // headgear
+            ( WeenieClassName.kabuton,              1.0f ),
+            // handwear
+            ( WeenieClassName.gauntletsleather,      1.0f ),
+            // footwear
+            ( WeenieClassName.bootssteeltoe,        1.0f ),
+
+            // even spread of ms coverage, so 0.5f for all
+            ( WeenieClassName.breastplateyoroi,     0.5f ),
+            ( WeenieClassName.cuirassyoroi,         0.5f ),
+            ( WeenieClassName.girthyoroi,           0.5f ),
+
+            ( WeenieClassName.leggingsyoroi,        0.5f ),
+            ( WeenieClassName.tassetsyoroi,        0.5f ),
+            ( WeenieClassName.greavesyoroi,        0.5f ),
+
+            ( WeenieClassName.sleevesyoroi,        0.5f ),
+            ( WeenieClassName.pauldronsyoroi,      0.5f ),
+            ( WeenieClassName.kote,                0.5f ),
+        };
+
+        private static ChanceTable<WeenieClassName> KoujiaWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        {
+             ( WeenieClassName.buckler,              0.25f ),
+            // headgear
+            ( WeenieClassName.kabuton,              1.0f ),
+            // handwear
+            ( WeenieClassName.gauntletsleather,      1.0f ),
+            // footwear
+            ( WeenieClassName.bootssteeltoe,        1.0f ),
+
+            ( WeenieClassName.breastplatekoujia, 1.0f ),
+            ( WeenieClassName.leggingskoujia,    1.0f ),
+            ( WeenieClassName.sleeveskoujia,     1.0f ),
+        };
+
+        private static ChanceTable<WeenieClassName> LoricaWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+         {
+            ( WeenieClassName.helmlorica,        1.0f ),
+            ( WeenieClassName.bootslorica,       1.0f ),
+            ( WeenieClassName.gauntletslorica,   1.0f ),
+            ( WeenieClassName.breastplatelorica, 1.0f ),
+            ( WeenieClassName.leggingslorica,    1.0f ),
+            ( WeenieClassName.sleeveslorica,     1.0f ),
+         };
+
+        private static ChanceTable<WeenieClassName> OlthoiKoujiaWcids = new ChanceTable<WeenieClassName>()
+        {
+            ( WeenieClassName.ace37190_olthoikoujiagauntlets,   0.20f ),
+            ( WeenieClassName.ace37198_olthoikoujiakabuton,     0.20f ),
+            ( WeenieClassName.ace37203_olthoikoujialeggings,    0.20f ),
+            ( WeenieClassName.ace37206_olthoikoujiasleeves,     0.20f ),
+            ( WeenieClassName.ace37215_olthoikoujiabreastplate, 0.20f ),
+        };
+
+
+
 
         private static ChanceTable<WeenieClassName> ChainmailWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
-            ( WeenieClassName.capmetal,             1.0f ),
-            ( WeenieClassName.mailcoif,             1.0f ),
-            ( WeenieClassName.basinetchainmail,     1.0f ),
+            // shields
+            ( WeenieClassName.shieldkite,           0.25f ),
+            ( WeenieClassName.shieldround,          0.25f ),
+            
+            // headgear
+            ( WeenieClassName.capmetal,             0.33f ),
+            ( WeenieClassName.mailcoif,             0.33f ),
+            ( WeenieClassName.basinetchainmail,     0.33f ),
 
-            ( WeenieClassName.gauntletschainmail,   2.0f ),
-            ( WeenieClassName.bootssteeltoe,        2.0f ),
+            // handwear
+            ( WeenieClassName.gauntletschainmail,   1.0f ),
 
-            ( WeenieClassName.shirtchainmail,       1.0f ),
-            ( WeenieClassName.hauberkchainmail,     1.0f ),
-            ( WeenieClassName.breastplatechainmail, 1.0f ),
+            // footwear
+            ( WeenieClassName.sollerets,            1.0f ),
 
-            ( WeenieClassName.girthchainmail,       1.0f ),
+            // single slot
+            ( WeenieClassName.breastplatechainmail, 0.5f ),
+            ( WeenieClassName.pauldronschainmail,   0.5f ),
+            ( WeenieClassName.bracerschainmail,     0.5f ),
+            ( WeenieClassName.girthchainmail,       0.5f ),
+            ( WeenieClassName.tassetschainmail,     0.5f ),
+            ( WeenieClassName.greaveschainmail,     0.5f ),
 
-            ( WeenieClassName.leggingschainmail,    1.0f ),
-            ( WeenieClassName.tassetschainmail,     1.0f ),
-            ( WeenieClassName.greaveschainmail,     1.0f ),
+            // multislot
+            ( WeenieClassName.shirtchainmail,       0.25f ),
+            ( WeenieClassName.hauberkchainmail,     0.25f ),
+            ( WeenieClassName.leggingschainmail,    0.25f ),
+            ( WeenieClassName.sleeveschainmail,     0.25f ),
 
-            ( WeenieClassName.sleeveschainmail,     1.0f ),
-            ( WeenieClassName.pauldronschainmail,   1.0f ),
-            ( WeenieClassName.bracerschainmail,     1.0f ),
         };
 
-        // platemail - aluvian
+
+        private static ChanceTable<WeenieClassName> ScalemailWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        {
+            //shields
+            ( WeenieClassName.shieldkite,           0.25f ),
+            ( WeenieClassName.shieldround,          0.25f ),
+
+            // headgear
+            ( WeenieClassName.baigha,               0.33f ),
+            ( WeenieClassName.basinetscalemail,     0.33f ),
+            ( WeenieClassName.coifscale,            0.33f ),
+
+            // handwear
+            ( WeenieClassName.gauntletsscalemail,   1.0f ),
+
+            // footwear
+            ( WeenieClassName.sollerets,            1.0f ),
+
+            // single slot
+            ( WeenieClassName.breastplatescalemail, 1.0f ),
+            ( WeenieClassName.girthscalemail,       1.0f ),
+            ( WeenieClassName.tassetsscalemail,     1.0f ),
+            ( WeenieClassName.greavesscalemail,     1.0f ),
+            ( WeenieClassName.pauldronsscalemail,   1.0f ),
+            ( WeenieClassName.bracersscalemail,     1.0f ),
+
+            // multislot
+            ( WeenieClassName.cuirassscalemail,     1.0f ),
+            ( WeenieClassName.hauberkscalemail,     1.0f ),
+            ( WeenieClassName.shirtscalemail,       1.0f ),
+            ( WeenieClassName.leggingsscalemail,    1.0f ),
+            ( WeenieClassName.sleevesscalemail,     1.0f ),
+
+        };
+
         private static ChanceTable<WeenieClassName> PlatemailWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
-           ( WeenieClassName.shieldkitelarge,      1.0f ),
-            ( WeenieClassName.shieldroundlarge,     1.0f ),
-            ( WeenieClassName.shieldkitelarge,      0.2f ),
-            ( WeenieClassName.shieldroundlarge,     0.2f ),
+            //shields
+            ( WeenieClassName.shieldkitelarge,      0.25f ),
+            ( WeenieClassName.shieldroundlarge,     0.25f ),
             ( WeenieClassName.shieldtower,          0.2f ),
 
-            ( WeenieClassName.helmet,               1.0f ),
-            ( WeenieClassName.helmhorned,           1.0f ),
-
+            // headgear
             ( WeenieClassName.armet,                1.0f ),
             ( WeenieClassName.heaume,               1.0f ),
             ( WeenieClassName.heaumenew,            1.0f ),
 
-            ( WeenieClassName.gauntletsplatemail,   2.0f ),
-            ( WeenieClassName.sollerets,            2.0f ),
+            // handwear
+            ( WeenieClassName.gauntletsplatemail,   1.0f ),
 
-            ( WeenieClassName.hauberkplatemail,     1.0f ),
-            ( WeenieClassName.cuirassplatemail,     1.0f ),
-            ( WeenieClassName.breastplateplatemail, 1.0f ),
+            // footwear
+            ( WeenieClassName.sollerets,            1.0f ),
 
-            ( WeenieClassName.girthplatemail,       1.0f ),
+            // single slot
+            ( WeenieClassName.breastplateplatemail, 0.5f ),
+            ( WeenieClassName.tassetsplatemail,     0.5f ),
+            ( WeenieClassName.greavesplatemail,     0.5f ),
+            ( WeenieClassName.pauldronsplatemail,   0.5f ),
+            ( WeenieClassName.vambracesplatemail,   0.5f ),
+            ( WeenieClassName.girthplatemail,       0.5f ),
 
-            ( WeenieClassName.leggingsplatemail,    1.0f ),
-            ( WeenieClassName.tassetsplatemail,     1.0f ),
-            ( WeenieClassName.greavesplatemail,     1.0f ),
+            // multislot
+            ( WeenieClassName.hauberkplatemail,     0.25f ),
+            ( WeenieClassName.cuirassplatemail,     0.25f ),
+            ( WeenieClassName.leggingsplatemail,    0.25f ),
+            ( WeenieClassName.sleevesplatemail,     0.25f ),
 
-            ( WeenieClassName.sleevesplatemail,     1.0f ),
-            ( WeenieClassName.pauldronsplatemail,   1.0f ),
-            ( WeenieClassName.vambracesplatemail,   1.0f ),
         };
 
-        // platemail - gharu'ndim
-        private static ChanceTable<WeenieClassName> ScalemailWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
-        {
-            ( WeenieClassName.shieldkite,           0.2f ),
-            ( WeenieClassName.shieldround,          0.2f ),
-
-            ( WeenieClassName.baigha,               1.0f ),
-            ( WeenieClassName.basinetscalemail,     1.0f ),
-            ( WeenieClassName.coifscale,            1.0f ),
-
-            ( WeenieClassName.gauntletsscalemail,   2.0f ),
-            ( WeenieClassName.sollerets,            2.0f ),
-
-            ( WeenieClassName.breastplatescalemail, 1.0f ),
-            ( WeenieClassName.cuirassscalemail,     1.0f ),
-            ( WeenieClassName.hauberkscalemail,     1.0f ),
-            ( WeenieClassName.shirtscalemail,       1.0f ),
-
-            ( WeenieClassName.girthscalemail,       1.0f ),
-
-            ( WeenieClassName.leggingsscalemail,    1.0f ),
-            ( WeenieClassName.tassetsscalemail,     1.0f ),
-            ( WeenieClassName.greavesscalemail,     1.0f ),
-
-            ( WeenieClassName.sleevesscalemail,     1.0f ),
-            ( WeenieClassName.pauldronsscalemail,   1.0f ),
-            ( WeenieClassName.bracersscalemail,     1.0f ),
-        };
-
-        // platemail - sho
-        private static ChanceTable<WeenieClassName> YoroiWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
-        {
-            ( WeenieClassName.buckler,              0.2f ),
-
-            ( WeenieClassName.kabuton,              1.0f ),
-            ( WeenieClassName.helmet,               1.0f ),
-
-            ( WeenieClassName.gauntletsplatemail,   2.0f ),
-            ( WeenieClassName.sollerets,            2.0f ),
-
-            ( WeenieClassName.breastplateyoroi,     1.0f ),
-            ( WeenieClassName.cuirassyoroi,         1.0f ),
-            ( WeenieClassName.girthyoroi,           1.0f ),
-
-            ( WeenieClassName.leggingsyoroi,        1.0f ),
-            ( WeenieClassName.tassetsyoroi,         1.0f ),
-            ( WeenieClassName.greavesyoroi,         1.0f ),
-
-            ( WeenieClassName.sleevesyoroi,         1.0f ),
-            ( WeenieClassName.pauldronsyoroi,       1.0f ),
-            ( WeenieClassName.kote,                 1.0f ),
-        };
-
-        // heritage low - aluvian
         private static ChanceTable<WeenieClassName> CeldonWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
-        {
+        { 
+            // headgear
+            ( WeenieClassName.helmet,               0.5f ),
+            ( WeenieClassName.helmhorned,           0.5f ),
+
+            // handwear
+            ( WeenieClassName.gauntletsplatemail,   1.0f ),
+
+            // footwear
+            ( WeenieClassName.sollerets,         1.0f ),
+
             ( WeenieClassName.girthceldon,       1.0f ),
             ( WeenieClassName.breastplateceldon, 1.0f ),
             ( WeenieClassName.leggingsceldon,    1.0f ),
             ( WeenieClassName.sleevesceldon,     1.0f ),
         };
 
-        // heritage low - gharu'ndim
-        private static ChanceTable<WeenieClassName> AmuliWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
-        {
-            ( WeenieClassName.coatamullian,     1.0f ),
-            ( WeenieClassName.leggingsamullian, 1.0f ),
-        };
-
-        // heritage low - sho
-        private static ChanceTable<WeenieClassName> KoujiaWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
-        {
-            ( WeenieClassName.breastplatekoujia, 1.0f ),
-            ( WeenieClassName.leggingskoujia,    1.0f ),
-            ( WeenieClassName.sleeveskoujia,     1.0f ),
-        };
-
         private static ChanceTable<WeenieClassName> CovenantWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
-            ( WeenieClassName.shieldcovenant,      1.0f ),
+            ( WeenieClassName.shieldcovenant,      0.5f ),
 
             ( WeenieClassName.helmcovenant,        1.0f ),
-
-            ( WeenieClassName.gauntletscovenant,   2.0f ),
-            ( WeenieClassName.bootscovenant,       2.0f ),
-
+            ( WeenieClassName.gauntletscovenant,   1.0f ),
+            ( WeenieClassName.bootscovenant,       1.0f ),
             ( WeenieClassName.breastplatecovenant, 1.0f ),
-
             ( WeenieClassName.girthcovenant,       1.0f ),
-
             ( WeenieClassName.tassetscovenant,     1.0f ),
             ( WeenieClassName.greavescovenant,     1.0f ),
-
             ( WeenieClassName.pauldronscovenant,   1.0f ),
             ( WeenieClassName.bracerscovenant,     1.0f ),
         };
 
-        // heritage high - aluvian
-        private static ChanceTable<WeenieClassName> LoricaWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
-        {
-            ( WeenieClassName.helmlorica,        1.0f ),
-
-            ( WeenieClassName.bootslorica,       2.0f ),
-            ( WeenieClassName.gauntletslorica,   2.0f ),
-
-            ( WeenieClassName.breastplatelorica, 1.0f ),
-
-            ( WeenieClassName.leggingslorica,    1.0f ),
-
-            ( WeenieClassName.sleeveslorica,     1.0f ),
-        };
-
-        // heritage high - gharu'ndim
-        private static ChanceTable<WeenieClassName> NariyidWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+     private static ChanceTable<WeenieClassName> NariyidWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
             ( WeenieClassName.helmnariyid,        1.0f ),
 
-            ( WeenieClassName.bootsnariyid,       2.0f ),
-            ( WeenieClassName.gauntletsnariyid,   2.0f ),
+            ( WeenieClassName.bootsnariyid,       1.0f ),
+            ( WeenieClassName.gauntletsnariyid,   1.0f ),
 
             ( WeenieClassName.breastplatenariyid, 1.0f ),
 
@@ -276,18 +308,76 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.sleevesnariyid,     1.0f ),
         };
 
-        // heritage high - sho
+        private static ChanceTable<WeenieClassName> OlthoiCeldonWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        {
+            ( WeenieClassName.ace37189_olthoiceldongauntlets,   1.0f ),
+            ( WeenieClassName.ace37192_olthoiceldongirth,        1.0f ),
+            ( WeenieClassName.ace37197_olthoiceldonhelm,        1.0f ),
+            ( WeenieClassName.ace37202_olthoiceldonleggings,     1.0f ),
+            ( WeenieClassName.ace37205_olthoiceldonsleeves,      1.0f ),
+            ( WeenieClassName.ace37209_olthoiceldonsollerets,    1.0f ),
+            ( WeenieClassName.ace37214_olthoiceldonbreastplate,  1.0f ),
+        };
+
+                private static ChanceTable<WeenieClassName> ClothWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        {
+            // headgear
+            ( WeenieClassName.capcloth,             0.25f),
+            ( WeenieClassName.cowlcloth,            0.25f),
+            ( WeenieClassName.capfez,               0.25f),
+            ( WeenieClassName.capsho,                 0.25f),
+
+            // handwear
+            ( WeenieClassName.glovescloth,          1.0f ),
+
+            //footwear - none because no non-robe body cloth drops in early tiers
+
+            // robes - higher % so they continue to drop frequently in higher tiers
+            ( WeenieClassName.robeshohood,          0.67f ),
+            ( WeenieClassName.robeshonohood,        0.67f ),
+            ( WeenieClassName.robegharundimhood,    0.67f ),
+            ( WeenieClassName.robegharundimnohood,  0.67f ),
+            ( WeenieClassName.robealuvianhood,      0.67f ),
+            ( WeenieClassName.robealuviannohood,    0.67f ),
+
+        };
+
+        private static ChanceTable<WeenieClassName> AmuliWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        {
+            // headgear
+            ( WeenieClassName.qafiya,               0.33f ),
+            ( WeenieClassName.turban,               0.33f ),
+            ( WeenieClassName.hood,                 0.33f ),
+            // handwear
+            ( WeenieClassName.glovescloth,          1.0f ),
+            // footwear
+            ( WeenieClassName.sandals,              0.33f ),
+            ( WeenieClassName.shoes,                0.33f ),
+            ( WeenieClassName.slippers,             0.33f ),
+
+            ( WeenieClassName.coatamullian,     1.0f ),
+            ( WeenieClassName.leggingsamullian, 1.0f ),
+        };
+
         private static ChanceTable<WeenieClassName> ChiranWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
             ( WeenieClassName.helmchiran,      1.0f ),
-
-            ( WeenieClassName.sandalschiran,   2.0f ),
-            ( WeenieClassName.gauntletschiran, 2.0f ),
-
+            ( WeenieClassName.sandalschiran,   1.0f ),
+            ( WeenieClassName.gauntletschiran, 1.0f ),
             ( WeenieClassName.coatchiran,      1.0f ),
-
             ( WeenieClassName.leggingschiran,  1.0f ),
         };
+
+        private static ChanceTable<WeenieClassName> OlthoiAmuliWcids = new ChanceTable<WeenieClassName>()
+        {
+            ( WeenieClassName.ace37188_olthoiamuligauntlets, 0.20f ),
+            ( WeenieClassName.ace37196_olthoiamulihelm,      0.20f ),
+            ( WeenieClassName.ace37201_olthoiamulileggings,  0.20f ),
+            ( WeenieClassName.ace37208_olthoiamulisollerets, 0.20f ),
+            ( WeenieClassName.ace37299_olthoiamulicoat,      0.20f ),
+        };
+
+        
 
         // ToD+
 
@@ -356,34 +446,9 @@ namespace ACE.Server.Factories.Tables.Wcids
 
         // olthoi heritage armor, t7+
         // introduced 08-2008 - ancient powers
-        private static ChanceTable<WeenieClassName> OlthoiCeldonWcids = new ChanceTable<WeenieClassName>()
-        {
-            ( WeenieClassName.ace37189_olthoiceldongauntlets,   0.14f ),
-            ( WeenieClassName.ace37192_olthoiceldongirth,       0.14f ),
-            ( WeenieClassName.ace37197_olthoiceldonhelm,        0.14f ),
-            ( WeenieClassName.ace37202_olthoiceldonleggings,    0.15f ),
-            ( WeenieClassName.ace37205_olthoiceldonsleeves,     0.15f ),
-            ( WeenieClassName.ace37209_olthoiceldonsollerets,   0.14f ),
-            ( WeenieClassName.ace37214_olthoiceldonbreastplate, 0.14f ),
-        };
 
-        private static ChanceTable<WeenieClassName> OlthoiAmuliWcids = new ChanceTable<WeenieClassName>()
-        {
-            ( WeenieClassName.ace37188_olthoiamuligauntlets, 0.20f ),
-            ( WeenieClassName.ace37196_olthoiamulihelm,      0.20f ),
-            ( WeenieClassName.ace37201_olthoiamulileggings,  0.20f ),
-            ( WeenieClassName.ace37208_olthoiamulisollerets, 0.20f ),
-            ( WeenieClassName.ace37299_olthoiamulicoat,      0.20f ),
-        };
 
-        private static ChanceTable<WeenieClassName> OlthoiKoujiaWcids = new ChanceTable<WeenieClassName>()
-        {
-            ( WeenieClassName.ace37190_olthoikoujiagauntlets,   0.20f ),
-            ( WeenieClassName.ace37198_olthoikoujiakabuton,     0.20f ),
-            ( WeenieClassName.ace37203_olthoikoujialeggings,    0.20f ),
-            ( WeenieClassName.ace37206_olthoikoujiasleeves,     0.20f ),
-            ( WeenieClassName.ace37215_olthoikoujiabreastplate, 0.20f ),
-        };
+
 
         private static ChanceTable<WeenieClassName> OlthoiAlduressaWcids = new ChanceTable<WeenieClassName>()
         {
@@ -516,30 +581,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.shoes,            0.5f ),
         };
 
-        private static ChanceTable<WeenieClassName> ClothWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
-        {
-            ( WeenieClassName.robeshohood,          1.0f ),
-            ( WeenieClassName.robeshonohood,        1.0f ),
-            ( WeenieClassName.robegharundimhood,    1.0f ),
-            ( WeenieClassName.robegharundimnohood,  1.0f ),
-            ( WeenieClassName.robealuvianhood,      1.0f ),
-            ( WeenieClassName.robealuviannohood,    1.0f ),
-            ( WeenieClassName.capcloth,             1.0f ),
-            ( WeenieClassName.cowlcloth,            1.0f ),
-            ( WeenieClassName.glovescloth,          1.0f ),
-            ( WeenieClassName.qafiya,               1.0f ),
-            ( WeenieClassName.sandals,              1.0f ),
-            ( WeenieClassName.shoes,                1.0f ),
-            ( WeenieClassName.slippers,             1.0f ),
-            ( WeenieClassName.turban,               1.0f ),
-            ( WeenieClassName.crown,                1.0f ),
-            //( WeenieClassName.crowniron,            1.0f ),
-            ( WeenieClassName.capfez,               1.0f ),
-            //( WeenieClassName.hatberet,             1.0f ),
-            //( WeenieClassName.shoesviamontloafers,  1.0f ),
-            //( WeenieClassName.hatbandana,           1.0f ),
-            ( WeenieClassName.hood,                 1.0f ),
-        };
+
 
         public static WeenieClassName Roll(TreasureDeath treasureDeath, TreasureRoll treasureRoll)
         {
