@@ -486,9 +486,14 @@ namespace ACE.Server.WorldObjects
                 visibleTargets.Add(creature);
             }
 
-            BuildTargetDistance(visibleTargets);
+            var nearestTargets = BuildTargetDistance(visibleTargets);
 
-            return visibleTargets;
+            var sortedTargets = new List<Creature>();
+
+            foreach (var target in nearestTargets)
+                sortedTargets.Add(target.Target);
+
+            return sortedTargets;
         }
 
     }
