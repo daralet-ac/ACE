@@ -4131,6 +4131,9 @@ namespace ACE.Server.WorldObjects
 
         public void RecalculateBurden()
         {
+            if (Session == null)
+                return;
+
             var totalBurden = 0;
             foreach (var wieldedObject in EquippedObjects.Values)
             {
