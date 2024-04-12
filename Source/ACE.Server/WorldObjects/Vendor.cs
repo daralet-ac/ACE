@@ -176,26 +176,27 @@ namespace ACE.Server.WorldObjects
 
             var itemsForSale = new Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint>();
 
-            var templateDefaultItems = new List<(int, uint, int, double, int)>();
+            var templateDefaultItems = new List<(int, int, uint, int, double, int)>();
 
             switch(GetProperty(PropertyString.Template))
             {
-                case "Archmage": templateDefaultItems = VendorBaseItems.ArchmageItems; break;
-                case "Armorer": templateDefaultItems = VendorBaseItems.ArmorerItems; break;
-                case "Barkeeper": templateDefaultItems = VendorBaseItems.BarkeeperItems; break;
-                case "Blacksmith": templateDefaultItems = VendorBaseItems.BlacksmithItems; break;
-                case "Bowyer": templateDefaultItems = VendorBaseItems.BowyerItems; break;
-                case "Butcher": templateDefaultItems = VendorBaseItems.ButcherItems; break;
-                case "Grocer": templateDefaultItems = VendorBaseItems.GrocerItems; break;
-                case "Healer": templateDefaultItems = VendorBaseItems.HealerItems; break;
-                case "Ivory Trader": templateDefaultItems = VendorBaseItems.IvoryTraderItems; break;
-                case "Jeweler": templateDefaultItems = VendorBaseItems.JewelerItems; break;
-                case "Leather Trader": templateDefaultItems = VendorBaseItems.LeatherTraderItems; break;
-                case "Provisioner": templateDefaultItems = VendorBaseItems.ProvisionerItems; break;
-                case "Scribe": templateDefaultItems = VendorBaseItems.ScribeItems; break;
-                case "Shopkeeper": templateDefaultItems = VendorBaseItems.ShopkeeperItems; break;
-                case "Tailor": templateDefaultItems = VendorBaseItems.TailorItems; break;
-                case "Weaponsmith": templateDefaultItems = VendorBaseItems.WeaponsmithItems; break;
+                case "Archmage":
+                case "Apprentice": templateDefaultItems =       VendorBaseItems.ArchmageItems; break;
+                case "Armorer": templateDefaultItems =          VendorBaseItems.ArmorerItems; break;
+                case "Barkeeper": templateDefaultItems =        VendorBaseItems.BarkeeperItems; break;
+                case "Blacksmith": templateDefaultItems =       VendorBaseItems.BlacksmithItems; break;
+                case "Bowyer": templateDefaultItems =           VendorBaseItems.BowyerItems; break;
+                case "Butcher": templateDefaultItems =          VendorBaseItems.ButcherItems; break;
+                case "Grocer": templateDefaultItems =           VendorBaseItems.GrocerItems; break;
+                case "Healer": templateDefaultItems =           VendorBaseItems.HealerItems; break;
+                case "Ivory Trader": templateDefaultItems =     VendorBaseItems.IvoryTraderItems; break;
+                case "Jeweler": templateDefaultItems =          VendorBaseItems.JewelerItems; break;
+                case "Leather Trader": templateDefaultItems =   VendorBaseItems.LeatherTraderItems; break;
+                case "Provisioner": templateDefaultItems =      VendorBaseItems.ProvisionerItems; break;
+                case "Scribe": templateDefaultItems =           VendorBaseItems.ScribeItems; break;
+                case "Shopkeeper": templateDefaultItems =       VendorBaseItems.ShopkeeperItems; break;
+                case "Tailor": templateDefaultItems =           VendorBaseItems.TailorItems; break;
+                case "Weaponsmith": templateDefaultItems =      VendorBaseItems.WeaponsmithItems; break;
             }
 
             LoadDefaultItems(itemsForSale, templateDefaultItems);
@@ -1113,12 +1114,15 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        private void LoadDefaultItems(Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint> itemsForSale, List<(int, uint, int, double, int)> defaultItems)
+        private void LoadDefaultItems(Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint> itemsForSale, List<(int, int, uint, int, double, int)> defaultItems)
         { 
             foreach (var item in defaultItems)
             {
-                var (itemTier, itemWcid, itemPaletteTemplate, itemShade, itemStackSize) = item;
-                
+                var (itemTier, itemHeritage, itemWcid, itemPaletteTemplate, itemShade, itemStackSize) = item;
+
+                if (itemHeritage != 0 && Heritage != itemHeritage)
+                    continue;
+
                 if (ShopTier - 1 >= itemTier)
                 {
                     LoadInventoryItem(itemsForSale, itemWcid, itemPaletteTemplate, (float)itemShade, itemStackSize);
