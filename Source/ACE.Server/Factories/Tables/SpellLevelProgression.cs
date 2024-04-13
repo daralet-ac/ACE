@@ -81,6 +81,18 @@ namespace ACE.Server.Factories.Tables
             SpellId.HealSelf8,
         };
 
+        public static readonly List<SpellId> FellowshipHeal = new List<SpellId>()
+        {
+            SpellId.FellowshipHeal1,
+            SpellId.FellowshipHeal2,
+            SpellId.FellowshipHeal3,
+            SpellId.FellowshipHeal4,
+            SpellId.FellowshipHeal5,
+            SpellId.FellowshipHeal6,
+            SpellId.FellowshipHeal7,
+            SpellId.FellowshipHeal8,
+        };
+
         public static readonly List<SpellId> HarmOther = new List<SpellId>()
         {
             SpellId.HarmOther1,
@@ -2574,6 +2586,18 @@ namespace ACE.Server.Factories.Tables
             SpellId.RevitalizeOther8,
         };
 
+        public static readonly List<SpellId> FellowshipRevitalize = new List<SpellId>()
+        {
+            SpellId.FellowshipRevitalize1,
+            SpellId.FellowshipRevitalize2,
+            SpellId.FellowshipRevitalize3,
+            SpellId.FellowshipRevitalize4,
+            SpellId.FellowshipRevitalize5,
+            SpellId.FellowshipRevitalize6,
+            SpellId.FellowshipRevitalize7,
+            SpellId.FellowshipRevitalize8,
+        };
+
         public static readonly List<SpellId> EnfeebleSelf = new List<SpellId>()
         {
             SpellId.EnfeebleSelf1,
@@ -2620,6 +2644,18 @@ namespace ACE.Server.Factories.Tables
             SpellId.ManaBoostOther6,
             SpellId.ManaBoostOther7,
             SpellId.ManaBoostOther8,
+        };
+
+        public static readonly List<SpellId> FellowshipManaBoost = new List<SpellId>()
+        {
+            SpellId.FellowshipManaBoost1,
+            SpellId.FellowshipManaBoost2,
+            SpellId.FellowshipManaBoost3,
+            SpellId.FellowshipManaBoost4,
+            SpellId.FellowshipManaBoost5,
+            SpellId.FellowshipManaBoost6,
+            SpellId.FellowshipManaBoost7,
+            SpellId.FellowshipManaBoost8,
         };
 
         public static readonly List<SpellId> ManaDrainSelf = new List<SpellId>()
@@ -8439,6 +8475,9 @@ namespace ACE.Server.Factories.Tables
             AddSpells(CantripWarriorVitality);
             AddSpells(CantripWarriorVigor);
             AddSpells(CantripWizardIntelect);
+            AddSpells(FellowshipHeal);
+            AddSpells(FellowshipRevitalize);
+            AddSpells(FellowshipManaBoost);
         }
 
         private static void AddSpells(List<SpellId> spells)

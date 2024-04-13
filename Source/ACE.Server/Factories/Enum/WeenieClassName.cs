@@ -41959,5 +41959,10 @@ namespace ACE.Server.Factories.Enum
         manaTincture = 1053969,
         healthTincture = 1053970,
         staminaTincture = 1053971,
+        scrollfellowshipheal = 1056000,
+        scrollfellowshiprevitalize = 1056008,
+        scrollfellowshipmanaboost = 1056016,
+        scrollmanaboostself = 1056024,
+        scrollmanaboostother = 1056032,
     }
 }
