@@ -173,6 +173,10 @@ namespace ACE.Server.Factories.Tables.Spells
             SpellId.ManaBoostOther1,      // but they weren't learnable by the player in retail
             SpellId.ManaDrainOther1,
 
+            SpellId.FellowshipHeal1,
+            SpellId.FellowshipRevitalize1,
+            SpellId.FellowshipManaBoost1,
+
             //SpellId.RegenerationSelf1,
             //SpellId.RegenerationOther1,
             //SpellId.FesterOther1,

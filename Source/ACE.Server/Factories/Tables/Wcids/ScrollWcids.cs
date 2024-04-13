@@ -1401,6 +1401,11 @@ namespace ACE.Server.Factories.Tables.Wcids
             WeenieClassName.scrolldispelcreatureneutralself,
             WeenieClassName.scrolldispelitemneutralother,
             WeenieClassName.scrolldispellifeneutralother,
+            WeenieClassName.scrollfellowshipheal,
+            WeenieClassName.scrollfellowshiprevitalize,
+            WeenieClassName.scrollfellowshipmanaboost,
+            WeenieClassName.scrollmanaboostself,
+            WeenieClassName.scrollmanaboostother,
         };
 
         public static WeenieClassName Roll()
