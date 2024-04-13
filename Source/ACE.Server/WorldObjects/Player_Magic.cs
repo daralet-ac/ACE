@@ -1504,6 +1504,9 @@ namespace ACE.Server.WorldObjects
 
                 // Life
                 SpellId.HealFellow1, SpellId.DispelLifeBadFellow1,
+                SpellId.FellowshipHeal1, SpellId.FellowshipHeal2, SpellId.FellowshipHeal3, SpellId.FellowshipHeal4, SpellId.FellowshipHeal5, SpellId.FellowshipHeal6, SpellId.FellowshipHeal7,
+                SpellId.FellowshipRevitalize1, SpellId.FellowshipRevitalize2, SpellId.FellowshipRevitalize3, SpellId.FellowshipRevitalize4, SpellId.FellowshipRevitalize5, SpellId.FellowshipRevitalize6, SpellId.FellowshipRevitalize7,
+                SpellId.FellowshipManaBoost1, SpellId.FellowshipManaBoost2, SpellId.FellowshipManaBoost3, SpellId.FellowshipManaBoost4, SpellId.FellowshipManaBoost5, SpellId.FellowshipManaBoost6, SpellId.FellowshipManaBoost7,
                 SpellId.HealthBolt1, SpellId.HealthBolt2, SpellId.HealthBolt3, SpellId.HealthBolt4, SpellId.HealthBolt5, SpellId.HealthBolt6, SpellId.HealthBolt7,
                 SpellId.StaminaBolt1, SpellId.StaminaBolt2, SpellId.StaminaBolt3, SpellId.StaminaBolt4, SpellId.StaminaBolt5, SpellId.StaminaBolt6, SpellId.StaminaBolt7,
                 SpellId.ManaBolt1, SpellId.ManaBolt2, SpellId.ManaBolt3, SpellId.ManaBolt4, SpellId.ManaBolt5, SpellId.ManaBolt6, SpellId.ManaBolt7 };
