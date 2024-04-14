@@ -6372,8 +6372,10 @@ namespace ACE.Entity.Enum
         FellowshipManaBoost6,
         FellowshipManaBoost7,
         FellowshipManaBoost8,
+        AcidBlast1,
+        FlameBlast1,
 
-        NumSpells = 8217,
+        NumSpells = 8219,
 
         // shared cooldowns, (0x8000 | shared cooldown id)
         // these aren't actually in dat spelltable...
