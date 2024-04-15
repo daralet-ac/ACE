@@ -49,6 +49,8 @@ namespace ACE.Entity.Enum
         ItemEnchantableTarget               = MeleeWeapon | Armor | Clothing | Jewelry | Misc | MissileWeapon | Container | Gem | Caster | ManaStone,
         VendorShopKeep                      = MeleeWeapon | Armor | Clothing | Food | Misc | MissileWeapon | Container | Useless | Writable | Key |
                                               PromissoryNote | CraftFletchingIntermediate | TinkeringMaterial,
-        VendorGrocer                        = Food | Container | Writable | Key | PromissoryNote | CraftCookingBase
+        VendorGrocer                        = Food | Container | Writable | Key | PromissoryNote | CraftCookingBase,
+        VendorBoyer                         = MissileWeapon | CraftFletchingBase | Container | Money, // (134218560)
+        VendorArchmage                      = Caster | Money | ManaStone | SpellComponents | CraftAlchemyBase, // (8949824)
     }
 }
