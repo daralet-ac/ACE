@@ -176,7 +176,7 @@ namespace ACE.Server.WorldObjects
 
             var itemsForSale = new Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint>();
 
-            var templateDefaultItems = new List<(int, int, uint, int, double, int)>();
+            var templateDefaultItems = new List<(int, bool, int, uint, int, double, int)>();
 
             switch(GetProperty(PropertyString.Template))
             {
@@ -217,7 +217,7 @@ namespace ACE.Server.WorldObjects
             uint weenieClassId, int? palette, double? shade, int? stackSize)
         {
             var itemProfile = (weenieClassId, palette ?? 0, shade ?? 0);
-            
+
             // let's skip dupes if there are any
             if (itemsForSale.ContainsKey(itemProfile))
                 return;
@@ -760,7 +760,7 @@ namespace ACE.Server.WorldObjects
             sellsRandomMeleeWeapons = ((ItemType)MerchandiseItemTypes & ItemType.MeleeWeapon) == ItemType.MeleeWeapon;
             sellsRandomMissileWeapons = ((ItemType)MerchandiseItemTypes & ItemType.MissileWeapon) == ItemType.MissileWeapon;
             sellsRandomCasters = ((ItemType)MerchandiseItemTypes & ItemType.Caster) == ItemType.Caster;
-
+            
             if (!IsStarterOutpostVendor)
             {
                 sellsRandomClothing = ((ItemType)MerchandiseItemTypes & ItemType.Clothing) == ItemType.Clothing;
@@ -1114,15 +1114,18 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        private void LoadDefaultItems(Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint> itemsForSale, List<(int, int, uint, int, double, int)> defaultItems)
+        private void LoadDefaultItems(Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint> itemsForSale, List<(int, bool, int, uint, int, double, int)> defaultItems)
         { 
             foreach (var item in defaultItems)
             {
-                var (itemTier, itemHeritage, itemWcid, itemPaletteTemplate, itemShade, itemStackSize) = item;
+                var (itemTier, onlyThisTier, itemHeritage, itemWcid, itemPaletteTemplate, itemShade, itemStackSize) = item;
 
                 if (itemHeritage != 0 && Heritage != itemHeritage)
                     continue;
-
+                
+                if (onlyThisTier && itemTier != ShopTier - 1)
+                    continue;
+                
                 if (ShopTier - 1 >= itemTier)
                 {
                     LoadInventoryItem(itemsForSale, itemWcid, itemPaletteTemplate, (float)itemShade, itemStackSize);
