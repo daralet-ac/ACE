@@ -5,10 +5,12 @@ using System.Reflection;
 using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using ACE.Common;
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.Server.Command;
+using ACE.Server.Discord;
 using ACE.Server.Managers;
 using ACE.Server.Mods;
 using ACE.Server.Network.Managers;
@@ -38,7 +40,7 @@ namespace ACE.Server
 
         public static readonly bool IsRunningInContainer = Convert.ToBoolean(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"));
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var consoleTitle = $"ACEmulator - v{ServerBuildInfo.FullVersion}";
 
@@ -59,6 +61,7 @@ namespace ACE.Server
 
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", reloadOnChange: false, optional: false)
+                .AddJsonFile("appsettings.Local.json", reloadOnChange: false, optional: true)
                 .Build();
 
             Log.Logger = new LoggerConfiguration()
@@ -289,6 +292,13 @@ namespace ACE.Server
 
             _log.Information("Initializing ModManager...");
             ModManager.Initialize();
+
+            var discordConfig = configuration.GetSection("Discord");
+            if (discordConfig.GetValue<bool>("Enabled"))
+            {
+                var discordBot = new DiscordBot();
+                await discordBot.Initialize(discordConfig);
+            }
 
             if (!PropertyManager.GetBool("world_closed", false).Item)
             {
