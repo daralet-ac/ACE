@@ -315,7 +315,7 @@ namespace ACE.Server.WorldObjects
                 (wo.GearMaxHealth ?? 0) == 0 &&
                 (wo.GearPKDamageRating ?? 0) == 0 &&
                 (wo.GearPKDamageResistRating ?? 0) == 0 &&
-                (wo.AegisLevel ?? 0) == 0 &&
+                (wo.WardLevel ?? 0) == 0 &&
                 (wo.GearStrength ?? 0) == 0 &&
                 (wo.GearEndurance ?? 0) == 0 &&
                 (wo.GearQuickness ?? 0) == 0 &&
@@ -352,7 +352,7 @@ namespace ACE.Server.WorldObjects
                 (wo.GearCompBurn ?? 0) == 0 &&
                 (wo.GearPyrealFind ?? 0) == 0 &&
                 (wo.GearNullification ?? 0) == 0 &&
-                (wo.GearAegisPen ?? 0) == 0 &&
+                (wo.GearWardPen ?? 0) == 0 &&
                 (wo.GearStamReduction ?? 0) == 0 &&
                 (wo.GearHardenedDefense ?? 0) == 0 &&
                 (wo.GearReprisal ?? 0) == 0 &&
@@ -375,7 +375,7 @@ namespace ACE.Server.WorldObjects
                     { PropertyInt.GearMaxHealth, 0 },
                     { PropertyInt.GearPKDamageRating, 0 },
                     { PropertyInt.GearPKDamageResistRating, 0 },
-                    { PropertyInt.AegisLevel, 0 },
+                    { PropertyInt.WardLevel, 0 },
                     { PropertyInt.GearStrength, 0 },
                     { PropertyInt.GearEndurance, 0 },
                     { PropertyInt.GearCoordination, 0 },
@@ -415,7 +415,7 @@ namespace ACE.Server.WorldObjects
                     { PropertyInt.GearCompBurn, 0 },
                     { PropertyInt.GearPyrealFind, 0 },
                     { PropertyInt.GearNullification, 0 },
-                    { PropertyInt.GearAegisPen, 0 },
+                    { PropertyInt.GearWardPen, 0 },
                     { PropertyInt.GearStamReduction, 0 },
                     {PropertyInt.GearHardenedDefense, 0 },
                     {PropertyInt.GearReprisal, 0 },
@@ -434,7 +434,7 @@ namespace ACE.Server.WorldObjects
             equippedItemsRatingCache[PropertyInt.GearMaxHealth] += (wo.GearMaxHealth ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageRating] += (wo.GearPKDamageRating ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageResistRating] += (wo.GearPKDamageResistRating ?? 0);
-            equippedItemsRatingCache[PropertyInt.AegisLevel] += (wo.AegisLevel ?? 0);
+            equippedItemsRatingCache[PropertyInt.WardLevel] += (wo.WardLevel ?? 0);
             equippedItemsRatingCache[PropertyInt.GearStrength] += (wo.GearStrength ?? 0);
             equippedItemsRatingCache[PropertyInt.GearEndurance] += (wo.GearEndurance ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCoordination] += (wo.GearCoordination ?? 0);
@@ -474,7 +474,7 @@ namespace ACE.Server.WorldObjects
             equippedItemsRatingCache[PropertyInt.GearCompBurn] += (wo.GearCompBurn ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPyrealFind] += (wo.GearPyrealFind ?? 0);
             equippedItemsRatingCache[PropertyInt.GearNullification] += (wo.GearNullification ?? 0);
-            equippedItemsRatingCache[PropertyInt.GearAegisPen] += (wo.GearAegisPen ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearWardPen] += (wo.GearWardPen ?? 0);
             equippedItemsRatingCache[PropertyInt.GearStamReduction] += (wo.GearStamReduction ?? 0);
             equippedItemsRatingCache[PropertyInt.GearHardenedDefense] += (wo.GearHardenedDefense ?? 0);
             equippedItemsRatingCache[PropertyInt.GearReprisal] += (wo.GearReprisal ?? 0);
@@ -496,7 +496,7 @@ namespace ACE.Server.WorldObjects
             equippedItemsRatingCache[PropertyInt.GearMaxHealth] -= (wo.GearMaxHealth ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageRating] -= (wo.GearPKDamageRating ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPKDamageResistRating] -= (wo.GearPKDamageResistRating ?? 0);
-            equippedItemsRatingCache[PropertyInt.AegisLevel] -= (wo.AegisLevel ?? 0);
+            equippedItemsRatingCache[PropertyInt.WardLevel] -= (wo.WardLevel ?? 0);
             equippedItemsRatingCache[PropertyInt.GearStrength] -= (wo.GearStrength ?? 0);
             equippedItemsRatingCache[PropertyInt.GearEndurance] -= (wo.GearEndurance ?? 0);
             equippedItemsRatingCache[PropertyInt.GearCoordination] -= (wo.GearCoordination ?? 0);
@@ -536,7 +536,7 @@ namespace ACE.Server.WorldObjects
             equippedItemsRatingCache[PropertyInt.GearCompBurn] -= (wo.GearCompBurn ?? 0);
             equippedItemsRatingCache[PropertyInt.GearPyrealFind] -= (wo.GearPyrealFind ?? 0);
             equippedItemsRatingCache[PropertyInt.GearNullification] -= (wo.GearNullification ?? 0);
-            equippedItemsRatingCache[PropertyInt.GearAegisPen] -= (wo.GearAegisPen ?? 0);
+            equippedItemsRatingCache[PropertyInt.GearWardPen] -= (wo.GearWardPen ?? 0);
             equippedItemsRatingCache[PropertyInt.GearStamReduction] -= (wo.GearStamReduction ?? 0);
             equippedItemsRatingCache[PropertyInt.GearHardenedDefense] -= (wo.GearHardenedDefense ?? 0);
             equippedItemsRatingCache[PropertyInt.GearReprisal] -= (wo.GearReprisal ?? 0);
@@ -555,15 +555,15 @@ namespace ACE.Server.WorldObjects
             return 0;
         }
 
-        public int GetEquippedItemsAegisSum(PropertyInt aegisLevel)
+        public int GetEquippedItemsWardSum(PropertyInt wardLevel)
         {
             if (equippedItemsRatingCache == null)
                 return 0;
 
-            if (equippedItemsRatingCache.TryGetValue(aegisLevel, out var value))
+            if (equippedItemsRatingCache.TryGetValue(wardLevel, out var value))
                 return value;
 
-            _log.Error($"Creature_Equipment.GetEquippedItemsAegisSum() does not support {aegisLevel}");
+            _log.Error($"Creature_Equipment.GetEquippedItemsWardSum() does not support {wardLevel}");
             return 0;
         }
 

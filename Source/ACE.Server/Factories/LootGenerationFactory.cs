@@ -664,7 +664,7 @@ namespace ACE.Server.Factories
 
             roll.Wcid = (WeenieClassName)item.WeenieClassId;
             roll.BaseArmorLevel = item.ArmorLevel ?? 0;
-            roll.BaseAegisLevel = item.AegisLevel ?? 0;
+            roll.BaseWardLevel = item.WardLevel ?? 0;
 
             if (roll.Wcid == WeenieClassName.coinstack)
             {
@@ -885,14 +885,14 @@ namespace ACE.Server.Factories
                 wo.SetProperty(PropertyInt.ArmorLevel, final);
             }
 
-            if (wo.AegisLevel != null)
+            if (wo.WardLevel != null)
             {
-                var baseStat = wo.AegisLevel.Value;
+                var baseStat = wo.WardLevel.Value;
                 var bonusRange = baseStat * maxBonus;
                 var bonus = bonusRange * roll;
                 var final = (int)Math.Round(baseStat + bonus);
 
-                wo.SetProperty(PropertyInt.AegisLevel, final);
+                wo.SetProperty(PropertyInt.WardLevel, final);
             }
 
             if (wo.ArmorModVsAcid != null)
@@ -1961,7 +1961,7 @@ namespace ACE.Server.Factories
                 }
 
                 treasureRoll.BaseArmorLevel = wo.ArmorLevel ?? 0;
-                treasureRoll.BaseAegisLevel = wo.AegisLevel ?? 0;
+                treasureRoll.BaseWardLevel = wo.WardLevel ?? 0;
             }
 
             var armorType = treasureRoll.ArmorType.ToACE();

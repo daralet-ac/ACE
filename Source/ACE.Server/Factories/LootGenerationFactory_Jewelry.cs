@@ -85,7 +85,7 @@ namespace ACE.Server.Factories
             // Workmanship
             wo.Workmanship = GetJewelryWorkmanship(wo, totalGearRatingPercentile);
             AssignJewelSlots(wo);
-            wo.BaseAegis = (wo.AegisLevel == null ? 0 : wo.AegisLevel);
+            wo.BaseWard = (wo.WardLevel == null ? 0 : wo.WardLevel);
             wo.BaseMaxMana = (wo.ItemMaxMana == null ? 0 : wo.ItemMaxMana);
         }
 
@@ -107,10 +107,10 @@ namespace ACE.Server.Factories
             var jewelryType = wo.ValidLocations;
             var qualityMod = td.LootQualityMod != 0.0f ? td.LootQualityMod : 0.0f;
 
-            // Roll Aegis
-            var minAegis = GetMaxValueOfTier(tier) / 2;
-            wo.AegisLevel = (int)(minAegis * GetDiminishingRoll(td) + minAegis);
-            var maxAegisRollPercentile = (float)wo.AegisLevel / (GetMaxValueOfTier(8));
+            // Roll Ward
+            var minWard = GetMaxValueOfTier(tier) / 2;
+            wo.WardLevel = (int)(minWard * GetDiminishingRoll(td) + minWard);
+            var maxWardRollPercentile = (float)wo.WardLevel / (GetMaxValueOfTier(8));
 
             // Necklaces
             if (jewelryType == EquipMask.NeckWear)
@@ -143,14 +143,14 @@ namespace ACE.Server.Factories
                 }
                 totalRollPercentile += ratingPercentile;
 
-                totalRollPercentile = (totalRollPercentile + maxAegisRollPercentile) / 2;
+                totalRollPercentile = (totalRollPercentile + maxWardRollPercentile) / 2;
 
                 return true;
             }
             // Rings
             else if (jewelryType == EquipMask.FingerWear)
             {
-                wo.AegisLevel /= 2;
+                wo.WardLevel /= 2;
 
                 var minRating = (float)(tier - 1) / 2;
                 var rollPercentile = GetDiminishingRoll(td);
@@ -180,14 +180,14 @@ namespace ACE.Server.Factories
                     }
                     totalRollPercentile += ratingPercentile;
                 
-                totalRollPercentile = (totalRollPercentile + maxAegisRollPercentile) / 2;
+                totalRollPercentile = (totalRollPercentile + maxWardRollPercentile) / 2;
 
                 return true;
             }
             // Bracelets
             else if (jewelryType == EquipMask.WristWear)
             {
-                wo.AegisLevel /= 2;
+                wo.WardLevel /= 2;
 
                 var minRating = (float)(tier - 1) / 2;
                 var rollPercentile = GetDiminishingRoll(td);
@@ -217,7 +217,7 @@ namespace ACE.Server.Factories
                 }
                 totalRollPercentile += ratingPercentile;
                 
-                totalRollPercentile = (totalRollPercentile + maxAegisRollPercentile) / 2;
+                totalRollPercentile = (totalRollPercentile + maxWardRollPercentile) / 2;
 
                 return true;
             }

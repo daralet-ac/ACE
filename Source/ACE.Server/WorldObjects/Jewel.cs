@@ -484,7 +484,7 @@ namespace ACE.Server.WorldObjects
                     CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
                     break;
                 case ACE.Entity.Enum.MaterialType.Tourmaline:
-                    jewelProperty = "Aegis Pen";
+                    jewelProperty = "Ward Pen";
                     appendedName = "of Ruthless Discernment";
                     CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
                     break;

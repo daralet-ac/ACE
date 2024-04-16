@@ -35,7 +35,7 @@ namespace ACE.Server.Entity
         // - critical (chance % mod / critical damage mod)
         // - attribute mod
         // - armor / mod (base al, impen / bane, life armor / imperil)
-        // - aegis / mod
+        // - ward / mod
         // - elemental damage bonus
         // - slayer mod
         // - resistance mod (natural, prot, vuln)

@@ -78,7 +78,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.materialaquamarine,       0.10f ), // Frost Rend
             ( WeenieClassName.materialjet,              0.10f ), // Lightning Rend
             ( WeenieClassName.materialemerald,          0.10f ), // Acid Rend
-            ( WeenieClassName.materialtourmaline,       0.10f ), // Aegis Rend
+            ( WeenieClassName.materialtourmaline,       0.10f ), // Ward Rend
 
             //( WeenieClassName.materialgreengarnet,      2.00f ), // Wand Damage + 1%
             //( WeenieClassName.materialsatin,            6.00f ), // Switch to Viamontian
@@ -169,7 +169,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             { WeenieClassName.materialaquamarine,       3.00f }, // Frost Rend
             { WeenieClassName.materialjet,              3.00f }, // Lightning Rend
             { WeenieClassName.materialemerald,          3.00f }, // Acid Rend
-            { WeenieClassName.materialtourmaline,       3.00f }, // Aegis Rend
+            { WeenieClassName.materialtourmaline,       3.00f }, // Ward Rend
 
             //{ WeenieClassName.materialgreengarnet,      1.00f }, // Wand Damage + 1%
             //{ WeenieClassName.materialsatin,            1.00f }, // Switch to Viamontian

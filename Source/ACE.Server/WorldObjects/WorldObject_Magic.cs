@@ -555,20 +555,20 @@ namespace ACE.Server.WorldObjects
             // create enchantment
             var addResult = target.EnchantmentManager.Add(spell, caster, weapon, equip);
 
-            // Aegis reduction of Creature and Life debuffs
+            // Ward reduction of Creature and Life debuffs
             if(target is Player && spell.Id != (uint)SpellId.Vitae)
             {
                 //Console.WriteLine("enchantment target player: " + target.Name);
                 Player targetPlayer = target as Player;
 
-                if (addResult.Enchantment.StatModValue < 0 && targetPlayer.GetAegisLevel() > 0)
+                if (addResult.Enchantment.StatModValue < 0 && targetPlayer.GetWardLevel() > 0)
                 {
                     //Console.WriteLine($"StatModValue Before: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue}\n" +
-                    //    $" -Target Aegis Level: {targetPlayer.GetAegisLevel()}");
+                    //    $" -Target Ward Level: {targetPlayer.GetWardLevel()}");
 
-                    var aegisMod = WorldObjects.SkillFormula.CalcAegisMod((float)targetPlayer.GetAegisLevel());
-                    addResult.Enchantment.StatModValue *= aegisMod;
-                    addResult.Enchantment.Duration *= aegisMod;
+                    var wardMod = WorldObjects.SkillFormula.CalcWardMod((float)targetPlayer.GetWardLevel());
+                    addResult.Enchantment.StatModValue *= wardMod;
+                    addResult.Enchantment.Duration *= wardMod;
                     //Console.WriteLine($"StatModValue After: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue}");
                 }
             }

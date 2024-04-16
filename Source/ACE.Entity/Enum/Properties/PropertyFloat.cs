@@ -249,7 +249,7 @@ namespace ACE.Entity.Enum.Properties
         VendorStockTimeToRot           = 10007,
 
         // Timeline 
-        IgnoreAegis                    = 20000,
+        IgnoreWard                    = 20000,
         ArmorWarMagicMod               = 20001,
         ArmorLifeMagicMod              = 20002,
         ArmorMagicDefMod               = 20003,

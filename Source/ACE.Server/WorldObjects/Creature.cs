@@ -190,7 +190,7 @@ namespace ACE.Server.WorldObjects
 
                     SetVitals(tier, statWeight, toughness, physicality, dexterity, magic);
 
-                    SetDamageArmorAegis(tier, statWeight, toughness, physicality, magic, lethality);
+                    SetDamageArmorWard(tier, statWeight, toughness, physicality, magic, lethality);
 
                     var difficultyMod = (toughness * 3 + physicality + dexterity + magic + intelligence + lethality * 3) / 10.0;
 

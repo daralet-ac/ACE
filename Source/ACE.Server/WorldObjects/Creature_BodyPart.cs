@@ -33,7 +33,7 @@ namespace ACE.Server.WorldObjects
             return SkillFormula.CalcArmorMod(effectiveArmorVsType);
         }
 
-        public float GetAegisMod()
+        public float GetWardMod()
         {
             return 1.0f;
         }
@@ -46,7 +46,7 @@ namespace ACE.Server.WorldObjects
             // get base AL / RL
             var armorMod = (float)Creature.GetArmorVsType(damageType);
 
-            if (Creature.IsMonster) // For monsters, we don't use the armorMod float. We simply adjust BaseArmorLevel, AegisLevel, and Resist types as needed
+            if (Creature.IsMonster) // For monsters, we don't use the armorMod float. We simply adjust BaseArmorLevel, WardLevel, and Resist types as needed
                 armorMod = 1.0f;
 
             var armorVsType = Biota.Value.BaseArmor * armorMod;

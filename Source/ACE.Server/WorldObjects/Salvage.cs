@@ -365,7 +365,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Weapon - 0.5% MagicD Mod + 5% Damage | Armor - 2 Aegis and 5% ArmorLevel
+                        // Weapon - 0.5% MagicD Mod + 5% Damage | Armor - 2 Ward and 5% ArmorLevel
                     case ACE.Entity.Enum.MaterialType.Pyreal:    // Pyreal
                         if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
@@ -383,15 +383,15 @@ namespace ACE.Server.WorldObjects
                         }
                         if (target.ItemType == ItemType.Armor)
                         {
-                            target.AegisLevel += 2;
+                            target.WardLevel += 2;
                             var armorBonus = (int)(target.BaseArmor * 0.05) < 1 ? 1 : (int)(target.BaseArmor * 0.05);
                             target.ArmorLevel += armorBonus;
 
-                            successAmount = $"raising its Armor by {armorBonus} and its Aegis Level by 2";
+                            successAmount = $"raising its Armor by {armorBonus} and its Ward Level by 2";
                         }
                         break;
 
-                        // Weapon - 1% MagicD Mod | Armor - 3 Aegis + 0.25% HP Regen
+                        // Weapon - 1% MagicD Mod | Armor - 3 Ward + 0.25% HP Regen
                     case ACE.Entity.Enum.MaterialType.Silver:    // Silver
                         if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
@@ -406,10 +406,10 @@ namespace ACE.Server.WorldObjects
                         }
                         if (target.ItemType == ItemType.Armor)
                         {
-                            target.AegisLevel += 3;
+                            target.WardLevel += 3;
                             target.ArmorHealthRegenMod += (0.0025 * armorSlots);
 
-                            successAmount = $"raising its Aegis Level by 3 and its Health Regeneration modifier by {0.25 * armorSlots}%";
+                            successAmount = $"raising its Ward Level by 3 and its Health Regeneration modifier by {0.25 * armorSlots}%";
                         }
                         break;
 
@@ -724,7 +724,7 @@ namespace ACE.Server.WorldObjects
                         target.IconUnderlayId = 0x06003356;
                         break;
                     case ACE.Entity.Enum.MaterialType.Tourmaline:
-                        target.ImbuedEffect = ImbuedEffectType.AegisRending;
+                        target.ImbuedEffect = ImbuedEffectType.WardRending;
                         target.IconUnderlayId = 0x06003356;
                         break;
                     case ACE.Entity.Enum.MaterialType.WhiteSapphire:
@@ -792,8 +792,8 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
                     case ACE.Entity.Enum.MaterialType.WhiteJade:
-                        target.AegisLevel += 1;
-                        successAmount = $"raising its Aegis Level by 1";
+                        target.WardLevel += 1;
+                        successAmount = $"raising its Ward Level by 1";
                         break;
 
 
@@ -946,8 +946,8 @@ namespace ACE.Server.WorldObjects
             if (target.NumTimesTinkered >= 0)
             {
 
-                if (target.AegisLevel != null)
-                    target.AegisLevel = target.BaseAegis == 0 ? null : target.BaseAegis;
+                if (target.WardLevel != null)
+                    target.WardLevel = target.BaseWard == 0 ? null : target.BaseWard;
 
                 if (target.ArmorLevel != null)
                 {

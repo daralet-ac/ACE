@@ -13,7 +13,7 @@ namespace ACE.Server.Factories.Entity
         public WeenieClassName Wcid;
 
         public int BaseArmorLevel;
-        public int BaseAegisLevel;
+        public int BaseWardLevel;
 
         /// <summary>
         /// A cumulative addon to the ItemDifficulty / Arcane Lore requirement
@@ -71,11 +71,11 @@ namespace ACE.Server.Factories.Entity
         }
 
         /// <summary>
-        /// Returns TRUE if wo has an AegisLevel > 0
+        /// Returns TRUE if wo has an WardLevel > 0
         /// </summary>
-        public bool HasAegisLevel(WorldObject wo)
+        public bool HasWardLevel(WorldObject wo)
         {
-            return (wo.AegisLevel ?? 0) > 0;
+            return (wo.WardLevel ?? 0) > 0;
         }
 
         public bool IsGem => ItemType == TreasureItemType_Orig.Gem;

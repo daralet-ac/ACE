@@ -659,10 +659,10 @@ namespace ACE.Server.Network.Structure
             }
 
             // -------- WEAPON PROPERTIES --------
-            // Aegis Rending
+            // Ward Rending
             if (PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffect) && imbuedEffect == 0x8000)
             {
-                extraPropertiesText += $"Additional Properties: Aegis Rending\n";
+                extraPropertiesText += $"Additional Properties: Ward Rending\n";
 
                 hasExtraPropertiesText = true;
             }
@@ -674,11 +674,11 @@ namespace ACE.Server.Network.Structure
 
                 hasExtraPropertiesText = true;
             }
-            // Aegis Cleaving
-            if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreAegis, out var ignoreAegis) && ignoreAegis != 0)
+            // Ward Cleaving
+            if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreWard, out var ignoreWard) && ignoreWard != 0)
             {
                 var wielder = (Creature)wo.Wielder;
-                extraPropertiesText += $"+{Math.Round((ignoreAegis * 100), 0)}% Aegis Cleaving\n";
+                extraPropertiesText += $"+{Math.Round((ignoreWard * 100), 0)}% Ward Cleaving\n";
 
                 hasExtraPropertiesText = true;
             }
@@ -779,17 +779,17 @@ namespace ACE.Server.Network.Structure
 
             // -- ARMOR --
 
-            // Aegis Level
-            if (PropertiesInt.TryGetValue(PropertyInt.AegisLevel, out var aegisLevel) && aegisLevel != 0)
+            // Ward Level
+            if (PropertiesInt.TryGetValue(PropertyInt.WardLevel, out var wardLevel) && wardLevel != 0)
             {
                 var wielder = (Creature)wo.Wielder;
                 if (wielder != null)
                 {
-                    var totalAegisLevel = wielder.GetAegisLevel();
-                    extraPropertiesText += $"Aegis Level: {aegisLevel}  ({totalAegisLevel})\n";
+                    var totalWardLevel = wielder.GetWardLevel();
+                    extraPropertiesText += $"Ward Level: {wardLevel}  ({totalWardLevel})\n";
                 }
                 else
-                    extraPropertiesText += $"Aegis Level: {aegisLevel}\n\n";
+                    extraPropertiesText += $"Ward Level: {wardLevel}\n\n";
 
                 hasExtraPropertiesText = true;
             }
