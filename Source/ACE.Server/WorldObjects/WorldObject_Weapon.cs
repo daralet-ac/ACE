@@ -1,4 +1,3 @@
-using System;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -6,6 +5,7 @@ using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
+using System;
 
 namespace ACE.Server.WorldObjects
 {
@@ -720,19 +720,19 @@ namespace ACE.Server.WorldObjects
             return 1.0f - (float)Math.Max(creatureMod, weaponMod);
         }
 
-        // -- AEGIS REND IMBUE --
-        // Grants Ignore 20% enemy aegis, plus up to an additional 20% based on skill level
+        // -- WARD REND IMBUE --
+        // Grants Ignore 20% enemy ward, plus up to an additional 20% based on skill level
         // Bonus amount caps 500 skill level
 
-        public static float MinAegisRendingMod = 0.2f;
-        public static float MaxAegisRendingMod = 0.4f;
+        public static float MinWardRendingMod = 0.2f;
+        public static float MaxWardRendingMod = 0.4f;
 
-        public static float GetAegisRendingMod(CreatureSkill skill)
+        public static float GetWardRendingMod(CreatureSkill skill)
         {
             var skillType = GetImbuedSkillType(skill);
             var baseSkill = GetBaseSkillImbued(skill);
 
-            var aegisRendingMod = MinAegisRendingMod;
+            var wardRendingMod = MinWardRendingMod;
 
             switch (skillType)
             {
@@ -741,33 +741,33 @@ namespace ACE.Server.WorldObjects
                 case ImbuedSkillType.Magic:
 
                     float bonusMod = baseSkill / 500.0f;
-                    aegisRendingMod += MinAegisRendingMod * bonusMod;
+                    wardRendingMod += MinWardRendingMod * bonusMod;
                     break;
 
                 default:
                     return 0.0f;
             }
 
-            return Math.Clamp(aegisRendingMod, MinAegisRendingMod, MaxAegisRendingMod);
+            return Math.Clamp(wardRendingMod, MinWardRendingMod, MaxWardRendingMod);
         }
 
-        public double? IgnoreAegis
+        public double? IgnoreWard
         {
-            get => GetProperty(PropertyFloat.IgnoreAegis);
-            set { if (!value.HasValue) RemoveProperty(PropertyFloat.IgnoreAegis); else SetProperty(PropertyFloat.IgnoreAegis, value.Value); }
+            get => GetProperty(PropertyFloat.IgnoreWard);
+            set { if (!value.HasValue) RemoveProperty(PropertyFloat.IgnoreWard); else SetProperty(PropertyFloat.IgnoreWard, value.Value); }
         }
 
-        public float GetIgnoreAegisMod(WorldObject weapon)
+        public float GetIgnoreWardMod(WorldObject weapon)
         {
-            if (weapon == null || weapon.IgnoreAegis == null)
+            if (weapon == null || weapon.IgnoreWard == null)
                 return 1.0f;
 
-            var creatureMod = IgnoreAegis ?? 0.0f;
-            var weaponMod = weapon.IgnoreAegis ?? 0.0f;
+            var creatureMod = IgnoreWard ?? 0.0f;
+            var weaponMod = weapon.IgnoreWard ?? 0.0f;
 
             var player = weapon.Wielder as Player;
 
-            // SPEC BONUS - War Magic (Orb): +10% aegis penetration (additively)
+            // SPEC BONUS - War Magic (Orb): +10% ward penetration (additively)
             if (player != null)
                 if (weapon.WeaponSkill == Skill.WarMagic && player.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 0)
                     creatureMod -= 0.1f;
@@ -778,9 +778,9 @@ namespace ACE.Server.WorldObjects
             return finalMod;
         }
 
-        public bool HasIgnoreAegis()
+        public bool HasIgnoreWard()
         {
-            return IgnoreAegis != null ? true : false;
+            return IgnoreWard != null ? true : false;
         }
 
         public static int GetBaseSkillImbued(CreatureSkill skill)

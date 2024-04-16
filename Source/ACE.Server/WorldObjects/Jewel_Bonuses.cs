@@ -358,20 +358,20 @@ namespace ACE.Server.WorldObjects
                     targetCreature.QuestManager.Increment($"{sourcePlayer.Name},{propertyType}", (int)baseStamps);
                 }
             }
-            // JEWEL - Tourmaline: Ramping Aegis Pen stamps
-            if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearAegisPen) > 0)
+            // JEWEL - Tourmaline: Ramping Ward Pen stamps
+            if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) > 0)
             {
-                if (targetCreature.QuestManager.HasQuest($"{sourcePlayer.Name},AegisPen"))
+                if (targetCreature.QuestManager.HasQuest($"{sourcePlayer.Name},WardPen"))
                 {
-                    if (targetCreature.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},AegisPen") < 500)
+                    if (targetCreature.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") < 500)
                     {
-                        targetCreature.QuestManager.Increment($"{sourcePlayer.Name},AegisPen", (int)baseStamps);
+                        targetCreature.QuestManager.Increment($"{sourcePlayer.Name},WardPen", (int)baseStamps);
                     }
                 }
                 else
                 {
-                    targetCreature.QuestManager.Stamp($"{sourcePlayer.Name},AegisPen");
-                    targetCreature.QuestManager.Increment($"{sourcePlayer.Name},AegisPen", (int)baseStamps);
+                    targetCreature.QuestManager.Stamp($"{sourcePlayer.Name},WardPen");
+                    targetCreature.QuestManager.Increment($"{sourcePlayer.Name},WardPen", (int)baseStamps);
                 }
             }
             // JEWEL - Green Garnet: Ramping War Damage stamps
@@ -594,7 +594,7 @@ namespace ACE.Server.WorldObjects
                                 description = $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant a bonus to War Magic spells, the amount ramping from 0% to {oneHalf}% based on how often you have hit your target.\n\n";
                                 break;
                             case ACE.Entity.Enum.MaterialType.Tourmaline:
-                                description = $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant Aegis penetration, the amount ramping from 0% to {oneHalf}% based on how often you have hit your target.\n\n";
+                                description = $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant Ward penetration, the amount ramping from 0% to {oneHalf}% based on how often you have hit your target.\n\n";
                                 break;
                             case ACE.Entity.Enum.MaterialType.WhiteJade:
                                 description = $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {threeQ}% bonus to your restoration spells, and a {oneTenth}% to create a sphere of healing energy on top of your target on casting a restoration spell.\n\n";
@@ -709,7 +709,7 @@ namespace ACE.Server.WorldObjects
                             description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping War Damage)\n"; 
                             break;
                         case ACE.Entity.Enum.MaterialType.Tourmaline:
-                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Aegis Pen)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Ward Pen)\n"; 
                             break;
                         case ACE.Entity.Enum.MaterialType.WhiteJade:
                             description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Restoration)\n"; 
@@ -794,7 +794,7 @@ namespace ACE.Server.WorldObjects
                 {"Heal", PropertyInt.GearHealBubble },
                 {"Components", PropertyInt.GearCompBurn },
                 {"Nullification", PropertyInt.GearNullification },
-                {"Aegis Pen", PropertyInt.GearAegisPen },
+                {"Ward Pen", PropertyInt.GearWardPen },
                 {"Stamina Reduction", PropertyInt.GearStamReduction },
                 {"Hardened Defense",PropertyInt.GearHardenedDefense },
                 {"Prosperity", PropertyInt.GearPyrealFind },

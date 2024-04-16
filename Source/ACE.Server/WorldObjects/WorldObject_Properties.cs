@@ -1975,10 +1975,10 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyInt.ArmorLevel); else SetProperty(PropertyInt.ArmorLevel, value.Value); }
         }
 
-        public int? AegisLevel
+        public int? WardLevel
         {
-            get => GetProperty(PropertyInt.AegisLevel);
-            set { if (!value.HasValue) RemoveProperty(PropertyInt.AegisLevel); else SetProperty(PropertyInt.AegisLevel, value.Value); }
+            get => GetProperty(PropertyInt.WardLevel);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.WardLevel); else SetProperty(PropertyInt.WardLevel, value.Value); }
         }
 
         public int? ArmorSlots
@@ -3693,10 +3693,10 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyInt.GearNullification); else SetProperty(PropertyInt.GearNullification, value.Value); }
         }
 
-        public int? GearAegisPen
+        public int? GearWardPen
         {
-            get => GetProperty(PropertyInt.GearAegisPen);
-            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearAegisPen); else SetProperty(PropertyInt.GearAegisPen, value.Value); }
+            get => GetProperty(PropertyInt.GearWardPen);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.GearWardPen); else SetProperty(PropertyInt.GearWardPen, value.Value); }
         }
 
         public int? GearStamReduction
@@ -3728,10 +3728,10 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseArmor); else SetProperty(PropertyInt.BaseArmor, value.Value); }
         }
 
-        public int? BaseAegis
+        public int? BaseWard
         {
-            get => GetProperty(PropertyInt.BaseAegis);
-            set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseAegis); else SetProperty(PropertyInt.BaseAegis, value.Value); }
+            get => GetProperty(PropertyInt.BaseWard);
+            set { if (!value.HasValue) RemoveProperty(PropertyInt.BaseWard); else SetProperty(PropertyInt.BaseWard, value.Value); }
         }
 
         public int? BaseMaxMana

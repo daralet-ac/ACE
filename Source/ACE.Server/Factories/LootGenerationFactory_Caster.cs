@@ -411,21 +411,21 @@ namespace ACE.Server.Factories
         }
 
         /// <summary>
-        /// Rolls Bonus Aegis Cleaving for Orbs
+        /// Rolls Bonus Ward Cleaving for Orbs
         /// 0% to 20% (up to 10% based on tier)
         /// </summary>
-        private static void RollBonusAegisCleaving(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
+        private static void RollBonusWardCleaving(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
         {
             float[] minMod = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
 
             var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
-            var aegisCleavingMod = 0.1f * GetDiminishingRoll(treasureDeath);
-            aegisCleavingMod += minMod[tier];
+            var wardCleavingMod = 0.1f * GetDiminishingRoll(treasureDeath);
+            wardCleavingMod += minMod[tier];
 
-            wo.SetProperty(PropertyFloat.IgnoreAegis, aegisCleavingMod);
+            wo.SetProperty(PropertyFloat.IgnoreWard, wardCleavingMod);
 
             var maxMod = 0.2f;
-            percentile = aegisCleavingMod / maxMod;
+            percentile = wardCleavingMod / maxMod;
         }
 
         /// <summary>

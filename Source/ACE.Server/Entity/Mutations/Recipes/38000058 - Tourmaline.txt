@@ -3,6 +3,6 @@
 Tier chances: 1
 
     - Chance: 100%:
-        ImbuedEffect = AegisRending
+        ImbuedEffect = WardRending
         NumTimesTinkered (>= 1 ? add : set) 1
 

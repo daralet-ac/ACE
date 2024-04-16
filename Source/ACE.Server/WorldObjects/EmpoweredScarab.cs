@@ -47,7 +47,7 @@ namespace ACE.Server.WorldObjects
         GearCritDamage,
         GearDamageResist,
         GearMaxHealth,
-        AegisLevel
+        WardLevel
     }
 
 
@@ -288,7 +288,7 @@ namespace ACE.Server.WorldObjects
             GearCritDamage = 0;
             GearDamageResist = 0;
             GearMaxHealth = 0;
-            AegisLevel = 0;
+            WardLevel = 0;
         }
 
         public void SetScarabBonus(int bonusStat, int amount)
@@ -301,7 +301,7 @@ namespace ACE.Server.WorldObjects
                 case 2: GearCritDamage = amount; break;
                 case 3: GearDamageResist = amount; break;
                 case 4: GearMaxHealth = amount; break;
-                case 5: AegisLevel = amount; break;   
+                case 5: WardLevel = amount; break;   
             }
         }
 

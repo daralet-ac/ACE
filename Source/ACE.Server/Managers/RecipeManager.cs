@@ -570,8 +570,8 @@ namespace ACE.Server.Managers
                     target.ImbuedEffect = ImbuedEffectType.CriticalStrike;
                     break;
                 case 0x38000058:    // Tourmaline
-                    //AddImbuedEffect(target, ImbuedEffectType.AegisRending);
-                    target.ImbuedEffect = ImbuedEffectType.AegisRending;
+                    //AddImbuedEffect(target, ImbuedEffectType.WardRending);
+                    target.ImbuedEffect = ImbuedEffectType.WardRending;
                     break;
                 case 0x3800002E:    // Opal
                     //target.ManaConversionMod += 0.01f;

@@ -588,37 +588,37 @@ namespace ACE.Server.WorldObjects
                     sourcePlayer.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, null, true);
             }
 
-            // aegis mod, rend, and penetration
-            var aegisRendingMod = 1.0f;
-            if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.AegisRending))
-                aegisRendingMod = 1.0f - GetAegisRendingMod(attackSkill);
+            // ward mod, rend, and penetration
+            var wardRendingMod = 1.0f;
+            if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
+                wardRendingMod = 1.0f - GetWardRendingMod(attackSkill);
 
-            var aegisPenMod = 0.0f;
+            var wardPenMod = 0.0f;
 
             if(sourcePlayer != null)
-                aegisPenMod = sourcePlayer.GetIgnoreAegisMod(weapon);
+                wardPenMod = sourcePlayer.GetIgnoreWardMod(weapon);
 
-            var ignoreAegisMod = Math.Min(aegisRendingMod, aegisPenMod);
+            var ignoreWardMod = Math.Min(wardRendingMod, wardPenMod);
 
-            // JEWEL - Tourmaline: Ramping Aegis Pen
+            // JEWEL - Tourmaline: Ramping Ward Pen
             if (sourcePlayer != null)
             {
-                if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearAegisPen) > 0)
+                if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) > 0)
                 {
-                    var jewelAegisPenMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},AegisPen") / 500;
-                    jewelAegisPenMod *= ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearAegisPen) / 66);
-                    ignoreAegisMod -= jewelAegisPenMod;
+                    var jewelWardPenMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") / 500;
+                    jewelWardPenMod *= ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) / 66);
+                    ignoreWardMod -= jewelWardPenMod;
                 }
             }
 
-            // SPEC BONUS - War Magic (Orb): +10% aegis penetration (additively)
+            // SPEC BONUS - War Magic (Orb): +10% ward penetration (additively)
             if (sourcePlayer != null && weapon != null)
                 if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 0)
-                    ignoreAegisMod -= 0.1f;
+                    ignoreWardMod -= 0.1f;
 
-            var aegisMod = GetAegisMod(target, ignoreAegisMod);
+            var wardMod = GetWardMod(target, ignoreWardMod);
 
-            //Console.WriteLine($"TargetAegis: {target.AegisLevel} AegisRend: {aegisRendingMod} Nullification: {NullificationMod} AegisMod: {aegisMod}");
+            //Console.WriteLine($"TargetWard: {target.WardLevel} WardRend: {wardRendingMod} Nullification: {NullificationMod} WardMod: {wardMod}");
 
             // absorb mod
             bool isPVP = sourcePlayer != null && targetPlayer != null;
@@ -739,7 +739,7 @@ namespace ACE.Server.WorldObjects
 
                 resistanceMod = (float)Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
-                finalDamage = lifeMagicDamage * criticalDamageMod * elementalDamageMod * slayerMod * attributeMod * resistanceMod * absorbMod * aegisMod * resistedMod * specDefenseMod;
+                finalDamage = lifeMagicDamage * criticalDamageMod * elementalDamageMod * slayerMod * attributeMod * resistanceMod * absorbMod * wardMod * resistedMod * specDefenseMod;
             }
             // war/void magic projectiles
             else
@@ -869,7 +869,7 @@ namespace ACE.Server.WorldObjects
                 // ----- FINAL CALCULATION ------------
                 var damageBeforeMitigation = baseDamage * criticalDamageMod * attributeMod * elementalDamageMod * slayerMod * combatFocusDamageMod * jewelElementalist * jewelElemental * jewelSelfHarm * jewelLastStand * strikethroughMod;
 
-                finalDamage = damageBeforeMitigation * absorbMod * aegisMod * resistanceMod * resistedMod * specDefenseMod * jewelcraftingProtection;
+                finalDamage = damageBeforeMitigation * absorbMod * wardMod * resistanceMod * resistedMod * specDefenseMod * jewelcraftingProtection;
 
                 if (sourcePlayer != null)
                 {
@@ -880,7 +880,7 @@ namespace ACE.Server.WorldObjects
                     //    $" -elementalDamageMod: {elementalDamageMod}\n" +
                     //    $" -slayerMod: {slayerMod}\n" +
                     //    $" -absorbMod: {absorbMod}\n" +
-                    //    $" -aegisMod: {aegisMod}\n" +
+                    //    $" -wardMod: {wardMod}\n" +
                     //    $" -resistanceMod: {resistanceMod}\n" +
                     //    $" -resistedMod: {resistedMod}\n" +
                     //    $" -specDefMod: {specDefenseMod}\n" +
@@ -933,12 +933,12 @@ namespace ACE.Server.WorldObjects
             return 1.0f;
         }
 
-        public float GetAegisMod(Creature target, float ignoreAegisMod)
+        public float GetWardMod(Creature target, float ignoreWardMod)
         {
-            var aegisLevel = target.GetAegisLevel();
-            //var aegisLevel = target.Level * 5;
+            var wardLevel = target.GetWardLevel();
+            //var wardLevel = target.Level * 5;
 
-            return SkillFormula.CalcAegisMod(aegisLevel * ignoreAegisMod);
+            return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod);
         }
 
         /// <summary>

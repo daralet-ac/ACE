@@ -335,7 +335,7 @@ namespace ACE.Server.Factories
                     const int ORB = 0, SCEPTER = 1, WAND = 2, STAFF = 3;
                     switch (subtype)
                     {
-                        case ORB: RollBonusAegisCleaving(treasureDeath, wo, out subtypeBonusPercentile); break;
+                        case ORB: RollBonusWardCleaving(treasureDeath, wo, out subtypeBonusPercentile); break;
                         case SCEPTER: RollBonusCritChance(treasureDeath, wo, out subtypeBonusPercentile); break;
                         case WAND: RollBonusCritDamage(treasureDeath, wo, out subtypeBonusPercentile); break;
                         case STAFF:

@@ -1,8 +1,8 @@
-using System;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
+using System;
 
 namespace ACE.Server.WorldObjects
 {
@@ -220,16 +220,16 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        public int GetAegisLevel()
+        public int GetWardLevel()
         {
-            var aegisLevel = 0;
+            var wardLevel = 0;
 
-            if(AegisLevel != null && AegisLevel.HasValue)
-                aegisLevel = (int)AegisLevel;
+            if(WardLevel != null && WardLevel.HasValue)
+                wardLevel = (int)WardLevel;
             else
-                aegisLevel = GetEquippedItemsAegisSum(PropertyInt.AegisLevel);
+                wardLevel = GetEquippedItemsWardSum(PropertyInt.WardLevel);
 
-            return aegisLevel;
+            return wardLevel;
         }
 
         public double? GetArmorHealthMod()

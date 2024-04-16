@@ -222,7 +222,7 @@ namespace ACE.Server.Factories
         }
 
         /// <summary>
-        /// Assign a final AL and Aegis value based upon tier
+        /// Assign a final AL and Ward value based upon tier
         /// Used values given at https://asheron.fandom.com/wiki/Loot#Armor_Levels for setting the AL mod values
         /// so as to not exceed the values listed in that table
         /// </summary>
@@ -241,8 +241,8 @@ namespace ACE.Server.Factories
 
                 var armorSlots = wo.ArmorSlots ?? 1;
 
-                // Get Armor/Aegis Level
-                var baseAegisLevel = wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth ? 10 : 5;
+                // Get Armor/Ward Level
+                var baseWardLevel = wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth ? 10 : 5;
 
 
                 switch (wo.ArmorStyle)
@@ -251,7 +251,7 @@ namespace ACE.Server.Factories
                     case (int)ArmorStyle.Chiran:
                     case (int)ArmorStyle.OlthoiAmuli:
                         baseArmorLevel = 75;
-                        baseAegisLevel = 7;
+                        baseWardLevel = 7;
                         break;
                     case (int)ArmorStyle.Leather:
                     case (int)ArmorStyle.Yoroi:
@@ -283,25 +283,25 @@ namespace ACE.Server.Factories
                 {
                     case (int)WeenieClassName.W_BUCKLER_CLASS: // Buckler
                         baseArmorLevel = 75;
-                        baseAegisLevel = 5;
+                        baseWardLevel = 5;
                         break;
                     case (int)WeenieClassName.W_SHIELDKITE_CLASS: // Kite Shield
                     case (int)WeenieClassName.W_SHIELDROUND_CLASS: // Round Shield
                         baseArmorLevel = 100;
-                        baseAegisLevel = 6;
+                        baseWardLevel = 6;
                         break;
                     case (int)WeenieClassName.W_SHIELDKITELARGE_CLASS: // Large Kite Shield
                     case (int)WeenieClassName.W_SHIELDROUNDLARGE_CLASS: // Large Round Shield
                         baseArmorLevel = 105;
-                        baseAegisLevel = 7;
+                        baseWardLevel = 7;
                         break;
                     case (int)WeenieClassName.W_SHIELDTOWER_CLASS: // Tower Shield
                         baseArmorLevel = 110;
-                        baseAegisLevel = 8;
+                        baseWardLevel = 8;
                      break;
                     case (int)WeenieClassName.W_SHIELDCOVENANT_CLASS: // Covenant Shield
                         baseArmorLevel = 125;
-                        baseAegisLevel = 10;
+                        baseWardLevel = 10;
                         break;
             }
 
@@ -310,11 +310,11 @@ namespace ACE.Server.Factories
 
                 // Final Calculation
                 var newArmorLevel = baseArmorLevel * (tier - 1) * variance;
-                var newAegisLevel = baseAegisLevel * (tier - 1) * armorSlots * variance;
+                var newWardLevel = baseWardLevel * (tier - 1) * armorSlots * variance;
 
                 // Assign levels
                 wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
-                wo.SetProperty(PropertyInt.AegisLevel, (int)newAegisLevel);
+                wo.SetProperty(PropertyInt.WardLevel, (int)newWardLevel);
 
             if ((wo.ResistMagic == null || wo.ResistMagic < 9999) && wo.ArmorLevel >= 1000)
                 _log.Warning($"[LOOT] Standard armor item exceeding upper AL threshold {wo.WeenieClassId} - {wo.Name}");
@@ -1098,8 +1098,8 @@ namespace ACE.Server.Factories
             if (wo.ArmorLevel != null)
                 wo.BaseArmor = wo.ArmorLevel;
 
-            if (wo.AegisLevel != null)
-                wo.BaseAegis = wo.AegisLevel;
+            if (wo.WardLevel != null)
+                wo.BaseWard = wo.WardLevel;
 
             if (wo.ArmorWarMagicMod != null)
                 wo.BaseArmorWarMagicMod = wo.ArmorWarMagicMod;
@@ -1435,14 +1435,14 @@ namespace ACE.Server.Factories
                 }
             }
 
-            // Aegis
-            var maxAegisLevel = GetMaxAegisLevel(wo);
-            var aegisLevelPercentile = 0.0f;
-            if (wo.AegisLevel > 0 && maxAegisLevel > 0)
+            // Ward
+            var maxWardLevel = GetMaxWardLevel(wo);
+            var wardLevelPercentile = 0.0f;
+            if (wo.WardLevel > 0 && maxWardLevel > 0)
             { 
-                aegisLevelPercentile = (float)wo.AegisLevel / maxAegisLevel;
+                wardLevelPercentile = (float)wo.WardLevel / maxWardLevel;
 
-                sum += aegisLevelPercentile;
+                sum += wardLevelPercentile;
                 divisor++;
             }
 
@@ -1461,7 +1461,7 @@ namespace ACE.Server.Factories
             }
             // Average Percentile
             var finalPercentile = sum / divisor;
-            //Console.WriteLine($" -MaxArmor: {maxArmorLevel} - ArmorLevel: {wo.ArmorLevel} -MaxProt: 1.5 -ProtLevel: {avgProtectionLevel} -Armor/Protection %: {armorLevelPercentile}\n" + $" -MaxAegis: {maxAegisLevel} -AegisLevel: {wo.AegisLevel} -Aegis %: {aegisLevelPercentile}\n" + $" -Mods %: {skillModsPercentile}\n" + $" -Ratings %: {gearRatingPercentile}\n" + $" -Divisor: {divisor}\n" +
+            //Console.WriteLine($" -MaxArmor: {maxArmorLevel} - ArmorLevel: {wo.ArmorLevel} -MaxProt: 1.5 -ProtLevel: {avgProtectionLevel} -Armor/Protection %: {armorLevelPercentile}\n" + $" -MaxWard: {maxWardLevel} -WardLevel: {wo.WardLevel} -Ward %: {wardLevelPercentile}\n" + $" -Mods %: {skillModsPercentile}\n" + $" -Ratings %: {gearRatingPercentile}\n" + $" -Divisor: {divisor}\n" +
             //    $" --FINAL: {finalPercentile}\n\n");
 
             // Workmanship Calculation
@@ -1528,21 +1528,21 @@ namespace ACE.Server.Factories
             return (int)(maxArmorLevel * 1.1f);
         }
 
-        private static int GetMaxAegisLevel(WorldObject wo)
+        private static int GetMaxWardLevel(WorldObject wo)
         {
             var armorStyle = (ArmorStyle)(wo.ArmorStyle ?? 0);
             var weightClass = (ArmorWeightClass)(wo.ArmorWeightClass ?? 0);
             var armorSlots = wo.ArmorSlots ?? 1;
 
-            int aegisLevel;
+            int wardLevel;
 
             switch(weightClass)
             {
                 case ArmorWeightClass.Cloth:
-                    aegisLevel = 70;
+                    wardLevel = 70;
                     break;
                 default:
-                    aegisLevel = 35;
+                    wardLevel = 35;
                     break;
             }
 
@@ -1550,15 +1550,15 @@ namespace ACE.Server.Factories
             {
                 case ArmorStyle.OlthoiArmor:
                 case ArmorStyle.Covenant:
-                    aegisLevel = 0;
+                    wardLevel = 0;
                     break;
                 case ArmorStyle.Amuli:
                 case ArmorStyle.Chiran:
-                    aegisLevel = 35;
+                    wardLevel = 35;
                     break;
             }
 
-            return (int)(aegisLevel * armorSlots * 1.1f);
+            return (int)(wardLevel * armorSlots * 1.1f);
         }
 
         private static float GetAverageProtectionLevel(WorldObject wo)

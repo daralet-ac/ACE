@@ -19,7 +19,7 @@ namespace ACE.Server.WorldObjects
         // defenses
         public static readonly float ArmorMod = 100.0f;
         public static readonly float ShieldMod = 2000.0f;
-        public static readonly float AegisMod = 100.0f;
+        public static readonly float WardMod = 100.0f;
 
         public static float GetAttributeMod(int currentAttribute, ACE.Entity.Enum.Skill skill = ACE.Entity.Enum.Skill.None)
         {
@@ -66,15 +66,15 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// Converts Aegis Level from an additive linear value
+        /// Converts Ward Level from an additive linear value
         /// to a scaled damage multiplier
         /// </summary>
-        public static float CalcAegisMod(float aegisLevel)
+        public static float CalcWardMod(float wardLevel)
         {
-            if (aegisLevel > 0)
-                return AegisMod / (aegisLevel + AegisMod);
-            else if (aegisLevel < 0)
-                return 1.0f - aegisLevel / AegisMod;
+            if (wardLevel > 0)
+                return WardMod / (wardLevel + WardMod);
+            else if (wardLevel < 0)
+                return 1.0f - wardLevel / WardMod;
             else
                 return 1.0f;
         }

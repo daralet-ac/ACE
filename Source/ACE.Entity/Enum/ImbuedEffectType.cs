@@ -21,7 +21,7 @@ namespace ACE.Entity.Enum
         MagicDefense                    = 0x1000,
         Spellbook                       = 0x2000,
         NetherRending                   = 0x4000,
-        AegisRending                    = 0x8000,
+        WardRending                    = 0x8000,
 
         IgnoreSomeMagicProjectileDamage = 0x20000000,
         AlwaysCritical                  = 0x40000000,

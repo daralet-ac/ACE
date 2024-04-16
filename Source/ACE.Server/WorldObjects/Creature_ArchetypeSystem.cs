@@ -17,7 +17,7 @@ namespace ACE.Server.WorldObjects
         private static readonly int[] enemyHealthRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
         private static readonly int[] enemyStaminaManaRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
 
-        private static readonly int[] enemyArmorAegis = { 20, 30, 45, 68, 101, 152, 228, 342, 513 };
+        private static readonly int[] enemyArmorWard = { 20, 30, 45, 68, 101, 152, 228, 342, 513 };
         private static readonly int[] enemyAttack = { 10, 75, 150, 200, 250, 300, 400, 500, 1000};
         private static readonly int[] enemyDefense = { 10, 100, 200, 300, 400, 500, 600, 700, 1000 };
         private static readonly int[] enemyAssessDeception = { 10, 50, 100, 150, 200, 250, 300, 350, 400 };
@@ -260,7 +260,7 @@ namespace ACE.Server.WorldObjects
             }
         }
 
-        private void SetDamageArmorAegis(int tier, float statWeight, double toughness, double physicality, double magic, double lethality)
+        private void SetDamageArmorWard(int tier, float statWeight, double toughness, double physicality, double magic, double lethality)
         {
             if (DebugArchetypeSystem)
                 Console.WriteLine($"\n-- SetDamageArmorAegus() for {Name} ({WeenieClassId}) (statWeight: {statWeight}) --");
@@ -315,17 +315,17 @@ namespace ACE.Server.WorldObjects
                         }
                     }
                     else
-                        _log.Warning($"Creature_ArchetypeSystem.SetDamageArmorAegis() - Unable to set damage/armor on bodyparts of {Weenie}. Body parts table may be missing from this wcid.");
+                        _log.Warning($"Creature_ArchetypeSystem.SetDamageArmorWard() - Unable to set damage/armor on bodyparts of {Weenie}. Body parts table may be missing from this wcid.");
                 }
                 else
-                    _log.Warning($"Creature.SetDamageArmorAegis() - Weenie == null for {Name} ({WeenieClassId}). Cannot set Damage/Armor for this creature.");
+                    _log.Warning($"Creature.SetDamageArmorWard() - Weenie == null for {Name} ({WeenieClassId}). Cannot set Damage/Armor for this creature.");
             }
 
-            // Aegis
+            // Ward
             {
-                var tweakedAegis = GetNewAegisLevel(tier, statWeight, toughness, magic);
+                var tweakedWard = GetNewWardLevel(tier, statWeight, toughness, magic);
 
-                AegisLevel = tweakedAegis;
+                WardLevel = tweakedWard;
             }
         }
 
@@ -685,7 +685,7 @@ namespace ACE.Server.WorldObjects
 
         private int GetNewArmorLevel(int tier, float statWeight, double toughness, double physicality)
         {
-            var target = enemyArmorAegis[tier] + (enemyArmorAegis[tier + 1] - enemyArmorAegis[tier]) * statWeight;
+            var target = enemyArmorWard[tier] + (enemyArmorWard[tier + 1] - enemyArmorWard[tier]) * statWeight;
             var multiplier = (toughness + physicality) / 2;
             var newArmor = (int)(target * multiplier);
 
@@ -698,19 +698,19 @@ namespace ACE.Server.WorldObjects
             return newArmor;
         }
 
-        private int GetNewAegisLevel(int tier, float statWeight, double toughness, double magic)
+        private int GetNewWardLevel(int tier, float statWeight, double toughness, double magic)
         {
-            var target = enemyArmorAegis[tier] + (enemyArmorAegis[tier + 1] - enemyArmorAegis[tier]) * statWeight;
+            var target = enemyArmorWard[tier] + (enemyArmorWard[tier + 1] - enemyArmorWard[tier]) * statWeight;
             var multiplier = (toughness + magic) / 2;
-            var newAegis = (int)(target * multiplier);
+            var newWard = (int)(target * multiplier);
 
             if (DebugArchetypeSystem)
-                Console.Write($"\n-Aegis\n" +
+                Console.Write($"\n-Ward\n" +
                 $" Target: {target}\n" +
                 $" Multiplier: {multiplier}\n" +
-                $" TweakedSkill: {newAegis}");
+                $" TweakedSkill: {newWard}");
 
-            return newAegis;
+            return newWard;
         }
 
         private uint GetNewHealthLevel(int tier, float statWeight, double toughness, double physicality)

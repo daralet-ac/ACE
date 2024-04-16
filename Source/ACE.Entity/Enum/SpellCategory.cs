@@ -731,7 +731,7 @@ namespace ACE.Entity.Enum
         GauntletVitalityRaising = 731,
         GauntletCriticalDamageRatingRaising = 732,
         GauntletCriticalDamageReductionRatingRaising = 733,
-        //TIMELINE
+        // Daralet
         BonusRun = 738,
         PenaltyRun = 739,
         BonusHealth = 740,
@@ -745,7 +745,7 @@ namespace ACE.Entity.Enum
         ExtraStaffSkillRaising = 748,
         TrinketDamageReductionRating = 749,
         TrinketCriticalDamageRating = 750,
-        AegisRaising = 751,
-        AegisLowering = 752,
+        WardRaising = 751,
+        WardLowering = 752,
     }
 }
