@@ -434,54 +434,54 @@ namespace ACE.Server.Factories.Tables
             { (0, false, HeritageAny, 9295, 0, 0.0, -1) }, // Intricate Carving Tool
 
             // Brown
-            { (0, true, HeritageAny, 1055000, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageAny, 1055010, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageAny, 1055020, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageAny, 1055000, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageAny, 1055010, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageAny, 1055020, 0, 0.0, -1) }, // large quiver
 
             // Green
-            { (0, true, HeritageAluvian, 1055002, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageAluvian, 1055012, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageAluvian, 1055022, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageAluvian, 1055002, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageAluvian, 1055012, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageAluvian, 1055022, 0, 0.0, -1) }, // large quiver
 
             // Blue
-            { (0, true, HeritageAluvian, 1055004, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageAluvian, 1055014, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageAluvian, 1055024, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageAluvian, 1055004, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageAluvian, 1055014, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageAluvian, 1055024, 0, 0.0, -1) }, // large quiver
 
             // Black
-            { (0, true, HeritageAluvian, 1055009, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageAluvian, 1055019, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageAluvian, 1055029, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageAluvian, 1055009, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageAluvian, 1055019, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageAluvian, 1055029, 0, 0.0, -1) }, // large quiver
 
             // Yellow
-            { (0, true, HeritageGharundim, 1055001, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageGharundim, 1055011, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageGharundim, 1055021, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageGharundim, 1055001, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageGharundim, 1055011, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageGharundim, 1055021, 0, 0.0, -1) }, // large quiver
 
             // Red
-            { (0, true, HeritageGharundim, 1055006, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageGharundim, 1055016, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageGharundim, 1055026, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageGharundim, 1055006, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageGharundim, 1055016, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageGharundim, 1055026, 0, 0.0, -1) }, // large quiver
 
             // Gray
-            { (0, true, HeritageGharundim, 1055008, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageGharundim, 1055018, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageGharundim, 1055028, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageGharundim, 1055008, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageGharundim, 1055018, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageGharundim, 1055028, 0, 0.0, -1) }, // large quiver
 
             // Teal
-            { (0, true, HeritageSho, 1055003, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageSho, 1055013, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageSho, 1055023, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageSho, 1055003, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageSho, 1055013, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageSho, 1055023, 0, 0.0, -1) }, // large quiver
 
             // Purple
-            { (0, true, HeritageSho, 1055005, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageSho, 1055015, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageSho, 1055025, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageSho, 1055005, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageSho, 1055015, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageSho, 1055025, 0, 0.0, -1) }, // large quiver
 
             // White
-            { (0, true, HeritageSho, 1055007, 0, 0.0, -1) }, // small quiver
-            { (2, true, HeritageSho, 1055017, 0, 0.0, -1) }, // quiver
-            { (4, true, HeritageSho, 1055027, 0, 0.0, -1) }, // large quiver
+            { (0, false, HeritageSho, 1055007, 0, 0.0, -1) }, // small quiver
+            { (2, false, HeritageSho, 1055017, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageSho, 1055027, 0, 0.0, -1) }, // large quiver
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -558,60 +558,60 @@ namespace ACE.Server.Factories.Tables
         public static readonly List<(int, bool, int, uint, int, double, int)> ShopkeeperItems = new List<(int, bool, int, uint, int, double, int)>()
         {
             // Packs
-            { (0, true, HeritageAny, 136, 21, 0.0, -1) },          // brown - pack
-            { (0, true, HeritageAny, 166, 21, 0.0, -1) },          // brown - sack
-            { (0, true, HeritageAny, 138, 4, 0.0, -1) },          // brown - belt pouch
-            { (0, true, HeritageAny, 139, 4, 0.0, -1) },          // brown - small belt pouch
+            { (0, false, HeritageAny, 136, 21, 0.0, -1) },          // brown - pack
+            { (0, false, HeritageAny, 166, 21, 0.0, -1) },          // brown - sack
+            { (0, false, HeritageAny, 138, 4, 0.0, -1) },          // brown - belt pouch
+            { (0, false, HeritageAny, 139, 4, 0.0, -1) },          // brown - small belt pouch
 
-            { (0, true, HeritageAluvian, 136, 8, 0.0, -1) },       // green - pack
-            { (0, true, HeritageAluvian, 166, 8, 0.0, -1) },       // green - sack
-            { (0, true, HeritageAluvian, 138, 84, 0.0, -1) },       // green - belt pouch
-            { (0, true, HeritageAluvian, 139, 84, 0.0, -1) },       // green - small belt pouch
+            { (0, false, HeritageAluvian, 136, 8, 0.0, -1) },       // green - pack
+            { (0, false, HeritageAluvian, 166, 8, 0.0, -1) },       // green - sack
+            { (0, false, HeritageAluvian, 138, 84, 0.0, -1) },       // green - belt pouch
+            { (0, false, HeritageAluvian, 139, 84, 0.0, -1) },       // green - small belt pouch
 
-            { (0, true, HeritageAluvian, 136, 2, 0.0, -1) },       // blue - pack
-            { (0, true, HeritageAluvian, 166, 2, 0.0, -1) },       // blue - sack
-            { (0, true, HeritageAluvian, 138, 91, 0.0, -1) },       // blue - belt pouch
-            { (0, true, HeritageAluvian, 139, 91, 0.0, -1) },       // blue - small belt pouch
+            { (0, false, HeritageAluvian, 136, 2, 0.0, -1) },       // blue - pack
+            { (0, false, HeritageAluvian, 166, 2, 0.0, -1) },       // blue - sack
+            { (0, false, HeritageAluvian, 138, 91, 0.0, -1) },       // blue - belt pouch
+            { (0, false, HeritageAluvian, 139, 91, 0.0, -1) },       // blue - small belt pouch
 
-            { (0, true, HeritageAluvian, 136, 39, 0.0, -1) },      // black - pack
-            { (0, true, HeritageAluvian, 166, 39, 0.0, -1) },      // black - sack
-            { (0, true, HeritageAluvian, 138, 93, 0.0, -1) },      // black - belt pouch
-            { (0, true, HeritageAluvian, 139, 93, 0.0, -1) },      // black - small belt pouch
+            { (0, false, HeritageAluvian, 136, 39, 0.0, -1) },      // black - pack
+            { (0, false, HeritageAluvian, 166, 39, 0.0, -1) },      // black - sack
+            { (0, false, HeritageAluvian, 138, 93, 0.0, -1) },      // black - belt pouch
+            { (0, false, HeritageAluvian, 139, 93, 0.0, -1) },      // black - small belt pouch
 
-            { (0, true, HeritageGharundim, 136, 17, 0.0, -1) },    // yellow - pack
-            { (0, true, HeritageGharundim, 166, 17, 0.0, -1) },    // yellow - sack
-            { (0, true, HeritageGharundim, 138, 86, 0.0, -1) },    // yellow - belt pouch
-            { (0, true, HeritageGharundim, 139, 86, 0.0, -1) },    // yellow - small belt pouch
+            { (0, false, HeritageGharundim, 136, 17, 0.0, -1) },    // yellow - pack
+            { (0, false, HeritageGharundim, 166, 17, 0.0, -1) },    // yellow - sack
+            { (0, false, HeritageGharundim, 138, 86, 0.0, -1) },    // yellow - belt pouch
+            { (0, false, HeritageGharundim, 139, 86, 0.0, -1) },    // yellow - small belt pouch
 
-            { (0, true, HeritageGharundim, 136, 14, 0.0, -1) },    // red - pack
-            { (0, true, HeritageGharundim, 166, 14, 0.0, -1) },    // red - sack
-            { (0, true, HeritageGharundim, 138, 85, 0.0, -1) },    // red - belt pouch
-            { (0, true, HeritageGharundim, 139, 85, 0.0, -1) },    // red - small belt pouch
+            { (0, false, HeritageGharundim, 136, 14, 0.0, -1) },    // red - pack
+            { (0, false, HeritageGharundim, 166, 14, 0.0, -1) },    // red - sack
+            { (0, false, HeritageGharundim, 138, 85, 0.0, -1) },    // red - belt pouch
+            { (0, false, HeritageGharundim, 139, 85, 0.0, -1) },    // red - small belt pouch
 
-            { (0, true, HeritageGharundim, 136, 9, 0.0, -1) },     // gray - pack
-            { (0, true, HeritageGharundim, 166, 9, 0.0, -1) },     // gray - sack
-            { (0, true, HeritageGharundim, 138, 90, 0.0, -1) },     // gray - belt pouch
-            { (0, true, HeritageGharundim, 139, 90, 0.0, -1) },     // gray - small belt pouch
+            { (0, false, HeritageGharundim, 136, 9, 0.0, -1) },     // gray - pack
+            { (0, false, HeritageGharundim, 166, 9, 0.0, -1) },     // gray - sack
+            { (0, false, HeritageGharundim, 138, 90, 0.0, -1) },     // gray - belt pouch
+            { (0, false, HeritageGharundim, 139, 90, 0.0, -1) },     // gray - small belt pouch
 
-            { (0, true, HeritageSho, 136, 77, 0.0, -1) },          // teal - pack
-            { (0, true, HeritageSho, 166, 77, 0.0, -1) },          // teal - sack
-            { (0, true, HeritageSho, 138, 88, 0.0, -1) },          // teal - belt pouch
-            { (0, true, HeritageSho, 139, 88, 0.0, -1) },          // teal - small belt pouch
+            { (0, false, HeritageSho, 136, 77, 0.0, -1) },          // teal - pack
+            { (0, false, HeritageSho, 166, 77, 0.0, -1) },          // teal - sack
+            { (0, false, HeritageSho, 138, 88, 0.0, -1) },          // teal - belt pouch
+            { (0, false, HeritageSho, 139, 88, 0.0, -1) },          // teal - small belt pouch
 
-            { (0, true, HeritageSho, 136, 13, 0.0, -1) },          // purple - pack
-            { (0, true, HeritageSho, 166, 13, 0.0, -1) },          // purple - sack
-            { (0, true, HeritageSho, 138, 92, 0.0, -1) },          // purple - belt pouch
-            { (0, true, HeritageSho, 139, 92, 0.0, -1) },          // purple - small belt pouch
+            { (0, false, HeritageSho, 136, 13, 0.0, -1) },          // purple - pack
+            { (0, false, HeritageSho, 166, 13, 0.0, -1) },          // purple - sack
+            { (0, false, HeritageSho, 138, 92, 0.0, -1) },          // purple - belt pouch
+            { (0, false, HeritageSho, 139, 92, 0.0, -1) },          // purple - small belt pouch
 
-            { (0, true, HeritageSho, 136, 61, 0.0, -1) },          // white - pack
-            { (0, true, HeritageSho, 166, 61, 0.0, -1) },          // white - sack
-            { (0, true, HeritageSho, 138, 90, 0.0, -1) },          // white - belt pouch
-            { (0, true, HeritageSho, 139, 90, 0.0, -1) },          // white - small belt pouch
+            { (0, false, HeritageSho, 136, 61, 0.0, -1) },          // white - pack
+            { (0, false, HeritageSho, 166, 61, 0.0, -1) },          // white - sack
+            { (0, false, HeritageSho, 138, 90, 0.0, -1) },          // white - belt pouch
+            { (0, false, HeritageSho, 139, 90, 0.0, -1) },          // white - small belt pouch
 
             // Salvage Sacks
-            { (0, true, HeritageAny, 1055060, 0, 0.0, -1) },
-            { (2, true, HeritageAny, 1055070, 0, 0.0, -1) },
-            { (4, true, HeritageAny, 1055080, 0, 0.0, -1) },
+            { (0, false, HeritageAny, 1055060, 0, 0.0, -1) },
+            { (2, false, HeritageAny, 1055070, 0, 0.0, -1) },
+            { (4, false, HeritageAny, 1055080, 0, 0.0, -1) },
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
