@@ -17,7 +17,7 @@ namespace ACE.Server.Network.Handlers
     {
         private static readonly ILogger _log = Log.ForContext(typeof(DDDHandler));
 
-        public static bool Debug = false;
+        public static bool Debug = true;
 
         [GameMessage(GameMessageOpcode.DDD_InterrogationResponse, SessionState.AuthConnected)]
         public static void DDD_InterrogationResponse(ClientMessage message, Session session)
@@ -129,6 +129,66 @@ namespace ACE.Server.Network.Handlers
 
                 var hasPortalMissingIterations = missingIterations.TryGetValue(DatDatabaseType.Portal, out var portalMissingIterations);
                 var hasLanguageMissingIterations = missingIterations.TryGetValue(DatDatabaseType.Language, out var languageMissingIterations);
+                var hasCellMissingIterations = missingIterations.TryGetValue(DatDatabaseType.Cell, out var cellMissingIterations);
+
+                if (hasCellMissingIterations)
+                {
+                    foreach (var iteration in cellMissingIterations.Values)
+                    {
+                        foreach (var fileId in iteration.OrderBy(f => f))
+                        {
+                            DatFileType qdid_type = 0;
+                            var qdid_ID = fileId;
+
+                            var hexValue = int.Parse(fileId.ToString("X8"), System.Globalization.NumberStyles.HexNumber);
+
+                            if ((hexValue & 0xFFFF) == 0xFFFF)
+                            {
+                                //Console.WriteLine($"Landblock: {fileId:X8} {fileId}");
+                                qdid_type = DatFileType.LandBlock;
+                            }
+                            else if ((hexValue & 0xFFFE) == 0xFFFE)
+                            {
+                                //Console.WriteLine($"LandblockInfo: {fileId:X8} {fileId}");
+                                qdid_type = DatFileType.LandBlockInfo;
+                            }
+                            else if ((hexValue & 0x0100) == 0x0100)
+                            {
+                                //Console.WriteLine($"EnvCell: {fileId:X8} {fileId}");
+                                qdid_type = DatFileType.EnvCell;
+                            }
+                            else
+                            {
+                                qdid_type = DatFileType.EnvCell;
+                                //Console.WriteLine($"Other: {fileId:X8} {fileId}");
+                            }
+
+                            // Landblock also needs to send the LandBlockInfo (0xFFFE) file with it...
+                            if (qdid_type == DatFileType.LandBlock)
+                            {
+                                var qdid_ID_FFFE = qdid_ID - 1;
+                                if (DatManager.CellDat.AllFiles.TryGetValue(qdid_ID_FFFE, out var datFileFFFE))
+                                    //session.Network.EnqueueSend(new GameMessageDDDDataMessage(qdid_ID_FFFE, DatDatabaseType.Cell));
+                                    DDDManager.AddToQueue(session, qdid_ID_FFFE, DatDatabaseType.Cell);
+                                //else
+                                //    _log.Warning($"[DDD] The server does not have the requested data on 0x{qdid_ID_FFFE:X8} | {qdid_type} to send.");
+                            }
+
+                            if (qdid_type == DatFileType.LandBlock || qdid_type == DatFileType.LandBlockInfo || qdid_type == DatFileType.EnvCell)
+                            {
+                                if (DatManager.CellDat.AllFiles.TryGetValue(qdid_ID, out var datFile))
+                                    //session.Network.EnqueueSend(new GameMessageDDDDataMessage(qdid_ID, DatDatabaseType.Cell));
+                                    DDDManager.AddToQueue(session, qdid_ID, DatDatabaseType.Cell);
+                                else if (qdid_type != DatFileType.LandBlockInfo)
+                                    _log.Warning($"[DDD] DDD_RequestDataMessage: The server does not have the requested data on 0x{qdid_ID:X8} | {qdid_type} to send to client {session.Account}.");
+                            }
+                            else
+                            {
+                                _log.Warning($"[DDD] DDD_RequestDataMessage: client {session.Account} requested data on 0x{qdid_ID:X8} | {qdid_type} which has been ignored.");
+                            }
+                        }
+                    }
+                }
 
                 if (hasPortalMissingIterations)
                 {
@@ -198,6 +258,8 @@ namespace ACE.Server.Network.Handlers
 
             var qdid_type = (DatFileType)message.Payload.ReadUInt32();
             var qdid_ID = message.Payload.ReadUInt32();
+
+            Console.WriteLine($"Message: {message}, Type: {qdid_type}, ID: {qdid_ID}, IDX8: {qdid_ID:X8}");
 
             _log.Information($"[DDD] client {session.Account} requested data on 0x{qdid_ID:X8} | {qdid_type}{(!enableDATpatching ? $"; DAT patching is disabled{(showDatWarning ? " and client will be booted" : "")}" : "")}");
 

@@ -153,7 +153,7 @@ namespace ACE.Server.Managers
 
             if (!datFileFound)
                 return null;
-
+            
             var cachedDatFileSizes = DatFileSizes[datDatabaseType][datFileId];
 
             var compressDatFile = cachedDatFileSizes.CompressedFileSize > 0;
@@ -218,8 +218,8 @@ namespace ACE.Server.Managers
                     {
                         iterations[datDatabaseType][y.Key].Add(z);
 
-                        if (datDatabaseType != DatDatabaseType.Cell)
-                        {
+                        //if (datDatabaseType != DatDatabaseType.Cell)
+                        //{
                             if (DatFileSizes[datDatabaseType][z].CompressedFileSize > 0)
                             {
                                 compressedFiles++;
@@ -230,11 +230,11 @@ namespace ACE.Server.Managers
                                 uncompressedFiles++;
                                 totalFileSize += (uint)DatFileSizes[datDatabaseType][z].UncompressedFileSize;
                             }
-                        }
-                        else
-                        {
-                            // do nothing, files from Cell DAT are not included in totalFileSize calculations because these files are requested/sent on demand and not part of initial patching.
-                        }
+                        //}
+                        //else
+                        //{
+                        //    // do nothing, files from Cell DAT are not included in totalFileSize calculations because these files are requested/sent on demand and not part of initial patching.
+                        //}
                     }
                 }
                 totalFileSize += (uint)compressedFiles * 4;

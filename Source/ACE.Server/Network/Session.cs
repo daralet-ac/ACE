@@ -74,7 +74,7 @@ namespace ACE.Server.Network
         /// <summary>
         /// The rate at which ProcessDDDQueue executes (and sends DDD patch data out to client)
         /// </summary>
-        private static readonly RateLimiter dddDataQueueRateLimiter = new RateLimiter(1000, TimeSpan.FromMinutes(1));
+        private static readonly RateLimiter dddDataQueueRateLimiter = new RateLimiter(1000, TimeSpan.FromSeconds(1));
 
         /// <summary>
         /// Rate limiter for /passwd command
@@ -379,7 +379,7 @@ namespace ACE.Server.Network
             var success = dddDataQueue.TryDequeue(out var dataFile);
             if (success)
             {
-                //Console.WriteLine($"{Account}.ProcessDDDQueue: 0x{dataFile.DatFileId:X8}, {dataFile.DatDatabaseType}; Remaining in Queue: {dddDataQueue.Count}");
+                Console.WriteLine($"{Account}.ProcessDDDQueue: 0x{dataFile.DatFileId:X8}, {dataFile.DatDatabaseType}; Remaining in Queue: {dddDataQueue.Count}");
                 Network.EnqueueSend(new GameMessageDDDDataMessage(dataFile.DatFileId, dataFile.DatDatabaseType));
                 dddDataQueueRateLimiter.RegisterEvent();
             }
