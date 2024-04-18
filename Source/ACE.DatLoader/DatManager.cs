@@ -1,4 +1,5 @@
 using System.IO;
+using ACE.Common;
 using Serilog;
 
 namespace ACE.DatLoader
@@ -11,12 +12,12 @@ namespace ACE.DatLoader
 
         private static int count;
 
-        private static int ITERATION_CELL = 30006;
-        private static int ITERATION_PORTAL = 30021;
-        private static int ITERATION_HIRES = 497;
-        private static int ITERATION_LANGUAGE = 30005;
-        public static CellDatDatabase CellDat { get; private set; }
+        private static int ITERATION_CELL = ConfigManager.Config.DAT.ITERATION_CELL;
+        private static int ITERATION_PORTAL = ConfigManager.Config.DAT.ITERATION_PORTAL;
+        private static int ITERATION_HIRES = ConfigManager.Config.DAT.ITERATION_HIRES;
+        private static int ITERATION_LANGUAGE = ConfigManager.Config.DAT.ITERATION_LANGUAGE;
 
+        public static CellDatDatabase CellDat { get; private set; }
         public static PortalDatDatabase PortalDat { get; private set; }
         public static DatDatabase HighResDat { get; private set; }
         public static LanguageDatDatabase LanguageDat { get; private set; }
