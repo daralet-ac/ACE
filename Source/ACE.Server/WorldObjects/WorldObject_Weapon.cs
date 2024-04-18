@@ -1119,7 +1119,7 @@ namespace ACE.Server.WorldObjects
 
             var attackType = W_AttackType;
 
-            if ((attackType & AttackType.Offhand) != 0)
+            if ((attackType & AttackType.Offhand) != 0 && attackType != AttackType.DoubleStrike)
             {
                 _log.Warning($"{Name} ({Guid}, {WeenieClassId}).GetAttackType(): {attackType}");
                 attackType &= ~AttackType.Offhand;
@@ -1231,7 +1231,7 @@ namespace ACE.Server.WorldObjects
         {
             var attackType = W_AttackType;
 
-            if ((attackType & AttackType.Offhand) != 0)
+            if ((attackType & AttackType.Offhand) != 0 && attackType != AttackType.DoubleStrike)
             {
                 _log.Warning($"{Name} ({Guid}, {WeenieClassId}).GetOffhandAttackType(): {attackType}");
                 attackType &= ~AttackType.Offhand;
