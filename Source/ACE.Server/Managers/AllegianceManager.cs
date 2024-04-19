@@ -288,7 +288,7 @@ namespace ACE.Server.Managers
             //var directFactor = direct ? 1.0f : 0.5f; // Currently not in use. May not be needed. Requires further testing.
             var loyaltyMod = loyalty / SkillCap;
             var leadershipMod = leadership / SkillCap;
-            var rankMod = (float)patron.AllegianceRank.Value == 0 ? 1 : (float)patron.AllegianceRank.Value / 10;
+            var rankMod = (float)(patron.AllegianceRank ?? 0) == 0 ? 1 : (float)(patron.AllegianceRank ?? 0) / 10;
 
             var generated = loyaltyMod * 0.5f; // directFactor to be used here if needed.
             var received = leadershipMod * rankMod;
