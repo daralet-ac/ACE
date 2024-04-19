@@ -17,7 +17,7 @@ namespace ACE.Server.Network.Handlers
     {
         private static readonly ILogger _log = Log.ForContext(typeof(DDDHandler));
 
-        public static bool Debug = true;
+        public static bool Debug = false;
 
         [GameMessage(GameMessageOpcode.DDD_InterrogationResponse, SessionState.AuthConnected)]
         public static void DDD_InterrogationResponse(ClientMessage message, Session session)
@@ -144,23 +144,18 @@ namespace ACE.Server.Network.Handlers
 
                             if ((hexValue & 0xFFFF) == 0xFFFF)
                             {
-                                //Console.WriteLine($"Landblock: {fileId:X8} {fileId}");
                                 qdid_type = DatFileType.LandBlock;
+                                //Console.WriteLine($"Landblock: {fileId:X8} {fileId}");
                             }
                             else if ((hexValue & 0xFFFE) == 0xFFFE)
                             {
-                                //Console.WriteLine($"LandblockInfo: {fileId:X8} {fileId}");
                                 qdid_type = DatFileType.LandBlockInfo;
-                            }
-                            else if ((hexValue & 0x0100) == 0x0100)
-                            {
-                                //Console.WriteLine($"EnvCell: {fileId:X8} {fileId}");
-                                qdid_type = DatFileType.EnvCell;
+                                //Console.WriteLine($"LandblockInfo: {fileId:X8} {fileId}");
                             }
                             else
                             {
                                 qdid_type = DatFileType.EnvCell;
-                                //Console.WriteLine($"Other: {fileId:X8} {fileId}");
+                                //Console.WriteLine($"EnvCell: {fileId:X8} {fileId}");
                             }
 
                             // Landblock also needs to send the LandBlockInfo (0xFFFE) file with it...
@@ -259,9 +254,14 @@ namespace ACE.Server.Network.Handlers
             var qdid_type = (DatFileType)message.Payload.ReadUInt32();
             var qdid_ID = message.Payload.ReadUInt32();
 
-            Console.WriteLine($"Message: {message}, Type: {qdid_type}, ID: {qdid_ID}, IDX8: {qdid_ID:X8}");
+            //Console.WriteLine($"Message: {message}, Type: {qdid_type}, ID: {qdid_ID}, IDX8: {qdid_ID:X8}");
 
-            _log.Information($"[DDD] client {session.Account} requested data on 0x{qdid_ID:X8} | {qdid_type}{(!enableDATpatching ? $"; DAT patching is disabled{(showDatWarning ? " and client will be booted" : "")}" : "")}");
+            if (enableDATpatching)
+                _log.Information("[DDD] client {AccountId} requested data on 0x{FileId:X8} | {FileType}", session.Account, qdid_ID, qdid_type);
+            else if (!enableDATpatching && showDatWarning)
+                _log.Information("[DDD] client {AccountId} requested data on 0x{FileId:X8} | {FileType}; DAT patching is disabled and client will be booted.", session.Account, qdid_ID, qdid_type);
+            else
+                _log.Information("[DDD] client {AccountId} requested data on 0x{FileId:X8} | {FileType}; DAT patching is disabled.", session.Account, qdid_ID, qdid_type);
 
             if (!enableDATpatching)
             {
