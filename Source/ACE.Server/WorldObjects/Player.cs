@@ -1014,8 +1014,8 @@ namespace ACE.Server.WorldObjects
             //SPEC BONUS - Jump: Gain a buff that doubles Jump skill for 10 seconds after jumping.
             if (GetCreatureSkill(Skill.Jump).AdvancementClass == SkillAdvancementClass.Specialized)
             {
-                var jumpSpell = new Spell(SpellId.JumpMasteryRare);
-                TryCastSpell(jumpSpell, this);
+                var jumpSpell = new Spell(SpellId.JumpSpecialization);
+                CreateEnchantment(this, this, null, jumpSpell);
             }
         }
 

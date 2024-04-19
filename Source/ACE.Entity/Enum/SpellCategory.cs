@@ -747,5 +747,6 @@ namespace ACE.Entity.Enum
         TrinketCriticalDamageRating = 750,
         WardRaising = 751,
         WardLowering = 752,
+        CampfireRested = 753,
     }
 }
