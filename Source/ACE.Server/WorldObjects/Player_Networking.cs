@@ -377,7 +377,7 @@ namespace ACE.Server.WorldObjects
                 var forwardCommand =  CurrentMovementData.Invalid.State.ForwardCommand;
                 if (forwardCommand != MotionCommand.Crouch && forwardCommand != MotionCommand.Sitting && forwardCommand != MotionCommand.Sleeping)
                 {
-                    var spell = new ACE.Server.Entity.Spell(SpellId.TrinketXPBoost1);  // placeholder
+                    var spell = new ACE.Server.Entity.Spell(SpellId.CampfireRest1);  
                     CreateEnchantment(this, WellRestedHotspot, null, spell);
 
                     WellRestedHotspot = null;
