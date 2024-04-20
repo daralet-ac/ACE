@@ -17,16 +17,16 @@ namespace ACE.Server.WorldObjects
         private static readonly int[] enemyHealthRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
         private static readonly int[] enemyStaminaManaRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
 
-        private static readonly int[] enemyArmorWard = { 20, 30, 45, 68, 101, 152, 228, 342, 513 };
-        private static readonly int[] enemyAttack = { 10, 75, 150, 200, 250, 300, 400, 500, 1000};
-        private static readonly int[] enemyDefense = { 10, 100, 200, 300, 400, 500, 600, 700, 1000 };
+        private static readonly int[] enemyArmorWard = { 10, 20, 45, 68, 101, 152, 228, 342, 513 };
+        private static readonly int[] enemyAttack = { 10, 50, 150, 200, 250, 300, 400, 500, 1000};
+        private static readonly int[] enemyDefense = { 10, 75, 200, 300, 400, 500, 600, 700, 1000 };
         private static readonly int[] enemyAssessDeception = { 10, 50, 100, 150, 200, 250, 300, 350, 400 };
         private static readonly int[] enemyRun = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
 
-        private static readonly float[] enemyDamage = { 2.0f, 2.5f, 3.0f, 3.3f, 3.6f, 3.9f, 4.2f, 5.0f, 6.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
+        private static readonly float[] enemyDamage = { 1.5f, 2.0f, 3.0f, 3.3f, 3.6f, 3.9f, 4.2f, 5.0f, 6.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
 
         private static readonly int[] avgPlayerHealth = { 25, 45, 95, 125, 155, 185, 215, 245, 320 };
-        private static readonly float[] avgPlayerArmorReduction = { 0.57f, 0.57f, 0.40f, 0.31f, 0.25f, 0.21f, 0.18f, 0.16f, 0.1f };
+        private static readonly float[] avgPlayerArmorReduction = { 0.75f, 0.57f, 0.40f, 0.31f, 0.25f, 0.21f, 0.18f, 0.16f, 0.1f };
         private static readonly float[] avgPlayerLifeProtReduction = { 1.0f, 0.9f, 0.9f, 0.85f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
         private static readonly int[] avgPlayerMeleeDefense = { 10, 75, 150, 175, 200, 225, 275, 350, 500 };
 
