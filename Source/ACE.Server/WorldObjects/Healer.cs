@@ -241,7 +241,7 @@ namespace ACE.Server.WorldObjects
                 var spell = new Spell(5208); // healing kit regeneration (surge of regen)
                 spell.SpellStatModVal *=  (float)HealkitMod.Value * (healingSkillCurrent * 0.01f);
 
-                healer.TryCastSpell_Inner(spell, healer);
+                healer.TryCastSpell_Inner(spell, target);
             }
 
             //if (target.Fellowship != null)
