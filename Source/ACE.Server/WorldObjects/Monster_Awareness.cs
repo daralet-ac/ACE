@@ -254,7 +254,7 @@ namespace ACE.Server.WorldObjects
 
                 }
 
-                if (GetDistance(AttackTarget) > VisualAwarenessRange)
+                if (AttackTarget != null && GetDistance(AttackTarget) > VisualAwarenessRange)
                 {
                     ThreatLevel.Remove(AttackTarget as Creature);
                 }
