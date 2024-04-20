@@ -236,7 +236,15 @@ namespace ACE.Server.WorldObjects
                     return false;
                 }
 
-                if(visibleTargets.Count > 1 && untargetablePlayer != null)
+                // Remove targets that are far away
+                const float maxAggroRange = 50.0f;
+                foreach (var targetCreature in visibleTargets)
+                {
+                    if (targetCreature.GetDistanceToTarget() > maxAggroRange)
+                        visibleTargets.Remove(targetCreature);
+                }
+
+                if (visibleTargets.Count > 1 && untargetablePlayer != null)
                     visibleTargets.Remove(untargetablePlayer);
 
                 if (untargetablePlayer != null && untargetablePlayer is Player vanishedPlayer && Time.GetUnixTime() < vanishedPlayer.LastVanishActivated + 5)
