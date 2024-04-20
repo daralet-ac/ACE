@@ -236,14 +236,6 @@ namespace ACE.Server.WorldObjects
                     return false;
                 }
 
-                // Remove targets that are far away
-                const float maxAggroRange = 50.0f;
-                foreach (var targetCreature in visibleTargets)
-                {
-                    if (targetCreature.GetDistanceToTarget() > maxAggroRange)
-                        visibleTargets.Remove(targetCreature);
-                }
-
                 if (visibleTargets.Count > 1 && untargetablePlayer != null)
                     visibleTargets.Remove(untargetablePlayer);
 
@@ -260,6 +252,11 @@ namespace ACE.Server.WorldObjects
                         return false;
                     }
 
+                }
+
+                if (GetDistance(AttackTarget) > VisualAwarenessRange)
+                {
+                    ThreatLevel.Remove(AttackTarget as Creature);
                 }
 
                 // Generally, a creature chooses whom to attack based on:
