@@ -12,7 +12,7 @@ public class ChatModule : InteractionModuleBase<SocketInteractionContext>
     [SlashCommand("gamecast", "Broadcast messages to the world on behave of SYSTEM")]
     public async Task Gamecast(string message)
     {
-        var msg = $"<Broadcast from System> {message}";
+        var msg = $"Broadcast from System> {message}";
         var sysMessage = new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast);
         PlayerManager.BroadcastToAll(sysMessage);
         PlayerManager.LogBroadcastChat(Channel.AllBroadcast, null, msg);
