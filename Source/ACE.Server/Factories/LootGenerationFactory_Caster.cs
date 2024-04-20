@@ -201,7 +201,7 @@ namespace ACE.Server.Factories
 
             if(profile.Tier == 1)
             {
-                wo.Name += " (damaged)";
+                //wo.Name += " (damaged)";
             }
 
             // assign jewel slots
