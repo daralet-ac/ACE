@@ -30,6 +30,10 @@ namespace ACE.Server.Entity
             if (skill.AdvancementClass < SkillAdvancementClass.Trained)
                 return;
 
+            // Bandaid for Thievery skill (awards outrageous amounts of XP when succeeding difficult checks)
+            if (skill.Skill == Skill.Lockpick)
+                return;
+
             var last_difficulty = skill.PropertiesSkill.ResistanceAtLastCheck;
             var last_used_time = skill.PropertiesSkill.LastUsedTime;
 
