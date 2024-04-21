@@ -438,11 +438,20 @@ namespace ACE.Server.WorldObjects
             {
                 if (homeRadiusSq == null)
                 {
-                    var homeRadius = HomeRadius ?? DefaultHomeRadius;
+                    var homeRadius = HomeRadius ?? LevelScaledHomeRadius();
                     homeRadiusSq = (float)(homeRadius * homeRadius);
                 }
                 return homeRadiusSq.Value;
             }
+        }
+
+        public float LevelScaledHomeRadius()
+        {
+            var minRadius = DefaultHomeRadius * 0.5f;
+            var scale = (float)((Level ?? 1) / 100);
+            var mod = minRadius * scale;
+
+            return Math.Max(DefaultHomeRadius, minRadius + mod);
         }
 
         public void CheckMissHome()
