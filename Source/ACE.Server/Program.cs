@@ -61,7 +61,7 @@ namespace ACE.Server
 
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", reloadOnChange: false, optional: false)
-                .AddJsonFile("appsettings.Local.json", reloadOnChange: false, optional: true)
+                .AddUserSecrets<Program>(optional: true)
                 .Build();
 
             Log.Logger = new LoggerConfiguration()
