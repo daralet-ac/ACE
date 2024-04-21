@@ -451,7 +451,7 @@ namespace ACE.Server.WorldObjects
             var scale = (float)((Level ?? 1) / 100);
             var mod = minRadius * scale;
 
-            return Math.Max(DefaultHomeRadius, minRadius + mod);
+            return Math.Min(DefaultHomeRadius, minRadius + mod);
         }
 
         public void CheckMissHome()
