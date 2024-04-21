@@ -805,8 +805,6 @@ namespace ACE.Server.WorldObjects
                 if (ManaBarrierToggle && Mana.Current >= manaDamage)
                 {
                     damageTaken = (uint)(amount * 0.75f);
-                    Console.WriteLine(amount);
-                    Console.WriteLine(damageTaken);
                     PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
                     UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
                     UpdateVitalDelta(Health, (int)-damageTaken);
