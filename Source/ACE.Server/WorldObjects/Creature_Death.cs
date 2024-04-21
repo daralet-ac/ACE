@@ -263,14 +263,14 @@ namespace ACE.Server.WorldObjects
 
             switch (tier)
             {
-                case 1: baseXp = levelTotalXP * 0.01f; break;
-                case 2: baseXp = levelTotalXP * 0.005f; break;
-                case 3: baseXp = levelTotalXP * 0.004f; break;
-                case 4: baseXp = levelTotalXP * 0.003f; break;
-                case 5: baseXp = levelTotalXP * 0.0025f; break;
+                case 1: baseXp = levelTotalXP * 0.05f; break;
+                case 2: baseXp = levelTotalXP * 0.01f; break;
+                case 3: baseXp = levelTotalXP * 0.005f; break;
+                case 4: baseXp = levelTotalXP * 0.004f; break;
+                case 5: baseXp = levelTotalXP * 0.003f; break;
                 case 6: baseXp = levelTotalXP * 0.002f; break;
-                case 7: baseXp = levelTotalXP * 0.0015f; break;
-                case 8: baseXp = levelTotalXP * 0.001f; break;
+                case 7: baseXp = levelTotalXP * 0.001f; break;
+                case 8: baseXp = levelTotalXP * 0.0005f; break;
             }
 
             return (int)Math.Round(baseXp);

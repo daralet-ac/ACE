@@ -140,20 +140,20 @@ namespace ACE.Server.WorldObjects
 
             var m_amount = (long)Math.Round(amount * overlevelPenalty * altBonus);
 
-            // Max possible kill xp gained is equal to 1% of your current level cost (5% of current level cost if under level 10)
+            // Max possible kill xp gained is equal to 1% of your current level cost (10% of current level cost if under level 10)
             if (xpType == XpType.Kill)
             {
                 if (Level.Value < 10)
                 {
                     var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                    var maxXpPerKill = (long)(currentLevelCost * 0.05);
+                    var maxXpPerKill = (long)(currentLevelCost * 0.1);
 
                     m_amount = Math.Min(m_amount, maxXpPerKill);
                 }
                 else if (Level.Value < 20)
                 {
                     var currentLevelCost = DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                    var maxXpPerKill = (long)(currentLevelCost * 0.025);
+                    var maxXpPerKill = (long)(currentLevelCost * 0.05);
 
                     m_amount = Math.Min(m_amount, maxXpPerKill);
                 }

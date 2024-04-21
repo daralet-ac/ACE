@@ -12,7 +12,7 @@ namespace ACE.Server.WorldObjects
         private static bool DebugArchetypeSystem = false;
 
         // Stat ranges by tier
-        private static readonly int[] enemyHealth = { 10, 100, 200, 350, 500, 800, 1200, 1600, 2000};
+        private static readonly int[] enemyHealth = { 10, 50, 150, 350, 500, 800, 1200, 1600, 2000};
         private static readonly int[] enemyStaminaMana = { 20, 100, 150, 225, 325, 450, 650, 950, 1250 };
         private static readonly int[] enemyHealthRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
         private static readonly int[] enemyStaminaManaRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
@@ -23,7 +23,7 @@ namespace ACE.Server.WorldObjects
         private static readonly int[] enemyAssessDeception = { 10, 50, 100, 150, 200, 250, 300, 350, 400 };
         private static readonly int[] enemyRun = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
 
-        private static readonly float[] enemyDamage = { 1.5f, 2.0f, 3.0f, 3.3f, 3.6f, 3.9f, 4.2f, 5.0f, 6.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
+        private static readonly float[] enemyDamage = { 1.0f, 1.5f, 3.0f, 3.3f, 3.6f, 3.9f, 4.2f, 5.0f, 6.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
 
         private static readonly int[] avgPlayerHealth = { 25, 45, 95, 125, 155, 185, 215, 245, 320 };
         private static readonly float[] avgPlayerArmorReduction = { 0.75f, 0.57f, 0.40f, 0.31f, 0.25f, 0.21f, 0.18f, 0.16f, 0.1f };
