@@ -533,7 +533,7 @@ namespace ACE.Server.WorldObjects
             {
                 var diff = (int)tweakedSkill - skillFromAttributes;
                 var attributeAdjustment = diff * divisor;
-                _log.Warning("Creature.SetSkills() - Archetype system is attempting to set the base War MAgic skill to {TweakedSkill} for {Name} ({WeenieClassId}) (defaulting to 1). Self attribute should be lowered by {AttributeAdjustment}.", diff, Name, WeenieClassId, attributeAdjustment);
+                _log.Warning("Creature.SetSkills() - Archetype system is attempting to set the base War Magic skill to {TweakedSkill} for {Name} ({WeenieClassId}) (defaulting to 1). Self attribute should be lowered by {AttributeAdjustment}.", diff, Name, WeenieClassId, attributeAdjustment);
             }
 
             var newSkill = tweakedSkill - (uint)skillFromAttributes;
