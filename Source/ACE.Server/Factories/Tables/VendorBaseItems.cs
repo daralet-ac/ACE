@@ -129,52 +129,102 @@ namespace ACE.Server.Factories.Tables
 
             // Brown
             { (0, true, HeritageAny, 1055030, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageAny, 1055030, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageAny, 1055040, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageAny, 1055040, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageAny, 1055050, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageAny, 1055050, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageAny, 1055050, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageAny, 1055050, 0, 0.0, -1) }, // Large Component Pouch
 
             // Green
             { (0, true, HeritageAluvian, 1055032, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageAluvian, 1055032, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageAluvian, 1055042, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageAluvian, 1055042, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageAluvian, 1055052, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageAluvian, 1055052, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageAluvian, 1055052, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageAluvian, 1055052, 0, 0.0, -1) }, // Large Component Pouch
 
             // Blue
             { (0, true, HeritageAluvian, 1055034, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageAluvian, 1055034, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageAluvian, 1055044, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageAluvian, 1055044, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageAluvian, 1055054, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageAluvian, 1055054, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageAluvian, 1055054, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageAluvian, 1055054, 0, 0.0, -1) }, // Large Component Pouch
 
             // Black
             { (0, true, HeritageAluvian, 1055039, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageAluvian, 1055039, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageAluvian, 1055049, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageAluvian, 1055049, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageAluvian, 1055059, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageAluvian, 1055059, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageAluvian, 1055059, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageAluvian, 1055059, 0, 0.0, -1) }, // Large Component Pouch
 
             // Yellow
             { (0, true, HeritageGharundim, 1055031, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageGharundim, 1055031, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageGharundim, 1055041, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageGharundim, 1055041, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageGharundim, 1055051, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageGharundim, 1055051, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageGharundim, 1055051, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageGharundim, 1055051, 0, 0.0, -1) }, // Large Component Pouch
 
             // Red
             { (0, true, HeritageGharundim, 1055036, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageGharundim, 1055036, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageGharundim, 1055046, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageGharundim, 1055046, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageGharundim, 1055056, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageGharundim, 1055056, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageGharundim, 1055056, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageGharundim, 1055056, 0, 0.0, -1) }, // Large Component Pouch
 
             // Gray
             { (0, true, HeritageGharundim, 1055038, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageGharundim, 1055038, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageGharundim, 1055048, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageGharundim, 1055048, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageGharundim, 1055058, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageGharundim, 1055058, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageGharundim, 1055058, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageGharundim, 1055058, 0, 0.0, -1) }, // Large Component Pouch
             // Teal
             { (0, true, HeritageSho, 1055033, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageSho, 1055033, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageSho, 1055043, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageSho, 1055043, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageSho, 1055053, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageSho, 1055053, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageSho, 1055053, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageSho, 1055053, 0, 0.0, -1) }, // Large Component Pouch
 
             // Purple
             { (0, true, HeritageSho, 1055035, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageSho, 1055035, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageSho, 1055045, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageSho, 1055045, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageSho, 1055055, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageSho, 1055055, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageSho, 1055055, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageSho, 1055055, 0, 0.0, -1) }, // Large Component Pouch
 
             // White
             { (0, true, HeritageSho, 1055037, 0, 0.0, -1) }, // Small Component Pouch
+            { (1, true, HeritageSho, 1055037, 0, 0.0, -1) }, // Small Component Pouch
             { (2, true, HeritageSho, 1055047, 0, 0.0, -1) }, // Component Pouch
+            { (3, true, HeritageSho, 1055047, 0, 0.0, -1) }, // Component Pouch
             { (4, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
+            { (5, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
+            { (6, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
+            { (7, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -435,53 +485,103 @@ namespace ACE.Server.Factories.Tables
 
             // Brown
             { (0, false, HeritageAny, 1055000, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageAny, 1055000, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageAny, 1055010, 0, 0.0, -1) }, // quiver
+            { (3, false, HeritageAny, 1055010, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageAny, 1055020, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageAny, 1055020, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageAny, 1055020, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageAny, 1055020, 0, 0.0, -1) }, // large quiver
 
             // Green
             { (0, false, HeritageAluvian, 1055002, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageAluvian, 1055002, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageAluvian, 1055012, 0, 0.0, -1) }, // quiver
+            { (3, false, HeritageAluvian, 1055012, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageAluvian, 1055022, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageAluvian, 1055022, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageAluvian, 1055022, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageAluvian, 1055022, 0, 0.0, -1) }, // large quiver
 
             // Blue
             { (0, false, HeritageAluvian, 1055004, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageAluvian, 1055004, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageAluvian, 1055014, 0, 0.0, -1) }, // quiver
+            { (3, false, HeritageAluvian, 1055014, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageAluvian, 1055024, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageAluvian, 1055024, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageAluvian, 1055024, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageAluvian, 1055024, 0, 0.0, -1) }, // large quiver
 
             // Black
             { (0, false, HeritageAluvian, 1055009, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageAluvian, 1055009, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageAluvian, 1055019, 0, 0.0, -1) }, // quiver
+            { (3, false, HeritageAluvian, 1055019, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageAluvian, 1055029, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageAluvian, 1055029, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageAluvian, 1055029, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageAluvian, 1055029, 0, 0.0, -1) }, // large quiver
 
             // Yellow
             { (0, false, HeritageGharundim, 1055001, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageGharundim, 1055001, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageGharundim, 1055011, 0, 0.0, -1) }, // quiver
+            { (4, false, HeritageGharundim, 1055011, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageGharundim, 1055021, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageGharundim, 1055021, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageGharundim, 1055021, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageGharundim, 1055021, 0, 0.0, -1) }, // large quiver
 
             // Red
             { (0, false, HeritageGharundim, 1055006, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageGharundim, 1055006, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageGharundim, 1055016, 0, 0.0, -1) }, // quiver
+            { (3, false, HeritageGharundim, 1055016, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageGharundim, 1055026, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageGharundim, 1055026, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageGharundim, 1055026, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageGharundim, 1055026, 0, 0.0, -1) }, // large quiver
 
             // Gray
             { (0, false, HeritageGharundim, 1055008, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageGharundim, 1055008, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageGharundim, 1055018, 0, 0.0, -1) }, // quiver
+            { (3, false, HeritageGharundim, 1055018, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageGharundim, 1055028, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageGharundim, 1055028, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageGharundim, 1055028, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageGharundim, 1055028, 0, 0.0, -1) }, // large quiver
 
             // Teal
             { (0, false, HeritageSho, 1055003, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageSho, 1055003, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageSho, 1055013, 0, 0.0, -1) }, // quiver
+            { (3, false, HeritageSho, 1055013, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageSho, 1055023, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageSho, 1055023, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageSho, 1055023, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageSho, 1055023, 0, 0.0, -1) }, // large quiver
 
             // Purple
             { (0, false, HeritageSho, 1055005, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageSho, 1055005, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageSho, 1055015, 0, 0.0, -1) }, // quiver
+            { (3, false, HeritageSho, 1055015, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageSho, 1055025, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageSho, 1055025, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageSho, 1055025, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageSho, 1055025, 0, 0.0, -1) }, // large quiver
 
             // White
             { (0, false, HeritageSho, 1055007, 0, 0.0, -1) }, // small quiver
+            { (1, false, HeritageSho, 1055007, 0, 0.0, -1) }, // small quiver
             { (2, false, HeritageSho, 1055017, 0, 0.0, -1) }, // quiver
+            { (3, false, HeritageSho, 1055017, 0, 0.0, -1) }, // quiver
             { (4, false, HeritageSho, 1055027, 0, 0.0, -1) }, // large quiver
+            { (5, false, HeritageSho, 1055027, 0, 0.0, -1) }, // large quiver
+            { (6, false, HeritageSho, 1055027, 0, 0.0, -1) }, // large quiver
+            { (7, false, HeritageSho, 1055027, 0, 0.0, -1) }, // large quiver
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -610,8 +710,13 @@ namespace ACE.Server.Factories.Tables
 
             // Salvage Sacks
             { (0, false, HeritageAny, 1055060, 0, 0.0, -1) },
+            { (1, false, HeritageAny, 1055060, 0, 0.0, -1) },
             { (2, false, HeritageAny, 1055070, 0, 0.0, -1) },
+            { (3, false, HeritageAny, 1055070, 0, 0.0, -1) },
             { (4, false, HeritageAny, 1055080, 0, 0.0, -1) },
+            { (5, false, HeritageAny, 1055080, 0, 0.0, -1) },
+            { (6, false, HeritageAny, 1055080, 0, 0.0, -1) },
+            { (7, false, HeritageAny, 1055080, 0, 0.0, -1) },
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
