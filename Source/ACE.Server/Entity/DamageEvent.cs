@@ -648,7 +648,7 @@ namespace ACE.Server.Entity
                 if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) > 0)
                 {
                     var jewelcraftingRampMod = (float)playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") / 200;
-                    DamageResistanceRatingMod *= jewelcraftingRampMod * ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) / 66);
+                    DamageResistanceRatingMod += jewelcraftingRampMod * ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) / 66);
                 }
             }
 
