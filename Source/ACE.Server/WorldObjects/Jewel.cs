@@ -232,26 +232,28 @@ namespace ACE.Server.WorldObjects
                 // if a ring or bracelet, change valid locations to left or right only
                 if ((int)target.ValidLocations == 786432)
                 {
-                    if (jewel.Name.Contains("Carnelian")|| jewel.Name.Contains("Azurite") || jewel.Name.Contains("Tiger Eye"))
+                    if (jewel.Name.Contains("Carnelian") || jewel.Name.Contains("Azurite") || jewel.Name.Contains("Tiger Eye"))
                     {
                         target.ValidLocations = ACE.Entity.Enum.EquipMask.FingerWearRight;
-                        target.Use += "This ring can only be worn on the right hand.";
+                        target.Use = "This ring can only be worn on the right hand.";
                     }
                     else
+                    {
                         target.ValidLocations = ACE.Entity.Enum.EquipMask.FingerWearLeft;
-                        target.Use += "This ring can only be worn on the left hand.";
+                        target.Use = "This ring can only be worn on the left hand.";
+                    }
                 }
                 if ((int)target.ValidLocations == 196608)
                 {
                     if (jewel.Name.Contains("Amethyst") || jewel.Name.Contains("Diamond") || jewel.Name.Contains("Onyx") || jewel.Name.Contains("Zircon"))
                     {
                         target.ValidLocations = ACE.Entity.Enum.EquipMask.WristWearRight;
-                        target.Use += "This bracelet can only be worn on the right wrist.";
+                        target.Use = "This bracelet can only be worn on the right wrist.";
                     }
                     else
                     {
                         target.ValidLocations = ACE.Entity.Enum.EquipMask.WristWearLeft;
-                        target.Use += "This bracelet can only be worn on the left wrist.";
+                        target.Use = "This bracelet can only be worn on the left wrist.";
                     }
                 }
 
@@ -696,6 +698,7 @@ namespace ACE.Server.WorldObjects
 
                 target.Attuned = null;
                 target.Bonded = null;
+                player.EnqueueBroadcast(new GameMessageUpdateObject(target));
                 return;
             }
 
