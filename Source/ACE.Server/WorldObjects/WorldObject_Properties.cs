@@ -3752,6 +3752,12 @@ namespace ACE.Server.WorldObjects
             set { if (!value.HasValue) RemoveProperty(PropertyDataId.SpellExtracted); else SetProperty(PropertyDataId.SpellExtracted, value.Value); }
         }
 
+        public uint? SpellToExtract
+        {
+            get => GetProperty(PropertyDataId.SpellToExtract);
+            set { if (!value.HasValue) RemoveProperty(PropertyDataId.SpellToExtract); else SetProperty(PropertyDataId.SpellToExtract, value.Value); }
+        }
+
         public double? BaseArmorWarMagicMod
         {
             get => (double?)GetProperty(PropertyFloat.BaseArmorWarMagicMod);

@@ -140,6 +140,7 @@ namespace ACE.Entity.Enum.Properties
         EmpoweredScarabTriggerSpellId = 63,
         [ServerOnly]
         SpellExtracted = 64,
+        SpellToExtract = 65,
 
 
         [ServerOnly]
