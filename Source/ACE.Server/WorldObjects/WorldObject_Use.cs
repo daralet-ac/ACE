@@ -380,7 +380,7 @@ namespace ACE.Server.WorldObjects
                             if (player.Stamina.Current < staminaCost)
                             {
                                 player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You do not have enough stamina.", ChatMessageType.Broadcast));
-                                return new ActivationResult(false); ;
+                                return new ActivationResult(false); 
                             }
                         }
                         break;
