@@ -319,6 +319,49 @@ namespace ACE.Server.WorldObjects
             if (manaScarab != null)
                 manaScarab.OnEquip(this);
 
+            // handle gear attribute ratings
+            if (item.GearStrength > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Strength];
+                playerAttr.StartingValue += (uint)item.GearStrength;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearEndurance > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Endurance];
+                playerAttr.StartingValue += (uint)item.GearEndurance;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearCoordination > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Coordination];
+                playerAttr.StartingValue += (uint)item.GearCoordination;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearQuickness > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Quickness];
+                playerAttr.StartingValue += (uint)item.GearQuickness;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearFocus > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Focus];
+                playerAttr.StartingValue += (uint)item.GearFocus;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearSelf > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Self];
+                playerAttr.StartingValue += (uint)item.GearSelf;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
             return true;
         }
 
@@ -446,6 +489,50 @@ namespace ACE.Server.WorldObjects
                     HandleActionChangeCombatMode(newCombatMode);
                 }
             }
+
+            // handle gear attribute ratings
+            if (item.GearStrength > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Strength];
+                playerAttr.StartingValue -= (uint)item.GearStrength;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearEndurance > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Endurance];
+                playerAttr.StartingValue -= (uint)item.GearEndurance;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearCoordination > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Coordination];
+                playerAttr.StartingValue -= (uint)item.GearCoordination;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearQuickness > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Quickness];
+                playerAttr.StartingValue -= (uint)item.GearQuickness;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearFocus > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Focus];
+                playerAttr.StartingValue -= (uint)item.GearFocus;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
+            if (item.GearSelf > 0)
+            {
+                var playerAttr = Attributes[PropertyAttribute.Self];
+                playerAttr.StartingValue -= (uint)item.GearSelf;
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
+            }
+
 
             return true;
         }

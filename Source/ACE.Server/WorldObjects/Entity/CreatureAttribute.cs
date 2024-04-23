@@ -96,40 +96,6 @@ namespace ACE.Server.WorldObjects.Entity
             {
                 uint total = Ranks + StartingValue;
 
-                // JEWEL - Attributes: Adds to Base
-
-                if (creature is Creature player)
-                {
-                    switch (Attribute)
-                    {
-                        case PropertyAttribute.Strength:
-                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearStrength) > 0)
-                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearStrength));
-                            break;
-                        case PropertyAttribute.Endurance:
-                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearEndurance) > 0)
-                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearEndurance));
-                            break;
-                        case PropertyAttribute.Coordination:
-                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearCoordination) > 0)
-                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearCoordination));
-                            break;
-                        case PropertyAttribute.Quickness:
-                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearQuickness) > 0)
-                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearQuickness));
-                            break;
-                        case PropertyAttribute.Focus:
-                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearFocus) > 0)
-                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearFocus));
-                            break;
-                        case PropertyAttribute.Self:
-                            if (player.GetEquippedItemsRatingSum(PropertyInt.GearSelf) > 0)
-                                total += (uint)(player.GetEquippedItemsRatingSum(PropertyInt.GearSelf));
-                            break;
-                    }
-                }
-                
-
                 return total;
             }
         }
