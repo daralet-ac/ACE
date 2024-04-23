@@ -133,12 +133,18 @@ namespace ACE.Server.WorldObjects
                     player.SendUseDoneEvent();
                     return;
                 }
+                // if not confirmed yet, we select a spell from the item and assign the ID to the pearl's SpellToExtract property.
+                // confirmation runs this method a second time after hitting yes
+                // so with multi-spell items, if we don't somehow save the previous spell it will roll again, potentially picking a different one
+                if (!confirmed)
+                {
+                    var spellToExtractRoll = ThreadSafeRandom.Next(0, spellCount - 1);
+                    var spellToExtractId = spells[spellToExtractRoll];
 
-                var spellToExtractRoll = ThreadSafeRandom.Next(0, spellCount - 1);
-                var spellToExtractId = spells[spellToExtractRoll];
+                    source.SpellToExtract = (uint?)spellToExtractId;
+                }
 
-                Spell chosenSpell = new Spell(spellToExtractId);
-
+                Spell chosenSpell = new Spell((uint)source.SpellToExtract);
                 var chance = 100;
 
                 var showDialog = player.GetCharacterOption(CharacterOption.UseCraftingChanceOfSuccessDialog);
@@ -186,10 +192,10 @@ namespace ACE.Server.WorldObjects
                     var spellName = "";
                     if (success)
                     {
-                        Spell spell = new Spell(spellToExtractId);
+                        Spell spell = new Spell((int)source.SpellToExtract);
                         spellName = spell.Name;
 
-                        pearl.SpellExtracted = (uint?)spellToExtractId;
+                        pearl.SpellExtracted = source.SpellToExtract;
 
                         var itemType = "";
                         if (target.ItemType == ItemType.Jewelry)
