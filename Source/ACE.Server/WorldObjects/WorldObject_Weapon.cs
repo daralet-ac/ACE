@@ -942,6 +942,9 @@ namespace ACE.Server.WorldObjects
             var creatureAttacker = attacker as Creature;
             var playerAttacker = attacker as Player;
 
+            if (playerAttacker != null && playerAttacker.GetCreatureSkill(Skill.ArcaneLore).Current < ItemDifficulty)
+                return;
+
             // COMBAT ABILITY - Enchanted: Full power attack has 100% proc chance
             if (playerAttacker != null)
             {
