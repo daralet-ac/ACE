@@ -547,7 +547,7 @@ namespace ACE.Server.WorldObjects
                 if (overloadChance > ThreadSafeRandom.Next(0, 1))
                 {
                     var damage = sourcePlayer.Health.MaxValue / 10;
-                    sourcePlayer.UpdateVitalDelta(sourcePlayer.Health, damage);
+                    sourcePlayer.UpdateVitalDelta(sourcePlayer.Health, -(int)damage);
                     sourcePlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Overloaded! You lose control of the energies flowing through you, suffering {damage} points of damage!", ChatMessageType.Magic));
                     sourcePlayer.PlayParticleEffect(PlayScript.Fizzle, sourcePlayer.Guid);
 
