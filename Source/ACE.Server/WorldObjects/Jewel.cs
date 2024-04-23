@@ -422,6 +422,7 @@ namespace ACE.Server.WorldObjects
                 case ACE.Entity.Enum.MaterialType.Malachite:
                     jewelProperty = "Components";
                     appendedName = "of the Meticulous Magus";
+                    CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
                     break;
                 case ACE.Entity.Enum.MaterialType.Moonstone:
                     jewelProperty = "Item Mana Useage";
