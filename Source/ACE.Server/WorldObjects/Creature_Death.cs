@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
 using ACE.Database;
+using ACE.Database.Models.Auth;
 using ACE.Database.Models.World;
 using ACE.DatLoader;
 using ACE.Entity;
@@ -641,7 +642,7 @@ namespace ACE.Server.WorldObjects
                     if (Player.DungeonList.TryGetValue((int)position.Landblock, out var dungeonName))
                         location = dungeonName;
                     else if (landblock.IsDungeon)
-                         location = "Unknown Dungeon";
+                        location = "Unknown Dungeon";
                     else
                         location = corpse.Location.GetMapCoordStr();
 
@@ -652,7 +653,7 @@ namespace ACE.Server.WorldObjects
                     if (player.CorpseLog == null)
                         player.CorpseLog = $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
                     else
-                       player.CorpseLog += $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
+                        player.CorpseLog += $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
 
 
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Use the @corpses command for a list of recent corpses. To query items dropped, type '@corpses' followed by the corpse number on the list. To remove a corpse you do not plan on retrieving, type '@corpses remove' followed by the corpse number.", ChatMessageType.Broadcast));
@@ -681,6 +682,19 @@ namespace ACE.Server.WorldObjects
 
                     if (dropped.Count == 0 && !isPKLdeath)
                         player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have retained all your items. You do not need to recover your corpse!", ChatMessageType.Broadcast));
+                }
+
+                if (player.ManaBarrierToggle)
+                {
+                    var toggles = player.GetInventoryItemsOfWCID(1051110);
+
+                    player.ToggleManaBarrierSetting();
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Upon death, your mana barrier fails and collapses!", ChatMessageType.Magic));
+                    if (toggles != null)
+                    {
+                        foreach (var toggle in toggles)
+                            EnchantmentManager.StartCooldown(toggle);
+                    }
                 }
             }
             else
