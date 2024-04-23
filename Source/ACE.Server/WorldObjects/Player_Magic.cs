@@ -1107,7 +1107,7 @@ namespace ACE.Server.WorldObjects
                     TryCastItemEnchantment_WithRedirects(spell, target, itemCaster);
 
                     // use target resistance?
-                    Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.PortalMagic), spell.PowerMod);
+                   // Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.PortalMagic), spell.PowerMod);
 
                     if (spell.IsHarmful)
                     {
