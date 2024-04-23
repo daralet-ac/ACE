@@ -45,7 +45,7 @@ namespace ACE.Server.WorldObjects
             // JEWEL - Hematite: Self-harm damage
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
             {
-                var jewelSelfHarm = 1f + (float)(playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
+                var jewelSelfHarm = (float)(playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
                 var selfHarm = (int)(jewelSelfHarm * damage);
                 playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarm);
                 playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, (uint)selfHarm);
