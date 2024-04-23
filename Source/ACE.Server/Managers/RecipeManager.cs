@@ -158,6 +158,9 @@ namespace ACE.Server.Managers
             if (recipe.IsTinkering())
                 return true;
 
+            if (recipe.Skill == (uint)Skill.ItemTinkering)
+                return true;
+
             return recipe.Skill > 0 && recipe.Difficulty > 0;
         }
 
