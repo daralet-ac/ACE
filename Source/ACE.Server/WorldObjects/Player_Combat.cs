@@ -218,6 +218,8 @@ namespace ACE.Server.WorldObjects
                                 recklessPercent = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless") / 5;
                                 if (recklessPercent > 100)
                                     recklessPercent = 100;
+                                if (recklessPercent < 0)
+                                    recklessPercent = 0;
 
                                 recklessMsg = $"{recklessPercent} Fury! ";
                             }
