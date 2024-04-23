@@ -721,7 +721,7 @@ namespace ACE.Server.WorldObjects.Managers
         /// </summary>
         public virtual float GetXPBonus()
         {
-            var enchantments = GetEnchantments(SpellCategory.TrinketXPRaising);
+            var enchantments = GetEnchantments(SpellCategory.CampfireRested);
 
             // TODO: temporary code to handle both additive and multiplicative mods
             // should be additive in database, update when everything is in sync
