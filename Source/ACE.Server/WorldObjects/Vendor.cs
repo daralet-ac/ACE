@@ -117,6 +117,8 @@ namespace ACE.Server.WorldObjects
 
             LastRestockTime = DateTime.UnixEpoch;
             OpenForBusiness = ValidateVendorRequirements();
+            
+            SetMerchandiseItemTypes();
         }
 
         private bool ValidateVendorRequirements()
@@ -1139,6 +1141,26 @@ namespace ACE.Server.WorldObjects
         {
             foreach (var createdItem in createdItems)
                 createdItem.Destroy();
+        }
+
+        private void SetMerchandiseItemTypes()
+        {
+            switch (GetProperty(PropertyString.Template))
+            {
+                case "Archmage":
+                case "Apprentice": MerchandiseItemTypes = (int)ItemType.VendorArchmage; break;
+                case "Armorer": MerchandiseItemTypes = (int)ItemType.VendorArmorer; break;
+                case "Barkeeper": MerchandiseItemTypes = (int)ItemType.VendorBarkeep; break;
+                case "Blacksmith": MerchandiseItemTypes = (int)ItemType.VendorBlacksmith; break;
+                case "Bowyer": MerchandiseItemTypes = (int)ItemType.VendorBowyer; break;
+                case "Grocer": MerchandiseItemTypes = (int)ItemType.VendorGrocer; break;
+                case "Healer": MerchandiseItemTypes = (int)ItemType.VendorHealer; break;
+                case "Jeweler": MerchandiseItemTypes = (int)ItemType.VendorJeweler; break;
+                case "Scribe": MerchandiseItemTypes = (int)ItemType.VendorScribe; break;
+                case "Shopkeeper": MerchandiseItemTypes = (int)ItemType.VendorShopKeep; break;
+                case "Tailor": MerchandiseItemTypes = (int) ItemType.VendorTailor; break;
+                case "Weaponsmith": MerchandiseItemTypes = (int)ItemType.VendorWeaponsmith; break;
+            }
         }
 
         public bool OpenForBusiness
