@@ -26,7 +26,7 @@ namespace ACE.Server.Factories.Tables
             ( SpellId.CANTRIPARCANEPROWESS1,          1.0f ),
 
             ( SpellId.CANTRIPMAGICRESISTANCE1,        1.0f ),
-            ( SpellId.CANTRIPIMPREGNABILITY1,         1.0f ),
+            //( SpellId.CANTRIPIMPREGNABILITY1,         1.0f ),
             ( SpellId.CANTRIPINVULNERABILITY1,        1.0f ),
             ( SpellId.CANTRIPDECEPTIONPROWESS1,       1.0f ),
             ( SpellId.CANTRIPMONSTERATTUNEMENT1,      1.0f ),
