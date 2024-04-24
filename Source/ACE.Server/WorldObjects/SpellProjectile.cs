@@ -1164,7 +1164,7 @@ namespace ACE.Server.WorldObjects
                         if (toggles != null)
                         {
                             foreach (var toggle in toggles)
-                                EnchantmentManager.StartCooldown(toggle);
+                                targetPlayer.EnchantmentManager.StartCooldown(toggle);
                         }
 
                         PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
