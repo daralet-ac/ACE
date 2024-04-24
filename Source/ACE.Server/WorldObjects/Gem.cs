@@ -54,12 +54,14 @@ namespace ACE.Server.WorldObjects
             if (!(activator is Player player))
                 return;
 
-            if (player.IsBusy || player.Teleporting || player.suicideInProgress)
+            if (CombatAbilityId == null)
             {
-                player.SendWeenieError(WeenieError.YoureTooBusy);
-                return;
+                if (player.IsBusy || player.Teleporting || player.suicideInProgress)
+                {
+                    player.SendWeenieError(WeenieError.YoureTooBusy);
+                    return;
+                }
             }
-
             if (player.IsJumping)
             {
                 player.SendWeenieError(WeenieError.YouCantDoThatWhileInTheAir);
@@ -384,11 +386,14 @@ namespace ACE.Server.WorldObjects
                 var containedItem = player.FindObject(Guid.Full, Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems);
                 if (containedItem != null) // item is contained by player
                 {
-                    if (player.IsBusy || player.Teleporting || player.suicideInProgress)
+                    if (CombatAbilityId == null)
                     {
-                        player.Session.Network.EnqueueSend(new GameEventWeenieError(player.Session, WeenieError.YoureTooBusy));
-                        player.EnchantmentManager.StartCooldown(this);
-                        return;
+                        if (player.IsBusy || player.Teleporting || player.suicideInProgress)
+                        {
+                            player.Session.Network.EnqueueSend(new GameEventWeenieError(player.Session, WeenieError.YoureTooBusy));
+                            player.EnchantmentManager.StartCooldown(this);
+                            return;
+                        }
                     }
 
                     if (player.IsDead)
