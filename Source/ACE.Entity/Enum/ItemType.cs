@@ -47,10 +47,18 @@ namespace ACE.Entity.Enum
                                               Gem | SpellComponents | Writable | Key | Caster | Portal | PromissoryNote | ManaStone | MagicWieldable,
         RedirectableItemEnchantmentTarget   = MeleeWeapon | Armor | Clothing | MissileWeapon | Caster,
         ItemEnchantableTarget               = MeleeWeapon | Armor | Clothing | Jewelry | Misc | MissileWeapon | Container | Gem | Caster | ManaStone,
-        VendorShopKeep                      = MeleeWeapon | Armor | Clothing | Food | Misc | MissileWeapon | Container | Useless | Writable | Key |
-                                              PromissoryNote | CraftFletchingIntermediate | TinkeringMaterial,
-        VendorGrocer                        = Food | Container | Writable | Key | PromissoryNote | CraftCookingBase,
-        VendorBoyer                         = MissileWeapon | CraftFletchingBase | Container | Money, // (134218560)
-        VendorArchmage                      = Caster | Money | ManaStone | SpellComponents | CraftAlchemyBase, // (8949824)
+
+        VendorShopKeep                      = Misc | Container | Useless | Writable | Key | PromissoryNote | CraftFletchingIntermediate | TinkeringMaterial,
+        VendorGrocer                        = Misc | Food | Container | Writable | Key | PromissoryNote | CraftCookingBase,
+        VendorBowyer                        = Misc | MissileWeapon | Container | PromissoryNote | CraftFletchingBase,
+        VendorArchmage                      = Misc | SpellComponents | Writable | Caster | PromissoryNote | ManaStone | CraftAlchemyBase,
+        VendorBlacksmith                    = MeleeWeapon | Armor | Misc | PromissoryNote,
+        VendorArmorer                       = Armor | Misc | PromissoryNote,
+        VendorWeaponsmith                   = MeleeWeapon | Misc | PromissoryNote,
+        VendorJeweler                       = Jewelry | Misc | Gem | PromissoryNote,
+        VendorScribe                        = Writable | Misc | PromissoryNote,
+        VendorHealer                        = Misc | PromissoryNote,
+        VendorTailor                        = Clothing | Misc | PromissoryNote,
+        VendorBarkeep                       = Misc | Food | PromissoryNote,
     }
 }
