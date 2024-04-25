@@ -208,7 +208,7 @@ namespace ACE.Server.WorldObjects
                     UsesLeft--;
 
                 var s = UsesLeft == 1 ? "" : "s";
-                remainingMsg = UsesLeft > 0 ? $" Your {Name} has {UsesLeft} use{s} left before it will no long provide heal-over-time effects." : $" Your {Name} has run out of uses that provide heal-over-time effects.";
+                remainingMsg = UsesLeft > 0 ? $" Your {Name} has {UsesLeft} use{s} left before it will no longer provide heal-over-time effects." : $" Your {Name} has run out of uses that provide heal-over-time effects.";
 
                 Value -= StructureUnitValue;
 
