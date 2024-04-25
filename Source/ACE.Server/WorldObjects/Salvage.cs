@@ -870,7 +870,7 @@ namespace ACE.Server.WorldObjects
             // Up to x2 xp when succeeding at recipes that are up to 50 more difficult than current skill.
             // x0.25 if failed.
             var progressPercentage = 1 - (skill.Current / 200);
-            var progressMod = 0.1f + 0.9f * progressPercentage;
+            var progressMod = 0.01f + 0.99f * progressPercentage;
 
             var skillDiff = difficulty - skill.Current;
             var diffMod = success ? Math.Clamp(1 + (float)skillDiff / 50, 1.0, 2.0) : 1.0f;
