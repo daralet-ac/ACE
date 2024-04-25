@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -8,6 +9,7 @@ using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
+using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 
 namespace ACE.Server.WorldObjects
@@ -119,8 +121,9 @@ namespace ACE.Server.WorldObjects
         {
             Skill.ArmorTinkering,
             Skill.WeaponTinkering,
-            //Skill.ItemTinkering,
-            Skill.MagicItemTinkering
+            Skill.ItemTinkering,
+            Skill.MagicItemTinkering,
+            Skill.Fletching
         };
 
         public void HandleSalvaging(List<uint> salvageItems)
@@ -196,7 +199,17 @@ namespace ACE.Server.WorldObjects
             if (!SquelchManager.Squelches.Contains(this, ChatMessageType.Salvaging))
             {
                 foreach (var kvp in salvageResults.GetMessages())
-                    Session.Network.EnqueueSend(new GameEventSalvageOperationsResult(Session, kvp.Key, kvp.Value));
+                {
+                    var salvageSkill = kvp.Key;
+                    var results = kvp.Value;
+
+                    foreach (var result in results)
+                    {
+                        var salvResults = new ACE.Server.Network.Structure.SalvageResult(result);
+                        var materialType = Regex.Replace((salvResults.MaterialType).ToString(), "(?<!^)([A-Z])", " $1"); 
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"You obtain {salvResults.Units} {materialType} (ws {salvResults.Workmanship.ToString("N2")}) using your knowledge of {((NewSkillNames)salvageSkill).ToSentence()}.", ChatMessageType.Broadcast));
+                    }
+                }
             }
         }
 
