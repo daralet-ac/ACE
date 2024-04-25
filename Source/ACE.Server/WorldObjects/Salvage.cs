@@ -7,6 +7,8 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
+using Mono.Cecil;
+using Org.BouncyCastle.Asn1.X509;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -45,7 +47,6 @@ namespace ACE.Server.WorldObjects
 
         public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target, bool confirmed = false)
         {
-            
             if (player.IsBusy)
             {
                 player.SendUseDoneEvent(WeenieError.YoureTooBusy);
@@ -68,10 +69,11 @@ namespace ACE.Server.WorldObjects
             }
 
             // check salvage units
-
-            if (source.Structure < (ushort)((target.ArmorSlots ?? 1) * 10))
+            var salvageCost = (target.ItemWorkmanship ?? 1) * (target.ArmorSlots ?? 1);
+            var units = salvageCost == 1 ? "unit" : "units";
+            if (source.Structure < (ushort)salvageCost)
             {
-                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You require at least {(target?.ArmorSlots ?? 1) * 10} units of {source?.MaterialType} to tinker the {target?.Name}.", ChatMessageType.Broadcast));
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You require at least {salvageCost} {units} of {source?.MaterialType} to tinker the {target?.Name}.", ChatMessageType.Broadcast));
                 player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                 return;
             }
@@ -126,7 +128,7 @@ namespace ACE.Server.WorldObjects
 
             var percent = (int)(successChance * 100);
 
-            var floorMsg = $"You determine that you have a {percent} percent chance to succeed.";
+            var floorMsg = $"You determine that you have a {percent} percent chance to succeed and will require {salvageCost} {units} of salvage.";
 
             if (!confirmed)
             {
@@ -221,17 +223,6 @@ namespace ACE.Server.WorldObjects
 
         public static void HandleTinkering(Player player, WorldObject source, WorldObject target, double successChance, int difficulty, CreatureSkill skill, Skill tinkeringSkill)
         {
-
-            var successAmount = "";
-
-            var success = ThreadSafeRandom.Next(0.0f, 1.0f) < successChance;
-
-            if (!success)
-            {
-                BroadcastTinkering(player, source, target, successChance, success, successAmount);
-                TinkeringCleanup(player, source, target);
-            }
-
             var armorSlots = 1;
 
             if (target.ArmorWeightClass != null)
@@ -239,6 +230,9 @@ namespace ACE.Server.WorldObjects
                 if (target.ArmorSlots != null)
                     armorSlots = (int)target.ArmorSlots;
             }
+
+            var successAmount = "";
+            var success = ThreadSafeRandom.Next(0.0f, 1.0f) < successChance;
 
             if (success)
             {
@@ -870,24 +864,33 @@ namespace ACE.Server.WorldObjects
                         break;
                  */
                 }
-
-                // 20% of ranks worth of XP per armor slot, quartered for failure
-                var rankXP = success ? 0.20f * armorSlots : 0.0625f * armorSlots;
-               
-                // check to ensure appropriately difficult tinker before granting (is player skill no more than 50 points away from adjusted diff)
-                if (Math.Abs(skill.Current - difficulty) < 50)
-                {
-                    var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-
-                    var totalXP = (uint)(xP * rankXP);
-
-                        player.NoContribSkillXp(player, tinkeringSkill, totalXP, false);
-                }
-
-                BroadcastTinkering(player, source, target, successChance, success, successAmount);
-                TinkeringCleanup(player, source, target);
             }
 
+            // Awarded xp scales based on level of current skill progress (100% of current rank awarded per tink, down to 10% at 200 skill).
+            // Up to x2 xp when succeeding at recipes that are up to 50 more difficult than current skill.
+            // x0.25 if failed.
+            var progressPercentage = 1 - (skill.Current / 200);
+            var progressMod = 0.1f + 0.9f * progressPercentage;
+
+            var skillDiff = difficulty - skill.Current;
+            var diffMod = success ? Math.Clamp(1 + (float)skillDiff / 50, 1.0, 2.0) : 1.0f;
+
+            var successMod = success ? 1.0f : 0.25f;
+
+            var rankXP = progressMod * diffMod * successMod * armorSlots;
+
+            // check to ensure appropriately difficult tinker before granting (is player skill no more than 50 points away from adjusted diff)
+            if (Math.Abs(skill.Current - difficulty) < 50)
+            {
+                var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
+
+                var totalXP = (uint)(xP * rankXP);
+                
+                player.NoContribSkillXp(player, tinkeringSkill, totalXP, false);
+            }
+
+            BroadcastTinkering(player, source, target, successChance, success, successAmount);
+            TinkeringCleanup(player, source, target);
         }
 
         public static void TinkeringCleanup(Player player, WorldObject source, WorldObject target)
@@ -900,10 +903,12 @@ namespace ACE.Server.WorldObjects
             target.NumTimesTinkered++;
 
             // update salvage bag structure
-            if (source.Structure >= (ushort)((target.ArmorSlots ?? 1) * 10))
+            var workmanship = target.ItemWorkmanship ?? 1;
+
+            if (source.Structure >= (ushort)((target.ArmorSlots ?? 1) * workmanship))
             {
-                source.Structure -= (ushort)((target.ArmorSlots ?? 1) * 10);
-                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your tinkering consumed {(target.ArmorSlots ?? 1) * 10} units of {RecipeManager.GetMaterialName(source.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown)}. The {target.Name} has been tinkered {target.NumTimesTinkered} times.", ChatMessageType.Broadcast));
+                source.Structure -= (ushort)((target.ArmorSlots ?? 1) * workmanship);
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your tinkering consumed {(target.ArmorSlots ?? 1) * workmanship} units of {RecipeManager.GetMaterialName(source.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown)}. The {target.Name} has been tinkered {target.NumTimesTinkered} times.", ChatMessageType.Broadcast));
             }
 
             source.Name = $"Salvage ({source.Structure})";
@@ -914,7 +919,6 @@ namespace ACE.Server.WorldObjects
 
         private static void UpdateObj(Player player, WorldObject obj)
         {
-
             player.EnqueueBroadcast(new GameMessageUpdateObject(obj));
 
             if (obj.CurrentWieldedLocation != null)
@@ -927,17 +931,21 @@ namespace ACE.Server.WorldObjects
 
             if (invObj != null)
                 player.MoveItemToFirstContainerSlot(obj);
-        }
 
+            if (obj != null && obj.Structure == 0)
+            {
+                var salvageName = obj.NameWithMaterial.Replace(" (0)", "");
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {salvageName} is consumed.", ChatMessageType.Broadcast));
+                player.Session.Network.EnqueueSend(new GameMessageDeleteObject(obj));
+            }
+        }
         public static void BroadcastTinkering(Player player, WorldObject tool, WorldObject target, double chance, bool success, string successAmount)
         {
             var sourceName = Regex.Replace(tool.NameWithMaterial, @" \(\d+\)$", "");
-
             if (success)
                 player.EnqueueBroadcast(new GameMessageSystemChat($"{player.Name} successfully applies the {sourceName} (workmanship {(tool.Workmanship ?? 0):#.00}) to the {target.NameWithMaterial}, {successAmount}.", ChatMessageType.Craft), 10f, ChatMessageType.Craft);
             else
                 player.EnqueueBroadcast(new GameMessageSystemChat($"{player.Name} fails to apply the {sourceName} (workmanship {(tool.Workmanship ?? 0):#.00}) to the {target.NameWithMaterial}.", ChatMessageType.Craft), 10f, ChatMessageType.Craft);
-
             _log.Debug($"[TINKERING] {player.Name} {(success ? "successfully applies" : "fails to apply")} the {sourceName} (workmanship {(tool.Workmanship ?? 0):#.00}) to the {target.NameWithMaterial}.{(!success ? " The target is destroyed." : "")} | Chance: {chance}");
         }
 
