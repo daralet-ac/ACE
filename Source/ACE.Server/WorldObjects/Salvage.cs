@@ -207,18 +207,24 @@ namespace ACE.Server.WorldObjects
             }
 
             // wand checks
-            if (source.MaterialType == ACE.Entity.Enum.MaterialType.Malachite || source.MaterialType == ACE.Entity.Enum.MaterialType.Amethyst
-                && source.MaterialType == ACE.Entity.Enum.MaterialType.Tourmaline && target.ItemType == ItemType.Caster)
-                return true;
+            if (target.ItemType == ItemType.Caster)
+            {
+                if (source.MaterialType == ACE.Entity.Enum.MaterialType.Malachite || source.MaterialType == ACE.Entity.Enum.MaterialType.Amethyst || source.MaterialType == ACE.Entity.Enum.MaterialType.Tourmaline)
+                    return true;
+            }
 
-            if (source.MaterialType == ACE.Entity.Enum.MaterialType.GreenGarnet || source.MaterialType == ACE.Entity.Enum.MaterialType.Opal && target.ElementalDamageBonus == null)
-                return false;
+            if (source.MaterialType == ACE.Entity.Enum.MaterialType.GreenGarnet || source.MaterialType == ACE.Entity.Enum.MaterialType.Opal)
+            {
+                if (target.ElementalDamageMod.HasValue)
+                    return true;
+            }
 
-            if (source.MaterialType == ACE.Entity.Enum.MaterialType.LavenderJade || source.MaterialType == ACE.Entity.Enum.MaterialType.RoseQuartz && target.WeaponRestorationSpellsMod == null)
-                return false;
-            
-            else
-                return false;
+            if (source.MaterialType == ACE.Entity.Enum.MaterialType.LavenderJade || source.MaterialType == ACE.Entity.Enum.MaterialType.RoseQuartz)
+            {
+                if (target.WeaponRestorationSpellsMod.HasValue)
+                    return true;
+            }
+            return false;
         }
 
         public static void HandleTinkering(Player player, WorldObject source, WorldObject target, double successChance, int difficulty, CreatureSkill skill, Skill tinkeringSkill)
