@@ -866,11 +866,11 @@ namespace ACE.Server.WorldObjects
                 }
             }
 
-            // Awarded xp scales based on level of current skill progress (100% of current rank awarded per tink, down to 10% at 200 skill).
+            // Awarded xp scales based on level of current skill progress (50% of current rank awarded per tink, down to 1% at 200 skill).
             // Up to x2 xp when succeeding at recipes that are up to 50 more difficult than current skill.
             // x0.25 if failed.
-            var progressPercentage = 1 - (skill.Current / 200);
-            var progressMod = 0.01f + 0.99f * progressPercentage;
+            var progressPercentage = Math.Max(0, 1 - (skill.Current / 200));
+            var progressMod = 0.01f + 0.49f * progressPercentage;
 
             var skillDiff = difficulty - skill.Current;
             var diffMod = success ? Math.Clamp(1 + (float)skillDiff / 50, 1.0, 2.0) : 1.0f;
@@ -878,9 +878,9 @@ namespace ACE.Server.WorldObjects
             var successMod = success ? 1.0f : 0.25f;
 
             var rankXP = progressMod * diffMod * successMod * armorSlots;
-
+            
             // check to ensure appropriately difficult tinker before granting (is player skill no more than 50 points away from adjusted diff)
-            if (Math.Abs(skill.Current - difficulty) < 50)
+            if (skill.Current - difficulty < 50)
             {
                 var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
 
