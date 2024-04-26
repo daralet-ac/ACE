@@ -32,6 +32,7 @@ namespace ACE.Server.WorldObjects
         public double LastEnchantedWeaponActivated = 0;
 
         public bool OverloadActivated = false;
+        public bool OverloadDumped = false;
         public bool RecklessActivated = false;
 
         public double MultishotActivatedDuration = 10;

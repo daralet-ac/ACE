@@ -50,7 +50,7 @@ namespace ACE.Server.WorldObjects
             if (combatFocus != null)
                 combatAbility = combatFocus.GetCombatAbility();
 
-            // Overload - Increased cost up to 100%+ with Overload stacks
+            // Overload - Increased cost up to 50%+ with Overload stacks
             if (combatAbility == CombatAbility.Overload && this.QuestManager.HasQuest($"{this.Name},Overload"))
             {
                 if (spell.Flags.HasFlag(SpellFlags.FastCast))

@@ -658,7 +658,7 @@ namespace ACE.Server.WorldObjects
             var combatFocusDamageMod = 1.0f;
             if (sourcePlayer != null)
             {
-                // Overload - Increased effectiveness up to 50%+ with Overload stacks, double bonus + erase stacks on activated ability
+                // Overload - Increased effectiveness up to 25%+ with Overload stacks, double bonus + erase stacks on activated ability
                 if (sourcePlayer.EquippedCombatAbility == CombatAbility.Overload && sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload"))
                 {
                     if (sourcePlayer.OverloadActivated == false)
@@ -670,8 +670,9 @@ namespace ACE.Server.WorldObjects
                     if (sourcePlayer.OverloadActivated && sourcePlayer.LastOverloadActivated > Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration)
                     {
                         sourcePlayer.OverloadActivated = false;
+                        sourcePlayer.OverloadDumped = true;
                         var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-                        var overloadMod = (float)overloadStacks / 500;
+                        var overloadMod = (float)overloadStacks / 1000;
                         combatFocusDamageMod += overloadMod;
                         sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
                     }
@@ -679,6 +680,7 @@ namespace ACE.Server.WorldObjects
                     if (sourcePlayer.OverloadActivated && sourcePlayer.LastOverloadActivated < Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration)
                     {
                         sourcePlayer.OverloadActivated = false;
+                        sourcePlayer.OverloadDumped = false;
                         sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
                     }
                 }
@@ -1274,6 +1276,12 @@ namespace ACE.Server.WorldObjects
                 if (sourcePlayer != null)
                 {
                     var critProt = critDefended ? " Your critical hit was avoided with their augmentation!" : "";
+
+                    if (sourcePlayer.OverloadDumped == true)
+                    {
+                        sourcePlayer.OverloadDumped = false;
+                        overloadMsg = "Overload Discharged! ";
+                    }    
 
                     var attackerMsg = $"{resistMost}{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
