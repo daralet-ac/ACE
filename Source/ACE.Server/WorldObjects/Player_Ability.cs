@@ -5,6 +5,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Network.GameAction.Actions;
 using ACE.Server.Network.GameMessages.Messages;
 using Org.BouncyCastle.Asn1.X509;
 using System;
@@ -547,6 +548,13 @@ namespace ACE.Server.WorldObjects
                     sourcePlayer.UpdateVitalDelta(sourcePlayer.Health, -(int)damage);
                     sourcePlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Overloaded! You lose control of the energies flowing through you, suffering {damage} points of damage!", ChatMessageType.Magic));
                     sourcePlayer.PlayParticleEffect(PlayScript.Fizzle, sourcePlayer.Guid);
+                    sourcePlayer.DamageHistory.Add(sourcePlayer, DamageType.Health, (uint)-damage);
+                    if (sourcePlayer.IsDead)
+                    {
+                        var lastDamager = sourcePlayer.DamageHistory.LastDamager;
+                        sourcePlayer.OnDeath(lastDamager, DamageType.Health, false);
+                        sourcePlayer.Die();
+                    }
 
                 }
             }
