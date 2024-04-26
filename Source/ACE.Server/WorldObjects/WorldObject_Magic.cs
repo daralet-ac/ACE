@@ -1106,11 +1106,12 @@ namespace ACE.Server.WorldObjects
                     player.QuestManager.Erase($"{player.Name},Elementalist");
             }
             // JEWEL - Amethyst: Ramping Magic Absorb
-            if (player != null && player != targetCreature)
+            // ensure player is target, and they're not targeting themselves
+            if (targetPlayer != null && this != targetPlayer)
             {
                 if (spell.TransferFlags.HasFlag(TransferFlags.TargetSource | TransferFlags.CasterDestination))
                 {
-                    if (player.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
+                    if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
                     {
                         var jewelRampMod = (float)player.QuestManager.GetCurrentSolves($"{player.Name},Nullification") / 200;
                         var xferReduction = (int)(jewelRampMod * ((float)player.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66));
