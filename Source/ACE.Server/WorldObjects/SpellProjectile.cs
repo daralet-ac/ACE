@@ -1150,35 +1150,38 @@ namespace ACE.Server.WorldObjects
                     if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
                         manaDamage = (damage * 0.25) * 1.5 * skillModifier;
 
-                    if (targetPlayer.ManaBarrierToggle && targetPlayer.Mana.Current >= manaDamage)
+                    if (targetPlayer.ManaBarrierToggle)
                     {
-                        amount = (uint)(damage * 0.75);
-                        PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
-                        targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-Math.Round(manaDamage));
-                        targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
-                        targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
-                    }
-                    // if not enough mana, barrier falls and player takes remainder of damage as health
-                    if (targetPlayer.ManaBarrierToggle && targetPlayer.Mana.Current < manaDamage)
-                    {
-                        targetPlayer.ToggleManaBarrierSetting();
-                        targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic));
-                        if (toggles != null)
+                        if (targetPlayer.Mana.Current >= manaDamage)
                         {
-                            foreach (var toggle in toggles)
-                                targetPlayer.EnchantmentManager.StartCooldown(toggle);
+                            amount = (uint)(damage * 0.75);
+                            PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
+                            targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-Math.Round(manaDamage));
+                            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
+                            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
                         }
+                        // if not enough mana, barrier falls and player takes remainder of damage as health
+                        else
+                        {
+                            targetPlayer.ToggleManaBarrierSetting();
+                            targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic));
+                            if (toggles != null)
+                            {
+                                foreach (var toggle in toggles)
+                                    targetPlayer.EnchantmentManager.StartCooldown(toggle);
+                            }
 
-                        PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
-                        // find mana damage overage and reconvert to HP damage
-                        var manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 1.5;
-                        if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                            manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 3;
+                            PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
+                            // find mana damage overage and reconvert to HP damage
+                            var manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 1.5;
+                            if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                                manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 3;
 
-                        amount = (uint)((damage * 0.75) + manaRemainder);
-                        targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-(targetPlayer.Mana.Current - 1));
-                        targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-(amount));
-                        targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+                            amount = (uint)((damage * 0.75) + manaRemainder);
+                            targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-(targetPlayer.Mana.Current - 1));
+                            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-(amount));
+                            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+                        }
                     }
                 }
             }

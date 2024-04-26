@@ -802,39 +802,41 @@ namespace ACE.Server.WorldObjects
                 // 25% of damage taken as mana, x3 for trained
                 var manaDamage = (amount * 0.25) * 3 * skillModifier;
                 if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                    manaDamage = (amount * 0.25) * 1.5 * skillModifier; 
+                    manaDamage = (amount * 0.25) * 1.5 * skillModifier;
 
-                if (ManaBarrierToggle && Mana.Current >= manaDamage)
+                if (ManaBarrierToggle)
                 {
-                    damageTaken = (uint)(amount * 0.75f);
-                    PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
-                    UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
-                    UpdateVitalDelta(Health, (int)-damageTaken);
-                    DamageHistory.Add(source, damageType, (uint)damageTaken);
-                }
-                // if not enough mana, barrier falls and player takes remainder of damage as health
-                if (ManaBarrierToggle && Mana.Current < manaDamage)
-                {
-                    ToggleManaBarrierSetting();
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic));
-                    if (toggles != null)
+                    if (Mana.Current >= manaDamage)
                     {
-                        foreach (var toggle in toggles)
-                            EnchantmentManager.StartCooldown(toggle);
+                        damageTaken = (uint)(amount * 0.75f);
+                        PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
+                        UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
+                        UpdateVitalDelta(Health, (int)-damageTaken);
+                        DamageHistory.Add(source, damageType, (uint)damageTaken);
                     }
-                    PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
+                    // if not enough mana, barrier falls and player takes remainder of damage as health
+                    else
+                    {
+                        ToggleManaBarrierSetting();
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic));
+                        if (toggles != null)
+                        {
+                            foreach (var toggle in toggles)
+                                EnchantmentManager.StartCooldown(toggle);
+                        }
+                        PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
 
-                    // find mana damage overage and reconvert to HP damage
-                    var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
-                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                        manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
+                        // find mana damage overage and reconvert to HP damage
+                        var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
+                        if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                            manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
 
-                    damageTaken = (uint)((amount * 0.75) + manaRemainder);
-                    UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
-                    UpdateVitalDelta(Health, (int)-(damageTaken));
-                    DamageHistory.Add(source, damageType, damageTaken);
+                        damageTaken = (uint)((amount * 0.75) + manaRemainder);
+                        UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
+                        UpdateVitalDelta(Health, (int)-(damageTaken));
+                        DamageHistory.Add(source, damageType, damageTaken);
+                    }
                 }
-
             }
 
             // update stamina
