@@ -545,7 +545,7 @@ namespace ACE.Server.WorldObjects
             if (stacks > 250)
             { 
                 var overloadChance = 0.075f * (stacks - 250) / 250;
-                if (overloadChance > ThreadSafeRandom.Next(0, 1))
+                if (overloadChance > ThreadSafeRandom.Next(0f, 1f))
                 {
                     var damage = sourcePlayer.Health.MaxValue / 10;
                     sourcePlayer.UpdateVitalDelta(sourcePlayer.Health, -(int)damage);
