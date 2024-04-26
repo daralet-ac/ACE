@@ -182,18 +182,7 @@ namespace ACE.Server.Factories
             wo.SetProperty(PropertyFloat.ArmorResourcePenalty, mod);
 
             // Spells
-            if (isMagical)
-            {
-                AssignMagic(wo, profile, roll, true);
-            }
-            else
-            {
-                wo.ItemManaCost = null;
-                wo.ItemMaxMana = null;
-                wo.ItemCurMana = null;
-                wo.ItemSpellcraft = null;
-                wo.ItemDifficulty = null;
-            }
+            AssignMagic(wo, profile, roll, true, isMagical);
 
             var totalSkillModPercentile = 0.0;
             var totalGearRatingPercentile = 0.0;
@@ -667,19 +656,9 @@ namespace ACE.Server.Factories
 
             wo.Value = Roll_ItemValue(wo, profile.Tier);
 
-            if (isMagical)
-            {
-                // looks like society armor always had impen on it
-                AssignMagic(wo, profile, roll, true);
-            }
-            else
-            {
-                wo.ItemManaCost = null;
-                wo.ItemMaxMana = null;
-                wo.ItemCurMana = null;
-                wo.ItemSpellcraft = null;
-                wo.ItemDifficulty = null;
-            }
+            // looks like society armor always had impen on it
+            AssignMagic(wo, profile, roll, true, isMagical);
+
             AssignArmorLevel(wo, profile.Tier, LootTables.ArmorType.SocietyArmor);
 
             wo.LongDesc = GetLongDesc(wo);

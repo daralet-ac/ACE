@@ -174,21 +174,7 @@ namespace ACE.Server.Factories
             // burden?
 
             // spells
-            if (!isMagical)
-            {
-                wo.ItemManaCost = null;
-                wo.ItemMaxMana = null;
-                wo.ItemCurMana = null;
-                wo.ItemSpellcraft = null;
-                wo.ItemDifficulty = null;
-            }
-            else
-            {
-                // if a caster was from a MagicItem profile, it always had a SpellDID
-                MutateCaster_SpellDID(wo, profile);
-
-                AssignMagic(wo, profile, roll);
-            }
+            AssignMagic(wo, profile, roll, false, isMagical);
 
             // item value
             //if (wo.HasMutateFilter(MutateFilter.Value))   // fixme: data
@@ -234,7 +220,7 @@ namespace ACE.Server.Factories
                 return;
             }
 
-            var spellLevel = SpellLevelChance.Roll(profile.Tier);
+            var spellLevel = Math.Clamp(profile.Tier - 1, 1, 7);
 
             wo.SpellDID = (uint)spellLevels[spellLevel - 1];
 

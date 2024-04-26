@@ -54,17 +54,7 @@ namespace ACE.Server.Factories
             wo.GemType = RollGemType(profile.Tier);
 
             // assign magic
-            if (isMagical)
-                AssignMagic(wo, profile, roll);
-            else
-            {
-                wo.ItemManaCost = null;
-                wo.ItemMaxMana = null;
-                wo.ItemCurMana = null;
-                wo.ItemSpellcraft = null;
-                wo.ItemDifficulty = null;
-                wo.ManaRate = null;
-            }
+            AssignMagic(wo, profile, roll, false, isMagical);
 
             // item value
             //  if (wo.HasMutateFilter(MutateFilter.Value))     // fixme: data

@@ -183,17 +183,7 @@ namespace ACE.Server.Factories
             MutateBurden(wo, profile, true);
 
             // spells
-            if (!isMagical)
-            {
-                // clear base
-                wo.ItemManaCost = null;
-                wo.ItemMaxMana = null;
-                wo.ItemCurMana = null;
-                wo.ItemSpellcraft = null;
-                wo.ItemDifficulty = null;
-            }
-            else
-                AssignMagic(wo, profile, roll);
+            AssignMagic(wo, profile, roll, false, isMagical);
 
             // item value
             //if (wo.HasMutateFilter(MutateFilter.Value))   // fixme: data
