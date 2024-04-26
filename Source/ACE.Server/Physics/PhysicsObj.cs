@@ -2695,6 +2695,13 @@ namespace ACE.Server.Physics
 
                 if (spellProjectile.Strikethrough >= spellProjectile.StrikethroughLimit)
                     strikethrough = false;
+
+                foreach (var collision in collisions.CollideObject)
+                    if (collision.WeenieObj.WorldObject != null && collision.WeenieObj.WorldObject is not Creature)
+                    {
+                        strikethrough = false;
+                        collisions.CollisionNormalValid = true;
+                    }
             }
 
             if (collisions.FramesStationaryFall <= 1)
