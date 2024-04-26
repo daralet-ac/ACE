@@ -34,6 +34,7 @@ public class DiscordBot
         _configuration = configuration;
 
         _services = new ServiceCollection()
+            .AddHttpClient()
             .AddSingleton(_configuration)
             .AddSingleton(_socketConfig)
             .AddSingleton<DiscordSocketClient>()
