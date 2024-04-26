@@ -1155,7 +1155,7 @@ namespace ACE.Server.WorldObjects
                         if (targetPlayer.Mana.Current >= manaDamage)
                         {
                             amount = (uint)(damage * 0.75);
-                            PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
+                            targetPlayer.PlayParticleEffect(PlayScript.RestrictionEffectBlue, targetPlayer.Guid);
                             targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-Math.Round(manaDamage));
                             targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
                             targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
@@ -1171,7 +1171,7 @@ namespace ACE.Server.WorldObjects
                                     targetPlayer.EnchantmentManager.StartCooldown(toggle);
                             }
 
-                            PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
+                            targetPlayer.PlayParticleEffect(PlayScript.HealthDownBlue, targetPlayer.Guid);
                             // find mana damage overage and reconvert to HP damage
                             var manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 1.5;
                             if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
