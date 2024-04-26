@@ -53,7 +53,7 @@ namespace ACE.Server.Factories
 
             // "Empty Flask" was the only dinnerware that never received spells
             if (isMagical && wo.WeenieClassId != (uint)WeenieClassName.flasksimple)
-                AssignMagic(wo, profile, roll);
+                AssignMagic(wo, profile, roll, false, isMagical);
 
             // item value
             if (wo.HasMutateFilter(MutateFilter.Value))

@@ -26,44 +26,6 @@ namespace ACE.Server.Factories
             }
             numSpells = spells.Count;
 
-            // 25% chance for a magical item to have a Proc Spell
-            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
-            if (rng < 0.25f)
-            {
-                if (roll.IsMeleeWeapon || roll.IsMissileWeapon)
-                {
-                    var itemProc = RollItemProc(wo, profile, roll);
-
-                    if (itemProc != SpellId.Undef)
-                    {
-                        var procRate = 0.1f + (0.2f * GetDiminishingRoll(profile)); // 10% to 20% base proc rate
-                        if (wo.IsTwoHanded)
-                            procRate *= 1.5f; // Two-handed weapons have 15% to 30% proc rate
-
-                        Server.Entity.Spell spell = new Server.Entity.Spell(itemProc);
-                        wo.ProcSpellRate = procRate;
-                        wo.ProcSpell = (uint)itemProc;
-                        wo.ProcSpellSelfTargeted = spell.IsSelfTargeted;
-
-                        // Weapons with proc spells deal less physical damage
-                        if (wo.W_WeaponType == WeaponType.Sword || wo.W_WeaponType == WeaponType.Axe || wo.W_WeaponType == WeaponType.Mace ||
-                            wo.W_WeaponType == WeaponType.Spear || wo.W_WeaponType == WeaponType.Staff || wo.W_WeaponType == WeaponType.Dagger || wo.W_WeaponType == WeaponType.Unarmed)
-                        {
-                            wo.Damage = (int)(wo.Damage.Value * 0.75f);
-                        }
-                        if (wo.W_WeaponType == WeaponType.Bow || wo.W_WeaponType == WeaponType.Crossbow || wo.W_WeaponType == WeaponType.Thrown)
-                        {
-                            var difference = wo.DamageMod - 1.0;
-                            var newMod = difference * 0.75;
-
-                            wo.DamageMod = 1.0 + newMod;
-                        }
-
-                        numSpells++;
-                    }
-                }
-            }
-
             return true;
         }
 
@@ -83,7 +45,44 @@ namespace ACE.Server.Factories
             return spells;
         }
 
-        private static SpellId RollItemProc(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
+        public static bool RollProcSpell(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
+        {
+            // 25% chance for a melee/missile weapon item to have a Proc Spell
+            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (rng > 0.25f || (!roll.IsMeleeWeapon && !roll.IsMissileWeapon))
+                return false;
+
+            var itemProc = RollIProcSpellId(wo, profile, roll);
+
+            if (itemProc != SpellId.Undef)
+            {
+                var procRate = 0.1f + (0.2f * GetDiminishingRoll(profile)); // 10% to 20% base proc rate
+                if (wo.IsTwoHanded)
+                    procRate *= 1.5f; // Two-handed weapons have 15% to 30% proc rate
+
+                Server.Entity.Spell spell = new Server.Entity.Spell(itemProc);
+                wo.ProcSpellRate = procRate;
+                wo.ProcSpell = (uint)itemProc;
+                wo.ProcSpellSelfTargeted = spell.IsSelfTargeted;
+
+                // Weapons with proc spells deal less physical damage
+                if (wo.W_WeaponType == WeaponType.Sword || wo.W_WeaponType == WeaponType.Axe || wo.W_WeaponType == WeaponType.Mace ||
+                    wo.W_WeaponType == WeaponType.Spear || wo.W_WeaponType == WeaponType.Staff || wo.W_WeaponType == WeaponType.Dagger || wo.W_WeaponType == WeaponType.Unarmed)
+                {
+                    wo.Damage = (int)(wo.Damage.Value * 0.75f);
+                }
+                if (wo.W_WeaponType == WeaponType.Bow || wo.W_WeaponType == WeaponType.Crossbow || wo.W_WeaponType == WeaponType.Thrown)
+                {
+                    var difference = wo.DamageMod - 1.0;
+                    var newMod = difference * 0.75;
+
+                    wo.DamageMod = 1.0 + newMod;
+                }
+            }
+            return true;
+        }
+
+        private static SpellId RollIProcSpellId(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
         {
             SpellId procSpellId = SpellId.Undef;
 

@@ -18,24 +18,24 @@ namespace ACE.Server.Factories
 {
     public static partial class LootGenerationFactory
     {
-        private static void AssignMagic(WorldObject wo, TreasureDeath profile, TreasureRoll roll, bool isArmor = false)
+        private static void AssignMagic(WorldObject wo, TreasureDeath profile, TreasureRoll roll, bool isArmor = false, bool isMagical = false)
         {
             int numSpells = 0;
             int numEpics = 0;
             int numLegendaries = 0;
 
-            if (roll == null)
-            {
-                // previous method
-                if (!AssignMagic_Spells(wo, profile, isArmor, out numSpells, out numEpics, out numLegendaries))
-                    return;
-            }
-            else
+            if (isMagical)
             {
                 // new method
                 if (!AssignMagic_New(wo, profile, roll, out numSpells))
                     return;
+
+                if(wo.IsCaster)
+                    MutateCaster_SpellDID(wo, profile);
             }
+
+            if (RollProcSpell(wo, profile, roll))
+                numSpells++;
 
             if (numSpells == 0 && wo.SpellDID == null && wo.ProcSpell == null)
             {
@@ -914,13 +914,13 @@ namespace ACE.Server.Factories
         {
             switch(tier)
             {
-                case 1: return 100;
-                case 2: return 200;
-                case 3: return 250;
-                case 4: return 300;
-                case 5: return 350;
-                case 6: return 400;
-                case 7: return 450;
+                case 1: return 75;
+                case 2: return 175;
+                case 3: return 225;
+                case 4: return 275;
+                case 5: return 325;
+                case 6: return 375;
+                case 7: return 425;
                 default: return 50;
             }
         }

@@ -141,21 +141,11 @@ namespace ACE.Server.Factories
             MutateBurden(wo, profile, true);
 
             // spells
-            if (!isMagical)
-            {
-                wo.ItemManaCost = null;
-                wo.ItemMaxMana = null;
-                wo.ItemCurMana = null;
-                wo.ItemSpellcraft = null;
-                wo.ItemDifficulty = null;
-                wo.ManaRate = null;
-            }
-            else
-                AssignMagic(wo, profile, roll);
+            AssignMagic(wo, profile, roll, false, isMagical);
 
             // item value
             //if (wo.HasMutateFilter(MutateFilter.Value))   // fixme: data
-                MutateValue(wo, profile.Tier, roll);
+            MutateValue(wo, profile.Tier, roll);
 
             // long description
             wo.LongDesc = GetLongDesc(wo);
