@@ -29,19 +29,13 @@ namespace ACE.Server.WorldObjects
             amount = Math.Abs(amount);
 
             string xpMessage = "";
-
-            // apply xp modifier
-            var modifier = PropertyManager.GetDouble("xp_modifier").Item;
-
-            // should this be passed upstream to fellowship / allegiance?
-            var enchantment = GetXPAndLuminanceModifier(xpType);
             
-            var m_amount = (long)Math.Round(amount * enchantment);
-
+            var m_amount = (long)amount;
+            
             if (m_amount < 0)
             {
                 _log.Warning($"{Name}.EarnXP({amount}, {shareType})");
-                _log.Warning($"modifier: {modifier}, enchantment: {enchantment}, m_amount: {m_amount}");
+                _log.Warning($"modifier: m_amount: {m_amount}");
                 return;
             }
 
@@ -202,6 +196,15 @@ namespace ACE.Server.WorldObjects
                 //}
             }
 
+            var amountBeforeMods = m_amount;
+
+            // apply xp modifier
+            var modifier = PropertyManager.GetDouble("xp_modifier").Item;
+
+            var enchantment = GetXPAndLuminanceModifier(xpType);
+
+            m_amount = (long)Math.Round(amountBeforeMods * modifier * enchantment);
+            
             // Make sure UpdateXpAndLevel is done on this players thread
             EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(m_amount, xpType, xpMessage)));
 
