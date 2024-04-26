@@ -234,6 +234,12 @@ namespace ACE.Server.Entity
                     PartialEvasion = PartialEvasion.None;
                     steadyShotActivatedMod = 1.25f;
                 }
+
+                if (playerAttacker.EquippedCombatAbility == CombatAbility.Fury && playerAttacker.RecklessActivated && playerAttacker.LastRecklessActivated > Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration)
+                {
+                    Evaded = false;
+                    PartialEvasion = PartialEvasion.None;
+                }
             }
 
             // ---- BASE DAMAGE ----
@@ -330,11 +336,13 @@ namespace ACE.Server.Entity
                         if (playerAttacker.RecklessActivated && playerAttacker.LastRecklessActivated < Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration)
                         {
                             playerAttacker.RecklessActivated = false;
+                            playerAttacker.RecklessDumped = false;
                             playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
                         }
                         if (playerAttacker.RecklessActivated && playerAttacker.LastRecklessActivated > Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration)
                         {
                             playerAttacker.RecklessActivated = false;
+                            playerAttacker.RecklessDumped = true;
                             recklessMod += (float)recklessStacks / 1000f;
                             playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
                         }
@@ -717,6 +725,35 @@ namespace ACE.Server.Entity
             {
                 Jewel.HandleMeleeDefenderBonuses(playerDefender, attacker, Damage);
                 Jewel.HandlePlayerDefenderBonuses(playerDefender, attacker, Damage);
+            }
+
+            // --- COMBAT ABILITY: FURY SELF-HARM CHANCE - 50% of the damage done to the enemy on this attack, or 10% of player max health, whichever is smaller
+
+            if (playerAttacker != null && playerAttacker.EquippedCombatAbility == CombatAbility.Fury)
+            { 
+                var stacks = playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless");
+                if (stacks > 250)
+                {
+                    var recklessChance = 0.075f * (stacks - 250) / 250;
+                    if (recklessChance > ThreadSafeRandom.Next(0f, 1f))
+                    {
+                        var damageDealt = (uint)(Damage / 2);
+                        var percentHealth = playerAttacker.Health.MaxValue / 10;
+                        var damage = Math.Min(damageDealt, percentHealth);
+
+                        playerAttacker.UpdateVitalDelta(playerAttacker.Health, -(int)damage);
+                        playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, damage);
+                        playerAttacker.Session.Network.EnqueueSend(new GameMessageSystemChat($"In your rage, you injure yourself, suffering {damage} points of damage!", ChatMessageType.CombatSelf));
+                        playerAttacker.PlayParticleEffect(PlayScript.SplatterMidLeftFront, playerAttacker.Guid);
+                        if (playerAttacker.IsDead)
+                        {
+                            var lastDamager = new DamageHistoryInfo(playerAttacker);
+
+                            playerAttacker.OnDeath(lastDamager, DamageType.Health, false);
+                            playerAttacker.Die();
+                        }
+                    }
+                }
             }
 
             // ---- OPTIONAL GLOBAL MULTIPLIERS FOR PLAYERS or MONSTERS ----
