@@ -34,6 +34,7 @@ namespace ACE.Server.WorldObjects
         public bool OverloadActivated = false;
         public bool OverloadDumped = false;
         public bool RecklessActivated = false;
+        public bool RecklessDumped = false;
 
         public double MultishotActivatedDuration = 10;
         public double PhalanxActivatedDuration = 10;
@@ -470,12 +471,7 @@ namespace ACE.Server.WorldObjects
                 playerAttacker.QuestManager.Increment($"{playerAttacker.Name},Reckless", (int)scaledStamps);
 
             var stacks = playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless");
-            if (stacks > 250)
-            {
-                var recklessChance = 0.075f * (stacks - 250) / 250;
-                if (recklessChance > ThreadSafeRandom.Next(0, 1))
-                    playerAttacker.DamageTarget(playerAttacker, playerAttacker);
-            }
+
             return stacks;
         }
 

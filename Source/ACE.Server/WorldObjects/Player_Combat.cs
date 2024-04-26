@@ -222,6 +222,12 @@ namespace ACE.Server.WorldObjects
                                     recklessPercent = 0;
 
                                 recklessMsg = $"{recklessPercent} Fury! ";
+
+                                if (this.RecklessDumped == true)
+                                {
+                                    this.RecklessDumped = false;
+                                    recklessMsg = $"Furious Blow! ";
+                                }
                             }
                         }
                     }
