@@ -317,7 +317,7 @@ namespace ACE.Server.WorldObjects
             if (EquippedCombatAbility == CombatAbility.Fury && QuestManager.HasQuest($"{this.Name},Reckless"))
             {
                 var recklessStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless");
-                float recklessMod = 1 + (recklessStacks / 500);
+                float recklessMod = 1 + (recklessStacks / 1000);
                 staminaCost = (int)(staminaCost * recklessMod);
             }
 
