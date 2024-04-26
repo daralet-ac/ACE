@@ -15,7 +15,10 @@ namespace ACE.Server.WorldObjects
         {
             uint baseCost = spell.BaseMana;
 
-            var manaResourcePen = (float)(1 + GetArmorResourcePenalty());
+            var manaResourcePen = 1.0f;
+            if (spell.School != MagicSchool.PortalMagic)
+                manaResourcePen = (float)(1 + GetArmorResourcePenalty());
+
             baseCost = (uint)(baseCost * manaResourcePen);
 
             // for casting spells built into a casting implement, use the ItemManaCost
