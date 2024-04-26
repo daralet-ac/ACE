@@ -73,6 +73,12 @@ namespace ACE.Server.WorldObjects
                 var targetArmorSlots = target.ArmorSlots ?? 1;
                 var armorPatchStackSize = source.StackSize ?? 1;
 
+                if (target.ArmorLevel < 1)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Armor patches can only reinforce vestments with innate armor level.", ChatMessageType.Craft));
+                    player.SendUseDoneEvent();
+                    return;
+                }
                 if (target.ArmorPatchApplied == true)
                 {
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {target.NameWithMaterial} has already had an armor patch applied.", ChatMessageType.Craft));
