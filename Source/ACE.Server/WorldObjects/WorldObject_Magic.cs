@@ -727,7 +727,7 @@ namespace ACE.Server.WorldObjects
                 if (combatFocus != null)
                     combatAbility = combatFocus.GetCombatAbility();
 
-                // Overload - Increased effectiveness up to 50%+ with Overload stacks
+                // Overload - Increased effectiveness up to 25%+ with Overload stacks
                 if (combatAbility == CombatAbility.Overload)
                 {
                     overload = true;
@@ -746,10 +746,11 @@ namespace ACE.Server.WorldObjects
                     if (player.OverloadActivated && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration)
                     {
                         player.OverloadActivated = false;
+                        player.OverloadDumped = true;
                         if (player.QuestManager.HasQuest($"{player.Name},Overload"))
                         {
                             var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
-                            var overloadMod = 1 + (float)overloadStacks / 500;
+                            var overloadMod = 1 + (float)overloadStacks / 1000;
                             tryBoost = (int)(tryBoost * overloadMod);
                             player.QuestManager.Erase($"{player.Name},Overload");
                         }
@@ -757,6 +758,7 @@ namespace ACE.Server.WorldObjects
                     if (player.OverloadActivated && player.LastOverloadActivated < Time.GetUnixTime() - player.OverloadActivatedDuration)
                     {
                         player.OverloadActivated = false;
+                        player.OverloadDumped = false;
                         if (player.QuestManager.HasQuest($"{player.Name},Overload"))
                             player.QuestManager.Erase($"{player.Name},Overload");
                     }
@@ -877,6 +879,11 @@ namespace ACE.Server.WorldObjects
             {
                 string casterMessage;
                 var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
+                if (player.OverloadDumped == true)
+                {
+                    player.OverloadDumped = false;
+                    overloadMsg = "Overload Discharged! ";
+                }
 
                 if (player != targetCreature)
                 {
@@ -1151,7 +1158,7 @@ namespace ACE.Server.WorldObjects
                 if (combatFocus != null)
                     combatAbility = combatFocus.GetCombatAbility();
 
-                // COMBAT ABILITY: Overload - Increased effectiveness up to 50%+ with Overload stacks, double bonus + erase stacks on activated
+                // COMBAT ABILITY: Overload - Increased effectiveness up to 25%+ with Overload stacks, double bonus + erase stacks on activated
                 if (combatAbility == CombatAbility.Overload)
                 {
                     overload = true;
@@ -1171,11 +1178,12 @@ namespace ACE.Server.WorldObjects
                     if (player.OverloadActivated == true && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration)
                     {
                         player.OverloadActivated = false;
+                        player.OverloadDumped = true;
 
                         if (player.QuestManager.HasQuest($"{player.Name},Overload"))
                         {
                             var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
-                            var overloadMod = 1 + (float)overloadStacks / 500;
+                            var overloadMod = 1 + (float)overloadStacks / 1000;
                             srcVitalChange = (uint)(srcVitalChange * overloadMod);
                             destVitalChange = (uint)(destVitalChange * overloadMod);
                             player.QuestManager.Erase($"{player.Name},Overload");
@@ -1184,6 +1192,7 @@ namespace ACE.Server.WorldObjects
                     if (player.OverloadActivated == true && player.LastOverloadActivated < Time.GetUnixTime() - player.OverloadActivatedDuration)
                     {
                         player.OverloadActivated = false;
+                        player.OverloadDumped = false;
 
                         if (player.QuestManager.HasQuest($"{player.Name},Overload"))                           
                             player.QuestManager.Erase($"{player.Name},Overload");
@@ -1297,6 +1306,11 @@ namespace ACE.Server.WorldObjects
             string sourceMsg = null, targetMsg = null;
 
             var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
+            if (player != null && player.OverloadDumped == true)
+            {
+                player.OverloadDumped = false;
+                overloadMsg = "Overload Discharged! ";
+            }
 
             if (playerSource != null && playerDestination != null && transferSource.Guid == destination.Guid)
             {
@@ -1318,9 +1332,9 @@ namespace ACE.Server.WorldObjects
                 if (playerDestination != null)
                 {
                     if (destination == this)
-                        sourceMsg = $"You gain {destVitalChange} points of {destVital} due to casting {spell.Name} on {targetCreature.Name}";
+                        sourceMsg = $"{overloadMsg}You gain {destVitalChange} points of {destVital} due to casting {spell.Name} on {targetCreature.Name}";
                     else
-                        targetMsg = $"You gain {destVitalChange} points of {destVital} due to {caster.Name} casting {spell.Name} on you";
+                        targetMsg = $"{overloadMsg}You gain {destVitalChange} points of {destVital} due to {caster.Name} casting {spell.Name} on you";
                 }
             }
 

@@ -1024,11 +1024,11 @@ namespace ACE.Server.WorldObjects
                     if (combatFocus != null)
                         combatAbility = combatFocus.GetCombatAbility();
 
-                    // Overload - Increased cost up to 100%+ with Overload stacks
+                    // Overload - Increased cost up to 50%+ with Overload stacks
                     if (combatAbility == CombatAbility.Overload && playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Overload"))
                     {
                         var overloadStacks = playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Overload");
-                        float overloadMod = 1 + (overloadStacks / 500);
+                        float overloadMod = 1 + (overloadStacks / 1000);
                         baseCost = (uint)(baseCost * overloadMod);
                     }
                     // Battery - 20% mana cost reduction minimum, increasing with lower mana or 0 cost during Battery Activated
