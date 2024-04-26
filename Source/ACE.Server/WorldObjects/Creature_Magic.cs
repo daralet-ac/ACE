@@ -54,7 +54,7 @@ namespace ACE.Server.WorldObjects
                     baseCost = 5 * spell.Level;
 
                 var overloadStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Overload");
-                float overloadMod = 1 + (overloadStacks / 500);
+                float overloadMod = 1 + (overloadStacks / 1000);
                 baseCost = (uint)(baseCost * overloadMod);
             }
             // Battery - 20% mana cost reduction minimum, increasing with lower mana or 0 cost during Battery Activated

@@ -480,7 +480,7 @@ namespace ACE.Server.WorldObjects
 
         public static int HandleOverloadStamps(Player sourcePlayer, int? spellTypeScaler, uint spellLevel)
         {
-            var baseStamps = 25;
+            var baseStamps = 50;
             var playerLevel = (int)(sourcePlayer.Level / 10);
 
             if (playerLevel > 7)
@@ -543,7 +543,7 @@ namespace ACE.Server.WorldObjects
             var stacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
             if (stacks > 250)
             { 
-                var overloadChance = 0.1f * (stacks - 250) / 250;
+                var overloadChance = 0.075f * (stacks - 250) / 250;
                 if (overloadChance > ThreadSafeRandom.Next(0, 1))
                 {
                     var damage = sourcePlayer.Health.MaxValue / 10;
