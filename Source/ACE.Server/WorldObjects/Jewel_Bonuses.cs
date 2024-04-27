@@ -2,6 +2,8 @@ using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Network.GameAction.Actions;
+using ACE.Server.Network.GameMessages.Messages;
 using System;
 using System.Collections.Generic;
 using AttackType = ACE.Entity.Enum.AttackType;
@@ -26,6 +28,8 @@ namespace ACE.Server.WorldObjects
                     var healAmount = (uint)Math.Round(damage / 10);
                     playerAttacker.UpdateVitalDelta(playerAttacker.Health, healAmount);
                     playerAttacker.DamageHistory.OnHeal(healAmount);
+                    playerAttacker.Session.Network.EnqueueSend(new GameMessageSystemChat($"Life Steal! Your attack restores {healAmount} health.", ChatMessageType.CombatSelf));
+
                 }
             }
 
@@ -39,6 +43,7 @@ namespace ACE.Server.WorldObjects
                     var healAmount = (uint)Math.Round((decimal)damage / 10);
                     playerAttacker.UpdateVitalDelta(playerAttacker.Mana, healAmount);
                     playerAttacker.DamageHistory.OnHeal(healAmount);
+                    playerAttacker.Session.Network.EnqueueSend(new GameMessageSystemChat($"Mana Leech! Your attack restores {healAmount} mana.", ChatMessageType.Magic));
                 }
             }
 
@@ -49,6 +54,12 @@ namespace ACE.Server.WorldObjects
                 var selfHarm = (int)(jewelSelfHarm * damage);
                 playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarm);
                 playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, (uint)selfHarm);
+                if (playerAttacker.IsDead)
+                {
+                    var lastDamager = playerAttacker.DamageHistory.LastDamager;
+                    playerAttacker.OnDeath(lastDamager, DamageType.Health, false);
+                    playerAttacker.Die();
+                }
             }
 
             // JEWEL - Aquamarine, Emerald, Jet, Red Garnet: Check hotspot chance
@@ -96,6 +107,7 @@ namespace ACE.Server.WorldObjects
                     var stamAmount = (uint)Math.Round(damage / 5);
                     playerDefender.UpdateVitalDelta(playerDefender.Stamina, stamAmount);
                     playerDefender.DamageHistory.OnHeal(stamAmount);
+                    playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Amber of the Masochist restores {stamAmount} points of Stamina!", ChatMessageType.Broadcast));
                 }
             }
             // JEWEL - Lapis Lazuli: Chance to gain mana on taking damage
@@ -110,9 +122,10 @@ namespace ACE.Server.WorldObjects
 
                 if (attacker != playerDefender && healthToManaChance >= ThreadSafeRandom.Next(0.0f, 1.0f))
                 {
-                    var ManaAmount = (uint)Math.Round(damage / 4);
-                    playerDefender.UpdateVitalDelta(playerDefender.Mana, ManaAmount);
-                    playerDefender.DamageHistory.OnHeal(ManaAmount);
+                    var manaAmount = (uint)Math.Round(damage / 4);
+                    playerDefender.UpdateVitalDelta(playerDefender.Mana, manaAmount);
+                    playerDefender.DamageHistory.OnHeal(manaAmount);
+                    playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Lapis of the Anchorite restores {manaAmount} points of Mana!", ChatMessageType.Broadcast));
                 }
             }
         }
@@ -123,7 +136,7 @@ namespace ACE.Server.WorldObjects
 
             var scaledStamps = Math.Round(playerAttacker.ScaleWithPowerAccuracyBar(20f));
 
-            scaledStamps += 10f;
+            scaledStamps += 20f;
 
             var numStrikes = playerAttacker.GetNumStrikes(playerAttacker.AttackType);
             if (numStrikes == 2)
@@ -222,13 +235,13 @@ namespace ACE.Server.WorldObjects
                 {
                     if (playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") < 200)
                     {
-                        playerDefender.QuestManager.Increment($"{playerDefender.Name},Hardened Defense", 10);
+                        playerDefender.QuestManager.Increment($"{playerDefender.Name},Hardened Defense", 20);
                     }
                 }
                 else
                 {
                     playerDefender.QuestManager.Stamp($"{playerDefender.Name},Hardened Defense");
-                    playerDefender.QuestManager.Increment($"{playerDefender.Name},Hardened Defense", 10);
+                    playerDefender.QuestManager.Increment($"{playerDefender.Name},Hardened Defense", 20);
                 }
             }
 
@@ -239,13 +252,13 @@ namespace ACE.Server.WorldObjects
                 {
                     if (playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Bravado") < 1000)
                     {
-                        playerDefender.QuestManager.Increment($"{playerDefender.Name},Bravado", 50);
+                        playerDefender.QuestManager.Increment($"{playerDefender.Name},Bravado", 100);
                     }
                 }
                 else
                 {
                     playerDefender.QuestManager.Stamp($"{playerDefender.Name},Bravado");
-                    playerDefender.QuestManager.Increment($"{playerDefender.Name},Bravado", 50);
+                    playerDefender.QuestManager.Increment($"{playerDefender.Name},Bravado", 100);
                 }
             }
 
@@ -253,7 +266,7 @@ namespace ACE.Server.WorldObjects
 
         public static void HandleCasterAttackerBonuses(Player sourcePlayer, Creature targetCreature, ProjectileSpellType spellType, ACE.Entity.Enum.DamageType damageType, uint spellLevel, int? spellTypeScaler)
         {
-            var baseStamps = 25;
+            var baseStamps = 50;
             var playerLevel = (int)(sourcePlayer.Level / 10);
 
             if (playerLevel > 7)
