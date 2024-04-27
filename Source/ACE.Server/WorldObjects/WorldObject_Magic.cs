@@ -1120,8 +1120,8 @@ namespace ACE.Server.WorldObjects
                 {
                     if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
                     {
-                        var jewelRampMod = (float)player.QuestManager.GetCurrentSolves($"{player.Name},Nullification") / 200;
-                        var xferReduction = (int)(jewelRampMod * ((float)player.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66));
+                        var jewelRampMod = (float)player.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200;
+                        var xferReduction = (int)(jewelRampMod * ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66));
                         srcVitalChange = (uint)(srcVitalChange * xferReduction);
                         destVitalChange = (uint)(destVitalChange * xferReduction);
                     }
