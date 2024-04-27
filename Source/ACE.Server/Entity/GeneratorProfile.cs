@@ -598,6 +598,9 @@ namespace ACE.Server.Entity
             Spawned.Remove(woi.Guid.Full);
 
             NextAvailable = DateTime.UtcNow.AddSeconds(Delay);
+
+            if (Generator.GetProperty(PropertyBool.IsPseudoRandomGenerator) == true)
+                Generator.GeneratorCooldown = Time.GetUnixTime();                 
         }
 
         public bool GeneratorResetInProgress = false;
