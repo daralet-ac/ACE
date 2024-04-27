@@ -1644,7 +1644,11 @@ namespace ACE.Server.Entity
                     var fellowMembers = fellow.GetFellowshipMembers();
                     foreach (var member in fellowMembers.Values)
                     {
+                        if (landblock.CapstonePlayers.Keys.Contains(member.Name))
+                            continue;
+
                         landblock.CapstonePlayers.Add(member.Name, Time.GetUnixTime());
+
                         if (member.Guid != player.Guid)
                             member.Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has entered {dungeonName}. If you join them in the next ten minutes, you will be guaranteed a place in the same instance. After the time limit has expired, another player may take your slot.", ChatMessageType.Broadcast));
                     }
