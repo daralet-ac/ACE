@@ -823,9 +823,6 @@ namespace ACE.Server.WorldObjects
             {
 
                 // weapon only
-                {ACE.Entity.Enum.MaterialType.BlackOpal, 1},
-                {ACE.Entity.Enum.MaterialType.FireOpal, 1},
-                {ACE.Entity.Enum.MaterialType.YellowGarnet, 1},
                 {ACE.Entity.Enum.MaterialType.ImperialTopaz, 1},
                 {ACE.Entity.Enum.MaterialType.BlackGarnet, 1},
                 {ACE.Entity.Enum.MaterialType.Jet, 1},
@@ -838,14 +835,19 @@ namespace ACE.Server.WorldObjects
                 {ACE.Entity.Enum.MaterialType.RoseQuartz, 1},
                 {ACE.Entity.Enum.MaterialType.Hematite, 1},
                 {ACE.Entity.Enum.MaterialType.Bloodstone, 1},
-                {ACE.Entity.Enum.MaterialType.Ruby, 1},
                 {ACE.Entity.Enum.MaterialType.WhiteJade, 1},
                 {ACE.Entity.Enum.MaterialType.GreenGarnet, 1},
                 {ACE.Entity.Enum.MaterialType.LavenderJade, 1},
 
-                // shield or melee weapons only
+                // shield only
                 {ACE.Entity.Enum.MaterialType.WhiteQuartz, 2},
                 {ACE.Entity.Enum.MaterialType.Turquoise, 2},
+
+                // shield or melee weapon
+                {ACE.Entity.Enum.MaterialType.Ruby, 3},
+                {ACE.Entity.Enum.MaterialType.BlackOpal, 3},
+                {ACE.Entity.Enum.MaterialType.FireOpal, 3},
+                {ACE.Entity.Enum.MaterialType.YellowGarnet, 3},
 
                 // bracelet only (left rest)
                 {ACE.Entity.Enum.MaterialType.SmokeyQuartz, 196608},
