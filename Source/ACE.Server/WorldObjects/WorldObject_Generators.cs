@@ -671,6 +671,9 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        public double GeneratorCooldown = 0;
+        public double GeneratorCooldownInterval = 0;
+
         /// <summary>
         /// Called every [RegenerationInterval] seconds<para />
         /// Also called from EmoteManager, Chest.Reset(), WorldObject.OnGenerate()
@@ -678,6 +681,10 @@ namespace ACE.Server.WorldObjects
         public void Generator_Generate(int? tier = null)
         {
             //Console.WriteLine($"{Name}.Generator_Generate({RegenerationInterval})");
+
+            // add a minimum 3 minute cooldown to encounter generation
+            if (GeneratorCooldown + GeneratorCooldownInterval > Time.GetUnixTime())
+                return;
 
             if (!GeneratorDisabled)
             {

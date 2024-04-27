@@ -411,6 +411,7 @@ namespace ACE.Server.Entity
                 if (wo == null) continue;
 
                 wo.SetProperty(PropertyBool.IsPseudoRandomGenerator, true);
+                wo.GeneratorCooldownInterval = 180;
 
                 if (generatedEncounterIdList.Contains(encounter.Id))
                 {
