@@ -232,6 +232,7 @@ namespace ACE.Server.Entity
                 {
                     Evaded = false;
                     PartialEvasion = PartialEvasion.None;
+                    evasionMod = 1f;
                     steadyShotActivatedMod = 1.25f;
                 }
 
@@ -239,6 +240,7 @@ namespace ACE.Server.Entity
                 {
                     Evaded = false;
                     PartialEvasion = PartialEvasion.None;
+                    evasionMod = 1f;
                 }
             }
 
