@@ -148,8 +148,8 @@ namespace ACE.Server.WorldObjects
         }
 
 
-        private static bool DebugThreatSystem = false;
-        private static int ThreatStartingAmount = 100;
+        private bool DebugThreatSystem { get => PropertyManager.GetBool("debug_threat_system").Item; }
+        private const int ThreatStartingAmount = 100;
         private double ThreatGainedSinceLastTick = 1;
 
         public Dictionary<Creature, int> ThreatLevel;
@@ -211,11 +211,11 @@ namespace ACE.Server.WorldObjects
 
             foreach (Creature key in ThreatLevel.Keys)
             {
-                if (ThreatLevel[key] > 50)
+                if (ThreatLevel[key] > ThreatStartingAmount)
                     ThreatLevel[key] -= amount;
 
-                if (ThreatLevel[key] < 50)
-                    ThreatLevel[key] = 50;
+                if (ThreatLevel[key] < ThreatStartingAmount)
+                    ThreatLevel[key] = ThreatStartingAmount;
             }
         }
 
@@ -290,7 +290,7 @@ namespace ACE.Server.WorldObjects
 
                     if (DebugThreatSystem)
                     {
-                        Console.WriteLine($"\n\n--------------\nThreatLevel list for {Name}:");
+                        Console.WriteLine($"\n\n--------------\nThreatLevel list for {Name} ({WeenieClassId}):");
                         foreach (Creature targetCreature in ThreatLevel.Keys)
                         {
                             Console.WriteLine($"-{targetCreature.Name}: {ThreatLevel[targetCreature]}");
