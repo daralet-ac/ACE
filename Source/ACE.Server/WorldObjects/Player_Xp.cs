@@ -300,34 +300,41 @@ namespace ACE.Server.WorldObjects
                 UpdateLoyalty(loyalty, amount);
 
         }
-        // calculate the amount of loyalty XP to grant based on: proportion 100% of rank up : level up / is patron on landblock / time sworn to patron
+
+
+        /// <summary>
+        /// Update a player's Loyalty skill xp progress when XP has been earned.
+        /// <para>FORMULA = ProportionCurrentLevelXpEarned * LevelOffset * LoyaltyRankXpCost * FellowshipMod * TimeSwornMod</para>
+        /// <para>LevelOffset = x1 to x10, depending on player level up to 100. To offset the slower pace of later levels.</para>
+        /// <para>FelloshipMod = x2, if patron and vassal are fellowed and on the same landblock.</para>
+        /// <para>TimeSwornMod = x1 up to x2, depending on how long vassal has been sworn to patron (maxes at 3 months).</para>
+        /// </summary>
         private void UpdateLoyalty(Entity.CreatureSkill loyalty, long amount)
         {
             var nextLevelXP = GetXPBetweenLevels(Level.Value, Level.Value + 1);
             var proportion = (double)amount / (double)nextLevelXP;
 
-            var nextRankXP = GetXPBetweenSkillLevels(loyalty.AdvancementClass, loyalty.Ranks, loyalty.Ranks + 1);
-            var baseLoyaltyXP = (long)nextRankXP * proportion;
+            var playerLevel = Level ?? 1;
+            var levelOffset = Math.Clamp((float)playerLevel / 10, 1, 10);
 
-            double loyaltyMods = 1;
-            // if patron is on same LB and in same fellow, grant double bonus
+            var nextRankXP = GetXPBetweenSkillLevels(loyalty.AdvancementClass, loyalty.Ranks, loyalty.Ranks + 1);
+            var baseLoyaltyXP = (long)nextRankXP * proportion * levelOffset;
+
+            double fellowshipMod = 1;
+            double timeMod = 1;
+            
             if (WithPatron && FellowedWithPatron)
-                loyaltyMods += 1;
+                fellowshipMod = 2;
 
             if (SworeAllegiance != null)
             {
-                // find how much time has elapsed between swearing to patron and now, then use proportion of that over 3 months (789235 seconds)
-                var timeMod = (Time.GetUnixTime() - (double)SworeAllegiance) / 7892352;
-                if (timeMod > 1)
-                    timeMod = 1;
-
-                loyaltyMods += timeMod;
+                timeMod = 1 + (Time.GetUnixTime() - (double)SworeAllegiance) / 7892352;
+                if (timeMod > 2)
+                    timeMod = 2;
             }
 
-            var loyaltyXp = (uint)(baseLoyaltyXP * loyaltyMods);
-
+            var loyaltyXp = (uint)Math.Max(baseLoyaltyXP * fellowshipMod * timeMod, 1);
             AwardNoContribSkillXP(Skill.Loyalty, loyaltyXp, false);
-
         }
         /// <summary>
         /// Optionally passes XP up the Allegiance tree

@@ -67,8 +67,9 @@ namespace ACE.Server.WorldObjects
         }
 
         public bool WithPatron = false;
-
         public bool FellowedWithPatron = false;
+        public Player WithVassal = null;
+        public Player FellowedWithVassal = null;
 
         /// <summary>
         /// Called when a player tries to Swear Allegiance to a target
@@ -540,8 +541,6 @@ namespace ACE.Server.WorldObjects
 
                     player.SaveBiotaToDatabase();
                 }
-
-               
             }
         }
 
@@ -563,24 +562,54 @@ namespace ACE.Server.WorldObjects
         /// For an online patron, adds the pending allegiance XP stored in AllegianceXPCached
         /// to their total / unassigned xp
         /// </summary>
-        public void AddAllegianceXP()
+        public void AddAllegianceXP(IPlayer vassal = null)
         {
             if (AllegianceXPCached == 0) return;
 
             // TODO: handle ulong -> long?
             GrantXP((long)AllegianceXPCached, XpType.Allegiance, ShareType.None);
 
-            // handle increase leadership
-            var leadership = GetCreatureSkill(Skill.Leadership);
-            if (leadership.AdvancementClass >= SkillAdvancementClass.Trained)
-            {
-                var cachedXP = AllegianceXPCached * 0.05 < 1 ? 1 : (uint)(AllegianceXPCached * 0.05);
-                AwardNoContribSkillXP(Skill.Leadership, cachedXP, false);
-            }
-            
+            HandleLeadershipRankXp(vassal);
+
             AllegianceXPReceived += AllegianceXPCached;
 
             AllegianceXPCached = 0;
+        }
+
+
+        /// <summary>
+        /// Update a player's Leadership skill xp progress when passup XP has been earned.
+        /// <para>FORMULA = CachedXp * FellowshipMod * TimeSwornMod</para>
+        /// <para>FelloshipMod = x2, if patron and vassal are fellowed and on the same landblock.</para>
+        /// <para>TimeSwornMod = x1 up to x2, depending on how long vassal has been sworn to patron (maxes at 3 months).</para>
+        /// </summary>
+        private void HandleLeadershipRankXp(IPlayer vassal = null)
+        {
+            var leadership = GetCreatureSkill(Skill.Leadership);
+            if (leadership.AdvancementClass >= SkillAdvancementClass.Trained)
+            {
+                double fellowshipMod = 1;
+                double timeMod = 1;
+
+                Player onlineVassal = PlayerManager.GetOnlinePlayer(vassal.Guid);
+                if (onlineVassal != null)
+                {
+                    if (onlineVassal.WithPatron && onlineVassal.FellowedWithPatron)
+                        fellowshipMod += 1;
+
+                    if (SworeAllegiance != null)
+                    {
+                        timeMod = 1 + (Time.GetUnixTime() - (double)onlineVassal.SworeAllegiance) / 7892352;
+                        if (timeMod > 2)
+                            timeMod = 2;
+                    }
+                }
+                var cachedXp = AllegianceXPCached;
+
+                var leadershipXp = (uint)(cachedXp * fellowshipMod * timeMod);
+                //Console.WriteLine($"cachedXp: {cachedXp}, fellowshipMod: {fellowshipMod}, timeMod: {timeMod}, total: {leadershipXp}");
+                AwardNoContribSkillXP(Skill.Leadership, leadershipXp, false);
+            }
         }
 
         public void HandleActionQueryMotd()
