@@ -269,10 +269,10 @@ namespace ACE.Server.Managers
 
             // NEW SYSTEM
             // Vassal Generated XP Mod = 0.5 + (0.5 * (Loyalty / 263)) * 0.1
-            // Patron Received XP Mod = (0.5 + (0.5 * (Leadership / 263))) * (0.5 + (0.5 * (Rank / 10)))
+            // Patron Received XP Mod = (0.5 + (0.5 * (Leadership / 263))) * (0.4 + (0.6 * (Rank / 10)))
             // Passup % = Generated Mod * Received Mod
             //
-            // Passup XP ranges from 1.25% to 10%.
+            // Passup XP ranges from 1% to 10%.
             // directFactor can be enabled to reduce continued passup by an additional 50%.
 
             //var directFactor = direct ? 1.0f : 0.5f; // Currently not in use. May not be needed. Requires further testing.
@@ -280,7 +280,7 @@ namespace ACE.Server.Managers
             var generatedMod = loyaltyMod * 0.1f;
 
             var leadershipMod = 0.5f + (0.5f * (leadership / SkillCap));
-            var rankMod = 0.5f + (0.5f * ((float)(patron.AllegianceRank ?? 1) / 10));
+            var rankMod = 0.4f + (0.6f * ((float)(patron.AllegianceRank ?? 1) / 10));
             var receivedMod = leadershipMod * rankMod;
 
             var passupMod = generatedMod * receivedMod;
