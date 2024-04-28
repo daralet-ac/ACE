@@ -383,8 +383,9 @@ namespace ACE.Server.WorldObjects
             });
             raiseChain.EnqueueChain();
 
+            var newSkill = (NewSkillNames)playerSkill.Skill;
             if (alertPlayer)
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You've earned {amount:N0} experience in your {playerSkill.Skill.ToSentence()} skill.", ChatMessageType.Broadcast));
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"You've earned {amount:N0} experience in your {newSkill.ToSentence()} skill.", ChatMessageType.Broadcast));
         }
 
         public void SpendAllAvailableSkillXp(CreatureSkill creatureSkill, bool sendNetworkUpdate = true)
@@ -1020,12 +1021,13 @@ namespace ACE.Server.WorldObjects
             });
             raiseChain.EnqueueChain();
 
+            var newSkill = (NewSkillNames)playerSkill.Skill;
             if (skill != Skill.Loyalty && skill != Skill.Leadership)
             {
                 if (!reduce)
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You've earned {amount:N0} experience in your {playerSkill.Skill.ToSentence()} skill.", ChatMessageType.Broadcast));
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You've earned {amount:N0} experience in your {newSkill.ToSentence()} skill.", ChatMessageType.Broadcast));
                 if (reduce)
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You've lost {amount:N0} experience in your {playerSkill.Skill.ToSentence()} skill.", ChatMessageType.Broadcast));
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You've lost {amount:N0} experience in your {newSkill.ToSentence()} skill.", ChatMessageType.Broadcast));
             }
         }
 
