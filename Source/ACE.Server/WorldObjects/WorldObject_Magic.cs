@@ -2801,30 +2801,32 @@ namespace ACE.Server.WorldObjects
         {
             var player = this as Player;
 
-            if (player == null)
+            if (player == null || playerTarget == null)
+                return;
+
+            if (playerTarget == player) // don't add support threat if player is targeting themself
                 return;
 
             var targetThreatRange = 3.0; // casting support spells on another player adds threat to monsters that are close to the targeted player
-            var casterThreatRange = 20.0; // casting any support spell adds threat to all creatures in the area
+            var casterThreatRange = 3.0; // casting any support spell adds threat to all creatures near the caster
 
             var nearbyMonstersOfTarget = playerTarget.GetNearbyMonsters(targetThreatRange);
             var nearbyMonstersOfCaster = player.GetNearbyMonsters(casterThreatRange);
 
-            var threatAmount = 5 * spell.Level;
+            var threatAmount = 2 * spell.Level;
 
             if (spell.MetaSpellType == SpellType.Boost)
                 threatAmount = (uint)(amount / 2);
 
             List<Creature> threatenedByTargetSupport = new List<Creature>();
 
-            if (playerTarget != player)
-                foreach (var creature in nearbyMonstersOfTarget)
-                {
-                    creature.IncreaseTargetThreatLevel(player, (int)threatAmount * 2);
-                    threatenedByTargetSupport.Add(creature);
-                }
+            foreach (var creature in nearbyMonstersOfTarget)
+            {
+                creature.IncreaseTargetThreatLevel(player, (int)threatAmount * 2);
+                threatenedByTargetSupport.Add(creature);
+            }
 
-            // don't increase a monster's threat towards a caster again if they already received threat from a targeted support spell
+            // While increasing threat of enemies nearby caster, don't increase a monster's threat towards them again if they already received threat from a targeted support spell
             foreach (var creature in nearbyMonstersOfCaster)
             {
                 var skip = false;

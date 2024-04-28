@@ -629,7 +629,8 @@ namespace ACE.Server.Managers
                 ("allow_xp_at_max_level", new Property<bool>(false, "enable this to allow players to continue earning xp after reaching max level")),
                 ("block_vpn_connections", new Property<bool>(false, "enable this to block user sessions from IPs identified as VPN proxies")),
                 ("increase_minimum_encounter_spawn_density", new Property<bool>(true, "enable this to increase the density of random encounters that spawn in low density landblocks")),
-                ("command_who_enabled", new Property<bool>(true, "disable this to prevent players from listing online players in their allegiance"))
+                ("command_who_enabled", new Property<bool>(true, "disable this to prevent players from listing online players in their allegiance")),
+                ("debug_threat_system", new Property<bool>(false, "enable this to see threat system console logging"))
                 );
 
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
