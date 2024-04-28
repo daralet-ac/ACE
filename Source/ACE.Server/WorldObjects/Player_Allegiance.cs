@@ -591,17 +591,20 @@ namespace ACE.Server.WorldObjects
                 double fellowshipMod = 1;
                 double timeMod = 1;
 
-                Player onlineVassal = PlayerManager.GetOnlinePlayer(vassal.Guid);
-                if (onlineVassal != null)
+                if (vassal != null)
                 {
-                    if (onlineVassal.WithPatron && onlineVassal.FellowedWithPatron)
-                        fellowshipMod += 1;
-
-                    if (SworeAllegiance != null)
+                    Player onlineVassal = PlayerManager.GetOnlinePlayer(vassal.Guid);
+                    if (onlineVassal != null)
                     {
-                        timeMod = 1 + (Time.GetUnixTime() - (double)onlineVassal.SworeAllegiance) / 7892352;
-                        if (timeMod > 2)
-                            timeMod = 2;
+                        if (onlineVassal.WithPatron && onlineVassal.FellowedWithPatron)
+                            fellowshipMod += 1;
+
+                        if (SworeAllegiance != null)
+                        {
+                            timeMod = 1 + (Time.GetUnixTime() - (double)onlineVassal.SworeAllegiance) / 7892352;
+                            if (timeMod > 2)
+                                timeMod = 2;
+                        }
                     }
                 }
                 var cachedXp = AllegianceXPCached;
