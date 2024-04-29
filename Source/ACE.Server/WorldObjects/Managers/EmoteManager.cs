@@ -165,26 +165,7 @@ namespace ACE.Server.WorldObjects.Managers
                         var skill = player.GetCreatureSkill(playerSkill);
                         var difficulty = emote.Amount ?? 0;
 
-                        // check to ensure appropriately difficult craft before granting xp (is player skill no more than 50 points above relative difficulty)
-                        if ((int)skill.Current - difficulty < 50)
-                        {
-                            var progressPercentage = Math.Max(0, 1 - (skill.Current / 200));
-                            var progressMod = 0.01f + 0.49f * progressPercentage;
-
-                            var relativeDifficulty = difficulty - skill.Current;
-                            var difficultyMod = 1 + (float)Math.Clamp(relativeDifficulty, -50, 50) / 50;
-
-                            var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-                            var totalXp = xP * progressMod * difficultyMod;
-
-                            player.NoContribSkillXp(player, playerSkill, (uint)totalXp, false);
-
-                            if (PropertyManager.GetBool("debug_crafting_system").Item)
-                                Console.WriteLine($"Skill: {skill.Current}, RecipeDiff: {difficulty}\n" +
-                                    $"ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n" +
-                                    $"CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n" +
-                                    $"ToLevelXp: {xP}, TotalXpAward: {totalXp}");
-                        }
+                        player.TryAwardCraftingXp(player, skill, playerSkill, difficulty);
                     }
                     break;
                         

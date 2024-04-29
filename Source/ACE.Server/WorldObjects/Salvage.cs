@@ -871,30 +871,8 @@ namespace ACE.Server.WorldObjects
                  */
                 }
             }
-            
-            // check to ensure appropriately difficult tinker before granting (is player skill no more than 50 points above relative difficulty)
-            if (skill.Current - difficulty < 50)
-            {
-                // Awarded xp scales based on level of current skill progress (50% of current rank awarded per tink, down to 1% at 200 skill).
-                // Bonus/penalty xp awarded for relative difficulty of the craft (-50% to +100%).
-                var progressPercentage = Math.Max(0, 1 - (skill.Current / 200));
-                var progressMod = 0.01f + 0.49f * progressPercentage;
 
-                var relativeDifficulty = difficulty - skill.Current;
-                var difficultyMod = 1 + Math.Clamp(relativeDifficulty, -50, 50) / 50;
-
-                var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-                var totalXp = (uint)(xP * progressMod * difficultyMod * armorSlots);
-                
-                player.NoContribSkillXp(player, tinkeringSkill, totalXp, false);
-
-                if (PropertyManager.GetBool("debug_crafting_system").Item)
-                    Console.WriteLine($"Skill: {skill.Current}, RecipeDiff: {difficulty}\n" +
-                        $"ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n" +
-                        $"CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n" +
-                        $"ToLevelXp: {xP}, TotalXpAward: {totalXp}");
-            }
-
+            player.TryAwardCraftingXp(player, skill, tinkeringSkill, difficulty, armorSlots);
             BroadcastTinkering(player, source, target, successChance, success, successAmount);
             TinkeringCleanup(player, source, target);
         }
