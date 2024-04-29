@@ -150,13 +150,43 @@ namespace ACE.Server.WorldObjects.Managers
 
                     if (player != null)
                     {
+                        if (emote.Stat == null)
+                        {
+                            _log.Error("EmoteType.AwardNoContribSkillXP - emote.Stat is null. Should have a reference to a skill id. {Player} was not awarded xp.", player.Name);
+                            break;
+                        }
+
+                        if (emote.Stat == null)
+                        {
+                            _log.Warning("EmoteType.AwardNoContribSkillXP - emote.Amount (difficulty) is null. Defaulting to '0'. Xp awarded to {Player} may be incorrect.", player.Name);
+                        }
+
                         var playerSkill = (Skill)emote.Stat;
                         var skill = player.GetCreatureSkill(playerSkill);
-                        var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-                        xP /= 5;
+                        var difficulty = emote.Amount ?? 0;
 
-                        player.NoContribSkillXp(player, playerSkill, (uint)xP, false);
+                        // check to ensure appropriately difficult craft before granting xp (is player skill no more than 50 points above relative difficulty)
+                        if ((int)skill.Current - difficulty < 50)
+                        {
+                            var progressPercentage = Math.Max(0, 1 - (skill.Current / 200));
+                            var progressMod = 0.01f + 0.49f * progressPercentage;
 
+                            var relativeDifficulty = difficulty - skill.Current;
+                            var difficultyMod = 1 + (float)Math.Clamp(relativeDifficulty, -50, 50) / 50;
+
+                            var rankXP = progressMod * difficultyMod;
+
+                            var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
+                            var totalXp = xP * rankXP;
+
+                            player.NoContribSkillXp(player, playerSkill, (uint)totalXp, false);
+
+                            if (PropertyManager.GetBool("debug_crafting_system").Item)
+                                Console.WriteLine($"Skill: {skill.Current}, RecipeDiff: {difficulty}\n" +
+                                    $"ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n" +
+                                    $"CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n" +
+                                    $"RankXp: {rankXP}, ToLevelXp: {xP}, TotalXpAward: {totalXp}");
+                        }
                     }
                     break;
                         

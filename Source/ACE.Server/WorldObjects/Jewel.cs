@@ -297,7 +297,7 @@ namespace ACE.Server.WorldObjects
 
             double qualityMod = (double)playerskill.Current / (100 * (double)player.Level / 10);
 
-            Console.WriteLine(qualityMod);
+            //Console.WriteLine(qualityMod);
 
             Random random = new Random();
 
@@ -588,16 +588,31 @@ namespace ACE.Server.WorldObjects
 
             if (modifiedBase < 1)
                 modifiedBase = 1;
-
-            // Rank chance - if skill is no more/less than 25 above or below difficulty, earn 20% of rank in XP.
-            if (Math.Abs(difficulty - skillLevel) < 25)
+            
+            // check to ensure appropriately difficult carve before granting xp (is player skill no more than 50 points above relative difficulty)
+            if ((int)skillLevel - difficulty < 50)
             {
+                // Awarded xp scales based on level of current skill progress (50% of current rank awarded per tink, down to 1% at 200 skill).
+                // Bonus/penalty xp awarded for relative difficulty of the craft (-50% to +100%).
+                var progressPercentage = Math.Max(0, 1 - (skill.Current / 200));
+                var progressMod = 0.01f + 0.49f * progressPercentage;
+
+                var relativeDifficulty = (float)difficulty - skillLevel;
+                var difficultyMod = 1 + Math.Clamp(relativeDifficulty, -50, 50) / 50;
+
+                var rankXP = progressMod * difficultyMod;
+
                 var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-                        xP /= 5;
+                var totalXP = (uint)(xP * rankXP);
 
-                player.NoContribSkillXp(player, Skill.ItemTinkering, (uint)xP, false);
+                player.NoContribSkillXp(player, Skill.ItemTinkering, (uint)totalXP, false);
+
+                if (PropertyManager.GetBool("debug_crafting_system").Item)
+                    Console.WriteLine($"Skill: {skillLevel}, RecipeDiff: {difficulty}\n" +
+                        $"ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n" +
+                        $"CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n" +
+                        $"RankXp: {rankXP}, ToLevelXp: {xP}, TotalXpAward: {totalXP}");
             }
-
 
             // get quality name + write socket and jewel name
             // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem workmanship
