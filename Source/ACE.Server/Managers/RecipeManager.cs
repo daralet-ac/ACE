@@ -390,33 +390,13 @@ namespace ACE.Server.Managers
                     UpdateObj(player, target);
             }
             
-            // CUSTOM CRAFTING - On success, so long as difficulty is no more than 10 above current skill, grant 20% of rank in no-contribution XP
+            // CUSTOM CRAFTING
             if (recipe.Skill > 0 && recipe.Difficulty > 0 && success)
             {
                 var skill = player.GetCreatureSkill((Skill)recipe.Skill);
                 var skillType = (Skill)recipe.Skill;
 
-                // check to ensure appropriately difficult craft before granting xp (is player skill no more than 50 points above relative difficulty)
-                if ((int)skill.Current - recipe.Difficulty < 50)
-                {
-                    var progressPercentage = Math.Max(0, 1 - (skill.Current / 200));
-                    var progressMod = 0.01f + 0.49f * progressPercentage;
-
-                    var difficulty = recipe.Difficulty;
-                    var relativeDifficulty = difficulty - skill.Current;
-                    var difficultyMod = 1 + (float)Math.Clamp(relativeDifficulty, -50, 50) / 50;
-
-                    var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-                    var totalXp = xP * progressMod * difficultyMod;
-
-                    player.NoContribSkillXp(player, skillType, (uint)totalXp, false);
-
-                    if (PropertyManager.GetBool("debug_crafting_system").Item)
-                        Console.WriteLine($"Skill: {skill.Current}, RecipeDiff: {difficulty}\n" +
-                            $"ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n" +
-                            $"CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n" +
-                            $"ToLevelXp: {xP}, TotalXpAward: {totalXp}");
-                }
+                player.TryAwardCraftingXp(player, skill, skillType, (int)recipe.Difficulty);
             }
         }
 
