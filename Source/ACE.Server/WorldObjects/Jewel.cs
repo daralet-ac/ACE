@@ -600,10 +600,8 @@ namespace ACE.Server.WorldObjects
                 var relativeDifficulty = (float)difficulty - skillLevel;
                 var difficultyMod = 1 + Math.Clamp(relativeDifficulty, -50, 50) / 50;
 
-                var rankXP = progressMod * difficultyMod;
-
                 var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-                var totalXP = (uint)(xP * rankXP);
+                var totalXP = (uint)(xP * progressMod * difficultyMod);
 
                 player.NoContribSkillXp(player, Skill.ItemTinkering, (uint)totalXP, false);
 
@@ -611,7 +609,7 @@ namespace ACE.Server.WorldObjects
                     Console.WriteLine($"Skill: {skillLevel}, RecipeDiff: {difficulty}\n" +
                         $"ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n" +
                         $"CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n" +
-                        $"RankXp: {rankXP}, ToLevelXp: {xP}, TotalXpAward: {totalXP}");
+                        $"ToLevelXp: {xP}, TotalXpAward: {totalXP}");
             }
 
             // get quality name + write socket and jewel name

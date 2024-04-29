@@ -174,10 +174,8 @@ namespace ACE.Server.WorldObjects.Managers
                             var relativeDifficulty = difficulty - skill.Current;
                             var difficultyMod = 1 + (float)Math.Clamp(relativeDifficulty, -50, 50) / 50;
 
-                            var rankXP = progressMod * difficultyMod;
-
                             var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-                            var totalXp = xP * rankXP;
+                            var totalXp = xP * progressMod * difficultyMod;
 
                             player.NoContribSkillXp(player, playerSkill, (uint)totalXp, false);
 
@@ -185,7 +183,7 @@ namespace ACE.Server.WorldObjects.Managers
                                 Console.WriteLine($"Skill: {skill.Current}, RecipeDiff: {difficulty}\n" +
                                     $"ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n" +
                                     $"CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n" +
-                                    $"RankXp: {rankXP}, ToLevelXp: {xP}, TotalXpAward: {totalXp}");
+                                    $"ToLevelXp: {xP}, TotalXpAward: {totalXp}");
                         }
                     }
                     break;

@@ -883,10 +883,8 @@ namespace ACE.Server.WorldObjects
                 var relativeDifficulty = difficulty - skill.Current;
                 var difficultyMod = 1 + Math.Clamp(relativeDifficulty, -50, 50) / 50;
 
-                var rankXP = progressMod * difficultyMod * armorSlots;
                 var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-
-                var totalXp = (uint)(xP * rankXP);
+                var totalXp = (uint)(xP * progressMod * difficultyMod * armorSlots);
                 
                 player.NoContribSkillXp(player, tinkeringSkill, totalXp, false);
 
@@ -894,7 +892,7 @@ namespace ACE.Server.WorldObjects
                     Console.WriteLine($"Skill: {skill.Current}, RecipeDiff: {difficulty}\n" +
                         $"ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n" +
                         $"CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n" +
-                        $"RankXp: {rankXP}, ToLevelXp: {xP}, TotalXpAward: {totalXp}");
+                        $"ToLevelXp: {xP}, TotalXpAward: {totalXp}");
             }
 
             BroadcastTinkering(player, source, target, successChance, success, successAmount);
