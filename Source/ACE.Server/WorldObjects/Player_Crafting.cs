@@ -430,11 +430,11 @@ public void AddSalvage(List<WorldObject> salvageBags, WorldObject item, SalvageR
             // check to ensure appropriately difficult craft before granting (is player skill no more than 50 points above relative difficulty)
             if (creatureSkill.Current - difficulty < 50)
             {
-                // Awarded xp scales based on level of current skill progress (50% of current rank awarded per tink, down to 1% at 200 skill).
-                // Bonus/penalty xp awarded for relative difficulty of the craft (-50% to +100%).
+                // Awarded xp scales based on level of current skill progress (from 50% of current rank awarded per craft, down to 1% at 200 skill).
                 var progressPercentage = Math.Max(0, 1 - (creatureSkill.Current / 200));
                 var progressMod = 0.01f + 0.49f * progressPercentage;
 
+                // Awarded xp received a bonus or penalty for relative difficulty of the craft (-100% to +100%).
                 var relativeDifficulty = difficulty - creatureSkill.Current;
                 var difficultyMod = 1 + Math.Clamp(relativeDifficulty, -50, 50) / 50;
 
