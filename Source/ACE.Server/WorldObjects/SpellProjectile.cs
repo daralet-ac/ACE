@@ -276,7 +276,8 @@ namespace ACE.Server.WorldObjects
         {
             //Console.WriteLine($"{Name}.OnCollideObject({target.Name})");
 
-            if (StrikethroughTargets.Contains(target.Guid.Full)) return;
+            if (target != null && StrikethroughTargets != null)
+                if (StrikethroughTargets.Contains(target.Guid.Full)) return;
 
             var player = ProjectileSource as Player;
 
