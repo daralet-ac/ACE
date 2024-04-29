@@ -1073,13 +1073,14 @@ namespace ACE.Server.WorldObjects
                 case "Xarabydun":
                 case "Underground City":
                 case "Khayyaban":
+                case "Lost Wish Mountains":
                     if (ShopTier == 0)
                         ShopTier = 4;
                     ShopQualityMod = 0.0f;
                     break;
                 case "Qalaba'r":
                 case "Kara":
-                case "Coiler":
+                case "Colier":
                 case "Mountain Retreat":
                 case "Danby's Outpost":
                     if (ShopTier == 0)
