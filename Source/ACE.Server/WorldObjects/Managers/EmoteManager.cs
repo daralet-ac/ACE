@@ -150,13 +150,22 @@ namespace ACE.Server.WorldObjects.Managers
 
                     if (player != null)
                     {
+                        if (emote.Stat == null)
+                        {
+                            _log.Error("EmoteType.AwardNoContribSkillXP - emote.Stat is null. Should have a reference to a skill id. {Player} was not awarded xp.", player.Name);
+                            break;
+                        }
+
+                        if (emote.Stat == null)
+                        {
+                            _log.Warning("EmoteType.AwardNoContribSkillXP - emote.Amount (difficulty) is null. Defaulting to '0'. Xp awarded to {Player} may be incorrect.", player.Name);
+                        }
+
                         var playerSkill = (Skill)emote.Stat;
                         var skill = player.GetCreatureSkill(playerSkill);
-                        var xP = player.GetXPBetweenSkillLevels(skill.AdvancementClass, skill.Ranks, skill.Ranks + 1);
-                        xP /= 5;
+                        var difficulty = emote.Amount ?? 0;
 
-                        player.NoContribSkillXp(player, playerSkill, (uint)xP, false);
-
+                        player.TryAwardCraftingXp(player, skill, playerSkill, difficulty);
                     }
                     break;
                         
