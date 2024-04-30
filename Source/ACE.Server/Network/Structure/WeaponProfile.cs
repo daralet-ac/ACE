@@ -57,6 +57,7 @@ namespace ACE.Server.Network.Structure
             MaxVelocity = weapon.MaximumVelocity ?? 1.0f;
             WeaponOffense = GetWeaponOffense(weapon);
             //MaxVelocityEstimated = (uint)Math.Round(MaxVelocity);   // not found in pcaps?
+            //Console.WriteLine($"{Damage} {DamageVariance} {DamageMod}");
         }
 
         /// <summary>
@@ -97,7 +98,7 @@ namespace ACE.Server.Network.Structure
             var varianceMod = weapon.EnchantmentManager.GetVarianceMod();
             var auraVarianceMod = weapon.Wielder != null ? weapon.Wielder.EnchantmentManager.GetVarianceMod() : 1.0f;
             Enchantment_DamageVariance = weapon.IsEnchantable ? varianceMod * auraVarianceMod : varianceMod;
-            return (float)(baseVariance * Enchantment_DamageVariance);
+            return (float)(baseVariance);
         }
 
         /// <summary>

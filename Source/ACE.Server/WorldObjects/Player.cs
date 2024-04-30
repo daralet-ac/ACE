@@ -1015,7 +1015,7 @@ namespace ACE.Server.WorldObjects
             if (GetCreatureSkill(Skill.Jump).AdvancementClass == SkillAdvancementClass.Specialized)
             {
                 var jumpSpell = new Spell(SpellId.JumpSpecialization);
-                CreateEnchantment(this, this, null, jumpSpell);
+                CreateEnchantmentSilent(jumpSpell, this);
             }
         }
 
