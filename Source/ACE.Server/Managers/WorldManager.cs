@@ -281,7 +281,14 @@ namespace ACE.Server.Managers
             else if (playerLoggedInOnNoLogLandblock) // see http://acpedia.org/wiki/Mount_Elyrii_Hive
                 session.Network.EnqueueSend(new GameMessageSystemChat("The currents of portal space cannot return you from whence you came. Your previous location forbids login.", ChatMessageType.Broadcast));
 
-            player.RecalculateBurden();
+            var act = new ActionChain();
+            act.AddDelaySeconds(3.0f);
+            act.AddAction(session.Player, () =>
+            {
+                if (session != null && session.Player != null)
+                    session.Player.RecalculateBurden();
+            });
+            act.EnqueueChain();
         }
 
         private static string AppendLines(params string[] lines)
