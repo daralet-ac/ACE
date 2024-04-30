@@ -714,8 +714,9 @@ namespace ACE.Server.WorldObjects
             var splatter = new GameMessageScript(Guid, damageType == DamageType.Nether ? PlayScript.HealthDownVoid : PlayScript.DirtyFightingDamageOverTime);
             EnqueueBroadcast(splatter);
 
-            if (Health.Current <= 0)
+            if (Health.Current <= 0 && !IsInDeathProcess)
             {
+                IsInDeathProcess = true;
                 // since damage over time is possibly combined from multiple sources,
                 // sending a message to the last damager here could be tricky..
 
@@ -740,7 +741,7 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public int TakeDamage(WorldObject source, DamageType damageType, float _amount, BodyPart bodyPart, PartialEvasion partialEvasion, bool crit = false, AttackConditions attackConditions = AttackConditions.None)
         {
-            if (Invincible || IsDead) return 0;
+            if (Invincible || IsDead || IsInDeathProcess) return 0;
 
             if (source is Creature creatureAttacker)
             {
@@ -791,8 +792,7 @@ namespace ACE.Server.WorldObjects
                 damageTaken = (uint)-UpdateVitalDelta(Health, (int)-amount);
                 DamageHistory.Add(source, damageType, damageTaken);
             }
-
-            if (ManaBarrierToggle)
+            else
             {
                 var toggles = GetInventoryItemsOfWCID(1051110);
                 var skill = GetCreatureSkill((Skill)16);
@@ -810,39 +810,36 @@ namespace ACE.Server.WorldObjects
                 if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
                     manaDamage = (amount * 0.25) * 1.5 * skillModifier;
 
-                if (ManaBarrierToggle)
+                if (Mana.Current >= manaDamage)
                 {
-                    if (Mana.Current >= manaDamage)
-                    {
-                        damageTaken = (uint)(amount * 0.75f);
-                        PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
-                        UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
-                        UpdateVitalDelta(Health, (int)-damageTaken);
-                        DamageHistory.Add(source, damageType, (uint)damageTaken);
-                    }
-                    // if not enough mana, barrier falls and player takes remainder of damage as health
-                    else
-                    {
-                        ToggleManaBarrierSetting();
-                        Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic));
-                        if (toggles != null)
-                        {
-                            foreach (var toggle in toggles)
-                                EnchantmentManager.StartCooldown(toggle);
-                        }
-                        PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
-
-                        // find mana damage overage and reconvert to HP damage
-                        var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
-                        if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                            manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
-
-                        damageTaken = (uint)((amount * 0.75) + manaRemainder);
-                        UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
-                        UpdateVitalDelta(Health, (int)-(damageTaken));
-                        DamageHistory.Add(source, damageType, damageTaken);
-                    }
+                    damageTaken = (uint)(amount * 0.75f);
+                    PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
+                    UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
+                    UpdateVitalDelta(Health, (int)-damageTaken);
+                    DamageHistory.Add(source, damageType, (uint)-damageTaken);
                 }
+                // if not enough mana, barrier falls and player takes remainder of damage as health
+                else
+                {
+                    ToggleManaBarrierSetting();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic));
+                    if (toggles != null)
+                    {
+                        foreach (var toggle in toggles)
+                            EnchantmentManager.StartCooldown(toggle);
+                    }
+                    PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
+
+                    // find mana damage overage and reconvert to HP damage
+                    var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
+                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                        manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
+
+                    damageTaken = (uint)((amount * 0.75) + manaRemainder);
+                    UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
+                    UpdateVitalDelta(Health, (int)-(damageTaken));
+                    DamageHistory.Add(source, damageType, (uint)-damageTaken);
+                }  
             }
 
             // update stamina
@@ -858,8 +855,9 @@ namespace ACE.Server.WorldObjects
             //if (Fellowship != null)
                 //Fellowship.OnVitalUpdate(this);
 
-            if (Health.Current <= 0)
+            if (Health.Current <= 0 && !IsInDeathProcess)
             {
+                IsInDeathProcess = true;
                 OnDeath(new DamageHistoryInfo(source), damageType, crit);
                 Die();
                 return (int)damageTaken;
