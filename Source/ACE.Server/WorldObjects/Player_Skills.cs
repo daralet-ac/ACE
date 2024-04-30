@@ -508,19 +508,22 @@ namespace ACE.Server.WorldObjects
 
         private const uint magicSkillCheckMargin = 50;
 
-        public bool CanReadScroll(Scroll scroll)
+        public bool CanReadScroll(Scroll scroll, out bool spec)
         {
             var power = scroll.Spell.Power;
 
             // level 1/7/8 scrolls can be learned by anyone?
-            if (power < 50 || power >= 300) return true;
+            //if (power < 50 || power >= 300) return true;
 
             var magicSkill = scroll.Spell.GetMagicSkill();
             var playerSkill = GetCreatureSkill(magicSkill);
 
             var minSkill = power - magicSkillCheckMargin;
 
-            return playerSkill.AdvancementClass >= SkillAdvancementClass.Trained && playerSkill.Current >= minSkill;
+            var skillAdvancementClass = IsAdvancedSpell(scroll.Spell) ? SkillAdvancementClass.Specialized : SkillAdvancementClass.Trained;
+            spec = skillAdvancementClass == SkillAdvancementClass.Specialized ? true : false;
+
+            return playerSkill.AdvancementClass >= skillAdvancementClass && playerSkill.Current >= minSkill;
         }
 
         public void AddSkillCredits(int amount)
