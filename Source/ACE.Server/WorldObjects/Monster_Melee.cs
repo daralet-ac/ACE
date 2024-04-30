@@ -508,18 +508,16 @@ namespace ACE.Server.WorldObjects
             {
                 // Shield Level capped at Shield skill amount
                 var shieldSkill = GetCreatureSkill(Skill.Shield);
-                var shieldCap = shieldSkill.Current;
-
-                var currentSkill = GetModdedShieldSkill();
+                var shieldCap = GetModdedShieldSkill();
 
                 // Shield Level cap doubled if Shield skill is specialized
-                if (shieldSkill.AdvancementClass != SkillAdvancementClass.Specialized)
-                    currentSkill = currentSkill * 2;
+                if (shieldSkill.AdvancementClass == SkillAdvancementClass.Specialized)
+                    shieldCap *= 2;
 
                 // If Shield cap is greater than equipped shield level, shield gains +1 shield level per 10 points under cap
-                if (currentSkill > shieldLevel)
-                    shieldLevel += (currentSkill - shieldLevel) / 10;
-
+                if (shieldCap > shieldLevel)
+                    shieldLevel += (shieldCap - shieldLevel) / 10;
+                
                 return Math.Min(shieldLevel, shieldCap);
             }
             else
@@ -576,7 +574,7 @@ namespace ACE.Server.WorldObjects
             Console.WriteLine("Effective RL: " + effectiveRL);
             Console.WriteLine();*/
 
-            return GetSkillModifiedArmorLevel(effectiveAL, (ArmorWeightClass)(armor.ArmorWeightClass ?? 0), effectiveRL);
+            return effectiveAL * effectiveRL;
         }
 
         /// <summary>

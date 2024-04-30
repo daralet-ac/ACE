@@ -800,8 +800,8 @@ namespace ACE.Server.WorldObjects
             }
 
             // get base shield AL
-            var baseSL = shield.GetProperty(PropertyInt.ArmorLevel) ?? 0.0f;
-
+            var baseSL = GetSkillModifiedShieldLevel(shield.GetProperty(PropertyInt.ArmorLevel) ?? 0.0f);
+            
             // shield AL item enchantment additives:
             // impenetrability, brittlemail
             var ignoreMagicArmor = (weapon?.IgnoreMagicArmor ?? false) || (attacker?.IgnoreMagicArmor ?? false);
