@@ -57,7 +57,6 @@ namespace ACE.Server.Network.Structure
             MaxVelocity = weapon.MaximumVelocity ?? 1.0f;
             WeaponOffense = GetWeaponOffense(weapon);
             //MaxVelocityEstimated = (uint)Math.Round(MaxVelocity);   // not found in pcaps?
-            //Console.WriteLine($"{Damage} {DamageVariance} {DamageMod}");
         }
 
         /// <summary>
