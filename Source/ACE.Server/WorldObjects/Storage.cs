@@ -157,13 +157,13 @@ namespace ACE.Server.WorldObjects
         {
             if (!IsOpen) return;
 
-            BankUser = null;
-
             Translucency = 0f;
 
             SaveBiotaToDatabase();
 
-            player.Session.Network.EnqueueSend(new GameEventTell(this, "Please return with more items.", player, ChatMessageType.Tell));
+            BankUser.Session.Network.EnqueueSend(new GameEventTell(this, "Please return with more items.", BankUser, ChatMessageType.Tell));
+
+            BankUser = null;
 
             PlayParticleEffect(PlayScript.UnHide, Guid);
 
