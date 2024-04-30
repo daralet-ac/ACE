@@ -50,7 +50,7 @@ namespace ACE.Server.Entity
                 BaseDamage.MaxDamage = (int)Math.Round(BaseDamage.MaxDamage * weapon.EnchantmentManager.GetDamageBonus());
 
             DamageBonus *= weapon.EnchantmentManager.GetDamageBonus();
-            VarianceMod *= weapon.EnchantmentManager.GetVarianceMod();
+            //VarianceMod *= weapon.EnchantmentManager.GetVarianceMod();
 
             //DamageMod = (float)(weapon.GetProperty(PropertyFloat.DamageMod) ?? 1.0f) + (((float)(weapon.GetProperty(PropertyFloat.DamageMod) ?? 1.0f) - 1.0f) * (weapon.EnchantmentManager.GetDamageMod() - 1.0f));
             DamageMod = (float)(weapon.GetProperty(PropertyFloat.DamageMod) ?? 1.0f);
@@ -62,7 +62,7 @@ namespace ACE.Server.Entity
 
                 // factor in wielder auras for enchantable weapons
                 DamageBonus *= wielder.EnchantmentManager.GetDamageBonus();
-                VarianceMod *= wielder.EnchantmentManager.GetVarianceMod();
+                //VarianceMod *= wielder.EnchantmentManager.GetVarianceMod();
 
                 //DamageMod += (DamageMod - 1.0f) * (wielder.EnchantmentManager.GetDamageMod() - 1.0f);;
             }

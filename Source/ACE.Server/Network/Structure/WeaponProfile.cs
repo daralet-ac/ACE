@@ -97,7 +97,7 @@ namespace ACE.Server.Network.Structure
             var varianceMod = weapon.EnchantmentManager.GetVarianceMod();
             var auraVarianceMod = weapon.Wielder != null ? weapon.Wielder.EnchantmentManager.GetVarianceMod() : 1.0f;
             Enchantment_DamageVariance = weapon.IsEnchantable ? varianceMod * auraVarianceMod : varianceMod;
-            return (float)(baseVariance * Enchantment_DamageVariance);
+            return (float)(baseVariance);
         }
 
         /// <summary>
