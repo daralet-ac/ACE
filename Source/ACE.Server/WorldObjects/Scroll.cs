@@ -97,7 +97,7 @@ namespace ACE.Server.WorldObjects
                 {
                     var msg = "";
                     if (spec)
-                        msg = $"You are not specialized in {playerSkill.Skill.ToSentence()}!";
+                        msg = $"You must be specialized in {playerSkill.Skill.ToSentence()} to learn this spell!";
                     else if (playerSkill.AdvancementClass < SkillAdvancementClass.Trained)
                         msg = $"You are not trained in {playerSkill.Skill.ToSentence()}!";
                     else
