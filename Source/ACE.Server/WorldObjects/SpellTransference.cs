@@ -490,13 +490,13 @@ namespace ACE.Server.WorldObjects
                     var cantripLevel = cantripLevels.IndexOf(spellId);
 
                     if (cantripLevel == MINOR)
-                        increasedDifficulty += 15;
+                        increasedDifficulty += 5;
                     else if (cantripLevel == MAJOR)
-                        increasedDifficulty += 20;
+                        increasedDifficulty += 10;
                     else if (cantripLevel == EPIC)
-                        increasedDifficulty += 25;
+                        increasedDifficulty += 15;
                     else if (cantripLevel == LEGENDARY)
-                        increasedDifficulty += 30;
+                        increasedDifficulty += 20;
                 }
             }
 
@@ -526,13 +526,13 @@ namespace ACE.Server.WorldObjects
         {
             switch (tier)
             {
-                case 1: return 100;
-                case 2: return 200;
-                case 3: return 250;
-                case 4: return 300;
-                case 5: return 350;
-                case 6: return 400;
-                case 7: return 450;
+                case 1: return 75;
+                case 2: return 175;
+                case 3: return 225;
+                case 4: return 275;
+                case 5: return 325;
+                case 6: return 375;
+                case 7: return 425;
                 default: return 50;
             }
         }
