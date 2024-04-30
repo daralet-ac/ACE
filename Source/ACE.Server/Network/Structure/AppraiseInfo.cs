@@ -440,7 +440,8 @@ namespace ACE.Server.Network.Structure
                     if (wo.IsShield)
                         armor = (int)wielder.GetSkillModifiedShieldLevel(baseArmor);
                     else
-                        armor = (int)wielder.GetSkillModifiedArmorLevel(baseArmor, (ArmorWeightClass)(wo.ArmorWeightClass ?? 0));
+                        armor = baseArmor;
+
                     if (armor < baseArmor)
                     {
                         PropertiesInt[PropertyInt.ArmorLevel] = armor;
