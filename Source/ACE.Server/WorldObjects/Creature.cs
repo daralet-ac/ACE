@@ -496,5 +496,28 @@ namespace ACE.Server.WorldObjects
             return sortedTargets;
         }
 
+        public int GetCreatureAvgTierHealth()
+        {
+            var statWeight = 0.0f;
+            var level = (float)Level.Value;
+            var tier = (Tier ?? 1) - 1;
+
+            switch (tier)
+            {
+                case 0: statWeight = level / 9; break;
+                case 1: statWeight = (level - 10) / 10; break;
+                case 2: statWeight = (level - 20) / 10; break;
+                case 3: statWeight = (level - 30) / 10; break;
+                case 4: statWeight = (level - 40) / 10; break;
+                case 5: statWeight = (level - 50) / 25; break;
+                case 6: statWeight = (level - 75) / 25; break;
+                case 7: statWeight = (level - 100) / 25; break;
+            }
+
+            var avgHealth = enemyHealth[tier] + (enemyHealth[tier + 1] - enemyHealth[tier]) * statWeight;
+
+            return (int)avgHealth;
+        }
+
     }
 }

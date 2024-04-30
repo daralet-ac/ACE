@@ -121,8 +121,8 @@ namespace ACE.Server.WorldObjects
             if(target.IsMonster)
             {
                 var damage = damageEvent.Damage;
-                var targetMaxHealth = target.Health.MaxValue;
-                var percentDamageDealt = damage / targetMaxHealth;
+                var targetAvgHealth = target.GetCreatureAvgTierHealth();
+                var percentDamageDealt = damage / targetAvgHealth;
 
                 var threat = percentDamageDealt * 1000;
 
