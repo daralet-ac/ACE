@@ -94,7 +94,7 @@ namespace ACE.Server.WorldObjects
 
         public void TryUseAreaTaunt(WorldObject ability)
         {
-            var nearbyMonsters = GetNearbyMonsters(5);
+            var nearbyMonsters = GetNearbyMonsters(10);
 
             foreach (var target in nearbyMonsters)
             {
@@ -122,7 +122,7 @@ namespace ACE.Server.WorldObjects
 
         public void TryUseFeignInjury(WorldObject ability)
         {
-            var nearbyMonsters = GetNearbyMonsters(5);
+            var nearbyMonsters = GetNearbyMonsters(15);
 
             foreach (var target in nearbyMonsters)
             {

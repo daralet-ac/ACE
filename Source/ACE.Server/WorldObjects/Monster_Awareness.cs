@@ -15,6 +15,8 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
+using Microsoft.Extensions.Logging.Abstractions;
+using Newtonsoft.Json.Linq;
 
 namespace ACE.Server.WorldObjects
 {
@@ -149,7 +151,7 @@ namespace ACE.Server.WorldObjects
 
 
         private bool DebugThreatSystem { get => PropertyManager.GetBool("debug_threat_system").Item; }
-        private const int ThreatStartingAmount = 100;
+        private const int ThreatMinimum = 100;
         private double ThreatGainedSinceLastTick = 1;
 
         public Dictionary<Creature, int> ThreatLevel;
@@ -162,7 +164,7 @@ namespace ACE.Server.WorldObjects
         public void IncreaseTargetThreatLevel(Creature targetCreature, int amount)
         {
             if (!ThreatLevel.ContainsKey(targetCreature))
-                ThreatLevel.Add(targetCreature, ThreatStartingAmount);
+                ThreatLevel.Add(targetCreature, ThreatMinimum);
 
             // check for modifiers
             var modifier = 1.0f;
@@ -204,19 +206,35 @@ namespace ACE.Server.WorldObjects
                 Console.WriteLine($"{Name} threat increased towards {targetCreature.Name} by +{amount}");
         }
 
+        /// <summary>
+        /// Every second, reduce threat levels towards each target by the total amount of threat gained since last tick divided by the number of targets.
+        /// Minimum of amount of threat reduced is equal to 10% of total threat, above target minimums (100).
+        /// </summary>
         public void TickDownAllTargetThreatLevels()
         {
-            var amount = (int)(ThreatGainedSinceLastTick / ThreatLevel.Count);
-            amount = amount < 1 ? 1 : amount;
+            var totalThreat = 0;
+            foreach (var kvp in ThreatLevel)
+                totalThreat += kvp.Value;
+
+            var minimumSubtraction = Math.Max((int)((totalThreat - ThreatMinimum * ThreatLevel.Count) * 0.1f), 1);
+
+            var threatGained = (int)(ThreatGainedSinceLastTick / ThreatLevel.Count);
+
+            threatGained = threatGained < minimumSubtraction ? minimumSubtraction : threatGained;
 
             foreach (Creature key in ThreatLevel.Keys)
             {
-                if (ThreatLevel[key] > ThreatStartingAmount)
-                    ThreatLevel[key] -= amount;
+                if (ThreatLevel[key] > ThreatMinimum)
+                    ThreatLevel[key] -= threatGained;
 
-                if (ThreatLevel[key] < ThreatStartingAmount)
-                    ThreatLevel[key] = ThreatStartingAmount;
+                if (ThreatLevel[key] < ThreatMinimum)
+                    ThreatLevel[key] = ThreatMinimum;
             }
+
+            //if (DebugThreatSystem)
+            //    _log.Information("TickDownAllTargetThreatLevels() - {Name} - {Threat}", Name, threatGained);
+
+            ThreatGainedSinceLastTick = 0;
         }
 
         public virtual bool FindNextTarget(bool onTakeDamage, Creature untargetablePlayer = null)
@@ -285,28 +303,30 @@ namespace ACE.Server.WorldObjects
                             continue;
 
                         // Add new visible targets to threat list
-                        ThreatLevel.Add(targetCreature, ThreatStartingAmount);
+                        if (!Name.Contains("Placeholder") && !Name.Contains("Boss Watchdog")) 
+                            ThreatLevel.Add(targetCreature, ThreatMinimum);
                     }
 
                     if (DebugThreatSystem)
                     {
-                        Console.WriteLine($"\n\n--------------\nThreatLevel list for {Name} ({WeenieClassId}):");
+                        Console.WriteLine("--------------");
+                        _log.Information("ThreatLevel list for {Name} ({WeenieClassId}):", Name, WeenieClassId);
                         foreach (Creature targetCreature in ThreatLevel.Keys)
                         {
-                            Console.WriteLine($"-{targetCreature.Name}: {ThreatLevel[targetCreature]}");
+                            _log.Information("{Name}: {targetThreat}", targetCreature.Name, ThreatLevel[targetCreature]);
                         }
                     }
 
                     // Set potential threat value range based on 50% of highest player's threat
                     var maxThreatValue = ThreatLevel.Values.Max();
 
-                    if (maxThreatValue <= 1)
+                    if (maxThreatValue < ThreatMinimum)
                     {
                         AttackTarget = SelectWeightedDistance(targetDistances);
                     }
                     else
                     {
-                        var minimumAggroRange = maxThreatValue * 0.5f;
+                        var minimumAggroRange = (int)(maxThreatValue * 0.5f);
 
                         // Add all player's witin the potential threat range to a new dictionary
                         Dictionary<Creature, int> potentialTargetList = new Dictionary<Creature, int>();
@@ -314,19 +334,20 @@ namespace ACE.Server.WorldObjects
 
                         foreach (var targetCreature in ThreatLevel)
                         {
-                            if (targetCreature.Value > minimumAggroRange)
-                                potentialTargetList.Add(targetCreature.Key, targetCreature.Value);
+                            if (targetCreature.Value >= minimumAggroRange)
+                                potentialTargetList.Add(targetCreature.Key, targetCreature.Value - minimumAggroRange);
 
-                            if (targetCreature.Value <= minimumAggroRange)
+                            if (targetCreature.Value < minimumAggroRange)
                                 safeTargetList.Add(targetCreature.Key, targetCreature.Value);
                         }
 
                         if (DebugThreatSystem)
                         {
-                            Console.WriteLine($"\nUnsorted Potential Target List {Name}:");
+                            Console.WriteLine("\n");
+                            _log.Information("Unsorted Potential Target List - {Name}:", Name);
                             foreach (Creature targetCreature in potentialTargetList.Keys)
                             {
-                                Console.WriteLine($"-{targetCreature.Name}: {potentialTargetList[targetCreature]}");
+                                _log.Information("{Name}: {TargetThreat}", targetCreature.Name, potentialTargetList[targetCreature]);
                             }
                         }
 
@@ -336,50 +357,57 @@ namespace ACE.Server.WorldObjects
 
                         if (DebugThreatSystem)
                         {
-                            Console.WriteLine($"\nSorted Potential Target List {Name}:");
+                            _log.Information("Sorted Potential Target List - {Name}:", Name);
                             foreach (Creature targetCreature in sortedPotentialTargetList.Keys)
                             {
-                                Console.WriteLine($"-{targetCreature.Name}: {sortedPotentialTargetList[targetCreature]}");
+                                _log.Information("{Name}: {TargetThreat}", targetCreature.Name, sortedPotentialTargetList[targetCreature]);
                             }
                         }
 
                         // Adjust values for each entry in the sorted list so that entry's value includes the sum of all previous values.
                         // i.e. KVPs of <1,30>, <2,38>, <3,45>
                         // would become <1,30>, <2,68>, <3,113>
+                        if (DebugThreatSystem)
+                            _log.Information("Additive Threat Values - {Name}", Name);
+
                         var lastValue = 0;
                         foreach (var entry in sortedPotentialTargetList)
                         {
-                            entry.Key.Value += lastValue;
-                            lastValue = entry.Value;
-                        }
+                            sortedPotentialTargetList[entry.Key] = entry.Value + lastValue;
+                            lastValue = sortedPotentialTargetList[entry.Key];
 
-                        // Roll a number based on the threat range. Player who's value is next above the roll becomes the new target.
-
-                        var totalRollRange = 0;
-                        foreach (var value in sortedPotentialTargetList)
-                        {
-                            totalRollRange += value.Value - (int)minimumAggroRange;
+                            if (DebugThreatSystem)
+                                _log.Information("{Name}: {Value}, Additive Value: {lastValue}", entry.Key.Name, entry.Value, lastValue);
                         }
 
                         var sortedMaxValue = sortedPotentialTargetList.Values.Max();
-                        var roll = ThreadSafeRandom.Next(minimumAggroRange, sortedMaxValue);
+                        var roll = ThreadSafeRandom.Next(1, sortedMaxValue);
 
                         if (DebugThreatSystem)
-                            Console.WriteLine($"\nTotalRange: {totalRollRange}");
+                            _log.Information("RollRange: {minimum} - {sortedMaxValue}, Roll: {roll}", 1, sortedMaxValue, roll);
 
                         PositiveThreat.Clear();
+                        var difference = 0;
                         foreach (var targetCreatureKey in sortedPotentialTargetList)
                         {
-                            if (targetCreatureKey.Value > roll)
-                                AttackTarget = targetCreatureKey.Key;
-
                             // Calculate chance to steal aggro, for Appraisal Threat Table
-                            var creatureThreatValue = targetCreatureKey.Value - minimumAggroRange;
-                            var chance = creatureThreatValue / totalRollRange;
+                            var creatureThreatValue = targetCreatureKey.Value - difference;
+                            var chance = (float)(creatureThreatValue) / sortedMaxValue;
+                            difference += creatureThreatValue;
+
                             PositiveThreat[targetCreatureKey.Key] = chance;
 
                             if (DebugThreatSystem)
-                                Console.WriteLine($"{targetCreatureKey.Key.Name} ThreatLevel: {creatureThreatValue} ThreatLevelInRange: {targetCreatureKey.Value}, Chance: {chance}");
+                                _log.Information("{Name} ThreatLevel: {creatureThreatValue}, ThreatRange: {Value}, Chance: {chance}", targetCreatureKey.Key.Name, creatureThreatValue, targetCreatureKey.Value, Math.Round(chance, 2));
+                        }
+
+                        foreach (var targetCreatureKey in sortedPotentialTargetList)
+                        {
+                            if (targetCreatureKey.Value > roll)
+                            {
+                                AttackTarget = targetCreatureKey.Key;
+                                break;
+                            }
                         }
 
                         NegativeThreat.Clear();
@@ -392,7 +420,7 @@ namespace ACE.Server.WorldObjects
 
                         if (DebugThreatSystem)
                         {
-                            Console.WriteLine($"\nSELECTED PLAYER: {AttackTarget.Name}");
+                            _log.Information("SELECTED PLAYER: {Name}", AttackTarget.Name);
                         }
                     }
                 }

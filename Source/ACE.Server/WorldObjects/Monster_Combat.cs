@@ -394,13 +394,6 @@ namespace ACE.Server.WorldObjects
                 Die();
             }
 
-            // Try Taunt
-            Player player = source as Player;
-            if(player != null && player.IsAttemptingToPerceiveThreats)
-            {
-                FindNextTarget(true);
-            }
-
             return (uint)Math.Max(0, damage);
         }
 
