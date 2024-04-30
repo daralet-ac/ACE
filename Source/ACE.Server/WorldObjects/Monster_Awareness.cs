@@ -317,10 +317,13 @@ namespace ACE.Server.WorldObjects
                         }
                     }
 
+                    if (ThreatLevel.Count == 0)
+                        return false;
+
                     // Set potential threat value range based on 50% of highest player's threat
                     var maxThreatValue = ThreatLevel.Values.Max();
 
-                    if (maxThreatValue < ThreatMinimum)
+                    if (maxThreatValue <= ThreatMinimum)
                     {
                         AttackTarget = SelectWeightedDistance(targetDistances);
                     }
