@@ -682,20 +682,7 @@ namespace ACE.Server.WorldObjects
 
                     if (dropped.Count == 0 && !isPKLdeath)
                         player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have retained all your items. You do not need to recover your corpse!", ChatMessageType.Broadcast));
-                }
-
-                if (player.ManaBarrierToggle)
-                {
-                    var toggles = player.GetInventoryItemsOfWCID(1051110);
-
-                    player.ToggleManaBarrierSetting();
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Upon death, your mana barrier fails and collapses!", ChatMessageType.Magic));
-                    if (toggles != null)
-                    {
-                        foreach (var toggle in toggles)
-                            EnchantmentManager.StartCooldown(toggle);
-                    }
-                }
+                }                
             }
             else
             {

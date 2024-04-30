@@ -1330,6 +1330,13 @@ namespace ACE.Server.WorldObjects
                         target.EmoteManager.OnReceiveCritical(sourcePlayer);
                 }
             }
+            else if (targetPlayer != null && !targetPlayer.IsInDeathProcess)
+            {
+                targetPlayer.IsInDeathProcess = true;
+                var lastDamager = ProjectileSource != null ? new DamageHistoryInfo(ProjectileSource) : null;
+                targetPlayer.OnDeath(lastDamager, Spell.DamageType, critical);
+                targetPlayer.Die();
+            }
             else
             {
                 var lastDamager = ProjectileSource != null ? new DamageHistoryInfo(ProjectileSource) : null;
