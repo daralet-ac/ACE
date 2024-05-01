@@ -167,7 +167,7 @@ namespace ACE.Server.WorldObjects
 
             PlayParticleEffect(PlayScript.UnHide, Guid);
 
-            FinishClose(player);
+            FinishClose(BankUser);
             
         }
         /// <summary>
