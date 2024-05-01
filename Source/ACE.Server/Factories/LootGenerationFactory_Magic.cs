@@ -81,7 +81,9 @@ namespace ACE.Server.Factories
                     wo.ItemMaxMana = RollItemMaxMana_New(wo, roll, combinedSpellCost);
                     wo.ItemCurMana = wo.ItemMaxMana;
 
-                    wo.ItemSpellcraft = RollSpellcraft(wo, roll);
+                    wo.ItemSpellcraft = RollSpellcraft(wo, roll, profile);
+                    if (wo.ItemSpellcraft == 0)
+                        wo.ItemSpellcraft = null;
 
                     AddActivationRequirements(wo, profile, roll);
                 }
@@ -640,30 +642,22 @@ namespace ACE.Server.Factories
 
         // new method / based on treasure roll
 
-        private static int RollSpellcraft(WorldObject wo, TreasureRoll roll)
+        private static int RollSpellcraft(WorldObject wo, TreasureRoll roll, TreasureDeath treasureDeath)
         {
             var maxSpellPower = GetMaxSpellPower(wo);
 
             (float min, float max) range = (1.0f, 1.0f);
 
-            if (roll.IsClothing || roll.IsArmor || roll.IsWeapon || roll.IsJewelry || roll.IsDinnerware ||
-                roll.ItemType == TreasureItemType_Orig.WeaponCaster || roll.ItemType == TreasureItemType_Orig.WeaponRogue || roll.ItemType == TreasureItemType_Orig.WeaponWarrior ||
-                roll.ItemType == TreasureItemType_Orig.ArmorCaster || roll.ItemType == TreasureItemType_Orig.ArmorRogue || roll.ItemType == TreasureItemType_Orig.ArmorWarrior)
-            {
-                range.min = 0.9f;
-                range.max = 1.1f;
-            }
-            else if (!roll.IsGem)
+            if (!roll.IsClothing && !roll.IsArmor && !roll.IsWeapon && !roll.IsJewelry && roll.IsDinnerware && !roll.IsGem &&
+                roll.ItemType != TreasureItemType_Orig.WeaponCaster && roll.ItemType != TreasureItemType_Orig.WeaponRogue && roll.ItemType != TreasureItemType_Orig.WeaponWarrior &&
+                roll.ItemType != TreasureItemType_Orig.ArmorCaster && roll.ItemType != TreasureItemType_Orig.ArmorRogue && roll.ItemType != TreasureItemType_Orig.ArmorWarrior)
             {
                 _log.Error($"RollSpellcraft({wo.Name}, {roll.ItemType}) - unknown item type");
             }
 
-            var rng = ThreadSafeRandom.Next(range.min, range.max);
+            var rng = 0.5f * GetDiminishingRoll(treasureDeath);
 
-            var spellcraft = (int)Math.Ceiling(maxSpellPower * rng);
-
-            // retail was capped at 370
-            spellcraft = Math.Min(spellcraft, 500);
+            var spellcraft = (int)Math.Ceiling(maxSpellPower + maxSpellPower * rng);
 
             return spellcraft;
         }
@@ -672,7 +666,7 @@ namespace ACE.Server.Factories
         {
             switch (spell.Formula.Level)
             {
-                case 1: return 20; // EoR is 1
+                case 1: return 50; // EoR is 1
                 case 2: return 150; // EoR is 50
                 case 3: return 200; // EoR is 100
                 case 4: return 250; // EoR is 150
@@ -699,17 +693,17 @@ namespace ACE.Server.Factories
                     maxSpellPower = spellPower;
             }
 
-            if (wo.Biota.PropertiesSpellBook != null)
-            {
-                foreach (var spellId in wo.Biota.PropertiesSpellBook.Keys)
-                {
-                    var spell = new Server.Entity.Spell(spellId);
+            //if (wo.Biota.PropertiesSpellBook != null)
+            //{
+            //    foreach (var spellId in wo.Biota.PropertiesSpellBook.Keys)
+            //    {
+            //        var spell = new Server.Entity.Spell(spellId);
 
-                    int spellPower = GetSpellPower(spell);
-                    if (spellPower > maxSpellPower)
-                        maxSpellPower = spellPower;
-                }
-            }
+            //        int spellPower = GetSpellPower(spell);
+            //        if (spellPower > maxSpellPower)
+            //            maxSpellPower = spellPower;
+            //    }
+            //}
 
             if (wo.ProcSpell != null)
             {

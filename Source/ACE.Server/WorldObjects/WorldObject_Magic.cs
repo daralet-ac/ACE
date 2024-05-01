@@ -206,14 +206,14 @@ namespace ACE.Server.WorldObjects
                             spellcraft = (uint)Math.Max((spellcraft + arcaneLore.Current) * 0.5f, spellcraft);
                     }
 
-                    // COMBAT ABILITY - Enchant: Effective spellcraft increased by 10%
+                    // COMBAT ABILITY - Enchant: Effective spellcraft increased by 25%
                     var combatAbility = CombatAbility.None;
                     var combatFocus = wielder.GetEquippedCombatFocus();
                     if (combatFocus != null)
                         combatAbility = combatFocus.GetCombatAbility();
 
                     if (combatAbility == CombatAbility.EnchantedWeapon)
-                        spellcraft = (uint)(spellcraft * 1.1f);
+                        spellcraft = (uint)(spellcraft * 1.25f);
 
                     magicSkill = (uint)((spellcraft + casterMagicSkill) * 0.5);
                 }
@@ -434,7 +434,7 @@ namespace ACE.Server.WorldObjects
                 case SpellType.Boost:
                 case SpellType.FellowBoost:
 
-                    HandleCastSpell_Boost(spell, targetCreature, showMsg, weapon);
+                    HandleCastSpell_Boost(spell, targetCreature, showMsg, fromProc, weapon);
                     break;
 
                 case SpellType.Transfer:
@@ -442,7 +442,7 @@ namespace ACE.Server.WorldObjects
                     if (itemCaster == null && targetCreature != null)
                         GenerateSupportSpellThreat(spell, targetCreature);
 
-                    HandleCastSpell_Transfer(spell, targetCreature, showMsg);
+                    HandleCastSpell_Transfer(spell, targetCreature, fromProc, showMsg);
                     break;
 
                 case SpellType.Projectile:
@@ -641,7 +641,7 @@ namespace ACE.Server.WorldObjects
         /// Handles casting SpellType.Boost / FellowBoost spells
         /// typically for Life Magic, ie. Heal, Harm
         /// </summary>
-        private void HandleCastSpell_Boost(Spell spell, Creature targetCreature, bool showMsg = true, WorldObject weapon = null)
+        private void HandleCastSpell_Boost(Spell spell, Creature targetCreature, bool fromProc, bool showMsg = true, WorldObject weapon = null)
         {
             var player = this as Player;
             var creature = this as Creature;
@@ -661,7 +661,9 @@ namespace ACE.Server.WorldObjects
             if (weapon != null && weapon.WeaponRestorationSpellsMod > 1)
                 weaponRestorationMod = weapon.WeaponRestorationSpellsMod;
 
-            int tryBoost = (int)(ThreadSafeRandom.Next(minBoostValue, maxBoostValue) * weaponRestorationMod);
+            var spelTargetProcSpellMod = SelfTargetSpellProcMod(fromProc, spell, weapon, player);
+
+            int tryBoost = (int)(ThreadSafeRandom.Next(minBoostValue, maxBoostValue) * weaponRestorationMod * spelTargetProcSpellMod);
 
             // Boost Crits
             var critMessage = "";
@@ -1041,7 +1043,7 @@ namespace ACE.Server.WorldObjects
         /// Handles casting SpellType.Transfer spells
         /// usually for Life Magic, ie. Stamina to Mana, Drain
         /// </summary>
-        private void HandleCastSpell_Transfer(Spell spell, Creature targetCreature, bool showMsg = true)
+        private void HandleCastSpell_Transfer(Spell spell, Creature targetCreature, bool fromProc, bool showMsg = true)
         {
             var player = this as Player;
             var creature = this as Creature;
@@ -2841,6 +2843,27 @@ namespace ACE.Server.WorldObjects
                 creature.IncreaseTargetThreatLevel(player, (int)threatAmount);
             }
             
+        }
+
+        private float SelfTargetSpellProcMod(bool fromProc, Spell spell, WorldObject weapon, Player player)
+        {
+            if (!fromProc || player == null || weapon == null)
+                return 1.0f;
+            else
+            {
+                var spellcraft = (uint)(weapon.ItemSpellcraft ?? 1);
+                var arcaneLore = player.GetCreatureSkill(Skill.ArcaneLore);
+
+                if (arcaneLore.AdvancementClass == SkillAdvancementClass.Specialized)
+                    spellcraft = (uint)Math.Max((spellcraft + arcaneLore.Current) * 0.5f, spellcraft);
+
+                var playerSpellSkill = spell.School == MagicSchool.WarMagic ? player.GetModdedWarMagicSkill() : player.GetModdedLifeMagicSkill();
+                var procSpellSkill = (playerSpellSkill + spellcraft) * 0.5f;
+
+                var mod = procSpellSkill / spell.Power;
+                
+                return Math.Clamp(mod, 0.5f, 2.0f);
+            }
         }
     }
 }
