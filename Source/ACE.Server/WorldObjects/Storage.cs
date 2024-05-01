@@ -161,14 +161,15 @@ namespace ACE.Server.WorldObjects
 
             SaveBiotaToDatabase();
 
-            BankUser.Session.Network.EnqueueSend(new GameEventTell(this, "Please return with more items.", BankUser, ChatMessageType.Tell));
-
-            BankUser = null;
+            if (BankUser != null)
+                BankUser.Session.Network.EnqueueSend(new GameEventTell(this, "Please return with more items.", BankUser, ChatMessageType.Tell));
 
             PlayParticleEffect(PlayScript.UnHide, Guid);
 
             FinishClose(BankUser);
-            
+
+            BankUser = null;
+
         }
         /// <summary>
          /// This event is raised when player adds item to storage
