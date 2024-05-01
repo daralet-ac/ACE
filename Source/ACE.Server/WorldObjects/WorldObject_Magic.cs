@@ -442,7 +442,7 @@ namespace ACE.Server.WorldObjects
                     if (itemCaster == null && targetCreature != null)
                         GenerateSupportSpellThreat(spell, targetCreature);
 
-                    HandleCastSpell_Transfer(spell, targetCreature, fromProc, showMsg);
+                    HandleCastSpell_Transfer(spell, targetCreature, showMsg);
                     break;
 
                 case SpellType.Projectile:
@@ -1043,7 +1043,7 @@ namespace ACE.Server.WorldObjects
         /// Handles casting SpellType.Transfer spells
         /// usually for Life Magic, ie. Stamina to Mana, Drain
         /// </summary>
-        private void HandleCastSpell_Transfer(Spell spell, Creature targetCreature, bool fromProc, bool showMsg = true)
+        private void HandleCastSpell_Transfer(Spell spell, Creature targetCreature, bool showMsg = true)
         {
             var player = this as Player;
             var creature = this as Creature;
