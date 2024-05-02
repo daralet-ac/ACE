@@ -72,7 +72,7 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
         IList<(string Name, string AccountName)> sortedOnlinePlayers)
     {
         var playerAccountTable = GeneratePlayerAccountTable(sortedOnlinePlayers);
-        return @$"{totalsLine}\n```{playerAccountTable}```";
+        return $"{totalsLine}\n```{playerAccountTable}```";
     }
 
     private static string GenerateTotalsLine(IList<Player> players)
