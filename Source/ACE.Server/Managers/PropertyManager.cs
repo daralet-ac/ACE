@@ -631,7 +631,8 @@ namespace ACE.Server.Managers
                 ("increase_minimum_encounter_spawn_density", new Property<bool>(true, "enable this to increase the density of random encounters that spawn in low density landblocks")),
                 ("command_who_enabled", new Property<bool>(true, "disable this to prevent players from listing online players in their allegiance")),
                 ("debug_threat_system", new Property<bool>(false, "enable this to see threat system console logging")),
-                ("debug_crafting_system", new Property<bool>(false, "enable this to see crafting system console logging"))
+                ("debug_crafting_system", new Property<bool>(false, "enable this to see crafting system console logging")),
+                ("debug_loot_quality_system", new Property<bool>(false, "enable this to see loot quality system console logging"))
                 );
 
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =
