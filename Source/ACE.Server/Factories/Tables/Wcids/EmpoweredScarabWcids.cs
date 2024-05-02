@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
-
+using ACE.Common;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 
@@ -8,59 +9,47 @@ namespace ACE.Server.Factories.Tables
 {
     public static class EmpoweredScarabWcids
     {
-        private static ChanceTable<WeenieClassName> T1_T2_T3_Chances = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        private static readonly List<WeenieClassName> scarabColors = new List<WeenieClassName>()
         {
-            ( WeenieClassName.empoweredScarabBlue_Life,      1.0f),
-            ( WeenieClassName.empoweredScarabBlue_War,       1.0f)
-        };
-
-        private static ChanceTable<WeenieClassName> T4_T5_Chances = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
-        {
-            ( WeenieClassName.empoweredScarabBlue_Life,      1.0f),
-            ( WeenieClassName.empoweredScarabBlue_War,       1.0f),
-            ( WeenieClassName.empoweredScarabYellow_Life,    1.0f),
-            ( WeenieClassName.empoweredScarabYellow_War,     1.0f)
-        };
-
-        private static ChanceTable<WeenieClassName> T6_T7_T8_Chances = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
-        {
-            ( WeenieClassName.empoweredScarabBlue_Life,      1.0f),
-            ( WeenieClassName.empoweredScarabBlue_War,       1.0f),
-            ( WeenieClassName.empoweredScarabYellow_Life,    1.0f),
-            ( WeenieClassName.empoweredScarabYellow_War,     1.0f),
-            ( WeenieClassName.empoweredScarabRed_Life,       1.0f),
-            ( WeenieClassName.empoweredScarabRed_War,        1.0f)
-        };
-
-        private static List<ChanceTable<WeenieClassName>> tierChances = new List<ChanceTable<WeenieClassName>>()
-        {
-            T1_T2_T3_Chances,
-            T1_T2_T3_Chances,
-            T1_T2_T3_Chances,
-            T4_T5_Chances,
-            T4_T5_Chances,
-            T6_T7_T8_Chances,
-            T6_T7_T8_Chances,
-            T6_T7_T8_Chances
+            WeenieClassName.empoweredScarabBlue_Life,  // blue
+            WeenieClassName.empoweredScarabBlue_War,   // blue
+            WeenieClassName.empoweredScarabYellow_Life,  // yellow
+            WeenieClassName.empoweredScarabYellow_War,   // yellow
+            WeenieClassName.empoweredScarabRed_Life,  // red
+            WeenieClassName.empoweredScarabRed_War,   // red
         };
 
         public static WeenieClassName Roll(int tier)
         {
-            // todo: add unique profiles for t7 / t8?
-            tier = Math.Clamp(tier, 1, 8);
+            switch (tier)
+            {
+                // blue only
+                case 3:
+                case 4:
+                case 5:
+                    var rng = ThreadSafeRandom.Next(0, 1);
+                    return scarabColors[rng];
 
-            return tierChances[tier - 1].Roll();
+                // even chance between blue / yellow
+                case 6:
+                    rng = ThreadSafeRandom.Next(0, 3);
+                    return scarabColors[rng];
+
+                // even chance between blue / yellow / red
+                case 7:
+                case 8:
+                    rng = ThreadSafeRandom.Next(0, 5);
+                    return scarabColors[rng];
+            }
+            return WeenieClassName.undef;
         }
 
         private static readonly HashSet<WeenieClassName> _combined = new HashSet<WeenieClassName>();
 
         static EmpoweredScarabWcids()
         {
-            foreach (var tierChance in tierChances)
-            {
-                foreach (var entry in tierChance)
-                    _combined.Add(entry.result);
-            }
+            foreach (var color in scarabColors)
+                _combined.Add(color);
         }
 
         public static bool Contains(WeenieClassName wcid)

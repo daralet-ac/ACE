@@ -1852,6 +1852,8 @@ namespace ACE.Server.Factories
                 case TreasureItemType_Orig.EmpoweredScarabs:
 
                     treasureRoll.Wcid = EmpoweredScarabWcids.Roll(treasureDeath.Tier);
+                    if (treasureRoll.Wcid == WeenieClassName.undef)
+                        treasureRoll = null;
                     break;
             }
 
