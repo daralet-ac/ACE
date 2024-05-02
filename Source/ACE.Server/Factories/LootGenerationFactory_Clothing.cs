@@ -1256,19 +1256,19 @@ namespace ACE.Server.Factories
                 case 1:
                     return 50;
                 case 2:
-                    return 100;
+                    return 125;
                 case 3:
-                    return 150;
-                case 4:
                     return 175;
-                case 5:
+                case 4:
                     return 200;
+                case 5:
+                    return 215;
                 case 6:
-                    return 220;
+                    return 230;
                 case 7:
-                    return 240;
+                    return 250;
                 case 8:
-                    return 260;
+                    return 270;
                 default:
                     return 0;
             }
