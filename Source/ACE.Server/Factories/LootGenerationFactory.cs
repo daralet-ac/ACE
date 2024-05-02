@@ -74,15 +74,13 @@ namespace ACE.Server.Factories
 
                 tweakedDeathTreasure = new Database.Models.World.TreasureDeath(deathTreasure);
 
-                float percentile = 1.0f;
+                // Adjust loot drops within a tier based on monster level within the tier
+                // Monsters towards the end of the tier should have higher drop rates and improved quality loot
                 int minLevelOfTier = 1;
                 int maxLevelOfTier = 1;
-                int levelsPerTier = 1;
-                float minimumMod = 0.75f;
-                float mod = 1.0f;
+                var creatureTier = creature.Tier ?? 1;
 
-                // Loot chance of each category is modified by 75% to 100%, depending on an enemy's level within its tier.
-                switch (creature.Tier ?? 1)
+                switch (creatureTier)
                 {
                     case 1:
                         minLevelOfTier = 1;
@@ -118,28 +116,47 @@ namespace ACE.Server.Factories
                         break;
                 }
 
-                levelsPerTier = maxLevelOfTier - minLevelOfTier + 1;
-                percentile = (float)(creature.Level - minLevelOfTier) / levelsPerTier;
-                mod = minimumMod + (percentile * (1 - minimumMod));
+                float minimumMod = 1.0f;
 
-                //Console.WriteLine($"-Tier: {deathTreasure.Tier} Percentile: {percentile}");
+                // Monsters that are higher level within their tier drop better loot. 
+                var levelsPerTier = maxLevelOfTier - minLevelOfTier + 1;
+                var percentile = (float)(creature.Level - minLevelOfTier + 1) / levelsPerTier;
+                var tierMod = 1.0f / creatureTier; // Reduce the potency of this effect at higher tiers.
 
-                mod = Math.Min(1, mod);
+                var mod = minimumMod + (percentile * minimumMod * tierMod);
+                mod = Math.Min(1.9f, mod); // cap at +90%
 
-                //Console.WriteLine($"CreatureLevel: {creature.Level} TierMinLv: {minLevelOfTier} TierMaxLv: {maxLevelOfTier} LevelsPerTier: {levelsPerTier} Percentile: {percentile} Mod: {mod}\n" +
-                //    $" -ItemBaseChance: {tweakedDeathTreasure.ItemChance} -ModdedItemChance: {(int)(tweakedDeathTreasure.ItemChance * mod)}\n" +
-                //    $" -MagicBaseChance: {tweakedDeathTreasure.MagicItemChance} -ModdedMagicChance: {(int)(tweakedDeathTreasure.MagicItemChance * mod)}\n" +
-                //    $" -MundaneBaseChance: {tweakedDeathTreasure.MundaneItemChance} -ModdedMundaneChance: {(int)(tweakedDeathTreasure.MundaneItemChance * mod)}");
+                var baseItemChance = tweakedDeathTreasure.ItemChance;
+                var baseMagicItemChance = tweakedDeathTreasure.MagicItemChance;
+                var baseMundaneItemChance = tweakedDeathTreasure.MundaneItemChance;
 
-                // Loot drop chance is decreased for enemies towards the bottom of a tier, by up to 25% (mod = 0.75 to 1.00)
-                tweakedDeathTreasure.ItemChance = (int)(tweakedDeathTreasure.ItemChance * mod);
-                tweakedDeathTreasure.MagicItemChance = (int)(tweakedDeathTreasure.MagicItemChance * mod);
-                tweakedDeathTreasure.MundaneItemChance = (int)(tweakedDeathTreasure.MundaneItemChance * mod);
+                tweakedDeathTreasure.ItemChance = (int)(baseItemChance * mod);
+                tweakedDeathTreasure.MagicItemChance = (int)(baseMagicItemChance * mod);
+                tweakedDeathTreasure.MundaneItemChance = (int)(baseMundaneItemChance * mod);
 
-                // Loot Quality receives a boost of of +0% to +25%, depending on an enemy's level with its tier.
-                mod -= 0.75f; // range of 0.0 to 0.25
-                var qualityBonus = (1 - tweakedDeathTreasure.LootQualityMod) * mod;
+                // if drop chances were modified to be above 100%, give a chance for an additional item.
+                if (tweakedDeathTreasure.ItemChance > 100 && ThreadSafeRandom.Next(1, 100) < tweakedDeathTreasure.ItemChance - 100)
+                {
+                    tweakedDeathTreasure.ItemMinAmount += 1;
+                    tweakedDeathTreasure.ItemMaxAmount += 1;
+                }
 
+                if (tweakedDeathTreasure.MagicItemChance > 100 && ThreadSafeRandom.Next(1, 100) < tweakedDeathTreasure.MagicItemChance - 100)
+                {
+                    tweakedDeathTreasure.MagicItemMinAmount += 1;
+                    tweakedDeathTreasure.MagicItemMaxAmount += 1;
+                }
+
+                if (tweakedDeathTreasure.MundaneItemChance > 100 && ThreadSafeRandom.Next(1, 100) < tweakedDeathTreasure.MundaneItemChance - 100)
+                {
+                    tweakedDeathTreasure.MundaneItemMinAmount += 1;
+                    tweakedDeathTreasure.MundaneItemMaxAmount += 1;
+                }
+
+                // Loot Quality receives a boost of of +0% to +90%, depending on an enemy's tier and level within its tier.
+                var qualityMod = mod - 1.0f;
+                var qualityBonus = (1 - tweakedDeathTreasure.LootQualityMod) * qualityMod;
+                
                 // JEWEL - Sappphire: Bonus Loot Quality
                 var updatedQualityMod = creature.QuestManager.HandleMagicFind();
 
@@ -151,7 +168,15 @@ namespace ACE.Server.Factories
                 var prosperityMod = creature.QuestManager.HandleProsperity();
 
                 if (prosperityMod >= ThreadSafeRandom.Next(0f, 1f))
-                    tweakedDeathTreasure.ItemMinAmount += 1; 
+                    tweakedDeathTreasure.ItemMinAmount += 1;
+
+                if (PropertyManager.GetBool("debug_loot_quality_system").Item)
+                    Console.WriteLine($"\n{creature.Name}\n" +
+                        $" -CreatureLevel: {creature.Level} TierMinLv: {minLevelOfTier} TierMaxLv: {maxLevelOfTier} LevelsPerTier: {levelsPerTier} Percentile: {percentile} Mod: {mod}\n" +
+                        $" -ItemBaseChance: {baseItemChance} -ModdedItemChance: {(int)(tweakedDeathTreasure.ItemChance)}\n" +
+                        $" -MagicBaseChance: {baseMagicItemChance} -ModdedMagicChance: {(int)(tweakedDeathTreasure.MagicItemChance)}\n" +
+                        $" -MundaneBaseChance: {baseMundaneItemChance} -ModdedMundaneChance: {(int)(tweakedDeathTreasure.MundaneItemChance)}\n" +
+                        $" -QualityMod: {qualityMod}, QualityBonus: {qualityBonus}, FinalLootQualityMod: {tweakedDeathTreasure.LootQualityMod}");
 
                 return tweakedDeathTreasure;
             }
