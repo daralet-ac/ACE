@@ -434,7 +434,7 @@ namespace ACE.Server.WorldObjects
                 case SpellType.Boost:
                 case SpellType.FellowBoost:
 
-                    HandleCastSpell_Boost(spell, targetCreature, showMsg, fromProc, weapon);
+                    HandleCastSpell_Boost(spell, targetCreature, fromProc, showMsg, weapon);
                     break;
 
                 case SpellType.Transfer:
