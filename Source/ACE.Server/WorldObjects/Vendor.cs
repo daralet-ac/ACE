@@ -1074,24 +1074,24 @@ namespace ACE.Server.WorldObjects
                 case "Underground City":
                 case "Khayyaban":
                 case "Lost Wish Mountains":
+                case "Plateau":
+                case "Mountain Retreat":
+                case "Danby's Outpost":
                     if (ShopTier == 0)
                         ShopTier = 4;
                     ShopQualityMod = 0.0f;
                     break;
                 case "Qalaba'r":
                 case "Kara":
+                case "Stonehold":
                 case "Colier":
-                case "Mountain Retreat":
-                case "Danby's Outpost":
+                case "Crater":
+                case "Bandit Castle":
+                case "Neydisa Castle":
                     if (ShopTier == 0)
                         ShopTier = 5;
                     ShopQualityMod = 0.0f;
                     break;
-                case "Crater":
-                case "Bandit Castle":
-                case "Neydisa Castle":
-                case "Stonehold":
-                case "Plateau":
                 case "Linvak Tukal":
                 case "Bluespire":
                 case "Greenspire":
