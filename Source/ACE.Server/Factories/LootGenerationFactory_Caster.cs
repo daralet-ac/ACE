@@ -137,7 +137,7 @@ namespace ACE.Server.Factories
 
             // Wield Reqs
             wo.WieldRequirements = WieldRequirement.RawAttrib;
-            wo.WieldDifficulty = RollWieldDifficulty(profile.Tier, TreasureWeaponType.MeleeWeapon);
+            wo.WieldDifficulty = GetWieldDifficultyPerTier(profile.Tier);
             wo.WieldSkillType = GetWeaponPrimaryAttribute((Skill)wo.WieldSkillType2);
 
             wo.WieldRequirements2 = WieldRequirement.Training;
