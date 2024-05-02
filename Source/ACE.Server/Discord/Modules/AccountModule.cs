@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Managers;
+using ACE.Server.WorldObjects;
 using Discord.Interactions;
 
 namespace ACE.Server.Discord.Modules;
@@ -54,31 +55,54 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
             return;
         }
 
-        var orderedPlayers = players.Where(x =>
+        var sortedOnlinePlayers = SortOnlinePlayers(showAdmins, players);
+        var totalsLine = GenerateTotalsLine(players);
+
+        if (!sortedOnlinePlayers.Any())
         {
-            var isAdmin = x.Account.AccessLevel == (uint)AccessLevel.Admin;
-            return !isAdmin || showAdmins;
-        }).OrderByDescending(x => x.Account.AccessLevel).ThenBy(x => x.Name).Select(x => (x.Name, x.Account.AccountName));
-        var playerAccountTable = GeneratePlayerAccountTable(orderedPlayers);
+            await RespondAsync(totalsLine, ephemeral: ephemeral);
+            return;
+        }
 
-
-        var adminCount = players.Count(x => x.Account.AccessLevel == (uint)AccessLevel.Admin);
-        var adminOrAdmins = adminCount == 1 ? "admin" : "admins";
-
-        var message = @$"Total players online: **{players.Count}** ({adminCount} {adminOrAdmins})
-```{playerAccountTable}```";
-
+        var message = GeneratePlayersOnlineWithTableMessage(totalsLine, sortedOnlinePlayers);
         await RespondAsync(message, ephemeral: ephemeral);
     }
 
+    private string GeneratePlayersOnlineWithTableMessage(string totalsLine,
+        IList<(string Name, string AccountName)> sortedOnlinePlayers)
+    {
+        var playerAccountTable = GeneratePlayerAccountTable(sortedOnlinePlayers);
+        return @$"{totalsLine}\n```{playerAccountTable}```";
+    }
 
-    private string GeneratePlayerAccountTable(IEnumerable<(string Name, string AccountName)> players)
+    private static string GenerateTotalsLine(IList<Player> players)
+    {
+        var adminCount = players.Count(x => x.Account.AccessLevel == (uint)AccessLevel.Admin);
+        var adminOrAdmins = adminCount == 1 ? "admin" : "admins";
+        var totals = $"Total players online: **{players.Count}** ({adminCount} {adminOrAdmins})";
+        return totals;
+    }
+
+    private IList<(string Name, string AccountName)> SortOnlinePlayers(bool showAdmins, IList<Player> players)
+    {
+        return players
+            .Where(x =>
+            {
+                var isAdmin = x.Account.AccessLevel == (uint)AccessLevel.Admin;
+                return !isAdmin || showAdmins;
+            })
+            .OrderByDescending(x => x.Account.AccessLevel)
+            .ThenBy(x => x.Name)
+            .Select(x => (x.Name, x.Account.AccountName))
+            .ToList();
+    }
+
+    private string GeneratePlayerAccountTable(IList<(string Name, string AccountName)> playerAccountTuples)
     {
         var longestNameLength = 6;
         var longestAccountLength = 7;
 
-        var valueTuples = players.ToList();
-        foreach (var (name, accountName) in valueTuples)
+        foreach (var (name, accountName) in playerAccountTuples)
         {
             if (name.Length > longestNameLength)
             {
@@ -93,11 +117,9 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
 
         var header = $"| {"Player".PadRight(longestNameLength)} | {"Account".PadRight(longestAccountLength)} |";
         var divider = $"|{"".PadRight(longestNameLength + 2, '-')}|{"".PadRight(longestAccountLength + 2, '-')}|";
-        var playerTable = valueTuples.Select(x => $"| {x.Name.PadRight(longestNameLength)} | {x.AccountName.PadRight(longestAccountLength)} |\n").ToList();
+        var playerTable = playerAccountTuples.Select(x => $"| {x.Name.PadRight(longestNameLength)} | {x.AccountName.PadRight(longestAccountLength)} |\n").ToList();
         var concatedPlayerTable = string.Join("", playerTable);
 
-        return @$"{header}
-{divider}
-{concatedPlayerTable}";
+        return $"{header}\n{divider}\n{concatedPlayerTable}";
     }
 }
