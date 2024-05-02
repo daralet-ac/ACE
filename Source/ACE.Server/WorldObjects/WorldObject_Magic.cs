@@ -566,7 +566,8 @@ namespace ACE.Server.WorldObjects
                     //Console.WriteLine($"StatModValue Before: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue}\n" +
                     //    $" -Target Ward Level: {targetPlayer.GetWardLevel()}");
 
-                    var wardMod = WorldObjects.SkillFormula.CalcWardMod((float)targetPlayer.GetWardLevel());
+                    var wardMod = WorldObjects.SkillFormula.CalcWardMod((float)targetPlayer.GetWardLevel() / 10);
+                    
                     addResult.Enchantment.StatModValue *= wardMod;
                     addResult.Enchantment.Duration *= wardMod;
                     //Console.WriteLine($"StatModValue After: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue}");
