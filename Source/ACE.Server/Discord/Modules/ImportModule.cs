@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using Discord.Interactions;
 using System.Threading.Tasks;
@@ -9,6 +10,9 @@ using ACE.Database.Models.World;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using System.Globalization;
+using System.Linq;
+using System.Text;
+using ACE.Server.Discord.Models;
 
 namespace ACE.Server.Discord.Modules;
 
@@ -24,37 +28,85 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
         _httpClient = httpClient;
     }
 
-    [SlashCommand("weenie", "Imports a weenie sql file")]
-    public async Task ImportSql(IAttachment weenie, bool ephemeral = true)
+    [SlashCommand("weenies", "Imports a weenie sql file")]
+    public async Task ImportWeenies([ComplexParameter] ImportWeenieParameters importWeenieParameters)
     {
-        await DeferAsync(ephemeral);
+        await DeferAsync(importWeenieParameters.Ephemeral);
+        var importResults = await ImportFiles(importWeenieParameters, ImportLandblock);
+        var message = BuildFollowUpMessage(importResults, "weenies");
+        await FollowupAsync(message);
+    }
 
-        if (!weenie.ContentType.StartsWith("application/sql"))
+    [SlashCommand("landblocks", "Imports a landblock sql file")]
+    public async Task ImportLandblocks([ComplexParameter] ImportLandblockParameters importLandblockParameters)
+    {
+        await DeferAsync(importLandblockParameters.Ephemeral);
+        var importResults = await ImportFiles(importLandblockParameters, ImportLandblock);
+        var message = BuildFollowUpMessage(importResults, "landblocks");
+        await FollowupAsync(message);
+    }
+
+    private async Task<List<ImportResult>> ImportFiles(IImportParameters importParameters, Func<IAttachment, Task<ImportResult>> importFunction)
+    {
+        var importResults = new List<ImportResult>();
+        foreach (var landblockFile in importParameters.Files)
         {
-            await RespondAsync("File must have a sql filetype.");
-            return;
+            var importResult = await importFunction(landblockFile);
+            importResults.Add(importResult);
         }
 
-        var fileName = weenie.Filename;
+        return importResults;
+    }
+
+    private string BuildFollowUpMessage(ICollection<ImportResult> importResults, string objectType)
+    {
+        var successfulImports = importResults.Count(x => x.Success);
+        var result = $"Successfully updated {successfulImports} out of {importResults.Count} {objectType}.";
+        var formattedResults = FormatResults(importResults);
+        var message = $"{result}\n{formattedResults}";
+        return message;
+    }
+
+    private async Task<ImportResult> ImportWeenie(IAttachment weenieFile)
+    {
+        var fileName = weenieFile.Filename;
+
+        if (!weenieFile.ContentType.StartsWith("application/sql"))
+        {
+            return new ImportResult
+            {
+                Success = false,
+                FailureReason = "Discord did not recognize this as a sql file. Ensure you end the filename with `.sql`.",
+                FileName = fileName
+            };
+        }
 
         const string pattern = @"^(\d+).*\.sql";
         var match = Regex.Match(fileName, pattern);
         if (!match.Success)
         {
-            await RespondAsync($"Weenie file did not follow the correct file name pattern. File names must begin with the wcid and end in `.sql`. Received `{fileName}`");
-            return;
+            return new ImportResult
+            {
+                Success = false,
+                FailureReason = "File names must begin with the weenie's wcid.",
+                FileName = fileName
+            };
         }
 
         var parseSuccessful = uint.TryParse(match.Groups[1].Value, out var wcid);
         if (!parseSuccessful)
         {
-            await RespondAsync($"Unable to parse wcid from filename: `{fileName}`.");
-            return;
+            return new ImportResult
+            {
+                Success = false,
+                FailureReason = "Unable to parse wcid from file name.",
+                FileName = fileName
+            };
         }
 
         try
         {
-            var response = await _httpClient.GetAsync(weenie.Url);
+            var response = await _httpClient.GetAsync(weenieFile.Url);
             response.EnsureSuccessStatusCode();
             var sql = await response.Content.ReadAsStringAsync();
 
@@ -64,47 +116,64 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
             DatabaseManager.World.GetWeenie(wcid);
 
             _log.Information("@{DiscordUser} ({DiscordUserId}) updated weenie {WCID} ({WeenieFileName}).", Context.User, Context.User.Id, wcid, fileName);
-            await FollowupAsync($"Updated weenie {wcid} using file `{fileName}`");
+            return new ImportResult
+            {
+                Success = true,
+                FileName = fileName
+            };
         }
         catch (Exception ex)
         {
             _log.Error(ex, "@{DiscordUser} ({DiscordUserId}) failed to update weenie {WCID} ({WeenieFileName}).", Context.User, Context.User.Id, wcid, fileName);
-            await FollowupAsync($"Failed to update weenie {wcid} using file `{fileName}`");
+            return new ImportResult
+            {
+                Success = false,
+                FailureReason = $"Failed to update weenie {wcid}.",
+                FileName = fileName
+            };
         }
     }
 
-
-    [SlashCommand("landblock", "Imports a landblock sql file")]
-    public async Task ImportLandblock(IAttachment landblock, bool ephemeral = true)
+    private async Task<ImportResult> ImportLandblock(IAttachment landblockFile)
     {
-        await DeferAsync(ephemeral);
+        var fileName = landblockFile.Filename;
 
-        if (!landblock.ContentType.StartsWith("application/sql"))
+        if (!landblockFile.ContentType.StartsWith("application/sql"))
         {
-            await RespondAsync("File must have a sql filetype.");
-            return;
+            return new ImportResult
+            {
+                Success = false,
+                FailureReason = "Discord did not recognize this as a sql file. Ensure you end the filename with `.sql`.",
+                FileName = fileName
+            };
         }
-
-        var fileName = landblock.Filename;
 
         const string pattern = @"^([0-9A-F]{4}).*\.sql";
         var match = Regex.Match(fileName, pattern, RegexOptions.IgnoreCase);
         if (!match.Success)
         {
-            await RespondAsync($"Landblock file did not follow the correct file name pattern. File names must begin with the Landblock Id in hex and end in `.sql`. Received `{fileName}`");
-            return;
+            return new ImportResult
+            {
+                Success = false,
+                FailureReason = "File names must begin with the landblock's hex id.",
+                FileName = fileName
+            };
         }
 
         var parseSuccessful = ushort.TryParse(match.Groups[1].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var landblockId);
         if (!parseSuccessful)
         {
-            await RespondAsync($"Unable to parse Landblock Id from filename: `{fileName}`.");
-            return;
+            return new ImportResult
+            {
+                Success = false,
+                FailureReason = "Unable to parse Landblock Id from file",
+                FileName = fileName
+            };
         }
 
         try
         {
-            var response = await _httpClient.GetAsync(landblock.Url);
+            var response = await _httpClient.GetAsync(landblockFile.Url);
             response.EnsureSuccessStatusCode();
             var sql = await response.Content.ReadAsStringAsync();
 
@@ -114,12 +183,21 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
             DatabaseManager.World.GetCachedInstancesByLandblock(landblockId);
 
             _log.Information("@{DiscordUser} ({DiscordUserId}) updated landblock {LandblockId:X4} ({LandblockFileName}).", Context.User, Context.User.Id, landblockId, fileName);
-            await FollowupAsync($"Updated landblock {landblockId:X4} using file `{landblock.Filename}`");
+            return new ImportResult
+            {
+                Success = true,
+                FileName = fileName
+            };
         }
         catch (Exception ex)
         {
             _log.Error(ex, "@{DiscordUser} ({DiscordUserId}) failed to update landblock {LandblockId:X4} ({LandblockFileName}).", Context.User, Context.User.Id, landblockId, fileName);
-            await FollowupAsync($"Failed to update landblock {landblockId:X4} using file `{landblock.Filename}");
+            return new ImportResult
+            {
+                Success = false,
+                FailureReason = $"Failed to update landblock {landblockId:X4}.",
+                FileName = fileName
+            };
         }
     }
 
@@ -129,5 +207,27 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
 
         using var ctx = new WorldDbContext();
         ctx.Database.ExecuteSqlRaw(sanitizedSql);
+    }
+
+    private string FormatResults(IEnumerable<ImportResult> importResults)
+    {
+        var successEmoji = Emoji.Parse(":white_check_mark:");
+        var failureEmoji = Emoji.Parse(":x:");
+
+        var stringBuilder = new StringBuilder();
+
+        foreach (var result in importResults)
+        {
+            if (result.Success)
+            {
+                stringBuilder.Append($"- {successEmoji} `{result.FileName}`\n");
+            }
+            else
+            {
+                stringBuilder.Append($"- {failureEmoji} `{result.FileName}` **Reason:** {result.FailureReason}\n");
+            }
+        }
+
+        return stringBuilder.ToString().Trim();
     }
 }
