@@ -456,36 +456,43 @@ namespace ACE.Server.Factories
                     elementType = 0x1; // slash
                     //materialType = 0x0000001A; // imperial topaz
                     uiEffect = 0x0400;
+                    wo.Name = "Slashing " + wo.Name;
                     break;
                 case 2:
                     elementType = 0x2; // pierce
                     //materialType = 0x0000000F; // black garnet
                     uiEffect = 0x0800;
+                    wo.Name = "Piercing " + wo.Name;
                     break;
                 case 3:
                     elementType = 0x4; // bludge
                     //materialType = 0x0000002F; // white sapphire
                     uiEffect = 0x0200;
+                    wo.Name = "Blunt " + wo.Name;
                     break;
                 case 4:
                     elementType = 0x8; // cold
                     //materialType = 0x0000000D; // aquamarine
                     uiEffect = 0x0080;
+                    wo.Name = "Frost " + wo.Name;
                     break;
                 case 5:
                     elementType = 0x10; // fire
                     //materialType = 0x00000023; // red garnet
                     uiEffect = 0x0020;
+                    wo.Name = "Fire " + wo.Name;
                     break;
                 case 6:
                     elementType = 0x20; // acid
                     //materialType = 0x00000015; // emerald
                     uiEffect = 0x0100;
+                    wo.Name = "Acid " + wo.Name;
                     break;
                 case 7:
                     elementType = 0x40; // electric
                     //materialType = 0x0000001B; // jet
                     uiEffect = 0x0040;
+                    wo.Name = "Lightning " + wo.Name;
                     break;
             }
             wo.W_DamageType = (DamageType)elementType;
