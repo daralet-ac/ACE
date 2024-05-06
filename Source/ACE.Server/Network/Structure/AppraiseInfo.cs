@@ -778,6 +778,30 @@ namespace ACE.Server.Network.Structure
                 hasExtraPropertiesText = true;
             }
 
+            // Weapon - ELemental Bow Warning 
+            if (PropertiesInt.TryGetValue(PropertyInt.DamageType, out var damageType) && damageType != (int)DamageType.Undef)
+            {
+                if (wo.IsAmmoLauncher)
+                {
+                    var element = "";
+                    switch (damageType)
+                    {
+                        case (int)DamageType.Slash: element = "slashing"; break;
+                        case (int)DamageType.Pierce: element = "piercing"; break;
+                        case (int)DamageType.Bludgeon: element = "bludgeoning"; break;
+                        case (int)DamageType.Acid: element = "acid"; break;
+                        case (int)DamageType.Fire: element = "fire"; break;
+                        case (int)DamageType.Cold: element = "cold"; break;
+                        case (int)DamageType.Electric: element = "electric"; break;
+                        default: element = ""; break;
+                    }
+
+                    extraPropertiesText += $"\nThe Damage Modifier on this weapon only applies to {element} damage.\n";
+
+                    hasExtraPropertiesText = true;
+                }
+            }
+
             // -- ARMOR --
 
             // Ward Level
