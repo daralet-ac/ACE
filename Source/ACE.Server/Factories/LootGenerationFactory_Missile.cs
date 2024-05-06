@@ -149,7 +149,6 @@ namespace ACE.Server.Factories
 
             // long description
             wo.LongDesc += GetLongDesc(wo);
-            wo.LongDesc += TryGetElementalLongDesc(wo);
 
             wo.BaseDamageMod = (wo.DamageMod == null ? 0 : wo.DamageMod);
             wo.BaseWeaponTime = (wo.WeaponTime == null ? 0 : wo.WeaponTime);

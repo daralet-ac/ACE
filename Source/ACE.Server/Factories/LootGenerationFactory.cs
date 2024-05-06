@@ -2223,29 +2223,6 @@ namespace ACE.Server.Factories
                 return null;
         }
 
-        private static string TryGetElementalLongDesc(WorldObject wo)
-        {
-            var element = "";
-            var hasElement = true;
-
-            switch(wo.W_DamageType)
-            {
-                case DamageType.Slash: element = "slashing"; break;
-                case DamageType.Pierce: element = "piercing"; break;
-                case DamageType.Bludgeon: element = "bludgeoning"; break;
-                case DamageType.Acid: element = "acid"; break;
-                case DamageType.Fire: element = "fire"; break;
-                case DamageType.Cold: element = "cold"; break;
-                case DamageType.Electric: element = "electric"; break;
-                default: hasElement = false; break;
-            }
-
-            if (hasElement)
-                return $"The Damage Modifier on this weapon only affects {element} damage.\n\n";
-            else
-                return "";
-        }
-
         private static void RollWieldLevelReq_T7_T8(WorldObject wo, TreasureDeath profile)
         {
             if (profile.Tier < 7)
