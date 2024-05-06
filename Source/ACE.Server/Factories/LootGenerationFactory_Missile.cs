@@ -148,7 +148,7 @@ namespace ACE.Server.Factories
             MutateValue(wo, profile.Tier, roll);
 
             // long description
-            wo.LongDesc += GetLongDesc(wo);
+            wo.LongDesc = GetLongDesc(wo);
 
             wo.BaseDamageMod = (wo.DamageMod == null ? 0 : wo.DamageMod);
             wo.BaseWeaponTime = (wo.WeaponTime == null ? 0 : wo.WeaponTime);
