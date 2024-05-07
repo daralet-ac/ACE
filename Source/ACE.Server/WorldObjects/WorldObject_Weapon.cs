@@ -279,7 +279,7 @@ namespace ACE.Server.WorldObjects
 
             if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.CriticalStrike))
             {
-                var criticalStrikeBonus = DefaultPhysicalCritFrequency + GetCriticalStrikeMod(skill);
+                var criticalStrikeBonus = DefaultPhysicalCritFrequency + GetCriticalStrikeMod(skill, wielder, target);
 
                 critRate = Math.Max(critRate, criticalStrikeBonus);
             }
@@ -319,7 +319,7 @@ namespace ACE.Server.WorldObjects
             {
                 var isPvP = wielder is Player && target is Player;
 
-                var criticalStrikeMod = DefaultMagicCritFrequency + GetCriticalStrikeMod(skill, isPvP);
+                var criticalStrikeMod = DefaultMagicCritFrequency + GetCriticalStrikeMod(skill, wielder, target, isPvP);
 
                 critRate = Math.Max(critRate, criticalStrikeMod);
             }
@@ -349,7 +349,7 @@ namespace ACE.Server.WorldObjects
 
             if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.CripplingBlow))
             {
-                var cripplingBlowMod = DefaultCritDamageMultiplier + GetCripplingBlowMod(skill);
+                var cripplingBlowMod = DefaultCritDamageMultiplier + GetCripplingBlowMod(skill, wielder, target);
 
                 critDamageMod = Math.Max(critDamageMod, cripplingBlowMod); 
             }
@@ -464,7 +464,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Returns the resistance modifier or rending modifier
         /// </summary>
-        public static float GetWeaponResistanceModifier(WorldObject weapon, Creature wielder, CreatureSkill skill, DamageType damageType)
+        public static float GetWeaponResistanceModifier(WorldObject weapon, Creature wielder, CreatureSkill skill, DamageType damageType, Creature target)
         {
             float resistMod = DefaultModifier;
 
@@ -483,7 +483,7 @@ namespace ACE.Server.WorldObjects
 
             if (rendDamageType != ImbuedEffectType.Undef && weapon.HasImbuedEffect(rendDamageType) && skill != null)
             {
-                var rendingMod = DefaultModifier + GetRendingMod(skill);
+                var rendingMod = DefaultModifier + GetRendingMod(skill, wielder, target);
 
                 resistMod = Math.Max(resistMod, rendingMod);
             }
@@ -563,12 +563,12 @@ namespace ACE.Server.WorldObjects
         private static float MinCriticalStrikeMod = 0.05f;
         private static float MaxCriticalStrikeMod = 0.1f;
 
-        public static float GetCriticalStrikeMod(CreatureSkill skill, bool isPvP = false)
+        public static float GetCriticalStrikeMod(CreatureSkill skill, Creature wielder, Creature target, bool isPvP = false)
         {
             var baseMod = MinCriticalStrikeMod;
 
             var skillType = GetImbuedSkillType(skill);
-            var baseSkill = GetBaseSkillImbued(skill);
+            var baseSkill = GetBaseSkillImbued(skill) * LevelScaling.GetPlayerAttackSkillScalar(wielder, target);
 
             switch (skillType)
             {
@@ -594,10 +594,10 @@ namespace ACE.Server.WorldObjects
         private static float MinCripplingBlowMod = 0.5f;
         private static float MaxCripplingBlowMod = 1.0f;
 
-        public static float GetCripplingBlowMod(CreatureSkill skill)
+        public static float GetCripplingBlowMod(CreatureSkill skill, Creature wielder, Creature target)
         {
             var skillType = GetImbuedSkillType(skill);
-            var baseSkill = GetBaseSkillImbued(skill);
+            var baseSkill = GetBaseSkillImbued(skill) * LevelScaling.GetPlayerAttackSkillScalar(wielder, target);
 
             var baseMod = MinCripplingBlowMod;
 
@@ -625,10 +625,10 @@ namespace ACE.Server.WorldObjects
         private static float MinRendingMod = 0.15f;
         private static float MaxRendingMod = 0.30f;
 
-        public static float GetRendingMod(CreatureSkill skill)
+        public static float GetRendingMod(CreatureSkill skill, Creature wielder, Creature target)
         {
             var skillType = GetImbuedSkillType(skill);
-            var baseSkill = GetBaseSkillImbued(skill);
+            var baseSkill = GetBaseSkillImbued(skill) * LevelScaling.GetPlayerAttackSkillScalar(wielder, target);
 
             var rendingMod = MinRendingMod;
 
@@ -656,10 +656,10 @@ namespace ACE.Server.WorldObjects
         public static float MinArmorRendingMod = 0.2f;
         public static float MaxArmorRendingMod = 0.4f;
 
-        public static float GetArmorRendingMod(CreatureSkill skill)
+        public static float GetArmorRendingMod(CreatureSkill skill, Creature wielder, Creature target)
         {
             var skillType = GetImbuedSkillType(skill);
-            var baseSkill = GetBaseSkillImbued(skill);
+            var baseSkill = GetBaseSkillImbued(skill) * LevelScaling.GetPlayerAttackSkillScalar(wielder, target);
 
             var armorRendingMod = MinArmorRendingMod;
 

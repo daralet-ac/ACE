@@ -604,7 +604,7 @@ namespace ACE.Server.Entity
                 ArmorMod = 1.0f;
 
             // ---- RESISTANCE ----
-            WeaponResistanceMod = WorldObject.GetWeaponResistanceModifier(Weapon, attacker, attackSkill, DamageType);
+            WeaponResistanceMod = WorldObject.GetWeaponResistanceModifier(Weapon, attacker, attackSkill, DamageType, defender);
 
             if (playerDefender != null)
             {

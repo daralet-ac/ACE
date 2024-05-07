@@ -724,7 +724,7 @@ namespace ACE.Server.WorldObjects
                         criticalDamageMod -= 0.2f;
                 }
 
-                weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType);
+                weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType, target);
 
                 // if attacker/weapon has IgnoreMagicResist directly, do not transfer to spell projectile
                 // only pass if SpellProjectile has it directly, such as 2637 - Invoking Aun Tanua
@@ -778,7 +778,7 @@ namespace ACE.Server.WorldObjects
 
                 baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
 
-                weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType);
+                weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType, target);
 
                 // if attacker/weapon has IgnoreMagicResist directly, do not transfer to spell projectile
                 // only pass if SpellProjectile has it directly, such as 2637 - Invoking Aun Tanua
