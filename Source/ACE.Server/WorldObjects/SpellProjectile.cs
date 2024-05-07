@@ -699,8 +699,8 @@ namespace ACE.Server.WorldObjects
             var specDefenseMod = 1.0f;
             if (targetPlayer != null && targetPlayer.GetCreatureSkill(Skill.MagicDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
-                var magicDefenseSkill = targetPlayer.GetCreatureSkill(Skill.MagicDefense);
-                var bonusAmount = (float)Math.Min(magicDefenseSkill.Current, 500) / 50;
+                var magicDefenseSkill = targetPlayer.GetModdedMagicDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(targetPlayer, sourceCreature);
+                var bonusAmount = (float)Math.Min(magicDefenseSkill, 500) / 50;
 
                 specDefenseMod = 0.9f - bonusAmount * 0.01f;
             }
