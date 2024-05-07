@@ -632,7 +632,8 @@ namespace ACE.Server.Managers
                 ("command_who_enabled", new Property<bool>(true, "disable this to prevent players from listing online players in their allegiance")),
                 ("debug_threat_system", new Property<bool>(false, "enable this to see threat system console logging")),
                 ("debug_crafting_system", new Property<bool>(false, "enable this to see crafting system console logging")),
-                ("debug_loot_quality_system", new Property<bool>(false, "enable this to see loot quality system console logging"))
+                ("debug_loot_quality_system", new Property<bool>(false, "enable this to see loot quality system console logging")),
+                ("debug_level_scaling_system", new Property<bool>(false, "enable this to see level scaling system console logging"))
                 );
 
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =

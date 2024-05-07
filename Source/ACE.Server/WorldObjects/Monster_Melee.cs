@@ -460,6 +460,8 @@ namespace ACE.Server.WorldObjects
             //Console.WriteLine("Armor Self: " + bodyArmorMod);
             effectiveAL += bodyArmorMod;
 
+            effectiveAL = effectiveAL * LevelScaling.GetPlayerArmorWardScalar(defender, this);
+
             // Armor Rending reduces physical armor too?
             if (effectiveAL > 0)
                 effectiveAL *= armorRendingMod;

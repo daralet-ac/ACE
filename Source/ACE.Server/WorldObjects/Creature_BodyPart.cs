@@ -30,6 +30,8 @@ namespace ACE.Server.WorldObjects
         {
             var effectiveArmorVsType = GetEffectiveArmorVsType(damageType, armorLayers, attacker, weapon, armorRendingMod);
 
+            effectiveArmorVsType = effectiveArmorVsType * LevelScaling.GetMonsterArmorWardScalar(attacker, Creature);
+
             return SkillFormula.CalcArmorMod(effectiveArmorVsType);
         }
 

@@ -332,17 +332,6 @@ namespace ACE.Server.WorldObjects
 
             if (damage != null)
             {
-                // LEVEL SCALING - If player has Scaling Spell, check to ensure their level is greater than the monster in question, then scale their damage done/damage taken if so
-                float levelScalingMod = 1f;
-
-                if (player != null && player.EnchantmentManager.HasSpell(5379) && player.Level.HasValue && creatureTarget.Level.HasValue && player.Level > creatureTarget.Level)
-                    levelScalingMod = Creature.GetPlayerDamageScaler((int)player.Level, (int)creatureTarget.Level);
-
-                if (targetPlayer != null && targetPlayer.EnchantmentManager.HasSpell(5379) && targetPlayer.Level.HasValue && sourceCreature.Level.HasValue && targetPlayer.Level > sourceCreature.Level)
-                    levelScalingMod = Creature.GetMonsterDamageScaler((int)targetPlayer.Level, (int)sourceCreature.Level);
-
-                damage *= levelScalingMod;
-
                 if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.EnchantmentProjectile)
                 {
                     // handle EnchantmentProjectile successfully landing on target
@@ -548,7 +537,7 @@ namespace ACE.Server.WorldObjects
                     var perception = targetPlayer.GetCreatureSkill(Skill.AssessCreature);
                     if (perception.AdvancementClass == SkillAdvancementClass.Specialized)
                     {
-                        var skillCheck = (float)perception.Current / (float)attackSkill.Current;
+                        var skillCheck = (float)targetPlayer.GetModdedPerceptionSkill() / (float)attackSkill.Current;
                         var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
 
                         if (criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f))
@@ -617,7 +606,7 @@ namespace ACE.Server.WorldObjects
                 if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 0)
                     ignoreWardMod -= 0.1f;
 
-            var wardMod = GetWardMod(target, ignoreWardMod);
+            var wardMod = GetWardMod(target, sourceCreature, ignoreWardMod);
 
             //Console.WriteLine($"TargetWard: {target.WardLevel} WardRend: {wardRendingMod} Nullification: {NullificationMod} WardMod: {wardMod}");
 
@@ -648,7 +637,7 @@ namespace ACE.Server.WorldObjects
 
             var attributeMod = 1f;
             if (sourcePlayer != null)
-                attributeMod = sourcePlayer.GetAttributeMod(weapon, true);
+                attributeMod = sourcePlayer.GetAttributeMod(weapon, true, target);
 
             var elementalDamageMod = GetCasterElementalDamageModifier(weapon, sourceCreature, target, Spell.DamageType);
 
@@ -710,8 +699,8 @@ namespace ACE.Server.WorldObjects
             var specDefenseMod = 1.0f;
             if (targetPlayer != null && targetPlayer.GetCreatureSkill(Skill.MagicDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
-                var magicDefenseSkill = targetPlayer.GetCreatureSkill(Skill.MagicDefense);
-                var bonusAmount = (float)Math.Min(magicDefenseSkill.Current, 500) / 50;
+                var magicDefenseSkill = targetPlayer.GetModdedMagicDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(targetPlayer, sourceCreature);
+                var bonusAmount = (float)Math.Min(magicDefenseSkill, 500) / 50;
 
                 specDefenseMod = 0.9f - bonusAmount * 0.01f;
             }
@@ -735,7 +724,7 @@ namespace ACE.Server.WorldObjects
                         criticalDamageMod -= 0.2f;
                 }
 
-                weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType);
+                weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType, target);
 
                 // if attacker/weapon has IgnoreMagicResist directly, do not transfer to spell projectile
                 // only pass if SpellProjectile has it directly, such as 2637 - Invoking Aun Tanua
@@ -789,7 +778,7 @@ namespace ACE.Server.WorldObjects
 
                 baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
 
-                weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType);
+                weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType, target);
 
                 // if attacker/weapon has IgnoreMagicResist directly, do not transfer to spell projectile
                 // only pass if SpellProjectile has it directly, such as 2637 - Invoking Aun Tanua
@@ -936,10 +925,9 @@ namespace ACE.Server.WorldObjects
             return 1.0f;
         }
 
-        public float GetWardMod(Creature target, float ignoreWardMod)
+        public float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
         {
-            var wardLevel = target.GetWardLevel();
-            //var wardLevel = target.Level * 5;
+            var wardLevel = target.GetWardLevel() * LevelScaling.GetPlayerArmorWardScalar(target, caster);
 
             return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod);
         }

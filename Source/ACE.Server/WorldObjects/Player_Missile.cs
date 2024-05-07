@@ -319,7 +319,7 @@ namespace ACE.Server.WorldObjects
             }
 
             // reload animation
-            var animSpeed = GetAnimSpeed();
+            var animSpeed = GetAnimSpeed(target as Creature);
             var reloadTime = EnqueueMotionPersist(actionChain, stance, MotionCommand.Reload, animSpeed);
 
             // reset for next projectile

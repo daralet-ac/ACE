@@ -888,12 +888,9 @@ namespace ACE.Server.WorldObjects
                                 }
                             }
                         }
-
                     }
-
                 }
             }
-
         }
 
         /// <summary>

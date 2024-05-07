@@ -184,7 +184,7 @@ namespace ACE.Server.WorldObjects
                 // Retrieve caster's secondary attribute mod (1% per 20 attributes)
                 var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
                 
-                magicSkill = (uint)(magicSkill * secondaryAttributeMod);
+                magicSkill = (uint)(magicSkill * secondaryAttributeMod * LevelScaling.GetPlayerAttackSkillScalar(casterCreature, target as Creature));
 
             }
             else if (caster.ItemSpellcraft != null)
@@ -231,7 +231,7 @@ namespace ACE.Server.WorldObjects
                 return false;
 
             // Retrieve target's Magic Defense Skill
-            var difficulty = targetCreature.GetModdedMagicDefSkill();
+            var difficulty = (uint)(targetCreature.GetModdedMagicDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(casterCreature, targetCreature));
 
             //Console.WriteLine($"{targetCreature.Name} was hit by a spell:\n" +
             //    $" -BaseMagicDef: {targetCreature.GetEffectiveMagicDefense()} -ArmorMod: {armorMagicDefMod} -FinalMagicDef: {difficulty}");
@@ -267,16 +267,6 @@ namespace ACE.Server.WorldObjects
                         resistChanceMod += familiarityPenalty;
                     }
                 }
-
-            }
-            // LEVEL SCALING - If player is scaled, we increase resist chance when they're casting, and reduce when they're target
-            if (player != null && player.EnchantmentManager.HasSpell(5379) && player.Level.HasValue && targetCreature.Level.HasValue && player.Level > targetCreature.Level)
-                resistChanceMod += 0.15f;
-
-            if (targetPlayer != null && targetPlayer.EnchantmentManager.HasSpell(5379) && targetPlayer.Level.HasValue && casterCreature != null && casterCreature.Level.HasValue && targetPlayer.Level > casterCreature.Level)
-            {
-                resistChanceMod -= 0.15f;
-                if (resistChanceMod < 0) resistChanceMod = 0;
             }
             //Console.WriteLine($"{target.Name}.ResistSpell({Name}, {spell.Name}): magicSkill: {magicSkill}, difficulty: {difficulty}");
 
@@ -561,12 +551,16 @@ namespace ACE.Server.WorldObjects
                 //Console.WriteLine("enchantment target player: " + target.Name);
                 Player targetPlayer = target as Player;
 
-                if (addResult.Enchantment.StatModValue < 0 && targetPlayer.GetWardLevel() > 0)
+                var targetPlayerWard = targetPlayer.GetWardLevel();
+
+                if (addResult.Enchantment.StatModValue < 0 && targetPlayerWard > 0)
                 {
                     //Console.WriteLine($"StatModValue Before: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue}\n" +
                     //    $" -Target Ward Level: {targetPlayer.GetWardLevel()}");
 
-                    var wardMod = WorldObjects.SkillFormula.CalcWardMod((float)targetPlayer.GetWardLevel() / 10);
+                    targetPlayerWard = (int)(targetPlayerWard * LevelScaling.GetPlayerArmorWardScalar(player, caster as Creature));
+
+                    var wardMod = WorldObjects.SkillFormula.CalcWardMod((float)targetPlayerWard / 10);
                     
                     addResult.Enchantment.StatModValue *= wardMod;
                     addResult.Enchantment.Duration *= wardMod;
@@ -837,18 +831,10 @@ namespace ACE.Server.WorldObjects
             }
 
             // LEVEL SCALING - Reduces harms against enemies, and restoration for players
-            if (player != null && player.EnchantmentManager.HasSpell(5379) && player.Level.HasValue && targetCreature.Level.HasValue && player.Level > targetCreature.Level)
-            {
-                var scaler = Creature.GetPlayerDamageScaler((int)player.Level, (int)targetCreature.Level);
-                tryBoost = (int)(tryBoost * scaler);
-            }
-            if (targetCreature is Player && targetCreature.EnchantmentManager.HasSpell(5379) && targetCreature.Level.HasValue && this.Level.HasValue && targetCreature.Level > this.Level)
-            {
-                var scaler = Creature.GetMonsterDamageScaler((int)targetCreature.Level, (int)this.Level);
-                tryBoost = (int)(tryBoost * scaler);
-            }
+            var scalar = LevelScaling.GetPlayerBoostSpellScalar(player, targetCreature);
+            tryBoost = (int)(tryBoost * scalar);
 
-                switch (spell.VitalDamageType)
+            switch (spell.VitalDamageType)
             {
                 case DamageType.Mana:
                     boost = targetCreature.UpdateVitalDelta(targetCreature.Mana, tryBoost);
@@ -1230,19 +1216,12 @@ namespace ACE.Server.WorldObjects
             // LEVEL SCALING - Reduce Drain effectiveness vs. monsters, and increase vs. player
             if (spell.TransferFlags.HasFlag(TransferFlags.TargetSource | TransferFlags.CasterDestination))
             {
-                float levelScalingMod = 1f;
-
-                if (player != null && player.EnchantmentManager.HasSpell(5379) && player.Level.HasValue && targetCreature.Level.HasValue && player.Level > targetCreature.Level)
-                    levelScalingMod = Creature.GetPlayerDamageScaler((int)player.Level, (int)targetCreature.Level);
-
-                if (targetPlayer != null && targetPlayer.EnchantmentManager.HasSpell(5379) && targetPlayer.Level.HasValue && creature != null && creature.Level.HasValue && targetPlayer.Level > creature.Level)
-                    levelScalingMod = Creature.GetMonsterDamageScaler((int)targetPlayer.Level, (int)creature.Level);
+                float levelScalingMod = LevelScaling.GetPlayerBoostSpellScalar(player, targetCreature);
 
                 srcVitalChange  = (uint)(srcVitalChange * levelScalingMod);
                 destVitalChange = (uint)(destVitalChange * levelScalingMod);  
 
             }
-
 
             // Apply the change in vitals to the source
             switch (spell.Source)
