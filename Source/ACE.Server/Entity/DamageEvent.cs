@@ -6,9 +6,11 @@ using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
+using ACE.Server.WorldObjects.Entity;
 using Serilog;
 using Time = ACE.Common.Time;
 
@@ -165,7 +167,10 @@ namespace ACE.Server.Entity
         }
 
         private float DoCalculateDamage(Creature attacker, Creature defender, WorldObject damageSource)
-        { 
+        {
+            if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+                Console.WriteLine($"\n\n---- LEVEL SCALING - {attacker.Name} vs {defender.Name} ----");
+
             var playerAttacker = attacker as Player;
             var playerDefender = defender as Player;
 
@@ -264,7 +269,7 @@ namespace ACE.Server.Entity
             // ---- DAMAGE RATING ----
             PowerMod = attacker.GetPowerMod(Weapon);
             
-            AttributeMod = attacker.GetAttributeMod(Weapon, false);
+            AttributeMod = attacker.GetAttributeMod(Weapon, false, defender);
 
             SlayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
 
@@ -360,14 +365,13 @@ namespace ACE.Server.Entity
                 DamageRatingMod = Creature.AdditiveCombine(DamageRatingMod, PkDamageMod);
             }
 
-            // LEVEL SCALING - If player has Scaling Spell, check to ensure their level is greater than the monster in question, then scale their damage done/damage taken if so
-            float levelScalingMod = 1f;
+            // LEVEL SCALING - A damage modifier for monsters to address the difference in player health at their current level and target enemy level
+            float levelScalingMod;
 
-            if (playerAttacker != null && playerAttacker.EnchantmentManager.HasSpell(5379) && playerAttacker.Level.HasValue && defender.Level.HasValue && playerAttacker.Level > defender.Level)
-                levelScalingMod = Creature.GetPlayerDamageScaler((int)playerAttacker.Level, (int)defender.Level);
-
-            if (playerDefender != null && playerDefender.EnchantmentManager.HasSpell(5379) && playerDefender.Level.HasValue && attacker.Level.HasValue && playerDefender.Level > attacker.Level)
-                levelScalingMod = Creature.GetMonsterDamageScaler((int)playerDefender.Level, (int)attacker.Level);
+            if (playerDefender != null)
+                levelScalingMod = LevelScaling.GetMonsterDamageDealtHealthScalar(playerDefender, attacker);
+            else
+                levelScalingMod = LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
 
             // ---- DAMAGE BEFORE MITIGATION ----
             DamageBeforeMitigation = BaseDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * dualWieldDamageMod * twohandedCombatDamageMod * steadyShotActivatedMod * multishotPenalty * provokeMod * levelScalingMod;
@@ -439,19 +443,7 @@ namespace ACE.Server.Entity
             if (playerDefender != null && (playerDefender.IsLoggingOut || playerDefender.PKLogout))
                 CriticalChance = 1.0f;
 
-            // Jewelcrafting Reprisal
-
-            if (playerAttacker != null)
-            {
-                if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
-                {
-                    if (playerAttacker.QuestManager.HasQuest($"{defender.Guid}/Reprisal"))
-                        CriticalChance = 1.0f;
-                }
-            }
-
             // Jewelcrafting Reprisal -- Auto crit in return
-
             if (playerAttacker != null)
             {
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
@@ -548,9 +540,6 @@ namespace ACE.Server.Entity
                         }
                     }
 
-                    // LEVEL SCALING - Reduce critical damage by the same amount
-                    CriticalDamageMod *= levelScalingMod;
-
                     CriticalDamageRatingMod = Creature.GetPositiveRatingMod(attacker.GetCritDamageRating());
 
                     // recklessness excluded from crits
@@ -560,9 +549,7 @@ namespace ACE.Server.Entity
                     if (pkBattle)
                         DamageRatingMod = Creature.AdditiveCombine(DamageRatingMod, PkDamageMod);
 
-                    DamageBeforeMitigation = BaseDamageMod.MaxDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * CriticalDamageMod * dualWieldDamageMod * twohandedCombatDamageMod *  steadyShotActivatedMod * multishotPenalty;
-
-                   
+                    DamageBeforeMitigation = BaseDamageMod.MaxDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * CriticalDamageMod * dualWieldDamageMod * twohandedCombatDamageMod *  steadyShotActivatedMod * multishotPenalty * levelScalingMod;
                 }
             }
 
@@ -666,8 +653,8 @@ namespace ACE.Server.Entity
             var specDefenseMod = 1.0f;
             if (playerDefender != null && playerDefender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized)
             {
-                var physicalDefenseSkill = playerDefender.GetCreatureSkill(Skill.MeleeDefense);
-                var bonusAmount = (float)Math.Min(physicalDefenseSkill.Current, 500) / 50;
+                var playerDefenderPhysicalDefense = playerDefender.GetModdedMeleeDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker);
+                var bonusAmount = (float)Math.Min(playerDefenderPhysicalDefense, 500) / 50;
 
                 specDefenseMod = 0.9f - bonusAmount * 0.01f;
             }
@@ -765,7 +752,7 @@ namespace ACE.Server.Entity
             if (!attacker.IsMonster)
                 Damage *= 1.0f;
 
-            //DpsLogging(playerAttacker);
+            //DpsLogging(attacker, attackSkill, defender, dualWieldDamageMod, twohandedCombatDamageMod, steadyShotActivatedMod, multishotPenalty, provokeMod, levelScalingMod);
 
             return Damage;
         }
@@ -794,11 +781,9 @@ namespace ACE.Server.Entity
 
             AccuracyMod = attacker.GetAccuracySkillMod(Weapon);
 
-            EffectiveAttackSkill = attacker.GetEffectiveAttackSkill();
+            EffectiveAttackSkill = (uint)(attacker.GetEffectiveAttackSkill() * LevelScaling.GetPlayerAttackSkillScalar(playerAttacker, defender));
 
-            //var attackType = attacker.GetCombatType();
-
-            EffectiveDefenseSkill = defender.GetEffectiveDefenseSkill(CombatType);
+            EffectiveDefenseSkill = (uint)(defender.GetEffectiveDefenseSkill(CombatType) * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker));
 
             GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
 
@@ -888,13 +873,6 @@ namespace ACE.Server.Entity
                 }
 
             }
-
-            // LEVEL SCALING - Add 15% flat evade chance penalty to scaled player's interactions
-            if (playerAttacker != null && playerAttacker.EnchantmentManager.HasSpell(5379) && playerAttacker.Level.HasValue && defender.Level.HasValue && playerAttacker.Level > defender.Level)
-                evadeChance += 0.15f;
-
-            if (playerDefender != null && playerDefender.EnchantmentManager.HasSpell(5379) && playerDefender.Level.HasValue && attacker.Level.HasValue && playerDefender.Level > attacker.Level)
-                evadeChance -= 0.15f;
 
             if (evadeChance < 0) evadeChance = 0;
 
@@ -1417,26 +1395,55 @@ namespace ACE.Server.Entity
             return false;
         }
 
-        private void DpsLogging(Player playerAttacker)
+        private void DpsLogging(Creature attacker, CreatureSkill attackSkill, Creature defender, float dualWieldDamageMod, float twohandedCombatDamageMod, float steadyShotActivatedMod, float multishotPenalty, float provokeMod, float damageScalar)
         {
-            Console.WriteLine($"\n---- {Weapon.Name} ----");
+            if (attacker == null || defender == null)
+                return;
+
             var currentTime = Time.GetUnixTime();
-            var timeSinceLastAttack = currentTime - playerAttacker.LastAttackedCreatureTime;
-            Console.WriteLine($"\nCurrentTime: {currentTime}, LastAttackTime: {playerAttacker.LastAttackedCreatureTime} TimeBetweenAttacks: {timeSinceLastAttack}");
-            playerAttacker.LastAttackedCreatureTime = currentTime;
+            var timeSinceLastAttack = currentTime - attacker.LastAttackedCreatureTime;
+            if (attacker as Player == null)
+            {
+                timeSinceLastAttack = MonsterAverageAnimationLength.GetValueMod(attacker.CreatureType);
+            }
 
-            var averageDamage = (BaseDamageMod.MaxDamage + BaseDamageMod.MinDamage) / 2;
-            if (Weapon.IsAmmoLauncher) averageDamage = 7.5f * (float)(Weapon.DamageMod ?? 1.0);
+            var damageSource = Weapon == null ? attacker : Weapon;
 
-            var powModDamage = averageDamage * PowerMod * AttributeMod;
-            var dps = averageDamage / timeSinceLastAttack;
-            var powerModDps = dps * PowerMod;
+            Console.WriteLine($"\n---- DAMAGE LOG ({damageSource.Name}) ----");
+            Console.WriteLine($"CurrentTime: {currentTime}, LastAttackTime: {attacker.LastAttackedCreatureTime} TimeBetweenAttacks: {timeSinceLastAttack}");
+            attacker.LastAttackedCreatureTime = currentTime;
 
-            Console.WriteLine($"TimeSinceLastAttack: {timeSinceLastAttack}\n" +
+            var critRate = CriticalChance;
+            var nonCritRate = 1 - critRate;
+            var critDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(damageSource, attacker, attackSkill, defender);
+
+            var avgNonCritHit = (BaseDamageMod.MaxDamage + BaseDamageMod.MinDamage) / 2;
+            var critHit = BaseDamageMod.MaxDamage * critDamageMod;
+
+            var averageDamage = avgNonCritHit * nonCritRate + critHit * critRate;
+            var baseDps = averageDamage / timeSinceLastAttack;
+
+            var averageDamageBeforeMitigation = averageDamage * PowerMod * AttributeMod * SlayerMod * DamageRatingMod * dualWieldDamageMod * twohandedCombatDamageMod * steadyShotActivatedMod * multishotPenalty * provokeMod;
+            var averageDpsBeforeMitigation = averageDamageBeforeMitigation / timeSinceLastAttack;
+
+            var averageDamageAfterMitigation = averageDamageBeforeMitigation * ArmorMod * ShieldMod * ResistanceMod * DamageResistanceRatingMod * damageScalar;
+            var averageDpsAfterMitigation = averageDamageAfterMitigation / timeSinceLastAttack;
+
+            Console.WriteLine($"TimeSinceLastAttack: {timeSinceLastAttack}" +
+                $"\n\n-- Base --\n" +
                 $"BaseDamageMod.MaxDamage: {BaseDamageMod.MaxDamage}, BaseDamageMod.MinDamage: {BaseDamageMod.MinDamage}, LiveBaseDamage: {BaseDamage}\n" +
-                $"PowerMod: {PowerMod}, AttributeMod: {AttributeMod}\n" +
-                $"AverageDamage: {averageDamage}, DPS: {dps}\n " +
-                $"PowModDamage: {powModDamage}, PowDPS: {powerModDps}");
+                $"AverageDamageNonCrit: {avgNonCritHit}, AverageDamageCrit: {critHit}, AverageDamageHit: {averageDamage}\n" +
+                $"DPS Base: {baseDps}\n\n" +
+                $"-- Before Mitigation --\n" +
+                $"PowerMod: {PowerMod}, AttributeMod: {AttributeMod}, SlayerMod: {SlayerMod}, DamageRatingMod: {DamageRatingMod}\n" +
+                $"AverageDamage Before Mitigation: {averageDamageBeforeMitigation}\n" +
+                $"DPS Before Mitigation: {averageDpsBeforeMitigation}\n\n" +
+                $"-- After Mitigation --\n" +
+                $"DamageScalar(health): {damageScalar}, ArmorMod: {ArmorMod}, ShieldMod: {ShieldMod}, ResistanceMod: {ResistanceMod}, DamageResistanceRatingMod: {DamageResistanceRatingMod}\n" +
+                $"AverageDamage After Mitigation: {averageDamageAfterMitigation}\n" +
+                $"DPS After Mitigation: {averageDpsAfterMitigation}\n" +
+                $"---- END DAMAGE LOG ({damageSource.Name}) ----");
+            
         }
     }
 }

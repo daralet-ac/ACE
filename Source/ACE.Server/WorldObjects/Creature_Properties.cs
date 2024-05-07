@@ -1,5 +1,6 @@
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using System;
@@ -128,6 +129,8 @@ namespace ACE.Server.WorldObjects
                     var augFactor = Math.Min(1.0f, resistAug * 0.1f);
                     protMod *= 1.0f - augFactor;
                 }
+
+                protMod = protMod * LevelScaling.GetPlayerResistanceScalar(player, attacker as Creature);
             }
 
             // vulnerability mod becomes either life vuln or weapon resistance mod,

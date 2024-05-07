@@ -38,8 +38,6 @@ namespace ACE.Server.WorldObjects
 
         public DateTime NextRefillTime;
 
-        public Creature LastAttackedCreature;
-        public double LastAttackedCreatureTime;
         public double LastPkAttackTimestamp
         {
             get => GetProperty(PropertyFloat.LastPkAttackTimestamp) ?? 0;

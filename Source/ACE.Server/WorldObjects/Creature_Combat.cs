@@ -1,5 +1,4 @@
 using System;
-using System.Data.Common;
 using System.Linq;
 using ACE.Common;
 using ACE.Entity;
@@ -474,7 +473,7 @@ namespace ACE.Server.WorldObjects
         /// Returns the attribute damage bonus for a physical and magical attacks
         /// </summary>
         /// <param name="attackType">Uses strength for melee, coordination for missile</param>
-        public float GetAttributeMod(WorldObject weapon, bool isSpell)
+        public float GetAttributeMod(WorldObject weapon, bool isSpell, Creature target)
         {
             Entity.CreatureAttribute attribute;
 
@@ -510,7 +509,10 @@ namespace ACE.Server.WorldObjects
 
             Skill skill = GetCurrentWeaponSkill();
 
-            return SkillFormula.GetAttributeMod((int)attribute.Current, skill);
+            // LEVEL SCALING - Attribute Mod
+            var currentAttribute = (int)(attribute.Current * LevelScaling.GetPlayerAttributeScalar(this, target));
+
+            return SkillFormula.GetAttributeMod(currentAttribute, skill);
         }
 
         /// <summary>
@@ -833,6 +835,8 @@ namespace ACE.Server.WorldObjects
             //effectiveRL = 1.0f / effectiveRL;
 
             var effectiveLevel = effectiveSL;
+
+            effectiveLevel = effectiveLevel * LevelScaling.GetPlayerArmorWardScalar(this, attacker as Creature);
 
             effectiveLevel *= effectiveRL;
 
@@ -1637,78 +1641,7 @@ namespace ACE.Server.WorldObjects
         }
 
         // LEVEL SCALING
-        public static float GetPlayerDamageScaler(int playerLevel, int monsterLevel)
-        {
-            if (playerLevel > 50) playerLevel = 50;
-            if (playerLevel < 10) playerLevel = 10;
-            if (monsterLevel > 50) monsterLevel = 50;
-            if (monsterLevel < 10) monsterLevel = 10;
-
-            var expectedDamage = GetPlayerDamageAtLevel(playerLevel);
-            var deleveledDamaged = GetPlayerDamageAtLevel(monsterLevel);
-
-            var damageScaler = (float)(deleveledDamaged / expectedDamage);
-
-            var levelGap = playerLevel - monsterLevel;
-            // reduce damage done by a further 8% for each 10/"tiers-worth" of level difference to account for tinkering/jewelcrafting and other sources of player power as level climbs
-            float gapMod = 1f - (float)(levelGap / 10f) / 12.5f;
-
-            return damageScaler * gapMod;
-
-        }
-        public static float GetPlayerDamageAtLevel(int level)
-        { 
-            int[] levelData = { 10, 20, 30, 40, 50 };
-            int[] damage = { 2010, 4017, 7680, 15051, 20282 };
-
-            for (int i = 0; i < levelData.Length - 1; i++)
-            {
-                if (level >= levelData[i] && level <= levelData[i + 1])
-                {
-                    float ratio = (float)(level - levelData[i]) / (levelData[i + 1] - levelData[i]);
-                    return (int)(damage[i] + ratio * (damage[i + 1] - damage[i]));
-                }
-            }
-
-            return 1;
-        }
-
-        public static float GetMonsterDamageScaler(int playerLevel, int monsterLevel)
-        {
-            if (playerLevel > 50) playerLevel = 50;
-            if (playerLevel < 10) playerLevel = 10;
-            if (monsterLevel > 50) monsterLevel = 50;
-            if (monsterLevel < 10) monsterLevel = 10;
-
-            var expectedDamage = GetMonsterDamageAtLevel(monsterLevel);
-            var upleveledDamage = GetMonsterDamageAtLevel(playerLevel);
-
-            var damageScaler = (float)(upleveledDamage / expectedDamage);
-
-            var levelGap = playerLevel - monsterLevel;
-            // increase damage done by a further 8% for each 10/"tiers-worth" of level difference to account for tinkering/jewelcrafting and other sources of player defense as level climbs
-            float gapMod = 1f + (float)(levelGap / 10f) / 12.5f;
-
-            return damageScaler * gapMod;
-
-        }
-        public static float GetMonsterDamageAtLevel(int level)
-        {
-            int[] levelData = { 10, 20, 30, 40, 50 };
-            int[] damage = { 747, 2879, 4679, 7781, 11399};
-
-            for (int i = 0; i < levelData.Length - 1; i++)
-            {
-                if (level >= levelData[i] && level <= levelData[i + 1])
-                {
-                    float ratio = (float)(level - levelData[i]) / (levelData[i + 1] - levelData[i]);
-                    return (int)(damage[i] + ratio * (damage[i + 1] - damage[i]));
-                }
-            }
-
-            return 1;
-        }
-
         public bool StruckByUnshrouded = false;
     }
+
 }

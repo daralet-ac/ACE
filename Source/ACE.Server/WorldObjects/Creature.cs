@@ -50,6 +50,9 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public Dictionary<uint, int> ammoHitWith;
 
+        public Creature LastAttackedCreature;
+        public double LastAttackedCreatureTime;
+
         /// <summary>
         /// A decaying count of attacks this creature has received recently.
         /// </summary>
