@@ -452,7 +452,7 @@ namespace ACE.Server.WorldObjects
         {
             // get the proper animation speed for this attack,
             // based on weapon speed and player quickness
-            var baseSpeed = GetAnimSpeed();
+            var baseSpeed = GetAnimSpeed(target as Creature);
 
             var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
             var animSpeedMod = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster dual-wield swing animation

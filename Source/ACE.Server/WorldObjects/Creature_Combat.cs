@@ -590,10 +590,10 @@ namespace ACE.Server.WorldObjects
         /// Returns the animation speed for an attack,
         /// based on the current quickness and weapon speed
         /// </summary>
-        public float GetAnimSpeed()
+        public float GetAnimSpeed(Creature target = null)
         {
             var animSpeed = 1.0f;
-            var quickness = (float)Quickness.Current;
+            var quickness = Quickness.Current * LevelScaling.GetPlayerAttributeScalar(this, target);
             var weaponSpeed = (float)GetWeaponSpeed(this);
 
             var minAttackSpeed = 0.8f;
