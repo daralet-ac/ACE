@@ -184,7 +184,7 @@ namespace ACE.Server.WorldObjects
                 // Retrieve caster's secondary attribute mod (1% per 20 attributes)
                 var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
                 
-                magicSkill = (uint)(magicSkill * secondaryAttributeMod);
+                magicSkill = (uint)(magicSkill * secondaryAttributeMod * LevelScaling.GetPlayerAttackSkillScalar(casterCreature, target as Creature));
 
             }
             else if (caster.ItemSpellcraft != null)
