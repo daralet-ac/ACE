@@ -319,7 +319,7 @@ namespace ACE.Server.WorldObjects
                 if (isWielded)
                 {
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana scarab gains a charge!", ChatMessageType.Magic));
-                    player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.PortalStorm));
+                    player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.RestrictionEffectBlue));
                 }
             }
             else
@@ -327,7 +327,7 @@ namespace ACE.Server.WorldObjects
                 if (isWielded)
                 {
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your mana scarab gains a charge, it is now fully charged!", ChatMessageType.Magic));
-                    player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpBlue));
+                    player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.PortalStorm));
                 }
             }
         }

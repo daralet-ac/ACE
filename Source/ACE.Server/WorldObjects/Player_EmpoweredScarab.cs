@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
@@ -14,20 +15,41 @@ namespace ACE.Server.WorldObjects
 {
     partial class Player
     {
+        private double LastHotspotHintTick = 0;
+        private double HotspotHintTickTime = 3;
+
         /// <summary>
         /// Check which Menhir Field we are in and recharge valid scarabs
         /// Recharges scarabs that are in the player's pack or equipped, and only of lower tiers
         /// </summary>
         public void RechargeEmpoweredScarabs(Hotspot manaField)
         {
-            var forwardCommand = CurrentMovementData.MovementType == MovementType.Invalid && CurrentMovementData.Invalid != null ? CurrentMovementData.Invalid.State.ForwardCommand : MotionCommand.Invalid;
-            if (forwardCommand != MotionCommand.MeditateState)
-                return;
-
             List<EmpoweredScarab> equippedEmpoweredScarabs = GetEquippedEmpoweredScarabs();
             List<EmpoweredScarab> heldEmpoweredScarabsBlue = GetHeldEmpoweredScarabsBlue();
             List<EmpoweredScarab> heldEmpoweredScarabsYellow = GetHeldEmpoweredScarabsYellow();
             List<EmpoweredScarab> heldEmpoweredScarabsRed = GetHeldEmpoweredScarabsRed();
+
+            // if player is within the mana field, is not meditating, and has any empowered scarab on them: trigger a blue effect flash on the player every 3 seconds.
+            var forwardCommand = CurrentMovementData.MovementType == MovementType.Invalid && CurrentMovementData.Invalid != null ? CurrentMovementData.Invalid.State.ForwardCommand : MotionCommand.Invalid;
+            if (forwardCommand != MotionCommand.MeditateState)
+            {
+                if (LastHotspotHintTick + HotspotHintTickTime < Time.GetUnixTime())
+                {
+                    var showHintEffect = false;
+
+                    var allHeldScarabs = new List<EmpoweredScarab>().Concat(equippedEmpoweredScarabs).Concat(heldEmpoweredScarabsBlue).Concat(heldEmpoweredScarabsYellow).Concat(heldEmpoweredScarabsRed).ToList();
+                    if (allHeldScarabs.Count > 0)
+                        showHintEffect = true;
+
+                    if(showHintEffect)
+                    {
+                        PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
+                        LastHotspotHintTick = Time.GetUnixTime();
+                    }
+                }
+                return;
+            }
+
             if (manaField.Tier == 0) // Low
             {
                 //Console.WriteLine("Mana Field LOW");
@@ -65,24 +87,24 @@ namespace ACE.Server.WorldObjects
                     SetEmpoweredScarabsBonus(manaField);
                 }
 
-                foreach (EmpoweredScarab EmpoweredScarab in heldEmpoweredScarabsBlue)
-                    EmpoweredScarab.RechargeEmpoweredScarab(manaField);
+                foreach (EmpoweredScarab empoweredScarab in heldEmpoweredScarabsBlue)
+                    empoweredScarab.RechargeEmpoweredScarab(manaField);
 
-                foreach (EmpoweredScarab EmpoweredScarab in heldEmpoweredScarabsYellow)
-                    EmpoweredScarab.RechargeEmpoweredScarab(manaField);
+                foreach (EmpoweredScarab empoweredScarab in heldEmpoweredScarabsYellow)
+                    empoweredScarab.RechargeEmpoweredScarab(manaField);
             }
 
             if (manaField.Tier == 3) // Lyceum
             {
                 //Console.WriteLine("Mana Field LYCEUM");
-                foreach (EmpoweredScarab EmpoweredScarab in heldEmpoweredScarabsBlue)
-                    EmpoweredScarab.RechargeEmpoweredScarab(manaField);
+                foreach (EmpoweredScarab empoweredScarab in heldEmpoweredScarabsBlue)
+                    empoweredScarab.RechargeEmpoweredScarab(manaField);
 
-                foreach (EmpoweredScarab EmpoweredScarab in heldEmpoweredScarabsYellow)
-                    EmpoweredScarab.RechargeEmpoweredScarab(manaField);
+                foreach (EmpoweredScarab empoweredScarab in heldEmpoweredScarabsYellow)
+                    empoweredScarab.RechargeEmpoweredScarab(manaField);
 
-                foreach (EmpoweredScarab EmpoweredScarab in heldEmpoweredScarabsRed)
-                    EmpoweredScarab.RechargeEmpoweredScarab(manaField);
+                foreach (EmpoweredScarab empoweredScarab in heldEmpoweredScarabsRed)
+                    empoweredScarab.RechargeEmpoweredScarab(manaField);
             }
         }
         /// <summary>

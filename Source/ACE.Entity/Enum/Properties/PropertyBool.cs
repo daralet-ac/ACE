@@ -189,6 +189,7 @@ namespace ACE.Entity.Enum.Properties
         CampfireHotspot                  = 146,
         MutableQuestItem                 = 147,
         StruckByUnshrouded               = 148,
+        MenhirManaHotspot                = 149,
 
         /* custom */
         [ServerOnly]

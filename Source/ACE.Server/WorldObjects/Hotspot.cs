@@ -201,7 +201,7 @@ namespace ACE.Server.WorldObjects
                 creature.HotspotImmunityTimestamp = currentTime + immunityTime;
             }
             
-            if (player != null)
+            if (player != null && MenhirManaHotspot == true)
                 player.RechargeEmpoweredScarabs(this);
             
             if (player != null && CampfireHotspot == true)
