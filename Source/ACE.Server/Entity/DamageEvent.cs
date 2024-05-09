@@ -892,9 +892,9 @@ namespace ACE.Server.Entity
 
             if (attacker != defender && EvasionChance > ThreadSafeRandom.Next(0.0f, 1.0f))
             {
-                var fullEvade = EvasionChance / 3.0f;
-                var mostEvade = fullEvade * 2.0f;
-                var someEvade = fullEvade * 3.0f;
+                var fullEvadeChance = 0.25f;    // 25%
+                var partialEvadeChance = 0.75f; // 50%
+                var noEvadeChance = 1.0f;       // 25%
 
                 var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
@@ -903,7 +903,7 @@ namespace ACE.Server.Entity
 
                 // full evade
 
-                if (attacker != defender && fullEvade > attackRoll)
+                if (attacker != defender && fullEvadeChance > attackRoll)
                 {
                     //Console.WriteLine($"Full Evade");
                     Evaded = true;
@@ -914,28 +914,26 @@ namespace ACE.Server.Entity
                 {
                     GetCombatAbilities(attacker, defender, out var attackerCombatAbility, out var defenderCombatAbility);
 
-                    if (mostEvade > attackRoll) // Evaded most of
+                    if (partialEvadeChance > attackRoll) // Evaded 50% of
                     {
-                        //Console.WriteLine($"Most Evade");
-
-                        evasionMod = 1 - 0.33f;
-                        PartialEvasion = PartialEvasion.Most;
-                        
-                    }
-                    else if (someEvade > attackRoll) // Evaded some of
-                    {
-                        //Console.WriteLine($"Some Evade");
-
-                        if (defenderCombatAbility == CombatAbility.Provoke) // Partial evades are always "Most"
+                        //Console.WriteLine($"Partial Evade");
+                        if (defenderCombatAbility == CombatAbility.Provoke) // 50% less damage received from Glancing Blows
                         {
-                            evasionMod = 1 - 0.33f;
-                            PartialEvasion = PartialEvasion.Most;
-                        }
-                        else
-                        { 
-                            evasionMod = 1 - 0.67f;
+                            evasionMod = 0.25f;
                             PartialEvasion = PartialEvasion.Some;
                         }
+                        else
+                        {
+                            evasionMod = 0.5f;
+                            PartialEvasion = PartialEvasion.Some;
+                        }
+                    }
+                    else if (noEvadeChance > attackRoll) // No Evade
+                    {
+                        //Console.WriteLine($"No Evade");
+
+                        evasionMod = 1.0f;
+                        PartialEvasion = PartialEvasion.None;
                     }
                 }
                 //Console.WriteLine($"EvasionMod: {Math.Round(evasionMod * 100)}%");
@@ -944,7 +942,7 @@ namespace ACE.Server.Entity
                 //    Console.WriteLine($"{attacker.Name} vs {defender.Name}:\n" +
                 //        $" -AttackRoll: {Math.Round(attackRoll * 100)}\n" +
                 //        $" -EvasionChance: {Math.Round(EvasionChance * 100)}%\n" +
-                //        $" -FullEvadeChance: {Math.Round(fullEvade * 100)}%\n" +
+                //        $" -FullEvadeChance: {Math.Round(fullEvadeChance * 100)}%\n" +
                 //        $" -EvasionMod: {Math.Round(evasionMod * 100)}% (IF PARTIAL EVADE)");
                 //}
             }

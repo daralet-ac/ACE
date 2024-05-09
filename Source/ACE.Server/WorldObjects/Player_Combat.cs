@@ -230,10 +230,8 @@ namespace ACE.Server.WorldObjects
                         }
                     }
                         
-                    if (this != target && damageEvent.PartialEvasion == PartialEvasion.Most)
-                        Session.Network.EnqueueSend(new GameMessageSystemChat($"{recklessMsg}{sneakMsg}Major Glancing Blow! You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
-                    else if (this != target && damageEvent.PartialEvasion == PartialEvasion.Some)
-                        Session.Network.EnqueueSend(new GameMessageSystemChat($"{recklessMsg}{sneakMsg}Minor Glancing Blow! You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
+                    if (this != target && damageEvent.PartialEvasion == PartialEvasion.Some)
+                        Session.Network.EnqueueSend(new GameMessageSystemChat($"{recklessMsg}{sneakMsg}Glancing Blow! You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
                     else if (this != target && recklessMsg != "")
                         Session.Network.EnqueueSend(new GameMessageSystemChat($"{recklessMsg}{critMsg}{sneakMsg}You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatSelf));
                     else if (this != target)
@@ -909,9 +907,7 @@ namespace ACE.Server.WorldObjects
                 Strings.GetAttackVerb(damageType, percentHp, ref verb, ref plural);
 
                 if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature && partialEvasion == PartialEvasion.Some)
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{sneakMsg}Minor Glancing Blow! {creature.Name} {plural} you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
-                else if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature && partialEvasion == PartialEvasion.Most)
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{sneakMsg}Major Glancing Blow! {creature.Name} {plural} you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{sneakMsg}Glancing Blow! {creature.Name} {plural} you for {damageTaken} {pointsText} of {damageTypeText} damage.", ChatMessageType.CombatEnemy));
                 else if (!SquelchManager.Squelches.Contains(source, ChatMessageType.CombatEnemy) && this != creature)
                     Session.Network.EnqueueSend(new GameEventDefenderNotification(Session, creature.Name, damageType, percent, damageTaken, damageLocation, crit, attackConditions));
     

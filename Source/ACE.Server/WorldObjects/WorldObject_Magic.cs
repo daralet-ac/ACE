@@ -67,7 +67,7 @@ namespace ACE.Server.WorldObjects
                 return;
 
             // perform resistance check, if applicable
-            if (tryResist && TryResistSpell(target, spell, out var resistedMod, itemCaster))
+            if (tryResist && TryResistSpell(target, spell, out _, itemCaster))
                 return;
 
             // if not resisted, cast spell
@@ -106,36 +106,30 @@ namespace ACE.Server.WorldObjects
         {
             // uses regular 0.03 factor, and not magic casting 0.07 factor
             var chance = 1.0 - (SkillCheck.GetSkillChance((int)casterMagicSkill, (int)targetMagicDefenseSkill) * chanceMod);
+            resistChance = (float)chance;
             var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-            partialResist = PartialEvasion.None;
 
             if (rng < chance)
             {
                 var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
-                var resistSome = 2.0f / 3.0f;
-                var resistMost = 1.0f / 3.0f;
 
-                if (roll > resistSome)
-                {
-                    partialResist = PartialEvasion.Some;
-                    resistChance = (float)chance;
-                    return false;
-                }
-                else if (roll > resistMost)
-                {
-                    partialResist = PartialEvasion.Most;
-                    resistChance = (float)chance;
-                    return false;
-                }
-                else
+                // resist all = 25%, resist some = 50%, no resist = 25%
+                var resistAllChance = 0.25f; 
+                var resistSome = 0.75f;      
+
+                if (roll < resistAllChance)
                 {
                     partialResist = PartialEvasion.All;
-                    resistChance = (float)chance;
                     return true;
                 }
+                else if (roll < resistSome)
+                {
+                    partialResist = PartialEvasion.Some;
+                    return false;
+                }
             }
-            resistChance = (float)chance;
+
+            partialResist = PartialEvasion.None;
             return false;
         }
 
@@ -293,7 +287,7 @@ namespace ACE.Server.WorldObjects
                 if (player.EquippedCombatAbility == CombatAbility.Overload && player.OverloadActivated && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration)
                 {
                     resisted = false;
-                    pResist = PartialEvasion.None;
+                    partialResist = PartialEvasion.None;
                 }
             }
 
