@@ -1259,8 +1259,7 @@ namespace ACE.Server.WorldObjects
                 var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
                 var overpowerMsg = overpower ? "Overpower! " : "";
                 var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
-                var resistSome = PartialEvasion == PartialEvasion.Some ? "Minor resist! " : "";
-                var resistMost = PartialEvasion == PartialEvasion.Most ? "Major resist! " : "";
+                var resistSome = PartialEvasion == PartialEvasion.Some ? "Partial resist! " : "";
                 var strikeThrough = Strikethrough > 0 ? "Strikethrough! " : "";
 
                 var nonHealth = Spell.Category == SpellCategory.StaminaLowering || Spell.Category == SpellCategory.ManaLowering;
@@ -1275,7 +1274,7 @@ namespace ACE.Server.WorldObjects
                         overloadMsg = "Overload Discharged! ";
                     }    
 
-                    var attackerMsg = $"{resistMost}{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
+                    var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
                     // could these crit / sneak attack?
                     if (nonHealth)
@@ -1292,7 +1291,7 @@ namespace ACE.Server.WorldObjects
                 {
                     var critProt = critDefended ? " Your augmentation allows you to avoid a critical hit!" : "";
 
-                    var defenderMsg = $"{resistMost}{resistSome}{critMsg}{overpowerMsg}{sneakMsg}{ProjectileSource.Name} {plural} you for {amount} points with {Spell.Name}.{critProt}";
+                    var defenderMsg = $"{resistSome}{critMsg}{overpowerMsg}{sneakMsg}{ProjectileSource.Name} {plural} you for {amount} points with {Spell.Name}.{critProt}";
 
                     if (nonHealth)
                     {
@@ -1486,12 +1485,7 @@ namespace ACE.Server.WorldObjects
             }
             else if (PartialEvasion == PartialEvasion.Some)
             {
-                resistedMod = 2.0f / 3.0f;
-                return false;
-            }
-            else if(PartialEvasion == PartialEvasion.Most)
-            {
-                resistedMod = 1.0f / 3.0f;
+                resistedMod = 0.5f;
                 return false;
             }
             else

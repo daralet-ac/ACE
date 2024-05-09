@@ -8,7 +8,6 @@ namespace ACE.Entity.Enum
     {
         None = 0,
         Some = 1,
-        Most = 2,
-        All = 3
+        All = 2
     }
 }
