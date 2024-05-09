@@ -606,7 +606,7 @@ namespace ACE.Server.WorldObjects
                 if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 0)
                     ignoreWardMod -= 0.1f;
 
-            var wardMod = GetWardMod(target, sourceCreature, ignoreWardMod);
+            var wardMod = GetWardMod(sourceCreature, target, ignoreWardMod);
 
             //Console.WriteLine($"TargetWard: {target.WardLevel} WardRend: {wardRendingMod} Nullification: {NullificationMod} WardMod: {wardMod}");
 
