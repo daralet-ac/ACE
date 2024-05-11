@@ -1249,31 +1249,6 @@ namespace ACE.Server.Factories
             }
         }
 
-        public static int GetWieldDifficultyPerTier(int tier)
-        {
-            switch (tier)
-            {
-                case 1:
-                    return 50;
-                case 2:
-                    return 125;
-                case 3:
-                    return 175;
-                case 4:
-                    return 200;
-                case 5:
-                    return 215;
-                case 6:
-                    return 230;
-                case 7:
-                    return 250;
-                case 8:
-                    return 270;
-                default:
-                    return 0;
-            }
-        }
-
         private static int GetGearRatingAmount(int tier, TreasureDeath td, out float gearRatingPercentile)
         {
             var lootQualityMod = td.LootQualityMod;

@@ -798,7 +798,7 @@ namespace ACE.Server.Factories
         {
             wo.SetProperty(PropertyBool.MutableQuestItem, false);
 
-            var tier = wo.Tier ?? 1;
+            var tier = GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 50);
             var lootQuality = (float)(wo.LootQualityMod ?? 0.0f);
             var armorSlots = wo.ArmorSlots ?? 1;
 
@@ -2397,6 +2397,39 @@ namespace ACE.Server.Factories
 
             }
         }
+
+        public static int GetWieldDifficultyPerTier(int tier)
+        {
+            switch (tier)
+            {
+                case 1: return 50;
+                case 2: return 125;
+                case 3: return 175;
+                case 4: return 200;
+                case 5: return 215;
+                case 6: return 230;
+                case 7: return 250;
+                case 8: return 270;
+                default: return 0;
+            }
+        }
+
+        public static int GetTierFromWieldDifficulty(int tier)
+        {
+            switch (tier)
+            {
+                case 50: return 1;
+                case 125: return 2;
+                case 175: return 3;
+                case 200: return 4;
+                case 215: return 5;
+                case 230: return 6;
+                case 250: return 7;
+                case 270: return 8;
+                default: return 0;
+            }
+        }
+
         public static void AssignJewelSlots(WorldObject wo)
         {
             if (wo.Tier >= 2)
