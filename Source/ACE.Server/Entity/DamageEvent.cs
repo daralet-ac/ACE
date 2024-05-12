@@ -1035,13 +1035,19 @@ namespace ACE.Server.Entity
             attackerCombatAbility = CombatAbility.None;
             defenderCombatAbility = CombatAbility.None;
 
-            var attackerCombatFocus = attacker.GetEquippedCombatFocus();
-            if (attackerCombatFocus != null)
-                attackerCombatAbility = attackerCombatFocus.GetCombatAbility();
+            if (attacker != null)
+            {
+                var attackerCombatFocus = attacker.GetEquippedCombatFocus();
+                if (attackerCombatFocus != null)
+                    attackerCombatAbility = attackerCombatFocus.GetCombatAbility();
+            }
 
-            var defenderCombatFocus = defender.GetEquippedCombatFocus();
-            if (defenderCombatFocus != null)
-                defenderCombatAbility = defenderCombatFocus.GetCombatAbility();
+            if (defender != null)
+            {
+                var defenderCombatFocus = defender.GetEquippedCombatFocus();
+                if (defenderCombatFocus != null)
+                    defenderCombatAbility = defenderCombatFocus.GetCombatAbility();
+            }
         }
 
         private float GetEvasionMod(Creature attacker, Creature defender)
