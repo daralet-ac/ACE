@@ -41989,8 +41989,12 @@ namespace ACE.Server.Factories.Enum
         scrollofbladevolley1 = 1056062,
         scrollofbladevolley2 = 1056063,
         scrollofforcevolley1 = 1056064,
-        scrollofforcevolley2 = 1066065,
-        scrollofshockvolley1 = 1066066,
-        scrollofshockvolley2 = 1066067,
+        scrollofforcevolley2 = 1056065,
+        scrollofshockvolley1 = 1056066,
+        scrollofshockvolley2 = 1056067,
+        manastonelessernew = 1057002,
+        manastonenew = 1057003,
+        manastonegreaternew = 1057004,
+        manastonetitannew = 1057005,
     }
 }
