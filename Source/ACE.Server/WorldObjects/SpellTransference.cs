@@ -433,7 +433,7 @@ namespace ACE.Server.WorldObjects
                         }
 
                         var newMaxBaseMana = LootGenerationFactory.GetCombinedSpellManaCost(target);
-                        var newManaRate = LootGenerationFactory.CalculateManaRate(newMaxBaseMana);
+                        var newManaRate = LootGenerationFactory.CalculateManaRate(target);
                         var newMaxMana = (int)spellToAdd.BaseMana * 15;
 
                         if (newMaxMana > (target.ItemMaxMana ?? 0))
