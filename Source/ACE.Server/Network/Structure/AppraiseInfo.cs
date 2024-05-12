@@ -338,9 +338,9 @@ namespace ACE.Server.Network.Structure
                 var useMessage = "";
 
                 if (wo.ItemCurMana.HasValue)
-                    useMessage = "Use on a magic item to give the stone's stored Mana to that item.";
+                    useMessage = $"Use on a magic item to give the stone's stored Mana to that item.\n\nMana Capacity: {wo.ItemMaxMana.Value}";
                 else
-                    useMessage = "Use on a magic item to destroy that item and drain its Mana.";
+                    useMessage = $"Use on a magic item to destroy that item and drain its Mana.\n\nMana Capacity: {wo.ItemMaxMana.Value}";
 
                 PropertiesString[PropertyString.Use] = useMessage;
             }

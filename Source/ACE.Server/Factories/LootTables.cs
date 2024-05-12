@@ -560,7 +560,7 @@ namespace ACE.Server.Factories
 
         // UA (Cestus, Katar, Nekode)
         public static readonly int[] UaMaxDamage = { 4, 8, 12, 17, 25, 37, 54, 78  };
-        public static readonly int[] UaMinDamage = { 3, 6, 13, 19, 27, 40, 53, 76  };
+        public static readonly int[] UaMinDamage = { 3, 6, 9, 13, 18, 27, 40, 59  };
 
         // 2H Axe (Great Axe)
         public static readonly int[] TwohandAxeMaxDamage = { 4, 9, 12, 17, 25, 36, 53, 76 };
