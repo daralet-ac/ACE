@@ -71,7 +71,7 @@ namespace ACE.Server.Network.Structure
 
         public void BuildProfile(WorldObject wo, Player examiner, bool success = true)
         {
-            //Console.WriteLine("Appraise: " + wo.Guid);
+            Console.WriteLine($"Appraise: {wo.Guid} {wo.Name}");
             Success = success;
 
             BuildProperties(wo);
@@ -336,11 +336,11 @@ namespace ACE.Server.Network.Structure
             if (wo is ManaStone)
             {
                 var useMessage = "";
-
+                
                 if (wo.ItemCurMana.HasValue)
-                    useMessage = $"Use on a magic item to give the stone's stored Mana to that item.\n\nMana Capacity: {wo.ItemMaxMana.Value}";
+                    useMessage = $"Use on a magic item to give the stone's stored Mana to that item.\n\nMana Capacity: {wo.ItemMaxMana ?? 10}";
                 else
-                    useMessage = $"Use on a magic item to destroy that item and drain its Mana.\n\nMana Capacity: {wo.ItemMaxMana.Value}";
+                    useMessage = $"Use on a magic item to destroy that item and drain its Mana.\n\nMana Capacity: {wo.ItemMaxMana ?? 10}";
 
                 PropertiesString[PropertyString.Use] = useMessage;
             }
