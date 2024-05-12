@@ -102,21 +102,16 @@ namespace ACE.Server.Factories.Tables
             { (0, false, HeritageAny, 1646, 0, 0.0, -1) }, // Grey
 
             // Mana Stones
-            { (0, false, HeritageAny, 27331, 0, 0.0, -1) }, // Minor
-            { (1, false, HeritageAny, 2434, 0, 0.0, -1) }, // Lesser
-            { (2, false, HeritageAny, 2435, 0, 0.0, -1) }, // Standard
-            { (3, false, HeritageAny, 27330, 0, 0.0, -1) }, // Moderate
-            { (4, false, HeritageAny, 2436, 0, 0.0, -1) }, // Greater
+            { (0, false, HeritageAny, 1057002, 0, 0.0, -1) }, // Lesser
+            { (2, false, HeritageAny, 1057003, 0, 0.0, -1) }, // Standard
+            { (4, false, HeritageAny, 1057004, 0, 0.0, -1) }, // Greater
+            { (6, false, HeritageAny, 1057005, 0, 0.0, -1) }, // Titan
 
             // Mana Charges
-            { (0, false, HeritageAny, 4612, 0, 0.0, -1) }, // Tiny
-            { (1, false, HeritageAny, 4613, 0, 0.0, -1) }, // Small
-            { (2, false, HeritageAny, 4614, 0, 0.0, -1) }, // Moderate
-            { (3, false, HeritageAny, 4615, 0, 0.0, -1) }, // High
-            { (4, false, HeritageAny, 4616, 0, 0.0, -1) }, // Great
-            { (5, false, HeritageAny, 20179, 0, 0.0, -1) }, // Superb
-            { (6, false, HeritageAny, 9060, 0, 0.0, -1) }, // Titan
-            { (7, false, HeritageAny, 27329, 0, 0.0, -1) }, // Massive
+            { (0, false, HeritageAny, 1057006, 0, 0.0, -1) }, // Lesser
+            { (2, false, HeritageAny, 1057007, 0, 0.0, -1) }, // Standard
+            { (4, false, HeritageAny, 1057008, 0, 0.0, -1) }, // Greater
+            { (6, false, HeritageAny, 1057009, 0, 0.0, -1) }, // Tian
 
             // Alchemy Supplies
             { (0, false, HeritageAny, 4747, 0, 0.0, -1) }, // Alembic

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ACE.Entity.Enum;
 using ACE.Server.Factories.Tables;
@@ -435,45 +436,175 @@ namespace ACE.Server.Factories
                 { 20, 26, 31, 37, 43, 48, 54, 56, 59 }; // UA
 
 
-        // TIMELINE DAMAGE MUTATION VALUES
-        //  0|100|150|200|225|250|275|300
+        public enum WeaponSubtype
+        {
+            Undef,
+            AxeLarge,
+            AxeMedium,
+            AxeSmall,
+            DaggerLarge,
+            DaggerSmall,
+            MaceLarge,
+            MaceMedium,
+            MaceSmall,
+            StaffLarge,
+            StaffMedium,
+            StaffSmall,
+            SpearLarge,
+            SpearMedium,
+            SpearSmall,
+            SwordLarge,
+            SwordMedium,
+            SwordSmall,
+            Ua,
+            TwohandAxe,
+            TwohandMace,
+            TwohandSpear,
+            TwohandSword,
+            AtlatlLarge,
+            AtlatlSmall,
+            BowLarge,
+            BowSmall,
+            CrossbowLarge,
+            CrossbowSmall,
+            Caster
 
-        // Axe
+        };
 
-        // Dagger
+        // DARALET DAMAGE MUTATION VALUES
+        //  0|125|175|200|215|230|250|270
 
-        // Mace
+        // Axe - Large (Battle Axe, Silifi, Ono)
+        public static readonly int[] AxeLargeWcids = { 301, 3750, 3751, 3752, 3753, 344, 3865, 3866, 3867, 3868, 336, 3842, 3843, 3844, 3845};
+        public static readonly int[] AxeLargeMaxDamage = { 9, 17, 24, 34, 49, 72, 106, 152  };
+        public static readonly int[] AxeLargeMinDamage = { 6, 12, 18, 25, 37, 54, 79, 114  };
 
-        // Spear
+        // Axe - Medium (War Hammer)
+        public static readonly int[] AxeMediumWcids = { 359, 3905, 3906, 3907, 3908 };
+        public static readonly int[] AxeMediumMaxDamage = { 7, 15, 21, 30, 44, 65, 95, 137  };
+        public static readonly int[] AxeMediumMinDamage = { 6, 11, 16, 22, 33, 48, 71, 102  };
 
-        // Staff
+        // Axe - Small (Shou-Ono, Tungi, Hand Axe)
+        public static readonly int[] AxeSmallWcids = { 342, 3857, 2858, 2859, 3840, 357, 3901, 3902, 3903, 3904, 303, 3754, 3755, 3756, 3757};
+        public static readonly int[] AxeSmallMaxDamage = { 7, 13, 19, 27, 39, 58, 86, 124  };
+        public static readonly int[] AxeSmallMinDamage = { 5, 10, 14, 20, 30, 44, 64, 93  };
 
-        // Sword
+        // Dagger - Large (Dirk, Jitte)
+        public static readonly int[] DaggerLargeWcids = { 321, 3802, 3803, 3804, 3805, 22440, 22441, 22442, 22443, 22444};
+        public static readonly int[] DaggerLargeMaxDamage = { 5, 11, 16, 22, 33, 49, 72, 105  };
+        public static readonly int[] DaggerLargeMinDamage = { 4, 8, 12, 17, 25, 37, 54, 78  };
 
-        // Sword MS
+        // Dagger - Small (Dagger, Jambiya, Khanjar)
+        public static readonly int[] DaggerSmallWcids = { 314, 3778, 3779, 3780, 3781, 319, 3794, 3795, 3796, 3797, 328, 3830, 3831, 3832, 3833};
+        public static readonly int[] DaggerSmallMaxDamage = { 5, 10, 15, 21, 31, 47, 69, 100  };
+        public static readonly int[] DaggerSmallMinDamage = { 4, 8, 11, 16, 24, 35, 52, 75  };
 
-        // UA
+        // Mace - Large (Morning Star)
+        public static readonly int[] MaceLargeWcids = { 332, 3937, 3938, 3939, 3940};
+        public static readonly int[] MaceLargeMaxDamage = { 9, 18, 26, 37, 53, 79, 115, 165  };
+        public static readonly int[] MaceLargeMinDamage = { 7, 13, 19, 28, 40, 59, 86, 124  };
 
-        // 2H Axe
+        // Mace - Medium (Dabus, Kasrullah, Mace, Club)
+        public static readonly int[] MaceMediumWcids = { 313, 3774, 3775, 3776, 3777, 325, 3814, 3815, 3816, 3817, 331, 3834, 3835, 3836, 3837, 309, 3766, 3767, 3768, 3769};
+        public static readonly int[] MaceMediumMaxDamage = { 8, 16, 23, 33, 48, 70, 103, 149  };
+        public static readonly int[] MaceMediumMinDamage = { 6, 12, 17, 24, 36, 53, 77, 111  };
 
-        // 2H Mace
+        // Mace - Small (Tofun)
+        public static readonly int[] MaceSmallWcids = { 356, 3897, 3898, 3899, 3900};
+        public static readonly int[] MaceSmallMaxDamage = { 7, 14, 21, 29, 43, 64, 93, 135  };
+        public static readonly int[] MaceSmallMinDamage = { 5, 11, 15, 22, 32, 48, 70, 101  };
 
-        // 2H Spear
+        // Spear - Large (Trident)
+        public static readonly int[] SpearLargeWcids = { 7772, 7791, 7792, 7793, 7794};
+        public static readonly int[] SpearLargeMaxDamage = { 7, 14, 21, 29, 42, 63, 92, 132  };
+        public static readonly int[] SpearLargeMinDamage = { 5, 11, 15, 22, 32, 47, 69, 99  };
 
-        // 2H Sword
+        // Spear - Medium (Yari)
+        public static readonly int[] SpearMediumWcids = { 362, 3913, 3914, 3915, 3916};
+        public static readonly int[] SpearMediumMaxDamage = { 6, 12, 18, 25, 37, 55, 80, 116  };
+        public static readonly int[] SpearMediumMinDamage = { 5, 9, 13, 19, 28, 41, 60, 87  };
 
-        // Atlatl
+        // Spear - Small (Budiaq)
+        public static readonly int[] SpearSmallWcids = { 308, 3762, 3763, 3764, 3765};
+        public static readonly int[] SpearSmallMaxDamage = { 5, 11, 16, 22, 33, 49, 71, 103  };
+        public static readonly int[] SpearSmallMinDamage = { 4, 8, 12, 17, 24, 36, 54, 77  };
 
-        // Bow
+        // Staff - Large (Nabut)
+        public static readonly int[] StaffLargeWcids = { 22163, 22159, 22160, 22161, 22162};
+        public static readonly int[] StaffLargeMaxDamage = { 8, 16, 24, 34, 49, 73, 107, 154  };
+        public static readonly int[] StaffLargeMinDamage = { 6, 12, 18, 25, 37, 55, 80, 115  };
 
-        // Crossbow
+        // Staff - Medium (Jo, Swordstaff)
+        public static readonly int[] StaffMediumWcids = { 7771, 7795, 7796, 7797, 7798, 22158, 22154, 22155, 22156, 22157};
+        public static readonly int[] StaffMediumMaxDamage = { 7, 14, 21, 29, 43, 64, 93, 135  };
+        public static readonly int[] StaffMediumMinDamage = { 5, 11, 15, 22, 32, 48, 70, 101  };
+
+        // Staff - Small (Quarterstaff)
+        public static readonly int[] StaffSmallWcids = { 22168, 22164, 22165, 22166, 22167};
+        public static readonly int[] StaffSmallMaxDamage = { 6, 12, 18, 26, 38, 56, 83, 120  };
+        public static readonly int[] StaffSmallMinDamage = { 5, 9, 14, 19, 28, 42, 62, 90  };
+
+        // Sword - Large (Long sword, Simi, Takuba)
+        public static readonly int[] SwordLargeWcids = { 351, 3881, 3882, 3883, 3884, 345, 3869, 3870, 3871, 3872, 354, 3893, 3894, 3895, 3896};
+        public static readonly int[] SwordLargeMaxDamage = { 7, 14, 21, 29, 43, 64, 93, 134  };
+        public static readonly int[] SwordLargeMinDamage = { 6, 11, 16, 22, 32, 48, 70, 101  };
+
+        // Sword - Medium (Scimitar, Kaskara, Rapier)
+        public static readonly int[] SwordMediumWcids = { 339, 3849, 3850, 3851, 3852, 324, 3810, 3811, 3812, 3813};
+        public static readonly int[] SwordMediumMaxDamage = { 6, 12, 18, 26, 37, 55, 81, 118  };
+        public static readonly int[] SwordMediumMinDamage = { 5, 9, 13, 19, 28, 42, 61, 88  };
+
+        // Sword - Small (Short Sword, Yaoji, Tachi)
+        public static readonly int[] SwordSmallMaxDamage = { 6, 11, 16, 23, 33, 49, 72, 105  };
+        public static readonly int[] SwordSmallMinDamage = { 4, 8, 12, 17, 25, 37, 54, 79  };
+
+        // UA (Cestus, Katar, Nekode)
+        public static readonly int[] UaMaxDamage = { 4, 8, 12, 17, 25, 37, 54, 78  };
+        public static readonly int[] UaMinDamage = { 3, 6, 9, 13, 18, 27, 40, 59  };
+
+        // 2H Axe (Great Axe)
+        public static readonly int[] TwohandAxeMaxDamage = { 4, 9, 12, 17, 25, 36, 53, 76 };
+        public static readonly int[] TwohandAxeMinDamage = { 3, 6, 9, 13, 19, 27, 40, 57 };
+
+        // 2H Mace (Great Star Mace, Tetsubo)
+        public static readonly int[] TwohandMaceMaxDamage = { 5, 9, 13, 19, 27, 40, 57, 82 };
+        public static readonly int[] TwohandMaceMinDamage = { 4, 7, 10, 14, 20, 30, 43, 62 };
+
+        // 2H Spear (Assagai, Magari Yaro, Pike)
+        public static readonly int[] TwohandSpearMaxDamage = { 5, 11, 15, 21, 31, 46, 67, 97 };
+        public static readonly int[] TwohandSpearMinDamage = { 4, 8, 11, 16, 23, 34, 50, 73 };
+
+        // 2H Sword (Great Sword, Nodachi, Shasqa)
+        public static readonly int[] TwohandSwordMaxDamage = { 3, 7, 10, 14, 20, 29, 42, 61 };
+        public static readonly int[] TwohandSwordMinDamage = { 3, 5, 7, 10, 15, 22, 32, 46 };
+
+        // Atlatl - Large
+        public static readonly float[] AtlatlLargeMaxDamageMod = { 1.17f, 1.73f, 2.04f, 2.45f, 3.12f, 4.09f, 5.40f, 7.07f  };
+        public static readonly float[] AtlatlLargeMinDamageMod = { 0.88f, 1.30f, 1.53f, 1.84f, 2.34f, 3.07f, 4.05f, 5.30f  };
+
+        // Atlatl - Small
+        public static readonly float[] AtlatlSmallMaxDamageMod = { 1.09f, 1.62f, 1.91f, 2.31f, 2.95f, 3.87f, 5.13f, 6.73f  };
+        public static readonly float[] AtlatlSmallMinDamageMod = { 0.82f, 1.21f, 1.43f, 1.73f, 2.21f, 2.91f, 3.84f, 5.05f  };
+
+        // Bow - Large
+        public static readonly float[] BowLargeMaxDamageMod = { 1.15f, 1.71f, 2.03f, 2.46f, 3.14f, 4.14f, 5.49f, 7.22f  };
+        public static readonly float[] BowLargeMinDamageMod = { 0.86f, 1.28f, 1.52f, 1.85f, 2.36f, 3.11f, 4.12f, 5.42f  };
+
+        // Bow - Small
+        public static readonly float[] BowSmallMaxDamageMod = { 1.08f, 1.61f, 1.92f, 2.34f, 2.99f, 3.95f, 5.25f, 6.91f  };
+        public static readonly float[] BowSmallMinDamageMod = { 0.81f, 1.21f, 1.44f, 1.75f, 2.24f, 2.96f, 3.94f, 5.18f  };
+
+        // Crossbow - Large
+        public static readonly float[] CrossbowLargeMaxDamageMod = { 1.15f, 1.71f, 2.03f, 2.46f, 3.14f, 4.14f, 5.49f, 7.22f  };
+        public static readonly float[] CrossbowLargeMinDamageMod = { 0.86f, 1.28f, 1.52f, 1.85f, 2.36f, 3.11f, 4.12f, 5.42f  };
+
+        // Crossbow - Small
+        public static readonly float[] CrossbowSmallMaxDamageMod = { 1.08f, 1.61f, 1.92f, 2.34f, 2.99f, 3.95f, 5.25f, 6.91f  };
+        public static readonly float[] CrossbowSmallMinDamageMod = { 0.81f, 1.21f, 1.44f, 1.75f, 2.24f, 2.96f, 3.94f, 5.18f  };
 
         // Caster
-        public static readonly float[] CasterMaxDamageMod =
-                { 1.0f, 1.3f, 1.6f, 2.1f, 2.75f, 3.75f, 4.75f, 6.00f  };
-
-        public static readonly float[] CasterMinDamageMod =
-                { 0.75f, 1.0f, 1.2f, 1.4f, 1.9f, 2.5f, 3.5f, 4.5f  };
+        public static readonly float[] CasterMaxDamageMod = { 1.0f, 1.3f, 1.6f, 2.1f, 2.75f, 3.75f, 4.75f, 6.00f  };
+        public static readonly float[] CasterMinDamageMod = { 0.75f, 1.0f, 1.2f, 1.4f, 1.9f, 2.5f, 3.5f, 4.5f  };
 
 
         public static readonly int[][] CasterWeaponsMatrix =
@@ -2939,6 +3070,55 @@ namespace ACE.Server.Factories
         public static int[] GetLootTable(ArmorTypeCaster armorTypeCaster)
         {
             return armorTypeCasterMap[armorTypeCaster];
+        }
+
+        public static int GetMeleeSubtypeDamageRange(WeaponSubtype weaponSubtype, int tier)
+        {
+            switch(weaponSubtype)
+            {
+                case WeaponSubtype.AxeLarge: return AxeLargeMaxDamage[tier] - AxeLargeMinDamage[tier];
+                case WeaponSubtype.AxeMedium: return AxeMediumMaxDamage[tier] - AxeMediumMinDamage[tier];
+                case WeaponSubtype.AxeSmall: return AxeSmallMaxDamage[tier] - AxeSmallMinDamage[tier];
+                case WeaponSubtype.DaggerLarge: return DaggerLargeMaxDamage[tier] - DaggerLargeMinDamage[tier];
+                case WeaponSubtype.DaggerSmall: return DaggerSmallMaxDamage[tier] - DaggerSmallMinDamage[tier];
+                case WeaponSubtype.MaceLarge: return MaceLargeMaxDamage[tier] - MaceLargeMinDamage[tier];
+                case WeaponSubtype.MaceMedium: return MaceMediumMaxDamage[tier] - MaceMediumMinDamage[tier];
+                case WeaponSubtype.MaceSmall: return MaceSmallMaxDamage[tier] - MaceSmallMinDamage[tier];
+                case WeaponSubtype.SpearLarge: return SpearLargeMaxDamage[tier] - SpearLargeMinDamage[tier];
+                case WeaponSubtype.SpearMedium: return SpearMediumMaxDamage[tier] - SpearMediumMinDamage[tier];
+                case WeaponSubtype.SpearSmall: return SpearSmallMaxDamage[tier] - SpearSmallMinDamage[tier];
+                case WeaponSubtype.StaffLarge: return StaffLargeMaxDamage[tier] - StaffLargeMinDamage[tier];
+                case WeaponSubtype.StaffMedium: return StaffMediumMaxDamage[tier] - StaffMediumMinDamage[tier];
+                case WeaponSubtype.StaffSmall: return StaffSmallMaxDamage[tier] - StaffSmallMinDamage[tier];
+                case WeaponSubtype.SwordLarge: return SwordLargeMaxDamage[tier] - SwordLargeMinDamage[tier];
+                case WeaponSubtype.SwordMedium: return SwordMediumMaxDamage[tier] - SwordMediumMinDamage[tier];
+                case WeaponSubtype.SwordSmall: return SwordSmallMaxDamage[tier] - SwordSmallMinDamage[tier];
+                case WeaponSubtype.Ua: return UaMaxDamage[tier] - UaMinDamage[tier];
+                default:
+                    {
+                        Console.WriteLine("Error: GetMeleeSubtypeDamageRange() - Incorrect Weapon Subtype");
+                        return 0;
+                    }
+            }
+        }
+
+        public static float GetMissileCasterSubtypeDamageRange(WeaponSubtype weaponSubtype, int tier)
+        {
+            switch (weaponSubtype)
+            {
+                case WeaponSubtype.AtlatlLarge: return AtlatlLargeMaxDamageMod[tier] - AtlatlLargeMinDamageMod[tier];
+                case WeaponSubtype.AtlatlSmall: return AtlatlSmallMaxDamageMod[tier] - AtlatlSmallMinDamageMod[tier];
+                case WeaponSubtype.BowLarge: return BowLargeMaxDamageMod[tier] - BowLargeMinDamageMod[tier];
+                case WeaponSubtype.BowSmall: return BowSmallMaxDamageMod[tier] - BowSmallMinDamageMod[tier];
+                case WeaponSubtype.CrossbowLarge: return CrossbowLargeMaxDamageMod[tier] - CrossbowLargeMinDamageMod[tier];
+                case WeaponSubtype.CrossbowSmall: return CrossbowSmallMaxDamageMod[tier] - CrossbowSmallMinDamageMod[tier];
+                case WeaponSubtype.Caster: return CasterMaxDamageMod[tier] - CasterMinDamageMod[tier];
+                default:
+                    {
+                        Console.WriteLine("Error: GetMissileCasterSubtypeDamageRange() - Incorrect Weapon Subtype");
+                        return 0;
+                    }
+            }
         }
     }
 }

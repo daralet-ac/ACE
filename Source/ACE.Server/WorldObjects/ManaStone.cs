@@ -104,7 +104,8 @@ namespace ACE.Server.WorldObjects
                         //The Pantaloons is destroyed.
 
                         var manaDrained = (int)Math.Round(Efficiency.Value * target.ItemCurMana.Value);
-                        ItemCurMana = manaDrained;
+                        ItemCurMana = Math.Min(manaDrained, ItemMaxMana ?? 10);
+
                         player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The Mana Stone drains {ItemCurMana:N0} points of mana from the {target.Name}.\nThe {target.Name} is destroyed.", ChatMessageType.Broadcast));
                         SetUiEffect(player, ACE.Entity.Enum.UiEffects.Magical);
                     }

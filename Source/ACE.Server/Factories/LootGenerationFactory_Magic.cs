@@ -54,7 +54,7 @@ namespace ACE.Server.Factories
                 var combinedSpellCost = GetCombinedSpellManaCost(wo);
                 
                 if(!wo.IsCaster)
-                    wo.ManaRate = CalculateManaRate(combinedSpellCost);
+                    wo.ManaRate = CalculateManaRate(wo);
 
                 if (roll == null)
                 {
@@ -564,6 +564,20 @@ namespace ACE.Server.Factories
             //Console.WriteLine($"{wo.Name}  maxSpellMana: {maxSpellMana}");
 
             var tier = wo.Tier ?? 1.0;
+            var armorSlots = wo.ArmorSlots ?? 1.0f;
+
+            var baseMaxMana = 15;
+            switch(tier)
+            {
+                case 1: baseMaxMana = 15; break;
+                case 2: baseMaxMana = 15; break;
+                case 3: baseMaxMana = 30; break;
+                case 4: baseMaxMana = 60; break;
+                case 5: baseMaxMana = 120; break;
+                case 6: baseMaxMana = 240; break;
+                case 7: baseMaxMana = 480; break;
+                case 8: baseMaxMana = 900; break;
+            }
 
             (int min, int max) range;
 
@@ -571,19 +585,19 @@ namespace ACE.Server.Factories
                 roll.ItemType == TreasureItemType_Orig.WeaponCaster || roll.ItemType == TreasureItemType_Orig.WeaponRogue || roll.ItemType == TreasureItemType_Orig.WeaponWarrior ||
                 roll.ItemType == TreasureItemType_Orig.ArmorCaster || roll.ItemType == TreasureItemType_Orig.ArmorRogue || roll.ItemType == TreasureItemType_Orig.ArmorWarrior)
             {
-                range.min = 10;
-                range.max = 15;
+                range.min = 4;
+                range.max = 6;
             }
             else if (roll.IsJewelry)
             {
                 // includes crowns
-                range.min = 15;
-                range.max = 20;
+                range.min = 4;
+                range.max = 6;
             }
             else if (roll.IsGem)
             {
-                range.min = 1;
-                range.max = 1;
+                range.min = 5;
+                range.max = 5;
             }
             else
             {
@@ -591,21 +605,35 @@ namespace ACE.Server.Factories
                 return 1;
             }
 
-            var rng = ThreadSafeRandom.Next(range.min, range.max);
+            var rng = ThreadSafeRandom.Next((float)range.min, (float)range.max);
 
-            return (int)Math.Ceiling(combinedSpellCost * tier * rng);
+            return (int)Math.Ceiling(baseMaxMana * armorSlots);
         }
 
         /// <summary>
         /// Calculates the ManaRate for an item
         /// </summary>
-        public static float CalculateManaRate(int maxBaseMana)
+        public static float CalculateManaRate(WorldObject wo)
         {
-            if (maxBaseMana <= 0)
-                maxBaseMana = 1;
-            
+            var tier = wo.Tier ?? 1;
+            var armorSlots = wo.ArmorSlots ?? 1;
+            var rng = (float)ThreadSafeRandom.Next(4.0f, 6.0f);
+
+            var baseManaRate = -1.0f;
+            switch(tier)
+            {
+                case 1: baseManaRate = -0.002083f; break;
+                case 2: baseManaRate = -0.002083f; break;
+                case 3: baseManaRate = -0.004167f; break;
+                case 4: baseManaRate = -0.008333f; break;
+                case 5: baseManaRate = -0.016667f; break;
+                case 6: baseManaRate = -0.033333f; break;
+                case 7: baseManaRate = -0.066667f; break;
+                case 8: baseManaRate = -0.125000f; break;
+            }
+
             // verified with eor data
-            return -1.0f / (float)Math.Ceiling(10000.0f / maxBaseMana);
+            return baseManaRate * armorSlots / rng;
         }
 
         // old method / based on item type
