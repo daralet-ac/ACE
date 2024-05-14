@@ -455,7 +455,7 @@ namespace ACE.Server.Managers
 
     public static class DefaultPropertyManager
     {
-        private static ReadOnlyDictionary<A,V> DictOf<A, V>()
+        private static ReadOnlyDictionary<A, V> DictOf<A, V>()
         {
             return new ReadOnlyDictionary<A, V>(new Dictionary<A, V>());
         }
@@ -633,7 +633,8 @@ namespace ACE.Server.Managers
                 ("debug_threat_system", new Property<bool>(false, "enable this to see threat system console logging")),
                 ("debug_crafting_system", new Property<bool>(false, "enable this to see crafting system console logging")),
                 ("debug_loot_quality_system", new Property<bool>(false, "enable this to see loot quality system console logging")),
-                ("debug_level_scaling_system", new Property<bool>(false, "enable this to see level scaling system console logging"))
+                ("debug_level_scaling_system", new Property<bool>(false, "enable this to see level scaling system console logging")),
+                ("debug_banking_system", new Property<bool>(false, "enable this to see banking system console logging"))
                 );
 
         public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties =

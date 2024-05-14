@@ -3,6 +3,7 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
@@ -51,7 +52,10 @@ namespace ACE.Server.WorldObjects
 
         public override void Open(Player player)
         {
-           player.LastOpenedContainerId = Guid;
+            if (PropertyManager.GetBool("debug_banking_system").Item)
+                Console.WriteLine($"\n\nSTORAGE.Open(Player {player.Name})");
+
+            player.LastOpenedContainerId = Guid;
 
             IsOpen = true;
 
@@ -73,6 +77,9 @@ namespace ACE.Server.WorldObjects
 
         protected void SortBiotasIntoBank(IEnumerable<ACE.Database.Models.Shard.Biota> biotas)
         {
+            if (PropertyManager.GetBool("debug_banking_system").Item)
+                Console.WriteLine($"STORAGE.SortBiotasIntoBank(IEnumerable<ACE.Database.Models.Shard.Biota> {biotas})");
+
             var worldObjects = new List<WorldObject>();
 
             foreach (var biota in biotas)
@@ -81,10 +88,10 @@ namespace ACE.Server.WorldObjects
             // check for GUID in any other banks and remove from inventory if so.
             foreach (var worldObject in worldObjects)
             {
-               foreach (var bank in BankChests)
+                foreach (var bank in BankChests)
                 {
                     if (bank.Inventory.Keys.Contains(worldObject.Guid))
-                       bank.Inventory.Remove(worldObject.Guid);
+                        bank.Inventory.Remove(worldObject.Guid);
                 }
 
             }
@@ -96,20 +103,23 @@ namespace ACE.Server.WorldObjects
 
         private void SortWorldObjectsIntoBank(IList<WorldObject> worldObjects)
         {
+            if (PropertyManager.GetBool("debug_banking_system").Item)
+                Console.WriteLine($"STORAGE.SortWorldObjectsIntoBank(IList<WorldObject> {worldObjects.Count})");
+
             for (int i = worldObjects.Count - 1; i >= 0; i--)
             {
-               if ((worldObjects[i].ContainerId ?? 0) == Biota.Id)
-                { 
-                worldObjects[i].ContainerId = Biota.Id;
-                worldObjects[i].OwnerId = Biota.Id;
+                if ((worldObjects[i].ContainerId ?? 0) == Biota.Id)
+                {
+                    worldObjects[i].ContainerId = Biota.Id;
+                    worldObjects[i].OwnerId = Biota.Id;
 
-                if (!Inventory.Keys.Contains(worldObjects[i].Guid))
-                     Inventory[worldObjects[i].Guid] = worldObjects[i];
+                    if (!Inventory.Keys.Contains(worldObjects[i].Guid))
+                        Inventory[worldObjects[i].Guid] = worldObjects[i];
 
                     worldObjects[i].Container = this;
 
                     worldObjects.RemoveAt(i);
-               }
+                }
             }
 
             var mainPackItems = Inventory.Values.Where(wo => !wo.UseBackpackSlot).OrderBy(wo => wo.PlacementPosition).ToList();
@@ -126,11 +136,14 @@ namespace ACE.Server.WorldObjects
                 cont.SortWorldObjectsIntoInventory(worldObjects);
             }
 
-           SendBankVaultInventory(BankUser);
+            SendBankVaultInventory(BankUser);
         }
 
         private void SendBankVaultInventory(Player player)
         {
+            if (PropertyManager.GetBool("debug_banking_system").Item)
+                Console.WriteLine($"STORAGE.SendBankVaultInventory(Player {player})");
+
             // send createobject for all objects in this container's inventory to player
             var itemsToSend = new List<GameMessage>();
 
@@ -155,6 +168,9 @@ namespace ACE.Server.WorldObjects
         }
         public override void Close(Player player)
         {
+            if (PropertyManager.GetBool("debug_banking_system").Item)
+                Console.WriteLine($"\n\nSTORAGE.Close(Player {player})");
+
             if (!IsOpen) return;
 
             Translucency = 0f;
@@ -172,10 +188,13 @@ namespace ACE.Server.WorldObjects
 
         }
         /// <summary>
-         /// This event is raised when player adds item to storage
-         /// </summary>
+        /// This event is raised when player adds item to storage
+        /// </summary>
         protected override void OnAddItem()
         {
+            if (PropertyManager.GetBool("debug_banking_system").Item)
+                Console.WriteLine($"STORAGE.OnAddItem()");
+
             if (Inventory.Count > 0)
             {
                 SaveBiotaToDatabase();
@@ -187,6 +206,9 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         protected override void OnRemoveItem(WorldObject removedItem)
         {
+            if (PropertyManager.GetBool("debug_banking_system").Item)
+                Console.WriteLine($"STORAGE.OnRemoveItem(WorldObject {removedItem})");
+
             SaveBiotaToDatabase();
         }
     }

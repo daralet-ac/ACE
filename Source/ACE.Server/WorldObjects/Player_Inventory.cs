@@ -1065,7 +1065,7 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void HandleActionPutItemInContainer(uint itemGuid, uint containerGuid, int placement = 0)
         {
-            //Console.WriteLine($"{Name}.HandleActionPutItemInContainer({itemGuid:X8}, {containerGuid:X8}, {placement})");
+            //Console.WriteLine($"\n\n{Name}.HandleActionPutItemInContainer({itemGuid:X8}, {containerGuid:X8}, {placement})");
 
             if (!HandleActionPutItemInContainer_Verify(itemGuid, containerGuid, placement,
                 out Container itemRootOwner, out WorldObject item, out Container containerRootOwner, out Container container, out bool itemWasEquipped))
@@ -1188,7 +1188,7 @@ namespace ACE.Server.WorldObjects
                                     foreach (var wo in itemAsContainer.Inventory.Values)
                                     {
                                         wo.SaveBiotaToDatabase();
-                                    } 
+                                    }
                                 }
 
                                 EnqueueBroadcast(new GameMessageSound(Guid, Sound.PickUpItem));
@@ -1475,28 +1475,36 @@ namespace ACE.Server.WorldObjects
                 containerRootOwner.Value += (item.Value ?? 0);
             }
 
-            // for moving objects within the main pack of a storage chest, we need to save to ensure they retain their placement position on next opening another bank
-            if (container != null && container.WeenieType == WeenieType.Storage) 
-               {
-                foreach (var wo in container.Inventory.Values)
-                    DeepSave(wo);
-                }
-
-            // for moving objects from main pack of storage chest into another container, we need to remove the bank account ID stamp. This is handled at the contained container level.
-            if (containerRootOwner != null && containerRootOwner.WeenieType == WeenieType.Storage)
+            // BANKING - for moving objects within the main pack of a storage chest, we need to save to ensure they retain their placement position on next opening another bank
+            if (container != null && container.WeenieType == WeenieType.Storage)
             {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"Move objects to BANK MAIN pack({container?.Name}): item: {item?.Name} ({item?.StackSize})");
+
+                foreach (var wo in container.Inventory.Values)
+                {
+                    wo.BankAccountId = Account.AccountId;
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
+            }
+
+            // BANKING - for moving objects from main pack of storage chest into another container, we need to remove the bank account ID stamp. This is handled at the contained container level.
+            if (prevContainer != null && prevContainer.WeenieType == WeenieType.Storage)
+            {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"Move objects from BANK MAIN pack ({containerRootOwner?.Name}) to ANOTHER CONTAINER ({container?.Name}): item: {item?.Name}");
+
                 foreach (var wo in container.Inventory.Values)
                 {
                     wo.BankAccountId = 0;
                     DeepSave(wo);
-                }
-            }
 
-            // for moving objects from side pack to main storage, we need to stamp with BankAccountId
-            if (prevContainer != null && prevContainer.WeenieType != WeenieType.Storage && container != null && container.WeenieType == WeenieType.Storage)
-            {
-                item.BankAccountId = this.Account.AccountId;
-                DeepSave(item);
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
             }
 
             // when moving from a non-stuck container to a different container,
@@ -1510,7 +1518,7 @@ namespace ACE.Server.WorldObjects
 
             // SPECIALIZED PACKS: Only recalculate burden on an item going into a container when it's a spec pack
             if (container != null && container.MerchandiseItemTypes.HasValue)
-               RecalculateBurden();
+                RecalculateBurden();
 
             return true;
         }
@@ -1664,7 +1672,7 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void HandleActionGetAndWieldItem(uint itemGuid, EquipMask wieldedLocation)
         {
-            //Console.WriteLine($"{Name}.HandleActionGetAndWieldItem({itemGuid:X8}, {wieldedLocation})");
+            //Console.WriteLine($"\n\n{Name}.HandleActionGetAndWieldItem({itemGuid:X8}, {wieldedLocation})");
 
             // todo fix this, it seems IsAnimating is always true for a player
             // todo we need to know when a player is busy to avoid additional actions during that time
@@ -1793,7 +1801,7 @@ namespace ACE.Server.WorldObjects
 
         private bool DoHandleActionGetAndWieldItem(WorldObject item, Container fromContainer, Container itemRootOwner, bool wasEquipped, EquipMask wieldedLocation, bool fromSplit = false)
         {
-            // Console.WriteLine($"-> DoHandleActionGetAndWieldItem({item.Name}, {itemRootOwner?.Name}, {wasEquipped}, {wieldedLocation})");
+            //Console.WriteLine($"-> DoHandleActionGetAndWieldItem({item.Name}, {itemRootOwner?.Name}, {wasEquipped}, {wieldedLocation})");
 
             var wieldError = CheckWieldRequirements(item);
 
@@ -1817,7 +1825,7 @@ namespace ACE.Server.WorldObjects
             if (item.IsShield)
             {
                 var mainHandWeapon = GetEquippedMainHand();
-                if(mainHandWeapon != null && mainHandWeapon.WeaponSkill == Skill.ThrownWeapon)
+                if (mainHandWeapon != null && mainHandWeapon.WeaponSkill == Skill.ThrownWeapon)
                 {
                     // prevent non-buckler shields from ever being equipped with thrown weapons
                     if (item.WeenieClassId != (uint)Factories.Enum.WeenieClassName.buckler)
@@ -1961,8 +1969,8 @@ namespace ACE.Server.WorldObjects
             // verify Aetheria slot, client doesn't handle this
             if ((wieldedLocation & EquipMask.Sigil) != 0)
             {
-                if (wieldedLocation.HasFlag(EquipMask.SigilOne)   && !AetheriaFlags.HasFlag(AetheriaBitfield.Blue) ||
-                    wieldedLocation.HasFlag(EquipMask.SigilTwo)   && !AetheriaFlags.HasFlag(AetheriaBitfield.Yellow) ||
+                if (wieldedLocation.HasFlag(EquipMask.SigilOne) && !AetheriaFlags.HasFlag(AetheriaBitfield.Blue) ||
+                    wieldedLocation.HasFlag(EquipMask.SigilTwo) && !AetheriaFlags.HasFlag(AetheriaBitfield.Yellow) ||
                     wieldedLocation.HasFlag(EquipMask.SigilThree) && !AetheriaFlags.HasFlag(AetheriaBitfield.Red))
                 {
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
@@ -2053,10 +2061,34 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
+            // BANKING - for equipping an item directly from a bank main pack
+            if (fromContainer != null && fromContainer.WeenieType == WeenieType.Storage)
+            {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"EQUIP from BANK MAIN PACK ({fromContainer.Name}): item: {item?.Name}");
+
+                foreach (var wo in fromContainer.Inventory.Values) // bank
+                {
+                    wo.BankAccountId = Account.AccountId;
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
+
+                item.BankAccountId = 0;
+                DeepSave(item);
+
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"Deep Save: {item.Name}");
+            }
+
             // if wielding from a loose container, we must save immediately
             if (fromContainer != null && !fromContainer.Stuck)
+            {
+                //Console.WriteLine($"DoHandleActionGetAndWieldItem(WorldObject {item.Name}, Container {fromContainer.Name}, Container {itemRootOwner.Name}, bool {wasEquipped}, EquipMask {wieldedLocation}, bool {fromSplit})");
                 item.SaveBiotaToDatabase();
-
+            }
             return true;
         }
 
@@ -2284,7 +2316,7 @@ namespace ACE.Server.WorldObjects
                 if (((item.ValidLocations & (EquipMask.Clothing | EquipMask.Armor)) != 0)
                     && (heritageSpecificArmor == null || (HeritageGroup)heritageSpecificArmor != HeritageGroup))
                     return WeenieError.HeritageRequiresSpecificArmor;
-            }    
+            }
             else
             {
                 if (heritageSpecificArmor != null && (HeritageGroup)heritageSpecificArmor != HeritageGroup)
@@ -2460,7 +2492,7 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void HandleActionStackableSplitToContainer(uint stackId, uint containerId, int placementPosition, int amount)
         {
-            //Console.WriteLine($"{Name}.HandleActionStackableSplitToContainer({stackId:X8}, {containerId:X8}, {placementPosition}, {amount})");
+            //Console.WriteLine($"\n\n{Name}.HandleActionStackableSplitToContainer({stackId:X8}, {containerId:X8}, {placementPosition}, {amount})");
 
             if (amount <= 0)
             {
@@ -2556,7 +2588,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            if ((stackRootOwner == this && containerRootOwner != this)  || (stackRootOwner != this && containerRootOwner == this)) // Movement is between the player and the world
+            if ((stackRootOwner == this && containerRootOwner != this) || (stackRootOwner != this && containerRootOwner == this)) // Movement is between the player and the world
             {
                 if (stackRootOwner is Vendor)
                 {
@@ -2666,7 +2698,7 @@ namespace ACE.Server.WorldObjects
 
         private bool DoHandleActionStackableSplitToContainer(WorldObject stack, Container stackFoundInContainer, Container stackRootOwner, Container container, Container containerRootOwner, WorldObject newStack, int placementPosition, int amount)
         {
-            //Console.WriteLine($"{Name}.DoHandleActionStackableSplitToContainer({stack?.Name}, {stackFoundInContainer?.Name}, {stackRootOwner?.Name}, {container?.Name}, {containerRootOwner?.Name}, {newStack?.Name}, {placementPosition}, {amount})");
+            //Console.WriteLine($"{Name}.DoHandleActionStackableSplitToContainer(stack: {stack?.Name}, stackFoundInContainer: {stackFoundInContainer?.Name}, stackRootOwner: {stackRootOwner?.Name}, container: {container?.Name}, containerRootOwner {containerRootOwner?.Name}, newStack {newStack?.Name}, {placementPosition}, {amount})");
 
             // Before we modify the original stack, we make sure we can add the new stack
             if (!container.TryAddToInventory(newStack, placementPosition, true))
@@ -2682,11 +2714,46 @@ namespace ACE.Server.WorldObjects
                 containerRootOwner.Value += (stack.StackUnitValue * amount);
             }
 
-            Session.Network.EnqueueSend(new GameMessageCreateObject(newStack));
-            Session.Network.EnqueueSend(new GameEventItemServerSaysContainId(Session, newStack, container));
-
             if (!AdjustStack(stack, -amount, stackFoundInContainer, stackRootOwner))
                 return false;
+
+            // BANKING - for spltting objects where the target container is a bank main pack, we need to save to ensure they retain their placement position on next opening another bank
+            if (container != null && container.WeenieType == WeenieType.Storage)
+            {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"SPLIT to NEW stack to BANK MAIN pack({container?.Name}): originalStack: {stack?.Name} ({stack?.StackSize}), newStack: {newStack?.Name} ({newStack?.StackSize})");
+
+                foreach (var wo in container.Inventory.Values)
+                {
+                    wo.BankAccountId = Account.AccountId;
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
+            }
+
+            // BANKING - for splitting objects from main pack of storage chest into another container, we need to remove the bank account ID stamp. This is handled at the contained container level.
+            if (stackFoundInContainer != null && stackFoundInContainer.WeenieType == WeenieType.Storage)
+            {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"SPLIT to NEW stack, from MAIN pack ({stackFoundInContainer?.Name}) to NON-BANK pack ({container?.Name}): originalStack: {stack?.Name} ({stack?.StackSize}), newStack: {newStack?.Name} ({newStack?.StackSize})");
+
+                foreach (var wo in stackFoundInContainer.Inventory.Values)
+                {
+                    wo.BankAccountId = Account.AccountId;
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
+
+                newStack.BankAccountId = 0;
+            }
+
+            Session.Network.EnqueueSend(new GameMessagePublicUpdateInstanceID(newStack, PropertyInstanceId.Container, container.Guid));
+            Session.Network.EnqueueSend(new GameMessageCreateObject(newStack));
+            Session.Network.EnqueueSend(new GameEventItemServerSaysContainId(Session, newStack, container));
 
             if (stackRootOwner == null)
                 EnqueueBroadcast(new GameMessageSetStackSize(stack));
@@ -2705,6 +2772,7 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void HandleActionStackableSplitTo3D(uint stackId, int amount)
         {
+            //Console.WriteLine($"\n\n{Name}.HandleActionStackableSplitTo3D(uint {stackId}, int {amount})");
             if (amount <= 0)
             {
                 _log.Warning("Player 0x{0:X8}:{1} tried to split item with invalid amount ({3}) 0x{2:X8}.", Guid.Full, Name, stackId, amount);
@@ -3078,7 +3146,7 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void HandleActionStackableMerge(uint mergeFromGuid, uint mergeToGuid, int amount)
         {
-            //Console.WriteLine($"HandleActionStackableMerge({mergeFromGuid:X8}, {mergeToGuid:X8}, {amount})");
+            //Console.WriteLine($"\n\nHandleActionStackableMerge({mergeFromGuid:X8}, {mergeToGuid:X8}, {amount})");
 
             if (amount <= 0)
             {
@@ -3211,7 +3279,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            if ((sourceStackRootOwner == this && targetStackRootOwner != this)  || (sourceStackRootOwner != this && targetStackRootOwner == this)) // Movement is between the player and the world
+            if ((sourceStackRootOwner == this && targetStackRootOwner != this) || (sourceStackRootOwner != this && targetStackRootOwner == this)) // Movement is between the player and the world
             {
                 if (sourceStackRootOwner is Vendor)
                 {
@@ -3309,6 +3377,9 @@ namespace ACE.Server.WorldObjects
             sourceStack = FindObject(sourceStack.Guid, SearchLocations.LocationsICanMove, out _, out var sourceStackRootOwner, out _);
             targetStack = FindObject(targetStack.Guid, SearchLocations.LocationsICanMove, out var targetStackFoundInContainer, out var targetStackRootOwner, out _);
 
+            var sourceContainer = sourceStack.Container as Container;
+            var targetContainer = targetStack.Container as Container;
+
             if (sourceStack == null || targetStack == null)
             {
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, previousSourceStackCheck.Guid.Full, WeenieError.None));
@@ -3389,6 +3460,73 @@ namespace ACE.Server.WorldObjects
                     targetStack.EnqueueBroadcast(new GameMessageSetStackSize(targetStack));
                 else
                     Session.Network.EnqueueSend(new GameMessageSetStackSize(targetStack));
+            }
+
+            // BANKING - for SPLITTING to MERGE stacks of objects within the MAIN pack of a storage chest (from main to main)
+            if (targetContainer != null && targetContainer.WeenieType == WeenieType.Storage && sourceContainer != null && sourceContainer.WeenieType == WeenieType.Storage)
+            {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"SPLIT to MERGED stack within BANK MAIN pack({targetContainer?.Name}): originalStack: {sourceStack?.Name} ({sourceStack?.StackSize}), newStack: {targetStack?.Name} ({targetStack?.StackSize})");
+
+                foreach (var wo in targetContainer.Inventory.Values) // bank
+                {
+                    wo.BankAccountId = Account.AccountId;
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
+            }
+
+            // banking - for SPLITTING to MERGE stacks of objects from the main pack of a storage chest to another container
+            if (sourceContainer != null && sourceContainer.WeenieType == WeenieType.Storage && targetContainer != null && targetContainer.WeenieType != WeenieType.Storage)
+            {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"SPLIT to MERGED stack from BANK MAIN pack({targetContainer?.Name}) into ANOTHER PACK ({targetContainer.Name}): originalStack: {sourceStack?.Name} ({sourceStack?.StackSize}), newStack: {targetStack?.Name} ({targetStack?.StackSize})");
+
+                foreach (var wo in sourceContainer.Inventory.Values) // bank
+                {
+                    //if (wo.StackSize > 0) Console.WriteLine($"stacksize: {wo.StackSize}");
+                    wo.BankAccountId = Account.AccountId;
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
+
+                //foreach (var wo in targetContainer.Inventory.Values) // non-bank
+                //{
+                targetStack.BankAccountId = 0;
+                DeepSave(targetStack);
+
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"Deep Save: {targetStack.Name}");
+                //}
+            }
+
+            // BANKING - for SPLITTING to MERGE objects from a non-bank container to main bank container, we need to stamp with BankAccountId
+            if (sourceContainer != null && sourceContainer.WeenieType != WeenieType.Storage && targetContainer != null && targetContainer.WeenieType == WeenieType.Storage)
+            {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"SPLIT to MERGED stack from NON-BANK pack({targetContainer?.Name}) into BANK MAIN PACK ({targetContainer.Name}): originalStack: {sourceStack?.Name} ({sourceStack?.StackSize}), newStack: {targetStack?.Name} ({targetStack?.StackSize})");
+
+                //foreach (var wo in sourceContainer.Inventory.Values) // non-bank
+                //{
+                sourceStack.BankAccountId = 0;
+                DeepSave(sourceStack);
+
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"Deep Save: {sourceStack.Name}");
+                //}
+
+                foreach (var wo in targetContainer.Inventory.Values) // bank
+                {
+                    wo.BankAccountId = Account.AccountId;
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
             }
 
             var itemFoundOnCorpse = sourceStackRootOwner is Corpse;
@@ -3675,7 +3813,7 @@ namespace ACE.Server.WorldObjects
                     }
                 }
                 else if (emoteResult.Category == EmoteCategory.Refuse)
-                {    
+                {
                     if (!target.ExamineItemsSilently.HasValue || target.ExamineItemsSilently == false)
                         Session.Network.EnqueueSend(new GameMessageSystemChat($"You allow {target.Name} to examine your {item.NameWithMaterial}.", ChatMessageType.Broadcast));
 
@@ -3692,7 +3830,7 @@ namespace ACE.Server.WorldObjects
             else
             {
                 if (item.WeenieType == WeenieType.Deed && target.AllowGive && target.AiAcceptEverything) // http://acpedia.org/wiki/Housing_FAQ#House_deeds
-                {                    
+                {
                     var stackSize = item.StackSize ?? 1;
 
                     var stackMsg = stackSize != 1 ? $"{stackSize} " : "";
@@ -3953,7 +4091,7 @@ namespace ACE.Server.WorldObjects
             Prev_PutItemInContainer[1] = Prev_PutItemInContainer[0];
             Prev_PutItemInContainer[0] = new PutItemInContainerEvent(itemGuid, containerGuid, placement);
         }
-        
+
         public void GiveFromEmote(WorldObject emoter, uint weenieClassId, int amount = 1, int palette = 0, float shade = 0)
         {
             if (emoter is null || weenieClassId == 0)
