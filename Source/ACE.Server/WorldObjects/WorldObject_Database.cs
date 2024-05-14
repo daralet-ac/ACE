@@ -5,7 +5,7 @@ using ACE.Common;
 using ACE.Database;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
-using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Managers;
 
 namespace ACE.Server.WorldObjects
 {
@@ -47,6 +47,9 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public virtual void SaveBiotaToDatabase(bool enqueueSave = true)
         {
+            if (PropertyManager.GetBool("debug_banking_system").Item)
+                Console.WriteLine($"{Name}.SaveBiotaToDatabase(enqueueSave {enqueueSave})");
+
             // Make sure all of our positions in the biota are up to date with our current cached values.
             foreach (var kvp in positionCache)
             {

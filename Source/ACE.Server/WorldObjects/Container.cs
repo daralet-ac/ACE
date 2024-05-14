@@ -222,7 +222,7 @@ namespace ACE.Server.WorldObjects
             {
                 foreach (var sidePack in Inventory.Values.OfType<Container>())
                 {
-                    if (sidePack.MerchandiseItemTypes == 0) 
+                    if (sidePack.MerchandiseItemTypes == 0)
                         freeSlots += (sidePack.ItemCapacity ?? 0) - sidePack.CountPackItems();
                 }
             }
@@ -608,7 +608,7 @@ namespace ACE.Server.WorldObjects
 
             OnAddItem();
 
-           if (this is Player containerPlayer)
+            if (this is Player containerPlayer)
                 containerPlayer.RecalculateBurden();
             else if (container.Container != null && container.Container is Player cPlayer)
                 cPlayer.RecalculateBurden();
