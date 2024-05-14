@@ -394,8 +394,9 @@ namespace ACE.Server.Physics
                     return TransitionState.OK;
                 ethereal = true;
             }
+
             // CUSTOM - Strikethrough: permits strikethrough projectiles to travel cleanly through monsters, even if they're not ethereal
-            if (WeenieObj.WorldObject != null && WeenieObj.WorldObject.Attackable == true)
+            if (WeenieObj.WorldObject != null && WeenieObj.WorldObject.ItemType == ItemType.Creature)
             {
                 if (transition.ObjectInfo.Object.WeenieObj.WorldObject != null && transition.ObjectInfo.Object.WeenieObj.WorldObject is SpellProjectile)
                     ethereal = true;
