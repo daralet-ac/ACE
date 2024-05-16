@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using ACE.Database;
@@ -1495,11 +1496,15 @@ namespace ACE.Server.WorldObjects
             if (prevContainer != null && prevContainer.WeenieType == WeenieType.Storage)
             {
                 if (PropertyManager.GetBool("debug_banking_system").Item)
-                    Console.WriteLine($"Move objects from BANK MAIN pack ({containerRootOwner?.Name}) to ANOTHER CONTAINER ({container?.Name}): item: {item?.Name}");
+                    Console.WriteLine($"Move objects from BANK MAIN pack ({prevContainer?.Name}) to ANOTHER CONTAINER ({container?.Name}): item: {item?.Name}");
 
                 foreach (var wo in container.Inventory.Values)
                 {
-                    wo.BankAccountId = 0;
+                    if (container.WeenieType == WeenieType.Storage)
+                        wo.BankAccountId = Account.AccountId;
+                    else
+                        wo.BankAccountId = 0;
+
                     DeepSave(wo);
 
                     if (PropertyManager.GetBool("debug_banking_system").Item)
@@ -2698,7 +2703,7 @@ namespace ACE.Server.WorldObjects
 
         private bool DoHandleActionStackableSplitToContainer(WorldObject stack, Container stackFoundInContainer, Container stackRootOwner, Container container, Container containerRootOwner, WorldObject newStack, int placementPosition, int amount)
         {
-            //Console.WriteLine($"{Name}.DoHandleActionStackableSplitToContainer(stack: {stack?.Name}, stackFoundInContainer: {stackFoundInContainer?.Name}, stackRootOwner: {stackRootOwner?.Name}, container: {container?.Name}, containerRootOwner {containerRootOwner?.Name}, newStack {newStack?.Name}, {placementPosition}, {amount})");
+            Console.WriteLine($"{Name}.DoHandleActionStackableSplitToContainer(stack: {stack?.Name}, stackFoundInContainer: {stackFoundInContainer?.Name}, stackRootOwner: {stackRootOwner?.Name}, container: {container?.Name}, containerRootOwner {containerRootOwner?.Name}, newStack {newStack?.Name}, {placementPosition}, {amount})");
 
             // Before we modify the original stack, we make sure we can add the new stack
             if (!container.TryAddToInventory(newStack, placementPosition, true))
@@ -2749,6 +2754,39 @@ namespace ACE.Server.WorldObjects
                 }
 
                 newStack.BankAccountId = 0;
+            }
+
+            // BANKING - for splitting objects from a bank side pack into another container, we need to remove the bank account ID stamp. This is handled at the contained container level.
+            if ((containerRootOwner != null && containerRootOwner.WeenieType == WeenieType.Storage) || (stackRootOwner != null && stackRootOwner.WeenieType == WeenieType.Storage))
+            {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"SPLIT to NEW stack, from NON-BANK pack ({stackFoundInContainer?.Name}) to NON-BANK pack ({container?.Name}): originalStack: {stack?.Name} ({stack?.StackSize}), newStack: {newStack?.Name} ({newStack?.StackSize})");
+
+                foreach (var wo in stackFoundInContainer.Inventory.Values)
+                {
+                    if (stackFoundInContainer.WeenieType == WeenieType.Storage)
+                        wo.BankAccountId = Account.AccountId;
+                    else
+                        wo.BankAccountId = 0;
+
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
+
+                foreach (var wo in container.Inventory.Values)
+                {
+                    if (container.WeenieType == WeenieType.Storage)
+                        wo.BankAccountId = Account.AccountId;
+                    else
+                        wo.BankAccountId = 0;
+
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
             }
 
             Session.Network.EnqueueSend(new GameMessagePublicUpdateInstanceID(newStack, PropertyInstanceId.Container, container.Guid));
@@ -3510,18 +3548,48 @@ namespace ACE.Server.WorldObjects
                 if (PropertyManager.GetBool("debug_banking_system").Item)
                     Console.WriteLine($"SPLIT to MERGED stack from NON-BANK pack({targetContainer?.Name}) into BANK MAIN PACK ({targetContainer.Name}): originalStack: {sourceStack?.Name} ({sourceStack?.StackSize}), newStack: {targetStack?.Name} ({targetStack?.StackSize})");
 
-                //foreach (var wo in sourceContainer.Inventory.Values) // non-bank
-                //{
                 sourceStack.BankAccountId = 0;
                 DeepSave(sourceStack);
 
                 if (PropertyManager.GetBool("debug_banking_system").Item)
                     Console.WriteLine($"Deep Save: {sourceStack.Name}");
-                //}
 
                 foreach (var wo in targetContainer.Inventory.Values) // bank
                 {
                     wo.BankAccountId = Account.AccountId;
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
+            }
+
+            // BANKING - for SPLITTING to MERGE objects to/from a bank side pack container to/from another non-bank container
+            if ((sourceStackRootOwner != null && sourceStackRootOwner.WeenieType == WeenieType.Storage) || (targetStackRootOwner != null && targetStackRootOwner.WeenieType == WeenieType.Storage))
+            {
+                if (PropertyManager.GetBool("debug_banking_system").Item)
+                    Console.WriteLine($"SPLIT to MERGED stack to/from BANK SIDE pack({targetContainer?.Name}) to/from another PACK ({targetContainer.Name}): originalStack: {sourceStack?.Name} ({sourceStack?.StackSize}), newStack: {targetStack?.Name} ({targetStack?.StackSize})");
+
+                foreach (var wo in sourceContainer.Inventory.Values)
+                {
+                    if (sourceContainer.WeenieType == WeenieType.Storage)
+                        wo.BankAccountId = Account.AccountId;
+                    else
+                        wo.BankAccountId = 0;
+
+                    DeepSave(wo);
+
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                }
+
+                foreach (var wo in targetContainer.Inventory.Values)
+                {
+                    if (targetContainer.WeenieType == WeenieType.Storage)
+                        wo.BankAccountId = Account.AccountId;
+                    else
+                        wo.BankAccountId = 0;
+
                     DeepSave(wo);
 
                     if (PropertyManager.GetBool("debug_banking_system").Item)
