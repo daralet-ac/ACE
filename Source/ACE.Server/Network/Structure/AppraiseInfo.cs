@@ -71,7 +71,7 @@ namespace ACE.Server.Network.Structure
 
         public void BuildProfile(WorldObject wo, Player examiner, bool success = true)
         {
-            Console.WriteLine($"Appraise: {wo.Guid} {wo.Name}");
+            //Console.WriteLine($"Appraise: {wo.Guid} {wo.Name}");
             Success = success;
 
             BuildProperties(wo);
