@@ -294,7 +294,8 @@ namespace ACE.Server.WorldObjects
                 new GameMessagePublicUpdateInstanceID(item, PropertyInstanceId.Wielder, ObjectGuid.Invalid),
                 new GameMessagePublicUpdatePropertyInt(item, PropertyInt.CurrentWieldedLocation, 0),
                 new GameEventWieldItem(Session, item.Guid.Full, wieldedLocation),
-                new GameMessageSound(Guid, Sound.WieldObject));
+                new GameMessageSound(Guid, Sound.WieldObject),
+                new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.EncumbranceVal, EncumbranceVal ?? 0));
 
             if (item.GearMaxHealth != null || item.ArmorHealthRegenMod != null)
                 HandleMaxHealthUpdate();
@@ -1052,7 +1053,7 @@ namespace ACE.Server.WorldObjects
         }
 
         // =========================================
-        // Game Action Handlers - Inventory Movement 
+        // Game Action Handlers - Inventory Movement
         // =========================================
 
         /// <summary>
@@ -1713,7 +1714,7 @@ namespace ACE.Server.WorldObjects
 
             if (!item.ValidLocations.HasValue || item.ValidLocations == EquipMask.None)
             {
-                _log.Warning("Player 0x{0:X8}:{1} tried to wield item 0x{2:X8}:{3} to {4} (0x{4:X}), not in item's validlocatiions {5} (0x{5:X}).", Guid.Full, Name, item.Guid.Full, item.Name, wieldedLocation, item.ValidLocations ?? 0);
+                _log.Warning("Player 0x{0:X8}:{1} tried to wield item 0x{2:X8}:{3} to {4} (0x{4:X}), not in item's validlocations {5} (0x{5:X}).", Guid.Full, Name, item.Guid.Full, item.Name, wieldedLocation, item.ValidLocations ?? 0);
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.InvalidInventoryLocation));
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
                 return;
@@ -2099,7 +2100,7 @@ namespace ACE.Server.WorldObjects
 
         /// <summary>
         /// Client will automatically send any unequip (PutItemInContainer) message before the GetAndWield, but misses some instances and can be memory hacked to ignore others.
-        //  Let's just make sure our status is accurate before actually equipping an item! 
+        //  Let's just make sure our status is accurate before actually equipping an item!
         /// </summary>
         /// <param name="item">The weapon we are attempting to equip</param>
         /// <returns>True if the items were successfuly remove and the new item can attempt to be equipped, otherwise false</returns>
@@ -2485,7 +2486,7 @@ namespace ACE.Server.WorldObjects
 
 
         // =========================================
-        // Game Action Handlers - Inventory Stacking 
+        // Game Action Handlers - Inventory Stacking
         // =========================================
 
         /// <summary>
@@ -3616,7 +3617,7 @@ namespace ACE.Server.WorldObjects
 
 
         // =============================================
-        // Game Action Handlers - Inventory Give/Receive 
+        // Game Action Handlers - Inventory Give/Receive
         // =============================================
 
         /// <summary>
@@ -4434,9 +4435,12 @@ namespace ACE.Server.WorldObjects
             }
             foreach (var inventoryObject in Inventory.Values)
             {
-                if (inventoryObject is Container container && container.MerchandiseItemTypes.HasValue)
+                if (inventoryObject is Container { MerchandiseItemTypes: not null })
                 {
-                    totalBurden += (int)inventoryObject.EncumbranceVal / 2;
+                    if (inventoryObject.EncumbranceVal != null)
+                    {
+                        totalBurden += (int)inventoryObject.EncumbranceVal / 2;
+                    }
                 }
                 else
                     totalBurden += inventoryObject.EncumbranceVal ?? 0;
@@ -4444,7 +4448,5 @@ namespace ACE.Server.WorldObjects
             EncumbranceVal = totalBurden;
             Session.Network.EnqueueSend(new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.EncumbranceVal, EncumbranceVal ?? 0));
         }
-
-
     }
 }

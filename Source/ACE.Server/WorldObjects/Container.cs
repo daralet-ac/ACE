@@ -610,7 +610,7 @@ namespace ACE.Server.WorldObjects
 
             if (this is Player containerPlayer)
                 containerPlayer.RecalculateBurden();
-            else if (container.Container != null && container.Container is Player cPlayer)
+            else if (container.Container is Player cPlayer)
                 cPlayer.RecalculateBurden();
 
             return true;
@@ -702,11 +702,6 @@ namespace ACE.Server.WorldObjects
 
                 OnRemoveItem(item);
 
-                // SPECIALIZED PACKS:  Only recalculate player burden on remove from Inventory if the item was contained in a Specialized Pack
-                if (this is Player player)
-                    player.RecalculateBurden();
-
-
                 return true;
             }
 
@@ -720,7 +715,7 @@ namespace ACE.Server.WorldObjects
                     Value -= (item.Value ?? 0);
 
                     // SPECIALIZED PACKS: Called when dropping an item from a spec pack entirely, or when moving from this pack to another
-                    if (container.Container != null && container.Container is Player containerPlayer)
+                    if (container.Container is Player containerPlayer)
                         containerPlayer.RecalculateBurden();
 
                     return true;
