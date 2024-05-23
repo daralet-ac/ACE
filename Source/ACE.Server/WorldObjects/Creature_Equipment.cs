@@ -680,7 +680,7 @@ namespace ACE.Server.WorldObjects
             _log.Error($"Creature_Equipment.GetEquippedItemsSkillModSum() does not support {skillMod}");
             return 0;
         }
-        
+
         /// <summary>
         /// Try to wield an object for non-player creatures
         /// </summary>
@@ -733,19 +733,14 @@ namespace ACE.Server.WorldObjects
             AddItemToEquippedItemsRatingCache(worldObject);
             AddItemToEquippedItemsSkillModCache(worldObject);
 
-            if (this is Player)
+            if (this is Player player)
             {
-                Player player = this as Player;
-
                 //player.AuditItemSpells();
 
                 UpdateArmorModBuffs();
             }
 
-            if (worldObject.WeenieType == WeenieType.Ammunition || worldObject.WeenieType == WeenieType.Missile)
-                EncumbranceVal += (int)Math.Ceiling((worldObject.EncumbranceVal ?? 0) / 2.0f);
-            else
-                EncumbranceVal += (worldObject.EncumbranceVal ?? 0);
+            EncumbranceVal += (worldObject.EncumbranceVal ?? 0);
             Value += (worldObject.Value ?? 0);
 
             TrySetChild(worldObject);
@@ -806,10 +801,8 @@ namespace ACE.Server.WorldObjects
             RemoveItemFromEquippedItemsSkillModCache(worldObject);
 
             //Console.WriteLine($"{Name} - Unequip: {GetArmorRunMod() + 1}");
-            if (this is Player)
-            { 
-                Player player = this as Player;
-
+            if (this is Player player)
+            {
                 //player.AuditItemSpells();
 
                 UpdateArmorModBuffs();
