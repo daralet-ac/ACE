@@ -14,6 +14,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
+using Serilog.Events;
 
 namespace ACE.Server.WorldObjects
 {
@@ -137,7 +138,7 @@ namespace ACE.Server.WorldObjects
                 var item_id_list = string.Join(", ", item_ids.Select(i => i.ToString("X8")));
                 var consumeItemsList = string.Join(", ", consumeItems.Select(i => $"{i.Name} ({i.Guid}) x{i.Value}"));
 
-                _log.Error($"[HOUSE] {Name}.HandleActionBuyHouse({slumlord_id:X8}, {item_id_list}) - TryConsumePurchaseItems failed with {consumeItemsList}");
+                _log.Error("[HOUSE] {Name}.HandleActionBuyHouse({SlumLordId:X8}, {ItemIds}) - TryConsumePurchaseItems failed with {ConsumeItemsList}", Name, slumlord_id, item_id_list, consumeItemsList);
 
                 return;
             }
@@ -161,7 +162,7 @@ namespace ACE.Server.WorldObjects
             if (location == null)
             {
                 if (!HouseManager.ApartmentBlocks.TryGetValue(slumLord.Location.Landblock, out location))
-                    _log.Error($"{Name}.GiveDeed() - couldn't find location {slumLord.Location.ToLOCString()}");
+                    _log.Error("{Name}.GiveDeed() - couldn't find location {SlumLordLocation}", Name, slumLord.Location.ToLOCString());
             }
 
             deed.LongDesc = $"Bought by {Name}{titleStr} on {date} at {time}\n\nPurchased at {location}";
@@ -215,8 +216,7 @@ namespace ACE.Server.WorldObjects
                 }
             }
             else
-                _log.Error($"[HOUSE] {Name}.HandleActionRentHouse({slumlord_id:X8}): couldn't find house owner {slumlord.HouseOwner}");
-
+                _log.Error("[HOUSE] {Name}.HandleActionRentHouse({SlumLordId:X8}): couldn't find house owner {SlumLordHouseOwner}", Name, slumlord_id, slumlord.HouseOwner);
 
             var logLine = $"[HOUSE] HandleActionRentHouse:" + Environment.NewLine;
             logLine += $"{slumlord.Name} ({slumlord.Guid})" + Environment.NewLine;
@@ -309,7 +309,7 @@ namespace ACE.Server.WorldObjects
                 if (item != null)
                     inventoryItems.Add(item);
                 else
-                    _log.Error($"{Name}.GetInventoryItems() - couldn't find {item_id:X8}");
+                    _log.Error("{Name}.GetInventoryItems() - couldn't find {ItemId:X8}", Name, item_id);
             }
 
             return inventoryItems;
@@ -387,7 +387,7 @@ namespace ACE.Server.WorldObjects
                 return false;
             }
 
-            _log.Debug($"[HOUSE] {Name}.TryMoveItemForRent({slumlord.Name} ({slumlord.Guid}), {((item.StackSize ?? 1) > 1 ? $"{item.StackSize}x " : "")}{item.Name} ({item.Guid})) - Successfully moved to Slumlord.");
+            _log.Debug("[HOUSE] {Name}.TryMoveItemForRent({SlumLordName} ({SlumLordGuid}), {StackSize}{ItemName} ({ItemGuid})) - Successfully moved to Slumlord.", Name, slumlord.Name, slumlord.Guid, (item.StackSize ?? 1) > 1 ? $"{item.StackSize}x " : "", item.Name, item.Guid);
             return true;
         }
 
@@ -448,7 +448,7 @@ namespace ACE.Server.WorldObjects
 
             return true;
         }
-        
+
         public void HandleActionAbandonHouse()
         {
             //Console.WriteLine($"\n{Name}.HandleActionAbandonHouse()");
@@ -622,7 +622,7 @@ namespace ACE.Server.WorldObjects
             house.HouseOwnerName = Name;
             house.OpenToEveryone = false;
             house.SaveBiotaToDatabase();
-            
+
             // relink
             house.UpdateLinks();
 
@@ -1852,7 +1852,7 @@ namespace ACE.Server.WorldObjects
         /// When house_15day_account is true (retail server default),
         /// new characters logging in on accounts less than 15 days old
         /// have their HousePurchaseTimestamp set to 15 days before account creation.
-        /// 
+        ///
         /// This is for the House panel to show the correct date the character may purchase a house,
         /// which the client automatically calculates as 30 days after HousePurchaseTimestamp
         /// </summary>
@@ -1875,7 +1875,7 @@ namespace ACE.Server.WorldObjects
             else if (HousePurchaseTimestamp == FifteenDaysBeforeAccountCreation)
             {
                 // account is now 15+ days old and still has not purchased a house, remove unneeded HousePurchaseTimestamp
-                // also if server admin sets house_15day_account to false, this corrects the next purchase time on the House panel 
+                // also if server admin sets house_15day_account to false, this corrects the next purchase time on the House panel
                 HousePurchaseTimestamp = null;
             }
         }

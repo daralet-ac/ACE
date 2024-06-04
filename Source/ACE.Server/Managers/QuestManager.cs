@@ -20,7 +20,7 @@ namespace ACE.Server.Managers
 
         /// <summary>
         /// This is almost always a Player
-        /// 
+        ///
         /// however there are some rare cases of Creatures having quests
         /// such as 'chickencrossingroad'
         /// </summary>
@@ -587,7 +587,7 @@ namespace ACE.Server.Managers
 
             if (killedCreature == null)
             {
-                _log.Error($"{Name}.QuestManager.HandleKillTask({killQuestName}): input object is null!");
+                _log.Error("{PlayerName}.QuestManager.HandleKillTask({KillQuestName}): input object is null!", Name, killQuestName);
                 return;
             }
 
@@ -596,7 +596,7 @@ namespace ACE.Server.Managers
 
             if (quest == null)
             {
-                _log.Error($"{Name}.QuestManager.HandleKillTask({killQuestName}): couldn't find kill task {questName} in database");
+                _log.Error("{PlayerName}.QuestManager.HandleKillTask({KillQuestName}): couldn't find kill task {QuestName} in database", Name, killQuestName, questName);
                 return;
             }
 
@@ -610,7 +610,7 @@ namespace ACE.Server.Managers
             if (playerQuest == null)
             {
                 // this should be impossible
-                _log.Error($"{Name}.QuestManager.HandleKillTask({killQuestName}): couldn't find kill task {questName} in player quests");
+                _log.Error("{PlayerName}.QuestManager.HandleKillTask({KillQuestName}): couldn't find kill task {QuestName} in player quests", Name, killQuestName, questName);
                 return;
             }
 
@@ -803,7 +803,7 @@ namespace ACE.Server.Managers
             }
 
             // divide modified total by the total taken altogether to get the proportionate MF rating bonus, add to existing LQM
-            
+
             double? updatedQualityMod = (double?)(totalModifiedDamage / totalDamage);
 
             if (magicFound)

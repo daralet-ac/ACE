@@ -31,6 +31,7 @@ using ACE.Server.Physics.Managers;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Entity;
 using Serilog;
+using Serilog.Events;
 using Spell = ACE.Server.Entity.Spell;
 
 namespace ACE.Server.Command.Handlers
@@ -1096,7 +1097,7 @@ namespace ACE.Server.Command.Handlers
                 if (!item.Stuck)
                     session.Player.TryCreateInInventoryWithNetworking(item);
                 else
-                    stuck.Add(item);    
+                    stuck.Add(item);
             }
 
             if (stuck.Count != 0)
@@ -2210,6 +2211,8 @@ namespace ACE.Server.Command.Handlers
         public static void HandleForceGC(Session session, params string[] parameters)
         {
             GC.Collect();
+
+            CommandHandlerHelper.WriteOutputInfo(session, ".NET Garbage Collection forced");
         }
 
         [CommandHandler("forcegc2", AccessLevel.Developer, CommandHandlerFlag.None, 0, "Forces .NET Garbage Collection with LOH Compact")]

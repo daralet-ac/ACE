@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -13,6 +12,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Server.WorldObjects
 {
@@ -68,7 +68,6 @@ namespace ACE.Server.WorldObjects
             {
                 var dtTimeToRot = DateTime.UtcNow.AddSeconds(TimeToRot ?? 0);
                 var tsDecay = dtTimeToRot - DateTime.UtcNow;
-
                 _log.Debug($"[CORPSE] {Name} (0x{Guid}) Reloaded from Database: Corpse Level: {Level ?? 0} | InventoryLoaded: {InventoryLoaded} | Inventory.Count: {Inventory.Count} | TimeToRot: {TimeToRot} | CreationTimestamp: {CreationTimestamp} ({Time.GetDateTimeFromTimestamp(CreationTimestamp ?? 0).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}) | Corpse should not decay before: {dtTimeToRot.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}, {tsDecay.ToString("%d")} day(s), {tsDecay.ToString("%h")} hours, {tsDecay.ToString("%m")} minutes, and {tsDecay.ToString("%s")} seconds from now.");
             }
         }
@@ -112,7 +111,6 @@ namespace ACE.Server.WorldObjects
             var tsDecay = dtTimeToRot - DateTime.UtcNow;
 
             Level = player.Level ?? 1;
-
             _log.Debug($"[CORPSE] {Name}.RecalculateDecayTime({player.Name}) 0x{Guid}: Player Level: {player.Level} | Inventory.Count: {Inventory.Count} | TimeToRot: {TimeToRot} | CreationTimestamp: {CreationTimestamp} ({Time.GetDateTimeFromTimestamp(CreationTimestamp ?? 0).ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}) | Corpse should not decay before: {dtTimeToRot.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")}, {tsDecay.ToString("%d")} day(s), {tsDecay.ToString("%h")} hours, {tsDecay.ToString("%m")} minutes, and {tsDecay.ToString("%s")} seconds from now.");
         }
 
@@ -412,7 +410,7 @@ namespace ACE.Server.WorldObjects
         }
 
         /// <summary>
-        /// A list of landblocks the player cannot drop items on corpse on death 
+        /// A list of landblocks the player cannot drop items on corpse on death
         /// </summary>
         public static HashSet<ushort> NoDrop_Landblocks = new HashSet<ushort>()
         {

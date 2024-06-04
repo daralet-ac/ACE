@@ -14,6 +14,7 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Managers;
 using ACE.Server.Network.Packets;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Server.Network.Handlers
 {
@@ -61,8 +62,8 @@ namespace ACE.Server.Network.Handlers
                         // no account, dynamically create one
                         if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
                             _log.Information($"Auto creating account for: {loginRequest.Account}");
-                        else
-                            _log.Debug($"Auto creating account for: {loginRequest.Account}");
+
+                        _log.Debug("Auto creating account for: {Account}", loginRequest.Account);
 
                         var accessLevel = (AccessLevel)ConfigManager.Config.Server.Accounts.DefaultAccessLevel;
 
@@ -83,7 +84,7 @@ namespace ACE.Server.Network.Handlers
 
             try
             {
-                _log.Debug($"new client connected: {loginRequest.Account}. setting session properties");
+                _log.Debug("new client connected: {Account}. setting session properties", loginRequest.Account);
                 AccountSelectCallback(account, session, loginRequest);
             }
             catch (Exception ex)
@@ -134,9 +135,9 @@ namespace ACE.Server.Network.Handlers
                 }
 
                 if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                    _log.Information($"client {loginRequest.Account} connected with no Password or GlsTicket included so booting");
+                    _log.Information("client {loginRequest.Account} connected with no Password or GlsTicket included so booting", loginRequest.Account);
                 else
-                    _log.Debug($"client {loginRequest.Account} connected with no Password or GlsTicket included so booting");
+                    _log.Debug("client {Account} connected with no Password or GlsTicket included so booting", loginRequest.Account);
 
                 session.Terminate(SessionTerminationReason.NotAuthorizedNoPasswordOrGlsTicketIncludedInLoginReq, new GameMessageCharacterError(CharacterError.AccountInvalid));
 
@@ -165,7 +166,7 @@ namespace ACE.Server.Network.Handlers
                     if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
                         _log.Information($"client {loginRequest.Account} connected with non matching password so booting");
                     else
-                        _log.Debug($"client {loginRequest.Account} connected with non matching password so booting");
+                        _log.Debug("client {Account} connected with non matching password so booting", loginRequest.Account);
 
                     session.Terminate(SessionTerminationReason.NotAuthorizedPasswordMismatch, new GameMessageBootAccount(" because the password entered for this account was not correct"));
 
@@ -193,14 +194,14 @@ namespace ACE.Server.Network.Handlers
                 if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
                     _log.Information($"client {loginRequest.Account} connected with verified password");
                 else
-                    _log.Debug($"client {loginRequest.Account} connected with verified password");
+                    _log.Debug("client {Account} connected with verified password", loginRequest.Account);
             }
             else if (loginRequest.NetAuthType == NetAuthType.GlsTicket)
             {
                 if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
                     _log.Information($"client {loginRequest.Account} connected with GlsTicket which is not implemented yet so booting");
                 else
-                    _log.Debug($"client {loginRequest.Account} connected with GlsTicket which is not implemented yet so booting");
+                    _log.Debug("client {Account} connected with GlsTicket which is not implemented yet so booting", loginRequest.Account);
 
                 session.Terminate(SessionTerminationReason.NotAuthorizedGlsTicketNotImplementedToProcLoginReq, new GameMessageCharacterError(CharacterError.AccountInvalid));
 

@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ACE.Common;
-using ACE.Common.Extensions;
 using ACE.Database.Entity;
 using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
@@ -15,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Database
 {
@@ -124,6 +124,33 @@ namespace ACE.Database
         {
             using (var context = new ShardDbContext())
                 return context.Biota.Count();
+        }
+
+        public int GetEstimatedBiotaCount(string dbName)
+        {
+            // https://mariadb.com/kb/en/incredibly-slow-count-on-mariadb-mysql/
+
+            var sql = $"SELECT TABLE_ROWS FROM information_schema.tables" + Environment.NewLine +
+                      $"WHERE TABLE_SCHEMA = '{dbName}'" + Environment.NewLine +
+                      $"AND TABLE_NAME = 'biota';";
+
+            using (var context = new ShardDbContext())
+            {
+                var connection = context.Database.GetDbConnection();
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = sql;
+                var reader = command.ExecuteReader();
+
+                var biotaEstimatedCount = 0;
+
+                while (reader.Read())
+                {
+                    biotaEstimatedCount = reader.GetFieldValue<int>(0);
+                }
+
+                return biotaEstimatedCount;
+            }
         }
 
         [Flags]
@@ -287,7 +314,9 @@ namespace ACE.Database
                 context.SaveChanges();
 
                 if (firstException != null)
+                {
                     _log.Debug(firstException, "[DATABASE] DoSaveBiota 0x{BiotaId:X8}:{BiotaName} retry succeeded after initial exception", biota.Id, biota.GetProperty(PropertyString.Name));
+                }
 
                 return true;
             }
@@ -369,7 +398,9 @@ namespace ACE.Database
                     context.SaveChanges();
 
                     if (firstException != null)
+                    {
                         _log.Debug(firstException, "[DATABASE] RemoveBiota 0x{BiotaId:X8} retry succeeded after initial exception", id);
+                    }
 
                     return true;
                 }
@@ -467,7 +498,7 @@ namespace ACE.Database
                         //update ownership to new storage chest
                         biota.SetProperty(PropertyInstanceId.Owner, storageId);
                         biota.SetProperty(PropertyInstanceId.Container, storageId);
-                        
+
                         inventory.Add(biota);
 
                         if (includedNestedItems && biota.WeenieType == (int)WeenieType.Container)
@@ -686,7 +717,9 @@ namespace ACE.Database
                         cachedContext.SaveChanges();
 
                         if (firstException != null)
+                        {
                             _log.Debug(firstException, "[DATABASE] SaveCharacter-1 0x{CharacterId:X8}:{CharacterName} retry succeeded after initial exception", character.Id, character.Name);
+                        }
 
                         return true;
                     }
@@ -726,8 +759,7 @@ namespace ACE.Database
                 {
                     context.SaveChanges();
 
-                    if (firstException != null)
-                        _log.Debug(firstException, "[DATABASE] SaveCharacter-2 0x{CharacterId:X8}:{CharacterName} retry succeeded after initial exception", character.Id, character.Name);
+                    _log.Debug(firstException, "[DATABASE] SaveCharacter-2 0x{CharacterId:X8}:{CharacterName} retry succeeded after initial exception", character.Id, character.Name);
 
                     return true;
                 }
@@ -828,7 +860,9 @@ namespace ACE.Database
                         cachedContext.SaveChanges();
 
                         if (firstException != null)
+                        {
                             _log.Debug(firstException, "[DATABASE] RenameCharacter 0x{CharacterId:X8}:{CharacterName} retry succeeded after initial exception", character.Id, character.Name);
+                        }
 
                         return true;
                     }
@@ -871,7 +905,9 @@ namespace ACE.Database
                     context.SaveChanges();
 
                     if (firstException != null)
+                    {
                         _log.Debug(firstException, "[DATABASE] RenameCharacter 0x{CharacterId:X8}:{CharacterName} retry succeeded after initial exception", character.Id, character.Name);
+                    }
 
                     return true;
                 }

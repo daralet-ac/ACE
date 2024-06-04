@@ -8,7 +8,6 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
-using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 
@@ -126,8 +125,29 @@ namespace ACE.Server.WorldObjects
             Skill.Fletching
         };
 
-        public void HandleSalvaging(List<uint> salvageItems)
+        private bool ToolIsValidUst(uint tool)
         {
+            var toolObject = FindObject(tool, SearchLocations.Everywhere, out _, out var rootOwner, out _);
+
+            if (toolObject == null || toolObject.WeenieClassId != (uint)ACE.Entity.Enum.WeenieClassName.W_TINKERINGTOOL_CLASS)
+            {
+                SendWeenieError(WeenieError.NotASalvageTool);
+                return false;
+            }
+            else if (rootOwner != this)
+            {
+                SendWeenieError(WeenieError.YouDoNotOwnThatSalvageTool);
+                return false;
+            }
+            else
+                return true;
+        }
+
+        public void HandleSalvaging(uint tool, List<uint> salvageItems)
+        {
+            if (!ToolIsValidUst(tool))
+                return;
+
             var salvageBags = new List<WorldObject>();
             var salvageResults = new SalvageResults();
 
@@ -136,7 +156,7 @@ namespace ACE.Server.WorldObjects
                 var item = GetInventoryItem(itemGuid);
                 if (item == null)
                 {
-                    //log.Debug($"[CRAFTING] {Name}.HandleSalvaging({itemGuid:X8}): couldn't find inventory item");
+                    //log.DebugFormat("[CRAFTING] {0}.HandleSalvaging({1:X8}): couldn't find inventory item", Name, itemGuid);
                     continue;
                 }
 
@@ -161,7 +181,7 @@ namespace ACE.Server.WorldObjects
                     Random random = new Random();
                     double roll = random.NextDouble();
                     double basechance = 0.001 * (double)item.GemCount;
-                    double tierModifier = 1.0 / Math.Pow(2, (double)item.Tier);  
+                    double tierModifier = 1.0 / Math.Pow(2, (double)item.Tier);
 
                     double gemBonusWithTier = (basechance * tierModifier);
 
@@ -183,7 +203,7 @@ namespace ACE.Server.WorldObjects
                 }
                 // can any salvagable items be stacked?
                 TryConsumeFromInventoryWithNetworking(item);
-            
+
 
              AddSalvage(salvageBags, item, salvageResults);
 
@@ -206,7 +226,7 @@ namespace ACE.Server.WorldObjects
                     foreach (var result in results)
                     {
                         var salvResults = new ACE.Server.Network.Structure.SalvageResult(result);
-                        var materialType = Regex.Replace((salvResults.MaterialType).ToString(), "(?<!^)([A-Z])", " $1"); 
+                        var materialType = Regex.Replace((salvResults.MaterialType).ToString(), "(?<!^)([A-Z])", " $1");
                         Session.Network.EnqueueSend(new GameMessageSystemChat($"You obtain {salvResults.Units} {materialType} (ws {salvResults.Workmanship.ToString("N2")}) using your knowledge of {((NewSkillNames)salvageSkill).ToSentence()}.", ChatMessageType.Broadcast));
                     }
                 }

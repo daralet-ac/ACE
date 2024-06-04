@@ -103,10 +103,7 @@ namespace ACE.Server.Network
                     byte[] data = new byte[dataSize];
                     Buffer.BlockCopy(buffer, 0, data, 0, dataSize);
 
-                    StringBuilder sb = new StringBuilder();
-                    sb.AppendLine($"Received Packet (Len: {data.Length}) [{ipEndpoint.Address}:{ipEndpoint.Port}=>{ListenerEndpoint.Address}:{ListenerEndpoint.Port}]");
-                    sb.AppendLine(data.BuildPacketString());
-                    _log.Verbose(sb.ToString());
+                    _log.Verbose("Received Packet (Len: {DataLength}) [{IpEndpointAddress}:{IpEndpointPort}=>{ListenerEndpointAddress}:{ListenerEndpointPort}] {PacketString}", data.Length, ipEndpoint.Address, ipEndpoint.Port,ListenerEndpoint.Address,ListenerEndpoint.Port, data.BuildPacketString());
                 }
 
                 var packet = new ClientPacket();

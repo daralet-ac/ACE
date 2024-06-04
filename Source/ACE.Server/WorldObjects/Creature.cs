@@ -31,7 +31,7 @@ namespace ACE.Server.WorldObjects
                 if (_questManager == null)
                 {
                     /*if (!(this is Player))
-                        _log.Debug($"Initializing non-player QuestManager for {Name} (0x{Guid})");*/
+                        _log.Debug($"Initializing non-player QuestManager for {Name} (0x{Guid})", Name, Guid);*/
 
                     _questManager = new QuestManager(this);
                 }
@@ -239,7 +239,7 @@ namespace ACE.Server.WorldObjects
             {
 #if DEBUG
                 //if (!(NpcLooksLikeObject ?? false))
-                    //log.Debug($"Creature.GenerateNewFace: {Name} (0x{Guid}) - wcid {WeenieClassId} - Heritage: {Heritage} | HeritageGroupName: {HeritageGroupName} | Gender: {Gender} | Sex: {Sex} - Data missing or unparsable, Cannot randomize face.");
+                    //log.DebugFormat("Creature.GenerateNewFace: {0} (0x{1}) - wcid {2} - Heritage: {3} | HeritageGroupName: {4} | Gender: {5} | Sex: {6} - Data missing or unparsable, Cannot randomize face.", Name, Guid, WeenieClassId, Heritage, HeritageGroupName, Gender, Sex);
 #endif
                 return;
             }
@@ -247,7 +247,7 @@ namespace ACE.Server.WorldObjects
             if (!cg.HeritageGroups.TryGetValue((uint)Heritage, out var heritageGroup) || !heritageGroup.Genders.TryGetValue((int)Gender, out var sex))
             {
 #if DEBUG
-                _log.Debug($"Creature.GenerateNewFace: {Name} (0x{Guid}) - wcid {WeenieClassId} - Heritage: {Heritage} | HeritageGroupName: {HeritageGroupName} | Gender: {Gender} | Sex: {Sex} - Data invalid, Cannot randomize face.");
+                _log.Debug("Creature.GenerateNewFace: {Name} (0x{Guid}) - wcid {WeenieClassId} - Heritage: {Heritage} | HeritageGroupName: {HeritageGroupName} | Gender: {Gender} | Sex: {Sex} - Data invalid, Cannot randomize face.", Name, Guid, WeenieClassId, Heritage, HeritageGroupName, Gender, Sex);
 #endif
                 return;
             }
@@ -399,7 +399,7 @@ namespace ACE.Server.WorldObjects
         /// The item does not exist in the players possession.<para />
         /// If the item was outside of range, the player will have been commanded to move using DoMoveTo before ActOnUse is called.<para />
         /// When this is called, it should be assumed that the player is within range.
-        /// 
+        ///
         /// This is the OnUse method.   This is just an initial implemention.   I have put in the turn to action at this point.
         /// If we are out of use radius, move to the object.   Once in range, let's turn the creature toward us and get started.
         /// Note - we may need to make an NPC class vs monster as using a monster does not make them turn towrad you as I recall. Og II

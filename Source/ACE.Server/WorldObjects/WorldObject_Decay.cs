@@ -6,6 +6,7 @@ using ACE.Entity.Enum;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog.Events;
 
 namespace ACE.Server.WorldObjects
 {
@@ -76,7 +77,7 @@ namespace ACE.Server.WorldObjects
                 {
                     TimeToRot = Corpse.EmptyDecayTime;
                     if (Level.HasValue && PropertyManager.GetBool("corpse_decay_tick_logging").Item)
-                        _log.Debug($"[CORPSE] {corpse.Name} (0x{corpse.Guid}).Decay({elapsed}): InventoryLoaded = {corpse.InventoryLoaded} | Inventory.Count = {corpse.Inventory.Count} | previous TimeToRot: {previousTTR} | current TimeToRot: {TimeToRot}");
+                        _log.Debug("[CORPSE] {CorpseName} (0x{CorpseGuid}).Decay({TimeElapsed}): InventoryLoaded = {CorpseInventoryLoaded} | Inventory.Count = {CorpseInventoryCount} | previous TimeToRot: {PreviousTimeToRot} | current TimeToRot: {TimeToRot}", corpse.Name, corpse.Guid, elapsed, corpse.InventoryLoaded, corpse.Inventory.Count, previousTTR, TimeToRot);
                     return;
                 }
             }
@@ -128,7 +129,7 @@ namespace ACE.Server.WorldObjects
                     }
                 }
 
-                if (corpseItems.Any())
+                if (corpseItems.Count != 0)
                 {
                     _log.Debug("[CORPSE] {CorpseName} (0x{CorpseGuid}) at {CorpseLocation} has decayed and placed the following items on the landblock: {CorpseItems}.", corpse.Name, corpse.Guid, corpse.Location.ToLOCString(), corpseItems);
                 }

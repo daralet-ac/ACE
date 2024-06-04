@@ -25,6 +25,7 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Serilog.Events;
 using Encounter = ACE.Database.Models.World.Encounter;
 using Position = ACE.Entity.Position;
 using Quaternion = System.Numerics.Quaternion;
@@ -188,7 +189,7 @@ namespace ACE.Server.Entity
 
         public Landblock(LandblockId id)
         {
-            //log.Debug($"Landblock({(id.Raw | 0xFFFF):X8})");
+            //log.DebugFormat("Landblock({0:X8})", (id.Raw | 0xFFFF));
 
             Id = id;
 
@@ -843,7 +844,7 @@ namespace ACE.Server.Entity
                     {
                         players.Add(player);
                         PlayerAccountIds.Add(player.Account.AccountId);
-                    } 
+                    }
                     else if (kvp.Value is Creature creature)
                         sortedCreaturesByNextTick.AddLast(creature);
 
@@ -1031,11 +1032,24 @@ namespace ACE.Server.Entity
             {
                 if (CurrentLandblockGroup != null && CurrentLandblockGroup != LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value)
                 {
-                    _log.Error($"Landblock 0x{Id} entered AddWorldObjectInternal in a cross-thread operation.");
-                    _log.Error($"Landblock 0x{Id} CurrentLandblockGroup: {CurrentLandblockGroup}");
-                    _log.Error($"LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value: {LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value}");
+                    // Prevent possible multi-threaded crash
+                    // The following scenario can happen rarely in ACE, all in the same call stack with no ActionQueue usage:
+                    // Moster successfully lands an attack on a player that procs a cloak spell
+                    // The code goes through and does the LaunchSpellProjectiles() which adds the spell projectiles to (presumably) the players landblock
+                    // For some unknown reason, the LandblockGroup/Thread where the monster exists seems to be a different LandblockGroup/Thread where the spells are added to.
+                    // Maybe there's a player death race condition? Maybe it's a teleport race condition? I dunno.
+                    // Because this happens so rarely, and, it only seems to affect cloak projectiles, and, cloak projectiles are pretty benign, we simply don't add the object, and only log it as a warning.
+                    if (wo.WeenieType == WeenieType.ProjectileSpell)
+                    {
+                        _log.Warning("Landblock 0x{LandblockId} entered AddWorldObjectInternal in a cross-thread operation for a ProjectileSpell. This is normally not an issue unless it's happening more than once an hour.", Id);
+                        return false;
+                    }
 
-                    _log.Error($"wo: 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}], previous landblock 0x{wo.CurrentLandblock?.Id}");
+                    _log.Error("Landblock 0x{LandblockId} entered AddWorldObjectInternal in a cross-thread operation.", Id);
+                    _log.Error("Landblock 0x{LandblockId} CurrentLandblockGroup: {CurrentLandblockGroup}", Id, CurrentLandblockGroup);
+                    _log.Error("LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value: {CurrentMultiThreadedTickingLandblockGroupValue}", LandblockManager.CurrentMultiThreadedTickingLandblockGroup.Value);
+
+                    _log.Error("wo: 0x{WorldObjectGuid}:{WorldObjectName} [{WorldObjectWeenieClassId} - {WorldObjectWeenieType}], previous landblock 0x{WorldObjectLandblockId}", wo.Guid, wo.Name, wo.WeenieClassId, wo.WeenieType, wo.CurrentLandblock?.Id);
 
                     if (wo.WeenieType == WeenieType.ProjectileSpell)
                     {
@@ -1049,10 +1063,6 @@ namespace ACE.Server.Entity
                     _log.Error(System.Environment.StackTrace);
 
                     _log.Error("PLEASE REPORT THIS TO THE ACE DEV TEAM !!!");
-
-                    // Prevent possible multi-threaded crash
-                    if (wo.WeenieType == WeenieType.ProjectileSpell)
-                        return false;
 
                     // This may still crash...
                 }
@@ -1074,13 +1084,15 @@ namespace ACE.Server.Entity
 
                     if (wo.Generator != null)
                     {
-                        _log.Debug($"AddWorldObjectInternal: couldn't spawn 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}] at {wo.Location.ToLOCString()} from generator {wo.Generator.WeenieClassId} - 0x{wo.Generator.Guid}:{wo.Generator.Name}");
+                        _log.Debug("AddWorldObjectInternal: couldn't spawn 0x{WorldObjectGuid}:{WorldObjectName} [{WorldObjectWeenieClassId} - {WorldObjectWeenieType}] at {WorldObjectLocation} from generator {WorldObjectGeneratorWeenieClassId} - 0x{WorldObjectGeneratorGuid}:{WorldObjectGeneratorName}", wo.Guid, wo.Name, wo.WeenieClassId, wo.WeenieType, wo.Location.ToLOCString(), wo.Generator.WeenieClassId, wo.Generator.Guid, wo.Generator.Name);
                         wo.NotifyOfEvent(RegenerationType.PickUp); // Notify generator the generated object is effectively destroyed, use Pickup to catch both cases.
                     }
                     else if (wo.IsGenerator) // Some generators will fail random spawns if they're circumference spans over water or cliff edges
-                        _log.Debug($"AddWorldObjectInternal: couldn't spawn generator 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}] at {wo.Location.ToLOCString()}");
+                    {
+                        _log.Debug("AddWorldObjectInternal: couldn't spawn generator 0x{WorldObjectGuid}:{WorldObjectName} [{WorldObjectWeenieClassId} - {WorldObjectWeenieType}] at {WorldObjectLocation}", wo.Guid, wo.Name, wo.WeenieClassId, wo.WeenieType, wo.Location.ToLOCString());
+                    }
                     else if (wo.ProjectileTarget == null && !(wo is SpellProjectile))
-                        _log.Warning($"AddWorldObjectInternal: couldn't spawn 0x{wo.Guid}:{wo.Name} [{wo.WeenieClassId} - {wo.WeenieType}] at {wo.Location.ToLOCString()}");
+                        _log.Warning("AddWorldObjectInternal: couldn't spawn 0x{WorldObjectGuid}:{WorldObjectName} [{WorldObjectWeenieClassId} - {WorldObjectWeenieType}] at {WorldObjectLocation}", wo.Guid, wo.Name, wo.WeenieClassId, wo.WeenieType, wo.Location.ToLOCString());
 
                     return false;
                 }
@@ -1108,7 +1120,7 @@ namespace ACE.Server.Entity
 
                     if (corpse != null)
                     {
-                        _log.Warning($"[CORPSE] Landblock.AddWorldObjectInternal(): {wo.Name} (0x{wo.Guid}) exceeds the per player limit of {corpseLimit} corpses for 0x{Id.Landblock:X4}. Adjusting TimeToRot for oldest {corpse.Name} (0x{corpse.Guid}), CreationTimestamp: {corpse.CreationTimestamp} ({Common.Time.GetDateTimeFromTimestamp(corpse.CreationTimestamp ?? 0).ToLocalTime():yyyy-MM-dd HH:mm:ss}), to Corpse.EmptyDecayTime({Corpse.EmptyDecayTime}).");
+                        _log.Warning("[CORPSE] Landblock.AddWorldObjectInternal(): {WorldObjectName} (0x{WorldObjectGuid}) exceeds the per player limit of {CorpseLimit} corpses for 0x{LandblockId:X4}. Adjusting TimeToRot for oldest {CorpseName} (0x{CorpseGuid}), CreationTimestamp: {CorpseCreationTimestamp} ({CorpseCreationTimestampLocalTime::yyyy-MM-dd HH:mm:ss}), to Corpse.EmptyDecayTime({CorpseEmptyDecayTime}).", wo.Name, wo.Guid, corpseLimit, Id.Landblock, corpse.Name, corpse.Guid, corpse.CreationTimestamp, Common.Time.GetDateTimeFromTimestamp(corpse.CreationTimestamp ?? 0).ToLocalTime(), Corpse.EmptyDecayTime);
                         corpse.TimeToRot = Corpse.EmptyDecayTime;
                     }
                 }
@@ -1326,7 +1338,7 @@ namespace ACE.Server.Entity
         {
             var landblockID = Id.Raw | 0xFFFF;
 
-            //log.Debug($"Landblock.Unload({landblockID:X8})");
+            //log.DebugFormat("Landblock.Unload({0:X8})", landblockID);
 
             ProcessPendingWorldObjectAdditionsAndRemovals();
 
@@ -1480,7 +1492,7 @@ namespace ACE.Server.Entity
         //
         /// If a landblock contains both a dungeon + traversable overworld,
         /// this field will return TRUE, whereas IsDungeon will return FALSE
-        /// 
+        ///
         /// This property should only be used in very specific scenarios,
         /// such as determining if a landblock contains a mansion basement
         /// </summary>
@@ -1679,10 +1691,10 @@ namespace ACE.Server.Entity
             foreach (var landblockId in dungeonLandblocks)
             {
                 if (landblockId != landblock.Id && LandblockManager.IsLoaded(landblockId))
-                { 
+                {
                     var otherDungeon = LandblockManager.GetLandblock(landblockId, false);
                     if (otherDungeon.CapstonePlayers.Keys.Contains(player))
-                        otherDungeon.CapstonePlayers.Remove(player); 
+                        otherDungeon.CapstonePlayers.Remove(player);
                 }
             } */
             player.CapstoneDungeon = landblock.Id;
@@ -1819,7 +1831,7 @@ namespace ACE.Server.Entity
             {new LandblockId(0x19FC << 16 | 0xFFFF), new Position(0x19FC0336, 62.5684F, -109.99126F, 0.005F, 0, 0, -0.707107f, 0.707107f) },
             {new LandblockId(0x19FB << 16 | 0xFFFF), new Position(0x19FB0336, 62.5684F, -109.99126F, 0.005F, 0, 0, -0.707107f, 0.707107f) },
             {new LandblockId(0x19FA << 16 | 0xFFFF), new Position(0x19FA0336, 62.5684F, -109.99126F, 0.005F, 0, 0, -0.707107f, 0.707107f) },
-            
+
             // Mines of Despair 0x0188, 0x0CFE, 0x0CFD, 0x0CFC, 0x0CFB, 0x0CFA
             {new LandblockId(0x0188 << 16 | 0xFFFF), new Position(0x01880307, 30f, -70f, 0f, 0f, 0f, 0f, 1f) },
             {new LandblockId(0x0CFE << 16 | 0xFFFF), new Position(0x0CFE0307, 30f, -70f, 0f, 0f, 0f, 0f, 1f) },
@@ -1836,7 +1848,7 @@ namespace ACE.Server.Entity
             {new LandblockId(0x0DFB << 16 | 0xFFFF), new Position(0x0DFB0160, 110f, -10f, 0f,  0f, 0f, -0.707107f, 0.707107f) },
             {new LandblockId(0x0DFA << 16 | 0xFFFF), new Position(0x0DFA0160, 110f, -10f, 0f,  0f, 0f, -0.707107f, 0.707107f) },
 
-            // Gredaline Consulate   0x029B, 0x11FE, 0x11FD, 0x11FC, 0x11FB, 0x11FA 
+            // Gredaline Consulate   0x029B, 0x11FE, 0x11FD, 0x11FC, 0x11FB, 0x11FA
             {new LandblockId(0x029B << 16 | 0xFFFF), new Position(0x029B0317, 279.8409f, -292.3339f, 6.005f, 0f, 0f, 1f, 0f) },
             {new LandblockId(0x11FE << 16 | 0xFFFF), new Position(0x11FE0317, 279.8409f, -292.3339f, 6.005f, 0f, 0f, 1f, 0f) },
             {new LandblockId(0x11FD << 16 | 0xFFFF), new Position(0x11FD0317, 279.8409f, -292.3339f, 6.005f, 0f, 0f, 1f, 0f) },
@@ -1859,7 +1871,7 @@ namespace ACE.Server.Entity
             {new LandblockId(0x16FC << 16 | 0xFFFF), new Position(0x16FC010E, 70.0493f, -480.134f, -11.995f, 0f, 0f, -0.701483f, 0.712686f) },
             {new LandblockId(0x16FB << 16 | 0xFFFF), new Position(0x16FB010E, 70.0493f, -480.134f, -11.995f, 0f, 0f, -0.701483f, 0.712686f) },
             {new LandblockId(0x16FA << 16 | 0xFFFF), new Position(0x16FA010E, 70.0493f, -480.134f, -11.995f, 0f, 0f, -0.701483f, 0.712686f) },
-             
+
             // Deeper into Lugian Mines 0x02E7, 0x17FE, 0x17FD, 0x17FC, 0x17FB, 0x17FA
             {new LandblockId(0x02E7 << 16 | 0xFFFF), new Position(0x02E70282, 509.92538f, -13.700772f, 12.004999f, 0f, 0f, 1f, 0f) },
             {new LandblockId(0x17FE << 16 | 0xFFFF), new Position(0x17FE0282, 509.92538f, -13.700772f, 12.004999f, 0f, 0f, 1f, 0f) },

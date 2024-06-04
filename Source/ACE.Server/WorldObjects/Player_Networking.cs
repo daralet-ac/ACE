@@ -14,6 +14,7 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Sequence;
 using ACE.Server.Network.Structure;
+using Serilog.Events;
 
 namespace ACE.Server.WorldObjects
 {
@@ -140,7 +141,7 @@ namespace ACE.Server.WorldObjects
                 actionChain.EnqueueChain();
             }
 
-            _log.Debug($"[LOGIN] Account {Account.AccountName} entered the world with character {Name} (0x{Guid}) at {DateTime.Now}.");
+            _log.Debug("[LOGIN] Account {Account} entered the world with character {PlayerName} (0x{PlayerGuid}) at {Timestamp}.", Account.AccountName, Name, Guid, DateTime.Now);
         }
 
         public void SendTurbineChatChannels(bool breakAllegiance = false)
@@ -259,7 +260,7 @@ namespace ACE.Server.WorldObjects
             foreach (var item in EquippedObjects.Values)
             {
                 item.Wielder = this;
-                Session.Network.EnqueueSend(new GameMessageCreateObject(item));                
+                Session.Network.EnqueueSend(new GameMessageCreateObject(item));
             }
         }
 
@@ -377,7 +378,7 @@ namespace ACE.Server.WorldObjects
                 var forwardCommand =  CurrentMovementData.Invalid.State.ForwardCommand;
                 if (forwardCommand != MotionCommand.Crouch && forwardCommand != MotionCommand.Sitting && forwardCommand != MotionCommand.Sleeping)
                 {
-                    var spell = new ACE.Server.Entity.Spell(SpellId.CampfireRest1);  
+                    var spell = new ACE.Server.Entity.Spell(SpellId.CampfireRest1);
                     CreateEnchantment(this, WellRestedHotspot, null, spell);
 
                     WellRestedHotspot = null;
@@ -390,7 +391,7 @@ namespace ACE.Server.WorldObjects
         public void SetFogColor(EnvironChangeType fogColor)
         {
             if (fogColor == EnvironChangeType.Clear && !currentFogColor.HasValue)
-                return;                
+                return;
 
             if (LandblockManager.GlobalFogColor.HasValue && currentFogColor != fogColor)
             {

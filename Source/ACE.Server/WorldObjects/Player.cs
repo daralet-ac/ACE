@@ -324,7 +324,7 @@ namespace ACE.Server.WorldObjects
 
             if (wo == null)
             {
-                //log.Debug($"{Name}.HandleActionIdentifyObject({objectGuid:X8}): couldn't find object");
+                //log.DebugFormat("{0}.HandleActionIdentifyObject({1:X8}): couldn't find object", Name, objectGuid);
                 Session.Network.EnqueueSend(new GameEventIdentifyObjectResponse(Session, objectGuid));
                 return;
             }
@@ -710,7 +710,7 @@ namespace ACE.Server.WorldObjects
             SavePlayerToDatabase();
             PlayerManager.SwitchPlayerFromOnlineToOffline(this);
 
-            _log.Debug($"[LOGOUT] Account {Account.AccountName} exited the world with character {Name} (0x{Guid}) at {DateTime.Now}.");
+            _log.Debug("[LOGOUT] Account {Account} exited the world with character {Name} (0x{Guid}) at {Timestamp}.", Account.AccountName, Name, Guid, DateTime.Now);
         }
 
         public void HandleMRT()
@@ -738,10 +738,6 @@ namespace ACE.Server.WorldObjects
             // Session.Network.EnqueueSend(new GameMessageAutonomousPosition(this));
         }
 
-
-
-        
-
         /// <summary>
         ///  Sends object description if the client requests it
         /// </summary>
@@ -750,7 +746,7 @@ namespace ACE.Server.WorldObjects
             var wo = FindObject(itemGuid, SearchLocations.Everywhere);
             if (wo == null)
             {
-                //log.Debug($"HandleActionForceObjDescSend() - couldn't find object {itemGuid:X8}");
+                //log.DebugFormat("HandleActionForceObjDescSend() - couldn't find object {0:X8}", itemGuid);
                 return;
             }
             Session.Network.EnqueueSend(new GameMessageObjDescEvent(wo));

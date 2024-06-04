@@ -126,7 +126,7 @@ namespace ACE.Server.WorldObjects
             {
                 KillerId = topDamager.Guid.Full;
 
-                //  Console.WriteLine(topDamager.HotspotOwner);  
+                //  Console.WriteLine(topDamager.HotspotOwner);
 
                 if (topDamager.IsPlayer)
                 {
@@ -510,7 +510,7 @@ namespace ACE.Server.WorldObjects
 
                 foreach (var item in loot)
                 {
-                    if (!string.IsNullOrEmpty(item.Quest)) // if the item has a Quest string, make the creature a "generator" of the item so that the pickup action applies the quest. 
+                    if (!string.IsNullOrEmpty(item.Quest)) // if the item has a Quest string, make the creature a "generator" of the item so that the pickup action applies the quest.
                         item.GeneratorId = Guid.Full;
                     item.Location = new Position(Location);
                     LandblockManager.AddObject(item);
@@ -682,7 +682,7 @@ namespace ACE.Server.WorldObjects
 
                     if (dropped.Count == 0 && !isPKLdeath)
                         player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have retained all your items. You do not need to recover your corpse!", ChatMessageType.Broadcast));
-                }                
+                }
             }
             else
             {
@@ -725,9 +725,9 @@ namespace ACE.Server.WorldObjects
             if (player != null)
             {
                 if (corpse.PhysicsObj == null || corpse.PhysicsObj.Position == null)
-                    _log.Debug($"[CORPSE] {Name}'s corpse (0x{corpse.Guid}) failed to spawn! Tried at {player.Location.ToLOCString()}");
+                    _log.Debug("[CORPSE] {Name}'s corpse (0x{CorpseGuid}) failed to spawn! Tried at {PlayerLocation}", Name, corpse.Guid, player.Location.ToLOCString());
                 else
-                    _log.Debug($"[CORPSE] {Name}'s corpse (0x{corpse.Guid}) is located at {corpse.PhysicsObj.Position}");
+                    _log.Debug("[CORPSE] {Name}'s corpse (0x{CorpseGuid}) is located at {CorpsePhysicsObjLocation}", Name, corpse.Guid, corpse.PhysicsObj.Position);
             }
 
             if (saveCorpse)

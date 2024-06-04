@@ -156,7 +156,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// For advanced spellcasting / players glitching around during powersliding,
         /// the reason for this retail bug is from 2 different functions for player movement
-        /// 
+        ///
         /// The client's self-player uses DoMotion/StopMotion
         /// The server and other players on the client use apply_raw_movement
         ///
@@ -325,7 +325,7 @@ namespace ACE.Server.WorldObjects
                 if (elapsedSeconds >= 1) // Yea, that ain't good....
                     _log.Warning($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}");
                 else if (elapsedSeconds >= 0.010)
-                    _log.Debug($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}");
+                    _log.Debug("[PERFORMANCE][PHYSICS] {Guid}:{Name} took {ElapsedTimeMs):N1} ms to process UpdateObjectPhysics() at loc: {Location}", Guid, Name, (elapsedSeconds * 1000), Location);
             }
         }
 
@@ -394,10 +394,10 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// The maximum rate UpdatePosition packets from MoveToState will be broadcast for each player
         /// AutonomousPosition still always broadcasts UpdatePosition
-        ///  
+        ///
         /// The default value (1 second) was estimated from this retail video:
         /// https://youtu.be/o5lp7hWhtWQ?t=112
-        /// 
+        ///
         /// If you wish for players to glitch around less during powerslides, lower this value
         /// </summary>
         public static TimeSpan MoveToState_UpdatePosition_Threshold = TimeSpan.FromSeconds(1);
@@ -529,7 +529,7 @@ namespace ACE.Server.WorldObjects
                     if (elapsedSeconds >= 0.100) // Yea, that ain't good....
                         _log.Warning($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdatePlayerPosition() at loc: {Location}");
                     else if (elapsedSeconds >= 0.010)
-                        _log.Debug($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdatePlayerPosition() at loc: {Location}");
+                        _log.Debug("[PERFORMANCE][PHYSICS] {Guid}:{Name} took {ElapsedTimeMs:N1} ms to process UpdatePlayerPosition() at loc: {Location}", Guid, Name, (elapsedSeconds * 1000), Location);
                 }
             }
         }

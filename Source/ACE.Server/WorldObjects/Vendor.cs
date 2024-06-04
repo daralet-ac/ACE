@@ -61,7 +61,7 @@ namespace ACE.Server.WorldObjects
     /// ** Buy Data Flow **
     ///
     /// Player.HandleActionBuyItem -> Vendor.BuyItems_ValidateTransaction -> Player.FinalizeBuyTransaction -> Vendor.BuyItems_FinalTransaction
-    ///     
+    ///
     /// </summary>
     public class Vendor : Creature
     {
@@ -117,7 +117,7 @@ namespace ACE.Server.WorldObjects
 
             LastRestockTime = DateTime.UnixEpoch;
             OpenForBusiness = ValidateVendorRequirements();
-            
+
             SetMerchandiseItemTypes();
         }
 
@@ -388,7 +388,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// After a player approaches a vendor, this is called every closeInterval seconds
         /// to see if the player is still within the UseRadius of the vendor.
-        /// 
+        ///
         /// If the player has moved away, the vendor Close emote is called (waving goodbye, saying farewell)
         /// </summary>
         public void CheckClose()
@@ -762,7 +762,7 @@ namespace ACE.Server.WorldObjects
             sellsRandomMeleeWeapons = ((ItemType)MerchandiseItemTypes & ItemType.MeleeWeapon) == ItemType.MeleeWeapon;
             sellsRandomMissileWeapons = ((ItemType)MerchandiseItemTypes & ItemType.MissileWeapon) == ItemType.MissileWeapon;
             sellsRandomCasters = ((ItemType)MerchandiseItemTypes & ItemType.Caster) == ItemType.Caster;
-            
+
             if (!IsStarterOutpostVendor)
             {
                 sellsRandomClothing = ((ItemType)MerchandiseItemTypes & ItemType.Clothing) == ItemType.Clothing;
@@ -928,7 +928,7 @@ namespace ACE.Server.WorldObjects
                     added++;
                 }
             }
-            
+
             UniqueItemsForSale = new Dictionary<ObjectGuid, WorldObject>(UniqueItemsForSale.OrderBy(key => key.Value, VendorItemComparer));
         }
 
@@ -1007,7 +1007,7 @@ namespace ACE.Server.WorldObjects
             {
                 foreach (var itemToRemove in itemsToRemove)
                 {
-                    _log.Debug($"[VENDOR] Vendor {Name} has discontinued sale of {itemToRemove.Name} and removed it from its UniqueItemsForSale list.");
+                    _log.Debug("[VENDOR] Vendor {Name} has discontinued sale of {ItemToRemove} and removed it from its UniqueItemsForSale list.", Name, itemToRemove.Name);
                     UniqueItemsForSale.Remove(itemToRemove.Guid);
 
                     itemToRemove.Destroy();     // even though it has already been removed from the db at this point, we want to mark as freed in guid manager now
@@ -1118,17 +1118,17 @@ namespace ACE.Server.WorldObjects
         }
 
         private void LoadDefaultItems(Dictionary<(uint weenieClassId, int paletteTemplate, double shade), uint> itemsForSale, List<(int, bool, int, uint, int, double, int)> defaultItems)
-        { 
+        {
             foreach (var item in defaultItems)
             {
                 var (itemTier, onlyThisTier, itemHeritage, itemWcid, itemPaletteTemplate, itemShade, itemStackSize) = item;
 
                 if (itemHeritage != 0 && Heritage != itemHeritage)
                     continue;
-                
+
                 if (onlyThisTier && itemTier != ShopTier - 1)
                     continue;
-                
+
                 if (ShopTier - 1 >= itemTier)
                 {
                     LoadInventoryItem(itemsForSale, itemWcid, itemPaletteTemplate, (float)itemShade, itemStackSize);

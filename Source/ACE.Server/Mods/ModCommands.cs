@@ -1,7 +1,4 @@
 using System;
-
-//using log4net;
-
 using ACE.Entity.Enum;
 using ACE.Server.Network;
 using ACE.Server.Mods;
@@ -94,7 +91,8 @@ namespace ACE.Server.Command.Handlers
 
                 //Full reload
                 case ModCommand.Find:
-                    ModManager.FindMods();
+                    ModManager.FindMods(true);
+                    ModManager.ListMods();
                     return;
 
                 //Lazy opening of mod settings

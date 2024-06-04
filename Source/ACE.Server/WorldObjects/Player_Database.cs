@@ -9,6 +9,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog.Events;
 
 namespace ACE.Server.WorldObjects
 {
@@ -102,7 +103,7 @@ namespace ACE.Server.WorldObjects
 
             DatabaseManager.Shard.SaveBiotasInParallel(biotas, result =>
             {
-                _log.Debug($"{Name} has been saved. It took {(DateTime.UtcNow - requestedTime).TotalMilliseconds:N0} ms to process the request.");
+                _log.Debug("{PlayerName} has been saved. It took {TimeElapsedMs:N0} ms to process the request.", Name, (DateTime.UtcNow - requestedTime).TotalMilliseconds);
 
                 if (!result)
                 {

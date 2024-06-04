@@ -89,7 +89,7 @@ namespace ACE.Server
 
             if (IsRunningInContainer)
                 _log.Information("ACEmulator is running in a container...");
-            
+
             var configFile = Path.Combine(exeLocation, "Config.js");
             var configConfigContainer = Path.Combine(containerConfigDirectory, "Config.js");
 
@@ -114,6 +114,9 @@ namespace ACE.Server
 
             _log.Information("Initializing ConfigManager...");
             ConfigManager.Initialize();
+
+            _log.Information("Initializing ModManager...");
+            ModManager.Initialize();
 
             if (ConfigManager.Config.Server.WorldName != "ACEmulator")
             {
@@ -292,6 +295,10 @@ namespace ACE.Server
 
             _log.Information("Initializing ModManager...");
             ModManager.Initialize();
+            //Register mod commands
+            _log.Information("Registering ModManager commands...");
+            ModManager.RegisterCommands();
+            ModManager.ListMods();
 
             var discordConfig = configuration.GetSection("Discord");
             if (discordConfig.GetValue<bool>("Enabled"))

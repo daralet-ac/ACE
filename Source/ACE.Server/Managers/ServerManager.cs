@@ -147,13 +147,22 @@ namespace ACE.Server.Managers
                 if (playerCount > 0 && DateTime.UtcNow - playerLogoffStart > TimeSpan.FromMinutes(5))
                 {
                     playerLogoffStart = DateTime.UtcNow;
-                    _log.Warning($"5 minute log off failsafe reached and there are {playerCount} player{(playerCount > 1 ? "s" : "")} still online.");
+                    if (playerCount > 1)
+                    {
+                        _log.Warning("5 minute log off failsafe reached and there are {PlayerCount} players still online.", playerCount);
+                    }
+                    else
+                    {
+                        _log.Warning("5 minute log off failsafe reached and there is {PlayerCount} player still online.", playerCount);
+                    }
+
                     foreach (var player in PlayerManager.GetAllOnline())
                     {
-                        _log.Warning($"Player {player.Name} (0x{player.Guid}) appears to be stuck in world and unable to log off normally. Requesting Forced Logoff...");
+                        _log.Warning("Player {PlayerName} (0x{PlayerGuid}) appears to be stuck in world and unable to log off normally. Requesting Forced Logoff...", player.Name, player.Guid);
+
                         player.ForcedLogOffRequested = true;
                         player.ForceLogoff();
-                    }    
+                    }
                 }
             }
 

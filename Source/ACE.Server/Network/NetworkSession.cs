@@ -120,10 +120,34 @@ namespace ACE.Server.Network
             foreach (var message in messages)
             {
                 var grp = message.Group;
-                var currentBundleLock = currentBundleLocks[(int) grp];
+                var currentBundleLock = currentBundleLocks[(int)grp];
                 lock (currentBundleLock)
                 {
-                    var currentBundle = currentBundles[(int) grp];
+                    var currentBundle = currentBundles[(int)grp];
+                    currentBundle.EncryptedChecksum = true;
+                    _log.Verbose("[{LoggingIdentifier}] Enqueuing Message {MessageOpCode}", session.LoggingIdentifier, message.Opcode);
+                    currentBundle.Enqueue(message);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Enequeues a GameMessage for sending to this client.
+        /// This may be called from many threads.
+        /// </summary>
+        /// <param name="messages">One or more GameMessages to send</param>
+        public void EnqueueSend(IEnumerable<GameMessage> messages)
+        {
+            if (isReleased) // Session has been removed
+                return;
+
+            foreach (var message in messages)
+            {
+                var grp = message.Group;
+                var currentBundleLock = currentBundleLocks[(int)grp];
+                lock (currentBundleLock)
+                {
+                    var currentBundle = currentBundles[(int)grp];
                     currentBundle.EncryptedChecksum = true;
                     _log.Verbose("[{LoggingIdentifier}] Enqueuing Message {MessageOpCode}", session.LoggingIdentifier, message.Opcode);
                     currentBundle.Enqueue(message);
@@ -296,7 +320,7 @@ namespace ACE.Server.Network
 
             // depending on the current session state:
             // Set the next timeout tick value, to compare against in the WorldManager
-            // Sessions that have gone past the AuthLoginRequest step will stay active for a longer period of time (exposed via configuration) 
+            // Sessions that have gone past the AuthLoginRequest step will stay active for a longer period of time (exposed via configuration)
             // Sessions that in the AuthLoginRequest will have a short timeout, as set in the AuthenticationHandler.DefaultAuthTimeout.
             // Example: Applications that check uptime will stay in the AuthLoginRequest state.
             session.Network.TimeoutTick = (session.State == SessionState.AuthLoginRequest) ?
@@ -342,7 +366,7 @@ namespace ACE.Server.Network
             // Processing stage
             // If we reach here, this is a packet we should proceed with processing.
             HandleOrderedPacket(packet);
-        
+
             // Process data now in sequence
             // Finally check if we have any out of order packets or fragments we need to process;
             CheckOutOfOrderPackets();
@@ -647,7 +671,7 @@ namespace ACE.Server.Network
         {
             if (cachedPackets.TryGetValue(sequence, out var cachedPacket))
             {
-                _log.Verbose("[{LoggingIdentifier}] Retransmit {PacketSequence}", session.LoggingIdentifier, sequence);
+                _log.Verbose("[{LoggingIdentifier}] Retransmit {FragmentSequence}", session.LoggingIdentifier, sequence);
 
                 if (!cachedPacket.Header.HasFlag(PacketHeaderFlags.Retransmission))
                     cachedPacket.Header.Flags |= PacketHeaderFlags.Retransmission;
@@ -662,15 +686,15 @@ namespace ACE.Server.Network
                 // This is to catch a race condition between .Count and .Min() and .Max()
                 try
                 {
-                    _log.Error($"Session {session.Network?.ClientId}\\{session.EndPointC2S} ({session.Account}:{session.Player?.Name}) retransmit requested packet {sequence} not in cache. Cache range {cachedPackets.Keys.Min()} - {cachedPackets.Keys.Max()}.");
+                    _log.Verbose("Session {ClientId}\\{EndPointC2S} ({Account}:{PlayerName}) retransmit requested packet {Sequence} not in cache. Cache range {CacheMin} - {CacheMax}.", session.Network?.ClientId, session.EndPointC2S, session.Account, session.Player?.Name, sequence, cachedPackets.Keys.Min(), cachedPackets.Keys.Max());
                 }
                 catch
                 {
-                    _log.Error($"Session {session.Network?.ClientId}\\{session.EndPointC2S} ({session.Account}:{session.Player?.Name}) retransmit requested packet {sequence} not in cache. Cache is empty. Race condition threw exception.");
+                    _log.Verbose("Session {ClientId}\\{EndPointC2S} ({Account}:{PlayerName}) retransmit requested packet {Sequence} not in cache. Cache is empty. Race condition threw exception.", session.Network?.ClientId, session.EndPointC2S, session.Account, session.Player?.Name, sequence);
                 }
             }
             else
-                _log.Error($"Session {session.Network?.ClientId}\\{session.EndPointC2S} ({session.Account}:{session.Player?.Name}) retransmit requested packet {sequence} not in cache. Cache is empty.");
+                _log.Verbose("Session {ClientId}\\{EndPointC2S} ({Account}:{PlayerName}) retransmit requested packet {Sequence} not in cache. Cache is empty.", session.Network?.ClientId, session.EndPointC2S, session.Account, session.Player?.Name, sequence);
 
             return false;
         }
@@ -729,7 +753,7 @@ namespace ACE.Server.Network
 
                 packet.CreateReadyToSendPacket(buffer, out var size);
 
-                _log.Verbose(packet.ToString());
+                _log.Verbose("{Packet}", packet.ToString());
 
                 if (_log.IsEnabled(LogEventLevel.Verbose))
                 {

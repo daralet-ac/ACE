@@ -11,6 +11,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
+using Serilog.Events;
 
 namespace ACE.Server.WorldObjects
 {
@@ -106,7 +107,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            _log.Debug($"[ALLEGIANCE] {Name} ({Level}) swearing allegiance to {patron.Name} ({patron.Level})");
+            _log.Debug("[ALLEGIANCE] {PlayerName} ({Level}) swearing allegiance to {PatronName} ({PatronLevel})", Name, Level, patron.Name, patron.Level);
 
             PatronId = targetGuid;
             AllegianceLog += $"{patron.Name}/{patron.Account.AccountId}/{Time.GetUnixTime()}";
@@ -227,7 +228,7 @@ namespace ACE.Server.WorldObjects
 
             if (target == null) return;
 
-            _log.Debug($"[ALLEGIANCE] {Name} breaking allegiance to {target.Name}");
+            _log.Debug("[ALLEGIANCE] {PlayerName} breaking allegiance to {TargetName}", Name, target.Name);
 
             // target can be either patron or vassal
             var isPatron = PatronId == target.Guid.Full;
@@ -1510,7 +1511,7 @@ namespace ACE.Server.WorldObjects
 
         public void HandleActionBreakAllegianceBoot(string playerName, bool accountBoot)
         {
-            _log.Debug($"[ALLEGIANCE] {Name}.HandleActionBreakAllegianceBoot({playerName}, {accountBoot})");
+            _log.Debug("[ALLEGIANCE] {PlayerName}.HandleActionBreakAllegianceBoot({PlayerName}, {AccountBoot})", Name, playerName, accountBoot);
 
             // TODO: handle account boot
 

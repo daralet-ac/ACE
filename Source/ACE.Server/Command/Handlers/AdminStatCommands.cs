@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using ACE.Common;
 using ACE.Database;
 using ACE.DatLoader;
@@ -34,6 +35,26 @@ namespace ACE.Server.Command.Handlers
             DeveloperDatabaseCommands.HandleDatabaseQueueInfo(session, parameters);
         }
 
+        [CommandHandler("threaddebug", AccessLevel.Advocate, CommandHandlerFlag.None, 0, "temporary thread testing")]
+        public static void HandleThreadDebug(Session session, params string[] parameters)
+        {
+            var sb = new StringBuilder();
+
+            sb.Append($"TickPhysicsInformation.Values.Count: {LandblockManager.TickPhysicsInformation.Values.Count}{'\n'}");
+            foreach (var value in LandblockManager.TickPhysicsInformation.Values)
+            {
+                sb.Append($"NumberOfParalellHits: {value.NumberOfParalellHits.ToString().PadLeft(3)}, NumberOfLandblocksInThisThread: {value.NumberOfLandblocksInThisThread.ToString().PadLeft(3)}, TotalTickDuration: {value.TotalTickDuration.TotalMilliseconds.ToString("N1").PadLeft(4)} ms, LongestTickedLandblockGroup: {value.LongestTickedLandblockGroup.TotalMilliseconds.ToString("N1").PadLeft(4)} ms{'\n'}");
+            }
+
+            sb.Append($"TickMultiThreadedWorkInformation.Values.Count: {LandblockManager.TickMultiThreadedWorkInformation.Values.Count}{'\n'}");
+            foreach (var value in LandblockManager.TickMultiThreadedWorkInformation.Values)
+            {
+                sb.Append($"NumberOfParalellHits: {value.NumberOfParalellHits.ToString().PadLeft(3)}, NumberOfLandblocksInThisThread: {value.NumberOfLandblocksInThisThread.ToString().PadLeft(3)}, TotalTickDuration: {value.TotalTickDuration.TotalMilliseconds.ToString("N1").PadLeft(4)} ms, LongestTickedLandblockGroup: {value.LongestTickedLandblockGroup.TotalMilliseconds.ToString("N1").PadLeft(4)} ms{'\n'}");
+            }
+
+            CommandHandlerHelper.WriteOutputInfo(session, $"{sb}");
+        }
+
         // serverstatus
         [CommandHandler("serverstatus", AccessLevel.Advocate, CommandHandlerFlag.None, 0, "Displays a summary of server statistics and usage")]
         public static void HandleServerStatus(Session session, params string[] parameters)
@@ -47,6 +68,12 @@ namespace ACE.Server.Command.Handlers
             sb.Append($"Server Status:{'\n'}");
 
             sb.Append($"Host Info: {Environment.OSVersion}, vCPU: {Environment.ProcessorCount}{'\n'}");
+
+            ThreadPool.GetMinThreads(out var minWorkerThreads, out var minCompletionPortThreads);
+            ThreadPool.GetMaxThreads(out var maxWorkerThreads, out var maxCompletionPortThreads);
+            ThreadPool.GetAvailableThreads(out var availWorkerThreads, out var availCompletionPortThreads);
+
+            sb.Append($"ThreadPool Min: {minWorkerThreads} {minCompletionPortThreads}, Max: {maxWorkerThreads} {maxCompletionPortThreads}, Avail: {availWorkerThreads} {availCompletionPortThreads}, Current: {ThreadPool.ThreadCount}{'\n'}");
 
             var runTime = DateTime.Now - proc.StartTime;
             sb.Append($"Server Runtime: {(int)runTime.TotalHours}h {runTime.Minutes}m {runTime.Seconds}s{'\n'}");
@@ -107,7 +134,8 @@ namespace ACE.Server.Command.Handlers
             sb.Append($"Total Server Objects: {ServerObjectManager.ServerObjects.Count:N0}{'\n'}");
 
             sb.Append($"World DB Cache Counts - Weenies: {DatabaseManager.World.GetWeenieCacheCount():N0}, LandblockInstances: {DatabaseManager.World.GetLandblockInstancesCacheCount():N0}, PointsOfInterest: {DatabaseManager.World.GetPointsOfInterestCacheCount():N0}, Cookbooks: {DatabaseManager.World.GetCookbookCacheCount():N0}, Spells: {DatabaseManager.World.GetSpellCacheCount():N0}, Encounters: {DatabaseManager.World.GetEncounterCacheCount():N0}, Events: {DatabaseManager.World.GetEventsCacheCount():N0}{'\n'}");
-            sb.Append($"Shard DB Counts - Biotas: {DatabaseManager.Shard.BaseDatabase.GetBiotaCount():N0}{'\n'}");
+            //sb.Append($"Shard DB Counts - Biotas: {DatabaseManager.Shard.BaseDatabase.GetBiotaCount():N0}{'\n'}");
+            sb.Append($"Shard DB Counts - Biotas: ~{DatabaseManager.Shard.BaseDatabase.GetEstimatedBiotaCount(ConfigManager.Config.MySql.Shard.Database):N0}{'\n'}");
             if (DatabaseManager.Shard.BaseDatabase is ShardDatabaseWithCaching shardDatabaseWithCaching)
             {
                 var biotaIds = shardDatabaseWithCaching.GetBiotaCacheKeys();
@@ -124,15 +152,15 @@ namespace ACE.Server.Command.Handlers
             CommandHandlerHelper.WriteOutputInfo(session, $"{sb}");
         }
 
-        // serverstatus
+        // serverperformance
         [CommandHandler("serverperformance", AccessLevel.Advocate, CommandHandlerFlag.None, 0, "Displays a summary of server performance statistics")]
         public static void HandleServerPerformance(Session session, params string[] parameters)
         {
             if (parameters != null && (parameters.Length == 1 || parameters.Length == 2))
             {
-                if (parameters[0].ToLower() == "start")
+                if (parameters.Length >= 1 && parameters[0].ToLower() == "start")
                 {
-                    if (parameters[1].ToLower() == "cumulative")
+                    if (parameters.Length >= 2 && parameters[1].ToLower() == "cumulative")
                     {
                         ServerPerformanceMonitor.StartCumulative();
                         CommandHandlerHelper.WriteOutputInfo(session, "Cumulative Server Performance Monitor started");
@@ -146,9 +174,9 @@ namespace ACE.Server.Command.Handlers
                     }
                 }
 
-                if (parameters[0].ToLower() == "stop")
+                if (parameters.Length >= 1 && parameters[0].ToLower() == "stop")
                 {
-                    if (parameters[1].ToLower() == "cumulative")
+                    if (parameters.Length >= 2 && parameters[1].ToLower() == "cumulative")
                     {
                         ServerPerformanceMonitor.StopCumulative();
                         CommandHandlerHelper.WriteOutputInfo(session, "Cumulative Server Performance Monitor stopped");
@@ -162,7 +190,7 @@ namespace ACE.Server.Command.Handlers
                     }
                 }
 
-                if (parameters[0].ToLower() == "reset")
+                if (parameters.Length >= 1 && parameters[0].ToLower() == "reset")
                 {
                     ServerPerformanceMonitor.Reset();
                     CommandHandlerHelper.WriteOutputInfo(session, "Server Performance Monitor reset");
@@ -234,6 +262,37 @@ namespace ACE.Server.Command.Handlers
                           $"{entry.Monitor1h.EventHistory.TotalEvents.ToString().PadLeft(7)} {entry.Monitor1h.EventHistory.AverageEventDuration:N4} {entry.Monitor1h.EventHistory.LongestEvent:N3} {entry.Monitor1h.EventHistory.LastEvent:N3} - " +
                           $"0x{entry.Id.Raw:X8} {players.ToString().PadLeft(7)}  {creatures.ToString().PadLeft(9)}{'\n'}");
             }
+
+            CommandHandlerHelper.WriteOutputInfo(session, sb.ToString());
+        }
+
+        [CommandHandler("lbgroupstats", AccessLevel.Advocate, CommandHandlerFlag.None, 0, "Displays a summary of landblock group stats")]
+        public static void HandleLBGroupStats(Session session, params string[] parameters)
+        {
+            var sb = new StringBuilder();
+
+            var loadedLanblockGroups = LandblockManager.GetLoadedLandblockGroups();
+
+
+            sb.Append($"Largest Landblock Groups{'\n'}");
+            sb.Append($"Cnt, XMin - XMax, YMin - YMax, NextTrySplitTime{'\n'}");
+
+            var sortedByLargest = loadedLanblockGroups.OrderByDescending(r => r.Count).ToList();
+
+            for (int i = 0; i < Math.Min(5, sortedByLargest.Count - 1); i++)
+            {
+                var landblockGroup = sortedByLargest[i];
+
+                sb.Append($"{landblockGroup.Count.ToString().PadLeft(3)},   {landblockGroup.XMin.ToString("X2").PadLeft(2)} - {landblockGroup.XMax.ToString("X2").PadLeft(2)},     {landblockGroup.YMin.ToString("X2").PadLeft(2)} - {landblockGroup.YMax.ToString("X2").PadLeft(2)},      {(landblockGroup.NextTrySplitTime - DateTime.UtcNow).TotalMinutes.ToString("N1").PadLeft(4)} m{'\n'}");
+            }
+
+
+            sb.Append($"Highest Compute Landblock Groups{'\n'}");
+
+            //var sortedByHighestCompute = loadedLanblockGroups.OrderByDescending(r => r.Count);
+
+            // todo
+
 
             CommandHandlerHelper.WriteOutputInfo(session, sb.ToString());
         }

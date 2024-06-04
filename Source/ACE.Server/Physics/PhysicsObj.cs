@@ -17,6 +17,7 @@ using ACE.Server.Physics.Hooks;
 using ACE.Server.Physics.Managers;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Serilog.Events;
 using Landblock = ACE.Server.Physics.Common.Landblock;
 using Plane = System.Numerics.Plane;
 using Position = ACE.Server.Physics.Common.Position;
@@ -1330,7 +1331,7 @@ namespace ACE.Server.Physics
 
                 // ideally CellArray.LoadCells = false would be passed to find_cell_list to prevent it from even attempting to load an unloaded neighboring landblock
 
-                _log.Debug($"{Name} ({ID:X8}) AddPhysicsObj() - {pos.ShortLoc()} resulted in {transition.SpherePath.CurPos.ShortLoc()}, discarding");
+                _log.Debug("{Name} ({Id:X8}) AddPhysicsObj() - {PositionLocation} resulted in {TransitionSpherePathCurPosLocation} discarding", Name, ID, pos.ShortLoc(), transition.SpherePath.CurPos.ShortLoc());
                 return SetPositionError.NoValidPosition;
             }
 
@@ -1444,7 +1445,9 @@ namespace ACE.Server.Physics
                         var groundZ = landblock.GetZ(newPos.Frame.Origin) + 0.05f;
 
                         if (Math.Abs(newPos.Frame.Origin.Z - groundZ) > ScatterThreshold_Z)
-                            _log.Debug($"{Name} ({ID:X8}).SetScatterPositionInternal() - tried to spawn outdoor object @ {newPos} ground Z {groundZ} (diff: {newPos.Frame.Origin.Z - groundZ}), investigate ScatterThreshold_Z");
+                        {
+                            _log.Debug("{Name} ({Id:X8}).SetScatterPositionInternal() - tried to spawn outdoor object @ {NewPos} ground Z {GroundZ} (diff: {NewPosFrameOriginZ - GroundZ}), investigate ScatterThreshold_Z", Name, ID, newPos, groundZ, newPos.Frame.Origin.Z - groundZ);
+                        }
                         else
                             newPos.Frame.Origin.Z = groundZ;
 
@@ -1709,7 +1712,9 @@ namespace ACE.Server.Physics
                     else
                     {
                         if (IsPlayer)
-                            _log.Debug($"{Name} ({ID:X8}).UpdateObjectInternal({quantum}) - failed transition from {Position} to {newPos}");
+                        {
+                            _log.Debug("{Name} ({Id:X8}).UpdateObjectInternal({Quantum}) - failed transition from {Position} to {NewPosition}", Name, ID, quantum, Position, newPos);
+                        }
                         else if (transit != null && transit.SpherePath.CurCell == null)
                             _log.Warning($"{Name} ({ID:X8}).UpdateObjectInternal({quantum}) - avoided CurCell=null from {Position} to {newPos}");
 
@@ -1790,7 +1795,9 @@ namespace ACE.Server.Physics
                 SetPositionInternal(transit);
             }
             else
-                _log.Debug($"{Name}.UpdateObjectInternalServer({quantum}) - failed transition from {Position} to {RequestPos}");
+            {
+                _log.Debug("{Name}.UpdateObjectInternalServer({Quantum}) - failed transition from {Position} to {RequestPosition}", Name, quantum, Position, RequestPos);
+            }
 
             if (DetectionManager != null) DetectionManager.CheckDetection();
 
@@ -2907,7 +2914,7 @@ namespace ACE.Server.Physics
                 CurLandblock.remove_server_object(this);
                 CurLandblock = null;
             }
-           
+
         }
 
         public void leave_visibility()

@@ -44,7 +44,7 @@ namespace ACE.Server.Entity
         //   - resistance cleaving
         // - shield mod
         // - rending mod
-        
+
         public Creature Attacker;
         public Creature Defender;
 
@@ -268,7 +268,7 @@ namespace ACE.Server.Entity
 
             // ---- DAMAGE RATING ----
             PowerMod = attacker.GetPowerMod(Weapon);
-            
+
             AttributeMod = attacker.GetAttributeMod(Weapon, false, defender);
 
             SlayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
@@ -526,7 +526,7 @@ namespace ACE.Server.Entity
 
                     // Jewelcrafting Reprisal -- Evade an Incoming Crit, auto crit in return
                     if (playerDefender != null)
-                    {    
+                    {
                         if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
                         {
                             if ((playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) / 2) >= ThreadSafeRandom.Next(0, 100))
@@ -719,7 +719,7 @@ namespace ACE.Server.Entity
             // --- COMBAT ABILITY: FURY SELF-HARM CHANCE - 50% of the damage done to the enemy on this attack, or 10% of player max health, whichever is smaller
 
             if (playerAttacker != null && playerAttacker.EquippedCombatAbility == CombatAbility.Fury)
-            { 
+            {
                 var stacks = playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless");
                 if (stacks > 250)
                 {
@@ -756,7 +756,7 @@ namespace ACE.Server.Entity
 
             return Damage;
         }
-    
+
 
             public Quadrant GetQuadrant(Creature defender, Creature attacker, AttackHeight attackHeight, WorldObject damageSource)
         {
@@ -769,7 +769,7 @@ namespace ACE.Server.Entity
             return quadrant;
         }
 
-        
+
         /// <summary>
         /// Returns the chance for creature to avoid monster attack
         /// </summary>
@@ -806,7 +806,7 @@ namespace ACE.Server.Entity
             // ATTACK HEIGHT BONUS: Low (+10% physical defense skill, +15% if weapon specialized)
             if (playerDefender != null)
             {
-                if (playerDefender != null && playerDefender.AttackHeight == AttackHeight.Low) 
+                if (playerDefender != null && playerDefender.AttackHeight == AttackHeight.Low)
                 {
                     float bonus;
 
@@ -819,7 +819,7 @@ namespace ACE.Server.Entity
                 }
             }
 
-            // COMBAT FOCUS - Steady Shot 
+            // COMBAT FOCUS - Steady Shot
             if (playerAttacker != null)
             {
                 if (attackerCombatAbility == CombatAbility.SteadyShot)
@@ -829,7 +829,7 @@ namespace ACE.Server.Entity
                     EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
                 }
             }
-           
+
             if (playerDefender != null)
             {   // JEWEL - Fire Opal: Evade chance bonus for having attacked target creature
                 if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
@@ -845,9 +845,9 @@ namespace ACE.Server.Entity
                 }
 
             }
-           
+
             if (playerAttacker != null)
-            {   // JEWEL - Yellow Garnet: Hit chance bonus for having been attacked frequently 
+            {   // JEWEL - Yellow Garnet: Hit chance bonus for having been attacked frequently
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) > 0)
                 {
                     if (playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Bravado"))
@@ -953,7 +953,7 @@ namespace ACE.Server.Entity
         {
             Player playerAttacker = attacker as Player;
             Player playerDefender = defender as Player;
-                        
+
             var blockChance = 0.0f;
 
             var effectiveAngle = 180.0f;
@@ -1447,7 +1447,7 @@ namespace ACE.Server.Entity
                 $"AverageDamage After Mitigation: {averageDamageAfterMitigation}\n" +
                 $"DPS After Mitigation: {averageDpsAfterMitigation}\n" +
                 $"---- END DAMAGE LOG ({damageSource.Name}) ----");
-            
+
         }
     }
 }

@@ -1214,7 +1214,7 @@ namespace ACE.Server.WorldObjects
 
                                 if (isFromAPlayerCorpse)
                                 {
-                                    _log.Debug($"[CORPSE] {Name} (0x{Guid}) picked up {item.Name} (0x{item.Guid}) from {itemRootOwner.Name} (0x{itemRootOwner.Guid})");
+                                    _log.Debug("[CORPSE] {Name} (0x{Guid}) picked up {ItemName} (0x{ItemGuid}) from {ItemRootOwnerName} (0x{ItemRootOwnerGuid})", Name, Guid, item.Name, item.Guid, itemRootOwner?.Name, itemRootOwner?.Guid);
                                     item.SaveBiotaToDatabase();
                                 }
                             }
@@ -1788,7 +1788,7 @@ namespace ACE.Server.WorldObjects
 
                             if (isFromAPlayerCorpse)
                             {
-                                _log.Debug($"[CORPSE] {Name} (0x{Guid}) picked up and wielded {item.Name} (0x{item.Guid}) from {rootOwner.Name} (0x{rootOwner.Guid})");
+                                _log.Debug("[CORPSE] {Name} (0x{Guid}) picked up and wielded {ItemName} (0x{ItemGuid}) from {RootOwnerName} (0x{RootOwnerGuid})", Name, Guid, item.Name, item.Guid, rootOwner?.Name, rootOwner?.Guid);
                                 item.SaveBiotaToDatabase();
                             }
                         }
@@ -3949,7 +3949,7 @@ namespace ACE.Server.WorldObjects
                     {
                         var success = uint.TryParse(split[0], out var wcid);
 
-                        //Console.WriteLine($"{success.ToString()} {wcid}");
+                        //Console.WriteLine($"{success} {wcid}");
 
                         Session.Network.EnqueueSend(new GameEventTell(target, "Ahh, an IOU! You know, I collect these for some reason. Let me see if I have something for it somewhere in my pack...", this, ChatMessageType.Tell));
 
@@ -3976,7 +3976,7 @@ namespace ACE.Server.WorldObjects
                                     if (PropertyManager.GetBool("player_receive_immediate_save").Item)
                                         RushNextPlayerSave(5);
 
-                                    _log.Debug($"[IOU] {Name} (0x{Guid}) traded in a IOU (0x{iouToTurnIn.Guid}) for {wcid} which became {item.Name} (0x{item.Guid}).");
+                                    _log.Debug("[IOU] {Name} (0x{Guid}) traded in a IOU (0x{IouToTurnInGuid}) for {Wcid} which became {ItemName} (0x{ItemGuid}).", Name, Guid, iouToTurnIn.Guid, wcid, item.Name, item.Guid);
                                 }
                                 return;
                             }

@@ -10,6 +10,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Database
 {
@@ -1003,8 +1004,8 @@ namespace ACE.Database
                     catch (Exception ex)
                     {
                         _log.Fatal(ex, "Unable to restore order column in biota_properties_palette table in shard database");
+
                         Environment.Exit(1);
-                        return;
                     }
                 }
             }

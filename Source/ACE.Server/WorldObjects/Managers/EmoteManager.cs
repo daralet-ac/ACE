@@ -81,7 +81,7 @@ namespace ACE.Server.WorldObjects.Managers
                     {
                         // ActOnUse delay?
                         var activationTarget = WorldObject.CurrentLandblock?.GetObject(WorldObject.ActivationTarget);
-                        activationTarget?.OnActivate(WorldObject);
+                        activationTarget?.OnActivate(player ?? WorldObject);
                     }
                     else if (WorldObject.GeneratorId.HasValue && WorldObject.GeneratorId > 0) // Fallback to linked generator
                     {
@@ -168,7 +168,7 @@ namespace ACE.Server.WorldObjects.Managers
                         player.TryAwardCraftingXp(player, skill, playerSkill, difficulty);
                     }
                     break;
-                        
+
 
                 case EmoteType.AwardNoShareXP:
 
@@ -772,7 +772,7 @@ namespace ACE.Server.WorldObjects.Managers
 
                                         if (currentTime <= nextSolveTime)
                                             canSolve = true;
-                                        
+
                                     }
                                 }
                             }
@@ -1146,7 +1146,7 @@ namespace ACE.Server.WorldObjects.Managers
                            (emote.AnglesX != 0    || emote.AnglesY != 0    || emote.AnglesZ != 0    || emote.AnglesW != 0) )
                         {
                             // also relative, or absolute?
-                            newPos.Rotation *= new Quaternion(emote.AnglesX.Value, emote.AnglesY.Value, emote.AnglesZ.Value, emote.AnglesW.Value);  
+                            newPos.Rotation *= new Quaternion(emote.AnglesX.Value, emote.AnglesY.Value, emote.AnglesZ.Value, emote.AnglesW.Value);
                         }
 
                         if (Debug)
@@ -1366,7 +1366,7 @@ namespace ACE.Server.WorldObjects.Managers
                             creature.CurrentLandblock?.DoEnvironChange(environChange);
                         }
                     }
-                
+
                     break;
 
                 case EmoteType.SetMouthPalette:
@@ -1530,7 +1530,7 @@ namespace ACE.Server.WorldObjects.Managers
                                     var msg = $"You hand over {amount} of your {itemTaken.GetPluralName()}.";
                                     player.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
                                 }
-                                  
+
                             }
                         }
                     }
@@ -1705,10 +1705,6 @@ namespace ACE.Server.WorldObjects.Managers
 
                     break;
 
-                default:
-                    _log.Debug($"EmoteManager.Execute - Encountered Unhandled EmoteType {(EmoteType)emote.Type} for {WorldObject.Name} ({WorldObject.WeenieClassId})");
-                    break;
-
                 case EmoteType.TrainSkill:
 
                     if (player != null)
@@ -1726,6 +1722,10 @@ namespace ACE.Server.WorldObjects.Managers
                         else
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Failed to train {((NewSkillNames)emote.Stat).ToSentence()}!", ChatMessageType.Advancement));
                     }
+                    break;
+
+                default:
+                    _log.Debug("EmoteManager.Execute - Encountered Unhandled EmoteType {EmoteType} for {WorldObjectName} ({WorldObjectWeenieClassId})", (EmoteType)emote.Type, WorldObject.Name, WorldObject.WeenieClassId);
                     break;
             }
 
@@ -2055,7 +2055,7 @@ namespace ACE.Server.WorldObjects.Managers
             if (target is Player targetPlayer)
             {
                 result = result.Replace("%tqt", !string.IsNullOrWhiteSpace(quest) ? targetPlayer.QuestManager.GetNextSolveTime(questName).GetFriendlyString() : "");
-                
+
                 result = result.Replace("%CDtime", !string.IsNullOrWhiteSpace(quest) ? targetPlayer.QuestManager.GetNextSolveTime(questName).GetFriendlyString() : "");
 
                 result = result.Replace("%tf", $"{(targetPlayer.Fellowship != null ? targetPlayer.Fellowship.FellowshipName : "")}");

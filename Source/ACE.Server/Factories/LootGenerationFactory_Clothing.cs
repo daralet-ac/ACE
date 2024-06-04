@@ -11,6 +11,7 @@ using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
+using Serilog.Events;
 using WeenieClassName = ACE.Entity.Enum.WeenieClassName;
 
 namespace ACE.Server.Factories
@@ -311,7 +312,7 @@ namespace ACE.Server.Factories
 
         private static void AssignArmorLevelCompat(WorldObject wo, int tier, LootTables.ArmorType armorType)
         {
-            _log.Debug($"[LOOT] Using AL Assignment Compatibility layer for item {wo.WeenieClassId} - {wo.Name}.");
+            _log.Debug("[LOOT] Using AL Assignment Compatibility layer for item {WorldObjectWeenieClassId} - {WorldObjectName}.", wo.WeenieClassId, wo.Name);
 
             var baseArmorLevel = wo.ArmorLevel ?? 0;
 
@@ -757,7 +758,7 @@ namespace ACE.Server.Factories
             {
                 case 1:
                 case 2:
-                default:                
+                default:
                     cloakLevel = 1;
                     break;
                 case 3:
@@ -1393,7 +1394,7 @@ namespace ACE.Server.Factories
             var maxWardLevel = GetMaxWardLevel(wo);
             var wardLevelPercentile = 0.0f;
             if (wo.WardLevel > 0 && maxWardLevel > 0)
-            { 
+            {
                 wardLevelPercentile = (float)wo.WardLevel / maxWardLevel;
 
                 sum += wardLevelPercentile;

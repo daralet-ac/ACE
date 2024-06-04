@@ -6,6 +6,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Database.Models.Auth
 {

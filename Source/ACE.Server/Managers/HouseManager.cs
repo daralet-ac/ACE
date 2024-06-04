@@ -16,6 +16,7 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Server.Managers
 {
@@ -181,7 +182,7 @@ namespace ACE.Server.Managers
 
             if (player.HouseRentTimestamp == null)
             {
-                _log.Warning($"[HOUSE] HouseManager.AddRentQueue({player.Name}, {houseGuid:X8}): player has null HouseRentTimestamp");
+                _log.Warning("[HOUSE] HouseManager.AddRentQueue({PlayerName}, {HouseGuid:X8}): player has null HouseRentTimestamp", player.Name, houseGuid);
                 player.HouseRentTimestamp = (int)house.GetRentDue(purchaseTime);
                 //return;
             }
@@ -361,7 +362,7 @@ namespace ACE.Server.Managers
                 var isInActiveOrDisabled = playerHouse.House.HouseStatus <= HouseStatus.InActive;
                 var isPaid = IsRentPaid(playerHouse);
                 var hasRequirements = HasRequirements(playerHouse);
-                _log.Debug($"[HOUSE] {playerHouse.PlayerName}.ProcessRent(): isPaid = {isPaid} | HasRequirements = {hasRequirements} | MaintenanceFree = {house.HouseStatus == HouseStatus.InActive}");
+                _log.Debug("[HOUSE] {PlayerName}.ProcessRent(): isPaid = {IsPaid} | HasRequirements = {HasRequirements} | MaintenanceFree = {MaintenanceFree}", playerHouse.PlayerName, isPaid, hasRequirements, house.HouseStatus == HouseStatus.InActive);
 
                 if (isInActiveOrDisabled || (isPaid && hasRequirements))
                     HandleRentPaid(playerHouse);
@@ -379,7 +380,7 @@ namespace ACE.Server.Managers
             var player = PlayerManager.FindByGuid(playerHouse.PlayerGuid);
             if (player == null)
             {
-                _log.Warning($"[HOUSE] HouseManager.HandleRentPaid({playerHouse.PlayerName}): couldn't find player");
+                _log.Warning("[HOUSE] HouseManager.HandleRentPaid({PlayerName}): couldn't find player", playerHouse.PlayerName);
                 return;
             }
 
@@ -390,7 +391,7 @@ namespace ACE.Server.Managers
 
             if (nextRentTime <= rentTime)
             {
-                _log.Warning($"[HOUSE] HouseManager.HandleRentPaid({playerHouse.PlayerName}): nextRentTime {nextRentTime} <= rentTime {rentTime}");
+                _log.Warning("[HOUSE] HouseManager.HandleRentPaid({PlayerName}): nextRentTime {NextRentTime} <= rentTime {RentTime}", playerHouse.PlayerName, nextRentTime, rentTime);
                 return;
             }
 
@@ -407,7 +408,7 @@ namespace ACE.Server.Managers
                 slumlord.SaveBiotaToDatabase();
             }
 
-            _log.Debug($"[HOUSE] HouseManager.HandleRentPaid({playerHouse.PlayerName}): rent payment successful!");
+            _log.Debug("[HOUSE] HouseManager.HandleRentPaid({PlayerName}): rent payment successful!", playerHouse.PlayerName);
 
             // re-add item to queue
             AddRentQueue(player, playerHouse.House);
@@ -448,7 +449,8 @@ namespace ACE.Server.Managers
                 var nextRentTime = house.GetRentDue(purchaseTime);
                 player.HouseRentTimestamp = (int)nextRentTime;
 
-                _log.Debug($"[HOUSE] HouseManager.HandleRentPaid({player.Name}): house rent disabled via config");
+
+                _log.Debug("[HOUSE] HouseManager.HandleRentPaid({PlayerName}): house rent disabled via config", player.Name);
 
                 // re-add item to queue
                 AddRentQueue(player, house);
@@ -494,11 +496,11 @@ namespace ACE.Server.Managers
                 player.HouseRentTimestamp = null;
             }
             else
-                _log.Warning($"[HOUSE] HouseManager.HandleRentEviction({house.Guid}, {player.Name}, {multihouse}): house guids don't match {player.HouseInstance}");
+                _log.Warning("[HOUSE] HouseManager.HandleRentEviction({HouseGuid}, {PlayerName}, {Multihouse}): house guids don't match {PlayerHouseInstance}", house.Guid, player.Name, multihouse, player.HouseInstance);
 
             house.ClearRestrictions();
 
-            _log.Debug($"[HOUSE] HouseManager.HandleRentEviction({player.Name})");
+            _log.Debug("[HOUSE] HouseManager.HandleRentEviction({PlayerName})", player.Name);
 
             if (multihouse)
             {
@@ -515,7 +517,7 @@ namespace ACE.Server.Managers
                 var offlinePlayer = PlayerManager.GetOfflinePlayer(playerGuid);
                 if (offlinePlayer == null)
                 {
-                    _log.Warning($"[HOUSE] {player.Name}.HandleEviction(): couldn't find offline player");
+                    _log.Warning("[HOUSE] {PlayerName}.HandleEviction(): couldn't find offline player", player.Name);
                     return;
                 }
                 offlinePlayer.SetProperty(PropertyBool.HouseEvicted, true);
@@ -551,7 +553,7 @@ namespace ACE.Server.Managers
             {
                 if (rentItem.Paid < rentItem.Num)
                 {
-                    _log.Debug($"[HOUSE] {playerHouse.PlayerName}.IsRentPaid() - required {rentItem.Num:N0}x {(rentItem.Num > 1 ? $"{rentItem.PluralName}" : $"{rentItem.Name}")} ({rentItem.WeenieID}), found {rentItem.Paid:N0}");
+                    _log.Debug("[HOUSE] {PlayerName}.IsRentPaid() - required {NumRentItems:N0}x {RentItemName} ({RentItemWeenieID}), found {RentItemPaid:N0}", playerHouse.PlayerName, rentItem.Num, rentItem.Num > 1 ? $"{rentItem.PluralName}" : $"{rentItem.Name}", rentItem.WeenieID, rentItem.Paid);
                     return false;
                 }
             }
@@ -578,7 +580,7 @@ namespace ACE.Server.Managers
 
             if (player == null)
             {
-                _log.Warning($"[HOUSE] {playerHouse.PlayerName}.HasRequirements() - couldn't find player");
+                _log.Warning("[HOUSE] {PlayerName}.HasRequirements() - couldn't find player", playerHouse.PlayerName);
                 return false;
             }
 
@@ -593,7 +595,7 @@ namespace ACE.Server.Managers
 
             if (allegianceMinLevel > 0 && (allegiance == null || rank < allegianceMinLevel))
             {
-                _log.Debug($"[HOUSE] {playerHouse.PlayerName}.HasRequirements() - allegiance rank {rank} < {allegianceMinLevel}");
+                _log.Debug("[HOUSE] {PlayerName}.HasRequirements() - allegiance rank {Rank} < {AllegianceMinLevel}", playerHouse.PlayerName, rank, allegianceMinLevel);
                 return false;
             }
             return true;
@@ -635,7 +637,7 @@ namespace ACE.Server.Managers
             }
 
             if (player.HouseInstance == null)
-                return;     
+                return;
 
             var playerHouse = FindPlayerHouse(playerGuid);
             if (playerHouse == null)
@@ -735,7 +737,7 @@ namespace ACE.Server.Managers
                 RegisterCallback(houseBiota, callback);
             }
             else
-                _log.Error($"[HOUSE] HouseManager.GetHouse({houseGuid:X8}): couldn't find house on loaded landblock");
+                _log.Error("[HOUSE] HouseManager.GetHouse({HouseGuid:X8}): couldn't find house on loaded landblock", houseGuid);
         }
 
         /// <summary>
@@ -886,7 +888,7 @@ namespace ACE.Server.Managers
                         actionChain.EnqueueChain();
                     }
 
-                    _log.Debug($"[HOUSE] HouseManager.PayRent({house.Guid}): fully paid rent into SlumLord.");
+                    _log.Debug("[HOUSE] HouseManager.PayRent({HouseGuid}): fully paid rent into SlumLord.", house.Guid);
                 }
             });
         }

@@ -9,6 +9,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Physics.Common;
+using Serilog.Events;
 
 namespace ACE.Server.WorldObjects
 {
@@ -397,7 +398,7 @@ namespace ACE.Server.WorldObjects
                         _log.Warning($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}. SpellProjectile destroyed.");
                     }
                     else
-                        _log.Debug($"[PERFORMANCE][PHYSICS] {Guid}:{Name} took {(elapsedSeconds * 1000):N1} ms to process UpdateObjectPhysics() at loc: {Location}");
+                        _log.Debug("[PERFORMANCE][PHYSICS] {Guid}:{Name} took {TimeElapsed:N1} ms to process UpdateObjectPhysics() at loc: {Location}", Guid, Name, (elapsedSeconds * 1000), Location);
                 }
             }
         }

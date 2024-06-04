@@ -12,6 +12,7 @@ using ACE.Server.Managers;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Serilog.Events;
 using Quaternion = System.Numerics.Quaternion;
 
 namespace ACE.Server.Entity
@@ -24,7 +25,7 @@ namespace ACE.Server.Entity
         private readonly ILogger _log = Log.ForContext<GeneratorProfile>();
 
         /// <summary>
-        /// The id for the profile. This id will be either a GUID from Landblock_Instances or an incremental id based on profile order from biota entry. 
+        /// The id for the profile. This id will be either a GUID from Landblock_Instances or an incremental id based on profile order from biota entry.
         /// </summary>
         public uint Id;
 
@@ -179,7 +180,7 @@ namespace ACE.Server.Entity
             {
                 /*if (MaxObjectsSpawned)
                 {
-                    _log.Debug($"{_generator.Name}.Enqueue({numObjects}): max objects reached");
+                    _log.Debug("{GeneratorName}.Enqueue({NumObjects}): max objects reached", _generator.Name, numObjects);
                     break;
                 }*/
                 SpawnQueue.Add(GetSpawnTime());
@@ -278,7 +279,7 @@ namespace ACE.Server.Entity
 
             foreach (var obj in objects)
             {
-                //log.Debug($"{_generator.Name}.Spawn({obj.Name})");
+                //log.DebugFormat("{0}.Spawn({1})", _generator.Name, obj.Name);
 
                 obj.Generator = Generator;
                 obj.GeneratorId = Generator.Guid.Full;
@@ -309,6 +310,7 @@ namespace ACE.Server.Entity
                 if (!success)
                 {
                     _log.Debug("[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} {GeneratorName}.Spawn(): failed to spawn {WorldObjectName} (0x{WorldObjectGuid}:{WorldObjectWeenieClassId}) from profile {LinkId} at {RegenLocationType}\nGenerator Location: {GeneratorLocation}\nWorld Object Location: {WorldObjectLocation}",  Generator.Guid, Generator.WeenieClassId, Generator.Name, obj.Name, obj.Guid, obj.WeenieClassId, LinkId, RegenLocationType, Generator.Location?.ToLOCString(), obj.Location.ToLOCString());
+                    obj.Destroy();
                 }
             }
 
@@ -329,7 +331,7 @@ namespace ACE.Server.Entity
                 {
                     var originalCellId = ((int)Biota.ObjCellId).ToString("X8");
                     var generatorLandblockId = ((int)Generator.Location.LandblockId.Raw).ToString("X8");
-                    
+
                     var modifiedCellId = generatorLandblockId.Substring(0, 4) + originalCellId.Substring(4);
 
                     loc = uint.Parse(modifiedCellId, System.Globalization.NumberStyles.HexNumber);
@@ -433,7 +435,7 @@ namespace ACE.Server.Entity
         public bool Spawn_Default(WorldObject obj)
         {
             // default location handler?
-            //log.Debug($"{_generator.Name}.Spawn_Default({obj.Name}): default handler for RegenLocationType {RegenLocationType}");
+            //log.DebugFormat("{0}.Spawn_Default({1}): default handler for RegenLocationType {2}", _generator.Name, obj.Name, RegenLocationType);
 
             obj.Location = new ACE.Entity.Position(Generator.Location);
 
@@ -449,7 +451,7 @@ namespace ACE.Server.Entity
         {
             if (obj.Location == null || obj.Location.Landblock != Generator.Location.Landblock)
             {
-                //log.Debug($"{_generator.Name}.VerifyLandblock({obj.Name}) - spawn location is invalid landblock");
+                //log.DebugFormat("{0}.VerifyLandblock({1}) - spawn location is invalid landblock", _generator.Name, obj.Name);
                 return false;
             }
             return true;
@@ -459,7 +461,7 @@ namespace ACE.Server.Entity
         {
             if (!obj.Location.Indoors && !obj.Location.IsWalkable() && !VerifyWalkableSlopeExcludedLandblocks.Contains(obj.Location.LandblockId.Landblock))
             {
-                //log.Debug($"{_generator.Name}.VerifyWalkableSlope({obj.Name}) - spawn location is unwalkable slope");
+                //log.DebugFormat("{0}.VerifyWalkableSlope({1}) - spawn location is unwalkable slope", _generator.Name, obj.Name);
                 return false;
             }
             return true;
@@ -467,7 +469,7 @@ namespace ACE.Server.Entity
 
         /// <summary>
         /// A list of landblocks the excluded from VerifyWalkableSlope check
-        /// 
+        ///
         /// TODO gmriggs
         /// Hack until this can be looked into more.
         /// </summary>
@@ -493,9 +495,9 @@ namespace ACE.Server.Entity
                 if (tier != null)
                     deathTreasure.Tier = (int)tier;
 
-                // TODO Get LootQualityMod from Chest (just like Tier above) 
+                // TODO Get LootQualityMod from Chest (just like Tier above)
 
-                //log.Debug($"{_generator.Name}.TreasureGenerator(): found death treasure {Biota.WeenieClassId}");
+                // _log.Debug("{GeneratorName}.TreasureGenerator(): found death treasure {BiotaWcid}", Generator.Name, Biota.WeenieClassId);
                 var generatedLoot = LootGenerationFactory.CreateRandomLootObjects(deathTreasure);
 
                 if ((RegenLocationType & RegenLocationType.Contain) == 0) // If we're not a container make sure we respect our generate limit.
@@ -516,7 +518,7 @@ namespace ACE.Server.Entity
                 if (wieldedTreasure != null)
                 {
                     // TODO: get randomly generated wielded treasure from LootGenerationFactory
-                    //log.Debug($"{_generator.Name}.TreasureGenerator(): found wielded treasure {Biota.WeenieClassId}");
+                    //log.DebugFormat("{0}.TreasureGenerator(): found wielded treasure {1}", _generator.Name, Biota.WeenieClassId);
 
                     // roll into the wielded treasure table
                     //var table = new TreasureWieldedTable(wieldedTreasure);
@@ -562,7 +564,7 @@ namespace ACE.Server.Entity
         /// </summary>
         public void NotifyGenerator(ObjectGuid target, RegenerationType eventType)
         {
-            //log.Debug($"{_generator.Name}.NotifyGenerator({target:X8}, {eventType})");
+            //log.DebugFormat("{0}.NotifyGenerator({1:X8}, {2})", _generator.Name, target, eventType);
 
             Spawned.TryGetValue(target.Full, out var woi);
 
@@ -600,7 +602,7 @@ namespace ACE.Server.Entity
             NextAvailable = DateTime.UtcNow.AddSeconds(Delay);
 
             if (Generator.GetProperty(PropertyBool.IsPseudoRandomGenerator) == true)
-                Generator.GeneratorCooldown = Time.GetUnixTime();                 
+                Generator.GeneratorCooldown = Time.GetUnixTime();
         }
 
         public bool GeneratorResetInProgress = false;

@@ -25,7 +25,7 @@ namespace ACE.Server.WorldObjects
         /// (spawns other world objects)
         /// </summary>
         public bool IsGenerator { get => GeneratorProfiles != null && GeneratorProfiles.Count > 0; }
-       
+
         //public List<string> History = new List<string>();
 
         /// <summary>
@@ -294,7 +294,7 @@ namespace ACE.Server.WorldObjects
             else
                 numObjects = initCreate;
 
-            //Console.WriteLine($"INIT - 0x{Guid.ToString()} {Name} ({WeenieClassId}): CurrentCreate = {CurrentCreate} | profile.Biota.InitCreate = {profile.Biota.InitCreate} | profile.Biota.MaxCreate = {profile.Biota.MaxCreate} | InitCreate: {InitCreate} | MaxCreate: {MaxCreate} | initCreate: {initCreate} | maxCreate: {maxCreate} | leftObjects = {leftObjects} | numObjects: {numObjects}");            
+            //Console.WriteLine($"INIT - 0x{Guid} {Name} ({WeenieClassId}): CurrentCreate = {CurrentCreate} | profile.Biota.InitCreate = {profile.Biota.InitCreate} | profile.Biota.MaxCreate = {profile.Biota.MaxCreate} | InitCreate: {InitCreate} | MaxCreate: {MaxCreate} | initCreate: {initCreate} | maxCreate: {maxCreate} | leftObjects = {leftObjects} | numObjects: {numObjects}");
 
             var genSlotsAvailable = MaxCreate - CurrentCreate;
             var profileSlotsAvailable = profile.MaxCreate - profile.CurrentCreate;
@@ -323,7 +323,7 @@ namespace ACE.Server.WorldObjects
                 if (CurrentCreate >= MaxCreate)
                 {
                     //if (CurrentCreate > InitCreate)
-                    //log.Debug($"{WeenieClassId} - 0x{Guid}:{Name}.StopConditionsInit(): CurrentCreate({CurrentCreate}) > InitCreate({InitCreate})");
+                    //log.DebugFormat("{0} - 0x{1}:{2}.StopConditionsInit(): CurrentCreate({3}) > InitCreate({4})", WeenieClassId, Guid, Name, CurrentCreate, InitCreate);
 
                     return true;
                 }
@@ -355,7 +355,7 @@ namespace ACE.Server.WorldObjects
                 case GeneratorTimeType.Day:
                     CheckTimeOfDayStatus();
                     break;
-            }            
+            }
         }
 
         /// <summary>
@@ -364,7 +364,7 @@ namespace ACE.Server.WorldObjects
         public void CheckTimeOfDayStatus()
         {
             var prevDisabled = GeneratorDisabled;
-           
+
             var isDay = Timers.CurrentInGameTime.IsDay;
             var isDayGenerator = GeneratorTimeType == GeneratorTimeType.Day;
 

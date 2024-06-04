@@ -5,6 +5,7 @@ using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Server.Managers
 {

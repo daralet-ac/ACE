@@ -23,7 +23,7 @@ using ACE.Server.Physics;
 
 namespace ACE.Server.WorldObjects
 {
-    partial class WorldObject 
+    partial class WorldObject
     {
         public virtual void SerializeUpdateObject(BinaryWriter writer, bool adminvision = false, bool changenodraw = false)
         {
@@ -308,6 +308,7 @@ namespace ACE.Server.WorldObjects
 
             if ((physicsDescriptionFlag & PhysicsDescriptionFlag.Movement) != 0)
             {
+                /* OLD METHOD
                 var movementData = new MovementData(this, CurrentMotionState).Serialize();
 
                 writer.Write((uint)movementData.Length);
@@ -315,6 +316,27 @@ namespace ACE.Server.WorldObjects
                 if (movementData.Length > 0)
                 {
                     writer.Write(movementData);
+                    writer.Write(Convert.ToUInt32(CurrentMotionState.IsAutonomous));
+                }
+                */
+
+                var movementData = new MovementData(this, CurrentMotionState);
+
+                // We'll come back to here to write the length
+                var preWritePosition = writer.BaseStream.Position;
+                writer.Write((uint)0);
+
+                writer.Write(movementData, false);
+
+                var postWritePosition = writer.BaseStream.Position;
+
+                if (preWritePosition + 4 != postWritePosition)
+                {
+                    // Go back and write the length
+                    writer.BaseStream.Position = preWritePosition;
+                    writer.Write((uint)(postWritePosition - preWritePosition - 4));
+
+                    writer.BaseStream.Position = postWritePosition;
                     writer.Write(Convert.ToUInt32(CurrentMotionState.IsAutonomous));
                 }
             }
@@ -922,7 +944,7 @@ namespace ACE.Server.WorldObjects
 
                 // If there are no ClothingSubPalEffects, or this item has no Shade and no PaletteTemplate set, we will not apply any Palette changes
                 if (item.ClothingSubPalEffects.Count > 0 && (Shade.HasValue || PaletteTemplate.HasValue))
-                { 
+                {
                     CloSubPalEffect itemSubPal;
                     int palOption = 0;
                     if (PaletteTemplate.HasValue)

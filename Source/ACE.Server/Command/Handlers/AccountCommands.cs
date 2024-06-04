@@ -5,6 +5,7 @@ using ACE.Database.Models.Auth;
 using ACE.Entity.Enum;
 using ACE.Server.Network;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Server.Command.Handlers
 {
@@ -43,7 +44,7 @@ namespace ACE.Server.Command.Handlers
             string message = "";
 
             var accountExists = DatabaseManager.Authentication.GetAccountByName(parameters[0]);
-                      
+
             if (accountExists != null)
             {
                 message = "Account already exists. Try a new name.";
@@ -67,7 +68,7 @@ namespace ACE.Server.Command.Handlers
 
             CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.WorldBroadcast);
         }
-  
+
         [CommandHandler("accountget", AccessLevel.Admin, CommandHandlerFlag.ConsoleInvoke, 1,
             "Gets an account.",
             "username")]
@@ -78,8 +79,8 @@ namespace ACE.Server.Command.Handlers
         }
 
         // set-accountaccess accountname (accesslevel)
-        [CommandHandler("set-accountaccess", AccessLevel.Admin, CommandHandlerFlag.None, 1, 
-            "Change the access level of an account.", 
+        [CommandHandler("set-accountaccess", AccessLevel.Admin, CommandHandlerFlag.None, 1,
+            "Change the access level of an account.",
             "accountname (accesslevel)\n" +
             "accesslevel can be a number or enum name\n" +
             "0 = Player | 1 = Advocate | 2 = Sentinel | 3 = Envoy | 4 = Developer | 5 = Admin")]
@@ -198,7 +199,7 @@ namespace ACE.Server.Command.Handlers
 
             if (account == null)
             {
-                CommandHandlerHelper.WriteOutputInfo(session, $"Account {session.Account} ({session.AccountId}) wasn't found in the database! How are you in world without a valid account?", ChatMessageType.Broadcast);                
+                CommandHandlerHelper.WriteOutputInfo(session, $"Account {session.Account} ({session.AccountId}) wasn't found in the database! How are you in world without a valid account?", ChatMessageType.Broadcast);
                 return;
             }
 

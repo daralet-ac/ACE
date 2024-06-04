@@ -330,11 +330,11 @@ namespace ACE.Server.WorldObjects
             DamageEvent.GetCombatAbilities(wielder, target, out var attackerCombatAbility, out var _);
             if (attackerCombatAbility == CombatAbility.IronFist)
                 critRate += 0.1f;
-            
+
             // mitigation
             var critResistRatingMod = Creature.GetNegativeRatingMod(target.GetCritResistRating());
             critRate *= critResistRatingMod;
-            
+
             return critRate;
         }
 
@@ -351,7 +351,7 @@ namespace ACE.Server.WorldObjects
             {
                 var cripplingBlowMod = DefaultCritDamageMultiplier + GetCripplingBlowMod(skill, wielder, target);
 
-                critDamageMod = Math.Max(critDamageMod, cripplingBlowMod); 
+                critDamageMod = Math.Max(critDamageMod, cripplingBlowMod);
             }
 
             // COMBAT ABILITY - Iron Fist: -20% crit damage
@@ -479,7 +479,7 @@ namespace ACE.Server.WorldObjects
             var rendDamageType = GetRendDamageType(damageType);
 
             if (rendDamageType == ImbuedEffectType.Undef)
-                _log.Debug($"{wielder.Name}.GetRendDamageType({damageType}) unexpected damage type for {weapon.Name} ({weapon.Guid})");
+                _log.Debug("{WielderName}.GetRendDamageType({DamageType}) unexpected damage type for {WeaponName} ({WeaponGuid})", wielder.Name, damageType, weapon.Name, weapon.Guid);
 
             if (rendDamageType != ImbuedEffectType.Undef && weapon.HasImbuedEffect(rendDamageType) && skill != null)
             {
@@ -527,7 +527,7 @@ namespace ACE.Server.WorldObjects
                 case DamageType.Nether:
                     return ImbuedEffectType.NetherRending;
                 default:
-                    //log.Debug($"GetRendDamageType({damageType}) unexpected damage type");
+                    //log.DebugFormat("GetRendDamageType({0}) unexpected damage type", damageType);
                     return ImbuedEffectType.Undef;
             }
         }
@@ -577,7 +577,7 @@ namespace ACE.Server.WorldObjects
                 case ImbuedSkillType.Magic:
 
                     float bonusMod = baseSkill / 500;
-                    baseMod += MinCriticalStrikeMod * bonusMod; 
+                    baseMod += MinCriticalStrikeMod * bonusMod;
                     break;
 
                 default:
@@ -608,7 +608,7 @@ namespace ACE.Server.WorldObjects
                 case ImbuedSkillType.Magic:
 
                     float bonusMod = baseSkill / 500.0f;
-                    baseMod += MinCripplingBlowMod * bonusMod; 
+                    baseMod += MinCripplingBlowMod * bonusMod;
                     break;
 
                 default:
@@ -773,7 +773,7 @@ namespace ACE.Server.WorldObjects
                     creatureMod -= 0.1f;
 
             var finalMod = 1.0f - (float)Math.Max(creatureMod, weaponMod);
-            //Console.WriteLine($"FinalMod = {finalMod}"); 
+            //Console.WriteLine($"FinalMod = {finalMod}");
 
             return finalMod;
         }
@@ -842,7 +842,7 @@ namespace ACE.Server.WorldObjects
                     return ImbuedSkillType.Magic;
 
                 default:
-                    _log.Debug($"WorldObject_Weapon.GetImbuedSkillType({skill?.Skill}): unexpected skill");
+                    _log.Debug("WorldObject_Weapon.GetImbuedSkillType({Skill}): unexpected skill", skill?.Skill);
                     return ImbuedSkillType.Undef;
             }
         }
@@ -1048,7 +1048,7 @@ namespace ACE.Server.WorldObjects
                     }
 
                     var scarabReduction = playerAttacker.GetEmpoweredScarabManaReductionMod();
-                    
+
                     if (playerAttacker.Mana.Current < (uint)(baseCost * scarabReduction))
                         return;
 

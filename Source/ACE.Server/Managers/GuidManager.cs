@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using ACE.Entity;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Server.Managers
 {
@@ -60,10 +61,10 @@ namespace ACE.Server.Managers
                         // Need to start allocating at current value in db +1
                         current++;
 
-                    _log.Debug($"{name} GUID Allocator current is now {current:X8} of {max:X8}");
+                    _log.Debug("{Name} GUID Allocator current is now {Current:X8} of {Max:X8}", name, current, max);
 
                     if ((max - current) < LowIdLimit)
-                        _log.Warning($"Dangerously low on {name} GUIDs: {current:X8} of {max:X8}");
+                        _log.Warning("Dangerously low on {Name} GUIDs: {Current:X8} of {Max:X8}", name, current, max);
                 }
 
                 this.name = name;
@@ -75,12 +76,12 @@ namespace ACE.Server.Managers
                 {
                     if (current == max)
                     {
-                        _log.Fatal($"Out of {name} GUIDs!");
+                        _log.Fatal("Out of {Name} GUIDs!", name);
                         return InvalidGuid;
                     }
 
                     if (current == max - LowIdLimit)
-                        _log.Warning($"Running dangerously low on {name} GUIDs, need to defrag");
+                        _log.Warning("Running dangerously low on {Name} GUIDs, need to defrag", name);
 
                     uint ret = current;
                     current += 1;
@@ -152,10 +153,10 @@ namespace ACE.Server.Managers
                         // Need to start allocating at current value in db +1
                         current++;
 
-                    _log.Debug($"{name} GUID Allocator current is now {current:X8} of {max:X8}");
+                    _log.Debug("{Name} GUID Allocator current is now {Current:X8} of {Max:X8}", name, current, max);
 
                     if ((max - current) < LowIdLimit)
-                        _log.Warning($"Dangerously low on {name} GUIDs: {current:X8} of {max:X8}");
+                        _log.Warning("Dangerously low on {Name} GUIDs: {Current:X8} of {Max:X8}", name, current, max);
                 }
 
                 // Get available ids in the form of sequence gaps
@@ -170,7 +171,9 @@ namespace ACE.Server.Managers
                             uint total = 0;
                             foreach (var pair in availableIDs)
                                 total += (pair.end - pair.start) + 1;
-                            _log.Debug($"{name} GUID Sequence gaps initialized with total availableIDs of {total:N0}");
+
+                            _log.Debug("{Name} GUID Sequence gaps initialized with total availableIDs of {Total:N0}", name, total);
+
                             done = true;
                             Monitor.Pulse(this);
                         }
@@ -215,7 +218,8 @@ namespace ACE.Server.Managers
                     {
                         if (!useSequenceGapExhaustedMessageDisplayed)
                         {
-                            _log.Debug($"{name} GUID Sequence gaps exhausted. Any new, non-recycled GUID will be current + 1. current is now {current:X8}");
+                            _log.Debug("{Name} GUID Sequence gaps exhausted. Any new, non-recycled GUID will be current + 1. current is now {Current:X8}", name, current);
+
                             useSequenceGapExhaustedMessageDisplayed = true;
                         }
                     }
@@ -223,12 +227,13 @@ namespace ACE.Server.Managers
                     // Lastly, use an id that increments our max
                     if (current == max)
                     {
-                        _log.Fatal($"Out of {name} GUIDs!");
+                        _log.Fatal("Out of {Name} GUIDs!", name);
+
                         return InvalidGuid;
                     }
 
                     if (current == max - LowIdLimit)
-                        _log.Warning($"Running dangerously low on {name} GUIDs, need to defrag");
+                        _log.Warning("Running dangerously low on {Name} GUIDs, need to defrag", name);
 
                     uint ret = current;
                     current += 1;

@@ -12,6 +12,7 @@ using ACE.Server.Network.Enum;
 using ACE.Server.Network.Handlers;
 using ACE.Server.Network.Packets;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Server.Network.Managers
 {
@@ -23,8 +24,8 @@ namespace ACE.Server.Network.Managers
         public const ushort ServerId = 0xB;
 
         /// <summary>
-        /// Seconds until a session will timeout. 
-        /// Raising this value allows connections to remain active for a longer period of time. 
+        /// Seconds until a session will timeout.
+        /// Raising this value allows connections to remain active for a longer period of time.
         /// </summary>
         /// <remarks>
         /// If you're experiencing network dropouts or frequent disconnects, try increasing this value.
@@ -46,7 +47,7 @@ namespace ACE.Server.Network.Managers
                 //ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.ProcessPacket_1);
                 if (packet.Header.Flags.HasFlag(PacketHeaderFlags.ConnectResponse))
                 {
-                    _log.Verbose($"{packet}, {endPoint}");
+                    _log.Verbose("{Packet}, {EndPoint}", packet, endPoint);
                     PacketInboundConnectResponse connectResponse = new PacketInboundConnectResponse(packet);
 
                     // This should be set on the second packet to the server from the client.
@@ -92,7 +93,7 @@ namespace ACE.Server.Network.Managers
                 //ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.ProcessPacket_0);
                 if (packet.Header.HasFlag(PacketHeaderFlags.LoginRequest))
                 {
-                    _log.Verbose($"{packet}, {endPoint}");
+                    _log.Verbose("{Packet}, {EndPoint}", packet, endPoint);
                     if (GetAuthenticatedSessionCount() >= ConfigManager.Config.Server.Network.MaximumAllowedSessions)
                     {
                         _log.Information("Login Request from {Endpoint} rejected. Server full.", endPoint);

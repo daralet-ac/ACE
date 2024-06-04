@@ -6,6 +6,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
+using Serilog.Events;
 
 namespace ACE.Server.WorldObjects
 {
@@ -215,7 +216,7 @@ namespace ACE.Server.WorldObjects
             }
             else
             {
-                _log.Debug($"{Name}.HandleActionUseItem({itemGuid:X8}): couldn't find object");
+                _log.Debug("{Name}.HandleActionUseItem({ItemGuid:X8}): couldn't find object", Name, itemGuid);
                 SendUseDoneEvent();
             }
         }

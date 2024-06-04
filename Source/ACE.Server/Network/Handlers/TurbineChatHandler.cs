@@ -8,6 +8,7 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
 using Serilog;
+using Serilog.Events;
 
 namespace ACE.Server.Network.Handlers
 {
@@ -103,10 +104,10 @@ namespace ACE.Server.Network.Handlers
                 }
 
                 if (channelID != adjustedChannelID)
-                    _log.Debug($"[CHAT] ChannelID ({channelID}) was adjusted to {adjustedChannelID} | ChatNetworkBlobDispatchType: {chatBlobDispatchType}");
+                    _log.Debug("[CHAT] ChannelID ({ChannelID}) was adjusted to {AdjustedChannelID} | ChatNetworkBlobDispatchType: {ChatBlobDispatchType}", channelID, adjustedChannelID, chatBlobDispatchType);
 
                 if (chatType != adjustedchatType)
-                    _log.Debug($"[CHAT] ChatType ({chatType}) was adjusted to {adjustedchatType} | ChatNetworkBlobDispatchType: {chatBlobDispatchType}");
+                    _log.Debug("[CHAT] ChatType ({ChatType}) was adjusted to {AdjustedChatType} | ChatNetworkBlobDispatchType: {ChatBlobDispatchType}", chatType, adjustedchatType, chatBlobDispatchType);
 
                 var gameMessageTurbineChat = new GameMessageTurbineChat(ChatNetworkBlobType.NETBLOB_EVENT_BINARY, ChatNetworkBlobDispatchType.ASYNCMETHOD_SENDTOROOMBYNAME, adjustedChannelID, session.Player.Name, message, senderID, adjustedchatType);
 
@@ -282,7 +283,7 @@ namespace ACE.Server.Network.Handlers
                     var chat_requires_player_level = PropertyManager.GetLong("chat_requires_player_level").Item;
                     if (chat_requires_player_level > 0 && session.Player.Level < chat_requires_player_level)
                     {
-                        HandleChatReject(session, contextId, chatType, gameMessageTurbineChat, $"because this character has reached level {chat_requires_player_level}");
+                        HandleChatReject(session, contextId, chatType, gameMessageTurbineChat, $"because this character has not reached level {chat_requires_player_level}");
                         return;
                     }
 

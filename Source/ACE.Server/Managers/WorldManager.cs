@@ -20,6 +20,7 @@ using ACE.Server.Physics;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Serilog.Events;
 using Biota = ACE.Entity.Models.Biota;
 using Position = ACE.Entity.Position;
 
@@ -61,12 +62,12 @@ namespace ACE.Server.Managers
             thread.Name = "World Manager";
             thread.Priority = ThreadPriority.AboveNormal;
             thread.Start();
-            _log.Debug("ServerTime initialized to {0}", Timers.WorldStartLoreTime);
-            _log.Debug($"Current maximum allowed sessions: {ConfigManager.Config.Server.Network.MaximumAllowedSessions}");
+            _log.Debug("ServerTime initialized to {WorldStartLoreTime}", Timers.WorldStartLoreTime);
+            _log.Debug("Current maximum allowed sessions: {MaximumAllowedSessions}", ConfigManager.Config.Server.Network.MaximumAllowedSessions);
 
             _log.Information($"World started and is currently {WorldStatus.ToString()}{(PropertyManager.GetBool("world_closed", false).Item ? "" : " and will open automatically when server startup is complete.")}");
             if (WorldStatus == WorldStatusState.Closed)
-                _log.Information($"To open world to players, use command: world open");
+                _log.Information("To open world to players, use command: world open");
         }
 
         internal static void Open(Player player)
@@ -101,7 +102,7 @@ namespace ACE.Server.Managers
             var start = DateTime.UtcNow;
             DatabaseManager.Shard.GetPossessedBiotasInParallel(character.Id, biotas =>
             {
-                _log.Debug($"GetPossessedBiotasInParallel for {character.Name} took {(DateTime.UtcNow - start).TotalMilliseconds:N0} ms");
+                _log.Debug("GetPossessedBiotasInParallel for {CharacterName} took {ProcessTime:N0} ms", character.Name, (DateTime.UtcNow - start).TotalMilliseconds);
 
                 ActionQueue.EnqueueAction(new ActionEventDelegate(() => DoPlayerEnterWorld(session, character, offlinePlayer.Biota, biotas)));
             });

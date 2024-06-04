@@ -16,7 +16,7 @@ namespace ACE.Server.Command
 
         public static readonly bool NonInteractiveConsole = Convert.ToBoolean(Environment.GetEnvironmentVariable("ACE_NONINTERACTIVE_CONSOLE"));
 
-        private static Dictionary<string, CommandHandlerInfo> commandHandlers;
+        private static Dictionary<string, CommandHandlerInfo> commandHandlers = new Dictionary<string, CommandHandlerInfo>(StringComparer.OrdinalIgnoreCase);
 
         public static IEnumerable<CommandHandlerInfo> GetCommands()
         {
@@ -94,7 +94,6 @@ namespace ACE.Server.Command
 
         public static void Initialize()
         {
-            commandHandlers = new Dictionary<string, CommandHandlerInfo>(StringComparer.OrdinalIgnoreCase);
             foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
             {
                 foreach (var method in type.GetMethods())
