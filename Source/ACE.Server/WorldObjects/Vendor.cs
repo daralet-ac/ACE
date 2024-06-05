@@ -808,13 +808,19 @@ namespace ACE.Server.WorldObjects
                     if(obj.ItemType == ItemType.Creature)
                     {
                         PlayerKillerStatus pkStatus = (PlayerKillerStatus)(obj.GetProperty(PropertyInt.PlayerKillerStatus) ?? 0);
-
                         Creature creature = obj as Creature;
 
-                        if (!(obj.Guid.IsPlayer()) && creature != null && pkStatus != PlayerKillerStatus.RubberGlue)
+                        if (creature.Name == "" || obj.Guid.IsPlayer() || creature == null)
+                            continue;
+
+                        if (pkStatus != PlayerKillerStatus.RubberGlue && creature.DeathTreasure != null && creature.DeathTreasure.Tier > ShopTier)
                         {
-                            if(creature.DeathTreasure != null && creature.DeathTreasure.Tier > ShopTier)
-                                ShopTier = creature.DeathTreasure.Tier; // Trade in the highest tier we can find around us.
+                            ShopTier = creature.DeathTreasure.Tier; // Find highest monster tier
+                        }
+
+                        if (creature.Tier != null && creature.Tier > ShopTier)
+                        {
+                            ShopTier = creature.Tier ?? 1; // Find highest NPC tier
                         }
                     }
                 }
@@ -1088,6 +1094,7 @@ namespace ACE.Server.WorldObjects
                 case "Crater":
                 case "Bandit Castle":
                 case "Neydisa Castle":
+                case "Beach Fort":
                     if (ShopTier == 0)
                         ShopTier = 5;
                     ShopQualityMod = 0.0f;
