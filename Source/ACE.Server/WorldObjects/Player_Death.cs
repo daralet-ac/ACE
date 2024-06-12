@@ -210,9 +210,22 @@ namespace ACE.Server.WorldObjects
 
             if (IsPKDeath(topDamager) || AugmentationSpellsRemainPastDeath == 0)
             {
-                var msgPurgeEnchantments = new GameEventMagicPurgeEnchantments(Session);
-                EnchantmentManager.RemoveAllEnchantments();
+                var allEnchantments = new List<ACE.Entity.Models.PropertiesEnchantmentRegistry>();
+                allEnchantments.AddRange(EnchantmentManager.GetEnchantments(MagicSchool.CreatureEnchantment));
+                allEnchantments.AddRange(EnchantmentManager.GetEnchantments(MagicSchool.LifeMagic));
+                allEnchantments.AddRange(EnchantmentManager.GetEnchantments(MagicSchool.PortalMagic));
+
+                foreach (var enchantment in allEnchantments.ToList())
+                {
+                    if (EnchantmentManager.DeathPersistentSpellCategory(enchantment.SpellCategory))
+                    {
+                        allEnchantments.Remove(enchantment);
+                    }
+                }
+
+                var msgPurgeEnchantments = new GameEventMagicDispelMultipleEnchantments(Session, allEnchantments);
                 Session.Network.EnqueueSend(msgPurgeEnchantments);
+                EnchantmentManager.RemoveAllEnchantments();
             }
             else
             {
@@ -334,7 +347,7 @@ namespace ACE.Server.WorldObjects
                 EnqueueBroadcast(new GameMessageHearSpeech(SuicideMessages[step], GetNameWithSuffix(), Guid.Full, ChatMessageType.Speech), LocalBroadcastRange);
 
                 var suicideChain = new ActionChain();
-                suicideChain.AddDelaySeconds(3.0f);
+                suicideChain.AddDelaySeconds(1.0f);
                 suicideChain.AddAction(this, () => HandleSuicide(numDeaths, step + 1));
                 suicideChain.EnqueueChain();
             }

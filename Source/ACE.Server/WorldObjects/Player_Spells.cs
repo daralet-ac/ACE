@@ -618,5 +618,57 @@ namespace ACE.Server.WorldObjects
 
             return false;
         }
+
+        public void GetAllSpellStacks()
+        {
+            GetOlthoiNorthSpellStacks(true);
+        }
+
+        public uint GetOlthoiNorthSpellStacks(bool withMessage = false)
+        {
+            uint totalStacks = 0;
+
+            var msg = "Olthoi North Modifiers - ";
+
+            var olthoiStaminaDebuff = EnchantmentManager.GetEnchantment((uint)SpellId.OlthoiStaminaDebuff); // stamaina and mana
+            if (olthoiStaminaDebuff != null)
+            {
+                var staminaDebuff = olthoiStaminaDebuff.SpellStacks + 1;
+                totalStacks += staminaDebuff;
+                msg += $" Stamina/Mana: -{staminaDebuff}%";
+            }
+
+            var olthoiHealthDebuff = EnchantmentManager.GetEnchantment((uint)SpellId.OlthoiHealthDebuff);
+            if (olthoiHealthDebuff != null)
+            {
+                var healthDebuff = olthoiHealthDebuff.SpellStacks + 1;
+                totalStacks += healthDebuff;
+                msg += $" Health: -{healthDebuff}%";
+            }
+
+            var olthoiDefenseDebuff = EnchantmentManager.GetEnchantment((uint)SpellId.OlthoiDefenseDebuff);
+            if (olthoiDefenseDebuff != null)
+            {
+                var physicalDefenseDebuff = olthoiDefenseDebuff.SpellStacks + 1;
+                totalStacks += physicalDefenseDebuff;
+                msg += $" Physical Defense: -{physicalDefenseDebuff}%";
+            }
+
+            var olthoiAcidDebuff = EnchantmentManager.GetEnchantment((uint)SpellId.OlthoiAcidVulnerability);
+            if (olthoiAcidDebuff != null)
+            {
+                var acidResistanceDebuff = olthoiAcidDebuff.SpellStacks + 1;
+                totalStacks += acidResistanceDebuff;
+                msg += $" Acid Vulnerability: +{acidResistanceDebuff}%.";
+            }
+
+            msg += $"\nTotal discovery bonus: +{ totalStacks}% ";
+
+            if (withMessage)
+            {
+                Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+            }
+            return totalStacks;
+        }
     }
 }

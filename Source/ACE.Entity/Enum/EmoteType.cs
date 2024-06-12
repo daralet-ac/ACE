@@ -147,5 +147,6 @@ namespace ACE.Entity.Enum
         CapstoneCacheReward           = 10009,
         AssignCapstoneDungeon         = 10010,
         AwardNoContribSkillXP         = 10011,
+        BroadcastSpellStacks          = 10012,
     }
 }

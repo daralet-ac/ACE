@@ -14,6 +14,7 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
@@ -42,6 +43,8 @@ namespace ACE.Server.WorldObjects
         private int _deathTreasureTier = 1;
 
         private bool onDeathEntered = false;
+
+        private float SpellStackBonus = 1.0f;
 
         /// <summary>
         /// Called when a monster or player dies, in conjunction with Die()
@@ -241,7 +244,7 @@ namespace ACE.Server.WorldObjects
                         playerDamager.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
                 }
                 else
-                    playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill, Level, ShareType.All);
+                    playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill, Level, ShareType.All, WeenieClassId);
 
                 // handle luminance
                 if (LuminanceAward != null)
@@ -651,9 +654,9 @@ namespace ACE.Server.WorldObjects
 
                     // Corpse GUID, Killer, DateTime (now), Location, DecayTime, Lost Items
                     if (player.CorpseLog == null)
-                        player.CorpseLog = $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
+                        player.CorpseLog = $"{corpse.Guid.Full}|{killer?.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
                     else
-                        player.CorpseLog += $"{corpse.Guid.Full}|{killer.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
+                        player.CorpseLog += $"{corpse.Guid.Full}|{killer?.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
 
 
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Use the @corpses command for a list of recent corpses. To query items dropped, type '@corpses' followed by the corpse number on the list. To remove a corpse you do not plan on retrieving, type '@corpses remove' followed by the corpse number.", ChatMessageType.Broadcast));
@@ -821,18 +824,28 @@ namespace ACE.Server.WorldObjects
                 var createList = Biota.PropertiesCreateList.Where(i => (i.DestinationType & DestinationType.Contain) != 0 ||
                                 (i.DestinationType & DestinationType.Treasure) != 0 && (i.DestinationType & DestinationType.Wield) == 0).ToList();
 
-                var selected = CreateListSelect(createList);
+                SpellStackBonus = GetSpellStackBonus(killer);
 
-                foreach (var item in selected)
+                List<PropertiesCreateList> selected = new List<PropertiesCreateList>();
+
+                if (SpellStackBonus != 1.0f && StackableSpellType > StackableSpellTables.StackableSpellType.None)
+                    selected = CreateListSelect(createList, SpellStackBonus);
+                else
+                    selected = CreateListSelect(createList);
+
+                if (selected.Count > 0)
                 {
-                    var wo = WorldObjectFactory.CreateNewWorldObject(item);
-
-                    if (wo != null)
+                    foreach (var item in selected)
                     {
-                        if (corpse != null)
-                            corpse.TryAddToInventory(wo);
-                        else
-                            droppedItems.Add(wo);
+                        var wo = WorldObjectFactory.CreateNewWorldObject(item);
+
+                        if (wo != null)
+                        {
+                            if (corpse != null)
+                                corpse.TryAddToInventory(wo);
+                            else
+                                droppedItems.Add(wo);
+                        }
                     }
                 }
             }
@@ -950,5 +963,19 @@ namespace ACE.Server.WorldObjects
             0x5965,     // Gauntlet Arena Two (Radiant Blood)
             0x596B,     // Gauntlet Staging Area (All Societies)
         };
+
+        private float GetSpellStackBonus(DamageHistoryInfo killer)
+        {
+            if (!killer.IsPlayer)
+                return 1.0f;
+
+            var olthoiNorthDebuffStacks = killer.Player.GetOlthoiNorthSpellStacks(false);
+            if (olthoiNorthDebuffStacks > 0 && StackableSpellType == StackableSpellTables.StackableSpellType.OlthoiNorth)
+            {
+                return 1.0f + ((float)olthoiNorthDebuffStacks / 100);
+            }
+
+            return 1.0f;
+        }
     }
 }

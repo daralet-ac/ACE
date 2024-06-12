@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using ACE.Entity.Enum;
 using ACE.Entity.Models;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Managers;
+using Org.BouncyCastle.Math.EC.Multiplier;
 
 namespace ACE.Server.Entity
 {
@@ -67,6 +68,9 @@ namespace ACE.Server.Entity
 
             var powerLevel = spell.Power;
 
+            var stackAdded = false;
+            var entryStatModValue = 1.0f;
+
             foreach (var entry in entries.OrderByDescending(i => i.PowerLevel))
             {
                 if (powerLevel > entry.PowerLevel)
@@ -79,6 +83,31 @@ namespace ACE.Server.Entity
                     // refreshing existing spell
                     if (spell.Id == entry.SpellId)
                     {
+                        if (IsStackableEnchantment((SpellId)spell.Id))
+                        {
+                            if (!stackAdded)
+                            {
+                                // Increase buff effect additively by +100%, before refreshing
+                                var statIncrement = Math.Round(1 - spell.StatModVal, 2);
+                                entry.StatModValue = (float)Math.Round(entry.StatModValue - statIncrement, 2);
+                                entryStatModValue = entry.StatModValue;
+
+                                entry.SpellStacks++;
+
+                                stackAdded = true;
+
+                                //Console.WriteLine($"\nMatch: {(SpellId)entry.SpellId}");
+                                //Console.WriteLine($"spell.StatModVal: {spell.StatModVal}, entry.statModValue: {entry.StatModValue}");
+                                //Console.WriteLine($"StatIncrement: {statIncrement}, NewEntryValue: {entry.StatModValue}");
+                                //Console.WriteLine($"SpellStacks: {entry.SpellStacks + 1}");
+                            }
+                            else // Other entries of the same buff should also be set to the correct statModValue
+                            {
+                                //Console.WriteLine($"Set Dupe Entry.StatModValue from: {entry.StatModValue} to {entryStatModValue}");
+                                entry.StatModValue = entryStatModValue;
+                            }
+                        }
+
                         Refresh.Add(entry);
 
                         // this could be valid
@@ -88,7 +117,7 @@ namespace ACE.Server.Entity
                         // it should cast to its own layer?
 
                         //if (Refresh.Count > 1)
-                            //Console.WriteLine($"AddEnchantmentResult.BuildStack(): multiple refresh entries");
+                        //Console.WriteLine($"AddEnchantmentResult.BuildStack(): multiple refresh entries");
                     }
                     else
                     {
@@ -175,6 +204,13 @@ namespace ACE.Server.Entity
                 if (refresh.CasterObjectId == caster?.Guid.Full)
                     RefreshCaster = refresh;
             }
+        }
+
+        private SpellId[] StackableSpellEnchantments = { SpellId.OlthoiStaminaDebuff, SpellId.OlthoiManaDebuff, SpellId.OlthoiDefenseDebuff, SpellId.OlthoiAcidVulnerability, SpellId.OlthoiHealthDebuff};
+
+        private bool IsStackableEnchantment(SpellId spellId)
+        {
+            return StackableSpellEnchantments.Contains(spellId);
         }
     }
 }

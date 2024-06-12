@@ -6378,6 +6378,11 @@ namespace ACE.Entity.Enum
         CampfireRest1,
         CampfireRest2,
         CampfireRest3,
+        OlthoiStaminaDebuff,
+        OlthoiManaDebuff,
+        OlthoiDefenseDebuff,
+        OlthoiAcidVulnerability,
+        OlthoiHealthDebuff,
 
         NumSpells = 8192,
 
