@@ -2,6 +2,7 @@ using System;
 
 using ACE.Entity;
 using ACE.Server.WorldObjects;
+using ACE.Server.WorldObjects.Managers;
 
 namespace ACE.Server.Entity
 {
@@ -24,6 +25,8 @@ namespace ACE.Server.Entity
 
         public int Level;
 
+        public Player Player;
+
         public DamageHistoryInfo(WorldObject attacker, float totalDamage = 0.0f)
         {
             Attacker = new WeakReference<WorldObject>(attacker);
@@ -31,6 +34,7 @@ namespace ACE.Server.Entity
             Guid = attacker.Guid;
             Name = attacker.Name;
             Level = attacker.Level ?? 1;
+            Player = attacker as Player;
 
             IsOlthoiPlayer = attacker is Player player && player.IsOlthoiPlayer;
 

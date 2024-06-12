@@ -28,6 +28,7 @@ namespace ACE.Server.Network.Structure
         public uint StatModKey;
         public float StatModValue;
         public uint SpellSetID;     // only sent if HasSpellSetID = true
+        public uint SpellStacks;
 
         // not sent in network structure
         public WorldObject Target;
@@ -75,6 +76,7 @@ namespace ACE.Server.Network.Structure
             CasterGuid = entry.CasterObjectId;
             StatModValue = entry.StatModValue;
             SpellSetID = (uint)entry.SpellSetId;
+            SpellStacks = entry.SpellStacks;
             Target = target;
             EnchantmentMask = (EnchantmentMask)entry.EnchantmentCategory;
         }
@@ -109,6 +111,7 @@ namespace ACE.Server.Network.Structure
             DegradeModifier = spell.DegradeModifier;
             DegradeLimit = spell.DegradeLimit;
             StatModValue = entry.StatModValue;
+            SpellStacks = entry.SpellStacks;
 
             if (spell._spell != null)
             {
@@ -131,6 +134,7 @@ namespace ACE.Server.Network.Structure
             StatModType = (EnchantmentTypeFlags)entry.StatModType;
             StatModKey = entry.StatModKey;
             StatModValue = entry.StatModValue;
+            SpellStacks = entry.SpellStacks;
         }
 
         public string GetInfo()
@@ -148,6 +152,7 @@ namespace ACE.Server.Network.Structure
             info += $"StatModType: {StatModType}\n";
             info += $"StatModKey: {StatModKey}\n";
             info += $"StatModValue: {StatModValue}\n";
+            info += $"SpellStacks: {SpellStacks}\n";
             info += "---------";
 
             return info;

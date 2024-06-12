@@ -748,5 +748,10 @@ namespace ACE.Entity.Enum
         WardRaising = 751,
         WardLowering = 752,
         CampfireRested = 753,
+        OlthoiStaminaPenalty = 754,
+        OlthoiManaPenalty = 755,
+        OlthoiHealthPenalty = 756,
+        OlthoiPhysicalDefensePenalty = 757,
+        OlthoiAcidVulnerability = 758,
     }
 }

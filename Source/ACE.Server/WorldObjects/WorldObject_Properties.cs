@@ -15,6 +15,7 @@ using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network.Structure;
 using ACE.Server.Physics.Extensions;
+using static ACE.Server.Factories.Tables.StackableSpellTables;
 
 namespace ACE.Server.WorldObjects
 {
@@ -4211,6 +4212,12 @@ namespace ACE.Server.WorldObjects
         {
             get => GetProperty(PropertyInstanceId.BankAccountId);
             set { if (!value.HasValue) RemoveProperty(PropertyInstanceId.BankAccountId); else SetProperty(PropertyInstanceId.BankAccountId, value.Value); }
+        }
+
+        public StackableSpellType StackableSpellType
+        {
+            get => (StackableSpellType)(GetProperty(PropertyInt.StackableSpellType) ?? 0);
+            set { if (value == 0) RemoveProperty(PropertyInt.StackableSpellType); else SetProperty(PropertyInt.StackableSpellType, (int)value); }
         }
     }
 }

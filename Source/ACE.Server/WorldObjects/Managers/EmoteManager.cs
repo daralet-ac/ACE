@@ -325,7 +325,14 @@ namespace ACE.Server.WorldObjects.Managers
                         {
                             var spellTarget = GetSpellTarget(spell, targetObject);
 
-                            WorldObject.TryCastSpell_WithRedirects(spell, spellTarget, WorldObject);
+                            if(emote.Message != null && emote.Message == "noresist")
+                            {
+                                WorldObject.TryCastSpell_WithRedirects(spell, spellTarget, WorldObject, null, false, false, false);
+                            }
+                            else
+                            {
+                                WorldObject.TryCastSpell_WithRedirects(spell, spellTarget, WorldObject);
+                            }
                         }
                     }
                     break;
@@ -1000,7 +1007,8 @@ namespace ACE.Server.WorldObjects.Managers
                 case EmoteType.LocalBroadcast:
 
                     message = Replace(emote.Message, WorldObject, targetObject, emoteSet.Quest);
-                    WorldObject.EnqueueBroadcast(new GameMessageSystemChat(message, ChatMessageType.Broadcast));
+                    var range = emote.Amount ?? WorldObject.LocalBroadcastRange;
+                    WorldObject.EnqueueBroadcast(new GameMessageSystemChat(message, ChatMessageType.Broadcast), (float)range);
                     break;
 
                 case EmoteType.LocalSignal:
@@ -1282,10 +1290,12 @@ namespace ACE.Server.WorldObjects.Managers
 
                     var name = WorldObject.CreatureType == CreatureType.Olthoi ? WorldObject.Name + "&" : WorldObject.Name;
 
+                    range = emote.Amount ?? WorldObject.LocalBroadcastRange;
+
                     if (emote.Extent > 0)
-                        WorldObject.EnqueueBroadcast(new GameMessageHearRangedSpeech(message, name, WorldObject.Guid.Full, emote.Extent, ChatMessageType.Emote), WorldObject.LocalBroadcastRange);
+                        WorldObject.EnqueueBroadcast(new GameMessageHearRangedSpeech(message, name, WorldObject.Guid.Full, emote.Extent, ChatMessageType.Emote), (float)range);
                     else
-                        WorldObject.EnqueueBroadcast(new GameMessageHearSpeech(message, name, WorldObject.Guid.Full, ChatMessageType.Emote), WorldObject.LocalBroadcastRange);
+                        WorldObject.EnqueueBroadcast(new GameMessageHearSpeech(message, name, WorldObject.Guid.Full, ChatMessageType.Emote), range);
                     break;
 
                 case EmoteType.SetAltRacialSkills:
@@ -1721,6 +1731,14 @@ namespace ACE.Server.WorldObjects.Managers
                         }
                         else
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Failed to train {((NewSkillNames)emote.Stat).ToSentence()}!", ChatMessageType.Advancement));
+                    }
+                    break;
+
+                case EmoteType.BroadcastSpellStacks:
+
+                    if (player != null)
+                    {
+                        player.GetAllSpellStacks();
                     }
                     break;
 

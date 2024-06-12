@@ -650,6 +650,7 @@ namespace ACE.Entity.Enum.Properties
         CombatFocusAttributeSpellAdded          = 458,
         CombatFocusSkillSpellRemoved            = 459,
         CombatFocusSkillSpellAdded              = 460,
+        StackableSpellType                      = 461,
 
 
         [ServerOnly]

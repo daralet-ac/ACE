@@ -8,6 +8,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Command.Handlers;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
@@ -22,7 +23,7 @@ namespace ACE.Server.WorldObjects
         /// <param name="amount">The amount of XP being added</param>
         /// <param name="xpType">The source of XP being added</param>
         /// <param name="shareable">True if this XP can be shared with Fellowship</param>
-        public void EarnXP(long amount, XpType xpType, int? xpSourceLevel, ShareType shareType = ShareType.All)
+        public void EarnXP(long amount, XpType xpType, int? xpSourceLevel, ShareType shareType = ShareType.All, uint? creatureWcid = null)
         {
             //Console.WriteLine($"{Name}.EarnXP({amount}, {xpType}, {xpSourceLevel}, {xpSourceId}, {shareType})");
 
@@ -39,7 +40,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            GrantXP(m_amount, xpType, xpSourceLevel, shareType, xpMessage);
+            GrantXP(m_amount, xpType, xpSourceLevel, shareType, xpMessage, creatureWcid);
 
         }
 
@@ -76,7 +77,7 @@ namespace ACE.Server.WorldObjects
         /// <param name="amount">The amount of XP to grant to the player</param>
         /// <param name="xpType">The source of the XP being granted</param>
         /// <param name="shareable">If TRUE, this XP can be shared with fellowship members</param>
-        public void GrantXP(long amount, XpType xpType, ShareType shareType = ShareType.All)
+        public void GrantXP(long amount, XpType xpType, ShareType shareType = ShareType.All, uint? creatureWcid = null)
         {
             if (IsOlthoiPlayer)
             {
@@ -105,7 +106,7 @@ namespace ACE.Server.WorldObjects
         /// <param name="amount">The amount of XP to grant to the player</param>
         /// <param name="xpType">The source of the XP being granted</param>
         /// <param name="shareable">If TRUE, this XP can be shared with fellowship members</param>
-        public void GrantXP(long amount, XpType xpType, int? xpSourceLevel, ShareType shareType = ShareType.All, string xpMessage = "")
+        public void GrantXP(long amount, XpType xpType, int? xpSourceLevel, ShareType shareType = ShareType.All, string xpMessage = "", uint? creatureWcid = null)
         {
             //Console.WriteLine($"{Name}.GrantXP({amount}, {xpType}, {shareType})");
 
@@ -128,11 +129,14 @@ namespace ACE.Server.WorldObjects
             // Gain less xp for killing monsters below your level
             var overlevelPenalty = xpSourceLevel != null ? GetOverlevelPenalty((int)xpSourceLevel) : 1.0f;
 
-            // Kill XP bonus for having higher level alt characters on your account. Doesn't share with fellow.
             if (xpType == XpType.Kill)
             {
+                // Kill XP bonus for having higher level alt characters on your account. Doesn't share with fellow.
                 var altBonus = GetAltXpBonus();
-                amount = (long)(altBonus * amount);
+
+                var regionalDebuffBonus = GetRegionalDebuffBonus(creatureWcid);
+
+                amount = (long)(amount * altBonus * regionalDebuffBonus);
             }
 
             var m_amount = (long)Math.Round(amount * overlevelPenalty);
@@ -825,6 +829,26 @@ namespace ACE.Server.WorldObjects
                 xpBonusMod += (float)levelDifference / 100;
 
             //Console.WriteLine($"Level Difference: {levelDifference}  XP Bonus Mod: {xpBonusMod}");
+
+            return xpBonusMod;
+        }
+
+        /// <summary>
+        /// Returns XP modifier for having a regional debuff and killing enemies in that region (i.e. Olthoi North)
+        /// </summary>
+        private float GetRegionalDebuffBonus(uint? enemyWcid)
+        {
+            var xpBonusMod = 1.0f;
+
+            if (enemyWcid == null)
+                return xpBonusMod;
+
+            if (StackableSpellTables.OlthoiNorthCreatureWcids.Contains(enemyWcid.Value))
+            {
+                xpBonusMod = (float)GetOlthoiNorthSpellStacks() / 100 + 1;
+            }
+
+            //Console.WriteLine($"RegionalDebuffBonus: {xpBonusMod}");
 
             return xpBonusMod;
         }

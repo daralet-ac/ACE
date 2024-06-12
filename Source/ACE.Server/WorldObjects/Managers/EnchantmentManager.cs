@@ -169,6 +169,16 @@ namespace ACE.Server.WorldObjects.Managers
             {
                 var newEntry = BuildEntry(spell, caster, weapon, equip);
                 newEntry.LayerId = result.NextLayerId;
+
+                // for Stackable Spells cast from different GUIDs, make sure the newEntry receives the statModValue of the other modified entries
+                foreach (var entry in entries)
+                {
+                    if (spell.Id == entry.SpellId)
+                    {
+                        newEntry.StatModValue = entry.StatModValue;
+                    }
+                }
+
                 WorldObject.Biota.PropertiesEnchantmentRegistry.AddEnchantment(newEntry, WorldObject.BiotaDatabaseLock);
 
                 result.Enchantment = newEntry;
@@ -358,7 +368,7 @@ namespace ACE.Server.WorldObjects.Managers
         public virtual void RemoveAllEnchantments()
         {
             // exclude cooldowns and enchantments from items
-            var spellsToExclude = WorldObject.Biota.PropertiesEnchantmentRegistry.Clone(WorldObject.BiotaDatabaseLock).Where(i => i.Duration == -1 || i.SpellId > short.MaxValue).Select(i => i.SpellId);
+            var spellsToExclude = WorldObject.Biota.PropertiesEnchantmentRegistry.Clone(WorldObject.BiotaDatabaseLock).Where(i => i.Duration == -1 || i.SpellId > short.MaxValue || DeathPersistentSpellCategory(i.SpellCategory)).Select(i => i.SpellId);
 
             WorldObject.Biota.PropertiesEnchantmentRegistry.RemoveAllEnchantments(spellsToExclude, WorldObject.BiotaDatabaseLock);
             WorldObject.ChangesDetected = true;
@@ -1498,6 +1508,20 @@ namespace ACE.Server.WorldObjects.Managers
             var numTicks = GetNumTicks(enchantment, heartbeatInterval);
 
             return totalDamage / numTicks;
+        }
+
+        public bool DeathPersistentSpellCategory(SpellCategory spellCategory)
+        {
+            SpellCategory[] deathPersistentSpellCategories =
+            {
+                SpellCategory.OlthoiStaminaPenalty,
+                SpellCategory.OlthoiManaPenalty,
+                SpellCategory.OlthoiHealthPenalty,
+                SpellCategory.OlthoiPhysicalDefensePenalty,
+                SpellCategory.OlthoiAcidVulnerability
+            };
+
+            return deathPersistentSpellCategories.Contains(spellCategory);
         }
     }
 }

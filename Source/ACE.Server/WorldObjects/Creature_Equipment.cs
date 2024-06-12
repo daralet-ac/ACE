@@ -1145,10 +1145,10 @@ namespace ACE.Server.WorldObjects
                         modifier = createList.GetSetModifier(i, dropRateMod);
                     }
 
-                    var probability = shadeOrProbability * (item.WeenieClassId != 0 ? modifier.TrophyMod : modifier.NoneMod);
+                    var probability = (float)Math.Round(shadeOrProbability * (item.WeenieClassId != 0 ? modifier.TrophyMod : modifier.NoneMod), 4);
 
                     totalProbability += probability;
-
+                    //Console.WriteLine($"Modifier: {modifier}, Prob: {probability}, TotalProb: {totalProbability}");
                     if (rngSelected || rng >= totalProbability)
                         continue;
 
