@@ -390,6 +390,11 @@ namespace ACE.Server.Entity
                 obj.Location.PositionX += Biota.OriginX ?? 0;
                 obj.Location.PositionY += Biota.OriginY ?? 0;
                 obj.Location.PositionZ += Biota.OriginZ ?? 0;
+
+                obj.Location.RotationW = Biota.AnglesW ?? 0.0f;
+                obj.Location.RotationX = Biota.AnglesX ?? 0.0f;
+                obj.Location.RotationY = Biota.AnglesY ?? 0.0f;
+                obj.Location.RotationZ = Biota.AnglesZ ?? 0.0f;
             }
 
             obj.Location.PositionZ += 0.05f;
