@@ -148,5 +148,6 @@ namespace ACE.Entity.Enum
         AssignCapstoneDungeon         = 10010,
         AwardNoContribSkillXP         = 10011,
         BroadcastSpellStacks          = 10012,
+        RemoveEnchantment                  = 10013,
     }
 }
