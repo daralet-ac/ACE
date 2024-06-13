@@ -6383,6 +6383,13 @@ namespace ACE.Entity.Enum
         OlthoiDefenseDebuff,
         OlthoiAcidVulnerability,
         OlthoiHealthDebuff,
+        PotionOfSlashingResistance,
+        PotionOfPiercingResistance,
+        PotionOfBludgeoningResistance,
+        PotionOfAcidResistance,
+        PotionOfFireResistance,
+        PotionOfColdResistance,
+        PotionOfLightningResistance,
 
         NumSpells = 8192,
 

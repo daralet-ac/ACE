@@ -1246,7 +1246,10 @@ namespace ACE.Server.WorldObjects.Managers
 
                 case EmoteType.PhysScript:
 
-                    WorldObject.PlayParticleEffect((PlayScript)emote.PScript, WorldObject.Guid, emote.Extent);
+                    if (player != null && emote.Message == "player")
+                        player.PlayParticleEffect((PlayScript)emote.PScript, player.Guid, emote.Extent);
+                    else
+                        WorldObject.PlayParticleEffect((PlayScript)emote.PScript, WorldObject.Guid, emote.Extent);
                     break;
 
                 case EmoteType.PopUp:
@@ -1739,6 +1742,23 @@ namespace ACE.Server.WorldObjects.Managers
                     if (player != null)
                     {
                         player.GetAllSpellStacks();
+                    }
+                    break;
+
+                case EmoteType.RemoveEnchantment:
+
+                    if (player != null)
+                    {
+                        var spellToRemove = emote.SpellId;
+
+                        if (spellToRemove != null)
+                        {
+                            var enchantment = player.EnchantmentManager.GetEnchantment((uint)spellToRemove);
+                            if (enchantment != null)
+                            {
+                                player.EnchantmentManager.Remove(enchantment);
+                            }
+                        }
                     }
                     break;
 

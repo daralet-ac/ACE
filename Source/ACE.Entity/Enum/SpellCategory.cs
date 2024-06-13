@@ -753,5 +753,12 @@ namespace ACE.Entity.Enum
         OlthoiHealthPenalty = 756,
         OlthoiPhysicalDefensePenalty = 757,
         OlthoiAcidVulnerability = 758,
+        ExtraSlashingResistanceRaising2 = 759,
+        ExtraPiercingResistanceRaising2 = 759,
+        ExtraBludgeoningResistanceRaising2 = 759,
+        ExtraAcidResistanceRaising2 = 759,
+        ExtraFireResistanceRaising2 = 759,
+        ExtraColdResistanceRaising2 = 759,
+        ExtraLightningResistanceRaising2 = 759,
     }
 }
