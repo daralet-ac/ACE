@@ -803,25 +803,29 @@ namespace ACE.Server.WorldObjects
             {
                 ShopTier = 1; // Fallback to tier 1 if there's nothing around us.
 
-                foreach (var obj in CurrentLandblock.GetAllWorldObjectsForDiagnostics())
+                var creatures = CurrentLandblock
+                    .GetAllWorldObjectsForDiagnostics()
+                    .Where(x => x.ItemType == ItemType.Creature)
+                    .Select(x => x as Creature)
+                    .Where(x => x is not null);
+
+                foreach (var creature in creatures)
                 {
-                    if(obj.ItemType == ItemType.Creature)
+                    var pkStatus = (PlayerKillerStatus)(creature.GetProperty(PropertyInt.PlayerKillerStatus) ?? 0);
+
+                    if (string.IsNullOrEmpty(creature.Name) || creature.Guid.IsPlayer())
                     {
-                        PlayerKillerStatus pkStatus = (PlayerKillerStatus)(obj.GetProperty(PropertyInt.PlayerKillerStatus) ?? 0);
-                        Creature creature = obj as Creature;
+                        continue;
+                    }
 
-                        if (creature.Name == "" || obj.Guid.IsPlayer() || creature == null)
-                            continue;
+                    if (pkStatus != PlayerKillerStatus.RubberGlue && creature.DeathTreasure is not null && creature.DeathTreasure.Tier > ShopTier)
+                    {
+                        ShopTier = creature.DeathTreasure.Tier; // Find highest monster tier
+                    }
 
-                        if (pkStatus != PlayerKillerStatus.RubberGlue && creature.DeathTreasure != null && creature.DeathTreasure.Tier > ShopTier)
-                        {
-                            ShopTier = creature.DeathTreasure.Tier; // Find highest monster tier
-                        }
-
-                        if (creature.Tier != null && creature.Tier > ShopTier)
-                        {
-                            ShopTier = creature.Tier ?? 1; // Find highest NPC tier
-                        }
+                    if (creature.Tier.HasValue && creature.Tier > ShopTier)
+                    {
+                        ShopTier = creature.Tier.Value; // Find highest NPC tier
                     }
                 }
             }
