@@ -1,10 +1,13 @@
 # directories
-**/bin/
-**/obj/
+**/dist
 **/out/
-**/.vs/
+**/.config/
 **/.git/
+**/.idea/
+**/.nx/
 **/.github/
+**/.tmp/
+**/.vs/
 **/sed/
 **/AppVeyor/
 **/publish/
@@ -12,10 +15,15 @@
 **/Dats/
 **/Logs/
 **/db-data/
+**/*-tests/
+Database/
 
 # files
 Dockerfile*
 **/.dockerignore*
+**/.gitignore*
+**/.gitattributes*
+**/.editorconfig
 **/*.user
 **/*.trx
 **/*.md

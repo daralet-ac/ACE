@@ -34,14 +34,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ACE.Server\ACE.Server.csproj" />
+    <ProjectReference Include="..\common\ACE.Common.csproj" />
+    <ProjectReference Include="..\database\ACE.Database.csproj" />
   </ItemGroup>
 
-    <ItemGroup>
-      <None Include="..\..\LICENSE">
-        <Pack>True</Pack>
-        <PackagePath></PackagePath>
-      </None>
-    </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
