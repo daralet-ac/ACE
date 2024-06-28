@@ -1,0 +1,13 @@
+{
+  "targets": {
+    "publish": {
+      "executor": "@nx-dotnet/core:publish",
+      "configurations": {
+        "docker": {
+          "configuration": "Release",
+          "output": "/ace"
+        }
+      }
+    }
+  }
+}

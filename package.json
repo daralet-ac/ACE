@@ -1,0 +1,12 @@
+{
+  "name": "@ace/source",
+  "version": "0.0.0",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "devDependencies": {
+    "@nx-dotnet/core": "^2.2.0",
+    "@nx/js": "19.3.2",
+    "@nx/workspace": "19.3.2",
+    "nx": "19.3.2"
+  }
+}
