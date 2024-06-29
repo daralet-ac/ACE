@@ -75,7 +75,7 @@ namespace ACE.Common
 
         public static JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
         {
-            AllowTrailingCommas = true,            
+            AllowTrailingCommas = true,
             NumberHandling = JsonNumberHandling.AllowReadingFromString,
             ReadCommentHandling = JsonCommentHandling.Skip,
             WriteIndented = true
