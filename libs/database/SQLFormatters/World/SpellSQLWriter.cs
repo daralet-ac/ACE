@@ -70,7 +70,7 @@ namespace ACE.Database.SQLFormatters.World
                     {
                         if (Enum.IsDefined(typeof(PropertyFloat), (ushort)input.StatModKey))
                             spellLine += $" /* {Enum.GetName(typeof(PropertyFloat), input.StatModKey)} */";
-                    }                    
+                    }
                 }
             }
             if (input.StatModVal.HasValue)
@@ -428,10 +428,10 @@ namespace ACE.Database.SQLFormatters.World
                 spellLine += $", {input.DotDuration}";
             }
 
-            
+
             spellLineHdr += ", `last_Modified`";
             spellLine += $", '{input.LastModified:yyyy-MM-dd HH:mm:ss}'";
-            
+
             spellLineHdr += ")";
             spellLine += ");";
 

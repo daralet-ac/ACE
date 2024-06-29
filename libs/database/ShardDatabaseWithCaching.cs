@@ -73,10 +73,10 @@ namespace ACE.Database
                 if (ObjectGuid.IsPlayer(biota.Id))
                 {
                     if (PlayerBiotaRetentionTime > TimeSpan.Zero)
-                        biotaCache[biota.Id] = new CacheObject<Biota> {LastSeen = DateTime.UtcNow, Context = context, CachedObject = biota};
+                        biotaCache[biota.Id] = new CacheObject<Biota> { LastSeen = DateTime.UtcNow, Context = context, CachedObject = biota };
                 }
                 else if (NonPlayerBiotaRetentionTime > TimeSpan.Zero)
-                    biotaCache[biota.Id] = new CacheObject<Biota> {LastSeen = DateTime.UtcNow, Context = context, CachedObject = biota};
+                    biotaCache[biota.Id] = new CacheObject<Biota> { LastSeen = DateTime.UtcNow, Context = context, CachedObject = biota };
             }
         }
 

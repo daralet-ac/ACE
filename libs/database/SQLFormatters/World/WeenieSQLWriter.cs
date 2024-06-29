@@ -734,7 +734,7 @@ namespace ACE.Database.SQLFormatters.World
         {
             writer.WriteLine("INSERT INTO `weenie_properties_book` (`object_Id`, `max_Num_Pages`, `max_Num_Chars_Per_Page`)");
 
-           writer.WriteLine($"VALUES ({weenieClassID}, {input.MaxNumPages}, {input.MaxNumCharsPerPage});");
+            writer.WriteLine($"VALUES ({weenieClassID}, {input.MaxNumPages}, {input.MaxNumCharsPerPage});");
         }
 
         public void CreateSQLINSERTStatement(uint weenieClassID, IList<WeeniePropertiesBookPageData> input, StreamWriter writer)
@@ -766,7 +766,7 @@ namespace ACE.Database.SQLFormatters.World
                     label = GetValueForTreasureData(input[i].WeenieClassId, false);
                 }
 
-                return  $"{weenieClassID}, " +
+                return $"{weenieClassID}, " +
                         $"{input[i].Probability:0.######}, " +
                         $"{input[i].WeenieClassId}, " +
                         $"{input[i].Delay:0.######}, " +
