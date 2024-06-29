@@ -10,7 +10,7 @@ namespace ACE.Entity.Enum
     public enum BasePropertyType
     {
         Invalid = 0,
-	    Bool = 1,
+        Bool = 1,
         Integer = 2,
         LongInteger = 3,
         Float = 4,

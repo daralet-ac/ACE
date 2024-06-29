@@ -1,4 +1,4 @@
-﻿namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum
 {
     using System.Diagnostics.CodeAnalysis;
     using System;
@@ -13,7 +13,7 @@
         /// The I got nothing for you....
         /// </summary>
         None = 0x00,
-        
+
         /// <summary>
         /// The velocity vector is present
         /// </summary>

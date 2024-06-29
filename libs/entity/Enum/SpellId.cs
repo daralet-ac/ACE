@@ -6396,51 +6396,51 @@ namespace ACE.Entity.Enum
         // shared cooldowns, (0x8000 | shared cooldown id)
         // these aren't actually in dat spelltable...
         // thanks to aclogview for this list so far!
-        JesterDecksCooldown                 = 0x8000 | 1,     // Deck of Eyes, Deck of Hands
-        AsheronsBenedictionCooldown         = 0x8000 | 2,
-        BlackmoorsFavorCooldown             = 0x8000 | 3,
-        HealthElixirCooldown                = 0x8000 | 4,     // Health elixir's with a cooldown
-        ManaElixirCooldown                  = 0x8000 | 5,     // Mana elixir's with a cooldown
-        CallOfLeadershipCooldown            = 0x8000 | 6,
-        AnswerOfLoyaltyStaminaCooldown      = 0x8000 | 7,
-        AnswerOfLoyaltyManaCooldown         = 0x8000 | 8,
-        VirindiEssenceCooldown              = 0x8000 | 9,
-        SurgingStrengthCooldown             = 0x8000 | 10,
-        ToweringDefenseCooldown             = 0x8000 | 11,
+        JesterDecksCooldown = 0x8000 | 1,     // Deck of Eyes, Deck of Hands
+        AsheronsBenedictionCooldown = 0x8000 | 2,
+        BlackmoorsFavorCooldown = 0x8000 | 3,
+        HealthElixirCooldown = 0x8000 | 4,     // Health elixir's with a cooldown
+        ManaElixirCooldown = 0x8000 | 5,     // Mana elixir's with a cooldown
+        CallOfLeadershipCooldown = 0x8000 | 6,
+        AnswerOfLoyaltyStaminaCooldown = 0x8000 | 7,
+        AnswerOfLoyaltyManaCooldown = 0x8000 | 8,
+        VirindiEssenceCooldown = 0x8000 | 9,
+        SurgingStrengthCooldown = 0x8000 | 10,
+        ToweringDefenseCooldown = 0x8000 | 11,
         // Skip 39
-        MhoireCastleItemsCooldown           = 0x8000 | 50,    // (Strange Jewel and Crystal of Spectral Blood)
-        MiscTenSecondCooldown               = 0x8000 | 51,    // Skull of One Thousand Torments, Enchanted Mana Stone, Aligned Mana Stone, Attuned Essence Gem
+        MhoireCastleItemsCooldown = 0x8000 | 50,    // (Strange Jewel and Crystal of Spectral Blood)
+        MiscTenSecondCooldown = 0x8000 | 51,    // Skull of One Thousand Torments, Enchanted Mana Stone, Aligned Mana Stone, Attuned Essence Gem
         // Skip 49
-        ContractCooldown                    = 0x8000 | 100,   // 2 second cooldown
+        ContractCooldown = 0x8000 | 100,   // 2 second cooldown
         // Skip 113
-        SummonCreatureCooldown              = 0x8000 | 213,   // 45 second cooldown
+        SummonCreatureCooldown = 0x8000 | 213,   // 45 second cooldown
         // Skip 8
-        FacilityHubPortalGemCooldown        = 0x8000 | 221,   // 30 second cooldown
+        FacilityHubPortalGemCooldown = 0x8000 | 221,   // 30 second cooldown
         // Skip 279
-        ScryingRodCooldown                  = 0x8000 | 500,   // (Slave Master Quest)
+        ScryingRodCooldown = 0x8000 | 500,   // (Slave Master Quest)
         // Skip 500
-        PortalGemCooldown                   = 0x8000 | 1000,   // 15 second cooldown
+        PortalGemCooldown = 0x8000 | 1000,   // 15 second cooldown
 
         // Timeline
-        EmpoweredScarabBlueCooldown         = 0x8000 | 10000,   // varies
-        EmpoweredScarabYellowCooldown       = 0x8000 | 10001,   // varies
-        EmpoweredScarabRedCooldown          = 0x8000 | 10002,   // varies
+        EmpoweredScarabBlueCooldown = 0x8000 | 10000,   // varies
+        EmpoweredScarabYellowCooldown = 0x8000 | 10001,   // varies
+        EmpoweredScarabRedCooldown = 0x8000 | 10002,   // varies
 
-        HealingKitCooldown                  = 0x8000 | 10003,   // varies
+        HealingKitCooldown = 0x8000 | 10003,   // varies
 
-        FocusedTaunt                        = 0x8000 | 10050,   // 15 second cooldown
-        AreaTaunt                           = 0x8000 | 10050,   // 15 second cooldown
-        FeignWeakness                       = 0x8000 | 10051,   // 15 second cooldown
-        Vanish                              = 0x8000 | 10052,   // 60 second cooldown
-        ExposeWeakness                      = 0x8000 | 10053,   // 15 second cooldown
-        ActivatedCombatAbilities            = 0x8000 | 10054,   // 120 second shared cooldown
-        ManaBarrier                         = 0x8000 | 10055,   // 60 second cooldown, triggered only on breaking/deactivation of shield
-        HealingFood                         = 0x8000 | 10056,
-        StaminaFood                         = 0x8000 | 10057,
-        ManaFood                            = 0x8000 | 10058,
-        HealingPotion                       = 0x8000 | 10059,
-        StaminaPotion                       = 0x8000 | 10060,
-        ManaPotion                          = 0x8000 | 10061,
+        FocusedTaunt = 0x8000 | 10050,   // 15 second cooldown
+        AreaTaunt = 0x8000 | 10050,   // 15 second cooldown
+        FeignWeakness = 0x8000 | 10051,   // 15 second cooldown
+        Vanish = 0x8000 | 10052,   // 60 second cooldown
+        ExposeWeakness = 0x8000 | 10053,   // 15 second cooldown
+        ActivatedCombatAbilities = 0x8000 | 10054,   // 120 second shared cooldown
+        ManaBarrier = 0x8000 | 10055,   // 60 second cooldown, triggered only on breaking/deactivation of shield
+        HealingFood = 0x8000 | 10056,
+        StaminaFood = 0x8000 | 10057,
+        ManaFood = 0x8000 | 10058,
+        HealingPotion = 0x8000 | 10059,
+        StaminaPotion = 0x8000 | 10060,
+        ManaPotion = 0x8000 | 10061,
 
     }
 

@@ -21,21 +21,21 @@ namespace ACE.Entity.Enum
 
     public static class QuadrantIndexExtensions
     {
-        public const Quadrant HLF = Quadrant.High   | Quadrant.Left | Quadrant.Front;
+        public const Quadrant HLF = Quadrant.High | Quadrant.Left | Quadrant.Front;
         public const Quadrant MLF = Quadrant.Medium | Quadrant.Left | Quadrant.Front;
-        public const Quadrant LLF = Quadrant.Low    | Quadrant.Left | Quadrant.Front;
+        public const Quadrant LLF = Quadrant.Low | Quadrant.Left | Quadrant.Front;
 
-        public const Quadrant HRF = Quadrant.High   | Quadrant.Right | Quadrant.Front;
+        public const Quadrant HRF = Quadrant.High | Quadrant.Right | Quadrant.Front;
         public const Quadrant MRF = Quadrant.Medium | Quadrant.Right | Quadrant.Front;
-        public const Quadrant LRF = Quadrant.Low    | Quadrant.Right | Quadrant.Front;
+        public const Quadrant LRF = Quadrant.Low | Quadrant.Right | Quadrant.Front;
 
-        public const Quadrant HLB = Quadrant.High   | Quadrant.Left | Quadrant.Back;
+        public const Quadrant HLB = Quadrant.High | Quadrant.Left | Quadrant.Back;
         public const Quadrant MLB = Quadrant.Medium | Quadrant.Left | Quadrant.Back;
-        public const Quadrant LLB = Quadrant.Low    | Quadrant.Left | Quadrant.Back;
+        public const Quadrant LLB = Quadrant.Low | Quadrant.Left | Quadrant.Back;
 
-        public const Quadrant HRB = Quadrant.High   | Quadrant.Right | Quadrant.Back;
+        public const Quadrant HRB = Quadrant.High | Quadrant.Right | Quadrant.Back;
         public const Quadrant MRB = Quadrant.Medium | Quadrant.Right | Quadrant.Back;
-        public const Quadrant LRB = Quadrant.Low    | Quadrant.Right | Quadrant.Back;
+        public const Quadrant LRB = Quadrant.Low | Quadrant.Right | Quadrant.Back;
 
         public static Quadrant ToQuadrant(this QuadrantIndex idx)
         {

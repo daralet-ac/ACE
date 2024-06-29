@@ -147,12 +147,12 @@ namespace ACE.Entity.Models
             try
             {
                 var results = from e in value
-                    group e by e.SpellCategory
+                              group e by e.SpellCategory
                     into categories
-                    //select categories.OrderByDescending(c => c.LayerId).First();
-                    select categories.OrderByDescending(c => c.PowerLevel)
-                        .ThenByDescending(c => Level8AuraSelfSpells.Contains(c.SpellId))
-                        .ThenByDescending(c => setSpells.Contains(c.SpellId) ? c.SpellId : c.StartTime).First();
+                              //select categories.OrderByDescending(c => c.LayerId).First();
+                              select categories.OrderByDescending(c => c.PowerLevel)
+                                  .ThenByDescending(c => Level8AuraSelfSpells.Contains(c.SpellId))
+                                  .ThenByDescending(c => setSpells.Contains(c.SpellId) ? c.SpellId : c.StartTime).First();
 
                 return results.ToList();
             }
@@ -176,12 +176,12 @@ namespace ACE.Entity.Models
                 var valuesByStatModType = value.Where(e => (e.StatModType & statModType) == statModType);
 
                 var results = from e in valuesByStatModType
-                    group e by e.SpellCategory
+                              group e by e.SpellCategory
                     into categories
-                    //select categories.OrderByDescending(c => c.LayerId).First();
-                    select categories.OrderByDescending(c => c.PowerLevel)
-                        .ThenByDescending(c => Level8AuraSelfSpells.Contains(c.SpellId))
-                        .ThenByDescending(c => setSpells.Contains(c.SpellId) ? c.SpellId : c.StartTime).First();
+                              //select categories.OrderByDescending(c => c.LayerId).First();
+                              select categories.OrderByDescending(c => c.PowerLevel)
+                                  .ThenByDescending(c => Level8AuraSelfSpells.Contains(c.SpellId))
+                                  .ThenByDescending(c => setSpells.Contains(c.SpellId) ? c.SpellId : c.StartTime).First();
 
                 return results.ToList();
             }
@@ -221,12 +221,12 @@ namespace ACE.Entity.Models
                 // confirmed this bug still exists in acclient Enchantment.Duel(), unknown if it existed in retail server
 
                 var results = from e in valuesByStatModTypeAndKey
-                    group e by e.SpellCategory
+                              group e by e.SpellCategory
                     into categories
-                    //select categories.OrderByDescending(c => c.LayerId).First();
-                    select categories.OrderByDescending(c => c.PowerLevel)
-                        .ThenByDescending(c => Level8AuraSelfSpells.Contains(c.SpellId))
-                        .ThenByDescending(c => setSpells.Contains(c.SpellId) ? c.SpellId : c.StartTime).First();
+                              //select categories.OrderByDescending(c => c.LayerId).First();
+                              select categories.OrderByDescending(c => c.PowerLevel)
+                                  .ThenByDescending(c => Level8AuraSelfSpells.Contains(c.SpellId))
+                                  .ThenByDescending(c => setSpells.Contains(c.SpellId) ? c.SpellId : c.StartTime).First();
 
                 return results.ToList();
             }

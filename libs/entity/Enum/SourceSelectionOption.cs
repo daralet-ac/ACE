@@ -5,7 +5,7 @@ namespace ACE.Entity.Enum
     /// </summary>
     public enum SourceSelectionOption
     {
-        None = 0,        
+        None = 0,
         Github = 1,
         LocalDisk = 2
     }

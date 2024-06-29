@@ -11,7 +11,7 @@ namespace ACE.Entity.Enum
     /// Used with F7E0: Server Message
     ///     0x00, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0D, 0x10, 0x11, 0x17, 0x18
     /// </summary>
-    public enum ChatMessageType: uint
+    public enum ChatMessageType : uint
     {
         /// <summary>
         /// allegiance MOTD
@@ -37,19 +37,19 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Default
         /// </summary>
-        Broadcast           = 0x00,
+        Broadcast = 0x00,
 
         /// <summary>
         /// The client sends this for message HandleActionModifyCharacterSquelch
         /// 
         /// LogTextTypeEnumMapper: AllChannels
         /// </summary>
-        AllChannels         = 0x01,
+        AllChannels = 0x01,
 
         /// <summary>
         /// LogTextTypeEnumMapper: Speech
         /// </summary>
-        Speech              = 0x02,
+        Speech = 0x02,
 
         /// <summary>
         /// 
@@ -60,14 +60,14 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Tell
         /// </summary>
-        Tell                = 0x03,
+        Tell = 0x03,
 
         /// <summary>
         /// You tell ...
         /// 
         /// LogTextTypeEnumMapper: Speech_Direct_Send
         /// </summary>
-        OutgoingTell        = 0x04,
+        OutgoingTell = 0x04,
 
         /// <summary>
         /// Warning!  You have not paid your maintenance costs for the last 30 day maintenance period.  Please pay these costs by this deadline or you will lose your house, and all your items within it.
@@ -75,7 +75,7 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: System
         /// </summary>
-        System              = 0x05,
+        System = 0x05,
 
         /// <summary>
         /// You receive 18 points of periodic nether damage.
@@ -84,7 +84,7 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Combat
         /// </summary>
-        Combat              = 0x06,
+        Combat = 0x06,
 
         /// <summary>
         /// Prismatic Amuli Leggings cast Epic Quickness on you
@@ -95,7 +95,7 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Magic
         /// </summary>
-        Magic                = 0x07,
+        Magic = 0x07,
 
         /// <summary>
         /// Light Pink Text - Both of the following two were associated with the following channels: admin, audit, av1, av2, av3, sentinel
@@ -103,24 +103,24 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Channel
         /// </summary>
-        Channel             = 0x08,
-                
+        Channel = 0x08,
+
         /// <summary>
         /// LogTextTypeEnumMapper: Channel_Send
         /// </summary>
-        ChannelSend         = 0x09,
+        ChannelSend = 0x09,
 
         /// <summary>
         /// Bright Yellow Text
         /// LogTextTypeEnumMapper: Social
         /// </summary>
-        Social              = 0x0A,
+        Social = 0x0A,
 
         /// <summary>
         /// Light Yellow Text
         /// LogTextTypeEnumMapper: Social_Send
         /// </summary>
-        SocialSend          = 0x0B,
+        SocialSend = 0x0B,
 
         /// <summary>
         /// Via 0x02BB:
@@ -147,7 +147,7 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Emote
         /// </summary>
-        Emote               = 0x0C,
+        Emote = 0x0C,
 
         /// <summary>
         /// You are now level 5!
@@ -159,7 +159,7 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Advancement
         /// </summary>
-        Advancement         = 0x0D,
+        Advancement = 0x0D,
 
         /// <summary>
         /// Light Cyan (skyblue?) Text - Would seem to be associated with the following channel: Abuse
@@ -167,21 +167,21 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Abuse
         /// </summary>
-        Abuse               = 0x0E,
+        Abuse = 0x0E,
 
         /// <summary>
         /// Red Text - Possibly OutgoingHelpSay, not even sure if that showed up on the client when you sent out an urgent help command
         /// 
         /// LogTextTypeEnumMapper: Help
         /// </summary>
-        Help                = 0x0F,
+        Help = 0x0F,
 
         /// <summary>
         /// Mr Sneaky tried and failed to assess you!
         /// 
         /// LogTextTypeEnumMapper: Appraisal
         /// </summary>
-        Appraisal           = 0x10,
+        Appraisal = 0x10,
 
         /// <summary>
         /// Via 02BB:
@@ -194,49 +194,49 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Spellcasting
         /// </summary>
-        Spellcasting        = 0x11,
+        Spellcasting = 0x11,
 
         /// <summary>
         /// Fellow warriors, aid me!
         /// 
         /// LogTextTypeEnumMapper: Allegiance
         /// </summary>
-        Allegiance           = 0x12,
+        Allegiance = 0x12,
 
         /// <summary>
         /// Bright Yellow Text
         /// 
         /// LogTextTypeEnumMapper: Fellowship
         /// </summary>
-        Fellowship           = 0x13,
+        Fellowship = 0x13,
 
         /// <summary>
         /// Green Text
         /// 
         /// LogTextTypeEnumMapper: World_Broadcast
         /// </summary>
-        WorldBroadcast      = 0x14,
+        WorldBroadcast = 0x14,
 
         /// <summary>
         /// Red Text
         /// 
         /// LogTextTypeEnumMapper: Combat_Enemy
         /// </summary>
-        CombatEnemy         = 0x15,
+        CombatEnemy = 0x15,
 
         /// <summary>
         /// Pink Text
         /// 
         /// LogTextTypeEnumMapper: Combat_Self
         /// </summary>
-        CombatSelf          = 0x16,
+        CombatSelf = 0x16,
 
         /// <summary>
         /// Player is recalling home.
         /// 
         /// LogTextTypeEnumMapper: Recall
         /// </summary>
-        Recall              = 0x17,
+        Recall = 0x17,
 
         /// <summary>
         /// Super Tink fails to apply the Fire Opal Salvage (workmanship 10.00) to the White Sapphire Fire Baton. The target is destroyed.
@@ -244,13 +244,13 @@ namespace ACE.Entity.Enum
         /// 
         /// LogTextTypeEnumMapper: Craft
         /// </summary>
-        Craft               = 0x18,
+        Craft = 0x18,
 
         /// <summary>
         /// Green Text
         /// LogTextTypeEnumMapper: Salvaging
         /// </summary>
-        Salvaging           = 0x19,
+        Salvaging = 0x19,
 
         /// <summary>
         /// Does Nothing - Unknown purpose/filter?
@@ -261,21 +261,21 @@ namespace ACE.Entity.Enum
         /// <summary>
         /// Light cyan(sky blue) - Unknown purpose/filter?
         /// </summary>
-        x1B                 = 0x1B,
-        x1C                 = 0x1C,
-        x1D                 = 0x1D,
+        x1B = 0x1B,
+        x1C = 0x1C,
+        x1D = 0x1D,
 
         /// <summary>
         /// Light Cyan (skyblue?) Text - Unknown purpose/filter?
         /// </summary>
-        x1E                 = 0x1E, 
+        x1E = 0x1E,
 
         /// <summary>
         /// Bright Yellow Text
         /// 
         /// LogTextTypeEnumMapper: Admin_Tell
         /// </summary>
-        AdminTell           = 0x1F,
+        AdminTell = 0x1F,
     }
 
     public static class ChatMessageTypeExtensions

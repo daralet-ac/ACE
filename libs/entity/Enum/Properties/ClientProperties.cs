@@ -15,7 +15,7 @@ namespace ACE.Entity.Enum.Properties
         /// <typeparam name="TResult">Type of the results</typeparam>
         private static HashSet<TResult> GetValues<T, TResult>()
         {
-            var list =typeof(T).GetFields().Select(x => new
+            var list = typeof(T).GetFields().Select(x => new
             {
                 att = x.GetCustomAttributes(false).OfType<ServerOnlyAttribute>().FirstOrDefault(),
                 member = x

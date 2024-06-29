@@ -1,4 +1,4 @@
-﻿namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum
 {
     public enum SecurityLevel
     {
@@ -21,22 +21,22 @@
         // list[15] = LF_ENUMERATE, public, value = 11, name = 'Max_SecurityLevel'
         // list[16] = LF_ENUMERATE, public, value = (LF_ULONG) 2147483647, name = 'FORCE_SecurityLevelEnum_32_BIT'
 
-        Undef       = 0,
-        Player      = Undef,
-        Advocate1   = 1,
-        Advocate2   = 2,
-        Advocate3   = 3,
-        Advocate4   = 4,
-        Advocate5   = 5,
+        Undef = 0,
+        Player = Undef,
+        Advocate1 = 1,
+        Advocate2 = 2,
+        Advocate3 = 3,
+        Advocate4 = 4,
+        Advocate5 = 5,
         MaxAdvocate = Advocate5,
-        Sentinel1   = 6,
-        Sentinel2   = 7,
-        Sentinel3   = 8,
+        Sentinel1 = 6,
+        Sentinel2 = 7,
+        Sentinel3 = 8,
         MaxSentinel = Sentinel3,
-        Turbine     = 9,
-        Arch        = 10,
-        Admin       = 11,
-        Max         = Admin
+        Turbine = 9,
+        Arch = 10,
+        Admin = 11,
+        Max = Admin
 
         // Player = 0,
         // Advocate = 1,
