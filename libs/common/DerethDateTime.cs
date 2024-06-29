@@ -8,49 +8,49 @@ namespace ACE.Common
     public class DerethDateTime
     {
         // Changing the four variables below will result in the Date and Time reported in ACClient no longer matching
-        private static int hoursInADay      = 16;   // A Derethian day has 16 hours
-        private static int daysInAMonth     = 30;   // A Derethian month has 30 days and does not vary like Earth months.
-        private static int monthsInAYear    = 12;   // A Derethian year has 12 months
-        private static double dayTicks      = 7620; // A Derethain day has 7620 ticks per day
+        private static int hoursInADay = 16;   // A Derethian day has 16 hours
+        private static int daysInAMonth = 30;   // A Derethian month has 30 days and does not vary like Earth months.
+        private static int monthsInAYear = 12;   // A Derethian year has 12 months
+        private static double dayTicks = 7620; // A Derethain day has 7620 ticks per day
 
-        private static double hourTicks     = dayTicks / hoursInADay;
-        private static double minuteTicks   = hourTicks / 60;
-        private static double secondTicks   = minuteTicks / 60;
+        private static double hourTicks = dayTicks / hoursInADay;
+        private static double minuteTicks = hourTicks / 60;
+        private static double secondTicks = minuteTicks / 60;
 
-        private static double monthTicks    = dayTicks * daysInAMonth;
-        private static double yearTicks     = monthTicks * monthsInAYear;
+        private static double monthTicks = dayTicks * daysInAMonth;
+        private static double yearTicks = monthTicks * monthsInAYear;
 
-        private static double dayZeroTicks  = 0; // Morningthaw 1, 10 P.Y. - Morntide-and-Half
-        private static double hourOneTicks  = 210; // Morningthaw 1, 10 P.Y. - Midsong
-        private static double dayOneTicks   = dayZeroTicks + hourOneTicks + (hourTicks * 8); // Morningthaw 2, 10 P.Y. - Darktide
-        private static double yearOneTicks  = dayOneTicks + (dayTicks * 359); // Morningthaw 1, 11 P.Y. - Darktide
+        private static double dayZeroTicks = 0; // Morningthaw 1, 10 P.Y. - Morntide-and-Half
+        private static double hourOneTicks = 210; // Morningthaw 1, 10 P.Y. - Midsong
+        private static double dayOneTicks = dayZeroTicks + hourOneTicks + (hourTicks * 8); // Morningthaw 2, 10 P.Y. - Darktide
+        private static double yearOneTicks = dayOneTicks + (dayTicks * 359); // Morningthaw 1, 11 P.Y. - Darktide
         private static double yearZeroTicks = dayOneTicks + (dayTicks * 269); // Snowreap 1, 10 P.Y. - Darktide
 
-        private static DateTime dayZero_RealWorld       = new DateTime(1999, 4, 1, 10, 30, 00);
-        private static DateTime dayOne_RealWorld        = new DateTime(1999, 4, 2, 00, 00, 00);
+        private static DateTime dayZero_RealWorld = new DateTime(1999, 4, 1, 10, 30, 00);
+        private static DateTime dayOne_RealWorld = new DateTime(1999, 4, 2, 00, 00, 00);
 
-        private static DateTime retailDayOne_RealWorld  = new DateTime(1999, 11, 2, 00, 00, 00);
+        private static DateTime retailDayOne_RealWorld = new DateTime(1999, 11, 2, 00, 00, 00);
         private static DateTime retailDayLast_RealWorld = new DateTime(2017, 1, 31, 12, 00, 00); // Eastern Standard Time
 
         /// <summary>
         /// <para>A <see cref="DerethDateTime"/> instance set to the Derethian Date, Portal Year and Time when the worlds first opened.</para>
         /// </summary>
-        private static DerethDateTime retailDayOne_Derethian            = new DerethDateTime(10, Months.Leafcull, 1, Hours.Darktide);
+        private static DerethDateTime retailDayOne_Derethian = new DerethDateTime(10, Months.Leafcull, 1, Hours.Darktide);
 
         /// <summary>
         /// <para>A <see cref="DerethDateTime"/> instance set to the Lore Corrected Derethian Date, Portal Year and Time when the worlds first opened.</para>
         /// </summary>
-        private static DerethDateTime retailDayOne_Derethian_Lore       = ConvertRealWorldToLoreDateTime(new DateTime(1999, 11, 2, 00, 00, 00));
+        private static DerethDateTime retailDayOne_Derethian_Lore = ConvertRealWorldToLoreDateTime(new DateTime(1999, 11, 2, 00, 00, 00));
 
         /// <summary>
         /// <para>A <see cref="DerethDateTime"/> instance set to the Derethian Date, Portal Year and Time when the worlds closed.</para>
         /// </summary>
-        private static DerethDateTime retailDayLast_Derethian           = new DerethDateTime(206, Months.Solclaim, 24, Hours.Gloaming);
+        private static DerethDateTime retailDayLast_Derethian = new DerethDateTime(206, Months.Solclaim, 24, Hours.Gloaming);
 
         /// <summary>
         /// <para>A <see cref="DerethDateTime"/> instance set to the Lore Corrected Derethian Date, Portal Year and Time when the worlds closed.</para>
         /// </summary>
-        private static DerethDateTime retailDayLast_Derethian_Lore      = ConvertRealWorldToLoreDateTime(new DateTime(2017, 1, 31, 12, 00, 00));
+        private static DerethDateTime retailDayLast_Derethian_Lore = ConvertRealWorldToLoreDateTime(new DateTime(2017, 1, 31, 12, 00, 00));
 
         /// <summary>
         /// <para>Date: Morningthaw 1, 10 P.Y. | Time: Morntide-and-Half (0)</para>
@@ -68,9 +68,9 @@ namespace ACE.Common
         /// </summary>
         public enum Months
         {
-            Snowreap    = -2,
-            Coldeve     = -1,
-            Wintersebb  = 0,
+            Snowreap = -2,
+            Coldeve = -1,
+            Wintersebb = 0,
             Morningthaw = 1,
             Solclaim,
             Seedsow,
@@ -138,11 +138,11 @@ namespace ACE.Common
             Night
         }
 
-        private double ticks    = MinValue;
-        private int day         = 1;
-        private int month       = (int)Months.Morningthaw;
-        private int year        = 10;
-        private int hour        = (int)Hours.Morntide_and_Half;
+        private double ticks = MinValue;
+        private int day = 1;
+        private int month = (int)Months.Morningthaw;
+        private int year = 10;
+        private int hour = (int)Hours.Morntide_and_Half;
 
         /// <summary>
         /// Gets the number of ticks that represent the date and time of this instance.
@@ -158,19 +158,19 @@ namespace ACE.Common
                 }
                 if ((value <= MinValue))
                 {
-                    ticks   = MinValue;
-                    day     = 1;
-                    month   = (int)Months.Morningthaw;
-                    year    = 10;
-                    hour    = (int)Hours.Morntide_and_Half;
+                    ticks = MinValue;
+                    day = 1;
+                    month = (int)Months.Morningthaw;
+                    year = 10;
+                    hour = (int)Hours.Morntide_and_Half;
                 }
                 if ((value >= MaxValue))
                 {
-                    ticks   = MaxValue;
-                    day     = 2;
-                    month   = (int)Months.Thistledown;
-                    year    = 401;
-                    hour    = (int)Hours.Morntide_and_Half;
+                    ticks = MaxValue;
+                    day = 2;
+                    month = (int)Months.Thistledown;
+                    year = 401;
+                    hour = (int)Hours.Morntide_and_Half;
                 }
             }
         }

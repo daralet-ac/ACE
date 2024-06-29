@@ -12,9 +12,9 @@ namespace ACE.Common.Cryptography
 
         public ISAAC(byte[] seed)
         {
-            mm      = new uint[256];
+            mm = new uint[256];
             randRsl = new uint[256];
-            offset  = 255u;
+            offset = 255u;
 
             Initialize(seed);
         }
@@ -90,13 +90,17 @@ namespace ACE.Common.Cryptography
                 var x = mm[i];
                 switch (i & 3)
                 {
-                    case 0: a ^= (a << 0x0D);
+                    case 0:
+                        a ^= (a << 0x0D);
                         break;
-                    case 1: a ^= (a >> 0x06);
+                    case 1:
+                        a ^= (a >> 0x06);
                         break;
-                    case 2: a ^= (a << 0x02);
+                    case 2:
+                        a ^= (a << 0x02);
                         break;
-                    case 3: a ^= (a >> 0x10);
+                    case 3:
+                        a ^= (a >> 0x10);
                         break;
                     default:
                         break;
@@ -105,7 +109,7 @@ namespace ACE.Common.Cryptography
                 a += mm[(i + 128) & 0xFF];
 
                 uint y;
-                mm[i]      = y = mm[(int)(x >> 2) & 0xFF] + a + b;
+                mm[i] = y = mm[(int)(x >> 2) & 0xFF] + a + b;
                 randRsl[i] = b = mm[(int)(y >> 10) & 0xFF] + x;
             }
         }
