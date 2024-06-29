@@ -75,7 +75,7 @@ namespace ACE.Server.Entity
             Creature = creature;
         }
 
- 
+
         /// <summary>
         /// Logs a damaging event for this player or creature
         /// </summary>
@@ -99,7 +99,7 @@ namespace ACE.Server.Entity
                     Creature.StruckByUnshrouded = true;
 
         }
-        
+
         /// <summary>
         /// Internally increments the total damage table
         /// </summary>
@@ -118,7 +118,7 @@ namespace ACE.Server.Entity
         {
             // todo: investigate, this shouldn't happen?
             // key 0 from BuildTotalDamage()
-            if (TotalDamage.ContainsKey(attacker))      
+            if (TotalDamage.ContainsKey(attacker))
                 TotalDamage[attacker].TotalDamage += amount;
         }
 

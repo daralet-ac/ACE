@@ -15,7 +15,7 @@ using MotionCommand = ACE.Entity.Enum.MotionCommand;
 namespace ACE.Server.WorldObjects
 {
     partial class Jewel : WorldObject
-    { 
+    {
         private static readonly ILogger _log = Log.ForContext(typeof(Jewel));
 
         /// <summary>
@@ -137,9 +137,9 @@ namespace ACE.Server.WorldObjects
                             }
                             if (target.W_DamageType == DamageType.SlashPierce && convertedMaterialType != ACE.Entity.Enum.MaterialType.BlackGarnet && convertedMaterialType != ACE.Entity.Enum.MaterialType.ImperialTopaz)
                             {
-                                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {source.Name} can never be slotted into a weapon of that damage type.", ChatMessageType.Craft));
-                                    player.SendUseDoneEvent();
-                                    return;
+                                player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {source.Name} can never be slotted into a weapon of that damage type.", ChatMessageType.Craft));
+                                player.SendUseDoneEvent();
+                                return;
                             }
                         }
                     }
@@ -470,7 +470,7 @@ namespace ACE.Server.WorldObjects
                     jewelProperty = "Magic Find";
                     appendedName = "of the Seeker";
                     CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
-                    break;              
+                    break;
                 case ACE.Entity.Enum.MaterialType.SmokeyQuartz:
                     jewelProperty = "Threat Reduction";
                     appendedName = "of Clouded Vision";
@@ -703,5 +703,5 @@ namespace ACE.Server.WorldObjects
 
 
     }
-    }
+}
 

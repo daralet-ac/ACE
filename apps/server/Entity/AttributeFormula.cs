@@ -62,7 +62,7 @@ namespace ACE.Server.Entity
             var divisor = formula.Z;
 
             uint total = 0;
-            if(attr1 != PropertyAttribute.Undef)
+            if (attr1 != PropertyAttribute.Undef)
                 total = current ? creature.Attributes[attr1].Current : creature.Attributes[attr1].Base;
             if (attr2 != PropertyAttribute.Undef)
                 total += current ? creature.Attributes[attr2].Current : creature.Attributes[attr2].Base;

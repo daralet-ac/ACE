@@ -206,7 +206,7 @@ namespace ACE.Server.Entity
             }
         }
 
-        private SpellId[] StackableSpellEnchantments = { SpellId.OlthoiStaminaDebuff, SpellId.OlthoiManaDebuff, SpellId.OlthoiDefenseDebuff, SpellId.OlthoiAcidVulnerability, SpellId.OlthoiHealthDebuff};
+        private SpellId[] StackableSpellEnchantments = { SpellId.OlthoiStaminaDebuff, SpellId.OlthoiManaDebuff, SpellId.OlthoiDefenseDebuff, SpellId.OlthoiAcidVulnerability, SpellId.OlthoiHealthDebuff };
 
         private bool IsStackableEnchantment(SpellId spellId)
         {

@@ -194,7 +194,7 @@ namespace ACE.Server.Entity
             landblockGroupSplitHelper.Add(remainingLandblocks[remainingLandblocks.Count - 1]);
             remainingLandblocks.RemoveAt(remainingLandblocks.Count - 1);
 
-            doAnotherPass:
+        doAnotherPass:
             bool needsAnotherPass = false;
 
             for (int i = remainingLandblocks.Count - 1; i >= 0; i--)

@@ -70,7 +70,7 @@ namespace ACE.Server.WorldObjects
                     return Skill.VoidMagic;
             }
         }
-        
+
         /// <summary>
         /// Handles player targeted casting message
         /// </summary>
@@ -78,7 +78,7 @@ namespace ACE.Server.WorldObjects
         public void HandleActionCastTargetedSpell(uint targetGuid, uint spellId, WorldObject casterItem = null)
         {
             //Console.WriteLine($"{Name}.HandleActionCastTargetedSpell({targetGuid:X8}, {spellId}, {builtInSpell})");
-            
+
             if (CombatMode != CombatMode.Magic)
             {
                 _log.Error($"{Name}.HandleActionCastTargetedSpell({targetGuid:X8}, {spellId}, {casterItem?.Name}) - CombatMode mismatch {CombatMode}, LastCombatMode: {LastCombatMode}");
@@ -994,7 +994,8 @@ namespace ACE.Server.WorldObjects
 
                 var actionChain = new ActionChain();
                 actionChain.AddDelaySeconds(1.0f);   // TODO: get actual recoil timing
-                actionChain.AddAction(this, () => {
+                actionChain.AddAction(this, () =>
+                {
 
                     IsBusy = false;
                     SendUseDoneEvent();
@@ -1107,7 +1108,7 @@ namespace ACE.Server.WorldObjects
                     TryCastItemEnchantment_WithRedirects(spell, target, itemCaster);
 
                     // use target resistance?
-                   // Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.PortalMagic), spell.PowerMod);
+                    // Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.PortalMagic), spell.PowerMod);
 
                     if (spell.IsHarmful)
                     {
@@ -1127,7 +1128,7 @@ namespace ACE.Server.WorldObjects
                         if (targetPlayer == null)
                             OnAttackMonster(targetCreature);
 
-                        if (TryResistSpell(target, spell, out PartialEvasion partialResist ,itemCaster))
+                        if (TryResistSpell(target, spell, out PartialEvasion partialResist, itemCaster))
                         {
                             if (spell.IsHarmful && targetCreature != null && targetCreature != this)
                                 targetCreature.OnAttackReceived(this, CombatType.Magic, false, true);
@@ -1452,7 +1453,7 @@ namespace ACE.Server.WorldObjects
                 case ItemType.LifeStone:
                     return target is Lifestone;
             }
-            
+
             _log.Error($"VerifyNonComponentTargetType({spell.Id} - {spell.Name}, {target.Name}) - unexpected NonComponentTargetType {spell.NonComponentTargetType}");
             return false;
         }

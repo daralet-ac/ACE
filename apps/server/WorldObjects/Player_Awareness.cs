@@ -45,7 +45,7 @@ namespace ACE.Server.WorldObjects
                 RadarColor = ACE.Entity.Enum.RadarColor.Creature;
                 EnqueueBroadcast(true, new GameMessagePublicUpdatePropertyInt(this, PropertyInt.RadarBlipColor, (int)RadarColor));
             }
-            else if(result == StealthTestResult.Failure)
+            else if (result == StealthTestResult.Failure)
                 Session.Network.EnqueueSend(new GameMessageSystemChat("You fail on your attempt to enter stealth.", ChatMessageType.Broadcast));
             else
                 Session.Network.EnqueueSend(new GameMessageSystemChat("You are not trained in thievery!", ChatMessageType.Broadcast));
@@ -144,7 +144,7 @@ namespace ACE.Server.WorldObjects
 
         public bool TestStealth(uint difficulty, string failureMessage)
         {
-            if(TestStealthInternal(difficulty) != StealthTestResult.Success)
+            if (TestStealthInternal(difficulty) != StealthTestResult.Success)
             {
                 EndStealth(failureMessage);
                 return false;

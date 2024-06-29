@@ -7,11 +7,11 @@ namespace ACE.Server.Network.Structure
     [Flags]
     public enum HookFlags
     {
-        None        = 0x0,
+        None = 0x0,
         Inscribable = 0x1,
-        IsHealer    = 0x2,
-        IsFood      = 0x4,
-        IsLockpick  = 0x8
+        IsHealer = 0x2,
+        IsFood = 0x4,
+        IsLockpick = 0x8
     };
 
     public class HookProfile

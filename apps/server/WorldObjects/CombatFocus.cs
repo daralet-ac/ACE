@@ -171,7 +171,7 @@ namespace ACE.Server.WorldObjects
                 case 5: spellList = SorcererSpells; break;
                 case 6: spellList = SpellswordSpells; break;
             }
-            
+
             foreach (var spellId in spellList)
                 CurrentSpells.Add(spellId);
 
@@ -199,7 +199,7 @@ namespace ACE.Server.WorldObjects
         {
             if (player == null)
                 return;
-            
+
             var combatFocusType = CombatFocusType;
             if (combatFocusType == null || combatFocusType < 1)
                 return;
@@ -316,7 +316,7 @@ namespace ACE.Server.WorldObjects
                 CurrentSpells.Remove(SpellId.UnarmedCombatMasterySelf1);
                 spellName = "Dagger, Staff, and Unarmed Combat spells";
             }
-            else 
+            else
                 CurrentSpells.Remove(spellId);
 
             // track removed spell
@@ -405,7 +405,7 @@ namespace ACE.Server.WorldObjects
             return false;
         }
 
-        private  string GetCombatAbilityDescription()
+        private string GetCombatAbilityDescription()
         {
             var description = "";
 
@@ -464,7 +464,7 @@ namespace ACE.Server.WorldObjects
         {
             var name = "";
 
-            switch(spellId)
+            switch (spellId)
             {
                 case SpellId.StrengthSelf1: name = "Strength"; break;
                 case SpellId.EnduranceSelf1: name = "Endurance"; break;
@@ -501,7 +501,7 @@ namespace ACE.Server.WorldObjects
 
         private PlayScript GetFocusParticleEffect()
         {
-            switch(CombatFocusType)
+            switch (CombatFocusType)
             {
                 default:
                 case 1: return PlayScript.SkillUpRed;

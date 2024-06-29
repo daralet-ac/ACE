@@ -8,21 +8,21 @@ namespace ACE.Server.Network.Enum
     [Flags]
     public enum ResistMask
     {
-        ResistSlash         = 0x1,
-        ResistPierce        = 0x2,
-        ResistBludgeon      = 0x4,
-        ResistFire          = 0x8,
-        ResistCold          = 0x10,
-        ResistAcid          = 0x20,
-        ResistElectric      = 0x40,
-        ResistHealthBoost   = 0x80,
-        ResistStaminaDrain  = 0x100,
-        ResistStaminaBoost  = 0x200,
-        ResistManaDrain     = 0x400,
-        ResistManaBoost     = 0x800,
-        ManaConversionMod   = 0x1000,
-        ElementalDamageMod  = 0x2000,
-        ResistNether        = 0x4000
+        ResistSlash = 0x1,
+        ResistPierce = 0x2,
+        ResistBludgeon = 0x4,
+        ResistFire = 0x8,
+        ResistCold = 0x10,
+        ResistAcid = 0x20,
+        ResistElectric = 0x40,
+        ResistHealthBoost = 0x80,
+        ResistStaminaDrain = 0x100,
+        ResistStaminaBoost = 0x200,
+        ResistManaDrain = 0x400,
+        ResistManaBoost = 0x800,
+        ManaConversionMod = 0x1000,
+        ElementalDamageMod = 0x2000,
+        ResistNether = 0x4000
     };
 
     public static class ResistMaskHelper

@@ -398,10 +398,10 @@ namespace ACE.Server.WorldObjects
                             killerPlayer.RaresTierSix++;
                             killerPlayer.RaresTierSixLogin = timestamp;
                             break;
-                        //case 7:
-                        //    killerPlayer.RaresTierSeven++;
-                        //    killerPlayer.RaresTierSevenLogin = timestamp;
-                        //    break;
+                            //case 7:
+                            //    killerPlayer.RaresTierSeven++;
+                            //    killerPlayer.RaresTierSevenLogin = timestamp;
+                            //    break;
                     }
                 }
             }

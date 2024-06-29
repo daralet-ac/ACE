@@ -164,13 +164,13 @@ namespace ACE.Server.WorldObjects
 
                 // Archetype System
                 var useArchetypeSystem = UseArchetypeSystem ?? false;
-                if(useArchetypeSystem)
+                if (useArchetypeSystem)
                 {
                     var statWeight = 0.0f;
                     var level = (float)Level.Value;
                     var tier = (Tier ?? 1) - 1;
 
-                    switch(tier)
+                    switch (tier)
                     {
                         case 0: statWeight = level / 9; break;
                         case 1: statWeight = (level - 10) / 10; break;
@@ -239,7 +239,7 @@ namespace ACE.Server.WorldObjects
             {
 #if DEBUG
                 //if (!(NpcLooksLikeObject ?? false))
-                    //log.DebugFormat("Creature.GenerateNewFace: {0} (0x{1}) - wcid {2} - Heritage: {3} | HeritageGroupName: {4} | Gender: {5} | Sex: {6} - Data missing or unparsable, Cannot randomize face.", Name, Guid, WeenieClassId, Heritage, HeritageGroupName, Gender, Sex);
+                //log.DebugFormat("Creature.GenerateNewFace: {0} (0x{1}) - wcid {2} - Heritage: {3} | HeritageGroupName: {4} | Gender: {5} | Sex: {6} - Data missing or unparsable, Cannot randomize face.", Name, Guid, WeenieClassId, Heritage, HeritageGroupName, Gender, Sex);
 #endif
                 return;
             }
@@ -356,7 +356,7 @@ namespace ACE.Server.WorldObjects
 
             // move directly to portal origin
             //if (target is Portal)
-                //moveToObject.MoveToParameters.MovementParameters &= ~MovementParams.UseSpheres;
+            //moveToObject.MoveToParameters.MovementParameters &= ~MovementParams.UseSpheres;
 
             SetWalkRunThreshold(moveToObject, target.Location);
 

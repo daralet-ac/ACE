@@ -29,7 +29,7 @@ namespace ACE.Server.Physics.Entity
             Requests++;
 
             //if (Requests % 10000 == 0)
-                //Console.WriteLine($"PolygonCache: Requests={Requests}, Hits={Hits}");
+            //Console.WriteLine($"PolygonCache: Requests={Requests}, Hits={Hits}");
 
             if (Polygons.TryGetValue(p, out var result))
             {

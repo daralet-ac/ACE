@@ -8470,9 +8470,9 @@ namespace ACE.Server.Factories.Tables
 
         public static SpellId GetLevel1SpellId(SpellId spellId)
         {
-            foreach(var spellProgressionEntry in spellProgression)
+            foreach (var spellProgressionEntry in spellProgression)
             {
-                foreach(var entry in spellProgressionEntry.Value)
+                foreach (var entry in spellProgressionEntry.Value)
                 {
                     if (spellId == entry)
                         return spellProgressionEntry.Key;

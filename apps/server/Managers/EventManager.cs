@@ -26,7 +26,7 @@ namespace ACE.Server.Managers
         {
             var events = Database.DatabaseManager.World.GetAllEvents();
 
-            foreach(var evnt in events)
+            foreach (var evnt in events)
             {
                 Events.Add(evnt.Name, evnt);
 

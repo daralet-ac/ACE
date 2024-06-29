@@ -337,7 +337,7 @@ namespace ACE.Server.Factories.Tables.Spells
         };
 
         private static readonly List<SpellId> voidSpells = new List<SpellId>()
-        { 
+        {
             //SpellId.NetherBolt1,
             //SpellId.NetherStreak1,
             //SpellId.NetherArc1,

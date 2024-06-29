@@ -58,7 +58,7 @@ namespace ACE.Server.WorldObjects
             return new ActivationResult(true);
         }
 
-        public bool IsHooked (WorldObject checker, out Hook hook)
+        public bool IsHooked(WorldObject checker, out Hook hook)
         {
             hook = null;
 

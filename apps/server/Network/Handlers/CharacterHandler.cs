@@ -46,7 +46,7 @@ namespace ACE.Server.Network.Handlers
         {
             var characterCreateInfo = new CharacterCreateInfo();
             characterCreateInfo.Unpack(message.Payload);
-            
+
             if (PropertyManager.GetBool("taboo_table").Item && DatManager.PortalDat.TabooTable.ContainsBadWord(characterCreateInfo.Name.ToLowerInvariant()))
             {
                 SendCharacterCreateResponse(session, CharacterGenerationVerificationResponse.NameBanned);
@@ -76,7 +76,7 @@ namespace ACE.Server.Network.Handlers
                 return;
             }
 
-			if ((characterCreateInfo.Heritage == HeritageGroup.Olthoi || characterCreateInfo.Heritage == HeritageGroup.OlthoiAcid) && PropertyManager.GetBool("olthoi_play_disabled").Item)
+            if ((characterCreateInfo.Heritage == HeritageGroup.Olthoi || characterCreateInfo.Heritage == HeritageGroup.OlthoiAcid) && PropertyManager.GetBool("olthoi_play_disabled").Item)
             {
                 SendCharacterCreateResponse(session, CharacterGenerationVerificationResponse.Pending);
                 return;

@@ -3,7 +3,7 @@ using ACE.Entity.Enum;
 
 namespace ACE.Server.Entity.Chess
 {
-    public class RookPiece: BasePiece
+    public class RookPiece : BasePiece
     {
         public RookPiece(ChessColor color, ChessPieceCoord to)
             : base(ChessPieceType.Rook, color, to)

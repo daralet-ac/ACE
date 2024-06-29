@@ -62,15 +62,15 @@ namespace ACE.Server.Managers
 
         public static List<LandblockGroup> GetLoadedLandblockGroups()
         {
-                landblockLock.EnterReadLock();
-                try
-                {
-                    return landblockGroups.ToList();
-                }
-                finally
-                {
-                    landblockLock.ExitReadLock();
-                }
+            landblockLock.EnterReadLock();
+            try
+            {
+                return landblockGroups.ToList();
+            }
+            finally
+            {
+                landblockLock.ExitReadLock();
+            }
         }
 
         /// <summary>
@@ -716,7 +716,7 @@ namespace ACE.Server.Managers
                             landblocks[landblock.Id.LandblockX, landblock.Id.LandblockY] = null;
 
                             // remove from landblock group
-                            for (int i = landblockGroups.Count - 1; i >= 0 ; i--)
+                            for (int i = landblockGroups.Count - 1; i >= 0; i--)
                             {
                                 if (landblockGroups[i].Remove(landblock))
                                 {

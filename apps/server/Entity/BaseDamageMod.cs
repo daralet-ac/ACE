@@ -9,9 +9,9 @@ namespace ACE.Server.Entity
     {
         public BaseDamage BaseDamage;
 
-        public float DamageBonus   = 0.0f;    // blood drinker
-        public float DamageMod     = 1.0f;    // for missile launchers (+113% yumis = 2.13)
-        public float VarianceMod   = 1.0f;
+        public float DamageBonus = 0.0f;    // blood drinker
+        public float DamageMod = 1.0f;    // for missile launchers (+113% yumis = 2.13)
+        public float VarianceMod = 1.0f;
 
         public int ElementalBonus = 0;
 
@@ -26,7 +26,7 @@ namespace ACE.Server.Entity
                 else
                     maxDamage = Math.Min(0, maxDamage);
 
-                return maxDamage;   
+                return maxDamage;
             }
         }
 

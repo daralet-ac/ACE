@@ -48,7 +48,7 @@ namespace ACE.Server.Physics.Animation
         public void HandleEnterWorld()
         {
             //if (MotionInterpreter != null)
-                //NoticeHandler.RecvNotice_PrevSpellSelection(MotionInterpreter);
+            //NoticeHandler.RecvNotice_PrevSpellSelection(MotionInterpreter);
         }
 
         public void HandleExitWorld()

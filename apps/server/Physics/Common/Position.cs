@@ -9,7 +9,7 @@ using ACE.Server.Physics.Util;
 
 namespace ACE.Server.Physics.Common
 {
-    public class Position: IEquatable<Position>
+    public class Position : IEquatable<Position>
     {
         public uint ObjCellID;
         public AFrame Frame;

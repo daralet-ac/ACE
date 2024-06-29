@@ -855,7 +855,7 @@ namespace ACE.Server.WorldObjects
         public void SendGagError()
         {
             var msg = "You are unable to talk locally, globally, or send tells because you have been gagged.";
-            Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, msg), new GameMessageSystemChat(msg,ChatMessageType.WorldBroadcast));
+            Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, msg), new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast));
         }
 
         public void SendGagNotice()
@@ -1042,8 +1042,8 @@ namespace ACE.Server.WorldObjects
             var movementData = new MovementData(this, CurrentMoveToState);
             var currentState = movementData.Invalid.State;
 
-            var changed = currentState.ForwardSpeed  != prevState.ForwardSpeed ||
-                          currentState.TurnSpeed     != prevState.TurnSpeed ||
+            var changed = currentState.ForwardSpeed != prevState.ForwardSpeed ||
+                          currentState.TurnSpeed != prevState.TurnSpeed ||
                           currentState.SidestepSpeed != prevState.SidestepSpeed;
 
             if (!changed)
@@ -1218,7 +1218,7 @@ namespace ACE.Server.WorldObjects
             actionChain.EnqueueChain();
         }
 
-        public int GetPlayerTier (int? level)
+        public int GetPlayerTier(int? level)
         {
             switch (level)
             {

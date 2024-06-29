@@ -54,7 +54,7 @@ namespace ACE.Server.WorldObjects
             var rolled = false;
             var continued = false;
 
-            for ( ; curIdx < items.Count; curIdx++)
+            for (; curIdx < items.Count; curIdx++)
             {
                 var item = items[curIdx];
 

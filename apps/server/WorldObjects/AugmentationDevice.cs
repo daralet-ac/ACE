@@ -11,7 +11,7 @@ using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects
 {
-    public class AugmentationDevice: WorldObject
+    public class AugmentationDevice : WorldObject
     {
         /// <summary>
         /// Indicates that the server should enforce logic to prevent players

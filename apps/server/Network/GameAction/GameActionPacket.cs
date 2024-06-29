@@ -11,7 +11,7 @@ namespace ACE.Server.Network.GameAction
         {
             // TODO: verify sequence
             uint sequence = message.Payload.ReadUInt32();
-            uint opcode   = message.Payload.ReadUInt32();
+            uint opcode = message.Payload.ReadUInt32();
 
             InboundMessageManager.HandleGameAction((GameActionType)opcode, message, session);
         }

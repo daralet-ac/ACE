@@ -30,7 +30,7 @@ namespace ACE.Server.Factories
                 if (!AssignMagic_New(wo, profile, roll, out numSpells))
                     return;
 
-                if(wo.IsCaster)
+                if (wo.IsCaster)
                     MutateCaster_SpellDID(wo, profile);
             }
 
@@ -48,12 +48,12 @@ namespace ACE.Server.Factories
             }
             else
             {
-                if(!wo.UiEffects.HasValue) // Elemental effects take precendence over magical as it is more important to know the element of a weapon than if it has spells.
+                if (!wo.UiEffects.HasValue) // Elemental effects take precendence over magical as it is more important to know the element of a weapon than if it has spells.
                     wo.UiEffects = UiEffects.Magical;
 
                 var combinedSpellCost = GetCombinedSpellManaCost(wo);
-                
-                if(!wo.IsCaster)
+
+                if (!wo.IsCaster)
                     wo.ManaRate = CalculateManaRate(wo);
 
                 if (roll == null)
@@ -97,7 +97,7 @@ namespace ACE.Server.Factories
 
             int lowSpellTier = GetLowSpellTier(profile.Tier);
             int highSpellTier = GetHighSpellTier(profile.Tier);
-            
+
             switch (wo.WeenieType)
             {
                 case WeenieType.Clothing:
@@ -567,7 +567,7 @@ namespace ACE.Server.Factories
             var armorSlots = wo.ArmorSlots ?? 1.0f;
 
             var baseMaxMana = 15;
-            switch(tier)
+            switch (tier)
             {
                 case 1: baseMaxMana = 15; break;
                 case 2: baseMaxMana = 15; break;
@@ -620,7 +620,7 @@ namespace ACE.Server.Factories
             var rng = (float)ThreadSafeRandom.Next(4.0f, 6.0f);
 
             var baseManaRate = -1.0f;
-            switch(tier)
+            switch (tier)
             {
                 case 1: baseManaRate = -0.002083f; break;
                 case 2: baseManaRate = -0.002083f; break;
@@ -702,7 +702,7 @@ namespace ACE.Server.Factories
                 case 6: return 350; // EoR is 250
                 case 7:
                 default: return 400; // EoR is 300
-                }
+            }
         }
 
         /// <summary>
@@ -759,7 +759,7 @@ namespace ACE.Server.Factories
             var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
             if (rng < 0.05)
             {
-                if(roll.Heritage == TreasureHeritageGroup.Invalid)
+                if (roll.Heritage == TreasureHeritageGroup.Invalid)
                     roll.Heritage = (TreasureHeritageGroup)ThreadSafeRandom.Next(1, 3);
 
                 switch (roll.Heritage)
@@ -853,7 +853,7 @@ namespace ACE.Server.Factories
 
             // - # of epics / legendaries on item
             var epicAddon = 0;
-            var legAddon =  0;
+            var legAddon = 0;
 
             // wield difficulty - skill requirement
             var wieldFactor = 0.0f;
@@ -877,7 +877,7 @@ namespace ACE.Server.Factories
             var numSpells = 0;
             var increasedDifficulty = 0.0f;
 
-            if(wo.Biota.PropertiesSpellBook !=  null)
+            if (wo.Biota.PropertiesSpellBook != null)
             {
                 int MINOR = 0, MAJOR = 1, EPIC = 2, LEGENDARY = 3;
 
@@ -905,7 +905,7 @@ namespace ACE.Server.Factories
 
             var tier = wo.Tier.Value - 1;
 
-            if(wo.ProcSpell != null)
+            if (wo.ProcSpell != null)
             {
                 numSpells++;
                 increasedDifficulty += Math.Max(5 * tier, 5);
@@ -927,7 +927,7 @@ namespace ACE.Server.Factories
 
         private static int ActivationDifficultyPerTier(int tier)
         {
-            switch(tier)
+            switch (tier)
             {
                 case 1: return 75;
                 case 2: return 175;

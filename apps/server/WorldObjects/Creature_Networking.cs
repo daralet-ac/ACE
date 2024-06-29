@@ -158,7 +158,7 @@ namespace ACE.Server.WorldObjects
                     {
                         objDesc = AddSetupAsClothingBase(objDesc, w);
                         // Add any potentially added parts back into the coverage list
-                        foreach(var a in objDesc.AnimPartChanges)
+                        foreach (var a in objDesc.AnimPartChanges)
                             if (!coverage.Contains(a.Index))
                                 coverage.Add(a.Index);
                         continue;
@@ -245,7 +245,7 @@ namespace ACE.Server.WorldObjects
             // Loop over the parts in the Setup of the WorldObject
             for (var i = 0; i < wo.CSetup.Parts.Count; i++)
             {
-                if(wo.CSetup.Parts[i] != 0x010001EC || i != 16) // This is essentially a "null" part, so do not add it for the head
+                if (wo.CSetup.Parts[i] != 0x010001EC || i != 16) // This is essentially a "null" part, so do not add it for the head
                     objDesc.AnimPartChanges.Add(new PropertiesAnimPart { Index = (byte)i, AnimationId = wo.CSetup.Parts[i] });
             }
 

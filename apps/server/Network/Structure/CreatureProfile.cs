@@ -9,9 +9,9 @@ namespace ACE.Server.Network.Structure
     public enum CreatureProfileFlags
     {
         HasBuffsDebuffs = 0x1,
-        Unknown1        = 0x2,      // TODO: decode flags
-        Unknown2        = 0x4,
-        ShowAttributes  = 0x8
+        Unknown1 = 0x2,      // TODO: decode flags
+        Unknown2 = 0x4,
+        ShowAttributes = 0x8
     };
 
     /// <summary>

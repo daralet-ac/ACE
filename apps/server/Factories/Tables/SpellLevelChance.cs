@@ -75,7 +75,7 @@ namespace ACE.Server.Factories.Tables
 
         static SpellLevelChance()
         {
-            
+
         }
 
         /// <summary>

@@ -71,7 +71,7 @@ namespace ACE.Server.WorldObjects
         public bool IsShield { get => CombatUse != null && CombatUse == ACE.Entity.Enum.CombatUse.Shield; }
         // ValidLocations is bugged for some older two-handed weapons, still contains MeleeWeapon instead of TwoHanded?
         //public bool IsTwoHanded { get => CurrentWieldedLocation != null && CurrentWieldedLocation == EquipMask.TwoHanded; }
-        public bool IsTwoHanded { get => DefaultCombatStyle != null && (DefaultCombatStyle == CombatStyle.TwoHanded ); }
+        public bool IsTwoHanded { get => DefaultCombatStyle != null && (DefaultCombatStyle == CombatStyle.TwoHanded); }
         public bool IsBow { get => DefaultCombatStyle != null && (DefaultCombatStyle == CombatStyle.Bow || DefaultCombatStyle == CombatStyle.Crossbow); }
         public bool IsAtlatl { get => DefaultCombatStyle != null && DefaultCombatStyle == CombatStyle.Atlatl; }
         public bool IsAmmoLauncher { get => IsBow || IsAtlatl; }
@@ -241,7 +241,7 @@ namespace ACE.Server.WorldObjects
         }
 
         private void SetEphemeralValues()
-        { 
+        {
             ObjectDescriptionFlags = ObjectDescriptionFlag.Attackable;
 
             EmoteManager = new EmoteManager(this);
@@ -270,7 +270,7 @@ namespace ACE.Server.WorldObjects
             {
                 emote = refuseItem;
                 return true;
-            }            
+            }
 
             // NPC accepts this item
             var giveItem = EmoteManager.GetEmoteSet(EmoteCategory.Give, null, null, item.WeenieClassId);
@@ -569,7 +569,7 @@ namespace ACE.Server.WorldObjects
                         break;
                     case "linkedlifestone":
                         sb.AppendLine($"{prop.Name} = {obj.LinkedLifestone.ToLOCString()}");
-                        break;                    
+                        break;
                     case "channelsactive":
                         sb.AppendLine($"{prop.Name} = {(Channel)obj.GetProperty(PropertyInt.ChannelsActive)}" + " (" + (uint)obj.GetProperty(PropertyInt.ChannelsActive) + ")");
                         break;
@@ -1034,7 +1034,7 @@ namespace ACE.Server.WorldObjects
                 case Skill.Spear: return Skill.HeavyWeapons;
                 default: return skill;
             }
-            
+
         }
 
         public void GetCurrentMotionState(out MotionStance currentStance, out MotionCommand currentMotion)

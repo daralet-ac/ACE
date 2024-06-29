@@ -82,7 +82,7 @@ namespace ACE.Server.Factories.Tables
 
             //return weaponTiers[tier - 1].Roll();
 
-            switch(filterToType)
+            switch (filterToType)
             {
                 case TreasureWeaponType.MeleeWeapon:
                     return MeleeChances.Roll();
@@ -90,7 +90,7 @@ namespace ACE.Server.Factories.Tables
                     return MissileChances.Roll();
                 default:
                     return RetailChances.Roll();
-            }            
+            }
         }
 
         public static TreasureWeaponType Roll(TreasureItemType_Orig filterToType = TreasureItemType_Orig.Undef)

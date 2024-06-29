@@ -5,7 +5,7 @@ using ACE.Server.Physics.Extensions;
 
 namespace ACE.Server.Physics.Animation
 {
-    public class AFrame: IEquatable<AFrame>
+    public class AFrame : IEquatable<AFrame>
     {
         public Vector3 Origin;
         public Quaternion Orientation;
@@ -57,7 +57,7 @@ namespace ACE.Server.Physics.Animation
         public Vector3 GlobalToLocal(Vector3 point)
         {
             var offset = point - Origin;
-            var rotate = GlobalToLocalVec(offset); 
+            var rotate = GlobalToLocalVec(offset);
             return rotate;
         }
 
@@ -80,7 +80,7 @@ namespace ACE.Server.Physics.Animation
         public bool IsEqual(AFrame frame)
         {
             // implement IEquatable
-            return frame.Equals(this);  
+            return frame.Equals(this);
         }
 
         public bool IsQuaternionEqual(AFrame frame)
@@ -111,7 +111,7 @@ namespace ACE.Server.Physics.Animation
         public void GRotate(Vector3 rotation)
         {
             Orientation *= Quaternion.CreateFromYawPitchRoll(rotation.X, rotation.Y, rotation.Z);
-            Orientation  = Quaternion.Normalize(Orientation);
+            Orientation = Quaternion.Normalize(Orientation);
         }
 
         public void Rotate(Vector3 rotation)

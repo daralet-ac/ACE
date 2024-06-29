@@ -103,7 +103,7 @@ namespace ACE.Server.WorldObjects
                     unlocker.Structure = 0;
 
                 structure = unlocker.Structure ?? 0;
-                
+
                 unlocker.Value -= unlocker.StructureUnitValue;
 
                 if (unlocker.Value < 0) // fix negative value
@@ -194,7 +194,7 @@ namespace ACE.Server.WorldObjects
                                 Proficiency.OnSuccessUse(player, lockpickSkill, difficulty);
 
                                 // SPEC BONUS - Thievery: Up to 50% chance to receive a loot quality bonus when successfully picking a locked chest (25% bonus towards "remaining" loot quality mod
-                                if(target.WeenieType == WeenieType.Chest)
+                                if (target.WeenieType == WeenieType.Chest)
                                 {
                                     var thievery = player.GetCreatureSkill(Skill.Lockpick);
                                     if (thievery.AdvancementClass == SkillAdvancementClass.Specialized)
@@ -212,7 +212,7 @@ namespace ACE.Server.WorldObjects
                                             var difference = 1 - (baseLootQualityMod ?? 0);
                                             var bonus = difference * 0.25f;
 
-                                            if(chest.LootQualityMod != null)
+                                            if (chest.LootQualityMod != null)
                                                 chest.LootQualityMod += bonus;
                                             else
                                                 chest.LootQualityMod = bonus;
@@ -270,7 +270,7 @@ namespace ACE.Server.WorldObjects
             // TODO: find out if ResistLockpick >= 9999 is a special 'unpickable' value in acclient,
             // similar to ResistMagic >= 9999 being equivalent to Unenchantable?
 
-            if (resistLockpick == null || resistLockpick >= 9999 )
+            if (resistLockpick == null || resistLockpick >= 9999)
                 return false;
 
             return true;

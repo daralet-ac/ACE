@@ -211,7 +211,7 @@ namespace ACE.Server.WorldObjects
 
             List<EmpoweredScarab> equippedEmpoweredScarabs = new List<EmpoweredScarab>();
 
-            if(empoweredScarabBlue != null)
+            if (empoweredScarabBlue != null)
                 equippedEmpoweredScarabs.Add(empoweredScarabBlue);
 
             if (empoweredScarabYellow != null)
@@ -549,7 +549,7 @@ namespace ACE.Server.WorldObjects
                 return 0;
 
             if (equippedItemsRatingCache.TryGetValue(rating, out var value))
-                    return value;
+                return value;
 
             _log.Error($"Creature_Equipment.GetEquippedItemsRatingsSum() does not support {rating}");
             return 0;
@@ -1064,7 +1064,7 @@ namespace ACE.Server.WorldObjects
                         wo.Destroy();
                 }
                 //else
-                    //TryWieldObject(wo, (EquipMask)wo.ValidLocations);
+                //TryWieldObject(wo, (EquipMask)wo.ValidLocations);
             }
         }
 
@@ -1197,7 +1197,7 @@ namespace ACE.Server.WorldObjects
                         item.Destroy();
                 }
                 //else
-                    //TryWieldObject(item, (EquipMask)item.ValidLocations);
+                //TryWieldObject(item, (EquipMask)item.ValidLocations);
             }
         }
 
@@ -1259,7 +1259,7 @@ namespace ACE.Server.WorldObjects
             }
             else
             {
-                foreach(var enchantment in enchantments)
+                foreach (var enchantment in enchantments)
                 {
                     var spellId = (uint)SpellId.OntheRun;
                     if (enchantment.SpellId == spellId)

@@ -79,7 +79,7 @@ namespace ACE.Server.Network
 
         public override string ToString()
         {
-            return $"Seeds: [Client {BitConverter.ToString(ClientSeed).Replace("-","")}, Server {BitConverter.ToString(ServerSeed).Replace("-", "")}]";
+            return $"Seeds: [Client {BitConverter.ToString(ClientSeed).Replace("-", "")}, Server {BitConverter.ToString(ServerSeed).Replace("-", "")}]";
         }
     }
 }

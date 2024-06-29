@@ -14,16 +14,16 @@ namespace ACE.Server.Entity
     /// </summary>
     public enum Scarab
     {
-        Lead     = 1,
-        Iron     = 2,
-        Copper   = 3,
-        Silver   = 4,
-        Gold     = 5,
-        Pyreal   = 6,
-        Diamond  = 110,
+        Lead = 1,
+        Iron = 2,
+        Copper = 3,
+        Silver = 4,
+        Gold = 5,
+        Pyreal = 6,
+        Diamond = 110,
         Platinum = 112,
-        Dark     = 192,
-        Mana     = 193
+        Dark = 192,
+        Mana = 193
     }
 
     /// <summary>

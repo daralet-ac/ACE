@@ -135,7 +135,7 @@ namespace ACE.Server.Physics
 
             Parts[nextIdx] = PartStorage[nextIdx];
             //if (Parts[nextIdx] == null)   // check if index exists?
-                //return;
+            //return;
 
             var firstParticle = Info.TotalParticles == 0 && Info.TotalSeconds == 0.0f;
 

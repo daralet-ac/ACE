@@ -30,7 +30,7 @@ namespace ACE.Server.Entity.Mutations
         public float MaxVal;
 
         public EffectArgument() { }
-        
+
         public EffectArgument(StatType statType, int propIdx)
         {
             Type = EffectArgumentType.Quality;

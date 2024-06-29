@@ -15,10 +15,10 @@ namespace ACE.Server.Physics.Hooks
                     obj.Hook_AnimDone();
                     break;
 
-                /*case AnimationHookType.Ethereal:
-                    if (animHook is EtherealHook hook)
-                        obj.set_ethereal(Convert.ToBoolean(hook.Ethereal), false);
-                    break;*/
+                    /*case AnimationHookType.Ethereal:
+                        if (animHook is EtherealHook hook)
+                            obj.set_ethereal(Convert.ToBoolean(hook.Ethereal), false);
+                        break;*/
             }
         }
     }

@@ -30,9 +30,9 @@ namespace ACE.Server.WorldObjects
             amount = Math.Abs(amount);
 
             string xpMessage = "";
-            
+
             var m_amount = (long)amount;
-            
+
             if (m_amount < 0)
             {
                 _log.Warning($"{Name}.EarnXP({amount}, {shareType})");
@@ -208,7 +208,7 @@ namespace ACE.Server.WorldObjects
             var enchantment = GetXPAndLuminanceModifier(xpType);
 
             m_amount = (long)Math.Round(amountBeforeMods * modifier * enchantment);
-            
+
             // Make sure UpdateXpAndLevel is done on this players thread
             EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(m_amount, xpType, xpMessage)));
 
@@ -326,7 +326,7 @@ namespace ACE.Server.WorldObjects
 
             double fellowshipMod = 1;
             double timeMod = 1;
-            
+
             if (WithPatron && FellowedWithPatron)
                 fellowshipMod = 2;
 
@@ -432,7 +432,7 @@ namespace ACE.Server.WorldObjects
                 vitaeRelieved += 1;
                 vitaePenalty = EnchantmentManager.ReduceVitae();
                 if (vitaePenalty == 1.0f)
-                    break;                 
+                    break;
             }
 
             Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Vitae penalty has been relieved by {vitaeRelieved}%!", ChatMessageType.Magic));
@@ -815,9 +815,9 @@ namespace ACE.Server.WorldObjects
             var accountCharacters = GetAccountPlayers(Account.AccountId);
             int? levelDifference = 0;
 
-            foreach(IPlayer character in accountCharacters)
+            foreach (IPlayer character in accountCharacters)
             {
-                if(character.Level > Level)
+                if (character.Level > Level)
                 {
                     //Console.WriteLine($"{character.Name}: Level {character.Level}");
                     levelDifference += character.Level - Level;
@@ -825,7 +825,7 @@ namespace ACE.Server.WorldObjects
             }
 
             var xpBonusMod = 1.0f;
-            if(levelDifference > 0)
+            if (levelDifference > 0)
                 xpBonusMod += (float)levelDifference / 100;
 
             //Console.WriteLine($"Level Difference: {levelDifference}  XP Bonus Mod: {xpBonusMod}");
@@ -861,9 +861,9 @@ namespace ACE.Server.WorldObjects
             var penalty = 1.0f;
             var levelDifference = Level - xpSourceLevel;
 
-            if(levelDifference > 0)
+            if (levelDifference > 0)
             {
-                for(int i = 0; i < levelDifference; i++)
+                for (int i = 0; i < levelDifference; i++)
                 {
                     penalty *= 0.9f;
                 }

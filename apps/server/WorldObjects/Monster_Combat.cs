@@ -275,7 +275,7 @@ namespace ACE.Server.WorldObjects
         {
             // wait for missile to strike
             //if (CurrentAttack == CombatType.Missile)
-                //return;
+            //return;
 
             IsTurning = false;
             IsMoving = false;

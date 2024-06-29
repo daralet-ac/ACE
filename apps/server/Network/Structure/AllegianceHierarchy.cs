@@ -72,7 +72,7 @@ namespace ACE.Server.Network.Structure
             {
                 // only send these to monarch?
                 //foreach (var officer in allegiance.Officers)
-                    //officers.Add(officer.Key, (AllegianceOfficerLevel)officer.Value.Player.AllegianceOfficerRank);
+                //officers.Add(officer.Key, (AllegianceOfficerLevel)officer.Value.Player.AllegianceOfficerRank);
 
                 // not in retail packets, breaks decal
                 /*if (allegiance.HasCustomTitles)

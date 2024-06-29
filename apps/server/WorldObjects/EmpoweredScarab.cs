@@ -295,13 +295,13 @@ namespace ACE.Server.WorldObjects
         {
             ResetScarabBonus();
 
-            switch(bonusStat)
+            switch (bonusStat)
             {
                 case 1: GearCrit = amount; break;
                 case 2: GearCritDamage = amount; break;
                 case 3: GearDamageResist = amount; break;
                 case 4: GearMaxHealth = amount; break;
-                case 5: WardLevel = amount; break;   
+                case 5: WardLevel = amount; break;
             }
         }
 

@@ -137,7 +137,7 @@ namespace ACE.Server.Factories
             var olthoiLootTimestamp = player.OlthoiLootTimestamp ?? 0;
             var currentTime = (int)Time.GetUnixTime();
             var timeDiff = Math.Max(0, currentTime - olthoiLootTimestamp);  // clamp to 0 on lower end -- avoid negatives, such as from server clock being rewound back in time
-            if (timeDiff < pvpSlagTimer.TotalSeconds)   
+            if (timeDiff < pvpSlagTimer.TotalSeconds)
             {
                 var timeScale = (float)(timeDiff / pvpSlagTimer.TotalSeconds);
                 totalSlag = (totalSlag * timeScale).Round();
@@ -163,14 +163,14 @@ namespace ACE.Server.Factories
 
             switch (level)
             {
-                case < 20:  return 1;   // 1-19
-                case < 40:  return 2;   // 20-39
-                case < 60:  return 3;   // 40-59
+                case < 20: return 1;   // 1-19
+                case < 40: return 2;   // 20-39
+                case < 60: return 3;   // 40-59
                 case < 100: return 4;   // 60-99
                 case < 135: return 5;   // 100-134
                 case < 185: return 6;   // 135-184
                 case < 275: return 7;   // 185-274
-                default:    return 8;   // 275
+                default: return 8;   // 275
             }
         }
 

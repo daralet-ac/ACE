@@ -72,7 +72,7 @@ namespace ACE.Server.WorldObjects
             player.IsBusy = true;
 
             if (player.AdvocateQuest || player.PkLevel != PKLevel.NPK || player is Admin || player.WeenieType == WeenieType.Admin || player is Sentinel || player.WeenieType == WeenieType.Sentinel) // PlayerKillers, Admins and Sentinels can't be Advocates.
-            {                                
+            {
                 var actionChain = new ActionChain();
 
                 var failMotion = UseTargetFailureAnimation != MotionCommand.Invalid ? UseTargetFailureAnimation : MotionCommand.Twitch2;

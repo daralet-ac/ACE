@@ -33,7 +33,7 @@ namespace ACE.Server.WorldObjects
             SetEphemeralValues();
         }
 
-        public bool IsPKSwitch  => PkLevelModifier ==  1;
+        public bool IsPKSwitch => PkLevelModifier == 1;
         public bool IsNPKSwitch => PkLevelModifier == -1;
 
         private void SetEphemeralValues()

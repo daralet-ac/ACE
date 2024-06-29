@@ -14,7 +14,7 @@ namespace ACE.Server.Physics.BSP
         Cell = 0x2
     };
 
-    public class BSPTree: IEquatable<BSPTree>
+    public class BSPTree : IEquatable<BSPTree>
     {
         public BSPNode RootNode;
 
@@ -202,11 +202,11 @@ namespace ACE.Server.Physics.BSP
                         return slide_sphere(transition, hitPoly_.Plane.Normal);
 
                     if (hitPoly_ != null) return NegPolyHit(path, hitPoly_, false);
-                    if (hitPoly  != null) return NegPolyHit(path, hitPoly,  true);
+                    if (hitPoly != null) return NegPolyHit(path, hitPoly, true);
                 }
                 return TransitionState.OK;
             }
-            
+
             if (RootNode.sphere_intersects_poly(localSphere, movement, ref hitPoly, ref contactPoint) || hitPoly != null)
             {
                 if (obj.State.HasFlag(ObjectInfoState.PathClipped))

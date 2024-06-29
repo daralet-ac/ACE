@@ -166,7 +166,7 @@ namespace ACE.Server.WorldObjects.Entity
 
             // a creature cannot fall below 5 MaxVital from enchantments / vitae normally,
             // or 1 MaxVital for creatures with very low starting vitals
-            var minVital = total >= 5 ? 5 : 1; 
+            var minVital = total >= 5 ? 5 : 1;
 
             iTotal = Math.Max(minVital, iTotal);
 
@@ -204,9 +204,9 @@ namespace ACE.Server.WorldObjects.Entity
         {
             switch (Vital)
             {
-                case PropertyAttribute2nd.MaxHealth:    return ACE.Entity.Enum.Vital.Health;
-                case PropertyAttribute2nd.MaxStamina:   return ACE.Entity.Enum.Vital.Stamina;
-                case PropertyAttribute2nd.MaxMana:      return ACE.Entity.Enum.Vital.Mana;
+                case PropertyAttribute2nd.MaxHealth: return ACE.Entity.Enum.Vital.Health;
+                case PropertyAttribute2nd.MaxStamina: return ACE.Entity.Enum.Vital.Stamina;
+                case PropertyAttribute2nd.MaxMana: return ACE.Entity.Enum.Vital.Mana;
             }
             return ACE.Entity.Enum.Vital.Undefined;
         }

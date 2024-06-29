@@ -25,7 +25,7 @@ namespace ACE.Server.Factories
             if (weaponSkill == MeleeWeaponSkill.Undef)
                 weaponSkill = (MeleeWeaponSkill)ThreadSafeRandom.Next(5, 11);
 
-            switch (weaponSkill)                
+            switch (weaponSkill)
             {
                 case MeleeWeaponSkill.HeavyWeapons:
 
@@ -187,7 +187,7 @@ namespace ACE.Server.Factories
 
             // item value
             //if (wo.HasMutateFilter(MutateFilter.Value))   // fixme: data
-                MutateValue(wo, profile.Tier, roll);
+            MutateValue(wo, profile.Tier, roll);
 
             // long description
             wo.LongDesc = GetLongDesc(wo);
@@ -288,19 +288,19 @@ namespace ACE.Server.Factories
 
         private enum LootWeaponType
         {
-            Axe         = 0,
-            Dagger      = 1,
+            Axe = 0,
+            Dagger = 1,
             DaggerMulti = 2,
-            Mace        = 3,
-            Spear       = 4,
-            Sword       = 5,
-            SwordMulti  = 6,
-            Staff       = 7,
-            Unarmed     = 8,
-            Jitte       = 9,
-            TwoHanded   = 0,
-            Cleaving    = 0,
-            Spears      = 1,
+            Mace = 3,
+            Spear = 4,
+            Sword = 5,
+            SwordMulti = 6,
+            Staff = 7,
+            Unarmed = 8,
+            Jitte = 9,
+            TwoHanded = 0,
+            Cleaving = 0,
+            Spears = 1,
         }
 
         private static bool MutateHeavyWeapon(WorldObject wo, TreasureDeath profile, int wieldDifficulty)

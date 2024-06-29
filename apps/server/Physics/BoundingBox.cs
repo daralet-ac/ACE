@@ -40,7 +40,7 @@ namespace ACE.Server.Physics
         public BoundingBox()
         {
         }
-        
+
         /// <summary>
         /// Constructs a new bounding box
         /// for a model
@@ -50,7 +50,7 @@ namespace ACE.Server.Physics
             Model = model;
             BuildBox(model);
         }
-        
+
         /// <summary>
         /// Builds a bounding box for a model
         /// </summary>

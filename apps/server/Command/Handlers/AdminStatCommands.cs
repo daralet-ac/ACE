@@ -309,7 +309,7 @@ namespace ACE.Server.Command.Handlers
             var gcmi = GC.GetGCMemoryInfo();
 
             sb.Append($"GCMI Index: {gcmi.Index:N0}, Generation: {gcmi.Generation}, Compacted: {gcmi.Compacted}, Concurrent: {gcmi.Concurrent}, PauseTimePercentage: {gcmi.PauseTimePercentage}{'\n'}");
-            for (int i = 0 ; i < gcmi.GenerationInfo.Length ; i++)
+            for (int i = 0; i < gcmi.GenerationInfo.Length; i++)
                 sb.Append($"GCMI.GenerationInfo[{i}] FragmentationBeforeBytes: {(gcmi.GenerationInfo[i].FragmentationBeforeBytes >> 20):N0} MB, FragmentationAfterBytes: {(gcmi.GenerationInfo[i].FragmentationAfterBytes >> 20):N0} MB, SizeBeforeBytes: {(gcmi.GenerationInfo[i].SizeBeforeBytes >> 20):N0} MB, SizeAfterBytes: {(gcmi.GenerationInfo[i].SizeAfterBytes >> 20):N0} MB{'\n'}");
             for (int i = 0; i < gcmi.PauseDurations.Length; i++)
                 sb.Append($"GCMI.PauseDurations[{i}]: {gcmi.PauseDurations[i].TotalMilliseconds:N0} ms{'\n'}");

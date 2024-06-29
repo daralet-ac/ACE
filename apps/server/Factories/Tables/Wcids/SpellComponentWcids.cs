@@ -369,7 +369,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             switch (type)
             {
                 case 1:
-                    if(isPea)
+                    if (isPea)
                         return herbsPea[ThreadSafeRandom.Next(0, herbsPea.Count - 1)];
                     return herbs[ThreadSafeRandom.Next(0, herbs.Count - 1)];
                 case 2:

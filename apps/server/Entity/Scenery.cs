@@ -120,7 +120,7 @@ namespace ACE.Server.Entity
             var quadrant = (1813693831 * iy - ix * (1870387557 * iy + 1109124029) - 402451965) * 2.3283064e-10;
 
             if (quadrant >= 0.75) return new Vector2(y, -x);
-            if (quadrant >= 0.5)  return new Vector2(-x, -y);
+            if (quadrant >= 0.5) return new Vector2(-x, -y);
             if (quadrant >= 0.25) return new Vector2(-y, x);
 
             return new Vector2(x, y);

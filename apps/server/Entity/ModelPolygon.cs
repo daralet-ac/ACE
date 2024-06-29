@@ -21,7 +21,7 @@ namespace ACE.Server.Entity
         /// <summary>
         /// Constructs a new polygon
         /// </summary>
-        public ModelPolygon(DatLoader.Entity.Polygon polygon, CVertexArray vertexArray)            
+        public ModelPolygon(DatLoader.Entity.Polygon polygon, CVertexArray vertexArray)
         {
             Polygon = polygon;
             LoadVertices(vertexArray);

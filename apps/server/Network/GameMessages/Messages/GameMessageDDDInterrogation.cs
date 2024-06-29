@@ -9,8 +9,8 @@ namespace ACE.Server.Network.GameMessages.Messages
             Writer.Write(1u); // m_NameRuleLanguage
             Writer.Write(1u); // m_dwProductID
             Writer.Write(2u); // m_SupportedLanguages.Count
-                Writer.Write(0u); // Invalid
-                Writer.Write(1u); // English
+            Writer.Write(0u); // Invalid
+            Writer.Write(1u); // English
         }
     }
 }

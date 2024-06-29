@@ -30,8 +30,8 @@ namespace ACE.Server.Network.GameEvent.Events
 
                 // With this flag set, it tells the client to always read the next two items. 
                 // Might result in more data than retail in some instances, but easier to manage and control for us.
-                Writer.Write(0xFFFF0002); 
-                
+                Writer.Write(0xFFFF0002);
+
                 if (pageData[i].PageText != null) // This will always be null for this event.
                 {
                     Writer.Write(1); // Text Included

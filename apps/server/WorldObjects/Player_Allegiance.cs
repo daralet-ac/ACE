@@ -1124,7 +1124,7 @@ namespace ACE.Server.WorldObjects
                 return;
             }
 
-            if (action == AllegianceLockAction.On && Allegiance.IsLocked || action== AllegianceLockAction.Off && !Allegiance.IsLocked)
+            if (action == AllegianceLockAction.On && Allegiance.IsLocked || action == AllegianceLockAction.Off && !Allegiance.IsLocked)
             {
                 Session.Network.EnqueueSend(new GameMessageSystemChat($"The allegiance is already {lockStatus}.", ChatMessageType.Broadcast));
                 return;

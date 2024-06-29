@@ -25,7 +25,7 @@ namespace ACE.Server.Network.Structure
             SlashingProtection = GetArmorMod(armor, DamageType.Slash);
             PiercingProtection = GetArmorMod(armor, DamageType.Pierce);
             BludgeoningProtection = GetArmorMod(armor, DamageType.Bludgeon);
-            ColdProtection = GetArmorMod(armor,DamageType.Cold);
+            ColdProtection = GetArmorMod(armor, DamageType.Cold);
             FireProtection = GetArmorMod(armor, DamageType.Fire);
             AcidProtection = GetArmorMod(armor, DamageType.Acid);
             NetherProtection = GetArmorMod(armor, DamageType.Nether);
@@ -52,7 +52,7 @@ namespace ACE.Server.Network.Structure
             // resistance clamp
             // TODO: this would be a good place to test with client values
             //if (effectiveRL > 2.0f)
-                //effectiveRL = 2.0f;
+            //effectiveRL = 2.0f;
             effectiveRL = Math.Clamp(effectiveRL, -2.0f, 2.0f);
 
             return effectiveRL;

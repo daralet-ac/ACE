@@ -554,7 +554,7 @@ namespace ACE.Server.WorldObjects
             // var rentTime = (uint)(houseOwner.HouseRentTimestamp ?? 0);
 
             if (HouseRentTimestamp != houseOwner.HouseRentTimestamp)
-                HouseRentTimestamp  = houseOwner.HouseRentTimestamp;
+                HouseRentTimestamp = houseOwner.HouseRentTimestamp;
 
             if (!House.SlumLord.InventoryLoaded)
             {
@@ -1798,7 +1798,7 @@ namespace ACE.Server.WorldObjects
             var accountHouses = HouseManager.GetAccountHouses(Account.AccountId);
 
             //if (showMsg)
-                //Session.Network.EnqueueSend(new GameMessageSystemChat($"AccountHouses: {accountHouses.Count}, CharacterHouses: {characterHouses.Count}", ChatMessageType.Broadcast));
+            //Session.Network.EnqueueSend(new GameMessageSystemChat($"AccountHouses: {accountHouses.Count}, CharacterHouses: {characterHouses.Count}", ChatMessageType.Broadcast));
 
             if (PropertyManager.GetBool("house_per_char").Item)
             {

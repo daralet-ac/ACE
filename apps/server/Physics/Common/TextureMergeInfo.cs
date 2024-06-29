@@ -70,7 +70,7 @@ namespace ACE.Server.Physics.Common
             SE = 2,
             NE = 3,
         }
-        
+
         // terrain rotations from NW
 
         public enum SideCorner

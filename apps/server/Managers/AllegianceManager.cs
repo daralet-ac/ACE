@@ -87,7 +87,7 @@ namespace ACE.Server.Managers
             AddPlayers(allegiance);
 
             //if (!Allegiances.ContainsKey(allegiance.Guid))
-                //Allegiances.Add(allegiance.Guid, allegiance);
+            //Allegiances.Add(allegiance.Guid, allegiance);
             Allegiances[allegiance.Guid] = allegiance;
 
             return allegiance;

@@ -189,7 +189,7 @@ namespace ACE.Server.Entity.Mutations
                     switch (b.Type)
                     {
                         case EffectArgumentType.Double:
-                            return b.DoubleVal != 0 ? new EffectArgument((long)(a.LongVal / b.DoubleVal)): a;
+                            return b.DoubleVal != 0 ? new EffectArgument((long)(a.LongVal / b.DoubleVal)) : a;
                         case EffectArgumentType.Int:
                             return b.IntVal != 0 ? new EffectArgument(a.LongVal / b.IntVal) : a;
                         case EffectArgumentType.Int64:

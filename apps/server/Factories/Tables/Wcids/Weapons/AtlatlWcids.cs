@@ -229,12 +229,12 @@ namespace ACE.Server.Factories.Tables.Wcids
 
             return roll;
         }
-   
+
         private static readonly Dictionary<WeenieClassName, TreasureWeaponType> _combined = new Dictionary<WeenieClassName, TreasureWeaponType>();
 
         static AtlatlWcids()
         {
-	   		foreach (var atlatlTier in atlatlTiers)
+            foreach (var atlatlTier in atlatlTiers)
             {
                 foreach (var entry in atlatlTier)
                     _combined.TryAdd(entry.result, TreasureWeaponType.Atlatl);

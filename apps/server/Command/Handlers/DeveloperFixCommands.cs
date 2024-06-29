@@ -1495,13 +1495,13 @@ namespace ACE.Server.Command.Handlers
                 var wieldReq1 = query.ToList();
 
                 query = from wieldReq in ctx.BiotaPropertiesInt
-                            join wieldDiff in ctx.BiotaPropertiesInt on wieldReq.ObjectId equals wieldDiff.ObjectId
-                            where wieldReq.Type.Equals((int)PropertyInt.WieldRequirements2) && wieldReq.Value.Equals((int)WieldRequirement.Level) && wieldDiff.Type.Equals((int)PropertyInt.WieldDifficulty2) && legendaryItems.Contains(wieldReq.ObjectId)
-                            select new
-                            {
-                                WieldReq = wieldReq,
-                                WieldDiff = wieldDiff
-                            };
+                        join wieldDiff in ctx.BiotaPropertiesInt on wieldReq.ObjectId equals wieldDiff.ObjectId
+                        where wieldReq.Type.Equals((int)PropertyInt.WieldRequirements2) && wieldReq.Value.Equals((int)WieldRequirement.Level) && wieldDiff.Type.Equals((int)PropertyInt.WieldDifficulty2) && legendaryItems.Contains(wieldReq.ObjectId)
+                        select new
+                        {
+                            WieldReq = wieldReq,
+                            WieldDiff = wieldDiff
+                        };
 
                 var wieldReq2 = query.ToList();
 
@@ -2281,7 +2281,7 @@ namespace ACE.Server.Command.Handlers
                         else
                         {
                             logline += $"\n\\----- Unable to change WCID from {rare.Value.Biota.WeenieClassId} for 0x{rare.Key:X8}. Not a melee rare?";
-                        }    
+                        }
                     }
                     else
                     {

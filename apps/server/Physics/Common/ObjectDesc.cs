@@ -45,7 +45,7 @@ namespace ACE.Server.Physics.Common
 
             return new Vector3(x, y, z);
         }
-        
+
         /// <summary>
         /// Returns the scale for a scenery object
         /// </summary>

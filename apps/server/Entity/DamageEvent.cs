@@ -549,7 +549,7 @@ namespace ACE.Server.Entity
                     if (pkBattle)
                         DamageRatingMod = Creature.AdditiveCombine(DamageRatingMod, PkDamageMod);
 
-                    DamageBeforeMitigation = BaseDamageMod.MaxDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * CriticalDamageMod * dualWieldDamageMod * twohandedCombatDamageMod *  steadyShotActivatedMod * multishotPenalty * levelScalingMod;
+                    DamageBeforeMitigation = BaseDamageMod.MaxDamage * AttributeMod * PowerMod * SlayerMod * DamageRatingMod * CriticalDamageMod * dualWieldDamageMod * twohandedCombatDamageMod * steadyShotActivatedMod * multishotPenalty * levelScalingMod;
                 }
             }
 
@@ -758,7 +758,7 @@ namespace ACE.Server.Entity
         }
 
 
-            public Quadrant GetQuadrant(Creature defender, Creature attacker, AttackHeight attackHeight, WorldObject damageSource)
+        public Quadrant GetQuadrant(Creature defender, Creature attacker, AttackHeight attackHeight, WorldObject damageSource)
         {
             var quadrant = attackHeight.ToQuadrant();
 
@@ -1022,10 +1022,10 @@ namespace ACE.Server.Entity
 
             // JEWEL - Turquoise: Passive Block %
             if (defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) > 0)
-                    blockChance += (float)(defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) / 100);
+                blockChance += (float)(defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) / 100);
 
             if (ThreadSafeRandom.Next(0f, 1f) < blockChance)
-            return true;
+                return true;
 
             return false;
         }
@@ -1067,7 +1067,7 @@ namespace ACE.Server.Entity
                 var evaded = GetEvadedMod(attacker, defender, out evasionMod);
                 if (evaded)
                     return 0.0f;
-        }
+            }
 
             return evasionMod;
         }

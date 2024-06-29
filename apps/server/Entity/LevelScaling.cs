@@ -38,7 +38,7 @@ namespace ACE.Server.Entity
         private static readonly int[] AvgPlayerAttackSkillPerTier = { 75, 150, 175, 200, 225, 275, 350, 500 };
         private static readonly int[] AvgPlayerDefenseSkillPerTier = { 75, 150, 175, 200, 225, 275, 350, 500 };
         private static readonly float[] AvgPlayerResistancePerTier = { 1.0f, 0.9f, 0.9f, 0.85f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
-        private static readonly int[] AvgPlayerBoostPerTier = {  10, 15, 20, 25, 30, 35, 40, 40};
+        private static readonly int[] AvgPlayerBoostPerTier = { 10, 15, 20, 25, 30, 35, 40, 40 };
 
         private static readonly int[] AvgMonsterArmorWardPerTier = { 20, 45, 68, 101, 152, 228, 342, 513 };
         private static readonly int[] AvgMonsterHealthPerTier = { 50, 150, 350, 500, 800, 1200, 1600, 2000 };

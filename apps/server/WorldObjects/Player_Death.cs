@@ -167,7 +167,7 @@ namespace ACE.Server.WorldObjects
             // as a factor in slag generation, this will eventually be moved to after the slag generation
 
             //if (topDamager != null && topDamager.IsOlthoiPlayer)
-                //OlthoiLootTimestamp = (int)Time.GetUnixTime();
+            //OlthoiLootTimestamp = (int)Time.GetUnixTime();
 
             if (CombatMode == CombatMode.Magic && MagicState.IsCasting)
                 FailCast(false);
@@ -490,7 +490,7 @@ namespace ACE.Server.WorldObjects
             // they don't drop any items
 
             if (corpse.IsOnNoDropLandblock || corpse.IsOnCapstoneLandblock || IsPKLiteDeath(corpse.KillerId))
-                return new List<WorldObject>();            
+                return new List<WorldObject>();
 
             var numItemsDropped = GetNumItemsDropped(corpse);
 

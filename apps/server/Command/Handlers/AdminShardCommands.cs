@@ -127,7 +127,7 @@ namespace ACE.Server.Command.Handlers
             if (adminName.Equals("CONSOLE"))
                 adminName = "System";
 
-            var genericMsgToPlayers = $"Broadcast from {(hideName ? "System": $"{adminName}")}> {(timeTillShutdown.TotalMinutes > 1.5 ? "ATTENTION" : "WARNING")} - This Asheron's Call Server is shutting down in {time}.{(timeTillShutdown.TotalMinutes <= 3 ? " Please log out." : "")}";
+            var genericMsgToPlayers = $"Broadcast from {(hideName ? "System" : $"{adminName}")}> {(timeTillShutdown.TotalMinutes > 1.5 ? "ATTENTION" : "WARNING")} - This Asheron's Call Server is shutting down in {time}.{(timeTillShutdown.TotalMinutes <= 3 ? " Please log out." : "")}";
 
             if (sdt.TotalMilliseconds == 0)
                 genericMsgToPlayers = $"Broadcast from {(hideName ? "System" : $"{adminName}")}> ATTENTION - This Asheron's Call Server is shutting down NOW!!!!";
@@ -156,7 +156,7 @@ namespace ACE.Server.Command.Handlers
                 {
                     case "open":
                         if (WorldManager.WorldStatus != WorldManager.WorldStatusState.Open)
-                        {                            
+                        {
                             message = "Opening world to players...";
                             open = true;
                         }

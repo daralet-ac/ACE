@@ -114,8 +114,8 @@ namespace ACE.Server.WorldObjects
                 var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
                 // resist all = 25%, resist some = 50%, no resist = 25%
-                var resistAllChance = 0.25f; 
-                var resistSome = 0.75f;      
+                var resistAllChance = 0.25f;
+                var resistSome = 0.75f;
 
                 if (roll < resistAllChance)
                 {
@@ -143,7 +143,7 @@ namespace ACE.Server.WorldObjects
 
             // fix hermetic void?
             if (!spell.IsResistable && spell.Category != SpellCategory.ManaConversionModLowering || spell.IsSelfTargeted)
-            //if (!spell.IsResistable || spell.IsSelfTargeted)
+                //if (!spell.IsResistable || spell.IsSelfTargeted)
                 return false;
 
             if (spell.MetaSpellType == SpellType.Dispel && spell.Align == DispelType.Negative && !PropertyManager.GetBool("allow_negative_dispel_resist").Item)
@@ -177,7 +177,7 @@ namespace ACE.Server.WorldObjects
 
                 // Retrieve caster's secondary attribute mod (1% per 20 attributes)
                 var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
-                
+
                 magicSkill = (uint)(magicSkill * secondaryAttributeMod * LevelScaling.GetPlayerAttackSkillScalar(casterCreature, target as Creature));
 
             }
@@ -229,14 +229,14 @@ namespace ACE.Server.WorldObjects
 
             //Console.WriteLine($"{targetCreature.Name} was hit by a spell:\n" +
             //    $" -BaseMagicDef: {targetCreature.GetEffectiveMagicDefense()} -ArmorMod: {armorMagicDefMod} -FinalMagicDef: {difficulty}");
-                
+
             float resistChanceMod = 1.0f;
 
             var player = this as Player;
             var targetPlayer = target as Player;
 
             // Combat Ability - Spell Reflect (gain 20% increased magic defense while attempting to resist a spell)
-            if (targetPlayer  != null)
+            if (targetPlayer != null)
             {
                 if (targetPlayer.EquippedCombatAbility == CombatAbility.Reflect)
                 {
@@ -404,7 +404,7 @@ namespace ACE.Server.WorldObjects
                 case SpellType.Enchantment:
                 case SpellType.FellowEnchantment:
 
-                    if(itemCaster == null && targetCreature != null)
+                    if (itemCaster == null && targetCreature != null)
                         GenerateSupportSpellThreat(spell, targetCreature);
 
                     // TODO: replace with some kind of 'rootOwner unless equip' concept?
@@ -540,7 +540,7 @@ namespace ACE.Server.WorldObjects
             var addResult = target.EnchantmentManager.Add(spell, caster, weapon, equip);
 
             // Ward reduction of Creature and Life debuffs
-            if(target is Player && spell.Id != (uint)SpellId.Vitae)
+            if (target is Player && spell.Id != (uint)SpellId.Vitae)
             {
                 //Console.WriteLine("enchantment target player: " + target.Name);
                 Player targetPlayer = target as Player;
@@ -555,13 +555,13 @@ namespace ACE.Server.WorldObjects
                     targetPlayerWard = (int)(targetPlayerWard * LevelScaling.GetPlayerArmorWardScalar(player, caster as Creature));
 
                     var wardMod = WorldObjects.SkillFormula.CalcWardMod((float)targetPlayerWard / 10);
-                    
+
                     addResult.Enchantment.StatModValue *= wardMod;
                     addResult.Enchantment.Duration *= wardMod;
                     //Console.WriteLine($"StatModValue After: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue}");
                 }
             }
-            
+
             // build message
             var suffix = "";
             switch (addResult.StackType)
@@ -597,11 +597,11 @@ namespace ACE.Server.WorldObjects
                     if (target == this)
                         targetName = casterCheck ? "yourself" : "you";
 
-                    if(showMsg)
+                    if (showMsg)
                         player.SendChatMessage(player, $"{casterName} cast {spell.Name} on {targetName}{suffix}", ChatMessageType.Magic);
                 }
             }
-            
+
             var playerTarget = target as Player;
 
             if (playerTarget != null)
@@ -668,7 +668,7 @@ namespace ACE.Server.WorldObjects
             }
 
             //Console.WriteLine($"Crit Multi: x1.5 + {weaponCritMulti} / 1.5 = {critMultiplier}");
-            
+
             var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
             //Console.WriteLine("CritChance: " + critChance);
             if (critChance > roll)
@@ -725,7 +725,7 @@ namespace ACE.Server.WorldObjects
 
                     if (player.OverloadActivated == false)
                     {
-                       overloadPercent = Player.HandleOverloadStamps(player, null, spell.Level);
+                        overloadPercent = Player.HandleOverloadStamps(player, null, spell.Level);
 
                         if (player.QuestManager.HasQuest($"{player.Name},Overload"))
                         {
@@ -777,7 +777,7 @@ namespace ACE.Server.WorldObjects
             }
             string srcVital;
 
-           
+
             if (player != null)
             {   // JEWEL - Lavender Jade: Bonus restoration to other players, reduced to self
                 if (player.GetEquippedItemsRatingSum(PropertyInt.GearSelflessness) > 0 && tryBoost > 0 && !targetCreature.IsMonster)
@@ -800,12 +800,12 @@ namespace ACE.Server.WorldObjects
                 }
                 // JEWEL - Rose Quartz: Penalty to restoration spells
                 if (player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) > 0)
-                    {
-                        var jewelcraftingBoostPenaltyMod = 1 - (float)player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) / 66;
-                        var boostPenalty = tryBoost * jewelcraftingBoostPenaltyMod;
-                        
-                        tryBoost = (int)boostPenalty;
-                    }
+                {
+                    var jewelcraftingBoostPenaltyMod = 1 - (float)player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) / 66;
+                    var boostPenalty = tryBoost * jewelcraftingBoostPenaltyMod;
+
+                    tryBoost = (int)boostPenalty;
+                }
             }
             // JEWEL - Amethyst: Ramping Magic Absorb
             if (targetCreature != null && targetCreature is Player tPlayer && tryBoost < 0)
@@ -853,7 +853,7 @@ namespace ACE.Server.WorldObjects
                         targetCreature.IncreaseTargetThreatLevel(player, boost);
                     }
                     //if (targetPlayer != null && targetPlayer.Fellowship != null)
-                        //targetPlayer.Fellowship.OnVitalUpdate(targetPlayer);
+                    //targetPlayer.Fellowship.OnVitalUpdate(targetPlayer);
 
                     break;
             }
@@ -900,7 +900,7 @@ namespace ACE.Server.WorldObjects
                         targetPlayer.SetCurrentAttacker(creature);
                 }
 
-                if(showMsg)
+                if (showMsg)
                     targetPlayer.SendChatMessage(player, targetMessage, ChatMessageType.Magic);
             }
 
@@ -1076,7 +1076,7 @@ namespace ACE.Server.WorldObjects
                 destVitalChange = maxDestVitalChange;
             }
 
-             if (player != null)
+            if (player != null)
             {   // JEWEL - Rose Quartz: Bonus to transfer spells
                 if (player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) > 0)
                 {
@@ -1177,7 +1177,7 @@ namespace ACE.Server.WorldObjects
                         player.OverloadActivated = false;
                         player.OverloadDumped = false;
 
-                        if (player.QuestManager.HasQuest($"{player.Name},Overload"))                           
+                        if (player.QuestManager.HasQuest($"{player.Name},Overload"))
                             player.QuestManager.Erase($"{player.Name},Overload");
                     }
                 }
@@ -1212,8 +1212,8 @@ namespace ACE.Server.WorldObjects
             {
                 float levelScalingMod = LevelScaling.GetPlayerBoostSpellScalar(player, targetCreature);
 
-                srcVitalChange  = (uint)(srcVitalChange * levelScalingMod);
-                destVitalChange = (uint)(destVitalChange * levelScalingMod);  
+                srcVitalChange = (uint)(srcVitalChange * levelScalingMod);
+                destVitalChange = (uint)(destVitalChange * levelScalingMod);
 
             }
 
@@ -1236,7 +1236,7 @@ namespace ACE.Server.WorldObjects
 
                     //var sourcePlayer = source as Player;
                     //if (sourcePlayer != null && sourcePlayer.Fellowship != null)
-                        //sourcePlayer.Fellowship.OnVitalUpdate(sourcePlayer);
+                    //sourcePlayer.Fellowship.OnVitalUpdate(sourcePlayer);
 
                     break;
             }
@@ -1260,7 +1260,7 @@ namespace ACE.Server.WorldObjects
 
                     //var destPlayer = destination as Player;
                     //if (destPlayer != null && destPlayer.Fellowship != null)
-                        //destPlayer.Fellowship.OnVitalUpdate(destPlayer);
+                    //destPlayer.Fellowship.OnVitalUpdate(destPlayer);
 
                     break;
             }
@@ -1379,7 +1379,7 @@ namespace ACE.Server.WorldObjects
                     damageType = DamageType.Health;
 
                     //if (player != null && player.Fellowship != null)
-                        //player.Fellowship.OnVitalUpdate(player);
+                    //player.Fellowship.OnVitalUpdate(player);
                 }
             }
 
@@ -1394,10 +1394,10 @@ namespace ACE.Server.WorldObjects
             if (player != null && targetCreature != null && projectileSpellType == ProjectileSpellType.Blast)
             {
                 var nearbyTargets = targetCreature.GetNearbyMonsters(10);
-                var blastTargets = new List<Creature> {targetCreature};
-                
+                var blastTargets = new List<Creature> { targetCreature };
+
                 if (nearbyTargets != null)
-                {  
+                {
                     var blastCount = 0;
                     foreach (var nearbyTarget in nearbyTargets)
                     {
@@ -1426,13 +1426,13 @@ namespace ACE.Server.WorldObjects
             if (caster != null && targetCreature != null)
             {
                 if (spell.DamageType == DamageType.Slash)
-                {   
+                {
                     if (spell.NumProjectiles <= 1)
-                    {   
+                    {
                         if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0)
                         {
                             if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > ThreadSafeRandom.Next(1, 100))
-                            {                                
+                            {
                                 var cleave = targetCreature.GetNearbyMonsters(10);
 
                                 foreach (var cleaveHit in cleave)
@@ -1946,7 +1946,7 @@ namespace ACE.Server.WorldObjects
                 else
                     casterMsg = $"You cast {spell.Name} on {target.Name}{suffix}";
 
-                if(showMsg)
+                if (showMsg)
                     player.SendChatMessage(player, casterMsg, ChatMessageType.Magic);
             }
 
@@ -2314,7 +2314,7 @@ namespace ACE.Server.WorldObjects
                     origin = origins[0];
 
                 var sp = WorldObjectFactory.CreateNewWorldObject(spell.Wcid) as SpellProjectile;
-                
+
                 if (sp == null)
                 {
                     _log.Error($"{Name} ({Guid}).LaunchSpellProjectiles({spell.Id} - {spell.Name}) - failed to create spell projectile from wcid {spell.Wcid}");
@@ -2334,7 +2334,7 @@ namespace ACE.Server.WorldObjects
                 sp.Location.Pos += Vector3.Transform(origin, strikeSpell ? rotate * OneEighty : rotate);
 
                 sp.PhysicsObj.Velocity = velocity;
-                
+
                 if (spell.SpreadAngle > 0 && !fireAllProjectilesFromCenter)
                 {
                     var n = Vector3.Normalize(origin);
@@ -2816,7 +2816,7 @@ namespace ACE.Server.WorldObjects
 
                 creature.IncreaseTargetThreatLevel(player, (int)threatAmount);
             }
-            
+
         }
 
         private float SelfTargetSpellProcMod(bool fromProc, Spell spell, WorldObject weapon, Player player)
@@ -2835,7 +2835,7 @@ namespace ACE.Server.WorldObjects
                 var procSpellSkill = (playerSpellSkill + spellcraft) * 0.5f;
 
                 var mod = procSpellSkill / spell.Power;
-                
+
                 return Math.Clamp(mod, 0.5f, 2.0f);
             }
         }

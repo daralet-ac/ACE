@@ -375,7 +375,7 @@ namespace ACE.Server.WorldObjects
 
             if (WellRestedHotspot != null)
             {
-                var forwardCommand =  CurrentMovementData.Invalid.State.ForwardCommand;
+                var forwardCommand = CurrentMovementData.Invalid.State.ForwardCommand;
                 if (forwardCommand != MotionCommand.Crouch && forwardCommand != MotionCommand.Sitting && forwardCommand != MotionCommand.Sleeping)
                 {
                     var spell = new ACE.Server.Entity.Spell(SpellId.CampfireRest1);

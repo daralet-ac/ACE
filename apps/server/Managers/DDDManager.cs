@@ -153,7 +153,7 @@ namespace ACE.Server.Managers
 
             if (!datFileFound)
                 return null;
-            
+
             var cachedDatFileSizes = DatFileSizes[datDatabaseType][datFileId];
 
             var compressDatFile = cachedDatFileSizes.CompressedFileSize > 0;
@@ -220,16 +220,16 @@ namespace ACE.Server.Managers
 
                         //if (datDatabaseType != DatDatabaseType.Cell)
                         //{
-                            if (DatFileSizes[datDatabaseType][z].CompressedFileSize > 0)
-                            {
-                                compressedFiles++;
-                                totalFileSize += (uint)DatFileSizes[datDatabaseType][z].CompressedFileSize;
-                            }
-                            else
-                            {
-                                uncompressedFiles++;
-                                totalFileSize += (uint)DatFileSizes[datDatabaseType][z].UncompressedFileSize;
-                            }
+                        if (DatFileSizes[datDatabaseType][z].CompressedFileSize > 0)
+                        {
+                            compressedFiles++;
+                            totalFileSize += (uint)DatFileSizes[datDatabaseType][z].CompressedFileSize;
+                        }
+                        else
+                        {
+                            uncompressedFiles++;
+                            totalFileSize += (uint)DatFileSizes[datDatabaseType][z].UncompressedFileSize;
+                        }
                         //}
                         //else
                         //{

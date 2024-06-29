@@ -54,7 +54,7 @@ namespace ACE.Server.Network.Structure
                     GuestList.Add(guest.Key, new GuestInfo(guest.Value, player.Name));
 
                 if (player.Guid == MonarchID)
-                {                    
+                {
                     if (guest.Value)
                         Bitmask |= HARBitfield.AllegianceStorage;
                     else

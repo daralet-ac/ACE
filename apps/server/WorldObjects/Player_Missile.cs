@@ -243,7 +243,7 @@ namespace ACE.Server.WorldObjects
                 // stamina usage
                 // TODO: ensure enough stamina for attack
                 // TODO: verify formulas - double/triple cost for bow/xbow?
-                
+
 
                 var projectile = LaunchProjectile(launcher, ammo, target, origin, orientation, velocity);
                 UpdateAmmoAfterLaunch(ammo);
@@ -300,7 +300,7 @@ namespace ACE.Server.WorldObjects
                         cleaveCount++;
                     }
                 }
-                
+
             });
 
             // ammo remaining?

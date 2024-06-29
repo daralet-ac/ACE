@@ -1685,18 +1685,18 @@ namespace ACE.Server.Entity
 
             // checks active instances of this dungeon and player's previous capstone, and removes them from permitted list
             // this is to prevent potential griefing (however unlikely) and ensure slots open speedily
-           /* if (player.CapstoneDungeon.HasValue)
-                dungeonLandblocks.Add((LandblockId)player.CapstoneDungeon);
+            /* if (player.CapstoneDungeon.HasValue)
+                 dungeonLandblocks.Add((LandblockId)player.CapstoneDungeon);
 
-            foreach (var landblockId in dungeonLandblocks)
-            {
-                if (landblockId != landblock.Id && LandblockManager.IsLoaded(landblockId))
-                {
-                    var otherDungeon = LandblockManager.GetLandblock(landblockId, false);
-                    if (otherDungeon.CapstonePlayers.Keys.Contains(player))
-                        otherDungeon.CapstonePlayers.Remove(player);
-                }
-            } */
+             foreach (var landblockId in dungeonLandblocks)
+             {
+                 if (landblockId != landblock.Id && LandblockManager.IsLoaded(landblockId))
+                 {
+                     var otherDungeon = LandblockManager.GetLandblock(landblockId, false);
+                     if (otherDungeon.CapstonePlayers.Keys.Contains(player))
+                         otherDungeon.CapstonePlayers.Remove(player);
+                 }
+             } */
             player.CapstoneDungeon = landblock.Id;
 
             if (CapstoneTeleportLocations.TryGetValue(landblock.Id, out var destination))
@@ -1725,7 +1725,7 @@ namespace ACE.Server.Entity
                 case "Empyrean Garrison": dungeonLandblocks = new uint[] { 0x0161, 0x0BFE, 0x0BFD, 0x0BFC, 0x0BFB, 0x0BFA }; break;
                 case "Grievous Vault": dungeonLandblocks = new uint[] { 0x0189, 0x10FE, 0x10FD, 0x10FC, 0x10FB, 0x10FA }; break;
                 // T3
-                case "Folthid Cellar": dungeonLandblocks = new uint[] { 0x013B, 0x19FE, 0x19FD, 0x19FC, 0x19FB, 0x19FA}; break;
+                case "Folthid Cellar": dungeonLandblocks = new uint[] { 0x013B, 0x19FE, 0x19FD, 0x19FC, 0x19FB, 0x19FA }; break;
                 case "Mines of Despair": dungeonLandblocks = new uint[] { 0x0188, 0x0CFE, 0x0CFD, 0x0CFC, 0x0CFB, 0x0CFA }; break;
                 case "Beyond the Mines": dungeonLandblocks = new uint[] { 0x02AB, 0x0DFE, 0x0DFD, 0x0DFC, 0x0DFB, 0x0DFA }; break;
                 case "Gredaline Consulate": dungeonLandblocks = new uint[] { 0x029B, 0x11FE, 0x11FD, 0x11FC, 0x11FB, 0x11FA }; break;

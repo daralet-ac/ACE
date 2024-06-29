@@ -38,7 +38,7 @@ namespace ACE.Server.WorldObjects
         {
             var plural = patchesConsumed > 1;
 
-            if(plural)
+            if (plural)
                 player.EnqueueBroadcast(new GameMessageSystemChat($"{player.Name} applies {patchesConsumed} {sourceName}es to the {target.NameWithMaterial}.", ChatMessageType.Craft), WorldObject.LocalBroadcastRange, ChatMessageType.Craft);
             else
                 player.EnqueueBroadcast(new GameMessageSystemChat($"{player.Name} applies an {sourceName} to the {target.NameWithMaterial}.", ChatMessageType.Craft), WorldObject.LocalBroadcastRange, ChatMessageType.Craft);
@@ -158,7 +158,7 @@ namespace ACE.Server.WorldObjects
         {
             var minimumTargetTier = 1;
 
-            switch(amountToAdd)
+            switch (amountToAdd)
             {
                 case 25: minimumTargetTier = 1; break;
                 case 50: minimumTargetTier = 3; break;

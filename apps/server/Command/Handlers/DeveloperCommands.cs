@@ -3921,7 +3921,8 @@ namespace ACE.Server.Command.Handlers
             }
             if (storm_level > 3) storm_level = 3;
 
-            switch (storm_level) {
+            switch (storm_level)
+            {
                 case 0:
                     session.Network.EnqueueSend(new GameEventPortalStormBrewing(session));
                     break;

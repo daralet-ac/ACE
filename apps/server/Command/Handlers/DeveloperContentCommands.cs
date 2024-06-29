@@ -261,7 +261,7 @@ namespace ACE.Server.Command.Handlers.Processors
                         break;
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 CommandHandlerHelper.WriteOutputError(session, $"There was an error importing the SQL:\n\n{e.Message}");
             }
@@ -295,7 +295,7 @@ namespace ACE.Server.Command.Handlers.Processors
 
             foreach (var file in files)
                 ImportSQLWeenie(session, file.DirectoryName + sep, file.Name);
-                
+
         }
 
         public static void ImportSQLRecipe(Session session, string recipeId)
@@ -1887,7 +1887,7 @@ namespace ACE.Server.Command.Handlers.Processors
             {
                 json_folder = $"{di.FullName}{sep}json{sep}weenies{sep}";
             }
-            
+
             di = new DirectoryInfo(json_folder);
 
             if (!di.Exists)
@@ -2451,13 +2451,13 @@ namespace ACE.Server.Command.Handlers.Processors
         [Flags]
         public enum CacheType
         {
-            None            = 0x0,
-            Landblock       = 0x1,
-            Recipe          = 0x2,
-            Spell           = 0x4,
-            Weenie          = 0x8,
+            None = 0x0,
+            Landblock = 0x1,
+            Recipe = 0x2,
+            Spell = 0x4,
+            Weenie = 0x8,
             WieldedTreasure = 0x10,
-            All             = 0xFFFF
+            All = 0xFFFF
         };
 
         public static FileType GetFileType(string filename)
@@ -3070,12 +3070,12 @@ namespace ACE.Server.Command.Handlers.Processors
                     {
                         CommandHandlerHelper.WriteOutputInfo(session, $"Unable to parse X ({strX}) value from line {i} in vlocDB: {vlocs[i]}");
                         continue;
-                    }    
+                    }
                     if (!float.TryParse(strY, out var y))
                     {
                         CommandHandlerHelper.WriteOutputInfo(session, $"Unable to parse Y ({strY}) value from line {i} in vlocDB: {vlocs[i]}");
                         continue;
-                    }    
+                    }
 
                     if ((objCellId >> 16) != lbid) continue;
 

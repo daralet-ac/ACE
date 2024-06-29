@@ -14,7 +14,7 @@ namespace ACE.Server.Network.Handlers
 
             // Using Turbine Chat
             // Client version 00.00.11.6096.r Portal: compiled Fri Jun 12 04:16:27 2015 : RETAIL
-            
+
             // If client connects with admin account, it will forward version request to server and will respond with the following:
 
             var msg = ServerBuildInfo.GetVersionInfo();

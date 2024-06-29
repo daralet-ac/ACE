@@ -11,11 +11,11 @@ namespace ACE.Server.Physics.Entity
 {
     public static class GfxObjCache
     {
-        #if !USE_WEAK_REFERENCE_CACHE
+#if !USE_WEAK_REFERENCE_CACHE
         public static readonly ConcurrentDictionary<uint, GfxObj> GfxObjs = new ConcurrentDictionary<uint, GfxObj>();
-        #else
+#else
         public static readonly ConcurrentDictionary<uint, WeakReference<GfxObj>> GfxObjs = new ConcurrentDictionary<uint, WeakReference<GfxObj>>();
-        #endif
+#endif
 
         public static int Requests;
         public static int Hits;
@@ -36,16 +36,16 @@ namespace ACE.Server.Physics.Entity
 
             if (GfxObjs.TryGetValue(gfxObjID, out var result))
             {
-                #if !USE_WEAK_REFERENCE_CACHE
+#if !USE_WEAK_REFERENCE_CACHE
                 Hits++;
                 return result;
-                #else
+#else
                 if (result.TryGetTarget(out var target))
                 {
                     Hits++;
                     return target;
                 }
-                #endif
+#endif
             }
 
             var _gfxObj = DBObj.GetGfxObj(gfxObjID);
@@ -53,11 +53,11 @@ namespace ACE.Server.Physics.Entity
             // not cached, add it
             var gfxObj = new GfxObj(_gfxObj);
 
-            #if !USE_WEAK_REFERENCE_CACHE
+#if !USE_WEAK_REFERENCE_CACHE
             gfxObj = GfxObjs.GetOrAdd(_gfxObj.Id, gfxObj);
-            #else
+#else
             GfxObjs[_gfxObj.Id] = new WeakReference<GfxObj>(gfxObj);
-            #endif
+#endif
 
             return gfxObj;
         }

@@ -85,7 +85,7 @@ namespace ACE.Server.WorldObjects
                 case Skill.ItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Jewelcrafting recipes. You may also purchase training from a Jeweler.", ChatMessageType.Advancement)); return false;
                 case Skill.MagicItemTinkering: Session.Network.EnqueueSend(new GameMessageSystemChat(cannotRaiseMsg + " You gain experience towards it when performing Spellcrafting recipes. You may also purchase training from an Archmage.", ChatMessageType.Advancement)); return false;
             }
-          
+
             var skillXPTable = GetSkillXPTable(creatureSkill.AdvancementClass);
             if (skillXPTable == null)
             {
@@ -299,7 +299,7 @@ namespace ACE.Server.WorldObjects
                 // CUSTOM - Trade Skills - Handle Quest Stamps on Untrain
                 if (IsTradeSkill(skill))
                 {
-                   if (QuestManager.HasQuest("TradeSkill"))
+                    if (QuestManager.HasQuest("TradeSkill"))
                     {
                         var solves = QuestManager.GetCurrentSolves("TradeSkill");
                         if (solves == 1)
@@ -687,7 +687,7 @@ namespace ACE.Server.WorldObjects
                         return false;
                     break;
             }
-            
+
             return !AlwaysTrained.Contains(skill);
         }
 
@@ -1108,7 +1108,7 @@ namespace ACE.Server.WorldObjects
 
         public bool IsTradeSkill(Skill skill)
         {
-            if (   skill == Skill.Alchemy
+            if (skill == Skill.Alchemy
                 || skill == Skill.ArmorTinkering
                 || skill == Skill.Cooking
                 || skill == Skill.Fletching

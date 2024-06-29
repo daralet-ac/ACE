@@ -22,7 +22,7 @@ namespace ACE.Server.Entity
             // possible todo: does this only apply to players?
             // ie., can monsters still level up from skill usage, or killing players?
             // it was possible on release, but i think they might have removed that feature?
-           
+
             if (player.IsOlthoiPlayer)
                 return;
 
@@ -51,7 +51,7 @@ namespace ACE.Server.Entity
 
             var difficulty_check = difficulty > last_difficulty;
             var time_check = timeDiff >= FullTime.TotalSeconds;
-            
+
             if (difficulty_check || time_check)
             {
                 // todo: not independent variables?

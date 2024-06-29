@@ -115,7 +115,7 @@ namespace ACE.Server.Physics
         public bool MorphToExistingObject(PhysicsPart template)
         {
             // copy constructor?
-            GfxObj = template.GfxObj;   
+            GfxObj = template.GfxObj;
             GfxObjScale = template.GfxObjScale;
             Pos = template.Pos;
             //DrawPos = template.DrawPos;

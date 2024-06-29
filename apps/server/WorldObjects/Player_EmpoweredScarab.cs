@@ -41,7 +41,7 @@ namespace ACE.Server.WorldObjects
                     if (allHeldScarabs.Count > 0)
                         showHintEffect = true;
 
-                    if(showHintEffect)
+                    if (showHintEffect)
                     {
                         PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
                         LastHotspotHintTick = Time.GetUnixTime();
@@ -337,7 +337,7 @@ namespace ACE.Server.WorldObjects
         {
             var castSpell = new Spell(castSpellId, true);
 
-            
+
 
             castSpell.SpellPowerMod = empoweredScarab.SpellIntensityMultiplier;
             castSpell.SpellStatModVal = empoweredScarab.SpellStatModValMultiplier;
@@ -408,15 +408,15 @@ namespace ACE.Server.WorldObjects
             // CHECK CONDITIONS OF EACH SCARAB TYPE
             switch (empoweredScarab.EmpoweredScarabEffectId)
             {
-                case (int)EmpoweredScarabEffect.CastVuln:       if (!IsValidForCastVuln(spell)) return false; break;
-                case (int)EmpoweredScarabEffect.CastProt:       if (!IsValidForCastProt(spell)) return false; break;
-                case (int)EmpoweredScarabEffect.CastItemBuff:   if (!IsValidForCastItemBuff(spell)) return false; break;
-                case (int)EmpoweredScarabEffect.CastVitalRate:  if (!IsValidForCastVitalRate(spell)) return false; break;
-                case (int)EmpoweredScarabEffect.Intensity:      if (!IsValidForIntensity(spell, empoweredScarab)) return false; break;
-                case (int)EmpoweredScarabEffect.Shield:         if (!IsValidForShield(spell, empoweredScarab)) return false; break;
-                case (int)EmpoweredScarabEffect.Duplicate:      if (!IsValidForDuplicate(spell, empoweredScarab)) return false; break;
-                case (int)EmpoweredScarabEffect.Detonate:       if (!IsValidForDetonate(spell, empoweredScarab, creatureTarget)) return false; break;
-                case (int)EmpoweredScarabEffect.Crit:           if (!IsValidForCrushing(spell, empoweredScarab, onCrit)) return false; break;
+                case (int)EmpoweredScarabEffect.CastVuln: if (!IsValidForCastVuln(spell)) return false; break;
+                case (int)EmpoweredScarabEffect.CastProt: if (!IsValidForCastProt(spell)) return false; break;
+                case (int)EmpoweredScarabEffect.CastItemBuff: if (!IsValidForCastItemBuff(spell)) return false; break;
+                case (int)EmpoweredScarabEffect.CastVitalRate: if (!IsValidForCastVitalRate(spell)) return false; break;
+                case (int)EmpoweredScarabEffect.Intensity: if (!IsValidForIntensity(spell, empoweredScarab)) return false; break;
+                case (int)EmpoweredScarabEffect.Shield: if (!IsValidForShield(spell, empoweredScarab)) return false; break;
+                case (int)EmpoweredScarabEffect.Duplicate: if (!IsValidForDuplicate(spell, empoweredScarab)) return false; break;
+                case (int)EmpoweredScarabEffect.Detonate: if (!IsValidForDetonate(spell, empoweredScarab, creatureTarget)) return false; break;
+                case (int)EmpoweredScarabEffect.Crit: if (!IsValidForCrushing(spell, empoweredScarab, onCrit)) return false; break;
             }
 
             return true;
@@ -431,7 +431,7 @@ namespace ACE.Server.WorldObjects
             var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
             if (empoweredScarab.EmpoweredScarabTriggerChance < rng && !onCrit)
                 return false;
-            
+
             return true;
         }
 

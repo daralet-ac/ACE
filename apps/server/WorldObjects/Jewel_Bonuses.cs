@@ -149,7 +149,7 @@ namespace ACE.Server.WorldObjects
 
             if (playerAttacker.AttackType == AttackType.OffhandPunch || playerAttacker.AttackType == AttackType.Punch || playerAttacker.AttackType == AttackType.Punches)
                 scaledStamps /= 1.25f;
-            
+
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0 || playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0 || playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
             {
                 if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
@@ -209,7 +209,7 @@ namespace ACE.Server.WorldObjects
 
             // JEWEL - Citrine: Stam reduction stamps
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearStamReduction) > 0)
-            { 
+            {
                 if (playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},StamReduction"))
                 {
                     if (playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},StamReduction") < 500)
@@ -433,12 +433,12 @@ namespace ACE.Server.WorldObjects
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) > 0 && damageType == DamageType.Acid)
                 jewelElemental += ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) / 100) * 0.75f;
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) > 0 && damageType == DamageType.Fire)
-                jewelElemental += ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) / 100) * 0.75f;  
+                jewelElemental += ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) / 100) * 0.75f;
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) > 0 && damageType == DamageType.Cold)
-                jewelElemental += ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) / 100) * 0.75f;  
+                jewelElemental += ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) / 100) * 0.75f;
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) > 0 && damageType == DamageType.Electric)
-                jewelElemental += ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) / 100) * 0.75f;  
-            
+                jewelElemental += ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) / 100) * 0.75f;
+
             return jewelElemental;
         }
         public static float GetJewelLastStand(Player playerAttacker, Creature defender)
@@ -635,9 +635,9 @@ namespace ACE.Server.WorldObjects
                                 break;
                         }
                     }
-                }       
+                }
             }
-                    return description;
+            return description;
         }
 
         public static string GetSocketDescription(string jewelSocket1)
@@ -653,37 +653,37 @@ namespace ACE.Server.WorldObjects
                     var oneHalf = Math.Round((float)amount * 1.5, 1);
                     var oneTenth = Math.Round((float)amount / 10, 2);
                     var threeQ = Math.Round((float)amount * 0.66, 1);
-                    
+
                     switch (convertedMaterialType)
                     {
 
                         // ring right
                         case ACE.Entity.Enum.MaterialType.Carnelian:
-                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.Azurite:
-                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.TigerEye:
-                             description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
                             break;
 
                         // ring left
                         case ACE.Entity.Enum.MaterialType.RedJade:
-                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.YellowTopaz:
-                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.Peridot:
-                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
                             break;
 
                         case ACE.Entity.Enum.MaterialType.Moonstone:
-                            description = $"\n\t Socket:  {parts[1]} (-{amount * 5}% Item Mana Consumption)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (-{amount * 5}% Item Mana Consumption)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.Malachite:
-                            description = $"\n\t Socket:  {parts[1]} (+{amount * 3}% Component Burn Reduction)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{amount * 3}% Component Burn Reduction)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.GreenJade:
                             description = $"\n\t Socket:  {parts[1]} (+{half}% Prosperity)\n";
@@ -691,44 +691,44 @@ namespace ACE.Server.WorldObjects
 
                         // bracelet right
                         case ACE.Entity.Enum.MaterialType.Amethyst:
-                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Magic Absorb)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Magic Absorb)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.Diamond:
-                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Physical Damage Resistance)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Physical Damage Resistance)\n";
                             break;
                         // shield
                         case ACE.Entity.Enum.MaterialType.WhiteQuartz:
-                            description = $"\n\t Socket:  {parts[1]} (+{amount * 5}% Shield Reprisal)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{amount * 5}% Shield Reprisal)\n";
                             break;
                         // weapon + shield
                         case ACE.Entity.Enum.MaterialType.BlackOpal:
-                            description = $"\n\t Socket:  {parts[1]} (+{half}% Critical Reprisal)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{half}% Critical Reprisal)\n";
                             break;
 
                         // weapon only
                         case ACE.Entity.Enum.MaterialType.Bloodstone:
-                            description = $"\n\t Socket:  {parts[1]} (+{half}% Life Steal)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{half}% Life Steal)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.Opal:
-                            description = $"\n\t Socket:  {parts[1]} (+{half}% Mana Leech)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{half}% Mana Leech)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.RoseQuartz:
-                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Vitals Transfer)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Vitals Transfer)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.LavenderJade:
-                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Selflessness)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Selflessness)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.GreenGarnet:
-                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping War Damage)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping War Damage)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.Tourmaline:
-                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Ward Pen)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Ward Pen)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.WhiteJade:
-                            description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Restoration)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Restoration)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.Aquamarine:
-                            description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Frost Damage)\n"; 
+                            description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Frost Damage)\n";
                             break;
                         case ACE.Entity.Enum.MaterialType.BlackGarnet:
                             description = $"\n\t Socket:  {parts[1]} (+{amount}% Ramping Pierce Pen)\n";
@@ -748,13 +748,13 @@ namespace ACE.Server.WorldObjects
                         case ACE.Entity.Enum.MaterialType.WhiteSapphire:
                             description = $"\n\t Socket:  {parts[1]} (+{amount * 2}% Ramping Bludgeon Crit Damage)\n";
                             break;
-                        default:   
-                            description = $"\n\t Socket:  {parts[1]} (+{amount}%  {parts[3]})\n"; 
+                        default:
+                            description = $"\n\t Socket:  {parts[1]} (+{amount}%  {parts[3]})\n";
                             break;
                     }
-                }       
+                }
             }
-                    return description;
+            return description;
         }
 
 
@@ -794,7 +794,7 @@ namespace ACE.Server.WorldObjects
                 {"Health To Stamina", PropertyInt.GearHealthToStamina },
                 {"Health To Mana", PropertyInt.GearHealthToMana },
                 {"Experience Gain", PropertyInt.GearExperienceGain },
-                {"Last Stand", PropertyInt.GearLastStand },    
+                {"Last Stand", PropertyInt.GearLastStand },
                 {"Manasteal", PropertyInt.GearManasteal },
                 {"Vitals Transfer", PropertyInt.GearVitalsTransfer },
                 {"Bludgeon", PropertyInt.GearBludgeon },

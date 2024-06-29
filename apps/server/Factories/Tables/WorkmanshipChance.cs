@@ -89,7 +89,7 @@ namespace ACE.Server.Factories.Tables
 
             var workmanshipChance = workmanshipChances[tier - 1];
 
-            if(qualityMod >= 0)
+            if (qualityMod >= 0)
                 return workmanshipChance.Roll(qualityMod, true) + Math.Max(0, cantripLevel - 2);
             else
                 return workmanshipChance.Roll(qualityMod, false) + Math.Max(0, cantripLevel - 2);

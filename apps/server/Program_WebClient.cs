@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace ACE.Server
 {
-    public class WebClient: IDisposable
+    public class WebClient : IDisposable
     {
         private readonly HttpClient httpClient;
 

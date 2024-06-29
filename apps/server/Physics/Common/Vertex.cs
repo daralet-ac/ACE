@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace ACE.Server.Physics.Entity
 {
-    public class Vertex: IEquatable<Vertex>
+    public class Vertex : IEquatable<Vertex>
     {
         public ushort Index;
         public Vector3 Origin;
@@ -29,22 +29,22 @@ namespace ACE.Server.Physics.Entity
             Origin = origin;
         }
 
-        public static Vector3 operator+ (Vertex a, Vertex b)
+        public static Vector3 operator +(Vertex a, Vertex b)
         {
             return a.Origin + b.Origin;
         }
 
-        public static Vector3 operator- (Vertex a, Vertex b)
+        public static Vector3 operator -(Vertex a, Vertex b)
         {
             return a.Origin - b.Origin;
         }
 
-        public static Vector3 operator* (Vertex a, Vertex b)
+        public static Vector3 operator *(Vertex a, Vertex b)
         {
             return a.Origin * b.Origin;
         }
 
-        public static Vector3 operator/ (Vertex a, Vertex b)
+        public static Vector3 operator /(Vertex a, Vertex b)
         {
             return a.Origin / b.Origin;
         }

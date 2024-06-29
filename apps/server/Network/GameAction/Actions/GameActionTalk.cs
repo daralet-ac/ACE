@@ -15,7 +15,7 @@ namespace ACE.Server.Network.GameAction.Actions
         public static void Handle(ClientMessage clientMessage, Session session)
         {
             var message = clientMessage.Payload.ReadString16L();
-            
+
             if (message.StartsWith("@"))
             {
                 string commandRaw = message.Remove(0, 1);

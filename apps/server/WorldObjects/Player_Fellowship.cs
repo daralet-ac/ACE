@@ -97,7 +97,7 @@ namespace ACE.Server.WorldObjects
 
             if (newPlayer.GetCharacterOption(CharacterOption.IgnoreFellowshipRequests))
             {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{newPlayer.Name} is not accepting fellowship requests.", ChatMessageType.Fellowship));                
+                Session.Network.EnqueueSend(new GameMessageSystemChat($"{newPlayer.Name} is not accepting fellowship requests.", ChatMessageType.Fellowship));
                 Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.FellowshipIgnoringRequests));
             }
             else if (Fellowship != null)

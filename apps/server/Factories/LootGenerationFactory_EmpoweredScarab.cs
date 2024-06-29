@@ -13,12 +13,12 @@ namespace ACE.Server.Factories
         private static readonly Dictionary<int, uint> IconOverlay2_Level = new Dictionary<int, uint>()
         {
             {1,     100690996 },
-            {2,     100690997 }, 
-            {3,     100690998 }, 
-            {4,     100690999 }, 
-            {5,     100691000 }, 
-            {6,     100691001 }, 
-            {7,     100691002 }, 
+            {2,     100690997 },
+            {3,     100690998 },
+            {4,     100690999 },
+            {5,     100691000 },
+            {6,     100691001 },
+            {7,     100691002 },
         };
 
         private static readonly Dictionary<string, uint> Icon_Colors = new Dictionary<string, uint>()
@@ -136,7 +136,7 @@ namespace ACE.Server.Factories
         private static readonly Dictionary<string, uint> OverlayIds = new Dictionary<string, uint>()
         {
             {"life",    100689496 },
-            {"war",     100689495 },  
+            {"war",     100689495 },
         };
 
         private static WorldObject CreateEmpoweredScarab(TreasureDeath profile, bool mutate = true)
@@ -144,7 +144,7 @@ namespace ACE.Server.Factories
             var wcid = EmpoweredScarabWcids.Roll(profile.Tier);
 
             var wo = WorldObjectFactory.CreateNewWorldObject((uint)wcid);
-            
+
             if (mutate)
                 MutateEmpoweredanaScarab(wo, profile);
 
@@ -162,7 +162,7 @@ namespace ACE.Server.Factories
             empoweredScarab.EmpoweredScarabManaReserved = GetReservedMana(profile);
             empoweredScarab.EmpoweredScarabMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
             empoweredScarab.WieldDifficulty = RollWieldDifficulty(profile.Tier);
-            empoweredScarab.ItemMaxLevel = Math.Clamp(profile.Tier -1, 1, 7);
+            empoweredScarab.ItemMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
             empoweredScarab.ItemBaseXp = GetBaseLevelCost(profile);
             empoweredScarab.ItemTotalXp = 0;
 
@@ -177,13 +177,13 @@ namespace ACE.Server.Factories
                 empoweredScarab.EmpoweredScarabEffectId = ThreadSafeRandom.Next(5, 10);
                 empoweredScarab.WieldSkillType = (int)Skill.WarMagic;
             }
-            
+
             // PROT
             if (empoweredScarab.EmpoweredScarabEffectId == (int)EmpoweredScarabEffect.CastProt)
             {
                 int element = ThreadSafeRandom.Next(0, 7);
 
-                switch(element)
+                switch (element)
                 {
                     default:
                     case 0: color = "black"; break;

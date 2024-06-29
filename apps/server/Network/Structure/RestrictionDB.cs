@@ -86,8 +86,8 @@ namespace ACE.Server.Network.Structure
         private static readonly ushort actualNumBuckets = 89;   // in RestrictionDB constructor in acclient,
                                                                 // client uses PHashTable for this (as opposed to the typical PackableHashTable)
 
-                                                                // which inits an IntrusiveHashTable with size 64
-                                                                // this gets bumped up to the next largest value in a hardcoded g_bucketSizeArray, which is 89
+        // which inits an IntrusiveHashTable with size 64
+        // this gets bumped up to the next largest value in a hardcoded g_bucketSizeArray, which is 89
 
         private static readonly GuidComparer guidComparer = new GuidComparer(actualNumBuckets);
 

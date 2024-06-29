@@ -46,17 +46,17 @@ namespace ACE.Server.Network.Structure
             //MovementSequence = BitConverter.ToUInt16(sequence.GetNextSequence(SequenceType.ObjectMovement));
 
             //if (IsAutonomous)
-                //ServerControlSequence = BitConverter.ToUInt16(sequence.GetCurrentSequence(SequenceType.ObjectServerControl));
+            //ServerControlSequence = BitConverter.ToUInt16(sequence.GetCurrentSequence(SequenceType.ObjectServerControl));
             //else
-                //ServerControlSequence = BitConverter.ToUInt16(sequence.GetNextSequence(SequenceType.ObjectServerControl));
+            //ServerControlSequence = BitConverter.ToUInt16(sequence.GetNextSequence(SequenceType.ObjectServerControl));
 
             MovementType = motion.MovementType;
             MotionFlags = motion.MotionFlags;
 
             //if (motion.HasTarget)
-                //MotionFlags |= MotionFlags.StickToObject;
+            //MotionFlags |= MotionFlags.StickToObject;
             //if (motion.StandingLongJump)
-                //MotionFlags |= MotionFlags.StandingLongJump;    // indicates if player started charging jump bar while standing still
+            //MotionFlags |= MotionFlags.StandingLongJump;    // indicates if player started charging jump bar while standing still
 
             CurrentStyle = motion.Stance;
 
@@ -159,7 +159,7 @@ namespace ACE.Server.Network.Structure
             // wouldn't all of these be autonomous?
             // walk backwards?
             //if (holdKey != HoldKey.Invalid || rawState.ForwardCommand == MotionCommand.WalkForward)
-                IsAutonomous = true;
+            IsAutonomous = true;
 
             Invalid = new MovementInvalid(this, interpState);
         }

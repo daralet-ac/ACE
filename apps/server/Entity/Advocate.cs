@@ -79,7 +79,7 @@ namespace ACE.Server.Entity
                 player.TryCreateInInventoryWithNetworking(useCreateAegis);
 
             player.ChannelsAllowed = AdvocateChannels | Channel.TownChans;
-            player.ChannelsActive  = AdvocateChannels | Channel.TownChans;
+            player.ChannelsActive = AdvocateChannels | Channel.TownChans;
 
             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have been bestowed as an Advocate, level {player.AdvocateLevel}!", ChatMessageType.Broadcast));
 

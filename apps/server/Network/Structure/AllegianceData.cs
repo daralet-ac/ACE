@@ -65,7 +65,7 @@ namespace ACE.Server.Network.Structure
                 var node = data.Node;
                 var playerGuid = node.PlayerGuid;
                 var player = PlayerManager.FindByGuid(playerGuid, out var playerIsOnline);
-                
+
                 characterID = player.Guid.Full;
                 cpCached = (uint)Math.Min(player.AllegianceXPCached, uint.MaxValue);
                 cpTithed = (uint)Math.Min(player.AllegianceXPGenerated, uint.MaxValue);
@@ -82,14 +82,14 @@ namespace ACE.Server.Network.Structure
                 level = (uint)player.Level;
                 loyalty = (ushort)player.GetCurrentLoyalty();
                 leadership = (ushort)player.GetCurrentLeadership();
-                
+
                 //if (!node.IsMonarch)
                 //{
                 // TODO: Get/set total time sworn to patron (allegianceAge) and total in-game time since swearing to patron (timeOnline)
                 //}
 
                 name = player.Name;
-                
+
             }
 
             writer.Write(characterID);

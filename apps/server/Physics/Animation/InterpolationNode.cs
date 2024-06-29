@@ -5,10 +5,10 @@ namespace ACE.Server.Physics.Animation
 {
     public enum InterpolationNodeType
     {
-        InvalidType     = 0x0,
-        PositionType    = 0x1,
-        JumpType        = 0x2,
-        VelocityType    = 0x3,
+        InvalidType = 0x0,
+        PositionType = 0x1,
+        JumpType = 0x2,
+        VelocityType = 0x3,
     };
 
     public class InterpolationNode

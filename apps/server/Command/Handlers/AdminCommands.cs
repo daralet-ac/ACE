@@ -594,7 +594,7 @@ namespace ACE.Server.Command.Handlers
 
                 if (wo != null && wo.IsGenerator)
                 {
-                    if(wo is Container container)
+                    if (wo is Container container)
                         container.Reset();
                     wo.ResetGenerator();
                     wo.GeneratorEnteredWorld = false;
@@ -1175,7 +1175,7 @@ namespace ACE.Server.Command.Handlers
                     }
                 }
                 else if (parameters.Length > 1 && parameters[1] == "name")
-                {                    
+                {
                     var playerName = "";
                     for (var i = 2; i < parameters.Length; i++)
                         playerName += $"{parameters[i]} ";
@@ -1295,13 +1295,13 @@ namespace ACE.Server.Command.Handlers
                 else if (parameters.Length > 1 && parameters[1] == "summary")
                 {
                     var apartmentsTotal = 3000d;
-                    var cottagesTotal   = 2600d;
-                    var villasTotal     = 570d;
-                    var mansionsTotal   = 80d;
+                    var cottagesTotal = 2600d;
+                    var villasTotal = 570d;
+                    var mansionsTotal = 80d;
 
-                    var cottages   = 0;
-                    var villas     = 0;
-                    var mansions   = 0;
+                    var cottages = 0;
+                    var villas = 0;
+                    var mansions = 0;
                     var apartments = 0;
 
                     for (var i = 1u; i < 6251; i++)
@@ -1330,9 +1330,9 @@ namespace ACE.Server.Command.Handlers
                     }
 
                     var apartmentsAvail = (apartmentsTotal - apartments) / apartmentsTotal;
-                    var cottagesAvail   = (cottagesTotal - cottages) / cottagesTotal;
-                    var villasAvail     = (villasTotal - villas) / villasTotal;
-                    var mansionsAvail   = (mansionsTotal - mansions) / mansionsTotal;
+                    var cottagesAvail = (cottagesTotal - cottages) / cottagesTotal;
+                    var villasAvail = (villasTotal - villas) / villasTotal;
+                    var mansionsAvail = (mansionsTotal - mansions) / mansionsTotal;
 
                     var msg = "HUD Report:\n";
                     msg += "=========================================================\n";
@@ -1507,7 +1507,7 @@ namespace ACE.Server.Command.Handlers
                 msg += "@adminhouse payrent off / on: sets the targeted house to not require / require normal maintenance payments.\n";
 
                 session.Player.SendMessage(msg);
-            }    
+            }
         }
 
         private static void DumpHouse(Session session, House targetHouse, WorldObject wo)
@@ -1585,7 +1585,7 @@ namespace ACE.Server.Command.Handlers
                     session.Player.SendMessage(msg, ChatMessageType.System);
                 }
 
-                session.Player.SendMessage(AppendHouseLinkDump(house), ChatMessageType.System);                
+                session.Player.SendMessage(AppendHouseLinkDump(house), ChatMessageType.System);
 
                 if (house.HouseType == HouseType.Villa || house.HouseType == HouseType.Mansion)
                 {
@@ -1803,7 +1803,7 @@ namespace ACE.Server.Command.Handlers
 
                     var names = string.Join(" ", parameters).Split(",");
 
-                    var newCharName = names[1].TrimStart(' ').TrimEnd(' ');                    
+                    var newCharName = names[1].TrimStart(' ').TrimEnd(' ');
 
                     if (newCharName.StartsWith("+"))
                         newCharName = newCharName.Substring(1);
@@ -1897,12 +1897,12 @@ namespace ACE.Server.Command.Handlers
 
                 switch (input.ToLower())
                 {
-                    case "glenden": case "glenden wood": case "glenden wood dungeon":  case "gw": case "gwd": dungeonName = "Glenden Wood Dungeon"; break;
-                    case "green mire grave": case "green mire": case "green": case "gmg": dungeonName ="Green Mire Grave"; break;
+                    case "glenden": case "glenden wood": case "glenden wood dungeon": case "gw": case "gwd": dungeonName = "Glenden Wood Dungeon"; break;
+                    case "green mire grave": case "green mire": case "green": case "gmg": dungeonName = "Green Mire Grave"; break;
                     case "sand shallow": case "sand shallows": case "sand": case "shallow": dungeonName = "Sand Shallow"; break;
                     case "manse of panderlou": case "manse": case "panderlou": case "dungeon of shadows": dungeonName = "Manse of Panderlou"; break;
                     case "smuggler's hideaway": case "smugglers hideaway": case "smuggler's": case "smugglers": case "smuggler": dungeonName = "Smugglers Hideaway"; break;
-                    case "halls of the helm": case "halls of helm": case "halls": dungeonName = "Halls of the Helm" ; break;
+                    case "halls of the helm": case "halls of helm": case "halls": dungeonName = "Halls of the Helm"; break;
                     case "colier mine": case "colier mines": case "mines of colier": case "colier": dungeonName = "Colier Mine"; break;
                     case "empyrean garrison": case "garrison": case "empyrean": dungeonName = "Empyrean Garrison"; break;
                     case "grievous vault": case "grievous": case "vault": dungeonName = "Grievous Vault"; break;
@@ -2552,7 +2552,7 @@ namespace ACE.Server.Command.Handlers
             var obj = WorldObjectFactory.CreateNewWorldObject(weenie);
 
             //if (obj.TimeToRot == null)
-                //obj.TimeToRot = double.MaxValue;
+            //obj.TimeToRot = double.MaxValue;
 
             if (obj.WeenieType == WeenieType.Creature)
                 obj.Location = session.Player.Location.InFrontOf(5f, true);
@@ -2821,7 +2821,7 @@ namespace ACE.Server.Command.Handlers
             {
                 session.Network.EnqueueSend(new GameMessageSystemChat($"You must select a player to send them a message.", ChatMessageType.Broadcast));
                 return;
-            }    
+            }
 
             var wo = session.Player.CurrentLandblock?.GetObject(objectId);
 
@@ -3271,7 +3271,7 @@ namespace ACE.Server.Command.Handlers
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Exception ( { e.Source } - {e.Message} ) caught while {currentPlayer.Name} was attempting to return to normal from godmode.");
+                    Console.WriteLine($"Exception ( {e.Source} - {e.Message} ) caught while {currentPlayer.Name} was attempting to return to normal from godmode.");
                     ChatPacket.SendServerMessage(session, "Error returning to mortal state, defaulting to godmode.", ChatMessageType.Broadcast);
                     DoGodMode(true, session, true);
                     return;

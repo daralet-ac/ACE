@@ -10,7 +10,7 @@ namespace ACE.Server.Entity
     /// <summary>
     /// The polygonal landblock mesh
     /// </summary>
-    public class LandblockMesh: Mesh
+    public class LandblockMesh : Mesh
     {
         public LandblockId LandblockId;
 

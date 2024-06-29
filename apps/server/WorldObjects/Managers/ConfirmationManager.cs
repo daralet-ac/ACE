@@ -118,7 +118,7 @@ namespace ACE.Server.WorldObjects.Managers
                     Player.SendMessage("That offer of fellowship has expired."); // still looking for pcap accurate response
 
                     return false;
-                }    
+                }
 
                 _log.Error($"{Player.Name}.ConfirmationManager.HandleResponse({confirmType}, {contextId}, {response}, {timeout}) - contextId != confirm.ContextId");
 

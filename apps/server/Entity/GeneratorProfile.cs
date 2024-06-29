@@ -165,7 +165,7 @@ namespace ACE.Server.Entity
         public DateTime GetSpawnTime()
         {
             //if (Generator.CurrentlyPoweringUp || Generator.CachedRegenerationInterval >= Delay)
-                return DateTime.UtcNow;
+            return DateTime.UtcNow;
             //else
             //    return DateTime.UtcNow.AddSeconds(Delay);
         }
@@ -309,7 +309,7 @@ namespace ACE.Server.Entity
                 // This object still may be returned in the spawned collection if FirstSpawn is true. This is to prevent retry spam.
                 if (!success)
                 {
-                    _log.Debug("[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} {GeneratorName}.Spawn(): failed to spawn {WorldObjectName} (0x{WorldObjectGuid}:{WorldObjectWeenieClassId}) from profile {LinkId} at {RegenLocationType}\nGenerator Location: {GeneratorLocation}\nWorld Object Location: {WorldObjectLocation}",  Generator.Guid, Generator.WeenieClassId, Generator.Name, obj.Name, obj.Guid, obj.WeenieClassId, LinkId, RegenLocationType, Generator.Location?.ToLOCString(), obj.Location.ToLOCString());
+                    _log.Debug("[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} {GeneratorName}.Spawn(): failed to spawn {WorldObjectName} (0x{WorldObjectGuid}:{WorldObjectWeenieClassId}) from profile {LinkId} at {RegenLocationType}\nGenerator Location: {GeneratorLocation}\nWorld Object Location: {WorldObjectLocation}", Generator.Guid, Generator.WeenieClassId, Generator.Name, obj.Name, obj.Guid, obj.WeenieClassId, LinkId, RegenLocationType, Generator.Location?.ToLOCString(), obj.Location.ToLOCString());
                     obj.Destroy();
                 }
             }

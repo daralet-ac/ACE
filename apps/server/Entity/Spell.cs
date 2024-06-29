@@ -16,7 +16,7 @@ namespace ACE.Server.Entity
     /// The Spell class for game code
     /// A wrapper around SpellBase and Database.Spell
     /// </summary>
-    public partial class Spell: IEquatable<Spell>
+    public partial class Spell : IEquatable<Spell>
     {
         private readonly ILogger _log = Log.ForContext<Spell>();
 
@@ -227,10 +227,10 @@ namespace ACE.Server.Entity
             switch (School)
             {
                 case MagicSchool.CreatureEnchantment: return Skill.CreatureEnchantment;
-                case MagicSchool.PortalMagic:     return Skill.PortalMagic;
-                case MagicSchool.LifeMagic:           return Skill.LifeMagic;
-                case MagicSchool.WarMagic:            return Skill.WarMagic;
-                case MagicSchool.VoidMagic:           return Skill.VoidMagic;
+                case MagicSchool.PortalMagic: return Skill.PortalMagic;
+                case MagicSchool.LifeMagic: return Skill.LifeMagic;
+                case MagicSchool.WarMagic: return Skill.WarMagic;
+                case MagicSchool.VoidMagic: return Skill.VoidMagic;
             }
             return Skill.None;
         }

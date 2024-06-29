@@ -227,7 +227,7 @@ namespace ACE.Server.WorldObjects
         {
             var wardLevel = 0;
 
-            if(WardLevel != null && WardLevel.HasValue)
+            if (WardLevel != null && WardLevel.HasValue)
                 wardLevel = (int)WardLevel;
             else
                 wardLevel = GetEquippedItemsWardSum(PropertyInt.WardLevel);
