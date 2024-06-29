@@ -80,7 +80,7 @@ namespace ACE.Server.Tests.Physics
 
             // represents the movement path
             var transition = new Transition();
-            transition.SpherePath.GlobalCurrCenter.Add(new Sphere(new Vector3(20, 20, 20), 5.0f));    
+            transition.SpherePath.GlobalCurrCenter.Add(new Sphere(new Vector3(20, 20, 20), 5.0f));
 
             // the point we are checking against is represented with this sphere...
             var checkPos = new Sphere(new Vector3(10, 10, 10), 0);
