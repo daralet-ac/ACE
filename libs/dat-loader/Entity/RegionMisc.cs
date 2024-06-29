@@ -13,12 +13,12 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Version         = reader.ReadUInt32();
-            GameMapID       = reader.ReadUInt32();
-            AutotestMapId   = reader.ReadUInt32();
+            Version = reader.ReadUInt32();
+            GameMapID = reader.ReadUInt32();
+            AutotestMapId = reader.ReadUInt32();
             AutotestMapSize = reader.ReadUInt32();
-            ClearCellId     = reader.ReadUInt32();
-            ClearMonsterId  = reader.ReadUInt32();
+            ClearCellId = reader.ReadUInt32();
+            ClearMonsterId = reader.ReadUInt32();
         }
     }
 }

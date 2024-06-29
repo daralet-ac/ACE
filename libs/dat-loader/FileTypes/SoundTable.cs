@@ -10,7 +10,7 @@ namespace ACE.DatLoader.FileTypes
     /// They are located in the client_portal.dat and are files starting with 0x20
     /// </summary>
     [DatFileType(DatFileType.SoundTable)]
-    public class SoundTable:FileType
+    public class SoundTable : FileType
     {
         public uint Unknown; // As the name implies, not sure what this is
 

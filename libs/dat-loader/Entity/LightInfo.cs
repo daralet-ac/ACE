@@ -14,10 +14,10 @@ namespace ACE.DatLoader.Entity
         {
             ViewerSpaceLocation.Unpack(reader);
 
-            Color       = reader.ReadUInt32();
-            Intensity   = reader.ReadSingle();
-            Falloff     = reader.ReadSingle();
-            ConeAngle   = reader.ReadSingle();
+            Color = reader.ReadUInt32();
+            Intensity = reader.ReadSingle();
+            Falloff = reader.ReadSingle();
+            ConeAngle = reader.ReadSingle();
         }
     }
 }

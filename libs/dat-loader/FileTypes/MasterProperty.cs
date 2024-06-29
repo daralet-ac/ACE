@@ -24,7 +24,7 @@ namespace ACE.DatLoader.FileTypes
             reader.ReadByte(); // = 5, Unknown (Bucket?)
 
             uint numEnums = reader.ReadCompressedUInt32();
-            for(var i = 0; i < numEnums; i++)
+            for (var i = 0; i < numEnums; i++)
             {
                 var key = reader.ReadUInt32();
                 var value = reader.ReadPString(1);

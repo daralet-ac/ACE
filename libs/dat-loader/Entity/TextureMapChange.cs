@@ -11,9 +11,9 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            PartIndex   = reader.ReadByte();
-            OldTexture  = reader.ReadAsDataIDOfKnownType(0x05000000);
-            NewTexture  = reader.ReadAsDataIDOfKnownType(0x05000000);
+            PartIndex = reader.ReadByte();
+            OldTexture = reader.ReadAsDataIDOfKnownType(0x05000000);
+            NewTexture = reader.ReadAsDataIDOfKnownType(0x05000000);
         }
     }
 }

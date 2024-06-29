@@ -18,7 +18,7 @@ namespace ACE.DatLoader.Entity
         private const uint BpnN = 1114664526; // 0x42706E4E
         private const uint BPIN = 1112557902; // 0x4250494E
         private const uint BPnN = 1112567374; // 0x42506E4E
-        
+
         public string Type { get; protected set; }
 
         public Plane SplittingPlane { get; protected set; }
@@ -42,7 +42,7 @@ namespace ACE.DatLoader.Entity
         public virtual void Unpack(BinaryReader reader, BSPType treeType)
         {
             Type = Encoding.ASCII.GetString(reader.ReadBytes(4)).Reverse();
-            
+
             switch (Type)
             {
                 // These types will unpack the data completely, in their own classes

@@ -20,7 +20,8 @@ namespace ACE.DatLoader.FileTypes
             Id = reader.ReadUInt32();
 
             ushort num_contracts = reader.ReadUInt16();
-            /*ushort table_size = */reader.ReadUInt16(); // We don't need this since C# handles it's own memory
+            /*ushort table_size = */
+            reader.ReadUInt16(); // We don't need this since C# handles it's own memory
 
             for (ushort i = 0; i < num_contracts; i++)
             {

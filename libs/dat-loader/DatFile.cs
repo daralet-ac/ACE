@@ -9,7 +9,7 @@ namespace ACE.DatLoader
     {
         internal static readonly uint ObjectSize = (sizeof(uint) * 6);
 
-        
+
         //public uint BitFlags { get; private set; }
 
         public uint ObjectId { get; private set; }
@@ -24,12 +24,13 @@ namespace ACE.DatLoader
 
         public void Unpack(BinaryReader reader)
         {
-            /*BitFlags    =*/ reader.ReadUInt32();
-            ObjectId    = reader.ReadUInt32();
-            FileOffset  = reader.ReadUInt32();
-            FileSize    = reader.ReadUInt32();
-            Date        = reader.ReadUInt32();
-            Iteration   = reader.ReadUInt32();
+            /*BitFlags    =*/
+            reader.ReadUInt32();
+            ObjectId = reader.ReadUInt32();
+            FileOffset = reader.ReadUInt32();
+            FileSize = reader.ReadUInt32();
+            Date = reader.ReadUInt32();
+            Iteration = reader.ReadUInt32();
         }
 
 

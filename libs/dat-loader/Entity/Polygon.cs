@@ -22,12 +22,12 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            NumPts      = reader.ReadByte();
-            Stippling   = (StipplingType)reader.ReadByte();
+            NumPts = reader.ReadByte();
+            Stippling = (StipplingType)reader.ReadByte();
 
-            SidesType   = (CullMode)reader.ReadInt32();
-            PosSurface  = reader.ReadInt16();
-            NegSurface  = reader.ReadInt16();
+            SidesType = (CullMode)reader.ReadInt32();
+            PosSurface = reader.ReadInt16();
+            NegSurface = reader.ReadInt16();
 
             for (short i = 0; i < NumPts; i++)
                 VertexIds.Add(reader.ReadInt16());

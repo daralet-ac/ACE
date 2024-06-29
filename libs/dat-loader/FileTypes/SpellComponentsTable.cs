@@ -9,15 +9,15 @@ namespace ACE.DatLoader.FileTypes
     {
         public enum Type
         {
-            Scarab      = 1,
-            Herb        = 2,
-            Powder      = 3,
-            Potion      = 4,
-            Talisman    = 5,
-            Taper       = 6,
-            PotionPea   = 7,
+            Scarab = 1,
+            Herb = 2,
+            Powder = 3,
+            Potion = 4,
+            Talisman = 5,
+            Taper = 6,
+            PotionPea = 7,
             TalismanPea = 5,
-            TaperPea    = 7
+            TaperPea = 7
         }
 
         internal const uint FILE_ID = 0x0E00000F;
@@ -66,7 +66,7 @@ namespace ACE.DatLoader.FileTypes
             // We need to make sure our second spell word, if any, is capitalized
             // Some spell words have no "secondSpellWord", so we're basically making sure the third word is capitalized.
             string secondSpellWordSet = (secondSpellWord + thirdSpellWord.ToLower());
-            if(secondSpellWordSet != "")
+            if (secondSpellWordSet != "")
             {
                 string firstLetter = secondSpellWordSet.Substring(0, 1).ToUpper();
                 secondSpellWordSet = firstLetter + secondSpellWordSet.Substring(1);

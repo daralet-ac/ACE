@@ -31,27 +31,27 @@ namespace ACE.DatLoader
 
         public void Unpack(BinaryReader reader)
         {
-            FileType    = reader.ReadUInt32();
-            BlockSize   = reader.ReadUInt32();
-            FileSize    = reader.ReadUInt32();
-            DataSet     = (DatDatabaseType)reader.ReadUInt32();
-            DataSubset  = reader.ReadUInt32();
+            FileType = reader.ReadUInt32();
+            BlockSize = reader.ReadUInt32();
+            FileSize = reader.ReadUInt32();
+            DataSet = (DatDatabaseType)reader.ReadUInt32();
+            DataSubset = reader.ReadUInt32();
 
-            FreeHead    = reader.ReadUInt32();
-            FreeTail    = reader.ReadUInt32();
-            FreeCount   = reader.ReadUInt32();
-            BTree       = reader.ReadUInt32();
+            FreeHead = reader.ReadUInt32();
+            FreeTail = reader.ReadUInt32();
+            FreeCount = reader.ReadUInt32();
+            BTree = reader.ReadUInt32();
 
-            NewLRU      = reader.ReadUInt32();
-            OldLRU      = reader.ReadUInt32();
-            UseLRU      = (reader.ReadUInt32() == 1);
+            NewLRU = reader.ReadUInt32();
+            OldLRU = reader.ReadUInt32();
+            UseLRU = (reader.ReadUInt32() == 1);
 
             MasterMapID = reader.ReadUInt32();
 
-            EnginePackVersion   = reader.ReadUInt32();
-            GamePackVersion     = reader.ReadUInt32();
-            VersionMajor        = reader.ReadBytes(16);
-            VersionMinor        = reader.ReadUInt32();
+            EnginePackVersion = reader.ReadUInt32();
+            GamePackVersion = reader.ReadUInt32();
+            VersionMajor = reader.ReadBytes(16);
+            VersionMinor = reader.ReadUInt32();
         }
     }
 }

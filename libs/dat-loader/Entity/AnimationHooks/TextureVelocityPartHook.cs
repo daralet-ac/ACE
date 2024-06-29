@@ -12,9 +12,9 @@ namespace ACE.DatLoader.Entity.AnimationHooks
         {
             base.Unpack(reader);
 
-            PartIndex   = reader.ReadUInt32();
-            USpeed      = reader.ReadSingle();
-            VSpeed      = reader.ReadSingle();
+            PartIndex = reader.ReadUInt32();
+            USpeed = reader.ReadSingle();
+            VSpeed = reader.ReadSingle();
         }
     }
 }

@@ -24,20 +24,20 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Begin       = reader.ReadSingle();
+            Begin = reader.ReadSingle();
 
-            DirBright   = reader.ReadSingle();
-            DirHeading  = reader.ReadSingle();
-            DirPitch    = reader.ReadSingle();
-            DirColor    = reader.ReadUInt32();
+            DirBright = reader.ReadSingle();
+            DirHeading = reader.ReadSingle();
+            DirPitch = reader.ReadSingle();
+            DirColor = reader.ReadUInt32();
 
-            AmbBright   = reader.ReadSingle();
-            AmbColor    = reader.ReadUInt32();
+            AmbBright = reader.ReadSingle();
+            AmbColor = reader.ReadUInt32();
 
-            MinWorldFog     = reader.ReadSingle();
-            MaxWorldFog     = reader.ReadSingle();
-            WorldFogColor   = reader.ReadUInt32();
-            WorldFog        = reader.ReadUInt32();
+            MinWorldFog = reader.ReadSingle();
+            MaxWorldFog = reader.ReadSingle();
+            WorldFogColor = reader.ReadUInt32();
+            WorldFog = reader.ReadUInt32();
 
             reader.AlignBoundary();
 

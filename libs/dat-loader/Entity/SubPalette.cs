@@ -11,9 +11,9 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            SubID       = reader.ReadAsDataIDOfKnownType(0x04000000);
-            Offset      = (uint)(reader.ReadByte() * 8);
-            NumColors   = reader.ReadByte();
+            SubID = reader.ReadAsDataIDOfKnownType(0x04000000);
+            Offset = (uint)(reader.ReadByte() * 8);
+            NumColors = reader.ReadByte();
 
             if (NumColors == 0)
                 NumColors = 256;

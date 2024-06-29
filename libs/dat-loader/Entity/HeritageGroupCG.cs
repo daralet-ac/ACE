@@ -19,12 +19,12 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Name                = reader.ReadString();
-            IconImage           = reader.ReadUInt32();
-            SetupID             = reader.ReadUInt32();
-            EnvironmentSetupID  = reader.ReadUInt32();
-            AttributeCredits    = reader.ReadUInt32();
-            SkillCredits        = reader.ReadUInt32();
+            Name = reader.ReadString();
+            IconImage = reader.ReadUInt32();
+            SetupID = reader.ReadUInt32();
+            EnvironmentSetupID = reader.ReadUInt32();
+            AttributeCredits = reader.ReadUInt32();
+            SkillCredits = reader.ReadUInt32();
 
             PrimaryStartAreas.UnpackSmartArray(reader);
             SecondaryStartAreas.UnpackSmartArray(reader);

@@ -19,16 +19,16 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Name            = reader.ReadString();
-            IconImage       = reader.ReadUInt32();
-            Title           = reader.ReadUInt32();
+            Name = reader.ReadString();
+            IconImage = reader.ReadUInt32();
+            Title = reader.ReadUInt32();
             // Attributes
-            Strength        = reader.ReadUInt32();
-            Endurance       = reader.ReadUInt32();
-            Coordination    = reader.ReadUInt32();
-            Quickness       = reader.ReadUInt32();
-            Focus           = reader.ReadUInt32();
-            Self            = reader.ReadUInt32();
+            Strength = reader.ReadUInt32();
+            Endurance = reader.ReadUInt32();
+            Coordination = reader.ReadUInt32();
+            Quickness = reader.ReadUInt32();
+            Focus = reader.ReadUInt32();
+            Self = reader.ReadUInt32();
 
             NormalSkillsList.UnpackSmartArray(reader);
             PrimarySkillsList.UnpackSmartArray(reader);

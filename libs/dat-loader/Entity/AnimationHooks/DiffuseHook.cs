@@ -12,9 +12,9 @@ namespace ACE.DatLoader.Entity.AnimationHooks
         {
             base.Unpack(reader);
 
-            Start   = reader.ReadSingle();
-            End     = reader.ReadSingle();
-            Time    = reader.ReadSingle();
+            Start = reader.ReadSingle();
+            End = reader.ReadSingle();
+            Time = reader.ReadSingle();
         }
     }
 }

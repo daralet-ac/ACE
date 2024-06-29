@@ -16,12 +16,12 @@ namespace ACE.DatLoader.FileTypes
 
         public override void Unpack(BinaryReader reader)
         {
-            int objectId   = reader.ReadInt32();
+            int objectId = reader.ReadInt32();
             int headerSize = reader.ReadInt32();
-            int dataSize   = reader.ReadInt32();
+            int dataSize = reader.ReadInt32();
 
             Header = reader.ReadBytes(headerSize);
-            Data   = reader.ReadBytes(dataSize);
+            Data = reader.ReadBytes(dataSize);
         }
 
         /// <summary>

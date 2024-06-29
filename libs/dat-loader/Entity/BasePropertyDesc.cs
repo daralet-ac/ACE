@@ -54,7 +54,7 @@ namespace ACE.DatLoader.Entity
         public void Unpack(BinaryReader reader)
         {
             // This is a reference to the m_emapper of the MasterProperty. It also matches the SmartArray key
-            m_propertyName = reader.ReadUInt32(); 
+            m_propertyName = reader.ReadUInt32();
             m_propertyType = (BasePropertyType)reader.ReadUInt32();
             m_propertyGroup = (PropertyGroupName)reader.ReadUInt32();
             m_propertyProvider = reader.ReadUInt32();
@@ -110,7 +110,7 @@ namespace ACE.DatLoader.Entity
             }
             hasMin = reader.ReadBoolean();
             if (hasMax)
-            { 
+            {
                 switch (m_propertyType)
                 {
                     case BasePropertyType.Float:
@@ -141,7 +141,7 @@ namespace ACE.DatLoader.Entity
             m_bToolOnly = reader.ReadBoolean(); // Always true
 
             var numItems = reader.ReadByte();
-            for(var i = 0; i < numItems; i++)
+            for (var i = 0; i < numItems; i++)
             {
                 m_availableProperties.Add(reader.ReadUInt32(), reader.ReadUInt32());
             }

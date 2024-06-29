@@ -28,7 +28,7 @@ namespace ACE.DatLoader.FileTypes
             MaxCharWidth = reader.ReadUInt32();
             NumCharacters = reader.ReadUInt32();
 
-            for(uint i = 0; i < NumCharacters; i++)
+            for (uint i = 0; i < NumCharacters; i++)
             {
                 var fontCharDesc = new FontCharDesc();
                 fontCharDesc.Unpack(reader);

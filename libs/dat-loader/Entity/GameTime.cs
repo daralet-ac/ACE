@@ -16,11 +16,11 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            ZeroTimeOfYear  = reader.ReadDouble();
-            ZeroYear        = reader.ReadUInt32();
-            DayLength       = reader.ReadSingle();
-            DaysPerYear     = reader.ReadUInt32();
-            YearSpec        = reader.ReadPString();
+            ZeroTimeOfYear = reader.ReadDouble();
+            ZeroYear = reader.ReadUInt32();
+            DayLength = reader.ReadSingle();
+            DaysPerYear = reader.ReadUInt32();
+            YearSpec = reader.ReadPString();
             reader.AlignBoundary();
 
             TimesOfDay.Unpack(reader);

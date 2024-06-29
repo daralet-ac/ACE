@@ -14,11 +14,11 @@ namespace ACE.DatLoader.Entity
         public void Unpack(BinaryReader reader)
         {
             ObjectIndex = reader.ReadUInt32();
-            GFXObjId    = reader.ReadUInt32();
-            Rotate      = reader.ReadSingle();
+            GFXObjId = reader.ReadUInt32();
+            Rotate = reader.ReadSingle();
             Transparent = reader.ReadSingle();
-            Luminosity  = reader.ReadSingle();
-            MaxBright   = reader.ReadSingle();
+            Luminosity = reader.ReadSingle();
+            MaxBright = reader.ReadSingle();
 
             reader.AlignBoundary();
         }

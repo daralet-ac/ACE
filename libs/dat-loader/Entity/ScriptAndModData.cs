@@ -9,8 +9,8 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Mod         = reader.ReadSingle();
-            ScriptId    = reader.ReadUInt32();
+            Mod = reader.ReadSingle();
+            ScriptId = reader.ReadUInt32();
         }
     }
 }

@@ -34,9 +34,9 @@ namespace ACE.DatLoader.FileTypes
                 ColorValue = reader.ReadUInt32();
             }
 
-            Translucency    = reader.ReadSingle();
-            Luminosity      = reader.ReadSingle();
-            Diffuse         = reader.ReadSingle();
+            Translucency = reader.ReadSingle();
+            Luminosity = reader.ReadSingle();
+            Diffuse = reader.ReadSingle();
         }
     }
 }

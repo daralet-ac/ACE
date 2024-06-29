@@ -17,15 +17,15 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            BeginTime           = reader.ReadSingle();
-            EndTime             = reader.ReadSingle();
-            BeginAngle          = reader.ReadSingle();
-            EndAngle            = reader.ReadSingle();
-            TexVelocityX        = reader.ReadSingle();
-            TexVelocityY        = reader.ReadSingle();
-            DefaultGFXObjectId  = reader.ReadUInt32();
-            DefaultPESObjectId  = reader.ReadUInt32();
-            Properties          = reader.ReadUInt32();
+            BeginTime = reader.ReadSingle();
+            EndTime = reader.ReadSingle();
+            BeginAngle = reader.ReadSingle();
+            EndAngle = reader.ReadSingle();
+            TexVelocityX = reader.ReadSingle();
+            TexVelocityY = reader.ReadSingle();
+            DefaultGFXObjectId = reader.ReadUInt32();
+            DefaultPESObjectId = reader.ReadUInt32();
+            Properties = reader.ReadUInt32();
 
             reader.AlignBoundary();
         }
