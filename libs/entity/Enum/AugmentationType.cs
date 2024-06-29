@@ -52,7 +52,7 @@ namespace ACE.Entity.Enum
         /// <summary>
         /// Shadow of The Seventh Mule - extra pack slot
         /// </summary>
-        PackSlot = 12, 
+        PackSlot = 12,
         /// <summary>
         /// Might of The Seventh Mule - increased burden capacity
         /// </summary>

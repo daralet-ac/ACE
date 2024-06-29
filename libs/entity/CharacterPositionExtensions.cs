@@ -4,10 +4,10 @@ namespace ACE.Entity
     {
         private enum StarterTown : uint
         {
-            Holtburg    = 0,
-            Shoushi     = 1,
-            Yaraq       = 2,
-            Sanamar     = 3
+            Holtburg = 0,
+            Shoushi = 1,
+            Yaraq = 2,
+            Sanamar = 3
         }
 
         public static Position StartingPosition(uint startArea)

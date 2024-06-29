@@ -2,9 +2,9 @@ namespace ACE.Entity.Enum
 {
     public enum AttackHeight
     {
-        High    = 1,
-        Medium  = 2,
-        Low     = 3
+        High = 1,
+        Medium = 2,
+        Low = 3
     }
 
     public static class AttackHeightExtensions
@@ -13,9 +13,9 @@ namespace ACE.Entity.Enum
         {
             switch (attackHeight)
             {
-                case AttackHeight.High:   return "High";
+                case AttackHeight.High: return "High";
                 case AttackHeight.Medium: return "Med";
-                case AttackHeight.Low:    return "Low";
+                case AttackHeight.Low: return "Low";
             }
             return null;
         }
@@ -24,9 +24,9 @@ namespace ACE.Entity.Enum
         {
             switch (attackHeight)
             {
-                case AttackHeight.High:   return Quadrant.High;
+                case AttackHeight.High: return Quadrant.High;
                 case AttackHeight.Medium: return Quadrant.Medium;
-                case AttackHeight.Low:    return Quadrant.Low;
+                case AttackHeight.Low: return Quadrant.Low;
                 default:
                     return Quadrant.None;
             }

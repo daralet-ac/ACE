@@ -11,7 +11,7 @@ namespace ACE.Entity
         public short PosSurface { get; set; }
         public short NegSurface { get; set; }
 
-        public List<short> VertexIds { get; set;  }
+        public List<short> VertexIds { get; set; }
 
         public List<byte> PosUVIndices { get; set; }
         public List<byte> NegUVIndices { get; set; }

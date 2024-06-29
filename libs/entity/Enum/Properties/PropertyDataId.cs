@@ -10,128 +10,128 @@ namespace ACE.Entity.Enum.Properties
         // description attributes are used by the weenie editor for a cleaner display name
 
         [ServerOnly]
-        Undef                      = 0,
+        Undef = 0,
         [ServerOnly]
-        Setup                      = 1,
+        Setup = 1,
         [SendOnLogin]
-        MotionTable                = 2,
+        MotionTable = 2,
         [ServerOnly]
-        SoundTable                 = 3,
+        SoundTable = 3,
         [SendOnLogin]
-        CombatTable                = 4,
+        CombatTable = 4,
         [ServerOnly]
-        QualityFilter              = 5,
+        QualityFilter = 5,
         [ServerOnly]
-        PaletteBase                = 6,
+        PaletteBase = 6,
         [ServerOnly]
-        ClothingBase               = 7,
+        ClothingBase = 7,
         [ServerOnly]
-        Icon                       = 8,
+        Icon = 8,
         [AssessmentProperty]
-        EyesTexture                = 9,
+        EyesTexture = 9,
         [AssessmentProperty]
-        NoseTexture                = 10,
+        NoseTexture = 10,
         [AssessmentProperty]
-        MouthTexture               = 11,
+        MouthTexture = 11,
         [ServerOnly]
-        DefaultEyesTexture         = 12,
+        DefaultEyesTexture = 12,
         [ServerOnly]
-        DefaultNoseTexture         = 13,
+        DefaultNoseTexture = 13,
         [ServerOnly]
-        DefaultMouthTexture        = 14,
+        DefaultMouthTexture = 14,
         [AssessmentProperty]
-        HairPalette                = 15,
+        HairPalette = 15,
         [AssessmentProperty]
-        EyesPalette                = 16,
+        EyesPalette = 16,
         [AssessmentProperty]
-        SkinPalette                = 17,
+        SkinPalette = 17,
         [ServerOnly]
-        HeadObject                 = 18,
+        HeadObject = 18,
         [ServerOnly]
-        ActivationAnimation        = 19,
+        ActivationAnimation = 19,
         [ServerOnly]
-        InitMotion                 = 20,
+        InitMotion = 20,
         [ServerOnly]
-        ActivationSound            = 21,
+        ActivationSound = 21,
         [ServerOnly]
-        PhysicsEffectTable         = 22,
+        PhysicsEffectTable = 22,
         [ServerOnly]
-        UseSound                   = 23,
+        UseSound = 23,
         [ServerOnly]
-        UseTargetAnimation         = 24,
+        UseTargetAnimation = 24,
         [ServerOnly]
-        UseTargetSuccessAnimation  = 25,
+        UseTargetSuccessAnimation = 25,
         [ServerOnly]
-        UseTargetFailureAnimation  = 26,
+        UseTargetFailureAnimation = 26,
         [ServerOnly]
-        UseUserAnimation           = 27,
+        UseUserAnimation = 27,
         [ServerOnly]
-        Spell                      = 28,
+        Spell = 28,
         [ServerOnly]
-        SpellComponent             = 29,
+        SpellComponent = 29,
         [ServerOnly]
-        PhysicsScript              = 30,
+        PhysicsScript = 30,
         [ServerOnly]
-        LinkedPortalOne            = 31,
+        LinkedPortalOne = 31,
         [ServerOnly]
-        WieldedTreasureType        = 32,
+        WieldedTreasureType = 32,
         [ServerOnly]
-        InventoryTreasureType      = 33,
+        InventoryTreasureType = 33,
         [ServerOnly]
-        ShopTreasureType           = 34,
+        ShopTreasureType = 34,
         [ServerOnly]
-        DeathTreasureType          = 35,
+        DeathTreasureType = 35,
         [ServerOnly]
-        MutateFilter               = 36,
+        MutateFilter = 36,
         [ServerOnly]
-        ItemSkillLimit             = 37,
+        ItemSkillLimit = 37,
         [ServerOnly]
-        UseCreateItem              = 38,
+        UseCreateItem = 38,
         [ServerOnly]
-        DeathSpell                 = 39,
+        DeathSpell = 39,
         [ServerOnly]
-        VendorsClassId             = 40,
+        VendorsClassId = 40,
         [ServerOnly]
-        ItemSpecializedOnly        = 41,
+        ItemSpecializedOnly = 41,
         [ServerOnly]
-        HouseId                    = 42,
+        HouseId = 42,
         [ServerOnly]
-        AccountHouseId             = 43,
+        AccountHouseId = 43,
         [ServerOnly]
-        RestrictionEffect          = 44,
+        RestrictionEffect = 44,
         [ServerOnly]
-        CreationMutationFilter     = 45,
+        CreationMutationFilter = 45,
         [ServerOnly]
-        TsysMutationFilter         = 46,
+        TsysMutationFilter = 46,
         [ServerOnly]
-        LastPortal                 = 47,
+        LastPortal = 47,
         [ServerOnly]
-        LinkedPortalTwo            = 48,
+        LinkedPortalTwo = 48,
         [ServerOnly]
-        OriginalPortal             = 49,
+        OriginalPortal = 49,
         [ServerOnly]
-        IconOverlay                = 50,
+        IconOverlay = 50,
         [ServerOnly]
-        IconOverlaySecondary       = 51,
+        IconOverlaySecondary = 51,
         [ServerOnly]
-        IconUnderlay               = 52,
+        IconUnderlay = 52,
         [ServerOnly]
         AugmentationMutationFilter = 53,
         [ServerOnly]
-        AugmentationEffect         = 54,
-        ProcSpell                  = 55,
+        AugmentationEffect = 54,
+        ProcSpell = 55,
         [ServerOnly]
-        AugmentationCreateItem     = 56,
+        AugmentationCreateItem = 56,
         [ServerOnly]
-        AlternateCurrency          = 57,
+        AlternateCurrency = 57,
         [ServerOnly]
-        BlueSurgeSpell             = 58,
+        BlueSurgeSpell = 58,
         [ServerOnly]
-        YellowSurgeSpell           = 59,
+        YellowSurgeSpell = 59,
         [ServerOnly]
-        RedSurgeSpell              = 60,
+        RedSurgeSpell = 60,
         [ServerOnly]
-        OlthoiDeathTreasureType    = 61,
+        OlthoiDeathTreasureType = 61,
 
         // Timeline
         [ServerOnly]
@@ -144,41 +144,41 @@ namespace ACE.Entity.Enum.Properties
 
 
         [ServerOnly]
-        PCAPRecordedWeenieHeader         = 8001,
+        PCAPRecordedWeenieHeader = 8001,
         [ServerOnly]
-        PCAPRecordedWeenieHeader2        = 8002,
+        PCAPRecordedWeenieHeader2 = 8002,
         [ServerOnly]
-        PCAPRecordedObjectDesc           = 8003,
+        PCAPRecordedObjectDesc = 8003,
         [ServerOnly]
-        PCAPRecordedPhysicsDesc          = 8005,
+        PCAPRecordedPhysicsDesc = 8005,
         [ServerOnly]
-        PCAPRecordedParentLocation       = 8009,
+        PCAPRecordedParentLocation = 8009,
         [ServerOnly]
-        PCAPRecordedDefaultScript        = 8019,
+        PCAPRecordedDefaultScript = 8019,
         [ServerOnly]
-        PCAPRecordedTimestamp0           = 8020,
+        PCAPRecordedTimestamp0 = 8020,
         [ServerOnly]
-        PCAPRecordedTimestamp1           = 8021,
+        PCAPRecordedTimestamp1 = 8021,
         [ServerOnly]
-        PCAPRecordedTimestamp2           = 8022,
+        PCAPRecordedTimestamp2 = 8022,
         [ServerOnly]
-        PCAPRecordedTimestamp3           = 8023,
+        PCAPRecordedTimestamp3 = 8023,
         [ServerOnly]
-        PCAPRecordedTimestamp4           = 8024,
+        PCAPRecordedTimestamp4 = 8024,
         [ServerOnly]
-        PCAPRecordedTimestamp5           = 8025,
+        PCAPRecordedTimestamp5 = 8025,
         [ServerOnly]
-        PCAPRecordedTimestamp6           = 8026,
+        PCAPRecordedTimestamp6 = 8026,
         [ServerOnly]
-        PCAPRecordedTimestamp7           = 8027,
+        PCAPRecordedTimestamp7 = 8027,
         [ServerOnly]
-        PCAPRecordedTimestamp8           = 8028,
+        PCAPRecordedTimestamp8 = 8028,
         [ServerOnly]
-        PCAPRecordedTimestamp9           = 8029,
+        PCAPRecordedTimestamp9 = 8029,
         [ServerOnly]
         PCAPRecordedMaxVelocityEstimated = 8030,
         [ServerOnly]
-        PCAPPhysicsDIDDataTemplatedFrom  = 8044
+        PCAPPhysicsDIDDataTemplatedFrom = 8044
 
         //[ServerOnly]
         //HairTexture                = 9001,
@@ -217,7 +217,7 @@ namespace ACE.Entity.Enum.Properties
                 case PropertyDataId.ShopTreasureType:
                     // todo
                     break;
-                case PropertyDataId.Spell:                
+                case PropertyDataId.Spell:
                 case PropertyDataId.DeathSpell:
                 case PropertyDataId.ProcSpell:
                 case PropertyDataId.RedSurgeSpell:

@@ -10,7 +10,7 @@ namespace ACE.Entity.Enum
     [Flags]
     public enum AiOption
     {
-        None         = 0,
+        None = 0,
         CanOpenDoors = 1
     };
 }

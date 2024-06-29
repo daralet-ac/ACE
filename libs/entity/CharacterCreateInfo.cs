@@ -38,22 +38,22 @@ namespace ACE.Entity
         {
             reader.BaseStream.Position += 4;   /* Unknown constant (1) */
 
-            Heritage    = (HeritageGroup)reader.ReadUInt32();
-            Gender      = reader.ReadUInt32();
+            Heritage = (HeritageGroup)reader.ReadUInt32();
+            Gender = reader.ReadUInt32();
 
             Appearance.Unpack(reader);
 
             TemplateOption = reader.ReadInt32();
 
-            StrengthAbility     = reader.ReadUInt32();
-            EnduranceAbility    = reader.ReadUInt32();
+            StrengthAbility = reader.ReadUInt32();
+            EnduranceAbility = reader.ReadUInt32();
             CoordinationAbility = reader.ReadUInt32();
-            QuicknessAbility    = reader.ReadUInt32();
-            FocusAbility        = reader.ReadUInt32();
-            SelfAbility         = reader.ReadUInt32();
+            QuicknessAbility = reader.ReadUInt32();
+            FocusAbility = reader.ReadUInt32();
+            SelfAbility = reader.ReadUInt32();
 
-            CharacterSlot   = reader.ReadUInt32();
-            ClassId         = reader.ReadUInt32();
+            CharacterSlot = reader.ReadUInt32();
+            ClassId = reader.ReadUInt32();
 
             uint numOfSkills = reader.ReadUInt32();
             for (uint i = 0; i < numOfSkills; i++)

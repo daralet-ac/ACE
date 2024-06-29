@@ -9,13 +9,13 @@ namespace ACE.Entity.Enum
     [Flags]
     public enum MovementStateFlag : uint
     {
-        Invalid         = 0x0,
-        CurrentStyle    = 0x1,
-        ForwardCommand  = 0x2,
-        ForwardSpeed    = 0x4,
+        Invalid = 0x0,
+        CurrentStyle = 0x1,
+        ForwardCommand = 0x2,
+        ForwardSpeed = 0x4,
         SideStepCommand = 0x8,
-        SideStepSpeed   = 0x10,
-        TurnCommand     = 0x20,
-        TurnSpeed       = 0x40
+        SideStepSpeed = 0x10,
+        TurnCommand = 0x20,
+        TurnSpeed = 0x40
     }
 }

@@ -8,29 +8,29 @@ namespace ACE.Entity.Enum.Properties
     // description attributes are used by the weenie editor for a cleaner display name
     public enum PropertyInt64 : ushort
     {
-        Undef               = 0,
+        Undef = 0,
         [SendOnLogin]
-        TotalExperience     = 1,
+        TotalExperience = 1,
         [SendOnLogin]
         AvailableExperience = 2,
-        AugmentationCost    = 3,
-        ItemTotalXp         = 4,
-        ItemBaseXp          = 5,
+        AugmentationCost = 3,
+        ItemTotalXp = 4,
+        ItemBaseXp = 5,
         [SendOnLogin]
-        AvailableLuminance  = 6,
+        AvailableLuminance = 6,
         [SendOnLogin]
-        MaximumLuminance    = 7,
-        InteractionReqs     = 8,
+        MaximumLuminance = 7,
+        InteractionReqs = 8,
 
         /* custom */
         [ServerOnly]
-        AllegianceXPCached    = 9000,
+        AllegianceXPCached = 9000,
         [ServerOnly]
         AllegianceXPGenerated = 9001,
         [ServerOnly]
-        AllegianceXPReceived  = 9002,
+        AllegianceXPReceived = 9002,
         [ServerOnly]
-        VerifyXp              = 9003
+        VerifyXp = 9003
     }
 
     public static class PropertyInt64Extensions
