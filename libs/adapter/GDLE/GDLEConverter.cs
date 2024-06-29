@@ -268,7 +268,7 @@ namespace ACE.Adapter.GDLE
                 result.Id = id;
 
                 result.Name = input.Name;
-                
+
                 if (input.MetaSpell.Spell.StatMod != null)
                 {
                     result.StatModType = input.MetaSpell.Spell.StatMod.Type;
@@ -548,7 +548,7 @@ namespace ACE.Adapter.GDLE
                     {
                         requirements = new Models.RecipeRequirements();
                         result.Requirements[floatReq.Index] = requirements;
-                   }
+                    }
 
                     requirements.FloatRequirements.Add(new Models.FloatRequirement
                     {
