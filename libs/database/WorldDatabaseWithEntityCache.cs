@@ -839,7 +839,7 @@ namespace ACE.Database
         // The Key is the Material Code (derived from PropertyInt.TsysMaterialData)
         // The Value is a list of all
         private Dictionary<int /* Material Code */, Dictionary<int /* Tier */, List<TreasureMaterialBase>>> cachedTreasureMaterialBase;
-        
+
         public void CacheAllTreasureMaterialBase()
         {
             using (var context = new WorldDbContext())
@@ -914,7 +914,7 @@ namespace ACE.Database
 
 
         private Dictionary<int /* Material ID */, Dictionary<int /* Color Code */, List<TreasureMaterialColor>>> cachedTreasureMaterialColor;
-        
+
         public void CacheAllTreasureMaterialColor()
         {
             using (var context = new WorldDbContext())

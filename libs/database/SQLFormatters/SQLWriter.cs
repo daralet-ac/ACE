@@ -113,7 +113,7 @@ namespace ACE.Database.SQLFormatters
                 case PropertyInt.PetClass:
                     if (WeenieNames != null)
                     {
-                        WeenieNames.TryGetValue((uint) value, out var propertyValueDescription);
+                        WeenieNames.TryGetValue((uint)value, out var propertyValueDescription);
                         return propertyValueDescription;
                     }
                     break;

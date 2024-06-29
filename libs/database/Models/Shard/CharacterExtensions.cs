@@ -269,7 +269,7 @@ namespace ACE.Database.Models.Shard
                 rwLock.EnterWriteLock();
                 try
                 {
-                    entity = new CharacterPropertiesFriendList { CharacterId = character.Id, FriendId = friendId, Character = character};
+                    entity = new CharacterPropertiesFriendList { CharacterId = character.Id, FriendId = friendId, Character = character };
                     character.CharacterPropertiesFriendList.Add(entity);
                     friendAlreadyExists = false;
                     return entity;
@@ -700,7 +700,7 @@ namespace ACE.Database.Models.Shard
                 rwLock.ExitUpgradeableReadLock();
             }
         }
-        
+
         // =====================================
         // CharacterPropertiesTitleBook
         // =====================================

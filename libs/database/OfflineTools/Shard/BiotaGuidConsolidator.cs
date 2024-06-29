@@ -63,8 +63,8 @@ namespace ACE.Database.OfflineTools.Shard
         {
             // Tinked Items
             // Wielded Items
-            if (biota.WeenieType == (int) WeenieType.Generic || biota.WeenieType == (int) WeenieType.Clothing ||
-                biota.WeenieType == (int) WeenieType.MissileLauncher || biota.WeenieType == (int) WeenieType.MeleeWeapon || biota.WeenieType == (int) WeenieType.Caster)
+            if (biota.WeenieType == (int)WeenieType.Generic || biota.WeenieType == (int)WeenieType.Clothing ||
+                biota.WeenieType == (int)WeenieType.MissileLauncher || biota.WeenieType == (int)WeenieType.MeleeWeapon || biota.WeenieType == (int)WeenieType.Caster)
             {
                 var numTimesTinkered = biota.BiotaPropertiesInt.FirstOrDefault(r => r.Type == (ushort)PropertyInt.NumTimesTinkered);
 
@@ -140,7 +140,7 @@ namespace ACE.Database.OfflineTools.Shard
                     if (numOfErrors > 0)
                         return;
 
-                    if (!ConsolidatableBasicWeenieTypes.Contains((WeenieType) partialBiota.WeenieType))
+                    if (!ConsolidatableBasicWeenieTypes.Contains((WeenieType)partialBiota.WeenieType))
                         return;
 
                     // Get the original biota
@@ -228,7 +228,7 @@ namespace ACE.Database.OfflineTools.Shard
                     if (numOfErrors > 0)
                         break;
 
-                    if (!ConsolidatableContainerWeenieTypes.Contains((WeenieType) partialBiota.WeenieType))
+                    if (!ConsolidatableContainerWeenieTypes.Contains((WeenieType)partialBiota.WeenieType))
                         continue;
 
                     // Get the original biota
@@ -289,12 +289,12 @@ namespace ACE.Database.OfflineTools.Shard
                     // update contained items to point to the new container
                     using (var context = new ShardDbContext())
                     {
-                        var ownedItems = context.BiotaPropertiesIID.Where(r => r.Type == (ushort) PropertyInstanceId.Owner && r.Value == fullBiota.Id);
+                        var ownedItems = context.BiotaPropertiesIID.Where(r => r.Type == (ushort)PropertyInstanceId.Owner && r.Value == fullBiota.Id);
 
                         foreach (var item in ownedItems)
                             item.Value = converted.Id;
 
-                        var containedItems = context.BiotaPropertiesIID.Where(r => r.Type == (ushort) PropertyInstanceId.Container && r.Value == fullBiota.Id);
+                        var containedItems = context.BiotaPropertiesIID.Where(r => r.Type == (ushort)PropertyInstanceId.Container && r.Value == fullBiota.Id);
 
                         foreach (var item in containedItems)
                             item.Value = converted.Id;

@@ -519,7 +519,7 @@ namespace ACE.Database.Adapter
                 foreach (var kvp in biota.PropertiesString)
                     result.SetProperty(kvp.Key, kvp.Value);
             }
- 
+
 
             if (biota.PropertiesPosition != null)
             {
@@ -579,7 +579,7 @@ namespace ACE.Database.Adapter
 
             if (biota.PropertiesTextureMap != null)
             {
-                for (int i = 0; i < biota.PropertiesTextureMap.Count ; i++)
+                for (int i = 0; i < biota.PropertiesTextureMap.Count; i++)
                 {
                     var value = biota.PropertiesTextureMap[i];
 
