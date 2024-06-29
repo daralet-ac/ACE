@@ -17,16 +17,16 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            TexGID          = reader.ReadUInt32();
-            TexTiling       = reader.ReadUInt32();
-            MaxVertBright   = reader.ReadUInt32();
-            MinVertBright   = reader.ReadUInt32();
+            TexGID = reader.ReadUInt32();
+            TexTiling = reader.ReadUInt32();
+            MaxVertBright = reader.ReadUInt32();
+            MinVertBright = reader.ReadUInt32();
             MaxVertSaturate = reader.ReadUInt32();
             MinVertSaturate = reader.ReadUInt32();
-            MaxVertHue      = reader.ReadUInt32();
-            MinVertHue      = reader.ReadUInt32();
+            MaxVertHue = reader.ReadUInt32();
+            MinVertHue = reader.ReadUInt32();
             DetailTexTiling = reader.ReadUInt32();
-            DetailTexGID    = reader.ReadUInt32();
+            DetailTexGID = reader.ReadUInt32();
         }
     }
 }

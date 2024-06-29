@@ -14,7 +14,7 @@ namespace ACE.DatLoader
         ///     WORD x 81 = Height Map
         /// </summary>
         [DatDatabaseType(DatDatabaseType.Cell)]
-        LandBlock               = 1, // DB_TYPE_LANDBLOCK
+        LandBlock = 1, // DB_TYPE_LANDBLOCK
 
         /// <summary>
         /// File Format:
@@ -50,56 +50,56 @@ namespace ACE.DatLoader
         /// </summary>
         [DatDatabaseType(DatDatabaseType.Cell)]
         [DatFileTypeExtension("lbi")]
-        LandBlockInfo           = 2, // DB_TYPE_LBI
+        LandBlockInfo = 2, // DB_TYPE_LBI
 
         [DatDatabaseType(DatDatabaseType.Cell)]
-        EnvCell                    = 3, // DB_TYPE_CELL
+        EnvCell = 3, // DB_TYPE_CELL
 
         /// <summary>
         /// usage of this is currently unknown.  exists in the client, but has no discernable
         /// source dat file.  appears to be a server file not distributed to clients.
         /// </summary>
         [DatFileTypeExtension("lbo")]
-        LandBlockObjects        = 4, // DB_TYPE_LBO
+        LandBlockObjects = 4, // DB_TYPE_LBO
 
         /// <summary>
         /// usage of this is currently unknown.  exists in the client, but has no discernable
         /// source dat file.  appears to be a server file not distributed to clients.
         /// </summary>
         [DatFileTypeExtension("ins")]
-        Instantiation           = 5, // DB_TYPE_INSTANTIATION
+        Instantiation = 5, // DB_TYPE_INSTANTIATION
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("obj")]
         [DatFileTypeIdRange(0x01000000, 0x0100FFFF)]
-        GraphicsObject          = 6, // DB_TYPE_GFXOBJ
+        GraphicsObject = 6, // DB_TYPE_GFXOBJ
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("set")]
         [DatFileTypeIdRange(0x02000000, 0x0200FFFF)]
-        Setup                   = 7, // DB_TYPE_SETUP
-        
+        Setup = 7, // DB_TYPE_SETUP
+
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("anm")]
         [DatFileTypeIdRange(0x03000000, 0x0300FFFF)]
-        Animation               = 8, // DB_TYPE_ANIM
+        Animation = 8, // DB_TYPE_ANIM
 
         /// <summary>
         /// usage of this is currently unknown.  exists in the client, but has no discernable
         /// source dat file.  appears to be a server file not distributed to clients.
         /// </summary>
         [DatFileTypeExtension("hk")]
-        AnimationHook           = 9, // DB_TYPE_ANIMATION_HOOK
+        AnimationHook = 9, // DB_TYPE_ANIMATION_HOOK
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("pal")]
         [DatFileTypeIdRange(0x04000000, 0x0400FFFF)]
-        Palette                 = 10, // DB_TYPE_PALETTE
+        Palette = 10, // DB_TYPE_PALETTE
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("texture")]
         [DatFileTypeIdRange(0x05000000, 0x05FFFFFF)]
-        SurfaceTexture          = 11, // DB_TYPE_SURFACETEXTURE
+        SurfaceTexture = 11, // DB_TYPE_SURFACETEXTURE
 
         /// <summary>
         /// the 5th dword of these files has values from the following enum:
@@ -125,7 +125,7 @@ namespace ACE.DatLoader
         [DatFileTypeExtension("csi")]
         [DatFileTypeExtension("alp")]
         [DatFileTypeIdRange(0x06000000, 0x07FFFFFF)]
-        Texture           = 12, // DB_TYPE_RENDERSURFACE
+        Texture = 12, // DB_TYPE_RENDERSURFACE
 
         /// <summary>
         /// indexed in client as "materials" for some reason
@@ -133,12 +133,12 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("surface")]
         [DatFileTypeIdRange(0x08000000, 0x0800FFFF)]
-        Surface                 = 13, // DB_TYPE_SURFACE
+        Surface = 13, // DB_TYPE_SURFACE
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("dsc")]
         [DatFileTypeIdRange(0x09000000, 0x0900FFFF)]
-        MotionTable              = 14, // DB_TYPE_MTABLE
+        MotionTable = 14, // DB_TYPE_MTABLE
 
         /// <summary>
         /// indexed as "sound" in the client
@@ -146,7 +146,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("wav")]
         [DatFileTypeIdRange(0x0A000000, 0x0A00FFFF)]
-        Wave                    = 15, // DB_TYPE_WAVE
+        Wave = 15, // DB_TYPE_WAVE
 
         /// <summary>
         /// File content structure:
@@ -202,7 +202,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("env")]
         [DatFileTypeIdRange(0x0D000000, 0x0D00FFFF)]
-        Environment             = 16, // DB_TYPE_ENVIRONMENT
+        Environment = 16, // DB_TYPE_ENVIRONMENT
 
         /// <summary>
         /// indexed as "ui" in the client
@@ -210,7 +210,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("cps")]
         [DatFileTypeIdRange(0x0E000007, 0x0E000007)]
-        ChatPoseTable           = 17, // DB_TYPE_CHAT_POSE_TABLE
+        ChatPoseTable = 17, // DB_TYPE_CHAT_POSE_TABLE
 
         /// <summary>
         /// indexed as "DungeonCfgs" in the client
@@ -218,7 +218,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("hrc")]
         [DatFileTypeIdRange(0x0E00000D, 0x0E00000D)]
-        ObjectHierarchy         = 18, // DB_TYPE_OBJECT_HIERARCHY
+        ObjectHierarchy = 18, // DB_TYPE_OBJECT_HIERARCHY
 
         /// <summary>
         /// indexed as "weenie" in the client
@@ -226,7 +226,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("bad")]
         [DatFileTypeIdRange(0x0E00001A, 0x0E00001A)]
-        BadData                 = 19, // DB_TYPE_BADDATA
+        BadData = 19, // DB_TYPE_BADDATA
 
         /// <summary>
         /// indexed as "weenie" in the client
@@ -234,11 +234,11 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("taboo")]
         [DatFileTypeIdRange(0x0E00001E, 0x0E00001E)]
-        TabooTable              = 20, // DB_TYPE_TABOO_TABLE
+        TabooTable = 20, // DB_TYPE_TABOO_TABLE
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeIdRange(0x0E00001F, 0x0E00001F)]
-        FileToId                = 21, // DB_TYPE_FILE2ID_TABLE
+        FileToId = 21, // DB_TYPE_FILE2ID_TABLE
 
         /// <summary>
         /// indexed as "namefilter" in the client
@@ -246,7 +246,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("nft")]
         [DatFileTypeIdRange(0x0E000020, 0x0E000020)]
-        NameFilterTable         = 22, // DB_TYPE_NAME_FILTER_TABLE
+        NameFilterTable = 22, // DB_TYPE_NAME_FILTER_TABLE
 
         /// <summary>
         /// indexed as "properties" in the client
@@ -254,27 +254,27 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("monprop")]
         [DatFileTypeIdRange(0x0E020000, 0x0E02FFFF)]
-        MonitoredProperties     = 23, // DB_TYPE_MONITOREDPROPERTIES
+        MonitoredProperties = 23, // DB_TYPE_MONITOREDPROPERTIES
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("pst")]
         [DatFileTypeIdRange(0x0F000000, 0x0F00FFFF)]
-        PaletteSet              = 24, // DB_TYPE_PAL_SET
+        PaletteSet = 24, // DB_TYPE_PAL_SET
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("clo")]
         [DatFileTypeIdRange(0x10000000, 0x1000FFFF)]
-        Clothing                = 25, // DB_TYPE_CLOTHING
+        Clothing = 25, // DB_TYPE_CLOTHING
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("deg")]
         [DatFileTypeIdRange(0x11000000, 0x1100FFFF)]
-        DegradeInfo             = 26, // DB_TYPE_DEGRADEINFO
+        DegradeInfo = 26, // DB_TYPE_DEGRADEINFO
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("scn")]
         [DatFileTypeIdRange(0x12000000, 0x1200FFFF)]
-        Scene                   = 27, // DB_TYPE_SCENE 
+        Scene = 27, // DB_TYPE_SCENE 
 
         /// <summary>
         /// indexed as "landscape" by the client
@@ -282,12 +282,12 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("rgn")]
         [DatFileTypeIdRange(0x13000000, 0x1300FFFF)]
-        Region                  = 28, // DB_TYPE_REGION
+        Region = 28, // DB_TYPE_REGION
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("keymap")]
         [DatFileTypeIdRange(0x14000000, 0x1400FFFF)]
-        KeyMap                  = 29, // DB_TYPE_KEYMAP
+        KeyMap = 29, // DB_TYPE_KEYMAP
 
         /// <summary>
         /// indexed as "textures" in the client
@@ -295,7 +295,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("rtexture")]
         [DatFileTypeIdRange(0x15000000, 0x15FFFFFF)]
-        RenderTexture           = 30, // DB_TYPE_RENDERTEXTURE 
+        RenderTexture = 30, // DB_TYPE_RENDERTEXTURE 
 
         /// <summary>
         /// indexed as "materials" in the client
@@ -303,7 +303,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("mat")]
         [DatFileTypeIdRange(0x16000000, 0x16FFFFFF)]
-        RenderMaterial          = 31, // DB_TYPE_RENDERMATERIAL 
+        RenderMaterial = 31, // DB_TYPE_RENDERMATERIAL 
 
         /// <summary>
         /// indexed as "materials" in the client
@@ -311,7 +311,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("mm")]
         [DatFileTypeIdRange(0x17000000, 0x17FFFFFF)]
-        MaterialModifier        = 32, // DB_TYPE_MATERIALMODIFIER 
+        MaterialModifier = 32, // DB_TYPE_MATERIALMODIFIER 
 
         /// <summary>
         /// indexed as "materials" in the client
@@ -319,7 +319,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("mi")]
         [DatFileTypeIdRange(0x18000000, 0x18FFFFFF)]
-        MaterialInstance        = 33, // DB_TYPE_MATERIALINSTANCE
+        MaterialInstance = 33, // DB_TYPE_MATERIALINSTANCE
 
         /// <summary>
         /// SoundTable
@@ -327,7 +327,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("stb")]
         [DatFileTypeIdRange(0x20000000, 0x2000FFFF)]
-        SoundTable              = 34, // DB_TYPE_STABLE
+        SoundTable = 34, // DB_TYPE_STABLE
 
         /// <summary>
         /// This is in the Language dat (client_local_English.dat)
@@ -335,7 +335,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Language)]
         [DatFileTypeExtension("uil")]
         [DatFileTypeIdRange(0x21000000, 0x21FFFFFF)]
-        UiLayout                = 35, // DB_TYPE_UI_LAYOUT
+        UiLayout = 35, // DB_TYPE_UI_LAYOUT
 
         /// <summary>
         /// indexed as "emp" in the client
@@ -343,7 +343,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("emp")]
         [DatFileTypeIdRange(0x22000000, 0x22FFFFFF)]
-        EnumMapper              = 36, // DB_TYPE_ENUM_MAPPER
+        EnumMapper = 36, // DB_TYPE_ENUM_MAPPER
 
         /// <summary>
         /// This is in the Language dat (client_local_English.dat)
@@ -351,7 +351,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Language)]
         [DatFileTypeExtension("stt")]
         [DatFileTypeIdRange(0x23000000, 0x24FFFFFF)]
-        StringTable             = 37, // DB_TYPE_STRING_TABLE 
+        StringTable = 37, // DB_TYPE_STRING_TABLE 
 
         /// <summary>
         /// indexed as "emp/idmap" in the client
@@ -359,12 +359,12 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("imp")]
         [DatFileTypeIdRange(0x25000000, 0x25FFFFFF)]
-        DidMapper               = 38, // DB_TYPE_DID_MAPPER 
+        DidMapper = 38, // DB_TYPE_DID_MAPPER 
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("actionmap")]
         [DatFileTypeIdRange(0x26000000, 0x2600FFFF)]
-        ActionMap               = 39, // DB_TYPE_ACTIONMAP 
+        ActionMap = 39, // DB_TYPE_ACTIONMAP 
 
         /// <summary>
         /// indexed as "emp/idmap" in the client
@@ -372,12 +372,12 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("dimp")]
         [DatFileTypeIdRange(0x27000000, 0x27FFFFFF)]
-        DualDidMapper           = 40, // DB_TYPE_DUAL_DID_MAPPER
+        DualDidMapper = 40, // DB_TYPE_DUAL_DID_MAPPER
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("str")]
         [DatFileTypeIdRange(0x31000000, 0x3100FFFF)]
-        String                  = 41, // DB_TYPE_STRING
+        String = 41, // DB_TYPE_STRING
 
         /// <summary>
         /// indexed as "emt" in the client
@@ -385,7 +385,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("emt")]
         [DatFileTypeIdRange(0x32000000, 0x3200FFFF)]
-        ParticleEmitter         = 42, // DB_TYPE_PARTICLE_EMITTER 
+        ParticleEmitter = 42, // DB_TYPE_PARTICLE_EMITTER 
 
         /// <summary>
         /// indexed as "pes" in the client
@@ -393,7 +393,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("pes")]
         [DatFileTypeIdRange(0x33000000, 0x3300FFFF)]
-        PhysicsScript           = 43, // DB_TYPE_PHYSICS_SCRIPT 
+        PhysicsScript = 43, // DB_TYPE_PHYSICS_SCRIPT 
 
         /// <summary>
         /// indexed as "pet" in the client
@@ -401,7 +401,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("pet")]
         [DatFileTypeIdRange(0x34000000, 0x3400FFFF)]
-        PhysicsScriptTable      = 44, // DB_TYPE_PHYSICS_SCRIPT_TABLE 
+        PhysicsScriptTable = 44, // DB_TYPE_PHYSICS_SCRIPT_TABLE 
 
         /// <summary>
         /// indexed as "emt/property" in the client
@@ -409,17 +409,17 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("mpr")]
         [DatFileTypeIdRange(0x39000000, 0x39FFFFFF)]
-        MasterProperty          = 45, // DB_TYPE_MASTER_PROPERTY 
+        MasterProperty = 45, // DB_TYPE_MASTER_PROPERTY 
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("font")]
         [DatFileTypeIdRange(0x40000000, 0x40000FFF)]
-        Font                    = 46, // DB_TYPE_FONT 
+        Font = 46, // DB_TYPE_FONT 
 
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("font_local")]
         [DatFileTypeIdRange(0x40001000, 0x400FFFFF)]
-        FontLocal               = 47, // DB_TYPE_FONT_LOCAL 
+        FontLocal = 47, // DB_TYPE_FONT_LOCAL 
 
         /// <summary>
         /// This is located in the Language dat (client_local_English.dat)
@@ -434,7 +434,7 @@ namespace ACE.DatLoader
         [DatFileTypeExtension("dbpc")]
         [DatFileTypeExtension("pmat")]
         [DatFileTypeIdRange(0x78000000, 0x7FFFFFFF)]
-        DbProperties            = 49, // DB_TYPE_DBPROPERTIES
+        DbProperties = 49, // DB_TYPE_DBPROPERTIES
 
         /// <summary>
         /// indexed as "mesh" in the client
@@ -442,7 +442,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("rendermesh")]
         [DatFileTypeIdRange(0x19000000, 0x19FFFFFF)]
-        RenderMesh              = 67, // DB_TYPE_RENDER_MESH
+        RenderMesh = 67, // DB_TYPE_RENDER_MESH
 
         // the following special files are called out in a different section of the decompiled client:
 
@@ -452,7 +452,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("wdf")]
         [DatFileTypeIdRange(0x00000001, 0x0000FFFF)]
-        WeenieDefaults          = 0x10000001, // DB_TYPE_WEENIE_DEF
+        WeenieDefaults = 0x10000001, // DB_TYPE_WEENIE_DEF
 
         /// <summary>
         /// indexed as "weenie" in the client
@@ -460,7 +460,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("cgd")]
         [DatFileTypeIdRange(0x0E000002, 0x0E000002)]
-        CharacterGenerator      = 0x10000002, // DB_TYPE_CHAR_GEN_0
+        CharacterGenerator = 0x10000002, // DB_TYPE_CHAR_GEN_0
 
         /// <summary>
         /// indexed as "weenie/skills" in the client
@@ -476,7 +476,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("wsk")]
         [DatFileTypeIdRange(0x0E000004, 0x0E000004)]
-        SkillTable              = 0x10000004, // DB_TYPE_SKILL_TABLE_0
+        SkillTable = 0x10000004, // DB_TYPE_SKILL_TABLE_0
 
         /// <summary>
         /// indexed as "weenie/magic" in the client
@@ -484,7 +484,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("spt")]
         [DatFileTypeIdRange(0x0E00000E, 0x0E00000E)]
-        SpellTable              = 0x10000005, // DB_TYPE_SPELL_TABLE_0
+        SpellTable = 0x10000005, // DB_TYPE_SPELL_TABLE_0
 
         /// <summary>
         /// indexed as "weenie/magic" in the client
@@ -492,7 +492,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("sct")]
         [DatFileTypeIdRange(0x0E00000F, 0x0E00000F)]
-        SpellComponentTable     = 0x10000006, // DB_TYPE_SPELLCOMPONENT_TABLE_0
+        SpellComponentTable = 0x10000006, // DB_TYPE_SPELLCOMPONENT_TABLE_0
 
         /// <summary>
         /// indexed as "weenie/treasure" in the client
@@ -500,7 +500,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("wts")]
         [DatFileTypeIdRange(0x0E000011, 0x0E000011)]
-        TreasureTable           = 0x10000007, // DB_TYPE_W_TREASURE_SYSTEM
+        TreasureTable = 0x10000007, // DB_TYPE_W_TREASURE_SYSTEM
 
         /// <summary>
         /// indexed as "weenie/craft" in the client
@@ -508,7 +508,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("cft")]
         [DatFileTypeIdRange(0x0E000019, 0x0E000019)]
-        CraftTable              = 0x10000008, // DB_TYPE_W_CRAFT_TABLE
+        CraftTable = 0x10000008, // DB_TYPE_W_CRAFT_TABLE
 
         /// <summary>
         /// indexed as "weenie/experience" in the client
@@ -516,7 +516,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("xpt")]
         [DatFileTypeIdRange(0x0E000018, 0x0E000018)]
-        XpTable                 = 0x10000009, // DB_TYPE_XP_TABLE_0
+        XpTable = 0x10000009, // DB_TYPE_XP_TABLE_0
 
         /// <summary>
         /// indexed as "weenie" in the client
@@ -524,7 +524,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("qdd")]
         [DatFileTypeIdRange(0x0E00001B, 0x0E00001B)]
-        Quests                  = 0x1000000A, // DB_TYPE_QUEST_DEF_DB_0
+        Quests = 0x1000000A, // DB_TYPE_QUEST_DEF_DB_0
 
         /// <summary>
         /// indexed as "weenie" in the client
@@ -532,7 +532,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("ged")]
         [DatFileTypeIdRange(0x0E00001C, 0x0E00001C)]
-        GameEventTable          = 0x1000000B, // DB_TYPE_GAME_EVENT_DB
+        GameEventTable = 0x1000000B, // DB_TYPE_GAME_EVENT_DB
 
         /// <summary>
         /// indexed as "weenie/filters" in the client
@@ -540,7 +540,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("wqf")]
         [DatFileTypeIdRange(0x0E010000, 0x0E01FFFF)]
-        QualityFilter           = 0x1000000C, // DB_TYPE_QUALITY_FILTER_0
+        QualityFilter = 0x1000000C, // DB_TYPE_QUALITY_FILTER_0
 
         /// <summary>
         /// indexed as "weenie/combat_tables" in the client
@@ -548,7 +548,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("wct")]
         [DatFileTypeIdRange(0x30000000, 0x3000FFFF)]
-        CombatTable             = 0x1000000D, // DB_TYPE_COMBAT_TABLE_0
+        CombatTable = 0x1000000D, // DB_TYPE_COMBAT_TABLE_0
 
         /// <summary>
         /// indexed as "weenie/ItemMutationFiles" in the client
@@ -556,7 +556,7 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("imf")]
         [DatFileTypeIdRange(0x38000000, 0x3800FFFF)]
-        ItemMutation            = 0x1000000E, // DB_TYPE_MUTATE_FILTER
+        ItemMutation = 0x1000000E, // DB_TYPE_MUTATE_FILTER
 
         /// <summary>
         /// indexed as "weenie" in the client
@@ -564,6 +564,6 @@ namespace ACE.DatLoader
         [DatDatabaseType(DatDatabaseType.Portal)]
         [DatFileTypeExtension("acc")]
         [DatFileTypeIdRange(0x0E00001D, 0x0E00001D)]
-        ContractTable           = 0x10000010, // DB_TYPE_CONTRACT_TABLE_0
+        ContractTable = 0x10000010, // DB_TYPE_CONTRACT_TABLE_0
     }
 }

@@ -15,10 +15,10 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Flags           = (PortalFlags)reader.ReadUInt16();
-            PolygonId       = reader.ReadUInt16();
-            OtherCellId     = reader.ReadUInt16();
-            OtherPortalId   = reader.ReadUInt16();
+            Flags = (PortalFlags)reader.ReadUInt16();
+            PolygonId = reader.ReadUInt16();
+            OtherCellId = reader.ReadUInt16();
+            OtherPortalId = reader.ReadUInt16();
         }
     }
 }

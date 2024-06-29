@@ -10,9 +10,9 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Name            = reader.ReadString();
-            ClothingTable   = reader.ReadUInt32();
-            WeenieDefault   = reader.ReadUInt32();
+            Name = reader.ReadString();
+            ClothingTable = reader.ReadUInt32();
+            WeenieDefault = reader.ReadUInt32();
         }
     }
 }

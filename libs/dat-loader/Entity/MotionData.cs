@@ -16,9 +16,9 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            var numAnims    = reader.ReadByte();
-            Bitfield        = reader.ReadByte();
-            Flags           = (MotionDataFlags)reader.ReadByte();
+            var numAnims = reader.ReadByte();
+            Bitfield = reader.ReadByte();
+            Flags = (MotionDataFlags)reader.ReadByte();
             reader.AlignBoundary();
 
             Anims.Unpack(reader, numAnims);

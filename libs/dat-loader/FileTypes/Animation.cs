@@ -21,10 +21,10 @@ namespace ACE.DatLoader.FileTypes
 
         public override void Unpack(BinaryReader reader)
         {
-            Id          = reader.ReadUInt32();
-            Flags       = (AnimationFlags)reader.ReadUInt32();
-            NumParts    = reader.ReadUInt32();
-            NumFrames   = reader.ReadUInt32();
+            Id = reader.ReadUInt32();
+            Flags = (AnimationFlags)reader.ReadUInt32();
+            NumParts = reader.ReadUInt32();
+            NumFrames = reader.ReadUInt32();
 
             if ((Flags & AnimationFlags.PosFrames) != 0)
                 PosFrames.Unpack(reader, NumFrames);

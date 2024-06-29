@@ -16,9 +16,9 @@ namespace ACE.DatLoader.Entity
 
             reader.ReadByte(); // ObjDesc always starts with 11.
 
-            var numPalettes             = reader.ReadByte();
-            var numTextureMapChanges    = reader.ReadByte();
-            var numAnimPartChanges      = reader.ReadByte();
+            var numPalettes = reader.ReadByte();
+            var numTextureMapChanges = reader.ReadByte();
+            var numAnimPartChanges = reader.ReadByte();
 
             if (numPalettes > 0)
                 PaletteID = reader.ReadAsDataIDOfKnownType(0x04000000);

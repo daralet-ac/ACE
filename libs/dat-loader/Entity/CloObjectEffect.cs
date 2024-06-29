@@ -11,7 +11,7 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Index   = reader.ReadUInt32();
+            Index = reader.ReadUInt32();
             ModelId = reader.ReadUInt32();
 
             CloTextureEffects.Unpack(reader);

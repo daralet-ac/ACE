@@ -47,29 +47,30 @@ namespace ACE.DatLoader.FileTypes
         {
             Id = reader.ReadUInt32();
 
-            /*uint unknown = */reader.ReadUInt32();
+            /*uint unknown = */
+            reader.ReadUInt32();
 
-            EmitterType  =  (EmitterType)reader.ReadInt32();
+            EmitterType = (EmitterType)reader.ReadInt32();
             ParticleType = (ParticleType)reader.ReadInt32();
 
-            GfxObjId   = reader.ReadUInt32();
+            GfxObjId = reader.ReadUInt32();
             HwGfxObjId = reader.ReadUInt32();
 
-            Birthrate   = reader.ReadDouble();
+            Birthrate = reader.ReadDouble();
 
-            MaxParticles  = reader.ReadInt32();
+            MaxParticles = reader.ReadInt32();
             InitialParticles = reader.ReadInt32();
 
             TotalParticles = reader.ReadInt32();
 
-            TotalSeconds  = reader.ReadDouble();
+            TotalSeconds = reader.ReadDouble();
 
-            Lifespan     = reader.ReadDouble();
+            Lifespan = reader.ReadDouble();
             LifespanRand = reader.ReadDouble();
 
-            OffsetDir = reader.ReadVector3();      
+            OffsetDir = reader.ReadVector3();
             MinOffset = reader.ReadSingle();
-            MaxOffset = reader.ReadSingle(); 
+            MaxOffset = reader.ReadSingle();
 
             A = reader.ReadVector3();
             MinA = reader.ReadSingle();
@@ -85,11 +86,11 @@ namespace ACE.DatLoader.FileTypes
 
             StartScale = reader.ReadSingle();
             FinalScale = reader.ReadSingle();
-            ScaleRand  = reader.ReadSingle();
+            ScaleRand = reader.ReadSingle();
 
             StartTrans = reader.ReadSingle();
             FinalTrans = reader.ReadSingle();
-            TransRand  = reader.ReadSingle();
+            TransRand = reader.ReadSingle();
 
             IsParentLocal = reader.ReadInt32();
         }

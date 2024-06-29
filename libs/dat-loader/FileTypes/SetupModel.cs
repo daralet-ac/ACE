@@ -49,8 +49,8 @@ namespace ACE.DatLoader.FileTypes
 
             Flags = (SetupFlags)reader.ReadUInt32();
 
-            AllowFreeHeading    = (Flags & SetupFlags.AllowFreeHeading) != 0;
-            HasPhysicsBSP       = (Flags & SetupFlags.HasPhysicsBSP) != 0;
+            AllowFreeHeading = (Flags & SetupFlags.AllowFreeHeading) != 0;
+            HasPhysicsBSP = (Flags & SetupFlags.HasPhysicsBSP) != 0;
 
             // Get all the GraphicsObjects in this SetupModel. These are all the 01-types.
             uint numParts = reader.ReadUInt32();
@@ -88,21 +88,21 @@ namespace ACE.DatLoader.FileTypes
 
             Spheres.Unpack(reader);
 
-            Height          = reader.ReadSingle();
-            Radius          = reader.ReadSingle();
-            StepUpHeight    = reader.ReadSingle();
-            StepDownHeight  = reader.ReadSingle();
+            Height = reader.ReadSingle();
+            Radius = reader.ReadSingle();
+            StepUpHeight = reader.ReadSingle();
+            StepDownHeight = reader.ReadSingle();
 
             SortingSphere.Unpack(reader);
             SelectionSphere.Unpack(reader);
 
             Lights.Unpack(reader);
 
-            DefaultAnimation    = reader.ReadUInt32();
-            DefaultScript       = reader.ReadUInt32();
-            DefaultMotionTable  = reader.ReadUInt32();
-            DefaultSoundTable   = reader.ReadUInt32();
-            DefaultScriptTable  = reader.ReadUInt32();
+            DefaultAnimation = reader.ReadUInt32();
+            DefaultScript = reader.ReadUInt32();
+            DefaultMotionTable = reader.ReadUInt32();
+            DefaultSoundTable = reader.ReadUInt32();
+            DefaultScriptTable = reader.ReadUInt32();
         }
 
         public static SetupModel CreateSimpleSetup()

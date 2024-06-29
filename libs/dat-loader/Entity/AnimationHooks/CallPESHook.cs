@@ -11,8 +11,8 @@ namespace ACE.DatLoader.Entity.AnimationHooks
         {
             base.Unpack(reader);
 
-            PES     = reader.ReadUInt32();
-            Pause   = reader.ReadSingle();
+            PES = reader.ReadUInt32();
+            Pause = reader.ReadSingle();
         }
     }
 }

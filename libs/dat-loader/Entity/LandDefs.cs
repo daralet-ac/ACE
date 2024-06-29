@@ -18,14 +18,14 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            NumBlockLength  = reader.ReadInt32();
-            NumBlockWidth   = reader.ReadInt32();
-            SquareLength    = reader.ReadSingle();
-            LBlockLength    = reader.ReadInt32();
-            VertexPerCell   = reader.ReadInt32();
-            MaxObjHeight    = reader.ReadSingle();
-            SkyHeight       = reader.ReadSingle();
-            RoadWidth       = reader.ReadSingle();
+            NumBlockLength = reader.ReadInt32();
+            NumBlockWidth = reader.ReadInt32();
+            SquareLength = reader.ReadSingle();
+            LBlockLength = reader.ReadInt32();
+            VertexPerCell = reader.ReadInt32();
+            MaxObjHeight = reader.ReadSingle();
+            SkyHeight = reader.ReadSingle();
+            RoadWidth = reader.ReadSingle();
 
             for (int i = 0; i < 256; i++)
                 LandHeightTable.Add(reader.ReadSingle());

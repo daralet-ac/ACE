@@ -31,9 +31,9 @@ namespace ACE.DatLoader.FileTypes
         {
             Id = reader.ReadUInt32();
 
-            RegionNumber    = reader.ReadUInt32();
-            Version         = reader.ReadUInt32();
-            RegionName      = reader.ReadPString(); // "Dereth"
+            RegionNumber = reader.ReadUInt32();
+            Version = reader.ReadUInt32();
+            RegionName = reader.ReadPString(); // "Dereth"
             reader.AlignBoundary();
 
             LandDefs.Unpack(reader);

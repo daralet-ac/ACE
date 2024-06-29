@@ -10,9 +10,9 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Start   = reader.ReadSingle();
+            Start = reader.ReadSingle();
             IsNight = (reader.ReadUInt32() == 1);
-            Name    = reader.ReadPString();
+            Name = reader.ReadPString();
             reader.AlignBoundary();
         }
     }

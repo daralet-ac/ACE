@@ -17,9 +17,9 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            var numPolygons        = reader.ReadUInt32();
+            var numPolygons = reader.ReadUInt32();
             var numPhysicsPolygons = reader.ReadUInt32();
-            var numPortals         = reader.ReadUInt32();
+            var numPortals = reader.ReadUInt32();
 
             VertexArray.Unpack(reader);
 

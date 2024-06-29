@@ -10,7 +10,7 @@ namespace ACE.DatLoader.Entity
         public void Unpack(BinaryReader reader)
         {
             PortalIndex = reader.ReadInt16();
-            PolygonId   = reader.ReadInt16();
+            PolygonId = reader.ReadInt16();
         }
     }
 }

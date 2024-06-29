@@ -41,9 +41,9 @@ namespace ACE.DatLoader.FileTypes
 
             reader.BaseStream.Position += 4; // Skip ahead 4 bytes, because this is the CellId. Again. Twice.
 
-            byte numSurfaces    = reader.ReadByte();
-            byte numPortals     = reader.ReadByte();    // Note that "portal" in this context does not refer to the swirly pink/purple thing, its basically connecting cells
-            ushort numStabs     = reader.ReadUInt16();  // I believe this is what cells can be seen from this one. So the engine knows what else it needs to load/draw.
+            byte numSurfaces = reader.ReadByte();
+            byte numPortals = reader.ReadByte();    // Note that "portal" in this context does not refer to the swirly pink/purple thing, its basically connecting cells
+            ushort numStabs = reader.ReadUInt16();  // I believe this is what cells can be seen from this one. So the engine knows what else it needs to load/draw.
 
             // Read what surfaces are used in this cell
             for (uint i = 0; i < numSurfaces; i++)

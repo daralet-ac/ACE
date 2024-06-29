@@ -9,8 +9,8 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Offset      = reader.ReadUInt32();
-            NumColors   = reader.ReadUInt32();
+            Offset = reader.ReadUInt32();
+            NumColors = reader.ReadUInt32();
         }
     }
 }

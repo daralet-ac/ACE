@@ -13,11 +13,11 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Style           = (MotionStance)reader.ReadUInt32();
-            AttackHeight    = (AttackHeight)reader.ReadUInt32();
-            AttackType      = (AttackType)reader.ReadUInt32();
-            MinSkillLevel   = reader.ReadUInt32();
-            Motion          = (MotionCommand)reader.ReadUInt32();
+            Style = (MotionStance)reader.ReadUInt32();
+            AttackHeight = (AttackHeight)reader.ReadUInt32();
+            AttackType = (AttackType)reader.ReadUInt32();
+            MinSkillLevel = reader.ReadUInt32();
+            Motion = (MotionCommand)reader.ReadUInt32();
         }
     }
 }

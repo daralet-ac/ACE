@@ -96,7 +96,7 @@ namespace ACE.DatLoader
                 else
                     dr = new DatReader(FilePath, file.FileOffset, file.FileSize, Header.BlockSize);
 
-                return dr;                    
+                return dr;
             }
 
             if ((fileId & 0xFFFF) == 0xFFFE) // These are LandBlockInfo objects. Not every landblock has extra info (buildings, etc..)

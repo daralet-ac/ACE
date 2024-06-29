@@ -38,7 +38,7 @@ namespace ACE.DatLoader.FileTypes
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
                 byte[] str = Encoding.GetEncoding(1252).GetBytes(strToHash);
 
-                foreach (sbyte c in str)                
+                foreach (sbyte c in str)
                 {
                     result = c + (result << 4);
 
@@ -58,7 +58,7 @@ namespace ACE.DatLoader.FileTypes
         public static List<uint> GetSpellFormula(SpellTable spellTable, uint spellId, string accountName)
         {
             SpellBase spell = spellTable.Spells[spellId];
-           
+
             switch (spell.FormulaVersion)
             {
                 case 1:

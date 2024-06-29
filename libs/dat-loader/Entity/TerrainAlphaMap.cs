@@ -9,8 +9,8 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            TCode   = reader.ReadUInt32();
-            TexGID  = reader.ReadUInt32();
+            TCode = reader.ReadUInt32();
+            TexGID = reader.ReadUInt32();
         }
     }
 }

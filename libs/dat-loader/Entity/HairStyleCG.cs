@@ -11,9 +11,9 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            IconImage       = reader.ReadUInt32();
-            Bald            = (reader.ReadByte() == 1);
-            AlternateSetup  = reader.ReadUInt32();
+            IconImage = reader.ReadUInt32();
+            Bald = (reader.ReadByte() == 1);
+            AlternateSetup = reader.ReadUInt32();
 
             ObjDesc.Unpack(reader);
         }

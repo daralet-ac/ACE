@@ -11,8 +11,8 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            TickSize        = reader.ReadDouble();
-            LightTickSize   = reader.ReadDouble();
+            TickSize = reader.ReadDouble();
+            LightTickSize = reader.ReadDouble();
 
             reader.AlignBoundary();
 

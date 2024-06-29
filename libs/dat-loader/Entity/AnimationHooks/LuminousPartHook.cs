@@ -13,10 +13,10 @@ namespace ACE.DatLoader.Entity.AnimationHooks
         {
             base.Unpack(reader);
 
-            Part    = reader.ReadUInt32();
-            Start   = reader.ReadSingle();
-            End     = reader.ReadSingle();
-            Time    = reader.ReadSingle();
+            Part = reader.ReadUInt32();
+            Start = reader.ReadSingle();
+            End = reader.ReadSingle();
+            Time = reader.ReadSingle();
         }
     }
 }

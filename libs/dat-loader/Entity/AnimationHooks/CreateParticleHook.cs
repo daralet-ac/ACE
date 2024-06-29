@@ -13,10 +13,10 @@ namespace ACE.DatLoader.Entity.AnimationHooks
         {
             base.Unpack(reader);
 
-            EmitterInfoId   = reader.ReadUInt32();
-            PartIndex       = reader.ReadUInt32();
+            EmitterInfoId = reader.ReadUInt32();
+            PartIndex = reader.ReadUInt32();
             Offset.Unpack(reader);
-            EmitterId       = reader.ReadUInt32();
+            EmitterId = reader.ReadUInt32();
         }
     }
 }

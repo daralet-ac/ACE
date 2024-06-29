@@ -76,7 +76,7 @@ namespace ACE.DatLoader.FileTypes
                 return Invalid;
 
             //if (maneuvers.Count == 1)
-                //return maneuvers[0];
+            //return maneuvers[0];
 
             /*Console.WriteLine($"CombatManeuverTable({Id:X8}).GetMotion({stance}, {attackHeight}, {attackType}) - found {maneuvers.Count} maneuvers");
             foreach (var maneuver in maneuvers)

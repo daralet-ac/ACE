@@ -12,11 +12,11 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Id          = reader.ReadUInt32();
+            Id = reader.ReadUInt32();
             DegradeMode = reader.ReadUInt32();
-            MinDist     = reader.ReadSingle();
-            IdealDist   = reader.ReadSingle();
-            MaxDist     = reader.ReadSingle();
+            MinDist = reader.ReadSingle();
+            IdealDist = reader.ReadSingle();
+            MaxDist = reader.ReadSingle();
         }
     }
 }

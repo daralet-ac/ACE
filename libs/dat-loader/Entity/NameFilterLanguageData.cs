@@ -5,7 +5,7 @@ namespace ACE.DatLoader.Entity
 {
     public class NameFilterLanguageData : IUnpackable
     {
-        public uint MaximumVowelsInARow; 
+        public uint MaximumVowelsInARow;
         public uint FirstNCharactersMustHaveAVowel;
         public uint VowelContainingSubstringLength;
         public uint ExtraAllowedCharacters;

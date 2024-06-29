@@ -122,7 +122,8 @@ namespace ACE.DatLoader
         public static void UnpackPackedHashTable<T>(this Dictionary<uint, T> value, BinaryReader reader) where T : IUnpackable, new()
         {
             var totalObjects = reader.ReadUInt16();
-            /*var bucketSize = */reader.ReadUInt16();
+            /*var bucketSize = */
+            reader.ReadUInt16();
 
             for (int i = 0; i < totalObjects; i++)
             {

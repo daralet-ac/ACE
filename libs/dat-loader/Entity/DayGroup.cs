@@ -12,8 +12,8 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            ChanceOfOccur   = reader.ReadSingle();
-            DayName         = reader.ReadPString();
+            ChanceOfOccur = reader.ReadSingle();
+            DayName = reader.ReadPString();
             reader.AlignBoundary();
 
             SkyObjects.Unpack(reader);

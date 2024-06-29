@@ -15,16 +15,16 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Name        = reader.ReadObfuscatedString();
+            Name = reader.ReadObfuscatedString();
             reader.AlignBoundary();
-            Category    = reader.ReadUInt32();
-            Icon        = reader.ReadUInt32();
-            Type        = reader.ReadUInt32();
-            Gesture     = reader.ReadUInt32();
-            Time        = reader.ReadSingle();
-            Text        = reader.ReadObfuscatedString();
+            Category = reader.ReadUInt32();
+            Icon = reader.ReadUInt32();
+            Type = reader.ReadUInt32();
+            Gesture = reader.ReadUInt32();
+            Time = reader.ReadSingle();
+            Text = reader.ReadObfuscatedString();
             reader.AlignBoundary();
-            CDM         = reader.ReadSingle();
+            CDM = reader.ReadSingle();
         }
     }
 }

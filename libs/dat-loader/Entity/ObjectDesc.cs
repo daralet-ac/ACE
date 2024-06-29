@@ -20,27 +20,27 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            ObjId       = reader.ReadUInt32();
+            ObjId = reader.ReadUInt32();
 
             BaseLoc.Unpack(reader);
 
-            Freq        = reader.ReadSingle();
+            Freq = reader.ReadSingle();
 
-            DisplaceX   = reader.ReadSingle();
-            DisplaceY   = reader.ReadSingle();
+            DisplaceX = reader.ReadSingle();
+            DisplaceY = reader.ReadSingle();
 
-            MinScale    = reader.ReadSingle();
-            MaxScale    = reader.ReadSingle();
+            MinScale = reader.ReadSingle();
+            MaxScale = reader.ReadSingle();
 
             MaxRotation = reader.ReadSingle();
 
-            MinSlope    = reader.ReadSingle();
-            MaxSlope    = reader.ReadSingle();
+            MinSlope = reader.ReadSingle();
+            MaxSlope = reader.ReadSingle();
 
-            Align       = reader.ReadUInt32();
-            Orient      = reader.ReadUInt32();
+            Align = reader.ReadUInt32();
+            Orient = reader.ReadUInt32();
 
-            WeenieObj   = reader.ReadUInt32();
+            WeenieObj = reader.ReadUInt32();
         }
     }
 }

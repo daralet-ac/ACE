@@ -148,16 +148,16 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            Name            = reader.ReadString();
-            Scale           = reader.ReadUInt32();
-            SetupID         = reader.ReadUInt32();
-            SoundTable      = reader.ReadUInt32();
-            IconImage       = reader.ReadUInt32();
-            BasePalette     = reader.ReadUInt32();
-            SkinPalSet      = reader.ReadUInt32();
-            PhysicsTable    = reader.ReadUInt32();
-            MotionTable     = reader.ReadUInt32();
-            CombatTable     = reader.ReadUInt32();
+            Name = reader.ReadString();
+            Scale = reader.ReadUInt32();
+            SetupID = reader.ReadUInt32();
+            SoundTable = reader.ReadUInt32();
+            IconImage = reader.ReadUInt32();
+            BasePalette = reader.ReadUInt32();
+            SkinPalSet = reader.ReadUInt32();
+            PhysicsTable = reader.ReadUInt32();
+            MotionTable = reader.ReadUInt32();
+            CombatTable = reader.ReadUInt32();
 
             BaseObjDesc.Unpack(reader);
 

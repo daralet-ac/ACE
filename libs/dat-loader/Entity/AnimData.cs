@@ -14,10 +14,10 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            AnimId      = reader.ReadUInt32();
-            LowFrame    = reader.ReadInt32();
-            HighFrame   = reader.ReadInt32();
-            Framerate   = reader.ReadSingle();
+            AnimId = reader.ReadUInt32();
+            LowFrame = reader.ReadInt32();
+            HighFrame = reader.ReadInt32();
+            Framerate = reader.ReadSingle();
         }
 
         public override string ToString()

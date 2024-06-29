@@ -96,7 +96,7 @@ namespace ACE.DatLoader.FileTypes
                 return visualPriority;
             }
             else
-                return null;            
+                return null;
         }
     }
 }

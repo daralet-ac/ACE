@@ -12,11 +12,11 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            SType       = reader.ReadUInt32();
-            Volume      = reader.ReadSingle();
-            BaseChance  = reader.ReadSingle();
-            MinRate     = reader.ReadSingle();
-            MaxRate     = reader.ReadSingle();
+            SType = reader.ReadUInt32();
+            Volume = reader.ReadSingle();
+            BaseChance = reader.ReadSingle();
+            MinRate = reader.ReadSingle();
+            MaxRate = reader.ReadSingle();
         }
 
         public bool IsContinuous => (BaseChance == 0);

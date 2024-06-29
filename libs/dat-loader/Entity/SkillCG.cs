@@ -10,8 +10,8 @@ namespace ACE.DatLoader.Entity
 
         public void Unpack(BinaryReader reader)
         {
-            SkillNum    = reader.ReadUInt32();
-            NormalCost  = reader.ReadInt32();
+            SkillNum = reader.ReadUInt32();
+            NormalCost = reader.ReadInt32();
             PrimaryCost = reader.ReadInt32();
         }
     }

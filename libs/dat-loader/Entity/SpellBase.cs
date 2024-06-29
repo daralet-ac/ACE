@@ -23,7 +23,7 @@ namespace ACE.DatLoader.Entity
         public float ComponentLoss { get; private set; } // Burn rate
         public SpellType MetaSpellType { get; private set; }
         public uint MetaSpellId { get; private set; } // Just the spell id again
-        
+
         // Only on EnchantmentSpell/FellowshipEnchantmentSpells
         public double Duration { get; private set; }
         public float DegradeModifier { get; private set; } // Unknown what this does
