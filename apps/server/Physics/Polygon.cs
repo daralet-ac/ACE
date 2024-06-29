@@ -8,7 +8,7 @@ using ACE.Server.Physics.Entity;
 
 namespace ACE.Server.Physics
 {
-    public class Polygon: IEquatable<Polygon>
+    public class Polygon : IEquatable<Polygon>
     {
         public List<Vertex> Vertices;   // not directly in this DAT structure
         public List<short> VertexIDs;

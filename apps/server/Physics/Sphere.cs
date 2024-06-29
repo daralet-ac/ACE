@@ -12,7 +12,7 @@ namespace ACE.Server.Physics
     /// <summary>
     /// Spherical collision detection
     /// </summary>
-    public class Sphere: IEquatable<Sphere>
+    public class Sphere : IEquatable<Sphere>
     {
         /// <summary>
         /// The center point of the sphere

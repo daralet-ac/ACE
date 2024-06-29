@@ -43,7 +43,7 @@ namespace ACE.Server.WorldObjects
         public HashSet<ObjectGuid> StorageAccess => Guests.Where(i => i.Value).Select(i => i.Key).ToHashSet();
         public WorldObject BootSpot => ChildLinks.FirstOrDefault(i => i.WeenieType == WeenieType.BootSpot);
 
-        public HousePortal HousePortal { get => ChildLinks.FirstOrDefault(l => l as HousePortal != null) as HousePortal;  }
+        public HousePortal HousePortal { get => ChildLinks.FirstOrDefault(l => l as HousePortal != null) as HousePortal; }
         public List<WorldObject> Linkspots => ChildLinks.Where(l => l.WeenieType == WeenieType.Generic && l.WeenieClassName.Equals("portaldestination")).ToList();
 
         /// <summary>
@@ -500,7 +500,7 @@ namespace ACE.Server.WorldObjects
             get
             {
                 //if (HouseType == ACE.Entity.Enum.HouseType.Apartment || HouseType == ACE.Entity.Enum.HouseType.Cottage)
-                    //return this;
+                //return this;
 
                 var landblock = (ushort)((RootGuid.Full >> 12) & 0xFFFF);
 
@@ -516,7 +516,7 @@ namespace ACE.Server.WorldObjects
                     // do not cache, in case permissions have changed
                     return Load(RootGuid.Full);
                 }
-                   
+
                 var loaded = LandblockManager.GetLandblock(landblockId, false);
                 return loaded.GetObject(RootGuid) as House;
             }

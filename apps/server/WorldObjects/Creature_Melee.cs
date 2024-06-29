@@ -135,11 +135,11 @@ namespace ACE.Server.WorldObjects
                 jewelCleave = false;
             }
             if (weapon.IsCleaving)
-               totalCleaves += weapon.CleaveTargets;
+                totalCleaves += weapon.CleaveTargets;
 
             if (totalCleaves > 0 && GetCreatureSkill(Skill.TwoHandedCombat).AdvancementClass == SkillAdvancementClass.Specialized)
                 totalCleaves += ThreadSafeRandom.Next(0, 1);
-           
+
             foreach (var obj in visible)
             {
                 // cleaving skips original target

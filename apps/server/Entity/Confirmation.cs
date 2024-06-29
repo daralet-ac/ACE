@@ -29,7 +29,7 @@ namespace ACE.Server.Entity
         public Player Player => PlayerManager.GetOnlinePlayer(PlayerGuid);
     }
 
-    public class Confirmation_AlterAttribute: Confirmation
+    public class Confirmation_AlterAttribute : Confirmation
     {
         public ObjectGuid AttributeTransferDevice;
 
@@ -77,7 +77,7 @@ namespace ACE.Server.Entity
         }
     }
 
-    public class Confirmation_Augmentation: Confirmation
+    public class Confirmation_Augmentation : Confirmation
     {
         public ObjectGuid AugmentationGuid;
 
@@ -101,13 +101,13 @@ namespace ACE.Server.Entity
         }
     }
 
-    public class Confirmation_CraftInteration: Confirmation
+    public class Confirmation_CraftInteration : Confirmation
     {
         public ObjectGuid SourceGuid;
         public ObjectGuid TargetGuid;
 
         public Confirmation_CraftInteration(ObjectGuid playerGuid, ObjectGuid sourceGuid, ObjectGuid targetGuid)
-            : base (playerGuid, ConfirmationType.CraftInteraction)
+            : base(playerGuid, ConfirmationType.CraftInteraction)
         {
             SourceGuid = sourceGuid;
             TargetGuid = targetGuid;
@@ -207,7 +207,7 @@ namespace ACE.Server.Entity
         }
     }
 
-    public class Confirmation_YesNo: Confirmation
+    public class Confirmation_YesNo : Confirmation
     {
         public ObjectGuid SourceGuid;
 
@@ -235,7 +235,7 @@ namespace ACE.Server.Entity
         }
     }
 
-    public class Confirmation_Custom: Confirmation
+    public class Confirmation_Custom : Confirmation
     {
         public Action Action;
 

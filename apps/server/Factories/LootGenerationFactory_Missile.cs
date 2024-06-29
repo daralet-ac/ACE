@@ -40,7 +40,7 @@ namespace ACE.Server.Factories
 
             if (wo != null && mutate)
                 MutateMissileWeapon(wo, profile, isMagical, wieldDifficulty);
-            
+
             return wo;
         }
 
@@ -84,7 +84,7 @@ namespace ACE.Server.Factories
             // Longbow, Shortbow, Nayin, Shouyumi, Yag, Yumi, Warbow, Heavy Xbow, Light Xbow, Atlatl, Royal Atlatl
             if (wo.Tier > 1)
             {
-                uint[] nonElementalMissileWeapons = { 306, 307, 334, 341, 360, 363, 30625, 311, 312, 12463, 20640 }; 
+                uint[] nonElementalMissileWeapons = { 306, 307, 334, 341, 360, 363, 30625, 311, 312, 12463, 20640 };
                 if (nonElementalMissileWeapons.Contains(wo.WeenieClassId))
                     RollMissileElement(profile, wo);
 

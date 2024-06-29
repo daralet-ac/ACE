@@ -53,7 +53,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.shirtleather,            0.125f ),
             ( WeenieClassName.leggingsleather,         0.125f ),
             ( WeenieClassName.sleevesleather,          0.125f ),
-            
+
             ( WeenieClassName.coatleathernew,          0.125f ),
             ( WeenieClassName.cuirassleathernew,       0.125f ),
             ( WeenieClassName.shirtleathernew,         0.125f ),
@@ -62,7 +62,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.pantsleathernew,         0.125f ),
             ( WeenieClassName.leggingsleathernew,      0.125f ),
             ( WeenieClassName.sleevesleathernew,       0.125f ),
-            
+
         };
 
         private static ChanceTable<WeenieClassName> StuddedLeatherWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
@@ -93,7 +93,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.leggingsstuddedleather,    0.25f ),
             ( WeenieClassName.sleevesstuddedleather,     0.25f ),
 
-            
+
         };
 
         private static ChanceTable<WeenieClassName> YoroiWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
@@ -292,7 +292,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.bracerscovenant,     1.0f ),
         };
 
-     private static ChanceTable<WeenieClassName> NariyidWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        private static ChanceTable<WeenieClassName> NariyidWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
             ( WeenieClassName.helmnariyid,        1.0f ),
 
@@ -319,7 +319,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.ace37214_olthoiceldonbreastplate,  1.0f ),
         };
 
-                private static ChanceTable<WeenieClassName> ClothWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
+        private static ChanceTable<WeenieClassName> ClothWcids = new ChanceTable<WeenieClassName>(ChanceTableType.Weight)
         {
             // headgear
             ( WeenieClassName.capcloth,             0.25f),
@@ -377,7 +377,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             ( WeenieClassName.ace37299_olthoiamulicoat,      0.20f ),
         };
 
-        
+
 
         // ToD+
 
@@ -650,20 +650,20 @@ namespace ACE.Server.Factories.Tables.Wcids
                 case TreasureArmorType.OlthoiHeritage:
                     return RollOlthoiHeritageWcid(treasureDeath, treasureRoll);
 
-                //case TreasureArmorType.Society:
-                //    return RollSocietyArmor(ref treasureRoll.ArmorType);
+                    //case TreasureArmorType.Society:
+                    //    return RollSocietyArmor(ref treasureRoll.ArmorType);
 
-                //case TreasureArmorType.Haebrean:
-                //    return HaebreanWcids.Roll();
+                    //case TreasureArmorType.Haebrean:
+                    //    return HaebreanWcids.Roll();
 
-                //case TreasureArmorType.KnorrAcademy:
-                //    return KnorrAcademyWcids.Roll();
+                    //case TreasureArmorType.KnorrAcademy:
+                    //    return KnorrAcademyWcids.Roll();
 
-                //case TreasureArmorType.Sedgemail:
-                //    return SedgemailLeatherWcids.Roll();
+                    //case TreasureArmorType.Sedgemail:
+                    //    return SedgemailLeatherWcids.Roll();
 
-                //case TreasureArmorType.Overrobe:
-                //    return RollOverRobeWcid(treasureDeath);
+                    //case TreasureArmorType.Overrobe:
+                    //    return RollOverRobeWcid(treasureDeath);
             }
             return WeenieClassName.undef;
         }

@@ -107,7 +107,7 @@ namespace ACE.Server.Entity
             // - 15 = 5
             // - 25 - 6
             // - 50 = 7
-            
+
             var uniqueFollowers = GetUniqueFollowers(this);
 
             var leadershipBonus = Player.GetCurrentLeadership() / 100;

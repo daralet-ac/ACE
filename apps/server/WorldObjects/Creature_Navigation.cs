@@ -40,7 +40,7 @@ namespace ACE.Server.WorldObjects
 
             targetDir.Z = 0.0f;
             targetDir = Vector3.Normalize(targetDir);
-            
+
             // get the 2D angle between these vectors
             return GetAngle(currentDir, targetDir);
         }

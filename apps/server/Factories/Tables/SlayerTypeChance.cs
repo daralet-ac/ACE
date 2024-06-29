@@ -316,7 +316,7 @@ namespace ACE.Server.Factories.Tables
             (CreatureType.Ghost, 1.0f ),
         };
 
-    private static ChanceTable<CreatureType> T6_T8_SlayerTypeChances = new ChanceTable<CreatureType>(ChanceTableType.Weight)
+        private static ChanceTable<CreatureType> T6_T8_SlayerTypeChances = new ChanceTable<CreatureType>(ChanceTableType.Weight)
         {
             ( CreatureType.Drudge, 1.0f ),
             ( CreatureType.Olthoi, 1.0f ),

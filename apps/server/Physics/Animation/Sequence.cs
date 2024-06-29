@@ -439,7 +439,7 @@ namespace ACE.Server.Physics.Animation
             timeElapsed = frameTimeElapsed;
 
             // loop to next anim
-            update_internal(timeElapsed, ref animNode, ref frameNum, ref frame);    
+            update_internal(timeElapsed, ref animNode, ref frameNum, ref frame);
         }
     }
 }

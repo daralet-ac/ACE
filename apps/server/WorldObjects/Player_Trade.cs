@@ -310,9 +310,9 @@ namespace ACE.Server.WorldObjects
 
             session.Player.TradeAccepted = false;
 
-            session.Network.EnqueueSend(new GameEventDeclineTrade(session,session.Player.Guid));
+            session.Network.EnqueueSend(new GameEventDeclineTrade(session, session.Player.Guid));
             session.Network.EnqueueSend(new GameEventCommunicationTransientString(session, "Trade confirmation failed..."));
-            
+
             var target = PlayerManager.GetOnlinePlayer(session.Player.TradePartner);
 
             if (target != null)

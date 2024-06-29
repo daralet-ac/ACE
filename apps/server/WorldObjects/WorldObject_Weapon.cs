@@ -44,7 +44,7 @@ namespace ACE.Server.WorldObjects
         /// <summary>
         /// Returns TRUE if this weapon cleaves
         /// </summary>
-        public bool IsCleaving { get => GetProperty(PropertyInt.Cleaving) != null;  }
+        public bool IsCleaving { get => GetProperty(PropertyInt.Cleaving) != null; }
 
         /// <summary>
         /// Returns the number of cleave targets for this weapon
@@ -1016,7 +1016,7 @@ namespace ACE.Server.WorldObjects
             {
                 if (playerAttacker != null)
                 {
-                   var baseCost = spell.BaseMana;
+                    var baseCost = spell.BaseMana;
 
                     // Check Overload and Battery Focuses
                     var combatAbility = CombatAbility.None;
@@ -1068,7 +1068,7 @@ namespace ACE.Server.WorldObjects
                                 loreScaler = 1f - skillCheck;
                         }
                     }
-                         playerAttacker.UpdateVitalDelta(playerAttacker.Mana, (int)(baseCost * (scarabReduction * -1) * loreScaler));
+                    playerAttacker.UpdateVitalDelta(playerAttacker.Mana, (int)(baseCost * (scarabReduction * -1) * loreScaler));
                 }
 
                 attacker.TryCastSpell(spell, target, itemCaster, itemCaster, true, true);

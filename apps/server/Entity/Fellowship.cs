@@ -509,7 +509,7 @@ namespace ACE.Server.Entity
             // instead of comparing to leader level, we now find the lowest level in the fellowship and compare to it.
             // Anyone with scaling and no more than 25 levels higher is reduced to their level for the purposes of comparison.
             // If there are non-scaled higher level players in the fellow, it will share unevenly as intended
-            var lowestLevel = fellows.Values.Min(f =>  f.Level ?? 1);
+            var lowestLevel = fellows.Values.Min(f => f.Level ?? 1);
 
             var maxLevelDiff = fellows.Values.Max(f =>
             {
@@ -519,8 +519,8 @@ namespace ACE.Server.Entity
                 if (fromMax <= 25 && f.EnchantmentManager.HasSpell(5379))
                     fLevel = lowestLevel;
 
-                return Math.Abs(lowestLevel - fLevel);  
-            }); 
+                return Math.Abs(lowestLevel - fLevel);
+            });
 
             if (maxLevelDiff <= 5)
             {

@@ -867,7 +867,7 @@ namespace ACE.Server.WorldObjects.Managers
             var modifier = 1.0f;
             foreach (var enchantment in enchantments.Where(e => (e.StatModType & EnchantmentTypeFlags.Skill) == 0))
                 modifier *= (int)enchantment.StatModValue;
-            
+
             return (int)modifier;
         }
 
@@ -1000,7 +1000,7 @@ namespace ACE.Server.WorldObjects.Managers
                 return auraDamageMod;
             else
                 return damageMod;*/
-            
+
             return auraDamageMod + damageMod - 1.0f;
         }
 
@@ -1053,7 +1053,7 @@ namespace ACE.Server.WorldObjects.Managers
         {
             var defenseMod = GetAdditiveMod(PropertyFloat.WeaponPhysicalDefense);
             var auraDefenseMod = GetAdditiveMod(PropertyFloat.WeaponAuraDefense);
-            
+
             /*if (WorldObject is Creature && auraDefenseMod != 0)
                 return auraDefenseMod;
             else
@@ -1090,7 +1090,7 @@ namespace ACE.Server.WorldObjects.Managers
                 return elementalDamageAuraMod;
             else
                 return elementalDamageMod;*/
-            
+
             return elementalDamageAuraMod + elementalDamageMod - 2;
         }
 

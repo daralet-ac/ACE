@@ -36,13 +36,13 @@ namespace ACE.Server.Command
 
         public CommandHandlerAttribute(string command, AccessLevel access, CommandHandlerFlag flags = CommandHandlerFlag.None, int parameterCount = -1, string description = "", string usage = "")
         {
-            Command        = command;
-            Access         = access;
-            Flags          = flags;
+            Command = command;
+            Access = access;
+            Flags = flags;
             ParameterCount = parameterCount;
-            Description    = description;
-            Usage          = usage;
-            IncludeRaw     = false;
+            Description = description;
+            Usage = usage;
+            IncludeRaw = false;
         }
 
         public CommandHandlerAttribute(string command, AccessLevel access, CommandHandlerFlag flags = CommandHandlerFlag.None, string description = "", string usage = "")

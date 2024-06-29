@@ -239,7 +239,7 @@ namespace ACE.Server.WorldObjects
                 var healingSkillCurrent = healer.GetCreatureSkill(Skill.Healing).Current;
 
                 var spell = new Spell(5208); // healing kit regeneration (surge of regen)
-                spell.SpellStatModVal *=  (float)HealkitMod.Value * (healingSkillCurrent * 0.01f);
+                spell.SpellStatModVal *= (float)HealkitMod.Value * (healingSkillCurrent * 0.01f);
 
                 healer.TryCastSpell_Inner(spell, target);
             }

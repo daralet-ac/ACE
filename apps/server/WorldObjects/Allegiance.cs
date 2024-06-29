@@ -13,7 +13,7 @@ using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects
 {
-    public class Allegiance: WorldObject
+    public class Allegiance : WorldObject
     {
         /// <summary>
         /// The top of the AllegianceNode tree
@@ -120,7 +120,7 @@ namespace ACE.Server.WorldObjects
             var members = AllegianceManager.FindAllPlayers(monarch);
 
             var patronVassals = BuildPatronVassals(members);
-            
+
             Monarch.BuildChain(this, members, patronVassals);
             BuildMembers(Monarch);
 

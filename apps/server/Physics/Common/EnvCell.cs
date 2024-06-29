@@ -11,7 +11,7 @@ using ACE.Server.Physics.Extensions;
 
 namespace ACE.Server.Physics.Common
 {
-    public class EnvCell: ObjCell, IEquatable<EnvCell>
+    public class EnvCell : ObjCell, IEquatable<EnvCell>
     {
         public int NumSurfaces;
         //public List<Surface> Surfaces;
@@ -38,7 +38,7 @@ namespace ACE.Server.Physics.Common
             Init();
         }
 
-        public EnvCell(DatLoader.FileTypes.EnvCell envCell): base()
+        public EnvCell(DatLoader.FileTypes.EnvCell envCell) : base()
         {
             _envCell = envCell;
 

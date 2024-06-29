@@ -239,7 +239,7 @@ namespace ACE.Server.WorldObjects
         public void Movement()
         {
             //if (!IsRanged)
-                UpdatePosition();
+            UpdatePosition();
 
             if (MonsterState == State.Awake && GetDistanceToTarget() >= MaxChaseRange)
             {
@@ -302,7 +302,7 @@ namespace ACE.Server.WorldObjects
                     //Console.WriteLine("New position: " + newPos.Frame.Origin);
                 }
                 //else
-                    //Console.WriteLine("Moving " + Name + " to " + Location.LandblockId.Raw.ToString("X8"));
+                //Console.WriteLine("Moving " + Name + " to " + Location.LandblockId.Raw.ToString("X8"));
             }
 
             // skip ObjCellID check when updating from physics

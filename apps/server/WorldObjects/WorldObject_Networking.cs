@@ -63,7 +63,7 @@ namespace ACE.Server.WorldObjects
                 SerializePhysicsData(writer, adminvision, changenodraw);
             }
 
-            var weenieFlags =  CalculateWeenieHeaderFlag();
+            var weenieFlags = CalculateWeenieHeaderFlag();
             var weenieFlags2 = CalculateWeenieHeaderFlag2();
 
             UpdateObjectDescriptionFlags();

@@ -205,7 +205,7 @@ namespace ACE.Server.WorldObjects
                 TryConsumeFromInventoryWithNetworking(item);
 
 
-             AddSalvage(salvageBags, item, salvageResults);
+                AddSalvage(salvageBags, item, salvageResults);
 
                 // can any salvagable items be stacked?
                 TryConsumeFromInventoryWithNetworking(item);
@@ -234,7 +234,7 @@ namespace ACE.Server.WorldObjects
         }
 
 
-    public static Dictionary<int, int> SalvagedGems = new Dictionary<int, int>()
+        public static Dictionary<int, int> SalvagedGems = new Dictionary<int, int>()
         {
             {10,  2413},    // Agate
             {11,  2426},    // Amber
@@ -279,7 +279,7 @@ namespace ACE.Server.WorldObjects
             {50,  2401},    // Zircon
         };
 
-public void AddSalvage(List<WorldObject> salvageBags, WorldObject item, SalvageResults salvageResults)
+        public void AddSalvage(List<WorldObject> salvageBags, WorldObject item, SalvageResults salvageResults)
         {
             var materialType = (MaterialType)item.MaterialType;
 
@@ -400,7 +400,7 @@ public void AddSalvage(List<WorldObject> salvageBags, WorldObject item, SalvageR
             if (randomSalvageBonus <= salvageItem.Workmanship)
             {
                 addStructure++;
-              // Console.WriteLine("Added bonus unit of salvage.");
+                // Console.WriteLine("Added bonus unit of salvage.");
             }
 
             message = salvageResults.GetMessage(salvageItem.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown, GetMaxSkill(TinkeringSkills).Skill);

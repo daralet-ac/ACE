@@ -73,27 +73,27 @@ namespace ACE.Server.Entity
         {
             Icons = new Dictionary<AetheriaColor, Dictionary<Sigil, uint>>();
 
-            Icons.Add(AetheriaColor.Blue,   new Dictionary<Sigil, uint>());
+            Icons.Add(AetheriaColor.Blue, new Dictionary<Sigil, uint>());
             Icons.Add(AetheriaColor.Yellow, new Dictionary<Sigil, uint>());
-            Icons.Add(AetheriaColor.Red,    new Dictionary<Sigil, uint>());
+            Icons.Add(AetheriaColor.Red, new Dictionary<Sigil, uint>());
 
-            Icons[AetheriaColor.Blue].Add(Sigil.Defense,     0x06006BF2);
+            Icons[AetheriaColor.Blue].Add(Sigil.Defense, 0x06006BF2);
             Icons[AetheriaColor.Blue].Add(Sigil.Destruction, 0x06006BFE);
-            Icons[AetheriaColor.Blue].Add(Sigil.Fury,        0x06006BFF);
-            Icons[AetheriaColor.Blue].Add(Sigil.Growth,      0x06006C00);
-            Icons[AetheriaColor.Blue].Add(Sigil.Vigor,       0x06006C01);
+            Icons[AetheriaColor.Blue].Add(Sigil.Fury, 0x06006BFF);
+            Icons[AetheriaColor.Blue].Add(Sigil.Growth, 0x06006C00);
+            Icons[AetheriaColor.Blue].Add(Sigil.Vigor, 0x06006C01);
 
-            Icons[AetheriaColor.Yellow].Add(Sigil.Defense,     0x06006C06);
+            Icons[AetheriaColor.Yellow].Add(Sigil.Defense, 0x06006C06);
             Icons[AetheriaColor.Yellow].Add(Sigil.Destruction, 0x06006C07);
-            Icons[AetheriaColor.Yellow].Add(Sigil.Fury,        0x06006BF3);
-            Icons[AetheriaColor.Yellow].Add(Sigil.Growth,      0x06006C08);
-            Icons[AetheriaColor.Yellow].Add(Sigil.Vigor,       0x06006BFD);
+            Icons[AetheriaColor.Yellow].Add(Sigil.Fury, 0x06006BF3);
+            Icons[AetheriaColor.Yellow].Add(Sigil.Growth, 0x06006C08);
+            Icons[AetheriaColor.Yellow].Add(Sigil.Vigor, 0x06006BFD);
 
-            Icons[AetheriaColor.Red].Add(Sigil.Defense,     0x06006C02);
+            Icons[AetheriaColor.Red].Add(Sigil.Defense, 0x06006C02);
             Icons[AetheriaColor.Red].Add(Sigil.Destruction, 0x06006C03);
-            Icons[AetheriaColor.Red].Add(Sigil.Fury,        0x06006C04);
-            Icons[AetheriaColor.Red].Add(Sigil.Growth,      0x06006BF4);
-            Icons[AetheriaColor.Red].Add(Sigil.Vigor,       0x06006C05);
+            Icons[AetheriaColor.Red].Add(Sigil.Fury, 0x06006C04);
+            Icons[AetheriaColor.Red].Add(Sigil.Growth, 0x06006BF4);
+            Icons[AetheriaColor.Red].Add(Sigil.Vigor, 0x06006C05);
         }
 
 

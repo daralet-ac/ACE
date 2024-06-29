@@ -68,7 +68,7 @@ namespace ACE.Server.Command.Handlers
             {
                 player.Character.DeleteTime = (ulong)Time.GetUnixTime();
                 player.Character.IsDeleted = true;
-                player.CharacterChangesDetected = true;                
+                player.CharacterChangesDetected = true;
                 player.Session.LogOffPlayer(true);
                 PlayerManager.HandlePlayerDelete(player.Character.Id);
 

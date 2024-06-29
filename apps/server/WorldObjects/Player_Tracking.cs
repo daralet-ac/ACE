@@ -61,7 +61,7 @@ namespace ACE.Server.WorldObjects
 
             Session.Network.EnqueueSend(new GameMessageCreateObject(worldObject, Adminvision, Adminvision));
 
-            if(worldObject is Player player && player.IsStealthed)
+            if (worldObject is Player player && player.IsStealthed)
                 Session.Network.EnqueueSend(new GameMessageScript(player.Guid, PlayScript.StealthBegin)); // Show the player as half-translucent
 
             //Console.WriteLine($"Player {Name} - TrackObject({worldObject.Name})");
@@ -144,7 +144,7 @@ namespace ACE.Server.WorldObjects
             // intended for cloaked objects, as DO's should not be sent for them
             // but this breaks regular players, as the state of worldObject has already changed, and is never in a ChildLocation
             //if (!IsInChildLocation(worldObject))
-                //return;
+            //return;
 
             // todo: Until we can fix the tracking system better, sending the PickupEvent like retail causes weapon dissapearing bugs on relog
             //Session.Network.EnqueueSend(new GameMessagePickupEvent(worldObject));

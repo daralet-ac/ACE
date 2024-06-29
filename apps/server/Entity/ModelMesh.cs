@@ -16,7 +16,7 @@ namespace ACE.Server.Entity
     /// <summary>
     /// An instanced static mesh
     /// </summary>
-    public class ModelMesh: Mesh
+    public class ModelMesh : Mesh
     {
         /// <summary>
         /// The static mesh

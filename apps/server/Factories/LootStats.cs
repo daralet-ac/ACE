@@ -21,7 +21,7 @@ namespace ACE.Server.Factories
         public float JewelryRingCount { get; set; }
         public float JewelryTrinketCount { get; set; }
         public float GemCount { get; set; }
-        public float AetheriaCount { get; set; }        
+        public float AetheriaCount { get; set; }
         public float ClothingCount { get; set; }
         public float CloakCount { get; set; }
         public float OtherCount { get; set; }
@@ -68,7 +68,7 @@ namespace ACE.Server.Factories
         public int MaxAL { get; set; }
         public string MinALItem { get; set; }
         public string MaxALItem { get; set; }
-        
+
 
         // Pet Stats
         public int PetsTotalRatings { get; set; }

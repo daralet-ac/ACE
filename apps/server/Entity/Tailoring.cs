@@ -135,7 +135,7 @@ namespace ACE.Server.Entity
         }
 
         public static void DoTailoring(Player player, WorldObject source, WorldObject target)
-        { 
+        {
             switch (source.WeenieClassId)
             {
                 case ArmorTailoringKit:
@@ -453,7 +453,7 @@ namespace ACE.Server.Entity
             }
 
             player.Session.Network.EnqueueSend(new GameMessageSystemChat("You modify your armor.", ChatMessageType.Broadcast));
-            
+
             player.UpdateProperty(target, PropertyInt.ClothingPriority, (int)clothingPriority);
             player.TryConsumeFromInventoryWithNetworking(source, 1);
 

@@ -162,7 +162,7 @@ namespace ACE.Server.WorldObjects
                 HandleActionTargetedMeleeAttack_Inner(target, attackSequence);
         }
 
-        public static readonly float MeleeDistance  = 0.6f;
+        public static readonly float MeleeDistance = 0.6f;
         public static readonly float StickyDistance = 4.0f;
         public static readonly float RepeatDistance = 16.0f;
 
@@ -313,7 +313,7 @@ namespace ACE.Server.WorldObjects
             // stamina usage
             // TODO: ensure enough stamina for attack
             var staminaCost = GetAttackStamina(GetPowerRange(), (float)LastAttackAnimationLength, weapon, dualWieldStaminaBonus);
-            
+
             if (EquippedCombatAbility == CombatAbility.Fury && QuestManager.HasQuest($"{this.Name},Reckless"))
             {
                 var recklessStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless");
@@ -333,7 +333,7 @@ namespace ACE.Server.WorldObjects
                         var modifiedStamCost = (float)staminaCost * stamReductionMod;
                         staminaCost = (int)modifiedStamCost;
                     }
-                }   
+                }
             }
 
             UpdateVitalDelta(Stamina, -staminaCost);
@@ -344,7 +344,7 @@ namespace ACE.Server.WorldObjects
                 combatAbility = combatFocus.GetCombatAbility();
 
             // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
-            if(combatAbility == CombatAbility.EnchantedWeapon)
+            if (combatAbility == CombatAbility.EnchantedWeapon)
                 UpdateVitalDelta(Mana, -staminaCost);
 
             if (numStrikes != attackFrames.Count)
@@ -402,7 +402,7 @@ namespace ACE.Server.WorldObjects
                 });
 
                 //if (numStrikes == 1 || TwoHandedCombat)
-                    //actionChain.AddDelaySeconds(swingTime);
+                //actionChain.AddDelaySeconds(swingTime);
             }
 
             //actionChain.AddDelaySeconds(animLength - swingTime * numStrikes);
@@ -416,7 +416,7 @@ namespace ACE.Server.WorldObjects
                 var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
                 var dualWieldSpecBonus = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster refill time
 
-                var refillMod = 1.0f / dualWieldSpecBonus;    
+                var refillMod = 1.0f / dualWieldSpecBonus;
 
                 PowerLevel = AttackQueue.Fetch();
 
@@ -464,7 +464,7 @@ namespace ACE.Server.WorldObjects
             //Console.WriteLine($"AnimSpeed: {animSpeed}, AnimLength: {animLength}");
 
             LastAttackAnimationLength = animLength;
-            
+
             attackFrames = MotionTable.GetAttackFrames(MotionTableId, CurrentMotionState.Stance, swingAnimation);
             //Console.WriteLine($"Attack frames: {string.Join(",", attackFrames)}");
 

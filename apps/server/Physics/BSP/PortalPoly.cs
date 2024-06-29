@@ -2,7 +2,7 @@ using System;
 
 namespace ACE.Server.Physics.BSP
 {
-    public class PortalPoly: IEquatable<PortalPoly>
+    public class PortalPoly : IEquatable<PortalPoly>
     {
         public int PortalIdx;
         public Polygon Portal;

@@ -18,10 +18,10 @@ namespace ACE.Server.WorldObjects
     {
         public enum DebugDamageType
         {
-            None     = 0x0,
+            None = 0x0,
             Attacker = 0x1,
             Defender = 0x2,
-            All      = Attacker | Defender
+            All = Attacker | Defender
         };
 
         public DebugDamageType DebugDamage;
@@ -481,7 +481,7 @@ namespace ACE.Server.WorldObjects
                 attribute = isSpell ? Self : Coordination;
             else
             {
-                switch(weapon.WeaponSkill)
+                switch (weapon.WeaponSkill)
                 {
                     default:
                     case Skill.Bow:
@@ -645,7 +645,7 @@ namespace ACE.Server.WorldObjects
                     attackerAsCreature.TryPerceiveWeaknesses(this, attackType, spellLevel);
 
             var playerAttacker = attacker as Player;
-            if(playerAttacker != null)
+            if (playerAttacker != null)
             {
                 playerAttacker.LastAttackedCreature = this;
                 playerAttacker.LastAttackedCreatureTime = Time.GetUnixTime();
@@ -891,7 +891,7 @@ namespace ACE.Server.WorldObjects
             // SPEC BONUS - Perception: Reduced chance to receive sneak attacks
             var attackerThievery = creatureTarget.GetCreatureSkill(Skill.Lockpick);
             var targetPerception = creatureTarget.GetCreatureSkill(Skill.AssessCreature); // Perception
-            if(targetPerception.AdvancementClass == SkillAdvancementClass.Specialized)
+            if (targetPerception.AdvancementClass == SkillAdvancementClass.Specialized)
             {
                 var skillCheck = SkillCheck.GetSkillChance(targetPerception.Current, attackerThievery.Current);
                 if (skillCheck > ThreadSafeRandom.Next(0.0f, 1.0f))
@@ -1212,7 +1212,7 @@ namespace ACE.Server.WorldObjects
             var spellSpec = new Spell(spellLevelsSpec[spellLevel - 1]);
 
             string spellTypePrefix;
-            switch(spellLevel)
+            switch (spellLevel)
             {
                 case 1: spellTypePrefix = "a slight"; break;
                 default:

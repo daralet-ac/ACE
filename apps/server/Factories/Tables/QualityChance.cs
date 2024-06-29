@@ -205,7 +205,7 @@ namespace ACE.Server.Factories.Tables
 
             //var rng = ThreadSafeRandom.NextIntervalMax(treasureDeath.LootQualityMod);
             double rng;
-            if(treasureDeath.LootQualityMod >= 0)
+            if (treasureDeath.LootQualityMod >= 0)
                 rng = ThreadSafeRandom.Next(0.0f, 1.0f);
             else
                 rng = ThreadSafeRandom.Next(0.0f, Math.Max(1.0f + treasureDeath.LootQualityMod, 0.0f));

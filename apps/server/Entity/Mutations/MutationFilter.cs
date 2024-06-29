@@ -11,11 +11,11 @@ namespace ACE.Server.Entity.Mutations
         public List<Mutation> Mutations = new List<Mutation>();
 
         // MutationFilter -> Mutation -> MutationOutcome -> EffectList -> Effect
-        
+
         public bool TryMutate(WorldObject wo, int tier = 1, float qualityMod = 0.0f)
         {
             double rng;
-            if(qualityMod >= 0)
+            if (qualityMod >= 0)
                 rng = ThreadSafeRandom.Next(qualityMod, 1.0f);
             else
                 rng = ThreadSafeRandom.Next(0.0f, Math.Max(1.0f + qualityMod, 0.0f));

@@ -101,7 +101,7 @@ namespace ACE.Server.WorldObjects
 
         public override void Heartbeat(double currentUnixTime)
         {
-            if(!Tier.HasValue)
+            if (!Tier.HasValue)
                 DetermineTier();
 
             base.Heartbeat(currentUnixTime);

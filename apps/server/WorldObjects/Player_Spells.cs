@@ -603,7 +603,7 @@ namespace ACE.Server.WorldObjects
 
         private bool IsCombatFocusSpell(PropertiesEnchantmentRegistry enchantment, WorldObject trinket)
         {
-            if(trinket == null || trinket.WeenieType != WeenieType.CombatFocus)
+            if (trinket == null || trinket.WeenieType != WeenieType.CombatFocus)
                 return false;
 
             var combatFocus = trinket as CombatFocus;
@@ -662,7 +662,7 @@ namespace ACE.Server.WorldObjects
                 msg += $" Acid Vulnerability: +{acidResistanceDebuff}%.";
             }
 
-            msg += $"\nTotal discovery bonus: +{ totalStacks}% ";
+            msg += $"\nTotal discovery bonus: +{totalStacks}% ";
 
             if (withMessage)
             {

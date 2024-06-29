@@ -12,17 +12,17 @@ namespace ACE.Server.Factories.Tables.Spells
 
         private static readonly List<SpellId> spells = new List<SpellId>()
         {
-             SpellId.CANTRIPARMOR1,               
-             SpellId.CANTRIPACIDWARD1,            
-             SpellId.CANTRIPBLUDGEONINGWARD1,     
-             SpellId.CANTRIPFROSTWARD1,           
-             SpellId.CANTRIPSTORMWARD1,           
-             SpellId.CANTRIPFLAMEWARD1,           
-             SpellId.CANTRIPSLASHINGWARD1,        
-             SpellId.CANTRIPPIERCINGWARD1,        
-             SpellId.CANTRIPMANAGAIN1,            
-             SpellId.CANTRIPSTAMINAGAIN1,         
-             SpellId.CANTRIPHEALTHGAIN1,          
+             SpellId.CANTRIPARMOR1,
+             SpellId.CANTRIPACIDWARD1,
+             SpellId.CANTRIPBLUDGEONINGWARD1,
+             SpellId.CANTRIPFROSTWARD1,
+             SpellId.CANTRIPSTORMWARD1,
+             SpellId.CANTRIPFLAMEWARD1,
+             SpellId.CANTRIPSLASHINGWARD1,
+             SpellId.CANTRIPPIERCINGWARD1,
+             SpellId.CANTRIPMANAGAIN1,
+             SpellId.CANTRIPSTAMINAGAIN1,
+             SpellId.CANTRIPHEALTHGAIN1,
         };
 
         private static readonly int NumTiers = 8;

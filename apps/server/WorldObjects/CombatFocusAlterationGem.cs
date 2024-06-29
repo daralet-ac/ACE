@@ -153,7 +153,7 @@ namespace ACE.Server.WorldObjects
 
             UpdateObj(player, target);
         }
-        
+
 
         private static bool IsAttribute(SpellId spellId)
         {

@@ -11,11 +11,11 @@ namespace ACE.Server.Physics.Animation
 {
     public enum TransitionState
     {
-        Invalid   = 0x0,
-        OK        = 0x1,
-        Collided  = 0x2,
-        Adjusted  = 0x3,
-        Slid      = 0x4
+        Invalid = 0x0,
+        OK = 0x1,
+        Collided = 0x2,
+        Adjusted = 0x3,
+        Slid = 0x4
     };
 
     public class Transition

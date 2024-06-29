@@ -18,9 +18,9 @@ namespace ACE.Server.WorldObjects
     {
         public enum SkillAlterationType
         {
-            Undef      = 0,
+            Undef = 0,
             Specialize = 1,
-            Lower      = 2,
+            Lower = 2,
         }
 
         public SkillAlterationType TypeOfAlteration
@@ -219,7 +219,7 @@ namespace ACE.Server.WorldObjects
                     {
                         var untrainable = Player.IsSkillUntrainable(skill.Skill, (HeritageGroup)player.Heritage);
 
-                       if (player.IsTradeSkill(skill.Skill))
+                        if (player.IsTradeSkill(skill.Skill))
                         {
                             if (player.UntrainSkill(skill.Skill, 0))
                             {
@@ -230,7 +230,7 @@ namespace ACE.Server.WorldObjects
                                 player.Session.Network.EnqueueSend(updateSkill, message);
                                 player.TryConsumeFromInventoryWithNetworking(this, 1);
                             }
-                        } 
+                        }
                         if (player.UntrainSkill(skill.Skill, skillBase.TrainedCost))
                         {
                             var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);

@@ -22,7 +22,7 @@ namespace ACE.Server
                 var json = JsonSerializer.Deserialize<JsonElement>(html);
 
                 string tag = json.GetProperty("tag_name").GetString();
-               
+
                 //Split the tag from "v{version}.{build}" into discrete components  - "tag_name": "v1.39.4192"
                 Version v = new Version(tag.Remove(0, 1));
                 Version currentServerVersion = ServerBuildInfo.GetServerVersion();
@@ -37,7 +37,7 @@ namespace ACE.Server
                     // the Console.Title.Get() only works on Windows...
 #pragma warning disable CA1416 // Validate platform compatibility
                     Console.Title += " -- Server Binary Update Available";
-                    #pragma warning restore CA1416 // Validate platform compatibility
+#pragma warning restore CA1416 // Validate platform compatibility
                 }
                 else
                 {

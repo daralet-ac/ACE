@@ -238,7 +238,7 @@ namespace ACE.Server.WorldObjects
                         if (player.EnchantmentManager.HasSpell(5379))
                         {
                             if (player.CurrentLandblock != null && player.CurrentLandblock.IsDungeon)
-                            { 
+                            {
                                 player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot dispel the Shroud while inside a dungeon.", ChatMessageType.Broadcast));
                                 return;
                             }
@@ -382,7 +382,7 @@ namespace ACE.Server.WorldObjects
         public override void OnActivate(WorldObject activator)
         {
             if (ItemUseable == Usable.Contained && activator is Player player)
-            {               
+            {
                 var containedItem = player.FindObject(Guid.Full, Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems);
                 if (containedItem != null) // item is contained by player
                 {

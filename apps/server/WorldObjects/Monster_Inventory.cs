@@ -185,7 +185,7 @@ namespace ACE.Server.WorldObjects
 
                     case WeenieType.Caster:
 
-                        if(allowCaster)
+                        if (allowCaster)
                             allWeapons.Add(item);
                         break;
 

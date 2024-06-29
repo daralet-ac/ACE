@@ -26,7 +26,7 @@ namespace ACE.Server.Factories
                 wield = RollWieldDifficulty(profile.Tier, TreasureWeaponType.Caster);
 
             // Getting the caster Weenie needed.
-            
+
             // Determine caster type: 0 = Orb, 1 = Scepter, 2 = Baton, 3 = Staff
             subType = ThreadSafeRandom.Next(0, LootTables.TimelineCasterWeaponsMatrix.Length - 1);
             var subTypeLength = ThreadSafeRandom.Next(0, LootTables.TimelineCasterWeaponsMatrix[subType].Length - 1);
@@ -130,7 +130,7 @@ namespace ACE.Server.Factories
                 wo.WeaponSkill = Skill.LifeMagic;
             }
             else
-            { 
+            {
                 wo.WieldSkillType2 = (int)Skill.WarMagic;
                 wo.WeaponSkill = Skill.WarMagic;
             }
@@ -185,7 +185,7 @@ namespace ACE.Server.Factories
 
             wo.ItemDifficulty = null;
 
-            if(profile.Tier == 1)
+            if (profile.Tier == 1)
             {
                 //wo.Name += " (damaged)";
             }
@@ -286,7 +286,7 @@ namespace ACE.Server.Factories
                 }
             }
 
-            return subType; 
+            return subType;
         }
 
         private static bool RollMagicSkillMod(TreasureDeath treasureDeath, WorldObject wo)
@@ -366,14 +366,14 @@ namespace ACE.Server.Factories
                 case 1:
                     elementType = 0x1; // slash
                     uiEffect = 0x0400;
-                    break; 
+                    break;
                 case 2:
                     elementType = 0x2; // pierce
-                    uiEffect = 0x0800; 
-                    break; 
+                    uiEffect = 0x0800;
+                    break;
                 case 3:
                     elementType = 0x4; // bludge
-                    uiEffect = 0x0200; 
+                    uiEffect = 0x0200;
                     break;
                 case 4:
                     elementType = 0x8; // cold
@@ -381,15 +381,15 @@ namespace ACE.Server.Factories
                     break;
                 case 5:
                     elementType = 0x10; // fire
-                    uiEffect = 0x0020; 
+                    uiEffect = 0x0020;
                     break;
                 case 6:
                     elementType = 0x20; // acid
-                    uiEffect = 0x0100; 
+                    uiEffect = 0x0100;
                     break;
                 case 7:
                     elementType = 0x40; // electric
-                    uiEffect = 0x0040; 
+                    uiEffect = 0x0040;
                     break;
             }
             wo.W_DamageType = (DamageType)elementType;
@@ -719,7 +719,7 @@ namespace ACE.Server.Factories
                 var maxDamageMod = GetCasterMaxDamageMod()[tier];
                 var minDamageMod = GetCasterMinDamageMod()[tier];
                 var diminishedDamageModRoll = (maxDamageMod - minDamageMod) * GetDiminishingRoll(profile);
-                
+
                 if (wo.WieldSkillType2 == (int)Skill.WarMagic)
                 {
                     damageRoll = minDamageMod + diminishedDamageModRoll;

@@ -263,7 +263,7 @@ namespace ACE.Server.WorldObjects
                         return null;
                     }
                     //else
-                        //log.Info($"{Name} ({Guid}).GetCombatManeuver() - successfully reduced attack type {AttackType} to {reduced} for attack height {AttackHeight} and stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
+                    //log.Info($"{Name} ({Guid}).GetCombatManeuver() - successfully reduced attack type {AttackType} to {reduced} for attack height {AttackHeight} and stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}");
                 }
                 else
                 {
@@ -336,7 +336,7 @@ namespace ACE.Server.WorldObjects
             }*/
         }
 
-        private static readonly List<(float time, AttackHook attackHook)> defaultAttackFrames = new List<(float time, AttackHook attackHook)>() { ( 1.0f / 3.0f, null ) };
+        private static readonly List<(float time, AttackHook attackHook)> defaultAttackFrames = new List<(float time, AttackHook attackHook)>() { (1.0f / 3.0f, null) };
 
         private static readonly ConcurrentDictionary<AttackFrameParams, bool> missingAttackFrames = new ConcurrentDictionary<AttackFrameParams, bool>();
 
@@ -357,7 +357,7 @@ namespace ACE.Server.WorldObjects
 
             var baseSpeed = GetAnimSpeed();
             var animSpeedMod = 1.0f;
-            if (IsDualWieldAttack &&  GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized)
+            if (IsDualWieldAttack && GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized)
                 animSpeedMod = 1.25f;     // dual wield swing animation 25% faster
 
             var animSpeed = baseSpeed * animSpeedMod;
@@ -437,7 +437,7 @@ namespace ACE.Server.WorldObjects
         /// <param name="armors">The list of armor/clothing covering the targeted body part</param>
         public float GetArmorMod(Creature defender, DamageType damageType, List<WorldObject> armors, WorldObject weapon, float armorRendingMod = 1.0f)
         {
-            var ignoreMagicArmor =  (weapon?.IgnoreMagicArmor ?? false)  || IgnoreMagicArmor;
+            var ignoreMagicArmor = (weapon?.IgnoreMagicArmor ?? false) || IgnoreMagicArmor;
             var ignoreMagicResist = (weapon?.IgnoreMagicResist ?? false) || IgnoreMagicResist;
 
             var effectiveAL = 0.0f;
@@ -454,7 +454,7 @@ namespace ACE.Server.WorldObjects
 
             // handle armor rending mod here?
             //if (bodyArmorMod > 0)
-                //bodyArmorMod *= armorRendingMod;
+            //bodyArmorMod *= armorRendingMod;
 
             //Console.WriteLine("==");
             //Console.WriteLine("Armor Self: " + bodyArmorMod);
@@ -506,7 +506,7 @@ namespace ACE.Server.WorldObjects
                 return 0;
 
             var player = this as Player;
-            if (player != null) 
+            if (player != null)
             {
                 // Shield Level capped at Shield skill amount
                 var shieldSkill = GetCreatureSkill(Skill.Shield);
@@ -519,7 +519,7 @@ namespace ACE.Server.WorldObjects
                 // If Shield cap is greater than equipped shield level, shield gains +1 shield level per 10 points under cap
                 if (shieldCap > shieldLevel)
                     shieldLevel += (shieldCap - shieldLevel) / 10;
-                
+
                 return Math.Min(shieldLevel, shieldCap);
             }
             else

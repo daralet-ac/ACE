@@ -50,7 +50,7 @@ namespace ACE.Server.Network.Managers
                     {
                         var messageHandler = new MessageHandlerInfo()
                         {
-                            Handler   = (MessageHandler)Delegate.CreateDelegate(typeof(MessageHandler), methodInfo),
+                            Handler = (MessageHandler)Delegate.CreateDelegate(typeof(MessageHandler), methodInfo),
                             Attribute = messageHandlerAttribute
                         };
 

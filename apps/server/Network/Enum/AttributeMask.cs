@@ -7,15 +7,15 @@ namespace ACE.Server.Network.Enum
     [Flags]
     public enum AttributeMask
     {
-        Strength     = 0x1,
-        Endurance    = 0x2,
-        Quickness    = 0x4,
+        Strength = 0x1,
+        Endurance = 0x2,
+        Quickness = 0x4,
         Coordination = 0x8,
-        Focus        = 0x10,
-        Self         = 0x20,
-        Health       = 0x40,
-        Stamina      = 0x80,
-        Mana         = 0x100,
+        Focus = 0x10,
+        Self = 0x20,
+        Health = 0x40,
+        Stamina = 0x80,
+        Mana = 0x100,
     };
 
     public static class AttributeMaskHelper

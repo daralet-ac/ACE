@@ -137,7 +137,7 @@ namespace ACE.Server.Managers
 
             DatabaseManager.Shard.SaveBiotasInParallel(biotas, null, true);
         }
-        
+
 
         /// <summary>
         /// This would be used when a new player is created after the server has started.
@@ -613,7 +613,7 @@ namespace ACE.Server.Managers
                 BroadcastToChannelFromConsole(Channel.Audit, message);
 
             //if (PropertyManager.GetBool("log_audit", true).Item)
-                //log.Info($"[AUDIT] {(issuer != null ? $"{issuer.Name} says on the Audit channel: " : "")}{message}");
+            //log.Info($"[AUDIT] {(issuer != null ? $"{issuer.Name} says on the Audit channel: " : "")}{message}");
 
             //LogBroadcastChat(Channel.Audit, issuer, message);
         }

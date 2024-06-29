@@ -1158,7 +1158,7 @@ namespace ACE.Server.WorldObjects
                 name = name.Replace(material, "");
 
             string element;
-            switch(W_DamageType)
+            switch (W_DamageType)
             {
                 default: element = ""; break;
                 case DamageType.Slash: element = "Slashing"; break;

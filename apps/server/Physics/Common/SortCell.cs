@@ -3,16 +3,16 @@ using ACE.Server.Physics.Animation;
 
 namespace ACE.Server.Physics.Common
 {
-    public class SortCell: ObjCell
+    public class SortCell : ObjCell
     {
         public BuildingObj Building;
 
-        public SortCell(): base()
+        public SortCell() : base()
         {
             Init();
         }
 
-        public SortCell(uint cellID): base(cellID)
+        public SortCell(uint cellID) : base(cellID)
         {
             Init();
         }

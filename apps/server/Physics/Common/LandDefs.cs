@@ -200,7 +200,7 @@ namespace ACE.Server.Physics.Common
         public static Vector2? get_outside_lcoord(uint blockCellID, float _x, float _y)
         {
             var cellID = (uint)(blockCellID & CellID_Mask);
-             
+
             if (cell_in_range(cellID))
             {
                 var offset = blockid_to_lcoord(blockCellID);
@@ -221,7 +221,7 @@ namespace ACE.Server.Physics.Common
         {
             return cellID == BlockCellID ||
                    cellID >= FirstLandCellID && cellID <= LastLandCellID ||
-                   cellID >= FirstEnvCellID  && cellID <= LastEnvCellID;
+                   cellID >= FirstEnvCellID && cellID <= LastEnvCellID;
         }
 
         public static int lcoord_to_gid(float _x, float _y)

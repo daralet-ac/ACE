@@ -23,9 +23,9 @@ namespace ACE.Server.Factories.Tables.Cantrips
             SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1,   // Martial Weapons
             SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1,   // Staff
             SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1, // Dagger
-            SpellId.CANTRIPUNARMEDAPTITUDE1,        
+            SpellId.CANTRIPUNARMEDAPTITUDE1,
             SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1, // Bows
-            SpellId.CANTRIPTHROWNAPTITUDE1,         
+            SpellId.CANTRIPTHROWNAPTITUDE1,
 
             SpellId.CANTRIPTWOHANDEDAPTITUDE1,
             SpellId.CantripDualWieldAptitude1,

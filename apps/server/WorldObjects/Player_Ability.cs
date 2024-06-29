@@ -66,7 +66,7 @@ namespace ACE.Server.WorldObjects
 
             }
         }
-        
+
         public void TryUseFocusedTaunt(WorldObject ability)
         {
             Creature target = LastAttackedCreature;
@@ -357,7 +357,7 @@ namespace ACE.Server.WorldObjects
 
         public void TryUseActivated(WorldObject ability)
         {
-           switch (EquippedCombatAbility)
+            switch (EquippedCombatAbility)
             {
                 case CombatAbility.Provoke:
                     LastProvokeActivated = Time.GetUnixTime();
@@ -366,9 +366,9 @@ namespace ACE.Server.WorldObjects
                     break;
 
                 case CombatAbility.Phalanx:
-                        LastPhalanxActivated = Time.GetUnixTime();
-                        PlayParticleEffect(PlayScript.ShieldUpGrey, this.Guid);
-                        Session.Network.EnqueueSend(new GameMessageSystemChat($"Raise your shield! For the next ten seconds, your chance to block is increased, and applies to attacks from any angle.", ChatMessageType.Broadcast));
+                    LastPhalanxActivated = Time.GetUnixTime();
+                    PlayParticleEffect(PlayScript.ShieldUpGrey, this.Guid);
+                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Raise your shield! For the next ten seconds, your chance to block is increased, and applies to attacks from any angle.", ChatMessageType.Broadcast));
                     break;
 
                 case CombatAbility.Fury:
@@ -442,7 +442,7 @@ namespace ACE.Server.WorldObjects
                     Session.Network.EnqueueSend(new GameMessageSystemChat($"You must equip an upgraded Combat Focus to activate an ability!", ChatMessageType.Broadcast));
                     break;
             }
-            
+
         }
 
         public static int HandleRecklessStamps(Player playerAttacker)
@@ -528,19 +528,19 @@ namespace ACE.Server.WorldObjects
                 baseStamps = (int)(baseStamps * 2.5);
 
             if (spellTypeScaler != null)
-                baseStamps = baseStamps/(int)spellTypeScaler;
+                baseStamps = baseStamps / (int)spellTypeScaler;
 
             if (!sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload"))
             {
                 sourcePlayer.QuestManager.Stamp($"{sourcePlayer.Name},Overload");
-                sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Overload", (int)baseStamps);                    
+                sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Overload", (int)baseStamps);
             }
             else if (sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload") < 500)
                 sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Overload", (int)baseStamps);
 
             var stacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
             if (stacks > 250)
-            { 
+            {
                 var overloadChance = 0.075f * (stacks - 250) / 250;
                 if (overloadChance > ThreadSafeRandom.Next(0f, 1f))
                 {

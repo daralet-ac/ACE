@@ -1,6 +1,6 @@
 namespace ACE.Server.Physics.Hooks
 {
-    public class FPHook: PhysicsObjHook
+    public class FPHook : PhysicsObjHook
     {
         public float StartValue;
         public float EndValue;

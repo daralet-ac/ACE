@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ACE.Server.Network.Enum;
 
 namespace ACE.Server.Network.GameMessages
@@ -12,7 +12,7 @@ namespace ACE.Server.Network.GameMessages
         public GameMessageAttribute(GameMessageOpcode opcode, SessionState state)
         {
             Opcode = opcode;
-            State  = state;
+            State = state;
         }
     }
 }

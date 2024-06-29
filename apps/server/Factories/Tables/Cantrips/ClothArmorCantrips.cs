@@ -5,7 +5,7 @@ using Serilog;
 
 namespace ACE.Server.Factories.Tables.Cantrips
 {
-    public static class ClothArmorCantrips 
+    public static class ClothArmorCantrips
     {
         private static readonly ILogger _log = Log.ForContext(typeof(ClothArmorCantrips));
 

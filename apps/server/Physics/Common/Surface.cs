@@ -31,7 +31,7 @@ namespace ACE.Server.Physics.Common
             OrigTextureID = 0;   // stru_845060
             OrigDiffuse = 1.0f;
             // palette id?
-            
+
             // SetAutoRestore()
         }
 

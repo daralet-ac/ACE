@@ -105,7 +105,7 @@ namespace ACE.Server.Managers
             //var houseOwners = allPlayers.Where(i => i.HouseInstance != null);
 
             //foreach (var houseOwner in houseOwners)
-                //AddRentQueue(houseOwner);
+            //AddRentQueue(houseOwner);
 
             var slumlordBiotas = DatabaseManager.Shard.BaseDatabase.GetBiotasByType(WeenieType.SlumLord);
 

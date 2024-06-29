@@ -202,7 +202,7 @@ namespace ACE.Server.WorldObjects
 
             ThreatGainedSinceLastTick += amount;
 
-            if(DebugThreatSystem)
+            if (DebugThreatSystem)
                 Console.WriteLine($"{Name} threat increased towards {targetCreature.Name} by +{amount}");
         }
 
@@ -261,7 +261,7 @@ namespace ACE.Server.WorldObjects
                 {
                     visibleTargets.Remove(untargetablePlayer);
 
-                     if (ThreatLevel != null && ThreatLevel.ContainsKey(untargetablePlayer))
+                    if (ThreatLevel != null && ThreatLevel.ContainsKey(untargetablePlayer))
                         ThreatLevel.Remove(untargetablePlayer);
 
                     if (visibleTargets.Count == 0)
@@ -303,7 +303,7 @@ namespace ACE.Server.WorldObjects
                             continue;
 
                         // Add new visible targets to threat list
-                        if (!Name.Contains("Placeholder") && !Name.Contains("Boss Watchdog")) 
+                        if (!Name.Contains("Placeholder") && !Name.Contains("Boss Watchdog"))
                             ThreatLevel.Add(targetCreature, ThreatMinimum);
                     }
 
@@ -718,7 +718,7 @@ namespace ACE.Server.WorldObjects
                     var visualAwarenessRange = (float)((VisualAwarenessRange ?? VisualAwarenessRange_Default) * PropertyManager.GetDouble("mob_awareness_range").Item);
 
                     if (!Location.Indoors && visualAwarenessRange < 45f && Level > 10 && !OverrideVisualRange.HasValue || OverrideVisualRange == false)
-                       visualAwarenessRange = PropertyManager.GetLong("monster_visual_awareness_range").Item;
+                        visualAwarenessRange = PropertyManager.GetLong("monster_visual_awareness_range").Item;
 
                     _visualAwarenessRangeSq = visualAwarenessRange * visualAwarenessRange;
                 }

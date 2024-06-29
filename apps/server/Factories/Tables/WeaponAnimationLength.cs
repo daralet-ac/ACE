@@ -9,7 +9,7 @@ namespace ACE.Server.Factories.Tables
     {
         private static readonly Dictionary<AttackType, float> MeleeAnimLength = new Dictionary<AttackType, float>()
         {
-            { AttackType.DoubleSlash,           2.62f }, 
+            { AttackType.DoubleSlash,           2.62f },
             { AttackType.DoubleStrike,          2.62f }, // use fastest, DoubleSlash
             { AttackType.DoubleThrust,          3.05f },
             { AttackType.Kick,                  1.10f },
@@ -53,7 +53,7 @@ namespace ACE.Server.Factories.Tables
                 return 1.85f;
             else if (!weapon.IsAmmoLauncher && weapon.WeaponSkill == Skill.ThrownWeapon)
                 return 2.33f;
-            else if (!weapon.IsAmmoLauncher  && MeleeAnimLength.TryGetValue(weapon.W_AttackType, out valueMod))
+            else if (!weapon.IsAmmoLauncher && MeleeAnimLength.TryGetValue(weapon.W_AttackType, out valueMod))
                 return valueMod;
             else if (weapon.IsAmmoLauncher && MissileAnimLength.TryGetValue(weapon.WeaponSkill, out valueMod))
                 return valueMod;

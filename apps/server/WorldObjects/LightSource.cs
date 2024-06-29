@@ -24,7 +24,7 @@ namespace ACE.Server.WorldObjects
         }
 
         private void SetEphemeralValues()
-        {        
+        {
         }
 
         public override void ActOnUse(WorldObject wo)

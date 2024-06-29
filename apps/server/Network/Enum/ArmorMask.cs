@@ -5,14 +5,14 @@ namespace ACE.Server.Network.Enum
 {
     public enum ArmorMask
     {
-        ArmorLevel              = 0x1,
-        SlashingProtection      = 0x2,
-        PiercingProtection      = 0x4,
-        BludgeoningProtection   = 0x8,
-        ColdProtection          = 0x10,
-        FireProtection          = 0x20,
-        AcidProtection          = 0x40,
-        LightningProtection     = 0x80
+        ArmorLevel = 0x1,
+        SlashingProtection = 0x2,
+        PiercingProtection = 0x4,
+        BludgeoningProtection = 0x8,
+        ColdProtection = 0x10,
+        FireProtection = 0x20,
+        AcidProtection = 0x40,
+        LightningProtection = 0x80
     };
 
     public static class ArmorMaskHelper

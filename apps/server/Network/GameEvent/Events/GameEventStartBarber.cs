@@ -2,7 +2,7 @@ namespace ACE.Server.Network.GameEvent.Events
 {
     public class GameEventStartBarber : GameEventMessage
     {
-        public static readonly uint EmpyreanMaleMotionDID   = 0x0900020E;
+        public static readonly uint EmpyreanMaleMotionDID = 0x0900020E;
         public static readonly uint EmpyreanFemaleMotionDID = 0x0900020D;
 
         public GameEventStartBarber(Session session)

@@ -20,12 +20,12 @@ namespace ACE.Server.Factories
 
             int jewelrySlot = ThreadSafeRandom.Next(1, 100);
             int jewelType;
-                if (jewelrySlot <= 33)
-                    jewelType = LootTables.ringItems[ThreadSafeRandom.Next(0, LootTables.ringItems.Length - 1)];
-                else if (jewelrySlot <= 66)
-                    jewelType = LootTables.braceletItems[ThreadSafeRandom.Next(0, LootTables.braceletItems.Length - 1)];
-                else
-                    jewelType = LootTables.necklaceItems[ThreadSafeRandom.Next(0, LootTables.necklaceItems.Length - 1)];
+            if (jewelrySlot <= 33)
+                jewelType = LootTables.ringItems[ThreadSafeRandom.Next(0, LootTables.ringItems.Length - 1)];
+            else if (jewelrySlot <= 66)
+                jewelType = LootTables.braceletItems[ThreadSafeRandom.Next(0, LootTables.braceletItems.Length - 1)];
+            else
+                jewelType = LootTables.necklaceItems[ThreadSafeRandom.Next(0, LootTables.necklaceItems.Length - 1)];
 
             WorldObject wo = WorldObjectFactory.CreateNewWorldObject((uint)jewelType);
 
@@ -58,7 +58,7 @@ namespace ACE.Server.Factories
 
             // item value
             //  if (wo.HasMutateFilter(MutateFilter.Value))     // fixme: data
-                MutateValue(wo, profile.Tier, roll);
+            MutateValue(wo, profile.Tier, roll);
 
             wo.LongDesc = GetLongDesc(wo);
 
@@ -167,9 +167,9 @@ namespace ACE.Server.Factories
                             wo.LongDesc = "This item cannot contain additional spells.\n\n" + wo.LongDesc;
                         }
                         break;
-                    }
-                    totalRollPercentile += ratingPercentile;
-                
+                }
+                totalRollPercentile += ratingPercentile;
+
                 totalRollPercentile = (totalRollPercentile + maxWardRollPercentile) / 2;
 
                 return true;
@@ -206,7 +206,7 @@ namespace ACE.Server.Factories
                         break;
                 }
                 totalRollPercentile += ratingPercentile;
-                
+
                 totalRollPercentile = (totalRollPercentile + maxWardRollPercentile) / 2;
 
                 return true;
@@ -239,12 +239,12 @@ namespace ACE.Server.Factories
             {
                 case 1:
                     switch (spellType)
-                    { 
+                    {
                         case 1:
                             SpellId[] slashBolts = { SpellId.WhirlingBlade1, SpellId.WhirlingBlade1, SpellId.WhirlingBlade2, SpellId.WhirlingBlade3, SpellId.WhirlingBlade4, SpellId.WhirlingBlade5, SpellId.WhirlingBlade6, SpellId.WhirlingBlade7 };
                             return slashBolts[tier - 1];
                         case 2:
-                            SpellId[] slashStreaks = { SpellId.WhirlingBladeStreak1, SpellId.WhirlingBladeStreak1, SpellId.WhirlingBladeStreak2, SpellId.WhirlingBladeStreak3, SpellId.WhirlingBladeStreak4, SpellId.WhirlingBladeStreak5, SpellId.WhirlingBladeStreak6, SpellId.WhirlingBladeStreak7 }; 
+                            SpellId[] slashStreaks = { SpellId.WhirlingBladeStreak1, SpellId.WhirlingBladeStreak1, SpellId.WhirlingBladeStreak2, SpellId.WhirlingBladeStreak3, SpellId.WhirlingBladeStreak4, SpellId.WhirlingBladeStreak5, SpellId.WhirlingBladeStreak6, SpellId.WhirlingBladeStreak7 };
                             return slashStreaks[tier - 1];
                         case 3:
                             SpellId[] slashVolleys = { SpellId.BladeVolley1, SpellId.BladeVolley1, SpellId.BladeVolley2, SpellId.BladeVolley3, SpellId.BladeVolley4, SpellId.BladeVolley5, SpellId.BladeVolley6, SpellId.BladeVolley7 };
@@ -329,7 +329,7 @@ namespace ACE.Server.Factories
                             SpellId[] coldBolts = { SpellId.FrostBolt1, SpellId.FrostBolt1, SpellId.FrostBolt2, SpellId.FrostBolt3, SpellId.FrostBolt4, SpellId.FrostBolt5, SpellId.FrostBolt6, SpellId.FrostBolt7 };
                             return coldBolts[tier - 1];
                         case 2:
-                            SpellId[] coldStreaks = { SpellId.FrostStreak1, SpellId.FrostStreak1, SpellId.FrostStreak2, SpellId.FrostStreak3, SpellId.FrostStreak4, SpellId.FrostStreak5, SpellId.FrostStreak6, SpellId.FrostStreak7 }; 
+                            SpellId[] coldStreaks = { SpellId.FrostStreak1, SpellId.FrostStreak1, SpellId.FrostStreak2, SpellId.FrostStreak3, SpellId.FrostStreak4, SpellId.FrostStreak5, SpellId.FrostStreak6, SpellId.FrostStreak7 };
                             return coldStreaks[tier - 1];
                         case 3:
                             SpellId[] coldVolleys = { SpellId.FrostVolley1, SpellId.FrostVolley1, SpellId.FrostVolley2, SpellId.FrostVolley3, SpellId.FrostVolley4, SpellId.FrostVolley5, SpellId.FrostVolley6, SpellId.FrostVolley7 };
@@ -346,7 +346,7 @@ namespace ACE.Server.Factories
                             SpellId[] lightningBolts = { SpellId.LightningBolt1, SpellId.LightningBolt1, SpellId.LightningBolt2, SpellId.LightningBolt3, SpellId.LightningBolt4, SpellId.LightningBolt5, SpellId.LightningBolt6, SpellId.LightningBolt7 };
                             return lightningBolts[tier - 1];
                         case 2:
-                            SpellId[] lightningStreaks = { SpellId.LightningStreak1, SpellId.LightningStreak1, SpellId.LightningStreak2, SpellId.LightningStreak3, SpellId.LightningStreak4, SpellId.LightningStreak5, SpellId.LightningStreak6, SpellId.LightningStreak7 }; 
+                            SpellId[] lightningStreaks = { SpellId.LightningStreak1, SpellId.LightningStreak1, SpellId.LightningStreak2, SpellId.LightningStreak3, SpellId.LightningStreak4, SpellId.LightningStreak5, SpellId.LightningStreak6, SpellId.LightningStreak7 };
                             return lightningStreaks[tier - 1];
                         case 3:
                             SpellId[] lightningVolleys = { SpellId.LightningVolley1, SpellId.LightningVolley1, SpellId.LightningVolley2, SpellId.LightningVolley3, SpellId.LightningVolley4, SpellId.LightningVolley5, SpellId.LightningVolley6, SpellId.LightningVolley7 };
@@ -370,12 +370,12 @@ namespace ACE.Server.Factories
                 {0.025f, 0.05f, 0.06f, 0.07f, 0.08f, 0.09f, 0.1f, 0.1f }, // Blasts
             };
 
-            return procChances[spellType - 1, tier - 1]; 
+            return procChances[spellType - 1, tier - 1];
         }
 
         private static int GetSpellProcDifficulty(int tier)
         {
-            int[] diff = {50, 100, 200, 300, 350, 400, 450, 475};
+            int[] diff = { 50, 100, 200, 300, 350, 400, 450, 475 };
 
             return diff[tier - 1];
         }

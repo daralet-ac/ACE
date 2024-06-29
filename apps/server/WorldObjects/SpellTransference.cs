@@ -228,7 +228,7 @@ namespace ACE.Server.WorldObjects
                         pearl.UiEffects = ACE.Entity.Enum.UiEffects.BoostMana;
                         player.EnqueueBroadcast(new GameMessageUpdateObject(source));
                         player.PlayParticleEffect(PlayScript.EnchantUpBlue, player.Guid);
-                        
+
                         player.TryConsumeFromInventoryWithNetworking(target);
 
                         player.TryCreateInInventoryWithNetworking(pearl);
@@ -250,7 +250,7 @@ namespace ACE.Server.WorldObjects
                 actionChain.EnqueueChain();
 
                 player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
-                
+
             }
             // handle Transference
             else
@@ -565,5 +565,5 @@ namespace ACE.Server.WorldObjects
         };
     }
 }
-    
+
 

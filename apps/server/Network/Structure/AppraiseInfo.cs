@@ -115,7 +115,7 @@ namespace ACE.Server.Network.Structure
                 if (wo.GetProperty(PropertyInt.Structure).HasValue)
                     PropertiesInt.Remove(PropertyInt.Structure);
 
-                if(wo.GetProperty(PropertyInt.MaxStructure).HasValue)
+                if (wo.GetProperty(PropertyInt.MaxStructure).HasValue)
                     PropertiesInt.Remove(PropertyInt.MaxStructure);
             }
 
@@ -208,7 +208,7 @@ namespace ACE.Server.Network.Structure
             }
 
             if (wo is SlumLord slumLord)
-            {                
+            {
                 PropertiesBool.Clear();
                 PropertiesDID.Clear();
                 PropertiesFloat.Clear();
@@ -336,7 +336,7 @@ namespace ACE.Server.Network.Structure
             if (wo is ManaStone)
             {
                 var useMessage = "";
-                
+
                 if (wo.ItemCurMana.HasValue)
                     useMessage = $"Use on a magic item to give the stone's stored Mana to that item.\n\nMana Capacity: {wo.ItemMaxMana ?? 10}";
                 else
@@ -624,7 +624,7 @@ namespace ACE.Server.Network.Structure
                         PropertiesString[PropertyString.LongDesc] = longDescAdditions;
                     }
                 }
-                
+
             }
 
 
@@ -1151,7 +1151,7 @@ namespace ACE.Server.Network.Structure
             }
 
             // ----- JEWELCRAFTING ------
-             if (PropertiesString.TryGetValue(PropertyString.JewelSocket1, out string jewelSocket1))
+            if (PropertiesString.TryGetValue(PropertyString.JewelSocket1, out string jewelSocket1))
             {
                 string[] parts = jewelSocket1.Split('/');
 
@@ -1226,7 +1226,7 @@ namespace ACE.Server.Network.Structure
             // Frequency
             if (PropertiesFloat.TryGetValue(PropertyFloat.CooldownDuration, out var cooldownDuration) && cooldownDuration > 0.01)
             {
-                if(wo.WeenieType == WeenieType.EmpoweredScarab)
+                if (wo.WeenieType == WeenieType.EmpoweredScarab)
                     extraPropertiesText += $"Cooldown: {Math.Round((double)cooldownDuration, 1)} seconds\n";
 
                 hasExtraPropertiesText = true;
@@ -1287,7 +1287,7 @@ namespace ACE.Server.Network.Structure
 
         private string GetProtectionLevelText(float protectionMod)
         {
-            switch(protectionMod)
+            switch (protectionMod)
             {
                 case <= 0.39f: return "Poor";
                 case <= 0.79f: return "Below Average";
@@ -1399,10 +1399,10 @@ namespace ACE.Server.Network.Structure
             ResistHighlight = ResistMaskHelper.GetHighlightMask(creature);
             ResistColor = ResistMaskHelper.GetColorMask(creature);
 
-	        if (Success && (creature is Player || !creature.Attackable))
-	            ArmorLevels = new ArmorLevel(creature);
-	
-	        AddRatings(creature);
+            if (Success && (creature is Player || !creature.Attackable))
+                ArmorLevels = new ArmorLevel(creature);
+
+            AddRatings(creature);
 
             if (NPCLooksLikeObject)
             {
@@ -1533,8 +1533,8 @@ namespace ACE.Server.Network.Structure
             if (PropertiesInt.Count > 0)
                 Flags |= IdentifyResponseFlags.IntStatsTable;
             if (PropertiesInt64.Count > 0)
-                Flags |= IdentifyResponseFlags.Int64StatsTable;         				
-			if (PropertiesBool.Count > 0)
+                Flags |= IdentifyResponseFlags.Int64StatsTable;
+            if (PropertiesBool.Count > 0)
                 Flags |= IdentifyResponseFlags.BoolStatsTable;
             if (PropertiesFloat.Count > 0)
                 Flags |= IdentifyResponseFlags.FloatStatsTable;

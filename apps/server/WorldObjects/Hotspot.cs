@@ -54,7 +54,7 @@ namespace ACE.Server.WorldObjects
 
             if (AffectsOnlyAis && (wo is Player))
                 return;
-              
+
             if (!Creatures.Contains(creature.Guid))
             {
                 //Console.WriteLine($"{Name} ({Guid}).OnCollideObject({creature.Name})");
@@ -177,7 +177,7 @@ namespace ACE.Server.WorldObjects
                 Activate(creature);
             }
         }
-         
+
         private void Activate(Creature creature)
         {
             if (!IsHot) return;
@@ -200,12 +200,12 @@ namespace ACE.Server.WorldObjects
                 var immunityTime = (CycleTime ?? 0) * (1.0f - CycleTimeVariance ?? 0.0f) * 0.9f; // Multiplying the minimum possible CycleTime by 0.9 just to be extra sure that we wont be immune for the next tick.
                 creature.HotspotImmunityTimestamp = currentTime + immunityTime;
             }
-            
+
             if (player != null && MenhirManaHotspot == true)
                 player.RechargeEmpoweredScarabs(this);
-            
+
             if (player != null && CampfireHotspot == true)
-            {   
+            {
                 var forwardCommand = player.CurrentMovementData.MovementType == MovementType.Invalid && player.CurrentMovementData.Invalid != null ? player.CurrentMovementData.Invalid.State.ForwardCommand : MotionCommand.Invalid;
                 if (forwardCommand == MotionCommand.Sitting || forwardCommand == MotionCommand.Sleeping || forwardCommand == MotionCommand.Crouch)
                 {
@@ -215,7 +215,7 @@ namespace ACE.Server.WorldObjects
 
                     if (player.CampfireTimer < Time.GetUnixTime())
                     {
-                        if(player.WellRestedHotspot == null)
+                        if (player.WellRestedHotspot == null)
                             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Gazing into the fire calms your soul.", ChatMessageType.Magic));
 
                         player.CampfireTimer = 0;
@@ -297,13 +297,13 @@ namespace ACE.Server.WorldObjects
 
             if (damageType == ACE.Entity.Enum.DamageType.Electric && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) / 1000) > ThreadSafeRandom.Next(0f, 1f))
                 wcid = (uint)lightningHotspots[modifiedTier];
-                
+
             if (damageType == ACE.Entity.Enum.DamageType.Health || damageType == ACE.Entity.Enum.DamageType.Stamina || damageType == ACE.Entity.Enum.DamageType.Mana)
             {
                 if ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) / 1000 > ThreadSafeRandom.Next(0f, 1f))
                     wcid = (uint)healingHotspots[modifiedTier];
             }
-                
+
 
             if (wcid != 0)
                 CreateHotspot(playerAttacker, defender, wcid);

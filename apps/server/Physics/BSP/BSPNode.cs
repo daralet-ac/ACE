@@ -23,7 +23,7 @@ namespace ACE.Server.Physics.BSP
         Close = 0x02
     };
 
-    public class BSPNode: IEquatable<BSPNode>
+    public class BSPNode : IEquatable<BSPNode>
     {
         public Sphere Sphere;
         public Plane SplittingPlane;

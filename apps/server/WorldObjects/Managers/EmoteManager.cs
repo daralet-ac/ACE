@@ -138,7 +138,7 @@ namespace ACE.Server.WorldObjects.Managers
                     if (player != null)
                         player.GrantSkillRanks((Skill)emote.Stat, (int)emote.Amount);
 
-                   break;
+                    break;
                 case EmoteType.AwardLuminance:
 
                     if (player != null)
@@ -325,7 +325,7 @@ namespace ACE.Server.WorldObjects.Managers
                         {
                             var spellTarget = GetSpellTarget(spell, targetObject);
 
-                            if(emote.Message != null && emote.Message == "noresist")
+                            if (emote.Message != null && emote.Message == "noresist")
                             {
                                 WorldObject.TryCastSpell_WithRedirects(spell, spellTarget, WorldObject, null, false, false, false);
                             }
@@ -631,7 +631,7 @@ namespace ACE.Server.WorldObjects.Managers
 
                     if (player != null)
                     {
-                        if(player.Fellowship != null)
+                        if (player.Fellowship != null)
                         {
                             var questSolves = player.Fellowship.QuestManager.HasQuestSolves(emote.Message, emote.Min, emote.Max);
 
@@ -700,7 +700,7 @@ namespace ACE.Server.WorldObjects.Managers
                 case EmoteType.InqOwnsItems:
 
                     if (player != null)
-					{
+                    {
                         var numRequired = emote.StackSize ?? 1;
 
                         var items = player.GetInventoryItemsOfWCID(emote.WeenieClassId ?? 0);
@@ -767,9 +767,9 @@ namespace ACE.Server.WorldObjects.Managers
 
                                 foreach (var character in characters)
                                 {
-                                   var matchingQuest = character.CharacterPropertiesQuestRegistry.FirstOrDefault(q => q.QuestName.Equals(questName, StringComparison.OrdinalIgnoreCase));
+                                    var matchingQuest = character.CharacterPropertiesQuestRegistry.FirstOrDefault(q => q.QuestName.Equals(questName, StringComparison.OrdinalIgnoreCase));
 
-                                   if (matchingQuest != null && questFile != null)
+                                    if (matchingQuest != null && questFile != null)
                                     {
                                         // if there's a matching stamp on another chararacter, check whether it's on cooldown or not
                                         var currentTime = (uint)Time.GetUnixTime();
@@ -784,12 +784,12 @@ namespace ACE.Server.WorldObjects.Managers
                                 }
                             }
                         }
-                           //  verify: QuestSuccess = player has quest, but their quest timer is currently still on cooldown.
-                           // for account quests, finding any account on cooldown means canSolve = true;
+                        //  verify: QuestSuccess = player has quest, but their quest timer is currently still on cooldown.
+                        // for account quests, finding any account on cooldown means canSolve = true;
 
-                            success = hasQuest && !canSolve;
+                        success = hasQuest && !canSolve;
 
-                            ExecuteEmoteSet(success ? EmoteCategory.QuestSuccess : EmoteCategory.QuestFailure, emote.Message, targetObject, true);
+                        ExecuteEmoteSet(success ? EmoteCategory.QuestSuccess : EmoteCategory.QuestFailure, emote.Message, targetObject, true);
                     }
 
                     break;
@@ -1151,7 +1151,7 @@ namespace ACE.Server.WorldObjects.Managers
 
                         // ensure valid quaternion - all 0s for example can lock up physics engine
                         if (emote.AnglesX != null && emote.AnglesY != null && emote.AnglesZ != null && emote.AnglesW != null &&
-                           (emote.AnglesX != 0    || emote.AnglesY != 0    || emote.AnglesZ != 0    || emote.AnglesW != 0) )
+                           (emote.AnglesX != 0 || emote.AnglesY != 0 || emote.AnglesZ != 0 || emote.AnglesW != 0))
                         {
                             // also relative, or absolute?
                             newPos.Rotation *= new Quaternion(emote.AnglesX.Value, emote.AnglesY.Value, emote.AnglesZ.Value, emote.AnglesW.Value);
@@ -1927,7 +1927,7 @@ namespace ACE.Server.WorldObjects.Managers
             var nextDelay = ExecuteEmote(emoteSet, emote, targetObject);
 
             if (Debug)
-                Console.WriteLine($" - { nextDelay}");
+                Console.WriteLine($" - {nextDelay}");
 
             if (emoteIdx < emoteSet.PropertiesEmoteAction.Count - 1)
                 Enqueue(emoteSet, targetObject, emoteIdx + 1, nextDelay);

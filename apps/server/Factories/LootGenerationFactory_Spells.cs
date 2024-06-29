@@ -105,7 +105,7 @@ namespace ACE.Server.Factories
                 return SpellId.Undef;
             }
 
-            if(procSpellId != SpellId.Undef)
+            if (procSpellId != SpellId.Undef)
                 return RollProcLevel(wo, profile, procSpellId);
             return SpellId.Undef;
         }
@@ -122,7 +122,7 @@ namespace ACE.Server.Factories
                 return SpellId.Undef;
             }
 
-            return(spellLevels[spellLevel - 1]);
+            return (spellLevels[spellLevel - 1]);
         }
 
         private static List<SpellId> RollItemSpells(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
@@ -156,7 +156,7 @@ namespace ACE.Server.Factories
                 return null;
             }
 
-            if(spells != null)
+            if (spells != null)
                 return RollSpellLevels(wo, profile, spells);
             else
                 return null;
@@ -312,15 +312,15 @@ namespace ACE.Server.Factories
 
             var itemDifficulty = 0.0f;
 
-                // exclude highest spell
-                for (var i = 0; i < spells.Count - 1; i++)
-                {
-                    var spell = spells[i];
+            // exclude highest spell
+            for (var i = 0; i < spells.Count - 1; i++)
+            {
+                var spell = spells[i];
 
-                    var rng = (float)ThreadSafeRandom.Next(0.5f, 1.5f);
+                var rng = (float)ThreadSafeRandom.Next(0.5f, 1.5f);
 
-                    itemDifficulty += spell.Formula.Level * 5.0f * rng;
-                }
+                itemDifficulty += spell.Formula.Level * 5.0f * rng;
+            }
 
             return itemDifficulty;
         }
@@ -364,16 +364,16 @@ namespace ACE.Server.Factories
 
                 var cantripLevels = SpellLevelProgression.GetSpellLevels(cantrip);
 
-	            if (cantripLevels.Count != 4)
-	            {
-	                _log.Error($"RollCantrips({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - {cantrip} has {cantripLevels.Count} cantrip levels, expected 4");
-	                continue;
-	            }
-	
-	            finalCantrips.Add(cantripLevels[cantripLevel - 1]);
-	
-	            if (cantripLevel == 4)
-	                hasLegendary = true;
+                if (cantripLevels.Count != 4)
+                {
+                    _log.Error($"RollCantrips({wo.Name}, {profile.TreasureType}, {roll.ItemType}) - {cantrip} has {cantripLevels.Count} cantrip levels, expected 4");
+                    continue;
+                }
+
+                finalCantrips.Add(cantripLevels[cantripLevel - 1]);
+
+                if (cantripLevel == 4)
+                    hasLegendary = true;
             }
 
             // if a legendary cantrip dropped on this item
@@ -394,7 +394,7 @@ namespace ACE.Server.Factories
 
         private static SpellId RollCantrip(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
         {
-            if(wo.WeenieClassId == (uint)Enum.WeenieClassName.leggingschiran)
+            if (wo.WeenieClassId == (uint)Enum.WeenieClassName.leggingschiran)
             {
                 //Console.WriteLine($"Chiran Leggings ({wo.WeenieClassId}), IsClothArmor? ({roll.IsClothArmor}) ArmorType: ({wo.ArmorType}) ItemType: ({roll.ItemType})");
             }
@@ -501,7 +501,7 @@ namespace ACE.Server.Factories
                 case Skill.MissileWeapons:
                     return SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1;
                 case Skill.Axe:
-                    return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1; 
+                    return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1;
                 case Skill.Dagger:
                     return SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1; // CANTRIPDAGGERAPTITUDE1
                 case Skill.Mace:

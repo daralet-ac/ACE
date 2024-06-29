@@ -220,10 +220,10 @@ namespace ACE.Server.Physics.Common
 
                             if (splitDir * 2.3283064e-10 < 0.5f)
                             {
-                                 //  2    1---0
-                                 //  | \   \  |
-                                 //  |  \   \ |
-                                 //  0---1    2
+                                //  2    1---0
+                                //  | \   \  |
+                                //  |  \   \ |
+                                //  0---1    2
 
                                 SWtoNEcut[cellIdx] = false;
 
@@ -298,7 +298,8 @@ namespace ACE.Server.Physics.Common
                             Polygons[idx + 1].PosUVIndices.Add(NE_Corner[(int)rotation]);
                             Polygons[idx + 1].PosUVIndices.Add(NW_Corner[(int)rotation]);
                         }
-                    } else
+                    }
+                    else
                     {
                         if (vType == VertexType.CSWVertexType)
                         {

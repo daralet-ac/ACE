@@ -300,7 +300,7 @@ namespace ACE.Server.WorldObjects
 
             if (player != null)
                 player.LastHitSpellProjectile = Spell;
-            
+
             // ensure caster can damage target
             var sourceCreature = ProjectileSource as Creature;
             if (sourceCreature != null && !sourceCreature.CanDamage(creatureTarget))
@@ -337,7 +337,7 @@ namespace ACE.Server.WorldObjects
                     // handle EnchantmentProjectile successfully landing on target
                     ProjectileSource.CreateEnchantment(creatureTarget, ProjectileSource, ProjectileLauncher, Spell, false, FromProc);
                 }
-                else 
+                else
                 {
                     DamageTarget(creatureTarget, damage.Value, critical, critDefended, overpower);
                 }
@@ -444,7 +444,7 @@ namespace ACE.Server.WorldObjects
             // war/void magic
             var baseDamage = 0;
             var skillBonus = 0.0f;
-           
+
             var finalDamage = 0.0f;
 
             var resistanceType = Creature.GetResistanceType(Spell.DamageType);
@@ -585,7 +585,7 @@ namespace ACE.Server.WorldObjects
 
             var wardPenMod = 0.0f;
 
-            if(sourcePlayer != null)
+            if (sourcePlayer != null)
                 wardPenMod = sourcePlayer.GetIgnoreWardMod(weapon);
 
             var ignoreWardMod = Math.Min(wardRendingMod, wardPenMod);
@@ -622,7 +622,7 @@ namespace ACE.Server.WorldObjects
                     var jewelRampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200;
                     absorbMod -= jewelRampMod * ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66);
                 }
-            } 
+            }
 
             //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
             if (isPVP && (target.CombatMode == CombatMode.Melee || target.CombatMode == CombatMode.Missile))
@@ -766,7 +766,7 @@ namespace ACE.Server.WorldObjects
                     critDamageBonus *= weaponCritDamageMod;
 
                     // SPEC BONUS - War Magic (Wand/Baton): +50% crit damage (additively)
-                    if(sourcePlayer != null && weapon != null)
+                    if (sourcePlayer != null && weapon != null)
                         if (weapon.WeaponSkill == Skill.WarMagic && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized && LootGenerationFactory.GetCasterSubType(weapon) == 2)
                             weaponCritDamageMod += 0.5f;
 
@@ -1174,17 +1174,17 @@ namespace ACE.Server.WorldObjects
                     }
                 }
             }
-                
-                    //if (targetPlayer != null && targetPlayer.Fellowship != null)
-                    //targetPlayer.Fellowship.OnVitalUpdate(targetPlayer);
-            
-       
-                    /* amount = (uint)Math.Round(damage);    // full amount for debugging
 
-                    Console.WriteLine($" -criticalHit? {critical}\n" +
-                        $" -damageRatingMod: {damageRatingMod}\n" +
-                        $" -damageResistRatingMod: {damageResistRatingMod}\n" +
-                        $" -FINAL: {amount}"); */
+            //if (targetPlayer != null && targetPlayer.Fellowship != null)
+            //targetPlayer.Fellowship.OnVitalUpdate(targetPlayer);
+
+
+            /* amount = (uint)Math.Round(damage);    // full amount for debugging
+
+            Console.WriteLine($" -criticalHit? {critical}\n" +
+                $" -damageRatingMod: {damageRatingMod}\n" +
+                $" -damageResistRatingMod: {damageResistRatingMod}\n" +
+                $" -FINAL: {amount}"); */
 
             // Overload Stamps + Messages
             var overloadPercent = 0;
@@ -1272,7 +1272,7 @@ namespace ACE.Server.WorldObjects
                     {
                         sourcePlayer.OverloadDumped = false;
                         overloadMsg = "Overload Discharged! ";
-                    }    
+                    }
 
                     var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
@@ -1384,7 +1384,7 @@ namespace ACE.Server.WorldObjects
                 info += $"CriticalDefended: {critDefended}\n";
 
             info += $"Overpower: {overpower}\n";
-        
+
             if (spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
             {
                 // life magic projectile
@@ -1458,7 +1458,7 @@ namespace ACE.Server.WorldObjects
                 info += $"DamageRatingMod: {damageRatingMod}\n";
 
             if (critDamageResistRatingMod != 1.0f)
-                 info += $"CritDamageResistRatingMod: {critDamageResistRatingMod}\n";
+                info += $"CritDamageResistRatingMod: {critDamageResistRatingMod}\n";
 
             if (pkDamageResistRatingMod != 1.0f)
                 info += $"PkDamageResistRatingMod: {pkDamageResistRatingMod}\n";

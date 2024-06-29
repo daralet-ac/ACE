@@ -29,7 +29,7 @@ namespace ACE.Server.Physics.Entity
             Requests++;
 
             //if (Requests % 1000 == 0)
-                //Console.WriteLine($"BSPCache: Requests={Requests}, Hits={Hits}");
+            //Console.WriteLine($"BSPCache: Requests={Requests}, Hits={Hits}");
 
             if (BSPTrees.TryGetValue(bspTree, out var result))
             {

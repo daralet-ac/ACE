@@ -192,7 +192,7 @@ namespace ACE.Server.Factories.Tables
         };
         static HeritageChance()
         {
-            
+
         }
 
         public static TreasureHeritageGroup Roll(int heritageProfile, TreasureRoll treasureRoll, bool addViamontian = false)

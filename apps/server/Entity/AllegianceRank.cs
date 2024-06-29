@@ -81,15 +81,15 @@ namespace ACE.Server.Entity
         {
             switch (rank)
             {
-                case 1:  return "Yeoman";
-                case 2:  return "Baronet";
-                case 3:  return "Baron";
-                case 4:  return "Reeve";
-                case 5:  return "Thane";
-                case 6:  return "Ealdor";
-                case 7:  return "Duke";
-                case 8:  return "Aetheling";
-                case 9:  return "King";
+                case 1: return "Yeoman";
+                case 2: return "Baronet";
+                case 3: return "Baron";
+                case 4: return "Reeve";
+                case 5: return "Thane";
+                case 6: return "Ealdor";
+                case 7: return "Duke";
+                case 8: return "Aetheling";
+                case 9: return "King";
                 case 10: return "High King";
                 default: return "";
             }

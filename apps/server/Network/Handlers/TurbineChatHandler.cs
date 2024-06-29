@@ -67,17 +67,17 @@ namespace ACE.Server.Network.Handlers
                 {
                     adjustedChannelID = chatType switch
                     {
-                        ChatType.Allegiance     => TurbineChatChannel.Allegiance,
-                        ChatType.General        => TurbineChatChannel.General,
-                        ChatType.Trade          => TurbineChatChannel.Trade,
-                        ChatType.LFG            => TurbineChatChannel.LFG,
-                        ChatType.Roleplay       => TurbineChatChannel.Roleplay,
-                        ChatType.Society        => TurbineChatChannel.Society,
-                        ChatType.SocietyCelHan  => TurbineChatChannel.Society,
-                        ChatType.SocietyEldWeb  => TurbineChatChannel.Society,
-                        ChatType.SocietyRadBlo  => TurbineChatChannel.Society,
-                        ChatType.Olthoi         => TurbineChatChannel.Olthoi,
-                        _                       => TurbineChatChannel.General
+                        ChatType.Allegiance => TurbineChatChannel.Allegiance,
+                        ChatType.General => TurbineChatChannel.General,
+                        ChatType.Trade => TurbineChatChannel.Trade,
+                        ChatType.LFG => TurbineChatChannel.LFG,
+                        ChatType.Roleplay => TurbineChatChannel.Roleplay,
+                        ChatType.Society => TurbineChatChannel.Society,
+                        ChatType.SocietyCelHan => TurbineChatChannel.Society,
+                        ChatType.SocietyEldWeb => TurbineChatChannel.Society,
+                        ChatType.SocietyRadBlo => TurbineChatChannel.Society,
+                        ChatType.Olthoi => TurbineChatChannel.Olthoi,
+                        _ => TurbineChatChannel.General
                     };
 
                     adjustedchatType = (ChatType)adjustedChannelID;

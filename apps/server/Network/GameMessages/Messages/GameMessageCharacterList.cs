@@ -15,7 +15,7 @@ namespace ACE.Server.Network.GameMessages.Messages
             Writer.Write(characters.Count);
 
             foreach (var character in characters)
-            {                
+            {
                 Writer.Write(character.Id);
                 if (ConfigManager.Config.Server.Accounts.OverrideCharacterPermissions && session.AccessLevel > ACE.Entity.Enum.AccessLevel.Advocate)
                     Writer.WriteString16L("+" + character.Name);

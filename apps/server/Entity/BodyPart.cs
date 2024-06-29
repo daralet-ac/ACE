@@ -13,15 +13,15 @@ namespace ACE.Server.Entity
     public enum BodyPart
     {
         // this is more like a combined coverage mask?
-        Head        = 0x1,
-        Chest       = 0x2,
-        Abdomen     = 0x4,
-        UpperArm    = 0x8,
-        LowerArm    = 0x10,
-        Hand        = 0x20,
-        UpperLeg    = 0x40,
-        LowerLeg    = 0x80,
-        Foot        = 0x100
+        Head = 0x1,
+        Chest = 0x2,
+        Abdomen = 0x4,
+        UpperArm = 0x8,
+        LowerArm = 0x10,
+        Hand = 0x20,
+        UpperLeg = 0x40,
+        LowerLeg = 0x80,
+        Foot = 0x100
     }
 
     public class BodyParts

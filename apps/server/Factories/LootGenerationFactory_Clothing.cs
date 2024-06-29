@@ -226,85 +226,85 @@ namespace ACE.Server.Factories
 
             var baseArmorLevel = wo.ArmorLevel ?? 50;
 
-                if (tier < 2)
-                    return;
+            if (tier < 2)
+                return;
 
-                var armorSlots = wo.ArmorSlots ?? 1;
+            var armorSlots = wo.ArmorSlots ?? 1;
 
-                // Get Armor/Ward Level
-                var baseWardLevel = wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth ? 10 : 5;
+            // Get Armor/Ward Level
+            var baseWardLevel = wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth ? 10 : 5;
 
 
-                switch (wo.ArmorStyle)
-                {
-                    case (int)ArmorStyle.Amuli:
-                    case (int)ArmorStyle.Chiran:
-                    case (int)ArmorStyle.OlthoiAmuli:
-                        baseArmorLevel = 75;
-                        baseWardLevel = 7;
-                        break;
-                    case (int)ArmorStyle.Leather:
-                    case (int)ArmorStyle.Yoroi:
-                    case (int)ArmorStyle.Lorica:
-                        baseArmorLevel = 75;
-                        break;
-                    case (int)ArmorStyle.StuddedLeather:
-                    case (int)ArmorStyle.Koujia:
-                    case (int)ArmorStyle.OlthoiKoujia:
-                        baseArmorLevel = 90;
-                        break;
-                    case (int)ArmorStyle.Chainmail:
-                    case (int)ArmorStyle.Scalemail:
-                    case (int)ArmorStyle.Nariyid:
-                        baseArmorLevel = 100;
-                        break;
-                    case (int)ArmorStyle.Platemail:
-                    case (int)ArmorStyle.Celdon:
-                    case (int)ArmorStyle.OlthoiCeldon:
-                        baseArmorLevel = 110;
-                        break;
-                    case (int)ArmorStyle.Covenant:
-                    case (int)ArmorStyle.OlthoiArmor:
-                        baseArmorLevel = 125;
-                        break;
-                }
-
-                switch ((int)wo.WeenieClassId)
-                {
-                    case (int)WeenieClassName.W_BUCKLER_CLASS: // Buckler
-                        baseArmorLevel = 75;
-                        baseWardLevel = 5;
-                        break;
-                    case (int)WeenieClassName.W_SHIELDKITE_CLASS: // Kite Shield
-                    case (int)WeenieClassName.W_SHIELDROUND_CLASS: // Round Shield
-                        baseArmorLevel = 100;
-                        baseWardLevel = 6;
-                        break;
-                    case (int)WeenieClassName.W_SHIELDKITELARGE_CLASS: // Large Kite Shield
-                    case (int)WeenieClassName.W_SHIELDROUNDLARGE_CLASS: // Large Round Shield
-                        baseArmorLevel = 105;
-                        baseWardLevel = 7;
-                        break;
-                    case (int)WeenieClassName.W_SHIELDTOWER_CLASS: // Tower Shield
-                        baseArmorLevel = 110;
-                        baseWardLevel = 8;
-                     break;
-                    case (int)WeenieClassName.W_SHIELDCOVENANT_CLASS: // Covenant Shield
-                        baseArmorLevel = 125;
-                        baseWardLevel = 10;
-                        break;
+            switch (wo.ArmorStyle)
+            {
+                case (int)ArmorStyle.Amuli:
+                case (int)ArmorStyle.Chiran:
+                case (int)ArmorStyle.OlthoiAmuli:
+                    baseArmorLevel = 75;
+                    baseWardLevel = 7;
+                    break;
+                case (int)ArmorStyle.Leather:
+                case (int)ArmorStyle.Yoroi:
+                case (int)ArmorStyle.Lorica:
+                    baseArmorLevel = 75;
+                    break;
+                case (int)ArmorStyle.StuddedLeather:
+                case (int)ArmorStyle.Koujia:
+                case (int)ArmorStyle.OlthoiKoujia:
+                    baseArmorLevel = 90;
+                    break;
+                case (int)ArmorStyle.Chainmail:
+                case (int)ArmorStyle.Scalemail:
+                case (int)ArmorStyle.Nariyid:
+                    baseArmorLevel = 100;
+                    break;
+                case (int)ArmorStyle.Platemail:
+                case (int)ArmorStyle.Celdon:
+                case (int)ArmorStyle.OlthoiCeldon:
+                    baseArmorLevel = 110;
+                    break;
+                case (int)ArmorStyle.Covenant:
+                case (int)ArmorStyle.OlthoiArmor:
+                    baseArmorLevel = 125;
+                    break;
             }
 
-                // Add some variance (+/- 10%)
-                var variance = 1.0f + ThreadSafeRandom.Next(-0.1f, 0.1f);
+            switch ((int)wo.WeenieClassId)
+            {
+                case (int)WeenieClassName.W_BUCKLER_CLASS: // Buckler
+                    baseArmorLevel = 75;
+                    baseWardLevel = 5;
+                    break;
+                case (int)WeenieClassName.W_SHIELDKITE_CLASS: // Kite Shield
+                case (int)WeenieClassName.W_SHIELDROUND_CLASS: // Round Shield
+                    baseArmorLevel = 100;
+                    baseWardLevel = 6;
+                    break;
+                case (int)WeenieClassName.W_SHIELDKITELARGE_CLASS: // Large Kite Shield
+                case (int)WeenieClassName.W_SHIELDROUNDLARGE_CLASS: // Large Round Shield
+                    baseArmorLevel = 105;
+                    baseWardLevel = 7;
+                    break;
+                case (int)WeenieClassName.W_SHIELDTOWER_CLASS: // Tower Shield
+                    baseArmorLevel = 110;
+                    baseWardLevel = 8;
+                    break;
+                case (int)WeenieClassName.W_SHIELDCOVENANT_CLASS: // Covenant Shield
+                    baseArmorLevel = 125;
+                    baseWardLevel = 10;
+                    break;
+            }
 
-                // Final Calculation
-                var newArmorLevel = baseArmorLevel * (tier - 1) * variance;
-                var newWardLevel = baseWardLevel * (tier - 1) * armorSlots * variance;
+            // Add some variance (+/- 10%)
+            var variance = 1.0f + ThreadSafeRandom.Next(-0.1f, 0.1f);
 
-                // Assign levels
-                wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
-                wo.SetProperty(PropertyInt.WardLevel, (int)newWardLevel);
+            // Final Calculation
+            var newArmorLevel = baseArmorLevel * (tier - 1) * variance;
+            var newWardLevel = baseWardLevel * (tier - 1) * armorSlots * variance;
+
+            // Assign levels
+            wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
+            wo.SetProperty(PropertyInt.WardLevel, (int)newWardLevel);
 
             if ((wo.ResistMagic == null || wo.ResistMagic < 9999) && wo.ArmorLevel >= 1000)
                 _log.Warning($"[LOOT] Standard armor item exceeding upper AL threshold {wo.WeenieClassId} - {wo.Name}");
@@ -674,7 +674,7 @@ namespace ACE.Server.Factories
             // even chance between 11 different types of cloaks
             var cloakType = ThreadSafeRandom.Next(0, LootTables.Cloaks.Length - 1);
 
-            var cloakWeenie  = LootTables.Cloaks[cloakType];
+            var cloakWeenie = LootTables.Cloaks[cloakType];
 
             var wo = WorldObjectFactory.CreateNewWorldObject((uint)cloakWeenie);
 
@@ -745,7 +745,7 @@ namespace ACE.Server.Factories
 
             // item value
             //if (wo.HasMutateFilter(MutateFilter.Value))
-                MutateValue(wo, profile.Tier, roll);
+            MutateValue(wo, profile.Tier, roll);
         }
 
         private static int RollCloak_ItemMaxLevel(TreasureDeath profile)
@@ -1130,7 +1130,7 @@ namespace ACE.Server.Factories
                 wo.BaseArmorStaminaMod = wo.ArmorStaminaMod;
 
             if (wo.ArmorManaMod != null)
-                wo.BaseArmorManaMod = wo.ArmorManaMod ;
+                wo.BaseArmorManaMod = wo.ArmorManaMod;
 
             if (wo.ArmorResourcePenalty != null)
                 wo.BaseArmorResourcePenalty = wo.ArmorResourcePenalty;
@@ -1264,7 +1264,7 @@ namespace ACE.Server.Factories
             return mod;
         }
 
-        private static double GetArmorSkillAmount(TreasureDeath treasureDeath ,WorldObject wo, out float modPercentile)
+        private static double GetArmorSkillAmount(TreasureDeath treasureDeath, WorldObject wo, out float modPercentile)
         {
             var tier = Math.Clamp(treasureDeath.Tier - 1, 0, 7);
             float[] bonusModRollPerTier = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
@@ -1293,7 +1293,7 @@ namespace ACE.Server.Factories
         /// <returns></returns>
         private static SpellId GetImpenetribilityLevel(WorldObject wo)
         {
-            switch(wo.Tier)
+            switch (wo.Tier)
             {
                 case 3: return SpellId.Impenetrability2;
                 case 4: return SpellId.Impenetrability3;
@@ -1491,7 +1491,7 @@ namespace ACE.Server.Factories
 
             int wardLevel;
 
-            switch(weightClass)
+            switch (weightClass)
             {
                 case ArmorWeightClass.Cloth:
                     wardLevel = 70;

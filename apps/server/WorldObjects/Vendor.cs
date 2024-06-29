@@ -180,25 +180,25 @@ namespace ACE.Server.WorldObjects
 
             var templateDefaultItems = new List<(int, bool, int, uint, int, double, int)>();
 
-            switch(GetProperty(PropertyString.Template))
+            switch (GetProperty(PropertyString.Template))
             {
                 case "Archmage":
-                case "Apprentice": templateDefaultItems =       VendorBaseItems.ArchmageItems; break;
-                case "Armorer": templateDefaultItems =          VendorBaseItems.ArmorerItems; break;
-                case "Barkeeper": templateDefaultItems =        VendorBaseItems.BarkeeperItems; break;
-                case "Blacksmith": templateDefaultItems =       VendorBaseItems.BlacksmithItems; break;
-                case "Bowyer": templateDefaultItems =           VendorBaseItems.BowyerItems; break;
-                case "Butcher": templateDefaultItems =          VendorBaseItems.ButcherItems; break;
-                case "Grocer": templateDefaultItems =           VendorBaseItems.GrocerItems; break;
-                case "Healer": templateDefaultItems =           VendorBaseItems.HealerItems; break;
-                case "Ivory Trader": templateDefaultItems =     VendorBaseItems.IvoryTraderItems; break;
-                case "Jeweler": templateDefaultItems =          VendorBaseItems.JewelerItems; break;
-                case "Leather Trader": templateDefaultItems =   VendorBaseItems.LeatherTraderItems; break;
-                case "Provisioner": templateDefaultItems =      VendorBaseItems.ProvisionerItems; break;
-                case "Scribe": templateDefaultItems =           VendorBaseItems.ScribeItems; break;
-                case "Shopkeeper": templateDefaultItems =       VendorBaseItems.ShopkeeperItems; break;
-                case "Tailor": templateDefaultItems =           VendorBaseItems.TailorItems; break;
-                case "Weaponsmith": templateDefaultItems =      VendorBaseItems.WeaponsmithItems; break;
+                case "Apprentice": templateDefaultItems = VendorBaseItems.ArchmageItems; break;
+                case "Armorer": templateDefaultItems = VendorBaseItems.ArmorerItems; break;
+                case "Barkeeper": templateDefaultItems = VendorBaseItems.BarkeeperItems; break;
+                case "Blacksmith": templateDefaultItems = VendorBaseItems.BlacksmithItems; break;
+                case "Bowyer": templateDefaultItems = VendorBaseItems.BowyerItems; break;
+                case "Butcher": templateDefaultItems = VendorBaseItems.ButcherItems; break;
+                case "Grocer": templateDefaultItems = VendorBaseItems.GrocerItems; break;
+                case "Healer": templateDefaultItems = VendorBaseItems.HealerItems; break;
+                case "Ivory Trader": templateDefaultItems = VendorBaseItems.IvoryTraderItems; break;
+                case "Jeweler": templateDefaultItems = VendorBaseItems.JewelerItems; break;
+                case "Leather Trader": templateDefaultItems = VendorBaseItems.LeatherTraderItems; break;
+                case "Provisioner": templateDefaultItems = VendorBaseItems.ProvisionerItems; break;
+                case "Scribe": templateDefaultItems = VendorBaseItems.ScribeItems; break;
+                case "Shopkeeper": templateDefaultItems = VendorBaseItems.ShopkeeperItems; break;
+                case "Tailor": templateDefaultItems = VendorBaseItems.TailorItems; break;
+                case "Weaponsmith": templateDefaultItems = VendorBaseItems.WeaponsmithItems; break;
             }
 
             LoadDefaultItems(itemsForSale, templateDefaultItems);
@@ -890,7 +890,7 @@ namespace ACE.Server.WorldObjects
                 return;
 
             int added = 0;
-            while(added < itemsToGenerate)
+            while (added < itemsToGenerate)
             {
                 if (sellsRandomArmor && added < itemsToGenerate)
                 {
@@ -1170,7 +1170,7 @@ namespace ACE.Server.WorldObjects
                 case "Jeweler": MerchandiseItemTypes = (int)ItemType.VendorJeweler; break;
                 case "Scribe": MerchandiseItemTypes = (int)ItemType.VendorScribe; break;
                 case "Shopkeeper": MerchandiseItemTypes = (int)ItemType.VendorShopKeep; break;
-                case "Tailor": MerchandiseItemTypes = (int) ItemType.VendorTailor; break;
+                case "Tailor": MerchandiseItemTypes = (int)ItemType.VendorTailor; break;
                 case "Weaponsmith": MerchandiseItemTypes = (int)ItemType.VendorWeaponsmith; break;
             }
         }

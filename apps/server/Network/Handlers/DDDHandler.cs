@@ -119,7 +119,7 @@ namespace ACE.Server.Network.Handlers
             }
             else if (clientIsMissingIterations && enableDATpatching)
             {
-                var totalMissingIterations = DDDManager.GetMissingIterations(clientPortalDatIntSet, clientCellDatIntSet, clientLanguageDatIntSet, out var totalFileSize, out var missingIterations);                
+                var totalMissingIterations = DDDManager.GetMissingIterations(clientPortalDatIntSet, clientCellDatIntSet, clientLanguageDatIntSet, out var totalFileSize, out var missingIterations);
                 var patchStatusMessage = new GameMessageDDDBeginDDD(totalMissingIterations, totalFileSize, missingIterations);
                 session.Network.EnqueueSend(patchStatusMessage);
                 session.BeginDDDSentTime = DateTime.UtcNow;

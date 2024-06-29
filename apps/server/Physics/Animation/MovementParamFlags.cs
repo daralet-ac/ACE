@@ -3,26 +3,26 @@ using System;
 namespace ACE.Server.Physics.Animation
 {
     [Flags]
-    public enum MovementParamFlags: uint
+    public enum MovementParamFlags : uint
     {
-        CanWalk                 = 0x00001,
-        CanRun                  = 0x00002,
-        CanSidestep             = 0x00004,
-        CanWalkBackwards        = 0x00008,
-        CanCharge               = 0x00010,
-        FailWalk                = 0x00020,
-        UseFinalHeading         = 0x00040,
-        Sticky                  = 0x00080,
-        MoveAway                = 0x00100,
-        MoveTowards             = 0x00200,
-        UseSpheres              = 0x00400,
-        SetHoldKey              = 0x00800,
-        Autonomous              = 0x01000,
-        ModifyRawState          = 0x02000,
-        ModifyInterpretedState  = 0x04000,
-        CancelMoveTo            = 0x08000,
-        StopCompletely          = 0x10000,
-        DisableJumpDuringLink   = 0x20000,
+        CanWalk = 0x00001,
+        CanRun = 0x00002,
+        CanSidestep = 0x00004,
+        CanWalkBackwards = 0x00008,
+        CanCharge = 0x00010,
+        FailWalk = 0x00020,
+        UseFinalHeading = 0x00040,
+        Sticky = 0x00080,
+        MoveAway = 0x00100,
+        MoveTowards = 0x00200,
+        UseSpheres = 0x00400,
+        SetHoldKey = 0x00800,
+        Autonomous = 0x01000,
+        ModifyRawState = 0x02000,
+        ModifyInterpretedState = 0x04000,
+        CancelMoveTo = 0x08000,
+        StopCompletely = 0x10000,
+        DisableJumpDuringLink = 0x20000,
     }
 
     public static class MovementParamFlagsHelper

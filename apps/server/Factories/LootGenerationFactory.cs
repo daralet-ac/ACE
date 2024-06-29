@@ -156,11 +156,11 @@ namespace ACE.Server.Factories
                 // Loot Quality receives a boost of of +0% to +90%, depending on an enemy's tier and level within its tier.
                 var qualityMod = mod - 1.0f;
                 var qualityBonus = (1 - tweakedDeathTreasure.LootQualityMod) * qualityMod;
-                
+
                 // JEWEL - Sappphire: Bonus Loot Quality
                 var updatedQualityMod = creature.QuestManager.HandleMagicFind();
 
-                qualityBonus += (float)updatedQualityMod; 
+                qualityBonus += (float)updatedQualityMod;
 
                 tweakedDeathTreasure.LootQualityMod += qualityBonus;
 
@@ -810,7 +810,7 @@ namespace ACE.Server.Factories
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = maxBonus * roll;
                 var final = (int)Math.Round(baseStat + bonus);
-                
+
                 wo.SetProperty(PropertyInt.Damage, final);
             }
 
@@ -873,7 +873,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.WeaponPhysicalDefense.Value;
                 var bonusRange = WeaponModMaxBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -884,7 +884,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.WeaponMagicalDefense.Value;
                 var bonusRange = WeaponModMaxBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -895,7 +895,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.WeaponLifeMagicMod.Value;
                 var bonusRange = WeaponModMaxBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -906,7 +906,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.WeaponWarMagicMod.Value;
                 var bonusRange = WeaponModMaxBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -928,7 +928,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.CriticalFrequency.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -939,7 +939,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.GetProperty(PropertyFloat.CriticalMultiplier).Value;
                 var bonusRange = (baseStat - 1) * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -950,7 +950,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.IgnoreArmor.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -961,7 +961,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.IgnoreWard.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -973,7 +973,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorLevel.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = (int)Math.Round(baseStat + bonus);
 
@@ -984,7 +984,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.WardLevel.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = (int)Math.Round(baseStat + bonus);
 
@@ -995,7 +995,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorModVsAcid.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1006,7 +1006,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorModVsBludgeon.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1017,7 +1017,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorModVsCold.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1028,7 +1028,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorModVsElectric.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1039,7 +1039,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorModVsFire.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1050,7 +1050,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorModVsPierce.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1061,7 +1061,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorModVsSlash.Value;
                 var bonusRange = baseStat * MaxMiscBonus;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1073,7 +1073,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorAttackMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1084,7 +1084,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorDeceptionMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1095,7 +1095,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorDualWieldMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1106,7 +1106,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorHealthMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1117,7 +1117,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorHealthRegenMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1128,7 +1128,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorLifeMagicMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1139,7 +1139,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorMagicDefMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1150,7 +1150,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorManaMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1161,7 +1161,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorManaRegenMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1172,7 +1172,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorPerceptionMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1183,7 +1183,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorPhysicalDefMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1194,7 +1194,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorRunMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1205,7 +1205,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorShieldMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1216,7 +1216,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorStaminaMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1227,7 +1227,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorStaminaRegenMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1238,7 +1238,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorThieveryMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1249,7 +1249,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorTwohandedCombatMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1260,7 +1260,7 @@ namespace ACE.Server.Factories
             {
                 var baseStat = wo.ArmorWarMagicMod.Value;
                 var bonusRange = 0.1f / armorSlots;
-                var roll =GetDiminishingRoll(null, lootQuality);
+                var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
 
@@ -1371,8 +1371,8 @@ namespace ACE.Server.Factories
                     break;
                 case WeenieType.MeleeWeapon:
                     {
-                        uint[] woodMeleeWeapons = { 309, 3766, 3767, 3768, 3769, 7768, 7787, 7788, 7789, 7790 };  
-                        if(wo.WeaponSkill == Skill.Staff || wo.WeaponSkill == Skill.Spear || woodMeleeWeapons.Contains(wo.WeenieClassId))
+                        uint[] woodMeleeWeapons = { 309, 3766, 3767, 3768, 3769, 7768, 7787, 7788, 7789, 7790 };
+                        if (wo.WeaponSkill == Skill.Staff || wo.WeaponSkill == Skill.Spear || woodMeleeWeapons.Contains(wo.WeenieClassId))
                         {
                             int roll = ThreadSafeRandom.Next(0, materialWoods.Length - 1);
                             material = (MaterialType)materialWoods[roll];
@@ -1950,7 +1950,7 @@ namespace ACE.Server.Factories
                     {
                         default:
                         case TreasureWeaponType.Unarmed: wcid = UnarmedWcids.Roll(heritage, treasureDeath.Tier); break;
-                        case TreasureWeaponType.Dagger:wcid = DaggerWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;
+                        case TreasureWeaponType.Dagger: wcid = DaggerWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;
                         case TreasureWeaponType.Atlatl: wcid = AtlatlWcids.Roll(treasureDeath.Tier, out weaponType); break; // all thrown weapons
                         case TreasureWeaponType.Crossbow: wcid = CrossbowWcids.Roll(treasureDeath.Tier, out weaponType); break;
                         case TreasureWeaponType.Bow: wcid = BowWcids.Roll(heritage, treasureDeath.Tier, out weaponType); break;

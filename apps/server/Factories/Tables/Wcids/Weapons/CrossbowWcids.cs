@@ -65,7 +65,7 @@ namespace ACE.Server.Factories.Tables.Wcids
             T6_T8_Chances,
             T6_T8_Chances,
         };
-        
+
         public static WeenieClassName Roll(int tier, out TreasureWeaponType weaponType)
         {
             var roll = crossbowTiers[tier - 1].Roll();
@@ -77,9 +77,9 @@ namespace ACE.Server.Factories.Tables.Wcids
 
             return roll;
         }
-        
-		private static readonly Dictionary<WeenieClassName, TreasureWeaponType> _combined = new Dictionary<WeenieClassName, TreasureWeaponType>();
-		
+
+        private static readonly Dictionary<WeenieClassName, TreasureWeaponType> _combined = new Dictionary<WeenieClassName, TreasureWeaponType>();
+
         static CrossbowWcids()
         {
             foreach (var crossbowTier in crossbowTiers)

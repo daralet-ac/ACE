@@ -224,7 +224,7 @@ namespace ACE.Server.WorldObjects
             {
                 if (CurrentCreate == 0)
                     FadeOutAndDestroy(); // Chest's complete generated inventory count has been wiped out
-                    //Destroy(); // Chest's complete generated inventory count has been wiped out
+                                         //Destroy(); // Chest's complete generated inventory count has been wiped out
             }
         }
 

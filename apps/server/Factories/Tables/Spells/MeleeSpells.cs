@@ -154,7 +154,7 @@ namespace ACE.Server.Factories.Tables.Spells
 
         public static SpellId RollProc(WorldObject wo, TreasureDeath treasureDeath, bool warSpell)
         {
-            if(warSpell)
+            if (warSpell)
                 return WarSpellProc(wo, treasureDeath);
             else
                 return meleeProcsLife.Roll(treasureDeath.LootQualityMod);

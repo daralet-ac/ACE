@@ -70,7 +70,7 @@ namespace ACE.Server.Physics.Common
                 {
                     //var landscapeTex = ImgTex.CreateLScapeTexture(TexData, texSize, texSize);
                     //if (landscapeTex != null)
-                        //surface.UseTextureMap(landscapeTex, SurfaceHandler.TexMerge);
+                    //surface.UseTextureMap(landscapeTex, SurfaceHandler.TexMerge);
 
                     surface.Info = texInfo;
                 }
@@ -103,7 +103,7 @@ namespace ACE.Server.Physics.Common
             result.TerrainBase = terrainTex[0];
 
             //if (TexData == null)
-                //TexData = new byte[4 * BaseTexSize * BaseTexSize];
+            //TexData = new byte[4 * BaseTexSize * BaseTexSize];
 
             for (var i = 0; i < 3; i++)
             {
@@ -393,7 +393,7 @@ namespace ACE.Server.Physics.Common
                 terrainTex.BaseTexture = new ImgTex(surfaceTexture);
             }
             baseTexture = terrainTex.BaseTexture;
-            
+
             if (baseTexture != null)
             {
                 ImgTex.CopyCSI(data, texSize, texSize, baseTexture, terrainTex.TexTiling);

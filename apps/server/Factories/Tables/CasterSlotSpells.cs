@@ -108,7 +108,7 @@ namespace ACE.Server.Factories.Tables
         {
             ChanceTable<SpellId> table;
 
-            switch(wo.W_DamageType)
+            switch (wo.W_DamageType)
             {
                 case DamageType.Undef: table = lifeSpells; break;
                 case DamageType.Slash: table = slashingSpells; break;
@@ -118,7 +118,7 @@ namespace ACE.Server.Factories.Tables
                 case DamageType.Fire: table = fireSpells; break;
                 case DamageType.Cold: table = coldSpells; break;
                 case DamageType.Electric: table = electricSpells; break;
-                    default: table = lifeSpells; break;
+                default: table = lifeSpells; break;
             }
 
             return table.Roll();

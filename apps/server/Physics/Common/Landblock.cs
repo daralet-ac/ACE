@@ -14,7 +14,7 @@ using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Physics.Common
 {
-    public class Landblock: LandblockStruct
+    public class Landblock : LandblockStruct
     {
         public Vector2 BlockCoord;
         public AFrame BlockFrame;
@@ -183,7 +183,7 @@ namespace ACE.Server.Physics.Common
         public void get_land_scenes()
         {
             //Console.WriteLine("Loading scenery for " + ID.ToString("X8"));
-            
+
             // ported from Scenery
             Scenery = new List<PhysicsObj>();
 

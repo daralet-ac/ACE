@@ -10,7 +10,7 @@ namespace ACE.Server.Physics
     /// <summary>
     /// A cylinder sphere
     /// </summary>
-    public class CylSphere: IEquatable<CylSphere>
+    public class CylSphere : IEquatable<CylSphere>
     {
         /// <summary>
         /// The base of the cylinder sphere

@@ -302,7 +302,7 @@ namespace ACE.Server.Command.Handlers
                     {
                         CommandHandlerHelper.WriteOutputInfo(session, $"That is not a valid Instance ID (IID). IIDs must be between 0x{ObjectGuid.PlayerMin:X8} and 0x{ObjectGuid.PlayerMax:X8}", ChatMessageType.Broadcast);
                         return;
-                    }    
+                    }
                     if (uint.TryParse(whomToBoot.Substring(2), NumberStyles.HexNumber, CultureInfo.CurrentCulture, out var iid))
                     {
                         sessionToBoot = PlayerManager.GetOnlinePlayer(iid)?.Session;
@@ -347,9 +347,9 @@ namespace ACE.Server.Command.Handlers
             // @ban - Bans the specified player account.
 
             var accountName = parameters[0];
-            var banDays     = parameters[1];
-            var banHours    = parameters[2];
-            var banMinutes  = parameters[3];
+            var banDays = parameters[1];
+            var banHours = parameters[2];
+            var banMinutes = parameters[3];
 
             var banReason = string.Empty;
             if (parameters.Length > 4)

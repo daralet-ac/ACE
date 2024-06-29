@@ -20,25 +20,25 @@ namespace ACE.Server.Network
 
         public void Unpack(BinaryReader reader)
         {
-            Sequence    = reader.ReadUInt32();
-            Flags       = (PacketHeaderFlags)reader.ReadUInt32();
-            Checksum    = reader.ReadUInt32();
-            Id          = reader.ReadUInt16();
-            Time        = reader.ReadUInt16();
-            Size        = reader.ReadUInt16();
-            Iteration   = reader.ReadUInt16();
+            Sequence = reader.ReadUInt32();
+            Flags = (PacketHeaderFlags)reader.ReadUInt32();
+            Checksum = reader.ReadUInt32();
+            Id = reader.ReadUInt16();
+            Time = reader.ReadUInt16();
+            Size = reader.ReadUInt16();
+            Iteration = reader.ReadUInt16();
         }
 
         public void Unpack(byte[] buffer, int offset = 0)
         {
-            Sequence    =              (uint)(buffer[offset++] | (buffer[offset++] << 8) | (buffer[offset++] << 16) | (buffer[offset++] << 24));
-            Flags       = (PacketHeaderFlags)(buffer[offset++] | (buffer[offset++] << 8) | (buffer[offset++] << 16) | (buffer[offset++] << 24));
-            Checksum    =              (uint)(buffer[offset++] | (buffer[offset++] << 8) | (buffer[offset++] << 16) | (buffer[offset++] << 24));
+            Sequence = (uint)(buffer[offset++] | (buffer[offset++] << 8) | (buffer[offset++] << 16) | (buffer[offset++] << 24));
+            Flags = (PacketHeaderFlags)(buffer[offset++] | (buffer[offset++] << 8) | (buffer[offset++] << 16) | (buffer[offset++] << 24));
+            Checksum = (uint)(buffer[offset++] | (buffer[offset++] << 8) | (buffer[offset++] << 16) | (buffer[offset++] << 24));
 
-            Id          = (ushort)(buffer[offset++] | (buffer[offset++] << 8));
-            Time        = (ushort)(buffer[offset++] | (buffer[offset++] << 8));
-            Size        = (ushort)(buffer[offset++] | (buffer[offset++] << 8));
-            Iteration   = (ushort)(buffer[offset++] | (buffer[offset++] << 8));
+            Id = (ushort)(buffer[offset++] | (buffer[offset++] << 8));
+            Time = (ushort)(buffer[offset++] | (buffer[offset++] << 8));
+            Size = (ushort)(buffer[offset++] | (buffer[offset++] << 8));
+            Iteration = (ushort)(buffer[offset++] | (buffer[offset++] << 8));
         }
 
         public void Pack(byte[] buffer, int offset = 0)

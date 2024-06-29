@@ -42,7 +42,7 @@ namespace ACE.Server.WorldObjects
 
         public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target, bool confirmed = false)
         {
-            
+
             if (player.IsBusy)
             {
                 player.SendUseDoneEvent(WeenieError.YoureTooBusy);
@@ -101,10 +101,10 @@ namespace ACE.Server.WorldObjects
                     var pattern = WorldObjectFactory.CreateNewWorldObject(1053973);
 
                     RipArmorAppearance(player, source, target, pattern);
-                    player.TryConsumeFromInventoryWithNetworking(source, 1); 
+                    player.TryConsumeFromInventoryWithNetworking(source, 1);
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You create a pattern from the {target.Name}.", ChatMessageType.Craft));
                     player.TryConsumeFromInventoryWithNetworking(target);
-                    
+
                     player.TryCreateInInventoryWithNetworking(pattern);
                 });
 
@@ -192,7 +192,7 @@ namespace ACE.Server.WorldObjects
 
             pattern.Dyable = target.Dyable;
 
-            pattern.Shade = target.Shade;            
+            pattern.Shade = target.Shade;
 
             pattern.SetupTableId = target.SetupTableId;
             pattern.PaletteBaseId = target.PaletteBaseId;
@@ -202,7 +202,7 @@ namespace ACE.Server.WorldObjects
             pattern.IconOverlayId = 0x060011F7;
 
             pattern.Name = target.Name;
-            pattern.LongDesc = $"This {pattern.Name} Pattern may be applied to any piece of armor from the same weight class and with equivalent slot coverage.";      
+            pattern.LongDesc = $"This {pattern.Name} Pattern may be applied to any piece of armor from the same weight class and with equivalent slot coverage.";
 
         }
 

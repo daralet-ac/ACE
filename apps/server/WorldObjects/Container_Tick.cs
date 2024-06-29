@@ -44,7 +44,7 @@ namespace ACE.Server.WorldObjects
             {
                 // FIXME: wo.NextHeartbeatTime is double.MaxValue here
                 //if (wo.NextHeartbeatTime <= currentUnixTime)
-                    //wo.Heartbeat(currentUnixTime);
+                //wo.Heartbeat(currentUnixTime);
 
                 // just go by parent heartbeats, only for enchantments?
                 if (wo.EnchantmentManager.HasEnchantments)

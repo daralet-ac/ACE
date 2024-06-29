@@ -442,7 +442,7 @@ namespace ACE.Server.Managers
                     target.ArmorLevel += 20;
                     break;
 
-                 // mutations apparently didn't cap to 2.0 here, clamps are applied in damage calculations though
+                // mutations apparently didn't cap to 2.0 here, clamps are applied in damage calculations though
 
                 case 0x38000017:    // Alabaster
                     //target.ArmorModVsPierce = Math.Min((target.ArmorModVsPierce ?? 0) + 0.2f, 2.0f);
@@ -801,16 +801,16 @@ namespace ACE.Server.Managers
 
         public static bool VerifyRequirements(Recipe recipe, Player player, WorldObject source, WorldObject target)
         {
-           /* if (player != null)
-            {
-                uint[] disabledCraftingSkills = { (uint)Skill.ArmorTinkering, (uint)Skill.WeaponTinkering, (uint)Skill.MagicItemTinkering, (uint)Skill.ItemTinkering };
-                if (disabledCraftingSkills.Contains(recipe.Skill))
-                {
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Blacksmithing, Jewelcrafting, Spellcrafting, and Tailoring recipes are currently disabled.", ChatMessageType.Broadcast));
+            /* if (player != null)
+             {
+                 uint[] disabledCraftingSkills = { (uint)Skill.ArmorTinkering, (uint)Skill.WeaponTinkering, (uint)Skill.MagicItemTinkering, (uint)Skill.ItemTinkering };
+                 if (disabledCraftingSkills.Contains(recipe.Skill))
+                 {
+                     player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Blacksmithing, Jewelcrafting, Spellcrafting, and Tailoring recipes are currently disabled.", ChatMessageType.Broadcast));
 
-                    return false;
-                }
-            } */
+                     return false;
+                 }
+             } */
 
             if (!VerifyUse(player, source, target))
                 return false;
@@ -821,7 +821,7 @@ namespace ACE.Server.Managers
 
             if (!VerifyRequirements(recipe, player, player, RequirementType.Player)) return false;
 
-           // if (!RequiresEqualOrGreaterWork(player, source, target)) return false;
+            // if (!RequiresEqualOrGreaterWork(player, source, target)) return false;
 
             return true;
         }
@@ -1582,19 +1582,19 @@ namespace ACE.Server.Managers
             var newSetup = newWeenie.GetProperty(PropertyDataId.Setup);
 
             if (newDamageType != null)
-                target.SetProperty(PropertyInt.DamageType, (int) newDamageType);
+                target.SetProperty(PropertyInt.DamageType, (int)newDamageType);
             else
                 target.RemoveProperty(PropertyInt.DamageType);
 
             if (newUiEffects != null)
-                target.SetProperty(PropertyInt.UiEffects, (int) newUiEffects);
+                target.SetProperty(PropertyInt.UiEffects, (int)newUiEffects);
             else if (target.ProcSpell != null || target.Biota.HasKnownSpell(target.BiotaDatabaseLock))
-                target.SetProperty(PropertyInt.UiEffects, (int) UiEffects.Magical);
+                target.SetProperty(PropertyInt.UiEffects, (int)UiEffects.Magical);
             else
                 target.RemoveProperty(PropertyInt.UiEffects);
 
             if (newSetup != null)
-                target.SetProperty(PropertyDataId.Setup, (uint) newSetup);
+                target.SetProperty(PropertyDataId.Setup, (uint)newSetup);
             else
                 target.RemoveProperty(PropertyDataId.Setup);
         }
@@ -1687,7 +1687,7 @@ namespace ACE.Server.Managers
 
         private static bool RequiresEqualOrGreaterWork(Player player, WorldObject source, WorldObject target)
         {
-            if(source.ItemType != ItemType.TinkeringMaterial)
+            if (source.ItemType != ItemType.TinkeringMaterial)
                 return true;
 
             uint[] qualifyingSalvageTypes = { (uint)MaterialType.Leather, (uint)MaterialType.Sandstone };

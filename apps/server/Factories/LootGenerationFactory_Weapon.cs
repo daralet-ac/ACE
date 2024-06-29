@@ -121,7 +121,7 @@ namespace ACE.Server.Factories
 
             var qualityMod = treasureDeath.LootQualityMod != 0.0f ? treasureDeath.LootQualityMod : 0.0f;
 
-            var potentialTypes = new List<int>() { 1, 2};
+            var potentialTypes = new List<int>() { 1, 2 };
             var rolledTypes = GetRolledTypes(potentialTypes, qualityMod);
 
             // Multiplier for weapons that rolled multiple mods. Currently limited to 2 mod rolls, but ready for more.
@@ -139,21 +139,21 @@ namespace ACE.Server.Factories
             foreach (var type in rolledTypes)
             {
                 float modPercentile;
-                    
-                switch(type)
+
+                switch (type)
                 {
                     case 1: // Offense Mods
-                        if(!caster)
+                        if (!caster)
                             wo.WeaponOffense = GetWeaponModAmount(wo, treasureDeath, out modPercentile) * numRolledTypesMultiplier + 1;
                         else
                         {
-                            if(wo.WieldSkillType2 == (int)Skill.WarMagic)
+                            if (wo.WieldSkillType2 == (int)Skill.WarMagic)
                                 wo.WeaponWarMagicMod = GetWeaponModAmount(wo, treasureDeath, out modPercentile) * numRolledTypesMultiplier;
                             else
                                 wo.WeaponLifeMagicMod = GetWeaponModAmount(wo, treasureDeath, out modPercentile) * numRolledTypesMultiplier;
                         }
 
-                        if(modPercentile > highestModPercentile)
+                        if (modPercentile > highestModPercentile)
                             highestModPercentile = modPercentile;
                         break;
                     case 2: // Defense Mods
@@ -185,7 +185,7 @@ namespace ACE.Server.Factories
             float[] bonusModRollPerTier = { 0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f };
 
             var minMod = 0.1f;
-            var weaponMod = minMod + minMod * GetDiminishingRoll(treasureDeath) +bonusModRollPerTier[tier];
+            var weaponMod = minMod + minMod * GetDiminishingRoll(treasureDeath) + bonusModRollPerTier[tier];
 
             var maxPossibleMod = minMod + minMod + bonusModRollPerTier[7];
 
@@ -209,7 +209,7 @@ namespace ACE.Server.Factories
             return Math.Clamp((int)(finalPercentile * 10), 1, 10);
         }
 
-        
+
 
         private static float[] GetCasterMaxDamageMod()
         {
@@ -223,7 +223,7 @@ namespace ACE.Server.Factories
 
         private static float GetWeaponBaseDps(int tier)
         {
-            switch(tier)
+            switch (tier)
             {
                 default:
                 case 1: return 5.0f;
@@ -239,7 +239,7 @@ namespace ACE.Server.Factories
 
         private static int GetWeaponPrimaryAttribute(Skill weaponSkill)
         {
-            switch(weaponSkill)
+            switch (weaponSkill)
             {
                 default:
                 case Skill.Sword:
@@ -319,7 +319,7 @@ namespace ACE.Server.Factories
                 case Skill.ThrownWeapon:
                     subtype = GetThrownWeaponsSubType(wo);
                     const int AXE = 0, CLUB = 1, DAGGER = 2, DART = 3, JAVELIN = 4, SHOUKEN = 5;
-                    switch(subtype)
+                    switch (subtype)
                     {
                         case AXE:
                         case DAGGER: RollBonusCritChance(treasureDeath, wo, out subtypeBonusPercentile); break;

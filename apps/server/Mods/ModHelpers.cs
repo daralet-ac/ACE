@@ -45,7 +45,7 @@ namespace ACE.Server.Mods
             {
                 Regex pattern = new(categoryPattern, RegexOptions.IgnoreCase);
                 List<Type> types = new();
-                foreach(var type in container.ModAssembly.GetTypes())
+                foreach (var type in container.ModAssembly.GetTypes())
                 {
                     var attr = type.GetCustomAttribute<CommandCategoryAttribute>();
                     var cat = attr?.Category ?? "";

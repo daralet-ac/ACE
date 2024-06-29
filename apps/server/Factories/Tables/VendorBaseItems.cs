@@ -225,19 +225,19 @@ namespace ACE.Server.Factories.Tables
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
         public static readonly List<(int, bool, int, uint, int, double, int)> ArmorerItems = new List<(int, bool, int, uint, int, double, int)>()
         {
-            
+
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
         public static readonly List<(int, bool, int, uint, int, double, int)> BarkeeperItems = new List<(int, bool, int, uint, int, double, int)>()
         {
-            
+
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
         public static readonly List<(int, bool, int, uint, int, double, int)> BlacksmithItems = new List<(int, bool, int, uint, int, double, int)>()
         {
-            
+
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -582,13 +582,13 @@ namespace ACE.Server.Factories.Tables
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
         public static readonly List<(int, bool, int, uint, int, double, int)> ButcherItems = new List<(int, bool, int, uint, int, double, int)>()
         {
-            
+
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
         public static readonly List<(int, bool, int, uint, int, double, int)> GrocerItems = new List<(int, bool, int, uint, int, double, int)>()
         {
-            
+
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -620,7 +620,7 @@ namespace ACE.Server.Factories.Tables
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
         public static readonly List<(int, bool, int, uint, int, double, int)> IvoryTraderItems = new List<(int, bool, int, uint, int, double, int)>()
         {
-            
+
         };
 
         // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>

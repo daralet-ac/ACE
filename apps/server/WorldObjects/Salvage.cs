@@ -52,7 +52,7 @@ namespace ACE.Server.WorldObjects
                 player.SendUseDoneEvent(WeenieError.YoureTooBusy);
                 return;
             }
-            
+
             if (!RecipeManager.VerifyUse(player, source, target, true) || target.Workmanship == null)
             {
                 player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
@@ -138,7 +138,7 @@ namespace ACE.Server.WorldObjects
                     player.SendUseDoneEvent();
 
                 return;
-            } 
+            }
 
             var actionChain = new ActionChain();
 
@@ -266,7 +266,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Weapon - 5% base damage + 0.5% Defense | Armor - 0.125% Defense + Shield Mod and 5% Armor Level
+                    // Weapon - 5% base damage + 0.5% Defense | Armor - 0.125% Defense + Shield Mod and 5% Armor Level
                     case ACE.Entity.Enum.MaterialType.Bronze:    // Bronze
                         if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
@@ -293,7 +293,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Weapon - 1% attack | Armor - 0.25% AttackMod + 2H mod
+                    // Weapon - 1% attack | Armor - 0.25% AttackMod + 2H mod
                     case ACE.Entity.Enum.MaterialType.Copper:    // Copper
                         if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
@@ -315,7 +315,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Weapon - 0.5% Attack and 5% damage | Armor - 0.125% Attack and 2h Mods + 5% ArmorLevel
+                    // Weapon - 0.5% Attack and 5% damage | Armor - 0.125% Attack and 2h Mods + 5% ArmorLevel
                     case ACE.Entity.Enum.MaterialType.Gold:    // Gold
                         if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
@@ -344,7 +344,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Weapon - 7.5% Damage but +5 WeaponTime | Armor - 7.5% ArmorLevel but -0.25% Stam Penalty
+                    // Weapon - 7.5% Damage but +5 WeaponTime | Armor - 7.5% ArmorLevel but -0.25% Stam Penalty
                     case ACE.Entity.Enum.MaterialType.Iron:    // Iron
                         if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
@@ -365,7 +365,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Weapon - 0.5% MagicD Mod + 5% Damage | Armor - 2 Ward and 5% ArmorLevel
+                    // Weapon - 0.5% MagicD Mod + 5% Damage | Armor - 2 Ward and 5% ArmorLevel
                     case ACE.Entity.Enum.MaterialType.Pyreal:    // Pyreal
                         if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
@@ -391,7 +391,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Weapon - 1% MagicD Mod | Armor - 3 Ward + 0.25% HP Regen
+                    // Weapon - 1% MagicD Mod | Armor - 3 Ward + 0.25% HP Regen
                     case ACE.Entity.Enum.MaterialType.Silver:    // Silver
                         if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
@@ -413,7 +413,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Weapon - 0.5% Defense + 0.5% Offense    | Armor - 5% Armor + 0.25% HP Regen
+                    // Weapon - 0.5% Defense + 0.5% Offense    | Armor - 5% Armor + 0.25% HP Regen
                     case ACE.Entity.Enum.MaterialType.Steel:    // Steel
                         if (target.ItemType == ItemType.MeleeWeapon || target.WeenieType == WeenieType.Missile)
                         {
@@ -443,10 +443,10 @@ namespace ACE.Server.WorldObjects
                             successAmount = $"raising its Armor by {armorBonus} and its Health Regeneration modifier by {0.25 * armorSlots}%";
                         }
                         break;
-                         
+
                     // Tailoring: Cloth = WeightClass 1 | Leather = WeightClass 2
 
-                        // 7.5% Armor
+                    // 7.5% Armor
                     case ACE.Entity.Enum.MaterialType.Leather:
                         {
                             var armorBonus = (int)(target.BaseArmor * 0.075) < 1 ? 1 : (int)(target.BaseArmor * 0.075);
@@ -456,7 +456,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // 10% bonus Armor but -0.25% resource penalty
+                    // 10% bonus Armor but -0.25% resource penalty
                     case ACE.Entity.Enum.MaterialType.ArmoredilloHide:
                         {
                             var armorBonus = (int)(target.BaseArmor * 0.1) < 1 ? 1 : (int)(target.BaseArmor * 0.1);
@@ -491,7 +491,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Leather - 5% Armor + 0.125% ArmorAttackMod  |   Cloth - 5% Armor + 0.125% War Magic Mod
+                    // Leather - 5% Armor + 0.125% ArmorAttackMod  |   Cloth - 5% Armor + 0.125% War Magic Mod
                     case ACE.Entity.Enum.MaterialType.ReedSharkHide:
                         if (target.ArmorWeightClass == 1)
                         {
@@ -515,7 +515,7 @@ namespace ACE.Server.WorldObjects
 
                         break;
 
-                        // 5% Armor and 0.25% Reduced Resource Penalty
+                    // 5% Armor and 0.25% Reduced Resource Penalty
                     case ACE.Entity.Enum.MaterialType.Linen:
                         if (target.ArmorWeightClass == 1)
                         {
@@ -536,7 +536,7 @@ namespace ACE.Server.WorldObjects
                             successAmount = $"raising its Armor by {armorBonus} and reducing its Resource Penalty by {0.25 * armorSlots}%";
                         }
                         break;
-                        // Leather - 5% Armor and 0.25% to Thievery and Deception | Cloth - 0.25% LifeMagic + 0.25% ManaCon and 0.25% Perception
+                    // Leather - 5% Armor and 0.25% to Thievery and Deception | Cloth - 0.25% LifeMagic + 0.25% ManaCon and 0.25% Perception
                     case ACE.Entity.Enum.MaterialType.Satin:
                         if (target.ArmorWeightClass == 1)
                         {
@@ -558,7 +558,7 @@ namespace ACE.Server.WorldObjects
                         }
                         break;
 
-                        // Cloth - 5% Armor + 0.125% Life Magic and 0.25% Mana Mod | Leather - 5% Armor + 0.25% Perception + 0.25% Deception
+                    // Cloth - 5% Armor + 0.125% Life Magic and 0.25% Mana Mod | Leather - 5% Armor + 0.25% Perception + 0.25% Deception
                     case ACE.Entity.Enum.MaterialType.Silk:
                         if (target.ArmorWeightClass == 1)
                         {
@@ -581,7 +581,7 @@ namespace ACE.Server.WorldObjects
                             successAmount = $"raising its Armor by {armorBonus} and its Perception and Deception modifiers by {0.25 * armorSlots}%";
                         }
                         break;
-                        // Cloth - 0.25% War Magic + 0.25% Mana + 0.25% Deception | Leather - 0.25% Attack, 0.25% Dual Wield, 0.25% Deception
+                    // Cloth - 0.25% War Magic + 0.25% Mana + 0.25% Deception | Leather - 0.25% Attack, 0.25% Dual Wield, 0.25% Deception
                     case ACE.Entity.Enum.MaterialType.Velvet:
                         if (target.ArmorWeightClass == 1)
                         {
@@ -600,7 +600,7 @@ namespace ACE.Server.WorldObjects
                             successAmount = $"raising its Attack, Dual-Wield, and Perception modifiers by {0.25 * armorSlots}%";
                         }
                         break;
-                        // Cloth - 0.25% Mana + 0.25% ManaRegen | Leather - Armor + 0.25% stam + 0.25% Stam Regen
+                    // Cloth - 0.25% Mana + 0.25% ManaRegen | Leather - Armor + 0.25% stam + 0.25% Stam Regen
                     case ACE.Entity.Enum.MaterialType.Wool:
                         if (target.ArmorWeightClass == 1)
                         {
@@ -629,7 +629,7 @@ namespace ACE.Server.WorldObjects
 
                     // Woodworking
 
-                        // 1% MagicD Mod
+                    // 1% MagicD Mod
                     case ACE.Entity.Enum.MaterialType.Ebony:    // Ebony
                         if (target.WeaponMagicalDefense == null)
                         {
@@ -641,12 +641,12 @@ namespace ACE.Server.WorldObjects
                         successAmount = $"raising its Magic Defense modifier by 1%";
 
                         break;
-                        // 7.5% Damage
+                    // 7.5% Damage
                     case ACE.Entity.Enum.MaterialType.Mahogany:    // Mahogany
                         target.DamageMod += 0.075f;
                         successAmount = $"raising its Damage modifier by 7.5%";
                         break;
-                        //  1% Defense Mod
+                    //  1% Defense Mod
                     case ACE.Entity.Enum.MaterialType.Oak:    // Oak
                         if (target.WeaponPhysicalDefense == null)
                         {
@@ -656,7 +656,7 @@ namespace ACE.Server.WorldObjects
                             target.WeaponPhysicalDefense += 0.01;
                         successAmount = $"raising its Physical Defense modifier by 1%";
                         break;
-                        // 1% Offense Mod
+                    // 1% Offense Mod
                     case ACE.Entity.Enum.MaterialType.Pine:    // Pine
                         if (target.WeaponOffense == null)
                         {
@@ -666,7 +666,7 @@ namespace ACE.Server.WorldObjects
                             target.WeaponOffense += 0.01;
                         successAmount = $"raising its Attack modifier by 1%";
                         break;
-                        // 0.5% Offense and 0.5% Defense
+                    // 0.5% Offense and 0.5% Defense
                     case ACE.Entity.Enum.MaterialType.Teak:    // Teak
                         if (target.WeaponOffense == null)
                         {
@@ -706,7 +706,7 @@ namespace ACE.Server.WorldObjects
                         target.ImbuedEffect = ImbuedEffectType.CripplingBlow;
                         target.IconUnderlayId = 0x06003357;
                         break;
-                    
+
                     case ACE.Entity.Enum.MaterialType.ImperialTopaz:
                         target.ImbuedEffect = ImbuedEffectType.SlashRending;
                         target.IconUnderlayId = 0x0600335C;
@@ -787,8 +787,8 @@ namespace ACE.Server.WorldObjects
                     case ACE.Entity.Enum.MaterialType.Moonstone:
                         if (target.ItemMaxMana != null)
                         {
-                           target.ItemMaxMana += 250;
-                           successAmount = $"raising its Maximum Mana by 250";
+                            target.ItemMaxMana += 250;
+                            successAmount = $"raising its Maximum Mana by 250";
                         }
                         break;
                     case ACE.Entity.Enum.MaterialType.WhiteJade:
@@ -797,78 +797,78 @@ namespace ACE.Server.WorldObjects
                         break;
 
 
-                 /*   case ACE.Entity.Enum.MaterialType.Agate:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Amber:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Azurite:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Bloodstone:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Carnelian:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Citrine:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Diamond:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.GreenJade:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Hematite:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.LapisLazuli:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    
-                    case ACE.Entity.Enum.MaterialType.Onyx:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                
-                    case ACE.Entity.Enum.MaterialType.Peridot:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.RedJade:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    
-                    case ACE.Entity.Enum.MaterialType.Ruby:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Sapphire:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                 
-                    case ACE.Entity.Enum.MaterialType.SmokeyQuartz:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.TigerEye:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Turquoise:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    
-                    case ACE.Entity.Enum.MaterialType.WhiteQuartz:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.YellowGarnet:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.YellowTopaz:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                    case ACE.Entity.Enum.MaterialType.Zircon:
-                        Console.WriteLine(Skill.ItemTinkering);
-                        break;
-                 */
+                        /*   case ACE.Entity.Enum.MaterialType.Agate:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Amber:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Azurite:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Bloodstone:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Carnelian:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Citrine:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Diamond:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.GreenJade:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Hematite:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.LapisLazuli:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+
+                           case ACE.Entity.Enum.MaterialType.Onyx:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+
+                           case ACE.Entity.Enum.MaterialType.Peridot:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.RedJade:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+
+                           case ACE.Entity.Enum.MaterialType.Ruby:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Sapphire:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+
+                           case ACE.Entity.Enum.MaterialType.SmokeyQuartz:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.TigerEye:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Turquoise:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+
+                           case ACE.Entity.Enum.MaterialType.WhiteQuartz:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.YellowGarnet:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.YellowTopaz:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                           case ACE.Entity.Enum.MaterialType.Zircon:
+                               Console.WriteLine(Skill.ItemTinkering);
+                               break;
+                        */
                 }
             }
 
@@ -943,14 +943,14 @@ namespace ACE.Server.WorldObjects
 
                 if (target.ArmorLevel != null)
                 {
-                    if(target.ArmorPatchAmount != null)
+                    if (target.ArmorPatchAmount != null)
                     {
                         target.ArmorLevel = target.BaseArmor + target.ArmorPatchAmount;
                     }
                     else
                         target.ArmorLevel = target.BaseArmor == 0 ? null : target.BaseArmor;
                 }
-                    
+
                 if (target.Damage != null)
                     target.Damage = target.BaseDamage == 0 ? null : target.BaseDamage;
 

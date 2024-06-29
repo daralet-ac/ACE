@@ -13,7 +13,7 @@ namespace ACE.Server.Command.Handlers
         // acehelp (command)
         [CommandHandler("acehelp", AccessLevel.Player, CommandHandlerFlag.None, 0, "Displays help.", "(command)")]
         public static void HandleACEHelp(Session session, params string[] parameters)
-        {         
+        {
             if (parameters?.Length <= 0)
             {
                 if (session != null)
@@ -35,7 +35,7 @@ namespace ACE.Server.Command.Handlers
                 HandleACECommands(session, parameters);
                 return;
             }
-                
+
             foreach (var command in CommandManager.GetCommandByName(parameters[0]))
             {
                 if (session != null)
@@ -83,7 +83,7 @@ namespace ACE.Server.Command.Handlers
             var msgHeader = "Note: You may substitute a forward slash (/) for the at symbol (@).\n"
                           + "For more information, type @acehelp < command >.\n";
 
-            if (session == null)            
+            if (session == null)
                 Console.WriteLine("For more information, type acehelp < command >.");
 
             var accessLevel = session != null ? session.AccessLevel : AccessLevel.Admin;

@@ -8,14 +8,14 @@ namespace ACE.Server.Network.Structure
 {
     public enum ContractStage
     {
-        Available           = 0x1,
-        InProgress          = 0x2,
+        Available = 0x1,
+        InProgress = 0x2,
         DoneOrPendingRepeat = 0x3,
-        ProgressCounter     = 0x4
+        ProgressCounter = 0x4
     };
 
     public class ContractTracker
-    {        
+    {
         public uint ContractId;
         public ContractStage Stage = ContractStage.Available;
         public double TimeWhenDone;
@@ -79,7 +79,7 @@ namespace ACE.Server.Network.Structure
             if (!string.IsNullOrWhiteSpace(Contract.QuestflagRepeatTime))
             {
                 if (player.QuestManager.HasQuest(Contract.QuestflagRepeatTime))
-                {                    
+                {
                     TimeWhenRepeats = player.QuestManager.GetNextSolveTime(Contract.QuestflagRepeatTime).TotalSeconds;
 
                     if (TimeWhenRepeats > 0)

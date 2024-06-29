@@ -33,7 +33,7 @@ namespace ACE.Server.Network.GameAction.Actions
                 session.Player.SetRequestedLocation(moveToState.Position, false);
 
             //if (!moveToState.StandingLongJump)
-                session.Player.BroadcastMovement(moveToState);
+            session.Player.BroadcastMovement(moveToState);
 
             if (session.Player.IsAfk)
             {

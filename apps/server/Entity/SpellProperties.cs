@@ -457,7 +457,7 @@ namespace ACE.Server.Entity
         /// <summary>
         /// The minimum spell power to dispel (unused?)
         /// </summary>
-        public int MinPower { get => _spell.MinPower ?? 0;  }
+        public int MinPower { get => _spell.MinPower ?? 0; }
 
         /// <summary>
         /// The maximum spell power to dispel
@@ -485,7 +485,7 @@ namespace ACE.Server.Entity
         /// <summary>
         /// The maximum # of spells to dispel
         /// </summary>
-        public int Number { get =>_spell.Number ?? 0; }
+        public int Number { get => _spell.Number ?? 0; }
 
         /// <summary>
         /// Number * NumberVariance = the minimum # of spells to dispel

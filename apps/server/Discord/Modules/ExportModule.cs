@@ -44,7 +44,7 @@ public class ExportModule : InteractionModuleBase<SocketInteractionContext>
             weenieSqlWriter.CreateSQLDELETEStatement(weenie, writer);
             await writer.WriteLineAsync();
             weenieSqlWriter.CreateSQLINSERTStatement(weenie, writer);
-            
+
             using var file = new FileAttachment(stream, weenieSqlWriter.GetDefaultFileName(weenie));
             await FollowupWithFileAsync(file);
         }
@@ -88,7 +88,7 @@ public class ExportModule : InteractionModuleBase<SocketInteractionContext>
             landblockInstanceWriter.CreateSQLDELETEStatement(instances, writer);
             await writer.WriteLineAsync();
             landblockInstanceWriter.CreateSQLINSERTStatement(instances, writer);
-            
+
             using var file = new FileAttachment(stream, $"{landblockId:X4}.sql");
             await FollowupWithFileAsync(file);
         }

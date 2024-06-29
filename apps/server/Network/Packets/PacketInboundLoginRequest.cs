@@ -8,7 +8,7 @@ namespace ACE.Server.Network.Packets
     {
         public NetAuthType NetAuthType { get; }
 
-        public uint Timestamp { get; }    
+        public uint Timestamp { get; }
 
         public string Account { get; }
 

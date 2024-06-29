@@ -79,9 +79,10 @@ namespace ACE.Server.Network
             tw.Write("   0  ");
 
             string asciiLine = "";
-            for (int i = startPosition; i < startPosition+bytesToOutput; i++)
+            for (int i = startPosition; i < startPosition + bytesToOutput; i++)
             {
-                if (i >= buffer.Length) {
+                if (i >= buffer.Length)
+                {
                     break;
                 }
                 if (column >= columns)

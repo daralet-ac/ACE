@@ -572,17 +572,17 @@ namespace ACE.Server.WorldObjects
         [Flags]
         public enum SearchLocations
         {
-            None                = 0x00,
-            MyInventory         = 0x01,
-            MyEquippedItems     = 0x02,
-            Landblock           = 0x04,
-            LastUsedContainer   = 0x08,
-            WieldedByOther      = 0x10,
-            TradedByOther       = 0x20,
-            ObjectsKnownByMe    = 0x40,
-            LastUsedHook        = 0x80,
-            LocationsICanMove   = MyInventory | MyEquippedItems | Landblock | LastUsedContainer,
-            Everywhere          = 0xFF
+            None = 0x00,
+            MyInventory = 0x01,
+            MyEquippedItems = 0x02,
+            Landblock = 0x04,
+            LastUsedContainer = 0x08,
+            WieldedByOther = 0x10,
+            TradedByOther = 0x20,
+            ObjectsKnownByMe = 0x40,
+            LastUsedHook = 0x80,
+            LocationsICanMove = MyInventory | MyEquippedItems | Landblock | LastUsedContainer,
+            Everywhere = 0xFF
         }
 
         public WorldObject FindObject(uint objectGuid, SearchLocations searchLocations)

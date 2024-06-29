@@ -15,7 +15,7 @@ namespace ACE.Server.Entity
         // http://acpedia.org/wiki/Core_Plating_Integrator
         // http://acpedia.org/wiki/Core_Plating_Deintegrator
 
-        public const uint CorePlatingIntegrator   = 42979;
+        public const uint CorePlatingIntegrator = 42979;
         public const uint CorePlatingDeintegrator = 43022;
 
         public static bool IsCorePlatingDevice(WorldObject wo)
@@ -211,7 +211,7 @@ namespace ACE.Server.Entity
                     slotName = " Bracer ";
                     break;
                 case EquipMask.UpperArmWear | EquipMask.LowerArmWear:
-                case EquipMask.UpperArmArmor  | EquipMask.LowerArmArmor:
+                case EquipMask.UpperArmArmor | EquipMask.LowerArmArmor:
                     slotName = " Sleeve ";
                     break;
                 case EquipMask.HandWear:
@@ -230,7 +230,7 @@ namespace ACE.Server.Entity
                 case EquipMask.AbdomenWear | EquipMask.UpperLegWear | EquipMask.LowerLegWear:
                 case EquipMask.AbdomenArmor | EquipMask.UpperLegArmor | EquipMask.LowerLegArmor:
                     slotName = " Leg ";
-                    break;                
+                    break;
                 case EquipMask.FootWear:
                 case EquipMask.LowerLegWear | EquipMask.FootWear:
                     slotName = " Solleret ";
