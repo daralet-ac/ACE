@@ -1,0 +1,9 @@
+{
+  "executors": {
+    "format": {
+      "implementation": "./src/executors/format/executor",
+      "schema": "./src/executors/format/schema.json",
+      "description": "CSharpier format executor"
+    }
+  }
+}
