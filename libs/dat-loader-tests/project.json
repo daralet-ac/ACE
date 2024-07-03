@@ -1,0 +1,12 @@
+{
+  "targets": {
+    "format": {
+      "executor": "@daralet/csharpier:format",
+      "configurations": {
+        "write": {
+          "check": false
+        }
+      }
+    }
+  }
+}

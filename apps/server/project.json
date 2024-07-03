@@ -1,5 +1,13 @@
 {
   "targets": {
+    "format": {
+      "executor": "@daralet/csharpier:format",
+      "configurations": {
+        "write": {
+          "check": false
+        }
+      }
+    },
     "publish": {
       "executor": "@nx-dotnet/core:publish",
       "configurations": {
