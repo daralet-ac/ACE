@@ -1,85 +1,83 @@
 using System;
 using System.IO;
 using System.Text;
-
 using ACE.Entity.Enum;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+public class RecordCast
 {
-    public class RecordCast
+    public Player Player;
+
+    public bool Enabled;
+
+    public string Filename => $"{Player.Name}Cast.log";
+
+    public StringBuilder Buffer = new StringBuilder();
+
+    public RecordCast(Player player)
     {
-        public Player Player;
+        Player = player;
+    }
 
-        public bool Enabled;
+    public void OnMoveToState(MoveToState moveToState)
+    {
+        var rawState = moveToState.RawMotionState;
 
-        public string Filename => $"{Player.Name}Cast.log";
+        var line = rawState.ToString(false).Replace(Environment.NewLine, " | ");
+        line = line.Length >= 8 ? line.Substring(0, line.Length - 8) : "";
 
-        public StringBuilder Buffer = new StringBuilder();
+        Output(line);
+    }
 
-        public RecordCast(Player player)
-        {
-            Player = player;
-        }
+    public void OnCastTargetedSpell(Spell spell, WorldObject target)
+    {
+        var line = $"HandleActionCastTargetedSpell({spell.Id} - {spell.Name}, {target.Name} ({target.Guid}))";
 
-        public void OnMoveToState(MoveToState moveToState)
-        {
-            var rawState = moveToState.RawMotionState;
+        Output(line);
+    }
 
-            var line = rawState.ToString(false).Replace(Environment.NewLine, " | ");
-            line = line.Length >= 8 ? line.Substring(0, line.Length - 8) : "";
+    public void OnCastUntargetedSpell(Spell spell)
+    {
+        var line = $"HandleActionCastUntargetedSpell({spell.Id} - {spell.Name})";
 
-            Output(line);
-        }
+        Output(line);
+    }
 
-        public void OnCastTargetedSpell(Spell spell, WorldObject target)
-        {
-            var line = $"HandleActionCastTargetedSpell({spell.Id} - {spell.Name}, {target.Name} ({target.Guid}))";
+    public void OnJump(JumpPack jump)
+    {
+        var line = $"HandleActionJump: Velocity={jump.Velocity}, Extent={jump.Extent}";
 
-            Output(line);
-        }
+        Output(line);
+    }
 
-        public void OnCastUntargetedSpell(Spell spell)
-        {
-            var line = $"HandleActionCastUntargetedSpell({spell.Id} - {spell.Name})";
+    public void OnSetCombatMode(CombatMode combatMode)
+    {
+        var line = $"HandleActionChangeCombatMode({combatMode})";
 
-            Output(line);
-        }
+        Output(line);
+    }
 
-        public void OnJump(JumpPack jump)
-        {
-            var line = $"HandleActionJump: Velocity={jump.Velocity}, Extent={jump.Extent}";
+    public void Log(string line)
+    {
+        Output(line);
+    }
 
-            Output(line);
-        }
+    public void Output(string line)
+    {
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss,fff");
 
-        public void OnSetCombatMode(CombatMode combatMode)
-        {
-            var line = $"HandleActionChangeCombatMode({combatMode})";
+        var timestamp_line = $"[{timestamp}] {line}";
 
-            Output(line);
-        }
+        Buffer.AppendLine(timestamp_line);
+        Console.WriteLine(timestamp_line);
+    }
 
-        public void Log(string line)
-        {
-            Output(line);
-        }
-
-        public void Output(string line)
-        {
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss,fff");
-
-            var timestamp_line = $"[{timestamp}] {line}";
-
-            Buffer.AppendLine(timestamp_line);
-            Console.WriteLine(timestamp_line);
-        }
-
-        public void Flush()
-        {
-            File.AppendAllText(Filename, Buffer.ToString());
-            Buffer.Clear();
-        }
+    public void Flush()
+    {
+        File.AppendAllText(Filename, Buffer.ToString());
+        Buffer.Clear();
     }
 }

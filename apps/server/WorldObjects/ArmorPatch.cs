@@ -1,3 +1,4 @@
+using System;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
@@ -6,129 +7,177 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using Serilog;
-using System;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+public class ArmorPatch : Stackable
 {
-    public class ArmorPatch : Stackable
+    private static readonly ILogger _log = Log.ForContext(typeof(ArmorPatch));
+
+    /// <summary>
+    /// A new biota be created taking all of its values from weenie.
+    /// </summary>
+    public ArmorPatch(Weenie weenie, ObjectGuid guid)
+        : base(weenie, guid)
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(ArmorPatch));
+        SetEphemeralValues();
+    }
 
-        /// <summary>
-        /// A new biota be created taking all of its values from weenie.
-        /// </summary>
-        public ArmorPatch(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
+    /// <summary>
+    /// Restore a WorldObject from the database.
+    /// </summary>
+    public ArmorPatch(Biota biota)
+        : base(biota)
+    {
+        SetEphemeralValues();
+    }
+
+    private void SetEphemeralValues() { }
+
+    public static void BroadcastArmorPatch(Player player, string sourceName, WorldObject target, int patchesConsumed)
+    {
+        var plural = patchesConsumed > 1;
+
+        if (plural)
         {
-            SetEphemeralValues();
+            player.EnqueueBroadcast(
+                new GameMessageSystemChat(
+                    $"{player.Name} applies {patchesConsumed} {sourceName}es to the {target.NameWithMaterial}.",
+                    ChatMessageType.Craft
+                ),
+                WorldObject.LocalBroadcastRange,
+                ChatMessageType.Craft
+            );
+        }
+        else
+        {
+            player.EnqueueBroadcast(
+                new GameMessageSystemChat(
+                    $"{player.Name} applies an {sourceName} to the {target.NameWithMaterial}.",
+                    ChatMessageType.Craft
+                ),
+                WorldObject.LocalBroadcastRange,
+                ChatMessageType.Craft
+            );
         }
 
-        /// <summary>
-        /// Restore a WorldObject from the database.
-        /// </summary>
-        public ArmorPatch(Biota biota) : base(biota)
+        _log.Debug($"[ArmorPatch] {player.Name} {sourceName} to the {target.NameWithMaterial}.");
+    }
+
+    public override void HandleActionUseOnTarget(Player player, WorldObject target)
+    {
+        UseObjectOnTarget(player, this, target);
+    }
+
+    public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target, bool confirmed = false)
+    {
+        if (player.IsBusy)
         {
-            SetEphemeralValues();
+            player.SendUseDoneEvent(WeenieError.YoureTooBusy);
+            return;
         }
 
-        private void SetEphemeralValues()
+        if (!RecipeManager.VerifyUse(player, source, target, true) || target.Workmanship == null)
         {
+            player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+            return;
         }
 
-        public static void BroadcastArmorPatch(Player player, string sourceName, WorldObject target, int patchesConsumed)
+        if (source.ArmorPatchAmount.HasValue)
         {
-            var plural = patchesConsumed > 1;
+            var amountToAdd = source.ArmorPatchAmount.Value;
+            var targetTier = target.Tier ?? 1;
 
-            if (plural)
-                player.EnqueueBroadcast(new GameMessageSystemChat($"{player.Name} applies {patchesConsumed} {sourceName}es to the {target.NameWithMaterial}.", ChatMessageType.Craft), WorldObject.LocalBroadcastRange, ChatMessageType.Craft);
-            else
-                player.EnqueueBroadcast(new GameMessageSystemChat($"{player.Name} applies an {sourceName} to the {target.NameWithMaterial}.", ChatMessageType.Craft), WorldObject.LocalBroadcastRange, ChatMessageType.Craft);
+            var targetArmorSlots = target.ArmorSlots ?? 1;
+            var armorPatchStackSize = source.StackSize ?? 1;
 
-            _log.Debug($"[ArmorPatch] {player.Name} {sourceName} to the {target.NameWithMaterial}.");
-        }
-
-        public override void HandleActionUseOnTarget(Player player, WorldObject target)
-        {
-            UseObjectOnTarget(player, this, target);
-        }
-
-        public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target, bool confirmed = false)
-        {
-            if (player.IsBusy)
+            if (target.ArmorLevel < 1)
             {
-                player.SendUseDoneEvent(WeenieError.YoureTooBusy);
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Armor patches can only reinforce vestments with innate armor level.",
+                        ChatMessageType.Craft
+                    )
+                );
+                player.SendUseDoneEvent();
+                return;
+            }
+            if (target.ArmorPatchApplied == true)
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"The {target.NameWithMaterial} has already had an armor patch applied.",
+                        ChatMessageType.Craft
+                    )
+                );
+                player.SendUseDoneEvent();
                 return;
             }
 
-            if (!RecipeManager.VerifyUse(player, source, target, true) || target.Workmanship == null)
+            if (TooPowerful(targetTier, amountToAdd))
             {
-                player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"The {target.NameWithMaterial} is too low quality to apply this armor patch.",
+                        ChatMessageType.Craft
+                    )
+                );
+                player.SendUseDoneEvent();
                 return;
             }
 
-            if (source.ArmorPatchAmount.HasValue)
+            if (armorPatchStackSize < targetArmorSlots)
             {
-                var amountToAdd = source.ArmorPatchAmount.Value;
-                var targetTier = target.Tier ?? 1;
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You need {targetArmorSlots} {source.Name}es to increase the armor level of {target.NameWithMaterial}.",
+                        ChatMessageType.Craft
+                    )
+                );
+                player.SendUseDoneEvent();
+                return;
+            }
 
-                var targetArmorSlots = target.ArmorSlots ?? 1;
-                var armorPatchStackSize = source.StackSize ?? 1;
+            if (!confirmed)
+            {
+                var plural = targetArmorSlots > 1 ? "es" : "";
 
-                if (target.ArmorLevel < 1)
+                if (
+                    !player.ConfirmationManager.EnqueueSend(
+                        new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
+                        $"Adding {targetArmorSlots} armor patch{plural} to {target.NameWithMaterial}, increasing its armor level by {amountToAdd}."
+                    )
+                )
                 {
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Armor patches can only reinforce vestments with innate armor level.", ChatMessageType.Craft));
+                    player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
+                }
+                else
+                {
                     player.SendUseDoneEvent();
-                    return;
-                }
-                if (target.ArmorPatchApplied == true)
-                {
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {target.NameWithMaterial} has already had an armor patch applied.", ChatMessageType.Craft));
-                    player.SendUseDoneEvent();
-                    return;
                 }
 
-                if (TooPowerful(targetTier, amountToAdd))
-                {
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {target.NameWithMaterial} is too low quality to apply this armor patch.", ChatMessageType.Craft));
-                    player.SendUseDoneEvent();
-                    return;
-                }
+                return;
+            }
 
-                if (armorPatchStackSize < targetArmorSlots)
-                {
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You need {targetArmorSlots} {source.Name}es to increase the armor level of {target.NameWithMaterial}.", ChatMessageType.Craft));
-                    player.SendUseDoneEvent();
-                    return;
-                }
+            var actionChain = new ActionChain();
 
-                if (!confirmed)
-                {
-                    var plural = targetArmorSlots > 1 ? "es" : "";
+            var animTime = 0.0f;
 
-                    if (!player.ConfirmationManager.EnqueueSend(new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid), $"Adding {targetArmorSlots} armor patch{plural} to {target.NameWithMaterial}, increasing its armor level by {amountToAdd}."))
-                        player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
-                    else
-                        player.SendUseDoneEvent();
+            player.IsBusy = true;
 
-                    return;
-                }
+            if (player.CombatMode != CombatMode.NonCombat)
+            {
+                var stanceTime = player.SetCombatMode(CombatMode.NonCombat);
+                actionChain.AddDelaySeconds(stanceTime);
 
-                var actionChain = new ActionChain();
+                animTime += stanceTime;
+            }
 
-                var animTime = 0.0f;
+            animTime += player.EnqueueMotion(actionChain, MotionCommand.ClapHands);
 
-                player.IsBusy = true;
-
-                if (player.CombatMode != CombatMode.NonCombat)
-                {
-                    var stanceTime = player.SetCombatMode(CombatMode.NonCombat);
-                    actionChain.AddDelaySeconds(stanceTime);
-
-                    animTime += stanceTime;
-                }
-
-                animTime += player.EnqueueMotion(actionChain, MotionCommand.ClapHands);
-
-                actionChain.AddAction(player, () =>
+            actionChain.AddAction(
+                player,
+                () =>
                 {
                     target.ArmorLevel += source.ArmorPatchAmount;
                     target.ArmorPatchAmount = source.ArmorPatchAmount;
@@ -139,37 +188,50 @@ namespace ACE.Server.WorldObjects
 
                     player.TryConsumeFromInventoryWithNetworking(source, targetArmorSlots);
                     BroadcastArmorPatch(player, source.Name, target, targetArmorSlots);
-                });
+                }
+            );
 
-                player.EnqueueMotion(actionChain, MotionCommand.Ready);
+            player.EnqueueMotion(actionChain, MotionCommand.Ready);
 
-                actionChain.AddAction(player, () =>
+            actionChain.AddAction(
+                player,
+                () =>
                 {
                     player.IsBusy = false;
-                });
+                }
+            );
 
-                actionChain.EnqueueChain();
+            actionChain.EnqueueChain();
 
-                player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
-            }
+            player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
         }
+    }
 
-        private static bool TooPowerful(int targetTier, int amountToAdd)
+    private static bool TooPowerful(int targetTier, int amountToAdd)
+    {
+        var minimumTargetTier = 1;
+
+        switch (amountToAdd)
         {
-            var minimumTargetTier = 1;
-
-            switch (amountToAdd)
-            {
-                case 25: minimumTargetTier = 1; break;
-                case 50: minimumTargetTier = 3; break;
-                case 100: minimumTargetTier = 5; break;
-                case 200: minimumTargetTier = 7; break;
-            }
-
-            if (targetTier < minimumTargetTier)
-                return true;
-
-            return false;
+            case 25:
+                minimumTargetTier = 1;
+                break;
+            case 50:
+                minimumTargetTier = 3;
+                break;
+            case 100:
+                minimumTargetTier = 5;
+                break;
+            case 200:
+                minimumTargetTier = 7;
+                break;
         }
+
+        if (targetTier < minimumTargetTier)
+        {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -1,17 +1,16 @@
-namespace ACE.Server.Network
+namespace ACE.Server.Network;
+
+public enum PacketDirection
 {
-    public enum PacketDirection
-    {
-        None,
+    None,
 
-        /// <summary>
-        /// Client->Server
-        /// </summary>
-        Client,
+    /// <summary>
+    /// Client->Server
+    /// </summary>
+    Client,
 
-        /// <summary>
-        /// Server->Client
-        /// </summary>
-        Server
-    }
+    /// <summary>
+    /// Server->Client
+    /// </summary>
+    Server
 }

@@ -9,154 +9,155 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
 using Serilog;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+public enum Sigil
 {
-    public enum Sigil
+    /// <summary>
+    /// Increased damage resistance rating
+    /// </summary>
+    Defense,
+
+    /// <summary>
+    /// Increased damage rating
+    /// </summary>
+    Destruction,
+
+    /// <summary>
+    /// Increased critical damage rating
+    /// </summary>
+    Fury,
+
+    /// <summary>
+    /// Increased healing rating
+    /// </summary>
+    Growth,
+
+    /// <summary>
+    /// Vital regeneration spells
+    /// </summary>
+    Vigor,
+}
+
+public enum Surge
+{
+    Destruction,
+    Protection,
+    Regeneration,
+    Affliction,
+    Festering
+};
+
+public enum AetheriaColor
+{
+    Blue,
+    Yellow,
+    Red
+};
+
+public class Aetheria
+{
+    private static readonly ILogger _log = Log.ForContext(typeof(Aetheria));
+
+    // https://asheron.fandom.com/wiki/Aetheria
+
+    public const uint AetheriaBlue = 42635;
+    public const uint AetheriaRed = 42636;
+    public const uint AetheriaYellow = 42637;
+
+    public const uint AetheriaManaStone = 42645;
+
+    public static Dictionary<AetheriaColor, Dictionary<Sigil, uint>> Icons;
+
+    static Aetheria()
     {
-        /// <summary>
-        /// Increased damage resistance rating
-        /// </summary>
-        Defense,
+        Icons = new Dictionary<AetheriaColor, Dictionary<Sigil, uint>>();
 
-        /// <summary>
-        /// Increased damage rating
-        /// </summary>
-        Destruction,
+        Icons.Add(AetheriaColor.Blue, new Dictionary<Sigil, uint>());
+        Icons.Add(AetheriaColor.Yellow, new Dictionary<Sigil, uint>());
+        Icons.Add(AetheriaColor.Red, new Dictionary<Sigil, uint>());
 
-        /// <summary>
-        /// Increased critical damage rating
-        /// </summary>
-        Fury,
+        Icons[AetheriaColor.Blue].Add(Sigil.Defense, 0x06006BF2);
+        Icons[AetheriaColor.Blue].Add(Sigil.Destruction, 0x06006BFE);
+        Icons[AetheriaColor.Blue].Add(Sigil.Fury, 0x06006BFF);
+        Icons[AetheriaColor.Blue].Add(Sigil.Growth, 0x06006C00);
+        Icons[AetheriaColor.Blue].Add(Sigil.Vigor, 0x06006C01);
 
-        /// <summary>
-        /// Increased healing rating
-        /// </summary>
-        Growth,
+        Icons[AetheriaColor.Yellow].Add(Sigil.Defense, 0x06006C06);
+        Icons[AetheriaColor.Yellow].Add(Sigil.Destruction, 0x06006C07);
+        Icons[AetheriaColor.Yellow].Add(Sigil.Fury, 0x06006BF3);
+        Icons[AetheriaColor.Yellow].Add(Sigil.Growth, 0x06006C08);
+        Icons[AetheriaColor.Yellow].Add(Sigil.Vigor, 0x06006BFD);
 
-        /// <summary>
-        /// Vital regeneration spells
-        /// </summary>
-        Vigor,
+        Icons[AetheriaColor.Red].Add(Sigil.Defense, 0x06006C02);
+        Icons[AetheriaColor.Red].Add(Sigil.Destruction, 0x06006C03);
+        Icons[AetheriaColor.Red].Add(Sigil.Fury, 0x06006C04);
+        Icons[AetheriaColor.Red].Add(Sigil.Growth, 0x06006BF4);
+        Icons[AetheriaColor.Red].Add(Sigil.Vigor, 0x06006C05);
     }
 
-    public enum Surge
+    public static bool IsAetheria(uint wcid)
     {
-        Destruction,
-        Protection,
-        Regeneration,
-        Affliction,
-        Festering
-    };
+        return wcid == AetheriaBlue || wcid == AetheriaYellow || wcid == AetheriaRed;
+    }
 
-    public enum AetheriaColor
+    public static AetheriaColor? GetColor(uint wcid)
     {
-        Blue,
-        Yellow,
-        Red
-    };
-
-    public class Aetheria
-    {
-        private static readonly ILogger _log = Log.ForContext(typeof(Aetheria));
-
-        // https://asheron.fandom.com/wiki/Aetheria
-
-        public const uint AetheriaBlue = 42635;
-        public const uint AetheriaRed = 42636;
-        public const uint AetheriaYellow = 42637;
-
-        public const uint AetheriaManaStone = 42645;
-
-        public static Dictionary<AetheriaColor, Dictionary<Sigil, uint>> Icons;
-
-        static Aetheria()
+        switch (wcid)
         {
-            Icons = new Dictionary<AetheriaColor, Dictionary<Sigil, uint>>();
+            case AetheriaBlue:
+                return AetheriaColor.Blue;
+            case AetheriaYellow:
+                return AetheriaColor.Yellow;
+            case AetheriaRed:
+                return AetheriaColor.Red;
+            default:
+                return null;
+        }
+    }
 
-            Icons.Add(AetheriaColor.Blue, new Dictionary<Sigil, uint>());
-            Icons.Add(AetheriaColor.Yellow, new Dictionary<Sigil, uint>());
-            Icons.Add(AetheriaColor.Red, new Dictionary<Sigil, uint>());
+    /// <summary>
+    /// The player uses an aetheria mana stone on a piece of coalesced aetheria
+    /// </summary>
+    public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target)
+    {
+        //Console.WriteLine($"Aetheria.UseObjectOnTarget({player.Name}, {source.Name}, {target.Name})");
 
-            Icons[AetheriaColor.Blue].Add(Sigil.Defense, 0x06006BF2);
-            Icons[AetheriaColor.Blue].Add(Sigil.Destruction, 0x06006BFE);
-            Icons[AetheriaColor.Blue].Add(Sigil.Fury, 0x06006BFF);
-            Icons[AetheriaColor.Blue].Add(Sigil.Growth, 0x06006C00);
-            Icons[AetheriaColor.Blue].Add(Sigil.Vigor, 0x06006C01);
-
-            Icons[AetheriaColor.Yellow].Add(Sigil.Defense, 0x06006C06);
-            Icons[AetheriaColor.Yellow].Add(Sigil.Destruction, 0x06006C07);
-            Icons[AetheriaColor.Yellow].Add(Sigil.Fury, 0x06006BF3);
-            Icons[AetheriaColor.Yellow].Add(Sigil.Growth, 0x06006C08);
-            Icons[AetheriaColor.Yellow].Add(Sigil.Vigor, 0x06006BFD);
-
-            Icons[AetheriaColor.Red].Add(Sigil.Defense, 0x06006C02);
-            Icons[AetheriaColor.Red].Add(Sigil.Destruction, 0x06006C03);
-            Icons[AetheriaColor.Red].Add(Sigil.Fury, 0x06006C04);
-            Icons[AetheriaColor.Red].Add(Sigil.Growth, 0x06006BF4);
-            Icons[AetheriaColor.Red].Add(Sigil.Vigor, 0x06006C05);
+        if (player.IsBusy)
+        {
+            player.SendUseDoneEvent(WeenieError.YoureTooBusy);
+            return;
         }
 
-
-        public static bool IsAetheria(uint wcid)
+        // verify use requirements
+        var useError = VerifyUseRequirements(player, source, target);
+        if (useError != WeenieError.None)
         {
-            return wcid == AetheriaBlue || wcid == AetheriaYellow || wcid == AetheriaRed;
+            player.SendUseDoneEvent(useError);
+            return;
         }
 
-        public static AetheriaColor? GetColor(uint wcid)
+        var animTime = 0.0f;
+
+        var actionChain = new ActionChain();
+
+        player.IsBusy = true;
+
+        // handle switching to peace mode
+        if (player.CombatMode != CombatMode.NonCombat)
         {
-            switch (wcid)
-            {
-                case AetheriaBlue:
-                    return AetheriaColor.Blue;
-                case AetheriaYellow:
-                    return AetheriaColor.Yellow;
-                case AetheriaRed:
-                    return AetheriaColor.Red;
-                default:
-                    return null;
-            }
+            var stanceTime = player.SetCombatMode(CombatMode.NonCombat);
+            actionChain.AddDelaySeconds(stanceTime);
+
+            animTime += stanceTime;
         }
 
-        /// <summary>
-        /// The player uses an aetheria mana stone on a piece of coalesced aetheria
-        /// </summary>
-        public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target)
-        {
-            //Console.WriteLine($"Aetheria.UseObjectOnTarget({player.Name}, {source.Name}, {target.Name})");
+        // perform clapping motion
+        animTime += player.EnqueueMotion(actionChain, MotionCommand.ClapHands);
 
-            if (player.IsBusy)
-            {
-                player.SendUseDoneEvent(WeenieError.YoureTooBusy);
-                return;
-            }
-
-            // verify use requirements
-            var useError = VerifyUseRequirements(player, source, target);
-            if (useError != WeenieError.None)
-            {
-                player.SendUseDoneEvent(useError);
-                return;
-            }
-
-            var animTime = 0.0f;
-
-            var actionChain = new ActionChain();
-
-            player.IsBusy = true;
-
-            // handle switching to peace mode
-            if (player.CombatMode != CombatMode.NonCombat)
-            {
-                var stanceTime = player.SetCombatMode(CombatMode.NonCombat);
-                actionChain.AddDelaySeconds(stanceTime);
-
-                animTime += stanceTime;
-            }
-
-            // perform clapping motion
-            animTime += player.EnqueueMotion(actionChain, MotionCommand.ClapHands);
-
-            actionChain.AddAction(player, () =>
+        actionChain.AddAction(
+            player,
+            () =>
             {
                 // re-verify
                 var useError = VerifyUseRequirements(player, source, target);
@@ -167,145 +168,176 @@ namespace ACE.Server.Entity
                 }
 
                 ActivateSigil(player, source, target);
-            });
-
-            player.EnqueueMotion(actionChain, MotionCommand.Ready);
-
-            actionChain.AddAction(player, () => player.IsBusy = false);
-
-            actionChain.EnqueueChain();
-
-            player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
-        }
-
-        public static WeenieError VerifyUseRequirements(Player player, WorldObject source, WorldObject target)
-        {
-            if (source == target)
-            {
-                player.Session.Network.EnqueueSend(new GameEventCommunicationTransientString(player.Session, $"You can't use the {source.Name} on itself."));
-                return WeenieError.YouDoNotPassCraftingRequirements;
             }
+        );
 
-            // ensure both source and target are in player's inventory
-            if (player.FindObject(source.Guid.Full, Player.SearchLocations.MyInventory) == null)
-                return WeenieError.YouDoNotPassCraftingRequirements;
+        player.EnqueueMotion(actionChain, MotionCommand.Ready);
 
-            if (player.FindObject(target.Guid.Full, Player.SearchLocations.MyInventory) == null)
-                return WeenieError.YouDoNotPassCraftingRequirements;
+        actionChain.AddAction(player, () => player.IsBusy = false);
 
-            if (source.WeenieClassId != AetheriaManaStone ||
-                target.WeenieClassId != AetheriaBlue && target.WeenieClassId != AetheriaYellow && target.WeenieClassId != AetheriaRed)
+        actionChain.EnqueueChain();
 
-                return WeenieError.YouDoNotPassCraftingRequirements;
+        player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
+    }
 
-            if (target.Name != "Coalesced Aetheria")
-            {
-                player.Session.Network.EnqueueSend(new GameEventCommunicationTransientString(player.Session, $"You can't use the {source.Name} on {target.Name} because the sigil is already visible."));
-                return WeenieError.YouDoNotPassCraftingRequirements;
-            }
-
-            return WeenieError.None;
+    public static WeenieError VerifyUseRequirements(Player player, WorldObject source, WorldObject target)
+    {
+        if (source == target)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameEventCommunicationTransientString(player.Session, $"You can't use the {source.Name} on itself.")
+            );
+            return WeenieError.YouDoNotPassCraftingRequirements;
         }
 
-        public static void ActivateSigil(Player player, WorldObject source, WorldObject target)
+        // ensure both source and target are in player's inventory
+        if (player.FindObject(source.Guid.Full, Player.SearchLocations.MyInventory) == null)
         {
-            // rng select a sigil / spell set
-            var randSigil = (Sigil)ThreadSafeRandom.Next(0, 4);
-
-            var equipmentSet = SigilToEquipmentSet[randSigil];
-            target.SetProperty(PropertyInt.EquipmentSetId, (int)equipmentSet);
-
-            // change icon
-            var color = GetColor(target.WeenieClassId).Value;
-            var icon = Icons[color][randSigil];
-            target.SetProperty(PropertyDataId.Icon, icon);
-
-            // rng select a surge spell
-            var surgeSpell = (SpellId)ThreadSafeRandom.Next(5204, 5208);
-
-            //target.Biota.GetOrAddKnownSpell((int)surgeSpell, target.BiotaDatabaseLock, target.BiotaPropertySpells, out _);
-
-            target.SetProperty(PropertyDataId.ProcSpell, (uint)surgeSpell);
-            //target.SetProperty(PropertyFloat.ProcSpellRate, 0.05f);   // proc rate for aetheria?
-
-            if (SurgeTargetSelf[surgeSpell])
-                target.SetProperty(PropertyBool.ProcSpellSelfTargeted, true);
-
-            // set equip mask
-            target.SetProperty(PropertyInt.ValidLocations, (int)ColorToMask[color]);
-
-            // level?
-            player.Session.Network.EnqueueSend(new GameMessageSystemChat("A sigil rises to the surface as you bathe the aetheria in mana.", ChatMessageType.Broadcast));
-
-            player.UpdateProperty(target, PropertyString.Name, "Aetheria");
-            player.UpdateProperty(target, PropertyString.LongDesc, "This aetheria's sigil now shows on the surface.");
-            player.Session.Network.EnqueueSend(new GameMessageUpdateObject(target));
-
-            target.SaveBiotaToDatabase();
-
-            player.SendUseDoneEvent();
-
-            _log.Debug("[CRAFTING] {Player} revealed a {AetheriaColor} {AetheriaSigil} with a surge of {AetheriaSurge} on {Item}:0x{ItemGuid}", player.Name, color, randSigil, surgeSpell, target.Name, target.Guid);
+            return WeenieError.YouDoNotPassCraftingRequirements;
         }
 
-        public static Dictionary<Sigil, EquipmentSet> SigilToEquipmentSet = new Dictionary<Sigil, EquipmentSet>()
+        if (player.FindObject(target.Guid.Full, Player.SearchLocations.MyInventory) == null)
         {
-            { Sigil.Defense, EquipmentSet.AetheriaDefense },
-            { Sigil.Destruction, EquipmentSet.AetheriaDestruction },
-            { Sigil.Fury, EquipmentSet.AetheriaFury },
-            { Sigil.Growth, EquipmentSet.AetheriaGrowth },
-            { Sigil.Vigor, EquipmentSet.AetheriaVigor }
-        };
-
-        public static Dictionary<AetheriaColor, EquipMask> ColorToMask = new Dictionary<AetheriaColor, EquipMask>()
-        {
-            { AetheriaColor.Blue, EquipMask.SigilOne },
-            { AetheriaColor.Yellow, EquipMask.SigilTwo },
-            { AetheriaColor.Red, EquipMask.SigilThree },
-        };
-
-        public static Dictionary<SpellId, bool> SurgeTargetSelf = new Dictionary<SpellId, bool>()
-        {
-            { SpellId.AetheriaProcDamageBoost,     true },
-            { SpellId.AetheriaProcDamageOverTime,  false },
-            { SpellId.AetheriaProcDamageReduction, true },
-            { SpellId.AetheriaProcHealDebuff,      false },
-            { SpellId.AetheriaProcHealthOverTime,  true },
-        };
-
-        public static float CalcProcRate(WorldObject aetheria, Creature wielder)
-        {
-            // ~1% base rate per level?
-            var procRate = (aetheria.ItemLevel ?? 0) * 0.01f;
-
-            if (wielder is Player player)
-            {
-                // +0.1% per luminance aug?
-                var augBonus = player.LumAugSurgeChanceRating * 0.001f;
-                procRate += augBonus;
-            }
-
-            // The proc rates depend on the attack type. Magic is best, then missile is slightly lower, then Melee is slightly lower than missile.
-            switch (wielder.CombatMode)
-            {
-                case CombatMode.Magic:
-                    procRate *= 2.0f;
-                    break;
-
-                case CombatMode.Missile:
-                    procRate *= 1.5f;
-                    break;
-            }
-            // It is unconfirmed, but believed, that the act of being hit or attacked increases the chances of a surge triggering.
-            return procRate;
+            return WeenieError.YouDoNotPassCraftingRequirements;
         }
 
-        /// <summary>
-        /// Returns TRUE if wo is AetheriaManaStone
-        /// </summary>
-        public static bool IsAetheriaManaStone(WorldObject wo)
+        if (
+            source.WeenieClassId != AetheriaManaStone
+            || target.WeenieClassId != AetheriaBlue
+                && target.WeenieClassId != AetheriaYellow
+                && target.WeenieClassId != AetheriaRed
+        )
         {
-            return wo.WeenieClassId == AetheriaManaStone;
+            return WeenieError.YouDoNotPassCraftingRequirements;
         }
+
+        if (target.Name != "Coalesced Aetheria")
+        {
+            player.Session.Network.EnqueueSend(
+                new GameEventCommunicationTransientString(
+                    player.Session,
+                    $"You can't use the {source.Name} on {target.Name} because the sigil is already visible."
+                )
+            );
+            return WeenieError.YouDoNotPassCraftingRequirements;
+        }
+
+        return WeenieError.None;
+    }
+
+    public static void ActivateSigil(Player player, WorldObject source, WorldObject target)
+    {
+        // rng select a sigil / spell set
+        var randSigil = (Sigil)ThreadSafeRandom.Next(0, 4);
+
+        var equipmentSet = SigilToEquipmentSet[randSigil];
+        target.SetProperty(PropertyInt.EquipmentSetId, (int)equipmentSet);
+
+        // change icon
+        var color = GetColor(target.WeenieClassId).Value;
+        var icon = Icons[color][randSigil];
+        target.SetProperty(PropertyDataId.Icon, icon);
+
+        // rng select a surge spell
+        var surgeSpell = (SpellId)ThreadSafeRandom.Next(5204, 5208);
+
+        //target.Biota.GetOrAddKnownSpell((int)surgeSpell, target.BiotaDatabaseLock, target.BiotaPropertySpells, out _);
+
+        target.SetProperty(PropertyDataId.ProcSpell, (uint)surgeSpell);
+        //target.SetProperty(PropertyFloat.ProcSpellRate, 0.05f);   // proc rate for aetheria?
+
+        if (SurgeTargetSelf[surgeSpell])
+        {
+            target.SetProperty(PropertyBool.ProcSpellSelfTargeted, true);
+        }
+
+        // set equip mask
+        target.SetProperty(PropertyInt.ValidLocations, (int)ColorToMask[color]);
+
+        // level?
+        player.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                "A sigil rises to the surface as you bathe the aetheria in mana.",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        player.UpdateProperty(target, PropertyString.Name, "Aetheria");
+        player.UpdateProperty(target, PropertyString.LongDesc, "This aetheria's sigil now shows on the surface.");
+        player.Session.Network.EnqueueSend(new GameMessageUpdateObject(target));
+
+        target.SaveBiotaToDatabase();
+
+        player.SendUseDoneEvent();
+
+        _log.Debug(
+            "[CRAFTING] {Player} revealed a {AetheriaColor} {AetheriaSigil} with a surge of {AetheriaSurge} on {Item}:0x{ItemGuid}",
+            player.Name,
+            color,
+            randSigil,
+            surgeSpell,
+            target.Name,
+            target.Guid
+        );
+    }
+
+    public static Dictionary<Sigil, EquipmentSet> SigilToEquipmentSet = new Dictionary<Sigil, EquipmentSet>()
+    {
+        { Sigil.Defense, EquipmentSet.AetheriaDefense },
+        { Sigil.Destruction, EquipmentSet.AetheriaDestruction },
+        { Sigil.Fury, EquipmentSet.AetheriaFury },
+        { Sigil.Growth, EquipmentSet.AetheriaGrowth },
+        { Sigil.Vigor, EquipmentSet.AetheriaVigor }
+    };
+
+    public static Dictionary<AetheriaColor, EquipMask> ColorToMask = new Dictionary<AetheriaColor, EquipMask>()
+    {
+        { AetheriaColor.Blue, EquipMask.SigilOne },
+        { AetheriaColor.Yellow, EquipMask.SigilTwo },
+        { AetheriaColor.Red, EquipMask.SigilThree },
+    };
+
+    public static Dictionary<SpellId, bool> SurgeTargetSelf = new Dictionary<SpellId, bool>()
+    {
+        { SpellId.AetheriaProcDamageBoost, true },
+        { SpellId.AetheriaProcDamageOverTime, false },
+        { SpellId.AetheriaProcDamageReduction, true },
+        { SpellId.AetheriaProcHealDebuff, false },
+        { SpellId.AetheriaProcHealthOverTime, true },
+    };
+
+    public static float CalcProcRate(WorldObject aetheria, Creature wielder)
+    {
+        // ~1% base rate per level?
+        var procRate = (aetheria.ItemLevel ?? 0) * 0.01f;
+
+        if (wielder is Player player)
+        {
+            // +0.1% per luminance aug?
+            var augBonus = player.LumAugSurgeChanceRating * 0.001f;
+            procRate += augBonus;
+        }
+
+        // The proc rates depend on the attack type. Magic is best, then missile is slightly lower, then Melee is slightly lower than missile.
+        switch (wielder.CombatMode)
+        {
+            case CombatMode.Magic:
+                procRate *= 2.0f;
+                break;
+
+            case CombatMode.Missile:
+                procRate *= 1.5f;
+                break;
+        }
+        // It is unconfirmed, but believed, that the act of being hit or attacked increases the chances of a surge triggering.
+        return procRate;
+    }
+
+    /// <summary>
+    /// Returns TRUE if wo is AetheriaManaStone
+    /// </summary>
+    public static bool IsAetheriaManaStone(WorldObject wo)
+    {
+        return wo.WeenieClassId == AetheriaManaStone;
     }
 }

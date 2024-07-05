@@ -2,17 +2,16 @@ using ACE.Entity;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.GameMessages.Messages
+namespace ACE.Server.Network.GameMessages.Messages;
+
+public class GameMessagePublicUpdatePosition : GameMessage
 {
-    public class GameMessagePublicUpdatePosition : GameMessage
+    public GameMessagePublicUpdatePosition(WorldObject worldObject, PositionType positionType, Position pos)
+        : base(GameMessageOpcode.PublicUpdatePosition, GameMessageGroup.UIQueue, 45)
     {
-        public GameMessagePublicUpdatePosition(WorldObject worldObject, PositionType positionType, Position pos)
-            : base(GameMessageOpcode.PublicUpdatePosition, GameMessageGroup.UIQueue, 45)
-        {
-            Writer.Write(worldObject.Sequences.GetNextSequence(Sequence.SequenceType.UpdatePosition, positionType));
-            Writer.WriteGuid(worldObject.Guid);
-            Writer.Write((uint)positionType);
-            pos.Serialize(Writer);
-        }
+        Writer.Write(worldObject.Sequences.GetNextSequence(Sequence.SequenceType.UpdatePosition, positionType));
+        Writer.WriteGuid(worldObject.Guid);
+        Writer.Write((uint)positionType);
+        pos.Serialize(Writer);
     }
 }

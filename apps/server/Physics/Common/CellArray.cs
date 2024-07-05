@@ -1,49 +1,48 @@
 using System.Collections.Generic;
 
-namespace ACE.Server.Physics.Common
+namespace ACE.Server.Physics.Common;
+
+public class CellArray
 {
-    public class CellArray
+    public bool AddedOutside;
+    public bool LoadCells;
+    public Dictionary<uint, ObjCell> Cells;
+    public int NumCells;
+
+    public CellArray()
     {
-        public bool AddedOutside;
-        public bool LoadCells;
-        public Dictionary<uint, ObjCell> Cells;
-        public int NumCells;
+        Cells = new Dictionary<uint, ObjCell>();
+    }
 
-        public CellArray()
+    public void SetStatic()
+    {
+        AddedOutside = false;
+        LoadCells = false;
+        NumCells = 0;
+    }
+
+    public void SetDynamic()
+    {
+        AddedOutside = false;
+        LoadCells = true;
+        NumCells = 0;
+    }
+
+    public void add_cell(uint cellID, ObjCell cell)
+    {
+        if (!Cells.ContainsKey(cellID))
         {
-            Cells = new Dictionary<uint, ObjCell>();
+            Cells.Add(cellID, cell);
+            NumCells++;
         }
+    }
 
-        public void SetStatic()
+    public void remove_cell(ObjCell cell)
+    {
+        if (Cells.ContainsKey(cell.ID))
         {
-            AddedOutside = false;
-            LoadCells = false;
-            NumCells = 0;
-        }
-
-        public void SetDynamic()
-        {
-            AddedOutside = false;
-            LoadCells = true;
-            NumCells = 0;
-        }
-
-        public void add_cell(uint cellID, ObjCell cell)
-        {
-            if (!Cells.ContainsKey(cellID))
-            {
-                Cells.Add(cellID, cell);
-                NumCells++;
-            }
-        }
-
-        public void remove_cell(ObjCell cell)
-        {
-            if (Cells.ContainsKey(cell.ID))
-            {
-                Cells.Remove(cell.ID);
-                NumCells--;
-            }
+            Cells.Remove(cell.ID);
+            NumCells--;
         }
     }
 }

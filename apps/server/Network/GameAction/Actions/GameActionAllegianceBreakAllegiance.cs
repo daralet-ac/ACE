@@ -1,14 +1,12 @@
+namespace ACE.Server.Network.GameAction.Actions;
 
-namespace ACE.Server.Network.GameAction.Actions
+public static class GameActionAllegianceBreakAllegiance
 {
-    public static class GameActionAllegianceBreakAllegiance
+    [GameAction(GameActionType.BreakAllegiance)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.BreakAllegiance)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            var targetGuid = message.Payload.ReadUInt32();
+        var targetGuid = message.Payload.ReadUInt32();
 
-            session.Player.HandleActionBreakAllegiance(targetGuid);
-        }
+        session.Player.HandleActionBreakAllegiance(targetGuid);
     }
 }

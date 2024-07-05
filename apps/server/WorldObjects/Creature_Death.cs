@@ -20,962 +20,1242 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using static ACE.Common.DerethDateTime;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+partial class Creature
 {
-    partial class Creature
+    public TreasureDeath DeathTreasure
     {
-        public TreasureDeath DeathTreasure
+        get
         {
-            get
+            var treasure = DeathTreasureType.HasValue
+                ? LootGenerationFactory.GetTweakedDeathTreasureProfile(DeathTreasureType.Value, this)
+                : null;
+
+            if (treasure != null)
             {
-                var treasure = DeathTreasureType.HasValue
-                    ? LootGenerationFactory.GetTweakedDeathTreasureProfile(DeathTreasureType.Value, this)
-                    : null;
-
-                if (treasure != null)
-                {
-                    treasure.Tier = _deathTreasureTier;
-                }
-
-                return treasure;
+                treasure.Tier = _deathTreasureTier;
             }
+
+            return treasure;
         }
-        private int _deathTreasureTier = 1;
+    }
+    private int _deathTreasureTier = 1;
 
-        private bool onDeathEntered = false;
+    private bool onDeathEntered = false;
 
-        private float SpellStackBonus = 1.0f;
+    private float SpellStackBonus = 1.0f;
 
-        /// <summary>
-        /// Called when a monster or player dies, in conjunction with Die()
-        /// </summary>
-        /// <param name="lastDamager">The last damager that landed the death blow</param>
-        /// <param name="damageType">The damage type for the death message</param>
-        /// <param name="criticalHit">True if the death blow was a critical hit, generates a critical death message</param>
-        public virtual DeathMessage OnDeath(DamageHistoryInfo lastDamager, DamageType damageType, bool criticalHit = false)
+    /// <summary>
+    /// Called when a monster or player dies, in conjunction with Die()
+    /// </summary>
+    /// <param name="lastDamager">The last damager that landed the death blow</param>
+    /// <param name="damageType">The damage type for the death message</param>
+    /// <param name="criticalHit">True if the death blow was a critical hit, generates a critical death message</param>
+    public virtual DeathMessage OnDeath(DamageHistoryInfo lastDamager, DamageType damageType, bool criticalHit = false)
+    {
+        if (onDeathEntered)
         {
-            if (onDeathEntered)
-                return GetDeathMessage(lastDamager, damageType, criticalHit);
-
-            onDeathEntered = true;
-
-            IsTurning = false;
-            IsMoving = false;
-
-            //QuestManager.OnDeath(lastDamager?.TryGetAttacker());
-
-            if (KillQuest != null)
-                OnDeath_HandleKillTask(KillQuest);
-            if (KillQuest2 != null)
-                OnDeath_HandleKillTask(KillQuest2);
-            if (KillQuest3 != null)
-                OnDeath_HandleKillTask(KillQuest3);
-
-            if (!IsOnNoDeathXPLandblock)
-                OnDeath_GrantXP();
-
-            if (!StruckByUnshrouded && !(this is Player))
-                HandleShroudRewards();
-
             return GetDeathMessage(lastDamager, damageType, criticalHit);
         }
 
+        onDeathEntered = true;
 
-        public DeathMessage GetDeathMessage(DamageHistoryInfo lastDamagerInfo, DamageType damageType, bool criticalHit = false)
+        IsTurning = false;
+        IsMoving = false;
+
+        //QuestManager.OnDeath(lastDamager?.TryGetAttacker());
+
+        if (KillQuest != null)
         {
-            var lastDamager = lastDamagerInfo?.TryGetAttacker();
-
-            if (lastDamagerInfo == null || lastDamagerInfo.Guid == Guid || lastDamager is Hotspot || lastDamager is Food)   // !(lastDamager is Creature)?
-                return Strings.General[1];
-
-            var deathMessage = Strings.GetDeathMessage(damageType, criticalHit);
-
-            // if killed by a player, send them a message
-            if (lastDamagerInfo.IsPlayer)
-            {
-                if (criticalHit && this is Player)
-                    deathMessage = Strings.PKCritical[0];
-
-                var killerMsg = string.Format(deathMessage.Killer, Name);
-
-                if (lastDamager is Player playerKiller)
-                    playerKiller.Session.Network.EnqueueSend(new GameEventKillerNotification(playerKiller.Session, killerMsg));
-            }
-            return deathMessage;
+            OnDeath_HandleKillTask(KillQuest);
         }
 
-        /// <summary>
-        /// Kills a player/creature and performs the full death sequence
-        /// </summary>
-        public void Die()
+        if (KillQuest2 != null)
         {
-            Die(DamageHistory.LastDamager, DamageHistory.TopDamager);
+            OnDeath_HandleKillTask(KillQuest2);
         }
 
-        private bool dieEntered = false;
-
-        /// <summary>
-        /// Performs the full death sequence for non-Player creatures
-        /// </summary>
-        protected virtual void Die(DamageHistoryInfo lastDamager, DamageHistoryInfo topDamager)
+        if (KillQuest3 != null)
         {
-            if (dieEntered) return;
+            OnDeath_HandleKillTask(KillQuest3);
+        }
 
-            dieEntered = true;
+        if (!IsOnNoDeathXPLandblock)
+        {
+            OnDeath_GrantXP();
+        }
 
-            UpdateVital(Health, 0);
+        if (!StruckByUnshrouded && !(this is Player))
+        {
+            HandleShroudRewards();
+        }
 
-            if (topDamager != null)
+        return GetDeathMessage(lastDamager, damageType, criticalHit);
+    }
+
+    public DeathMessage GetDeathMessage(
+        DamageHistoryInfo lastDamagerInfo,
+        DamageType damageType,
+        bool criticalHit = false
+    )
+    {
+        var lastDamager = lastDamagerInfo?.TryGetAttacker();
+
+        if (lastDamagerInfo == null || lastDamagerInfo.Guid == Guid || lastDamager is Hotspot || lastDamager is Food) // !(lastDamager is Creature)?
+        {
+            return Strings.General[1];
+        }
+
+        var deathMessage = Strings.GetDeathMessage(damageType, criticalHit);
+
+        // if killed by a player, send them a message
+        if (lastDamagerInfo.IsPlayer)
+        {
+            if (criticalHit && this is Player)
             {
-                KillerId = topDamager.Guid.Full;
-
-                //  Console.WriteLine(topDamager.HotspotOwner);
-
-                if (topDamager.IsPlayer)
-                {
-                    var topDamagerPlayer = topDamager.TryGetAttacker();
-                    if (topDamagerPlayer != null)
-                        topDamagerPlayer.CreatureKills = (topDamagerPlayer.CreatureKills ?? 0) + 1;
-                }
-
-                if (topDamager.HotspotOwner != null)
-                {
-                    var hotspotOwner = topDamager.TryGetHotspotOwner();
-                    KillerId = hotspotOwner.Guid.Full;
-                }
-
+                deathMessage = Strings.PKCritical[0];
             }
 
-            CurrentMotionState = new Motion(MotionStance.NonCombat, MotionCommand.Ready);
-            //IsMonster = false;
+            var killerMsg = string.Format(deathMessage.Killer, Name);
 
-            PhysicsObj.StopCompletely(true);
+            if (lastDamager is Player playerKiller)
+            {
+                playerKiller.Session.Network.EnqueueSend(
+                    new GameEventKillerNotification(playerKiller.Session, killerMsg)
+                );
+            }
+        }
+        return deathMessage;
+    }
 
-            // broadcast death animation
-            var motionDeath = new Motion(MotionStance.NonCombat, MotionCommand.Dead);
-            var deathAnimLength = ExecuteMotion(motionDeath);
+    /// <summary>
+    /// Kills a player/creature and performs the full death sequence
+    /// </summary>
+    public void Die()
+    {
+        Die(DamageHistory.LastDamager, DamageHistory.TopDamager);
+    }
 
-            EmoteManager.OnDeath(lastDamager);
+    private bool dieEntered = false;
 
-            var dieChain = new ActionChain();
+    /// <summary>
+    /// Performs the full death sequence for non-Player creatures
+    /// </summary>
+    protected virtual void Die(DamageHistoryInfo lastDamager, DamageHistoryInfo topDamager)
+    {
+        if (dieEntered)
+        {
+            return;
+        }
 
-            // wait for death animation to finish
-            //var deathAnimLength = DatManager.PortalDat.ReadFromDat<MotionTable>(MotionTableId).GetAnimationLength(MotionCommand.Dead);
-            dieChain.AddDelaySeconds(deathAnimLength);
+        dieEntered = true;
 
-            dieChain.AddAction(this, () =>
+        UpdateVital(Health, 0);
+
+        if (topDamager != null)
+        {
+            KillerId = topDamager.Guid.Full;
+
+            //  Console.WriteLine(topDamager.HotspotOwner);
+
+            if (topDamager.IsPlayer)
+            {
+                var topDamagerPlayer = topDamager.TryGetAttacker();
+                if (topDamagerPlayer != null)
+                {
+                    topDamagerPlayer.CreatureKills = (topDamagerPlayer.CreatureKills ?? 0) + 1;
+                }
+            }
+
+            if (topDamager.HotspotOwner != null)
+            {
+                var hotspotOwner = topDamager.TryGetHotspotOwner();
+                KillerId = hotspotOwner.Guid.Full;
+            }
+        }
+
+        CurrentMotionState = new Motion(MotionStance.NonCombat, MotionCommand.Ready);
+        //IsMonster = false;
+
+        PhysicsObj.StopCompletely(true);
+
+        // broadcast death animation
+        var motionDeath = new Motion(MotionStance.NonCombat, MotionCommand.Dead);
+        var deathAnimLength = ExecuteMotion(motionDeath);
+
+        EmoteManager.OnDeath(lastDamager);
+
+        var dieChain = new ActionChain();
+
+        // wait for death animation to finish
+        //var deathAnimLength = DatManager.PortalDat.ReadFromDat<MotionTable>(MotionTableId).GetAnimationLength(MotionCommand.Dead);
+        dieChain.AddDelaySeconds(deathAnimLength);
+
+        dieChain.AddAction(
+            this,
+            () =>
             {
                 CreateCorpse(topDamager);
                 Destroy();
-            });
-
-            dieChain.EnqueueChain();
-        }
-
-        /// <summary>
-        /// Called when an admin player uses the /smite command
-        /// to instantly kill a creature
-        /// </summary>
-        public void Smite(WorldObject smiter, bool useTakeDamage = false)
-        {
-            if (useTakeDamage)
-            {
-                // deal remaining damage
-                TakeDamage(smiter, DamageType.Bludgeon, Health.Current);
             }
-            else
+        );
+
+        dieChain.EnqueueChain();
+    }
+
+    /// <summary>
+    /// Called when an admin player uses the /smite command
+    /// to instantly kill a creature
+    /// </summary>
+    public void Smite(WorldObject smiter, bool useTakeDamage = false)
+    {
+        if (useTakeDamage)
+        {
+            // deal remaining damage
+            TakeDamage(smiter, DamageType.Bludgeon, Health.Current);
+        }
+        else
+        {
+            OnDeath();
+            var smiterInfo = new DamageHistoryInfo(smiter);
+            Die(smiterInfo, smiterInfo);
+        }
+    }
+
+    public void OnDeath()
+    {
+        OnDeath(null, DamageType.Undef);
+    }
+
+    /// <summary>
+    /// Grants XP to players in damage history
+    /// </summary>
+    public void OnDeath_GrantXP()
+    {
+        if (this is Player && PlayerKillerStatus == PlayerKillerStatus.PKLite)
+        {
+            return;
+        }
+
+        var totalHealth = DamageHistory.TotalHealth;
+
+        if (totalHealth == 0)
+        {
+            return;
+        }
+
+        foreach (var kvp in DamageHistory.TotalDamage)
+        {
+            var damager = kvp.Value.TryGetAttacker();
+
+            var playerDamager = damager as Player;
+
+            if (playerDamager == null && kvp.Value.PetOwner != null)
             {
-                OnDeath();
-                var smiterInfo = new DamageHistoryInfo(smiter);
-                Die(smiterInfo, smiterInfo);
+                playerDamager = kvp.Value.TryGetPetOwner();
             }
-        }
 
-        public void OnDeath()
-        {
-            OnDeath(null, DamageType.Undef);
-        }
-
-        /// <summary>
-        /// Grants XP to players in damage history
-        /// </summary>
-        public void OnDeath_GrantXP()
-        {
-            if (this is Player && PlayerKillerStatus == PlayerKillerStatus.PKLite)
-                return;
-
-            var totalHealth = DamageHistory.TotalHealth;
-
-            if (totalHealth == 0)
-                return;
-
-            foreach (var kvp in DamageHistory.TotalDamage)
+            if (playerDamager == null && kvp.Value.HotspotOwner != null)
             {
-                var damager = kvp.Value.TryGetAttacker();
+                playerDamager = kvp.Value.TryGetHotspotOwner();
+            }
 
-                var playerDamager = damager as Player;
+            if (playerDamager == null)
+            {
+                continue;
+            }
 
-                if (playerDamager == null && kvp.Value.PetOwner != null)
-                    playerDamager = kvp.Value.TryGetPetOwner();
+            if (playerDamager == this)
+            {
+                continue;
+            }
 
-                if (playerDamager == null && kvp.Value.HotspotOwner != null)
-                    playerDamager = kvp.Value.TryGetHotspotOwner();
+            var totalDamage = kvp.Value.TotalDamage;
 
-                if (playerDamager == null)
-                    continue;
+            var damagePercent = totalDamage / totalHealth;
 
-                if (playerDamager == this)
-                    continue;
+            var killXpMod = KillXpMod ?? 1.0;
 
-                var totalDamage = kvp.Value.TotalDamage;
+            var totalXP = GetCreatureDeathXP(Level ?? 0, Tier ?? 1) * damagePercent * (float)killXpMod;
 
-                var damagePercent = totalDamage / totalHealth;
-
-                var killXpMod = KillXpMod ?? 1.0;
-
-                var totalXP = GetCreatureDeathXP(Level ?? 0, Tier ?? 1) * damagePercent * (float)killXpMod;
-
-                if (BossKillXpReward == true)
+            if (BossKillXpReward == true)
+            {
+                if (playerDamager.Fellowship != null)
                 {
-                    if (playerDamager.Fellowship != null)
-                        foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
-                            member.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
-                    else
-                        playerDamager.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                    foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
+                    {
+                        member.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                    }
                 }
                 else
-                    playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill, Level, ShareType.All, WeenieClassId);
-
-                // handle luminance
-                if (LuminanceAward != null)
                 {
-                    var totalLuminance = (long)Math.Round(LuminanceAward.Value * damagePercent);
-                    playerDamager.EarnLuminance(totalLuminance, XpType.Kill);
+                    playerDamager.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
                 }
-            }
-        }
-        public static int GetCreatureDeathXP(int level, int tier = 1)
-        {
-            var baseXp = 0.0;
-
-            ulong levelTotalXP;
-
-            if (level <= 125)
-                levelTotalXP = DatManager.PortalDat.XpTable.CharacterLevelXPList[level + 1] - DatManager.PortalDat.XpTable.CharacterLevelXPList[level];
-            else
-                levelTotalXP = DatManager.PortalDat.XpTable.CharacterLevelXPList[126] - DatManager.PortalDat.XpTable.CharacterLevelXPList[125];
-
-            switch (tier)
-            {
-                case 1: baseXp = levelTotalXP * 0.05f; break;
-                case 2: baseXp = levelTotalXP * 0.01f; break;
-                case 3: baseXp = levelTotalXP * 0.005f; break;
-                case 4: baseXp = levelTotalXP * 0.004f; break;
-                case 5: baseXp = levelTotalXP * 0.003f; break;
-                case 6: baseXp = levelTotalXP * 0.002f; break;
-                case 7: baseXp = levelTotalXP * 0.001f; break;
-                case 8: baseXp = levelTotalXP * 0.0005f; break;
-            }
-
-            return (int)Math.Round(baseXp);
-        }
-
-        /// <summary>
-        /// Handles the KillTask for a killed creature
-        /// </summary>
-        public void OnDeath_HandleKillTask(string killQuest)
-        {
-            /*var receivers = KillTask_GetEligibleReceivers(killQuest);
-
-            foreach (var receiver in receivers)
-            {
-                var damager = receiver.Value.TryGetAttacker();
-
-                var player = damager as Player;
-
-                if (player == null && receiver.Value.PetOwner != null)
-                    player = receiver.Value.TryGetPetOwner();
-
-                if (player != null)
-                    player.QuestManager.HandleKillTask(killQuest, this);
-            }*/
-
-            // new method
-
-            // with full fellowship support and new config option for capping,
-            // building a pre-flattened structure is no longer really necessary,
-            // and we can do this more iteratively.
-
-            // one caveat to do this, we need to keep track of player and summoning caps separately
-            // this is to prevent ordering bugs, such as a player being processed after a summon,
-            // and already being at the 1 cap for players
-
-            var summon_credit_cap = (int)PropertyManager.GetLong("summoning_killtask_multicredit_cap").Item - 1;
-
-            var playerCredits = new Dictionary<ObjectGuid, int>();
-            var summonCredits = new Dictionary<ObjectGuid, int>();
-
-            // this option isn't really needed anymore, but keeping it around for compatibility
-            // it is now synonymous with summoning_killtask_multicredit_cap <= 1
-            if (!PropertyManager.GetBool("allow_summoning_killtask_multicredit").Item)
-                summon_credit_cap = 0;
-
-            foreach (var kvp in DamageHistory.TotalDamage)
-            {
-                if (kvp.Value.TotalDamage <= 0)
-                    continue;
-
-                var damager = kvp.Value.TryGetAttacker();
-
-                var combatPet = false;
-
-                var playerDamager = damager as Player;
-
-                if (playerDamager == null && kvp.Value.PetOwner != null)
-                {
-                    playerDamager = kvp.Value.TryGetPetOwner();
-                    combatPet = true;
-                }
-
-                if (playerDamager == null)
-                    continue;
-
-                var killTaskCredits = combatPet ? summonCredits : playerCredits;
-
-                var cap = combatPet ? summon_credit_cap : 1;
-
-                if (cap <= 0)
-                {
-                    // handle special case: use playerCredits
-                    killTaskCredits = playerCredits;
-                    cap = 1;
-                }
-
-                if (playerDamager.QuestManager.HasQuest(killQuest))
-                {
-                    TryHandleKillTask(playerDamager, killQuest, killTaskCredits, cap);
-                }
-                // check option that requires killer to have killtask to pass to fellows
-                else if (!PropertyManager.GetBool("fellow_kt_killer").Item)
-                {
-                    continue;
-                }
-
-                if (playerDamager.Fellowship == null)
-                    continue;
-
-                // share with fellows in kill task range
-                var fellows = playerDamager.Fellowship.WithinRange(playerDamager);
-
-                foreach (var fellow in fellows)
-                {
-                    if (fellow.QuestManager.HasQuest(killQuest))
-                        TryHandleKillTask(fellow, killQuest, killTaskCredits, cap);
-                }
-            }
-        }
-
-        public bool TryHandleKillTask(Player player, string killTask, Dictionary<ObjectGuid, int> killTaskCredits, int cap)
-        {
-            if (killTaskCredits.TryGetValue(player.Guid, out var currentCredits))
-            {
-                if (currentCredits >= cap)
-                    return false;
-
-                killTaskCredits[player.Guid]++;
-            }
-            else
-                killTaskCredits[player.Guid] = 1;
-
-            player.QuestManager.HandleKillTask(killTask, this);
-
-            return true;
-        }
-
-        /// <summary>
-        /// Returns a flattened structure of eligible Players, Fellows, and CombatPets
-        /// </summary>
-        public Dictionary<ObjectGuid, DamageHistoryInfo> KillTask_GetEligibleReceivers(string killQuest)
-        {
-            // http://acpedia.org/wiki/Announcements_-_2012/12_-_A_Growing_Twilight#Release_Notes
-
-            var questName = QuestManager.GetQuestName(killQuest);
-
-            // we are using DamageHistoryInfo here, instead of Creature or WorldObjectInfo
-            // WeakReference<CombatPet> may be null for expired CombatPets, but we still need the WeakReference<PetOwner> references
-
-            var receivers = new Dictionary<ObjectGuid, DamageHistoryInfo>();
-
-            foreach (var kvp in DamageHistory.TotalDamage)
-            {
-                if (kvp.Value.TotalDamage <= 0)
-                    continue;
-
-                var damager = kvp.Value.TryGetAttacker();
-
-                var playerDamager = damager as Player;
-
-                if (playerDamager == null && kvp.Value.PetOwner != null)
-                {
-                    // handle combat pets
-                    playerDamager = kvp.Value.TryGetPetOwner();
-
-                    if (playerDamager != null && playerDamager.QuestManager.HasQuest(questName))
-                    {
-                        // only add combat pet to eligible receivers if player has quest, and allow_summoning_killtask_multicredit = true (default, retail)
-                        if (DamageHistory.HasDamager(playerDamager, true) && PropertyManager.GetBool("allow_summoning_killtask_multicredit").Item)
-                            receivers[kvp.Value.Guid] = kvp.Value;  // add CombatPet
-                        else
-                            receivers[playerDamager.Guid] = new DamageHistoryInfo(playerDamager);   // add dummy profile for PetOwner
-                    }
-
-                    // regardless if combat pet is eligible, we still want to continue traversing to the pet owner, and possibly fellows
-
-                    // in a scenario where combat pet does 100% damage:
-
-                    // - regardless if allow_summoning_killtask_multicredit is enabled/disabled, it should continue traversing into pet owner and possibly their fellows
-
-                    // - if pet owner doesn't have kill task, and fellow_kt_killer=false, any fellows with the task should still receive 1 credit
-                }
-
-                if (playerDamager == null)
-                    continue;
-
-                // factors:
-                // - has quest
-                // - is killer (last damager, top damager, or any damager? in current context, considering it to be any damager)
-                // - has fellowship
-                // - server option: fellow_kt_killer
-                // - server option: fellow_kt_landblock
-
-                if (playerDamager.QuestManager.HasQuest(questName))
-                {
-                    // just add a fake DamageHistoryInfo for reference
-                    receivers[playerDamager.Guid] = new DamageHistoryInfo(playerDamager);
-                }
-                else if (PropertyManager.GetBool("fellow_kt_killer").Item)
-                {
-                    // if this option is enabled (retail default), the killer is required to have kill task
-                    // for it to share with fellowship
-                    continue;
-                }
-
-                // we want to add fellowship members in a flattened structure
-                // in this inner loop, instead of the outer loop
-
-                // scenarios:
-
-                // i am a summoner in a fellowship with 1 other player
-                // we both have a killtask
-
-                // - my combatpet does 100% damage to the monster
-                // result: i get 1 killtask credit, and my fellow gets 1 killtask credit
-
-                // - my combatpet does 50% damage to monster, and i do 50% damage
-                // result: i get 2 killtask credits (1 if allow_summoning_killtask_multicredit server option is disabled), and my fellow gets 1 killtask credit
-                // after update should be 2/2, instead of 2/1
-
-                // - my combatpet does 33% damage to monster, i do 33% damage, and fellow does 33% damage
-                // result: same as previous scenario
-                // after update should be 2/2, instead of 2/1 again
-
-                // 2 players not in a fellowship both have a killtask
-                // they each do 50% damage to monster
-
-                // result: both players receive killtask credit
-
-                if (playerDamager.Fellowship == null)
-                    continue;
-
-                // share with fellows in kill task range
-                var fellows = playerDamager.Fellowship.WithinRange(playerDamager);
-
-                foreach (var fellow in fellows)
-                {
-                    if (fellow.QuestManager.HasQuest(questName))
-                        receivers[fellow.Guid] = new DamageHistoryInfo(fellow);
-                }
-            }
-            return receivers;
-        }
-
-
-        /// <summary>
-        /// Create a corpse for both creatures and players currently
-        /// </summary>
-        protected void CreateCorpse(DamageHistoryInfo killer, bool hadVitae = false)
-        {
-            if (NoCorpse)
-            {
-                if (killer != null && killer.IsOlthoiPlayer) return;
-
-                var loot = GenerateTreasure(killer, null);
-
-                foreach (var item in loot)
-                {
-                    if (!string.IsNullOrEmpty(item.Quest)) // if the item has a Quest string, make the creature a "generator" of the item so that the pickup action applies the quest.
-                        item.GeneratorId = Guid.Full;
-                    item.Location = new Position(Location);
-                    LandblockManager.AddObject(item);
-                }
-                return;
-            }
-
-            var cachedWeenie = DatabaseManager.World.GetCachedWeenie("corpse");
-
-            var corpse = WorldObjectFactory.CreateNewWorldObject(cachedWeenie) as Corpse;
-
-            var prefix = "Corpse";
-
-            if (TreasureCorpse)
-            {
-                // Hardcoded values from PCAPs of Treasure Pile Corpses, everything else lines up exactly with existing corpse weenie
-                corpse.SetupTableId = 0x02000EC4;
-                corpse.MotionTableId = 0x0900019B;
-                corpse.SoundTableId = 0x200000C2;
-                corpse.ObjScale = 0.4f;
-
-                prefix = "Treasure";
             }
             else
             {
-                corpse.SetupTableId = SetupTableId;
-                corpse.MotionTableId = MotionTableId;
-                //corpse.SoundTableId = SoundTableId; // Do not change sound table for corpses
-                corpse.PaletteBaseDID = PaletteBaseDID;
-                corpse.ClothingBase = ClothingBase;
-                corpse.PhysicsTableId = PhysicsTableId;
-
-                if (ObjScale.HasValue)
-                    corpse.ObjScale = ObjScale;
-                if (PaletteTemplate.HasValue)
-                    corpse.PaletteTemplate = PaletteTemplate;
-                if (Shade.HasValue)
-                    corpse.Shade = Shade;
-                //if (Translucency.HasValue) // Shadows have Translucency but their corpses do not, videographic evidence can be found on YouTube.
-                //corpse.Translucency = Translucency;
-
-
-                // Pull and save objdesc for correct corpse apperance at time of death
-                var objDesc = CalculateObjDesc();
-
-                corpse.Biota.PropertiesAnimPart = objDesc.AnimPartChanges.Clone(corpse.BiotaDatabaseLock);
-
-                corpse.Biota.PropertiesPalette = objDesc.SubPalettes.Clone(corpse.BiotaDatabaseLock);
-
-                corpse.Biota.PropertiesTextureMap = objDesc.TextureChanges.Clone(corpse.BiotaDatabaseLock);
+                playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill, Level, ShareType.All, WeenieClassId);
             }
 
-            // use the physics location for accuracy,
-            // especially while jumping
-            corpse.Location = PhysicsObj.Position.ACEPosition();
-
-            corpse.VictimId = Guid.Full;
-            corpse.Name = $"{prefix} of {Name}";
-
-            // set 'killed by' for looting rights
-            var killerName = "misadventure";
-
-            if (killer != null)
+            // handle luminance
+            if (LuminanceAward != null)
             {
-                if (!(Generator != null && Generator.Guid == killer.Guid) && Guid != killer.Guid)
-                {
-                    if (!string.IsNullOrWhiteSpace(killer.Name))
-                        killerName = killer.Name.TrimStart('+');  // vtank requires + to be stripped for regex matching.
-
-                    corpse.KillerId = killer.Guid.Full;
-
-                    if (killer.PetOwner != null)
-                    {
-                        var petOwner = killer.TryGetPetOwner();
-                        if (petOwner != null)
-                            corpse.KillerId = petOwner.Guid.Full;
-                    }
-
-                    if (killer.HotspotOwner != null)
-                    {
-                        var hotspotOwner = killer.TryGetHotspotOwner();
-                        corpse.KillerId = hotspotOwner.Guid.Full;
-                    }
-
-                }
+                var totalLuminance = (long)Math.Round(LuminanceAward.Value * damagePercent);
+                playerDamager.EarnLuminance(totalLuminance, XpType.Kill);
             }
+        }
+    }
 
-            corpse.LongDesc = $"Killed by {killerName}.";
+    public static int GetCreatureDeathXP(int level, int tier = 1)
+    {
+        var baseXp = 0.0;
 
-            bool saveCorpse = false;
+        ulong levelTotalXP;
 
-            var player = this as Player;
+        if (level <= 125)
+        {
+            levelTotalXP =
+                DatManager.PortalDat.XpTable.CharacterLevelXPList[level + 1]
+                - DatManager.PortalDat.XpTable.CharacterLevelXPList[level];
+        }
+        else
+        {
+            levelTotalXP =
+                DatManager.PortalDat.XpTable.CharacterLevelXPList[126]
+                - DatManager.PortalDat.XpTable.CharacterLevelXPList[125];
+        }
+
+        switch (tier)
+        {
+            case 1:
+                baseXp = levelTotalXP * 0.05f;
+                break;
+            case 2:
+                baseXp = levelTotalXP * 0.01f;
+                break;
+            case 3:
+                baseXp = levelTotalXP * 0.005f;
+                break;
+            case 4:
+                baseXp = levelTotalXP * 0.004f;
+                break;
+            case 5:
+                baseXp = levelTotalXP * 0.003f;
+                break;
+            case 6:
+                baseXp = levelTotalXP * 0.002f;
+                break;
+            case 7:
+                baseXp = levelTotalXP * 0.001f;
+                break;
+            case 8:
+                baseXp = levelTotalXP * 0.0005f;
+                break;
+        }
+
+        return (int)Math.Round(baseXp);
+    }
+
+    /// <summary>
+    /// Handles the KillTask for a killed creature
+    /// </summary>
+    public void OnDeath_HandleKillTask(string killQuest)
+    {
+        /*var receivers = KillTask_GetEligibleReceivers(killQuest);
+
+        foreach (var receiver in receivers)
+        {
+            var damager = receiver.Value.TryGetAttacker();
+
+            var player = damager as Player;
+
+            if (player == null && receiver.Value.PetOwner != null)
+                player = receiver.Value.TryGetPetOwner();
 
             if (player != null)
+                player.QuestManager.HandleKillTask(killQuest, this);
+        }*/
+
+        // new method
+
+        // with full fellowship support and new config option for capping,
+        // building a pre-flattened structure is no longer really necessary,
+        // and we can do this more iteratively.
+
+        // one caveat to do this, we need to keep track of player and summoning caps separately
+        // this is to prevent ordering bugs, such as a player being processed after a summon,
+        // and already being at the 1 cap for players
+
+        var summon_credit_cap = (int)PropertyManager.GetLong("summoning_killtask_multicredit_cap").Item - 1;
+
+        var playerCredits = new Dictionary<ObjectGuid, int>();
+        var summonCredits = new Dictionary<ObjectGuid, int>();
+
+        // this option isn't really needed anymore, but keeping it around for compatibility
+        // it is now synonymous with summoning_killtask_multicredit_cap <= 1
+        if (!PropertyManager.GetBool("allow_summoning_killtask_multicredit").Item)
+        {
+            summon_credit_cap = 0;
+        }
+
+        foreach (var kvp in DamageHistory.TotalDamage)
+        {
+            if (kvp.Value.TotalDamage <= 0)
             {
-                var killerIsOlthoiPlayer = killer != null && killer.IsOlthoiPlayer;
-                var killerIsPkPlayer = killer != null && killer.IsPlayer && killer.Guid != Guid;
+                continue;
+            }
 
-                //var dropped = killer != null && killer.IsOlthoiPlayer ? player.CalculateDeathItems_Olthoi(corpse, hadVitae) : player.CalculateDeathItems(corpse);
+            var damager = kvp.Value.TryGetAttacker();
 
-                if (killerIsOlthoiPlayer || player.IsOlthoiPlayer)
+            var combatPet = false;
+
+            var playerDamager = damager as Player;
+
+            if (playerDamager == null && kvp.Value.PetOwner != null)
+            {
+                playerDamager = kvp.Value.TryGetPetOwner();
+                combatPet = true;
+            }
+
+            if (playerDamager == null)
+            {
+                continue;
+            }
+
+            var killTaskCredits = combatPet ? summonCredits : playerCredits;
+
+            var cap = combatPet ? summon_credit_cap : 1;
+
+            if (cap <= 0)
+            {
+                // handle special case: use playerCredits
+                killTaskCredits = playerCredits;
+                cap = 1;
+            }
+
+            if (playerDamager.QuestManager.HasQuest(killQuest))
+            {
+                TryHandleKillTask(playerDamager, killQuest, killTaskCredits, cap);
+            }
+            // check option that requires killer to have killtask to pass to fellows
+            else if (!PropertyManager.GetBool("fellow_kt_killer").Item)
+            {
+                continue;
+            }
+
+            if (playerDamager.Fellowship == null)
+            {
+                continue;
+            }
+
+            // share with fellows in kill task range
+            var fellows = playerDamager.Fellowship.WithinRange(playerDamager);
+
+            foreach (var fellow in fellows)
+            {
+                if (fellow.QuestManager.HasQuest(killQuest))
                 {
-                    var dropped = player.CalculateDeathItems_Olthoi(corpse, hadVitae, killerIsOlthoiPlayer, killerIsPkPlayer);
-
-                    foreach (var wo in dropped)
-                        DoCantripLogging(killer, wo);
-
-                    corpse.RecalculateDecayTime(player);
-
-                    if (dropped.Count > 0)
-                        saveCorpse = true;
-
-                    corpse.PkLevel = PKLevel.PK;
+                    TryHandleKillTask(fellow, killQuest, killTaskCredits, cap);
                 }
-                else
+            }
+        }
+    }
+
+    public bool TryHandleKillTask(Player player, string killTask, Dictionary<ObjectGuid, int> killTaskCredits, int cap)
+    {
+        if (killTaskCredits.TryGetValue(player.Guid, out var currentCredits))
+        {
+            if (currentCredits >= cap)
+            {
+                return false;
+            }
+
+            killTaskCredits[player.Guid]++;
+        }
+        else
+        {
+            killTaskCredits[player.Guid] = 1;
+        }
+
+        player.QuestManager.HandleKillTask(killTask, this);
+
+        return true;
+    }
+
+    /// <summary>
+    /// Returns a flattened structure of eligible Players, Fellows, and CombatPets
+    /// </summary>
+    public Dictionary<ObjectGuid, DamageHistoryInfo> KillTask_GetEligibleReceivers(string killQuest)
+    {
+        // http://acpedia.org/wiki/Announcements_-_2012/12_-_A_Growing_Twilight#Release_Notes
+
+        var questName = QuestManager.GetQuestName(killQuest);
+
+        // we are using DamageHistoryInfo here, instead of Creature or WorldObjectInfo
+        // WeakReference<CombatPet> may be null for expired CombatPets, but we still need the WeakReference<PetOwner> references
+
+        var receivers = new Dictionary<ObjectGuid, DamageHistoryInfo>();
+
+        foreach (var kvp in DamageHistory.TotalDamage)
+        {
+            if (kvp.Value.TotalDamage <= 0)
+            {
+                continue;
+            }
+
+            var damager = kvp.Value.TryGetAttacker();
+
+            var playerDamager = damager as Player;
+
+            if (playerDamager == null && kvp.Value.PetOwner != null)
+            {
+                // handle combat pets
+                playerDamager = kvp.Value.TryGetPetOwner();
+
+                if (playerDamager != null && playerDamager.QuestManager.HasQuest(questName))
                 {
-                    var dropped = player.CalculateDeathItems(corpse);
-
-                    corpse.RecalculateDecayTime(player);
-
-                    if (dropped.Count > 0)
-                        saveCorpse = true;
-
-                    var position = player.Location;
-                    var location = "";
-
-                    var landblock = LandblockManager.GetLandblock(position.LandblockId, false);
-
-                    if (Player.DungeonList.TryGetValue((int)position.Landblock, out var dungeonName))
-                        location = dungeonName;
-                    else if (landblock.IsDungeon)
-                        location = "Unknown Dungeon";
-                    else
-                        location = corpse.Location.GetMapCoordStr();
-
-                    var minutesToDecay = (int)player.Level * 30;
-                    var decayTime = DateTime.UtcNow.AddMinutes(minutesToDecay);
-
-                    // Corpse GUID, Killer, DateTime (now), Location, DecayTime, Lost Items
-                    if (player.CorpseLog == null)
-                        player.CorpseLog = $"{corpse.Guid.Full}|{killer?.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
-                    else
-                        player.CorpseLog += $"{corpse.Guid.Full}|{killer?.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
-
-
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Use the @corpses command for a list of recent corpses. To query items dropped, type '@corpses' followed by the corpse number on the list. To remove a corpse you do not plan on retrieving, type '@corpses remove' followed by the corpse number.", ChatMessageType.Broadcast));
-
-                    if ((player.Location.Cell & 0xFFFF) < 0x100)
+                    // only add combat pet to eligible receivers if player has quest, and allow_summoning_killtask_multicredit = true (default, retail)
+                    if (
+                        DamageHistory.HasDamager(playerDamager, true)
+                        && PropertyManager.GetBool("allow_summoning_killtask_multicredit").Item
+                    )
                     {
-                        player.SetPosition(PositionType.LastOutsideDeath, new Position(corpse.Location));
-                        player.Session.Network.EnqueueSend(new GameMessagePrivateUpdatePosition(player, PositionType.LastOutsideDeath, corpse.Location));
-
-                        if (dropped.Count > 0)
-                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your corpse is located at ({corpse.Location.GetMapCoordStr()}).", ChatMessageType.Broadcast));
+                        receivers[kvp.Value.Guid] = kvp.Value; // add CombatPet
                     }
-
-                    var isPKdeath = player.IsPKDeath(killer);
-                    var isPKLdeath = player.IsPKLiteDeath(killer);
-
-                    if (isPKdeath)
-                        corpse.PkLevel = PKLevel.PK;
-
-                    if (!isPKdeath && !isPKLdeath)
+                    else
                     {
-                        var miserAug = player.AugmentationLessDeathItemLoss * 5;
-                        if (miserAug > 0)
-                            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your augmentation has reduced the number of items you can lose by {miserAug}!", ChatMessageType.Broadcast));
+                        receivers[playerDamager.Guid] = new DamageHistoryInfo(playerDamager); // add dummy profile for PetOwner
                     }
-
-                    if (dropped.Count == 0 && !isPKLdeath)
-                        player.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have retained all your items. You do not need to recover your corpse!", ChatMessageType.Broadcast));
                 }
+
+                // regardless if combat pet is eligible, we still want to continue traversing to the pet owner, and possibly fellows
+
+                // in a scenario where combat pet does 100% damage:
+
+                // - regardless if allow_summoning_killtask_multicredit is enabled/disabled, it should continue traversing into pet owner and possibly their fellows
+
+                // - if pet owner doesn't have kill task, and fellow_kt_killer=false, any fellows with the task should still receive 1 credit
+            }
+
+            if (playerDamager == null)
+            {
+                continue;
+            }
+
+            // factors:
+            // - has quest
+            // - is killer (last damager, top damager, or any damager? in current context, considering it to be any damager)
+            // - has fellowship
+            // - server option: fellow_kt_killer
+            // - server option: fellow_kt_landblock
+
+            if (playerDamager.QuestManager.HasQuest(questName))
+            {
+                // just add a fake DamageHistoryInfo for reference
+                receivers[playerDamager.Guid] = new DamageHistoryInfo(playerDamager);
+            }
+            else if (PropertyManager.GetBool("fellow_kt_killer").Item)
+            {
+                // if this option is enabled (retail default), the killer is required to have kill task
+                // for it to share with fellowship
+                continue;
+            }
+
+            // we want to add fellowship members in a flattened structure
+            // in this inner loop, instead of the outer loop
+
+            // scenarios:
+
+            // i am a summoner in a fellowship with 1 other player
+            // we both have a killtask
+
+            // - my combatpet does 100% damage to the monster
+            // result: i get 1 killtask credit, and my fellow gets 1 killtask credit
+
+            // - my combatpet does 50% damage to monster, and i do 50% damage
+            // result: i get 2 killtask credits (1 if allow_summoning_killtask_multicredit server option is disabled), and my fellow gets 1 killtask credit
+            // after update should be 2/2, instead of 2/1
+
+            // - my combatpet does 33% damage to monster, i do 33% damage, and fellow does 33% damage
+            // result: same as previous scenario
+            // after update should be 2/2, instead of 2/1 again
+
+            // 2 players not in a fellowship both have a killtask
+            // they each do 50% damage to monster
+
+            // result: both players receive killtask credit
+
+            if (playerDamager.Fellowship == null)
+            {
+                continue;
+            }
+
+            // share with fellows in kill task range
+            var fellows = playerDamager.Fellowship.WithinRange(playerDamager);
+
+            foreach (var fellow in fellows)
+            {
+                if (fellow.QuestManager.HasQuest(questName))
+                {
+                    receivers[fellow.Guid] = new DamageHistoryInfo(fellow);
+                }
+            }
+        }
+        return receivers;
+    }
+
+    /// <summary>
+    /// Create a corpse for both creatures and players currently
+    /// </summary>
+    protected void CreateCorpse(DamageHistoryInfo killer, bool hadVitae = false)
+    {
+        if (NoCorpse)
+        {
+            if (killer != null && killer.IsOlthoiPlayer)
+            {
+                return;
+            }
+
+            var loot = GenerateTreasure(killer, null);
+
+            foreach (var item in loot)
+            {
+                if (!string.IsNullOrEmpty(item.Quest)) // if the item has a Quest string, make the creature a "generator" of the item so that the pickup action applies the quest.
+                {
+                    item.GeneratorId = Guid.Full;
+                }
+
+                item.Location = new Position(Location);
+                LandblockManager.AddObject(item);
+            }
+            return;
+        }
+
+        var cachedWeenie = DatabaseManager.World.GetCachedWeenie("corpse");
+
+        var corpse = WorldObjectFactory.CreateNewWorldObject(cachedWeenie) as Corpse;
+
+        var prefix = "Corpse";
+
+        if (TreasureCorpse)
+        {
+            // Hardcoded values from PCAPs of Treasure Pile Corpses, everything else lines up exactly with existing corpse weenie
+            corpse.SetupTableId = 0x02000EC4;
+            corpse.MotionTableId = 0x0900019B;
+            corpse.SoundTableId = 0x200000C2;
+            corpse.ObjScale = 0.4f;
+
+            prefix = "Treasure";
+        }
+        else
+        {
+            corpse.SetupTableId = SetupTableId;
+            corpse.MotionTableId = MotionTableId;
+            //corpse.SoundTableId = SoundTableId; // Do not change sound table for corpses
+            corpse.PaletteBaseDID = PaletteBaseDID;
+            corpse.ClothingBase = ClothingBase;
+            corpse.PhysicsTableId = PhysicsTableId;
+
+            if (ObjScale.HasValue)
+            {
+                corpse.ObjScale = ObjScale;
+            }
+
+            if (PaletteTemplate.HasValue)
+            {
+                corpse.PaletteTemplate = PaletteTemplate;
+            }
+
+            if (Shade.HasValue)
+            {
+                corpse.Shade = Shade;
+            }
+            //if (Translucency.HasValue) // Shadows have Translucency but their corpses do not, videographic evidence can be found on YouTube.
+            //corpse.Translucency = Translucency;
+
+
+            // Pull and save objdesc for correct corpse apperance at time of death
+            var objDesc = CalculateObjDesc();
+
+            corpse.Biota.PropertiesAnimPart = objDesc.AnimPartChanges.Clone(corpse.BiotaDatabaseLock);
+
+            corpse.Biota.PropertiesPalette = objDesc.SubPalettes.Clone(corpse.BiotaDatabaseLock);
+
+            corpse.Biota.PropertiesTextureMap = objDesc.TextureChanges.Clone(corpse.BiotaDatabaseLock);
+        }
+
+        // use the physics location for accuracy,
+        // especially while jumping
+        corpse.Location = PhysicsObj.Position.ACEPosition();
+
+        corpse.VictimId = Guid.Full;
+        corpse.Name = $"{prefix} of {Name}";
+
+        // set 'killed by' for looting rights
+        var killerName = "misadventure";
+
+        if (killer != null)
+        {
+            if (!(Generator != null && Generator.Guid == killer.Guid) && Guid != killer.Guid)
+            {
+                if (!string.IsNullOrWhiteSpace(killer.Name))
+                {
+                    killerName = killer.Name.TrimStart('+'); // vtank requires + to be stripped for regex matching.
+                }
+
+                corpse.KillerId = killer.Guid.Full;
+
+                if (killer.PetOwner != null)
+                {
+                    var petOwner = killer.TryGetPetOwner();
+                    if (petOwner != null)
+                    {
+                        corpse.KillerId = petOwner.Guid.Full;
+                    }
+                }
+
+                if (killer.HotspotOwner != null)
+                {
+                    var hotspotOwner = killer.TryGetHotspotOwner();
+                    corpse.KillerId = hotspotOwner.Guid.Full;
+                }
+            }
+        }
+
+        corpse.LongDesc = $"Killed by {killerName}.";
+
+        var saveCorpse = false;
+
+        var player = this as Player;
+
+        if (player != null)
+        {
+            var killerIsOlthoiPlayer = killer != null && killer.IsOlthoiPlayer;
+            var killerIsPkPlayer = killer != null && killer.IsPlayer && killer.Guid != Guid;
+
+            //var dropped = killer != null && killer.IsOlthoiPlayer ? player.CalculateDeathItems_Olthoi(corpse, hadVitae) : player.CalculateDeathItems(corpse);
+
+            if (killerIsOlthoiPlayer || player.IsOlthoiPlayer)
+            {
+                var dropped = player.CalculateDeathItems_Olthoi(
+                    corpse,
+                    hadVitae,
+                    killerIsOlthoiPlayer,
+                    killerIsPkPlayer
+                );
+
+                foreach (var wo in dropped)
+                {
+                    DoCantripLogging(killer, wo);
+                }
+
+                corpse.RecalculateDecayTime(player);
+
+                if (dropped.Count > 0)
+                {
+                    saveCorpse = true;
+                }
+
+                corpse.PkLevel = PKLevel.PK;
             }
             else
             {
-                corpse.IsMonster = true;
+                var dropped = player.CalculateDeathItems(corpse);
 
-                if (killer == null || !killer.IsOlthoiPlayer)
-                    GenerateTreasure(killer, corpse);
-                else
-                    GenerateTreasure_Olthoi(killer, corpse);
+                corpse.RecalculateDecayTime(player);
 
-                if (killer != null && killer.IsPlayer && !killer.IsOlthoiPlayer)
+                if (dropped.Count > 0)
                 {
-                    if (Level >= 100)
+                    saveCorpse = true;
+                }
+
+                var position = player.Location;
+                var location = "";
+
+                var landblock = LandblockManager.GetLandblock(position.LandblockId, false);
+
+                if (Player.DungeonList.TryGetValue((int)position.Landblock, out var dungeonName))
+                {
+                    location = dungeonName;
+                }
+                else if (landblock.IsDungeon)
+                {
+                    location = "Unknown Dungeon";
+                }
+                else
+                {
+                    location = corpse.Location.GetMapCoordStr();
+                }
+
+                var minutesToDecay = (int)player.Level * 30;
+                var decayTime = DateTime.UtcNow.AddMinutes(minutesToDecay);
+
+                // Corpse GUID, Killer, DateTime (now), Location, DecayTime, Lost Items
+                if (player.CorpseLog == null)
+                {
+                    player.CorpseLog =
+                        $"{corpse.Guid.Full}|{killer?.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
+                }
+                else
+                {
+                    player.CorpseLog +=
+                        $"{corpse.Guid.Full}|{killer?.Name}|{DateTime.UtcNow}|{location}|{decayTime}|{player.DropMessage(dropped, 0)};";
+                }
+
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Use the @corpses command for a list of recent corpses. To query items dropped, type '@corpses' followed by the corpse number on the list. To remove a corpse you do not plan on retrieving, type '@corpses remove' followed by the corpse number.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+
+                if ((player.Location.Cell & 0xFFFF) < 0x100)
+                {
+                    player.SetPosition(PositionType.LastOutsideDeath, new Position(corpse.Location));
+                    player.Session.Network.EnqueueSend(
+                        new GameMessagePrivateUpdatePosition(player, PositionType.LastOutsideDeath, corpse.Location)
+                    );
+
+                    if (dropped.Count > 0)
+                    {
+                        player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                $"Your corpse is located at ({corpse.Location.GetMapCoordStr()}).",
+                                ChatMessageType.Broadcast
+                            )
+                        );
+                    }
+                }
+
+                var isPKdeath = player.IsPKDeath(killer);
+                var isPKLdeath = player.IsPKLiteDeath(killer);
+
+                if (isPKdeath)
+                {
+                    corpse.PkLevel = PKLevel.PK;
+                }
+
+                if (!isPKdeath && !isPKLdeath)
+                {
+                    var miserAug = player.AugmentationLessDeathItemLoss * 5;
+                    if (miserAug > 0)
+                    {
+                        player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                $"Your augmentation has reduced the number of items you can lose by {miserAug}!",
+                                ChatMessageType.Broadcast
+                            )
+                        );
+                    }
+                }
+
+                if (dropped.Count == 0 && !isPKLdeath)
+                {
+                    player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"You have retained all your items. You do not need to recover your corpse!",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                }
+            }
+        }
+        else
+        {
+            corpse.IsMonster = true;
+
+            if (killer == null || !killer.IsOlthoiPlayer)
+            {
+                GenerateTreasure(killer, corpse);
+            }
+            else
+            {
+                GenerateTreasure_Olthoi(killer, corpse);
+            }
+
+            if (killer != null && killer.IsPlayer && !killer.IsOlthoiPlayer)
+            {
+                if (Level >= 100)
+                {
+                    CanGenerateRare = true;
+                }
+                else
+                {
+                    var killerPlayer = killer.TryGetAttacker();
+                    if (killerPlayer != null && Level > killerPlayer.Level)
                     {
                         CanGenerateRare = true;
                     }
+                }
+            }
+            else
+            {
+                CanGenerateRare = false;
+            }
+        }
+
+        corpse.RemoveProperty(PropertyInt.Value);
+
+        //if (CanGenerateRare && killer != null)
+        //    corpse.TryGenerateRare(killer);
+
+        corpse.InitPhysicsObj();
+
+        // persist the original creature velocity (only used for falling) to corpse
+        corpse.PhysicsObj.Velocity = PhysicsObj.Velocity;
+
+        corpse.EnterWorld();
+
+        if (player != null)
+        {
+            if (corpse.PhysicsObj == null || corpse.PhysicsObj.Position == null)
+            {
+                _log.Debug(
+                    "[CORPSE] {Name}'s corpse (0x{CorpseGuid}) failed to spawn! Tried at {PlayerLocation}",
+                    Name,
+                    corpse.Guid,
+                    player.Location.ToLOCString()
+                );
+            }
+            else
+            {
+                _log.Debug(
+                    "[CORPSE] {Name}'s corpse (0x{CorpseGuid}) is located at {CorpsePhysicsObjLocation}",
+                    Name,
+                    corpse.Guid,
+                    corpse.PhysicsObj.Position
+                );
+            }
+        }
+
+        if (saveCorpse)
+        {
+            corpse.SaveBiotaToDatabase();
+
+            foreach (var item in corpse.Inventory.Values)
+            {
+                item.SaveBiotaToDatabase();
+            }
+        }
+    }
+
+    public bool CanGenerateRare
+    {
+        get => GetProperty(PropertyBool.CanGenerateRare) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.CanGenerateRare);
+            }
+            else
+            {
+                SetProperty(PropertyBool.CanGenerateRare, value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Transfers generated treasure from creature to corpse
+    /// </summary>
+    private List<WorldObject> GenerateTreasure(DamageHistoryInfo killer, Corpse corpse)
+    {
+        var droppedItems = new List<WorldObject>();
+
+        // create death treasure from loot generation factory
+        if (DeathTreasure != null)
+        {
+            if (Tier != null)
+            {
+                _deathTreasureTier = Tier.Value;
+            }
+
+            var items = LootGenerationFactory.CreateRandomLootObjects(DeathTreasure);
+
+            for (var i = items.Count - 1; i >= 0; i--)
+            {
+                var removed = false;
+
+                if (items[i].MaxStackSize > 1)
+                {
+                    foreach (var item in items.ToList())
+                    {
+                        if (items[i].Guid != item.Guid && items[i].WeenieClassId == item.WeenieClassId)
+                        {
+                            var newStack = items[i].StackSize + item.StackSize;
+                            item.SetStackSize(newStack);
+
+                            items.Remove(items[i]);
+
+                            removed = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!removed)
+                {
+                    if (corpse != null)
+                    {
+                        corpse.TryAddToInventory(items[i]);
+                    }
                     else
                     {
-                        var killerPlayer = killer.TryGetAttacker();
-                        if (killerPlayer != null && Level > killerPlayer.Level)
-                            CanGenerateRare = true;
+                        droppedItems.Add(items[i]);
                     }
+
+                    DoCantripLogging(killer, items[i]);
                 }
-                else
-                    CanGenerateRare = false;
-            }
-
-            corpse.RemoveProperty(PropertyInt.Value);
-
-            //if (CanGenerateRare && killer != null)
-            //    corpse.TryGenerateRare(killer);
-
-            corpse.InitPhysicsObj();
-
-            // persist the original creature velocity (only used for falling) to corpse
-            corpse.PhysicsObj.Velocity = PhysicsObj.Velocity;
-
-            corpse.EnterWorld();
-
-            if (player != null)
-            {
-                if (corpse.PhysicsObj == null || corpse.PhysicsObj.Position == null)
-                    _log.Debug("[CORPSE] {Name}'s corpse (0x{CorpseGuid}) failed to spawn! Tried at {PlayerLocation}", Name, corpse.Guid, player.Location.ToLOCString());
-                else
-                    _log.Debug("[CORPSE] {Name}'s corpse (0x{CorpseGuid}) is located at {CorpsePhysicsObjLocation}", Name, corpse.Guid, corpse.PhysicsObj.Position);
-            }
-
-            if (saveCorpse)
-            {
-                corpse.SaveBiotaToDatabase();
-
-                foreach (var item in corpse.Inventory.Values)
-                    item.SaveBiotaToDatabase();
             }
         }
 
-        public bool CanGenerateRare
+        // move wielded treasure over, which also should include Wielded objects not marked for destroy on death.
+        // allow server operators to configure this behavior due to errors in createlist post 16py data
+        var dropFlags = PropertyManager.GetBool("creatures_drop_createlist_wield").Item
+            ? DestinationType.WieldTreasure
+            : DestinationType.Treasure;
+
+        var wieldedTreasure = Inventory
+            .Values.Concat(EquippedObjects.Values)
+            .Where(i => (i.DestinationType & dropFlags) != 0);
+        foreach (var item in wieldedTreasure.ToList())
         {
-            get => GetProperty(PropertyBool.CanGenerateRare) ?? false;
-            set { if (!value) RemoveProperty(PropertyBool.CanGenerateRare); else SetProperty(PropertyBool.CanGenerateRare, value); }
+            if (item.Bonded == BondedStatus.Destroy)
+            {
+                continue;
+            }
+
+            if (TryDequipObjectWithBroadcasting(item.Guid, out var wo, out var wieldedLocation))
+            {
+                EnqueueBroadcast(
+                    new GameMessagePublicUpdateInstanceID(item, PropertyInstanceId.Wielder, ObjectGuid.Invalid)
+                );
+            }
+
+            if (corpse != null)
+            {
+                corpse.TryAddToInventory(item);
+                EnqueueBroadcast(
+                    new GameMessagePublicUpdateInstanceID(item, PropertyInstanceId.Container, corpse.Guid),
+                    new GameMessagePickupEvent(item)
+                );
+            }
+            else
+            {
+                droppedItems.Add(item);
+            }
         }
 
-        /// <summary>
-        /// Transfers generated treasure from creature to corpse
-        /// </summary>
-        private List<WorldObject> GenerateTreasure(DamageHistoryInfo killer, Corpse corpse)
+        // contain and non-wielded treasure create
+        if (Biota.PropertiesCreateList != null)
         {
-            var droppedItems = new List<WorldObject>();
+            var createList = Biota
+                .PropertiesCreateList.Where(i =>
+                    (i.DestinationType & DestinationType.Contain) != 0
+                    || (i.DestinationType & DestinationType.Treasure) != 0
+                        && (i.DestinationType & DestinationType.Wield) == 0
+                )
+                .ToList();
 
-            // create death treasure from loot generation factory
-            if (DeathTreasure != null)
+            SpellStackBonus = GetSpellStackBonus(killer);
+
+            var selected = new List<PropertiesCreateList>();
+
+            if (SpellStackBonus != 1.0f && StackableSpellType > StackableSpellTables.StackableSpellType.None)
             {
-                if (Tier != null)
-                    _deathTreasureTier = Tier.Value;
+                selected = CreateListSelect(createList, SpellStackBonus);
+            }
+            else
+            {
+                selected = CreateListSelect(createList);
+            }
 
-                List<WorldObject> items = LootGenerationFactory.CreateRandomLootObjects(DeathTreasure);
-
-                for (int i = items.Count - 1; i >= 0; i--)
+            if (selected.Count > 0)
+            {
+                foreach (var item in selected)
                 {
-                    var removed = false;
+                    var wo = WorldObjectFactory.CreateNewWorldObject(item);
 
-                    if (items[i].MaxStackSize > 1)
-                    {
-                        foreach (WorldObject item in items.ToList())
-                        {
-                            if (items[i].Guid != item.Guid && items[i].WeenieClassId == item.WeenieClassId)
-                            {
-                                var newStack = items[i].StackSize + item.StackSize;
-                                item.SetStackSize(newStack);
-
-                                items.Remove(items[i]);
-
-                                removed = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!removed)
+                    if (wo != null)
                     {
                         if (corpse != null)
-                            corpse.TryAddToInventory(items[i]);
-                        else
-                            droppedItems.Add(items[i]);
-
-                        DoCantripLogging(killer, items[i]);
-                    }
-                }
-            }
-
-            // move wielded treasure over, which also should include Wielded objects not marked for destroy on death.
-            // allow server operators to configure this behavior due to errors in createlist post 16py data
-            var dropFlags = PropertyManager.GetBool("creatures_drop_createlist_wield").Item ? DestinationType.WieldTreasure : DestinationType.Treasure;
-
-            var wieldedTreasure = Inventory.Values.Concat(EquippedObjects.Values).Where(i => (i.DestinationType & dropFlags) != 0);
-            foreach (var item in wieldedTreasure.ToList())
-            {
-                if (item.Bonded == BondedStatus.Destroy)
-                    continue;
-
-                if (TryDequipObjectWithBroadcasting(item.Guid, out var wo, out var wieldedLocation))
-                    EnqueueBroadcast(new GameMessagePublicUpdateInstanceID(item, PropertyInstanceId.Wielder, ObjectGuid.Invalid));
-
-                if (corpse != null)
-                {
-                    corpse.TryAddToInventory(item);
-                    EnqueueBroadcast(new GameMessagePublicUpdateInstanceID(item, PropertyInstanceId.Container, corpse.Guid), new GameMessagePickupEvent(item));
-                }
-                else
-                    droppedItems.Add(item);
-            }
-
-            // contain and non-wielded treasure create
-            if (Biota.PropertiesCreateList != null)
-            {
-                var createList = Biota.PropertiesCreateList.Where(i => (i.DestinationType & DestinationType.Contain) != 0 ||
-                                (i.DestinationType & DestinationType.Treasure) != 0 && (i.DestinationType & DestinationType.Wield) == 0).ToList();
-
-                SpellStackBonus = GetSpellStackBonus(killer);
-
-                List<PropertiesCreateList> selected = new List<PropertiesCreateList>();
-
-                if (SpellStackBonus != 1.0f && StackableSpellType > StackableSpellTables.StackableSpellType.None)
-                    selected = CreateListSelect(createList, SpellStackBonus);
-                else
-                    selected = CreateListSelect(createList);
-
-                if (selected.Count > 0)
-                {
-                    foreach (var item in selected)
-                    {
-                        var wo = WorldObjectFactory.CreateNewWorldObject(item);
-
-                        if (wo != null)
                         {
-                            if (corpse != null)
-                                corpse.TryAddToInventory(wo);
-                            else
-                                droppedItems.Add(wo);
+                            corpse.TryAddToInventory(wo);
+                        }
+                        else
+                        {
+                            droppedItems.Add(wo);
                         }
                     }
                 }
             }
-
-            return droppedItems;
         }
 
-        public void HandleShroudRewards()
+        return droppedItems;
+    }
+
+    public void HandleShroudRewards()
+    {
+        var scaledDamagers = DamageHistory.TotalDamage.Values.Where(d =>
+            (d.Level > Level + 10) && d.TotalDamage >= DamageHistory.TotalHealth / 10
+        );
+
+        if (scaledDamagers.Any())
         {
-            var scaledDamagers = DamageHistory.TotalDamage.Values.Where(d => (d.Level > Level + 10) && d.TotalDamage >= DamageHistory.TotalHealth / 10);
+            var bonusChance = 0f;
 
-            if (scaledDamagers.Any())
+            var accompaniedLowbie = DamageHistory
+                .TotalDamage.Values.Where(d => (d.Level < Level + 5) && (d.Level > Level - 5))
+                .Sum(d => d.TotalDamage);
+
+            if (accompaniedLowbie >= DamageHistory.TotalHealth / 5)
             {
-                var bonusChance = 0f;
+                bonusChance += 0.05f;
+            }
 
-                var accompaniedLowbie = DamageHistory.TotalDamage.Values.Where(d => (d.Level < Level + 5) && (d.Level > Level - 5)).Sum(d => d.TotalDamage);
-
-                if (accompaniedLowbie >= DamageHistory.TotalHealth / 5)
-                    bonusChance += 0.05f;
-
-                foreach (var damageInfo in scaledDamagers)
+            foreach (var damageInfo in scaledDamagers)
+            {
+                if (DamageHistory.TotalDamage.ContainsValue(damageInfo))
                 {
-                    if (DamageHistory.TotalDamage.ContainsValue(damageInfo))
+                    var matchingGuid = DamageHistory.TotalDamage.FirstOrDefault(x => x.Value == damageInfo).Key;
+                    if (matchingGuid.IsPlayer())
                     {
-                        var matchingGuid = DamageHistory.TotalDamage.FirstOrDefault(x => x.Value == damageInfo).Key;
-                        if (matchingGuid.IsPlayer())
+                        var player = PlayerManager.GetOnlinePlayer(matchingGuid);
+
+                        if (player != null)
                         {
-                            var player = PlayerManager.GetOnlinePlayer(matchingGuid);
-
-                            if (player != null)
+                            var proportion = damageInfo.TotalDamage / DamageHistory.TotalHealth;
+                            if (proportion >= 0.5f)
                             {
-                                float proportion = damageInfo.TotalDamage / DamageHistory.TotalHealth;
-                                if (proportion >= 0.5f)
-                                    proportion = 0.5f;
+                                proportion = 0.5f;
+                            }
 
-                                float baseChance = 0;
+                            float baseChance = 0;
 
-                                if (proportion >= 0.1f && proportion <= 0.24f)
-                                    baseChance = proportion / 20;
-                                if (proportion >= 0.25f && proportion <= 0.39f)
-                                    baseChance = proportion / 15;
-                                else
-                                    baseChance = proportion / 10;
+                            if (proportion >= 0.1f && proportion <= 0.24f)
+                            {
+                                baseChance = proportion / 20;
+                            }
 
-                                baseChance += bonusChance;
+                            if (proportion >= 0.25f && proportion <= 0.39f)
+                            {
+                                baseChance = proportion / 15;
+                            }
+                            else
+                            {
+                                baseChance = proportion / 10;
+                            }
 
-                                if (baseChance >= ThreadSafeRandom.Next(0f, 1f))
-                                {
-                                    var reward = WorldObjectFactory.CreateNewWorldObject(1054175);
-                                    player.TryCreateInInventoryWithNetworking(reward);
-                                    player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Shard of Shrouding glimmers, and produces a small fragment of crystallized energy!", ChatMessageType.Broadcast));
-                                    player.PlayParticleEffect(PlayScript.EnchantUpPurple, player.Guid);
-                                }
+                            baseChance += bonusChance;
+
+                            if (baseChance >= ThreadSafeRandom.Next(0f, 1f))
+                            {
+                                var reward = WorldObjectFactory.CreateNewWorldObject(1054175);
+                                player.TryCreateInInventoryWithNetworking(reward);
+                                player.Session.Network.EnqueueSend(
+                                    new GameMessageSystemChat(
+                                        $"Your Shard of Shrouding glimmers, and produces a small fragment of crystallized energy!",
+                                        ChatMessageType.Broadcast
+                                    )
+                                );
+                                player.PlayParticleEffect(PlayScript.EnchantUpPurple, player.Guid);
                             }
                         }
                     }
                 }
             }
         }
+    }
 
-        /// <summary>
-        /// Generates random amounts of slag on a corpse
-        /// when an OlthoiPlayer is the killer
-        /// </summary>
-        private void GenerateTreasure_Olthoi(DamageHistoryInfo killer, Corpse corpse)
+    /// <summary>
+    /// Generates random amounts of slag on a corpse
+    /// when an OlthoiPlayer is the killer
+    /// </summary>
+    private void GenerateTreasure_Olthoi(DamageHistoryInfo killer, Corpse corpse)
+    {
+        if (DeathTreasure == null)
         {
-            if (DeathTreasure == null) return;
-
-            var slag = LootGenerationFactory.RollSlag(DeathTreasure);
-
-            if (slag == null) return;
-
-            corpse.TryAddToInventory(slag);
+            return;
         }
 
-        public void DoCantripLogging(DamageHistoryInfo killer, WorldObject wo)
+        var slag = LootGenerationFactory.RollSlag(DeathTreasure);
+
+        if (slag == null)
         {
-            var epicCantrips = wo.EpicCantrips;
-            var legendaryCantrips = wo.LegendaryCantrips;
-
-            if (epicCantrips.Count > 0)
-                _log.Debug($"[LOOT][EPIC] {Name} ({Guid}) generated item with {epicCantrips.Count} epic{(epicCantrips.Count > 1 ? "s" : "")} - {wo.Name} ({wo.Guid}) - {GetSpellList(epicCantrips)} - killed by {killer?.Name} ({killer?.Guid})");
-
-            if (legendaryCantrips.Count > 0)
-                _log.Debug($"[LOOT][LEGENDARY] {Name} ({Guid}) generated item with {legendaryCantrips.Count} legendar{(legendaryCantrips.Count > 1 ? "ies" : "y")} - {wo.Name} ({wo.Guid}) - {GetSpellList(legendaryCantrips)} - killed by {killer?.Name} ({killer?.Guid})");
+            return;
         }
 
-        public static string GetSpellList(Dictionary<int, float> spellTable)
+        corpse.TryAddToInventory(slag);
+    }
+
+    public void DoCantripLogging(DamageHistoryInfo killer, WorldObject wo)
+    {
+        var epicCantrips = wo.EpicCantrips;
+        var legendaryCantrips = wo.LegendaryCantrips;
+
+        if (epicCantrips.Count > 0)
         {
-            var spells = new List<Server.Entity.Spell>();
-
-            foreach (var kvp in spellTable)
-                spells.Add(new Server.Entity.Spell(kvp.Key, false));
-
-            return string.Join(", ", spells.Select(i => i.Name));
+            _log.Debug(
+                $"[LOOT][EPIC] {Name} ({Guid}) generated item with {epicCantrips.Count} epic{(epicCantrips.Count > 1 ? "s" : "")} - {wo.Name} ({wo.Guid}) - {GetSpellList(epicCantrips)} - killed by {killer?.Name} ({killer?.Guid})"
+            );
         }
 
-        public bool IsOnNoDeathXPLandblock => Location != null ? NoDeathXP_Landblocks.Contains(Location.LandblockId.Landblock) : false;
-
-        /// <summary>
-        /// A list of landblocks the player gains no xp from creature kills
-        /// </summary>
-        public static HashSet<ushort> NoDeathXP_Landblocks = new HashSet<ushort>()
+        if (legendaryCantrips.Count > 0)
         {
-            0x00B0,     // Colosseum Arena One
-            0x00B1,     // Colosseum Arena Two
-            0x00B2,     // Colosseum Arena Three
-            0x00B3,     // Colosseum Arena Four
-            0x00B4,     // Colosseum Arena Five
-            0x5960,     // Gauntlet Arena One (Celestial Hand)
-            0x5961,     // Gauntlet Arena Two (Celestial Hand)
-            0x5962,     // Gauntlet Arena One (Eldritch Web)
-            0x5963,     // Gauntlet Arena Two (Eldritch Web)
-            0x5964,     // Gauntlet Arena One (Radiant Blood)
-            0x5965,     // Gauntlet Arena Two (Radiant Blood)
-            0x596B,     // Gauntlet Staging Area (All Societies)
-        };
+            _log.Debug(
+                $"[LOOT][LEGENDARY] {Name} ({Guid}) generated item with {legendaryCantrips.Count} legendar{(legendaryCantrips.Count > 1 ? "ies" : "y")} - {wo.Name} ({wo.Guid}) - {GetSpellList(legendaryCantrips)} - killed by {killer?.Name} ({killer?.Guid})"
+            );
+        }
+    }
 
-        private float GetSpellStackBonus(DamageHistoryInfo killer)
+    public static string GetSpellList(Dictionary<int, float> spellTable)
+    {
+        var spells = new List<Server.Entity.Spell>();
+
+        foreach (var kvp in spellTable)
         {
-            if (!killer.IsPlayer)
-                return 1.0f;
+            spells.Add(new Server.Entity.Spell(kvp.Key, false));
+        }
 
-            var olthoiNorthDebuffStacks = killer.Player.GetOlthoiNorthSpellStacks(false);
-            if (olthoiNorthDebuffStacks > 0 && StackableSpellType == StackableSpellTables.StackableSpellType.OlthoiNorth)
-            {
-                return 1.0f + ((float)olthoiNorthDebuffStacks / 100);
-            }
+        return string.Join(", ", spells.Select(i => i.Name));
+    }
 
+    public bool IsOnNoDeathXPLandblock =>
+        Location != null ? NoDeathXP_Landblocks.Contains(Location.LandblockId.Landblock) : false;
+
+    /// <summary>
+    /// A list of landblocks the player gains no xp from creature kills
+    /// </summary>
+    public static HashSet<ushort> NoDeathXP_Landblocks = new HashSet<ushort>()
+    {
+        0x00B0, // Colosseum Arena One
+        0x00B1, // Colosseum Arena Two
+        0x00B2, // Colosseum Arena Three
+        0x00B3, // Colosseum Arena Four
+        0x00B4, // Colosseum Arena Five
+        0x5960, // Gauntlet Arena One (Celestial Hand)
+        0x5961, // Gauntlet Arena Two (Celestial Hand)
+        0x5962, // Gauntlet Arena One (Eldritch Web)
+        0x5963, // Gauntlet Arena Two (Eldritch Web)
+        0x5964, // Gauntlet Arena One (Radiant Blood)
+        0x5965, // Gauntlet Arena Two (Radiant Blood)
+        0x596B, // Gauntlet Staging Area (All Societies)
+    };
+
+    private float GetSpellStackBonus(DamageHistoryInfo killer)
+    {
+        if (!killer.IsPlayer)
+        {
             return 1.0f;
         }
+
+        var olthoiNorthDebuffStacks = killer.Player.GetOlthoiNorthSpellStacks(false);
+        if (olthoiNorthDebuffStacks > 0 && StackableSpellType == StackableSpellTables.StackableSpellType.OlthoiNorth)
+        {
+            return 1.0f + ((float)olthoiNorthDebuffStacks / 100);
+        }
+
+        return 1.0f;
     }
 }

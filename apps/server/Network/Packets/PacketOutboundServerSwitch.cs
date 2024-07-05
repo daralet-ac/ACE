@@ -1,15 +1,14 @@
-namespace ACE.Server.Network.Packets
+namespace ACE.Server.Network.Packets;
+
+public class PacketOutboundServerSwitch : ServerPacket
 {
-    public class PacketOutboundServerSwitch : ServerPacket
+    public PacketOutboundServerSwitch()
     {
-        public PacketOutboundServerSwitch()
-        {
-            Header.Flags = PacketHeaderFlags.EncryptedChecksum | PacketHeaderFlags.ServerSwitch;
+        Header.Flags = PacketHeaderFlags.EncryptedChecksum | PacketHeaderFlags.ServerSwitch;
 
-            InitializeDataWriter();
+        InitializeDataWriter();
 
-            DataWriter.Write((uint)0x18); // This value is currently the hard coded Server ID. It can be something different...
-            DataWriter.Write((uint)0x00);
-        }
+        DataWriter.Write((uint)0x18); // This value is currently the hard coded Server ID. It can be something different...
+        DataWriter.Write((uint)0x00);
     }
 }

@@ -1,15 +1,14 @@
 using System;
 
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+public class GameEventBookDeletePageResponse : GameEventMessage
 {
-    public class GameEventBookDeletePageResponse : GameEventMessage
+    public GameEventBookDeletePageResponse(Session session, uint bookGuid, int page, bool success)
+        : base(GameEventType.BookDeletePageResponse, GameMessageGroup.UIQueue, session, 16)
     {
-        public GameEventBookDeletePageResponse(Session session, uint bookGuid, int page, bool success)
-            : base(GameEventType.BookDeletePageResponse, GameMessageGroup.UIQueue, session, 16)
-        {
-            Writer.Write(bookGuid);
-            Writer.Write(page);     // 0-based
-            Writer.Write(Convert.ToUInt32(success));
-        }
+        Writer.Write(bookGuid);
+        Writer.Write(page); // 0-based
+        Writer.Write(Convert.ToUInt32(success));
     }
 }

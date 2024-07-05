@@ -1,13 +1,12 @@
 using ACE.Entity.Enum;
 
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+public class GameEventCloseTrade : GameEventMessage
 {
-    public class GameEventCloseTrade : GameEventMessage
+    public GameEventCloseTrade(Session session, EndTradeReason endTradeReason)
+        : base(GameEventType.CloseTrade, GameMessageGroup.UIQueue, session, 8)
     {
-        public GameEventCloseTrade(Session session, EndTradeReason endTradeReason)
-            : base(GameEventType.CloseTrade, GameMessageGroup.UIQueue, session, 8)
-        {
-            Writer.Write((uint)endTradeReason);
-        }
+        Writer.Write((uint)endTradeReason);
     }
 }

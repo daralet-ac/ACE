@@ -1,34 +1,35 @@
 using System;
 
-namespace ACE.Server.Entity.Actions
+namespace ACE.Server.Entity.Actions;
+
+public class ConditionalAction : IAction
 {
-    public class ConditionalAction : IAction
+    public Func<bool> Condition { get; }
+    public ActionChain TrueChain { get; }
+    public ActionChain FalseChain { get; }
+
+    public ConditionalAction(Func<bool> condition, ActionChain trueChain, ActionChain falseChain)
     {
-        public Func<bool> Condition { get; }
-        public ActionChain TrueChain { get; }
-        public ActionChain FalseChain { get; }
+        Condition = condition;
+        TrueChain = trueChain;
+        FalseChain = falseChain;
+    }
 
-        public ConditionalAction(Func<bool> condition, ActionChain trueChain, ActionChain falseChain)
+    public void RunOnFinish(IActor actor, IAction action)
+    {
+        TrueChain.AddAction(actor, action);
+        FalseChain.AddAction(actor, action);
+    }
+
+    public Tuple<IActor, IAction> Act()
+    {
+        var cond = Condition();
+
+        if (cond)
         {
-            Condition = condition;
-            TrueChain = trueChain;
-            FalseChain = falseChain;
+            return new Tuple<IActor, IAction>(TrueChain.FirstElement.Actor, TrueChain.FirstElement.Action);
         }
 
-        public void RunOnFinish(IActor actor, IAction action)
-        {
-            TrueChain.AddAction(actor, action);
-            FalseChain.AddAction(actor, action);
-        }
-
-        public Tuple<IActor, IAction> Act()
-        {
-            bool cond = Condition();
-
-            if (cond)
-                return new Tuple<IActor, IAction>(TrueChain.FirstElement.Actor, TrueChain.FirstElement.Action);
-
-            return new Tuple<IActor, IAction>(FalseChain.FirstElement.Actor, FalseChain.FirstElement.Action);
-        }
+        return new Tuple<IActor, IAction>(FalseChain.FirstElement.Actor, FalseChain.FirstElement.Action);
     }
 }

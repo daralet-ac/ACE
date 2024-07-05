@@ -2,122 +2,112 @@ using System.Collections.Generic;
 using ACE.Entity.Enum;
 using Serilog;
 
-namespace ACE.Server.Factories.Tables.Spells
+namespace ACE.Server.Factories.Tables.Spells;
+
+public static class JewelrySpells
 {
-    public static class JewelrySpells
+    private static readonly ILogger _log = Log.ForContext(typeof(JewelrySpells));
+
+    private static readonly List<SpellId> spells = new List<SpellId>()
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(JewelrySpells));
+        // creature buffs
+        SpellId.StrengthSelf1,
+        SpellId.EnduranceSelf1,
+        SpellId.CoordinationSelf1,
+        SpellId.QuicknessSelf1,
+        SpellId.FocusSelf1,
+        SpellId.WillpowerSelf1,
+        SpellId.HeavyWeaponsMasterySelf1,
+        SpellId.LightWeaponsMasterySelf1,
+        SpellId.FinesseWeaponsMasterySelf1,
+        SpellId.MissileWeaponsMasterySelf1,
+        SpellId.TwoHandedMasterySelf1,
+        SpellId.InvulnerabilitySelf1,
+        SpellId.MagicResistanceSelf1,
+        SpellId.CreatureEnchantmentMasterySelf1,
+        SpellId.ItemEnchantmentMasterySelf1,
+        SpellId.LifeMagicMasterySelf1,
+        SpellId.WarMagicMasterySelf1,
+        SpellId.VoidMagicMasterySelf1,
+        SpellId.SummoningMasterySelf1,
+        SpellId.ArcaneEnlightenmentSelf1,
+        SpellId.DeceptionMasterySelf1,
+        SpellId.HealingMasterySelf1,
+        SpellId.JumpingMasterySelf1,
+        SpellId.LockpickMasterySelf1,
+        SpellId.ManaMasterySelf1,
+        SpellId.SprintSelf1,
+        SpellId.DualWieldMasterySelf1,
+        SpellId.DirtyFightingMasterySelf1,
+        SpellId.RecklessnessMasterySelf1,
+        SpellId.SneakAttackMasterySelf1,
+        SpellId.ShieldMasterySelf1,
+        SpellId.AlchemyMasterySelf1,
+        SpellId.CookingMasterySelf1,
+        SpellId.FletchingMasterySelf1,
+        SpellId.LeadershipMasterySelf1,
+        SpellId.FealtySelf1,
+        SpellId.ArcanumSalvagingSelf1,
+        SpellId.ArmorExpertiseSelf1,
+        SpellId.ItemExpertiseSelf1,
+        SpellId.MagicItemExpertiseSelf1,
+        SpellId.WeaponExpertiseSelf1,
+        SpellId.MonsterAttunementSelf1,
+        SpellId.PersonAttunementSelf1,
+        // life buffs
 
-        private static readonly List<SpellId> spells = new List<SpellId>()
+        SpellId.RegenerationSelf1,
+        SpellId.RejuvenationSelf1,
+        SpellId.ManaRenewalSelf1,
+        SpellId.ArmorSelf1,
+        SpellId.BladeProtectionSelf1,
+        SpellId.PiercingProtectionSelf1,
+        SpellId.BludgeonProtectionSelf1,
+        SpellId.FireProtectionSelf1,
+        SpellId.ColdProtectionSelf1,
+        SpellId.AcidProtectionSelf1,
+        SpellId.LightningProtectionSelf1,
+    };
+
+    private static readonly int NumTiers = 8;
+
+    // original api
+    public static readonly SpellId[][] Table = new SpellId[spells.Count][];
+
+    static JewelrySpells()
+    {
+        // takes ~0.3ms
+        BuildSpells();
+    }
+
+    private static void BuildSpells()
+    {
+        for (var i = 0; i < spells.Count; i++)
         {
-            // creature buffs
-            SpellId.StrengthSelf1,
-            SpellId.EnduranceSelf1,
-            SpellId.CoordinationSelf1,
-            SpellId.QuicknessSelf1,
-            SpellId.FocusSelf1,
-            SpellId.WillpowerSelf1,
-
-            SpellId.HeavyWeaponsMasterySelf1,
-            SpellId.LightWeaponsMasterySelf1,
-            SpellId.FinesseWeaponsMasterySelf1,
-            SpellId.MissileWeaponsMasterySelf1,
-            SpellId.TwoHandedMasterySelf1,
-
-            SpellId.InvulnerabilitySelf1,
-            SpellId.MagicResistanceSelf1,
-
-            SpellId.CreatureEnchantmentMasterySelf1,
-            SpellId.ItemEnchantmentMasterySelf1,
-            SpellId.LifeMagicMasterySelf1,
-            SpellId.WarMagicMasterySelf1,
-            SpellId.VoidMagicMasterySelf1,
-            SpellId.SummoningMasterySelf1,
-
-            SpellId.ArcaneEnlightenmentSelf1,
-            SpellId.DeceptionMasterySelf1,
-            SpellId.HealingMasterySelf1,
-            SpellId.JumpingMasterySelf1,
-            SpellId.LockpickMasterySelf1,
-            SpellId.ManaMasterySelf1,
-            SpellId.SprintSelf1,
-
-            SpellId.DualWieldMasterySelf1,
-            SpellId.DirtyFightingMasterySelf1,
-            SpellId.RecklessnessMasterySelf1,
-            SpellId.SneakAttackMasterySelf1,
-
-            SpellId.ShieldMasterySelf1,
-
-            SpellId.AlchemyMasterySelf1,
-            SpellId.CookingMasterySelf1,
-            SpellId.FletchingMasterySelf1,
-
-            SpellId.LeadershipMasterySelf1,
-            SpellId.FealtySelf1,
-
-            SpellId.ArcanumSalvagingSelf1,
-            SpellId.ArmorExpertiseSelf1,
-            SpellId.ItemExpertiseSelf1,
-            SpellId.MagicItemExpertiseSelf1,
-            SpellId.WeaponExpertiseSelf1,
-
-            SpellId.MonsterAttunementSelf1,
-            SpellId.PersonAttunementSelf1,
-
-            // life buffs
-
-            SpellId.RegenerationSelf1,
-            SpellId.RejuvenationSelf1,
-            SpellId.ManaRenewalSelf1,
-
-            SpellId.ArmorSelf1,
-
-            SpellId.BladeProtectionSelf1,
-            SpellId.PiercingProtectionSelf1,
-            SpellId.BludgeonProtectionSelf1,
-            SpellId.FireProtectionSelf1,
-            SpellId.ColdProtectionSelf1,
-            SpellId.AcidProtectionSelf1,
-            SpellId.LightningProtectionSelf1,
-        };
-
-        private static readonly int NumTiers = 8;
-
-        // original api
-        public static readonly SpellId[][] Table = new SpellId[spells.Count][];
-
-        static JewelrySpells()
-        {
-            // takes ~0.3ms
-            BuildSpells();
+            Table[i] = new SpellId[NumTiers];
         }
 
-        private static void BuildSpells()
+        for (var i = 0; i < spells.Count; i++)
         {
-            for (var i = 0; i < spells.Count; i++)
-                Table[i] = new SpellId[NumTiers];
+            var spell = spells[i];
 
-            for (var i = 0; i < spells.Count; i++)
+            var spellLevels = SpellLevelProgression.GetSpellLevels(spell);
+
+            if (spellLevels == null)
             {
-                var spell = spells[i];
+                _log.Error($"JewelrySpells - couldn't find {spell}");
+                continue;
+            }
 
-                var spellLevels = SpellLevelProgression.GetSpellLevels(spell);
+            if (spellLevels.Count != NumTiers)
+            {
+                _log.Error($"JewelrySpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
+                continue;
+            }
 
-                if (spellLevels == null)
-                {
-                    _log.Error($"JewelrySpells - couldn't find {spell}");
-                    continue;
-                }
-
-                if (spellLevels.Count != NumTiers)
-                {
-                    _log.Error($"JewelrySpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
-                    continue;
-                }
-
-                for (var j = 0; j < NumTiers; j++)
-                    Table[i][j] = spellLevels[j];
+            for (var j = 0; j < NumTiers; j++)
+            {
+                Table[i][j] = spellLevels[j];
             }
         }
     }

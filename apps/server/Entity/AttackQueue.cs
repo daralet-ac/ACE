@@ -1,41 +1,42 @@
 using System.Collections.Generic;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+public class AttackQueue
 {
-    public class AttackQueue
+    public Player Player;
+
+    public Queue<float> PowerAccuracy;
+
+    public AttackQueue(Player player)
     {
-        public Player Player;
+        Player = player;
 
-        public Queue<float> PowerAccuracy;
+        PowerAccuracy = new Queue<float>();
+    }
 
-        public AttackQueue(Player player)
+    public void Add(float powerAccuracy)
+    {
+        PowerAccuracy.Enqueue(powerAccuracy);
+    }
+
+    public float Fetch()
+    {
+        if (PowerAccuracy.Count > 1)
         {
-            Player = player;
-
-            PowerAccuracy = new Queue<float>();
+            PowerAccuracy.Dequeue();
         }
 
-        public void Add(float powerAccuracy)
+        if (!PowerAccuracy.TryPeek(out var powerAccuracy))
         {
-            PowerAccuracy.Enqueue(powerAccuracy);
+            return 0.5f;
         }
+        return powerAccuracy;
+    }
 
-        public float Fetch()
-        {
-            if (PowerAccuracy.Count > 1)
-                PowerAccuracy.Dequeue();
-
-            if (!PowerAccuracy.TryPeek(out var powerAccuracy))
-            {
-                return 0.5f;
-            }
-            return powerAccuracy;
-        }
-
-        public void Clear()
-        {
-            PowerAccuracy.Clear();
-        }
+    public void Clear()
+    {
+        PowerAccuracy.Clear();
     }
 }

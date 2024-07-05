@@ -4,65 +4,72 @@
 using System;
 using System.Collections.Concurrent;
 
-namespace ACE.Server.Entity.Actions
+namespace ACE.Server.Entity.Actions;
+
+public class ActionQueue : IActor
 {
-    public class ActionQueue : IActor
+    protected ConcurrentQueue<IAction> Queue { get; } = new ConcurrentQueue<IAction>();
+
+#if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
+    private readonly ILogger _log = Log.ForContext<ActionQueue>();
+    private readonly System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+#endif
+
+    public void RunActions()
     {
-        protected ConcurrentQueue<IAction> Queue { get; } = new ConcurrentQueue<IAction>();
-
-#if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
-        private readonly ILogger _log = Log.ForContext<ActionQueue>();
-        private readonly System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-#endif
-
-        public void RunActions()
+        if (Queue.IsEmpty)
         {
-            if (Queue.IsEmpty)
-                return;
+            return;
+        }
 
-            var count = Queue.Count;
+        var count = Queue.Count;
 
-            for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
+        {
+            if (Queue.TryDequeue(out var result))
             {
-                if (Queue.TryDequeue(out var result))
+#if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
+                sw.Restart();
+#endif
+
+                var enqueue = result.Act();
+
+#if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
+                sw.Stop();
+
+                if (sw.Elapsed.TotalSeconds > 1)
                 {
-#if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
-                    sw.Restart();
-#endif
-
-                    Tuple<IActor, IAction> enqueue = result.Act();
-
-#if WRAP_AND_MEASURE_ACT_WITH_STOPWATCH
-                    sw.Stop();
-
-                    if (sw.Elapsed.TotalSeconds > 1)
+                    if (result is ActionEventDelegate actionEventDelegate)
                     {
-                        if (result is ActionEventDelegate actionEventDelegate)
-                        {
-                            if (actionEventDelegate.Action.Target is WorldObjects.WorldObject worldObject)
-                                _log.Warning($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s. Method.Name: {actionEventDelegate.Action.Method.Name}, Target: {actionEventDelegate.Action.Target} 0x{worldObject.Guid}:{worldObject.Name}");
-                            else
-                                _log.Warning($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s. Method.Name: {actionEventDelegate.Action.Method.Name}, Target: {actionEventDelegate.Action.Target}");
-                        }
+                        if (actionEventDelegate.Action.Target is WorldObjects.WorldObject worldObject)
+                            _log.Warning(
+                                $"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s. Method.Name: {actionEventDelegate.Action.Method.Name}, Target: {actionEventDelegate.Action.Target} 0x{worldObject.Guid}:{worldObject.Name}"
+                            );
                         else
-                            _log.Warning($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s.");
+                            _log.Warning(
+                                $"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s. Method.Name: {actionEventDelegate.Action.Method.Name}, Target: {actionEventDelegate.Action.Target}"
+                            );
                     }
+                    else
+                        _log.Warning($"ActionQueue Act() took {sw.Elapsed.TotalSeconds:N0}s.");
+                }
 #endif
 
-                    if (enqueue != null)
-                        enqueue.Item1.EnqueueAction(enqueue.Item2);
+                if (enqueue != null)
+                {
+                    enqueue.Item1.EnqueueAction(enqueue.Item2);
                 }
             }
         }
+    }
 
-        public void EnqueueAction(IAction action)
-        {
-            Queue.Enqueue(action);
-        }
+    public void EnqueueAction(IAction action)
+    {
+        Queue.Enqueue(action);
+    }
 
-        public void Clear()
-        {
-            Queue.Clear();
-        }
+    public void Clear()
+    {
+        Queue.Clear();
     }
 }

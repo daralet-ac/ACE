@@ -1,8 +1,7 @@
-namespace ACE.Server.Physics.Common
+namespace ACE.Server.Physics.Common;
+
+public class PalShiftTerrainPal
 {
-    public class PalShiftTerrainPal
-    {
-        public LandDefs.TerrainType TerrainIndex;
-        public uint PalID;
-    }
+    public LandDefs.TerrainType TerrainIndex;
+    public uint PalID;
 }

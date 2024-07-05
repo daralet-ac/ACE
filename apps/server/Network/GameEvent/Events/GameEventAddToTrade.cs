@@ -1,15 +1,14 @@
 using ACE.Entity.Enum;
 
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+public class GameEventAddToTrade : GameEventMessage
 {
-    public class GameEventAddToTrade : GameEventMessage
+    public GameEventAddToTrade(Session session, uint objectGuid, TradeSide tradeSide)
+        : base(GameEventType.AddToTrade, GameMessageGroup.UIQueue, session, 16)
     {
-        public GameEventAddToTrade(Session session, uint objectGuid, TradeSide tradeSide)
-            : base(GameEventType.AddToTrade, GameMessageGroup.UIQueue, session, 16)
-        {
-            Writer.Write(objectGuid);
-            Writer.Write((uint)tradeSide);
-            Writer.Write(0);    // location / slot
-        }
+        Writer.Write(objectGuid);
+        Writer.Write((uint)tradeSide);
+        Writer.Write(0); // location / slot
     }
 }

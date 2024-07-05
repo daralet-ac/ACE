@@ -1,6 +1,3 @@
-namespace ACE.Server.Entity
-{
-    public class Landcell
-    {
-    }
-}
+namespace ACE.Server.Entity;
+
+public class Landcell { }

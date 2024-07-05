@@ -1,8 +1,7 @@
-namespace ACE.Server.Network.Sequence
+namespace ACE.Server.Network.Sequence;
+
+public interface ISequence
 {
-    public interface ISequence
-    {
-        byte[] NextBytes { get; }
-        byte[] CurrentBytes { get; }
-    }
+    byte[] NextBytes { get; }
+    byte[] CurrentBytes { get; }
 }

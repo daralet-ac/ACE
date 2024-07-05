@@ -1,11 +1,10 @@
-namespace ACE.Server.Network.GameAction.Actions
+namespace ACE.Server.Network.GameAction.Actions;
+
+public static class GameActionClearAllegianceName
 {
-    public static class GameActionClearAllegianceName
+    [GameAction(GameActionType.ClearAllegianceName)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.ClearAllegianceName)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            session.Player.HandleActionClearAllegianceName();
-        }
+        session.Player.HandleActionClearAllegianceName();
     }
 }

@@ -1,10 +1,7 @@
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+public class GameEventCombatCommenceAttack : GameEventMessage
 {
-    public class GameEventCombatCommenceAttack : GameEventMessage
-    {
-        public GameEventCombatCommenceAttack(Session session)
-            : base(GameEventType.CombatCommenceAttack, GameMessageGroup.UIQueue, session, 4)
-        {
-        }
-    }
+    public GameEventCombatCommenceAttack(Session session)
+        : base(GameEventType.CombatCommenceAttack, GameMessageGroup.UIQueue, session, 4) { }
 }

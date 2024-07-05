@@ -1,11 +1,10 @@
-namespace ACE.Server.Network.GameAction.Actions
+namespace ACE.Server.Network.GameAction.Actions;
+
+public static class GameActionClearMotd
 {
-    public static class GameActionClearMotd
+    [GameAction(GameActionType.ClearMotd)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.ClearMotd)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            session.Player.HandleActionClearMotd();
-        }
+        session.Player.HandleActionClearMotd();
     }
 }

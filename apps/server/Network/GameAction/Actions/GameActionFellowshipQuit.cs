@@ -1,14 +1,12 @@
+namespace ACE.Server.Network.GameAction.Actions;
 
-namespace ACE.Server.Network.GameAction.Actions
+public class GameActionFellowshipQuit
 {
-    public class GameActionFellowshipQuit
+    [GameAction(GameActionType.FellowshipQuit)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.FellowshipQuit)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            bool disbandFellowship = message.Payload.ReadUInt32() > 0;
+        var disbandFellowship = message.Payload.ReadUInt32() > 0;
 
-            session.Player.FellowshipQuit(disbandFellowship);
-        }
+        session.Player.FellowshipQuit(disbandFellowship);
     }
 }

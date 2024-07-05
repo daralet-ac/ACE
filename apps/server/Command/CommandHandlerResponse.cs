@@ -1,13 +1,12 @@
-namespace ACE.Server.Command
+namespace ACE.Server.Command;
+
+public enum CommandHandlerResponse
 {
-    public enum CommandHandlerResponse
-    {
-        Ok,
-        SudoOk,
-        InvalidCommand,
-        NoConsoleInvoke,
-        NotAuthorized,
-        InvalidParameterCount,
-        NotInWorld
-    }
+    Ok,
+    SudoOk,
+    InvalidCommand,
+    NoConsoleInvoke,
+    NotAuthorized,
+    InvalidParameterCount,
+    NotInWorld
 }

@@ -1,11 +1,10 @@
-namespace ACE.Server.Network.GameAction.Actions
+namespace ACE.Server.Network.GameAction.Actions;
+
+public static class GameActionListAllegianceOfficers
 {
-    public static class GameActionListAllegianceOfficers
+    [GameAction(GameActionType.ListAllegianceOfficers)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.ListAllegianceOfficers)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            session.Player.HandleActionListAllegianceOfficers();
-        }
+        session.Player.HandleActionListAllegianceOfficers();
     }
 }

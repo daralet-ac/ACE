@@ -1,44 +1,44 @@
 using System.Collections.Generic;
-
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+public class UniqueTable
 {
-    public class UniqueTable
+    // helper counting the # of uniques in a container,
+    // and possibly its sub-containers
+    public Dictionary<uint, UniqueTableEntry> Entries;
+
+    public UniqueTable(List<WorldObject> uniques)
     {
-        // helper counting the # of uniques in a container,
-        // and possibly its sub-containers
-        public Dictionary<uint, UniqueTableEntry> Entries;
+        Entries = new Dictionary<uint, UniqueTableEntry>();
 
-        public UniqueTable(List<WorldObject> uniques)
+        foreach (var unique in uniques)
         {
-            Entries = new Dictionary<uint, UniqueTableEntry>();
+            var wcid = unique.WeenieClassId;
+            var stackSize = unique.StackSize ?? 1;
 
-            foreach (var unique in uniques)
+            if (!Entries.TryGetValue(wcid, out var entry))
             {
-                var wcid = unique.WeenieClassId;
-                var stackSize = unique.StackSize ?? 1;
-
-                if (!Entries.TryGetValue(wcid, out var entry))
-                {
-                    entry = new UniqueTableEntry(stackSize, unique.Unique ?? 0);
-                    Entries.Add(wcid, entry);
-                }
-                else
-                    entry.Count += stackSize;
+                entry = new UniqueTableEntry(stackSize, unique.Unique ?? 0);
+                Entries.Add(wcid, entry);
+            }
+            else
+            {
+                entry.Count += stackSize;
             }
         }
+    }
 
-        public class UniqueTableEntry
+    public class UniqueTableEntry
+    {
+        public int Count;
+        public int Max;
+
+        public UniqueTableEntry(int count, int max)
         {
-            public int Count;
-            public int Max;
-
-            public UniqueTableEntry(int count, int max)
-            {
-                Count = count;
-                Max = max;
-            }
+            Count = count;
+            Max = max;
         }
     }
 }

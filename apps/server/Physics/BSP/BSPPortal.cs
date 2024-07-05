@@ -1,43 +1,49 @@
 using System;
 using System.Collections.Generic;
 
-namespace ACE.Server.Physics.BSP
+namespace ACE.Server.Physics.BSP;
+
+public class BSPPortal : BSPNode, IEquatable<BSPPortal>
 {
-    public class BSPPortal : BSPNode, IEquatable<BSPPortal>
+    public int NumPortals;
+    public List<PortalPoly> Portals;
+
+    public BSPPortal()
+        : base() { }
+
+    public void portal_draw_portals_only(int portalPolyOrPortalContents)
     {
-        public int NumPortals;
-        public List<PortalPoly> Portals;
+        // rendering stuff
+    }
 
-        public BSPPortal() : base() { }
-
-        public void portal_draw_portals_only(int portalPolyOrPortalContents)
+    public bool Equals(BSPPortal portal)
+    {
+        if (!base.Equals(portal) || NumPortals != portal.NumPortals)
         {
-            // rendering stuff
+            return false;
         }
 
-        public bool Equals(BSPPortal portal)
+        for (var i = 0; i < NumPortals; i++)
         {
-            if (!base.Equals(portal) || NumPortals != portal.NumPortals)
-                return false;
-
-            for (var i = 0; i < NumPortals; i++)
+            if (!Portals[i].Equals(portal.Portals[i]))
             {
-                if (!Portals[i].Equals(portal.Portals[i]))
-                    return false;
+                return false;
             }
-            return true;
         }
+        return true;
+    }
 
-        public override int GetHashCode()
+    public override int GetHashCode()
+    {
+        var hash = base.GetHashCode();
+
+        hash = (hash * 397) ^ NumPortals.GetHashCode();
+
+        for (var i = 0; i < NumPortals; i++)
         {
-            var hash = base.GetHashCode();
-
-            hash = (hash * 397) ^ NumPortals.GetHashCode();
-
-            for (var i = 0; i < NumPortals; i++)
-                hash = (hash * 397) ^ Portals[i].GetHashCode();
-
-            return hash;
+            hash = (hash * 397) ^ Portals[i].GetHashCode();
         }
+
+        return hash;
     }
 }

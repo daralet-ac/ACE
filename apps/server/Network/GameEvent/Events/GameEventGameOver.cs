@@ -1,17 +1,16 @@
 using ACE.Entity;
 
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+/// <summary>
+/// End of chess game
+/// </summary>
+public class GameEventGameOver : GameEventMessage
 {
-    /// <summary>
-    /// End of chess game
-    /// </summary>
-    public class GameEventGameOver : GameEventMessage
+    public GameEventGameOver(Session session, ObjectGuid boardGuid, int teamWinner)
+        : base(GameEventType.GameOver, GameMessageGroup.UIQueue, session, 8)
     {
-        public GameEventGameOver(Session session, ObjectGuid boardGuid, int teamWinner)
-            : base(GameEventType.GameOver, GameMessageGroup.UIQueue, session, 8)
-        {
-            Writer.Write(boardGuid.Full);
-            Writer.Write(teamWinner);
-        }
+        Writer.Write(boardGuid.Full);
+        Writer.Write(teamWinner);
     }
 }

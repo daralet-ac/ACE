@@ -1,15 +1,13 @@
+namespace ACE.Server.Network.GameAction.Actions;
 
-namespace ACE.Server.Network.GameAction.Actions
+public static class GameActionAddToTrade
 {
-    public static class GameActionAddToTrade
+    [GameAction(GameActionType.AddToTrade)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.AddToTrade)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            var itemGuid = message.Payload.ReadUInt32();
-            var tradeSlot = message.Payload.ReadUInt32();
+        var itemGuid = message.Payload.ReadUInt32();
+        var tradeSlot = message.Payload.ReadUInt32();
 
-            session.Player.HandleActionAddToTrade(itemGuid, tradeSlot);
-        }
+        session.Player.HandleActionAddToTrade(itemGuid, tradeSlot);
     }
 }

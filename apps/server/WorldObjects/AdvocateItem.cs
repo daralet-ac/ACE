@@ -1,50 +1,54 @@
 using System;
-
 using ACE.Entity;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Network.GameMessages.Messages;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+public class AdvocateItem : GenericObject
 {
-    public class AdvocateItem : GenericObject
+    /// <summary>
+    /// A new biota be created taking all of its values from weenie.
+    /// </summary>
+    public AdvocateItem(Weenie weenie, ObjectGuid guid)
+        : base(weenie, guid)
     {
-        /// <summary>
-        /// A new biota be created taking all of its values from weenie.
-        /// </summary>
-        public AdvocateItem(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
-        {
-            SetEphemeralValues();
-        }
+        SetEphemeralValues();
+    }
 
-        /// <summary>
-        /// Restore a WorldObject from the database.
-        /// </summary>
-        public AdvocateItem(Biota biota) : base(biota)
-        {
-            SetEphemeralValues();
-        }
+    /// <summary>
+    /// Restore a WorldObject from the database.
+    /// </summary>
+    public AdvocateItem(Biota biota)
+        : base(biota)
+    {
+        SetEphemeralValues();
+    }
 
-        private void SetEphemeralValues()
-        {
-        }
+    private void SetEphemeralValues() { }
 
-        public override void OnWield(Creature creature)
-        {
-            creature.RadarColor = ACE.Entity.Enum.RadarColor.Advocate;
-            creature.EnqueueBroadcast(true, new GameMessagePublicUpdatePropertyInt(creature, PropertyInt.RadarBlipColor, (int)creature.RadarColor));
-            creature.SetProperty(PropertyBool.AdvocateState, true);
+    public override void OnWield(Creature creature)
+    {
+        creature.RadarColor = ACE.Entity.Enum.RadarColor.Advocate;
+        creature.EnqueueBroadcast(
+            true,
+            new GameMessagePublicUpdatePropertyInt(creature, PropertyInt.RadarBlipColor, (int)creature.RadarColor)
+        );
+        creature.SetProperty(PropertyBool.AdvocateState, true);
 
-            base.OnWield(creature);
-        }
+        base.OnWield(creature);
+    }
 
-        public override void OnUnWield(Creature creature)
-        {
-            creature.RadarColor = null;
-            creature.EnqueueBroadcast(true, new GameMessagePublicUpdatePropertyInt(creature, PropertyInt.RadarBlipColor, 0));
-            creature.SetProperty(PropertyBool.AdvocateState, false);
+    public override void OnUnWield(Creature creature)
+    {
+        creature.RadarColor = null;
+        creature.EnqueueBroadcast(
+            true,
+            new GameMessagePublicUpdatePropertyInt(creature, PropertyInt.RadarBlipColor, 0)
+        );
+        creature.SetProperty(PropertyBool.AdvocateState, false);
 
-            base.OnUnWield(creature);
-        }
+        base.OnUnWield(creature);
     }
 }

@@ -1,23 +1,22 @@
-namespace ACE.Server.Physics.Common
+namespace ACE.Server.Physics.Common;
+
+public class TerrainAlphaMap
 {
-    public class TerrainAlphaMap
+    public DatLoader.Entity.TerrainAlphaMap _alphaMap;
+
+    public uint TCode;
+    public uint TexGID;
+    public ImgTex Texture;
+
+    public static readonly TerrainAlphaMap NULL;
+
+    public TerrainAlphaMap() { }
+
+    public TerrainAlphaMap(DatLoader.Entity.TerrainAlphaMap alphaMap)
     {
-        public DatLoader.Entity.TerrainAlphaMap _alphaMap;
+        _alphaMap = alphaMap;
 
-        public uint TCode;
-        public uint TexGID;
-        public ImgTex Texture;
-
-        public static readonly TerrainAlphaMap NULL;
-
-        public TerrainAlphaMap() { }
-
-        public TerrainAlphaMap(DatLoader.Entity.TerrainAlphaMap alphaMap)
-        {
-            _alphaMap = alphaMap;
-
-            TCode = alphaMap.TCode;
-            TexGID = alphaMap.TexGID;
-        }
+        TCode = alphaMap.TCode;
+        TexGID = alphaMap.TexGID;
     }
 }

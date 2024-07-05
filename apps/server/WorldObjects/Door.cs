@@ -1,5 +1,4 @@
 using System;
-
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -11,255 +10,316 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+public class Door : WorldObject, Lock
 {
-    public class Door : WorldObject, Lock
+    private static readonly Motion motionOpen = new Motion(MotionStance.NonCombat, MotionCommand.On);
+    private static readonly Motion motionClosed = new Motion(MotionStance.NonCombat, MotionCommand.Off);
+
+    /// <summary>
+    /// A new biota be created taking all of its values from weenie.
+    /// </summary>
+    public Door(Weenie weenie, ObjectGuid guid)
+        : base(weenie, guid)
     {
-        private static readonly Motion motionOpen = new Motion(MotionStance.NonCombat, MotionCommand.On);
-        private static readonly Motion motionClosed = new Motion(MotionStance.NonCombat, MotionCommand.Off);
+        SetEphemeralValues();
+    }
 
-        /// <summary>
-        /// A new biota be created taking all of its values from weenie.
-        /// </summary>
-        public Door(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
+    /// <summary>
+    /// Restore a WorldObject from the database.
+    /// </summary>
+    public Door(Biota biota)
+        : base(biota)
+    {
+        SetEphemeralValues();
+    }
+
+    private void SetEphemeralValues()
+    {
+        ObjectDescriptionFlags |= ObjectDescriptionFlag.Door;
+
+        if (!DefaultOpen)
         {
-            SetEphemeralValues();
+            CurrentMotionState = motionClosed;
+            IsOpen = false;
+            //Ethereal = false;
+        }
+        else
+        {
+            CurrentMotionState = motionOpen;
+            IsOpen = true;
+            Ethereal = true;
         }
 
-        /// <summary>
-        /// Restore a WorldObject from the database.
-        /// </summary>
-        public Door(Biota biota) : base(biota)
+        ResetInterval = ResetInterval ?? 30.0f;
+        LockCode = LockCode ?? "";
+
+        // Account for possible missing property from recreated weenies
+        if (IsLocked && !DefaultLocked)
         {
-            SetEphemeralValues();
+            DefaultLocked = true;
         }
 
-        private void SetEphemeralValues()
+        if (DefaultLocked)
         {
-            ObjectDescriptionFlags |= ObjectDescriptionFlag.Door;
+            IsLocked = true;
+        }
+        else
+        {
+            IsLocked = false;
+        }
 
-            if (!DefaultOpen)
+        ActivationResponse |= ActivationResponse.Use;
+    }
+
+    public string LockCode
+    {
+        get => GetProperty(PropertyString.LockCode);
+        set
+        {
+            if (value == null)
             {
-                CurrentMotionState = motionClosed;
-                IsOpen = false;
-                //Ethereal = false;
+                RemoveProperty(PropertyString.LockCode);
             }
             else
             {
-                CurrentMotionState = motionOpen;
-                IsOpen = true;
-                Ethereal = true;
-            }
-
-            ResetInterval = ResetInterval ?? 30.0f;
-            LockCode = LockCode ?? "";
-
-            // Account for possible missing property from recreated weenies
-            if (IsLocked && !DefaultLocked)
-                DefaultLocked = true;
-
-            if (DefaultLocked)
-                IsLocked = true;
-            else
-                IsLocked = false;
-
-            ActivationResponse |= ActivationResponse.Use;
-        }
-
-        public string LockCode
-        {
-            get => GetProperty(PropertyString.LockCode);
-            set { if (value == null) RemoveProperty(PropertyString.LockCode); else SetProperty(PropertyString.LockCode, value); }
-        }
-
-        public override void OnTalk(WorldObject activator)
-        {
-            if (activator is Player player)
-            {
-                var behind = player != null && player.GetRelativeDir(this).HasFlag(Quadrant.Back);
-
-                if (IsOpen && !behind) // not sure if retail made this distinction, but for the doors tested, it seemed more logical given the text shown
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat(ActivationTalk, ChatMessageType.Broadcast));
+                SetProperty(PropertyString.LockCode, value);
             }
         }
+    }
 
-        public override void ActOnUse(WorldObject worldObject)
+    public override void OnTalk(WorldObject activator)
+    {
+        if (activator is Player player)
         {
-            if (IsBusy) return;
-
-            var player = worldObject as Player;
             var behind = player != null && player.GetRelativeDir(this).HasFlag(Quadrant.Back);
 
-            if (!IsLocked)
+            if (IsOpen && !behind) // not sure if retail made this distinction, but for the doors tested, it seemed more logical given the text shown
             {
-                if (!IsOpen)
-                    Open(worldObject.Guid);
-                else if (!(worldObject is Switch) && !(worldObject is PressurePlate))
-                    Close(worldObject.Guid);
-
-                // Create Door auto close timer
-                var useTimestamp = UseTimestamp ?? 0;
-
-                var autoCloseTimer = new ActionChain();
-                autoCloseTimer.AddDelaySeconds(ResetInterval ?? 0);
-                autoCloseTimer.AddAction(this, () => Reset(useTimestamp));
-                autoCloseTimer.EnqueueChain();
-            }
-            else
-            {
-                if (player != null)
-                {
-                    var doorIsLocked = new GameEventCommunicationTransientString(player.Session, "The door is locked!");
-                    player.Session.Network.EnqueueSend(doorIsLocked);
-                    EnqueueBroadcast(new GameMessageSound(Guid, Sound.OpenFailDueToLock, 1.0f));
-                }
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(ActivationTalk, ChatMessageType.Broadcast)
+                );
             }
         }
+    }
 
-        public void Open(ObjectGuid opener = new ObjectGuid())
+    public override void ActOnUse(WorldObject worldObject)
+    {
+        if (IsBusy)
         {
-            if (CurrentMotionState == motionOpen)
-                return;
-
-            EnqueueBroadcastMotion(motionOpen);
-            CurrentMotionState = motionOpen;
-
-            Ethereal = true;
-            IsOpen = true;
-
-            EnqueueBroadcastPhysicsState();
-
-            if (opener.Full > 0)
-                UseTimestamp = Time.GetUnixTime();
-
-            IsBusy = true;
-
-            var animTime = Physics.Animation.MotionTable.GetAnimationLength(MotionTableId, MotionStance.NonCombat, MotionCommand.Off, MotionCommand.On);
-
-            var actionChain = new ActionChain();
-            actionChain.AddDelaySeconds(animTime);
-            actionChain.AddAction(this, () => IsBusy = false);
-            actionChain.EnqueueChain();
+            return;
         }
 
-        public double CloseTimestamp;
+        var player = worldObject as Player;
+        var behind = player != null && player.GetRelativeDir(this).HasFlag(Quadrant.Back);
 
-        public void Close(ObjectGuid closer = new ObjectGuid())
+        if (!IsLocked)
         {
-            if (CurrentMotionState == motionClosed)
-                return;
+            if (!IsOpen)
+            {
+                Open(worldObject.Guid);
+            }
+            else if (!(worldObject is Switch) && !(worldObject is PressurePlate))
+            {
+                Close(worldObject.Guid);
+            }
 
-            EnqueueBroadcastMotion(motionClosed);
-            CurrentMotionState = motionClosed;
+            // Create Door auto close timer
+            var useTimestamp = UseTimestamp ?? 0;
 
-            IsOpen = false;
+            var autoCloseTimer = new ActionChain();
+            autoCloseTimer.AddDelaySeconds(ResetInterval ?? 0);
+            autoCloseTimer.AddAction(this, () => Reset(useTimestamp));
+            autoCloseTimer.EnqueueChain();
+        }
+        else
+        {
+            if (player != null)
+            {
+                var doorIsLocked = new GameEventCommunicationTransientString(player.Session, "The door is locked!");
+                player.Session.Network.EnqueueSend(doorIsLocked);
+                EnqueueBroadcast(new GameMessageSound(Guid, Sound.OpenFailDueToLock, 1.0f));
+            }
+        }
+    }
 
-            var animTime = Physics.Animation.MotionTable.GetAnimationLength(MotionTableId, MotionStance.NonCombat, MotionCommand.On, MotionCommand.Off);
+    public void Open(ObjectGuid opener = new ObjectGuid())
+    {
+        if (CurrentMotionState == motionOpen)
+        {
+            return;
+        }
 
-            //Console.WriteLine($"AnimTime: {animTime}");
+        EnqueueBroadcastMotion(motionOpen);
+        CurrentMotionState = motionOpen;
 
-            IsBusy = true;
+        Ethereal = true;
+        IsOpen = true;
 
-            CloseTimestamp = Time.GetUnixTime();
+        EnqueueBroadcastPhysicsState();
 
-            var closeTimestamp = CloseTimestamp;
+        if (opener.Full > 0)
+        {
+            UseTimestamp = Time.GetUnixTime();
+        }
 
-            var actionChain = new ActionChain();
-            actionChain.AddDelaySeconds(animTime);
-            actionChain.AddAction(this, () =>
+        IsBusy = true;
+
+        var animTime = Physics.Animation.MotionTable.GetAnimationLength(
+            MotionTableId,
+            MotionStance.NonCombat,
+            MotionCommand.Off,
+            MotionCommand.On
+        );
+
+        var actionChain = new ActionChain();
+        actionChain.AddDelaySeconds(animTime);
+        actionChain.AddAction(this, () => IsBusy = false);
+        actionChain.EnqueueChain();
+    }
+
+    public double CloseTimestamp;
+
+    public void Close(ObjectGuid closer = new ObjectGuid())
+    {
+        if (CurrentMotionState == motionClosed)
+        {
+            return;
+        }
+
+        EnqueueBroadcastMotion(motionClosed);
+        CurrentMotionState = motionClosed;
+
+        IsOpen = false;
+
+        var animTime = Physics.Animation.MotionTable.GetAnimationLength(
+            MotionTableId,
+            MotionStance.NonCombat,
+            MotionCommand.On,
+            MotionCommand.Off
+        );
+
+        //Console.WriteLine($"AnimTime: {animTime}");
+
+        IsBusy = true;
+
+        CloseTimestamp = Time.GetUnixTime();
+
+        var closeTimestamp = CloseTimestamp;
+
+        var actionChain = new ActionChain();
+        actionChain.AddDelaySeconds(animTime);
+        actionChain.AddAction(
+            this,
+            () =>
             {
                 FinalizeClose(closeTimestamp);
                 IsBusy = false;
-            });
-            actionChain.EnqueueChain();
-
-            if (closer.Full > 0)
-                UseTimestamp = Time.GetUnixTime();
-        }
-
-        private void FinalizeClose(double closeTimestamp)
-        {
-            if (IsOpen || closeTimestamp != CloseTimestamp)
-                return;
-
-            // ethereal must be set to false for ethereal_check_for_collisions
-            Ethereal = false;
-
-            if (PropertyManager.GetBool("allow_door_hold").Item && PhysicsObj.ethereal_check_for_collisions())
-            {
-                // the source of this bug is EtherealHook for the door
-                // physics engine set_ethereal() -> ethereal_check_for_collisions() -> CheckEthereal state
-
-                // if fix_door_holding == true, the player can still hold doors for other nearby players
-                // who already know about the door / have not been far away from the door for > 25s
-
-                // fix_door_holding == true only fixes 'long holding'
-                //Console.WriteLine($"{Name} ({Guid}).FinalizeClose()");
-                Ethereal = true;
-
-                var holdChain = new ActionChain();
-                holdChain.AddDelaySeconds(1.0f);    // poll every second
-                holdChain.AddAction(this, () => FinalizeClose(closeTimestamp));
-                holdChain.EnqueueChain();
-                return;
             }
+        );
+        actionChain.EnqueueChain();
 
-            EnqueueBroadcastPhysicsState();
+        if (closer.Full > 0)
+        {
+            UseTimestamp = Time.GetUnixTime();
+        }
+    }
+
+    private void FinalizeClose(double closeTimestamp)
+    {
+        if (IsOpen || closeTimestamp != CloseTimestamp)
+        {
+            return;
         }
 
-        private void Reset(double useTimestamp)
-        {
-            if (useTimestamp != UseTimestamp) return;
+        // ethereal must be set to false for ethereal_check_for_collisions
+        Ethereal = false;
 
-            if (!DefaultOpen)
+        if (PropertyManager.GetBool("allow_door_hold").Item && PhysicsObj.ethereal_check_for_collisions())
+        {
+            // the source of this bug is EtherealHook for the door
+            // physics engine set_ethereal() -> ethereal_check_for_collisions() -> CheckEthereal state
+
+            // if fix_door_holding == true, the player can still hold doors for other nearby players
+            // who already know about the door / have not been far away from the door for > 25s
+
+            // fix_door_holding == true only fixes 'long holding'
+            //Console.WriteLine($"{Name} ({Guid}).FinalizeClose()");
+            Ethereal = true;
+
+            var holdChain = new ActionChain();
+            holdChain.AddDelaySeconds(1.0f); // poll every second
+            holdChain.AddAction(this, () => FinalizeClose(closeTimestamp));
+            holdChain.EnqueueChain();
+            return;
+        }
+
+        EnqueueBroadcastPhysicsState();
+    }
+
+    private void Reset(double useTimestamp)
+    {
+        if (useTimestamp != UseTimestamp)
+        {
+            return;
+        }
+
+        if (!DefaultOpen)
+        {
+            Close(ObjectGuid.Invalid);
+            if (DefaultLocked)
             {
-                Close(ObjectGuid.Invalid);
-                if (DefaultLocked)
-                {
-                    IsLocked = true;
-                    var updateProperty = new GameMessagePublicUpdatePropertyBool(this, PropertyBool.Locked, IsLocked);
-                    EnqueueBroadcast(updateProperty);
-                }
+                IsLocked = true;
+                var updateProperty = new GameMessagePublicUpdatePropertyBool(this, PropertyBool.Locked, IsLocked);
+                EnqueueBroadcast(updateProperty);
             }
-            else
-                Open(ObjectGuid.Invalid);
-
-            ResetTimestamp = Time.GetUnixTime();
         }
-
-        /// <summary>
-        /// Used for unlocking a door via lockpick, so contains a skill check
-        /// player.Skills[Skill.Lockpick].Current should be sent for the skill check
-        /// </summary>
-        public UnlockResults Unlock(uint unlockerGuid, uint playerLockpickSkillLvl, ref int difficulty)
+        else
         {
-            return LockHelper.Unlock(this, playerLockpickSkillLvl, ref difficulty);
+            Open(ObjectGuid.Invalid);
         }
 
-        /// <summary>
-        /// Used for unlocking a door via a key
-        /// </summary>
-        public UnlockResults Unlock(uint unlockerGuid, Key key, string keyCode = null)
+        ResetTimestamp = Time.GetUnixTime();
+    }
+
+    /// <summary>
+    /// Used for unlocking a door via lockpick, so contains a skill check
+    /// player.Skills[Skill.Lockpick].Current should be sent for the skill check
+    /// </summary>
+    public UnlockResults Unlock(uint unlockerGuid, uint playerLockpickSkillLvl, ref int difficulty)
+    {
+        return LockHelper.Unlock(this, playerLockpickSkillLvl, ref difficulty);
+    }
+
+    /// <summary>
+    /// Used for unlocking a door via a key
+    /// </summary>
+    public UnlockResults Unlock(uint unlockerGuid, Key key, string keyCode = null)
+    {
+        return LockHelper.Unlock(this, key, keyCode);
+    }
+
+    public override void SetLinkProperties(WorldObject wo)
+    {
+        wo.ActivationTarget = Guid.Full;
+    }
+
+    public override void OnCollideObject(WorldObject target)
+    {
+        if (IsOpen)
         {
-            return LockHelper.Unlock(this, key, keyCode);
+            return;
         }
 
-        public override void SetLinkProperties(WorldObject wo)
+        // currently the only AI options appear to be 0 or 1,
+        // 1 meaning able to open doors?
+        var creature = target as Creature;
+        if (creature == null || creature.AiOptions == 0)
         {
-            wo.ActivationTarget = Guid.Full;
+            return;
         }
 
-        public override void OnCollideObject(WorldObject target)
-        {
-            if (IsOpen) return;
-
-            // currently the only AI options appear to be 0 or 1,
-            // 1 meaning able to open doors?
-            var creature = target as Creature;
-            if (creature == null || creature.AiOptions == 0)
-                return;
-
-            ActOnUse(target);
-        }
+        ActOnUse(target);
     }
 }

@@ -1,11 +1,10 @@
-namespace ACE.Server.Network.GameAction.Actions
+namespace ACE.Server.Network.GameAction.Actions;
+
+public static class GameActionRecallAllegianceHometown
 {
-    public static class GameActionRecallAllegianceHometown
+    [GameAction(GameActionType.RecallAllegianceHometown)]
+    public static void Handle(ClientMessage clientMessage, Session session)
     {
-        [GameAction(GameActionType.RecallAllegianceHometown)]
-        public static void Handle(ClientMessage clientMessage, Session session)
-        {
-            session.Player.HandleActionRecallAllegianceHometown();
-        }
+        session.Player.HandleActionRecallAllegianceHometown();
     }
 }

@@ -1,17 +1,16 @@
 using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.GameMessages.Messages
+namespace ACE.Server.Network.GameMessages.Messages;
+
+public class GameMessageSetState : GameMessage
 {
-    public class GameMessageSetState : GameMessage
+    public GameMessageSetState(WorldObject worldObject, PhysicsState state)
+        : base(GameMessageOpcode.SetState, GameMessageGroup.SmartboxQueue, 16)
     {
-        public GameMessageSetState(WorldObject worldObject, PhysicsState state)
-            : base(GameMessageOpcode.SetState, GameMessageGroup.SmartboxQueue, 16)
-        {
-            Writer.WriteGuid(worldObject.Guid);
-            Writer.Write((uint)state);
-            Writer.Write(worldObject.Sequences.GetCurrentSequence(Sequence.SequenceType.ObjectInstance));
-            Writer.Write(worldObject.Sequences.GetNextSequence(Sequence.SequenceType.ObjectState));
-        }
+        Writer.WriteGuid(worldObject.Guid);
+        Writer.Write((uint)state);
+        Writer.Write(worldObject.Sequences.GetCurrentSequence(Sequence.SequenceType.ObjectInstance));
+        Writer.Write(worldObject.Sequences.GetNextSequence(Sequence.SequenceType.ObjectState));
     }
 }

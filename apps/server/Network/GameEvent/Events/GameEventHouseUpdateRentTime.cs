@@ -1,17 +1,16 @@
 using System;
 
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+public class GameEventHouseUpdateRentTime : GameEventMessage
 {
-    public class GameEventHouseUpdateRentTime : GameEventMessage
+    public GameEventHouseUpdateRentTime(Session session)
+        : base(GameEventType.UpdateRentTime, GameMessageGroup.UIQueue, session, 8)
     {
-        public GameEventHouseUpdateRentTime(Session session)
-            : base(GameEventType.UpdateRentTime, GameMessageGroup.UIQueue, session, 8)
-        {
-            //Console.WriteLine("Sending 0x227 - House - UpdateRentTime");
+        //Console.WriteLine("Sending 0x227 - House - UpdateRentTime");
 
-            var rentTime = 0u;  // when the current maintenance period began (unix timestamp)
+        var rentTime = 0u; // when the current maintenance period began (unix timestamp)
 
-            Writer.Write(rentTime);
-        }
+        Writer.Write(rentTime);
     }
 }

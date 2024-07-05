@@ -1,13 +1,12 @@
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.GameMessages.Messages
+namespace ACE.Server.Network.GameMessages.Messages;
+
+public class GameMessageUpdateObject : GameMessage
 {
-    public class GameMessageUpdateObject : GameMessage
+    public GameMessageUpdateObject(WorldObject worldObject, bool adminvision = false, bool changenodraw = false)
+        : base(GameMessageOpcode.UpdateObject, GameMessageGroup.SmartboxQueue)
     {
-        public GameMessageUpdateObject(WorldObject worldObject, bool adminvision = false, bool changenodraw = false)
-            : base(GameMessageOpcode.UpdateObject, GameMessageGroup.SmartboxQueue)
-        {
-            worldObject.SerializeUpdateObject(Writer, adminvision, changenodraw);
-        }
+        worldObject.SerializeUpdateObject(Writer, adminvision, changenodraw);
     }
 }

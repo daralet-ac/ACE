@@ -16,247 +16,338 @@ using ACE.Server.Network.Packets;
 using Serilog;
 using Serilog.Events;
 
-namespace ACE.Server.Network.Handlers
+namespace ACE.Server.Network.Handlers;
+
+public static class AuthenticationHandler
 {
-    public static class AuthenticationHandler
+    /// <summary>
+    /// Seconds until an authentication request will timeout/expire.
+    /// </summary>
+    public const int DefaultAuthTimeout = 15;
+
+    private static readonly ILogger _log = Log.ForContext(typeof(AuthenticationHandler));
+
+    public static void HandleLoginRequest(ClientPacket packet, Session session)
     {
-        /// <summary>
-        /// Seconds until an authentication request will timeout/expire.
-        /// </summary>
-        public const int DefaultAuthTimeout = 15;
-
-        private static readonly ILogger _log = Log.ForContext(typeof(AuthenticationHandler));
-
-        public static void HandleLoginRequest(ClientPacket packet, Session session)
+        try
         {
-            try
-            {
-                PacketInboundLoginRequest loginRequest = new PacketInboundLoginRequest(packet);
+            var loginRequest = new PacketInboundLoginRequest(packet);
 
-                if (loginRequest.Account.Length > 50)
-                {
-                    NetworkManager.SendLoginRequestReject(session, CharacterError.AccountInvalid);
-                    session.Terminate(SessionTerminationReason.AccountInformationInvalid);
-                    return;
-                }
-
-                Task t = new Task(() => DoLogin(session, loginRequest));
-                t.Start();
-            }
-            catch (Exception ex)
+            if (loginRequest.Account.Length > 50)
             {
-                _log.Error(ex, "Received LoginRequest from {ClientEndpoint} that threw an exception.", session.EndPointC2S);
+                NetworkManager.SendLoginRequestReject(session, CharacterError.AccountInvalid);
+                session.Terminate(SessionTerminationReason.AccountInformationInvalid);
+                return;
             }
+
+            var t = new Task(() => DoLogin(session, loginRequest));
+            t.Start();
         }
-
-        private static void DoLogin(Session session, PacketInboundLoginRequest loginRequest)
+        catch (Exception ex)
         {
-            var account = DatabaseManager.Authentication.GetAccountByName(loginRequest.Account);
-
-            if (account == null)
-            {
-                if (loginRequest.NetAuthType == NetAuthType.AccountPassword && loginRequest.Password != "")
-                {
-                    if (ConfigManager.Config.Server.Accounts.AllowAutoAccountCreation)
-                    {
-                        // no account, dynamically create one
-                        if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                            _log.Information($"Auto creating account for: {loginRequest.Account}");
-
-                        _log.Debug("Auto creating account for: {Account}", loginRequest.Account);
-
-                        var accessLevel = (AccessLevel)ConfigManager.Config.Server.Accounts.DefaultAccessLevel;
-
-                        if (!System.Enum.IsDefined(typeof(AccessLevel), accessLevel))
-                            accessLevel = AccessLevel.Player;
-
-                        if (DatabaseManager.AutoPromoteNextAccountToAdmin)
-                        {
-                            accessLevel = AccessLevel.Admin;
-                            DatabaseManager.AutoPromoteNextAccountToAdmin = false;
-                            _log.Warning($"Automatically setting account AccessLevel to Admin for account \"{loginRequest.Account}\" because there are no admin accounts in the current database.");
-                        }
-
-                        account = DatabaseManager.Authentication.CreateAccount(loginRequest.Account.ToLower(), loginRequest.Password, accessLevel, session.EndPointC2S.Address);
-                    }
-                }
-            }
-
-            try
-            {
-                _log.Debug("new client connected: {Account}. setting session properties", loginRequest.Account);
-                AccountSelectCallback(account, session, loginRequest);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error in HandleLoginRequest trying to find the account.");
-                session.Terminate(SessionTerminationReason.AccountSelectCallbackException);
-            }
+            _log.Error(ex, "Received LoginRequest from {ClientEndpoint} that threw an exception.", session.EndPointC2S);
         }
+    }
 
+    private static void DoLogin(Session session, PacketInboundLoginRequest loginRequest)
+    {
+        var account = DatabaseManager.Authentication.GetAccountByName(loginRequest.Account);
 
-        private static void AccountSelectCallback(Account account, Session session, PacketInboundLoginRequest loginRequest)
+        if (account == null)
         {
-            _log.Verbose("ConnectRequest TS: {0}", Timers.PortalYearTicks);
-
-            if (session.Network.ConnectionData.ServerSeed == null || session.Network.ConnectionData.ClientSeed == null)
+            if (loginRequest.NetAuthType == NetAuthType.AccountPassword && loginRequest.Password != "")
             {
-                // these are null if ConnectionData.DiscardSeeds() is called because of some other error condition.
-                session.Terminate(SessionTerminationReason.BadHandshake, new GameMessageCharacterError(CharacterError.ServerCrash1));
-                return;
-            }
-
-            if (loginRequest.ClientVersion == null || !loginRequest.ClientVersion.Equals("1802"))
-            {
-                session.Terminate(SessionTerminationReason.ClientVersionIncorrect, new GameMessageBootAccount(" because your client is not the correct version for this server. Please visit http://play.emu.ac/ to update to latest client"));
-                return;
-            }
-
-            var connectRequest = new PacketOutboundConnectRequest(
-                Timers.PortalYearTicks,
-                session.Network.ConnectionData.ConnectionCookie,
-                session.Network.ClientId,
-                session.Network.ConnectionData.ServerSeed,
-                session.Network.ConnectionData.ClientSeed);
-
-            session.Network.ConnectionData.DiscardSeeds();
-
-            session.Network.EnqueueSend(connectRequest);
-
-            if (loginRequest.NetAuthType < NetAuthType.AccountPassword)
-            {
-                if (loginRequest.Account == "acservertracker:jj9h26hcsggc")
+                if (ConfigManager.Config.Server.Accounts.AllowAutoAccountCreation)
                 {
-                    //log.Info($"Incoming ping from a Thwarg-Launcher client... Sending Pong...");
-
-                    session.Terminate(SessionTerminationReason.PongSentClosingConnection, new GameMessageCharacterError(CharacterError.ServerCrash1));
-
-                    return;
-                }
-
-                if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                    _log.Information("client {loginRequest.Account} connected with no Password or GlsTicket included so booting", loginRequest.Account);
-                else
-                    _log.Debug("client {Account} connected with no Password or GlsTicket included so booting", loginRequest.Account);
-
-                session.Terminate(SessionTerminationReason.NotAuthorizedNoPasswordOrGlsTicketIncludedInLoginReq, new GameMessageCharacterError(CharacterError.AccountInvalid));
-
-                return;
-            }
-
-            if (account == null)
-            {
-                session.Terminate(SessionTerminationReason.NotAuthorizedAccountNotFound, new GameMessageCharacterError(CharacterError.AccountDoesntExist));
-                return;
-            }
-
-            if (!PropertyManager.GetBool("account_login_boots_in_use").Item)
-            {
-                if (NetworkManager.Find(account.AccountName) != null)
-                {
-                    session.Terminate(SessionTerminationReason.AccountInUse, new GameMessageCharacterError(CharacterError.Logon));
-                    return;
-                }
-            }
-
-            if (loginRequest.NetAuthType == NetAuthType.AccountPassword)
-            {
-                if (!account.PasswordMatches(loginRequest.Password))
-                {
+                    // no account, dynamically create one
                     if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                        _log.Information($"client {loginRequest.Account} connected with non matching password so booting");
-                    else
-                        _log.Debug("client {Account} connected with non matching password so booting", loginRequest.Account);
-
-                    session.Terminate(SessionTerminationReason.NotAuthorizedPasswordMismatch, new GameMessageBootAccount(" because the password entered for this account was not correct"));
-
-                    // TO-DO: temporary lockout of account preventing brute force password discovery
-                    // exponential duration of lockout for targeted account
-
-                    return;
-                }
-
-                if (PropertyManager.GetBool("account_login_boots_in_use").Item)
-                {
-                    var previouslyConnectedAccount = NetworkManager.Find(account.AccountName);
-
-                    if (previouslyConnectedAccount != null)
                     {
-                        // Boot the existing account
-                        previouslyConnectedAccount.Terminate(SessionTerminationReason.AccountLoggedIn, new GameMessageCharacterError(CharacterError.Logon));
-
-                        // We still can't let the new account in. They'll need to retry after the previous account has been successfully booted.
-                        session.Terminate(SessionTerminationReason.AccountInUse, new GameMessageCharacterError(CharacterError.Logon));
-                        return;
+                        _log.Information($"Auto creating account for: {loginRequest.Account}");
                     }
+
+                    _log.Debug("Auto creating account for: {Account}", loginRequest.Account);
+
+                    var accessLevel = (AccessLevel)ConfigManager.Config.Server.Accounts.DefaultAccessLevel;
+
+                    if (!System.Enum.IsDefined(typeof(AccessLevel), accessLevel))
+                    {
+                        accessLevel = AccessLevel.Player;
+                    }
+
+                    if (DatabaseManager.AutoPromoteNextAccountToAdmin)
+                    {
+                        accessLevel = AccessLevel.Admin;
+                        DatabaseManager.AutoPromoteNextAccountToAdmin = false;
+                        _log.Warning(
+                            $"Automatically setting account AccessLevel to Admin for account \"{loginRequest.Account}\" because there are no admin accounts in the current database."
+                        );
+                    }
+
+                    account = DatabaseManager.Authentication.CreateAccount(
+                        loginRequest.Account.ToLower(),
+                        loginRequest.Password,
+                        accessLevel,
+                        session.EndPointC2S.Address
+                    );
                 }
-
-                if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                    _log.Information($"client {loginRequest.Account} connected with verified password");
-                else
-                    _log.Debug("client {Account} connected with verified password", loginRequest.Account);
             }
-            else if (loginRequest.NetAuthType == NetAuthType.GlsTicket)
-            {
-                if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
-                    _log.Information($"client {loginRequest.Account} connected with GlsTicket which is not implemented yet so booting");
-                else
-                    _log.Debug("client {Account} connected with GlsTicket which is not implemented yet so booting", loginRequest.Account);
+        }
 
-                session.Terminate(SessionTerminationReason.NotAuthorizedGlsTicketNotImplementedToProcLoginReq, new GameMessageCharacterError(CharacterError.AccountInvalid));
+        try
+        {
+            _log.Debug("new client connected: {Account}. setting session properties", loginRequest.Account);
+            AccountSelectCallback(account, session, loginRequest);
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "Error in HandleLoginRequest trying to find the account.");
+            session.Terminate(SessionTerminationReason.AccountSelectCallbackException);
+        }
+    }
+
+    private static void AccountSelectCallback(Account account, Session session, PacketInboundLoginRequest loginRequest)
+    {
+        _log.Verbose("ConnectRequest TS: {0}", Timers.PortalYearTicks);
+
+        if (session.Network.ConnectionData.ServerSeed == null || session.Network.ConnectionData.ClientSeed == null)
+        {
+            // these are null if ConnectionData.DiscardSeeds() is called because of some other error condition.
+            session.Terminate(
+                SessionTerminationReason.BadHandshake,
+                new GameMessageCharacterError(CharacterError.ServerCrash1)
+            );
+            return;
+        }
+
+        if (loginRequest.ClientVersion == null || !loginRequest.ClientVersion.Equals("1802"))
+        {
+            session.Terminate(
+                SessionTerminationReason.ClientVersionIncorrect,
+                new GameMessageBootAccount(
+                    " because your client is not the correct version for this server. Please visit http://play.emu.ac/ to update to latest client"
+                )
+            );
+            return;
+        }
+
+        var connectRequest = new PacketOutboundConnectRequest(
+            Timers.PortalYearTicks,
+            session.Network.ConnectionData.ConnectionCookie,
+            session.Network.ClientId,
+            session.Network.ConnectionData.ServerSeed,
+            session.Network.ConnectionData.ClientSeed
+        );
+
+        session.Network.ConnectionData.DiscardSeeds();
+
+        session.Network.EnqueueSend(connectRequest);
+
+        if (loginRequest.NetAuthType < NetAuthType.AccountPassword)
+        {
+            if (loginRequest.Account == "acservertracker:jj9h26hcsggc")
+            {
+                //log.Info($"Incoming ping from a Thwarg-Launcher client... Sending Pong...");
+
+                session.Terminate(
+                    SessionTerminationReason.PongSentClosingConnection,
+                    new GameMessageCharacterError(CharacterError.ServerCrash1)
+                );
 
                 return;
             }
 
-            if (account.BanExpireTime.HasValue)
+            if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
             {
-                var now = DateTime.UtcNow;
-                if (now < account.BanExpireTime.Value)
+                _log.Information(
+                    "client {loginRequest.Account} connected with no Password or GlsTicket included so booting",
+                    loginRequest.Account
+                );
+            }
+            else
+            {
+                _log.Debug(
+                    "client {Account} connected with no Password or GlsTicket included so booting",
+                    loginRequest.Account
+                );
+            }
+
+            session.Terminate(
+                SessionTerminationReason.NotAuthorizedNoPasswordOrGlsTicketIncludedInLoginReq,
+                new GameMessageCharacterError(CharacterError.AccountInvalid)
+            );
+
+            return;
+        }
+
+        if (account == null)
+        {
+            session.Terminate(
+                SessionTerminationReason.NotAuthorizedAccountNotFound,
+                new GameMessageCharacterError(CharacterError.AccountDoesntExist)
+            );
+            return;
+        }
+
+        if (!PropertyManager.GetBool("account_login_boots_in_use").Item)
+        {
+            if (NetworkManager.Find(account.AccountName) != null)
+            {
+                session.Terminate(
+                    SessionTerminationReason.AccountInUse,
+                    new GameMessageCharacterError(CharacterError.Logon)
+                );
+                return;
+            }
+        }
+
+        if (loginRequest.NetAuthType == NetAuthType.AccountPassword)
+        {
+            if (!account.PasswordMatches(loginRequest.Password))
+            {
+                if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
                 {
-                    var reason = account.BanReason;
-                    session.Terminate(SessionTerminationReason.AccountBanned, new GameMessageAccountBanned(account.BanExpireTime.Value, $"{(reason != null ? $" - {reason}" : null)}"), null, reason);
-                    return;
+                    _log.Information($"client {loginRequest.Account} connected with non matching password so booting");
                 }
                 else
                 {
-                    account.UnBan();
+                    _log.Debug(
+                        "client {Account} connected with non matching password so booting",
+                        loginRequest.Account
+                    );
+                }
+
+                session.Terminate(
+                    SessionTerminationReason.NotAuthorizedPasswordMismatch,
+                    new GameMessageBootAccount(" because the password entered for this account was not correct")
+                );
+
+                // TO-DO: temporary lockout of account preventing brute force password discovery
+                // exponential duration of lockout for targeted account
+
+                return;
+            }
+
+            if (PropertyManager.GetBool("account_login_boots_in_use").Item)
+            {
+                var previouslyConnectedAccount = NetworkManager.Find(account.AccountName);
+
+                if (previouslyConnectedAccount != null)
+                {
+                    // Boot the existing account
+                    previouslyConnectedAccount.Terminate(
+                        SessionTerminationReason.AccountLoggedIn,
+                        new GameMessageCharacterError(CharacterError.Logon)
+                    );
+
+                    // We still can't let the new account in. They'll need to retry after the previous account has been successfully booted.
+                    session.Terminate(
+                        SessionTerminationReason.AccountInUse,
+                        new GameMessageCharacterError(CharacterError.Logon)
+                    );
+                    return;
                 }
             }
 
-            account.UpdateLastLogin(session.EndPointC2S.Address);
+            if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
+            {
+                _log.Information($"client {loginRequest.Account} connected with verified password");
+            }
+            else
+            {
+                _log.Debug("client {Account} connected with verified password", loginRequest.Account);
+            }
+        }
+        else if (loginRequest.NetAuthType == NetAuthType.GlsTicket)
+        {
+            if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
+            {
+                _log.Information(
+                    $"client {loginRequest.Account} connected with GlsTicket which is not implemented yet so booting"
+                );
+            }
+            else
+            {
+                _log.Debug(
+                    "client {Account} connected with GlsTicket which is not implemented yet so booting",
+                    loginRequest.Account
+                );
+            }
 
-            session.SetAccount(account.AccountId, account.AccountName, (AccessLevel)account.AccessLevel);
-            session.State = SessionState.AuthConnectResponse;
+            session.Terminate(
+                SessionTerminationReason.NotAuthorizedGlsTicketNotImplementedToProcLoginReq,
+                new GameMessageCharacterError(CharacterError.AccountInvalid)
+            );
+
+            return;
         }
 
-        public static void HandleConnectResponse(Session session)
+        if (account.BanExpireTime.HasValue)
         {
-            if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open || session.AccessLevel > AccessLevel.Player)
+            var now = DateTime.UtcNow;
+            if (now < account.BanExpireTime.Value)
             {
-                DatabaseManager.Shard.GetCharacters(session.AccountId, false, result =>
+                var reason = account.BanReason;
+                session.Terminate(
+                    SessionTerminationReason.AccountBanned,
+                    new GameMessageAccountBanned(
+                        account.BanExpireTime.Value,
+                        $"{(reason != null ? $" - {reason}" : null)}"
+                    ),
+                    null,
+                    reason
+                );
+                return;
+            }
+            else
+            {
+                account.UnBan();
+            }
+        }
+
+        account.UpdateLastLogin(session.EndPointC2S.Address);
+
+        session.SetAccount(account.AccountId, account.AccountName, (AccessLevel)account.AccessLevel);
+        session.State = SessionState.AuthConnectResponse;
+    }
+
+    public static void HandleConnectResponse(Session session)
+    {
+        if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open || session.AccessLevel > AccessLevel.Player)
+        {
+            DatabaseManager.Shard.GetCharacters(
+                session.AccountId,
+                false,
+                result =>
                 {
                     // If you want to create default characters for accounts that have none, here is where you would do it.
 
                     SendConnectResponse(session, result);
-                });
-            }
-            else
-            {
-                session.Terminate(SessionTerminationReason.WorldClosed, new GameMessageCharacterError(CharacterError.LogonServerFull));
-            }
+                }
+            );
         }
-
-        private static void SendConnectResponse(Session session, List<Character> characters)
+        else
         {
-            characters = characters.OrderByDescending(o => o.LastLoginTimestamp).ToList(); // The client highlights the first character in the list. We sort so the first character sent is the one we last logged in
-            session.UpdateCharacters(characters);
-
-            GameMessageCharacterList characterListMessage = new GameMessageCharacterList(session.Characters, session);
-            GameMessageServerName serverNameMessage = new GameMessageServerName(ConfigManager.Config.Server.WorldName, PlayerManager.GetOnlineCount(), (int)ConfigManager.Config.Server.Network.MaximumAllowedSessions);
-            GameMessageDDDInterrogation dddInterrogation = new GameMessageDDDInterrogation();
-
-            session.Network.EnqueueSend(characterListMessage, serverNameMessage);
-            session.Network.EnqueueSend(dddInterrogation);
+            session.Terminate(
+                SessionTerminationReason.WorldClosed,
+                new GameMessageCharacterError(CharacterError.LogonServerFull)
+            );
         }
+    }
+
+    private static void SendConnectResponse(Session session, List<Character> characters)
+    {
+        characters = characters.OrderByDescending(o => o.LastLoginTimestamp).ToList(); // The client highlights the first character in the list. We sort so the first character sent is the one we last logged in
+        session.UpdateCharacters(characters);
+
+        var characterListMessage = new GameMessageCharacterList(session.Characters, session);
+        var serverNameMessage = new GameMessageServerName(
+            ConfigManager.Config.Server.WorldName,
+            PlayerManager.GetOnlineCount(),
+            (int)ConfigManager.Config.Server.Network.MaximumAllowedSessions
+        );
+        var dddInterrogation = new GameMessageDDDInterrogation();
+
+        session.Network.EnqueueSend(characterListMessage, serverNameMessage);
+        session.Network.EnqueueSend(dddInterrogation);
     }
 }

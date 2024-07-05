@@ -1,13 +1,13 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using ACE.Database;
 using ACE.Database.SQLFormatters.World;
-using Discord.Interactions;
-using System.IO;
-using System;
-using System.Threading.Tasks;
 using ACE.Entity;
 using Discord;
-using System.Globalization;
-using System.Text.RegularExpressions;
+using Discord.Interactions;
 
 namespace ACE.Server.Discord.Modules;
 
@@ -59,8 +59,12 @@ public class ExportModule : InteractionModuleBase<SocketInteractionContext>
     {
         await DeferAsync(ephemeral);
 
-        var parseSuccessful = ushort.TryParse(Regex.Match(landblock, @"[0-9A-F]{4}", RegexOptions.IgnoreCase).Value, NumberStyles.HexNumber,
-            CultureInfo.InvariantCulture, out var landblockId);
+        var parseSuccessful = ushort.TryParse(
+            Regex.Match(landblock, @"[0-9A-F]{4}", RegexOptions.IgnoreCase).Value,
+            NumberStyles.HexNumber,
+            CultureInfo.InvariantCulture,
+            out var landblockId
+        );
         if (!parseSuccessful)
         {
             await FollowupAsync($"Could not parse landblock with id: {landblock}");

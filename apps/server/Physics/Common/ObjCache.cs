@@ -1,22 +1,21 @@
 using System.Collections.Generic;
 using ACE.Server.Physics.Animation;
 
-namespace ACE.Server.Physics.Common
+namespace ACE.Server.Physics.Common;
+
+public static class ObjCache
 {
-    public static class ObjCache
+    public static Dictionary<uint, MotionTable> MotionTables;
+
+    static ObjCache()
     {
-        public static Dictionary<uint, MotionTable> MotionTables;
+        MotionTables = new Dictionary<uint, MotionTable>();
+    }
 
-        static ObjCache()
-        {
-            MotionTables = new Dictionary<uint, MotionTable>();
-        }
-
-        public static MotionTable GetMotionTable(uint id)
-        {
-            MotionTable mtable = null;
-            MotionTables.TryGetValue(id, out mtable);
-            return mtable;
-        }
+    public static MotionTable GetMotionTable(uint id)
+    {
+        MotionTable mtable = null;
+        MotionTables.TryGetValue(id, out mtable);
+        return mtable;
     }
 }

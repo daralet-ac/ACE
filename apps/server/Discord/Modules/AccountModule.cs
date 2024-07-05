@@ -41,7 +41,10 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
         allowList[^1] = ip;
         ConfigManager.Config.Server.Network.AllowUnlimitedSessionsFromIPAddresses = allowList;
 
-        await RespondAsync($"Successfully added `{ip}` to the server allow list. **Reminder:** This is temporary and should be added to the config", ephemeral: true);
+        await RespondAsync(
+            $"Successfully added `{ip}` to the server allow list. **Reminder:** This is temporary and should be added to the config",
+            ephemeral: true
+        );
     }
 
     [RequireRole("Admin")]
@@ -68,8 +71,10 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
         await RespondAsync(message, ephemeral: ephemeral);
     }
 
-    private string GeneratePlayersOnlineWithTableMessage(string totalsLine,
-        IList<(string Name, string AccountName)> sortedOnlinePlayers)
+    private string GeneratePlayersOnlineWithTableMessage(
+        string totalsLine,
+        IList<(string Name, string AccountName)> sortedOnlinePlayers
+    )
     {
         var playerAccountTable = GeneratePlayerAccountTable(sortedOnlinePlayers);
         return $"{totalsLine}\n```{playerAccountTable}```";
@@ -117,7 +122,9 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
 
         var header = $"| {"Player".PadRight(longestNameLength)} | {"Account".PadRight(longestAccountLength)} |";
         var divider = $"|{"".PadRight(longestNameLength + 2, '-')}|{"".PadRight(longestAccountLength + 2, '-')}|";
-        var playerTable = playerAccountTuples.Select(x => $"| {x.Name.PadRight(longestNameLength)} | {x.AccountName.PadRight(longestAccountLength)} |\n").ToList();
+        var playerTable = playerAccountTuples
+            .Select(x => $"| {x.Name.PadRight(longestNameLength)} | {x.AccountName.PadRight(longestAccountLength)} |\n")
+            .ToList();
         var concatedPlayerTable = string.Join("", playerTable);
 
         return $"{header}\n{divider}\n{concatedPlayerTable}";

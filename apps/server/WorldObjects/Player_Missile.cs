@@ -12,227 +12,253 @@ using Lifestoned.DataModel.Shared;
 using Serilog;
 using MotionCommand = ACE.Entity.Enum.MotionCommand;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+partial class Player
 {
-    partial class Player
+    private float _accuracyLevel;
+
+    public float AccuracyLevel
     {
-        private float _accuracyLevel;
+        get => IsExhausted ? 0.0f : _accuracyLevel;
+        set => _accuracyLevel = value;
+    }
 
-        public float AccuracyLevel
+    public Creature MissileTarget;
+
+    public PowerAccuracy GetAccuracyRange()
+    {
+        if (AccuracyLevel < 0.33f)
         {
-            get => IsExhausted ? 0.0f : _accuracyLevel;
-            set => _accuracyLevel = value;
+            return PowerAccuracy.Low;
         }
-
-        public Creature MissileTarget;
-
-        public PowerAccuracy GetAccuracyRange()
+        else if (AccuracyLevel < 0.66f)
         {
-            if (AccuracyLevel < 0.33f)
-                return PowerAccuracy.Low;
-            else if (AccuracyLevel < 0.66f)
-                return PowerAccuracy.Medium;
+            return PowerAccuracy.Medium;
+        }
+        else
+        {
+            return PowerAccuracy.High;
+        }
+    }
+
+    /// <summary>
+    /// Called by network packet handler 0xA - GameActionTargetedMissileAttack
+    /// </summary>
+    /// <param name="targetGuid">The target guid</param>
+    /// <param name="attackHeight">The attack height 1-3</param>
+    /// <param name="accuracyLevel">The 0-1 accuracy bar level</param>
+    public void HandleActionTargetedMissileAttack(uint targetGuid, uint attackHeight, float accuracyLevel)
+    {
+        //log.Info($"-");
+
+        if (CombatMode != CombatMode.Missile)
+        {
+            _log.Error(
+                $"{Name}.HandleActionTargetedMissileAttack({targetGuid:X8}, {attackHeight}, {accuracyLevel}) - CombatMode mismatch {CombatMode}, LastCombatMode: {LastCombatMode}"
+            );
+
+            if (LastCombatMode == CombatMode.Missile)
+            {
+                CombatMode = CombatMode.Missile;
+            }
             else
-                return PowerAccuracy.High;
+            {
+                OnAttackDone();
+                return;
+            }
         }
 
-        /// <summary>
-        /// Called by network packet handler 0xA - GameActionTargetedMissileAttack
-        /// </summary>
-        /// <param name="targetGuid">The target guid</param>
-        /// <param name="attackHeight">The attack height 1-3</param>
-        /// <param name="accuracyLevel">The 0-1 accuracy bar level</param>
-        public void HandleActionTargetedMissileAttack(uint targetGuid, uint attackHeight, float accuracyLevel)
+        if (IsBusy || Teleporting || suicideInProgress)
         {
-            //log.Info($"-");
+            SendWeenieError(WeenieError.YoureTooBusy);
+            OnAttackDone();
+            return;
+        }
 
-            if (CombatMode != CombatMode.Missile)
-            {
-                _log.Error($"{Name}.HandleActionTargetedMissileAttack({targetGuid:X8}, {attackHeight}, {accuracyLevel}) - CombatMode mismatch {CombatMode}, LastCombatMode: {LastCombatMode}");
+        if (IsJumping)
+        {
+            SendWeenieError(WeenieError.YouCantDoThatWhileInTheAir);
+            OnAttackDone();
+            return;
+        }
 
-                if (LastCombatMode == CombatMode.Missile)
-                    CombatMode = CombatMode.Missile;
-                else
-                {
-                    OnAttackDone();
-                    return;
-                }
-            }
+        if (PKLogout)
+        {
+            SendWeenieError(WeenieError.YouHaveBeenInPKBattleTooRecently);
+            OnAttackDone();
+            return;
+        }
 
-            if (IsBusy || Teleporting || suicideInProgress)
-            {
-                SendWeenieError(WeenieError.YoureTooBusy);
-                OnAttackDone();
-                return;
-            }
+        var weapon = GetEquippedMissileWeapon();
+        var ammo = GetEquippedAmmo();
 
-            if (IsJumping)
-            {
-                SendWeenieError(WeenieError.YouCantDoThatWhileInTheAir);
-                OnAttackDone();
-                return;
-            }
+        // sanity check
+        accuracyLevel = Math.Clamp(accuracyLevel, 0.0f, 1.0f);
 
-            if (PKLogout)
-            {
-                SendWeenieError(WeenieError.YouHaveBeenInPKBattleTooRecently);
-                OnAttackDone();
-                return;
-            }
+        if (weapon == null || weapon.IsAmmoLauncher && ammo == null)
+        {
+            OnAttackDone();
+            return;
+        }
 
-            var weapon = GetEquippedMissileWeapon();
-            var ammo = GetEquippedAmmo();
+        AttackHeight = (AttackHeight)attackHeight;
+        AttackQueue.Add(accuracyLevel);
 
-            // sanity check
-            accuracyLevel = Math.Clamp(accuracyLevel, 0.0f, 1.0f);
+        if (MissileTarget == null)
+        {
+            AccuracyLevel = accuracyLevel; // verify
+        }
 
-            if (weapon == null || weapon.IsAmmoLauncher && ammo == null)
-            {
-                OnAttackDone();
-                return;
-            }
+        // get world object of target guid
+        var target = CurrentLandblock?.GetObject(targetGuid) as Creature;
+        if (target == null || target.Teleporting)
+        {
+            //log.Warn($"{Name}.HandleActionTargetedMissileAttack({targetGuid:X8}, {AttackHeight}, {accuracyLevel}) - couldn't find creature target guid");
+            OnAttackDone();
+            return;
+        }
 
-            AttackHeight = (AttackHeight)attackHeight;
-            AttackQueue.Add(accuracyLevel);
+        if (Attacking || MissileTarget != null && MissileTarget.IsAlive)
+        {
+            return;
+        }
 
-            if (MissileTarget == null)
-                AccuracyLevel = accuracyLevel;  // verify
+        if (!CanDamage(target))
+        {
+            SendTransientError($"You cannot attack {target.Name}");
+            OnAttackDone();
+            return;
+        }
 
-            // get world object of target guid
-            var target = CurrentLandblock?.GetObject(targetGuid) as Creature;
-            if (target == null || target.Teleporting)
-            {
-                //log.Warn($"{Name}.HandleActionTargetedMissileAttack({targetGuid:X8}, {AttackHeight}, {accuracyLevel}) - couldn't find creature target guid");
-                OnAttackDone();
-                return;
-            }
+        //log.Info($"{Name}.HandleActionTargetedMissileAttack({targetGuid:X8}, {attackHeight}, {accuracyLevel})");
 
-            if (Attacking || MissileTarget != null && MissileTarget.IsAlive)
-                return;
+        AttackTarget = target;
+        MissileTarget = target;
 
-            if (!CanDamage(target))
-            {
-                SendTransientError($"You cannot attack {target.Name}");
-                OnAttackDone();
-                return;
-            }
+        var attackSequence = ++AttackSequence;
 
-            //log.Info($"{Name}.HandleActionTargetedMissileAttack({targetGuid:X8}, {attackHeight}, {accuracyLevel})");
+        // record stance here and pass it along
+        // accounts for odd client behavior with swapping bows during repeat attacks
+        var stance = CurrentMotionState.Stance;
 
-            AttackTarget = target;
-            MissileTarget = target;
+        // turn if required
+        var rotateTime = Rotate(target);
+        var actionChain = new ActionChain();
 
-            var attackSequence = ++AttackSequence;
+        var delayTime = rotateTime;
+        if (NextRefillTime > DateTime.UtcNow.AddSeconds(delayTime))
+        {
+            delayTime = (float)(NextRefillTime - DateTime.UtcNow).TotalSeconds;
+        }
 
-            // record stance here and pass it along
-            // accounts for odd client behavior with swapping bows during repeat attacks
-            var stance = CurrentMotionState.Stance;
+        actionChain.AddDelaySeconds(delayTime);
 
-            // turn if required
+        // do missile attack
+        actionChain.AddAction(this, () => LaunchMissile(target, attackSequence, stance));
+        actionChain.EnqueueChain();
+    }
+
+    /// <summary>
+    /// Launches a missile attack from player to target
+    /// </summary>
+    public void LaunchMissile(WorldObject target, int attackSequence, MotionStance stance, bool subsequent = false)
+    {
+        if (AttackSequence != attackSequence)
+        {
+            return;
+        }
+
+        var weapon = GetEquippedMissileWeapon();
+        if (weapon == null || CombatMode == CombatMode.NonCombat)
+        {
+            OnAttackDone();
+            return;
+        }
+
+        var ammo = weapon.IsAmmoLauncher ? GetEquippedAmmo() : weapon;
+        if (ammo == null)
+        {
+            OnAttackDone();
+            return;
+        }
+
+        var launcher = GetEquippedMissileLauncher();
+
+        var creature = target as Creature;
+        if (!IsAlive || IsBusy || MissileTarget == null || creature == null || !creature.IsAlive || suicideInProgress)
+        {
+            OnAttackDone();
+            return;
+        }
+
+        if (!TargetInRange(target))
+        {
+            // this must also be sent to actually display the transient message
+            SendWeenieError(WeenieError.MissileOutOfRange);
+
+            // this prevents the accuracy bar from refilling when 'repeat attacks' is enabled
+            OnAttackDone();
+
+            return;
+        }
+
+        var actionChain = new ActionChain();
+
+        if (subsequent && !IsFacing(target))
+        {
             var rotateTime = Rotate(target);
-            var actionChain = new ActionChain();
-
-            var delayTime = rotateTime;
-            if (NextRefillTime > DateTime.UtcNow.AddSeconds(delayTime))
-                delayTime = (float)(NextRefillTime - DateTime.UtcNow).TotalSeconds;
-
-            actionChain.AddDelaySeconds(delayTime);
-
-            // do missile attack
-            actionChain.AddAction(this, () => LaunchMissile(target, attackSequence, stance));
-            actionChain.EnqueueChain();
+            actionChain.AddDelaySeconds(rotateTime);
         }
 
-        /// <summary>
-        /// Launches a missile attack from player to target
-        /// </summary>
-        public void LaunchMissile(WorldObject target, int attackSequence, MotionStance stance, bool subsequent = false)
+        // launch animation
+        // point of no return beyond this point -- cannot be cancelled
+        actionChain.AddAction(this, () => Attacking = true);
+
+        if (subsequent)
         {
-            if (AttackSequence != attackSequence)
-                return;
+            // client shows hourglass, until attack done is received
+            // retail only did this for subsequent attacks w/ repeat attacks on
+            Session.Network.EnqueueSend(new GameEventCombatCommenceAttack(Session));
+        }
 
-            var weapon = GetEquippedMissileWeapon();
-            if (weapon == null || CombatMode == CombatMode.NonCombat)
-            {
-                OnAttackDone();
-                return;
-            }
+        var projectileSpeed = GetProjectileSpeed();
 
-            var ammo = weapon.IsAmmoLauncher ? GetEquippedAmmo() : weapon;
-            if (ammo == null)
-            {
-                OnAttackDone();
-                return;
-            }
+        // get z-angle for aim motion
+        var aimVelocity = GetAimVelocity(target, projectileSpeed);
 
-            var launcher = GetEquippedMissileLauncher();
+        var aimLevel = GetAimLevel(aimVelocity);
 
-            var creature = target as Creature;
-            if (!IsAlive || IsBusy || MissileTarget == null || creature == null || !creature.IsAlive || suicideInProgress)
-            {
-                OnAttackDone();
-                return;
-            }
+        // calculate projectile spawn pos and velocity
+        var localOrigin = GetProjectileSpawnOrigin(ammo.WeenieClassId, aimLevel);
 
-            if (!TargetInRange(target))
-            {
-                // this must also be sent to actually display the transient message
-                SendWeenieError(WeenieError.MissileOutOfRange);
+        var velocity = CalculateProjectileVelocity(
+            localOrigin,
+            target,
+            projectileSpeed,
+            out var origin,
+            out var orientation
+        );
 
-                // this prevents the accuracy bar from refilling when 'repeat attacks' is enabled
-                OnAttackDone();
+        //Console.WriteLine($"Velocity: {velocity}");
 
-                return;
-            }
+        if (velocity == Vector3.Zero)
+        {
+            // pre-check succeeded, but actual velocity calculation failed
+            SendWeenieError(WeenieError.MissileOutOfRange);
 
-            var actionChain = new ActionChain();
+            // this prevents the accuracy bar from refilling when 'repeat attacks' is enabled
+            Attacking = false;
+            OnAttackDone();
+            return;
+        }
 
-            if (subsequent && !IsFacing(target))
-            {
-                var rotateTime = Rotate(target);
-                actionChain.AddDelaySeconds(rotateTime);
-            }
+        var launchTime = EnqueueMotionPersist(actionChain, aimLevel);
 
-            // launch animation
-            // point of no return beyond this point -- cannot be cancelled
-            actionChain.AddAction(this, () => Attacking = true);
-
-            if (subsequent)
-            {
-                // client shows hourglass, until attack done is received
-                // retail only did this for subsequent attacks w/ repeat attacks on
-                Session.Network.EnqueueSend(new GameEventCombatCommenceAttack(Session));
-            }
-
-            var projectileSpeed = GetProjectileSpeed();
-
-            // get z-angle for aim motion
-            var aimVelocity = GetAimVelocity(target, projectileSpeed);
-
-            var aimLevel = GetAimLevel(aimVelocity);
-
-            // calculate projectile spawn pos and velocity
-            var localOrigin = GetProjectileSpawnOrigin(ammo.WeenieClassId, aimLevel);
-
-            var velocity = CalculateProjectileVelocity(localOrigin, target, projectileSpeed, out Vector3 origin, out Quaternion orientation);
-
-            //Console.WriteLine($"Velocity: {velocity}");
-
-            if (velocity == Vector3.Zero)
-            {
-                // pre-check succeeded, but actual velocity calculation failed
-                SendWeenieError(WeenieError.MissileOutOfRange);
-
-                // this prevents the accuracy bar from refilling when 'repeat attacks' is enabled
-                Attacking = false;
-                OnAttackDone();
-                return;
-            }
-
-            var launchTime = EnqueueMotionPersist(actionChain, aimLevel);
-
-            // launch projectile
-            actionChain.AddAction(this, () =>
+        // launch projectile
+        actionChain.AddAction(
+            this,
+            () =>
             {
                 // handle self-procs
                 TryProcEquippedItems(this, this, true, weapon);
@@ -251,14 +277,33 @@ namespace ACE.Server.WorldObjects
                 // Check for missile cleaves
                 var numCleaves = 0;
 
-                if (EquippedCombatAbility == CombatAbility.Multishot && LastMultishotActivated < Time.GetUnixTime() - MultishotActivatedDuration)
+                if (
+                    EquippedCombatAbility == CombatAbility.Multishot
+                    && LastMultishotActivated < Time.GetUnixTime() - MultishotActivatedDuration
+                )
+                {
                     numCleaves = 1;
-                if (EquippedCombatAbility == CombatAbility.Multishot && LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration)
+                }
+
+                if (
+                    EquippedCombatAbility == CombatAbility.Multishot
+                    && LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration
+                )
+                {
                     numCleaves = 2;
+                }
                 // JEWEL - Imperial Topaz - Bonus cleave chance
-                if (this.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0 && launcher.W_DamageType == ACE.Entity.Enum.DamageType.Slash && ammo.W_DamageType == ACE.Entity.Enum.DamageType.Slash)
+                if (
+                    this.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0
+                    && launcher.W_DamageType == ACE.Entity.Enum.DamageType.Slash
+                    && ammo.W_DamageType == ACE.Entity.Enum.DamageType.Slash
+                )
+                {
                     if (GetEquippedItemsRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 200))
+                    {
                         numCleaves += 1;
+                    }
+                }
 
                 var cleaveTargets = creature.GetNearbyMonsters(10);
                 var cleaveCount = 0;
@@ -266,9 +311,14 @@ namespace ACE.Server.WorldObjects
                 foreach (var cleave in cleaveTargets)
                 {
                     if (cleaveCount == numCleaves)
+                    {
                         break;
+                    }
+
                     if (cleave.Translucency == 1 || cleave.Visibility == true)
+                    {
                         continue;
+                    }
 
                     var ammoCheck = weapon.IsAmmoLauncher ? GetEquippedAmmo() : weapon;
                     if (ammoCheck == null)
@@ -278,10 +328,12 @@ namespace ACE.Server.WorldObjects
                     }
 
                     var angle = GetAngle(cleave);
-                    bool angleWrong = false;
+                    var angleWrong = false;
 
                     if (Math.Abs(angle) > CleaveAngle / 2.0f)
+                    {
                         angleWrong = true;
+                    }
 
                     if (!angleWrong)
                     {
@@ -291,70 +343,111 @@ namespace ACE.Server.WorldObjects
 
                         var newlocalOrigin = GetProjectileSpawnOrigin(ammo.WeenieClassId, newaimLevel);
 
-                        var newvelocity = CalculateProjectileVelocity(newlocalOrigin, cleave, projectileSpeed, out Vector3 neworigin, out Quaternion neworientation);
+                        var newvelocity = CalculateProjectileVelocity(
+                            newlocalOrigin,
+                            cleave,
+                            projectileSpeed,
+                            out var neworigin,
+                            out var neworientation
+                        );
 
-                        var bonusProjectile = LaunchProjectile(launcher, ammo, cleave, neworigin, neworientation, newvelocity);
+                        var bonusProjectile = LaunchProjectile(
+                            launcher,
+                            ammo,
+                            cleave,
+                            neworigin,
+                            neworientation,
+                            newvelocity
+                        );
 
                         UpdateAmmoAfterLaunch(ammo);
 
                         cleaveCount++;
                     }
                 }
+            }
+        );
 
-            });
-
-            // ammo remaining?
-            if (!ammo.UnlimitedUse && (ammo.StackSize == null || ammo.StackSize <= 1))
-            {
-                actionChain.AddAction(this, () =>
+        // ammo remaining?
+        if (!ammo.UnlimitedUse && (ammo.StackSize == null || ammo.StackSize <= 1))
+        {
+            actionChain.AddAction(
+                this,
+                () =>
                 {
-                    Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "You are out of ammunition!"));
+                    Session.Network.EnqueueSend(
+                        new GameEventCommunicationTransientString(Session, "You are out of ammunition!")
+                    );
                     SetCombatMode(CombatMode.NonCombat);
                     Attacking = false;
                     OnAttackDone();
-                });
+                }
+            );
 
-                actionChain.EnqueueChain();
-                return;
-            }
+            actionChain.EnqueueChain();
+            return;
+        }
 
-            // reload animation
-            var animSpeed = GetAnimSpeed(target as Creature);
-            var reloadTime = EnqueueMotionPersist(actionChain, stance, MotionCommand.Reload, animSpeed);
+        // reload animation
+        var animSpeed = GetAnimSpeed(target as Creature);
+        var reloadTime = EnqueueMotionPersist(actionChain, stance, MotionCommand.Reload, animSpeed);
 
-            // reset for next projectile
-            EnqueueMotionPersist(actionChain, stance, MotionCommand.Ready);
-            var linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
-            //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
+        // reset for next projectile
+        EnqueueMotionPersist(actionChain, stance, MotionCommand.Ready);
+        var linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
+        //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
 
-            LastAttackAnimationLength = launchTime + reloadTime + linkTime;
-            //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}");
+        LastAttackAnimationLength = launchTime + reloadTime + linkTime;
+        //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}");
 
-            var staminaCost = GetAttackStamina(GetAccuracyRange(), (float)LastAttackAnimationLength, weapon);
-            UpdateVitalDelta(Stamina, -staminaCost);
+        var staminaCost = GetAttackStamina(GetAccuracyRange(), (float)LastAttackAnimationLength, weapon);
+        UpdateVitalDelta(Stamina, -staminaCost);
 
-            var combatAbility = CombatAbility.None;
-            var combatFocus = GetEquippedCombatFocus();
-            if (combatFocus != null)
-                combatAbility = combatFocus.GetCombatAbility();
+        var combatAbility = CombatAbility.None;
+        var combatFocus = GetEquippedCombatFocus();
+        if (combatFocus != null)
+        {
+            combatAbility = combatFocus.GetCombatAbility();
+        }
 
-            // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
-            if (combatAbility == CombatAbility.EnchantedWeapon)
-                UpdateVitalDelta(Mana, -staminaCost);
+        // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
+        if (combatAbility == CombatAbility.EnchantedWeapon)
+        {
+            UpdateVitalDelta(Mana, -staminaCost);
+        }
 
-            actionChain.AddAction(this, () =>
+        actionChain.AddAction(
+            this,
+            () =>
             {
                 if (CombatMode == CombatMode.Missile)
-                    EnqueueBroadcast(new GameMessageParentEvent(this, ammo, ACE.Entity.Enum.ParentLocation.RightHand, ACE.Entity.Enum.Placement.RightHandCombat));
-            });
+                {
+                    EnqueueBroadcast(
+                        new GameMessageParentEvent(
+                            this,
+                            ammo,
+                            ACE.Entity.Enum.ParentLocation.RightHand,
+                            ACE.Entity.Enum.Placement.RightHandCombat
+                        )
+                    );
+                }
+            }
+        );
 
-            actionChain.AddDelaySeconds(linkTime);
+        actionChain.AddDelaySeconds(linkTime);
 
-            actionChain.AddAction(this, () =>
+        actionChain.AddAction(
+            this,
+            () =>
             {
                 Attacking = false;
 
-                if (creature.IsAlive && GetCharacterOption(CharacterOption.AutoRepeatAttacks) && !IsBusy && !AttackCancelled)
+                if (
+                    creature.IsAlive
+                    && GetCharacterOption(CharacterOption.AutoRepeatAttacks)
+                    && !IsBusy
+                    && !AttackCancelled
+                )
                 {
                     // client starts refilling accuracy bar
                     Session.Network.EnqueueSend(new GameEventAttackDone(Session));
@@ -369,61 +462,80 @@ namespace ACE.Server.WorldObjects
                     nextAttack.AddDelaySeconds(nextRefillTime);
 
                     // perform next attack
-                    nextAttack.AddAction(this, () => { LaunchMissile(target, attackSequence, stance, true); });
+                    nextAttack.AddAction(
+                        this,
+                        () =>
+                        {
+                            LaunchMissile(target, attackSequence, stance, true);
+                        }
+                    );
                     nextAttack.EnqueueChain();
                 }
                 else
+                {
                     OnAttackDone();
-            });
-
-            actionChain.EnqueueChain();
-
-            if (UnderLifestoneProtection)
-                LifestoneProtectionDispel();
-        }
-
-        // TODO: the damage pipeline currently uses the creature ammo instead of the projectile
-        // for calculating damage. when the last arrow is launched, the player ammo will be null
-        // give projectiles an owner, and have the damage pipeline take the actual damage source object
-        // (ie. the arrow-in-flight, or a melee weapon)
-
-        public override float GetAimHeight(WorldObject target)
-        {
-            switch (AttackHeight.Value)
-            {
-                case ACE.Entity.Enum.AttackHeight.High: return 1.0f;
-                case ACE.Entity.Enum.AttackHeight.Medium: return 2.0f;
-                //case AttackHeight.Low: return target.Height;
-                case ACE.Entity.Enum.AttackHeight.Low: return 3.0f;
+                }
             }
-            return 2.0f;
-        }
+        );
 
-        public override void UpdateAmmoAfterLaunch(WorldObject ammo)
+        actionChain.EnqueueChain();
+
+        if (UnderLifestoneProtection)
         {
-            //if (ammo.UnlimitedUse)
-            //    return;
-
-            // hide previously held ammo
-            EnqueueBroadcast(new GameMessagePickupEvent(ammo));
-
-            if (ammo.UnlimitedUse)
-                return;
-
-            if (ammo.StackSize == null || ammo.StackSize <= 1)
-                TryDequipObjectWithNetworking(ammo.Guid, out _, DequipObjectAction.ConsumeItem);
-            else
-                TryConsumeFromInventoryWithNetworking(ammo, 1);
+            LifestoneProtectionDispel();
         }
+    }
 
-        public bool TargetInRange(WorldObject target)
+    // TODO: the damage pipeline currently uses the creature ammo instead of the projectile
+    // for calculating damage. when the last arrow is launched, the player ammo will be null
+    // give projectiles an owner, and have the damage pipeline take the actual damage source object
+    // (ie. the arrow-in-flight, or a melee weapon)
+
+    public override float GetAimHeight(WorldObject target)
+    {
+        switch (AttackHeight.Value)
         {
-            // 2d or 3d distance?
-            var dist = Location.DistanceTo(target.Location);
-
-            var maxRange = GetMaxMissileRange();
-
-            return dist <= maxRange;
+            case ACE.Entity.Enum.AttackHeight.High:
+                return 1.0f;
+            case ACE.Entity.Enum.AttackHeight.Medium:
+                return 2.0f;
+            //case AttackHeight.Low: return target.Height;
+            case ACE.Entity.Enum.AttackHeight.Low:
+                return 3.0f;
         }
+        return 2.0f;
+    }
+
+    public override void UpdateAmmoAfterLaunch(WorldObject ammo)
+    {
+        //if (ammo.UnlimitedUse)
+        //    return;
+
+        // hide previously held ammo
+        EnqueueBroadcast(new GameMessagePickupEvent(ammo));
+
+        if (ammo.UnlimitedUse)
+        {
+            return;
+        }
+
+        if (ammo.StackSize == null || ammo.StackSize <= 1)
+        {
+            TryDequipObjectWithNetworking(ammo.Guid, out _, DequipObjectAction.ConsumeItem);
+        }
+        else
+        {
+            TryConsumeFromInventoryWithNetworking(ammo, 1);
+        }
+    }
+
+    public bool TargetInRange(WorldObject target)
+    {
+        // 2d or 3d distance?
+        var dist = Location.DistanceTo(target.Location);
+
+        var maxRange = GetMaxMissileRange();
+
+        return dist <= maxRange;
     }
 }

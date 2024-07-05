@@ -1,14 +1,13 @@
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+public class GameEventFellowshipDismiss : GameEventMessage
 {
-    public class GameEventFellowshipDismiss : GameEventMessage
+    public GameEventFellowshipDismiss(Session session, Player dismissedPlayer)
+        : base(GameEventType.FellowshipDismiss, GameMessageGroup.UIQueue, session, 8)
     {
-        public GameEventFellowshipDismiss(Session session, Player dismissedPlayer)
-            : base(GameEventType.FellowshipDismiss, GameMessageGroup.UIQueue, session, 8)
-        {
-            // can be both S2C and C2S?
-            Writer.Write(dismissedPlayer.Guid.Full);
-        }
+        // can be both S2C and C2S?
+        Writer.Write(dismissedPlayer.Guid.Full);
     }
 }

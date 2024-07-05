@@ -4,62 +4,69 @@ using System.Linq;
 using System.Text;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+/// <summary>
+/// Tracks top damager
+/// </summary>
+public class AttackList
 {
-    /// <summary>
-    /// Tracks top damager
-    /// </summary>
-    public class AttackList
+    public Dictionary<WorldObject, uint> Damagers;
+
+    public AttackList()
     {
-        public Dictionary<WorldObject, uint> Damagers;
+        Init();
+    }
 
-        public AttackList()
+    public AttackList(List<AttackDamage> attackDamages)
+    {
+        Init();
+
+        foreach (var attackDamage in attackDamages)
         {
-            Init();
+            Add(attackDamage.Source, attackDamage.Amount);
         }
+    }
 
-        public AttackList(List<AttackDamage> attackDamages)
+    public void Init()
+    {
+        Damagers = new Dictionary<WorldObject, uint>();
+    }
+
+    public void Add(WorldObject damager, uint amount)
+    {
+        if (Damagers.ContainsKey(damager))
         {
-            Init();
-
-            foreach (var attackDamage in attackDamages)
-                Add(attackDamage.Source, attackDamage.Amount);
+            Damagers[damager] += amount;
         }
-
-        public void Init()
+        else
         {
-            Damagers = new Dictionary<WorldObject, uint>();
+            Damagers.Add(damager, amount);
         }
+    }
 
-        public void Add(WorldObject damager, uint amount)
+    public WorldObject TopDamager
+    {
+        get
         {
-            if (Damagers.ContainsKey(damager))
-                Damagers[damager] += amount;
-            else
-                Damagers.Add(damager, amount);
+            var sorted = Damagers.OrderByDescending(wo => wo.Value);
+            return sorted.FirstOrDefault().Key;
         }
+    }
 
-        public WorldObject TopDamager
+    /// <summary>
+    /// Called when an AttackTarget regains health
+    /// </summary>
+    /// <param name="healAmount">The amount of health restored</param>
+    /// <param name="missingHealth">The amount of health that was missing before healing</param>
+    public void OnHeal(int healAmount, int missingHealth)
+    {
+        // on heal, scale the damage from each source by 1 - healAmount / missingHealth
+        var scalar = 1.0f - healAmount / missingHealth;
+
+        foreach (var damager in Damagers.Keys)
         {
-            get
-            {
-                var sorted = Damagers.OrderByDescending(wo => wo.Value);
-                return sorted.FirstOrDefault().Key;
-            }
-        }
-
-        /// <summary>
-        /// Called when an AttackTarget regains health
-        /// </summary>
-        /// <param name="healAmount">The amount of health restored</param>
-        /// <param name="missingHealth">The amount of health that was missing before healing</param>
-        public void OnHeal(int healAmount, int missingHealth)
-        {
-            // on heal, scale the damage from each source by 1 - healAmount / missingHealth
-            var scalar = 1.0f - healAmount / missingHealth;
-
-            foreach (var damager in Damagers.Keys)
-                Damagers[damager] *= (uint)Math.Round(scalar);
+            Damagers[damager] *= (uint)Math.Round(scalar);
         }
     }
 }

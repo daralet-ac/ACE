@@ -1,14 +1,12 @@
+namespace ACE.Server.Network.GameAction.Actions;
 
-namespace ACE.Server.Network.GameAction.Actions
+public static class GameActionRemoveShortcut
 {
-    public static class GameActionRemoveShortcut
+    [GameAction(GameActionType.RemoveShortCut)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.RemoveShortCut)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            var index = message.Payload.ReadUInt32();
+        var index = message.Payload.ReadUInt32();
 
-            session.Player.HandleActionRemoveShortcut(index);
-        }
+        session.Player.HandleActionRemoveShortcut(index);
     }
 }

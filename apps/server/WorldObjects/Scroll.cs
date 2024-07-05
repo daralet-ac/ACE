@@ -1,107 +1,125 @@
 using System;
-
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameMessages.Messages;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+public class Scroll : WorldObject
 {
-    public class Scroll : WorldObject
+    public Server.Entity.Spell Spell;
+
+    /// <summary>
+    /// A new biota be created taking all of its values from weenie.
+    /// </summary>
+    public Scroll(Weenie weenie, ObjectGuid guid)
+        : base(weenie, guid)
     {
-        public Server.Entity.Spell Spell;
+        SetEphemeralValues();
+    }
 
-        /// <summary>
-        /// A new biota be created taking all of its values from weenie.
-        /// </summary>
-        public Scroll(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
+    /// <summary>
+    /// Restore a WorldObject from the database.
+    /// </summary>
+    public Scroll(Biota biota)
+        : base(biota)
+    {
+        SetEphemeralValues();
+    }
+
+    private void SetEphemeralValues()
+    {
+        if (SpellDID != null)
         {
-            SetEphemeralValues();
+            Spell = new Server.Entity.Spell(SpellDID.Value, false);
         }
 
-        /// <summary>
-        /// Restore a WorldObject from the database.
-        /// </summary>
-        public Scroll(Biota biota) : base(biota)
+        if (Spell != null)
         {
-            SetEphemeralValues();
+            LongDesc = $"Inscribed spell: {Spell.Name}\n{Spell.Description}";
         }
 
-        private void SetEphemeralValues()
-        {
-            if (SpellDID != null)
-                Spell = new Server.Entity.Spell(SpellDID.Value, false);
+        Use = "Use this item to attempt to learn its spell.";
+    }
 
-            if (Spell != null)
-                LongDesc = $"Inscribed spell: {Spell.Name}\n{Spell.Description}";
-            Use = "Use this item to attempt to learn its spell.";
+    /// <summary>
+    /// This is raised by Player.HandleActionUseItem.<para />
+    /// The item should be in the players possession.
+    /// </summary>
+    public override void ActOnUse(WorldObject activator)
+    {
+        // Research: http://asheron.wikia.com/wiki/Announcements_-_2002/06_-_Castling
+
+        if (!(activator is Player player))
+        {
+            return;
         }
 
-        /// <summary>
-        /// This is raised by Player.HandleActionUseItem.<para />
-        /// The item should be in the players possession.
-        /// </summary>
-        public override void ActOnUse(WorldObject activator)
+        if (Spell == null)
         {
-            // Research: http://asheron.wikia.com/wiki/Announcements_-_2002/06_-_Castling
+            Console.WriteLine($"{Name}.ActOnUse({activator.Name}) - SpellDID not found for {WeenieClassId}");
+            return;
+        }
 
-            if (!(activator is Player player))
-                return;
+        if (player.IsBusy || player.Teleporting || player.suicideInProgress)
+        {
+            player.SendWeenieError(WeenieError.YoureTooBusy);
+            return;
+        }
 
-            if (Spell == null)
-            {
-                Console.WriteLine($"{Name}.ActOnUse({activator.Name}) - SpellDID not found for {WeenieClassId}");
-                return;
-            }
+        player.IsBusy = true;
 
-            if (player.IsBusy || player.Teleporting || player.suicideInProgress)
-            {
-                player.SendWeenieError(WeenieError.YoureTooBusy);
-                return;
-            }
+        var actionChain = new ActionChain();
 
-            player.IsBusy = true;
+        if (player.CombatMode != CombatMode.NonCombat)
+        {
+            var stanceTime = player.SetCombatMode(CombatMode.NonCombat);
+            actionChain.AddDelaySeconds(stanceTime);
 
-            var actionChain = new ActionChain();
+            player.LastUseTime += stanceTime;
+        }
 
-            if (player.CombatMode != CombatMode.NonCombat)
-            {
-                var stanceTime = player.SetCombatMode(CombatMode.NonCombat);
-                actionChain.AddDelaySeconds(stanceTime);
+        var animTime = player.EnqueueMotion(actionChain, MotionCommand.Reading);
+        player.LastUseTime += animTime;
 
-                player.LastUseTime += stanceTime;
-            }
+        var readTime = 1.0f;
 
-            var animTime = player.EnqueueMotion(actionChain, MotionCommand.Reading);
-            player.LastUseTime += animTime;
+        actionChain.AddDelaySeconds(readTime);
+        player.LastUseTime += readTime;
 
-            var readTime = 1.0f;
-
-            actionChain.AddDelaySeconds(readTime);
-            player.LastUseTime += readTime;
-
-            actionChain.AddAction(player, () =>
+        actionChain.AddAction(
+            player,
+            () =>
             {
                 if (player.SpellIsKnown(Spell.Id))
                 {
                     // verify unknown spell
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat("You already know that spell!", ChatMessageType.Broadcast));
+                    player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat("You already know that spell!", ChatMessageType.Broadcast)
+                    );
                     return;
                 }
 
                 var skill = Spell.GetMagicSkill();
                 var playerSkill = player.GetCreatureSkill(skill);
 
-                if (!player.CanReadScroll(this, out bool spec))
+                if (!player.CanReadScroll(this, out var spec))
                 {
                     var msg = "";
                     if (spec)
+                    {
                         msg = $"You must be specialized in {playerSkill.Skill.ToSentence()} to learn this spell!";
+                    }
                     else if (playerSkill.AdvancementClass < SkillAdvancementClass.Trained)
+                    {
                         msg = $"You are not trained in {playerSkill.Skill.ToSentence()}!";
+                    }
                     else
+                    {
                         msg = $"You are not skilled enough in {playerSkill.Skill.ToSentence()} to learn this spell.";
+                    }
 
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
                     return;
@@ -111,21 +129,22 @@ namespace ACE.Server.WorldObjects
                 {
                     player.LearnSpellWithNetworking(Spell.Id);
 
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat("The scroll is destroyed.", ChatMessageType.Broadcast));
+                    player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat("The scroll is destroyed.", ChatMessageType.Broadcast)
+                    );
                 }
-            });
+            }
+        );
 
+        // FIXME: return stance time
+        player.EnqueueMotion(actionChain, MotionCommand.Ready);
 
-            // FIXME: return stance time
-            player.EnqueueMotion(actionChain, MotionCommand.Ready);
+        player.LastUseTime += animTime; // return stance
 
-            player.LastUseTime += animTime;     // return stance
+        actionChain.AddDelaySeconds(animTime);
 
-            actionChain.AddDelaySeconds(animTime);
+        actionChain.AddAction(player, () => player.IsBusy = false);
 
-            actionChain.AddAction(player, () => player.IsBusy = false);
-
-            actionChain.EnqueueChain();
-        }
+        actionChain.EnqueueChain();
     }
 }

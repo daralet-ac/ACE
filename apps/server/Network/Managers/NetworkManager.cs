@@ -14,376 +14,440 @@ using ACE.Server.Network.Packets;
 using Serilog;
 using Serilog.Events;
 
-namespace ACE.Server.Network.Managers
+namespace ACE.Server.Network.Managers;
+
+public static class NetworkManager
 {
-    public static class NetworkManager
+    private static readonly ILogger _log = Log.ForContext(typeof(NetworkManager));
+
+    // Hard coded server Id, this will need to change if we move to multi-process or multi-server model
+    public const ushort ServerId = 0xB;
+
+    /// <summary>
+    /// Seconds until a session will timeout.
+    /// Raising this value allows connections to remain active for a longer period of time.
+    /// </summary>
+    /// <remarks>
+    /// If you're experiencing network dropouts or frequent disconnects, try increasing this value.
+    /// </remarks>
+    public static uint DefaultSessionTimeout = ConfigManager.Config.Server.Network.DefaultSessionTimeout;
+
+    private static readonly ReaderWriterLockSlim sessionLock = new ReaderWriterLockSlim();
+    private static readonly Session[] sessionMap = new Session[
+        ConfigManager.Config.Server.Network.MaximumAllowedSessions
+    ];
+
+    /// <summary>
+    /// Handles ClientMessages in InboundMessageManager
+    /// </summary>
+    public static readonly ActionQueue InboundMessageQueue = new ActionQueue();
+
+    public static void ProcessPacket(ConnectionListener connectionListener, ClientPacket packet, IPEndPoint endPoint)
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(NetworkManager));
-
-        // Hard coded server Id, this will need to change if we move to multi-process or multi-server model
-        public const ushort ServerId = 0xB;
-
-        /// <summary>
-        /// Seconds until a session will timeout.
-        /// Raising this value allows connections to remain active for a longer period of time.
-        /// </summary>
-        /// <remarks>
-        /// If you're experiencing network dropouts or frequent disconnects, try increasing this value.
-        /// </remarks>
-        public static uint DefaultSessionTimeout = ConfigManager.Config.Server.Network.DefaultSessionTimeout;
-
-        private static readonly ReaderWriterLockSlim sessionLock = new ReaderWriterLockSlim();
-        private static readonly Session[] sessionMap = new Session[ConfigManager.Config.Server.Network.MaximumAllowedSessions];
-
-        /// <summary>
-        /// Handles ClientMessages in InboundMessageManager
-        /// </summary>
-        public static readonly ActionQueue InboundMessageQueue = new ActionQueue();
-
-        public static void ProcessPacket(ConnectionListener connectionListener, ClientPacket packet, IPEndPoint endPoint)
+        if (connectionListener.ListenerEndpoint.Port == ConfigManager.Config.Server.Network.Port + 1)
         {
-            if (connectionListener.ListenerEndpoint.Port == ConfigManager.Config.Server.Network.Port + 1)
+            //ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.ProcessPacket_1);
+            if (packet.Header.Flags.HasFlag(PacketHeaderFlags.ConnectResponse))
             {
-                //ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.ProcessPacket_1);
-                if (packet.Header.Flags.HasFlag(PacketHeaderFlags.ConnectResponse))
+                _log.Verbose("{Packet}, {EndPoint}", packet, endPoint);
+                var connectResponse = new PacketInboundConnectResponse(packet);
+
+                // This should be set on the second packet to the server from the client.
+                // This completes the three-way handshake.
+                sessionLock.EnterReadLock();
+                Session session = null;
+                try
                 {
-                    _log.Verbose("{Packet}, {EndPoint}", packet, endPoint);
-                    PacketInboundConnectResponse connectResponse = new PacketInboundConnectResponse(packet);
-
-                    // This should be set on the second packet to the server from the client.
-                    // This completes the three-way handshake.
-                    sessionLock.EnterReadLock();
-                    Session session = null;
-                    try
-                    {
-                        session =
-                            (from k in sessionMap
-                             where
-                                 k != null &&
-                                 k.State == SessionState.AuthConnectResponse &&
-                                 k.Network.ConnectionData.ConnectionCookie == connectResponse.Check &&
-                                 k.EndPointC2S.Address.Equals(endPoint.Address)
-                             select k).FirstOrDefault();
-                    }
-                    finally
-                    {
-                        sessionLock.ExitReadLock();
-                    }
-                    if (session != null)
-                    {
-                        session.SetS2CEndpoint(endPoint);
-                        session.State = SessionState.AuthConnected;
-                        session.Network.sendResync = true;
-                        AuthenticationHandler.HandleConnectResponse(session);
-                    }
-
+                    session = (
+                        from k in sessionMap
+                        where
+                            k != null
+                            && k.State == SessionState.AuthConnectResponse
+                            && k.Network.ConnectionData.ConnectionCookie == connectResponse.Check
+                            && k.EndPointC2S.Address.Equals(endPoint.Address)
+                        select k
+                    ).FirstOrDefault();
                 }
-                else if (packet.Header.Id == 0 && packet.Header.HasFlag(PacketHeaderFlags.CICMDCommand))
+                finally
                 {
-                    // TODO: Not sure what to do with these packets yet
+                    sessionLock.ExitReadLock();
+                }
+                if (session != null)
+                {
+                    session.SetS2CEndpoint(endPoint);
+                    session.State = SessionState.AuthConnected;
+                    session.Network.sendResync = true;
+                    AuthenticationHandler.HandleConnectResponse(session);
+                }
+            }
+            else if (packet.Header.Id == 0 && packet.Header.HasFlag(PacketHeaderFlags.CICMDCommand))
+            {
+                // TODO: Not sure what to do with these packets yet
+            }
+            else
+            {
+                _log.Error(
+                    "Packet from {Endpoint} rejected. Packet sent to listener 1 and is not a ConnectResponse or CICMDCommand",
+                    endPoint
+                );
+            }
+            //ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.ProcessPacket_1);
+        }
+        else // ConfigManager.Config.Server.Network.Port + 0
+        {
+            //ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.ProcessPacket_0);
+            if (packet.Header.HasFlag(PacketHeaderFlags.LoginRequest))
+            {
+                _log.Verbose("{Packet}, {EndPoint}", packet, endPoint);
+                if (GetAuthenticatedSessionCount() >= ConfigManager.Config.Server.Network.MaximumAllowedSessions)
+                {
+                    _log.Information("Login Request from {Endpoint} rejected. Server full.", endPoint);
+                    SendLoginRequestReject(connectionListener, endPoint, CharacterError.LogonServerFull);
+                }
+                else if (ServerManager.ShutdownInProgress)
+                {
+                    _log.Information("Login Request from {Endpoint} rejected. Server is shutting down.", endPoint);
+                    SendLoginRequestReject(connectionListener, endPoint, CharacterError.ServerCrash1);
+                }
+                else if (
+                    ServerManager.ShutdownInitiated
+                    && (ServerManager.ShutdownTime - DateTime.UtcNow).TotalMinutes < 2
+                )
+                {
+                    _log.Information(
+                        "Login Request from {Endpoint} rejected. Server shutting down in less than 2 minutes.",
+                        endPoint
+                    );
+                    SendLoginRequestReject(connectionListener, endPoint, CharacterError.ServerCrash1);
                 }
                 else
                 {
-                    _log.Error("Packet from {Endpoint} rejected. Packet sent to listener 1 and is not a ConnectResponse or CICMDCommand", endPoint);
-                }
-                //ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.ProcessPacket_1);
-            }
-            else // ConfigManager.Config.Server.Network.Port + 0
-            {
-                //ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.ProcessPacket_0);
-                if (packet.Header.HasFlag(PacketHeaderFlags.LoginRequest))
-                {
-                    _log.Verbose("{Packet}, {EndPoint}", packet, endPoint);
-                    if (GetAuthenticatedSessionCount() >= ConfigManager.Config.Server.Network.MaximumAllowedSessions)
-                    {
-                        _log.Information("Login Request from {Endpoint} rejected. Server full.", endPoint);
-                        SendLoginRequestReject(connectionListener, endPoint, CharacterError.LogonServerFull);
-                    }
-                    else if (ServerManager.ShutdownInProgress)
-                    {
-                        _log.Information("Login Request from {Endpoint} rejected. Server is shutting down.", endPoint);
-                        SendLoginRequestReject(connectionListener, endPoint, CharacterError.ServerCrash1);
-                    }
-                    else if (ServerManager.ShutdownInitiated && (ServerManager.ShutdownTime - DateTime.UtcNow).TotalMinutes < 2)
-                    {
-                        _log.Information("Login Request from {Endpoint} rejected. Server shutting down in less than 2 minutes.", endPoint);
-                        SendLoginRequestReject(connectionListener, endPoint, CharacterError.ServerCrash1);
-                    }
-                    else
-                    {
-                        _log.Debug("Login Request from {Endpoint}", endPoint);
+                    _log.Debug("Login Request from {Endpoint}", endPoint);
 
-                        var ipAllowsUnlimited = ConfigManager.Config.Server.Network.AllowUnlimitedSessionsFromIPAddresses.Contains(endPoint.Address.ToString());
-                        if (ipAllowsUnlimited || ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress == -1 || GetSessionEndpointTotalByAddressCount(endPoint.Address) < ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress)
+                    var ipAllowsUnlimited =
+                        ConfigManager.Config.Server.Network.AllowUnlimitedSessionsFromIPAddresses.Contains(
+                            endPoint.Address.ToString()
+                        );
+                    if (
+                        ipAllowsUnlimited
+                        || ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress == -1
+                        || GetSessionEndpointTotalByAddressCount(endPoint.Address)
+                            < ConfigManager.Config.Server.Network.MaximumAllowedSessionsPerIPAddress
+                    )
+                    {
+                        var session = FindOrCreateSession(connectionListener, endPoint);
+                        if (session != null)
                         {
-                            var session = FindOrCreateSession(connectionListener, endPoint);
-                            if (session != null)
+                            if (session.State == SessionState.AuthConnectResponse)
                             {
-                                if (session.State == SessionState.AuthConnectResponse)
-                                {
-                                    // connect request packet sent to the client was corrupted in transit and session entered an unspecified state.
-                                    // ignore the request and remove the broken session and the client will start a new session.
-                                    RemoveSession(session);
-                                    _log.Warning($"Bad handshake from {endPoint}, aborting session.");
-                                }
+                                // connect request packet sent to the client was corrupted in transit and session entered an unspecified state.
+                                // ignore the request and remove the broken session and the client will start a new session.
+                                RemoveSession(session);
+                                _log.Warning($"Bad handshake from {endPoint}, aborting session.");
+                            }
 
-                                session.ProcessPacket(packet);
-                            }
-                            else
-                            {
-                                _log.Information("Login Request from {Endpoint} rejected. Failed to find or create session.", endPoint);
-                                SendLoginRequestReject(connectionListener, endPoint, CharacterError.LogonServerFull);
-                            }
+                            session.ProcessPacket(packet);
                         }
                         else
                         {
-                            _log.Information("Login Request from {Endpoint} rejected. Session would exceed MaximumAllowedSessionsPerIPAddress limit.", endPoint);
+                            _log.Information(
+                                "Login Request from {Endpoint} rejected. Failed to find or create session.",
+                                endPoint
+                            );
                             SendLoginRequestReject(connectionListener, endPoint, CharacterError.LogonServerFull);
                         }
                     }
-                }
-                else if (sessionMap.Length > packet.Header.Id)
-                {
-                    var session = sessionMap[packet.Header.Id];
-                    if (session != null)
+                    else
                     {
-                        if (session.EndPointC2S.Equals(endPoint))
-                            session.ProcessPacket(packet);
-                        else
-                            _log.Information("Session for Id {PackerHeaderId} has IP {ClientEndpoint} but packet has IP {Endpoint}", packet.Header.Id, session.EndPointC2S, endPoint);
+                        _log.Information(
+                            "Login Request from {Endpoint} rejected. Session would exceed MaximumAllowedSessionsPerIPAddress limit.",
+                            endPoint
+                        );
+                        SendLoginRequestReject(connectionListener, endPoint, CharacterError.LogonServerFull);
+                    }
+                }
+            }
+            else if (sessionMap.Length > packet.Header.Id)
+            {
+                var session = sessionMap[packet.Header.Id];
+                if (session != null)
+                {
+                    if (session.EndPointC2S.Equals(endPoint))
+                    {
+                        session.ProcessPacket(packet);
                     }
                     else
                     {
-                        _log.Debug("Unsolicited Packet from {Endpoint} with Id {PackerHeaderId}", endPoint, packet.Header.Id);
+                        _log.Information(
+                            "Session for Id {PackerHeaderId} has IP {ClientEndpoint} but packet has IP {Endpoint}",
+                            packet.Header.Id,
+                            session.EndPointC2S,
+                            endPoint
+                        );
                     }
                 }
                 else
                 {
-                    _log.Debug("Unsolicited Packet from {Endpoint} with Id {PackerHeaderId}", endPoint, packet.Header.Id);
+                    _log.Debug(
+                        "Unsolicited Packet from {Endpoint} with Id {PackerHeaderId}",
+                        endPoint,
+                        packet.Header.Id
+                    );
                 }
-                //ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.ProcessPacket_0);
             }
-        }
-
-        private static void SendLoginRequestReject(ConnectionListener connectionListener, IPEndPoint endPoint, CharacterError error)
-        {
-            var tempSession = new Session(connectionListener, endPoint, (ushort)(sessionMap.Length + 1), ServerId);
-
-            SendLoginRequestReject(tempSession, error);
-        }
-
-        public static void SendLoginRequestReject(Session session, CharacterError error)
-        {
-            // First we must send the connect request response
-            var connectRequest = new PacketOutboundConnectRequest(
-                Timers.PortalYearTicks,
-                session.Network.ConnectionData.ConnectionCookie,
-                session.Network.ClientId,
-                session.Network.ConnectionData.ServerSeed,
-                session.Network.ConnectionData.ClientSeed);
-            session.Network.ConnectionData.DiscardSeeds();
-            session.Network.EnqueueSend(connectRequest);
-
-            // Then we send the error
-            session.SendCharacterError(error);
-
-            session.Network.Update();
-        }
-
-        public static int GetSessionCount()
-        {
-            sessionLock.EnterReadLock();
-            try
+            else
             {
-                return sessionMap.Count(s => s != null);
+                _log.Debug("Unsolicited Packet from {Endpoint} with Id {PackerHeaderId}", endPoint, packet.Header.Id);
             }
-            finally
-            {
-                sessionLock.ExitReadLock();
-            }
+            //ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.ProcessPacket_0);
         }
+    }
 
-        public static int GetAuthenticatedSessionCount()
+    private static void SendLoginRequestReject(
+        ConnectionListener connectionListener,
+        IPEndPoint endPoint,
+        CharacterError error
+    )
+    {
+        var tempSession = new Session(connectionListener, endPoint, (ushort)(sessionMap.Length + 1), ServerId);
+
+        SendLoginRequestReject(tempSession, error);
+    }
+
+    public static void SendLoginRequestReject(Session session, CharacterError error)
+    {
+        // First we must send the connect request response
+        var connectRequest = new PacketOutboundConnectRequest(
+            Timers.PortalYearTicks,
+            session.Network.ConnectionData.ConnectionCookie,
+            session.Network.ClientId,
+            session.Network.ConnectionData.ServerSeed,
+            session.Network.ConnectionData.ClientSeed
+        );
+        session.Network.ConnectionData.DiscardSeeds();
+        session.Network.EnqueueSend(connectRequest);
+
+        // Then we send the error
+        session.SendCharacterError(error);
+
+        session.Network.Update();
+    }
+
+    public static int GetSessionCount()
+    {
+        sessionLock.EnterReadLock();
+        try
         {
-            sessionLock.EnterReadLock();
-            try
-            {
-                return sessionMap.Count(s => s != null && s.AccountId != 0);
-            }
-            finally
-            {
-                sessionLock.ExitReadLock();
-            }
+            return sessionMap.Count(s => s != null);
         }
-
-        public static int GetUniqueSessionEndpointCount()
+        finally
         {
-            sessionLock.EnterReadLock();
-            try
-            {
-                var ipAddresses = new HashSet<IPAddress>();
+            sessionLock.ExitReadLock();
+        }
+    }
 
-                foreach (var s in sessionMap)
+    public static int GetAuthenticatedSessionCount()
+    {
+        sessionLock.EnterReadLock();
+        try
+        {
+            return sessionMap.Count(s => s != null && s.AccountId != 0);
+        }
+        finally
+        {
+            sessionLock.ExitReadLock();
+        }
+    }
+
+    public static int GetUniqueSessionEndpointCount()
+    {
+        sessionLock.EnterReadLock();
+        try
+        {
+            var ipAddresses = new HashSet<IPAddress>();
+
+            foreach (var s in sessionMap)
+            {
+                if (s != null)
                 {
-                    if (s != null)
-                        ipAddresses.Add(s.EndPointC2S.Address);
+                    ipAddresses.Add(s.EndPointC2S.Address);
                 }
+            }
 
-                return ipAddresses.Count;
-            }
-            finally
-            {
-                sessionLock.ExitReadLock();
-            }
+            return ipAddresses.Count;
         }
-
-        public static int GetSessionEndpointTotalByAddressCount(IPAddress address)
+        finally
         {
-            sessionLock.EnterReadLock();
-            try
-            {
-                int result = 0;
+            sessionLock.ExitReadLock();
+        }
+    }
 
-                foreach (var s in sessionMap)
+    public static int GetSessionEndpointTotalByAddressCount(IPAddress address)
+    {
+        sessionLock.EnterReadLock();
+        try
+        {
+            var result = 0;
+
+            foreach (var s in sessionMap)
+            {
+                if (s != null && s.EndPointC2S.Address.Equals(address))
                 {
-                    if (s != null && s.EndPointC2S.Address.Equals(address))
-                        result++;
+                    result++;
                 }
+            }
 
-                return result;
-            }
-            finally
-            {
-                sessionLock.ExitReadLock();
-            }
+            return result;
         }
-
-        public static Session FindOrCreateSession(ConnectionListener connectionListener, IPEndPoint endPoint)
+        finally
         {
-            Session session;
+            sessionLock.ExitReadLock();
+        }
+    }
 
-            sessionLock.EnterUpgradeableReadLock();
-            try
+    public static Session FindOrCreateSession(ConnectionListener connectionListener, IPEndPoint endPoint)
+    {
+        Session session;
+
+        sessionLock.EnterUpgradeableReadLock();
+        try
+        {
+            session = sessionMap.SingleOrDefault(s => s != null && endPoint.Equals(s.EndPointC2S));
+            if (session == null)
             {
-                session = sessionMap.SingleOrDefault(s => s != null && endPoint.Equals(s.EndPointC2S));
-                if (session == null)
+                sessionLock.EnterWriteLock();
+                try
                 {
-                    sessionLock.EnterWriteLock();
-                    try
+                    for (ushort i = 0; i < sessionMap.Length; i++)
                     {
-                        for (ushort i = 0; i < sessionMap.Length; i++)
+                        if (sessionMap[i] == null)
                         {
-                            if (sessionMap[i] == null)
-                            {
-                                _log.Debug("Creating new session for {ClientEndpoint} with id {ClientId}", endPoint, i);
-                                session = new Session(connectionListener, endPoint, i, ServerId);
-                                sessionMap[i] = session;
-                                break;
-                            }
+                            _log.Debug("Creating new session for {ClientEndpoint} with id {ClientId}", endPoint, i);
+                            session = new Session(connectionListener, endPoint, i, ServerId);
+                            sessionMap[i] = session;
+                            break;
                         }
                     }
-                    finally
-                    {
-                        sessionLock.ExitWriteLock();
-                    }
                 }
-            }
-            finally
-            {
-                sessionLock.ExitUpgradeableReadLock();
-            }
-
-            return session;
-        }
-
-        public static Session Find(uint accountId)
-        {
-            sessionLock.EnterReadLock();
-            try
-            {
-                return sessionMap.SingleOrDefault(s => s != null && s.AccountId == accountId);
-            }
-            finally
-            {
-                sessionLock.ExitReadLock();
-            }
-        }
-
-        public static Session Find(string account)
-        {
-            sessionLock.EnterReadLock();
-            try
-            {
-                return sessionMap.SingleOrDefault(s => s != null && s.Account == account);
-            }
-            finally
-            {
-                sessionLock.ExitReadLock();
-            }
-        }
-
-        /// <summary>
-        /// Removes a session, network client and network endpoint from the various tracker objects.
-        /// </summary>
-        public static void RemoveSession(Session session)
-        {
-            sessionLock.EnterWriteLock();
-            try
-            {
-                _log.Debug("Removing session for {ClientEndpoint} with id {ClientId}", session.EndPointC2S, session.Network.ClientId);
-                if (sessionMap[session.Network.ClientId] == session)
-                    sessionMap[session.Network.ClientId] = null;
-            }
-            finally
-            {
-                sessionLock.ExitWriteLock();
-            }
-        }
-
-        /// <summary>
-        /// Processes all inbound GameAction messages.<para />
-        /// Dispatches all outgoing messages.<para />
-        /// Removes dead sessions.
-        /// </summary>
-        public static int DoSessionWork()
-        {
-            int sessionCount = 0;
-
-            sessionLock.EnterUpgradeableReadLock();
-            try
-            {
-                // The session tick outbound processes pending actions and handles outgoing messages
-                ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.DoSessionWork_TickOutbound);
-                Parallel.ForEach(sessionMap, ConfigManager.Config.Server.Threading.NetworkManagerParallelOptions, s => s?.TickOutbound());
-                ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.DoSessionWork_TickOutbound);
-
-                // Removes sessions in the NetworkTimeout state, including sessions that have reached a timeout limit.
-                ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.DoSessionWork_RemoveSessions);
-                foreach (var session in sessionMap.Where(k => !Equals(null, k)))
+                finally
                 {
-                    if (session.PendingTermination != null && session.PendingTermination.TerminationStatus == SessionTerminationPhase.SessionWorkCompleted)
-                    {
-                        session.DropSession();
-                        session.PendingTermination.TerminationStatus = SessionTerminationPhase.WorldManagerWorkCompleted;
-                    }
-
-                    sessionCount++;
+                    sessionLock.ExitWriteLock();
                 }
-                ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.DoSessionWork_RemoveSessions);
             }
-            finally
-            {
-                sessionLock.ExitUpgradeableReadLock();
-            }
-            return sessionCount;
+        }
+        finally
+        {
+            sessionLock.ExitUpgradeableReadLock();
         }
 
-        public static void DisconnectAllSessionsForShutdown()
+        return session;
+    }
+
+    public static Session Find(uint accountId)
+    {
+        sessionLock.EnterReadLock();
+        try
         {
-            foreach (var session in sessionMap)
+            return sessionMap.SingleOrDefault(s => s != null && s.AccountId == accountId);
+        }
+        finally
+        {
+            sessionLock.ExitReadLock();
+        }
+    }
+
+    public static Session Find(string account)
+    {
+        sessionLock.EnterReadLock();
+        try
+        {
+            return sessionMap.SingleOrDefault(s => s != null && s.Account == account);
+        }
+        finally
+        {
+            sessionLock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
+    /// Removes a session, network client and network endpoint from the various tracker objects.
+    /// </summary>
+    public static void RemoveSession(Session session)
+    {
+        sessionLock.EnterWriteLock();
+        try
+        {
+            _log.Debug(
+                "Removing session for {ClientEndpoint} with id {ClientId}",
+                session.EndPointC2S,
+                session.Network.ClientId
+            );
+            if (sessionMap[session.Network.ClientId] == session)
             {
-                session?.Terminate(SessionTerminationReason.ServerShuttingDown, new GameMessages.Messages.GameMessageCharacterError(CharacterError.ServerCrash1));
+                sessionMap[session.Network.ClientId] = null;
             }
+        }
+        finally
+        {
+            sessionLock.ExitWriteLock();
+        }
+    }
+
+    /// <summary>
+    /// Processes all inbound GameAction messages.<para />
+    /// Dispatches all outgoing messages.<para />
+    /// Removes dead sessions.
+    /// </summary>
+    public static int DoSessionWork()
+    {
+        var sessionCount = 0;
+
+        sessionLock.EnterUpgradeableReadLock();
+        try
+        {
+            // The session tick outbound processes pending actions and handles outgoing messages
+            ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.DoSessionWork_TickOutbound);
+            Parallel.ForEach(
+                sessionMap,
+                ConfigManager.Config.Server.Threading.NetworkManagerParallelOptions,
+                s => s?.TickOutbound()
+            );
+            ServerPerformanceMonitor.RegisterEventEnd(ServerPerformanceMonitor.MonitorType.DoSessionWork_TickOutbound);
+
+            // Removes sessions in the NetworkTimeout state, including sessions that have reached a timeout limit.
+            ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.DoSessionWork_RemoveSessions);
+            foreach (var session in sessionMap.Where(k => !Equals(null, k)))
+            {
+                if (
+                    session.PendingTermination != null
+                    && session.PendingTermination.TerminationStatus == SessionTerminationPhase.SessionWorkCompleted
+                )
+                {
+                    session.DropSession();
+                    session.PendingTermination.TerminationStatus = SessionTerminationPhase.WorldManagerWorkCompleted;
+                }
+
+                sessionCount++;
+            }
+            ServerPerformanceMonitor.RegisterEventEnd(
+                ServerPerformanceMonitor.MonitorType.DoSessionWork_RemoveSessions
+            );
+        }
+        finally
+        {
+            sessionLock.ExitUpgradeableReadLock();
+        }
+        return sessionCount;
+    }
+
+    public static void DisconnectAllSessionsForShutdown()
+    {
+        foreach (var session in sessionMap)
+        {
+            session?.Terminate(
+                SessionTerminationReason.ServerShuttingDown,
+                new GameMessages.Messages.GameMessageCharacterError(CharacterError.ServerCrash1)
+            );
         }
     }
 }

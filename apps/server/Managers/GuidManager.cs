@@ -5,44 +5,47 @@ using ACE.Entity;
 using Serilog;
 using Serilog.Events;
 
-namespace ACE.Server.Managers
+namespace ACE.Server.Managers;
+
+/// <summary>
+/// Used to assign global guids and ensure they are unique to server.
+/// </summary>
+public static class GuidManager
 {
+    private static readonly ILogger _log = Log.ForContext(typeof(GuidManager));
+
+    // Running server is guid master - database only read as startup to get current max per range.
+    // weenie class templates Max 65,535 - took Turbine 17 years to get to 10K
+    // these will be added by developers and not in game.
+    // Nothing in this range is persisted by the game.   Only developers or content creators can create them to be persisted.
+    // this is only here for documentation purposes.
+    // Fragmentation: None
+
     /// <summary>
-    /// Used to assign global guids and ensure they are unique to server.
+    /// Is equal to uint.MaxValue
     /// </summary>
-    public static class GuidManager
+    public static uint InvalidGuid { get; } = uint.MaxValue;
+
+    private const uint LowIdLimit = 0x1000;
+
+    private class PlayerGuidAllocator
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(GuidManager));
+        private readonly uint max;
+        private uint current;
+        private readonly string name;
 
-        // Running server is guid master - database only read as startup to get current max per range.
-        // weenie class templates Max 65,535 - took Turbine 17 years to get to 10K
-        // these will be added by developers and not in game.
-        // Nothing in this range is persisted by the game.   Only developers or content creators can create them to be persisted.
-        // this is only here for documentation purposes.
-        // Fragmentation: None
-
-        /// <summary>
-        /// Is equal to uint.MaxValue
-        /// </summary>
-        public static uint InvalidGuid { get; } = uint.MaxValue;
-
-        private const uint LowIdLimit = 0x1000;
-
-        private class PlayerGuidAllocator
+        public PlayerGuidAllocator(uint min, uint max, string name)
         {
-            private readonly uint max;
-            private uint current;
-            private readonly string name;
+            this.max = max;
 
-            public PlayerGuidAllocator(uint min, uint max, string name)
+            // Read current value out of ShardDatabase
+            lock (this)
             {
-                this.max = max;
-
-                // Read current value out of ShardDatabase
-                lock (this)
-                {
-                    bool done = false;
-                    Database.DatabaseManager.Shard.GetMaxGuidFoundInRange(min, max, dbVal =>
+                var done = false;
+                Database.DatabaseManager.Shard.GetMaxGuidFoundInRange(
+                    min,
+                    max,
+                    dbVal =>
                     {
                         lock (this)
                         {
@@ -50,91 +53,105 @@ namespace ACE.Server.Managers
                             done = true;
                             Monitor.Pulse(this);
                         }
-                    });
-
-                    while (!done)
-                        Monitor.Wait(this);
-
-                    if (current == InvalidGuid)
-                        current = min;
-                    else
-                        // Need to start allocating at current value in db +1
-                        current++;
-
-                    _log.Debug("{Name} GUID Allocator current is now {Current:X8} of {Max:X8}", name, current, max);
-
-                    if ((max - current) < LowIdLimit)
-                        _log.Warning("Dangerously low on {Name} GUIDs: {Current:X8} of {Max:X8}", name, current, max);
-                }
-
-                this.name = name;
-            }
-
-            public uint Alloc()
-            {
-                lock (this)
-                {
-                    if (current == max)
-                    {
-                        _log.Fatal("Out of {Name} GUIDs!", name);
-                        return InvalidGuid;
                     }
+                );
 
-                    if (current == max - LowIdLimit)
-                        _log.Warning("Running dangerously low on {Name} GUIDs, need to defrag", name);
+                while (!done)
+                {
+                    Monitor.Wait(this);
+                }
 
-                    uint ret = current;
-                    current += 1;
+                if (current == InvalidGuid)
+                {
+                    current = min;
+                }
+                else
+                {
+                    // Need to start allocating at current value in db +1
+                    current++;
+                }
 
-                    return ret;
+                _log.Debug("{Name} GUID Allocator current is now {Current:X8} of {Max:X8}", name, current, max);
+
+                if ((max - current) < LowIdLimit)
+                {
+                    _log.Warning("Dangerously low on {Name} GUIDs: {Current:X8} of {Max:X8}", name, current, max);
                 }
             }
 
-            /// <summary>
-            /// For information purposes only, do not use the result. Use Alloc() instead
-            /// This value represents the current DbMax + 1
-            /// </summary>
-            public uint Current()
+            this.name = name;
+        }
+
+        public uint Alloc()
+        {
+            lock (this)
             {
-                return current;
+                if (current == max)
+                {
+                    _log.Fatal("Out of {Name} GUIDs!", name);
+                    return InvalidGuid;
+                }
+
+                if (current == max - LowIdLimit)
+                {
+                    _log.Warning("Running dangerously low on {Name} GUIDs, need to defrag", name);
+                }
+
+                var ret = current;
+                current += 1;
+
+                return ret;
             }
         }
 
         /// <summary>
-        /// On a server with ~500 players, about 10,000,000 dynamic GUID's will be requested every 24hr period.
+        /// For information purposes only, do not use the result. Use Alloc() instead
+        /// This value represents the current DbMax + 1
         /// </summary>
-        private class DynamicGuidAllocator
+        public uint Current()
         {
-            private readonly uint max;
-            private uint current;
-            private readonly string name;
+            return current;
+        }
+    }
 
-            private static readonly TimeSpan recycleTime = TimeSpan.FromMinutes(360);
+    /// <summary>
+    /// On a server with ~500 players, about 10,000,000 dynamic GUID's will be requested every 24hr period.
+    /// </summary>
+    private class DynamicGuidAllocator
+    {
+        private readonly uint max;
+        private uint current;
+        private readonly string name;
 
-            private readonly Queue<Tuple<DateTime, uint>> recycledGuids = new Queue<Tuple<DateTime, uint>>();
+        private static readonly TimeSpan recycleTime = TimeSpan.FromMinutes(360);
 
-            /// <summary>
-            /// The value here is the result of two factors:
-            /// - A: The total number of GUIDs that are generated during a period of recycledTime (defined above)
-            /// - B: The total number of GUIDs that are consumed and saved to the shard between server resets
-            /// A safe value might be (2 * A) + (2 * B)
-            /// On a shard with severe id fragmentation, this can end up eating more memory to store all the smaller gaps
-            /// Once sequence gaps are depleted and there are no available id's in the recycle queue, DB Max + 1 is used
-            /// You can monitor the amount of available id's using /serverstatus
-            /// </summary>
-            private const int limitAvailableIDsReturnedInGetSequenceGaps = 10000000;
-            private bool useSequenceGapExhaustedMessageDisplayed;
-            private LinkedList<(uint start, uint end)> availableIDs = new LinkedList<(uint start, uint end)>();
+        private readonly Queue<Tuple<DateTime, uint>> recycledGuids = new Queue<Tuple<DateTime, uint>>();
 
-            public DynamicGuidAllocator(uint min, uint max, string name)
+        /// <summary>
+        /// The value here is the result of two factors:
+        /// - A: The total number of GUIDs that are generated during a period of recycledTime (defined above)
+        /// - B: The total number of GUIDs that are consumed and saved to the shard between server resets
+        /// A safe value might be (2 * A) + (2 * B)
+        /// On a shard with severe id fragmentation, this can end up eating more memory to store all the smaller gaps
+        /// Once sequence gaps are depleted and there are no available id's in the recycle queue, DB Max + 1 is used
+        /// You can monitor the amount of available id's using /serverstatus
+        /// </summary>
+        private const int limitAvailableIDsReturnedInGetSequenceGaps = 10000000;
+        private bool useSequenceGapExhaustedMessageDisplayed;
+        private LinkedList<(uint start, uint end)> availableIDs = new LinkedList<(uint start, uint end)>();
+
+        public DynamicGuidAllocator(uint min, uint max, string name)
+        {
+            this.max = max;
+
+            // Read current value out of ShardDatabase
+            lock (this)
             {
-                this.max = max;
-
-                // Read current value out of ShardDatabase
-                lock (this)
-                {
-                    bool done = false;
-                    Database.DatabaseManager.Shard.GetMaxGuidFoundInRange(min, max, dbVal =>
+                var done = false;
+                Database.DatabaseManager.Shard.GetMaxGuidFoundInRange(
+                    min,
+                    max,
+                    dbVal =>
                     {
                         lock (this)
                         {
@@ -142,218 +159,266 @@ namespace ACE.Server.Managers
                             done = true;
                             Monitor.Pulse(this);
                         }
-                    });
+                    }
+                );
 
-                    while (!done)
-                        Monitor.Wait(this);
-
-                    if (current == InvalidGuid)
-                        current = min;
-                    else
-                        // Need to start allocating at current value in db +1
-                        current++;
-
-                    _log.Debug("{Name} GUID Allocator current is now {Current:X8} of {Max:X8}", name, current, max);
-
-                    if ((max - current) < LowIdLimit)
-                        _log.Warning("Dangerously low on {Name} GUIDs: {Current:X8} of {Max:X8}", name, current, max);
+                while (!done)
+                {
+                    Monitor.Wait(this);
                 }
 
-                // Get available ids in the form of sequence gaps
-                lock (this)
+                if (current == InvalidGuid)
                 {
-                    bool done = false;
-                    Database.DatabaseManager.Shard.GetSequenceGaps(ObjectGuid.DynamicMin, limitAvailableIDsReturnedInGetSequenceGaps, gaps =>
+                    current = min;
+                }
+                else
+                {
+                    // Need to start allocating at current value in db +1
+                    current++;
+                }
+
+                _log.Debug("{Name} GUID Allocator current is now {Current:X8} of {Max:X8}", name, current, max);
+
+                if ((max - current) < LowIdLimit)
+                {
+                    _log.Warning("Dangerously low on {Name} GUIDs: {Current:X8} of {Max:X8}", name, current, max);
+                }
+            }
+
+            // Get available ids in the form of sequence gaps
+            lock (this)
+            {
+                var done = false;
+                Database.DatabaseManager.Shard.GetSequenceGaps(
+                    ObjectGuid.DynamicMin,
+                    limitAvailableIDsReturnedInGetSequenceGaps,
+                    gaps =>
                     {
                         lock (this)
                         {
                             availableIDs = new LinkedList<(uint start, uint end)>(gaps);
                             uint total = 0;
                             foreach (var pair in availableIDs)
+                            {
                                 total += (pair.end - pair.start) + 1;
+                            }
 
-                            _log.Debug("{Name} GUID Sequence gaps initialized with total availableIDs of {Total:N0}", name, total);
+                            _log.Debug(
+                                "{Name} GUID Sequence gaps initialized with total availableIDs of {Total:N0}",
+                                name,
+                                total
+                            );
 
                             done = true;
                             Monitor.Pulse(this);
                         }
-                    });
+                    }
+                );
 
-                    while (!done)
-                        Monitor.Wait(this);
+                while (!done)
+                {
+                    Monitor.Wait(this);
                 }
-
-                this.name = name;
             }
 
-            public uint Alloc()
+            this.name = name;
+        }
+
+        public uint Alloc()
+        {
+            lock (this)
             {
-                lock (this)
+                // First, try to use a recycled Guid
+                if (recycledGuids.TryPeek(out var result) && DateTime.UtcNow - result.Item1 > recycleTime)
                 {
-                    // First, try to use a recycled Guid
-                    if (recycledGuids.TryPeek(out var result) && DateTime.UtcNow - result.Item1 > recycleTime)
+                    recycledGuids.Dequeue();
+                    return result.Item2;
+                }
+
+                // Second, try to use a known available Guid
+                if (availableIDs.First != null)
+                {
+                    var id = availableIDs.First.Value.start;
+
+                    if (availableIDs.First.Value.start == availableIDs.First.Value.end)
                     {
-                        recycledGuids.Dequeue();
-                        return result.Item2;
-                    }
+                        availableIDs.RemoveFirst();
 
-                    // Second, try to use a known available Guid
-                    if (availableIDs.First != null)
-                    {
-                        var id = availableIDs.First.Value.start;
-
-                        if (availableIDs.First.Value.start == availableIDs.First.Value.end)
-                        {
-                            availableIDs.RemoveFirst();
-
-                            //if (availableIDs.First == null)
-                            //    _log.Warning($"Sequence gap GUIDs depleted on {name}");
-                        }
-                        else
-                            availableIDs.First.Value = (availableIDs.First.Value.start + 1, availableIDs.First.Value.end);
-
-                        return id;
+                        //if (availableIDs.First == null)
+                        //    _log.Warning($"Sequence gap GUIDs depleted on {name}");
                     }
                     else
                     {
-                        if (!useSequenceGapExhaustedMessageDisplayed)
-                        {
-                            _log.Debug("{Name} GUID Sequence gaps exhausted. Any new, non-recycled GUID will be current + 1. current is now {Current:X8}", name, current);
-
-                            useSequenceGapExhaustedMessageDisplayed = true;
-                        }
+                        availableIDs.First.Value = (availableIDs.First.Value.start + 1, availableIDs.First.Value.end);
                     }
 
-                    // Lastly, use an id that increments our max
-                    if (current == max)
+                    return id;
+                }
+                else
+                {
+                    if (!useSequenceGapExhaustedMessageDisplayed)
                     {
-                        _log.Fatal("Out of {Name} GUIDs!", name);
+                        _log.Debug(
+                            "{Name} GUID Sequence gaps exhausted. Any new, non-recycled GUID will be current + 1. current is now {Current:X8}",
+                            name,
+                            current
+                        );
 
-                        return InvalidGuid;
+                        useSequenceGapExhaustedMessageDisplayed = true;
                     }
-
-                    if (current == max - LowIdLimit)
-                        _log.Warning("Running dangerously low on {Name} GUIDs, need to defrag", name);
-
-                    uint ret = current;
-                    current += 1;
-
-                    return ret;
                 }
-            }
 
-            /// <summary>
-            /// For information purposes only, do not use the result. Use Alloc() instead
-            /// This is the value that might be used in the event that there are no recycled guid available and sequence gap guids have been exhausted
-            /// This value represents the current DbMax + 1
-            /// </summary>
-            public uint Current()
-            {
-                return current;
-            }
-
-            public void Recycle(uint guid)
-            {
-                lock (this)
-                    recycledGuids.Enqueue(new Tuple<DateTime, uint>(DateTime.UtcNow, guid));
-            }
-
-            public override string ToString()
-            {
-                lock (this)
+                // Lastly, use an id that increments our max
+                if (current == max)
                 {
-                    uint total = 0;
-                    foreach (var pair in availableIDs)
-                        total += (pair.end - pair.start) + 1;
+                    _log.Fatal("Out of {Name} GUIDs!", name);
 
-                    return $"DynamicGuidAllocator: {name}, current: 0x{current:X8}, max: 0x{max:X8}, sequence gap GUIDs available: {total:N0}, recycled GUIDs available: {recycledGuids.Count:N0}";
+                    return InvalidGuid;
                 }
-            }
 
-            public (DateTime nextRecycleTime, int totalPendingRecycledGuids, uint totalSequenceGapGuids) GetRecycleDebugInfo()
-            {
-                var nextRecycleTime = DateTime.MinValue;
-                int totalPendingRecycledGuids;
-                uint totalSequenceGapGuids = 0;
-
-                lock (this)
+                if (current == max - LowIdLimit)
                 {
-                    if (recycledGuids.TryPeek(out var firstRecycledGuid))
-                        nextRecycleTime = firstRecycledGuid.Item1 + recycleTime;
-
-                    totalPendingRecycledGuids = recycledGuids.Count;
-
-                    foreach (var pair in availableIDs)
-                        totalSequenceGapGuids += (pair.end - pair.start) + 1;
+                    _log.Warning("Running dangerously low on {Name} GUIDs, need to defrag", name);
                 }
 
-                return (nextRecycleTime, totalPendingRecycledGuids, totalSequenceGapGuids);
+                var ret = current;
+                current += 1;
+
+                return ret;
             }
         }
 
-        private static PlayerGuidAllocator playerAlloc;
-        private static DynamicGuidAllocator dynamicAlloc;
-
-        public static void Initialize()
-        {
-            playerAlloc = new PlayerGuidAllocator(ObjectGuid.PlayerMin, ObjectGuid.PlayerMax, "player");
-            dynamicAlloc = new DynamicGuidAllocator(ObjectGuid.DynamicMin, ObjectGuid.DynamicMax, "dynamic");
-        }
-
         /// <summary>
-        /// Returns New Player Guid
+        /// For information purposes only, do not use the result. Use Alloc() instead
+        /// This is the value that might be used in the event that there are no recycled guid available and sequence gap guids have been exhausted
+        /// This value represents the current DbMax + 1
         /// </summary>
-        public static ObjectGuid NewPlayerGuid()
+        public uint Current()
         {
-            return new ObjectGuid(playerAlloc.Alloc());
+            return current;
         }
 
-        /// <summary>
-        /// These represent items are generated in the world.
-        /// Some of them will be saved to the Shard db.
-        /// They can be monsters, loot, etc..
-        /// </summary>
-        public static ObjectGuid NewDynamicGuid()
+        public void Recycle(uint guid)
         {
-            return new ObjectGuid(dynamicAlloc.Alloc());
+            lock (this)
+            {
+                recycledGuids.Enqueue(new Tuple<DateTime, uint>(DateTime.UtcNow, guid));
+            }
         }
 
-        /// <summary>
-        /// Guid will be added to the recycle queue, and available for use in GuidAllocator.recycleTime
-        /// </summary>
-        /// <param name="guid"></param>
-        public static void RecycleDynamicGuid(ObjectGuid guid)
+        public override string ToString()
         {
-            dynamicAlloc.Recycle(guid.Full);
+            lock (this)
+            {
+                uint total = 0;
+                foreach (var pair in availableIDs)
+                {
+                    total += (pair.end - pair.start) + 1;
+                }
+
+                return $"DynamicGuidAllocator: {name}, current: 0x{current:X8}, max: 0x{max:X8}, sequence gap GUIDs available: {total:N0}, recycled GUIDs available: {recycledGuids.Count:N0}";
+            }
         }
 
-
-        public static string GetDynamicGuidDebugInfo()
+        public (
+            DateTime nextRecycleTime,
+            int totalPendingRecycledGuids,
+            uint totalSequenceGapGuids
+        ) GetRecycleDebugInfo()
         {
-            return dynamicAlloc.ToString();
+            var nextRecycleTime = DateTime.MinValue;
+            int totalPendingRecycledGuids;
+            uint totalSequenceGapGuids = 0;
+
+            lock (this)
+            {
+                if (recycledGuids.TryPeek(out var firstRecycledGuid))
+                {
+                    nextRecycleTime = firstRecycledGuid.Item1 + recycleTime;
+                }
+
+                totalPendingRecycledGuids = recycledGuids.Count;
+
+                foreach (var pair in availableIDs)
+                {
+                    totalSequenceGapGuids += (pair.end - pair.start) + 1;
+                }
+            }
+
+            return (nextRecycleTime, totalPendingRecycledGuids, totalSequenceGapGuids);
         }
+    }
 
-        public static string GetIdListCommandOutput()
+    private static PlayerGuidAllocator playerAlloc;
+    private static DynamicGuidAllocator dynamicAlloc;
+
+    public static void Initialize()
+    {
+        playerAlloc = new PlayerGuidAllocator(ObjectGuid.PlayerMin, ObjectGuid.PlayerMax, "player");
+        dynamicAlloc = new DynamicGuidAllocator(ObjectGuid.DynamicMin, ObjectGuid.DynamicMax, "dynamic");
+    }
+
+    /// <summary>
+    /// Returns New Player Guid
+    /// </summary>
+    public static ObjectGuid NewPlayerGuid()
+    {
+        return new ObjectGuid(playerAlloc.Alloc());
+    }
+
+    /// <summary>
+    /// These represent items are generated in the world.
+    /// Some of them will be saved to the Shard db.
+    /// They can be monsters, loot, etc..
+    /// </summary>
+    public static ObjectGuid NewDynamicGuid()
+    {
+        return new ObjectGuid(dynamicAlloc.Alloc());
+    }
+
+    /// <summary>
+    /// Guid will be added to the recycle queue, and available for use in GuidAllocator.recycleTime
+    /// </summary>
+    /// <param name="guid"></param>
+    public static void RecycleDynamicGuid(ObjectGuid guid)
+    {
+        dynamicAlloc.Recycle(guid.Full);
+    }
+
+    public static string GetDynamicGuidDebugInfo()
+    {
+        return dynamicAlloc.ToString();
+    }
+
+    public static string GetIdListCommandOutput()
+    {
+        var playerGuidCurrent = playerAlloc.Current();
+        var dynamicGuidCurrent = dynamicAlloc.Current();
+        var dynamicDebugInfo = dynamicAlloc.GetRecycleDebugInfo();
+
+        var message = $"The next Player GUID to be allocated is expected to be: 0x{playerGuidCurrent:X}\n";
+
+        if (dynamicDebugInfo.nextRecycleTime == DateTime.MinValue)
         {
-            var playerGuidCurrent = playerAlloc.Current();
-            var dynamicGuidCurrent = dynamicAlloc.Current();
-            var dynamicDebugInfo = dynamicAlloc.GetRecycleDebugInfo();
+            message +=
+                $"After {dynamicDebugInfo.totalSequenceGapGuids:N0} sequence gap ids have been consumed, and {dynamicDebugInfo.totalPendingRecycledGuids:N0} recycled ids have been consumed, the next id will be {dynamicGuidCurrent:X8}";
+        }
+        else
+        {
+            var nextDynamicIsAvailIn = dynamicDebugInfo.nextRecycleTime - DateTime.UtcNow;
 
-            string message = $"The next Player GUID to be allocated is expected to be: 0x{playerGuidCurrent:X}\n";
-
-            if (dynamicDebugInfo.nextRecycleTime == DateTime.MinValue)
-                message += $"After {dynamicDebugInfo.totalSequenceGapGuids:N0} sequence gap ids have been consumed, and {dynamicDebugInfo.totalPendingRecycledGuids:N0} recycled ids have been consumed, the next id will be {dynamicGuidCurrent:X8}";
+            if (nextDynamicIsAvailIn.TotalSeconds <= 0)
+            {
+                message +=
+                    $"After {dynamicDebugInfo.totalSequenceGapGuids:N0} sequence gap ids have been consumed, and {dynamicDebugInfo.totalPendingRecycledGuids:N0} recycled ids have been consumed, the next of which are available now, the next id will be: 0x{dynamicGuidCurrent:X8}";
+            }
             else
             {
-                var nextDynamicIsAvailIn = dynamicDebugInfo.nextRecycleTime - DateTime.UtcNow;
-
-                if (nextDynamicIsAvailIn.TotalSeconds <= 0)
-                    message += $"After {dynamicDebugInfo.totalSequenceGapGuids:N0} sequence gap ids have been consumed, and {dynamicDebugInfo.totalPendingRecycledGuids:N0} recycled ids have been consumed, the next of which are available now, the next id will be: 0x{dynamicGuidCurrent:X8}";
-                else
-                    message += $"After {dynamicDebugInfo.totalSequenceGapGuids:N0} sequence gap ids have been consumed, and {dynamicDebugInfo.totalPendingRecycledGuids:N0} recycled ids have been consumed, the next of which is available in {nextDynamicIsAvailIn.TotalMinutes:N1} m, the next id will be: 0x{dynamicGuidCurrent:X8}";
+                message +=
+                    $"After {dynamicDebugInfo.totalSequenceGapGuids:N0} sequence gap ids have been consumed, and {dynamicDebugInfo.totalPendingRecycledGuids:N0} recycled ids have been consumed, the next of which is available in {nextDynamicIsAvailIn.TotalMinutes:N1} m, the next id will be: 0x{dynamicGuidCurrent:X8}";
             }
-
-            return message;
         }
+
+        return message;
     }
 }

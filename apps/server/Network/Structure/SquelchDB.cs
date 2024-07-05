@@ -7,175 +7,190 @@ using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Managers;
 using Serilog;
 
-namespace ACE.Server.Network.Structure
+namespace ACE.Server.Network.Structure;
+
+public class SquelchDB
 {
-    public class SquelchDB
+    private readonly ILogger _log = Log.ForContext<SquelchDB>();
+
+    /// <summary>
+    /// Account squelches
+    ///
+    /// This is defined by the network protocol, but appears to have always been empty in retail pcaps (possibly for security reasons?)
+    ///
+    /// When sending the SquelchDB to the player, the account squelches were sent in the Characters table below as SequelchInfo.Account=true
+    ///
+    /// Key: not sure if this was account name, or character name
+    /// Index: not sure if this was account id, or character id
+    /// </summary>
+    public Dictionary<string, uint> Accounts;
+
+    /// <summary>
+    /// Character squelches
+    ///
+    /// Even though this is called Characters, it contains both the Character and Account squelches (denoted by SquelchInfo.Account)
+    /// </summary>
+    public Dictionary<uint, SquelchInfo> Characters;
+
+    /// <summary>
+    /// Global squelches
+    /// </summary>
+    public SquelchInfo Globals;
+
+    /// <summary>
+    /// Constructs a new SquelchDB for network sending
+    /// </summary>
+    public SquelchDB(List<CharacterPropertiesSquelch> squelches, SquelchMask globals)
     {
-        private readonly ILogger _log = Log.ForContext<SquelchDB>();
+        Accounts = new Dictionary<string, uint>();
+        Characters = new Dictionary<uint, SquelchInfo>();
+        Globals = new SquelchInfo();
 
-        /// <summary>
-        /// Account squelches
-        /// 
-        /// This is defined by the network protocol, but appears to have always been empty in retail pcaps (possibly for security reasons?)
-        /// 
-        /// When sending the SquelchDB to the player, the account squelches were sent in the Characters table below as SequelchInfo.Account=true
-        ///
-        /// Key: not sure if this was account name, or character name
-        /// Index: not sure if this was account id, or character id
-        /// </summary>
-        public Dictionary<string, uint> Accounts;
-
-        /// <summary>
-        /// Character squelches
-        ///
-        /// Even though this is called Characters, it contains both the Character and Account squelches (denoted by SquelchInfo.Account)
-        /// </summary>
-        public Dictionary<uint, SquelchInfo> Characters;
-
-        /// <summary>
-        /// Global squelches
-        /// </summary>
-        public SquelchInfo Globals;
-
-        /// <summary>
-        /// Constructs a new SquelchDB for network sending
-        /// </summary>
-        public SquelchDB(List<CharacterPropertiesSquelch> squelches, SquelchMask globals)
+        foreach (var squelch in squelches)
         {
-            Accounts = new Dictionary<string, uint>();
-            Characters = new Dictionary<uint, SquelchInfo>();
-            Globals = new SquelchInfo();
-
-            foreach (var squelch in squelches)
+            var squelchPlayer = PlayerManager.FindByGuid(squelch.SquelchCharacterId);
+            if (squelchPlayer == null)
             {
-                var squelchPlayer = PlayerManager.FindByGuid(squelch.SquelchCharacterId);
-                if (squelchPlayer == null)
-                {
-                    _log.Warning($"BuildSquelchDB(): couldn't find character {squelch.SquelchCharacterId:X8}");
-                    continue;
-                }
-
-                if (squelch.SquelchAccountId == 0)
-                {
-                    // chracter squelch
-                    var squelchInfo = new SquelchInfo((SquelchMask)squelch.Type, squelchPlayer.Name, false);
-
-                    Characters.Add(squelch.SquelchCharacterId, squelchInfo);
-                }
-                else
-                {
-                    // account squelch
-                    Accounts.Add(squelchPlayer.Account.AccountName, squelchPlayer.Guid.Full);
-                }
+                _log.Warning($"BuildSquelchDB(): couldn't find character {squelch.SquelchCharacterId:X8}");
+                continue;
             }
 
-            // global squelch
-            if (globals != SquelchMask.None)
-                Globals.Filters.Add(globals);
-        }
-
-        /// <summary>
-        /// Merges accounts + character for sending to clients
-        /// </summary>
-        public Dictionary<uint, SquelchInfo> CharactersPlus
-        {
-            get
+            if (squelch.SquelchAccountId == 0)
             {
-                var charactersPlus = new Dictionary<uint, SquelchInfo>(Characters);
+                // chracter squelch
+                var squelchInfo = new SquelchInfo((SquelchMask)squelch.Type, squelchPlayer.Name, false);
 
-                foreach (var account in Accounts)
-                {
-                    var guid = account.Value;
-                    var accountPlayer = PlayerManager.FindByGuid(guid);
-                    if (accountPlayer == null)
-                        continue;
-
-                    if (!charactersPlus.TryGetValue(guid, out var existing))
-                        charactersPlus.Add(guid, new SquelchInfo(SquelchMask.AllChannels, accountPlayer.Name, true));
-                    else
-                        existing.Account = true;
-                }
-                return charactersPlus;
+                Characters.Add(squelch.SquelchCharacterId, squelchInfo);
+            }
+            else
+            {
+                // account squelch
+                Accounts.Add(squelchPlayer.Account.AccountName, squelchPlayer.Guid.Full);
             }
         }
 
-        /// <summary>
-        /// Returns TRUE if the input player is filtered by this player
-        /// </summary>
-        public bool Contains(WorldObject source, ChatMessageType messageType = ChatMessageType.AllChannels)
+        // global squelch
+        if (globals != SquelchMask.None)
         {
-            // ensure this channel can be squelched
-            if (messageType != ChatMessageType.AllChannels && !SquelchManager.IsLegalChannel(messageType))
-                return false;
-
-            var squelchMask = messageType.ToMask();
-
-            if (source is Player player)
-            {
-                // check account squelches
-
-                // the client forces account squelches to be AllMessages,
-                // so for these, channel mask is not required
-
-                if (Accounts.ContainsKey(player.Session.Account))
-                    return true;
-
-                // check character squelches
-                Characters.TryGetValue(player.Guid.Full, out var squelchInfo);
-
-                if (squelchInfo != null && squelchInfo.Filters[0].HasFlag(squelchMask))
-                    return true;
-            }
-
-            // check global squelches
-            if (Globals.Filters.Count > 0 && Globals.Filters[0].HasFlag(squelchMask))
-                return true;
-
-            return false;
+            Globals.Filters.Add(globals);
         }
     }
 
-    public static class SquelchDBExtensions
+    /// <summary>
+    /// Merges accounts + character for sending to clients
+    /// </summary>
+    public Dictionary<uint, SquelchInfo> CharactersPlus
     {
-        public static void Write(this BinaryWriter writer, SquelchDB squelches)
+        get
         {
-            //writer.Write(squelches.Accounts);
-            writer.Write(new Dictionary<string, uint>());   // this part of the structure is always empty in retail pcaps, even with account squelches
-                                                            // perhaps for security reasons, always send account squelches in the characters section + account bool?
-            writer.Write(squelches.CharactersPlus);
-            writer.Write(squelches.Globals);
-        }
+            var charactersPlus = new Dictionary<uint, SquelchInfo>(Characters);
 
-        public static void Write(this BinaryWriter writer, Dictionary<string, uint> accountHash)
-        {
-            // unused in retail
-            PackableHashTable.WriteHeader(writer, 0, 0);
-
-            /*PHashTable.WriteHeader(writer, accountHash.Count);    // verify
-
-            foreach (var kvp in accountHash)
+            foreach (var account in Accounts)
             {
-                writer.WriteString16L(kvp.Key);
-                writer.Write(kvp.Value);
-            }*/
-        }
+                var guid = account.Value;
+                var accountPlayer = PlayerManager.FindByGuid(guid);
+                if (accountPlayer == null)
+                {
+                    continue;
+                }
 
-        // retail used either 32 or 128 here, but i could find no fully consistent pattern to discern them
-
-        // seems to be 128 in client constructor?
-        public static HashComparer HashComparer = new HashComparer(32);
-
-        public static void Write(this BinaryWriter writer, Dictionary<uint, SquelchInfo> characterHash)
-        {
-            PackableHashTable.WriteHeader(writer, characterHash.Count, HashComparer.NumBuckets);
-
-            var sorted = new SortedDictionary<uint, SquelchInfo>(characterHash, HashComparer);
-
-            foreach (var kvp in sorted)
-            {
-                writer.Write(kvp.Key);
-                writer.Write(kvp.Value);
+                if (!charactersPlus.TryGetValue(guid, out var existing))
+                {
+                    charactersPlus.Add(guid, new SquelchInfo(SquelchMask.AllChannels, accountPlayer.Name, true));
+                }
+                else
+                {
+                    existing.Account = true;
+                }
             }
+            return charactersPlus;
+        }
+    }
+
+    /// <summary>
+    /// Returns TRUE if the input player is filtered by this player
+    /// </summary>
+    public bool Contains(WorldObject source, ChatMessageType messageType = ChatMessageType.AllChannels)
+    {
+        // ensure this channel can be squelched
+        if (messageType != ChatMessageType.AllChannels && !SquelchManager.IsLegalChannel(messageType))
+        {
+            return false;
+        }
+
+        var squelchMask = messageType.ToMask();
+
+        if (source is Player player)
+        {
+            // check account squelches
+
+            // the client forces account squelches to be AllMessages,
+            // so for these, channel mask is not required
+
+            if (Accounts.ContainsKey(player.Session.Account))
+            {
+                return true;
+            }
+
+            // check character squelches
+            Characters.TryGetValue(player.Guid.Full, out var squelchInfo);
+
+            if (squelchInfo != null && squelchInfo.Filters[0].HasFlag(squelchMask))
+            {
+                return true;
+            }
+        }
+
+        // check global squelches
+        if (Globals.Filters.Count > 0 && Globals.Filters[0].HasFlag(squelchMask))
+        {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+public static class SquelchDBExtensions
+{
+    public static void Write(this BinaryWriter writer, SquelchDB squelches)
+    {
+        //writer.Write(squelches.Accounts);
+        writer.Write(new Dictionary<string, uint>()); // this part of the structure is always empty in retail pcaps, even with account squelches
+        // perhaps for security reasons, always send account squelches in the characters section + account bool?
+        writer.Write(squelches.CharactersPlus);
+        writer.Write(squelches.Globals);
+    }
+
+    public static void Write(this BinaryWriter writer, Dictionary<string, uint> accountHash)
+    {
+        // unused in retail
+        PackableHashTable.WriteHeader(writer, 0, 0);
+
+        /*PHashTable.WriteHeader(writer, accountHash.Count);    // verify
+
+        foreach (var kvp in accountHash)
+        {
+            writer.WriteString16L(kvp.Key);
+            writer.Write(kvp.Value);
+        }*/
+    }
+
+    // retail used either 32 or 128 here, but i could find no fully consistent pattern to discern them
+
+    // seems to be 128 in client constructor?
+    public static HashComparer HashComparer = new HashComparer(32);
+
+    public static void Write(this BinaryWriter writer, Dictionary<uint, SquelchInfo> characterHash)
+    {
+        PackableHashTable.WriteHeader(writer, characterHash.Count, HashComparer.NumBuckets);
+
+        var sorted = new SortedDictionary<uint, SquelchInfo>(characterHash, HashComparer);
+
+        foreach (var kvp in sorted)
+        {
+            writer.Write(kvp.Key);
+            writer.Write(kvp.Value);
         }
     }
 }

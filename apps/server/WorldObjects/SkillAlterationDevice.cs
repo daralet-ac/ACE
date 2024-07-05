@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-
 using ACE.DatLoader;
 using ACE.DatLoader.Entity;
 using ACE.Entity;
@@ -12,313 +11,416 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+public class SkillAlterationDevice : WorldObject
 {
-    public class SkillAlterationDevice : WorldObject
+    public enum SkillAlterationType
     {
-        public enum SkillAlterationType
+        Undef = 0,
+        Specialize = 1,
+        Lower = 2,
+    }
+
+    public SkillAlterationType TypeOfAlteration
+    {
+        get => (SkillAlterationType)(GetProperty(PropertyInt.TypeOfAlteration) ?? 0);
+        set
         {
-            Undef = 0,
-            Specialize = 1,
-            Lower = 2,
-        }
-
-        public SkillAlterationType TypeOfAlteration
-        {
-            get => (SkillAlterationType)(GetProperty(PropertyInt.TypeOfAlteration) ?? 0);
-            set { if (value == 0) RemoveProperty(PropertyInt.TypeOfAlteration); else SetProperty(PropertyInt.TypeOfAlteration, (int)value); }
-        }
-
-        public Skill SkillToBeAltered
-        {
-            get => (Skill)(GetProperty(PropertyInt.SkillToBeAltered) ?? 0);
-            set { if (value == 0) RemoveProperty(PropertyInt.SkillToBeAltered); else SetProperty(PropertyInt.SkillToBeAltered, (int)value); }
-        }
-
-        /// <summary>
-        /// A new biota be created taking all of its values from weenie.
-        /// </summary>
-        public SkillAlterationDevice(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
-        {
-            SetEphemeralValues();
-        }
-
-        /// <summary>
-        /// Restore a WorldObject from the database.
-        /// </summary>
-        public SkillAlterationDevice(Biota biota) : base(biota)
-        {
-            SetEphemeralValues();
-        }
-
-        private void SetEphemeralValues()
-        {
-        }
-
-        public override void ActOnUse(WorldObject activator)
-        {
-            ActOnUse(activator, false);
-        }
-
-        public void ActOnUse(WorldObject activator, bool confirmed)
-        {
-            if (!(activator is Player player))
-                return;
-
-            // verify skill
-            var skill = player.GetCreatureSkill(SkillToBeAltered);
-
-            if (skill == null)
+            if (value == 0)
             {
-                player.Session.Network.EnqueueSend(new GameEventWeenieError(player.Session, WeenieError.YouFailToAlterSkill));
-                return;
+                RemoveProperty(PropertyInt.TypeOfAlteration);
+            }
+            else
+            {
+                SetProperty(PropertyInt.TypeOfAlteration, (int)value);
+            }
+        }
+    }
+
+    public Skill SkillToBeAltered
+    {
+        get => (Skill)(GetProperty(PropertyInt.SkillToBeAltered) ?? 0);
+        set
+        {
+            if (value == 0)
+            {
+                RemoveProperty(PropertyInt.SkillToBeAltered);
+            }
+            else
+            {
+                SetProperty(PropertyInt.SkillToBeAltered, (int)value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A new biota be created taking all of its values from weenie.
+    /// </summary>
+    public SkillAlterationDevice(Weenie weenie, ObjectGuid guid)
+        : base(weenie, guid)
+    {
+        SetEphemeralValues();
+    }
+
+    /// <summary>
+    /// Restore a WorldObject from the database.
+    /// </summary>
+    public SkillAlterationDevice(Biota biota)
+        : base(biota)
+    {
+        SetEphemeralValues();
+    }
+
+    private void SetEphemeralValues() { }
+
+    public override void ActOnUse(WorldObject activator)
+    {
+        ActOnUse(activator, false);
+    }
+
+    public void ActOnUse(WorldObject activator, bool confirmed)
+    {
+        if (!(activator is Player player))
+        {
+            return;
+        }
+
+        // verify skill
+        var skill = player.GetCreatureSkill(SkillToBeAltered);
+
+        if (skill == null)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameEventWeenieError(player.Session, WeenieError.YouFailToAlterSkill)
+            );
+            return;
+        }
+
+        // get skill training / specialization costs
+        var skillBase = DatManager.PortalDat.SkillTable.SkillBaseHash[(uint)skill.Skill];
+
+        if (!VerifyRequirements(player, skill, skillBase))
+        {
+            return;
+        }
+
+        if (!confirmed)
+        {
+            var newSkill = (NewSkillNames)skill.Skill;
+            var msg = "This action will ";
+            switch (TypeOfAlteration)
+            {
+                case SkillAlterationType.Specialize:
+                    msg +=
+                        $"specialize your {newSkill.ToSentence()} skill and cost {skillBase.UpgradeCostFromTrainedToSpecialized} credits.";
+                    break;
+                case SkillAlterationType.Lower:
+                    msg +=
+                        $"lower your {newSkill.ToSentence()} skill from {(skill.AdvancementClass == SkillAdvancementClass.Specialized ? "specialized to trained" : "trained to untrained")} and refund the skill credits and experience invested in this skill.";
+                    break;
             }
 
-            // get skill training / specialization costs
-            var skillBase = DatManager.PortalDat.SkillTable.SkillBaseHash[(uint)skill.Skill];
-
-            if (!VerifyRequirements(player, skill, skillBase))
-                return;
-
-            if (!confirmed)
+            if (!player.ConfirmationManager.EnqueueSend(new Confirmation_AlterSkill(player.Guid, Guid), msg))
             {
-                var newSkill = (NewSkillNames)skill.Skill;
-                var msg = "This action will ";
-                switch (TypeOfAlteration)
+                player.SendWeenieError(WeenieError.ConfirmationInProgress);
+            }
+
+            return;
+        }
+
+        AlterSkill(player, skill, skillBase);
+    }
+
+    public bool VerifyRequirements(Player player, CreatureSkill skill, SkillBase skillBase)
+    {
+        var newSkill = (NewSkillNames)skill.Skill;
+
+        switch (TypeOfAlteration)
+        {
+            // Gem of Enlightenment
+            case SkillAlterationType.Specialize:
+
+                // ensure skill is trained
+                if (skill.AdvancementClass != SkillAdvancementClass.Trained)
                 {
-                    case SkillAlterationType.Specialize:
-                        msg += $"specialize your {newSkill.ToSentence()} skill and cost {skillBase.UpgradeCostFromTrainedToSpecialized} credits.";
-                        break;
-                    case SkillAlterationType.Lower:
-                        msg += $"lower your {newSkill.ToSentence()} skill from {(skill.AdvancementClass == SkillAdvancementClass.Specialized ? "specialized to trained" : "trained to untrained")} and refund the skill credits and experience invested in this skill.";
-                        break;
+                    player.Session.Network.EnqueueSend(
+                        new GameEventWeenieErrorWithString(
+                            player.Session,
+                            WeenieErrorWithString.Your_SkillMustBeTrained,
+                            newSkill.ToSentence()
+                        )
+                    );
+                    return false;
                 }
 
-                if (!player.ConfirmationManager.EnqueueSend(new Confirmation_AlterSkill(player.Guid, Guid), msg))
-                    player.SendWeenieError(WeenieError.ConfirmationInProgress);
+                // ensure player has enough available skill credits
+                if (player.AvailableSkillCredits < skillBase.UpgradeCostFromTrainedToSpecialized)
+                {
+                    player.Session.Network.EnqueueSend(
+                        new GameEventWeenieErrorWithString(
+                            player.Session,
+                            WeenieErrorWithString.NotEnoughSkillCreditsToSpecialize,
+                            newSkill.ToSentence()
+                        )
+                    );
+                    return false;
+                }
 
-                return;
-            }
+                // ensure player won't exceed limit of 70 specialized credits after operation
+                var specializedCost = skillBase.SpecializedCost;
 
-            AlterSkill(player, skill, skillBase);
+                if (
+                    DatManager.PortalDat.CharGen.HeritageGroups.TryGetValue(
+                        (uint)player.Heritage,
+                        out var heritageGroup
+                    )
+                )
+                {
+                    // check for adjusted costs of Specialization due to player's heritage (e.g. Arcane Lore)
+                    var heritageAdjustedCost = heritageGroup.Skills.FirstOrDefault(i => i.SkillNum == (int)skill.Skill);
+
+                    if (heritageAdjustedCost != null)
+                    {
+                        specializedCost = heritageAdjustedCost.PrimaryCost;
+                    }
+                }
+
+                if (GetTotalSpecializedCredits(player) + specializedCost > 70)
+                {
+                    player.Session.Network.EnqueueSend(
+                        new GameEventWeenieErrorWithString(
+                            player.Session,
+                            WeenieErrorWithString.TooManyCreditsInSpecializedSkills,
+                            newSkill.ToSentence()
+                        )
+                    );
+                    return false;
+                }
+                break;
+
+            // Gem of Forgetfulness
+            case SkillAlterationType.Lower:
+
+                // ensure skill is trained or specialized
+                if (skill.AdvancementClass < SkillAdvancementClass.Trained)
+                {
+                    player.Session.Network.EnqueueSend(
+                        new GameEventWeenieErrorWithString(
+                            player.Session,
+                            WeenieErrorWithString.Your_SkillIsAlreadyUntrained,
+                            newSkill.ToSentence()
+                        )
+                    );
+                    return false;
+                }
+
+                // Check for equipped items that have requirements in the skill we're lowering
+                if (CheckWieldedItems(player))
+                {
+                    // Items are wielded which might be affected by a lowering operation
+                    player.Session.Network.EnqueueSend(
+                        new GameEventWeenieErrorWithString(
+                            player.Session,
+                            WeenieErrorWithString.CannotLowerSkillWhileWieldingItem,
+                            newSkill.ToSentence()
+                        )
+                    );
+                    return false;
+                }
+
+                break;
         }
+        return true;
+    }
 
-        public bool VerifyRequirements(Player player, CreatureSkill skill, SkillBase skillBase)
+    public void AlterSkill(Player player, CreatureSkill skill, SkillBase skillBase)
+    {
+        var newSkill = (NewSkillNames)skill.Skill;
+
+        switch (TypeOfAlteration)
         {
-            var newSkill = (NewSkillNames)skill.Skill;
+            // Gem of Enlightenment
+            case SkillAlterationType.Specialize:
 
-            switch (TypeOfAlteration)
-            {
-                // Gem of Enlightenment
-                case SkillAlterationType.Specialize:
+                if (player.SpecializeSkill(skill.Skill, skillBase.UpgradeCostFromTrainedToSpecialized, false))
+                {
+                    var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
+                    var availableSkillCredits = new GameMessagePrivateUpdatePropertyInt(
+                        player,
+                        PropertyInt.AvailableSkillCredits,
+                        player.AvailableSkillCredits ?? 0
+                    );
 
-                    // ensure skill is trained
-                    if (skill.AdvancementClass != SkillAdvancementClass.Trained)
-                    {
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.Your_SkillMustBeTrained, newSkill.ToSentence()));
-                        return false;
-                    }
+                    var msg = new GameEventWeenieErrorWithString(
+                        player.Session,
+                        WeenieErrorWithString.YouHaveSucceededSpecializing_Skill,
+                        newSkill.ToSentence()
+                    );
 
-                    // ensure player has enough available skill credits
-                    if (player.AvailableSkillCredits < skillBase.UpgradeCostFromTrainedToSpecialized)
-                    {
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.NotEnoughSkillCreditsToSpecialize, newSkill.ToSentence()));
-                        return false;
-                    }
+                    player.Session.Network.EnqueueSend(updateSkill, availableSkillCredits, msg);
 
-                    // ensure player won't exceed limit of 70 specialized credits after operation
-                    var specializedCost = skillBase.SpecializedCost;
+                    player.TryConsumeFromInventoryWithNetworking(this, 1);
+                }
+                break;
 
-                    if (DatManager.PortalDat.CharGen.HeritageGroups.TryGetValue((uint)player.Heritage, out var heritageGroup))
-                    {
-                        // check for adjusted costs of Specialization due to player's heritage (e.g. Arcane Lore)
-                        var heritageAdjustedCost = heritageGroup.Skills.FirstOrDefault(i => i.SkillNum == (int)skill.Skill);
+            // Gem of Forgetfulness
+            case SkillAlterationType.Lower:
 
-                        if (heritageAdjustedCost != null)
-                            specializedCost = heritageAdjustedCost.PrimaryCost;
-                    }
+                // specialized => trained
+                if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                {
+                    var specializedViaAugmentation =
+                        player.IsSkillSpecializedViaAugmentation(skill.Skill, out var playerHasAugmentation)
+                        && playerHasAugmentation;
 
-                    if (GetTotalSpecializedCredits(player) + specializedCost > 70)
-                    {
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.TooManyCreditsInSpecializedSkills, newSkill.ToSentence()));
-                        return false;
-                    }
-                    break;
-
-                // Gem of Forgetfulness
-                case SkillAlterationType.Lower:
-
-                    // ensure skill is trained or specialized
-                    if (skill.AdvancementClass < SkillAdvancementClass.Trained)
-                    {
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.Your_SkillIsAlreadyUntrained, newSkill.ToSentence()));
-                        return false;
-                    }
-
-                    // Check for equipped items that have requirements in the skill we're lowering
-                    if (CheckWieldedItems(player))
-                    {
-                        // Items are wielded which might be affected by a lowering operation
-                        player.Session.Network.EnqueueSend(new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.CannotLowerSkillWhileWieldingItem, newSkill.ToSentence()));
-                        return false;
-                    }
-
-                    break;
-
-            }
-            return true;
-        }
-
-        public void AlterSkill(Player player, CreatureSkill skill, SkillBase skillBase)
-        {
-            var newSkill = (NewSkillNames)skill.Skill;
-
-            switch (TypeOfAlteration)
-            {
-                // Gem of Enlightenment
-                case SkillAlterationType.Specialize:
-
-                    if (player.SpecializeSkill(skill.Skill, skillBase.UpgradeCostFromTrainedToSpecialized, false))
+                    if (player.UnspecializeSkill(skill.Skill, skillBase.UpgradeCostFromTrainedToSpecialized))
                     {
                         var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
-                        var availableSkillCredits = new GameMessagePrivateUpdatePropertyInt(player, PropertyInt.AvailableSkillCredits, player.AvailableSkillCredits ?? 0);
+                        var availableSkillCredits = new GameMessagePrivateUpdatePropertyInt(
+                            player,
+                            PropertyInt.AvailableSkillCredits,
+                            player.AvailableSkillCredits ?? 0
+                        );
+                        var msg = specializedViaAugmentation
+                            ? WeenieErrorWithString.YouSucceededRecoveringXPFromSkill_AugmentationNotUntrainable
+                            : WeenieErrorWithString.YouHaveSucceededUnspecializing_Skill;
+                        var message = new GameEventWeenieErrorWithString(player.Session, msg, newSkill.ToSentence());
 
-                        var msg = new GameEventWeenieErrorWithString(player.Session, WeenieErrorWithString.YouHaveSucceededSpecializing_Skill, newSkill.ToSentence());
-
-                        player.Session.Network.EnqueueSend(updateSkill, availableSkillCredits, msg);
+                        player.Session.Network.EnqueueSend(updateSkill, availableSkillCredits, message);
 
                         player.TryConsumeFromInventoryWithNetworking(this, 1);
                     }
-                    break;
+                }
+                // trained => untrained
+                // in the case of skills which can't be untrained,
+                // keep trained, but recover the xp spent
+                else if (skill.AdvancementClass == SkillAdvancementClass.Trained)
+                {
+                    var untrainable = Player.IsSkillUntrainable(skill.Skill, (HeritageGroup)player.Heritage);
 
-                // Gem of Forgetfulness
-                case SkillAlterationType.Lower:
-
-                    // specialized => trained
-                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                    if (player.IsTradeSkill(skill.Skill))
                     {
-                        var specializedViaAugmentation = player.IsSkillSpecializedViaAugmentation(skill.Skill, out var playerHasAugmentation) && playerHasAugmentation;
-
-                        if (player.UnspecializeSkill(skill.Skill, skillBase.UpgradeCostFromTrainedToSpecialized))
+                        if (player.UntrainSkill(skill.Skill, 0))
                         {
                             var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
-                            var availableSkillCredits = new GameMessagePrivateUpdatePropertyInt(player, PropertyInt.AvailableSkillCredits, player.AvailableSkillCredits ?? 0);
-                            var msg = specializedViaAugmentation ? WeenieErrorWithString.YouSucceededRecoveringXPFromSkill_AugmentationNotUntrainable : WeenieErrorWithString.YouHaveSucceededUnspecializing_Skill;
-                            var message = new GameEventWeenieErrorWithString(player.Session, msg, newSkill.ToSentence());
+                            var msg = untrainable
+                                ? WeenieErrorWithString.YouHaveSucceededUntraining_Skill
+                                : WeenieErrorWithString.CannotUntrain_SkillButRecoveredXP;
+                            var message = new GameEventWeenieErrorWithString(
+                                player.Session,
+                                msg,
+                                newSkill.ToSentence()
+                            );
 
-                            player.Session.Network.EnqueueSend(updateSkill, availableSkillCredits, message);
-
+                            player.Session.Network.EnqueueSend(updateSkill, message);
                             player.TryConsumeFromInventoryWithNetworking(this, 1);
                         }
                     }
-
-                    // trained => untrained
-                    // in the case of skills which can't be untrained,
-                    // keep trained, but recover the xp spent
-                    else if (skill.AdvancementClass == SkillAdvancementClass.Trained)
+                    if (player.UntrainSkill(skill.Skill, skillBase.TrainedCost))
                     {
-                        var untrainable = Player.IsSkillUntrainable(skill.Skill, (HeritageGroup)player.Heritage);
+                        var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
+                        var availableSkillCredits = new GameMessagePrivateUpdatePropertyInt(
+                            player,
+                            PropertyInt.AvailableSkillCredits,
+                            player.AvailableSkillCredits ?? 0
+                        );
+                        var msg = untrainable
+                            ? WeenieErrorWithString.YouHaveSucceededUntraining_Skill
+                            : WeenieErrorWithString.CannotUntrain_SkillButRecoveredXP;
+                        var message = new GameEventWeenieErrorWithString(player.Session, msg, newSkill.ToSentence());
 
-                        if (player.IsTradeSkill(skill.Skill))
-                        {
-                            if (player.UntrainSkill(skill.Skill, 0))
-                            {
-                                var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
-                                var msg = untrainable ? WeenieErrorWithString.YouHaveSucceededUntraining_Skill : WeenieErrorWithString.CannotUntrain_SkillButRecoveredXP;
-                                var message = new GameEventWeenieErrorWithString(player.Session, msg, newSkill.ToSentence());
+                        player.Session.Network.EnqueueSend(updateSkill, availableSkillCredits, message);
 
-                                player.Session.Network.EnqueueSend(updateSkill, message);
-                                player.TryConsumeFromInventoryWithNetworking(this, 1);
-                            }
-                        }
-                        if (player.UntrainSkill(skill.Skill, skillBase.TrainedCost))
-                        {
-                            var updateSkill = new GameMessagePrivateUpdateSkill(player, skill);
-                            var availableSkillCredits = new GameMessagePrivateUpdatePropertyInt(player, PropertyInt.AvailableSkillCredits, player.AvailableSkillCredits ?? 0);
-                            var msg = untrainable ? WeenieErrorWithString.YouHaveSucceededUntraining_Skill : WeenieErrorWithString.CannotUntrain_SkillButRecoveredXP;
-                            var message = new GameEventWeenieErrorWithString(player.Session, msg, newSkill.ToSentence());
-
-                            player.Session.Network.EnqueueSend(updateSkill, availableSkillCredits, message);
-
-                            player.TryConsumeFromInventoryWithNetworking(this, 1);
-                        }
+                        player.TryConsumeFromInventoryWithNetworking(this, 1);
                     }
-                    break;
+                }
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Calculates and returns the current total number of specialized credits
+    /// </summary>
+    private int GetTotalSpecializedCredits(Player player)
+    {
+        var specializedCreditsTotal = 0;
+
+        foreach (var kvp in player.Skills)
+        {
+            if (kvp.Value.AdvancementClass == SkillAdvancementClass.Specialized)
+            {
+                switch (kvp.Key)
+                {
+                    // exclude None/Undef skill
+                    case Skill.None:
+
+                    // exclude aug specs
+                    case Skill.ArmorTinkering:
+                    case Skill.ItemTinkering:
+                    case Skill.MagicItemTinkering:
+                    case Skill.WeaponTinkering:
+                    case Skill.Salvaging:
+
+                    // removed skills
+                    case Skill.MissileDefense:
+                    case Skill.DirtyFighting:
+                    case Skill.Recklessness:
+                        continue;
+                }
+
+                var skill = DatManager.PortalDat.SkillTable.SkillBaseHash[(uint)kvp.Key];
+
+                var specializedCost = skill.SpecializedCost;
+
+                if (
+                    DatManager.PortalDat.CharGen.HeritageGroups.TryGetValue(
+                        (uint)player.Heritage,
+                        out var heritageGroup
+                    )
+                )
+                {
+                    // check for adjusted costs of Specialization due to player's heritage (e.g. Arcane Lore)
+                    var heritageAdjustedCost = heritageGroup.Skills.FirstOrDefault(i => i.SkillNum == (int)kvp.Key);
+
+                    if (heritageAdjustedCost != null)
+                    {
+                        specializedCost = heritageAdjustedCost.PrimaryCost;
+                    }
+                }
+                specializedCreditsTotal += specializedCost;
             }
         }
+        return specializedCreditsTotal;
+    }
 
-        /// <summary>
-        /// Calculates and returns the current total number of specialized credits
-        /// </summary>
-        private int GetTotalSpecializedCredits(Player player)
+    /// <summary>
+    /// Checks wielded items and their requirements to see if they'd be violated by an impending skill lowering operation
+    /// </summary>
+    private bool CheckWieldedItems(Player player)
+    {
+        foreach (var equippedItem in player.EquippedObjects.Values)
         {
-            var specializedCreditsTotal = 0;
-
-            foreach (var kvp in player.Skills)
+            if (
+                CheckWieldRequirement(player, equippedItem.WieldRequirements, equippedItem.WieldSkillType)
+                || CheckWieldRequirement(player, equippedItem.WieldRequirements2, equippedItem.WieldSkillType2)
+                || CheckWieldRequirement(player, equippedItem.WieldRequirements3, equippedItem.WieldSkillType3)
+                || CheckWieldRequirement(player, equippedItem.WieldRequirements4, equippedItem.WieldSkillType4)
+            )
             {
-                if (kvp.Value.AdvancementClass == SkillAdvancementClass.Specialized)
-                {
-                    switch (kvp.Key)
-                    {
-                        // exclude None/Undef skill
-                        case Skill.None:
-
-                        // exclude aug specs
-                        case Skill.ArmorTinkering:
-                        case Skill.ItemTinkering:
-                        case Skill.MagicItemTinkering:
-                        case Skill.WeaponTinkering:
-                        case Skill.Salvaging:
-
-                        // removed skills
-                        case Skill.MissileDefense:
-                        case Skill.DirtyFighting:
-                        case Skill.Recklessness:
-                            continue;
-                    }
-
-                    var skill = DatManager.PortalDat.SkillTable.SkillBaseHash[(uint)kvp.Key];
-
-                    var specializedCost = skill.SpecializedCost;
-
-                    if (DatManager.PortalDat.CharGen.HeritageGroups.TryGetValue((uint)player.Heritage, out var heritageGroup))
-                    {
-                        // check for adjusted costs of Specialization due to player's heritage (e.g. Arcane Lore)
-                        var heritageAdjustedCost = heritageGroup.Skills.FirstOrDefault(i => i.SkillNum == (int)kvp.Key);
-
-                        if (heritageAdjustedCost != null)
-                            specializedCost = heritageAdjustedCost.PrimaryCost;
-                    }
-                    specializedCreditsTotal += specializedCost;
-                }
+                return true;
             }
-            return specializedCreditsTotal;
         }
+        return false;
+    }
 
-        /// <summary>
-        /// Checks wielded items and their requirements to see if they'd be violated by an impending skill lowering operation
-        /// </summary>
-        private bool CheckWieldedItems(Player player)
+    private bool CheckWieldRequirement(Player player, WieldRequirement itemWieldReq, int? wieldSkillType)
+    {
+        if (itemWieldReq != WieldRequirement.RawSkill && itemWieldReq != WieldRequirement.Skill)
         {
-            foreach (var equippedItem in player.EquippedObjects.Values)
-            {
-                if (CheckWieldRequirement(player, equippedItem.WieldRequirements, equippedItem.WieldSkillType) ||
-                    CheckWieldRequirement(player, equippedItem.WieldRequirements2, equippedItem.WieldSkillType2) ||
-                    CheckWieldRequirement(player, equippedItem.WieldRequirements3, equippedItem.WieldSkillType3) ||
-                    CheckWieldRequirement(player, equippedItem.WieldRequirements4, equippedItem.WieldSkillType4))
-                {
-                    return true;
-                }
-            }
             return false;
         }
 
-        private bool CheckWieldRequirement(Player player, WieldRequirement itemWieldReq, int? wieldSkillType)
-        {
-            if (itemWieldReq != WieldRequirement.RawSkill && itemWieldReq != WieldRequirement.Skill)
-                return false;
-
-            return player.ConvertToMoASkill((Skill)(wieldSkillType ?? 0)) == SkillToBeAltered;
-        }
+        return player.ConvertToMoASkill((Skill)(wieldSkillType ?? 0)) == SkillToBeAltered;
     }
 }

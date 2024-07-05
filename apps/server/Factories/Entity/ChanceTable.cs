@@ -4,115 +4,135 @@ using System.Linq;
 using ACE.Common;
 using Serilog;
 
-namespace ACE.Server.Factories.Entity
+namespace ACE.Server.Factories.Entity;
+
+public enum ChanceTableType
 {
-    public enum ChanceTableType
+    Chance,
+    Weight
+}
+
+public class ChanceTable<T> : List<(T result, float chance)>
+{
+    private bool verified;
+    private ChanceTableType TableType;
+    private float TotalWeight = 1.0f;
+    private static readonly decimal threshold = 0.0000001M;
+
+    private readonly ILogger _log = Log.ForContext<ChanceTable<T>>();
+
+    public ChanceTable(ChanceTableType tableType = ChanceTableType.Chance)
     {
-        Chance,
-        Weight
+        TableType = tableType;
     }
 
-    public class ChanceTable<T> : List<(T result, float chance)>
+    private static int CompareByInverseChance((T result, float chance) x, (T result, float chance) y)
     {
-        private bool verified;
-        private ChanceTableType TableType;
-        private float TotalWeight = 1.0f;
-        private static readonly decimal threshold = 0.0000001M;
+        return -x.chance.CompareTo(y.chance);
+    }
 
-        private readonly ILogger _log = Log.ForContext<ChanceTable<T>>();
+    private void VerifyTable()
+    {
+        Sort(CompareByInverseChance); // Sort this list to make sure the smallest chances are at the end of the list so qualityMod can work properly.
 
-        public ChanceTable(ChanceTableType tableType = ChanceTableType.Chance)
+        if (TableType == ChanceTableType.Weight)
         {
-            TableType = tableType;
-        }
-        private static int CompareByInverseChance((T result, float chance) x, (T result, float chance) y)
-        {
-            return -x.chance.CompareTo(y.chance);
-        }
-
-        private void VerifyTable()
-        {
-            Sort(CompareByInverseChance); // Sort this list to make sure the smallest chances are at the end of the list so qualityMod can work properly.
-
-            if (TableType == ChanceTableType.Weight)
+            TotalWeight = 0.0f;
+            foreach (var entry in this)
             {
-                TotalWeight = 0.0f;
-                foreach (var entry in this)
-                {
-                    TotalWeight += entry.chance;
-                }
+                TotalWeight += entry.chance;
             }
-            else
-            {
-                var total = 0.0M;
-
-                foreach (var entry in this)
-                    total += (decimal)(entry.chance);
-
-                if (Math.Abs(1.0M - total) > threshold)
-                    _log.Error($"Chance table adds up to {total}, expected 1.0: {string.Join(", ", this)}");
-            }
-
-            verified = true;
         }
-
-        public T PseudoRandomRoll(int seed)
+        else
         {
-            if (!verified)
-                VerifyTable();
-
-            var total = 0.0f;
-
-            Random random = new Random(seed);
-            var rng = random.NextDouble();
+            var total = 0.0M;
 
             foreach (var entry in this)
             {
-                total += entry.chance / TotalWeight;
-
-                if (rng < total)
-                    return entry.result;
+                total += (decimal)(entry.chance);
             }
 
-            //Console.WriteLine($"Rolled {rng}, everything >= {total}");
-
-            return this.Last(i => i.chance > 0).result;
+            if (Math.Abs(1.0M - total) > threshold)
+            {
+                _log.Error($"Chance table adds up to {total}, expected 1.0: {string.Join(", ", this)}");
+            }
         }
 
-        public T Roll(float qualityMod = 0.0f, bool invertedQualityMod = false)
+        verified = true;
+    }
+
+    public T PseudoRandomRoll(int seed)
+    {
+        if (!verified)
         {
-            if (!verified)
-                VerifyTable();
+            VerifyTable();
+        }
 
-            var total = 0.0f;
+        var total = 0.0f;
 
-            double rng;
-            if (invertedQualityMod)
+        var random = new Random(seed);
+        var rng = random.NextDouble();
+
+        foreach (var entry in this)
+        {
+            total += entry.chance / TotalWeight;
+
+            if (rng < total)
             {
-                if (qualityMod >= 0)
-                    rng = ThreadSafeRandom.Next(0.0f, 1.0f - qualityMod);
-                else
-                    rng = ThreadSafeRandom.Next(-qualityMod, 1.0f);
+                return entry.result;
+            }
+        }
+
+        //Console.WriteLine($"Rolled {rng}, everything >= {total}");
+
+        return this.Last(i => i.chance > 0).result;
+    }
+
+    public T Roll(float qualityMod = 0.0f, bool invertedQualityMod = false)
+    {
+        if (!verified)
+        {
+            VerifyTable();
+        }
+
+        var total = 0.0f;
+
+        double rng;
+        if (invertedQualityMod)
+        {
+            if (qualityMod >= 0)
+            {
+                rng = ThreadSafeRandom.Next(0.0f, 1.0f - qualityMod);
             }
             else
             {
-                if (qualityMod >= 0)
-                    rng = ThreadSafeRandom.Next(qualityMod, 1.0f);
-                else
-                    rng = ThreadSafeRandom.Next(0.0f, Math.Max(1.0f + qualityMod, 0.0f));
+                rng = ThreadSafeRandom.Next(-qualityMod, 1.0f);
             }
-
-            foreach (var entry in this)
-            {
-                total += entry.chance / TotalWeight;
-
-                if (rng < total)
-                    return entry.result;
-            }
-
-            //Console.WriteLine($"Rolled {rng}, everything >= {total}");
-
-            return this.Last(i => i.chance > 0).result;
         }
+        else
+        {
+            if (qualityMod >= 0)
+            {
+                rng = ThreadSafeRandom.Next(qualityMod, 1.0f);
+            }
+            else
+            {
+                rng = ThreadSafeRandom.Next(0.0f, Math.Max(1.0f + qualityMod, 0.0f));
+            }
+        }
+
+        foreach (var entry in this)
+        {
+            total += entry.chance / TotalWeight;
+
+            if (rng < total)
+            {
+                return entry.result;
+            }
+        }
+
+        //Console.WriteLine($"Rolled {rng}, everything >= {total}");
+
+        return this.Last(i => i.chance > 0).result;
     }
 }

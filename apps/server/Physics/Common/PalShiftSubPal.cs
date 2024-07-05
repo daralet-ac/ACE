@@ -1,8 +1,7 @@
-namespace ACE.Server.Physics.Common
+namespace ACE.Server.Physics.Common;
+
+public class PalShiftSubPal
 {
-    public class PalShiftSubPal
-    {
-        public uint SubPalIndex;
-        public uint SubPalLength;
-    }
+    public uint SubPalIndex;
+    public uint SubPalLength;
 }

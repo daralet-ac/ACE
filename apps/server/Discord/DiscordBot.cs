@@ -1,17 +1,17 @@
-using System.Threading;
-using Discord.WebSocket;
-using System.Threading.Tasks;
-using Discord;
-using Serilog.Events;
-using Serilog;
-using Discord.Interactions;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using ACE.Common;
 using ACE.Server.Managers;
+using Discord;
+using Discord.Interactions;
+using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using Serilog.Events;
 using Timer = System.Timers.Timer;
 
 namespace ACE.Server.Discord;
@@ -23,11 +23,12 @@ public class DiscordBot
     private IServiceProvider _services;
     private DiscordSocketClient _client;
 
-    private readonly DiscordSocketConfig _socketConfig = new()
-    {
-        GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMembers,
-        AlwaysDownloadUsers = true,
-    };
+    private readonly DiscordSocketConfig _socketConfig =
+        new()
+        {
+            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.GuildMembers,
+            AlwaysDownloadUsers = true,
+        };
 
     public async Task Initialize(IConfiguration configuration)
     {
@@ -46,8 +47,7 @@ public class DiscordBot
 
         _client.Log += LogAsync;
 
-        await _services.GetRequiredService<InteractionHandler>()
-            .InitializeAsync();
+        await _services.GetRequiredService<InteractionHandler>().InitializeAsync();
 
         _client.Ready += CreatePopulationChannelUpdateTimer;
         _client.Ready += CreateDayNightCycleChannelUpdateTimer;
@@ -60,13 +60,12 @@ public class DiscordBot
 
     private Task CreatePopulationChannelUpdateTimer()
     {
-        var updateInterval = _configuration.GetSection("StatChannels").GetSection("Population").GetValue<double>("UpdateInterval");
+        var updateInterval = _configuration
+            .GetSection("StatChannels")
+            .GetSection("Population")
+            .GetValue<double>("UpdateInterval");
 
-        var timer = new Timer
-        {
-            AutoReset = true,
-            Interval = updateInterval
-        };
+        var timer = new Timer { AutoReset = true, Interval = updateInterval };
 
         timer.Elapsed += DoPopulationChannelUpdate;
 
@@ -77,14 +76,27 @@ public class DiscordBot
 
     private async void DoPopulationChannelUpdate(object sender, ElapsedEventArgs e)
     {
-        var populationChannelId = _configuration.GetSection("StatChannels").GetSection("Population").GetValue<ulong>("ChannelId");
-        if (await _client.GetChannelAsync(populationChannelId) is not IVoiceChannel channel) return;
+        var populationChannelId = _configuration
+            .GetSection("StatChannels")
+            .GetSection("Population")
+            .GetValue<ulong>("ChannelId");
+        if (await _client.GetChannelAsync(populationChannelId) is not IVoiceChannel channel)
+        {
+            return;
+        }
 
         var oldChannelName = channel.Name;
         var newChannelName = $"Population: \ud83d\udfe2 {PlayerManager.GetOnlineCount()}";
-        if (string.Equals(oldChannelName, newChannelName)) return;
+        if (string.Equals(oldChannelName, newChannelName))
+        {
+            return;
+        }
 
-        _log.Information("Updating population channel name. Old: {OldPopulationChannelName} | New: {NewPopulationChannelName}", oldChannelName, newChannelName);
+        _log.Information(
+            "Updating population channel name. Old: {OldPopulationChannelName} | New: {NewPopulationChannelName}",
+            oldChannelName,
+            newChannelName
+        );
 
         try
         {
@@ -99,13 +111,12 @@ public class DiscordBot
 
     private Task CreateDayNightCycleChannelUpdateTimer()
     {
-        var updateInterval = _configuration.GetSection("StatChannels").GetSection("DayNightCycle").GetValue<double>("UpdateInterval");
+        var updateInterval = _configuration
+            .GetSection("StatChannels")
+            .GetSection("DayNightCycle")
+            .GetValue<double>("UpdateInterval");
 
-        var timer = new Timer
-        {
-            AutoReset = true,
-            Interval = updateInterval
-        };
+        var timer = new Timer { AutoReset = true, Interval = updateInterval };
 
         timer.Elapsed += DoDayNightCycleChannelUpdate;
 
@@ -114,17 +125,29 @@ public class DiscordBot
         return Task.CompletedTask;
     }
 
-
     private async void DoDayNightCycleChannelUpdate(object sender, ElapsedEventArgs e)
     {
-        var dayNightCycleChannelId = _configuration.GetSection("StatChannels").GetSection("DayNightCycle").GetValue<ulong>("ChannelId");
-        if (await _client.GetChannelAsync(dayNightCycleChannelId) is not IVoiceChannel channel) return;
+        var dayNightCycleChannelId = _configuration
+            .GetSection("StatChannels")
+            .GetSection("DayNightCycle")
+            .GetValue<ulong>("ChannelId");
+        if (await _client.GetChannelAsync(dayNightCycleChannelId) is not IVoiceChannel channel)
+        {
+            return;
+        }
 
         var oldChannelName = channel.Name;
         var newChannelName = GetCurrentDayNightCycleChannelName();
-        if (string.Equals(oldChannelName.Split(" ").Last(), newChannelName.Split(" ").Last())) return;
+        if (string.Equals(oldChannelName.Split(" ").Last(), newChannelName.Split(" ").Last()))
+        {
+            return;
+        }
 
-        _log.Information("Updating day/night cycle channel name. Old: {OldDayNightCycleChannelName} | New: {NewDayNightCycleChannelName}", oldChannelName, newChannelName);
+        _log.Information(
+            "Updating day/night cycle channel name. Old: {OldDayNightCycleChannelName} | New: {NewDayNightCycleChannelName}",
+            oldChannelName,
+            newChannelName
+        );
 
         try
         {
@@ -141,9 +164,7 @@ public class DiscordBot
     {
         var isNightTime = DerethDateTime.UtcNowToEMUTime.IsNighttime;
 
-        return isNightTime
-            ? "Time: \ud83c\udf11 Night"
-            : "Time: \ud83c\udf1e Day";
+        return isNightTime ? "Time: \ud83c\udf11 Night" : "Time: \ud83c\udf1e Day";
     }
 
     private async Task LogAsync(LogMessage message)
