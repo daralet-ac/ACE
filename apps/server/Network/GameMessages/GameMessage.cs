@@ -1,5 +1,3 @@
-using System;
-
 namespace ACE.Server.Network.GameMessages;
 
 public abstract class GameMessage

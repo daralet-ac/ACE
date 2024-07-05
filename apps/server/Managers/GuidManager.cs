@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using ACE.Entity;
 using Serilog;
-using Serilog.Events;
 
 namespace ACE.Server.Managers;
 

@@ -11,7 +11,6 @@ using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
-using Serilog.Events;
 using WeenieClassName = ACE.Entity.Enum.WeenieClassName;
 
 namespace ACE.Server.Factories;

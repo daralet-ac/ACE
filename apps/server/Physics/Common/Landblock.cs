@@ -4,12 +4,9 @@ using System.Linq;
 using System.Numerics;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
-using ACE.Entity;
-using ACE.Server.Managers;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.BSP;
 using ACE.Server.Physics.Extensions;
-using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Physics.Common;
 

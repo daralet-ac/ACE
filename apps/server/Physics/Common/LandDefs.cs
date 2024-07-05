@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using ACE.DatLoader;
-using ACE.Server.Physics.Extensions;
 
 namespace ACE.Server.Physics.Common;
 

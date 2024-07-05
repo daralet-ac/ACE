@@ -2,13 +2,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
-using ACE.Common;
 using ACE.DatLoader;
 using ACE.DatLoader.Entity;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 using ACE.Server.Physics.Animation.Internal;
-using ACE.Server.Physics.Common;
 
 namespace ACE.Server.Physics.Animation;
 

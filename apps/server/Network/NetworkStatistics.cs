@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using ACE.Common.Extensions;
-using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Network;
 

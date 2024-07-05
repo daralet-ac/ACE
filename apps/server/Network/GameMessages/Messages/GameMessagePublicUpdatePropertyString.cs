@@ -1,4 +1,3 @@
-using ACE.Entity;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Network.Sequence;
 using ACE.Server.WorldObjects;

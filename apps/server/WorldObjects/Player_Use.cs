@@ -5,7 +5,6 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
-using Serilog.Events;
 
 namespace ACE.Server.WorldObjects;
 

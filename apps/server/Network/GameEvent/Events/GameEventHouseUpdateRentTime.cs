@@ -1,5 +1,3 @@
-using System;
-
 namespace ACE.Server.Network.GameEvent.Events;
 
 public class GameEventHouseUpdateRentTime : GameEventMessage

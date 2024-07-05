@@ -5,7 +5,6 @@ using ACE.Database.Models.Auth;
 using ACE.Entity.Enum;
 using ACE.Server.Network;
 using Serilog;
-using Serilog.Events;
 
 namespace ACE.Server.Command.Handlers;
 

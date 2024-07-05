@@ -12,7 +12,6 @@ using ACE.Server.Managers;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects;
 using Serilog;
-using Serilog.Events;
 using Quaternion = System.Numerics.Quaternion;
 
 namespace ACE.Server.Entity;

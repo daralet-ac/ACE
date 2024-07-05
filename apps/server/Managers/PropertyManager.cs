@@ -7,7 +7,6 @@ using System.Timers;
 using ACE.Database;
 using ACE.Server.Factories.Tables.Cantrips;
 using Serilog;
-using Serilog.Events;
 
 namespace ACE.Server.Managers;
 

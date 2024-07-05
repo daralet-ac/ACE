@@ -16,7 +16,6 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 using Serilog;
-using Serilog.Events;
 
 namespace ACE.Server.Managers;
 

@@ -12,7 +12,6 @@ using ACE.Server.Network.Enum;
 using ACE.Server.Network.Handlers;
 using ACE.Server.Network.Packets;
 using Serilog;
-using Serilog.Events;
 
 namespace ACE.Server.Network.Managers;
 

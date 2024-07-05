@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using ACE.Entity;
-using ACE.Server.Network.Enum;
 
 namespace ACE.Server.Network;
 

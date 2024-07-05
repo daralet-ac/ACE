@@ -2,7 +2,6 @@ using System;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Server.Factories.Enum;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Entity.Mutations;

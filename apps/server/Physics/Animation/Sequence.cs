@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using ACE.DatLoader.Entity;
 using ACE.Entity.Enum;
-using ACE.Server.Physics.Hooks;
 
 namespace ACE.Server.Physics.Animation;
 

@@ -1,5 +1,4 @@
 using ACE.DatLoader.Entity;
-using ACE.Server.Physics.Animation;
 
 namespace ACE.Server.Physics;
 

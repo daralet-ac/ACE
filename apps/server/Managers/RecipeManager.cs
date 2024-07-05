@@ -18,9 +18,7 @@ using ACE.Server.Factories;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Serilog;
-using Serilog.Events;
 using Weenie = ACE.Entity.Models.Weenie;
 
 namespace ACE.Server.Managers;

@@ -1,7 +1,6 @@
 // Uncomment this if you want to use weak reference cache. It could save 10's of MB and might be useful on a micro-server
 //#define USE_WEAK_REFERENCE_CACHE
 
-using System;
 using System.Collections.Concurrent;
 using ACE.Server.Physics.Collision;
 using ACE.Server.Physics.Common;

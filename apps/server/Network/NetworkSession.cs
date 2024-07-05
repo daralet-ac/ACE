@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using ACE.Common.Cryptography;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;

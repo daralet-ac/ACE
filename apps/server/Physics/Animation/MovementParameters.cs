@@ -1,4 +1,3 @@
-using System;
 using ACE.Entity.Enum;
 using ACE.Server.Network.Structure;
 

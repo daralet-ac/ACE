@@ -1,7 +1,6 @@
 using System;
 using System.Numerics;
 using ACE.Server.Physics.Animation;
-using ACE.Server.Physics.Collision;
 using ACE.Server.Physics.Common;
 using ACE.Server.Physics.Extensions;
 

@@ -30,7 +30,6 @@ using ACE.Server.Physics.Managers;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Entity;
 using Serilog;
-using Serilog.Events;
 using Spell = ACE.Server.Entity.Spell;
 
 namespace ACE.Server.Command.Handlers;

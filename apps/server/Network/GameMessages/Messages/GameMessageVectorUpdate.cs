@@ -1,4 +1,3 @@
-using System;
 using System.Numerics;
 using ACE.Server.Network.Sequence;
 using ACE.Server.Network.Structure;

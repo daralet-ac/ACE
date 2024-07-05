@@ -8,7 +8,6 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
 using Serilog;
-using Serilog.Events;
 
 namespace ACE.Server.Network.Handlers;
 

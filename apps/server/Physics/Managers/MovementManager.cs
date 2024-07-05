@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using ACE.Entity.Enum;
 using ACE.Server.Physics.Combat;
 using ACE.Server.Physics.Common;

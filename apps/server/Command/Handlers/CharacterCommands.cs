@@ -1,10 +1,8 @@
 using System;
-using System.Globalization;
 using System.Threading;
 using ACE.Common;
 using ACE.Database;
 using ACE.Entity.Enum;
-using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network;

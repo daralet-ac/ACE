@@ -1,4 +1,3 @@
-using System;
 using ACE.Server.Entity.Chess;
 
 namespace ACE.Server.WorldObjects;

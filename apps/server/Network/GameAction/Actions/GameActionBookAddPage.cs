@@ -1,5 +1,3 @@
-using System;
-
 namespace ACE.Server.Network.GameAction.Actions;
 
 public static class GameActionBookAddPage

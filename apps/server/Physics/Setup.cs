@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Numerics;
 using ACE.DatLoader.Entity;
 using ACE.DatLoader.FileTypes;
 using ACE.Server.Physics.Common;

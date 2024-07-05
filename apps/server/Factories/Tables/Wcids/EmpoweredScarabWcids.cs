@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
 using ACE.Common;
-using ACE.Server.Entity;
-using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 
 namespace ACE.Server.Factories.Tables;
