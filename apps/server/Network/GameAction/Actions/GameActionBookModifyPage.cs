@@ -1,4 +1,3 @@
-using System;
 using ACE.Common.Extensions;
 
 namespace ACE.Server.Network.GameAction.Actions;

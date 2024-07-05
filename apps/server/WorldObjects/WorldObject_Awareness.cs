@@ -1,16 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Numerics;
 using ACE.Common;
 using ACE.Entity;
-using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
-using ACE.Server.Entity;
-using ACE.Server.Entity.Actions;
-using ACE.Server.Managers;
 using ACE.Server.Physics;
-using ACE.Server.Physics.Common;
 
 namespace ACE.Server.WorldObjects;
 

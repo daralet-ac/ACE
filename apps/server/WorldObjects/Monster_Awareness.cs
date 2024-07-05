@@ -12,10 +12,6 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
-using Google.Protobuf.Collections;
-using Google.Protobuf.WellKnownTypes;
-using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json.Linq;
 
 namespace ACE.Server.WorldObjects;
 

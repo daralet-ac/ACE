@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Entity;

@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Numerics;
-using ACE.Entity.Enum;
 
 namespace ACE.Server.Entity.Chess;
 

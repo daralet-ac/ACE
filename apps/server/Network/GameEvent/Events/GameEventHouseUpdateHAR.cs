@@ -1,4 +1,3 @@
-using System;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 

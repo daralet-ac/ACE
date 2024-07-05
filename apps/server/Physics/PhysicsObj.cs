@@ -17,7 +17,6 @@ using ACE.Server.Physics.Hooks;
 using ACE.Server.Physics.Managers;
 using ACE.Server.WorldObjects;
 using Serilog;
-using Serilog.Events;
 using Landblock = ACE.Server.Physics.Common.Landblock;
 using Plane = System.Numerics.Plane;
 using Position = ACE.Server.Physics.Common.Position;

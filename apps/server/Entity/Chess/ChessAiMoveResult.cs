@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using ACE.Entity.Enum;
 
 namespace ACE.Server.Entity.Chess;

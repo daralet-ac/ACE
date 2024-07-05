@@ -1,5 +1,3 @@
-using ACE.Entity;
-
 namespace ACE.Server.Network.GameAction.Actions;
 
 public static class GameActionCancelAttack

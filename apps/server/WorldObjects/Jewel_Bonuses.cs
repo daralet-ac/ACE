@@ -4,7 +4,6 @@ using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
-using ACE.Server.Network.GameAction.Actions;
 using ACE.Server.Network.GameMessages.Messages;
 using AttackType = ACE.Entity.Enum.AttackType;
 using DamageType = ACE.Entity.Enum.DamageType;

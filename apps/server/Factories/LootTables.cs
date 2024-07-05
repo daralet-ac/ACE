@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using ACE.Entity.Enum;
-using ACE.Server.Factories.Tables;
 using ACE.Server.Factories.Tables.Cantrips;
 using ACE.Server.WorldObjects;
 

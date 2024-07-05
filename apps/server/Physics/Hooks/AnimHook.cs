@@ -1,6 +1,4 @@
-using System;
 using ACE.DatLoader.Entity;
-using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 
 namespace ACE.Server.Physics.Hooks;

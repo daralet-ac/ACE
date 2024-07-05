@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using ACE.Common;
 using ACE.Entity.Enum;
@@ -8,8 +7,6 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics.Animation;
-using Lifestoned.DataModel.Shared;
-using Serilog;
 using MotionCommand = ACE.Entity.Enum.MotionCommand;
 
 namespace ACE.Server.WorldObjects;

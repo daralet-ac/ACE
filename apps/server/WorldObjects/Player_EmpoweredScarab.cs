@@ -7,8 +7,6 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
-using WeenieClassName = ACE.Server.Factories.Enum.WeenieClassName;
 
 namespace ACE.Server.WorldObjects;
 

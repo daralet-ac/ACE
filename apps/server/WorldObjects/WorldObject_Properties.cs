@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using ACE.Common;
 using ACE.Database;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
@@ -13,7 +12,6 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network.Structure;
-using ACE.Server.Physics.Extensions;
 using static ACE.Server.Factories.Tables.StackableSpellTables;
 
 namespace ACE.Server.WorldObjects;

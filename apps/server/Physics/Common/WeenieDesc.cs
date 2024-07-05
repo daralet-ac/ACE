@@ -1,5 +1,3 @@
-using ACE.DatLoader.Entity;
-
 namespace ACE.Server.Physics.Common;
 
 public class WeenieDesc

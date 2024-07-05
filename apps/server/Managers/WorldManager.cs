@@ -20,7 +20,6 @@ using ACE.Server.Physics;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects;
 using Serilog;
-using Serilog.Events;
 using Biota = ACE.Entity.Models.Biota;
 using Position = ACE.Entity.Position;
 

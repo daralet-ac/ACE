@@ -14,7 +14,6 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Managers;
 using ACE.Server.Network.Packets;
 using Serilog;
-using Serilog.Events;
 
 namespace ACE.Server.Network.Handlers;
 

@@ -9,7 +9,6 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Physics.Common;
-using Serilog.Events;
 
 namespace ACE.Server.WorldObjects;
 

@@ -1,4 +1,3 @@
-using System;
 using ACE.Entity;
 using ACE.Server.Network.Structure;
 

@@ -1,6 +1,5 @@
 using System;
 using System.Text.Json;
-using Serilog;
 
 namespace ACE.Server;
 

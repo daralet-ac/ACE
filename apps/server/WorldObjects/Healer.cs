@@ -8,10 +8,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.Network.Structure;
-using ACE.Server.Physics;
 using ACE.Server.Physics.Animation;
-using ACE.Server.WorldObjects.Entity;
 
 namespace ACE.Server.WorldObjects;
 

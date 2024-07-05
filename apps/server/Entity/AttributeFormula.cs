@@ -1,7 +1,5 @@
-using System;
 using ACE.Common.Extensions;
 using ACE.DatLoader;
-using ACE.DatLoader.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects;

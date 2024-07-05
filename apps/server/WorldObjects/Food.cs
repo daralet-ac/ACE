@@ -5,7 +5,6 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 

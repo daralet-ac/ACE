@@ -25,7 +25,6 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects;
 using Serilog;
-using Serilog.Events;
 using Encounter = ACE.Database.Models.World.Encounter;
 using Position = ACE.Entity.Position;
 using Quaternion = System.Numerics.Quaternion;

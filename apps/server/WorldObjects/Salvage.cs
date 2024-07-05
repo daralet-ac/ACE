@@ -10,8 +10,6 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
-using Mono.Cecil;
-using Org.BouncyCastle.Asn1.X509;
 using Serilog;
 
 namespace ACE.Server.WorldObjects;

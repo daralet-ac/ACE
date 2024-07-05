@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using ACE.Common;
 using ACE.Database;
@@ -13,7 +12,6 @@ using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-using MySqlX.XDevAPI.Common;
 using Serilog;
 
 namespace ACE.Server.Command.Handlers;
