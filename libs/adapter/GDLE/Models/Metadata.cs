@@ -2,41 +2,41 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-using Lifestoned.DataModel.Gdle;
-using Lifestoned.DataModel.Shared;
+namespace ACE.Adapter.GDLE.Models;
 
-namespace ACE.Adapter.GDLE.Models
+public class Metadata
 {
-    public class Metadata
+    public DateTime? LastModified { get; set; }
+    public string ModifiedBy { get; set; }
+
+    public List<ChangelogEntry> Changelog { get; set; }
+
+    public string UserChangeSummary { get; set; }
+
+    public bool IsDone { get; set; }
+
+    public Metadata(LSDWeenie weenie)
     {
-        public DateTime? LastModified { get; set; }
-        public string ModifiedBy { get; set; }
+        LastModified = weenie.LastModified;
+        ModifiedBy = weenie.ModifiedBy;
 
-        public List<ChangelogEntry> Changelog { get; set; }
+        Changelog = weenie.Changelog;
 
-        public string UserChangeSummary { get; set; }
+        UserChangeSummary = weenie.UserChangeSummary;
 
-        public bool IsDone { get; set; }
+        IsDone = weenie.IsDone;
+    }
 
-        public Metadata(LSDWeenie weenie)
+    [JsonIgnore]
+    public bool HasInfo
+    {
+        get
         {
-            LastModified = weenie.LastModified;
-            ModifiedBy = weenie.ModifiedBy;
-
-            Changelog = weenie.Changelog;
-
-            UserChangeSummary = weenie.UserChangeSummary;
-
-            IsDone = weenie.IsDone;
-        }
-
-        [JsonIgnore]
-        public bool HasInfo
-        {
-            get
-            {
-                return LastModified != null || ModifiedBy != null || Changelog != null && Changelog.Count > 0 || UserChangeSummary != null || IsDone;
-            }
+            return LastModified != null
+                || ModifiedBy != null
+                || Changelog != null && Changelog.Count > 0
+                || UserChangeSummary != null
+                || IsDone;
         }
     }
 }
