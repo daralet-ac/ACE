@@ -1,22 +1,21 @@
 using System;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+public class HouseCallback
 {
-    public class HouseCallback
+    public House House;
+    public Action<House> Callback;
+
+    public HouseCallback(House house, Action<House> callback)
     {
-        public House House;
-        public Action<House> Callback;
+        House = house;
+        Callback = callback;
+    }
 
-        public HouseCallback(House house, Action<House> callback)
-        {
-            House = house;
-            Callback = callback;
-        }
-
-        public void Run()
-        {
-            Callback(House);
-        }
+    public void Run()
+    {
+        Callback(House);
     }
 }

@@ -1,10 +1,7 @@
-namespace ACE.Server.Network.GameMessages.Messages
+namespace ACE.Server.Network.GameMessages.Messages;
+
+public class GameMessageCharacterEnterWorldServerReady : GameMessage
 {
-    public class GameMessageCharacterEnterWorldServerReady : GameMessage
-    {
-        public GameMessageCharacterEnterWorldServerReady()
-            : base(GameMessageOpcode.CharacterEnterWorldServerReady, GameMessageGroup.UIQueue, 4)
-        {
-        }
-    }
+    public GameMessageCharacterEnterWorldServerReady()
+        : base(GameMessageOpcode.CharacterEnterWorldServerReady, GameMessageGroup.UIQueue, 4) { }
 }

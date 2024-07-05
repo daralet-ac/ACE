@@ -1,27 +1,26 @@
 using System.Collections.Generic;
 
-namespace ACE.Server.Physics.Common
+namespace ACE.Server.Physics.Common;
+
+public class LostCell
 {
-    public class LostCell
+    public int NumObjects;
+    public List<PhysicsObj> Objects;
+
+    public LostCell()
     {
-        public int NumObjects;
-        public List<PhysicsObj> Objects;
+        Objects = new List<PhysicsObj>();
+    }
 
-        public LostCell()
-        {
-            Objects = new List<PhysicsObj>();
-        }
+    public void Clear()
+    {
+        Objects.Clear();
+        NumObjects = 0;
+    }
 
-        public void Clear()
-        {
-            Objects.Clear();
-            NumObjects = 0;
-        }
-
-        public void remove_object(PhysicsObj obj)
-        {
-            Objects.Remove(obj);
-            NumObjects = Objects.Count;
-        }
+    public void remove_object(PhysicsObj obj)
+    {
+        Objects.Remove(obj);
+        NumObjects = Objects.Count;
     }
 }

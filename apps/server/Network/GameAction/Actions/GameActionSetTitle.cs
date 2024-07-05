@@ -1,14 +1,12 @@
+namespace ACE.Server.Network.GameAction.Actions;
 
-namespace ACE.Server.Network.GameAction.Actions
+public static class GameActionSetTitle
 {
-    public static class GameActionSetTitle
+    [GameAction(GameActionType.TitleSet)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.TitleSet)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            var title = message.Payload.ReadUInt32();
+        var title = message.Payload.ReadUInt32();
 
-            session.Player.HandleActionSetTitle(title);
-        }
+        session.Player.HandleActionSetTitle(title);
     }
 }

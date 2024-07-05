@@ -1,11 +1,10 @@
-namespace ACE.Server.Network.Enum
+namespace ACE.Server.Network.Enum;
+
+public enum SessionState
 {
-    public enum SessionState
-    {
-        AuthLoginRequest,
-        AuthConnectResponse,
-        AuthConnected,
-        WorldConnected,
-        TerminationStarted,
-    }
+    AuthLoginRequest,
+    AuthConnectResponse,
+    AuthConnected,
+    WorldConnected,
+    TerminationStarted,
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -12,315 +11,393 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+public partial class Chest : Container, Lock
 {
-    public partial class Chest : Container, Lock
+    /// <summary>
+    /// This is used for things like Mana Forge Chests
+    /// </summary>
+    public bool ChestRegenOnClose
     {
-        /// <summary>
-        /// This is used for things like Mana Forge Chests
-        /// </summary>
-        public bool ChestRegenOnClose
+        get
         {
-            get
+            if (ChestResetInterval <= 5)
             {
-                if (ChestResetInterval <= 5)
-                    return true;
-
-                return GetProperty(PropertyBool.ChestRegenOnClose) ?? false;
+                return true;
             }
-            set { if (!value) RemoveProperty(PropertyBool.ChestRegenOnClose); else SetProperty(PropertyBool.ChestRegenOnClose, value); }
-        }
 
-        /// <summary>
-        /// This is used for things like Dirty Old Crate
-        /// </summary>
-        public bool ChestClearedWhenClosed
-        {
-            get => GetProperty(PropertyBool.ChestClearedWhenClosed) ?? false;
-            set { if (!value) RemoveProperty(PropertyBool.ChestClearedWhenClosed); else SetProperty(PropertyBool.ChestClearedWhenClosed, value); }
+            return GetProperty(PropertyBool.ChestRegenOnClose) ?? false;
         }
-
-        /// <summary>
-        /// This is the default setup for resetting chests
-        /// </summary>
-        public double ChestResetInterval
+        set
         {
-            get
+            if (!value)
             {
-                var chestResetInterval = ResetInterval ?? Default_ChestResetInterval;
-
-                if (chestResetInterval < 15)
-                    chestResetInterval = Default_ChestResetInterval;
-
-                return chestResetInterval;
+                RemoveProperty(PropertyBool.ChestRegenOnClose);
+            }
+            else
+            {
+                SetProperty(PropertyBool.ChestRegenOnClose, value);
             }
         }
+    }
 
-        public virtual double Default_ChestResetInterval => 120;
-
-        /// <summary>
-        /// A new biota be created taking all of its values from weenie.
-        /// </summary>
-        public Chest(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
+    /// <summary>
+    /// This is used for things like Dirty Old Crate
+    /// </summary>
+    public bool ChestClearedWhenClosed
+    {
+        get => GetProperty(PropertyBool.ChestClearedWhenClosed) ?? false;
+        set
         {
-            SetEphemeralValues();
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.ChestClearedWhenClosed);
+            }
+            else
+            {
+                SetProperty(PropertyBool.ChestClearedWhenClosed, value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// This is the default setup for resetting chests
+    /// </summary>
+    public double ChestResetInterval
+    {
+        get
+        {
+            var chestResetInterval = ResetInterval ?? Default_ChestResetInterval;
+
+            if (chestResetInterval < 15)
+            {
+                chestResetInterval = Default_ChestResetInterval;
+            }
+
+            return chestResetInterval;
+        }
+    }
+
+    public virtual double Default_ChestResetInterval => 120;
+
+    /// <summary>
+    /// A new biota be created taking all of its values from weenie.
+    /// </summary>
+    public Chest(Weenie weenie, ObjectGuid guid)
+        : base(weenie, guid)
+    {
+        SetEphemeralValues();
+    }
+
+    /// <summary>
+    /// Restore a WorldObject from the database.
+    /// </summary>
+    public Chest(Biota biota)
+        : base(biota)
+    {
+        SetEphemeralValues();
+    }
+
+    private void SetEphemeralValues()
+    {
+        ContainerCapacity = ContainerCapacity ?? 10;
+        ItemCapacity = ItemCapacity ?? 120;
+
+        ActivationResponse |= ActivationResponse.Use; // todo: fix broken data
+
+        CurrentMotionState = motionClosed; // do any chests default to open?
+
+        if (IsLocked)
+        {
+            DefaultLocked = true;
         }
 
-        /// <summary>
-        /// Restore a WorldObject from the database.
-        /// </summary>
-        public Chest(Biota biota) : base(biota)
+        if (DefaultLocked) // ignore regen interval, only regen on relock
         {
-            SetEphemeralValues();
+            NextGeneratorRegenerationTime = double.MaxValue;
+        }
+    }
+
+    protected static readonly Motion motionOpen = new Motion(MotionStance.NonCombat, MotionCommand.On);
+    protected static readonly Motion motionClosed = new Motion(MotionStance.NonCombat, MotionCommand.Off);
+
+    public override ActivationResult CheckUseRequirements(WorldObject activator)
+    {
+        var baseRequirements = base.CheckUseRequirements(activator);
+        if (!baseRequirements.Success)
+        {
+            return baseRequirements;
         }
 
-        private void SetEphemeralValues()
+        if (!(activator is Player player))
         {
-            ContainerCapacity = ContainerCapacity ?? 10;
-            ItemCapacity = ItemCapacity ?? 120;
-
-            ActivationResponse |= ActivationResponse.Use;   // todo: fix broken data
-
-            CurrentMotionState = motionClosed;              // do any chests default to open?
-
-            if (IsLocked)
-                DefaultLocked = true;
-
-            if (DefaultLocked) // ignore regen interval, only regen on relock
-                NextGeneratorRegenerationTime = double.MaxValue;
+            return new ActivationResult(false);
         }
 
-        protected static readonly Motion motionOpen = new Motion(MotionStance.NonCombat, MotionCommand.On);
-        protected static readonly Motion motionClosed = new Motion(MotionStance.NonCombat, MotionCommand.Off);
-
-        public override ActivationResult CheckUseRequirements(WorldObject activator)
+        if (IsLocked)
         {
-            var baseRequirements = base.CheckUseRequirements(activator);
-            if (!baseRequirements.Success)
-                return baseRequirements;
+            if (PropertyManager.GetBool("fix_chest_missing_inventory_window").Item)
+            {
+                player.SendTransientError($"The {Name} is locked");
+            }
 
-            if (!(activator is Player player))
+            EnqueueBroadcast(new GameMessageSound(Guid, Sound.OpenFailDueToLock, 1.0f));
+            return new ActivationResult(false);
+        }
+
+        if (UseLockTimestamp != null && activator.Guid.Full != LastUnlocker)
+        {
+            var currentTime = Time.GetUnixTime();
+
+            // prevent ninja looting
+            if (UseLockTimestamp.Value + PropertyManager.GetDouble("unlocker_window").Item > currentTime)
+            {
+                player.SendTransientError(InUseMessage);
                 return new ActivationResult(false);
-
-            if (IsLocked)
-            {
-                if (PropertyManager.GetBool("fix_chest_missing_inventory_window").Item)
-                    player.SendTransientError($"The {Name} is locked");
-
-                EnqueueBroadcast(new GameMessageSound(Guid, Sound.OpenFailDueToLock, 1.0f));
-                return new ActivationResult(false);
             }
+        }
 
-            if (UseLockTimestamp != null && activator.Guid.Full != LastUnlocker)
+        if (IsOpen)
+        {
+            if (Viewer == player.Guid.Full)
             {
-                var currentTime = Time.GetUnixTime();
+                // current player has this chest open, close it
+                Close(player);
+            }
+            else
+            {
+                // another player has this chest open -- ensure they are within range
+                var currentViewer = CurrentLandblock.GetObject(Viewer) as Player;
 
-                // prevent ninja looting
-                if (UseLockTimestamp.Value + PropertyManager.GetDouble("unlocker_window").Item > currentTime)
+                if (currentViewer == null)
+                {
+                    Close(null); // current viewer not found, close it
+                }
+                else
                 {
                     player.SendTransientError(InUseMessage);
+                }
+            }
+
+            return new ActivationResult(false);
+        }
+
+        // handle quest requirements
+        if (Quest != null)
+        {
+            if (!player.QuestManager.HasQuest(Quest))
+            {
+                EmoteManager.OnQuest(player);
+            }
+            else
+            {
+                if (player.QuestManager.CanSolve(Quest))
+                {
+                    EmoteManager.OnQuest(player);
+                }
+                else
+                {
+                    player.QuestManager.HandleSolveError(Quest);
                     return new ActivationResult(false);
                 }
             }
+        }
 
-            if (IsOpen)
+        return new ActivationResult(true);
+    }
+
+    /// <summary>
+    /// This is raised by Player.HandleActionUseItem.<para />
+    /// The item does not exist in the players possession.<para />
+    /// If the item was outside of range, the player will have been commanded to move using DoMoveTo before ActOnUse is called.<para />
+    /// When this is called, it should be assumed that the player is within range.
+    /// </summary>
+    public override void ActOnUse(WorldObject wo)
+    {
+        if (!(wo is Player player))
+        {
+            return;
+        }
+
+        // open chest
+        Open(player);
+    }
+
+    public override void Open(Player player)
+    {
+        base.Open(player);
+
+        if (!ResetMessagePending && !double.IsPositiveInfinity(ChestResetInterval))
+        {
+            var resetTimestamp = ResetTimestamp;
+
+            var actionChain = new ActionChain();
+            actionChain.AddDelaySeconds(ChestResetInterval);
+            actionChain.AddAction(this, () => Reset(resetTimestamp));
+            actionChain.EnqueueChain();
+
+            ResetMessagePending = true;
+        }
+
+        UseLockTimestamp = null;
+    }
+
+    public override void Close(Player player)
+    {
+        Close(player);
+    }
+
+    /// <summary>
+    /// Called when a chest is closed, or walked away from
+    /// </summary>
+    public void Close(Player player, bool tryReset = true)
+    {
+        base.Close(player);
+
+        if (ChestRegenOnClose && tryReset)
+        {
+            Reset(ResetTimestamp);
+        }
+    }
+
+    public override void FinishClose(Player player)
+    {
+        base.FinishClose(player);
+
+        if (ChestClearedWhenClosed && InitCreate > 0)
+        {
+            if (CurrentCreate == 0)
             {
-                if (Viewer == player.Guid.Full)
+                FadeOutAndDestroy(); // Chest's complete generated inventory count has been wiped out
+            }
+            //Destroy(); // Chest's complete generated inventory count has been wiped out
+        }
+    }
+
+    public void Reset(double? resetTimestamp)
+    {
+        if (resetTimestamp != ResetTimestamp)
+        {
+            return; // already cleared by previous reset
+        }
+
+        // TODO: if 'ResetInterval' style, do we want to ensure a minimum amount of time for the last viewer?
+
+        // should only be an edge case with reload-landblock
+        if (CurrentLandblock == null)
+        {
+            return;
+        }
+
+        var player = CurrentLandblock.GetObject(Viewer) as Player;
+
+        if (IsOpen)
+        {
+            Close(player, false);
+        }
+
+        if (DefaultLocked && !IsLocked)
+        {
+            IsLocked = true;
+            if (!PropertyManager.GetBool("fix_chest_missing_inventory_window").Item)
+            {
+                EnqueueBroadcast(new GameMessagePublicUpdatePropertyBool(this, PropertyBool.Locked, IsLocked));
+            }
+        }
+
+        ClearUnmanagedInventory();
+
+        if (IsGenerator)
+        {
+            ResetGenerator();
+            CurrentlyPoweringUp = true;
+            if (InitCreate > 0)
+            {
+                //Console.WriteLine(Tier);
+                if (Tier != null)
                 {
-                    // current player has this chest open, close it
-                    Close(player);
+                    Generator_Generate(Tier);
                 }
                 else
                 {
-                    // another player has this chest open -- ensure they are within range
-                    var currentViewer = CurrentLandblock.GetObject(Viewer) as Player;
-
-                    if (currentViewer == null)
-                        Close(null);    // current viewer not found, close it
-                    else
-                        player.SendTransientError(InUseMessage);
-                }
-
-                return new ActivationResult(false);
-            }
-
-            // handle quest requirements
-            if (Quest != null)
-            {
-                if (!player.QuestManager.HasQuest(Quest))
-                    EmoteManager.OnQuest(player);
-                else
-                {
-                    if (player.QuestManager.CanSolve(Quest))
-                    {
-                        EmoteManager.OnQuest(player);
-                    }
-                    else
-                    {
-                        player.QuestManager.HandleSolveError(Quest);
-                        return new ActivationResult(false);
-                    }
+                    Generator_Generate();
                 }
             }
-
-            return new ActivationResult(true);
         }
 
-        /// <summary>
-        /// This is raised by Player.HandleActionUseItem.<para />
-        /// The item does not exist in the players possession.<para />
-        /// If the item was outside of range, the player will have been commanded to move using DoMoveTo before ActOnUse is called.<para />
-        /// When this is called, it should be assumed that the player is within range.
-        /// </summary>
-        public override void ActOnUse(WorldObject wo)
-        {
-            if (!(wo is Player player))
-                return;
+        ResetTimestamp = Time.GetUnixTime();
+        ResetMessagePending = false;
+    }
 
-            // open chest
-            Open(player);
+    protected override float DoOnOpenMotionChanges()
+    {
+        if (MotionTableId != 0)
+        {
+            return ExecuteMotion(motionOpen);
         }
-
-        public override void Open(Player player)
+        else
         {
-            base.Open(player);
+            return 0;
+        }
+    }
 
-            if (!ResetMessagePending && !double.IsPositiveInfinity(ChestResetInterval))
+    protected override float DoOnCloseMotionChanges()
+    {
+        if (MotionTableId != 0)
+        {
+            return ExecuteMotion(motionClosed);
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    public string LockCode
+    {
+        get => GetProperty(PropertyString.LockCode);
+        set
+        {
+            if (value == null)
             {
-                var resetTimestamp = ResetTimestamp;
-
-                var actionChain = new ActionChain();
-                actionChain.AddDelaySeconds(ChestResetInterval);
-                actionChain.AddAction(this, () => Reset(resetTimestamp));
-                actionChain.EnqueueChain();
-
-                ResetMessagePending = true;
+                RemoveProperty(PropertyString.LockCode);
             }
-
-            UseLockTimestamp = null;
-        }
-
-        public override void Close(Player player)
-        {
-            Close(player);
-        }
-
-        /// <summary>
-        /// Called when a chest is closed, or walked away from
-        /// </summary>
-        public void Close(Player player, bool tryReset = true)
-        {
-            base.Close(player);
-
-            if (ChestRegenOnClose && tryReset)
-                Reset(ResetTimestamp);
-        }
-
-        public override void FinishClose(Player player)
-        {
-            base.FinishClose(player);
-
-            if (ChestClearedWhenClosed && InitCreate > 0)
-            {
-                if (CurrentCreate == 0)
-                    FadeOutAndDestroy(); // Chest's complete generated inventory count has been wiped out
-                                         //Destroy(); // Chest's complete generated inventory count has been wiped out
-            }
-        }
-
-        public void Reset(double? resetTimestamp)
-        {
-            if (resetTimestamp != ResetTimestamp)
-                return;     // already cleared by previous reset
-
-            // TODO: if 'ResetInterval' style, do we want to ensure a minimum amount of time for the last viewer?
-
-            // should only be an edge case with reload-landblock
-            if (CurrentLandblock == null)
-                return;
-
-            var player = CurrentLandblock.GetObject(Viewer) as Player;
-
-            if (IsOpen)
-                Close(player, false);
-
-            if (DefaultLocked && !IsLocked)
-            {
-                IsLocked = true;
-                if (!PropertyManager.GetBool("fix_chest_missing_inventory_window").Item)
-                    EnqueueBroadcast(new GameMessagePublicUpdatePropertyBool(this, PropertyBool.Locked, IsLocked));
-            }
-
-            ClearUnmanagedInventory();
-
-            if (IsGenerator)
-            {
-                ResetGenerator();
-                CurrentlyPoweringUp = true;
-                if (InitCreate > 0)
-                {
-                    //Console.WriteLine(Tier);
-                    if (Tier != null)
-                        Generator_Generate(Tier);
-                    else
-                        Generator_Generate();
-                }
-            }
-
-            ResetTimestamp = Time.GetUnixTime();
-            ResetMessagePending = false;
-        }
-        protected override float DoOnOpenMotionChanges()
-        {
-            if (MotionTableId != 0)
-                return ExecuteMotion(motionOpen);
             else
-                return 0;
-        }
-
-        protected override float DoOnCloseMotionChanges()
-        {
-            if (MotionTableId != 0)
-                return ExecuteMotion(motionClosed);
-            else
-                return 0;
-        }
-
-        public string LockCode
-        {
-            get => GetProperty(PropertyString.LockCode);
-            set { if (value == null) RemoveProperty(PropertyString.LockCode); else SetProperty(PropertyString.LockCode, value); }
-        }
-
-        /// <summary>
-        /// Used for unlocking a chest via lockpick, so contains a skill check
-        /// player.Skills[Skill.Lockpick].Current should be sent for the skill check
-        /// </summary>
-        public UnlockResults Unlock(uint unlockerGuid, uint playerLockpickSkillLvl, ref int difficulty)
-        {
-            var result = LockHelper.Unlock(this, playerLockpickSkillLvl, ref difficulty);
-
-            if (result == UnlockResults.UnlockSuccess)
             {
-                LastUnlocker = unlockerGuid;
-                UseLockTimestamp = Time.GetUnixTime();
+                SetProperty(PropertyString.LockCode, value);
             }
-            return result;
         }
+    }
 
-        /// <summary>
-        /// Used for unlocking a chest via a key
-        /// </summary>
-        public UnlockResults Unlock(uint unlockerGuid, Key key, string keyCode = null)
+    /// <summary>
+    /// Used for unlocking a chest via lockpick, so contains a skill check
+    /// player.Skills[Skill.Lockpick].Current should be sent for the skill check
+    /// </summary>
+    public UnlockResults Unlock(uint unlockerGuid, uint playerLockpickSkillLvl, ref int difficulty)
+    {
+        var result = LockHelper.Unlock(this, playerLockpickSkillLvl, ref difficulty);
+
+        if (result == UnlockResults.UnlockSuccess)
         {
-            var result = LockHelper.Unlock(this, key, keyCode);
-
-            if (result == UnlockResults.UnlockSuccess)
-            {
-                LastUnlocker = unlockerGuid;
-                UseLockTimestamp = Time.GetUnixTime();
-            }
-            return result;
+            LastUnlocker = unlockerGuid;
+            UseLockTimestamp = Time.GetUnixTime();
         }
+        return result;
+    }
+
+    /// <summary>
+    /// Used for unlocking a chest via a key
+    /// </summary>
+    public UnlockResults Unlock(uint unlockerGuid, Key key, string keyCode = null)
+    {
+        var result = LockHelper.Unlock(this, key, keyCode);
+
+        if (result == UnlockResults.UnlockSuccess)
+        {
+            LastUnlocker = unlockerGuid;
+            UseLockTimestamp = Time.GetUnixTime();
+        }
+        return result;
     }
 }

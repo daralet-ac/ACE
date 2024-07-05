@@ -3,17 +3,20 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Network.Sequence;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.GameMessages.Messages
+namespace ACE.Server.Network.GameMessages.Messages;
+
+public class GameMessagePublicUpdateInstanceID : GameMessage
 {
-    public class GameMessagePublicUpdateInstanceID : GameMessage
+    public GameMessagePublicUpdateInstanceID(
+        WorldObject worldObject,
+        PropertyInstanceId property,
+        ObjectGuid instanceGuid
+    )
+        : base(GameMessageOpcode.PublicUpdateInstanceId, GameMessageGroup.UIQueue, 17)
     {
-        public GameMessagePublicUpdateInstanceID(WorldObject worldObject, PropertyInstanceId property, ObjectGuid instanceGuid)
-            : base(GameMessageOpcode.PublicUpdateInstanceId, GameMessageGroup.UIQueue, 17)
-        {
-            Writer.Write(worldObject.Sequences.GetNextSequence(SequenceType.UpdatePropertyInstanceID, property));
-            Writer.WriteGuid(worldObject.Guid);
-            Writer.Write((uint)property);
-            Writer.WriteGuid(instanceGuid);
-        }
+        Writer.Write(worldObject.Sequences.GetNextSequence(SequenceType.UpdatePropertyInstanceID, property));
+        Writer.WriteGuid(worldObject.Guid);
+        Writer.Write((uint)property);
+        Writer.WriteGuid(instanceGuid);
     }
 }

@@ -1,7 +1,7 @@
-using Discord.Interactions;
 using System.Threading.Tasks;
 using ACE.Server.Managers;
 using Discord;
+using Discord.Interactions;
 
 namespace ACE.Server.Discord.Modules;
 

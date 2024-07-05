@@ -1,127 +1,134 @@
 using ACE.Entity.Enum;
 
-namespace ACE.Server.Physics.Command
+namespace ACE.Server.Physics.Command;
+
+public class CommandList
 {
-    public class CommandList
+    public CommandListElement Head;
+    public CommandListElement MouseCommand;
+    public CommandListElement Current;
+
+    public void AddCommand(MotionCommand command, float speed, bool mouse, bool holdRun)
     {
-        public CommandListElement Head;
-        public CommandListElement MouseCommand;
-        public CommandListElement Current;
+        var element = new CommandListElement(command, speed, holdRun);
 
-        public void AddCommand(MotionCommand command, float speed, bool mouse, bool holdRun)
+        CommandListElement mouse_cmd = null;
+
+        if (mouse)
         {
-            var element = new CommandListElement(command, speed, holdRun);
+            mouse_cmd = MouseCommand;
 
-            CommandListElement mouse_cmd = null;
-
-            if (mouse)
+            if (mouse_cmd == null)
             {
-                mouse_cmd = MouseCommand;
+                SetMouseCommand(element);
+                return;
+            }
 
-                if (mouse_cmd == null)
+            var prevNext = mouse_cmd.Prev.Next;
+            if (prevNext != null)
+            {
+                prevNext = mouse_cmd.Next;
+            }
+            else
+            {
+                var next = mouse_cmd.Next;
+                var nextNull = next == null;
+                Head = mouse_cmd.Next;
+                if (nextNull)
                 {
+                    // label_12
+                    mouse_cmd.Next = null;
+                    mouse_cmd.Prev = null;
+
                     SetMouseCommand(element);
                     return;
                 }
-
-                var prevNext = mouse_cmd.Prev.Next;
-                if (prevNext != null)
-                {
-                    prevNext = mouse_cmd.Next;
-                }
-                else
-                {
-                    var next = mouse_cmd.Next;
-                    var nextNull = next == null;
-                    Head = mouse_cmd.Next;
-                    if (nextNull)
-                    {
-                        // label_12
-                        mouse_cmd.Next = null;
-                        mouse_cmd.Prev = null;
-
-                        SetMouseCommand(element);
-                        return;
-                    }
-                    next.Prev = null;
-                }
-                if (mouse_cmd.Next != null)
-                    mouse_cmd.Next.Prev = mouse_cmd.Prev;
-                // goto label_12
+                next.Prev = null;
             }
-        }
-
-        public void ClearAllCommands()
-        {
-            if (Head != null)
+            if (mouse_cmd.Next != null)
             {
-                CommandListElement headPrevNext = null;
+                mouse_cmd.Next.Prev = mouse_cmd.Prev;
+            }
+            // goto label_12
+        }
+    }
 
-                while (true)
+    public void ClearAllCommands()
+    {
+        if (Head != null)
+        {
+            CommandListElement headPrevNext = null;
+
+            while (true)
+            {
+                var head = Head;
+                headPrevNext = Head.Prev.Next;
+                if (headPrevNext != null)
                 {
-                    var head = Head;
-                    headPrevNext = Head.Prev.Next;
-                    if (headPrevNext != null)
-                        break;
+                    break;
+                }
 
-                    var headNext = head.Next;
-                    var headNextNull = head.Next == null;
-                    Head = head.Next;
+                var headNext = head.Next;
+                var headNextNull = head.Next == null;
+                Head = head.Next;
 
-                    if (!headNextNull)
+                if (!headNextNull)
+                {
+                    headNext.Prev = null;
+
+                    // label_6
+                    if (head.Next != null)
                     {
-                        headNext.Prev = null;
-
-                        // label_6
-                        if (head.Next != null)
-                            head.Next.Prev = head.Prev;
-                    }
-
-                    head.Next = null;
-                    head.Prev = null;
-
-                    if (Head == null)
-                    {
-                        MouseCommand = null;
-                        return;
+                        head.Next.Prev = head.Prev;
                     }
                 }
-                headPrevNext = Head.Next;
-                // goto label_6
+
+                head.Next = null;
+                head.Prev = null;
+
+                if (Head == null)
+                {
+                    MouseCommand = null;
+                    return;
+                }
             }
-            MouseCommand = null;
+            headPrevNext = Head.Next;
+            // goto label_6
         }
+        MouseCommand = null;
+    }
 
-        public void ClearKeyboardCommands()
-        {
+    public void ClearKeyboardCommands() { }
 
-        }
+    public CommandListElement GetHead()
+    {
+        return Head;
+    }
 
-        public CommandListElement GetHead()
-        {
-            return Head;
-        }
-
-        public bool HeadIsMouse()
-        {
-            if (Head == null)
-                return false;
-
-            return Head == MouseCommand;
-        }
-
-        public bool RemoveCommand(MotionCommand command, float speed, bool mouse)
+    public bool HeadIsMouse()
+    {
+        if (Head == null)
         {
             return false;
         }
 
-        public void SetMouseCommand(CommandListElement element)
+        return Head == MouseCommand;
+    }
+
+    public bool RemoveCommand(MotionCommand command, float speed, bool mouse)
+    {
+        return false;
+    }
+
+    public void SetMouseCommand(CommandListElement element)
+    {
+        MouseCommand = element;
+        element.Next = Head;
+        if (Head != null)
         {
-            MouseCommand = element;
-            element.Next = Head;
-            if (Head != null)
-                Head.Prev = element;
-            Head = element;
+            Head.Prev = element;
         }
+
+        Head = element;
     }
 }

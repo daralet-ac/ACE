@@ -7,55 +7,57 @@ using ACE.Server.Factories.Tables;
 using ACE.Server.Factories.Tables.Spells;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Factories
+namespace ACE.Server.Factories;
+
+public static partial class LootGenerationFactory
 {
-    public static partial class LootGenerationFactory
+    private static WorldObject CreateRandomScroll(TreasureDeath profile, TreasureRoll roll = null)
     {
-        private static WorldObject CreateRandomScroll(TreasureDeath profile, TreasureRoll roll = null)
+        // level 8 spell components shouldn't be in here,
+        // they should be associated with TreasureItemType.SpellComponent (peas)
+        if (roll == null && profile.Tier >= 7)
         {
-            // level 8 spell components shouldn't be in here,
-            // they should be associated with TreasureItemType.SpellComponent (peas)
-            if (roll == null && profile.Tier >= 7)
+            // According to wiki, Tier 7 has a chance for level 8 spell components or level 7 spell scrolls (as does Tier 8)
+            // No indication of weighting in either direction, so assuming a 50/50 split
+            var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+            if (rng < 0.5f)
             {
-                // According to wiki, Tier 7 has a chance for level 8 spell components or level 7 spell scrolls (as does Tier 8)
-                // No indication of weighting in either direction, so assuming a 50/50 split
-                var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+                var wcid = RollLevel8SpellComp();
 
-                if (rng < 0.5f)
-                {
-                    var wcid = RollLevel8SpellComp();
-
-                    return WorldObjectFactory.CreateNewWorldObject((uint)wcid);
-                }
+                return WorldObjectFactory.CreateNewWorldObject((uint)wcid);
             }
-            var spellLevel = ScrollLevelChance.Roll(profile);
+        }
+        var spellLevel = ScrollLevelChance.Roll(profile);
 
-            // todo: switch to SpellLevelProgression
-            var spellId = SpellId.Undef;
-            do
-            {
-                var spellIdx = ThreadSafeRandom.Next(0, ScrollSpells.Table.Length - 1);
+        // todo: switch to SpellLevelProgression
+        var spellId = SpellId.Undef;
+        do
+        {
+            var spellIdx = ThreadSafeRandom.Next(0, ScrollSpells.Table.Length - 1);
 
-                spellId = ScrollSpells.Table[spellIdx][spellLevel - 1];
-            }
-            while (spellId == SpellId.Undef);   // simple way of handling spells that start at level 3 (blasts, volleys)
+            spellId = ScrollSpells.Table[spellIdx][spellLevel - 1];
+        } while (spellId == SpellId.Undef); // simple way of handling spells that start at level 3 (blasts, volleys)
 
-            var weenie = DatabaseManager.World.GetScrollWeenie((uint)spellId);
+        var weenie = DatabaseManager.World.GetScrollWeenie((uint)spellId);
 
-            if (weenie == null)
-            {
-                _log.Debug("CreateRandomScroll for tier {Tier} and spellID of {SpellId} returned null from the database.", profile.Tier, spellId);
-                return null;
-            }
-
-            return WorldObjectFactory.CreateNewWorldObject(weenie.WeenieClassId);
+        if (weenie == null)
+        {
+            _log.Debug(
+                "CreateRandomScroll for tier {Tier} and spellID of {SpellId} returned null from the database.",
+                profile.Tier,
+                spellId
+            );
+            return null;
         }
 
-        private static int RollLevel8SpellComp()
-        {
-            var rng = ThreadSafeRandom.Next(0, LootTables.Level8SpellComps.Length - 1);
+        return WorldObjectFactory.CreateNewWorldObject(weenie.WeenieClassId);
+    }
 
-            return LootTables.Level8SpellComps[rng];
-        }
+    private static int RollLevel8SpellComp()
+    {
+        var rng = ThreadSafeRandom.Next(0, LootTables.Level8SpellComps.Length - 1);
+
+        return LootTables.Level8SpellComps[rng];
     }
 }

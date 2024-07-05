@@ -1,3 +1,5 @@
+using System;
+using System.Numerics;
 using ACE.Common;
 using ACE.Database;
 using ACE.Entity;
@@ -9,224 +11,266 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using System;
-using System.Numerics;
 using Time = ACE.Common.Time;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+/// <summary>
+/// Activates an object based on collision
+/// </summary>
+public class PressurePlate : WorldObject
 {
     /// <summary>
-    /// Activates an object based on collision
+    /// The last time this pressure plate was activated
     /// </summary>
-    public class PressurePlate : WorldObject
+    public DateTime LastUseTime;
+
+    /// <summary>
+    /// A new biota be created taking all of its values from weenie.
+    /// </summary>
+    public PressurePlate(Weenie weenie, ObjectGuid guid)
+        : base(weenie, guid)
     {
-        /// <summary>
-        /// The last time this pressure plate was activated
-        /// </summary>
-        public DateTime LastUseTime;
+        SetEphemeralValues();
+    }
 
-        /// <summary>
-        /// A new biota be created taking all of its values from weenie.
-        /// </summary>
-        public PressurePlate(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
+    /// <summary>
+    /// Restore a WorldObject from the database.
+    /// </summary>
+    public PressurePlate(Biota biota)
+        : base(biota)
+    {
+        SetEphemeralValues();
+    }
+
+    private void SetEphemeralValues()
+    {
+        if (UseSound == 0)
         {
-            SetEphemeralValues();
+            UseSound = Sound.TriggerActivated;
         }
 
-        /// <summary>
-        /// Restore a WorldObject from the database.
-        /// </summary>
-        public PressurePlate(Biota biota) : base(biota)
+        DefaultActive = Active;
+        NextRearm = 0;
+    }
+
+    public override void SetLinkProperties(WorldObject wo)
+    {
+        wo.ActivationTarget = Guid.Full;
+    }
+
+    /// <summary>
+    /// Called when a player runs over the pressure plate
+    /// </summary>
+    public override void OnCollideObject(WorldObject wo)
+    {
+        OnActivate(wo);
+    }
+
+    public bool NextActivationIsFromUse = false;
+
+    /// <summary>
+    /// Activates the object linked to a pressure plate
+    /// </summary>
+    public override void OnActivate(WorldObject activator)
+    {
+        if (!Active)
         {
-            SetEphemeralValues();
+            return;
         }
 
-        private void SetEphemeralValues()
+        // handle monsters walking on pressure plates
+        if (!(activator is Player player))
         {
-            if (UseSound == 0)
-                UseSound = Sound.TriggerActivated;
-
-            DefaultActive = Active;
-            NextRearm = 0;
+            return;
         }
 
-        public override void SetLinkProperties(WorldObject wo)
+        if (
+            !NextActivationIsFromUse
+            && ResistPerception.HasValue
+            && player.TestStealth((uint)ResistPerception, "You fail to avoid the trigger! You lose stealth.")
+        )
         {
-            wo.ActivationTarget = Guid.Full;
+            return;
         }
 
-        /// <summary>
-        /// Called when a player runs over the pressure plate
-        /// </summary>
-        public override void OnCollideObject(WorldObject wo)
+        NextActivationIsFromUse = false;
+
+        // prevent continuous event stream
+        // TODO: should this go in base.OnActivate()?
+
+        var currentTime = DateTime.UtcNow;
+        if (currentTime < LastUseTime + TimeSpan.FromSeconds(2))
         {
-            OnActivate(wo);
+            return;
         }
 
-        public bool NextActivationIsFromUse = false;
+        LastUseTime = currentTime;
 
-        /// <summary>
-        /// Activates the object linked to a pressure plate
-        /// </summary>
-        public override void OnActivate(WorldObject activator)
+        player.EnqueueBroadcast(new GameMessageSound(player.Guid, UseSound));
+
+        base.OnActivate(activator);
+    }
+
+    public override void ActOnUse(WorldObject wo) { }
+
+    public override void Heartbeat(double currentUnixTime)
+    {
+        if (!Tier.HasValue)
         {
-            if (!Active)
-                return;
-
-            // handle monsters walking on pressure plates
-            if (!(activator is Player player))
-                return;
-
-            if (!NextActivationIsFromUse && ResistPerception.HasValue && player.TestStealth((uint)ResistPerception, "You fail to avoid the trigger! You lose stealth."))
-                return;
-            NextActivationIsFromUse = false;
-
-            // prevent continuous event stream
-            // TODO: should this go in base.OnActivate()?
-
-            var currentTime = DateTime.UtcNow;
-            if (currentTime < LastUseTime + TimeSpan.FromSeconds(2))
-                return;
-
-            LastUseTime = currentTime;
-
-            player.EnqueueBroadcast(new GameMessageSound(player.Guid, UseSound));
-
-            base.OnActivate(activator);
+            DetermineTier();
         }
 
-        public override void ActOnUse(WorldObject wo)
+        base.Heartbeat(currentUnixTime);
+
+        if (NextRearm != 0 && NextRearm <= currentUnixTime)
         {
+            Active = true;
         }
+    }
 
-        public override void Heartbeat(double currentUnixTime)
+    public void DetermineTier()
+    {
+        var instances = DatabaseManager.World.GetCachedInstancesByLandblock(CurrentLandblock.Id.Landblock);
+        foreach (var instance in instances)
         {
-            if (!Tier.HasValue)
-                DetermineTier();
-
-            base.Heartbeat(currentUnixTime);
-
-            if (NextRearm != 0 && NextRearm <= currentUnixTime)
-                Active = true;
-        }
-
-        public void DetermineTier()
-        {
-            var instances = DatabaseManager.World.GetCachedInstancesByLandblock(CurrentLandblock.Id.Landblock);
-            foreach (var instance in instances)
+            var instancePos = new Position(
+                instance.ObjCellId,
+                instance.OriginX,
+                instance.OriginY,
+                instance.OriginZ,
+                instance.AnglesX,
+                instance.AnglesY,
+                instance.AnglesZ,
+                instance.AnglesW
+            );
+            if (Location.DistanceTo(instancePos) < 50)
             {
-                Position instancePos = new Position(instance.ObjCellId, instance.OriginX, instance.OriginY, instance.OriginZ, instance.AnglesX, instance.AnglesY, instance.AnglesZ, instance.AnglesW);
-                if (Location.DistanceTo(instancePos) < 50)
-                {
-                    var weenie = DatabaseManager.World.GetCachedWeenie(instance.WeenieClassId);
+                var weenie = DatabaseManager.World.GetCachedWeenie(instance.WeenieClassId);
 
-                    var deathTreasureId = weenie.GetProperty(PropertyDataId.DeathTreasureType) ?? 0;
+                var deathTreasureId = weenie.GetProperty(PropertyDataId.DeathTreasureType) ?? 0;
+                if (deathTreasureId != 0)
+                {
+                    var deathTreasure = LootGenerationFactory.GetTweakedDeathTreasureProfile(deathTreasureId, this);
+                    if (deathTreasure.Tier > (Tier ?? 0))
+                    {
+                        Tier = deathTreasure.Tier;
+                    }
+                }
+            }
+        }
+
+        var encounters = DatabaseManager.World.GetCachedEncountersByLandblock(CurrentLandblock.Id.Landblock, out _);
+        foreach (var encounter in encounters)
+        {
+            var xPos = Math.Clamp((encounter.CellX * 24.0f) + 12.0f, 0.5f, 191.5f);
+            var yPos = Math.Clamp((encounter.CellY * 24.0f) + 12.0f, 0.5f, 191.5f);
+
+            var pos = new Physics.Common.Position();
+            pos.ObjCellID = (uint)(CurrentLandblock.Id.Landblock << 16) | 1;
+            pos.Frame = new Physics.Animation.AFrame(new Vector3(xPos, yPos, 0), Quaternion.Identity);
+            pos.adjust_to_outside();
+            pos.Frame.Origin.Z = CurrentLandblock.PhysicsLandblock.GetZ(pos.Frame.Origin);
+
+            var encounterPos = new Position(pos.ObjCellID, pos.Frame.Origin, pos.Frame.Orientation);
+            if (Location.DistanceTo(encounterPos) < 50)
+            {
+                var weenie = DatabaseManager.World.GetCachedWeenie(encounter.WeenieClassId);
+
+                foreach (var generatorEntry in weenie.PropertiesGenerator)
+                {
+                    var generatedWeenie = DatabaseManager.World.GetCachedWeenie(generatorEntry.WeenieClassId);
+
+                    var deathTreasureId = generatedWeenie.GetProperty(PropertyDataId.DeathTreasureType) ?? 0;
                     if (deathTreasureId != 0)
                     {
                         var deathTreasure = LootGenerationFactory.GetTweakedDeathTreasureProfile(deathTreasureId, this);
                         if (deathTreasure.Tier > (Tier ?? 0))
                         {
                             Tier = deathTreasure.Tier;
+                            break;
                         }
                     }
                 }
-            }
 
-            var encounters = DatabaseManager.World.GetCachedEncountersByLandblock(CurrentLandblock.Id.Landblock, out _);
-            foreach (var encounter in encounters)
-            {
-                var xPos = Math.Clamp((encounter.CellX * 24.0f) + 12.0f, 0.5f, 191.5f);
-                var yPos = Math.Clamp((encounter.CellY * 24.0f) + 12.0f, 0.5f, 191.5f);
-
-                var pos = new Physics.Common.Position();
-                pos.ObjCellID = (uint)(CurrentLandblock.Id.Landblock << 16) | 1;
-                pos.Frame = new Physics.Animation.AFrame(new Vector3(xPos, yPos, 0), Quaternion.Identity);
-                pos.adjust_to_outside();
-                pos.Frame.Origin.Z = CurrentLandblock.PhysicsLandblock.GetZ(pos.Frame.Origin);
-
-                Position encounterPos = new Position(pos.ObjCellID, pos.Frame.Origin, pos.Frame.Orientation);
-                if (Location.DistanceTo(encounterPos) < 50)
+                if (Tier.HasValue)
                 {
-                    var weenie = DatabaseManager.World.GetCachedWeenie(encounter.WeenieClassId);
-
-                    foreach (var generatorEntry in weenie.PropertiesGenerator)
-                    {
-                        var generatedWeenie = DatabaseManager.World.GetCachedWeenie(generatorEntry.WeenieClassId);
-
-                        var deathTreasureId = generatedWeenie.GetProperty(PropertyDataId.DeathTreasureType) ?? 0;
-                        if (deathTreasureId != 0)
-                        {
-                            var deathTreasure = LootGenerationFactory.GetTweakedDeathTreasureProfile(deathTreasureId, this);
-                            if (deathTreasure.Tier > (Tier ?? 0))
-                            {
-                                Tier = deathTreasure.Tier;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (Tier.HasValue)
-                        break;
+                    break;
                 }
             }
-
-            if (!Tier.HasValue)
-                Tier = 3;
-
-            ResistLockpick = Tier * 75;
-            ResistPerception = Tier * 75;
         }
 
-        private bool DefaultActive;
-        private double NextRearm;
-        private static int DisarmLength = 300;
-
-        public void Disarm()
+        if (!Tier.HasValue)
         {
-            if (!DefaultActive)
-                return;
-
-            if (Active)
-            {
-                Active = false;
-                NextRearm = Time.GetFutureUnixTime(DisarmLength);
-
-                EnqueueBroadcast(new GameMessagePublicUpdatePropertyInt(this, PropertyInt.Active, Active ? 1 : 0));
-            }
-            else
-                NextRearm = Time.GetFutureUnixTime(DisarmLength);
+            Tier = 3;
         }
 
-        public void Rearm()
-        {
-            if (!DefaultActive || Active)
-                return;
+        ResistLockpick = Tier * 75;
+        ResistPerception = Tier * 75;
+    }
 
-            Active = true;
-            NextRearm = 0;
+    private bool DefaultActive;
+    private double NextRearm;
+    private static int DisarmLength = 300;
+
+    public void Disarm()
+    {
+        if (!DefaultActive)
+        {
+            return;
+        }
+
+        if (Active)
+        {
+            Active = false;
+            NextRearm = Time.GetFutureUnixTime(DisarmLength);
 
             EnqueueBroadcast(new GameMessagePublicUpdatePropertyInt(this, PropertyInt.Active, Active ? 1 : 0));
         }
-
-        public void AttemptDisarm(Player player, WorldObject unlocker)
+        else
         {
-            if (!DefaultActive || !Tier.HasValue)
-            {
-                player.Session.Network.EnqueueSend(new GameEventUseDone(player.Session, WeenieError.YouCannotLockOrUnlockThat));
-                return;
-            }
+            NextRearm = Time.GetFutureUnixTime(DisarmLength);
+        }
+    }
 
-            ActionChain chain = new ActionChain();
+    public void Rearm()
+    {
+        if (!DefaultActive || Active)
+        {
+            return;
+        }
 
-            chain.AddAction(player, () =>
+        Active = true;
+        NextRearm = 0;
+
+        EnqueueBroadcast(new GameMessagePublicUpdatePropertyInt(this, PropertyInt.Active, Active ? 1 : 0));
+    }
+
+    public void AttemptDisarm(Player player, WorldObject unlocker)
+    {
+        if (!DefaultActive || !Tier.HasValue)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameEventUseDone(player.Session, WeenieError.YouCannotLockOrUnlockThat)
+            );
+            return;
+        }
+
+        var chain = new ActionChain();
+
+        chain.AddAction(
+            player,
+            () =>
             {
                 if (player.Skills[Skill.Lockpick].AdvancementClass < SkillAdvancementClass.Trained)
                 {
-                    player.Session.Network.EnqueueSend(new GameEventUseDone(player.Session, WeenieError.YouArentTrainedInLockpicking));
+                    player.Session.Network.EnqueueSend(
+                        new GameEventUseDone(player.Session, WeenieError.YouArentTrainedInLockpicking)
+                    );
                     return;
                 }
 
-                uint difficulty = (uint)(ResistLockpick ?? 0);
+                var difficulty = (uint)(ResistLockpick ?? 0);
                 if (unlocker.WeenieType == WeenieType.Lockpick)
                 {
                     var lockpickSkill = player.GetCreatureSkill(Skill.Lockpick);
@@ -234,7 +278,7 @@ namespace ACE.Server.WorldObjects
 
                     var pickChance = SkillCheck.GetSkillChance(effectiveLockpickSkill, difficulty);
 
-                    bool success = false;
+                    var success = false;
                     var chance = ThreadSafeRandom.Next(0.0f, 1.0f);
                     if (chance < pickChance)
                     {
@@ -244,17 +288,26 @@ namespace ACE.Server.WorldObjects
                         EnqueueBroadcast(new GameMessageSound(Guid, Sound.LockSuccess, 1.0f));
                     }
                     else
+                    {
                         EnqueueBroadcast(new GameMessageSound(Guid, Sound.PicklockFail, 1.0f));
+                    }
 
-                    UnlockerHelper.SendDisarmResultMessage(player, UnlockerHelper.ConsumeUnlocker(player, unlocker, this), this, success);
+                    UnlockerHelper.SendDisarmResultMessage(
+                        player,
+                        UnlockerHelper.ConsumeUnlocker(player, unlocker, this),
+                        this,
+                        success
+                    );
                 }
                 else
                 {
-                    player.Session.Network.EnqueueSend(new GameEventUseDone(player.Session, WeenieError.YouCannotLockOrUnlockThat));
+                    player.Session.Network.EnqueueSend(
+                        new GameEventUseDone(player.Session, WeenieError.YouCannotLockOrUnlockThat)
+                    );
                 }
-            });
+            }
+        );
 
-            chain.EnqueueChain();
-        }
+        chain.EnqueueChain();
     }
 }

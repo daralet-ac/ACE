@@ -1,15 +1,14 @@
-namespace ACE.Server.Network.Enum
+namespace ACE.Server.Network.Enum;
+
+public enum CharacterGenerationVerificationResponse
 {
-    public enum CharacterGenerationVerificationResponse
-    {
-        Undef,
-        Ok,
-        Pending,
-        NameInUse,
-        NameBanned,
-        Corrupt,
-        DatabaseDown,
-        AdminPrivilegeDenied,
-        Count
-    }
+    Undef,
+    Ok,
+    Pending,
+    NameInUse,
+    NameBanned,
+    Corrupt,
+    DatabaseDown,
+    AdminPrivilegeDenied,
+    Count
 }

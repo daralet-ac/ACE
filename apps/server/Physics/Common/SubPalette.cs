@@ -1,11 +1,10 @@
-namespace ACE.Server.Physics.Common
+namespace ACE.Server.Physics.Common;
+
+public class SubPalette
 {
-    public class SubPalette
-    {
-        public uint SubID;
-        public uint Offset;
-        public uint NumColors;
-        public SubPalette Prev;
-        public SubPalette Next;
-    }
+    public uint SubID;
+    public uint Offset;
+    public uint NumColors;
+    public SubPalette Prev;
+    public SubPalette Next;
 }

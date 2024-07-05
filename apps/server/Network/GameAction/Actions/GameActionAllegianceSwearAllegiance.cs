@@ -1,14 +1,12 @@
+namespace ACE.Server.Network.GameAction.Actions;
 
-namespace ACE.Server.Network.GameAction.Actions
+public static class GameActionAllegianceSwearAllegiance
 {
-    public static class GameActionAllegianceSwearAllegiance
+    [GameAction(GameActionType.SwearAllegiance)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.SwearAllegiance)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            var targetGuid = message.Payload.ReadUInt32();
+        var targetGuid = message.Payload.ReadUInt32();
 
-            session.Player.HandleActionSwearAllegiance(targetGuid);
-        }
+        session.Player.HandleActionSwearAllegiance(targetGuid);
     }
 }

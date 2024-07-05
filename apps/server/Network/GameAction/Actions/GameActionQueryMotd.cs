@@ -1,11 +1,10 @@
-namespace ACE.Server.Network.GameAction.Actions
+namespace ACE.Server.Network.GameAction.Actions;
+
+public static class GameActionQueryMotd
 {
-    public static class GameActionQueryMotd
+    [GameAction(GameActionType.QueryMotd)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.QueryMotd)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            session.Player.HandleActionQueryMotd();
-        }
+        session.Player.HandleActionQueryMotd();
     }
 }

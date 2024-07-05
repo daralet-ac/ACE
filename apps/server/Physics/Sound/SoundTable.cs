@@ -1,7 +1,6 @@
-namespace ACE.Server.Physics.Sound
+namespace ACE.Server.Physics.Sound;
+
+public class SoundTable
 {
-    public class SoundTable
-    {
-        public SoundTableData SoundData;
-    }
+    public SoundTableData SoundData;
 }

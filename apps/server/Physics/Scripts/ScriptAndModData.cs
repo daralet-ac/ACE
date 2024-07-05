@@ -1,8 +1,7 @@
-namespace ACE.Server.Physics
+namespace ACE.Server.Physics;
+
+public class ScriptAndModData
 {
-    public class ScriptAndModData
-    {
-        public float Mod;
-        public int ScriptID;
-    }
+    public float Mod;
+    public int ScriptID;
 }

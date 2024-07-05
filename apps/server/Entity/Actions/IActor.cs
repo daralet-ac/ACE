@@ -1,8 +1,6 @@
+namespace ACE.Server.Entity.Actions;
 
-namespace ACE.Server.Entity.Actions
+public interface IActor
 {
-    public interface IActor
-    {
-        void EnqueueAction(IAction action);
-    }
+    void EnqueueAction(IAction action);
 }

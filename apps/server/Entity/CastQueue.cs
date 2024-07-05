@@ -1,31 +1,31 @@
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+/// <summary>
+/// questionable if this was ever in retail
+/// </summary>
+public class CastQueue
 {
-    /// <summary>
-    /// questionable if this was ever in retail
-    /// </summary>
-    public class CastQueue
-    {
-        public CastQueueType Type;
-        public uint TargetGuid;
-        public uint SpellId;
-        //public bool BuiltInSpell;
-        public WorldObject CasterItem;
+    public CastQueueType Type;
+    public uint TargetGuid;
+    public uint SpellId;
 
-        public CastQueue(CastQueueType type, uint targetGuid, uint spellId, WorldObject casterItem)
-        {
-            Type = type;
-            TargetGuid = targetGuid;
-            SpellId = spellId;
-            //BuiltInSpell = builtInSpell;
-            CasterItem = casterItem;
-        }
-    }
+    //public bool BuiltInSpell;
+    public WorldObject CasterItem;
 
-    public enum CastQueueType
+    public CastQueue(CastQueueType type, uint targetGuid, uint spellId, WorldObject casterItem)
     {
-        Targeted,
-        Untargeted
+        Type = type;
+        TargetGuid = targetGuid;
+        SpellId = spellId;
+        //BuiltInSpell = builtInSpell;
+        CasterItem = casterItem;
     }
+}
+
+public enum CastQueueType
+{
+    Targeted,
+    Untargeted
 }

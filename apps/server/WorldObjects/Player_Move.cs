@@ -9,309 +9,357 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Collision;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+partial class Player
 {
-    partial class Player
+    private TimeSpan defaultMoveToTimeout = TimeSpan.FromSeconds(15); // This is just a starting point number. It may be far off from retail.
+
+    private int moveToChainCounter;
+    private DateTime moveToChainStartTime;
+
+    private int lastCompletedMove;
+
+    public bool IsPlayerMovingTo => moveToChainCounter > lastCompletedMove;
+
+    private int GetNextMoveToChainNumber()
     {
-        private TimeSpan defaultMoveToTimeout = TimeSpan.FromSeconds(15); // This is just a starting point number. It may be far off from retail.
+        return Interlocked.Increment(ref moveToChainCounter);
+    }
 
-        private int moveToChainCounter;
-        private DateTime moveToChainStartTime;
+    public void StopExistingMoveToChains()
+    {
+        Interlocked.Increment(ref moveToChainCounter);
 
-        private int lastCompletedMove;
+        lastCompletedMove = moveToChainCounter;
+    }
 
-        public bool IsPlayerMovingTo => moveToChainCounter > lastCompletedMove;
-
-        private int GetNextMoveToChainNumber()
+    public void CreateMoveToChain(
+        WorldObject target,
+        Action<bool> callback,
+        float? useRadius = null,
+        bool rotate = true
+    )
+    {
+        if (FastTick)
         {
-            return Interlocked.Increment(ref moveToChainCounter);
+            CreateMoveToChain2(target, callback, useRadius, rotate);
+            return;
         }
 
-        public void StopExistingMoveToChains()
-        {
-            Interlocked.Increment(ref moveToChainCounter);
+        var thisMoveToChainNumber = GetNextMoveToChainNumber();
 
-            lastCompletedMove = moveToChainCounter;
+        if (target.Location == null)
+        {
+            StopExistingMoveToChains();
+            _log.Error($"{Name}.CreateMoveToChain({target.Name}): target.Location is null");
+
+            callback(false);
+            return;
         }
 
-        public void CreateMoveToChain(WorldObject target, Action<bool> callback, float? useRadius = null, bool rotate = true)
+        // fix bug in magic combat mode after walking to target,
+        // crouch animation steps out of range
+        if (useRadius == null)
         {
-            if (FastTick)
+            useRadius = target.UseRadius ?? 0.6f;
+        }
+
+        if (CombatMode == CombatMode.Magic)
+        {
+            useRadius = Math.Max(0.0f, useRadius.Value - 0.2f);
+        }
+
+        // already within use distance?
+        var withinUseRadius = CurrentLandblock.WithinUseRadius(this, target.Guid, out var targetValid, useRadius);
+        if (withinUseRadius)
+        {
+            if (rotate)
             {
-                CreateMoveToChain2(target, callback, useRadius, rotate);
-                return;
-            }
-
-            var thisMoveToChainNumber = GetNextMoveToChainNumber();
-
-            if (target.Location == null)
-            {
-                StopExistingMoveToChains();
-                _log.Error($"{Name}.CreateMoveToChain({target.Name}): target.Location is null");
-
-                callback(false);
-                return;
-            }
-
-            // fix bug in magic combat mode after walking to target,
-            // crouch animation steps out of range
-            if (useRadius == null)
-                useRadius = target.UseRadius ?? 0.6f;
-
-            if (CombatMode == CombatMode.Magic)
-                useRadius = Math.Max(0.0f, useRadius.Value - 0.2f);
-
-            // already within use distance?
-            var withinUseRadius = CurrentLandblock.WithinUseRadius(this, target.Guid, out var targetValid, useRadius);
-            if (withinUseRadius)
-            {
-                if (rotate)
-                {
-                    // send TurnTo motion
-                    var rotateTime = Rotate(target);
-                    var actionChain = new ActionChain();
-                    actionChain.AddDelaySeconds(rotateTime);
-                    actionChain.AddAction(this, () =>
+                // send TurnTo motion
+                var rotateTime = Rotate(target);
+                var actionChain = new ActionChain();
+                actionChain.AddDelaySeconds(rotateTime);
+                actionChain.AddAction(
+                    this,
+                    () =>
                     {
                         lastCompletedMove = thisMoveToChainNumber;
                         callback(true);
-                    });
-                    actionChain.EnqueueChain();
-                }
-                else
-                {
-                    lastCompletedMove = thisMoveToChainNumber;
-                    callback(true);
-                }
-                return;
-            }
-
-            if (target.WeenieType == WeenieType.Portal)
-                MoveToPosition(target.Location);
-            else
-                MoveToObject(target, useRadius);
-
-            moveToChainStartTime = DateTime.UtcNow;
-
-            MoveToChain(target, thisMoveToChainNumber, callback, useRadius);
-        }
-
-        public void MoveToChain(WorldObject target, int thisMoveToChainNumber, Action<bool> callback, float? useRadius = null)
-        {
-            if (thisMoveToChainNumber != moveToChainCounter)
-            {
-                if (thisMoveToChainNumber > lastCompletedMove)
-                    lastCompletedMove = thisMoveToChainNumber;
-
-                callback(false);
-                return;
-            }
-
-            // Break loop if CurrentLandblock == null (we portaled or logged out)
-            if (CurrentLandblock == null)
-            {
-                StopExistingMoveToChains(); // This increments our moveToChainCounter and thus, should stop any additional actions in this chain
-                callback(false);
-                return;
-            }
-
-            // Have we timed out?
-            if (moveToChainStartTime + defaultMoveToTimeout <= DateTime.UtcNow)
-            {
-                StopExistingMoveToChains(); // This increments our moveToChainCounter and thus, should stop any additional actions in this chain
-                callback(false);
-                return;
-            }
-
-            // Are we within use radius?
-            var success = CurrentLandblock.WithinUseRadius(this, target.Guid, out var targetValid, useRadius);
-
-            // If one of the items isn't on a landblock
-            if (!targetValid)
-            {
-                StopExistingMoveToChains(); // This increments our moveToChainCounter and thus, should stop any additional actions in this chain
-                callback(false);
-                return;
-            }
-
-            if (!success)
-            {
-                // target not reached yet
-                var actionChain = new ActionChain();
-                actionChain.AddDelaySeconds(0.1f);
-                actionChain.AddAction(this, () => MoveToChain(target, thisMoveToChainNumber, callback, useRadius));
+                    }
+                );
                 actionChain.EnqueueChain();
             }
             else
             {
-                if (thisMoveToChainNumber > lastCompletedMove)
-                    lastCompletedMove = thisMoveToChainNumber;
-
+                lastCompletedMove = thisMoveToChainNumber;
                 callback(true);
             }
+            return;
         }
 
-        public Position StartJump;
-
-        public override void MoveTo(WorldObject target, float runRate = 0.0f)
+        if (target.WeenieType == WeenieType.Portal)
         {
-            if (runRate == 0.0f)
-                runRate = GetRunRate();
-
-            //Console.WriteLine($"{Name}.MoveTo({target.Name})");
-
-            var motion = new Motion(this, target, MovementType.MoveToObject);
-            motion.MoveToParameters.MovementParameters |= MovementParams.CanCharge | MovementParams.FailWalk | MovementParams.UseFinalHeading | MovementParams.Sticky | MovementParams.MoveAway;
-            motion.MoveToParameters.WalkRunThreshold = 1.0f;
-            motion.MoveToParameters.Speed = 1.5f;   // charge modifier
-            motion.MoveToParameters.FailDistance = 15.0f;
-            motion.RunRate = runRate;
-
-            CurrentMotionState = motion;
-
-            EnqueueBroadcastMotion(motion);
-
-            var mvp = GetChargeParameters();
-            PhysicsObj.MoveToObject(target.PhysicsObj, mvp);
-
-            IsMoving = true;
-
-            MoveTo_Tick();
+            MoveToPosition(target.Location);
+        }
+        else
+        {
+            MoveToObject(target, useRadius);
         }
 
-        public static float MoveToRate = 0.1f;
+        moveToChainStartTime = DateTime.UtcNow;
 
-        public void MoveTo_Tick()
+        MoveToChain(target, thisMoveToChainNumber, callback, useRadius);
+    }
+
+    public void MoveToChain(
+        WorldObject target,
+        int thisMoveToChainNumber,
+        Action<bool> callback,
+        float? useRadius = null
+    )
+    {
+        if (thisMoveToChainNumber != moveToChainCounter)
         {
-            //Console.WriteLine($"{Name}.MoveTo_Tick()");
+            if (thisMoveToChainNumber > lastCompletedMove)
+            {
+                lastCompletedMove = thisMoveToChainNumber;
+            }
 
-            PhysicsObj.update_object();
-
-            if (IsMoving)
-                Enqueue_NextMoveTick();
+            callback(false);
+            return;
         }
 
-        public void Enqueue_NextMoveTick()
+        // Break loop if CurrentLandblock == null (we portaled or logged out)
+        if (CurrentLandblock == null)
         {
+            StopExistingMoveToChains(); // This increments our moveToChainCounter and thus, should stop any additional actions in this chain
+            callback(false);
+            return;
+        }
+
+        // Have we timed out?
+        if (moveToChainStartTime + defaultMoveToTimeout <= DateTime.UtcNow)
+        {
+            StopExistingMoveToChains(); // This increments our moveToChainCounter and thus, should stop any additional actions in this chain
+            callback(false);
+            return;
+        }
+
+        // Are we within use radius?
+        var success = CurrentLandblock.WithinUseRadius(this, target.Guid, out var targetValid, useRadius);
+
+        // If one of the items isn't on a landblock
+        if (!targetValid)
+        {
+            StopExistingMoveToChains(); // This increments our moveToChainCounter and thus, should stop any additional actions in this chain
+            callback(false);
+            return;
+        }
+
+        if (!success)
+        {
+            // target not reached yet
             var actionChain = new ActionChain();
-            actionChain.AddDelaySeconds(MoveToRate);
-            actionChain.AddAction(this, MoveTo_Tick);
+            actionChain.AddDelaySeconds(0.1f);
+            actionChain.AddAction(this, () => MoveToChain(target, thisMoveToChainNumber, callback, useRadius));
             actionChain.EnqueueChain();
         }
-
-        public override void OnMoveComplete(WeenieError status)
+        else
         {
-            //Console.WriteLine($"{Name}.OnMoveComplete({status})");
-
-            IsMoving = false;
-
-            if (IsPlayerMovingTo2)
+            if (thisMoveToChainNumber > lastCompletedMove)
             {
-                OnMoveComplete_MoveTo2(status);
-
-                if (MagicState.IsCasting)
-                    OnMoveComplete_Magic(status);
-
-                return;
+                lastCompletedMove = thisMoveToChainNumber;
             }
 
-            switch (status)
-            {
-                case WeenieError.None:
+            callback(true);
+        }
+    }
 
-                    Attack(MeleeTarget, AttackSequence);
-                    break;
+    public Position StartJump;
 
-                default:
-
-                    SendWeenieError(status);
-                    HandleActionCancelAttack();
-                    break;
-            }
+    public override void MoveTo(WorldObject target, float runRate = 0.0f)
+    {
+        if (runRate == 0.0f)
+        {
+            runRate = GetRunRate();
         }
 
-        public MovementParameters GetChargeParameters()
+        //Console.WriteLine($"{Name}.MoveTo({target.Name})");
+
+        var motion = new Motion(this, target, MovementType.MoveToObject);
+        motion.MoveToParameters.MovementParameters |=
+            MovementParams.CanCharge
+            | MovementParams.FailWalk
+            | MovementParams.UseFinalHeading
+            | MovementParams.Sticky
+            | MovementParams.MoveAway;
+        motion.MoveToParameters.WalkRunThreshold = 1.0f;
+        motion.MoveToParameters.Speed = 1.5f; // charge modifier
+        motion.MoveToParameters.FailDistance = 15.0f;
+        motion.RunRate = runRate;
+
+        CurrentMotionState = motion;
+
+        EnqueueBroadcastMotion(motion);
+
+        var mvp = GetChargeParameters();
+        PhysicsObj.MoveToObject(target.PhysicsObj, mvp);
+
+        IsMoving = true;
+
+        MoveTo_Tick();
+    }
+
+    public static float MoveToRate = 0.1f;
+
+    public void MoveTo_Tick()
+    {
+        //Console.WriteLine($"{Name}.MoveTo_Tick()");
+
+        PhysicsObj.update_object();
+
+        if (IsMoving)
         {
-            var mvp = new MovementParameters();
+            Enqueue_NextMoveTick();
+        }
+    }
 
-            // set non-default params for player melee charge
-            mvp.Flags &= ~MovementParamFlags.CanWalk;
-            mvp.Flags |= MovementParamFlags.CanCharge | MovementParamFlags.FailWalk | MovementParamFlags.UseFinalHeading | MovementParamFlags.Sticky | MovementParamFlags.MoveAway;
-            mvp.HoldKeyToApply = HoldKey.Run;
-            mvp.FailDistance = 15.0f;
-            mvp.Speed = 1.5f;
+    public void Enqueue_NextMoveTick()
+    {
+        var actionChain = new ActionChain();
+        actionChain.AddDelaySeconds(MoveToRate);
+        actionChain.AddAction(this, MoveTo_Tick);
+        actionChain.EnqueueChain();
+    }
 
-            return mvp;
+    public override void OnMoveComplete(WeenieError status)
+    {
+        //Console.WriteLine($"{Name}.OnMoveComplete({status})");
+
+        IsMoving = false;
+
+        if (IsPlayerMovingTo2)
+        {
+            OnMoveComplete_MoveTo2(status);
+
+            if (MagicState.IsCasting)
+            {
+                OnMoveComplete_Magic(status);
+            }
+
+            return;
         }
 
-        public void HandleFallingDamage(EnvCollisionProfile collision)
+        switch (status)
         {
-            // starting with phat logic
+            case WeenieError.None:
 
-            // jumping skill sort of used as a damping factor here
-            //var jumpVelocity = 0.0f;
-            //PhysicsObj.WeenieObj.InqJumpVelocity(1.0f, out jumpVelocity);
-            var jumpVelocity = 11.25434f;   // TODO: figure out how to scale this better
+                Attack(MeleeTarget, AttackSequence);
+                break;
 
-            //var currVelocity = FastTick ? PhysicsObj.Velocity : PhysicsObj.CachedVelocity;
-            var currVelocity = PhysicsObj.Velocity;
+            default:
 
-            var overspeed = jumpVelocity + currVelocity.Z + 4.5f;     // a little leeway
+                SendWeenieError(status);
+                HandleActionCancelAttack();
+                break;
+        }
+    }
 
-            var ratio = -overspeed / jumpVelocity;
+    public MovementParameters GetChargeParameters()
+    {
+        var mvp = new MovementParameters();
 
-            /*Console.WriteLine($"Jump velocity: {jumpVelocity}");
-            Console.WriteLine($"Velocity: {currVelocity}");
-            Console.WriteLine($"Overspeed: {overspeed}");
-            Console.WriteLine($"Ratio: {ratio}");*/
+        // set non-default params for player melee charge
+        mvp.Flags &= ~MovementParamFlags.CanWalk;
+        mvp.Flags |=
+            MovementParamFlags.CanCharge
+            | MovementParamFlags.FailWalk
+            | MovementParamFlags.UseFinalHeading
+            | MovementParamFlags.Sticky
+            | MovementParamFlags.MoveAway;
+        mvp.HoldKeyToApply = HoldKey.Run;
+        mvp.FailDistance = 15.0f;
+        mvp.Speed = 1.5f;
 
-            if (ratio > 0.0f)
+        return mvp;
+    }
+
+    public void HandleFallingDamage(EnvCollisionProfile collision)
+    {
+        // starting with phat logic
+
+        // jumping skill sort of used as a damping factor here
+        //var jumpVelocity = 0.0f;
+        //PhysicsObj.WeenieObj.InqJumpVelocity(1.0f, out jumpVelocity);
+        var jumpVelocity = 11.25434f; // TODO: figure out how to scale this better
+
+        //var currVelocity = FastTick ? PhysicsObj.Velocity : PhysicsObj.CachedVelocity;
+        var currVelocity = PhysicsObj.Velocity;
+
+        var overspeed = jumpVelocity + currVelocity.Z + 4.5f; // a little leeway
+
+        var ratio = -overspeed / jumpVelocity;
+
+        /*Console.WriteLine($"Jump velocity: {jumpVelocity}");
+        Console.WriteLine($"Velocity: {currVelocity}");
+        Console.WriteLine($"Overspeed: {overspeed}");
+        Console.WriteLine($"Ratio: {ratio}");*/
+
+        if (ratio > 0.0f)
+        {
+            //var damage = ratio * 40.0f;
+            var damage = ratio * 87.293810f;
+            //Console.WriteLine($"Damage: {damage}");
+
+            // bludgeon damage
+            // impact damage
+            //if (damage > 0.0f && (FastTick || StartJump == null || StartJump.PositionZ - PhysicsObj.Position.Frame.Origin.Z > 10.0f))
+            if (damage > 0.0f)
             {
-                //var damage = ratio * 40.0f;
-                var damage = ratio * 87.293810f;
-                //Console.WriteLine($"Damage: {damage}");
-
-                // bludgeon damage
-                // impact damage
-                //if (damage > 0.0f && (FastTick || StartJump == null || StartJump.PositionZ - PhysicsObj.Position.Frame.Origin.Z > 10.0f))
-                if (damage > 0.0f)
-                    TakeDamage_Falling(damage);
+                TakeDamage_Falling(damage);
             }
         }
+    }
 
-        public void TakeDamage_Falling(float amount)
+    public void TakeDamage_Falling(float amount)
+    {
+        if (IsDead || Invincible)
         {
-            if (IsDead || Invincible) return;
+            return;
+        }
 
-            // handle lifestone protection?
-            if (UnderLifestoneProtection)
-            {
-                HandleLifestoneProtection();
-                return;
-            }
+        // handle lifestone protection?
+        if (UnderLifestoneProtection)
+        {
+            HandleLifestoneProtection();
+            return;
+        }
 
-            // SPEC BONUS - Jump: Reduce fall damage by 50%
-            var jumpSpecMod = GetCreatureSkill(Skill.Jump).AdvancementClass == SkillAdvancementClass.Specialized ? 0.5f : 1.0f;
+        // SPEC BONUS - Jump: Reduce fall damage by 50%
+        var jumpSpecMod =
+            GetCreatureSkill(Skill.Jump).AdvancementClass == SkillAdvancementClass.Specialized ? 0.5f : 1.0f;
 
-            // scale by bludgeon protection
-            var resistance = GetResistanceMod(DamageType.Bludgeon, null, null);
-            var damage = (uint)Math.Round(amount * resistance * jumpSpecMod);
+        // scale by bludgeon protection
+        var resistance = GetResistanceMod(DamageType.Bludgeon, null, null);
+        var damage = (uint)Math.Round(amount * resistance * jumpSpecMod);
 
-            // update health
-            var damageTaken = (uint)-UpdateVitalDelta(Health, (int)-damage);
-            DamageHistory.Add(this, DamageType.Bludgeon, damageTaken);
+        // update health
+        var damageTaken = (uint)-UpdateVitalDelta(Health, (int)-damage);
+        DamageHistory.Add(this, DamageType.Bludgeon, damageTaken);
 
-            var msg = Strings.GetFallMessage(damageTaken, Health.MaxValue);
+        var msg = Strings.GetFallMessage(damageTaken, Health.MaxValue);
 
-            SendMessage(msg, ChatMessageType.Combat);
+        SendMessage(msg, ChatMessageType.Combat);
 
-            if (Health.Current <= 0)
-            {
-                OnDeath(new DamageHistoryInfo(this), DamageType.Bludgeon, false);
-                Die();
-            }
-            else
-                EnqueueBroadcast(new GameMessageSound(Guid, Sound.Wound3, 1.0f));
+        if (Health.Current <= 0)
+        {
+            OnDeath(new DamageHistoryInfo(this), DamageType.Bludgeon, false);
+            Die();
+        }
+        else
+        {
+            EnqueueBroadcast(new GameMessageSound(Guid, Sound.Wound3, 1.0f));
         }
     }
 }

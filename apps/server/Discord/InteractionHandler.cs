@@ -1,12 +1,12 @@
+using System;
+using System.Reflection;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
-using Serilog.Events;
 using Serilog;
-using System;
-using System.Reflection;
-using System.Threading.Tasks;
+using Serilog.Events;
 
 namespace ACE.Server.Discord;
 
@@ -18,7 +18,12 @@ public class InteractionHandler
     private readonly IServiceProvider _services;
     private readonly IConfiguration _configuration;
 
-    public InteractionHandler(DiscordSocketClient client, InteractionService handler, IServiceProvider services, IConfiguration config)
+    public InteractionHandler(
+        DiscordSocketClient client,
+        InteractionService handler,
+        IServiceProvider services,
+        IConfiguration config
+    )
     {
         _client = client;
         _handler = handler;
@@ -80,6 +85,7 @@ public class InteractionHandler
             // Due to async nature of InteractionFramework, the result here may always be success.
             // That's why we also need to handle the InteractionExecuted event.
             if (!result.IsSuccess)
+            {
                 switch (result.Error)
                 {
                     case InteractionCommandError.UnmetPrecondition:
@@ -88,19 +94,25 @@ public class InteractionHandler
                     default:
                         break;
                 }
+            }
         }
         catch
         {
             // If Slash Command execution fails it is most likely that the original interaction acknowledgement will persist. It is a good idea to delete the original
             // response, or at least let the user know that something went wrong during the command execution.
             if (interaction.Type is InteractionType.ApplicationCommand)
-                await interaction.GetOriginalResponseAsync().ContinueWith(async (msg) => await msg.Result.DeleteAsync());
+            {
+                await interaction
+                    .GetOriginalResponseAsync()
+                    .ContinueWith(async (msg) => await msg.Result.DeleteAsync());
+            }
         }
     }
 
     private async Task HandleInteractionExecute(ICommandInfo commandInfo, IInteractionContext context, IResult result)
     {
         if (!result.IsSuccess)
+        {
             switch (result.Error)
             {
                 case InteractionCommandError.UnmetPrecondition:
@@ -109,5 +121,6 @@ public class InteractionHandler
                 default:
                     break;
             }
+        }
     }
 }

@@ -15,7 +15,9 @@ public static class QueueExtensions
     public static T DequeueLast<T>(this Queue<T> q)
     {
         for (var i = 1; i < q.Count; i++)
+        {
             q.Enqueue(q.Dequeue());
+        }
 
         return q.Dequeue();
     }
@@ -30,11 +32,15 @@ public static class QueueExtensions
     public static IEnumerable<T> DequeueLast<T>(this Queue<T> q, int quantity)
     {
         for (var i = quantity; i < q.Count; i++)
+        {
             q.Enqueue(q.Dequeue());
+        }
 
         var poppedItems = new List<T>(quantity);
-        for (int i = 0; i < quantity; i++)
+        for (var i = 0; i < quantity; i++)
+        {
             poppedItems.Add(q.Dequeue());
+        }
 
         return poppedItems;
     }
@@ -48,7 +54,9 @@ public static class QueueExtensions
     {
         q.Enqueue(item);
         for (var i = 1; i < q.Count; i++)
+        {
             q.Enqueue(q.Dequeue());
+        }
     }
 
     /// <summary>
@@ -59,12 +67,19 @@ public static class QueueExtensions
     /// <param name="items">List of items(<see cref="T"/>) to add to the <see cref="System.Collections.Generic.Queue{T}"/>.</param>
     public static void EnqueueFirst<T>(this Queue<T> q, IEnumerable<T> items)
     {
-        if (items == null || !items.Any()) return;
+        if (items == null || !items.Any())
+        {
+            return;
+        }
 
         foreach (var item in items)
+        {
             q.Enqueue(item);
+        }
 
         for (var i = items.Count(); i < q.Count; i++)
+        {
             q.Enqueue(q.Dequeue());
+        }
     }
 }

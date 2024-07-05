@@ -1,119 +1,135 @@
 using System;
-
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
 
-namespace ACE.Server.Physics.Common
+namespace ACE.Server.Physics.Common;
+
+public class DBObj
 {
-    public class DBObj
+    public static Object Get(QualifiedDataID qualifiedDID)
     {
-        public static Object Get(QualifiedDataID qualifiedDID)
+        // TODO: map to ACE datloaders
+        // return static or mutable?
+
+        if (qualifiedDID.Type == 1)
         {
-            // TODO: map to ACE datloaders
-            // return static or mutable?
-
-            if (qualifiedDID.Type == 1)
-                return GetCellLandblock(qualifiedDID.ID);
-
-            if (qualifiedDID.Type == 2)
-                return GetLandblockInfo(qualifiedDID.ID);
-
-            if (qualifiedDID.Type == 3)
-                return GetEnvCell(qualifiedDID.ID);
-
-            if (qualifiedDID.Type == 6)
-                return GetGfxObj(qualifiedDID.ID);
-
-            if (qualifiedDID.Type == 7)
-                return GetSetup(qualifiedDID.ID);
-
-            if (qualifiedDID.Type == 8)
-                return GetAnimation(qualifiedDID.ID);
-
-            if (qualifiedDID.Type == 11)
-                return GetSurfaceTexture(qualifiedDID.ID);
-
-            if (qualifiedDID.Type == 16)
-                return GetEnvironment(qualifiedDID.ID);
-
-            if (qualifiedDID.Type == 42)
-                return GetParticleEmitterInfo(qualifiedDID.ID);
-
-            return -1;
+            return GetCellLandblock(qualifiedDID.ID);
         }
 
-        /// <summary>
-        /// QualifiedDID Type 1
-        /// </summary>
-        public static CellLandblock GetCellLandblock(uint id)
+        if (qualifiedDID.Type == 2)
         {
-            return DatManager.CellDat.ReadFromDat<CellLandblock>(id);
+            return GetLandblockInfo(qualifiedDID.ID);
         }
 
-        /// <summary>
-        /// QualifiedDID Type 2
-        /// </summary>
-        public static LandblockInfo GetLandblockInfo(uint id)
+        if (qualifiedDID.Type == 3)
         {
-            return DatManager.CellDat.ReadFromDat<LandblockInfo>(id);
+            return GetEnvCell(qualifiedDID.ID);
         }
 
-        /// <summary>
-        /// QualifiedDID Type 3
-        /// </summary>
-        public static EnvCell GetEnvCell(uint id)
+        if (qualifiedDID.Type == 6)
         {
-            var envCell = DatManager.CellDat.ReadFromDat<DatLoader.FileTypes.EnvCell>(id);
-
-            return new EnvCell(envCell);
+            return GetGfxObj(qualifiedDID.ID);
         }
 
-        /// <summary>
-        /// QualifiedDID Type 6
-        /// </summary>
-        public static GfxObj GetGfxObj(uint id)
+        if (qualifiedDID.Type == 7)
         {
-            return DatManager.PortalDat.ReadFromDat<GfxObj>(id);
+            return GetSetup(qualifiedDID.ID);
         }
 
-        /// <summary>
-        /// QualifiedDID Type 7
-        /// </summary>
-        public static SetupModel GetSetup(uint id)
+        if (qualifiedDID.Type == 8)
         {
-            return DatManager.PortalDat.ReadFromDat<SetupModel>(id);
+            return GetAnimation(qualifiedDID.ID);
         }
 
-        /// <summary>
-        /// QualifiedDID Type 8
-        /// </summary>
-        public static DatLoader.FileTypes.Animation GetAnimation(uint id)
+        if (qualifiedDID.Type == 11)
         {
-            return DatManager.PortalDat.ReadFromDat<DatLoader.FileTypes.Animation>(id);
+            return GetSurfaceTexture(qualifiedDID.ID);
         }
 
-        /// <summary>
-        /// QualifiedDID Type 11
-        /// </summary>
-        public static SurfaceTexture GetSurfaceTexture(uint id)
+        if (qualifiedDID.Type == 16)
         {
-            return DatManager.PortalDat.ReadFromDat<SurfaceTexture>(id);
+            return GetEnvironment(qualifiedDID.ID);
         }
 
-        /// <summary>
-        /// QualifiedDID Type 16
-        /// </summary>
-        public static DatLoader.FileTypes.Environment GetEnvironment(uint id)
+        if (qualifiedDID.Type == 42)
         {
-            return DatManager.PortalDat.ReadFromDat<DatLoader.FileTypes.Environment>(id);
+            return GetParticleEmitterInfo(qualifiedDID.ID);
         }
 
-        /// <summary>
-        /// QualifiedDID Type 42
-        /// </summary>
-        public static DatLoader.FileTypes.ParticleEmitterInfo GetParticleEmitterInfo(uint id)
-        {
-            return DatManager.PortalDat.ReadFromDat<DatLoader.FileTypes.ParticleEmitterInfo>(id);
-        }
+        return -1;
+    }
+
+    /// <summary>
+    /// QualifiedDID Type 1
+    /// </summary>
+    public static CellLandblock GetCellLandblock(uint id)
+    {
+        return DatManager.CellDat.ReadFromDat<CellLandblock>(id);
+    }
+
+    /// <summary>
+    /// QualifiedDID Type 2
+    /// </summary>
+    public static LandblockInfo GetLandblockInfo(uint id)
+    {
+        return DatManager.CellDat.ReadFromDat<LandblockInfo>(id);
+    }
+
+    /// <summary>
+    /// QualifiedDID Type 3
+    /// </summary>
+    public static EnvCell GetEnvCell(uint id)
+    {
+        var envCell = DatManager.CellDat.ReadFromDat<DatLoader.FileTypes.EnvCell>(id);
+
+        return new EnvCell(envCell);
+    }
+
+    /// <summary>
+    /// QualifiedDID Type 6
+    /// </summary>
+    public static GfxObj GetGfxObj(uint id)
+    {
+        return DatManager.PortalDat.ReadFromDat<GfxObj>(id);
+    }
+
+    /// <summary>
+    /// QualifiedDID Type 7
+    /// </summary>
+    public static SetupModel GetSetup(uint id)
+    {
+        return DatManager.PortalDat.ReadFromDat<SetupModel>(id);
+    }
+
+    /// <summary>
+    /// QualifiedDID Type 8
+    /// </summary>
+    public static DatLoader.FileTypes.Animation GetAnimation(uint id)
+    {
+        return DatManager.PortalDat.ReadFromDat<DatLoader.FileTypes.Animation>(id);
+    }
+
+    /// <summary>
+    /// QualifiedDID Type 11
+    /// </summary>
+    public static SurfaceTexture GetSurfaceTexture(uint id)
+    {
+        return DatManager.PortalDat.ReadFromDat<SurfaceTexture>(id);
+    }
+
+    /// <summary>
+    /// QualifiedDID Type 16
+    /// </summary>
+    public static DatLoader.FileTypes.Environment GetEnvironment(uint id)
+    {
+        return DatManager.PortalDat.ReadFromDat<DatLoader.FileTypes.Environment>(id);
+    }
+
+    /// <summary>
+    /// QualifiedDID Type 42
+    /// </summary>
+    public static DatLoader.FileTypes.ParticleEmitterInfo GetParticleEmitterInfo(uint id)
+    {
+        return DatManager.PortalDat.ReadFromDat<DatLoader.FileTypes.ParticleEmitterInfo>(id);
     }
 }

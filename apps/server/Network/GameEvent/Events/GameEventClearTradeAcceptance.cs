@@ -1,13 +1,10 @@
 using ACE.Entity;
 using ACE.Entity.Enum;
 
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+public class GameEventClearTradeAcceptance : GameEventMessage
 {
-    public class GameEventClearTradeAcceptance : GameEventMessage
-    {
-        public GameEventClearTradeAcceptance(Session session)
-            : base(GameEventType.ClearTradeAcceptance, GameMessageGroup.UIQueue, session, 4)
-        {
-        }
-    }
+    public GameEventClearTradeAcceptance(Session session)
+        : base(GameEventType.ClearTradeAcceptance, GameMessageGroup.UIQueue, session, 4) { }
 }

@@ -1,16 +1,15 @@
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Entity
-{
-    public class TargetDistance
-    {
-        public Creature Target;
-        public float Distance;
+namespace ACE.Server.Entity;
 
-        public TargetDistance(Creature target, float distance)
-        {
-            Target = target;
-            Distance = distance;
-        }
+public class TargetDistance
+{
+    public Creature Target;
+    public float Distance;
+
+    public TargetDistance(Creature target, float distance)
+    {
+        Target = target;
+        Distance = distance;
     }
 }

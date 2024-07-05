@@ -5,112 +5,119 @@ using ACE.Entity.Enum;
 using ACE.Server.WorldObjects;
 using Serilog;
 
-namespace ACE.Server.Factories.Tables.Spells
+namespace ACE.Server.Factories.Tables.Spells;
+
+public static class WandSpells
 {
-    public static class WandSpells
+    private static readonly ILogger _log = Log.ForContext(typeof(WandSpells));
+
+    private static readonly List<SpellId> spells = new List<SpellId>()
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(WandSpells));
+        //SpellId.FocusSelf1,
+        //SpellId.WillpowerSelf1,
 
-        private static readonly List<SpellId> spells = new List<SpellId>()
+        //SpellId.CreatureEnchantmentMasterySelf1,
+        //SpellId.ItemEnchantmentMasterySelf1,
+        //SpellId.LifeMagicMasterySelf1,
+        //SpellId.WarMagicMasterySelf1,
+        //SpellId.VoidMagicMasterySelf1,  // missing from original
+
+        SpellId.DefenderSelf1,
+        SpellId.HermeticLinkSelf1,
+        SpellId.SpiritDrinkerSelf1, // added to match WandCantrips
+
+        //SpellId.ArcaneEnlightenmentSelf1,
+        //SpellId.ManaMasterySelf1,
+
+        //SpellId.SneakAttackMasterySelf1,
+    };
+
+    private static readonly int NumTiers = 8;
+
+    // original api
+    public static readonly SpellId[][] Table = new SpellId[spells.Count][];
+    public static readonly List<SpellId> CreatureLifeTable = new List<SpellId>();
+
+    static WandSpells()
+    {
+        // takes ~0.3ms
+        BuildSpells();
+    }
+
+    private static void BuildSpells()
+    {
+        for (var i = 0; i < spells.Count; i++)
         {
-            //SpellId.FocusSelf1,
-            //SpellId.WillpowerSelf1,
-
-            //SpellId.CreatureEnchantmentMasterySelf1,
-            //SpellId.ItemEnchantmentMasterySelf1,
-            //SpellId.LifeMagicMasterySelf1,
-            //SpellId.WarMagicMasterySelf1,
-            //SpellId.VoidMagicMasterySelf1,  // missing from original
-
-            SpellId.DefenderSelf1,
-            SpellId.HermeticLinkSelf1,
-            SpellId.SpiritDrinkerSelf1,     // added to match WandCantrips
-
-            //SpellId.ArcaneEnlightenmentSelf1,
-            //SpellId.ManaMasterySelf1,
-
-            //SpellId.SneakAttackMasterySelf1,
-        };
-
-        private static readonly int NumTiers = 8;
-
-        // original api
-        public static readonly SpellId[][] Table = new SpellId[spells.Count][];
-        public static readonly List<SpellId> CreatureLifeTable = new List<SpellId>();
-
-        static WandSpells()
-        {
-            // takes ~0.3ms
-            BuildSpells();
+            Table[i] = new SpellId[NumTiers];
         }
 
-        private static void BuildSpells()
+        for (var i = 0; i < spells.Count; i++)
         {
-            for (var i = 0; i < spells.Count; i++)
-                Table[i] = new SpellId[NumTiers];
+            var spell = spells[i];
 
-            for (var i = 0; i < spells.Count; i++)
+            var spellLevels = SpellLevelProgression.GetSpellLevels(spell);
+
+            if (spellLevels == null)
             {
-                var spell = spells[i];
+                _log.Error($"WandSpells - couldn't find {spell}");
+                continue;
+            }
 
-                var spellLevels = SpellLevelProgression.GetSpellLevels(spell);
+            if (spellLevels.Count != NumTiers)
+            {
+                _log.Error($"WandSpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
+                continue;
+            }
 
-                if (spellLevels == null)
-                {
-                    _log.Error($"WandSpells - couldn't find {spell}");
-                    continue;
-                }
+            for (var j = 0; j < NumTiers; j++)
+            {
+                Table[i][j] = spellLevels[j];
+            }
 
-                if (spellLevels.Count != NumTiers)
-                {
-                    _log.Error($"WandSpells - expected {NumTiers} levels for {spell}, found {spellLevels.Count}");
-                    continue;
-                }
+            // build a version of this table w/out item spells
+            switch (spell)
+            {
+                case SpellId.DefenderSelf1:
+                case SpellId.HermeticLinkSelf1:
+                case SpellId.SpiritDrinkerSelf1:
+                    break;
 
-                for (var j = 0; j < NumTiers; j++)
-                    Table[i][j] = spellLevels[j];
-
-                // build a version of this table w/out item spells
-                switch (spell)
-                {
-                    case SpellId.DefenderSelf1:
-                    case SpellId.HermeticLinkSelf1:
-                    case SpellId.SpiritDrinkerSelf1:
-                        break;
-
-                    default:
-                        CreatureLifeTable.Add(spell);
-                        break;
-                }
+                default:
+                    CreatureLifeTable.Add(spell);
+                    break;
             }
         }
+    }
 
-        // alt
+    // alt
 
-        private static readonly List<(SpellId spellId, float chance)> wandSpells = new List<(SpellId, float)>()
+    private static readonly List<(SpellId spellId, float chance)> wandSpells = new List<(SpellId, float)>()
+    {
+        (SpellId.DefenderSelf1, 0.25f),
+        (SpellId.HermeticLinkSelf1, 0.5f),
+        (SpellId.SpiritDrinkerSelf1, 0.25f), // retail appears to have had a flat 25% chance for Spirit Drinker for all casters,
+        // regardless if they had a DamageType
+    };
+
+    public static List<SpellId> Roll(WorldObject wo, TreasureDeath treasureDeath)
+    {
+        var spells = new List<SpellId>();
+
+        foreach (var spell in wandSpells)
         {
-            ( SpellId.DefenderSelf1,      0.25f ),
-            ( SpellId.HermeticLinkSelf1,  0.5f ),
-            ( SpellId.SpiritDrinkerSelf1, 0.25f ),      // retail appears to have had a flat 25% chance for Spirit Drinker for all casters,
-                                                        // regardless if they had a DamageType
-        };
-
-        public static List<SpellId> Roll(WorldObject wo, TreasureDeath treasureDeath)
-        {
-            var spells = new List<SpellId>();
-
-            foreach (var spell in wandSpells)
+            // retail didn't have this logic, but...
+            if (spell.spellId == SpellId.SpiritDrinkerSelf1 && wo.W_DamageType == DamageType.Undef)
             {
-                // retail didn't have this logic, but...
-                if (spell.spellId == SpellId.SpiritDrinkerSelf1 && wo.W_DamageType == DamageType.Undef)
-                    continue;
-
-                var rng = ThreadSafeRandom.NextInterval(treasureDeath.LootQualityMod);
-
-                if (rng < spell.chance)
-                    spells.Add(spell.spellId);
+                continue;
             }
-            return spells;
+
+            var rng = ThreadSafeRandom.NextInterval(treasureDeath.LootQualityMod);
+
+            if (rng < spell.chance)
+            {
+                spells.Add(spell.spellId);
+            }
         }
+        return spells;
     }
 }

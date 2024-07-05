@@ -1,8 +1,7 @@
-namespace ACE.Server.Network.Enum
+namespace ACE.Server.Network.Enum;
+
+public enum RemoveFriendResult
 {
-    public enum RemoveFriendResult
-    {
-        NotInFriendsList,
-        Success
-    }
+    NotInFriendsList,
+    Success
 }

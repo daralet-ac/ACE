@@ -1,10 +1,9 @@
-namespace ACE.Server.Factories.Enum
+namespace ACE.Server.Factories.Enum;
+
+public enum TreasureItemCategory
 {
-    public enum TreasureItemCategory
-    {
-        Undef,
-        Item,
-        MagicItem,
-        MundaneItem,
-    };
-}
+    Undef,
+    Item,
+    MagicItem,
+    MundaneItem,
+};

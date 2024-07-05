@@ -1,11 +1,10 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+public class StarterGearConfiguration
 {
-    public class StarterGearConfiguration
-    {
-        [JsonPropertyName("skills")]
-        public List<StarterGearSkill> Skills { get; set; }
-    }
+    [JsonPropertyName("skills")]
+    public List<StarterGearSkill> Skills { get; set; }
 }

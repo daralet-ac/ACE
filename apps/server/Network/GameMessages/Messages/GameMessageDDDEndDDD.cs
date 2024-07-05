@@ -1,10 +1,7 @@
-namespace ACE.Server.Network.GameMessages.Messages
+namespace ACE.Server.Network.GameMessages.Messages;
+
+public class GameMessageDDDEndDDD : GameMessage
 {
-    public class GameMessageDDDEndDDD : GameMessage
-    {
-        public GameMessageDDDEndDDD()
-            : base(GameMessageOpcode.DDD_EndDDD, GameMessageGroup.DatabaseQueue, 4)
-        {
-        }
-    }
+    public GameMessageDDDEndDDD()
+        : base(GameMessageOpcode.DDD_EndDDD, GameMessageGroup.DatabaseQueue, 4) { }
 }

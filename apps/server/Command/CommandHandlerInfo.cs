@@ -1,10 +1,9 @@
 using System;
 
-namespace ACE.Server.Command
+namespace ACE.Server.Command;
+
+public class CommandHandlerInfo
 {
-    public class CommandHandlerInfo
-    {
-        public Delegate Handler { get; set; }
-        public CommandHandlerAttribute Attribute { get; set; }
-    }
+    public Delegate Handler { get; set; }
+    public CommandHandlerAttribute Attribute { get; set; }
 }

@@ -1,15 +1,14 @@
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+/// <summary>
+/// Remove a spell from the player's spellbook
+/// </summary>
+public class GameEventMagicRemoveSpell : GameEventMessage
 {
-    /// <summary>
-    /// Remove a spell from the player's spellbook
-    /// </summary>
-    public class GameEventMagicRemoveSpell : GameEventMessage
+    public GameEventMagicRemoveSpell(Session session, ushort spellId, ushort layer = 0)
+        : base(GameEventType.MagicRemoveSpell, GameMessageGroup.UIQueue, session, 8)
     {
-        public GameEventMagicRemoveSpell(Session session, ushort spellId, ushort layer = 0)
-            : base(GameEventType.MagicRemoveSpell, GameMessageGroup.UIQueue, session, 8)
-        {
-            Writer.Write(spellId);
-            Writer.Write(layer);    // unused?
-        }
+        Writer.Write(spellId);
+        Writer.Write(layer); // unused?
     }
 }

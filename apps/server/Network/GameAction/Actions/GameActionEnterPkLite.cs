@@ -1,13 +1,12 @@
 using ACE.Common.Extensions;
 
-namespace ACE.Server.Network.GameAction.Actions
+namespace ACE.Server.Network.GameAction.Actions;
+
+public static class GameActionEnterPkLite
 {
-    public static class GameActionEnterPkLite
+    [GameAction(GameActionType.EnterPkLite)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.EnterPkLite)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            session.Player.HandleActionEnterPkLite();
-        }
+        session.Player.HandleActionEnterPkLite();
     }
 }

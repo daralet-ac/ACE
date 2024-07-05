@@ -1,11 +1,10 @@
-using ACE.Server.Physics.Animation;
 using ACE.DatLoader.Entity;
+using ACE.Server.Physics.Animation;
 
-namespace ACE.Server.Physics
+namespace ACE.Server.Physics;
+
+public class PhysicsScriptData
 {
-    public class PhysicsScriptData
-    {
-        public double StartTime;
-        public AnimationHook Hook;
-    }
+    public double StartTime;
+    public AnimationHook Hook;
 }

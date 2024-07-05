@@ -1,14 +1,12 @@
+namespace ACE.Server.Network.GameAction.Actions;
 
-namespace ACE.Server.Network.GameAction.Actions
+public static class GameActionQueryHealth
 {
-    public static class GameActionQueryHealth
+    [GameAction(GameActionType.QueryHealth)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.QueryHealth)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            uint objectGuid = message.Payload.ReadUInt32();
+        var objectGuid = message.Payload.ReadUInt32();
 
-            session.Player.HandleActionQueryHealth(objectGuid);
-        }
+        session.Player.HandleActionQueryHealth(objectGuid);
     }
 }

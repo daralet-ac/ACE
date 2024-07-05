@@ -1,14 +1,12 @@
+namespace ACE.Server.Network.GameAction.Actions;
 
-namespace ACE.Server.Network.GameAction.Actions
+public static class GameActionIdentifyObject
 {
-    public static class GameActionIdentifyObject
+    [GameAction(GameActionType.IdentifyObject)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.IdentifyObject)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            var objectGuid = message.Payload.ReadUInt32();
+        var objectGuid = message.Payload.ReadUInt32();
 
-            session.Player.HandleActionIdentifyObject(objectGuid);
-        }
+        session.Player.HandleActionIdentifyObject(objectGuid);
     }
 }

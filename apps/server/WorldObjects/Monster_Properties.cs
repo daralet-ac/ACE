@@ -1,16 +1,25 @@
 using ACE.Entity.Enum.Properties;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+/// <summary>
+/// Monster-specific properties
+/// </summary>
+partial class Creature
 {
-    /// <summary>
-    /// Monster-specific properties
-    /// </summary>
-    partial class Creature
+    public int AiOptions
     {
-        public int AiOptions
+        get => GetProperty(PropertyInt.AiOptions) ?? 0;
+        set
         {
-            get => GetProperty(PropertyInt.AiOptions) ?? 0;
-            set { if (value == 0) RemoveProperty(PropertyInt.AiOptions); else SetProperty(PropertyInt.AiOptions, value); }
+            if (value == 0)
+            {
+                RemoveProperty(PropertyInt.AiOptions);
+            }
+            else
+            {
+                SetProperty(PropertyInt.AiOptions, value);
+            }
         }
     }
 }

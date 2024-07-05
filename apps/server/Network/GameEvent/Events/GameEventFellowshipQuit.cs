@@ -1,11 +1,10 @@
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+public class GameEventFellowshipQuit : GameEventMessage
 {
-    public class GameEventFellowshipQuit : GameEventMessage
+    public GameEventFellowshipQuit(Session session, uint playerId)
+        : base(GameEventType.FellowshipQuit, GameMessageGroup.UIQueue, session, 8)
     {
-        public GameEventFellowshipQuit(Session session, uint playerId)
-            : base(GameEventType.FellowshipQuit, GameMessageGroup.UIQueue, session, 8)
-        {
-            Writer.Write(playerId);
-        }
+        Writer.Write(playerId);
     }
 }

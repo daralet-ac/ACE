@@ -1,131 +1,176 @@
 using ACE.Server.Physics.Combat;
 using ACE.Server.Physics.Common;
 
-namespace ACE.Server.Physics.Animation
+namespace ACE.Server.Physics.Animation;
+
+public class PositionManager
 {
-    public class PositionManager
+    public InterpolationManager InterpolationManager;
+    public StickyManager StickyManager;
+    public ConstraintManager ConstraintManager;
+    public PhysicsObj PhysicsObj;
+
+    public PositionManager() { }
+
+    public PositionManager(PhysicsObj obj)
     {
-        public InterpolationManager InterpolationManager;
-        public StickyManager StickyManager;
-        public ConstraintManager ConstraintManager;
-        public PhysicsObj PhysicsObj;
+        SetPhysicsObject(obj);
+    }
 
-        public PositionManager() { }
-
-        public PositionManager(PhysicsObj obj)
+    public void AdjustOffset(AFrame frame, double quantum)
+    {
+        if (InterpolationManager != null)
         {
-            SetPhysicsObject(obj);
+            InterpolationManager.adjust_offset(frame, quantum);
         }
 
-        public void AdjustOffset(AFrame frame, double quantum)
+        if (StickyManager != null)
         {
-            if (InterpolationManager != null)
-                InterpolationManager.adjust_offset(frame, quantum);
-            if (StickyManager != null)
-                StickyManager.adjust_offset(frame, quantum);
-            if (ConstraintManager != null)
-                ConstraintManager.adjust_offset(frame, quantum);
+            StickyManager.adjust_offset(frame, quantum);
         }
 
-        public void ConstrainTo(Position position, float startDistance, float maxDistance)
+        if (ConstraintManager != null)
         {
-            if (ConstraintManager == null)
-                ConstraintManager = ConstraintManager.Create(PhysicsObj);
+            ConstraintManager.adjust_offset(frame, quantum);
+        }
+    }
 
-            ConstraintManager.ConstrainTo(position, startDistance, maxDistance);
+    public void ConstrainTo(Position position, float startDistance, float maxDistance)
+    {
+        if (ConstraintManager == null)
+        {
+            ConstraintManager = ConstraintManager.Create(PhysicsObj);
         }
 
-        public static PositionManager Create(PhysicsObj physicsObj)
+        ConstraintManager.ConstrainTo(position, startDistance, maxDistance);
+    }
+
+    public static PositionManager Create(PhysicsObj physicsObj)
+    {
+        return new PositionManager(physicsObj);
+    }
+
+    public uint GetStickyObjectID()
+    {
+        if (StickyManager == null)
         {
-            return new PositionManager(physicsObj);
+            return 0;
         }
 
-        public uint GetStickyObjectID()
+        return StickyManager.TargetID;
+    }
+
+    public void HandleUpdateTarget(TargetInfo targetInfo)
+    {
+        if (StickyManager != null)
         {
-            if (StickyManager == null) return 0;
-            return StickyManager.TargetID;
+            StickyManager.HandleUpdateTarget(targetInfo);
+        }
+    }
+
+    public void InterpolateTo(Position position, bool keepHeading)
+    {
+        if (InterpolationManager == null)
+        {
+            InterpolationManager = InterpolationManager.Create(PhysicsObj);
         }
 
-        public void HandleUpdateTarget(TargetInfo targetInfo)
+        InterpolationManager.InterpolateTo(position, keepHeading);
+    }
+
+    public bool IsFullyConstrained()
+    {
+        if (ConstraintManager == null)
         {
-            if (StickyManager != null)
-                StickyManager.HandleUpdateTarget(targetInfo);
+            return false;
+        }
+        else
+        {
+            return ConstraintManager.IsFullyConstrained();
+        }
+    }
+
+    public bool IsInterpolating()
+    {
+        return InterpolationManager != null && InterpolationManager.IsInterpolating();
+    }
+
+    public void MakeStickyManager()
+    {
+        if (StickyManager == null)
+        {
+            StickyManager = StickyManager.Create(PhysicsObj);
+        }
+    }
+
+    public void SetPhysicsObject(PhysicsObj obj)
+    {
+        PhysicsObj = obj;
+        if (InterpolationManager != null)
+        {
+            InterpolationManager.SetPhysicsObject(obj);
         }
 
-        public void InterpolateTo(Position position, bool keepHeading)
+        if (StickyManager != null)
         {
-            if (InterpolationManager == null)
-                InterpolationManager = InterpolationManager.Create(PhysicsObj);
-
-            InterpolationManager.InterpolateTo(position, keepHeading);
+            StickyManager.SetPhysicsObject(obj);
         }
 
-        public bool IsFullyConstrained()
+        if (ConstraintManager != null)
         {
-            if (ConstraintManager == null)
-                return false;
-            else
-                return ConstraintManager.IsFullyConstrained();
+            ConstraintManager.SetPhysicsObject(obj);
+        }
+    }
+
+    public void StickTo(uint objectID, float radius, float height)
+    {
+        if (StickyManager == null)
+        {
+            MakeStickyManager();
         }
 
-        public bool IsInterpolating()
+        StickyManager.StickTo(objectID, radius, height);
+    }
+
+    public void StopInterpolating()
+    {
+        if (InterpolationManager != null)
         {
-            return InterpolationManager != null && InterpolationManager.IsInterpolating();
+            InterpolationManager.StopInterpolating();
+        }
+    }
+
+    public void Unconstrain()
+    {
+        if (ConstraintManager != null)
+        {
+            ConstraintManager.Unconstrain();
+        }
+    }
+
+    public void Unstick()
+    {
+        if (StickyManager != null)
+        {
+            StickyManager.HandleExitWorld();
+        }
+    }
+
+    public void UseTime()
+    {
+        if (InterpolationManager != null)
+        {
+            InterpolationManager.UseTime();
         }
 
-        public void MakeStickyManager()
+        if (StickyManager != null)
         {
-            if (StickyManager == null)
-                StickyManager = StickyManager.Create(PhysicsObj);
+            StickyManager.UseTime();
         }
 
-        public void SetPhysicsObject(PhysicsObj obj)
+        if (ConstraintManager != null)
         {
-            PhysicsObj = obj;
-            if (InterpolationManager != null)
-                InterpolationManager.SetPhysicsObject(obj);
-            if (StickyManager != null)
-                StickyManager.SetPhysicsObject(obj);
-            if (ConstraintManager != null)
-                ConstraintManager.SetPhysicsObject(obj);
-        }
-
-        public void StickTo(uint objectID, float radius, float height)
-        {
-            if (StickyManager == null)
-                MakeStickyManager();
-
-            StickyManager.StickTo(objectID, radius, height);
-        }
-
-        public void StopInterpolating()
-        {
-            if (InterpolationManager != null)
-                InterpolationManager.StopInterpolating();
-        }
-
-        public void Unconstrain()
-        {
-            if (ConstraintManager != null)
-                ConstraintManager.Unconstrain();
-        }
-
-        public void Unstick()
-        {
-            if (StickyManager != null)
-                StickyManager.HandleExitWorld();
-        }
-
-        public void UseTime()
-        {
-            if (InterpolationManager != null)
-                InterpolationManager.UseTime();
-
-            if (StickyManager != null)
-                StickyManager.UseTime();
-
-            if (ConstraintManager != null)
-                ConstraintManager.UseTime();
+            ConstraintManager.UseTime();
         }
     }
 }

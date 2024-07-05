@@ -1,10 +1,9 @@
-namespace ACE.Server.Network.Enum
+namespace ACE.Server.Network.Enum;
+
+public enum AddFriendResult
 {
-    public enum AddFriendResult
-    {
-        FriendWithSelf,
-        AlreadyInList,
-        CharacterDoesNotExist,
-        Success
-    }
+    FriendWithSelf,
+    AlreadyInList,
+    CharacterDoesNotExist,
+    Success
 }

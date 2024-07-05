@@ -1,39 +1,43 @@
 using System.Buffers;
 using System.IO;
-
 using ACE.Common.Cryptography;
 
-namespace ACE.Server.Network
+namespace ACE.Server.Network;
+
+public class ClientPacketFragment : PacketFragment
 {
-    public class ClientPacketFragment : PacketFragment
+    public bool Unpack(BinaryReader payload)
     {
-        public bool Unpack(BinaryReader payload)
+        Header.Unpack(payload);
+        if (Header.Size - PacketFragmentHeader.HeaderSize < 0)
         {
-            Header.Unpack(payload);
-            if (Header.Size - PacketFragmentHeader.HeaderSize < 0)
-                return false;
-            if (Header.Size > 464)
-                return false;
-            Data = payload.ReadBytes(Header.Size - PacketFragmentHeader.HeaderSize);
-            return true;
+            return false;
         }
 
-        public uint CalculateHash32()
+        if (Header.Size > 464)
         {
-            byte[] buffer = ArrayPool<byte>.Shared.Rent(PacketFragmentHeader.HeaderSize);
+            return false;
+        }
 
-            try
-            {
-                Header.Pack(buffer);
+        Data = payload.ReadBytes(Header.Size - PacketFragmentHeader.HeaderSize);
+        return true;
+    }
 
-                uint fragmentChecksum = Hash32.Calculate(buffer, buffer.Length) + Hash32.Calculate(Data, Data.Length);
+    public uint CalculateHash32()
+    {
+        var buffer = ArrayPool<byte>.Shared.Rent(PacketFragmentHeader.HeaderSize);
 
-                return fragmentChecksum;
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
+        try
+        {
+            Header.Pack(buffer);
+
+            var fragmentChecksum = Hash32.Calculate(buffer, buffer.Length) + Hash32.Calculate(Data, Data.Length);
+
+            return fragmentChecksum;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 }

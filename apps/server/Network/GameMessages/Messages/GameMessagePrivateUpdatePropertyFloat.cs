@@ -1,16 +1,15 @@
 using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.GameMessages.Messages
+namespace ACE.Server.Network.GameMessages.Messages;
+
+public class GameMessagePrivateUpdatePropertyFloat : GameMessage
 {
-    public class GameMessagePrivateUpdatePropertyFloat : GameMessage
+    public GameMessagePrivateUpdatePropertyFloat(WorldObject worldObject, PropertyFloat property, double value)
+        : base(GameMessageOpcode.PrivateUpdatePropertyFloat, GameMessageGroup.UIQueue, 17)
     {
-        public GameMessagePrivateUpdatePropertyFloat(WorldObject worldObject, PropertyFloat property, double value)
-            : base(GameMessageOpcode.PrivateUpdatePropertyFloat, GameMessageGroup.UIQueue, 17)
-        {
-            Writer.Write(worldObject.Sequences.GetNextSequence(Sequence.SequenceType.UpdatePropertyDouble, property));
-            Writer.Write((uint)property);
-            Writer.Write(value);
-        }
+        Writer.Write(worldObject.Sequences.GetNextSequence(Sequence.SequenceType.UpdatePropertyDouble, property));
+        Writer.Write((uint)property);
+        Writer.Write(value);
     }
 }

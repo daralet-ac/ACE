@@ -1,9 +1,8 @@
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+public class RecipePrecursor
 {
-    public class RecipePrecursor
-    {
-        public uint Tool;
-        public uint Target;
-        public uint RecipeID;
-    }
+    public uint Tool;
+    public uint Target;
+    public uint RecipeID;
 }

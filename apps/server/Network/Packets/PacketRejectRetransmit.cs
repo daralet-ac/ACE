@@ -1,19 +1,20 @@
 using System.Collections.Generic;
 
-namespace ACE.Server.Network.Packets
+namespace ACE.Server.Network.Packets;
+
+public class PacketRejectRetransmit : ServerPacket
 {
-    public class PacketRejectRetransmit : ServerPacket
+    public PacketRejectRetransmit(List<uint> sequences)
     {
-        public PacketRejectRetransmit(List<uint> sequences)
+        Header.Flags = PacketHeaderFlags.RejectRetransmit;
+
+        InitializeDataWriter();
+
+        DataWriter.Write(sequences.Count);
+
+        foreach (var sequence in sequences)
         {
-            Header.Flags = PacketHeaderFlags.RejectRetransmit;
-
-            InitializeDataWriter();
-
-            DataWriter.Write(sequences.Count);
-
-            foreach (var sequence in sequences)
-                DataWriter.Write(sequence);
+            DataWriter.Write(sequence);
         }
     }
 }

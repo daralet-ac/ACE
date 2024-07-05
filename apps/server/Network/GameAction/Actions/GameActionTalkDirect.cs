@@ -5,48 +5,64 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
 using Serilog;
 
-namespace ACE.Server.Network.GameAction.Actions
+namespace ACE.Server.Network.GameAction.Actions;
+
+public static class GameActionTalkDirect
 {
-    public static class GameActionTalkDirect
+    private static readonly ILogger _log = Log.ForContext(typeof(GameActionTalkDirect));
+
+    [GameAction(GameActionType.TalkDirect)]
+    public static void Handle(ClientMessage clientMessage, Session session)
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(GameActionTalkDirect));
+        var message = clientMessage.Payload.ReadString16L();
+        var targetGuid = clientMessage.Payload.ReadUInt32();
 
-        [GameAction(GameActionType.TalkDirect)]
-        public static void Handle(ClientMessage clientMessage, Session session)
+        var creature = session.Player.CurrentLandblock?.GetObject(targetGuid) as Creature;
+        if (creature == null)
         {
-            var message = clientMessage.Payload.ReadString16L();
-            var targetGuid = clientMessage.Payload.ReadUInt32();
+            var statusMessage = new GameEventWeenieError(session, WeenieError.CharacterNotAvailable);
+            session.Network.EnqueueSend(statusMessage);
+            return;
+        }
 
-            var creature = session.Player.CurrentLandblock?.GetObject(targetGuid) as Creature;
-            if (creature == null)
+        session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You tell {creature.Name}, \"{message}\"", ChatMessageType.OutgoingTell)
+        );
+
+        if (creature is Player targetPlayer)
+        {
+            if (session.Player.IsGagged)
             {
-                var statusMessage = new GameEventWeenieError(session, WeenieError.CharacterNotAvailable);
-                session.Network.EnqueueSend(statusMessage);
+                session.Player.SendGagError();
                 return;
             }
 
-            session.Network.EnqueueSend(new GameMessageSystemChat($"You tell {creature.Name}, \"{message}\"", ChatMessageType.OutgoingTell));
-
-            if (creature is Player targetPlayer)
+            if (targetPlayer.SquelchManager.Squelches.Contains(session.Player, ChatMessageType.Tell))
             {
-                if (session.Player.IsGagged)
-                {
-                    session.Player.SendGagError();
-                    return;
-                }
-
-                if (targetPlayer.SquelchManager.Squelches.Contains(session.Player, ChatMessageType.Tell))
-                {
-                    session.Network.EnqueueSend(new GameEventWeenieErrorWithString(session, WeenieErrorWithString.MessageBlocked_, $"{targetPlayer.Name} has you squelched."));
-                    // _log.Warning($"Tell from {session.Player.Name} (0x{session.Player.Guid.ToString()}) to {targetPlayer.Name} (0x{targetPlayer.Guid.ToString()}) blocked due to squelch");
-                    return;
-                }
-
-                var tell = new GameEventTell(targetPlayer.Session, message, session.Player.GetNameWithSuffix(), session.Player.Guid.Full, targetPlayer.Guid.Full, ChatMessageType.Tell);
-                targetPlayer.Session.Network.EnqueueSend(tell);
+                session.Network.EnqueueSend(
+                    new GameEventWeenieErrorWithString(
+                        session,
+                        WeenieErrorWithString.MessageBlocked_,
+                        $"{targetPlayer.Name} has you squelched."
+                    )
+                );
+                // _log.Warning($"Tell from {session.Player.Name} (0x{session.Player.Guid.ToString()}) to {targetPlayer.Name} (0x{targetPlayer.Guid.ToString()}) blocked due to squelch");
+                return;
             }
-            else
-                creature.EmoteManager.OnTalkDirect(session.Player, message);
+
+            var tell = new GameEventTell(
+                targetPlayer.Session,
+                message,
+                session.Player.GetNameWithSuffix(),
+                session.Player.Guid.Full,
+                targetPlayer.Guid.Full,
+                ChatMessageType.Tell
+            );
+            targetPlayer.Session.Network.EnqueueSend(tell);
+        }
+        else
+        {
+            creature.EmoteManager.OnTalkDirect(session.Player, message);
         }
     }
 }

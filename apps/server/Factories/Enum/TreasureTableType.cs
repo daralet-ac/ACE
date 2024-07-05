@@ -1,17 +1,16 @@
-namespace ACE.Server.Factories.Enum
-{
-    public enum TreasureTableType
-    {
-        Undef,
-        ChanceInt,
-        ChanceSpell,
-        ChanceWcid,
-        ChanceBool,
+namespace ACE.Server.Factories.Enum;
 
-        ChanceGem,
-        ChanceHeritage,
-        ChanceItemType,
-        ChanceArmorType,
-        ChanceWeaponType,
-    }
+public enum TreasureTableType
+{
+    Undef,
+    ChanceInt,
+    ChanceSpell,
+    ChanceWcid,
+    ChanceBool,
+
+    ChanceGem,
+    ChanceHeritage,
+    ChanceItemType,
+    ChanceArmorType,
+    ChanceWeaponType,
 }

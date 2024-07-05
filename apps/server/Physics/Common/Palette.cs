@@ -1,6 +1,3 @@
-namespace ACE.Server.Physics.Common
-{
-    public class Palette
-    {
-    }
-}
+namespace ACE.Server.Physics.Common;
+
+public class Palette { }

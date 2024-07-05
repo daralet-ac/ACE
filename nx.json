@@ -17,11 +17,6 @@
   },
   "plugins": ["@nx-dotnet/core"],
   "targetDefaults": {
-    "lint": {
-      "options": {
-        "fixWhitespace": false
-      }
-    },
     "@nx/js:tsc": {
       "cache": true,
       "dependsOn": ["^build"],

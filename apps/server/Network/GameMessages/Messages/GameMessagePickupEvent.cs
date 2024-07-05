@@ -1,16 +1,15 @@
 using ACE.Server.Network.Sequence;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.GameMessages.Messages
+namespace ACE.Server.Network.GameMessages.Messages;
+
+public class GameMessagePickupEvent : GameMessage
 {
-    public class GameMessagePickupEvent : GameMessage
+    public GameMessagePickupEvent(WorldObject targetItem)
+        : base(GameMessageOpcode.PickupEvent, GameMessageGroup.SmartboxQueue, 12)
     {
-        public GameMessagePickupEvent(WorldObject targetItem)
-            : base(GameMessageOpcode.PickupEvent, GameMessageGroup.SmartboxQueue, 12)
-        {
-            Writer.Write(targetItem.Guid.Full);
-            Writer.Write(targetItem.Sequences.GetCurrentSequence(SequenceType.ObjectInstance));
-            Writer.Write(targetItem.Sequences.GetNextSequence(SequenceType.ObjectPosition));
-        }
+        Writer.Write(targetItem.Guid.Full);
+        Writer.Write(targetItem.Sequences.GetCurrentSequence(SequenceType.ObjectInstance));
+        Writer.Write(targetItem.Sequences.GetNextSequence(SequenceType.ObjectPosition));
     }
 }

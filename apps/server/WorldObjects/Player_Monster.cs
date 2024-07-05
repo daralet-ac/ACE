@@ -1,57 +1,72 @@
 using System;
 using System.Linq;
-using ACE.Server.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
+using ACE.Server.Entity;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+/// <summary>
+/// Handles player->monster visibility checks
+/// </summary>
+partial class Player
 {
     /// <summary>
-    /// Handles player->monster visibility checks
+    /// Wakes up any monsters within the applicable range
     /// </summary>
-    partial class Player
+    public void CheckMonsters()
     {
-        /// <summary>
-        /// Wakes up any monsters within the applicable range
-        /// </summary>
-        public void CheckMonsters()
+        if (!Attackable || Teleporting)
         {
-            if (!Attackable || Teleporting) return;
-
-            var visibleObjs = PhysicsObj.ObjMaint.GetVisibleObjectsValuesOfTypeCreature();
-
-            foreach (var monster in visibleObjs)
-            {
-                if (monster is Player) continue;
-
-                var distSq = PhysicsObj.get_distance_sq_to_object(monster.PhysicsObj, true);
-                //var distSq = Location.SquaredDistanceTo(monster.Location);
-
-                if (distSq <= monster.VisualAwarenessRangeSq && !TestStealth(monster, distSq, $"{monster.Name} detects you! You lose stealth."))
-                    AlertMonster(monster);
-            }
+            return;
         }
 
-        /// <summary>
-        /// Called when this player attacks a monster
-        /// </summary>
-        public void OnAttackMonster(Creature monster)
+        var visibleObjs = PhysicsObj.ObjMaint.GetVisibleObjectsValuesOfTypeCreature();
+
+        foreach (var monster in visibleObjs)
         {
-            if (monster == null || !Attackable) return;
-
-            /*Console.WriteLine($"{Name}.OnAttackMonster({monster.Name})");
-            Console.WriteLine($"Attackable: {monster.Attackable}");
-            Console.WriteLine($"Tolerance: {monster.Tolerance}");*/
-
-            // faction mobs will retaliate against players belonging to the same faction
-            if (SameFaction(monster))
-                monster.AddRetaliateTarget(this);
-
-            if (monster.MonsterState != State.Awake && (monster.Tolerance & PlayerCombatPet_RetaliateExclude) == 0)
+            if (monster is Player)
             {
-                monster.AttackTarget = this;
-                monster.WakeUp();
+                continue;
             }
+
+            var distSq = PhysicsObj.get_distance_sq_to_object(monster.PhysicsObj, true);
+            //var distSq = Location.SquaredDistanceTo(monster.Location);
+
+            if (
+                distSq <= monster.VisualAwarenessRangeSq
+                && !TestStealth(monster, distSq, $"{monster.Name} detects you! You lose stealth.")
+            )
+            {
+                AlertMonster(monster);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Called when this player attacks a monster
+    /// </summary>
+    public void OnAttackMonster(Creature monster)
+    {
+        if (monster == null || !Attackable)
+        {
+            return;
+        }
+
+        /*Console.WriteLine($"{Name}.OnAttackMonster({monster.Name})");
+        Console.WriteLine($"Attackable: {monster.Attackable}");
+        Console.WriteLine($"Tolerance: {monster.Tolerance}");*/
+
+        // faction mobs will retaliate against players belonging to the same faction
+        if (SameFaction(monster))
+        {
+            monster.AddRetaliateTarget(this);
+        }
+
+        if (monster.MonsterState != State.Awake && (monster.Tolerance & PlayerCombatPet_RetaliateExclude) == 0)
+        {
+            monster.AttackTarget = this;
+            monster.WakeUp();
         }
     }
 }

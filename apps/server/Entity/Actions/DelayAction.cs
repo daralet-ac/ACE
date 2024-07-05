@@ -1,40 +1,41 @@
 using System;
 using System.Threading;
 
-namespace ACE.Server.Entity.Actions
+namespace ACE.Server.Entity.Actions;
+
+/// <summary>
+/// Action that will not return until Timer.PortalYearTicks >= EndTime
+/// must only be inserted into DelayManager actor
+/// </summary>
+public class DelayAction : ActionEventBase, IComparable<DelayAction>
 {
-    /// <summary>
-    /// Action that will not return until Timer.PortalYearTicks >= EndTime
-    /// must only be inserted into DelayManager actor
-    /// </summary>
-    public class DelayAction : ActionEventBase, IComparable<DelayAction>
+    public double WaitTime { get; }
+    public double EndTime { get; private set; }
+
+    // For breaking ties on compareto, two actions cannot be equal
+    private readonly long sequence;
+    private static long glblSequence;
+
+    public DelayAction(double waitTimePortalYearTicks)
     {
-        public double WaitTime { get; }
-        public double EndTime { get; private set; }
+        WaitTime = waitTimePortalYearTicks;
+        sequence = Interlocked.Increment(ref glblSequence);
+    }
 
-        // For breaking ties on compareto, two actions cannot be equal
-        private readonly long sequence;
-        private static long glblSequence;
+    public void Start()
+    {
+        EndTime = Timers.PortalYearTicks + WaitTime;
+    }
 
-        public DelayAction(double waitTimePortalYearTicks)
+    public int CompareTo(DelayAction rhs)
+    {
+        var ret = EndTime.CompareTo(rhs.EndTime);
+
+        if (ret == 0)
         {
-            WaitTime = waitTimePortalYearTicks;
-            sequence = Interlocked.Increment(ref glblSequence);
+            return sequence.CompareTo(rhs.sequence);
         }
 
-        public void Start()
-        {
-            EndTime = Timers.PortalYearTicks + WaitTime;
-        }
-
-        public int CompareTo(DelayAction rhs)
-        {
-            int ret = EndTime.CompareTo(rhs.EndTime);
-
-            if (ret == 0)
-                return sequence.CompareTo(rhs.sequence);
-
-            return ret;
-        }
+        return ret;
     }
 }

@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
-using Discord.Interactions;
-using System.Threading.Tasks;
-using Discord;
-using System.Text.RegularExpressions;
-using ACE.Database;
-using ACE.Database.Models.World;
-using Microsoft.EntityFrameworkCore;
-using Serilog;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using ACE.Database;
+using ACE.Database.Models.World;
 using ACE.Server.Discord.Models;
+using Discord;
+using Discord.Interactions;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace ACE.Server.Discord.Modules;
 
@@ -46,7 +46,10 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
         await FollowupAsync(message);
     }
 
-    private async Task<List<ImportResult>> ImportFiles(IImportParameters importParameters, Func<IAttachment, Task<ImportResult>> importFunction)
+    private async Task<List<ImportResult>> ImportFiles(
+        IImportParameters importParameters,
+        Func<IAttachment, Task<ImportResult>> importFunction
+    )
     {
         var importResults = new List<ImportResult>();
         foreach (var landblockFile in importParameters.Files)
@@ -76,7 +79,8 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
             return new ImportResult
             {
                 Success = false,
-                FailureReason = "Discord did not recognize this as a sql file. Ensure you end the filename with `.sql`.",
+                FailureReason =
+                    "Discord did not recognize this as a sql file. Ensure you end the filename with `.sql`.",
                 FileName = fileName
             };
         }
@@ -115,16 +119,25 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
             DatabaseManager.World.ClearCachedWeenie(wcid);
             DatabaseManager.World.GetWeenie(wcid);
 
-            _log.Information("@{DiscordUser} ({DiscordUserId}) updated weenie {WCID} ({WeenieFileName}).", Context.User, Context.User.Id, wcid, fileName);
-            return new ImportResult
-            {
-                Success = true,
-                FileName = fileName
-            };
+            _log.Information(
+                "@{DiscordUser} ({DiscordUserId}) updated weenie {WCID} ({WeenieFileName}).",
+                Context.User,
+                Context.User.Id,
+                wcid,
+                fileName
+            );
+            return new ImportResult { Success = true, FileName = fileName };
         }
         catch (Exception ex)
         {
-            _log.Error(ex, "@{DiscordUser} ({DiscordUserId}) failed to update weenie {WCID} ({WeenieFileName}).", Context.User, Context.User.Id, wcid, fileName);
+            _log.Error(
+                ex,
+                "@{DiscordUser} ({DiscordUserId}) failed to update weenie {WCID} ({WeenieFileName}).",
+                Context.User,
+                Context.User.Id,
+                wcid,
+                fileName
+            );
             return new ImportResult
             {
                 Success = false,
@@ -143,7 +156,8 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
             return new ImportResult
             {
                 Success = false,
-                FailureReason = "Discord did not recognize this as a sql file. Ensure you end the filename with `.sql`.",
+                FailureReason =
+                    "Discord did not recognize this as a sql file. Ensure you end the filename with `.sql`.",
                 FileName = fileName
             };
         }
@@ -160,7 +174,12 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
             };
         }
 
-        var parseSuccessful = ushort.TryParse(match.Groups[1].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var landblockId);
+        var parseSuccessful = ushort.TryParse(
+            match.Groups[1].Value,
+            NumberStyles.HexNumber,
+            CultureInfo.InvariantCulture,
+            out var landblockId
+        );
         if (!parseSuccessful)
         {
             return new ImportResult
@@ -182,16 +201,25 @@ public class ImportModule : InteractionModuleBase<SocketInteractionContext>
             DatabaseManager.World.ClearCachedInstancesByLandblock(landblockId);
             DatabaseManager.World.GetCachedInstancesByLandblock(landblockId);
 
-            _log.Information("@{DiscordUser} ({DiscordUserId}) updated landblock {LandblockId:X4} ({LandblockFileName}).", Context.User, Context.User.Id, landblockId, fileName);
-            return new ImportResult
-            {
-                Success = true,
-                FileName = fileName
-            };
+            _log.Information(
+                "@{DiscordUser} ({DiscordUserId}) updated landblock {LandblockId:X4} ({LandblockFileName}).",
+                Context.User,
+                Context.User.Id,
+                landblockId,
+                fileName
+            );
+            return new ImportResult { Success = true, FileName = fileName };
         }
         catch (Exception ex)
         {
-            _log.Error(ex, "@{DiscordUser} ({DiscordUserId}) failed to update landblock {LandblockId:X4} ({LandblockFileName}).", Context.User, Context.User.Id, landblockId, fileName);
+            _log.Error(
+                ex,
+                "@{DiscordUser} ({DiscordUserId}) failed to update landblock {LandblockId:X4} ({LandblockFileName}).",
+                Context.User,
+                Context.User.Id,
+                landblockId,
+                fileName
+            );
             return new ImportResult
             {
                 Success = false,

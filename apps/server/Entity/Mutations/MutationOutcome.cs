@@ -1,21 +1,21 @@
 using System.Collections.Generic;
-
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Entity.Mutations
-{
-    public class MutationOutcome
-    {
-        public List<EffectList> EffectLists = new List<EffectList>();
+namespace ACE.Server.Entity.Mutations;
 
-        public bool TryMutate(WorldObject wo, double rng)
+public class MutationOutcome
+{
+    public List<EffectList> EffectLists = new List<EffectList>();
+
+    public bool TryMutate(WorldObject wo, double rng)
+    {
+        foreach (var effectList in EffectLists)
         {
-            foreach (var effectList in EffectLists)
+            if (rng < effectList.Chance)
             {
-                if (rng < effectList.Chance)
-                    return effectList.TryMutate(wo);
+                return effectList.TryMutate(wo);
             }
-            return false;
         }
+        return false;
     }
 }

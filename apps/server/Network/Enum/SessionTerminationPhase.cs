@@ -1,9 +1,8 @@
-namespace ACE.Server.Network.Enum
+namespace ACE.Server.Network.Enum;
+
+public enum SessionTerminationPhase
 {
-    public enum SessionTerminationPhase
-    {
-        Initialized,
-        SessionWorkCompleted,
-        WorldManagerWorkCompleted
-    }
+    Initialized,
+    SessionWorkCompleted,
+    WorldManagerWorkCompleted
 }

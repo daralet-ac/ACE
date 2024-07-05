@@ -1,10 +1,9 @@
-namespace ACE.Server.Factories.Enum
+namespace ACE.Server.Factories.Enum;
+
+public enum Level8_SpellComponentType
 {
-    public enum Level8_SpellComponentType
-    {
-        Undef,
-        Quill,
-        Ink,
-        Glyph
-    };
-}
+    Undef,
+    Quill,
+    Ink,
+    Glyph
+};

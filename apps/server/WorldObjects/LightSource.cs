@@ -1,35 +1,33 @@
 using System;
-
 using ACE.Entity;
 using ACE.Entity.Models;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+public class LightSource : GenericObject
 {
-    public class LightSource : GenericObject
+    /// <summary>
+    /// A new biota be created taking all of its values from weenie.
+    /// </summary>
+    public LightSource(Weenie weenie, ObjectGuid guid)
+        : base(weenie, guid)
     {
-        /// <summary>
-        /// A new biota be created taking all of its values from weenie.
-        /// </summary>
-        public LightSource(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
-        {
-            SetEphemeralValues();
-        }
+        SetEphemeralValues();
+    }
 
-        /// <summary>
-        /// Restore a WorldObject from the database.
-        /// </summary>
-        public LightSource(Biota biota) : base(biota)
-        {
-            SetEphemeralValues();
-        }
+    /// <summary>
+    /// Restore a WorldObject from the database.
+    /// </summary>
+    public LightSource(Biota biota)
+        : base(biota)
+    {
+        SetEphemeralValues();
+    }
 
-        private void SetEphemeralValues()
-        {
-        }
+    private void SetEphemeralValues() { }
 
-        public override void ActOnUse(WorldObject wo)
-        {
-            // Do nothing
-        }
+    public override void ActOnUse(WorldObject wo)
+    {
+        // Do nothing
     }
 }

@@ -1,7 +1,6 @@
-namespace ACE.Server.Physics
+namespace ACE.Server.Physics;
+
+public class PhysicsScript
 {
-    public class PhysicsScript
-    {
-        public PhysicsScriptData Data;
-    }
+    public PhysicsScriptData Data;
 }

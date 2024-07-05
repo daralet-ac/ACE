@@ -11,549 +11,701 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using Serilog;
 
-namespace ACE.Server.Entity.Mutations
+namespace ACE.Server.Entity.Mutations;
+
+public static class MutationCache
 {
-    public static class MutationCache
+    private static readonly ILogger _log = Log.ForContext(typeof(MutationCache));
+    private static readonly ConcurrentDictionary<string, MutationFilter> tSysMutationFilters =
+        new ConcurrentDictionary<string, MutationFilter>();
+
+    static MutationCache()
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(MutationCache));
-        private static readonly ConcurrentDictionary<string, MutationFilter> tSysMutationFilters = new ConcurrentDictionary<string, MutationFilter>();
+        CacheResourceNames();
+    }
 
-        static MutationCache()
+    /// <summary>
+    /// For lootgen -- custom filenames
+    /// </summary>
+    public static MutationFilter GetMutation(string filename)
+    {
+        if (!tSysMutationFilters.TryGetValue(filename, out var tSysMutationFilter))
         {
-            CacheResourceNames();
+            tSysMutationFilter = BuildMutation(filename);
+
+            if (tSysMutationFilter != null)
+            {
+                tSysMutationFilters.TryAdd(filename, tSysMutationFilter);
+            }
+        }
+        return tSysMutationFilter;
+    }
+
+    /// <summary>
+    /// For recipes -- mutation script id + custom filename
+    /// </summary>
+    public static MutationFilter GetMutation(uint mutationId)
+    {
+        var mutationId_str = mutationId.ToString();
+
+        if (!tSysMutationFilters.TryGetValue(mutationId_str, out var tSysMutationFilter))
+        {
+            tSysMutationFilter = BuildMutation(mutationId);
+
+            if (tSysMutationFilter != null)
+            {
+                tSysMutationFilters.TryAdd(mutationId_str, tSysMutationFilter);
+            }
+        }
+        return tSysMutationFilter;
+    }
+
+    private static MutationFilter BuildMutation(uint mutationId)
+    {
+        if (!mutationIdToFilename.TryGetValue(mutationId, out var filename))
+        {
+            _log.Error($"MutationCache.BuildMutation({mutationId:X8}) - embedded resource not found");
+            return null;
         }
 
-        /// <summary>
-        /// For lootgen -- custom filenames
-        /// </summary>
-        public static MutationFilter GetMutation(string filename)
-        {
-            if (!tSysMutationFilters.TryGetValue(filename, out var tSysMutationFilter))
-            {
-                tSysMutationFilter = BuildMutation(filename);
+        return BuildMutation(filename);
+    }
 
-                if (tSysMutationFilter != null)
-                    tSysMutationFilters.TryAdd(filename, tSysMutationFilter);
-            }
-            return tSysMutationFilter;
+    private static MutationFilter BuildMutation(string filename)
+    {
+        var lines = ReadScript(filename);
+
+        if (lines == null)
+        {
+            _log.Error($"MutationCache.BuildMutation({filename}) - embedded resource not found");
+            return null;
         }
 
-        /// <summary>
-        /// For recipes -- mutation script id + custom filename
-        /// </summary>
-        public static MutationFilter GetMutation(uint mutationId)
+        string prevMutationLine = null;
+        string mutationLine = null;
+
+        var mutationFilter = new MutationFilter();
+        Mutation mutation = null;
+        MutationOutcome outcome = null;
+        EffectList effectList = null;
+
+        var totalChance = 0.0M;
+
+        var timer = Stopwatch.StartNew();
+
+        foreach (var _line in lines)
         {
-            var mutationId_str = mutationId.ToString();
+            var line = _line;
 
-            if (!tSysMutationFilters.TryGetValue(mutationId_str, out var tSysMutationFilter))
+            var commentIdx = line.IndexOf("//");
+
+            if (commentIdx != -1)
             {
-                tSysMutationFilter = BuildMutation(mutationId);
-
-                if (tSysMutationFilter != null)
-                    tSysMutationFilters.TryAdd(mutationId_str, tSysMutationFilter);
-            }
-            return tSysMutationFilter;
-        }
-
-        private static MutationFilter BuildMutation(uint mutationId)
-        {
-            if (!mutationIdToFilename.TryGetValue(mutationId, out var filename))
-            {
-                _log.Error($"MutationCache.BuildMutation({mutationId:X8}) - embedded resource not found");
-                return null;
+                line = line.Substring(0, commentIdx);
             }
 
-            return BuildMutation(filename);
-        }
-
-        private static MutationFilter BuildMutation(string filename)
-        {
-            var lines = ReadScript(filename);
-
-            if (lines == null)
+            if (line.Contains("Mutation #", StringComparison.OrdinalIgnoreCase))
             {
-                _log.Error($"MutationCache.BuildMutation({filename}) - embedded resource not found");
-                return null;
+                prevMutationLine = mutationLine;
+                mutationLine = line;
+                continue;
             }
 
-            string prevMutationLine = null;
-            string mutationLine = null;
-
-            var mutationFilter = new MutationFilter();
-            Mutation mutation = null;
-            MutationOutcome outcome = null;
-            EffectList effectList = null;
-
-            var totalChance = 0.0M;
-
-            var timer = Stopwatch.StartNew();
-
-            foreach (var _line in lines)
+            if (line.Contains("Tier chances", StringComparison.OrdinalIgnoreCase))
             {
-                var line = _line;
-
-                var commentIdx = line.IndexOf("//");
-
-                if (commentIdx != -1)
-                    line = line.Substring(0, commentIdx);
-
-                if (line.Contains("Mutation #", StringComparison.OrdinalIgnoreCase))
+                if (outcome != null && outcome.EffectLists.Last().Chance != 1.0f)
                 {
-                    prevMutationLine = mutationLine;
-                    mutationLine = line;
-                    continue;
+                    _log.Error(
+                        $"MutationCache.BuildMutation({filename}) - {prevMutationLine} total {outcome.EffectLists.Last().Chance}, expected 1.0"
+                    );
                 }
 
-                if (line.Contains("Tier chances", StringComparison.OrdinalIgnoreCase))
+                mutation = new Mutation();
+                mutationFilter.Mutations.Add(mutation);
+
+                var tierPieces = line.Split(',');
+
+                foreach (var tierPiece in tierPieces)
                 {
-                    if (outcome != null && outcome.EffectLists.Last().Chance != 1.0f)
-                        _log.Error($"MutationCache.BuildMutation({filename}) - {prevMutationLine} total {outcome.EffectLists.Last().Chance}, expected 1.0");
-
-                    mutation = new Mutation();
-                    mutationFilter.Mutations.Add(mutation);
-
-                    var tierPieces = line.Split(',');
-
-                    foreach (var tierPiece in tierPieces)
+                    var match = Regex.Match(tierPiece, @"([\d.]+)");
+                    if (match.Success && float.TryParse(match.Groups[1].Value, out var tierChance))
                     {
-                        var match = Regex.Match(tierPiece, @"([\d.]+)");
-                        if (match.Success && float.TryParse(match.Groups[1].Value, out var tierChance))
-                        {
-                            mutation.Chances.Add(tierChance);
-                        }
-                        else
-                        {
-                            _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse tier chances for {mutationLine}: {tierPiece}");
-                            mutation.Chances.Add(0.0f);
-                        }
+                        mutation.Chances.Add(tierChance);
+                    }
+                    else
+                    {
+                        _log.Error(
+                            $"MutationCache.BuildMutation({filename}) - couldn't parse tier chances for {mutationLine}: {tierPiece}"
+                        );
+                        mutation.Chances.Add(0.0f);
+                    }
+                }
+
+                outcome = new MutationOutcome();
+                mutation.Outcomes.Add(outcome);
+
+                totalChance = 0.0M;
+
+                continue;
+            }
+
+            if (line.Contains("- Chance", StringComparison.OrdinalIgnoreCase))
+            {
+                if (totalChance >= 1.0M)
+                {
+                    if (totalChance > 1.0M)
+                    {
+                        _log.Error(
+                            $"MutationCache.BuildMutation({filename}) - {mutationLine} total {totalChance}, expected 1.0"
+                        );
                     }
 
                     outcome = new MutationOutcome();
                     mutation.Outcomes.Add(outcome);
 
                     totalChance = 0.0M;
-
-                    continue;
                 }
 
-                if (line.Contains("- Chance", StringComparison.OrdinalIgnoreCase))
+                effectList = new EffectList();
+                outcome.EffectLists.Add(effectList);
+
+                var match = Regex.Match(line, @"([\d.]+)");
+                if (match.Success && decimal.TryParse(match.Groups[1].Value, out var chance))
                 {
-                    if (totalChance >= 1.0M)
-                    {
-                        if (totalChance > 1.0M)
-                            _log.Error($"MutationCache.BuildMutation({filename}) - {mutationLine} total {totalChance}, expected 1.0");
+                    totalChance += chance / 100;
 
-                        outcome = new MutationOutcome();
-                        mutation.Outcomes.Add(outcome);
-
-                        totalChance = 0.0M;
-                    }
-
-                    effectList = new EffectList();
-                    outcome.EffectLists.Add(effectList);
-
-                    var match = Regex.Match(line, @"([\d.]+)");
-                    if (match.Success && decimal.TryParse(match.Groups[1].Value, out var chance))
-                    {
-                        totalChance += chance / 100;
-
-                        effectList.Chance = (float)totalChance;
-                    }
-                    else
-                    {
-                        _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse {line} for {mutationLine}");
-                    }
-                    continue;
+                    effectList.Chance = (float)totalChance;
                 }
+                else
+                {
+                    _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse {line} for {mutationLine}");
+                }
+                continue;
+            }
 
-                if (!line.Contains("="))
-                    continue;
+            if (!line.Contains("="))
+            {
+                continue;
+            }
 
-                var effect = new Effect();
+            var effect = new Effect();
 
-                effect.Type = GetMutationEffectType(line);
+            effect.Type = GetMutationEffectType(line);
 
-                var firstOperator = GetFirstOperator(effect.Type);
+            var firstOperator = GetFirstOperator(effect.Type);
 
-                var pieces = line.Split(firstOperator, 2);
+            var pieces = line.Split(firstOperator, 2);
 
-                if (pieces.Length != 2)
+            if (pieces.Length != 2)
+            {
+                _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse {line}");
+                continue;
+            }
+
+            pieces[0] = pieces[0].Trim();
+            pieces[1] = pieces[1].Trim();
+
+            var firstStatType = GetStatType(pieces[0]);
+
+            /*if (firstStatType == StatType.Undef)
+            {
+                _log.Error($"MutationCache.BuildMutation({filename}) - couldn't determine StatType for {pieces[0]} in {line}");
+                continue;
+            }*/
+
+            effect.Quality = ParseEffectArgument(filename, effect, pieces[0]);
+
+            var hasSecondOperator = HasSecondOperator(effect.Type);
+
+            if (!hasSecondOperator)
+            {
+                effect.Arg1 = ParseEffectArgument(filename, effect, pieces[1]);
+            }
+            else
+            {
+                var secondOperator = GetSecondOperator(effect.Type);
+
+                var subpieces = pieces[1].Split(secondOperator, 2);
+
+                if (subpieces.Length != 2)
                 {
                     _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse {line}");
                     continue;
                 }
 
-                pieces[0] = pieces[0].Trim();
-                pieces[1] = pieces[1].Trim();
+                subpieces[0] = subpieces[0].Trim();
+                subpieces[1] = subpieces[1].Trim();
 
-                var firstStatType = GetStatType(pieces[0]);
-
-                /*if (firstStatType == StatType.Undef)
-                {
-                    _log.Error($"MutationCache.BuildMutation({filename}) - couldn't determine StatType for {pieces[0]} in {line}");
-                    continue;
-                }*/
-
-                effect.Quality = ParseEffectArgument(filename, effect, pieces[0]);
-
-                var hasSecondOperator = HasSecondOperator(effect.Type);
-
-                if (!hasSecondOperator)
-                {
-                    effect.Arg1 = ParseEffectArgument(filename, effect, pieces[1]);
-                }
-                else
-                {
-                    var secondOperator = GetSecondOperator(effect.Type);
-
-                    var subpieces = pieces[1].Split(secondOperator, 2);
-
-                    if (subpieces.Length != 2)
-                    {
-                        _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse {line}");
-                        continue;
-                    }
-
-                    subpieces[0] = subpieces[0].Trim();
-                    subpieces[1] = subpieces[1].Trim();
-
-                    effect.Arg1 = ParseEffectArgument(filename, effect, subpieces[0]);
-                    effect.Arg2 = ParseEffectArgument(filename, effect, subpieces[1]);
-                }
-
-                effectList.Effects.Add(effect);
+                effect.Arg1 = ParseEffectArgument(filename, effect, subpieces[0]);
+                effect.Arg2 = ParseEffectArgument(filename, effect, subpieces[1]);
             }
 
-            if (outcome != null && outcome.EffectLists.Last().Chance != 1.0f)
-                _log.Error($"MutationCache.BuildMutation({filename}) - {mutationLine} total {outcome.EffectLists.Last().Chance}, expected 1.0");
-
-            timer.Stop();
-
-            // scripts take about ~2ms to compile
-            //Console.WriteLine($"Compiled {filename} in {timer.Elapsed.TotalMilliseconds}ms");
-
-            return mutationFilter;
+            effectList.Effects.Add(effect);
         }
 
-        private static EffectArgument ParseEffectArgument(string filename, Effect effect, string operand)
+        if (outcome != null && outcome.EffectLists.Last().Chance != 1.0f)
         {
-            var effectArgument = new EffectArgument();
+            _log.Error(
+                $"MutationCache.BuildMutation({filename}) - {mutationLine} total {outcome.EffectLists.Last().Chance}, expected 1.0"
+            );
+        }
 
-            effectArgument.Type = GetEffectArgumentType(effect, operand);
+        timer.Stop();
 
-            switch (effectArgument.Type)
-            {
-                case EffectArgumentType.Int:
+        // scripts take about ~2ms to compile
+        //Console.WriteLine($"Compiled {filename} in {timer.Elapsed.TotalMilliseconds}ms");
 
-                    if (!int.TryParse(operand, out effectArgument.IntVal))
+        return mutationFilter;
+    }
+
+    private static EffectArgument ParseEffectArgument(string filename, Effect effect, string operand)
+    {
+        var effectArgument = new EffectArgument();
+
+        effectArgument.Type = GetEffectArgumentType(effect, operand);
+
+        switch (effectArgument.Type)
+        {
+            case EffectArgumentType.Int:
+
+                if (!int.TryParse(operand, out effectArgument.IntVal))
+                {
+                    if (
+                        effect.Quality != null
+                        && effect.Quality.StatType == StatType.Int
+                        && effect.Quality.StatIdx == (int)PropertyInt.ImbuedEffect
+                        && Enum.TryParse(operand, out ImbuedEffectType imbuedEffectType)
+                    )
                     {
-                        if (effect.Quality != null && effect.Quality.StatType == StatType.Int && effect.Quality.StatIdx == (int)PropertyInt.ImbuedEffect && Enum.TryParse(operand, out ImbuedEffectType imbuedEffectType))
-                            effectArgument.IntVal = (int)imbuedEffectType;
-                        else if (Enum.TryParse(operand, out WieldRequirement wieldRequirement))
-                            effectArgument.IntVal = (int)wieldRequirement;
-                        else if (Enum.TryParse(operand, out Skill skill))
-                            effectArgument.IntVal = (int)skill;
+                        effectArgument.IntVal = (int)imbuedEffectType;
+                    }
+                    else if (Enum.TryParse(operand, out WieldRequirement wieldRequirement))
+                    {
+                        effectArgument.IntVal = (int)wieldRequirement;
+                    }
+                    else if (Enum.TryParse(operand, out Skill skill))
+                    {
+                        effectArgument.IntVal = (int)skill;
+                    }
+                    else
+                    {
+                        _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse IntVal {operand}");
+                    }
+                }
+                break;
+
+            case EffectArgumentType.Int64:
+
+                if (!long.TryParse(operand, out effectArgument.LongVal))
+                {
+                    _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse Int64Val {operand}");
+                }
+                break;
+
+            case EffectArgumentType.Double:
+
+                if (!double.TryParse(operand, out effectArgument.DoubleVal))
+                {
+                    _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse DoubleVal {operand}");
+                }
+                break;
+
+            case EffectArgumentType.Quality:
+
+                effectArgument.StatType = GetStatType(operand);
+
+                switch (effectArgument.StatType)
+                {
+                    case StatType.Int:
+
+                        if (Enum.TryParse(operand, out PropertyInt propInt))
+                        {
+                            effectArgument.StatIdx = (int)propInt;
+                        }
                         else
-                            _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse IntVal {operand}");
-                    }
-                    break;
+                        {
+                            _log.Error(
+                                $"MutationCache.BuildMutation({filename}) - couldn't parse PropertyInt.{operand}"
+                            );
+                        }
 
-                case EffectArgumentType.Int64:
+                        break;
 
-                    if (!long.TryParse(operand, out effectArgument.LongVal))
-                    {
-                        _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse Int64Val {operand}");
-                    }
-                    break;
+                    case StatType.Int64:
 
-                case EffectArgumentType.Double:
+                        if (Enum.TryParse(operand, out PropertyInt64 propInt64))
+                        {
+                            effectArgument.StatIdx = (int)propInt64;
+                        }
+                        else
+                        {
+                            _log.Error(
+                                $"MutationCache.BuildMutation({filename}) - couldn't parse PropertyInt64.{operand}"
+                            );
+                        }
 
-                    if (!double.TryParse(operand, out effectArgument.DoubleVal))
-                    {
-                        _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse DoubleVal {operand}");
-                    }
-                    break;
+                        break;
 
-                case EffectArgumentType.Quality:
+                    case StatType.Float:
 
-                    effectArgument.StatType = GetStatType(operand);
+                        if (Enum.TryParse(operand, out PropertyFloat propFloat))
+                        {
+                            effectArgument.StatIdx = (int)propFloat;
+                        }
+                        else
+                        {
+                            _log.Error(
+                                $"MutationCache.BuildMutation({filename}) - couldn't parse PropertyFloat.{operand}"
+                            );
+                        }
 
-                    switch (effectArgument.StatType)
-                    {
-                        case StatType.Int:
+                        break;
 
-                            if (Enum.TryParse(operand, out PropertyInt propInt))
-                                effectArgument.StatIdx = (int)propInt;
-                            else
-                                _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse PropertyInt.{operand}");
-                            break;
+                    case StatType.Bool:
 
-                        case StatType.Int64:
+                        if (Enum.TryParse(operand, out PropertyBool propBool))
+                        {
+                            effectArgument.StatIdx = (int)propBool;
+                        }
+                        else
+                        {
+                            _log.Error(
+                                $"MutationCache.BuildMutation({filename}) - couldn't parse PropertyBool.{operand}"
+                            );
+                        }
 
-                            if (Enum.TryParse(operand, out PropertyInt64 propInt64))
-                                effectArgument.StatIdx = (int)propInt64;
-                            else
-                                _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse PropertyInt64.{operand}");
-                            break;
+                        break;
 
-                        case StatType.Float:
+                    case StatType.DataID:
 
-                            if (Enum.TryParse(operand, out PropertyFloat propFloat))
-                                effectArgument.StatIdx = (int)propFloat;
-                            else
-                                _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse PropertyFloat.{operand}");
-                            break;
+                        if (Enum.TryParse(operand, out PropertyDataId propDID))
+                        {
+                            effectArgument.StatIdx = (int)propDID;
+                        }
+                        else
+                        {
+                            _log.Error(
+                                $"MutationCache.BuildMutation({filename}) - couldn't parse PropertyBool.{operand}"
+                            );
+                        }
 
-                        case StatType.Bool:
+                        break;
 
-                            if (Enum.TryParse(operand, out PropertyBool propBool))
-                                effectArgument.StatIdx = (int)propBool;
-                            else
-                                _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse PropertyBool.{operand}");
-                            break;
+                    default:
+                        _log.Error($"MutationCache.BuildMutation({filename}) - unknown PropertyType.{operand}");
+                        break;
+                }
+                break;
 
-                        case StatType.DataID:
+            case EffectArgumentType.Random:
 
-                            if (Enum.TryParse(operand, out PropertyDataId propDID))
-                                effectArgument.StatIdx = (int)propDID;
-                            else
-                                _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse PropertyBool.{operand}");
-                            break;
+                var match = Regex.Match(operand, @"Random\(([\d.-]+), ([\d.-]+)\)");
 
-                        default:
-                            _log.Error($"MutationCache.BuildMutation({filename}) - unknown PropertyType.{operand}");
-                            break;
-                    }
-                    break;
+                if (
+                    !match.Success
+                    || !float.TryParse(match.Groups[1].Value, out effectArgument.MinVal)
+                    || !float.TryParse(match.Groups[2].Value, out effectArgument.MaxVal)
+                )
+                {
+                    _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse {operand}");
+                }
 
-                case EffectArgumentType.Random:
+                break;
 
-                    var match = Regex.Match(operand, @"Random\(([\d.-]+), ([\d.-]+)\)");
+            case EffectArgumentType.Variable:
 
-                    if (!match.Success || !float.TryParse(match.Groups[1].Value, out effectArgument.MinVal) || !float.TryParse(match.Groups[2].Value, out effectArgument.MaxVal))
-                        _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse {operand}");
+                match = Regex.Match(operand, @"\[(\d+)\]");
 
-                    break;
+                if (!match.Success || !int.TryParse(match.Groups[1].Value, out effectArgument.IntVal))
+                {
+                    _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse {operand}");
+                }
 
-                case EffectArgumentType.Variable:
+                break;
 
-                    match = Regex.Match(operand, @"\[(\d+)\]");
-
-                    if (!match.Success || !int.TryParse(match.Groups[1].Value, out effectArgument.IntVal))
-                        _log.Error($"MutationCache.BuildMutation({filename}) - couldn't parse {operand}");
-
-                    break;
-
-                default:
-                    _log.Error($"MutationCache.BuildMutation({filename}) - unknown EffectArgumentType from {operand}");
-                    break;
-            }
-            return effectArgument;
+            default:
+                _log.Error($"MutationCache.BuildMutation({filename}) - unknown EffectArgumentType from {operand}");
+                break;
         }
+        return effectArgument;
+    }
 
-        private static MutationEffectType GetMutationEffectType(string line)
+    private static MutationEffectType GetMutationEffectType(string line)
+    {
+        if (line.Contains("+="))
         {
-            if (line.Contains("+="))
+            if (line.Contains("*"))
             {
-                if (line.Contains("*"))
-                    return MutationEffectType.AddMultiply;
-                else if (line.Contains("/"))
-                    return MutationEffectType.AddDivide;
-                else
-                    return MutationEffectType.Add;
+                return MutationEffectType.AddMultiply;
             }
-            else if (line.Contains("-="))
-            {
-                if (line.Contains("*"))
-                    return MutationEffectType.SubtractMultiply;
-                else if (line.Contains("/"))
-                    return MutationEffectType.SubtractDivide;
-                else
-                    return MutationEffectType.Subtract;
-            }
-            else if (line.Contains("*="))
-                return MutationEffectType.Multiply;
-            else if (line.Contains("/="))
-                return MutationEffectType.Divide;
-            else if (line.Contains("+"))
-                return MutationEffectType.AssignAdd;
-            else if (line.Contains(" - "))
-                return MutationEffectType.AssignSubtract;
-            else if (line.Contains("*"))
-                return MutationEffectType.AssignMultiply;
             else if (line.Contains("/"))
-                return MutationEffectType.AssignDivide;
-            else if (line.Contains("(>="))
-                return MutationEffectType.AtLeastAdd;
-            else if (line.Contains("(<="))
-                return MutationEffectType.AtMostSubtract;
+            {
+                return MutationEffectType.AddDivide;
+            }
             else
-                return MutationEffectType.Assign;
-        }
-
-        private static string GetFirstOperator(MutationEffectType effectType)
-        {
-            switch (effectType)
             {
-                case MutationEffectType.Assign:
-                case MutationEffectType.AssignAdd:
-                case MutationEffectType.AssignSubtract:
-                case MutationEffectType.AssignMultiply:
-                case MutationEffectType.AssignDivide:
-                    return "=";
-                case MutationEffectType.Add:
-                case MutationEffectType.AddMultiply:
-                case MutationEffectType.AddDivide:
-                    return "+=";
-                case MutationEffectType.Subtract:
-                case MutationEffectType.SubtractMultiply:
-                case MutationEffectType.SubtractDivide:
-                    return "-=";
-                case MutationEffectType.Multiply:
-                    return "*=";
-                case MutationEffectType.Divide:
-                    return "/=";
-                case MutationEffectType.AtLeastAdd:
-                    return "(>=";
-                case MutationEffectType.AtMostSubtract:
-                    return "(<=";
+                return MutationEffectType.Add;
             }
-            return null;
         }
-
-        public static StatType GetStatType(string operand)
+        else if (line.Contains("-="))
         {
-            if (Enum.TryParse(operand, out PropertyInt propInt))
-                return StatType.Int;
-            else if (Enum.TryParse(operand, out PropertyInt64 propInt64))
-                return StatType.Int64;
-            else if (Enum.TryParse(operand, out PropertyFloat propFloat))
-                return StatType.Float;
-            else if (Enum.TryParse(operand, out PropertyBool propBool))
-                return StatType.Bool;
-            else if (Enum.TryParse(operand, out PropertyDataId propDID))
-                return StatType.DataID;
+            if (line.Contains("*"))
+            {
+                return MutationEffectType.SubtractMultiply;
+            }
+            else if (line.Contains("/"))
+            {
+                return MutationEffectType.SubtractDivide;
+            }
             else
-                return StatType.Undef;
+            {
+                return MutationEffectType.Subtract;
+            }
         }
-
-        public static EffectArgumentType GetEffectArgumentType(Effect effect, string operand)
+        else if (line.Contains("*="))
         {
-            if (IsNumber(operand) || Enum.TryParse(operand, out WieldRequirement wieldRequirement) || Enum.TryParse(operand, out Skill skill) || Enum.TryParse(operand, out ImbuedEffectType imbuedEffectType))
+            return MutationEffectType.Multiply;
+        }
+        else if (line.Contains("/="))
+        {
+            return MutationEffectType.Divide;
+        }
+        else if (line.Contains("+"))
+        {
+            return MutationEffectType.AssignAdd;
+        }
+        else if (line.Contains(" - "))
+        {
+            return MutationEffectType.AssignSubtract;
+        }
+        else if (line.Contains("*"))
+        {
+            return MutationEffectType.AssignMultiply;
+        }
+        else if (line.Contains("/"))
+        {
+            return MutationEffectType.AssignDivide;
+        }
+        else if (line.Contains("(>="))
+        {
+            return MutationEffectType.AtLeastAdd;
+        }
+        else if (line.Contains("(<="))
+        {
+            return MutationEffectType.AtMostSubtract;
+        }
+        else
+        {
+            return MutationEffectType.Assign;
+        }
+    }
+
+    private static string GetFirstOperator(MutationEffectType effectType)
+    {
+        switch (effectType)
+        {
+            case MutationEffectType.Assign:
+            case MutationEffectType.AssignAdd:
+            case MutationEffectType.AssignSubtract:
+            case MutationEffectType.AssignMultiply:
+            case MutationEffectType.AssignDivide:
+                return "=";
+            case MutationEffectType.Add:
+            case MutationEffectType.AddMultiply:
+            case MutationEffectType.AddDivide:
+                return "+=";
+            case MutationEffectType.Subtract:
+            case MutationEffectType.SubtractMultiply:
+            case MutationEffectType.SubtractDivide:
+                return "-=";
+            case MutationEffectType.Multiply:
+                return "*=";
+            case MutationEffectType.Divide:
+                return "/=";
+            case MutationEffectType.AtLeastAdd:
+                return "(>=";
+            case MutationEffectType.AtMostSubtract:
+                return "(<=";
+        }
+        return null;
+    }
+
+    public static StatType GetStatType(string operand)
+    {
+        if (Enum.TryParse(operand, out PropertyInt propInt))
+        {
+            return StatType.Int;
+        }
+        else if (Enum.TryParse(operand, out PropertyInt64 propInt64))
+        {
+            return StatType.Int64;
+        }
+        else if (Enum.TryParse(operand, out PropertyFloat propFloat))
+        {
+            return StatType.Float;
+        }
+        else if (Enum.TryParse(operand, out PropertyBool propBool))
+        {
+            return StatType.Bool;
+        }
+        else if (Enum.TryParse(operand, out PropertyDataId propDID))
+        {
+            return StatType.DataID;
+        }
+        else
+        {
+            return StatType.Undef;
+        }
+    }
+
+    public static EffectArgumentType GetEffectArgumentType(Effect effect, string operand)
+    {
+        if (
+            IsNumber(operand)
+            || Enum.TryParse(operand, out WieldRequirement wieldRequirement)
+            || Enum.TryParse(operand, out Skill skill)
+            || Enum.TryParse(operand, out ImbuedEffectType imbuedEffectType)
+        )
+        {
+            if (operand.Contains('.'))
             {
-                if (operand.Contains('.'))
-                    return EffectArgumentType.Double;
-                else if (effect.Quality != null && effect.Quality.StatType == StatType.Int64)
-                    return EffectArgumentType.Int64;
-                else
-                    return EffectArgumentType.Int;
+                return EffectArgumentType.Double;
             }
-            else if (GetStatType(operand) != StatType.Undef)
+            else if (effect.Quality != null && effect.Quality.StatType == StatType.Int64)
             {
-                return EffectArgumentType.Quality;
+                return EffectArgumentType.Int64;
             }
-            else if (operand.StartsWith("Random", StringComparison.OrdinalIgnoreCase))
-                return EffectArgumentType.Random;
-            else if (operand.StartsWith("Variable", StringComparison.OrdinalIgnoreCase))
-                return EffectArgumentType.Variable;
             else
-                return EffectArgumentType.Invalid;
-        }
-
-        public static bool IsNumber(string operand)
-        {
-            var match = Regex.Match(operand, @"([\d.-]+)");
-            return match.Success && match.Groups[1].Value.Equals(operand);
-        }
-
-        public static bool HasSecondOperator(MutationEffectType effectType)
-        {
-            switch (effectType)
             {
-                case MutationEffectType.AssignAdd:
-                case MutationEffectType.AssignSubtract:
-                case MutationEffectType.AssignMultiply:
-                case MutationEffectType.AssignDivide:
-                case MutationEffectType.AddMultiply:
-                case MutationEffectType.AddDivide:
-                case MutationEffectType.SubtractMultiply:
-                case MutationEffectType.SubtractDivide:
-                case MutationEffectType.AtLeastAdd:
-                case MutationEffectType.AtMostSubtract:
-                    return true;
+                return EffectArgumentType.Int;
             }
-            return false;
         }
-
-        public static string GetSecondOperator(MutationEffectType effectType)
+        else if (GetStatType(operand) != StatType.Undef)
         {
-            switch (effectType)
+            return EffectArgumentType.Quality;
+        }
+        else if (operand.StartsWith("Random", StringComparison.OrdinalIgnoreCase))
+        {
+            return EffectArgumentType.Random;
+        }
+        else if (operand.StartsWith("Variable", StringComparison.OrdinalIgnoreCase))
+        {
+            return EffectArgumentType.Variable;
+        }
+        else
+        {
+            return EffectArgumentType.Invalid;
+        }
+    }
+
+    public static bool IsNumber(string operand)
+    {
+        var match = Regex.Match(operand, @"([\d.-]+)");
+        return match.Success && match.Groups[1].Value.Equals(operand);
+    }
+
+    public static bool HasSecondOperator(MutationEffectType effectType)
+    {
+        switch (effectType)
+        {
+            case MutationEffectType.AssignAdd:
+            case MutationEffectType.AssignSubtract:
+            case MutationEffectType.AssignMultiply:
+            case MutationEffectType.AssignDivide:
+            case MutationEffectType.AddMultiply:
+            case MutationEffectType.AddDivide:
+            case MutationEffectType.SubtractMultiply:
+            case MutationEffectType.SubtractDivide:
+            case MutationEffectType.AtLeastAdd:
+            case MutationEffectType.AtMostSubtract:
+                return true;
+        }
+        return false;
+    }
+
+    public static string GetSecondOperator(MutationEffectType effectType)
+    {
+        switch (effectType)
+        {
+            case MutationEffectType.AssignAdd:
+                return "+";
+            case MutationEffectType.AssignSubtract:
+                return "-";
+            case MutationEffectType.AssignMultiply:
+            case MutationEffectType.AddMultiply:
+            case MutationEffectType.SubtractMultiply:
+                return "*";
+            case MutationEffectType.AssignDivide:
+            case MutationEffectType.AddDivide:
+            case MutationEffectType.SubtractDivide:
+                return "/";
+            case MutationEffectType.AtLeastAdd:
+                return "? add : set)";
+            case MutationEffectType.AtMostSubtract:
+                return "? sub : set)";
+        }
+        return null;
+    }
+
+    private static readonly string prefix = "ACE.Server.Entity.Mutations.";
+
+    private static List<string> ReadScript(string filename)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = prefix + filename.Replace('/', '.');
+
+        using (var stream = assembly.GetManifestResourceStream(resourceName))
+        {
+            if (stream == null)
             {
-                case MutationEffectType.AssignAdd:
-                    return "+";
-                case MutationEffectType.AssignSubtract:
-                    return "-";
-                case MutationEffectType.AssignMultiply:
-                case MutationEffectType.AddMultiply:
-                case MutationEffectType.SubtractMultiply:
-                    return "*";
-                case MutationEffectType.AssignDivide:
-                case MutationEffectType.AddDivide:
-                case MutationEffectType.SubtractDivide:
-                    return "/";
-                case MutationEffectType.AtLeastAdd:
-                    return "? add : set)";
-                case MutationEffectType.AtMostSubtract:
-                    return "? sub : set)";
+                return null;
             }
-            return null;
-        }
 
-        private static readonly string prefix = "ACE.Server.Entity.Mutations.";
+            var lines = new List<string>();
 
-        private static List<string> ReadScript(string filename)
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = prefix + filename.Replace('/', '.');
-
-            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            using (var reader = new StreamReader(stream))
             {
-                if (stream == null) return null;
-
-                var lines = new List<string>();
-
-                using (var reader = new StreamReader(stream))
+                while (!reader.EndOfStream)
                 {
-                    while (!reader.EndOfStream)
-                        lines.Add(reader.ReadLine());
+                    lines.Add(reader.ReadLine());
                 }
-                return lines;
             }
+            return lines;
         }
+    }
 
-        private static readonly Dictionary<uint, string> mutationIdToFilename = new Dictionary<uint, string>();
+    private static readonly Dictionary<uint, string> mutationIdToFilename = new Dictionary<uint, string>();
 
-        private static void CacheResourceNames()
+    private static void CacheResourceNames()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+
+        var resourceNames = assembly.GetManifestResourceNames();
+
+        foreach (var resourceName in resourceNames)
         {
-            var assembly = Assembly.GetExecutingAssembly();
+            var pieces = resourceName.Split('.');
 
-            var resourceNames = assembly.GetManifestResourceNames();
-
-            foreach (var resourceName in resourceNames)
+            if (pieces.Length < 2)
             {
-                var pieces = resourceName.Split('.');
+                _log.Error($"MutationCache.CacheResourceNames() - unknown resource format {resourceName}");
+                continue;
+            }
+            var shortName = pieces[pieces.Length - 2];
 
-                if (pieces.Length < 2)
-                {
-                    _log.Error($"MutationCache.CacheResourceNames() - unknown resource format {resourceName}");
-                    continue;
-                }
-                var shortName = pieces[pieces.Length - 2];
+            var match = Regex.Match(shortName, @"([0-9A-F]{8})");
 
-                var match = Regex.Match(shortName, @"([0-9A-F]{8})");
-
-                if (match.Success && uint.TryParse(match.Groups[1].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var mutationId))
-                    mutationIdToFilename[mutationId] = resourceName.Replace(prefix, "");
+            if (
+                match.Success
+                && uint.TryParse(
+                    match.Groups[1].Value,
+                    NumberStyles.HexNumber,
+                    CultureInfo.InvariantCulture,
+                    out var mutationId
+                )
+            )
+            {
+                mutationIdToFilename[mutationId] = resourceName.Replace(prefix, "");
             }
         }
     }

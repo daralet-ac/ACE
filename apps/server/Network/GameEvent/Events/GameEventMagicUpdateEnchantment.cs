@@ -1,16 +1,15 @@
 using ACE.Server.Network.Structure;
 
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+/// <summary>
+/// Apply an enchantment to your character.
+/// </summary>
+public class GameEventMagicUpdateEnchantment : GameEventMessage
 {
-    /// <summary>
-    /// Apply an enchantment to your character.
-    /// </summary>
-    public class GameEventMagicUpdateEnchantment : GameEventMessage
+    public GameEventMagicUpdateEnchantment(Session session, Enchantment enchantment)
+        : base(GameEventType.MagicUpdateEnchantment, GameMessageGroup.UIQueue, session, 68)
     {
-        public GameEventMagicUpdateEnchantment(Session session, Enchantment enchantment)
-            : base(GameEventType.MagicUpdateEnchantment, GameMessageGroup.UIQueue, session, 68)
-        {
-            Writer.Write(enchantment);
-        }
+        Writer.Write(enchantment);
     }
 }

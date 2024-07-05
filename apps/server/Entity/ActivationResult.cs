@@ -1,20 +1,19 @@
 using ACE.Server.Network.GameEvent;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+public class ActivationResult
 {
-    public class ActivationResult
+    public bool Success;
+    public GameEventMessage Message;
+
+    public ActivationResult(bool success)
     {
-        public bool Success;
-        public GameEventMessage Message;
+        Success = success;
+    }
 
-        public ActivationResult(bool success)
-        {
-            Success = success;
-        }
-
-        public ActivationResult(GameEventMessage message)
-        {
-            Message = message;
-        }
+    public ActivationResult(GameEventMessage message)
+    {
+        Message = message;
     }
 }

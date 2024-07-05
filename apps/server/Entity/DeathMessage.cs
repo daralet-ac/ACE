@@ -2,21 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ACE.Server.Entity
+namespace ACE.Server.Entity;
+
+public class DeathMessage
 {
-    public class DeathMessage
+    public string Killer;
+    public string Victim;
+
+    public string Broadcast;
+
+    public DeathMessage(string killer, string victim, string broadcast)
     {
-        public string Killer;
-        public string Victim;
+        Killer = killer;
+        Victim = victim;
 
-        public string Broadcast;
-
-        public DeathMessage(string killer, string victim, string broadcast)
-        {
-            Killer = killer;
-            Victim = victim;
-
-            Broadcast = broadcast;
-        }
+        Broadcast = broadcast;
     }
 }

@@ -1,29 +1,28 @@
-namespace ACE.Server.Factories.Enum
+namespace ACE.Server.Factories.Enum;
+
+public enum SocietyType
 {
-    public enum SocietyType
-    {
-        Undef,
-        CelestialHand,
-        EldrytchWeb,
-        RadiantBlood
-    }
+    Undef,
+    CelestialHand,
+    EldrytchWeb,
+    RadiantBlood
+}
 
-    public static class SocietyTypeExtensions
+public static class SocietyTypeExtensions
+{
+    public static SocietyType ToSociety(this TreasureHeritageGroup treasureHeritageGroup)
     {
-        public static SocietyType ToSociety(this TreasureHeritageGroup treasureHeritageGroup)
+        switch (treasureHeritageGroup)
         {
-            switch (treasureHeritageGroup)
-            {
-                case TreasureHeritageGroup.CelestialHand:
-                    return SocietyType.CelestialHand;
+            case TreasureHeritageGroup.CelestialHand:
+                return SocietyType.CelestialHand;
 
-                case TreasureHeritageGroup.EldrytchWeb:
-                    return SocietyType.EldrytchWeb;
+            case TreasureHeritageGroup.EldrytchWeb:
+                return SocietyType.EldrytchWeb;
 
-                case TreasureHeritageGroup.RadiantBlood:
-                    return SocietyType.RadiantBlood;
-            }
-            return SocietyType.Undef;
+            case TreasureHeritageGroup.RadiantBlood:
+                return SocietyType.RadiantBlood;
         }
+        return SocietyType.Undef;
     }
 }

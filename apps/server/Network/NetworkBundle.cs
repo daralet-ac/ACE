@@ -1,65 +1,63 @@
-using ACE.Server.Network.GameMessages;
 using System.Collections.Generic;
+using ACE.Server.Network.GameMessages;
 
-namespace ACE.Server.Network
+namespace ACE.Server.Network;
+
+internal class NetworkBundle
 {
+    private bool propChanged;
 
-    internal class NetworkBundle
+    public bool NeedsSending => propChanged || messages.Count > 0;
+
+    public bool HasMoreMessages => messages.Count > 0;
+
+    private Queue<GameMessage> messages = new Queue<GameMessage>();
+
+    private float clientTime = -1f;
+    public float ClientTime
     {
-        private bool propChanged;
-
-        public bool NeedsSending => propChanged || messages.Count > 0;
-
-        public bool HasMoreMessages => messages.Count > 0;
-
-        private Queue<GameMessage> messages = new Queue<GameMessage>();
-
-        private float clientTime = -1f;
-        public float ClientTime
+        get => clientTime;
+        set
         {
-            get => clientTime;
-            set
-            {
-                clientTime = value;
-                propChanged = true;
-            }
+            clientTime = value;
+            propChanged = true;
         }
+    }
 
-        private bool timeSync;
-        public bool TimeSync
+    private bool timeSync;
+    public bool TimeSync
+    {
+        get => timeSync;
+        set
         {
-            get => timeSync;
-            set
-            {
-                timeSync = value;
-                propChanged = true;
-            }
+            timeSync = value;
+            propChanged = true;
         }
+    }
 
-        private bool ackSeq;
-        public bool SendAck
+    private bool ackSeq;
+    public bool SendAck
+    {
+        get => ackSeq;
+        set
         {
-            get => ackSeq;
-            set
-            {
-                ackSeq = value;
-                propChanged = true;
-            }
+            ackSeq = value;
+            propChanged = true;
         }
+    }
 
-        public bool EncryptedChecksum { get; set; }
+    public bool EncryptedChecksum { get; set; }
 
-        public int CurrentSize { get; private set; }
+    public int CurrentSize { get; private set; }
 
-        public void Enqueue(GameMessage message)
-        {
-            CurrentSize += (int)message.Data.Length;
-            messages.Enqueue(message);
-        }
+    public void Enqueue(GameMessage message)
+    {
+        CurrentSize += (int)message.Data.Length;
+        messages.Enqueue(message);
+    }
 
-        public GameMessage Dequeue()
-        {
-            return messages.Dequeue();
-        }
+    public GameMessage Dequeue()
+    {
+        return messages.Dequeue();
     }
 }

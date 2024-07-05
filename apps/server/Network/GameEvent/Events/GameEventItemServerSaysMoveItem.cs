@@ -1,13 +1,12 @@
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.GameEvent.Events
+namespace ACE.Server.Network.GameEvent.Events;
+
+public class GameEventItemServerSaysMoveItem : GameEventMessage
 {
-    public class GameEventItemServerSaysMoveItem : GameEventMessage
+    public GameEventItemServerSaysMoveItem(Session session, WorldObject worldObject)
+        : base(GameEventType.InventoryPutObjectIn3D, GameMessageGroup.UIQueue, session, 8)
     {
-        public GameEventItemServerSaysMoveItem(Session session, WorldObject worldObject)
-            : base(GameEventType.InventoryPutObjectIn3D, GameMessageGroup.UIQueue, session, 8)
-        {
-            Writer.WriteGuid(worldObject.Guid);
-        }
+        Writer.WriteGuid(worldObject.Guid);
     }
 }

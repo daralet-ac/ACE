@@ -8,139 +8,170 @@ using ACE.Server.Entity;
 using ACE.Server.Network.GameEvent.Events;
 using Serilog;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+public sealed class HousePortal : Portal
 {
-    public sealed class HousePortal : Portal
+    private readonly ILogger _log = Log.ForContext<HousePortal>();
+
+    public House House => ParentLink as House;
+
+    /// <summary>
+    /// A new biota be created taking all of its values from weenie.
+    /// </summary>
+    public HousePortal(Weenie weenie, ObjectGuid guid)
+        : base(weenie, guid)
     {
-        private readonly ILogger _log = Log.ForContext<HousePortal>();
+        SetEphemeralValues();
+    }
 
-        public House House => ParentLink as House;
+    /// <summary>
+    /// Restore a WorldObject from the database.
+    /// </summary>
+    public HousePortal(Biota biota)
+        : base(biota)
+    {
+        SetEphemeralValues();
+    }
 
-        /// <summary>
-        /// A new biota be created taking all of its values from weenie.
-        /// </summary>
-        public HousePortal(Weenie weenie, ObjectGuid guid) : base(weenie, guid)
+    public override void SetLinkProperties(WorldObject wo)
+    {
+        if (House == null)
         {
-            SetEphemeralValues();
+            _log.Warning(
+                $"[HOUSE] HousePortal.SetLinkProperties({(wo != null ? $"{wo.Name}:0x{wo.Guid}:{wo.WeenieClassId}" : "null")}): House is null for HousePortal 0x{Guid} at {Location.ToLOCString()}"
+            );
+            return;
         }
 
-        /// <summary>
-        /// Restore a WorldObject from the database.
-        /// </summary>
-        public HousePortal(Biota biota) : base(biota)
+        if (wo == null)
         {
-            SetEphemeralValues();
+            _log.Warning(
+                $"[HOUSE] HousePortal.SetLinkProperties(null): WorldObject is null for HousePortal 0x{Guid} at {Location.ToLOCString()} | {(House != null ? $"House = {House.Name}:0x{House.Guid}:{House.WeenieClassId}" : "House is null")}"
+            );
+            return;
         }
 
-        public override void SetLinkProperties(WorldObject wo)
+        // get properties from parent?
+        wo.HouseId = House.HouseId;
+        wo.HouseOwner = House.HouseOwner;
+        wo.HouseInstance = House.HouseInstance;
+
+        if (wo.IsLinkSpot)
         {
-            if (House == null)
+            var housePortals = House.GetHousePortals();
+            if (housePortals.Count == 0)
             {
-                _log.Warning($"[HOUSE] HousePortal.SetLinkProperties({(wo != null ? $"{wo.Name}:0x{wo.Guid}:{wo.WeenieClassId}" : "null")}): House is null for HousePortal 0x{Guid} at {Location.ToLOCString()}");
+                Console.WriteLine($"{Name}.SetLinkProperties({wo.Name}): found LinkSpot, but empty HousePortals");
                 return;
             }
+            var i = housePortals[0];
 
-            if (wo == null)
+            if (i.ObjCellId == Location.Cell)
             {
-                _log.Warning($"[HOUSE] HousePortal.SetLinkProperties(null): WorldObject is null for HousePortal 0x{Guid} at {Location.ToLOCString()} | {(House != null ? $"House = {House.Name}:0x{House.Guid}:{House.WeenieClassId}" : "House is null")}");
-                return;
+                if (housePortals.Count > 1)
+                {
+                    i = housePortals[1];
+                }
+                else
+                { // there are some houses that for some reason, don't have return locations, so we'll fake the entry with a reference to the root house portal location mimicking other database entries.
+                    i = new Database.Models.World.HousePortal
+                    {
+                        ObjCellId = House.RootHouse.HousePortal.Location.Cell,
+                        OriginX = House.RootHouse.HousePortal.Location.PositionX,
+                        OriginY = House.RootHouse.HousePortal.Location.PositionY,
+                        OriginZ = House.RootHouse.HousePortal.Location.PositionZ,
+                        AnglesX = House.RootHouse.HousePortal.Location.RotationX,
+                        AnglesY = House.RootHouse.HousePortal.Location.RotationY,
+                        AnglesZ = House.RootHouse.HousePortal.Location.RotationZ,
+                        AnglesW = House.RootHouse.HousePortal.Location.RotationW
+                    };
+                }
             }
 
-            // get properties from parent?
-            wo.HouseId = House.HouseId;
-            wo.HouseOwner = House.HouseOwner;
-            wo.HouseInstance = House.HouseInstance;
+            var destination = new Position(
+                i.ObjCellId,
+                new Vector3(i.OriginX, i.OriginY, i.OriginZ),
+                new Quaternion(i.AnglesX, i.AnglesY, i.AnglesZ, i.AnglesW)
+            );
 
-            if (wo.IsLinkSpot)
-            {
-                var housePortals = House.GetHousePortals();
-                if (housePortals.Count == 0)
-                {
-                    Console.WriteLine($"{Name}.SetLinkProperties({wo.Name}): found LinkSpot, but empty HousePortals");
-                    return;
-                }
-                var i = housePortals[0];
+            wo.SetPosition(PositionType.Destination, destination);
 
-                if (i.ObjCellId == Location.Cell)
-                {
-                    if (housePortals.Count > 1)
-                        i = housePortals[1];
-                    else
-                    { // there are some houses that for some reason, don't have return locations, so we'll fake the entry with a reference to the root house portal location mimicking other database entries.
-                        i = new Database.Models.World.HousePortal
-                        {
-                            ObjCellId = House.RootHouse.HousePortal.Location.Cell,
-                            OriginX = House.RootHouse.HousePortal.Location.PositionX,
-                            OriginY = House.RootHouse.HousePortal.Location.PositionY,
-                            OriginZ = House.RootHouse.HousePortal.Location.PositionZ,
-                            AnglesX = House.RootHouse.HousePortal.Location.RotationX,
-                            AnglesY = House.RootHouse.HousePortal.Location.RotationY,
-                            AnglesZ = House.RootHouse.HousePortal.Location.RotationZ,
-                            AnglesW = House.RootHouse.HousePortal.Location.RotationW
-                        };
-                    }
-                }
+            // set portal destination directly?
+            SetPosition(PositionType.Destination, destination);
+        }
+    }
 
-                var destination = new Position(i.ObjCellId, new Vector3(i.OriginX, i.OriginY, i.OriginZ), new Quaternion(i.AnglesX, i.AnglesY, i.AnglesZ, i.AnglesW));
+    public override ActivationResult CheckUseRequirements(WorldObject activator)
+    {
+        var rootHouse = House?.RootHouse;
 
-                wo.SetPosition(PositionType.Destination, destination);
-
-                // set portal destination directly?
-                SetPosition(PositionType.Destination, destination);
-            }
+        if (activator == null || rootHouse == null)
+        {
+            _log.Warning($"HousePortal.CheckUseRequirements: 0x{Guid} - {Location.ToLOCString()}");
+            _log.Warning(
+                $"HousePortal.CheckUseRequirements: activator is null - {activator == null} | House is null - {House == null} | RootHouse is null - {rootHouse == null}"
+            );
+            return new ActivationResult(false);
         }
 
-        public override ActivationResult CheckUseRequirements(WorldObject activator)
+        if (!(activator is Player player))
         {
-            var rootHouse = House?.RootHouse;
+            return new ActivationResult(false);
+        }
 
-            if (activator == null || rootHouse == null)
-            {
-                _log.Warning($"HousePortal.CheckUseRequirements: 0x{Guid} - {Location.ToLOCString()}");
-                _log.Warning($"HousePortal.CheckUseRequirements: activator is null - {activator == null} | House is null - {House == null} | RootHouse is null - {rootHouse == null}");
-                return new ActivationResult(false);
-            }
+        if (player.IsOlthoiPlayer)
+        {
+            return new ActivationResult(new GameEventWeenieError(player.Session, WeenieError.OlthoiMayNotUsePortal));
+        }
 
-            if (!(activator is Player player))
-                return new ActivationResult(false);
+        if (player.CurrentLandblock.IsDungeon && Destination.LandblockId != player.CurrentLandblock.Id)
+        {
+            return new ActivationResult(true); // allow escape to overworld always
+        }
 
-            if (player.IsOlthoiPlayer)
-                return new ActivationResult(new GameEventWeenieError(player.Session, WeenieError.OlthoiMayNotUsePortal));
-
-            if (player.CurrentLandblock.IsDungeon && Destination.LandblockId != player.CurrentLandblock.Id)
-                return new ActivationResult(true);   // allow escape to overworld always
-
-            if (player.IgnorePortalRestrictions)
-                return new ActivationResult(true);
-
-            var houseOwner = rootHouse.HouseOwner;
-
-            if (houseOwner == null)
-                //return new ActivationResult(new GameEventWeenieError(player.Session, WeenieError.YouMustBeHouseGuestToUsePortal));
-                return new ActivationResult(true);
-
-            if (rootHouse.OpenToEveryone)
-                return new ActivationResult(true);
-
-            if (!rootHouse.HasPermission(player))
-                return new ActivationResult(new GameEventWeenieError(player.Session, WeenieError.YouMustBeHouseGuestToUsePortal));
-
+        if (player.IgnorePortalRestrictions)
+        {
             return new ActivationResult(true);
         }
 
-        /// <summary>
-        /// House Portals are on Use activated, rather than collision based activation
-        /// The actual portal process is wrapped to the base portal class ActOnUse, after ACL check are performed
-        /// </summary>
-        /// <param name="worldObject"></param>
-        public override void ActOnUse(WorldObject worldObject)
-        {
-            // if house portal in dungeon,
-            // set destination to outdoor house slumlord
-            if (CurrentLandblock != null && CurrentLandblock.IsDungeon && Destination.LandblockId == CurrentLandblock.Id)
-                SetPosition(PositionType.Destination, new Position(House.RootHouse.SlumLord.Location));
+        var houseOwner = rootHouse.HouseOwner;
 
-            base.ActOnUse(worldObject);
+        if (houseOwner == null)
+        {
+            //return new ActivationResult(new GameEventWeenieError(player.Session, WeenieError.YouMustBeHouseGuestToUsePortal));
+            return new ActivationResult(true);
         }
+
+        if (rootHouse.OpenToEveryone)
+        {
+            return new ActivationResult(true);
+        }
+
+        if (!rootHouse.HasPermission(player))
+        {
+            return new ActivationResult(
+                new GameEventWeenieError(player.Session, WeenieError.YouMustBeHouseGuestToUsePortal)
+            );
+        }
+
+        return new ActivationResult(true);
+    }
+
+    /// <summary>
+    /// House Portals are on Use activated, rather than collision based activation
+    /// The actual portal process is wrapped to the base portal class ActOnUse, after ACL check are performed
+    /// </summary>
+    /// <param name="worldObject"></param>
+    public override void ActOnUse(WorldObject worldObject)
+    {
+        // if house portal in dungeon,
+        // set destination to outdoor house slumlord
+        if (CurrentLandblock != null && CurrentLandblock.IsDungeon && Destination.LandblockId == CurrentLandblock.Id)
+        {
+            SetPosition(PositionType.Destination, new Position(House.RootHouse.SlumLord.Location));
+        }
+
+        base.ActOnUse(worldObject);
     }
 }

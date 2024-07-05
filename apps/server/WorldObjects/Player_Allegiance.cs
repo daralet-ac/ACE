@@ -13,1624 +13,2130 @@ using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using Serilog.Events;
 
-namespace ACE.Server.WorldObjects
+namespace ACE.Server.WorldObjects;
+
+partial class Player
 {
-    partial class Player
+    public Allegiance Allegiance { get; set; }
+    public AllegianceNode AllegianceNode { get; set; }
+
+    public bool HasAllegiance
     {
-        public Allegiance Allegiance { get; set; }
-        public AllegianceNode AllegianceNode { get; set; }
+        get => Allegiance != null && AllegianceNode != null && Allegiance.TotalMembers > 1;
+    }
 
-        public bool HasAllegiance { get => Allegiance != null && AllegianceNode != null && Allegiance.TotalMembers > 1; }
-
-        public ulong AllegianceXPCached
+    public ulong AllegianceXPCached
+    {
+        get => (ulong)(GetProperty(PropertyInt64.AllegianceXPCached) ?? 0);
+        set
         {
-            get => (ulong)(GetProperty(PropertyInt64.AllegianceXPCached) ?? 0);
-            set { if (value == 0) RemoveProperty(PropertyInt64.AllegianceXPCached); else SetProperty(PropertyInt64.AllegianceXPCached, (long)value); }
-        }
-
-        public ulong AllegianceXPGenerated
-        {
-            get => (ulong)(GetProperty(PropertyInt64.AllegianceXPGenerated) ?? 0);
-            set { if (value == 0) RemoveProperty(PropertyInt64.AllegianceXPGenerated); else SetProperty(PropertyInt64.AllegianceXPGenerated, (long)value); }
-        }
-
-        public ulong AllegianceXPReceived
-        {
-            get => (ulong)(GetProperty(PropertyInt64.AllegianceXPReceived) ?? 0);
-            set { if (value == 0) RemoveProperty(PropertyInt64.AllegianceXPReceived); else SetProperty(PropertyInt64.AllegianceXPReceived, (long)value); }
-        }
-
-        public int? AllegianceRank
-        {
-            get => GetProperty(PropertyInt.AllegianceRank);
-            set { if (!value.HasValue) RemoveProperty(PropertyInt.AllegianceRank); else SetProperty(PropertyInt.AllegianceRank, value.Value); }
-        }
-
-        public int? AllegianceOfficerRank
-        {
-            get => GetProperty(PropertyInt.AllegianceOfficerRank);
-            set { if (!value.HasValue) RemoveProperty(PropertyInt.AllegianceOfficerRank); else SetProperty(PropertyInt.AllegianceOfficerRank, value.Value); }
-        }
-
-        /// <summary>
-        /// This flag indicates if a player can pass up allegiance XP
-        /// </summary>
-        public bool ExistedBeforeAllegianceXpChanges
-        {
-            get => GetProperty(PropertyBool.ExistedBeforeAllegianceXpChanges) ?? true;
-            set { if (value) RemoveProperty(PropertyBool.ExistedBeforeAllegianceXpChanges); else SetProperty(PropertyBool.ExistedBeforeAllegianceXpChanges, value); }
-        }
-
-        public double? RankContribution
-        {
-            get => GetProperty(PropertyFloat.RankContribution);
-            set { if (!value.HasValue) RemoveProperty(PropertyFloat.RankContribution); else SetProperty(PropertyFloat.RankContribution, value.Value); }
-        }
-
-        public bool WithPatron = false;
-        public bool FellowedWithPatron = false;
-        public Player WithVassal = null;
-        public Player FellowedWithVassal = null;
-
-        /// <summary>
-        /// Called when a player tries to Swear Allegiance to a target
-        /// </summary>
-        /// <param name="targetGuid">The target this player is attempting to swear allegiance to</param>
-        public void HandleActionSwearAllegiance(uint targetGuid)
-        {
-            var patron = PlayerManager.GetOnlinePlayer(targetGuid);
-
-            if (patron == null) return;
-
-            if (!IsPledgable(patron)) return;
-
-            // perform moveto / turnto
-            CreateMoveToChain(patron, (success) => SwearAllegiance(patron.Guid.Full, success), Allegiance_MaxSwearDistance);
-        }
-
-        public void SwearAllegiance(uint targetGuid, bool success, bool confirmed = false)
-        {
-            if (!success) return;
-
-            var patron = PlayerManager.GetOnlinePlayer(targetGuid);
-            if (patron == null)
-                return;
-
-            if (!IsPledgable(patron)) return;
-
-            if (!confirmed)
+            if (value == 0)
             {
-                if (!patron.ConfirmationManager.EnqueueSend(new Confirmation_SwearAllegiance(patron.Guid, Guid), Name))
-                {
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{patron.Name} is busy.", ChatMessageType.Broadcast));
-                }
-                return;
+                RemoveProperty(PropertyInt64.AllegianceXPCached);
             }
-
-            _log.Debug("[ALLEGIANCE] {PlayerName} ({Level}) swearing allegiance to {PatronName} ({PatronLevel})", Name, Level, patron.Name, patron.Level);
-
-            PatronId = targetGuid;
-            AllegianceLog += $"{patron.Name}/{patron.Account.AccountId}/{Time.GetUnixTime()}";
-
-            var monarchGuid = AllegianceManager.GetMonarch(patron).Guid.Full;
-
-            UpdateProperty(PropertyInstanceId.Monarch, monarchGuid, true);
-
-            ExistedBeforeAllegianceXpChanges = (patron.Level ?? 1) >= (Level ?? 1);
-
-            // handle special case: monarch swearing into another allegiance
-            if (Allegiance != null && Allegiance.MonarchId == Guid.Full)
-                HandleMonarchSwear();
-
-            // handle swearing for the first time
-            var loyalty = this.GetCreatureSkill(Skill.Loyalty);
-            if (loyalty.AdvancementClass == SkillAdvancementClass.Untrained)
+            else
             {
-                loyalty.AdvancementClass = SkillAdvancementClass.Trained;
-
-                this.Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, this.GetCreatureSkill(Skill.Loyalty)));
-
-                this.Session.Network.EnqueueSend(new GameMessageSystemChat($"Loyalty trained.", ChatMessageType.Advancement));
-
-                PatronAccountId = patron.Account.AccountId;
-                SworeAllegiance = Time.GetUnixTime();
+                SetProperty(PropertyInt64.AllegianceXPCached, (long)value);
             }
-            // handle reswearing to a new patron, reducing Loyalty XP by half
-            else if (PatronAccountId != null && patron.Account.AccountId != PatronAccountId)
+        }
+    }
+
+    public ulong AllegianceXPGenerated
+    {
+        get => (ulong)(GetProperty(PropertyInt64.AllegianceXPGenerated) ?? 0);
+        set
+        {
+            if (value == 0)
             {
-                PatronAccountId = patron.Account.AccountId;
-                SworeAllegiance = Time.GetUnixTime();
-
-                var reducedRanks = loyalty.Ranks - (loyalty.Ranks / 2);
-                var reducedXP = GetXPBetweenSkillLevels(loyalty.AdvancementClass, reducedRanks, loyalty.Ranks);
-                AwardNoContribSkillXP(Skill.Loyalty, (uint)reducedXP, true);
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"Your oath of fealty is still fresh, and your loyalty to your new patron has yet to be tested. Your Loyalty skill has been lowered as a result.", ChatMessageType.Advancement));
+                RemoveProperty(PropertyInt64.AllegianceXPGenerated);
             }
-            else if (PatronAccountId == null)
-                PatronAccountId = patron.Account.AccountId;
-            // check patron for leadership and train
-            var leadership = patron.GetCreatureSkill(Skill.Leadership);
-            if (leadership.AdvancementClass == SkillAdvancementClass.Untrained)
+            else
             {
-                leadership.AdvancementClass = SkillAdvancementClass.Trained;
-
-                patron.Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(patron, patron.GetCreatureSkill(Skill.Leadership)));
-
-                patron.Session.Network.EnqueueSend(new GameMessageSystemChat($"Leadership trained.", ChatMessageType.Advancement));
-
-                patron.SaveBiotaToDatabase();
+                SetProperty(PropertyInt64.AllegianceXPGenerated, (long)value);
             }
+        }
+    }
 
-            SaveBiotaToDatabase();
+    public ulong AllegianceXPReceived
+    {
+        get => (ulong)(GetProperty(PropertyInt64.AllegianceXPReceived) ?? 0);
+        set
+        {
+            if (value == 0)
+            {
+                RemoveProperty(PropertyInt64.AllegianceXPReceived);
+            }
+            else
+            {
+                SetProperty(PropertyInt64.AllegianceXPReceived, (long)value);
+            }
+        }
+    }
 
-            //Console.WriteLine("Patron: " + PlayerManager.GetOfflinePlayerByGuidId(Patron.Value).Name);
-            //Console.WriteLine("Monarch: " + PlayerManager.GetOfflinePlayerByGuidId(Monarch.Value).Name);
+    public int? AllegianceRank
+    {
+        get => GetProperty(PropertyInt.AllegianceRank);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.AllegianceRank);
+            }
+            else
+            {
+                SetProperty(PropertyInt.AllegianceRank, value.Value);
+            }
+        }
+    }
 
-            // send message to patron:
-            // %vassal% has sworn Allegiance to you.
-            patron.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} has sworn Allegiance to you.", ChatMessageType.Broadcast));
+    public int? AllegianceOfficerRank
+    {
+        get => GetProperty(PropertyInt.AllegianceOfficerRank);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.AllegianceOfficerRank);
+            }
+            else
+            {
+                SetProperty(PropertyInt.AllegianceOfficerRank, value.Value);
+            }
+        }
+    }
 
-            // send message to vassal:
-            // %patron% has accepted your oath of Allegiance!
-            // Motion_Kneel
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{patron.Name} has accepted your oath of Allegiance!", ChatMessageType.Broadcast));
+    /// <summary>
+    /// This flag indicates if a player can pass up allegiance XP
+    /// </summary>
+    public bool ExistedBeforeAllegianceXpChanges
+    {
+        get => GetProperty(PropertyBool.ExistedBeforeAllegianceXpChanges) ?? true;
+        set
+        {
+            if (value)
+            {
+                RemoveProperty(PropertyBool.ExistedBeforeAllegianceXpChanges);
+            }
+            else
+            {
+                SetProperty(PropertyBool.ExistedBeforeAllegianceXpChanges, value);
+            }
+        }
+    }
 
-            EnqueueBroadcastMotion(new Motion(MotionStance.NonCombat, MotionCommand.Kneel));
+    public double? RankContribution
+    {
+        get => GetProperty(PropertyFloat.RankContribution);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyFloat.RankContribution);
+            }
+            else
+            {
+                SetProperty(PropertyFloat.RankContribution, value.Value);
+            }
+        }
+    }
 
-            // rebuild allegiance tree structure
-            AllegianceManager.OnSwearAllegiance(this);
+    public bool WithPatron = false;
+    public bool FellowedWithPatron = false;
+    public Player WithVassal = null;
+    public Player FellowedWithVassal = null;
 
-            AllegianceXPGenerated = 0;
-            AllegianceOfficerRank = null;
+    /// <summary>
+    /// Called when a player tries to Swear Allegiance to a target
+    /// </summary>
+    /// <param name="targetGuid">The target this player is attempting to swear allegiance to</param>
+    public void HandleActionSwearAllegiance(uint targetGuid)
+    {
+        var patron = PlayerManager.GetOnlinePlayer(targetGuid);
 
-            // refresh ui panel
-            Session.Network.EnqueueSend(new GameEventAllegianceUpdate(Session, Allegiance, AllegianceNode), new GameEventAllegianceAllegianceUpdateDone(Session));
-
-            if (GetCharacterOption(CharacterOption.ListenToAllegianceChat) && Allegiance != null)
-                JoinTurbineChatChannel("Allegiance");
+        if (patron == null)
+        {
+            return;
         }
 
-        /// <summary>
-        /// Handle monarch swearing into another allegiance
-        /// </summary>
-        public void HandleMonarchSwear()
+        if (!IsPledgable(patron))
         {
-            // walk the allegiance tree from this node, update monarch ids
-            AllegianceNode.Walk((node) =>
+            return;
+        }
+
+        // perform moveto / turnto
+        CreateMoveToChain(patron, (success) => SwearAllegiance(patron.Guid.Full, success), Allegiance_MaxSwearDistance);
+    }
+
+    public void SwearAllegiance(uint targetGuid, bool success, bool confirmed = false)
+    {
+        if (!success)
+        {
+            return;
+        }
+
+        var patron = PlayerManager.GetOnlinePlayer(targetGuid);
+        if (patron == null)
+        {
+            return;
+        }
+
+        if (!IsPledgable(patron))
+        {
+            return;
+        }
+
+        if (!confirmed)
+        {
+            if (!patron.ConfirmationManager.EnqueueSend(new Confirmation_SwearAllegiance(patron.Guid, Guid), Name))
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"{patron.Name} is busy.", ChatMessageType.Broadcast)
+                );
+            }
+            return;
+        }
+
+        _log.Debug(
+            "[ALLEGIANCE] {PlayerName} ({Level}) swearing allegiance to {PatronName} ({PatronLevel})",
+            Name,
+            Level,
+            patron.Name,
+            patron.Level
+        );
+
+        PatronId = targetGuid;
+        AllegianceLog += $"{patron.Name}/{patron.Account.AccountId}/{Time.GetUnixTime()}";
+
+        var monarchGuid = AllegianceManager.GetMonarch(patron).Guid.Full;
+
+        UpdateProperty(PropertyInstanceId.Monarch, monarchGuid, true);
+
+        ExistedBeforeAllegianceXpChanges = (patron.Level ?? 1) >= (Level ?? 1);
+
+        // handle special case: monarch swearing into another allegiance
+        if (Allegiance != null && Allegiance.MonarchId == Guid.Full)
+        {
+            HandleMonarchSwear();
+        }
+
+        // handle swearing for the first time
+        var loyalty = this.GetCreatureSkill(Skill.Loyalty);
+        if (loyalty.AdvancementClass == SkillAdvancementClass.Untrained)
+        {
+            loyalty.AdvancementClass = SkillAdvancementClass.Trained;
+
+            this.Session.Network.EnqueueSend(
+                new GameMessagePrivateUpdateSkill(this, this.GetCreatureSkill(Skill.Loyalty))
+            );
+
+            this.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Loyalty trained.", ChatMessageType.Advancement)
+            );
+
+            PatronAccountId = patron.Account.AccountId;
+            SworeAllegiance = Time.GetUnixTime();
+        }
+        // handle reswearing to a new patron, reducing Loyalty XP by half
+        else if (PatronAccountId != null && patron.Account.AccountId != PatronAccountId)
+        {
+            PatronAccountId = patron.Account.AccountId;
+            SworeAllegiance = Time.GetUnixTime();
+
+            var reducedRanks = loyalty.Ranks - (loyalty.Ranks / 2);
+            var reducedXP = GetXPBetweenSkillLevels(loyalty.AdvancementClass, reducedRanks, loyalty.Ranks);
+            AwardNoContribSkillXP(Skill.Loyalty, (uint)reducedXP, true);
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Your oath of fealty is still fresh, and your loyalty to your new patron has yet to be tested. Your Loyalty skill has been lowered as a result.",
+                    ChatMessageType.Advancement
+                )
+            );
+        }
+        else if (PatronAccountId == null)
+        {
+            PatronAccountId = patron.Account.AccountId;
+        }
+        // check patron for leadership and train
+        var leadership = patron.GetCreatureSkill(Skill.Leadership);
+        if (leadership.AdvancementClass == SkillAdvancementClass.Untrained)
+        {
+            leadership.AdvancementClass = SkillAdvancementClass.Trained;
+
+            patron.Session.Network.EnqueueSend(
+                new GameMessagePrivateUpdateSkill(patron, patron.GetCreatureSkill(Skill.Leadership))
+            );
+
+            patron.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Leadership trained.", ChatMessageType.Advancement)
+            );
+
+            patron.SaveBiotaToDatabase();
+        }
+
+        SaveBiotaToDatabase();
+
+        //Console.WriteLine("Patron: " + PlayerManager.GetOfflinePlayerByGuidId(Patron.Value).Name);
+        //Console.WriteLine("Monarch: " + PlayerManager.GetOfflinePlayerByGuidId(Monarch.Value).Name);
+
+        // send message to patron:
+        // %vassal% has sworn Allegiance to you.
+        patron.Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"{Name} has sworn Allegiance to you.", ChatMessageType.Broadcast)
+        );
+
+        // send message to vassal:
+        // %patron% has accepted your oath of Allegiance!
+        // Motion_Kneel
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"{patron.Name} has accepted your oath of Allegiance!", ChatMessageType.Broadcast)
+        );
+
+        EnqueueBroadcastMotion(new Motion(MotionStance.NonCombat, MotionCommand.Kneel));
+
+        // rebuild allegiance tree structure
+        AllegianceManager.OnSwearAllegiance(this);
+
+        AllegianceXPGenerated = 0;
+        AllegianceOfficerRank = null;
+
+        // refresh ui panel
+        Session.Network.EnqueueSend(
+            new GameEventAllegianceUpdate(Session, Allegiance, AllegianceNode),
+            new GameEventAllegianceAllegianceUpdateDone(Session)
+        );
+
+        if (GetCharacterOption(CharacterOption.ListenToAllegianceChat) && Allegiance != null)
+        {
+            JoinTurbineChatChannel("Allegiance");
+        }
+    }
+
+    /// <summary>
+    /// Handle monarch swearing into another allegiance
+    /// </summary>
+    public void HandleMonarchSwear()
+    {
+        // walk the allegiance tree from this node, update monarch ids
+        AllegianceNode.Walk(
+            (node) =>
             {
                 node.Player.UpdateProperty(PropertyInstanceId.Monarch, MonarchId, true);
 
                 node.Player.SaveBiotaToDatabase();
 
                 // update node.Player.House.Monarch, if not null?
-            });
-
-            // TODO: allegiance officers should probably be stored in their own table
-            foreach (var kvp in Allegiance.Officers)
-            {
-                var officer = PlayerManager.FindByGuid(kvp.Key);
-                if (officer != null)
-                    officer.AllegianceOfficerRank = null;
-
-                officer.SaveBiotaToDatabase();
             }
+        );
+
+        // TODO: allegiance officers should probably be stored in their own table
+        foreach (var kvp in Allegiance.Officers)
+        {
+            var officer = PlayerManager.FindByGuid(kvp.Key);
+            if (officer != null)
+            {
+                officer.AllegianceOfficerRank = null;
+            }
+
+            officer.SaveBiotaToDatabase();
+        }
+    }
+
+    /// <summary>
+    /// Called when a player tries to break Allegiance to a target
+    /// </summary>
+    /// <param name="targetGuid">The target this player is attempting to break allegiance from</param>
+    public void HandleActionBreakAllegiance(uint targetGuid)
+    {
+        if (!IsBreakable(targetGuid))
+        {
+            return;
         }
 
-        /// <summary>
-        /// Called when a player tries to break Allegiance to a target
-        /// </summary>
-        /// <param name="targetGuid">The target this player is attempting to break allegiance from</param>
-        public void HandleActionBreakAllegiance(uint targetGuid)
+        var target = PlayerManager.FindByGuid(targetGuid, out var targetIsOnline);
+
+        if (target == null)
         {
-            if (!IsBreakable(targetGuid)) return;
+            return;
+        }
 
-            var target = PlayerManager.FindByGuid(targetGuid, out var targetIsOnline);
+        _log.Debug("[ALLEGIANCE] {PlayerName} breaking allegiance to {TargetName}", Name, target.Name);
 
-            if (target == null) return;
+        // target can be either patron or vassal
+        var isPatron = PatronId == target.Guid.Full;
+        var isVassal = target.PatronId == Guid.Full;
 
-            _log.Debug("[ALLEGIANCE] {PlayerName} breaking allegiance to {TargetName}", Name, target.Name);
+        // break ties
+        if (isVassal)
+        {
+            // patron breaking from vassal
+            target.PatronId = null;
 
-            // target can be either patron or vassal
-            var isPatron = PatronId == target.Guid.Full;
-            var isVassal = target.PatronId == Guid.Full;
+            Allegiance.Members.TryGetValue(target.Guid, out var targetNode);
 
-            // break ties
-            if (isVassal)
-            {
-                // patron breaking from vassal
-                target.PatronId = null;
+            var monarchId = targetNode.HasVassals ? (uint?)target.Guid.Full : null;
 
-                Allegiance.Members.TryGetValue(target.Guid, out var targetNode);
+            target.UpdateProperty(PropertyInstanceId.Monarch, monarchId, true);
 
-                var monarchId = targetNode.HasVassals ? (uint?)target.Guid.Full : null;
-
-                target.UpdateProperty(PropertyInstanceId.Monarch, monarchId, true);
-
-                // walk the allegiance tree from this node, update monarch ids
-                targetNode.Walk((node) =>
+            // walk the allegiance tree from this node, update monarch ids
+            targetNode.Walk(
+                (node) =>
                 {
                     node.Player.UpdateProperty(PropertyInstanceId.Monarch, target.Guid.Full, true);
 
                     node.Player.SaveBiotaToDatabase();
+                },
+                false
+            );
 
-                }, false);
+            target.SaveBiotaToDatabase();
+        }
+        else
+        {
+            // vassal breaking from patron
+            PatronId = null;
+            UpdateProperty(PropertyInstanceId.Monarch, null, true);
 
-                target.SaveBiotaToDatabase();
-            }
-            else
-            {
-                // vassal breaking from patron
-                PatronId = null;
-                UpdateProperty(PropertyInstanceId.Monarch, null, true);
-
-                // walk the allegiance tree from this node, update monarch ids
-                AllegianceNode.Walk((node) =>
+            // walk the allegiance tree from this node, update monarch ids
+            AllegianceNode.Walk(
+                (node) =>
                 {
                     node.Player.UpdateProperty(PropertyInstanceId.Monarch, Guid.Full, true);
 
                     node.Player.SaveBiotaToDatabase();
+                },
+                false
+            );
 
-                }, false);
+            SaveBiotaToDatabase();
+        }
 
-                SaveBiotaToDatabase();
-            }
-
-            // send message to target if online
-            if (targetIsOnline)
+        // send message to target if online
+        if (targetIsOnline)
+        {
+            var onlineTarget = PlayerManager.GetOnlinePlayer(targetGuid);
+            if (onlineTarget != null)
             {
-                var onlineTarget = PlayerManager.GetOnlinePlayer(targetGuid);
-                if (onlineTarget != null)
-                    onlineTarget.Session.Network.EnqueueSend(new GameMessageSystemChat($"{Name} has broken their Allegiance to you!", ChatMessageType.Broadcast));
+                onlineTarget.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"{Name} has broken their Allegiance to you!", ChatMessageType.Broadcast)
+                );
             }
+        }
 
-            // send message to self
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"You have broken your Allegiance to {target.Name}!", ChatMessageType.Broadcast));
+        // send message to self
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You have broken your Allegiance to {target.Name}!", ChatMessageType.Broadcast)
+        );
 
-            // rebuild allegiance tree structures
-            AllegianceManager.OnBreakAllegiance(this, target);
+        // rebuild allegiance tree structures
+        AllegianceManager.OnBreakAllegiance(this, target);
 
-            if (isVassal)
+        if (isVassal)
+        {
+            // patron broke from vassal
+            CheckAllegianceHouse(target.Guid);
+
+            var vassalAllegiance = AllegianceManager.GetAllegiance(target);
+            if (vassalAllegiance != null)
             {
-                // patron broke from vassal
-                CheckAllegianceHouse(target.Guid);
+                vassalAllegiance.Monarch.Walk((node) => CheckAllegianceHouse(node.PlayerGuid), false);
+            }
+        }
+        else
+        {
+            // vassal broke from patron
+            CheckAllegianceHouse(Guid);
 
-                var vassalAllegiance = AllegianceManager.GetAllegiance(target);
-                if (vassalAllegiance != null)
-                    vassalAllegiance.Monarch.Walk((node) => CheckAllegianceHouse(node.PlayerGuid), false);
+            if (AllegianceNode != null)
+            {
+                AllegianceNode.Walk((node) => CheckAllegianceHouse(node.PlayerGuid), false);
+            }
+        }
+
+        // refresh ui panel
+
+        // move this to function below?
+        Session.Network.EnqueueSend(
+            new GameEventAllegianceUpdate(Session, Allegiance, AllegianceNode),
+            new GameEventAllegianceAllegianceUpdateDone(Session)
+        );
+    }
+
+    public static void CheckAllegianceHouse(ObjectGuid playerGuid)
+    {
+        // handle player.House.Monarch updates?
+
+        // instead of walking, would it be more appropriate for House
+        // to boot any players who don't belong there?
+
+        var player = PlayerManager.GetOnlinePlayer(playerGuid);
+        if (player == null)
+        {
+            return;
+        }
+
+        if (player.CheckHouse())
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat("You have been booted from the allegiance house.", ChatMessageType.Broadcast)
+            );
+        }
+
+        if (player.GetCharacterOption(CharacterOption.ListenToAllegianceChat))
+        {
+            if (player.Allegiance != null)
+            {
+                player.LeaveTurbineChatChannel("Allegiance", true);
+                player.JoinTurbineChatChannel("Allegiance");
             }
             else
             {
-                // vassal broke from patron
-                CheckAllegianceHouse(Guid);
-
-                if (AllegianceNode != null)
-                    AllegianceNode.Walk((node) => CheckAllegianceHouse(node.PlayerGuid), false);
+                player.LeaveTurbineChatChannel("Allegiance");
             }
+        }
+        else
+        {
+            player.SendTurbineChatChannels();
+        }
+    }
 
-            // refresh ui panel
+    //public static float Allegiance_MaxSwearDistance = 4.0f;
+    public static float Allegiance_MaxSwearDistance = 2.0f;
 
-            // move this to function below?
-            Session.Network.EnqueueSend(new GameEventAllegianceUpdate(Session, Allegiance, AllegianceNode), new GameEventAllegianceAllegianceUpdateDone(Session));
+    /// <summary>
+    /// Returns TRUE if this player can swear to the target guid
+    /// </summary>
+    public bool IsPledgable(Player target)
+    {
+        // the client doesn't seem to display most of these werrors,
+        // so we also send similar messages as text
+
+        // An Olthoi player cannot swear allegiance to another player
+        if (IsOlthoiPlayer)
+        {
+            //Session.Network.EnqueueSend(new GameMessageSystemChat($"The Olthoi only have an allegiance to the Olthoi Queen!", ChatMessageType.Broadcast));
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.OlthoiCannotJoinAllegiance));
+            return false;
         }
 
-        public static void CheckAllegianceHouse(ObjectGuid playerGuid)
+        if (target.IsOlthoiPlayer)
         {
-            // handle player.House.Monarch updates?
-
-            // instead of walking, would it be more appropriate for House
-            // to boot any players who don't belong there?
-
-            var player = PlayerManager.GetOnlinePlayer(playerGuid);
-            if (player == null) return;
-
-            if (player.CheckHouse())
-                player.Session.Network.EnqueueSend(new GameMessageSystemChat("You have been booted from the allegiance house.", ChatMessageType.Broadcast));
-
-            if (player.GetCharacterOption(CharacterOption.ListenToAllegianceChat))
-            {
-                if (player.Allegiance != null)
-                {
-                    player.LeaveTurbineChatChannel("Allegiance", true);
-                    player.JoinTurbineChatChannel("Allegiance");
-                }
-                else
-                    player.LeaveTurbineChatChannel("Allegiance");
-            }
-            else
-                player.SendTurbineChatChannels();
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"The Olthoi have loyalty only to their Olthoi Queen!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            SendWeenieError(WeenieError.None);
+            return false;
         }
 
-        //public static float Allegiance_MaxSwearDistance = 4.0f;
-        public static float Allegiance_MaxSwearDistance = 2.0f;
-
-        /// <summary>
-        /// Returns TRUE if this player can swear to the target guid
-        /// </summary>
-        public bool IsPledgable(Player target)
+        // check ignore allegiance requests
+        if (target.GetCharacterOption(CharacterOption.IgnoreAllegianceRequests))
         {
-            // the client doesn't seem to display most of these werrors,
-            // so we also send similar messages as text
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Your offer of allegiance was ignored.", ChatMessageType.Broadcast)
+            );
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YourOfferOfAllegianceWasIgnored));
+            return false;
+        }
 
-            // An Olthoi player cannot swear allegiance to another player
-            if (IsOlthoiPlayer)
+        // player already sworn?
+        if (PatronId != null)
+        {
+            //Console.WriteLine(Name + " tried to swear to " + target.Name + ", but is already sworn to " + PlayerManager.GetOfflinePlayerByGuidId(Patron.Value).Name);
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You've already sworn allegiance.", ChatMessageType.Broadcast)
+            );
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouveAlreadySwornAllegiance));
+            return false;
+        }
+
+        // player can't swear to themselves
+        if (target.Guid == Guid)
+        {
+            //Console.WriteLine(Name + " tried to swear to themselves");
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot swear allegiance to yourself.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        // patron must currently be greater or equal level
+        /*if (target.Level < Level)
+        {
+            //Console.WriteLine(Name + " tried to swear to a lower level character");
+            Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot swear to a lower level character.", ChatMessageType.Broadcast));
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.AllegianceIllegalLevel));
+            return false;
+        }*/
+
+        var selfNode = AllegianceNode;
+        var targetNode = target.AllegianceNode;
+
+        if (targetNode != null)
+        {
+            // maximum # of direct vassals = 11
+            if (targetNode.TotalVassals >= 11)
             {
-                //Session.Network.EnqueueSend(new GameMessageSystemChat($"The Olthoi only have an allegiance to the Olthoi Queen!", ChatMessageType.Broadcast));
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.OlthoiCannotJoinAllegiance));
+                //Console.WriteLine(target.Name + " already has the maximum # of vassals");
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"{target.Name} already has the maximum # of vassals",
+                        ChatMessageType.Broadcast
+                    )
+                );
                 return false;
             }
 
-            if (target.IsOlthoiPlayer)
+            // 2 players can't swear to each other
+            // prevent any loops in the allegiance chain
+            if (selfNode != null && selfNode.IsMonarch)
             {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"The Olthoi have loyalty only to their Olthoi Queen!", ChatMessageType.Broadcast));
-                SendWeenieError(WeenieError.None);
-                return false;
-            }
-
-            // check ignore allegiance requests
-            if (target.GetCharacterOption(CharacterOption.IgnoreAllegianceRequests))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"Your offer of allegiance was ignored.", ChatMessageType.Broadcast));
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YourOfferOfAllegianceWasIgnored));
-                return false;
-            }
-
-            // player already sworn?
-            if (PatronId != null)
-            {
-                //Console.WriteLine(Name + " tried to swear to " + target.Name + ", but is already sworn to " + PlayerManager.GetOfflinePlayerByGuidId(Patron.Value).Name);
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You've already sworn allegiance.", ChatMessageType.Broadcast));
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouveAlreadySwornAllegiance));
-                return false;
-            }
-
-            // player can't swear to themselves
-            if (target.Guid == Guid)
-            {
-                //Console.WriteLine(Name + " tried to swear to themselves");
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot swear allegiance to yourself.", ChatMessageType.Broadcast));
-                return false;
-            }
-
-            // patron must currently be greater or equal level
-            /*if (target.Level < Level)
-            {
-                //Console.WriteLine(Name + " tried to swear to a lower level character");
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot swear to a lower level character.", ChatMessageType.Broadcast));
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.AllegianceIllegalLevel));
-                return false;
-            }*/
-
-            var selfNode = AllegianceNode;
-            var targetNode = target.AllegianceNode;
-
-            if (targetNode != null)
-            {
-                // maximum # of direct vassals = 11
-                if (targetNode.TotalVassals >= 11)
+                if (selfNode.PlayerGuid == targetNode.Monarch.PlayerGuid)
                 {
-                    //Console.WriteLine(target.Name + " already has the maximum # of vassals");
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{target.Name} already has the maximum # of vassals", ChatMessageType.Broadcast));
-                    return false;
-                }
-
-                // 2 players can't swear to each other
-                // prevent any loops in the allegiance chain
-                if (selfNode != null && selfNode.IsMonarch)
-                {
-                    if (selfNode.PlayerGuid == targetNode.Monarch.PlayerGuid)
-                    {
-                        //Console.WriteLine(Name + " tried to swear to someone already in Allegiance: " + target.Name);
-                        Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot swear allegiance to {target.Name}.", ChatMessageType.Broadcast));
-                        return false;
-                    }
-                }
-
-                if (targetNode.Allegiance.IsLocked && !targetNode.Allegiance.HasApprovedVassal(Guid.Full)
-                    && (targetNode.Player.AllegianceOfficerRank ?? 0) < (int)AllegianceOfficerLevel.Castellan)
-                {
-                    //Console.WriteLine(Name + "tried to join locked allegiance, not in approved vassals list");
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{target.Name} is not accepting allegiance requests.", ChatMessageType.Broadcast));
-                    return false;
-                }
-
-                if (targetNode.Allegiance.IsBanned(Guid.Full))
-                {
-                    //Console.WriteLine(Name + "tried to join allegiance, but was banned!");
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"You are banned from joining {target.Name}'s allegiance.", ChatMessageType.Broadcast));
+                    //Console.WriteLine(Name + " tried to swear to someone already in Allegiance: " + target.Name);
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"You cannot swear allegiance to {target.Name}.",
+                            ChatMessageType.Broadcast
+                        )
+                    );
                     return false;
                 }
             }
 
-            // ensure this player doesn't own a monarch-only house
-            if (House != null && House.SlumLord.HouseRequiresMonarch && House.HouseOwner == Guid.Full)
+            if (
+                targetNode.Allegiance.IsLocked
+                && !targetNode.Allegiance.HasApprovedVassal(Guid.Full)
+                && (targetNode.Player.AllegianceOfficerRank ?? 0) < (int)AllegianceOfficerLevel.Castellan
+            )
             {
-                //Console.WriteLine(Name + "monarch tried to pledge allegiance, already owns a mansion");
-                //Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot swear allegiance while owning a mansion.", ChatMessageType.Broadcast));
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.CannotSwearAllegianceWhileOwningMansion));
+                //Console.WriteLine(Name + "tried to join locked allegiance, not in approved vassals list");
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"{target.Name} is not accepting allegiance requests.",
+                        ChatMessageType.Broadcast
+                    )
+                );
                 return false;
             }
 
-            return true;
+            if (targetNode.Allegiance.IsBanned(Guid.Full))
+            {
+                //Console.WriteLine(Name + "tried to join allegiance, but was banned!");
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You are banned from joining {target.Name}'s allegiance.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return false;
+            }
         }
 
-        /// <summary>
-        /// Returns TRUE if this player can break allegiance to the target guid
-        /// </summary>
-        public bool IsBreakable(uint targetGuid)
+        // ensure this player doesn't own a monarch-only house
+        if (House != null && House.SlumLord.HouseRequiresMonarch && House.HouseOwner == Guid.Full)
         {
-            // players can break from either vassals or patrons
-
-            // ensure target player exists
-            var target = PlayerManager.FindByGuid(targetGuid);
-            if (target == null)
-            {
-                //Console.WriteLine(Name + " tried to break allegiance to an unknown player guid: " + targetGuid.Full.ToString("X8"));
-                return false;
-            }
-
-            // verify patron or vassal
-            var isPatron = PatronId == target.Guid.Full;
-            var isVassal = target.PatronId == Guid.Full;
-
-            if (!isPatron && !isVassal)
-            {
-                //Console.WriteLine(Name + " tried to break allegiance from " + target.Name + ", but they aren't patron or vassal");
-                return false;
-            }
-            return true;
+            //Console.WriteLine(Name + "monarch tried to pledge allegiance, already owns a mansion");
+            //Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot swear allegiance while owning a mansion.", ChatMessageType.Broadcast));
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.CannotSwearAllegianceWhileOwningMansion)
+            );
+            return false;
         }
 
-        /// <summary>
-        /// Called when a player logs in to handle allegiance events on login
-        /// </summary>
-        public void HandleAllegianceOnLogin()
+        return true;
+    }
+
+    /// <summary>
+    /// Returns TRUE if this player can break allegiance to the target guid
+    /// </summary>
+    public bool IsBreakable(uint targetGuid)
+    {
+        // players can break from either vassals or patrons
+
+        // ensure target player exists
+        var target = PlayerManager.FindByGuid(targetGuid);
+        if (target == null)
         {
-            var actionChain = new ActionChain();
-            actionChain.AddDelaySeconds(3.0f);
-            actionChain.AddAction(this, () =>
+            //Console.WriteLine(Name + " tried to break allegiance to an unknown player guid: " + targetGuid.Full.ToString("X8"));
+            return false;
+        }
+
+        // verify patron or vassal
+        var isPatron = PatronId == target.Guid.Full;
+        var isVassal = target.PatronId == Guid.Full;
+
+        if (!isPatron && !isVassal)
+        {
+            //Console.WriteLine(Name + " tried to break allegiance from " + target.Name + ", but they aren't patron or vassal");
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Called when a player logs in to handle allegiance events on login
+    /// </summary>
+    public void HandleAllegianceOnLogin()
+    {
+        var actionChain = new ActionChain();
+        actionChain.AddDelaySeconds(3.0f);
+        actionChain.AddAction(
+            this,
+            () =>
             {
                 if (Allegiance != null && Allegiance.AllegianceMotd != null)
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"\"{Allegiance.AllegianceMotd}\" -- {Allegiance.AllegianceMotdSetBy}", ChatMessageType.Broadcast));
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"\"{Allegiance.AllegianceMotd}\" -- {Allegiance.AllegianceMotdSetBy}",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                }
 
                 if (AllegianceXPCached != 0)
                 {
                     AllegianceXPCached = (ulong)(AllegianceXPCached * 0.75);
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"Your Vassals have produced experience points for you.\nTaking your skills as a leader into account, you gain {AllegianceXPCached:N0} xp.", ChatMessageType.Broadcast));
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Your Vassals have produced experience points for you.\nTaking your skills as a leader into account, you gain {AllegianceXPCached:N0} xp.",
+                            ChatMessageType.Broadcast
+                        )
+                    );
                     AddAllegianceXP();
                 }
-            });
-            actionChain.EnqueueChain();
+            }
+        );
+        actionChain.EnqueueChain();
 
-            if (Allegiance != null)
+        if (Allegiance != null)
+        {
+            foreach (var member in Allegiance.OnlinePlayers)
             {
-                foreach (var member in Allegiance.OnlinePlayers)
+                if (member.Guid != Guid && member.GetCharacterOption(CharacterOption.ShowAllegianceLogons))
                 {
-                    if (member.Guid != Guid && member.GetCharacterOption(CharacterOption.ShowAllegianceLogons))
-                        member.Session.Network.EnqueueSend(new GameEventAllegianceLoginNotification(member.Session, Guid.Full, isLoggedIn: true));
+                    member.Session.Network.EnqueueSend(
+                        new GameEventAllegianceLoginNotification(member.Session, Guid.Full, isLoggedIn: true)
+                    );
                 }
             }
         }
+    }
 
-        public void HandleAllegianceOnLogout()
+    public void HandleAllegianceOnLogout()
+    {
+        if (Allegiance != null)
         {
-            if (Allegiance != null)
+            foreach (var member in Allegiance.OnlinePlayers)
             {
-                foreach (var member in Allegiance.OnlinePlayers)
+                if (member.Guid != Guid && member.GetCharacterOption(CharacterOption.ShowAllegianceLogons))
                 {
-                    if (member.Guid != Guid && member.GetCharacterOption(CharacterOption.ShowAllegianceLogons))
-                        member.Session.Network.EnqueueSend(new GameEventAllegianceLoginNotification(member.Session, Guid.Full, isLoggedIn: false));
-                }
-
-                var accountPlayers = PlayerManager.GetAccountPlayers(Account.AccountId);
-
-                double totalLevels = 0;
-
-                foreach (var accountPlayer in accountPlayers.Values)
-                {
-                    if (accountPlayer.Level < 10) continue;
-
-                    totalLevels += (double)accountPlayer.Level;
-                }
-
-                foreach (var player in accountPlayers.Values)
-                {
-                    if (player.Level < 10) continue;
-
-                    var rankContrib = ((double)player.Level / totalLevels);
-
-                    player.SetProperty(PropertyFloat.RankContribution, rankContrib);
-
-                    player.SaveBiotaToDatabase();
-                }
-            }
-        }
-
-        public string GetPrefix(Player allegianceMember)
-        {
-            var prefix = "";
-
-            if (allegianceMember.Guid == AllegianceNode.Monarch.PlayerGuid)
-                prefix = "Your monarch ";
-            else if (AllegianceNode.Patron != null && allegianceMember.Guid == AllegianceNode.Patron.PlayerGuid)
-                prefix = "Your patron ";
-            else if (AllegianceNode.Vassals.ContainsKey(allegianceMember.Guid.Full))
-                prefix = "Your vassal ";
-
-            return prefix;
-        }
-
-        /// <summary>
-        /// For an online patron, adds the pending allegiance XP stored in AllegianceXPCached
-        /// to their total / unassigned xp
-        /// </summary>
-        public void AddAllegianceXP(IPlayer vassal = null)
-        {
-            if (AllegianceXPCached == 0) return;
-
-            // TODO: handle ulong -> long?
-            GrantXP((long)AllegianceXPCached, XpType.Allegiance, ShareType.None);
-
-            HandleLeadershipRankXp(vassal);
-
-            AllegianceXPReceived += AllegianceXPCached;
-
-            AllegianceXPCached = 0;
-        }
-
-
-        /// <summary>
-        /// Update a player's Leadership skill xp progress when passup XP has been earned.
-        /// <para>FORMULA = CachedXp * FellowshipMod * TimeSwornMod</para>
-        /// <para>FelloshipMod = x2, if patron and vassal are fellowed and on the same landblock.</para>
-        /// <para>TimeSwornMod = x1 up to x2, depending on how long vassal has been sworn to patron (maxes at 3 months).</para>
-        /// </summary>
-        private void HandleLeadershipRankXp(IPlayer vassal = null)
-        {
-            var leadership = GetCreatureSkill(Skill.Leadership);
-            if (leadership.AdvancementClass >= SkillAdvancementClass.Trained)
-            {
-                double fellowshipMod = 1;
-                double timeMod = 1;
-
-                if (vassal != null)
-                {
-                    Player onlineVassal = PlayerManager.GetOnlinePlayer(vassal.Guid);
-                    if (onlineVassal != null)
-                    {
-                        if (onlineVassal.WithPatron && onlineVassal.FellowedWithPatron)
-                            fellowshipMod += 1;
-
-                        if (SworeAllegiance != null)
-                        {
-                            timeMod = 1 + (Time.GetUnixTime() - (double)onlineVassal.SworeAllegiance) / 7892352;
-                            if (timeMod > 2)
-                                timeMod = 2;
-                        }
-                    }
-                }
-                var cachedXp = AllegianceXPCached;
-
-                var leadershipXp = (uint)(cachedXp * fellowshipMod * timeMod);
-                //Console.WriteLine($"cachedXp: {cachedXp}, fellowshipMod: {fellowshipMod}, timeMod: {timeMod}, total: {leadershipXp}");
-                AwardNoContribSkillXP(Skill.Leadership, leadershipXp, false);
-            }
-        }
-
-        public void HandleActionQueryMotd()
-        {
-            //Console.WriteLine($"{Name}.HandleActionQueryMotd()");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (Allegiance.AllegianceMotd == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat("Your allegiance has not set a message of the day.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            var msg = $"\"{Allegiance.AllegianceMotd}\" -- {Allegiance.AllegianceMotdSetBy}";
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionSetMotd(string motd)
-        {
-            //Console.WriteLine($"{Name}.HandleActionSetMotd({motd})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            Allegiance.AllegianceMotd = motd;
-
-            var rank = AllegianceTitle.GetTitle(HeritageGroup, (Gender)Gender, AllegianceNode.Rank);
-            Allegiance.AllegianceMotdSetBy = $"{rank} {Name}";
-
-            Allegiance.SaveBiotaToDatabase();
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat("Your message of the day has been set.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionClearMotd()
-        {
-            //Console.WriteLine($"{Name}.HandleActionClearMotd()");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            Allegiance.AllegianceMotd = null;
-
-            var rank = AllegianceTitle.GetTitle(HeritageGroup, (Gender)Gender, AllegianceNode.Rank);
-            Allegiance.AllegianceMotdSetBy = $"{rank} {Name}";
-
-            Allegiance.SaveBiotaToDatabase();
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat("Your message of the day has been cleared.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionQueryAllegianceName()
-        {
-            //Console.WriteLine($"{Name}.HandleActionQueryAllegianceName()");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (Allegiance.AllegianceName == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat("Your allegiance has not set a name.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat(Allegiance.AllegianceName, ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionSetAllegianceName(string allegianceName)
-        {
-            //Console.WriteLine($"{Name}.HandleActionSetAllegianceName({allegianceName}");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            // TODO: name verifications
-            // - same name as current allegiance name
-            // - no empty names
-            // - allegiance name too long (40 chars max.)
-            // - allegiance name already in use
-            // - bad chars (space, single quote, hyphen, A-Z, a-z)
-            // - banned words from portal.dat
-            // - name change timer (1 day?)
-
-            Allegiance.AllegianceName = allegianceName;
-            Allegiance.SaveBiotaToDatabase();
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat("Your allegiance name has been set.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionClearAllegianceName()
-        {
-            //Console.WriteLine($"{Name}.HandleActionClearAllegianceName()");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            Allegiance.AllegianceName = null;
-            Allegiance.SaveBiotaToDatabase();
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat("Your allegiance name has been cleared.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionListAllegianceOfficers()
-        {
-            //Console.WriteLine($"{Name}.HandleActionListAllegianceOfficers()");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            var officerList = "Allegiance Officers:\n";
-            officerList += Allegiance.Monarch.Player.Name + " (Monarch)\n";
-
-            foreach (var officer in Allegiance.Officers.Values.Select(i => i.Player).OrderBy(i => i.Name))
-            {
-                var title = Allegiance.GetOfficerTitle((AllegianceOfficerLevel)officer.AllegianceOfficerRank);
-                officerList += $"{officer.Name} ({title})\n";
-            }
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat(officerList, ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionListAllegianceOfficerTitles()
-        {
-            //Console.WriteLine($"{Name}.HandleActionListAllegianceOfficerTitles()");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            var speakerTitle = Allegiance.AllegianceSpeakerTitle ?? "Speaker";
-            var seneschalTitle = Allegiance.AllegianceSeneschalTitle ?? "Seneschal";
-            var castellanTitle = Allegiance.AllegianceCastellanTitle ?? "Castellan";
-
-            var officerTitles = "Allegiance Officer Titles:\n";
-            officerTitles += $"1. {speakerTitle}\n";
-            officerTitles += $"2. {seneschalTitle}\n";
-            officerTitles += $"3. {castellanTitle}\n";
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat(officerTitles, ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionSetAllegianceOfficerTitle(uint rank, string title)
-        {
-            //Console.WriteLine($"{Name}.HandleActionSetAllegianceOfficerTitle({rank}, {title})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            if (rank < 1 || rank > 3)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat("Please specify a valid officer level as a number between 1 and 3.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            switch (rank)
-            {
-                case 1:
-                    Allegiance.AllegianceSpeakerTitle = title;
-                    break;
-                case 2:
-                    Allegiance.AllegianceSeneschalTitle = title;
-                    break;
-                case 3:
-                    Allegiance.AllegianceCastellanTitle = title;
-                    break;
-            }
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"Your allegiance {(AllegianceOfficerLevel)rank} title has been set.", ChatMessageType.Broadcast));
-
-            Allegiance.SaveBiotaToDatabase();
-        }
-
-        public void HandleActionClearAllegianceOfficerTitles()
-        {
-            //Console.WriteLine($"{Name}.HandleActionClearAllegianceOfficerTitles()");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            // castellans can clear all titles?
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            Allegiance.AllegianceSpeakerTitle = null;
-            Allegiance.AllegianceSeneschalTitle = null;
-            Allegiance.AllegianceCastellanTitle = null;
-
-            Allegiance.SaveBiotaToDatabase();
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"Your allegiance officer titles have been cleared.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionSetAllegianceOfficer(string playerName, uint officerLevel)
-        {
-            //Console.WriteLine($"{Name}.HandleActionSetAllegianceOfficer({playerName}, {officerLevel})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            // TODO: also check officer permissions
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            var player = PlayerManager.FindByName(playerName);
-            if (player == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (!Allegiance.Members.ContainsKey(player.Guid))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found in this allegiance", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (player.Guid.Full == Allegiance.MonarchId)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            // seneschals can only promote/demote speakers
-            if (AllegiancePermissionLevel == AllegiancePermissionLevel.Seneschal)
-            {
-                if (officerLevel > 1 || (AllegianceOfficerLevel)(player.AllegianceOfficerRank ?? 0) > AllegianceOfficerLevel.Speaker)
-                {
-                    Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                    return;
+                    member.Session.Network.EnqueueSend(
+                        new GameEventAllegianceLoginNotification(member.Session, Guid.Full, isLoggedIn: false)
+                    );
                 }
             }
 
-            if (officerLevel < 1 || officerLevel > 3)
+            var accountPlayers = PlayerManager.GetAccountPlayers(Account.AccountId);
+
+            double totalLevels = 0;
+
+            foreach (var accountPlayer in accountPlayers.Values)
             {
-                Session.Network.EnqueueSend(new GameMessageSystemChat("Please specify a valid officer level as a number between 1 and 3.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            player.AllegianceOfficerRank = (int)officerLevel;
-            var title = Allegiance.GetOfficerTitle((AllegianceOfficerLevel)officerLevel);
-
-            Allegiance.BuildOfficers();
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} is now {title}.", ChatMessageType.Broadcast));
-
-            // send message to online target player?
-        }
-
-        public void HandleActionRemoveAllegianceOfficer(string officerName)
-        {
-            //Console.WriteLine($"{Name}.HandleActionRemoveAllegianceOfficer({officerName})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            var officer = PlayerManager.FindByName(officerName);
-            if (officer == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{officerName} not found", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (!Allegiance.Members.ContainsKey(officer.Guid))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{officerName} not found in this allegiance", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (!Allegiance.Officers.ContainsKey(officer.Guid))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{officer.Name} not found in allegiance officers", ChatMessageType.Broadcast));
-                return;
-            }
-
-            // seneschals can only promote/demote speakers and non-officers
-            if (AllegiancePermissionLevel == AllegiancePermissionLevel.Seneschal)
-            {
-                if ((AllegianceOfficerLevel)(officer.AllegianceOfficerRank ?? 0) > AllegianceOfficerLevel.Speaker)
+                if (accountPlayer.Level < 10)
                 {
-                    Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                    return;
-                }
-            }
-
-            officer.AllegianceOfficerRank = null;
-            Allegiance.BuildOfficers();
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{officer.Name} has been removed from allegiance officers.", ChatMessageType.Broadcast));
-
-            // send message to online target player?
-        }
-
-        public void HandleActionClearAllegianceOfficers()
-        {
-            //Console.WriteLine($"{Name}.HandleActionClearAllegianceOfficers()");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            // could castellans perform this action?
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Monarch)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            foreach (var kvp in Allegiance.Officers)
-            {
-                var officer = PlayerManager.FindByGuid(kvp.Key);
-                if (officer != null)
-                    officer.AllegianceOfficerRank = null;
-            }
-
-            Allegiance.BuildOfficers();
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"The list of officers has been cleared.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionAllegianceInfoRequest(string playerName)
-        {
-            //Console.WriteLine($"{Name}.HandleActionRemoveAllegianceOfficer({playerName})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            var player = PlayerManager.FindByName(playerName);
-            if (player == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast));
-                return;
-            }
-
-            Allegiance.Members.TryGetValue(player.Guid, out var allegianceNode);
-            if (allegianceNode == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found in this allegiance", ChatMessageType.Broadcast));
-                return;
-            }
-            var profile = new AllegianceProfile(Allegiance, allegianceNode);
-
-            Session.Network.EnqueueSend(new GameEventAllegianceInfoResponse(Session, player.Guid.Full, profile));
-        }
-
-        public void HandleActionDoAllegianceLockAction(AllegianceLockAction action)
-        {
-            //Console.WriteLine($"{Name}.HandleActionDoAllegianceLockAction({action})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            var lockStatus = Allegiance.IsLocked ? "locked" : "unlocked";
-
-            // no permissions for checks?
-            if (action == AllegianceLockAction.Check)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"The allegiance is currently {lockStatus}.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (action == AllegianceLockAction.CheckApproved)
-            {
-                if (Allegiance.ApprovedVassals.Count == 0)
-                {
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"The approved vassals list is currently empty.", ChatMessageType.Broadcast));
-                    return;
-                }
-
-                var list = "Approved vassals:";
-                foreach (var entity in Allegiance.ApprovedVassals)
-                {
-                    var approvedVassal = PlayerManager.FindByGuid(entity.Key);
-                    if (approvedVassal == null)
-                    {
-                        // automatically remove?
-                        _log.Warning($"{Name}.HandleActionDoAllegianceLockAction({action}): couldn't find approved vassal {entity.Key:X8}");
-                        continue;
-                    }
-
-                    list += $"\n{approvedVassal.Name}";
-                }
-
-                Session.Network.EnqueueSend(new GameMessageSystemChat(list, ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            if (action == AllegianceLockAction.ClearApproved)
-            {
-                foreach (var entity in Allegiance.ApprovedVassals)
-                    Allegiance.RemoveApprovedVassal(entity.Key);
-
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"The approved vassals list has been cleared.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (action == AllegianceLockAction.On && Allegiance.IsLocked || action == AllegianceLockAction.Off && !Allegiance.IsLocked)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"The allegiance is already {lockStatus}.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (action == AllegianceLockAction.On)
-                Allegiance.IsLocked = true;
-            else if (action == AllegianceLockAction.Off)
-                Allegiance.IsLocked = false;
-            else if (action == AllegianceLockAction.Toggle)
-                Allegiance.IsLocked = !Allegiance.IsLocked;
-
-            Allegiance.SaveBiotaToDatabase();
-
-            lockStatus = Allegiance.IsLocked ? "locked" : "unlocked";
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"The allegiance is now {lockStatus}.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionSetAllegianceApprovedVassal(string playerName)
-        {
-            //Console.WriteLine($"{Name}.HandleActionSetAllegianceApprovedVassal({playerName})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            var player = PlayerManager.FindByName(playerName);
-
-            if (player == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (player.Allegiance != null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} is already in an allegiance.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (Allegiance.Members.ContainsKey(player.Guid))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} is already in the allegiance.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (Allegiance.HasApprovedVassal(player.Guid.Full))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} is already an approved vassal.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            Allegiance.AddApprovedVassal(player.Guid.Full);
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} is now an approved vassal.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionAllegianceChatBoot(string playerName, string reason)
-        {
-            //Console.WriteLine($"{Name}.HandleActionAllegianceChatBoot({playerName}, {reason})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            var player = PlayerManager.FindByName(playerName);
-
-            if (player == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (!Allegiance.Members.ContainsKey(player.Guid))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} not found in allegiance", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (player.Guid == Guid)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot boot yourself from allegiance chat.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (player.Guid.Full == Allegiance.MonarchId)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot boot the monarch from allegiance chat.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (Allegiance.ChatFilters.TryGetValue(player.Guid, out var existing))
-            {
-                if (existing == DateTime.MaxValue)
-                {
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has already been booted from allegiance chat.", ChatMessageType.Broadcast));
-                    return;
-                }
-
-                Allegiance.ChatFilters[player.Guid] = DateTime.MaxValue;
-            }
-            else
-                Allegiance.ChatFilters.Add(player.Guid, DateTime.MaxValue);
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has been booted from allegiance chat.", ChatMessageType.Broadcast));
-
-            var onlinePlayer = PlayerManager.GetOnlinePlayer(player.Guid);
-
-            if (onlinePlayer != null)
-                onlinePlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have been booted from Allegiance chat ({reason})", ChatMessageType.Broadcast));
-        }
-
-        public static TimeSpan AllegianceChat_GagTime = TimeSpan.FromMinutes(5);
-
-        public void HandleActionAllegianceChatGag(string playerName, bool enabled)
-        {
-            if (enabled)
-                HandleActionAllegianceChatGag_Enabled(playerName);
-            else
-                HandleActionAllegianceChatGag_Disabled(playerName);
-        }
-
-        public void HandleActionAllegianceChatGag_Enabled(string playerName)
-        {
-            //Console.WriteLine($"{Name}.HandleActionAllegianceChatGag_Enabled({playerName})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            var player = PlayerManager.FindByName(playerName);
-
-            if (player == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (!Allegiance.Members.ContainsKey(player.Guid))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} not found in allegiance", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (player.Guid == Guid)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot gag yourself.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (player.Guid.Full == Allegiance.MonarchId)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot gag the monarch.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (Allegiance.ChatFilters.TryGetValue(player.Guid, out var existing))
-            {
-                if (existing == DateTime.MaxValue)
-                {
-                    Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has already been booted from allegiance chat.", ChatMessageType.Broadcast));
-                    return;
-                }
-
-                Allegiance.ChatFilters[player.Guid] = DateTime.UtcNow + AllegianceChat_GagTime;
-            }
-            else
-                Allegiance.ChatFilters.Add(player.Guid, DateTime.UtcNow + AllegianceChat_GagTime);
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has been gagged.", ChatMessageType.Broadcast));
-
-            var onlinePlayer = PlayerManager.GetOnlinePlayer(player.Guid);
-
-            if (onlinePlayer != null)
-                onlinePlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have been gagged in allegiance chat.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionAllegianceChatGag_Disabled(string playerName)
-        {
-            //Console.WriteLine($"{Name}.HandleActionAllegianceChatGag_Disabled({playerName})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            var player = PlayerManager.FindByName(playerName);
-
-            if (player == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (!Allegiance.Members.ContainsKey(player.Guid))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} not found in allegiance", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (player.Guid == Guid)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot ungag yourself.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (!Allegiance.ChatFilters.TryGetValue(player.Guid, out var existing))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has not been gagged.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (existing == DateTime.MaxValue)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has been booted from allegiance chat.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            Allegiance.ChatFilters.Remove(player.Guid);
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has been ungagged.", ChatMessageType.Broadcast));
-
-            var onlinePlayer = PlayerManager.GetOnlinePlayer(player.Guid);
-
-            if (onlinePlayer != null)
-                onlinePlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"You have been ungagged in allegiance chat.", ChatMessageType.Broadcast));
-        }
-
-        public void HandleActionListAllegianceBans()
-        {
-            //Console.WriteLine($"{Name}.HandleActionListAllegianceBans()");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            var banList = Allegiance.BanList;
-
-            if (banList.Count == 0)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"The ban list is currently empty.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            var list = "Allegiance ban list:";
-            foreach (var entity in banList)
-            {
-                var player = PlayerManager.FindByGuid(entity.Key);
-
-                if (player == null)
-                {
-                    // automatically remove?
-                    _log.Warning($"{Name}.HandleActionListAllegianceBans(): couldn't find banned player {entity.Key:X8}");
                     continue;
                 }
 
-                list += $"\n{player.Name}";
+                totalLevels += (double)accountPlayer.Level;
+            }
+
+            foreach (var player in accountPlayers.Values)
+            {
+                if (player.Level < 10)
+                {
+                    continue;
+                }
+
+                var rankContrib = ((double)player.Level / totalLevels);
+
+                player.SetProperty(PropertyFloat.RankContribution, rankContrib);
+
+                player.SaveBiotaToDatabase();
+            }
+        }
+    }
+
+    public string GetPrefix(Player allegianceMember)
+    {
+        var prefix = "";
+
+        if (allegianceMember.Guid == AllegianceNode.Monarch.PlayerGuid)
+        {
+            prefix = "Your monarch ";
+        }
+        else if (AllegianceNode.Patron != null && allegianceMember.Guid == AllegianceNode.Patron.PlayerGuid)
+        {
+            prefix = "Your patron ";
+        }
+        else if (AllegianceNode.Vassals.ContainsKey(allegianceMember.Guid.Full))
+        {
+            prefix = "Your vassal ";
+        }
+
+        return prefix;
+    }
+
+    /// <summary>
+    /// For an online patron, adds the pending allegiance XP stored in AllegianceXPCached
+    /// to their total / unassigned xp
+    /// </summary>
+    public void AddAllegianceXP(IPlayer vassal = null)
+    {
+        if (AllegianceXPCached == 0)
+        {
+            return;
+        }
+
+        // TODO: handle ulong -> long?
+        GrantXP((long)AllegianceXPCached, XpType.Allegiance, ShareType.None);
+
+        HandleLeadershipRankXp(vassal);
+
+        AllegianceXPReceived += AllegianceXPCached;
+
+        AllegianceXPCached = 0;
+    }
+
+    /// <summary>
+    /// Update a player's Leadership skill xp progress when passup XP has been earned.
+    /// <para>FORMULA = CachedXp * FellowshipMod * TimeSwornMod</para>
+    /// <para>FelloshipMod = x2, if patron and vassal are fellowed and on the same landblock.</para>
+    /// <para>TimeSwornMod = x1 up to x2, depending on how long vassal has been sworn to patron (maxes at 3 months).</para>
+    /// </summary>
+    private void HandleLeadershipRankXp(IPlayer vassal = null)
+    {
+        var leadership = GetCreatureSkill(Skill.Leadership);
+        if (leadership.AdvancementClass >= SkillAdvancementClass.Trained)
+        {
+            double fellowshipMod = 1;
+            double timeMod = 1;
+
+            if (vassal != null)
+            {
+                var onlineVassal = PlayerManager.GetOnlinePlayer(vassal.Guid);
+                if (onlineVassal != null)
+                {
+                    if (onlineVassal.WithPatron && onlineVassal.FellowedWithPatron)
+                    {
+                        fellowshipMod += 1;
+                    }
+
+                    if (SworeAllegiance != null)
+                    {
+                        timeMod = 1 + (Time.GetUnixTime() - (double)onlineVassal.SworeAllegiance) / 7892352;
+                        if (timeMod > 2)
+                        {
+                            timeMod = 2;
+                        }
+                    }
+                }
+            }
+            var cachedXp = AllegianceXPCached;
+
+            var leadershipXp = (uint)(cachedXp * fellowshipMod * timeMod);
+            //Console.WriteLine($"cachedXp: {cachedXp}, fellowshipMod: {fellowshipMod}, timeMod: {timeMod}, total: {leadershipXp}");
+            AwardNoContribSkillXP(Skill.Leadership, leadershipXp, false);
+        }
+    }
+
+    public void HandleActionQueryMotd()
+    {
+        //Console.WriteLine($"{Name}.HandleActionQueryMotd()");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (Allegiance.AllegianceMotd == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "Your allegiance has not set a message of the day.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
+
+        var msg = $"\"{Allegiance.AllegianceMotd}\" -- {Allegiance.AllegianceMotdSetBy}";
+
+        Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Broadcast));
+    }
+
+    public void HandleActionSetMotd(string motd)
+    {
+        //Console.WriteLine($"{Name}.HandleActionSetMotd({motd})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        Allegiance.AllegianceMotd = motd;
+
+        var rank = AllegianceTitle.GetTitle(HeritageGroup, (Gender)Gender, AllegianceNode.Rank);
+        Allegiance.AllegianceMotdSetBy = $"{rank} {Name}";
+
+        Allegiance.SaveBiotaToDatabase();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat("Your message of the day has been set.", ChatMessageType.Broadcast)
+        );
+    }
+
+    public void HandleActionClearMotd()
+    {
+        //Console.WriteLine($"{Name}.HandleActionClearMotd()");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        Allegiance.AllegianceMotd = null;
+
+        var rank = AllegianceTitle.GetTitle(HeritageGroup, (Gender)Gender, AllegianceNode.Rank);
+        Allegiance.AllegianceMotdSetBy = $"{rank} {Name}";
+
+        Allegiance.SaveBiotaToDatabase();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat("Your message of the day has been cleared.", ChatMessageType.Broadcast)
+        );
+    }
+
+    public void HandleActionQueryAllegianceName()
+    {
+        //Console.WriteLine($"{Name}.HandleActionQueryAllegianceName()");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (Allegiance.AllegianceName == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat("Your allegiance has not set a name.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        Session.Network.EnqueueSend(new GameMessageSystemChat(Allegiance.AllegianceName, ChatMessageType.Broadcast));
+    }
+
+    public void HandleActionSetAllegianceName(string allegianceName)
+    {
+        //Console.WriteLine($"{Name}.HandleActionSetAllegianceName({allegianceName}");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        // TODO: name verifications
+        // - same name as current allegiance name
+        // - no empty names
+        // - allegiance name too long (40 chars max.)
+        // - allegiance name already in use
+        // - bad chars (space, single quote, hyphen, A-Z, a-z)
+        // - banned words from portal.dat
+        // - name change timer (1 day?)
+
+        Allegiance.AllegianceName = allegianceName;
+        Allegiance.SaveBiotaToDatabase();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat("Your allegiance name has been set.", ChatMessageType.Broadcast)
+        );
+    }
+
+    public void HandleActionClearAllegianceName()
+    {
+        //Console.WriteLine($"{Name}.HandleActionClearAllegianceName()");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        Allegiance.AllegianceName = null;
+        Allegiance.SaveBiotaToDatabase();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat("Your allegiance name has been cleared.", ChatMessageType.Broadcast)
+        );
+    }
+
+    public void HandleActionListAllegianceOfficers()
+    {
+        //Console.WriteLine($"{Name}.HandleActionListAllegianceOfficers()");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        var officerList = "Allegiance Officers:\n";
+        officerList += Allegiance.Monarch.Player.Name + " (Monarch)\n";
+
+        foreach (var officer in Allegiance.Officers.Values.Select(i => i.Player).OrderBy(i => i.Name))
+        {
+            var title = Allegiance.GetOfficerTitle((AllegianceOfficerLevel)officer.AllegianceOfficerRank);
+            officerList += $"{officer.Name} ({title})\n";
+        }
+
+        Session.Network.EnqueueSend(new GameMessageSystemChat(officerList, ChatMessageType.Broadcast));
+    }
+
+    public void HandleActionListAllegianceOfficerTitles()
+    {
+        //Console.WriteLine($"{Name}.HandleActionListAllegianceOfficerTitles()");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        var speakerTitle = Allegiance.AllegianceSpeakerTitle ?? "Speaker";
+        var seneschalTitle = Allegiance.AllegianceSeneschalTitle ?? "Seneschal";
+        var castellanTitle = Allegiance.AllegianceCastellanTitle ?? "Castellan";
+
+        var officerTitles = "Allegiance Officer Titles:\n";
+        officerTitles += $"1. {speakerTitle}\n";
+        officerTitles += $"2. {seneschalTitle}\n";
+        officerTitles += $"3. {castellanTitle}\n";
+
+        Session.Network.EnqueueSend(new GameMessageSystemChat(officerTitles, ChatMessageType.Broadcast));
+    }
+
+    public void HandleActionSetAllegianceOfficerTitle(uint rank, string title)
+    {
+        //Console.WriteLine($"{Name}.HandleActionSetAllegianceOfficerTitle({rank}, {title})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        if (rank < 1 || rank > 3)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "Please specify a valid officer level as a number between 1 and 3.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
+
+        switch (rank)
+        {
+            case 1:
+                Allegiance.AllegianceSpeakerTitle = title;
+                break;
+            case 2:
+                Allegiance.AllegianceSeneschalTitle = title;
+                break;
+            case 3:
+                Allegiance.AllegianceCastellanTitle = title;
+                break;
+        }
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"Your allegiance {(AllegianceOfficerLevel)rank} title has been set.",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        Allegiance.SaveBiotaToDatabase();
+    }
+
+    public void HandleActionClearAllegianceOfficerTitles()
+    {
+        //Console.WriteLine($"{Name}.HandleActionClearAllegianceOfficerTitles()");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        // castellans can clear all titles?
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        Allegiance.AllegianceSpeakerTitle = null;
+        Allegiance.AllegianceSeneschalTitle = null;
+        Allegiance.AllegianceCastellanTitle = null;
+
+        Allegiance.SaveBiotaToDatabase();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"Your allegiance officer titles have been cleared.", ChatMessageType.Broadcast)
+        );
+    }
+
+    public void HandleActionSetAllegianceOfficer(string playerName, uint officerLevel)
+    {
+        //Console.WriteLine($"{Name}.HandleActionSetAllegianceOfficer({playerName}, {officerLevel})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        // TODO: also check officer permissions
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        var player = PlayerManager.FindByName(playerName);
+        if (player == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (!Allegiance.Members.ContainsKey(player.Guid))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found in this allegiance", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (player.Guid.Full == Allegiance.MonarchId)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        // seneschals can only promote/demote speakers
+        if (AllegiancePermissionLevel == AllegiancePermissionLevel.Seneschal)
+        {
+            if (
+                officerLevel > 1
+                || (AllegianceOfficerLevel)(player.AllegianceOfficerRank ?? 0) > AllegianceOfficerLevel.Speaker
+            )
+            {
+                Session.Network.EnqueueSend(
+                    new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+                );
+                return;
+            }
+        }
+
+        if (officerLevel < 1 || officerLevel > 3)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "Please specify a valid officer level as a number between 1 and 3.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
+
+        player.AllegianceOfficerRank = (int)officerLevel;
+        var title = Allegiance.GetOfficerTitle((AllegianceOfficerLevel)officerLevel);
+
+        Allegiance.BuildOfficers();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"{player.Name} is now {title}.", ChatMessageType.Broadcast)
+        );
+
+        // send message to online target player?
+    }
+
+    public void HandleActionRemoveAllegianceOfficer(string officerName)
+    {
+        //Console.WriteLine($"{Name}.HandleActionRemoveAllegianceOfficer({officerName})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        var officer = PlayerManager.FindByName(officerName);
+        if (officer == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{officerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (!Allegiance.Members.ContainsKey(officer.Guid))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{officerName} not found in this allegiance", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (!Allegiance.Officers.ContainsKey(officer.Guid))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{officer.Name} not found in allegiance officers", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        // seneschals can only promote/demote speakers and non-officers
+        if (AllegiancePermissionLevel == AllegiancePermissionLevel.Seneschal)
+        {
+            if ((AllegianceOfficerLevel)(officer.AllegianceOfficerRank ?? 0) > AllegianceOfficerLevel.Speaker)
+            {
+                Session.Network.EnqueueSend(
+                    new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+                );
+                return;
+            }
+        }
+
+        officer.AllegianceOfficerRank = null;
+        Allegiance.BuildOfficers();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"{officer.Name} has been removed from allegiance officers.",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        // send message to online target player?
+    }
+
+    public void HandleActionClearAllegianceOfficers()
+    {
+        //Console.WriteLine($"{Name}.HandleActionClearAllegianceOfficers()");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        // could castellans perform this action?
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Monarch)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        foreach (var kvp in Allegiance.Officers)
+        {
+            var officer = PlayerManager.FindByGuid(kvp.Key);
+            if (officer != null)
+            {
+                officer.AllegianceOfficerRank = null;
+            }
+        }
+
+        Allegiance.BuildOfficers();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"The list of officers has been cleared.", ChatMessageType.Broadcast)
+        );
+    }
+
+    public void HandleActionAllegianceInfoRequest(string playerName)
+    {
+        //Console.WriteLine($"{Name}.HandleActionRemoveAllegianceOfficer({playerName})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        var player = PlayerManager.FindByName(playerName);
+        if (player == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        Allegiance.Members.TryGetValue(player.Guid, out var allegianceNode);
+        if (allegianceNode == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found in this allegiance", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+        var profile = new AllegianceProfile(Allegiance, allegianceNode);
+
+        Session.Network.EnqueueSend(new GameEventAllegianceInfoResponse(Session, player.Guid.Full, profile));
+    }
+
+    public void HandleActionDoAllegianceLockAction(AllegianceLockAction action)
+    {
+        //Console.WriteLine($"{Name}.HandleActionDoAllegianceLockAction({action})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        var lockStatus = Allegiance.IsLocked ? "locked" : "unlocked";
+
+        // no permissions for checks?
+        if (action == AllegianceLockAction.Check)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"The allegiance is currently {lockStatus}.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (action == AllegianceLockAction.CheckApproved)
+        {
+            if (Allegiance.ApprovedVassals.Count == 0)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"The approved vassals list is currently empty.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+
+            var list = "Approved vassals:";
+            foreach (var entity in Allegiance.ApprovedVassals)
+            {
+                var approvedVassal = PlayerManager.FindByGuid(entity.Key);
+                if (approvedVassal == null)
+                {
+                    // automatically remove?
+                    _log.Warning(
+                        $"{Name}.HandleActionDoAllegianceLockAction({action}): couldn't find approved vassal {entity.Key:X8}"
+                    );
+                    continue;
+                }
+
+                list += $"\n{approvedVassal.Name}";
             }
 
             Session.Network.EnqueueSend(new GameMessageSystemChat(list, ChatMessageType.Broadcast));
+            return;
         }
 
-        public void HandleActionAddAllegianceBan(string playerName)
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
         {
-            //Console.WriteLine($"{Name}.HandleActionAddAllegianceBan({playerName})");
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
 
-            // check if player is in an allegiance
-            if (Allegiance == null)
+        if (action == AllegianceLockAction.ClearApproved)
+        {
+            foreach (var entity in Allegiance.ApprovedVassals)
             {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+                Allegiance.RemoveApprovedVassal(entity.Key);
+            }
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"The approved vassals list has been cleared.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (
+            action == AllegianceLockAction.On && Allegiance.IsLocked
+            || action == AllegianceLockAction.Off && !Allegiance.IsLocked
+        )
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"The allegiance is already {lockStatus}.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (action == AllegianceLockAction.On)
+        {
+            Allegiance.IsLocked = true;
+        }
+        else if (action == AllegianceLockAction.Off)
+        {
+            Allegiance.IsLocked = false;
+        }
+        else if (action == AllegianceLockAction.Toggle)
+        {
+            Allegiance.IsLocked = !Allegiance.IsLocked;
+        }
+
+        Allegiance.SaveBiotaToDatabase();
+
+        lockStatus = Allegiance.IsLocked ? "locked" : "unlocked";
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"The allegiance is now {lockStatus}.", ChatMessageType.Broadcast)
+        );
+    }
+
+    public void HandleActionSetAllegianceApprovedVassal(string playerName)
+    {
+        //Console.WriteLine($"{Name}.HandleActionSetAllegianceApprovedVassal({playerName})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Castellan)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        var player = PlayerManager.FindByName(playerName);
+
+        if (player == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (player.Allegiance != null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{player.Name} is already in an allegiance.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (Allegiance.Members.ContainsKey(player.Guid))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{player.Name} is already in the allegiance.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (Allegiance.HasApprovedVassal(player.Guid.Full))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{player.Name} is already an approved vassal.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        Allegiance.AddApprovedVassal(player.Guid.Full);
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"{player.Name} is now an approved vassal.", ChatMessageType.Broadcast)
+        );
+    }
+
+    public void HandleActionAllegianceChatBoot(string playerName, string reason)
+    {
+        //Console.WriteLine($"{Name}.HandleActionAllegianceChatBoot({playerName}, {reason})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        var player = PlayerManager.FindByName(playerName);
+
+        if (player == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (!Allegiance.Members.ContainsKey(player.Guid))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{player.Name} not found in allegiance", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (player.Guid == Guid)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot boot yourself from allegiance chat.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (player.Guid.Full == Allegiance.MonarchId)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You cannot boot the monarch from allegiance chat.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
+
+        if (Allegiance.ChatFilters.TryGetValue(player.Guid, out var existing))
+        {
+            if (existing == DateTime.MaxValue)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"{player.Name} has already been booted from allegiance chat.",
+                        ChatMessageType.Broadcast
+                    )
+                );
                 return;
             }
 
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
+            Allegiance.ChatFilters[player.Guid] = DateTime.MaxValue;
+        }
+        else
+        {
+            Allegiance.ChatFilters.Add(player.Guid, DateTime.MaxValue);
+        }
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"{player.Name} has been booted from allegiance chat.", ChatMessageType.Broadcast)
+        );
+
+        var onlinePlayer = PlayerManager.GetOnlinePlayer(player.Guid);
+
+        if (onlinePlayer != null)
+        {
+            onlinePlayer.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You have been booted from Allegiance chat ({reason})",
+                    ChatMessageType.Broadcast
+                )
+            );
+        }
+    }
+
+    public static TimeSpan AllegianceChat_GagTime = TimeSpan.FromMinutes(5);
+
+    public void HandleActionAllegianceChatGag(string playerName, bool enabled)
+    {
+        if (enabled)
+        {
+            HandleActionAllegianceChatGag_Enabled(playerName);
+        }
+        else
+        {
+            HandleActionAllegianceChatGag_Disabled(playerName);
+        }
+    }
+
+    public void HandleActionAllegianceChatGag_Enabled(string playerName)
+    {
+        //Console.WriteLine($"{Name}.HandleActionAllegianceChatGag_Enabled({playerName})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        var player = PlayerManager.FindByName(playerName);
+
+        if (player == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (!Allegiance.Members.ContainsKey(player.Guid))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{player.Name} not found in allegiance", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (player.Guid == Guid)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot gag yourself.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (player.Guid.Full == Allegiance.MonarchId)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot gag the monarch.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (Allegiance.ChatFilters.TryGetValue(player.Guid, out var existing))
+        {
+            if (existing == DateTime.MaxValue)
             {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"{player.Name} has already been booted from allegiance chat.",
+                        ChatMessageType.Broadcast
+                    )
+                );
                 return;
             }
 
-            var player = PlayerManager.FindByName(playerName);
+            Allegiance.ChatFilters[player.Guid] = DateTime.UtcNow + AllegianceChat_GagTime;
+        }
+        else
+        {
+            Allegiance.ChatFilters.Add(player.Guid, DateTime.UtcNow + AllegianceChat_GagTime);
+        }
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"{player.Name} has been gagged.", ChatMessageType.Broadcast)
+        );
+
+        var onlinePlayer = PlayerManager.GetOnlinePlayer(player.Guid);
+
+        if (onlinePlayer != null)
+        {
+            onlinePlayer.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You have been gagged in allegiance chat.", ChatMessageType.Broadcast)
+            );
+        }
+    }
+
+    public void HandleActionAllegianceChatGag_Disabled(string playerName)
+    {
+        //Console.WriteLine($"{Name}.HandleActionAllegianceChatGag_Disabled({playerName})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Speaker)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        var player = PlayerManager.FindByName(playerName);
+
+        if (player == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (!Allegiance.Members.ContainsKey(player.Guid))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{player.Name} not found in allegiance", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (player.Guid == Guid)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot ungag yourself.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (!Allegiance.ChatFilters.TryGetValue(player.Guid, out var existing))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{player.Name} has not been gagged.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (existing == DateTime.MaxValue)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{player.Name} has been booted from allegiance chat.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
+
+        Allegiance.ChatFilters.Remove(player.Guid);
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"{player.Name} has been ungagged.", ChatMessageType.Broadcast)
+        );
+
+        var onlinePlayer = PlayerManager.GetOnlinePlayer(player.Guid);
+
+        if (onlinePlayer != null)
+        {
+            onlinePlayer.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You have been ungagged in allegiance chat.", ChatMessageType.Broadcast)
+            );
+        }
+    }
+
+    public void HandleActionListAllegianceBans()
+    {
+        //Console.WriteLine($"{Name}.HandleActionListAllegianceBans()");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        var banList = Allegiance.BanList;
+
+        if (banList.Count == 0)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"The ban list is currently empty.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        var list = "Allegiance ban list:";
+        foreach (var entity in banList)
+        {
+            var player = PlayerManager.FindByGuid(entity.Key);
 
             if (player == null)
             {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast));
-                return;
+                // automatically remove?
+                _log.Warning($"{Name}.HandleActionListAllegianceBans(): couldn't find banned player {entity.Key:X8}");
+                continue;
             }
 
-            // any other restrictions?
-            if (player.Guid.Full == Allegiance.MonarchId)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} cannot be banned from the allegiance!", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (Allegiance.IsBanned(player.Guid.Full))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} is already banned from the allegiance.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            Allegiance.AddBan(player.Guid.Full);
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has been banned from the allegiance.", ChatMessageType.Broadcast));
-
-            // were they already a member? if so, boot them...
-            if (Allegiance.Members.ContainsKey(player.Guid))
-                HandleActionBreakAllegianceBoot(player.Name, false);
+            list += $"\n{player.Name}";
         }
 
-        public void HandleActionRemoveAllegianceBan(string playerName)
+        Session.Network.EnqueueSend(new GameMessageSystemChat(list, ChatMessageType.Broadcast));
+    }
+
+    public void HandleActionAddAllegianceBan(string playerName)
+    {
+        //Console.WriteLine($"{Name}.HandleActionAddAllegianceBan({playerName})");
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
         {
-            //Console.WriteLine($"{Name}.HandleActionRemoveAllegianceBan({playerName})");
-
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
-
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
-
-            var player = PlayerManager.FindByName(playerName);
-
-            if (player == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast));
-                return;
-            }
-
-            if (!Allegiance.IsBanned(player.Guid.Full))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} is not banned from the allegiance.", ChatMessageType.Broadcast));
-                return;
-            }
-
-            Allegiance.RemoveBan(player.Guid.Full);
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} is no longer banned from the allegiance.", ChatMessageType.Broadcast));
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
         }
 
-        public void HandleActionBreakAllegianceBoot(string playerName, bool accountBoot)
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
         {
-            _log.Debug("[ALLEGIANCE] {PlayerName}.HandleActionBreakAllegianceBoot({PlayerName}, {AccountBoot})", Name, playerName, accountBoot);
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
 
-            // TODO: handle account boot
+        var player = PlayerManager.FindByName(playerName);
 
-            // check if player is in an allegiance
-            if (Allegiance == null)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
-                return;
-            }
+        if (player == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
 
-            if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
-            {
-                Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance));
-                return;
-            }
+        // any other restrictions?
+        if (player.Guid.Full == Allegiance.MonarchId)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{player.Name} cannot be banned from the allegiance!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
 
-            var player = PlayerManager.FindByName(playerName);
+        if (Allegiance.IsBanned(player.Guid.Full))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{player.Name} is already banned from the allegiance.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
 
-            if (player == null)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast));
-                return;
-            }
+        Allegiance.AddBan(player.Guid.Full);
 
-            if (!Allegiance.Members.ContainsKey(player.Guid))
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"{playerName} not found in allegiance", ChatMessageType.Broadcast));
-                return;
-            }
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"{player.Name} has been banned from the allegiance.", ChatMessageType.Broadcast)
+        );
 
-            if (player.Guid == Guid)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot boot yourself from the allegiance.", ChatMessageType.Broadcast));
-                return;
-            }
+        // were they already a member? if so, boot them...
+        if (Allegiance.Members.ContainsKey(player.Guid))
+        {
+            HandleActionBreakAllegianceBoot(player.Name, false);
+        }
+    }
 
-            if (player.Guid.Full == Allegiance.MonarchId)
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat($"You cannot boot the monarch from the allegiance!", ChatMessageType.Broadcast));
-                return;
-            }
+    public void HandleActionRemoveAllegianceBan(string playerName)
+    {
+        //Console.WriteLine($"{Name}.HandleActionRemoveAllegianceBan({playerName})");
 
-            var patron = PlayerManager.FindByGuid(new ObjectGuid(player.PatronId ?? 0));
-            if (patron == null)
-            {
-                Console.WriteLine($"{Name}.HandleActionBreakAllegianceBoot({player.Name}, {accountBoot}): couldn't find patron id {player.PatronId}");
-                return;
-            }
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
 
-            player.PatronId = null;
-            player.UpdateProperty(PropertyInstanceId.Monarch, null, true);
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
 
-            // walk the allegiance tree from this node, update monarch ids
-            Allegiance.Members.TryGetValue(player.Guid, out var targetNode);
+        var player = PlayerManager.FindByName(playerName);
 
-            targetNode.Walk((node) =>
+        if (player == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (!Allegiance.IsBanned(player.Guid.Full))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{player.Name} is not banned from the allegiance.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
+
+        Allegiance.RemoveBan(player.Guid.Full);
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"{player.Name} is no longer banned from the allegiance.",
+                ChatMessageType.Broadcast
+            )
+        );
+    }
+
+    public void HandleActionBreakAllegianceBoot(string playerName, bool accountBoot)
+    {
+        _log.Debug(
+            "[ALLEGIANCE] {PlayerName}.HandleActionBreakAllegianceBoot({PlayerName}, {AccountBoot})",
+            Name,
+            playerName,
+            accountBoot
+        );
+
+        // TODO: handle account boot
+
+        // check if player is in an allegiance
+        if (Allegiance == null)
+        {
+            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouAreNotInAllegiance));
+            return;
+        }
+
+        if (AllegiancePermissionLevel < AllegiancePermissionLevel.Seneschal)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventWeenieError(Session, WeenieError.YouDoNotHaveAuthorityInAllegiance)
+            );
+            return;
+        }
+
+        var player = PlayerManager.FindByName(playerName);
+
+        if (player == null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (!Allegiance.Members.ContainsKey(player.Guid))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{playerName} not found in allegiance", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (player.Guid == Guid)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot boot yourself from the allegiance.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        if (player.Guid.Full == Allegiance.MonarchId)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You cannot boot the monarch from the allegiance!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
+
+        var patron = PlayerManager.FindByGuid(new ObjectGuid(player.PatronId ?? 0));
+        if (patron == null)
+        {
+            Console.WriteLine(
+                $"{Name}.HandleActionBreakAllegianceBoot({player.Name}, {accountBoot}): couldn't find patron id {player.PatronId}"
+            );
+            return;
+        }
+
+        player.PatronId = null;
+        player.UpdateProperty(PropertyInstanceId.Monarch, null, true);
+
+        // walk the allegiance tree from this node, update monarch ids
+        Allegiance.Members.TryGetValue(player.Guid, out var targetNode);
+
+        targetNode.Walk(
+            (node) =>
             {
                 node.Player.UpdateProperty(PropertyInstanceId.Monarch, player.Guid.Full, true);
 
                 node.Player.SaveBiotaToDatabase();
-            });
+            }
+        );
 
-            // rebuild allegiance tree structures
-            AllegianceManager.OnBreakAllegiance(player, patron);
+        // rebuild allegiance tree structures
+        AllegianceManager.OnBreakAllegiance(player, patron);
 
-            CheckAllegianceHouse(player.Guid);
+        CheckAllegianceHouse(player.Guid);
 
-            var newAllegiance = AllegianceManager.GetAllegiance(player);
-            if (newAllegiance != null)
-                newAllegiance.Monarch.Walk((node) => CheckAllegianceHouse(node.PlayerGuid), false);
-
-            // update allegiance ui panels?
-
-            Session.Network.EnqueueSend(new GameMessageSystemChat($"{player.Name} has been removed from the allegiance.", ChatMessageType.Broadcast));
-
-            var onlinePlayer = PlayerManager.GetOnlinePlayer(player.Guid);
-            if (onlinePlayer != null)
-                onlinePlayer.Session.Network.EnqueueSend(new GameMessageSystemChat("You have been booted from the allegiance!", ChatMessageType.Broadcast));
+        var newAllegiance = AllegianceManager.GetAllegiance(player);
+        if (newAllegiance != null)
+        {
+            newAllegiance.Monarch.Walk((node) => CheckAllegianceHouse(node.PlayerGuid), false);
         }
 
-        public AllegiancePermissionLevel AllegiancePermissionLevel
+        // update allegiance ui panels?
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"{player.Name} has been removed from the allegiance.", ChatMessageType.Broadcast)
+        );
+
+        var onlinePlayer = PlayerManager.GetOnlinePlayer(player.Guid);
+        if (onlinePlayer != null)
         {
-            // https://asheron.fandom.com/wiki/Allegiance_Officers
+            onlinePlayer.Session.Network.EnqueueSend(
+                new GameMessageSystemChat("You have been booted from the allegiance!", ChatMessageType.Broadcast)
+            );
+        }
+    }
 
-            // Level 1: Speaker
+    public AllegiancePermissionLevel AllegiancePermissionLevel
+    {
+        // https://asheron.fandom.com/wiki/Allegiance_Officers
 
-            // - Allegiance chat kick.
-            // - Allegiance chat gag.
-            // - Allegiance broadcast.
-            // - Set/clear the MOTD.
+        // Level 1: Speaker
 
-            // Level 2: Seneschal
+        // - Allegiance chat kick.
+        // - Allegiance chat gag.
+        // - Allegiance broadcast.
+        // - Set/clear the MOTD.
 
-            // - Promote/demote members under own rank (i.e. can promote/demote speakers)
-            // - Allegiance boot.
-            // - Allegiance ban.
-            // - Access allegiance info.
-            // - Lock/unlock the allegiance.
+        // Level 2: Seneschal
 
-            // Level 3: Castellan
+        // - Promote/demote members under own rank (i.e. can promote/demote speakers)
+        // - Allegiance boot.
+        // - Allegiance ban.
+        // - Access allegiance info.
+        // - Lock/unlock the allegiance.
 
-            // - Promote/demote members to any rank, including other Castellans.
-            // - Change officer titles.
-            // - Set/clear the allegiance name.
-            // - Set allegiance bindstone.
-            // - Change mansion allegiance access/storage permissions.
-            // - Bypass allegiance lock with own vassals.
-            // - Bypass allegiance lock by approving particular vassals.
+        // Level 3: Castellan
 
-            get
+        // - Promote/demote members to any rank, including other Castellans.
+        // - Change officer titles.
+        // - Set/clear the allegiance name.
+        // - Set allegiance bindstone.
+        // - Change mansion allegiance access/storage permissions.
+        // - Bypass allegiance lock with own vassals.
+        // - Bypass allegiance lock by approving particular vassals.
+
+        get
+        {
+            if (Allegiance == null)
             {
-                if (Allegiance == null)
-                    return AllegiancePermissionLevel.None;
-
-                if (Allegiance.MonarchId == Guid.Full)
-                    return AllegiancePermissionLevel.Monarch;
-
-                return (AllegiancePermissionLevel)(AllegianceOfficerRank ?? 0);
+                return AllegiancePermissionLevel.None;
             }
+
+            if (Allegiance.MonarchId == Guid.Full)
+            {
+                return AllegiancePermissionLevel.Monarch;
+            }
+
+            return (AllegiancePermissionLevel)(AllegianceOfficerRank ?? 0);
         }
     }
 }

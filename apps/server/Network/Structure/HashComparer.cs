@@ -1,264 +1,284 @@
 using System.Collections.Generic;
-
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 
-namespace ACE.Server.Network.Structure
+namespace ACE.Server.Network.Structure;
+
+public class HashComparer : IComparer<uint>
 {
-    public class HashComparer : IComparer<uint>
+    public ushort NumBuckets;
+
+    public HashComparer(ushort numBuckets)
     {
-        public ushort NumBuckets;
-
-        public HashComparer(ushort numBuckets)
-        {
-            NumBuckets = numBuckets;
-        }
-
-        public int Compare(uint a, uint b)
-        {
-            var keyA = a % NumBuckets;
-            var keyB = b % NumBuckets;
-
-            var result = keyA.CompareTo(keyB);
-
-            if (result == 0)
-                result = a.CompareTo(b);
-
-            return result;
-        }
+        NumBuckets = numBuckets;
     }
 
-    // can't implement with generics, and the alternative is to key all of the originals by ints,
-    // instead of the more semantic enums
-
-    public class PropertyIntComparer : IComparer<PropertyInt>
+    public int Compare(uint a, uint b)
     {
-        public ushort NumBuckets;
+        var keyA = a % NumBuckets;
+        var keyB = b % NumBuckets;
 
-        public PropertyIntComparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(PropertyInt a, PropertyInt b)
-        {
-            var keyA = (int)a % NumBuckets;
-            var keyB = (int)b % NumBuckets;
+        return result;
+    }
+}
 
-            var result = keyA.CompareTo(keyB);
+// can't implement with generics, and the alternative is to key all of the originals by ints,
+// instead of the more semantic enums
 
-            if (result == 0)
-                result = a.CompareTo(b);
+public class PropertyIntComparer : IComparer<PropertyInt>
+{
+    public ushort NumBuckets;
 
-            return result;
-        }
+    public PropertyIntComparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
     }
 
-    public class PropertyInt64Comparer : IComparer<PropertyInt64>
+    public int Compare(PropertyInt a, PropertyInt b)
     {
-        public ushort NumBuckets;
+        var keyA = (int)a % NumBuckets;
+        var keyB = (int)b % NumBuckets;
 
-        public PropertyInt64Comparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(PropertyInt64 a, PropertyInt64 b)
-        {
-            var keyA = (int)a % NumBuckets;
-            var keyB = (int)b % NumBuckets;
+        return result;
+    }
+}
 
-            var result = keyA.CompareTo(keyB);
+public class PropertyInt64Comparer : IComparer<PropertyInt64>
+{
+    public ushort NumBuckets;
 
-            if (result == 0)
-                result = a.CompareTo(b);
-
-            return result;
-        }
+    public PropertyInt64Comparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
     }
 
-    public class PropertyBoolComparer : IComparer<PropertyBool>
+    public int Compare(PropertyInt64 a, PropertyInt64 b)
     {
-        public ushort NumBuckets;
+        var keyA = (int)a % NumBuckets;
+        var keyB = (int)b % NumBuckets;
 
-        public PropertyBoolComparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(PropertyBool a, PropertyBool b)
-        {
-            var keyA = (int)a % NumBuckets;
-            var keyB = (int)b % NumBuckets;
+        return result;
+    }
+}
 
-            var result = keyA.CompareTo(keyB);
+public class PropertyBoolComparer : IComparer<PropertyBool>
+{
+    public ushort NumBuckets;
 
-            if (result == 0)
-                result = a.CompareTo(b);
-
-            return result;
-        }
+    public PropertyBoolComparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
     }
 
-    public class PropertyFloatComparer : IComparer<PropertyFloat>
+    public int Compare(PropertyBool a, PropertyBool b)
     {
-        public ushort NumBuckets;
+        var keyA = (int)a % NumBuckets;
+        var keyB = (int)b % NumBuckets;
 
-        public PropertyFloatComparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(PropertyFloat a, PropertyFloat b)
-        {
-            var keyA = (int)a % NumBuckets;
-            var keyB = (int)b % NumBuckets;
+        return result;
+    }
+}
 
-            var result = keyA.CompareTo(keyB);
+public class PropertyFloatComparer : IComparer<PropertyFloat>
+{
+    public ushort NumBuckets;
 
-            if (result == 0)
-                result = a.CompareTo(b);
-
-            return result;
-        }
+    public PropertyFloatComparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
     }
 
-    public class PropertyStringComparer : IComparer<PropertyString>
+    public int Compare(PropertyFloat a, PropertyFloat b)
     {
-        public ushort NumBuckets;
+        var keyA = (int)a % NumBuckets;
+        var keyB = (int)b % NumBuckets;
 
-        public PropertyStringComparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(PropertyString a, PropertyString b)
-        {
-            var keyA = (int)a % NumBuckets;
-            var keyB = (int)b % NumBuckets;
+        return result;
+    }
+}
 
-            var result = keyA.CompareTo(keyB);
+public class PropertyStringComparer : IComparer<PropertyString>
+{
+    public ushort NumBuckets;
 
-            if (result == 0)
-                result = a.CompareTo(b);
-
-            return result;
-        }
+    public PropertyStringComparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
     }
 
-    public class PropertyDataIdComparer : IComparer<PropertyDataId>
+    public int Compare(PropertyString a, PropertyString b)
     {
-        public ushort NumBuckets;
+        var keyA = (int)a % NumBuckets;
+        var keyB = (int)b % NumBuckets;
 
-        public PropertyDataIdComparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(PropertyDataId a, PropertyDataId b)
-        {
-            var keyA = (int)a % NumBuckets;
-            var keyB = (int)b % NumBuckets;
+        return result;
+    }
+}
 
-            var result = keyA.CompareTo(keyB);
+public class PropertyDataIdComparer : IComparer<PropertyDataId>
+{
+    public ushort NumBuckets;
 
-            if (result == 0)
-                result = a.CompareTo(b);
-
-            return result;
-        }
+    public PropertyDataIdComparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
     }
 
-    public class PropertyInstanceIdComparer : IComparer<PropertyInstanceId>
+    public int Compare(PropertyDataId a, PropertyDataId b)
     {
-        public ushort NumBuckets;
+        var keyA = (int)a % NumBuckets;
+        var keyB = (int)b % NumBuckets;
 
-        public PropertyInstanceIdComparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(PropertyInstanceId a, PropertyInstanceId b)
-        {
-            var keyA = (int)a % NumBuckets;
-            var keyB = (int)b % NumBuckets;
+        return result;
+    }
+}
 
-            var result = keyA.CompareTo(keyB);
+public class PropertyInstanceIdComparer : IComparer<PropertyInstanceId>
+{
+    public ushort NumBuckets;
 
-            if (result == 0)
-                result = a.CompareTo(b);
-
-            return result;
-        }
+    public PropertyInstanceIdComparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
     }
 
-    public class SkillComparer : IComparer<Skill>
+    public int Compare(PropertyInstanceId a, PropertyInstanceId b)
     {
-        public ushort NumBuckets;
+        var keyA = (int)a % NumBuckets;
+        var keyB = (int)b % NumBuckets;
 
-        public SkillComparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(Skill a, Skill b)
-        {
-            var keyA = (int)a % NumBuckets;
-            var keyB = (int)b % NumBuckets;
+        return result;
+    }
+}
 
-            var result = keyA.CompareTo(keyB);
+public class SkillComparer : IComparer<Skill>
+{
+    public ushort NumBuckets;
 
-            if (result == 0)
-                result = a.CompareTo(b);
-
-            return result;
-        }
+    public SkillComparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
     }
 
-    public class SpellComparer : IComparer<int>
+    public int Compare(Skill a, Skill b)
     {
-        public ushort NumBuckets;
+        var keyA = (int)a % NumBuckets;
+        var keyB = (int)b % NumBuckets;
 
-        public SpellComparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(int a, int b)
-        {
-            var keyA = a % NumBuckets;
-            var keyB = b % NumBuckets;
+        return result;
+    }
+}
 
-            var result = keyA.CompareTo(keyB);
+public class SpellComparer : IComparer<int>
+{
+    public ushort NumBuckets;
 
-            if (result == 0)
-                result = a.CompareTo(b);
-
-            return result;
-        }
+    public SpellComparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
     }
 
-    public class GuidComparer : IComparer<ObjectGuid>
+    public int Compare(int a, int b)
     {
-        public ushort NumBuckets;
+        var keyA = a % NumBuckets;
+        var keyB = b % NumBuckets;
 
-        public GuidComparer(ushort numBuckets)
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            NumBuckets = numBuckets;
+            result = a.CompareTo(b);
         }
 
-        public int Compare(ObjectGuid a, ObjectGuid b)
+        return result;
+    }
+}
+
+public class GuidComparer : IComparer<ObjectGuid>
+{
+    public ushort NumBuckets;
+
+    public GuidComparer(ushort numBuckets)
+    {
+        NumBuckets = numBuckets;
+    }
+
+    public int Compare(ObjectGuid a, ObjectGuid b)
+    {
+        var keyA = a.Full % NumBuckets;
+        var keyB = b.Full % NumBuckets;
+
+        var result = keyA.CompareTo(keyB);
+
+        if (result == 0)
         {
-            var keyA = a.Full % NumBuckets;
-            var keyB = b.Full % NumBuckets;
-
-            var result = keyA.CompareTo(keyB);
-
-            if (result == 0)
-                result = a.Full.CompareTo(b.Full);
-
-            return result;
+            result = a.Full.CompareTo(b.Full);
         }
+
+        return result;
     }
 }

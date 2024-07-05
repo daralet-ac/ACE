@@ -1,14 +1,15 @@
-namespace ACE.Server.Network.GameAction.Actions
-{
-    public static class GameActionFellowshipDismiss
-    {
-        [GameAction(GameActionType.FellowshipDismiss)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            uint playerIdToDismiss = message.Payload.ReadUInt32();
+namespace ACE.Server.Network.GameAction.Actions;
 
-            if (session.Player.Fellowship != null)
-                session.Player.FellowshipDismissPlayer(playerIdToDismiss);
+public static class GameActionFellowshipDismiss
+{
+    [GameAction(GameActionType.FellowshipDismiss)]
+    public static void Handle(ClientMessage message, Session session)
+    {
+        var playerIdToDismiss = message.Payload.ReadUInt32();
+
+        if (session.Player.Fellowship != null)
+        {
+            session.Player.FellowshipDismissPlayer(playerIdToDismiss);
         }
     }
 }

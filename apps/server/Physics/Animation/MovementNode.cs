@@ -1,18 +1,17 @@
 using ACE.Entity.Enum;
 
-namespace ACE.Server.Physics.Animation
+namespace ACE.Server.Physics.Animation;
+
+public class MovementNode
 {
-    public class MovementNode
+    public MovementType Type;
+    public float Heading;
+
+    public MovementNode() { }
+
+    public MovementNode(MovementType type, float heading = 0.0f)
     {
-        public MovementType Type;
-        public float Heading;
-
-        public MovementNode() { }
-
-        public MovementNode(MovementType type, float heading = 0.0f)
-        {
-            Type = type;
-            Heading = heading;
-        }
+        Type = type;
+        Heading = heading;
     }
 }

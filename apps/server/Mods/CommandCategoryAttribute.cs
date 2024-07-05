@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ACE.Server.Mods;
+
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
 public class CommandCategoryAttribute : Attribute
 {

@@ -1,14 +1,12 @@
+namespace ACE.Server.Network.GameAction.Actions;
 
-namespace ACE.Server.Network.GameAction.Actions
+public static class GameActionFellowshipChangeOpenness
 {
-    public static class GameActionFellowshipChangeOpenness
+    [GameAction(GameActionType.FellowshipChangeOpenness)]
+    public static void Handle(ClientMessage message, Session session)
     {
-        [GameAction(GameActionType.FellowshipChangeOpenness)]
-        public static void Handle(ClientMessage message, Session session)
-        {
-            var isOpen = message.Payload.ReadUInt32() != 0;
+        var isOpen = message.Payload.ReadUInt32() != 0;
 
-            session.Player.HandleActionFellowshipChangeOpenness(isOpen);
-        }
+        session.Player.HandleActionFellowshipChangeOpenness(isOpen);
     }
 }
