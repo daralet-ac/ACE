@@ -1,8 +1,9 @@
-namespace ACE.Common
+namespace ACE.Common;
+
+public class DatabaseConfiguration
 {
-    public class DatabaseConfiguration
-    {
-        public MySqlConfiguration Authentication { get; set; } = new MySqlConfiguration()
+    public MySqlConfiguration Authentication { get; set; } =
+        new MySqlConfiguration()
         {
             Host = "127.0.0.1",
             Port = 3306,
@@ -11,7 +12,8 @@ namespace ACE.Common
             Password = ""
         };
 
-        public MySqlConfiguration Shard { get; set; } = new MySqlConfiguration()
+    public MySqlConfiguration Shard { get; set; } =
+        new MySqlConfiguration()
         {
             Host = "127.0.0.1",
             Port = 3306,
@@ -20,7 +22,8 @@ namespace ACE.Common
             Password = ""
         };
 
-        public MySqlConfiguration World { get; set; } = new MySqlConfiguration()
+    public MySqlConfiguration World { get; set; } =
+        new MySqlConfiguration()
         {
             Host = "127.0.0.1",
             Port = 3306,
@@ -28,5 +31,4 @@ namespace ACE.Common
             Username = "root",
             Password = ""
         };
-    }
 }

@@ -1,15 +1,14 @@
-namespace ACE.Common
+namespace ACE.Common;
+
+public class MasterConfiguration
 {
-    public class MasterConfiguration
-    {
-        public GameConfiguration Server { get; set; } = new GameConfiguration();
+    public GameConfiguration Server { get; set; } = new GameConfiguration();
 
-        public DatabaseConfiguration MySql { get; set; } = new DatabaseConfiguration();
+    public DatabaseConfiguration MySql { get; set; } = new DatabaseConfiguration();
 
-        public OfflineConfiguration Offline { get; set; } = new OfflineConfiguration();
+    public OfflineConfiguration Offline { get; set; } = new OfflineConfiguration();
 
-        public DDDConfiguration DDD { get; set; } = new DDDConfiguration();
+    public DDDConfiguration DDD { get; set; } = new DDDConfiguration();
 
-        public DATConfiguration DAT { get; set; } = new DATConfiguration();
-    }
+    public DATConfiguration DAT { get; set; } = new DATConfiguration();
 }

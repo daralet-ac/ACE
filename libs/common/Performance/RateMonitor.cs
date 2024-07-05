@@ -1,69 +1,68 @@
 using System.Diagnostics;
 
-namespace ACE.Common.Performance
+namespace ACE.Common.Performance;
+
+public class RateMonitor
 {
-    public class RateMonitor
+    private readonly Stopwatch stopwatch = new Stopwatch();
+
+    public readonly TimedEventHistory EventHistory = new TimedEventHistory();
+
+    /// <summary>
+    /// Stops time interval measurement and resets the elapsed time to zero.
+    /// </summary>
+    public void Reset()
     {
-        private readonly Stopwatch stopwatch = new Stopwatch();
+        stopwatch.Reset();
+    }
 
-        public readonly TimedEventHistory EventHistory = new TimedEventHistory();
+    /// <summary>
+    /// Stops time interval measurement, resets the elapsed time to zero, and starts measuring elapsed time.
+    /// </summary>
+    public void Restart()
+    {
+        stopwatch.Restart();
+    }
 
-        /// <summary>
-        /// Stops time interval measurement and resets the elapsed time to zero.
-        /// </summary>
-        public void Reset()
-        {
-            stopwatch.Reset();
-        }
+    /// <summary>
+    /// Stops time interval measurement.
+    /// </summary>
+    public void Pause()
+    {
+        stopwatch.Stop();
+    }
 
-        /// <summary>
-        /// Stops time interval measurement, resets the elapsed time to zero, and starts measuring elapsed time.
-        /// </summary>
-        public void Restart()
-        {
-            stopwatch.Restart();
-        }
+    /// <summary>
+    /// Starts time interval measurement.
+    /// </summary>
+    public void Resume()
+    {
+        stopwatch.Start();
+    }
 
-        /// <summary>
-        /// Stops time interval measurement.
-        /// </summary>
-        public void Pause()
-        {
-            stopwatch.Stop();
-        }
+    /// <summary>
+    /// Stops time interval measurement.
+    /// Registers the completion of an event and returns the elapsed seconds for this event
+    /// </summary>
+    public double RegisterEventEnd()
+    {
+        stopwatch.Stop();
 
-        /// <summary>
-        /// Starts time interval measurement.
-        /// </summary>
-        public void Resume()
-        {
-            stopwatch.Start();
-        }
+        return RegisterEvent(stopwatch.Elapsed.TotalSeconds);
+    }
 
-        /// <summary>
-        /// Stops time interval measurement.
-        /// Registers the completion of an event and returns the elapsed seconds for this event
-        /// </summary>
-        public double RegisterEventEnd()
-        {
-            stopwatch.Stop();
+    public double RegisterEvent(double totalSeconds)
+    {
+        return EventHistory.RegisterEvent(totalSeconds);
+    }
 
-            return RegisterEvent(stopwatch.Elapsed.TotalSeconds);
-        }
+    public void ClearEventHistory()
+    {
+        EventHistory.ClearHistory();
+    }
 
-        public double RegisterEvent(double totalSeconds)
-        {
-            return EventHistory.RegisterEvent(totalSeconds);
-        }
-
-        public void ClearEventHistory()
-        {
-            EventHistory.ClearHistory();
-        }
-
-        public override string ToString()
-        {
-            return EventHistory.ToString();
-        }
+    public override string ToString()
+    {
+        return EventHistory.ToString();
     }
 }
