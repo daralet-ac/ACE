@@ -2,42 +2,41 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ACE.Common.Cryptography
+namespace ACE.Common.Cryptography;
+
+public enum SHA2Type
 {
-    public enum SHA2Type
-    {
-        SHA256,
-        SHA512
-    }
+    SHA256,
+    SHA512
+}
 
-    public static class SHA2
+public static class SHA2
+{
+    public static string Hash(SHA2Type type, string data)
     {
-        public static string Hash(SHA2Type type, string data)
+        var buffer = Encoding.UTF8.GetBytes(data);
+
+        try
         {
-            byte[] buffer = Encoding.UTF8.GetBytes(data);
-
-            try
+            byte[] digest;
+            switch (type)
             {
-                byte[] digest;
-                switch (type)
-                {
-                    case SHA2Type.SHA256:
-                        digest = SHA256.Create().ComputeHash(buffer);
-                        break;
-                    case SHA2Type.SHA512:
-                        digest = SHA512.Create().ComputeHash(buffer);
-                        break;
-                    default:
-                        return "";
-                }
+                case SHA2Type.SHA256:
+                    digest = SHA256.Create().ComputeHash(buffer);
+                    break;
+                case SHA2Type.SHA512:
+                    digest = SHA512.Create().ComputeHash(buffer);
+                    break;
+                default:
+                    return "";
+            }
 
-                return BitConverter.ToString(digest).Replace("-", "").ToLower();
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine(exception.Message);
-                return "";
-            }
+            return BitConverter.ToString(digest).Replace("-", "").ToLower();
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception.Message);
+            return "";
         }
     }
 }

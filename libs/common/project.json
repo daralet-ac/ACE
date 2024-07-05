@@ -1,5 +1,16 @@
 {
   "targets": {
+    "lint": {
+      "executor": "@nx-dotnet/core:format",
+      "options": {
+        "fixWhitespace": false
+      },
+      "configurations": {
+        "write": {
+          "fix": true
+        }
+      }
+    },
     "format": {
       "executor": "@daralet/csharpier:format",
       "configurations": {
