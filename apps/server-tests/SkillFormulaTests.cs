@@ -1,17 +1,15 @@
+using ACE.Server.WorldObjects;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using ACE.Server.WorldObjects;
+namespace ACE.Server.Tests;
 
-namespace ACE.Server.Tests
+[TestClass]
+public class SkillFormulaTests
 {
-    [TestClass]
-    public class SkillFormulaTests
+    [TestMethod]
+    public void FiftyFiftyIsAccurate()
     {
-        [TestMethod]
-        public void FiftyFiftyIsAccurate()
-        {
-            var result = SkillCheck.GetSkillChance(100, 100);
-            Assert.AreEqual(0.5d, result);
-        }
+        var result = SkillCheck.GetSkillChance(100, 100);
+        Assert.AreEqual(0.5d, result);
     }
 }
