@@ -1,36 +1,28 @@
-using Lifestoned.DataModel.Shared;
 using System.Text.Json.Serialization;
+using Lifestoned.DataModel.Shared;
 
-namespace ACE.Adapter.GDLE.Models
+namespace ACE.Adapter.GDLE.Models;
+
+public class BodyPartListing
 {
-    public class BodyPartListing
+    [JsonPropertyName("key")]
+    public int Key { get; set; }
+
+    [JsonIgnore]
+    public BodyPartType BodyPartType
     {
-        [JsonPropertyName("key")]
-        public int Key { get; set; }
+        get { return (BodyPartType)Key; }
+        set { Key = (int)value; }
+    }
 
-        [JsonIgnore]
-        public BodyPartType BodyPartType
-        {
-            get
-            {
-                return (BodyPartType)Key;
-            }
-            set
-            {
-                Key = (int)value;
-            }
-        }
+    [JsonPropertyName("value")]
+    public BodyPart BodyPart { get; set; } = new BodyPart();
 
-        [JsonPropertyName("value")]
-        public BodyPart BodyPart { get; set; } = new BodyPart();
+    [JsonIgnore]
+    public bool Deleted { get; set; }
 
-
-        [JsonIgnore]
-        public bool Deleted { get; set; }
-
-        public BodyPartListing()
-        {
-            BodyPart = new BodyPart();
-        }
+    public BodyPartListing()
+    {
+        BodyPart = new BodyPart();
     }
 }

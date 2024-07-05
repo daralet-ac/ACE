@@ -1,13 +1,12 @@
 using System.Text.Json.Serialization;
 
-namespace ACE.Adapter.GDLE.Models
-{
-    public class Frame
-    {
-        [JsonPropertyName("origin")]
-        public XYZ Position { get; set; }
+namespace ACE.Adapter.GDLE.Models;
 
-        [JsonPropertyName("angles")]
-        public Quaternion Rotations { get; set; }
-    }
+public class Frame
+{
+    [JsonPropertyName("origin")]
+    public XYZ Position { get; set; }
+
+    [JsonPropertyName("angles")]
+    public Quaternion Rotations { get; set; }
 }

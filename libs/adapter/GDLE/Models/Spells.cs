@@ -1,11 +1,9 @@
-
 using System.Text.Json.Serialization;
 
-namespace ACE.Adapter.GDLE.Models
+namespace ACE.Adapter.GDLE.Models;
+
+public class Spells
 {
-    public class Spells
-    {
-        [JsonPropertyName("table")]
-        public SpellTable Table { get; set; }
-    }
+    [JsonPropertyName("table")]
+    public SpellTable Table { get; set; }
 }

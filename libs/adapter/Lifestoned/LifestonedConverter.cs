@@ -4,61 +4,87 @@ using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
 using ACE.Adapter.Enum;
 using ACE.Adapter.GDLE.Models;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 
-namespace ACE.Adapter.Lifestoned
+namespace ACE.Adapter.Lifestoned;
+
+public static class LifestonedConverter
 {
-    public static class LifestonedConverter
+    /// <summary>
+    /// Converts LSD weenie to ACE weenie
+    /// </summary>
+    public static bool TryConvert(LSDWeenie input, out Weenie result, bool correctForEnumShift = false)
     {
-        /// <summary>
-        /// Converts LSD weenie to ACE weenie
-        /// </summary>
-        public static bool TryConvert(LSDWeenie input, out Weenie result, bool correctForEnumShift = false)
+        if (input.WeenieId == 0)
         {
-            if (input.WeenieId == 0)
+            result = null;
+            return false;
+        }
+
+        try
+        {
+            result = new Weenie();
+
+            result.ClassId = input.WeenieId;
+
+            if (
+                input.WeenieClassId <= ushort.MaxValue
+                && System.Enum.IsDefined(typeof(WeenieClassId), (ushort)input.WeenieClassId)
+            )
             {
-                result = null;
-                return false;
+                result.ClassName = System.Enum.GetName(typeof(WeenieClassId), (ushort)input.WeenieClassId).ToLower();
+            }
+            else if (
+                input.WeenieClassId <= ushort.MaxValue
+                && System.Enum.IsDefined(typeof(WeenieClassName), (ushort)input.WeenieClassId)
+            )
+            {
+                var clsName = System.Enum.GetName(typeof(WeenieClassName), input.WeenieClassId).ToLower().Substring(2);
+                result.ClassName = clsName.Substring(0, clsName.Length - 6);
+            }
+            else
+            {
+                result.ClassName =
+                    "ace"
+                    + input.WeenieClassId
+                    + "-"
+                    + input
+                        .Name.Replace("'", "")
+                        .Replace(" ", "")
+                        .Replace(".", "")
+                        .Replace("(", "")
+                        .Replace(")", "")
+                        .Replace("+", "")
+                        .Replace(":", "")
+                        .Replace("_", "")
+                        .Replace("-", "")
+                        .Replace(",", "")
+                        .Replace("\"", "")
+                        .ToLower();
             }
 
-            try
+            result.Type = input.WeenieTypeId;
+
+            if (input.Book != null)
             {
-                result = new Weenie();
+                result.WeeniePropertiesBook = new WeeniePropertiesBook();
+                result.WeeniePropertiesBook.MaxNumPages = input.Book.MaxNumberPages;
+                result.WeeniePropertiesBook.MaxNumCharsPerPage = input.Book.MaxCharactersPerPage;
 
-                result.ClassId = input.WeenieId;
-
-                if (input.WeenieClassId <= ushort.MaxValue && System.Enum.IsDefined(typeof(WeenieClassId), (ushort)input.WeenieClassId))
-                    result.ClassName = System.Enum.GetName(typeof(WeenieClassId), (ushort)input.WeenieClassId).ToLower();
-                else if (input.WeenieClassId <= ushort.MaxValue && System.Enum.IsDefined(typeof(WeenieClassName), (ushort)input.WeenieClassId))
+                if (input.Book.Pages != null)
                 {
-                    var clsName = System.Enum.GetName(typeof(WeenieClassName), input.WeenieClassId).ToLower().Substring(2);
-                    result.ClassName = clsName.Substring(0, clsName.Length - 6);
-                }
-                else
-                    result.ClassName = "ace" + input.WeenieClassId + "-" + input.Name.Replace("'", "").Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", "").Replace("+", "").Replace(":", "").Replace("_", "").Replace("-", "").Replace(",", "").Replace("\"", "").ToLower();
+                    result.WeeniePropertiesBookPageData = new List<WeeniePropertiesBookPageData>();
 
-                result.Type = input.WeenieTypeId;
+                    uint pageId = 0;
 
-                if (input.Book != null)
-                {
-                    result.WeeniePropertiesBook = new WeeniePropertiesBook();
-                    result.WeeniePropertiesBook.MaxNumPages = input.Book.MaxNumberPages;
-                    result.WeeniePropertiesBook.MaxNumCharsPerPage = input.Book.MaxCharactersPerPage;
-
-                    if (input.Book.Pages != null)
+                    foreach (var value in input.Book.Pages)
                     {
-                        result.WeeniePropertiesBookPageData = new List<WeeniePropertiesBookPageData>();
-
-                        uint pageId = 0;
-
-                        foreach (var value in input.Book.Pages)
-                        {
-                            result.WeeniePropertiesBookPageData.Add(new WeeniePropertiesBookPageData
+                        result.WeeniePropertiesBookPageData.Add(
+                            new WeeniePropertiesBookPageData
                             {
                                 PageId = pageId,
 
@@ -67,47 +93,149 @@ namespace ACE.Adapter.Lifestoned
                                 AuthorAccount = value.AuthorAccount,
                                 IgnoreAuthor = value.IgnoreAuthor ?? false,
                                 PageText = value.PageText,
-                            });
+                            }
+                        );
 
-                            pageId++;
-                        }
+                        pageId++;
                     }
                 }
+            }
 
-                // LandblockInstance
+            // LandblockInstance
 
-                // PointsOfInterest
+            // PointsOfInterest
 
-                // WeeniePropertiesAnimPart
+            // WeeniePropertiesAnimPart
 
-                if (input.Attributes != null)
+            if (input.Attributes != null)
+            {
+                if (input.Attributes.Strength != null)
                 {
-                    if (input.Attributes.Strength != null)
-                        result.WeeniePropertiesAttribute.Add(new WeeniePropertiesAttribute { Type = (ushort)PropertyAttribute.Strength, InitLevel = input.Attributes.Strength.Ranks ?? 0, LevelFromCP = input.Attributes.Strength.LevelFromCp, CPSpent = input.Attributes.Strength.XpSpent ?? 0 });
-                    if (input.Attributes.Endurance != null)
-                        result.WeeniePropertiesAttribute.Add(new WeeniePropertiesAttribute { Type = (ushort)PropertyAttribute.Endurance, InitLevel = input.Attributes.Endurance.Ranks ?? 0, LevelFromCP = input.Attributes.Endurance.LevelFromCp, CPSpent = input.Attributes.Endurance.XpSpent ?? 0 });
-                    if (input.Attributes.Quickness != null)
-                        result.WeeniePropertiesAttribute.Add(new WeeniePropertiesAttribute { Type = (ushort)PropertyAttribute.Quickness, InitLevel = input.Attributes.Quickness.Ranks ?? 0, LevelFromCP = input.Attributes.Quickness.LevelFromCp, CPSpent = input.Attributes.Quickness.XpSpent ?? 0 });
-                    if (input.Attributes.Coordination != null)
-                        result.WeeniePropertiesAttribute.Add(new WeeniePropertiesAttribute { Type = (ushort)PropertyAttribute.Coordination, InitLevel = input.Attributes.Coordination.Ranks ?? 0, LevelFromCP = input.Attributes.Coordination.LevelFromCp, CPSpent = input.Attributes.Coordination.XpSpent ?? 0 });
-                    if (input.Attributes.Focus != null)
-                        result.WeeniePropertiesAttribute.Add(new WeeniePropertiesAttribute { Type = (ushort)PropertyAttribute.Focus, InitLevel = input.Attributes.Focus.Ranks ?? 0, LevelFromCP = input.Attributes.Focus.LevelFromCp, CPSpent = input.Attributes.Focus.XpSpent ?? 0 });
-                    if (input.Attributes.Self != null)
-                        result.WeeniePropertiesAttribute.Add(new WeeniePropertiesAttribute { Type = (ushort)PropertyAttribute.Self, InitLevel = input.Attributes.Self.Ranks ?? 0, LevelFromCP = input.Attributes.Self.LevelFromCp, CPSpent = input.Attributes.Self.XpSpent ?? 0 });
-
-                    if (input.Attributes.Health != null)
-                        result.WeeniePropertiesAttribute2nd.Add(new WeeniePropertiesAttribute2nd { Type = (ushort)PropertyAttribute2nd.MaxHealth, InitLevel = input.Attributes.Health.Ranks ?? 0, LevelFromCP = input.Attributes.Health.LevelFromCp ?? 0, CPSpent = input.Attributes.Health.XpSpent ?? 0, CurrentLevel = input.Attributes.Health.Current ?? 0 });
-                    if (input.Attributes.Stamina != null)
-                        result.WeeniePropertiesAttribute2nd.Add(new WeeniePropertiesAttribute2nd { Type = (ushort)PropertyAttribute2nd.MaxStamina, InitLevel = input.Attributes.Stamina.Ranks ?? 0, LevelFromCP = input.Attributes.Stamina.LevelFromCp ?? 0, CPSpent = input.Attributes.Stamina.XpSpent ?? 0, CurrentLevel = input.Attributes.Stamina.Current ?? 0 });
-                    if (input.Attributes.Mana != null)
-                        result.WeeniePropertiesAttribute2nd.Add(new WeeniePropertiesAttribute2nd { Type = (ushort)PropertyAttribute2nd.MaxMana, InitLevel = input.Attributes.Mana.Ranks ?? 0, LevelFromCP = input.Attributes.Mana.LevelFromCp ?? 0, CPSpent = input.Attributes.Mana.XpSpent ?? 0, CurrentLevel = input.Attributes.Mana.Current ?? 0 });
+                    result.WeeniePropertiesAttribute.Add(
+                        new WeeniePropertiesAttribute
+                        {
+                            Type = (ushort)PropertyAttribute.Strength,
+                            InitLevel = input.Attributes.Strength.Ranks ?? 0,
+                            LevelFromCP = input.Attributes.Strength.LevelFromCp,
+                            CPSpent = input.Attributes.Strength.XpSpent ?? 0
+                        }
+                    );
                 }
 
-                if (input.Body != null)
+                if (input.Attributes.Endurance != null)
                 {
-                    foreach (var value in input.Body.BodyParts)
-                    {
-                        result.WeeniePropertiesBodyPart.Add(new WeeniePropertiesBodyPart
+                    result.WeeniePropertiesAttribute.Add(
+                        new WeeniePropertiesAttribute
+                        {
+                            Type = (ushort)PropertyAttribute.Endurance,
+                            InitLevel = input.Attributes.Endurance.Ranks ?? 0,
+                            LevelFromCP = input.Attributes.Endurance.LevelFromCp,
+                            CPSpent = input.Attributes.Endurance.XpSpent ?? 0
+                        }
+                    );
+                }
+
+                if (input.Attributes.Quickness != null)
+                {
+                    result.WeeniePropertiesAttribute.Add(
+                        new WeeniePropertiesAttribute
+                        {
+                            Type = (ushort)PropertyAttribute.Quickness,
+                            InitLevel = input.Attributes.Quickness.Ranks ?? 0,
+                            LevelFromCP = input.Attributes.Quickness.LevelFromCp,
+                            CPSpent = input.Attributes.Quickness.XpSpent ?? 0
+                        }
+                    );
+                }
+
+                if (input.Attributes.Coordination != null)
+                {
+                    result.WeeniePropertiesAttribute.Add(
+                        new WeeniePropertiesAttribute
+                        {
+                            Type = (ushort)PropertyAttribute.Coordination,
+                            InitLevel = input.Attributes.Coordination.Ranks ?? 0,
+                            LevelFromCP = input.Attributes.Coordination.LevelFromCp,
+                            CPSpent = input.Attributes.Coordination.XpSpent ?? 0
+                        }
+                    );
+                }
+
+                if (input.Attributes.Focus != null)
+                {
+                    result.WeeniePropertiesAttribute.Add(
+                        new WeeniePropertiesAttribute
+                        {
+                            Type = (ushort)PropertyAttribute.Focus,
+                            InitLevel = input.Attributes.Focus.Ranks ?? 0,
+                            LevelFromCP = input.Attributes.Focus.LevelFromCp,
+                            CPSpent = input.Attributes.Focus.XpSpent ?? 0
+                        }
+                    );
+                }
+
+                if (input.Attributes.Self != null)
+                {
+                    result.WeeniePropertiesAttribute.Add(
+                        new WeeniePropertiesAttribute
+                        {
+                            Type = (ushort)PropertyAttribute.Self,
+                            InitLevel = input.Attributes.Self.Ranks ?? 0,
+                            LevelFromCP = input.Attributes.Self.LevelFromCp,
+                            CPSpent = input.Attributes.Self.XpSpent ?? 0
+                        }
+                    );
+                }
+
+                if (input.Attributes.Health != null)
+                {
+                    result.WeeniePropertiesAttribute2nd.Add(
+                        new WeeniePropertiesAttribute2nd
+                        {
+                            Type = (ushort)PropertyAttribute2nd.MaxHealth,
+                            InitLevel = input.Attributes.Health.Ranks ?? 0,
+                            LevelFromCP = input.Attributes.Health.LevelFromCp ?? 0,
+                            CPSpent = input.Attributes.Health.XpSpent ?? 0,
+                            CurrentLevel = input.Attributes.Health.Current ?? 0
+                        }
+                    );
+                }
+
+                if (input.Attributes.Stamina != null)
+                {
+                    result.WeeniePropertiesAttribute2nd.Add(
+                        new WeeniePropertiesAttribute2nd
+                        {
+                            Type = (ushort)PropertyAttribute2nd.MaxStamina,
+                            InitLevel = input.Attributes.Stamina.Ranks ?? 0,
+                            LevelFromCP = input.Attributes.Stamina.LevelFromCp ?? 0,
+                            CPSpent = input.Attributes.Stamina.XpSpent ?? 0,
+                            CurrentLevel = input.Attributes.Stamina.Current ?? 0
+                        }
+                    );
+                }
+
+                if (input.Attributes.Mana != null)
+                {
+                    result.WeeniePropertiesAttribute2nd.Add(
+                        new WeeniePropertiesAttribute2nd
+                        {
+                            Type = (ushort)PropertyAttribute2nd.MaxMana,
+                            InitLevel = input.Attributes.Mana.Ranks ?? 0,
+                            LevelFromCP = input.Attributes.Mana.LevelFromCp ?? 0,
+                            CPSpent = input.Attributes.Mana.XpSpent ?? 0,
+                            CurrentLevel = input.Attributes.Mana.Current ?? 0
+                        }
+                    );
+                }
+            }
+
+            if (input.Body != null)
+            {
+                foreach (var value in input.Body.BodyParts)
+                {
+                    result.WeeniePropertiesBodyPart.Add(
+                        new WeeniePropertiesBodyPart
                         {
                             Key = (ushort)value.Key,
 
@@ -142,230 +270,268 @@ namespace ACE.Adapter.Lifestoned
                             HRB = (float?)value.BodyPart.SD.HRB ?? 0,
                             MRB = (float?)value.BodyPart.SD.MRB ?? 0,
                             LRB = (float?)value.BodyPart.SD.LRB ?? 0,
-                        });
+                        }
+                    );
+                }
+            }
+
+            if (input.BoolStats != null)
+            {
+                foreach (var value in input.BoolStats)
+                {
+                    if (result.WeeniePropertiesBool.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
+                    {
+                        result.WeeniePropertiesBool.Add(
+                            new WeeniePropertiesBool { Type = (ushort)value.Key, Value = (value.Value != 0) }
+                        );
                     }
                 }
+            }
 
-                if (input.BoolStats != null)
+            if (input.CreateList != null)
+            {
+                foreach (var value in input.CreateList)
                 {
-                    foreach (var value in input.BoolStats)
-                    {
-                        if (result.WeeniePropertiesBool.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
-                            result.WeeniePropertiesBool.Add(new WeeniePropertiesBool { Type = (ushort)value.Key, Value = (value.Value != 0) });
-                    }
-                }
-
-                if (input.CreateList != null)
-                {
-                    foreach (var value in input.CreateList)
-                        result.WeeniePropertiesCreateList.Add(new WeeniePropertiesCreateList { WeenieClassId = value.WeenieClassId ?? 0, Palette = (sbyte?)value.Palette ?? 0, Shade = (float?)value.Shade ?? 0, DestinationType = (sbyte?)value.Destination ?? 0, StackSize = value.StackSize ?? 0, TryToBond = (value.TryToBond != 0) });
-                }
-
-                if (input.DidStats != null)
-                {
-                    foreach (var value in input.DidStats)
-                    {
-                        if (!correctForEnumShift)
-                            result.WeeniePropertiesDID.Add(new WeeniePropertiesDID { Type = (ushort)value.Key, Value = value.Value });
-                        else
+                    result.WeeniePropertiesCreateList.Add(
+                        new WeeniePropertiesCreateList
                         {
-                            var valCorrected = value.Value;
+                            WeenieClassId = value.WeenieClassId ?? 0,
+                            Palette = (sbyte?)value.Palette ?? 0,
+                            Shade = (float?)value.Shade ?? 0,
+                            DestinationType = (sbyte?)value.Destination ?? 0,
+                            StackSize = value.StackSize ?? 0,
+                            TryToBond = (value.TryToBond != 0)
+                        }
+                    );
+                }
+            }
 
-                            // Fix PhysicsScript ENUM shift post 16PY data
-                            if (value.Key == (int)PropertyDataId.PhysicsScript)
+            if (input.DidStats != null)
+            {
+                foreach (var value in input.DidStats)
+                {
+                    if (!correctForEnumShift)
+                    {
+                        result.WeeniePropertiesDID.Add(
+                            new WeeniePropertiesDID { Type = (ushort)value.Key, Value = value.Value }
+                        );
+                    }
+                    else
+                    {
+                        var valCorrected = value.Value;
+
+                        // Fix PhysicsScript ENUM shift post 16PY data
+                        if (value.Key == (int)PropertyDataId.PhysicsScript)
+                        {
+                            // These are the only ones in 16PY database, not entirely certain where the shift started but the change below is correct for end of retail enum
+                            if (valCorrected >= 83 && valCorrected <= 89)
                             {
-                                // These are the only ones in 16PY database, not entirely certain where the shift started but the change below is correct for end of retail enum
-                                if (valCorrected >= 83 && valCorrected <= 89)
-                                    valCorrected++;
+                                valCorrected++;
                             }
+                        }
 
-                            // Fix PhysicsScript ENUM shift post 16PY data
-                            if (value.Key == (int)PropertyDataId.RestrictionEffect)
+                        // Fix PhysicsScript ENUM shift post 16PY data
+                        if (value.Key == (int)PropertyDataId.RestrictionEffect)
+                        {
+                            if (valCorrected >= 83)
                             {
-                                if (valCorrected >= 83)
-                                    valCorrected++;
+                                valCorrected++;
                             }
+                        }
 
-                            if (result.WeeniePropertiesDID.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
-                                result.WeeniePropertiesDID.Add(new WeeniePropertiesDID { Type = (ushort)value.Key, Value = valCorrected });
+                        if (result.WeeniePropertiesDID.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
+                        {
+                            result.WeeniePropertiesDID.Add(
+                                new WeeniePropertiesDID { Type = (ushort)value.Key, Value = valCorrected }
+                            );
                         }
                     }
                 }
+            }
 
-                if (input.EmoteTable != null)
+            if (input.EmoteTable != null)
+            {
+                foreach (var kvp in input.EmoteTable)
                 {
-                    foreach (var kvp in input.EmoteTable)
+                    // kvp.key not used
+
+                    foreach (var value in kvp.Emotes)
                     {
-                        // kvp.key not used
-
-                        foreach (var value in kvp.Emotes)
+                        var efEmote = new WeeniePropertiesEmote
                         {
-                            var efEmote = new WeeniePropertiesEmote
+                            Category = value.Category,
+
+                            Probability = value.Probability ?? 0,
+
+                            WeenieClassId = value.ClassId,
+
+                            Style = value.Style,
+                            Substyle = value.SubStyle,
+
+                            Quest = value.Quest,
+
+                            VendorType = (int?)value.VendorType,
+
+                            MinHealth = value.MinHealth,
+                            MaxHealth = value.MaxHealth
+                        };
+
+                        // Fix MotionCommand ENUM shift post 16PY data
+                        if (correctForEnumShift && efEmote.Style.HasValue)
+                        {
+                            var oldStyle = (ACE.Entity.Enum.MotionCommand)efEmote.Style;
+                            var index = efEmote.Style.Value & 0xFFFF;
+                            if (index >= 0x115)
                             {
-                                Category = value.Category,
+                                var newStyle = (ACE.Entity.Enum.MotionCommand)efEmote.Style + 3;
+                                efEmote.Style += 3;
+                            }
+                        }
+                        if (correctForEnumShift && efEmote.Substyle.HasValue)
+                        {
+                            var oldSubstyle = (ACE.Entity.Enum.MotionCommand)efEmote.Substyle;
+                            var index = efEmote.Substyle.Value & 0xFFFF;
+                            if (index >= 0x115)
+                            {
+                                var newSubstyle = (ACE.Entity.Enum.MotionCommand)efEmote.Substyle + 3;
+                                efEmote.Substyle += 3;
+                            }
+                        }
 
-                                Probability = value.Probability ?? 0,
+                        uint order = 0;
 
-                                WeenieClassId = value.ClassId,
+                        foreach (var action in value.Actions)
+                        {
+                            var efAction = new WeeniePropertiesEmoteAction
+                            {
+                                Order = order, // This is an ACE specific value to maintain the correct order of EmoteActions
 
-                                Style = value.Style,
-                                Substyle = value.SubStyle,
+                                Type = action.EmoteActionType,
+                                Delay = action.Delay ?? 0,
+                                Extent = action.Extent ?? 0,
 
-                                Quest = value.Quest,
+                                Motion = (uint?)action.Motion,
 
-                                VendorType = (int?)value.VendorType,
+                                Message = action.Message,
+                                TestString = action.TestString,
 
-                                MinHealth = value.MinHealth,
-                                MaxHealth = value.MaxHealth
+                                Min = (int?)action.Min,
+                                Max = (int?)action.Max,
+                                Min64 = action.Minimum64,
+                                Max64 = action.Maximum64,
+                                MinDbl = action.FMin,
+                                MaxDbl = action.FMax,
+
+                                Stat = (int?)action.Stat,
+                                Display = action.Display,
+
+                                Amount = (int?)action.Amount,
+                                Amount64 = (long?)action.Amount64,
+                                HeroXP64 = (long?)action.HeroXp64,
+
+                                Percent = action.Percent,
+
+                                SpellId = (int?)action.SpellId,
+
+                                WealthRating = (int?)action.WealthRating,
+                                TreasureClass = (int?)action.TreasureClass,
+                                TreasureType = action.TreasureType,
+
+                                PScript = (int?)action.PScript,
+
+                                Sound = (int?)action.Sound
                             };
 
                             // Fix MotionCommand ENUM shift post 16PY data
-                            if (correctForEnumShift && efEmote.Style.HasValue)
+                            if (correctForEnumShift && efAction.Motion.HasValue)
                             {
-                                var oldStyle = (ACE.Entity.Enum.MotionCommand)efEmote.Style;
-                                var index = efEmote.Style.Value & 0xFFFF;
+                                var oldMotion = (MotionCommand)efAction.Motion;
+                                var index = efAction.Motion.Value & 0xFFFF;
                                 if (index >= 0x115)
                                 {
-                                    var newStyle = (ACE.Entity.Enum.MotionCommand)efEmote.Style + 3;
-                                    efEmote.Style += 3;
+                                    var newMotion = (MotionCommand)efAction.Motion + 3;
+                                    efAction.Motion += 3;
                                 }
                             }
-                            if (correctForEnumShift && efEmote.Substyle.HasValue)
+
+                            // Fix PhysicsScript ENUM shift post 16PY data
+                            if (correctForEnumShift && efAction.PScript.HasValue)
                             {
-                                var oldSubstyle = (ACE.Entity.Enum.MotionCommand)efEmote.Substyle;
-                                var index = efEmote.Substyle.Value & 0xFFFF;
-                                if (index >= 0x115)
+                                if (efAction.PScript.Value >= 83)
                                 {
-                                    var newSubstyle = (ACE.Entity.Enum.MotionCommand)efEmote.Substyle + 3;
-                                    efEmote.Substyle += 3;
+                                    efAction.PScript++;
                                 }
                             }
 
-                            uint order = 0;
+                            order++;
 
-                            foreach (var action in value.Actions)
+                            if (action.Item != null)
                             {
-                                var efAction = new WeeniePropertiesEmoteAction
-                                {
-                                    Order = order, // This is an ACE specific value to maintain the correct order of EmoteActions
-
-                                    Type = action.EmoteActionType,
-                                    Delay = action.Delay ?? 0,
-                                    Extent = action.Extent ?? 0,
-
-                                    Motion = (uint?)action.Motion,
-
-                                    Message = action.Message,
-                                    TestString = action.TestString,
-
-                                    Min = (int?)action.Min,
-                                    Max = (int?)action.Max,
-                                    Min64 = action.Minimum64,
-                                    Max64 = action.Maximum64,
-                                    MinDbl = action.FMin,
-                                    MaxDbl = action.FMax,
-
-                                    Stat = (int?)action.Stat,
-                                    Display = action.Display,
-
-                                    Amount = (int?)action.Amount,
-                                    Amount64 = (long?)action.Amount64,
-                                    HeroXP64 = (long?)action.HeroXp64,
-
-                                    Percent = action.Percent,
-
-                                    SpellId = (int?)action.SpellId,
-
-                                    WealthRating = (int?)action.WealthRating,
-                                    TreasureClass = (int?)action.TreasureClass,
-                                    TreasureType = action.TreasureType,
-
-                                    PScript = (int?)action.PScript,
-
-                                    Sound = (int?)action.Sound
-                                };
-
-                                // Fix MotionCommand ENUM shift post 16PY data
-                                if (correctForEnumShift && efAction.Motion.HasValue)
-                                {
-                                    var oldMotion = (MotionCommand)efAction.Motion;
-                                    var index = efAction.Motion.Value & 0xFFFF;
-                                    if (index >= 0x115)
-                                    {
-                                        var newMotion = (MotionCommand)efAction.Motion + 3;
-                                        efAction.Motion += 3;
-                                    }
-                                }
-
-                                // Fix PhysicsScript ENUM shift post 16PY data
-                                if (correctForEnumShift && efAction.PScript.HasValue)
-                                {
-                                    if (efAction.PScript.Value >= 83)
-                                        efAction.PScript++;
-                                }
-
-                                order++;
-
-                                if (action.Item != null)
-                                {
-                                    efAction.WeenieClassId = action.Item.WeenieClassId;
-                                    efAction.Palette = (int?)action.Item.Palette;
-                                    efAction.Shade = (float?)action.Item.Shade;
-                                    efAction.DestinationType = (sbyte?)action.Item.Destination;
-                                    efAction.StackSize = action.Item.StackSize;
-                                    efAction.TryToBond = action.Item.TryToBond.HasValue ? (action.Item.TryToBond != 0) : (bool?)null;
-                                }
-
-                                if (action.Frame != null)
-                                {
-                                    efAction.OriginX = action.Frame.Position.X;
-                                    efAction.OriginY = action.Frame.Position.Y;
-                                    efAction.OriginZ = action.Frame.Position.Z;
-
-                                    efAction.AnglesW = action.Frame.Rotations.W;
-                                    efAction.AnglesX = action.Frame.Rotations.X;
-                                    efAction.AnglesY = action.Frame.Rotations.Y;
-                                    efAction.AnglesZ = action.Frame.Rotations.Z;
-                                }
-
-                                if (action.MPosition != null)
-                                {
-                                    efAction.ObjCellId = action.MPosition.LandCellId;
-
-                                    efAction.OriginX = action.MPosition.Frame.Position.X;
-                                    efAction.OriginY = action.MPosition.Frame.Position.Y;
-                                    efAction.OriginZ = action.MPosition.Frame.Position.Z;
-
-                                    efAction.AnglesW = action.MPosition.Frame.Rotations.W;
-                                    efAction.AnglesX = action.MPosition.Frame.Rotations.X;
-                                    efAction.AnglesY = action.MPosition.Frame.Rotations.Y;
-                                    efAction.AnglesZ = action.MPosition.Frame.Rotations.Z;
-                                }
-
-                                efEmote.WeeniePropertiesEmoteAction.Add(efAction);
+                                efAction.WeenieClassId = action.Item.WeenieClassId;
+                                efAction.Palette = (int?)action.Item.Palette;
+                                efAction.Shade = (float?)action.Item.Shade;
+                                efAction.DestinationType = (sbyte?)action.Item.Destination;
+                                efAction.StackSize = action.Item.StackSize;
+                                efAction.TryToBond = action.Item.TryToBond.HasValue
+                                    ? (action.Item.TryToBond != 0)
+                                    : (bool?)null;
                             }
 
-                            result.WeeniePropertiesEmote.Add(efEmote);
+                            if (action.Frame != null)
+                            {
+                                efAction.OriginX = action.Frame.Position.X;
+                                efAction.OriginY = action.Frame.Position.Y;
+                                efAction.OriginZ = action.Frame.Position.Z;
+
+                                efAction.AnglesW = action.Frame.Rotations.W;
+                                efAction.AnglesX = action.Frame.Rotations.X;
+                                efAction.AnglesY = action.Frame.Rotations.Y;
+                                efAction.AnglesZ = action.Frame.Rotations.Z;
+                            }
+
+                            if (action.MPosition != null)
+                            {
+                                efAction.ObjCellId = action.MPosition.LandCellId;
+
+                                efAction.OriginX = action.MPosition.Frame.Position.X;
+                                efAction.OriginY = action.MPosition.Frame.Position.Y;
+                                efAction.OriginZ = action.MPosition.Frame.Position.Z;
+
+                                efAction.AnglesW = action.MPosition.Frame.Rotations.W;
+                                efAction.AnglesX = action.MPosition.Frame.Rotations.X;
+                                efAction.AnglesY = action.MPosition.Frame.Rotations.Y;
+                                efAction.AnglesZ = action.MPosition.Frame.Rotations.Z;
+                            }
+
+                            efEmote.WeeniePropertiesEmoteAction.Add(efAction);
                         }
+
+                        result.WeeniePropertiesEmote.Add(efEmote);
                     }
                 }
+            }
 
-                // WeeniePropertiesEventFilter
+            // WeeniePropertiesEventFilter
 
-                if (input.FloatStats != null)
+            if (input.FloatStats != null)
+            {
+                foreach (var value in input.FloatStats)
                 {
-                    foreach (var value in input.FloatStats)
+                    if (result.WeeniePropertiesFloat.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
                     {
-                        if (result.WeeniePropertiesFloat.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
-                            result.WeeniePropertiesFloat.Add(new WeeniePropertiesFloat { Type = (ushort)value.Key, Value = value.Value });
+                        result.WeeniePropertiesFloat.Add(
+                            new WeeniePropertiesFloat { Type = (ushort)value.Key, Value = value.Value }
+                        );
                     }
                 }
+            }
 
-                if (input.GeneratorTable != null)
+            if (input.GeneratorTable != null)
+            {
+                foreach (var value in input.GeneratorTable)
                 {
-                    foreach (var value in input.GeneratorTable)
-                    {
-                        result.WeeniePropertiesGenerator.Add(new WeeniePropertiesGenerator
+                    result.WeeniePropertiesGenerator.Add(
+                        new WeeniePropertiesGenerator
                         {
                             Probability = (float)value.Probability,
                             WeenieClassId = value.WeenieClassId,
@@ -392,45 +558,64 @@ namespace ACE.Adapter.Lifestoned
                             AnglesZ = value.Frame.Rotations.Z,
 
                             // Slot
-                        });
+                        }
+                    );
+                }
+            }
+
+            if (input.IidStats != null)
+            {
+                foreach (var value in input.IidStats)
+                {
+                    if (result.WeeniePropertiesIID.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
+                    {
+                        result.WeeniePropertiesIID.Add(
+                            new WeeniePropertiesIID { Type = (ushort)value.Key, Value = (uint)value.Value }
+                        );
                     }
                 }
+            }
 
-                if (input.IidStats != null)
+            if (input.IntStats != null)
+            {
+                foreach (var value in input.IntStats)
                 {
-                    foreach (var value in input.IidStats)
+                    if (result.WeeniePropertiesInt.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
                     {
-                        if (result.WeeniePropertiesIID.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
-                            result.WeeniePropertiesIID.Add(new WeeniePropertiesIID { Type = (ushort)value.Key, Value = (uint)value.Value });
+                        result.WeeniePropertiesInt.Add(
+                            new WeeniePropertiesInt { Type = (ushort)value.Key, Value = value.Value }
+                        );
                     }
                 }
+            }
 
-                if (input.IntStats != null)
+            if (input.Int64Stats != null)
+            {
+                foreach (var value in input.Int64Stats)
                 {
-                    foreach (var value in input.IntStats)
+                    if (result.WeeniePropertiesInt64.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
                     {
-                        if (result.WeeniePropertiesInt.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
-                            result.WeeniePropertiesInt.Add(new WeeniePropertiesInt { Type = (ushort)value.Key, Value = value.Value });
+                        result.WeeniePropertiesInt64.Add(
+                            new WeeniePropertiesInt64 { Type = (ushort)value.Key, Value = value.Value }
+                        );
                     }
                 }
+            }
 
-                if (input.Int64Stats != null)
+            // WeeniePropertiesPalette
+
+            if (input.Positions != null)
+            {
+                foreach (var value in input.Positions)
                 {
-                    foreach (var value in input.Int64Stats)
+                    if (
+                        result.WeeniePropertiesPosition.FirstOrDefault(x =>
+                            x.PositionType == (ushort)value.PositionType
+                        ) == null
+                    )
                     {
-                        if (result.WeeniePropertiesInt64.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
-                            result.WeeniePropertiesInt64.Add(new WeeniePropertiesInt64 { Type = (ushort)value.Key, Value = value.Value });
-                    }
-                }
-
-                // WeeniePropertiesPalette
-
-                if (input.Positions != null)
-                {
-                    foreach (var value in input.Positions)
-                    {
-                        if (result.WeeniePropertiesPosition.FirstOrDefault(x => x.PositionType == (ushort)value.PositionType) == null)
-                            result.WeeniePropertiesPosition.Add(new WeeniePropertiesPosition()
+                        result.WeeniePropertiesPosition.Add(
+                            new WeeniePropertiesPosition()
                             {
                                 PositionType = (ushort)value.PositionType,
 
@@ -442,94 +627,126 @@ namespace ACE.Adapter.Lifestoned
                                 AnglesX = value.Position.Frame.Rotations.X,
                                 AnglesY = value.Position.Frame.Rotations.Y,
                                 AnglesZ = value.Position.Frame.Rotations.Z,
-                            });
+                            }
+                        );
                     }
                 }
-
-                if (input.Skills != null)
-                {
-                    foreach (var value in input.Skills)
-                    {
-                        if (result.WeeniePropertiesSkill.FirstOrDefault(x => x.Type == (ushort)value.SkillId) == null)
-                            result.WeeniePropertiesSkill.Add(new WeeniePropertiesSkill { Type = (ushort)value.SkillId, LevelFromPP = (ushort)value.Skill.LevelFromPp, SAC = (uint?)value.Skill.TrainedLevel ?? 0, PP = value.Skill.XpInvested ?? 0, InitLevel = value.Skill.Ranks ?? 0, ResistanceAtLastCheck = value.Skill.ResistanceOfLastCheck ?? 0, LastUsedTime = value.Skill.LastUsed ?? 0 });
-                    }
-                }
-
-                if (input.Spells != null)
-                {
-                    foreach (var value in input.Spells)
-                    {
-                        if (result.WeeniePropertiesDID.FirstOrDefault(x => x.Type == (int)PropertyDataId.Spell && x.Value == value.SpellId) == null)
-                            result.WeeniePropertiesSpellBook.Add(new WeeniePropertiesSpellBook { Spell = value.SpellId, Probability = (float?)value.Stats.CastingChance ?? 0f });
-                    }
-                }
-
-                if (input.StringStats != null)
-                {
-                    foreach (var value in input.StringStats)
-                    {
-                        if (result.WeeniePropertiesString.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
-                            result.WeeniePropertiesString.Add(new WeeniePropertiesString { Type = (ushort)value.Key, Value = value.Value });
-                    }
-                }
-
-                // WeeniePropertiesTextureMap
-
-                return true;
             }
-            catch
+
+            if (input.Skills != null)
             {
-                result = null;
-                return false;
+                foreach (var value in input.Skills)
+                {
+                    if (result.WeeniePropertiesSkill.FirstOrDefault(x => x.Type == (ushort)value.SkillId) == null)
+                    {
+                        result.WeeniePropertiesSkill.Add(
+                            new WeeniePropertiesSkill
+                            {
+                                Type = (ushort)value.SkillId,
+                                LevelFromPP = (ushort)value.Skill.LevelFromPp,
+                                SAC = (uint?)value.Skill.TrainedLevel ?? 0,
+                                PP = value.Skill.XpInvested ?? 0,
+                                InitLevel = value.Skill.Ranks ?? 0,
+                                ResistanceAtLastCheck = value.Skill.ResistanceOfLastCheck ?? 0,
+                                LastUsedTime = value.Skill.LastUsed ?? 0
+                            }
+                        );
+                    }
+                }
             }
+
+            if (input.Spells != null)
+            {
+                foreach (var value in input.Spells)
+                {
+                    if (
+                        result.WeeniePropertiesDID.FirstOrDefault(x =>
+                            x.Type == (int)PropertyDataId.Spell && x.Value == value.SpellId
+                        ) == null
+                    )
+                    {
+                        result.WeeniePropertiesSpellBook.Add(
+                            new WeeniePropertiesSpellBook
+                            {
+                                Spell = value.SpellId,
+                                Probability = (float?)value.Stats.CastingChance ?? 0f
+                            }
+                        );
+                    }
+                }
+            }
+
+            if (input.StringStats != null)
+            {
+                foreach (var value in input.StringStats)
+                {
+                    if (result.WeeniePropertiesString.FirstOrDefault(x => x.Type == (ushort)value.Key) == null)
+                    {
+                        result.WeeniePropertiesString.Add(
+                            new WeeniePropertiesString { Type = (ushort)value.Key, Value = value.Value }
+                        );
+                    }
+                }
+            }
+
+            // WeeniePropertiesTextureMap
+
+            return true;
+        }
+        catch
+        {
+            result = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Converts ACE weenie to LSD weenie
+    /// </summary>
+    public static bool TryConvert(Weenie input, out LSDWeenie result, bool correctForEnumShift = false)
+    {
+        if (input.ClassId == 0)
+        {
+            result = null;
+            return false;
         }
 
-        /// <summary>
-        /// Converts ACE weenie to LSD weenie
-        /// </summary>
-        public static bool TryConvert(Weenie input, out LSDWeenie result, bool correctForEnumShift = false)
+        try
         {
-            if (input.ClassId == 0)
+            result = new LSDWeenie();
+
+            result.WeenieId = input.ClassId;
+
+            //if (input.WeenieClassId <= ushort.MaxValue && System.Enum.IsDefined(typeof(WeenieClassId), (ushort)input.WeenieClassId))
+            //    result.ClassName = System.Enum.GetName(typeof(WeenieClassId), (ushort)input.WeenieClassId).ToLower();
+            //else if (input.WeenieClassId <= ushort.MaxValue && System.Enum.IsDefined(typeof(WeenieClassName), (ushort)input.WeenieClassId))
+            //{
+            //    var clsName = System.Enum.GetName(typeof(WeenieClassName), input.WeenieClassId).ToLower().Substring(2);
+            //    result.ClassName = clsName.Substring(0, clsName.Length - 6);
+            //}
+            //else
+            //    result.ClassName = "ace" + input.WeenieClassId + "-" + input.Name.Replace("'", "").Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", "").Replace("+", "").Replace(":", "").Replace("_", "").Replace("-", "").Replace(",", "").ToLower();
+
+            //result.Name = input.ClassName;
+
+            result.WeenieTypeId = input.Type;
+
+            if (input.WeeniePropertiesBook != null)
             {
-                result = null;
-                return false;
-            }
+                result.Book = new Book();
+                result.Book.MaxNumberPages = input.WeeniePropertiesBook.MaxNumPages;
+                result.Book.MaxCharactersPerPage = input.WeeniePropertiesBook.MaxNumCharsPerPage;
 
-            try
-            {
-                result = new LSDWeenie();
-
-                result.WeenieId = input.ClassId;
-
-                //if (input.WeenieClassId <= ushort.MaxValue && System.Enum.IsDefined(typeof(WeenieClassId), (ushort)input.WeenieClassId))
-                //    result.ClassName = System.Enum.GetName(typeof(WeenieClassId), (ushort)input.WeenieClassId).ToLower();
-                //else if (input.WeenieClassId <= ushort.MaxValue && System.Enum.IsDefined(typeof(WeenieClassName), (ushort)input.WeenieClassId))
-                //{
-                //    var clsName = System.Enum.GetName(typeof(WeenieClassName), input.WeenieClassId).ToLower().Substring(2);
-                //    result.ClassName = clsName.Substring(0, clsName.Length - 6);
-                //}
-                //else
-                //    result.ClassName = "ace" + input.WeenieClassId + "-" + input.Name.Replace("'", "").Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", "").Replace("+", "").Replace(":", "").Replace("_", "").Replace("-", "").Replace(",", "").ToLower();
-
-                //result.Name = input.ClassName;
-
-                result.WeenieTypeId = input.Type;
-
-                if (input.WeeniePropertiesBook != null)
+                if (input.WeeniePropertiesBookPageData != null && input.WeeniePropertiesBookPageData.Count > 0)
                 {
-                    result.Book = new Book();
-                    result.Book.MaxNumberPages = input.WeeniePropertiesBook.MaxNumPages;
-                    result.Book.MaxCharactersPerPage = input.WeeniePropertiesBook.MaxNumCharsPerPage;
+                    result.Book.Pages = new List<Page>();
 
-                    if (input.WeeniePropertiesBookPageData != null && input.WeeniePropertiesBookPageData.Count > 0)
+                    //uint pageId = 0;
+
+                    foreach (var value in input.WeeniePropertiesBookPageData.OrderBy(p => p.PageId))
                     {
-                        result.Book.Pages = new List<Page>();
-
-                        //uint pageId = 0;
-
-                        foreach (var value in input.WeeniePropertiesBookPageData.OrderBy(p => p.PageId))
-                        {
-                            result.Book.Pages.Add(new Page
+                        result.Book.Pages.Add(
+                            new Page
                             {
                                 //= pageId,
 
@@ -538,105 +755,195 @@ namespace ACE.Adapter.Lifestoned
                                 AuthorAccount = value.AuthorAccount,
                                 IgnoreAuthor = value.IgnoreAuthor,
                                 PageText = value.PageText,
-                            });
+                            }
+                        );
 
-                            //pageId++;
-                        }
+                        //pageId++;
                     }
                 }
+            }
 
-                // LandblockInstance
+            // LandblockInstance
 
-                // PointsOfInterest
+            // PointsOfInterest
 
-                // WeeniePropertiesAnimPart
+            // WeeniePropertiesAnimPart
 
-                if (input.WeeniePropertiesAttribute != null && input.WeeniePropertiesAttribute.Count > 0)
+            if (input.WeeniePropertiesAttribute != null && input.WeeniePropertiesAttribute.Count > 0)
+            {
+                if (result.Attributes == null)
                 {
-                    if (result.Attributes == null)
-                        result.Attributes = new AttributeSet();
-
-                    result.Attributes.Strength = new GDLE.Models.Attribute
-                    {
-                        Ranks = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Strength).InitLevel,
-                        LevelFromCp = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Strength).LevelFromCP,
-                        XpSpent = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Strength).CPSpent
-                    };
-
-                    result.Attributes.Endurance = new GDLE.Models.Attribute
-                    {
-                        Ranks = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Endurance).InitLevel,
-                        LevelFromCp = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Endurance).LevelFromCP,
-                        XpSpent = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Endurance).CPSpent
-                    };
-
-                    result.Attributes.Quickness = new GDLE.Models.Attribute
-                    {
-                        Ranks = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Quickness).InitLevel,
-                        LevelFromCp = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Quickness).LevelFromCP,
-                        XpSpent = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Quickness).CPSpent
-                    };
-
-                    result.Attributes.Coordination = new GDLE.Models.Attribute
-                    {
-                        Ranks = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Coordination).InitLevel,
-                        LevelFromCp = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Coordination).LevelFromCP,
-                        XpSpent = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Coordination).CPSpent
-                    };
-
-                    result.Attributes.Focus = new GDLE.Models.Attribute
-                    {
-                        Ranks = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Focus).InitLevel,
-                        LevelFromCp = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Focus).LevelFromCP,
-                        XpSpent = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Focus).CPSpent
-                    };
-
-                    result.Attributes.Self = new GDLE.Models.Attribute
-                    {
-                        Ranks = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Self).InitLevel,
-                        LevelFromCp = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Self).LevelFromCP,
-                        XpSpent = input.WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Self).CPSpent
-                    };
+                    result.Attributes = new AttributeSet();
                 }
 
-                if (input.WeeniePropertiesAttribute2nd != null && input.WeeniePropertiesAttribute2nd.Count > 0)
+                result.Attributes.Strength = new GDLE.Models.Attribute
                 {
-                    if (result.Attributes == null)
-                        result.Attributes = new AttributeSet();
+                    Ranks = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Strength)
+                        .InitLevel,
+                    LevelFromCp = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Strength)
+                        .LevelFromCP,
+                    XpSpent = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Strength)
+                        .CPSpent
+                };
 
-                    result.Attributes.Health = new GDLE.Models.Vital
-                    {
-                        Ranks = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxHealth).InitLevel,
-                        LevelFromCp = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxHealth).LevelFromCP,
-                        XpSpent = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxHealth).CPSpent,
-                        Current = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxHealth).CurrentLevel
-                    };
+                result.Attributes.Endurance = new GDLE.Models.Attribute
+                {
+                    Ranks = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Endurance)
+                        .InitLevel,
+                    LevelFromCp = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Endurance)
+                        .LevelFromCP,
+                    XpSpent = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Endurance)
+                        .CPSpent
+                };
 
-                    result.Attributes.Stamina = new GDLE.Models.Vital
-                    {
-                        Ranks = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxStamina).InitLevel,
-                        LevelFromCp = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxStamina).LevelFromCP,
-                        XpSpent = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxStamina).CPSpent,
-                        Current = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxStamina).CurrentLevel
-                    };
+                result.Attributes.Quickness = new GDLE.Models.Attribute
+                {
+                    Ranks = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Quickness)
+                        .InitLevel,
+                    LevelFromCp = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Quickness)
+                        .LevelFromCP,
+                    XpSpent = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Quickness)
+                        .CPSpent
+                };
 
-                    result.Attributes.Mana = new GDLE.Models.Vital
-                    {
-                        Ranks = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxMana).InitLevel,
-                        LevelFromCp = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxMana).LevelFromCP,
-                        XpSpent = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxMana).CPSpent,
-                        Current = input.WeeniePropertiesAttribute2nd.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute2nd.MaxMana).CurrentLevel
-                    };
+                result.Attributes.Coordination = new GDLE.Models.Attribute
+                {
+                    Ranks = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Coordination)
+                        .InitLevel,
+                    LevelFromCp = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Coordination)
+                        .LevelFromCP,
+                    XpSpent = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Coordination)
+                        .CPSpent
+                };
+
+                result.Attributes.Focus = new GDLE.Models.Attribute
+                {
+                    Ranks = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Focus)
+                        .InitLevel,
+                    LevelFromCp = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Focus)
+                        .LevelFromCP,
+                    XpSpent = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Focus)
+                        .CPSpent
+                };
+
+                result.Attributes.Self = new GDLE.Models.Attribute
+                {
+                    Ranks = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Self)
+                        .InitLevel,
+                    LevelFromCp = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Self)
+                        .LevelFromCP,
+                    XpSpent = input
+                        .WeeniePropertiesAttribute.FirstOrDefault(a => a.Type == (ushort)PropertyAttribute.Self)
+                        .CPSpent
+                };
+            }
+
+            if (input.WeeniePropertiesAttribute2nd != null && input.WeeniePropertiesAttribute2nd.Count > 0)
+            {
+                if (result.Attributes == null)
+                {
+                    result.Attributes = new AttributeSet();
                 }
 
-                if (input.WeeniePropertiesBodyPart != null && input.WeeniePropertiesBodyPart.Count > 0)
+                result.Attributes.Health = new GDLE.Models.Vital
                 {
-                    result.Body = new Body();
-                    result.Body.BodyParts = new List<BodyPartListing>();
+                    Ranks = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxHealth
+                        )
+                        .InitLevel,
+                    LevelFromCp = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxHealth
+                        )
+                        .LevelFromCP,
+                    XpSpent = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxHealth
+                        )
+                        .CPSpent,
+                    Current = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxHealth
+                        )
+                        .CurrentLevel
+                };
 
-                    foreach (var value in input.WeeniePropertiesBodyPart)
-                    {
-                        result.Body.BodyParts.Add(new BodyPartListing
+                result.Attributes.Stamina = new GDLE.Models.Vital
+                {
+                    Ranks = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxStamina
+                        )
+                        .InitLevel,
+                    LevelFromCp = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxStamina
+                        )
+                        .LevelFromCP,
+                    XpSpent = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxStamina
+                        )
+                        .CPSpent,
+                    Current = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxStamina
+                        )
+                        .CurrentLevel
+                };
+
+                result.Attributes.Mana = new GDLE.Models.Vital
+                {
+                    Ranks = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxMana
+                        )
+                        .InitLevel,
+                    LevelFromCp = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxMana
+                        )
+                        .LevelFromCP,
+                    XpSpent = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxMana
+                        )
+                        .CPSpent,
+                    Current = input
+                        .WeeniePropertiesAttribute2nd.FirstOrDefault(a =>
+                            a.Type == (ushort)PropertyAttribute2nd.MaxMana
+                        )
+                        .CurrentLevel
+                };
+            }
+
+            if (input.WeeniePropertiesBodyPart != null && input.WeeniePropertiesBodyPart.Count > 0)
+            {
+                result.Body = new Body();
+                result.Body.BodyParts = new List<BodyPartListing>();
+
+                foreach (var value in input.WeeniePropertiesBodyPart)
+                {
+                    result.Body.BodyParts.Add(
+                        new BodyPartListing
                         {
                             Key = value.Key,
                             BodyPartType = (global::Lifestoned.DataModel.Shared.BodyPartType)value.Key,
@@ -677,27 +984,32 @@ namespace ACE.Adapter.Lifestoned
                                     LRB = value.LRB,
                                 }
                             }
-                        });
-                    }
+                        }
+                    );
                 }
+            }
 
-                if (input.WeeniePropertiesBool != null && input.WeeniePropertiesBool.Count > 0)
+            if (input.WeeniePropertiesBool != null && input.WeeniePropertiesBool.Count > 0)
+            {
+                result.BoolStats = new List<BoolStat>();
+
+                foreach (var value in input.WeeniePropertiesBool)
                 {
-                    result.BoolStats = new List<BoolStat>();
-
-                    foreach (var value in input.WeeniePropertiesBool)
+                    if (result.BoolStats.FirstOrDefault(x => x.Key == value.Type) == null)
                     {
-                        if (result.BoolStats.FirstOrDefault(x => x.Key == value.Type) == null)
-                            result.BoolStats.Add(new BoolStat { Key = value.Type, Value = Convert.ToInt32(value.Value) });
+                        result.BoolStats.Add(new BoolStat { Key = value.Type, Value = Convert.ToInt32(value.Value) });
                     }
                 }
+            }
 
-                if (input.WeeniePropertiesCreateList != null && input.WeeniePropertiesCreateList.Count > 0)
+            if (input.WeeniePropertiesCreateList != null && input.WeeniePropertiesCreateList.Count > 0)
+            {
+                result.CreateList = new List<CreateItem>();
+
+                foreach (var value in input.WeeniePropertiesCreateList)
                 {
-                    result.CreateList = new List<CreateItem>();
-
-                    foreach (var value in input.WeeniePropertiesCreateList)
-                        result.CreateList.Add(new CreateItem
+                    result.CreateList.Add(
+                        new CreateItem
                         {
                             WeenieClassId = value.WeenieClassId,
                             Palette = (uint)value.Palette,
@@ -705,150 +1017,132 @@ namespace ACE.Adapter.Lifestoned
                             Destination = (uint)value.DestinationType,
                             StackSize = value.StackSize,
                             TryToBond = Convert.ToByte(value.TryToBond)
-                        });
+                        }
+                    );
                 }
+            }
 
-                if (input.WeeniePropertiesDID != null && input.WeeniePropertiesDID.Count > 0)
+            if (input.WeeniePropertiesDID != null && input.WeeniePropertiesDID.Count > 0)
+            {
+                result.DidStats = new List<DidStat>();
+
+                foreach (var value in input.WeeniePropertiesDID)
                 {
-                    result.DidStats = new List<DidStat>();
-
-                    foreach (var value in input.WeeniePropertiesDID)
-                    {
-                        result.DidStats.Add(new DidStat { Key = value.Type, Value = value.Value });
-                    }
+                    result.DidStats.Add(new DidStat { Key = value.Type, Value = value.Value });
                 }
+            }
 
-                if (input.WeeniePropertiesEmote != null && input.WeeniePropertiesEmote.Count > 0)
+            if (input.WeeniePropertiesEmote != null && input.WeeniePropertiesEmote.Count > 0)
+            {
+                result.EmoteTable = new List<EmoteCategoryListing>();
+
+                var eorder = 0;
+                foreach (var emote in input.WeeniePropertiesEmote)
                 {
-                    result.EmoteTable = new List<EmoteCategoryListing>();
-
-                    var eorder = 0;
-                    foreach (var emote in input.WeeniePropertiesEmote)
+                    var ec = new EmoteCategoryListing
                     {
-                        var ec = new EmoteCategoryListing
+                        EmoteCategoryId = (int)emote.Category,
+                        Emotes = new List<Emote>(),
+                    };
+
+                    var em = new Emote
+                    {
+                        SortOrder = eorder,
+                        Category = emote.Category,
+                        EmoteCategory = (global::Lifestoned.DataModel.Shared.EmoteCategory)emote.Category,
+                        ClassId = emote.WeenieClassId,
+                        MaxHealth = emote.MaxHealth,
+                        MinHealth = emote.MinHealth,
+                        Probability = emote.Probability,
+                        Quest = emote.Quest,
+                        Style = emote.Style,
+                        SubStyle = emote.Substyle,
+                        VendorType = (uint?)emote.VendorType,
+                        Actions = new List<EmoteAction>()
+                    };
+
+                    var aorder = 0;
+                    foreach (var action in emote.WeeniePropertiesEmoteAction.OrderBy(e => e.Order))
+                    {
+                        var ea = new EmoteAction
                         {
-                            EmoteCategoryId = (int)emote.Category,
-                            Emotes = new List<Emote>(),
+                            SortOrder = aorder,
+                            Amount = (uint?)action.Amount,
+                            Amount64 = (uint?)action.Amount64,
+                            Delay = action.Delay,
+                            EmoteActionType = action.Type,
+                            Extent = action.Extent,
+                            FMax = (float?)action.MaxDbl,
+                            FMin = (float?)action.MinDbl,
+                            //Frame = new Frame
+                            //{
+                            //    Position = new XYZ
+                            //    {
+                            //        X = action.OriginX ?? 0,
+                            //        Y = action.OriginY ?? 0,
+                            //        Z = action.OriginZ ?? 0
+                            //    },
+                            //    Rotations = new Quaternion
+                            //    {
+                            //        W = action.AnglesW ?? 0,
+                            //        X = action.AnglesX ?? 0,
+                            //        Y = action.AnglesY ?? 0,
+                            //        Z = action.AnglesZ ?? 0
+                            //    }
+                            //},
+                            HeroXp64 = (ulong?)action.HeroXP64,
+                            //Item = new CreateItem
+                            //{
+                            //    Destination = (uint?)action.DestinationType,
+                            //    Palette = (uint?)action.Palette,
+                            //    Shade = action.Shade,
+                            //    StackSize = action.StackSize,
+                            //    TryToBond = Convert.ToByte(action.TryToBond),
+                            //    WeenieClassId = action.WeenieClassId
+                            //},
+                            Max = (uint?)action.Max,
+                            Min = (uint?)action.Min,
+                            Maximum64 = action.Max64,
+                            Minimum64 = action.Min64,
+                            Message = action.Message,
+                            Motion = (uint?)action.Motion,
+                            //MPosition = new Position
+                            //{
+                            //    LandCellId = action.ObjCellId ?? 0,
+                            //    Frame = new Frame
+                            //    {
+                            //        Position = new XYZ
+                            //        {
+                            //            X = action.OriginX ?? 0,
+                            //            Y = action.OriginY ?? 0,
+                            //            Z = action.OriginZ ?? 0
+                            //        },
+                            //        Rotations = new Quaternion
+                            //        {
+                            //            W = action.AnglesW ?? 0,
+                            //            X = action.AnglesX ?? 0,
+                            //            Y = action.AnglesY ?? 0,
+                            //            Z = action.AnglesZ ?? 0
+                            //        }
+                            //    }
+                            //},
+                            Percent = (float?)action.Percent,
+                            PScript = (uint?)action.PScript,
+                            Sound = (uint?)action.Sound,
+                            SpellId = (uint?)action.SpellId,
+                            Stat = (uint?)action.Stat,
+                            TestString = action.TestString,
+                            TreasureClass = (uint?)action.TreasureClass,
+                            WealthRating = (uint?)action.WealthRating,
+                            TreasureType = action.TreasureType,
                         };
 
-                        var em = new Emote
+                        if (action.ObjCellId.HasValue)
                         {
-                            SortOrder = eorder,
-                            Category = emote.Category,
-                            EmoteCategory = (global::Lifestoned.DataModel.Shared.EmoteCategory)emote.Category,
-                            ClassId = emote.WeenieClassId,
-                            MaxHealth = emote.MaxHealth,
-                            MinHealth = emote.MinHealth,
-                            Probability = emote.Probability,
-                            Quest = emote.Quest,
-                            Style = emote.Style,
-                            SubStyle = emote.Substyle,
-                            VendorType = (uint?)emote.VendorType,
-                            Actions = new List<EmoteAction>()
-                        };
-
-                        var aorder = 0;
-                        foreach (var action in emote.WeeniePropertiesEmoteAction.OrderBy(e => e.Order))
-                        {
-                            var ea = new EmoteAction
+                            ea.MPosition = new Position
                             {
-                                SortOrder = aorder,
-                                Amount = (uint?)action.Amount,
-                                Amount64 = (uint?)action.Amount64,
-                                Delay = action.Delay,
-                                EmoteActionType = action.Type,
-                                Extent = action.Extent,
-                                FMax = (float?)action.MaxDbl,
-                                FMin = (float?)action.MinDbl,
-                                //Frame = new Frame
-                                //{
-                                //    Position = new XYZ
-                                //    {
-                                //        X = action.OriginX ?? 0,
-                                //        Y = action.OriginY ?? 0,
-                                //        Z = action.OriginZ ?? 0
-                                //    },
-                                //    Rotations = new Quaternion
-                                //    {
-                                //        W = action.AnglesW ?? 0,
-                                //        X = action.AnglesX ?? 0,
-                                //        Y = action.AnglesY ?? 0,
-                                //        Z = action.AnglesZ ?? 0
-                                //    }
-                                //},
-                                HeroXp64 = (ulong?)action.HeroXP64,
-                                //Item = new CreateItem
-                                //{
-                                //    Destination = (uint?)action.DestinationType,
-                                //    Palette = (uint?)action.Palette,
-                                //    Shade = action.Shade,
-                                //    StackSize = action.StackSize,
-                                //    TryToBond = Convert.ToByte(action.TryToBond),
-                                //    WeenieClassId = action.WeenieClassId
-                                //},
-                                Max = (uint?)action.Max,
-                                Min = (uint?)action.Min,
-                                Maximum64 = action.Max64,
-                                Minimum64 = action.Min64,
-                                Message = action.Message,
-                                Motion = (uint?)action.Motion,
-                                //MPosition = new Position
-                                //{
-                                //    LandCellId = action.ObjCellId ?? 0,
-                                //    Frame = new Frame
-                                //    {
-                                //        Position = new XYZ
-                                //        {
-                                //            X = action.OriginX ?? 0,
-                                //            Y = action.OriginY ?? 0,
-                                //            Z = action.OriginZ ?? 0
-                                //        },
-                                //        Rotations = new Quaternion
-                                //        {
-                                //            W = action.AnglesW ?? 0,
-                                //            X = action.AnglesX ?? 0,
-                                //            Y = action.AnglesY ?? 0,
-                                //            Z = action.AnglesZ ?? 0
-                                //        }
-                                //    }
-                                //},
-                                Percent = (float?)action.Percent,
-                                PScript = (uint?)action.PScript,
-                                Sound = (uint?)action.Sound,
-                                SpellId = (uint?)action.SpellId,
-                                Stat = (uint?)action.Stat,
-                                TestString = action.TestString,
-                                TreasureClass = (uint?)action.TreasureClass,
-                                WealthRating = (uint?)action.WealthRating,
-                                TreasureType = action.TreasureType,
-                            };
-
-                            if (action.ObjCellId.HasValue)
-                            {
-                                ea.MPosition = new Position
-                                {
-                                    LandCellId = action.ObjCellId ?? 0,
-                                    Frame = new Frame
-                                    {
-                                        Position = new XYZ
-                                        {
-                                            X = action.OriginX ?? 0,
-                                            Y = action.OriginY ?? 0,
-                                            Z = action.OriginZ ?? 0
-                                        },
-                                        Rotations = new Quaternion
-                                        {
-                                            W = action.AnglesW ?? 0,
-                                            X = action.AnglesX ?? 0,
-                                            Y = action.AnglesY ?? 0,
-                                            Z = action.AnglesZ ?? 0
-                                        }
-                                    }
-                                };
-                            }
-                            else if (action.OriginX.HasValue || action.OriginY.HasValue || action.OriginZ.HasValue || action.AnglesW.HasValue || action.AnglesX.HasValue || action.AnglesY.HasValue || action.AnglesZ.HasValue)
-                            {
-                                ea.Frame = new Frame
+                                LandCellId = action.ObjCellId ?? 0,
+                                Frame = new Frame
                                 {
                                     Position = new XYZ
                                     {
@@ -863,58 +1157,93 @@ namespace ACE.Adapter.Lifestoned
                                         Y = action.AnglesY ?? 0,
                                         Z = action.AnglesZ ?? 0
                                     }
-                                };
-                            }
-
-                            if (action.DestinationType.HasValue)
+                                }
+                            };
+                        }
+                        else if (
+                            action.OriginX.HasValue
+                            || action.OriginY.HasValue
+                            || action.OriginZ.HasValue
+                            || action.AnglesW.HasValue
+                            || action.AnglesX.HasValue
+                            || action.AnglesY.HasValue
+                            || action.AnglesZ.HasValue
+                        )
+                        {
+                            ea.Frame = new Frame
                             {
-                                ea.Item = new CreateItem
+                                Position = new XYZ
                                 {
-                                    Destination = (uint?)action.DestinationType,
-                                    Palette = (uint?)action.Palette,
-                                    Shade = action.Shade,
-                                    StackSize = action.StackSize,
-                                    TryToBond = Convert.ToByte(action.TryToBond),
-                                    WeenieClassId = action.WeenieClassId
-                                };
-                            }
-
-                            aorder++;
-
-                            em.Actions.Add(ea);
+                                    X = action.OriginX ?? 0,
+                                    Y = action.OriginY ?? 0,
+                                    Z = action.OriginZ ?? 0
+                                },
+                                Rotations = new Quaternion
+                                {
+                                    W = action.AnglesW ?? 0,
+                                    X = action.AnglesX ?? 0,
+                                    Y = action.AnglesY ?? 0,
+                                    Z = action.AnglesZ ?? 0
+                                }
+                            };
                         }
 
-                        ec.Emotes.Add(em);
+                        if (action.DestinationType.HasValue)
+                        {
+                            ea.Item = new CreateItem
+                            {
+                                Destination = (uint?)action.DestinationType,
+                                Palette = (uint?)action.Palette,
+                                Shade = action.Shade,
+                                StackSize = action.StackSize,
+                                TryToBond = Convert.ToByte(action.TryToBond),
+                                WeenieClassId = action.WeenieClassId
+                            };
+                        }
 
-                        var existingEC = result.EmoteTable.FirstOrDefault(e => e.EmoteCategoryId == (int)emote.Category);
+                        aorder++;
 
-                        if (existingEC == null)
-                            result.EmoteTable.Add(ec);
-                        else
-                            existingEC.Emotes.Add(em);
+                        em.Actions.Add(ea);
+                    }
 
-                        eorder++;
+                    ec.Emotes.Add(em);
+
+                    var existingEC = result.EmoteTable.FirstOrDefault(e => e.EmoteCategoryId == (int)emote.Category);
+
+                    if (existingEC == null)
+                    {
+                        result.EmoteTable.Add(ec);
+                    }
+                    else
+                    {
+                        existingEC.Emotes.Add(em);
+                    }
+
+                    eorder++;
+                }
+            }
+
+            // WeeniePropertiesEventFilter
+
+            if (input.WeeniePropertiesFloat != null && input.WeeniePropertiesFloat.Count > 0)
+            {
+                foreach (var value in input.WeeniePropertiesFloat)
+                {
+                    if (result.FloatStats.FirstOrDefault(x => x.Key == value.Type) == null)
+                    {
+                        result.FloatStats.Add(new FloatStat { Key = value.Type, Value = (float)value.Value });
                     }
                 }
+            }
 
-                // WeeniePropertiesEventFilter
-
-                if (input.WeeniePropertiesFloat != null && input.WeeniePropertiesFloat.Count > 0)
+            if (input.WeeniePropertiesGenerator != null && input.WeeniePropertiesGenerator.Count > 0)
+            {
+                result.GeneratorTable = new List<GeneratorTable>();
+                uint slot = 0;
+                foreach (var value in input.WeeniePropertiesGenerator)
                 {
-                    foreach (var value in input.WeeniePropertiesFloat)
-                    {
-                        if (result.FloatStats.FirstOrDefault(x => x.Key == value.Type) == null)
-                            result.FloatStats.Add(new FloatStat { Key = value.Type, Value = (float)value.Value });
-                    }
-                }
-
-                if (input.WeeniePropertiesGenerator != null && input.WeeniePropertiesGenerator.Count > 0)
-                {
-                    result.GeneratorTable = new List<GeneratorTable>();
-                    uint slot = 0;
-                    foreach (var value in input.WeeniePropertiesGenerator)
-                    {
-                        result.GeneratorTable.Add(new GeneratorTable
+                    result.GeneratorTable.Add(
+                        new GeneratorTable
                         {
                             Slot = slot,
                             Probability = value.Probability,
@@ -949,54 +1278,63 @@ namespace ACE.Adapter.Lifestoned
                                     Z = value.AnglesZ ?? 0
                                 }
                             }
-                        });
-                        slot++;
+                        }
+                    );
+                    slot++;
+                }
+            }
+
+            if (input.WeeniePropertiesIID != null && input.WeeniePropertiesIID.Count > 0)
+            {
+                result.IidStats = new List<IidStat>();
+
+                foreach (var value in input.WeeniePropertiesIID)
+                {
+                    if (result.IidStats.FirstOrDefault(x => x.Key == value.Type) == null)
+                    {
+                        result.IidStats.Add(new IidStat { Key = value.Type, Value = (int)value.Value });
                     }
                 }
+            }
 
-                if (input.WeeniePropertiesIID != null && input.WeeniePropertiesIID.Count > 0)
+            if (input.WeeniePropertiesInt != null && input.WeeniePropertiesInt.Count > 0)
+            {
+                result.IntStats = new List<IntStat>();
+
+                foreach (var value in input.WeeniePropertiesInt)
                 {
-                    result.IidStats = new List<IidStat>();
-
-                    foreach (var value in input.WeeniePropertiesIID)
+                    if (result.IntStats.FirstOrDefault(x => x.Key == value.Type) == null)
                     {
-                        if (result.IidStats.FirstOrDefault(x => x.Key == value.Type) == null)
-                            result.IidStats.Add(new IidStat { Key = value.Type, Value = (int)value.Value });
+                        result.IntStats.Add(new IntStat { Key = value.Type, Value = value.Value });
                     }
                 }
+            }
 
-                if (input.WeeniePropertiesInt != null && input.WeeniePropertiesInt.Count > 0)
+            if (input.WeeniePropertiesInt64 != null && input.WeeniePropertiesInt64.Count > 0)
+            {
+                result.Int64Stats = new List<Int64Stat>();
+
+                foreach (var value in input.WeeniePropertiesInt64)
                 {
-                    result.IntStats = new List<IntStat>();
-
-                    foreach (var value in input.WeeniePropertiesInt)
+                    if (result.Int64Stats.FirstOrDefault(x => x.Key == value.Type) == null)
                     {
-                        if (result.IntStats.FirstOrDefault(x => x.Key == value.Type) == null)
-                            result.IntStats.Add(new IntStat { Key = value.Type, Value = value.Value });
+                        result.Int64Stats.Add(new Int64Stat { Key = value.Type, Value = value.Value });
                     }
                 }
+            }
 
-                if (input.WeeniePropertiesInt64 != null && input.WeeniePropertiesInt64.Count > 0)
+            // WeeniePropertiesPalette
+
+            if (input.WeeniePropertiesPosition != null && input.WeeniePropertiesPosition.Count > 0)
+            {
+                result.Positions = new List<PositionListing>();
+
+                foreach (var value in input.WeeniePropertiesPosition)
                 {
-                    result.Int64Stats = new List<Int64Stat>();
-
-                    foreach (var value in input.WeeniePropertiesInt64)
+                    if (result.Positions.FirstOrDefault(x => x.PositionType == value.PositionType) == null)
                     {
-                        if (result.Int64Stats.FirstOrDefault(x => x.Key == value.Type) == null)
-                            result.Int64Stats.Add(new Int64Stat { Key = value.Type, Value = value.Value });
-                    }
-                }
-
-                // WeeniePropertiesPalette
-
-                if (input.WeeniePropertiesPosition != null && input.WeeniePropertiesPosition.Count > 0)
-                {
-                    result.Positions = new List<PositionListing>();
-
-                    foreach (var value in input.WeeniePropertiesPosition)
-                    {
-                        if (result.Positions.FirstOrDefault(x => x.PositionType == value.PositionType) == null)
-                            result.Positions.Add(new PositionListing
+                        result.Positions.Add(
+                            new PositionListing
                             {
                                 PositionType = value.PositionType,
                                 Position = new Position
@@ -1019,18 +1357,22 @@ namespace ACE.Adapter.Lifestoned
                                         }
                                     }
                                 }
-                            });
+                            }
+                        );
                     }
                 }
+            }
 
-                if (input.WeeniePropertiesSkill != null && input.WeeniePropertiesSkill.Count > 0)
+            if (input.WeeniePropertiesSkill != null && input.WeeniePropertiesSkill.Count > 0)
+            {
+                result.Skills = new List<SkillListing>();
+
+                foreach (var value in input.WeeniePropertiesSkill)
                 {
-                    result.Skills = new List<SkillListing>();
-
-                    foreach (var value in input.WeeniePropertiesSkill)
+                    if (result.Skills.FirstOrDefault(x => x.SkillId == value.Type) == null)
                     {
-                        if (result.Skills.FirstOrDefault(x => x.SkillId == value.Type) == null)
-                            result.Skills.Add(new SkillListing
+                        result.Skills.Add(
+                            new SkillListing
                             {
                                 SkillId = value.Type,
                                 Skill = new GDLE.Models.Skill
@@ -1042,117 +1384,123 @@ namespace ACE.Adapter.Lifestoned
                                     ResistanceOfLastCheck = value.ResistanceAtLastCheck,
                                     LastUsed = (float)value.LastUsedTime
                                 }
-                            });
+                            }
+                        );
                     }
                 }
+            }
 
-                if (input.WeeniePropertiesSpellBook != null && input.WeeniePropertiesSpellBook.Count > 0)
+            if (input.WeeniePropertiesSpellBook != null && input.WeeniePropertiesSpellBook.Count > 0)
+            {
+                result.Spells = new List<SpellbookEntry>();
+
+                foreach (var value in input.WeeniePropertiesSpellBook)
                 {
-                    result.Spells = new List<SpellbookEntry>();
-
-                    foreach (var value in input.WeeniePropertiesSpellBook)
+                    if (result.Spells.FirstOrDefault(x => x.SpellId == value.Spell) == null)
                     {
-                        if (result.Spells.FirstOrDefault(x => x.SpellId == value.Spell) == null)
-                            result.Spells.Add(new SpellbookEntry
+                        result.Spells.Add(
+                            new SpellbookEntry
                             {
                                 SpellId = value.Spell,
-                                Stats = new SpellCastingStats
-                                {
-                                    CastingChance = value.Probability
-                                }
-                            });
+                                Stats = new SpellCastingStats { CastingChance = value.Probability }
+                            }
+                        );
                     }
                 }
+            }
 
-                if (input.WeeniePropertiesString != null && input.WeeniePropertiesString.Count > 0)
+            if (input.WeeniePropertiesString != null && input.WeeniePropertiesString.Count > 0)
+            {
+                result.StringStats = new List<StringStat>();
+
+                foreach (var value in input.WeeniePropertiesString)
                 {
-                    result.StringStats = new List<StringStat>();
-
-                    foreach (var value in input.WeeniePropertiesString)
+                    if (result.StringStats.FirstOrDefault(x => x.Key == value.Type) == null)
                     {
-                        if (result.StringStats.FirstOrDefault(x => x.Key == value.Type) == null)
-                            result.StringStats.Add(new StringStat { Key = value.Type, Value = value.Value });
+                        result.StringStats.Add(new StringStat { Key = value.Type, Value = value.Value });
                     }
                 }
+            }
 
-                // WeeniePropertiesTextureMap
+            // WeeniePropertiesTextureMap
 
-                result.Changelog = new List<ChangelogEntry>();
-                result.Changelog.Add(new ChangelogEntry
+            result.Changelog = new List<ChangelogEntry>();
+            result.Changelog.Add(
+                new ChangelogEntry
                 {
                     Author = "ACE.Adapter",
                     Comment = "Weenie exported from ACEmulator world database using ACE.Adapter",
                     Created = DateTime.UtcNow
-                });
+                }
+            );
 
+            return true;
+        }
+        catch
+        {
+            result = null;
+            return false;
+        }
+    }
+
+    public static bool TryConvertACEWeeniesToLSDJSON(List<Weenie> weenies, out List<string> results)
+    {
+        try
+        {
+            results = new List<string>();
+
+            foreach (var weenie in weenies)
+            {
+                if (TryConvert(weenie, out var result))
+                {
+                    results.Add(JsonSerializer.Serialize(result, SerializerSettings));
+                }
+            }
+
+            return true;
+        }
+        catch
+        {
+            results = null;
+            return false;
+        }
+    }
+
+    public static JsonSerializerOptions SerializerSettings = new JsonSerializerOptions();
+
+    static LifestonedConverter()
+    {
+        SerializerSettings.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        SerializerSettings.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+        SerializerSettings.WriteIndented = true;
+    }
+
+    public static bool TryConvertACEWeenieToLSDJSON(Weenie weenie, out string result, out LSDWeenie lsdWeenie)
+    {
+        try
+        {
+            if (TryConvert(weenie, out lsdWeenie))
+            {
+                try
+                {
+                    result = JsonSerializer.Serialize(lsdWeenie, SerializerSettings);
+                }
+                catch
+                {
+                    result = "serialize failed";
+                    return false;
+                }
                 return true;
             }
-            catch
-            {
-                result = null;
-                return false;
-            }
+
+            result = "try convert failed";
+            return false;
         }
-
-        public static bool TryConvertACEWeeniesToLSDJSON(List<Weenie> weenies, out List<string> results)
+        catch
         {
-            try
-            {
-                results = new List<string>();
-
-                foreach (var weenie in weenies)
-                {
-                    if (TryConvert(weenie, out var result))
-                    {
-                        results.Add(JsonSerializer.Serialize(result, SerializerSettings));
-                    }
-                }
-
-                return true;
-            }
-            catch
-            {
-                results = null;
-                return false;
-            }
-        }
-
-        public static JsonSerializerOptions SerializerSettings = new JsonSerializerOptions();
-
-        static LifestonedConverter()
-        {
-            SerializerSettings.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-            SerializerSettings.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
-            SerializerSettings.WriteIndented = true;
-        }
-
-        public static bool TryConvertACEWeenieToLSDJSON(Weenie weenie, out string result, out LSDWeenie lsdWeenie)
-        {
-            try
-            {
-                if (TryConvert(weenie, out lsdWeenie))
-                {
-                    try
-                    {
-                        result = JsonSerializer.Serialize(lsdWeenie, SerializerSettings);
-                    }
-                    catch
-                    {
-                        result = "serialize failed";
-                        return false;
-                    }
-                    return true;
-                }
-
-                result = "try convert failed";
-                return false;
-            }
-            catch
-            {
-                lsdWeenie = null;
-                result = null;
-                return false;
-            }
+            lsdWeenie = null;
+            result = null;
+            return false;
         }
     }
 }

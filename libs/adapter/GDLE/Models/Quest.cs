@@ -1,8 +1,7 @@
-namespace ACE.Adapter.GDLE.Models
+namespace ACE.Adapter.GDLE.Models;
+
+public class Quest
 {
-    public class Quest
-    {
-        public string key { get; set; }
-        public QuestValue value { get; set; }
-    }
+    public string key { get; set; }
+    public QuestValue value { get; set; }
 }

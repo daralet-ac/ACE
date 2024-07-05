@@ -1,20 +1,19 @@
-using Lifestoned.DataModel.Shared;
 using System.Text.Json.Serialization;
+using Lifestoned.DataModel.Shared;
 
-namespace ACE.Adapter.GDLE.Models
+namespace ACE.Adapter.GDLE.Models;
+
+public class IidStat
 {
-    public class IidStat
-    {
-        [JsonPropertyName("key")]
-        public int Key { get; set; }
+    [JsonPropertyName("key")]
+    public int Key { get; set; }
 
-        [JsonPropertyName("value")]
-        public int Value { get; set; }
+    [JsonPropertyName("value")]
+    public int Value { get; set; }
 
-        [JsonIgnore]
-        public string PropertyIdBinder => ((IidPropertyId)Key).GetName();
+    [JsonIgnore]
+    public string PropertyIdBinder => ((IidPropertyId)Key).GetName();
 
-        [JsonIgnore]
-        public bool Deleted { get; set; }
-    }
+    [JsonIgnore]
+    public bool Deleted { get; set; }
 }
