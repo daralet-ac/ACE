@@ -1,22 +1,18 @@
 using System.IO;
-
+using ACE.Server.Entity;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+namespace ACE.Server.Tests;
 
-using ACE.Server.Entity;
-
-namespace ACE.Server.Tests
+[TestClass]
+public class StarterGearTests
 {
-    [TestClass]
-    public class StarterGearTests
+    [TestMethod]
+    public void CanParseStarterGearJson()
     {
-        [TestMethod]
-        public void CanParseStarterGearJson()
-        {
-            string contents = File.ReadAllText("../../../../../ACE.Server/starterGear.json");
+        var contents = File.ReadAllText("../../../../../ACE.Server/starterGear.json");
 
-            StarterGearConfiguration config = JsonConvert.DeserializeObject<StarterGearConfiguration>(contents);
-        }
+        var config = JsonConvert.DeserializeObject<StarterGearConfiguration>(contents);
     }
 }

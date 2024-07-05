@@ -123,4 +123,5 @@ dotnet_style_qualification_for_property = false:silent
 dotnet_style_readonly_field = true:suggestion
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:silent
 
+dotnet_diagnostic.IDE0005.severity = error
 dotnet_diagnostic.IDE0055.severity = none
