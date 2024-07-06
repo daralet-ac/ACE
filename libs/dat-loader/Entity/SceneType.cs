@@ -1,18 +1,17 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace ACE.DatLoader.Entity
+namespace ACE.DatLoader.Entity;
+
+public class SceneType : IUnpackable
 {
-    public class SceneType : IUnpackable
+    public uint StbIndex { get; private set; }
+    public List<uint> Scenes { get; } = new List<uint>();
+
+    public void Unpack(BinaryReader reader)
     {
-        public uint StbIndex { get; private set; }
-        public List<uint> Scenes { get; } = new List<uint>();
+        StbIndex = reader.ReadUInt32();
 
-        public void Unpack(BinaryReader reader)
-        {
-            StbIndex = reader.ReadUInt32();
-
-            Scenes.Unpack(reader);
-        }
+        Scenes.Unpack(reader);
     }
 }

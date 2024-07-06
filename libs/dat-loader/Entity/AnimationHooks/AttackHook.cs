@@ -1,16 +1,15 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity.AnimationHooks
+namespace ACE.DatLoader.Entity.AnimationHooks;
+
+public class AttackHook : AnimationHook
 {
-    public class AttackHook : AnimationHook
+    public AttackCone AttackCone { get; } = new AttackCone();
+
+    public override void Unpack(BinaryReader reader)
     {
-        public AttackCone AttackCone { get; } = new AttackCone();
+        base.Unpack(reader);
 
-        public override void Unpack(BinaryReader reader)
-        {
-            base.Unpack(reader);
-
-            AttackCone.Unpack(reader);
-        }
+        AttackCone.Unpack(reader);
     }
 }

@@ -1,7 +1,3 @@
+namespace ACE.DatLoader.Entity.AnimationHooks;
 
-namespace ACE.DatLoader.Entity.AnimationHooks
-{
-    public class CreateBlockingParticle : CreateParticleHook
-    {
-    }
-}
+public class CreateBlockingParticle : CreateParticleHook { }

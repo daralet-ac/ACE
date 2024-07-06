@@ -1,16 +1,15 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity.AnimationHooks
+namespace ACE.DatLoader.Entity.AnimationHooks;
+
+public class SoundHook : AnimationHook
 {
-    public class SoundHook : AnimationHook
+    public uint Id { get; private set; }
+
+    public override void Unpack(BinaryReader reader)
     {
-        public uint Id { get; private set; }
+        base.Unpack(reader);
 
-        public override void Unpack(BinaryReader reader)
-        {
-            base.Unpack(reader);
-
-            Id = reader.ReadUInt32();
-        }
+        Id = reader.ReadUInt32();
     }
 }

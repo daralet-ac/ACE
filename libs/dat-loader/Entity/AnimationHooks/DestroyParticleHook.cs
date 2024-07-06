@@ -1,16 +1,15 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity.AnimationHooks
+namespace ACE.DatLoader.Entity.AnimationHooks;
+
+public class DestroyParticleHook : AnimationHook
 {
-    public class DestroyParticleHook : AnimationHook
+    public uint EmitterId { get; private set; }
+
+    public override void Unpack(BinaryReader reader)
     {
-        public uint EmitterId { get; private set; }
+        base.Unpack(reader);
 
-        public override void Unpack(BinaryReader reader)
-        {
-            base.Unpack(reader);
-
-            EmitterId = reader.ReadUInt32();
-        }
+        EmitterId = reader.ReadUInt32();
     }
 }

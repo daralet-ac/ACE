@@ -1,9 +1,8 @@
 using System.IO;
 
-namespace ACE.DatLoader
+namespace ACE.DatLoader;
+
+public interface IUnpackable
 {
-    public interface IUnpackable
-    {
-        void Unpack(BinaryReader reader);
-    }
+    void Unpack(BinaryReader reader);
 }

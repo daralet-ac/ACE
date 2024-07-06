@@ -2,32 +2,31 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace ACE.DatLoader.Entity
+namespace ACE.DatLoader.Entity;
+
+public class AnimationFrame : IUnpackable
 {
-    public class AnimationFrame : IUnpackable
+    public List<Frame> Frames { get; } = new List<Frame>();
+    public List<AnimationHook> Hooks { get; } = new List<AnimationHook>();
+
+    /// <summary>
+    /// You must use the Unpack(BinaryReader reader, int numParts) method.
+    /// </summary>
+    /// <exception cref="NotSupportedException">You must use the Unpack(BinaryReader reader, int numParts) method.</exception>
+    public void Unpack(BinaryReader reader)
     {
-        public List<Frame> Frames { get; } = new List<Frame>();
-        public List<AnimationHook> Hooks { get; } = new List<AnimationHook>();
+        throw new NotSupportedException();
+    }
 
-        /// <summary>
-        /// You must use the Unpack(BinaryReader reader, int numParts) method.
-        /// </summary>
-        /// <exception cref="NotSupportedException">You must use the Unpack(BinaryReader reader, int numParts) method.</exception>
-        public void Unpack(BinaryReader reader)
+    public void Unpack(BinaryReader reader, uint numParts)
+    {
+        Frames.Unpack(reader, numParts);
+
+        var numHooks = reader.ReadUInt32();
+        for (uint i = 0; i < numHooks; i++)
         {
-            throw new NotSupportedException();
-        }
-
-        public void Unpack(BinaryReader reader, uint numParts)
-        {
-            Frames.Unpack(reader, numParts);
-
-            uint numHooks = reader.ReadUInt32();
-            for (uint i = 0; i < numHooks; i++)
-            {
-                var hook = AnimationHook.ReadHook(reader);
-                Hooks.Add(hook);
-            }
+            var hook = AnimationHook.ReadHook(reader);
+            Hooks.Add(hook);
         }
     }
 }

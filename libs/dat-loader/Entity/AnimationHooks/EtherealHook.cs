@@ -1,16 +1,15 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity.AnimationHooks
+namespace ACE.DatLoader.Entity.AnimationHooks;
+
+public class EtherealHook : AnimationHook
 {
-    public class EtherealHook : AnimationHook
+    public int Ethereal { get; private set; }
+
+    public override void Unpack(BinaryReader reader)
     {
-        public int Ethereal { get; private set; }
+        base.Unpack(reader);
 
-        public override void Unpack(BinaryReader reader)
-        {
-            base.Unpack(reader);
-
-            Ethereal = reader.ReadInt32();
-        }
+        Ethereal = reader.ReadInt32();
     }
 }

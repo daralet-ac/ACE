@@ -1,21 +1,20 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity
+namespace ACE.DatLoader.Entity;
+
+/// <summary>
+/// Position consists of a CellID + a Frame (Origin + Orientation)
+/// </summary>
+public class Position : IUnpackable
 {
-    /// <summary>
-    /// Position consists of a CellID + a Frame (Origin + Orientation)
-    /// </summary>
-    public class Position : IUnpackable
+    public uint ObjCellID { get; private set; }
+
+    public Frame Frame = new Frame();
+
+    public void Unpack(BinaryReader reader)
     {
-        public uint ObjCellID { get; private set; }
+        ObjCellID = reader.ReadUInt32();
 
-        public Frame Frame = new Frame();
-
-        public void Unpack(BinaryReader reader)
-        {
-            ObjCellID = reader.ReadUInt32();
-
-            Frame.Unpack(reader);
-        }
+        Frame.Unpack(reader);
     }
 }

@@ -1,22 +1,21 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity.AnimationHooks
+namespace ACE.DatLoader.Entity.AnimationHooks;
+
+public class LuminousPartHook : AnimationHook
 {
-    public class LuminousPartHook : AnimationHook
+    public uint Part { get; private set; }
+    public float Start { get; private set; }
+    public float End { get; private set; }
+    public float Time { get; private set; }
+
+    public override void Unpack(BinaryReader reader)
     {
-        public uint Part { get; private set; }
-        public float Start { get; private set; }
-        public float End { get; private set; }
-        public float Time { get; private set; }
+        base.Unpack(reader);
 
-        public override void Unpack(BinaryReader reader)
-        {
-            base.Unpack(reader);
-
-            Part = reader.ReadUInt32();
-            Start = reader.ReadSingle();
-            End = reader.ReadSingle();
-            Time = reader.ReadSingle();
-        }
+        Part = reader.ReadUInt32();
+        Start = reader.ReadSingle();
+        End = reader.ReadSingle();
+        Time = reader.ReadSingle();
     }
 }

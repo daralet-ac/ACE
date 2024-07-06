@@ -1,24 +1,25 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity
+namespace ACE.DatLoader.Entity;
+
+// TODO: refactor to use existing PaletteOverride object
+public class SubPalette : IUnpackable
 {
-    // TODO: refactor to use existing PaletteOverride object
-    public class SubPalette : IUnpackable
+    public uint SubID { get; set; }
+    public uint Offset { get; set; }
+    public uint NumColors { get; set; }
+
+    public void Unpack(BinaryReader reader)
     {
-        public uint SubID { get; set; }
-        public uint Offset { get; set; }
-        public uint NumColors { get; set; }
+        SubID = reader.ReadAsDataIDOfKnownType(0x04000000);
+        Offset = (uint)(reader.ReadByte() * 8);
+        NumColors = reader.ReadByte();
 
-        public void Unpack(BinaryReader reader)
+        if (NumColors == 0)
         {
-            SubID = reader.ReadAsDataIDOfKnownType(0x04000000);
-            Offset = (uint)(reader.ReadByte() * 8);
-            NumColors = reader.ReadByte();
-
-            if (NumColors == 0)
-                NumColors = 256;
-
-            NumColors *= 8;
+            NumColors = 256;
         }
+
+        NumColors *= 8;
     }
 }
