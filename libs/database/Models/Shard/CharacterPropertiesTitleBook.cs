@@ -1,15 +1,11 @@
-using System;
-using System.Collections.Generic;
-
 #nullable disable
 
-namespace ACE.Database.Models.Shard
-{
-    public partial class CharacterPropertiesTitleBook
-    {
-        public uint CharacterId { get; set; }
-        public uint TitleId { get; set; }
+namespace ACE.Database.Models.Shard;
 
-        public virtual Character Character { get; set; }
-    }
+public partial class CharacterPropertiesTitleBook
+{
+    public uint CharacterId { get; set; }
+    public uint TitleId { get; set; }
+
+    public virtual Character Character { get; set; }
 }

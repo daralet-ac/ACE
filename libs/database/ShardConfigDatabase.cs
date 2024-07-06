@@ -1,196 +1,213 @@
 using System.Collections.Generic;
 using System.Linq;
-
+using ACE.Database.Models.Shard;
 using Microsoft.EntityFrameworkCore;
 
-using ACE.Database.Models.Shard;
+namespace ACE.Database;
 
-namespace ACE.Database
+public class ShardConfigDatabase
 {
-    public class ShardConfigDatabase
+    public bool BoolExists(string key)
     {
-        public bool BoolExists(string key)
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesBoolean.Any(r => r.Key == key);
+            return context.ConfigPropertiesBoolean.Any(r => r.Key == key);
         }
+    }
 
-        public bool DoubleExists(string key)
+    public bool DoubleExists(string key)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesDouble.Any(r => r.Key == key);
+            return context.ConfigPropertiesDouble.Any(r => r.Key == key);
         }
+    }
 
-        public bool LongExists(string key)
+    public bool LongExists(string key)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesLong.Any(r => r.Key == key);
+            return context.ConfigPropertiesLong.Any(r => r.Key == key);
         }
+    }
 
-        public bool StringExists(string key)
+    public bool StringExists(string key)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesString.Any(r => r.Key == key);
+            return context.ConfigPropertiesString.Any(r => r.Key == key);
         }
+    }
 
-
-        public void AddBool(string key, bool value, string description = null)
+    public void AddBool(string key, bool value, string description = null)
+    {
+        var stat = new ConfigPropertiesBoolean
         {
-            var stat = new ConfigPropertiesBoolean
-            {
-                Key = key,
-                Value = value,
-                Description = description
-            };
+            Key = key,
+            Value = value,
+            Description = description
+        };
 
-            using (var context = new ShardDbContext())
-            {
-                context.ConfigPropertiesBoolean.Add(stat);
+        using (var context = new ShardDbContext())
+        {
+            context.ConfigPropertiesBoolean.Add(stat);
 
-                context.SaveChanges();
-            }
+            context.SaveChanges();
         }
+    }
 
-        public void AddLong(string key, long value, string description = null)
+    public void AddLong(string key, long value, string description = null)
+    {
+        var stat = new ConfigPropertiesLong
         {
-            var stat = new ConfigPropertiesLong
-            {
-                Key = key,
-                Value = value,
-                Description = description
-            };
+            Key = key,
+            Value = value,
+            Description = description
+        };
 
-            using (var context = new ShardDbContext())
-            {
-                context.ConfigPropertiesLong.Add(stat);
+        using (var context = new ShardDbContext())
+        {
+            context.ConfigPropertiesLong.Add(stat);
 
-                context.SaveChanges();
-            }
+            context.SaveChanges();
         }
+    }
 
-        public void AddDouble(string key, double value, string description = null)
+    public void AddDouble(string key, double value, string description = null)
+    {
+        var stat = new ConfigPropertiesDouble
         {
-            var stat = new ConfigPropertiesDouble
-            {
-                Key = key,
-                Value = value,
-                Description = description
-            };
+            Key = key,
+            Value = value,
+            Description = description
+        };
 
-            using (var context = new ShardDbContext())
-            {
-                context.ConfigPropertiesDouble.Add(stat);
+        using (var context = new ShardDbContext())
+        {
+            context.ConfigPropertiesDouble.Add(stat);
 
-                context.SaveChanges();
-            }
+            context.SaveChanges();
         }
+    }
 
-        public void AddString(string key, string value, string description = null)
+    public void AddString(string key, string value, string description = null)
+    {
+        var stat = new ConfigPropertiesString
         {
-            var stat = new ConfigPropertiesString
-            {
-                Key = key,
-                Value = value,
-                Description = description
-            };
+            Key = key,
+            Value = value,
+            Description = description
+        };
 
-            using (var context = new ShardDbContext())
-            {
-                context.ConfigPropertiesString.Add(stat);
+        using (var context = new ShardDbContext())
+        {
+            context.ConfigPropertiesString.Add(stat);
 
-                context.SaveChanges();
-            }
+            context.SaveChanges();
         }
+    }
 
-
-        public ConfigPropertiesBoolean GetBool(string key)
+    public ConfigPropertiesBoolean GetBool(string key)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesBoolean.AsNoTracking().FirstOrDefault(r => r.Key == key);
+            return context.ConfigPropertiesBoolean.AsNoTracking().FirstOrDefault(r => r.Key == key);
         }
+    }
 
-        public ConfigPropertiesLong GetLong(string key)
+    public ConfigPropertiesLong GetLong(string key)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesLong.AsNoTracking().FirstOrDefault(r => r.Key == key);
+            return context.ConfigPropertiesLong.AsNoTracking().FirstOrDefault(r => r.Key == key);
         }
+    }
 
-        public ConfigPropertiesDouble GetDouble(string key)
+    public ConfigPropertiesDouble GetDouble(string key)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesDouble.AsNoTracking().FirstOrDefault(r => r.Key == key);
+            return context.ConfigPropertiesDouble.AsNoTracking().FirstOrDefault(r => r.Key == key);
         }
+    }
 
-        public ConfigPropertiesString GetString(string key)
+    public ConfigPropertiesString GetString(string key)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesString.AsNoTracking().FirstOrDefault(r => r.Key == key);
+            return context.ConfigPropertiesString.AsNoTracking().FirstOrDefault(r => r.Key == key);
         }
+    }
 
-
-        public List<ConfigPropertiesBoolean> GetAllBools()
+    public List<ConfigPropertiesBoolean> GetAllBools()
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesBoolean.AsNoTracking().ToList();
+            return context.ConfigPropertiesBoolean.AsNoTracking().ToList();
         }
+    }
 
-        public List<ConfigPropertiesLong> GetAllLongs()
+    public List<ConfigPropertiesLong> GetAllLongs()
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesLong.AsNoTracking().ToList();
+            return context.ConfigPropertiesLong.AsNoTracking().ToList();
         }
+    }
 
-        public List<ConfigPropertiesDouble> GetAllDoubles()
+    public List<ConfigPropertiesDouble> GetAllDoubles()
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesDouble.AsNoTracking().ToList();
+            return context.ConfigPropertiesDouble.AsNoTracking().ToList();
         }
+    }
 
-        public List<ConfigPropertiesString> GetAllStrings()
+    public List<ConfigPropertiesString> GetAllStrings()
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-                return context.ConfigPropertiesString.AsNoTracking().ToList();
+            return context.ConfigPropertiesString.AsNoTracking().ToList();
         }
+    }
 
-
-        public void SaveBool(ConfigPropertiesBoolean stat)
+    public void SaveBool(ConfigPropertiesBoolean stat)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-            {
-                context.Entry(stat).State = EntityState.Modified;
+            context.Entry(stat).State = EntityState.Modified;
 
-                context.SaveChanges();
-            }
+            context.SaveChanges();
         }
+    }
 
-        public void SaveLong(ConfigPropertiesLong stat)
+    public void SaveLong(ConfigPropertiesLong stat)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-            {
-                context.Entry(stat).State = EntityState.Modified;
+            context.Entry(stat).State = EntityState.Modified;
 
-                context.SaveChanges();
-            }
+            context.SaveChanges();
         }
+    }
 
-        public void SaveDouble(ConfigPropertiesDouble stat)
+    public void SaveDouble(ConfigPropertiesDouble stat)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-            {
-                context.Entry(stat).State = EntityState.Modified;
+            context.Entry(stat).State = EntityState.Modified;
 
-                context.SaveChanges();
-            }
+            context.SaveChanges();
         }
+    }
 
-        public void SaveString(ConfigPropertiesString stat)
+    public void SaveString(ConfigPropertiesString stat)
+    {
+        using (var context = new ShardDbContext())
         {
-            using (var context = new ShardDbContext())
-            {
-                context.Entry(stat).State = EntityState.Modified;
+            context.Entry(stat).State = EntityState.Modified;
 
-                context.SaveChanges();
-            }
+            context.SaveChanges();
         }
     }
 }

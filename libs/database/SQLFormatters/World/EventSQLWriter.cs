@@ -1,46 +1,45 @@
 using System;
 using System.Globalization;
 using System.IO;
-
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 
-namespace ACE.Database.SQLFormatters.World
+namespace ACE.Database.SQLFormatters.World;
+
+public class EventSQLWriter : SQLWriter
 {
-    public class EventSQLWriter : SQLWriter
+    /// <summary>
+    /// Default is formed from: input.name
+    /// </summary>
+    public string GetDefaultFileName(Event input)
     {
-        /// <summary>
-        /// Default is formed from: input.name
-        /// </summary>
-        public string GetDefaultFileName(Event input)
-        {
-            string fileName = input.Name;
-            fileName = IllegalInFileName.Replace(fileName, "_");
-            fileName += ".sql";
+        var fileName = input.Name;
+        fileName = IllegalInFileName.Replace(fileName, "_");
+        fileName += ".sql";
 
-            return fileName;
-        }
+        return fileName;
+    }
 
-        public void CreateSQLDELETEStatement(Event input, StreamWriter writer)
-        {
-            writer.WriteLine($"DELETE FROM `event` WHERE `name` = {GetSQLString(input.Name)};");
-        }
+    public void CreateSQLDELETEStatement(Event input, StreamWriter writer)
+    {
+        writer.WriteLine($"DELETE FROM `event` WHERE `name` = {GetSQLString(input.Name)};");
+    }
 
-        public void CreateSQLINSERTStatement(Event input, StreamWriter writer)
-        {
-            writer.WriteLine("INSERT INTO `event` (`name`, `start_Time`, `end_Time`, `state`, `last_Modified`)");
+    public void CreateSQLINSERTStatement(Event input, StreamWriter writer)
+    {
+        writer.WriteLine("INSERT INTO `event` (`name`, `start_Time`, `end_Time`, `state`, `last_Modified`)");
 
-            var output = "VALUES (" +
-                             $"{GetSQLString(input.Name)}, " +
-                             $"{(input.StartTime == -1 ? $"{input.StartTime}" : $"{input.StartTime} /* {DateTimeOffset.FromUnixTimeSeconds(input.StartTime).DateTime.ToString(CultureInfo.InvariantCulture)} */")}, " +
-                             $"{(input.EndTime == -1 ? $"{input.EndTime}" : $"{input.EndTime} /* {DateTimeOffset.FromUnixTimeSeconds(input.EndTime).DateTime.ToString(CultureInfo.InvariantCulture)} */")}, " +
-                             $"{input.State} /* GameEventState.{(GameEventState)input.State} */, " +
-                             $"'{input.LastModified:yyyy-MM-dd HH:mm:ss}'" +
-                             ");";
+        var output =
+            "VALUES ("
+            + $"{GetSQLString(input.Name)}, "
+            + $"{(input.StartTime == -1 ? $"{input.StartTime}" : $"{input.StartTime} /* {DateTimeOffset.FromUnixTimeSeconds(input.StartTime).DateTime.ToString(CultureInfo.InvariantCulture)} */")}, "
+            + $"{(input.EndTime == -1 ? $"{input.EndTime}" : $"{input.EndTime} /* {DateTimeOffset.FromUnixTimeSeconds(input.EndTime).DateTime.ToString(CultureInfo.InvariantCulture)} */")}, "
+            + $"{input.State} /* GameEventState.{(GameEventState)input.State} */, "
+            + $"'{input.LastModified:yyyy-MM-dd HH:mm:ss}'"
+            + ");";
 
-            output = FixNullFields(output);
+        output = FixNullFields(output);
 
-            writer.WriteLine(output);
-        }
+        writer.WriteLine(output);
     }
 }

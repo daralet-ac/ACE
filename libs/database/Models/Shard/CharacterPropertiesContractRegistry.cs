@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
-
 #nullable disable
 
-namespace ACE.Database.Models.Shard
-{
-    public partial class CharacterPropertiesContractRegistry
-    {
-        public uint CharacterId { get; set; }
-        public uint ContractId { get; set; }
-        public bool DeleteContract { get; set; }
-        public bool SetAsDisplayContract { get; set; }
+namespace ACE.Database.Models.Shard;
 
-        public virtual Character Character { get; set; }
-    }
+public partial class CharacterPropertiesContractRegistry
+{
+    public uint CharacterId { get; set; }
+    public uint ContractId { get; set; }
+    public bool DeleteContract { get; set; }
+    public bool SetAsDisplayContract { get; set; }
+
+    public virtual Character Character { get; set; }
 }

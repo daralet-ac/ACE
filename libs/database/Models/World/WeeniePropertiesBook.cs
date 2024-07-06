@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
-
 #nullable disable
 
-namespace ACE.Database.Models.World
-{
-    public partial class WeeniePropertiesBook
-    {
-        public uint Id { get; set; }
-        public uint ObjectId { get; set; }
-        public int MaxNumPages { get; set; }
-        public int MaxNumCharsPerPage { get; set; }
+namespace ACE.Database.Models.World;
 
-        public virtual Weenie Object { get; set; }
-    }
+public partial class WeeniePropertiesBook
+{
+    public uint Id { get; set; }
+    public uint ObjectId { get; set; }
+    public int MaxNumPages { get; set; }
+    public int MaxNumCharsPerPage { get; set; }
+
+    public virtual Weenie Object { get; set; }
 }
