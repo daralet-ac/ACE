@@ -2,7 +2,6 @@
 //#define USE_WEAK_REFERENCE_CACHE
 
 using System.Collections.Concurrent;
-using ACE.Server.Physics.Collision;
 using ACE.Server.Physics.Common;
 
 namespace ACE.Server.Physics.Entity;
@@ -10,10 +9,9 @@ namespace ACE.Server.Physics.Entity;
 public static class GfxObjCache
 {
 #if !USE_WEAK_REFERENCE_CACHE
-    public static readonly ConcurrentDictionary<uint, GfxObj> GfxObjs = new ConcurrentDictionary<uint, GfxObj>();
+    public static readonly ConcurrentDictionary<uint, GfxObj> GfxObjs = new();
 #else
-    public static readonly ConcurrentDictionary<uint, WeakReference<GfxObj>> GfxObjs =
-        new ConcurrentDictionary<uint, WeakReference<GfxObj>>();
+    public static readonly ConcurrentDictionary<uint, WeakReference<GfxObj>> GfxObjs = new();
 #endif
 
     public static int Requests;

@@ -17,6 +17,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Motion;
 using ACE.Server.Network.Sequence;
 using ACE.Server.Network.Structure;
 using ACE.Server.Physics;
@@ -767,7 +768,7 @@ public partial class Player : Creature, IPlayer
                 EnqueueBroadcastPhysicsState();
 
                 var motionCommand = MotionCommand.LogOut;
-                var motion = new Motion(this, motionCommand);
+                var motion = new ACE.Server.Entity.Motion(this, motionCommand);
                 var stanceNonCombat = MotionStance.NonCombat;
                 var animLength = Physics.Animation.MotionTable.GetAnimationLength(
                     MotionTableId,

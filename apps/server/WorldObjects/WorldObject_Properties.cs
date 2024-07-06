@@ -11,7 +11,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
-using ACE.Server.Network.Structure;
+using ACE.Server.Network.Motion;
 using static ACE.Server.Factories.Tables.StackableSpellTables;
 
 namespace ACE.Server.WorldObjects;

@@ -158,7 +158,7 @@ public class House : WorldObject
 
                     var newWorldObject = WorldObjectFactory.CreateWorldObject(weenie, objectGuid);
 
-                    biota = ACE.Database.Adapter.BiotaConverter.ConvertFromEntityBiota(newWorldObject.Biota);
+                    biota = Database.Adapter.BiotaConverter.ConvertFromEntityBiota(newWorldObject.Biota);
                 }
             }
         }
@@ -663,7 +663,7 @@ public class House : WorldObject
 
         if (!isLoaded)
         {
-            return House.Load(houseGuid);
+            return Load(houseGuid);
         }
 
         var loaded = LandblockManager.GetLandblock(landblockId, false);
@@ -677,7 +677,7 @@ public class House : WorldObject
 
         if (!isLoaded)
         {
-            return House.Load(DungeonHouseGuid, true);
+            return Load(DungeonHouseGuid, true);
         }
 
         var loaded = LandblockManager.GetLandblock(landblockId, false);

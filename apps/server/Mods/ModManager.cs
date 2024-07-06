@@ -16,7 +16,7 @@ public static class ModManager
     private static readonly ILogger _log = Serilog.Log.ForContext(typeof(ModManager));
 
     public static string ModPath { get; } =
-        ACE.Common.ConfigManager.Config.Server.ModsDirectory
+        ConfigManager.Config.Server.ModsDirectory
         ?? Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "Mods");
 
     /// <summary>

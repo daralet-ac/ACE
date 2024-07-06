@@ -2,6 +2,8 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
+using ACE.Server.Factories.Tables.Wcids.Weapons;
+using ACE.Server.Factories.Tables.Wcids.Weapons.Legacy;
 using WeenieClassName = ACE.Server.Factories.Enum.WeenieClassName;
 
 namespace ACE.Server.Factories.Tables.Wcids;

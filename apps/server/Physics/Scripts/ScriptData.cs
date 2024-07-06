@@ -1,4 +1,4 @@
-namespace ACE.Server.Physics;
+namespace ACE.Server.Physics.Scripts;
 
 public class ScriptData
 {

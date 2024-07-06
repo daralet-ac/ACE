@@ -1,13 +1,12 @@
 using System.IO;
-using ACE.Server.Entity;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 public class TurnToHeading
 {
     public TurnToParameters TurnToParameters; // set of turning parameters
 
-    public TurnToHeading(Motion motion)
+    public TurnToHeading(ACE.Server.Entity.Motion motion)
     {
         TurnToParameters = new TurnToParameters(motion);
     }

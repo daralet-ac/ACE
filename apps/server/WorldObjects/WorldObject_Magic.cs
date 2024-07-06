@@ -726,7 +726,7 @@ partial class WorldObject
                     targetPlayerWard * LevelScaling.GetPlayerArmorWardScalar(player, caster as Creature)
                 );
 
-                var wardMod = WorldObjects.SkillFormula.CalcWardMod((float)targetPlayerWard / 10);
+                var wardMod = SkillFormula.CalcWardMod((float)targetPlayerWard / 10);
 
                 addResult.Enchantment.StatModValue *= wardMod;
                 addResult.Enchantment.Duration *= wardMod;

@@ -57,16 +57,16 @@ public class BSPNode : IUnpackable
         {
             case "BPnn":
             case "BPIn":
-                PosNode = BSPNode.ReadNode(reader, treeType);
+                PosNode = ReadNode(reader, treeType);
                 break;
             case "BpIN":
             case "BpnN":
-                NegNode = BSPNode.ReadNode(reader, treeType);
+                NegNode = ReadNode(reader, treeType);
                 break;
             case "BPIN":
             case "BPnN":
-                PosNode = BSPNode.ReadNode(reader, treeType);
-                NegNode = BSPNode.ReadNode(reader, treeType);
+                PosNode = ReadNode(reader, treeType);
+                NegNode = ReadNode(reader, treeType);
                 break;
         }
 

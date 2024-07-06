@@ -186,7 +186,7 @@ partial class Player
 
         //Console.WriteLine($"{Name}.MoveTo({target.Name})");
 
-        var motion = new Motion(this, target, MovementType.MoveToObject);
+        var motion = new ACE.Server.Entity.Motion(this, target, MovementType.MoveToObject);
         motion.MoveToParameters.MovementParameters |=
             MovementParams.CanCharge
             | MovementParams.FailWalk

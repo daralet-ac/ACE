@@ -301,7 +301,7 @@ public static class WorldObjectFactory
     /// </summary>
     public static WorldObject CreateWorldObject(Biota databaseBiota)
     {
-        var biota = ACE.Database.Adapter.BiotaConverter.ConvertToEntityBiota(databaseBiota);
+        var biota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(databaseBiota);
 
         return CreateWorldObject(biota);
     }
@@ -399,7 +399,7 @@ public static class WorldObjectFactory
     /// <summary>
     /// Creates a list of WorldObjects from a list of Biotas
     /// </summary>
-    public static List<WorldObject> CreateWorldObjects(List<ACE.Database.Models.Shard.Biota> biotas)
+    public static List<WorldObject> CreateWorldObjects(List<Biota> biotas)
     {
         var results = new List<WorldObject>();
 

@@ -6,7 +6,6 @@ using ACE.DatLoader;
 using ACE.DatLoader.Entity;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
-using ACE.Server.Physics.Animation.Internal;
 
 namespace ACE.Server.Physics.Animation;
 

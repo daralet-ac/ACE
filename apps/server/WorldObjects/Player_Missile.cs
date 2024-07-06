@@ -292,8 +292,8 @@ partial class Player
                 // JEWEL - Imperial Topaz - Bonus cleave chance
                 if (
                     this.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0
-                    && launcher.W_DamageType == ACE.Entity.Enum.DamageType.Slash
-                    && ammo.W_DamageType == ACE.Entity.Enum.DamageType.Slash
+                    && launcher.W_DamageType == DamageType.Slash
+                    && ammo.W_DamageType == DamageType.Slash
                 )
                 {
                     if (GetEquippedItemsRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 200))

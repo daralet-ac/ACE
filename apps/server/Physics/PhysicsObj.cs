@@ -15,6 +15,8 @@ using ACE.Server.Physics.Combat;
 using ACE.Server.Physics.Common;
 using ACE.Server.Physics.Hooks;
 using ACE.Server.Physics.Managers;
+using ACE.Server.Physics.Particles;
+using ACE.Server.Physics.Scripts;
 using ACE.Server.WorldObjects;
 using Serilog;
 using Landblock = ACE.Server.Physics.Common.Landblock;

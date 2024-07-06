@@ -1,12 +1,11 @@
 using System;
 using System.IO;
 using ACE.Entity.Enum;
-using ACE.Server.Entity;
 using ACE.Server.Network.Enum;
 using ACE.Server.Network.Sequence;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 /// <summary>
 /// The movement and animation for an object
@@ -36,7 +35,7 @@ public class MovementData
         WorldObject = wo;
     }
 
-    public MovementData(WorldObject wo, Motion motion)
+    public MovementData(WorldObject wo, ACE.Server.Entity.Motion motion)
     {
         WorldObject = wo;
         //var sequence = wo.Sequences;

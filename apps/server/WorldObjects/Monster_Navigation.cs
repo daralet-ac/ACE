@@ -626,7 +626,7 @@ partial class Creature
             ForceHome();
         }
 
-        EnqueueBroadcastMotion(new Motion(CurrentMotionState.Stance, MotionCommand.Ready));
+        EnqueueBroadcastMotion(new ACE.Server.Entity.Motion(CurrentMotionState.Stance, MotionCommand.Ready));
 
         IsMoving = false;
         NextMoveTime = Timers.RunningTime + 1.0f;

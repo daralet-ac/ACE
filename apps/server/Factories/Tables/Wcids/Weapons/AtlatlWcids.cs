@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 
-namespace ACE.Server.Factories.Tables.Wcids;
+namespace ACE.Server.Factories.Tables.Wcids.Weapons;
 
 public static class AtlatlWcids
 {

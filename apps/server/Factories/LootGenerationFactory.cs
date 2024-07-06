@@ -12,6 +12,8 @@ using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Factories.Tables.Wcids;
+using ACE.Server.Factories.Tables.Wcids.Weapons;
+using ACE.Server.Factories.Tables.Wcids.Weapons.Legacy;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using Serilog;
@@ -56,10 +58,7 @@ public static partial class LootGenerationFactory
         };
     }
 
-    public static Database.Models.World.TreasureDeath GetTweakedDeathTreasureProfile(
-        uint deathTreasureId,
-        object tweakedFor
-    )
+    public static TreasureDeath GetTweakedDeathTreasureProfile(uint deathTreasureId, object tweakedFor)
     {
         if (deathTreasureId == 338) // Leave Steel Chests alone!
         {
@@ -78,7 +77,7 @@ public static partial class LootGenerationFactory
                 return deathTreasure;
             }
 
-            tweakedDeathTreasure = new Database.Models.World.TreasureDeath(deathTreasure);
+            tweakedDeathTreasure = new TreasureDeath(deathTreasure);
 
             // Adjust loot drops within a tier based on monster level within the tier
             // Monsters towards the end of the tier should have higher drop rates and improved quality loot
@@ -211,13 +210,13 @@ public static partial class LootGenerationFactory
         if (tweakedFor is Container)
         {
             // Some overrides to make chests more interesting, ideally this should be done in the data but as a quick tweak this will do.
-            tweakedDeathTreasure = new Database.Models.World.TreasureDeath(deathTreasure);
+            tweakedDeathTreasure = new TreasureDeath(deathTreasure);
 
             return tweakedDeathTreasure;
         }
         else if (tweakedFor is GenericObject generic && generic.GeneratorProfiles != null) // Ground item spawners
         {
-            tweakedDeathTreasure = new Database.Models.World.TreasureDeath(deathTreasure);
+            tweakedDeathTreasure = new TreasureDeath(deathTreasure);
 
             return tweakedDeathTreasure;
         }

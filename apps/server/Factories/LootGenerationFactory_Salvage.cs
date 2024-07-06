@@ -1,5 +1,6 @@
 using System;
 using ACE.Common;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.WorldObjects;
 

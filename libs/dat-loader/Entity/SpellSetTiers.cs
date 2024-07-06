@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace ACE.DatLoader.FileTypes;
+namespace ACE.DatLoader.Entity;
 
 public class SpellSetTiers : IUnpackable
 {

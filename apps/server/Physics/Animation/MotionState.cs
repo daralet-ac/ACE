@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using ACE.Server.Physics.Animation.Internal;
 
 namespace ACE.Server.Physics.Animation;
 

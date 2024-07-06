@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using ACE.Entity.Enum;
+using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Collision;
 using ACE.Server.Physics.Common;
 using ACE.Server.Physics.Extensions;
 
-namespace ACE.Server.Physics.Animation;
+namespace ACE.Server.Physics;
 
 public enum TransitionState
 {

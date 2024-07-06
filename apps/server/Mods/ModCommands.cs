@@ -2,11 +2,11 @@ using System;
 using System.Diagnostics;
 using System.Text;
 using ACE.Entity.Enum;
-using ACE.Server.Mods;
+using ACE.Server.Command;
 using ACE.Server.Network;
 using HarmonyLib;
 
-namespace ACE.Server.Command.Handlers;
+namespace ACE.Server.Mods;
 
 public static class ModCommands
 {

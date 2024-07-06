@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using ACE.Entity.Enum;
 
-namespace ACE.Server.Physics;
+namespace ACE.Server.Physics.Scripts;
 
 public class PhysicsScriptTable
 {

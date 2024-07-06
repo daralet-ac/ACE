@@ -11,12 +11,12 @@ namespace ACE.Database.Adapter;
 
 public static class WeenieConverter
 {
-    public static ACE.Entity.Models.Weenie ConvertToEntityWeenie(
+    public static Weenie ConvertToEntityWeenie(
         ACE.Database.Models.World.Weenie weenie,
         bool instantiateEmptyCollections = false
     )
     {
-        var result = new ACE.Entity.Models.Weenie();
+        var result = new Weenie();
 
         result.WeenieClassId = weenie.ClassId;
         result.ClassName = weenie.ClassName;
@@ -480,17 +480,17 @@ public static class WeenieConverter
         return result;
     }
 
-    public static ACE.Database.Models.World.Weenie ConvertFromEntityWeenie(ACE.Entity.Models.Weenie weenie)
+    public static ACE.Database.Models.World.Weenie ConvertFromEntityWeenie(Weenie weenie)
     {
         throw new NotImplementedException();
     }
 
-    public static ACE.Database.Models.Shard.Biota ConvertToDatabaseBiota(
+    public static Models.Shard.Biota ConvertToDatabaseBiota(
         ACE.Database.Models.World.Weenie weenie,
         uint id
     )
     {
-        var result = new ACE.Database.Models.Shard.Biota();
+        var result = new Models.Shard.Biota();
 
         result.Id = id;
         result.WeenieClassId = weenie.ClassId;

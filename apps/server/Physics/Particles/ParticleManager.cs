@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using ACE.Server.Physics.Animation;
 
-namespace ACE.Server.Physics;
+namespace ACE.Server.Physics.Particles;
 
 public class ParticleManager
 {

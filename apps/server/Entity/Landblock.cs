@@ -1334,7 +1334,7 @@ public class Landblock : IActor
                         corpse.Name,
                         corpse.Guid,
                         corpse.CreationTimestamp,
-                        Common.Time.GetDateTimeFromTimestamp(corpse.CreationTimestamp ?? 0).ToLocalTime(),
+                        Time.GetDateTimeFromTimestamp(corpse.CreationTimestamp ?? 0).ToLocalTime(),
                         Corpse.EmptyDecayTime
                     );
                     corpse.TimeToRot = Corpse.EmptyDecayTime;
@@ -1541,7 +1541,7 @@ public class Landblock : IActor
             var wieldedItem = creature.GetEquippedItem(guid);
             if (wieldedItem != null)
             {
-                if ((wieldedItem.CurrentWieldedLocation & ACE.Entity.Enum.EquipMask.Selectable) != 0)
+                if ((wieldedItem.CurrentWieldedLocation & EquipMask.Selectable) != 0)
                 {
                     return wieldedItem;
                 }

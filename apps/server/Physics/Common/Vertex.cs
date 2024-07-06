@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace ACE.Server.Physics.Entity;
+namespace ACE.Server.Physics.Common;
 
 public class Vertex : IEquatable<Vertex>
 {

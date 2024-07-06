@@ -10,7 +10,7 @@ public static class GameActionQueryBirth
     public static void Handle(ClientMessage message, Session session)
     {
         var target = message.Payload.ReadString16L();
-        var playerDOB = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+        var playerDOB = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         playerDOB = playerDOB.AddSeconds(session.Player.CreationTimestamp.Value).ToUniversalTime();
 
         var dobEvent = new GameMessages.Messages.GameMessageSystemChat(

@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using ACE.DatLoader.Entity;
-using ACE.Server.Physics.Animation;
+using ACE.Server.Physics.Collision;
 using ACE.Server.Physics.Entity;
 
-namespace ACE.Server.Physics.Collision;
+namespace ACE.Server.Physics.Common;
 
 public class GfxObj
 {

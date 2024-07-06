@@ -6,7 +6,7 @@ using ACE.Server.Entity;
 using ACE.Server.Network.Enum;
 using Serilog;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 /// <summary>
 /// The raw movement commands sent by client

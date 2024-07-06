@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Numerics;
-using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Common;
 
 namespace ACE.Server.Physics.Collision;

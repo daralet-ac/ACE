@@ -26,8 +26,8 @@ public class BSPPortal : BSPNode
         SplittingPlane = new Plane();
         SplittingPlane.Unpack(reader);
 
-        PosNode = BSPNode.ReadNode(reader, treeType);
-        NegNode = BSPNode.ReadNode(reader, treeType);
+        PosNode = ReadNode(reader, treeType);
+        NegNode = ReadNode(reader, treeType);
 
         if (treeType == BSPType.Drawing)
         {

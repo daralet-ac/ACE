@@ -10,8 +10,8 @@ using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Motion;
 using ACE.Server.Network.Sequence;
-using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects;
 
@@ -487,7 +487,7 @@ partial class Player
                 && forwardCommand != MotionCommand.Sleeping
             )
             {
-                var spell = new ACE.Server.Entity.Spell(SpellId.CampfireRest1);
+                var spell = new Spell(SpellId.CampfireRest1);
                 CreateEnchantment(this, WellRestedHotspot, null, spell);
 
                 WellRestedHotspot = null;

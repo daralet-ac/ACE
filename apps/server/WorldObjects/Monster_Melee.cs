@@ -472,7 +472,7 @@ partial class Creature
             attackFrames = defaultAttackFrames;
         }
 
-        var motion = new Motion(this, motionCommand, animSpeed);
+        var motion = new ACE.Server.Entity.Motion(this, motionCommand, animSpeed);
         motion.MotionState.TurnSpeed = 2.25f;
 
         if (!AiImmobile)

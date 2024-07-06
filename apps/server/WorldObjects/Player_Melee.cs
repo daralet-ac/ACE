@@ -545,7 +545,7 @@ partial class Player
         //Console.WriteLine($"Attack frames: {string.Join(",", attackFrames)}");
 
         // broadcast player swing animation to clients
-        var motion = new Motion(this, swingAnimation, animSpeed);
+        var motion = new ACE.Server.Entity.Motion(this, swingAnimation, animSpeed);
         if (PropertyManager.GetBool("persist_movement").Item)
         {
             motion.Persist(CurrentMotionState);

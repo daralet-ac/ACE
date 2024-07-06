@@ -45,7 +45,7 @@ public class ArmorPatch : Stackable
                     $"{player.Name} applies {patchesConsumed} {sourceName}es to the {target.NameWithMaterial}.",
                     ChatMessageType.Craft
                 ),
-                WorldObject.LocalBroadcastRange,
+                LocalBroadcastRange,
                 ChatMessageType.Craft
             );
         }
@@ -56,7 +56,7 @@ public class ArmorPatch : Stackable
                     $"{player.Name} applies an {sourceName} to the {target.NameWithMaterial}.",
                     ChatMessageType.Craft
                 ),
-                WorldObject.LocalBroadcastRange,
+                LocalBroadcastRange,
                 ChatMessageType.Craft
             );
         }

@@ -1,8 +1,7 @@
 using System.IO;
 using ACE.Entity;
-using ACE.Server.Entity;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 public class TurnToObject
 {
@@ -12,7 +11,7 @@ public class TurnToObject
     // this is used instead of the DesiredHeading in the TurnToParameters
     public TurnToParameters TurnToParameters; // set of turning parameters
 
-    public TurnToObject(Motion motion)
+    public TurnToObject(ACE.Server.Entity.Motion motion)
     {
         Target = motion.TargetGuid;
         DesiredHeading = motion.DesiredHeading;

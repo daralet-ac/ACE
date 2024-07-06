@@ -75,135 +75,135 @@ partial class Creature
             {
                 var newSkill = GetNewMeleeAttackSkill(tier, statWeight, physicality, dexterity);
 
-                var skillType = ACE.Entity.Enum.Skill.HeavyWeapons;
+                var skillType = Skill.HeavyWeapons;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.HeavyWeapons] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.HeavyWeapons] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Unarmed Attack Skill
             {
                 var newSkill = GetNewUnarmedCombatSkill(tier, statWeight, physicality, dexterity);
 
-                var skillType = ACE.Entity.Enum.Skill.UnarmedCombat;
+                var skillType = Skill.UnarmedCombat;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.UnarmedCombat] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.UnarmedCombat] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Dagger Skill
             {
                 var newSkill = GetNewDaggerSkill(tier, statWeight, physicality, dexterity);
 
-                var skillType = ACE.Entity.Enum.Skill.Dagger;
+                var skillType = Skill.Dagger;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.Dagger] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.Dagger] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Staff Skill
             {
                 var newSkill = GetNewStaffSkill(tier, statWeight, physicality, dexterity);
 
-                var skillType = ACE.Entity.Enum.Skill.Staff;
+                var skillType = Skill.Staff;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.Staff] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.Staff] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Missile Attack Skill
             {
                 var newSkill = GetNewMissileAttackSkill(tier, statWeight, dexterity);
 
-                var skillType = ACE.Entity.Enum.Skill.Bow;
+                var skillType = Skill.Bow;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.Bow] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.Bow] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Thrown Weapons Skill
             {
                 var newSkill = GetNewMissileAttackSkill(tier, statWeight, dexterity);
 
-                var skillType = ACE.Entity.Enum.Skill.ThrownWeapon;
+                var skillType = Skill.ThrownWeapon;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.ThrownWeapon] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.ThrownWeapon] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // War Magic Skill
             {
                 var newSkill = GetNewWarMagicSkill(tier, statWeight, magic);
 
-                var skillType = ACE.Entity.Enum.Skill.WarMagic;
+                var skillType = Skill.WarMagic;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.WarMagic] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.WarMagic] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Life Magic Skill
             {
                 var newSkill = GetNewLifeMagicSkill(tier, statWeight, magic);
 
-                var skillType = ACE.Entity.Enum.Skill.LifeMagic;
+                var skillType = Skill.LifeMagic;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.LifeMagic] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.LifeMagic] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Physical Defense
             {
                 var newSkill = GetNewPhysicalDefenseSkill(tier, statWeight, toughness, (physicality + dexterity) / 2);
 
-                var skillType = ACE.Entity.Enum.Skill.MeleeDefense;
+                var skillType = Skill.MeleeDefense;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Specialized
+                    SAC = SkillAdvancementClass.Specialized
                 };
 
-                Skills[ACE.Entity.Enum.Skill.MeleeDefense] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.MeleeDefense] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Missile Defense
@@ -221,60 +221,60 @@ partial class Creature
             {
                 var newSkill = GetNewMagicDefenseSkill(tier, statWeight, toughness, magic);
 
-                var skillType = ACE.Entity.Enum.Skill.MagicDefense;
+                var skillType = Skill.MagicDefense;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Specialized
+                    SAC = SkillAdvancementClass.Specialized
                 };
 
-                Skills[ACE.Entity.Enum.Skill.MagicDefense] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.MagicDefense] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Perception
             {
                 var newSkill = GetNewPerceptionSkill(tier, statWeight, intelligence);
 
-                var skillType = ACE.Entity.Enum.Skill.AssessCreature;
+                var skillType = Skill.AssessCreature;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.AssessCreature] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.AssessCreature] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Deception
             {
                 var newSkill = GetNewDeceptionSkill(tier, statWeight, intelligence);
 
-                var skillType = ACE.Entity.Enum.Skill.Deception;
+                var skillType = Skill.Deception;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.Deception] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.Deception] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Run
             {
                 var newSkill = GetNewRunSkill(tier, statWeight, dexterity);
 
-                var skillType = ACE.Entity.Enum.Skill.Run;
+                var skillType = Skill.Run;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
                     InitLevel = newSkill,
-                    SAC = ACE.Entity.Enum.SkillAdvancementClass.Trained
+                    SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[ACE.Entity.Enum.Skill.Run] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.Run] = new CreatureSkill(this, skillType, propertiesSkill);
             }
         }
     }

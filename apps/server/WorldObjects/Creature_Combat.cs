@@ -126,7 +126,7 @@ partial class Creature
             MotionCommand.NonCombat
         );
 
-        var motion = new Motion(MotionStance.NonCombat);
+        var motion = new ACE.Server.Entity.Motion(MotionStance.NonCombat);
         ExecuteMotionPersist(motion);
 
         var player = this as Player;
@@ -202,7 +202,7 @@ partial class Creature
             (MotionCommand)combatStance
         );
 
-        var motion = new Motion(combatStance);
+        var motion = new ACE.Server.Entity.Motion(combatStance);
         ExecuteMotionPersist(motion);
 
         var player = this as Player;
@@ -237,7 +237,7 @@ partial class Creature
             MotionCommand.Magic
         );
 
-        var motion = new Motion(MotionStance.Magic);
+        var motion = new ACE.Server.Entity.Motion(MotionStance.Magic);
         ExecuteMotionPersist(motion);
 
         var player = this as Player;
@@ -269,7 +269,7 @@ partial class Creature
 
         var swapTime = SwitchCombatStyles();
 
-        var motion = new Motion(combatStance);
+        var motion = new ACE.Server.Entity.Motion(combatStance);
         var stanceTime = ExecuteMotionPersist(motion);
 
         var ammo = GetEquippedAmmo();

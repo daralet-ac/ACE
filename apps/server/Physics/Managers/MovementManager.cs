@@ -1,8 +1,9 @@
 using ACE.Entity.Enum;
+using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Combat;
 using ACE.Server.Physics.Common;
 
-namespace ACE.Server.Physics.Animation;
+namespace ACE.Server.Physics.Managers;
 
 public class MovementManager
 {

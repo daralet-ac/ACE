@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
 using ACE.Entity.Enum;
-using ACE.Server.Entity;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 /// <summary>
 /// Information related to movement and animation
@@ -63,7 +62,7 @@ public class InterpretedMotionState
         Flags = BuildMovementFlags();
     }
 
-    public InterpretedMotionState(MovementData data, Motion motion)
+    public InterpretedMotionState(MovementData data, ACE.Server.Entity.Motion motion)
     {
         MovementData = data;
         CurrentStyle = data.CurrentStyle;

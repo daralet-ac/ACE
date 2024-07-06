@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using ACE.DatLoader.Entity;
-using ACE.Server.Physics.Animation;
 
 namespace ACE.Server.Physics.Common;
 

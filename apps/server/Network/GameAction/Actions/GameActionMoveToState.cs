@@ -1,4 +1,4 @@
-using ACE.Server.Network.Structure;
+using ACE.Server.Network.Motion;
 
 namespace ACE.Server.Network.GameAction.Actions;
 

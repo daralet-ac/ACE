@@ -88,9 +88,9 @@ public class DBObj
     /// <summary>
     /// QualifiedDID Type 6
     /// </summary>
-    public static GfxObj GetGfxObj(uint id)
+    public static ACE.DatLoader.FileTypes.GfxObj GetGfxObj(uint id)
     {
-        return DatManager.PortalDat.ReadFromDat<GfxObj>(id);
+        return DatManager.PortalDat.ReadFromDat<ACE.DatLoader.FileTypes.GfxObj>(id);
     }
 
     /// <summary>
@@ -128,8 +128,8 @@ public class DBObj
     /// <summary>
     /// QualifiedDID Type 42
     /// </summary>
-    public static DatLoader.FileTypes.ParticleEmitterInfo GetParticleEmitterInfo(uint id)
+    public static ParticleEmitterInfo GetParticleEmitterInfo(uint id)
     {
-        return DatManager.PortalDat.ReadFromDat<DatLoader.FileTypes.ParticleEmitterInfo>(id);
+        return DatManager.PortalDat.ReadFromDat<ParticleEmitterInfo>(id);
     }
 }

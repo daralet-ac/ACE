@@ -2,7 +2,6 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
-using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
@@ -78,7 +77,7 @@ public class Bindstone : WorldObject
 
         actionChain.AddAction(
             this,
-            () => EnqueueBroadcastMotion(new Motion(MotionStance.NonCombat, MotionCommand.Twitch1))
+            () => EnqueueBroadcastMotion(new ACE.Server.Entity.Motion(MotionStance.NonCombat, MotionCommand.Twitch1))
         );
 
         // player animation?

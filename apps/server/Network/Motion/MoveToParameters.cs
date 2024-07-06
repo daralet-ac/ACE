@@ -1,7 +1,7 @@
 using System.IO;
 using ACE.Entity.Enum;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 public class MoveToParameters
 {
