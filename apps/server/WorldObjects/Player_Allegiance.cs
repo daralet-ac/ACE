@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using ACE.Common;
-using ACE.Database.Models.Auth;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;

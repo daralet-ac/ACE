@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Database.Models.Shard;
@@ -872,10 +871,7 @@ public static class BiotaUpdater
         existingValue.TryToBond = value.TryToBond;
     }
 
-    private static void CopyValueInto(
-        ACE.Entity.Models.PropertiesEmote value,
-        BiotaPropertiesEmote existingValue
-    )
+    private static void CopyValueInto(ACE.Entity.Models.PropertiesEmote value, BiotaPropertiesEmote existingValue)
     {
         existingValue.Category = (uint)value.Category;
         existingValue.Probability = value.Probability;
