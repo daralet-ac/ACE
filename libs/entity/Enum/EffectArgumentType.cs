@@ -1,15 +1,14 @@
-namespace ACE.Entity.Enum
-{
-    public enum EffectArgumentType
-    {
-        Invalid,
-        Double,
-        Int,
-        Quality,
-        Random,
-        Variable,
+namespace ACE.Entity.Enum;
 
-        // added
-        Int64
-    }
+public enum EffectArgumentType
+{
+    Invalid,
+    Double,
+    Int,
+    Quality,
+    Random,
+    Variable,
+
+    // added
+    Int64
 }

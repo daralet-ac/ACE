@@ -1,12 +1,11 @@
 using System;
 
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+[Flags]
+public enum MotionFlags : byte
 {
-    [Flags]
-    public enum MotionFlags : byte
-    {
-        None = 0x0,
-        StickToObject = 0x1,
-        StandingLongJump = 0x2
-    };
-}
+    None = 0x0,
+    StickToObject = 0x1,
+    StandingLongJump = 0x2
+};

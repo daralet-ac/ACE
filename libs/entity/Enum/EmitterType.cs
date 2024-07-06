@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum EmitterType
 {
-    public enum EmitterType
-    {
-        Unknown = 0,
-        BirthratePerSec = 1,
-        BirthratePerMeter = 2,
-    }
+    Unknown = 0,
+    BirthratePerSec = 1,
+    BirthratePerMeter = 2,
 }

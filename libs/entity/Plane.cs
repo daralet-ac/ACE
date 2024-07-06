@@ -1,10 +1,9 @@
 using System.Numerics;
 
-namespace ACE.Entity
+namespace ACE.Entity;
+
+public class Plane
 {
-    public class Plane
-    {
-        public Vector3 N { get; set; }
-        public float D { get; set; }
-    }
+    public Vector3 N { get; set; }
+    public float D { get; set; }
 }

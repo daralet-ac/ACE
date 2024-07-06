@@ -1,13 +1,12 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+/// <summary>
+/// Account lookup Types
+/// </summary>
+public enum AccountLookupType
 {
-    /// <summary>
-    /// Account lookup Types
-    /// </summary>
-    public enum AccountLookupType
-    {
-        Undef,
-        Subscription,
-        Character,
-        Iid,
-    }
+    Undef,
+    Subscription,
+    Character,
+    Iid,
 }

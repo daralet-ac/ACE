@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+namespace ACE.Entity.Enum;
 
-namespace ACE.Entity.Enum
+public enum PropertyCachingType
 {
-    public enum PropertyCachingType
-    {
-        Global = 0x0,
-        Internal = 0x1,
-    }
+    Global = 0x0,
+    Internal = 0x1,
 }

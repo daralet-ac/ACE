@@ -1,9 +1,8 @@
-namespace ACE.Entity
+namespace ACE.Entity;
+
+public class TextureMapChange
 {
-    public class TextureMapChange
-    {
-        public byte PartIndex { get; set; }
-        public uint OldTexture { get; set; }
-        public uint NewTexture { get; set; }
-    }
+    public byte PartIndex { get; set; }
+    public uint OldTexture { get; set; }
+    public uint NewTexture { get; set; }
 }

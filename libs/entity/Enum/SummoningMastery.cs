@@ -1,11 +1,9 @@
+namespace ACE.Entity.Enum;
 
-namespace ACE.Entity.Enum
+public enum SummoningMastery
 {
-    public enum SummoningMastery
-    {
-        Undef,
-        Primalist,
-        Necromancer,
-        Naturalist
-    }
+    Undef,
+    Primalist,
+    Necromancer,
+    Naturalist
 }

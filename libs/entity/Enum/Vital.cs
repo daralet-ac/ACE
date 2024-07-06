@@ -1,13 +1,12 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum Vital : uint
 {
-    public enum Vital : uint
-    {
-        Undefined,
-        MaxHealth,
-        Health,
-        MaxStamina,
-        Stamina,
-        MaxMana,
-        Mana
-    }
+    Undefined,
+    MaxHealth,
+    Health,
+    MaxStamina,
+    Stamina,
+    MaxMana,
+    Mana
 }

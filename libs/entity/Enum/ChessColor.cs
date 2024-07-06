@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum ChessColor
 {
-    public enum ChessColor
-    {
-        None = -1,
-        White = 0,
-        Black = 1,
-    }
+    None = -1,
+    White = 0,
+    Black = 1,
 }

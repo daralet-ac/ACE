@@ -1,21 +1,14 @@
-using System;
+namespace ACE.Entity.Models;
 
-namespace ACE.Entity.Models
+public class PropertiesBook
 {
-    public class PropertiesBook
+    public int MaxNumPages { get; set; }
+    public int MaxNumCharsPerPage { get; set; }
+
+    public PropertiesBook Clone()
     {
-        public int MaxNumPages { get; set; }
-        public int MaxNumCharsPerPage { get; set; }
+        var result = new PropertiesBook { MaxNumPages = MaxNumPages, MaxNumCharsPerPage = MaxNumCharsPerPage, };
 
-        public PropertiesBook Clone()
-        {
-            var result = new PropertiesBook
-            {
-                MaxNumPages = MaxNumPages,
-                MaxNumCharsPerPage = MaxNumCharsPerPage,
-            };
-
-            return result;
-        }
+        return result;
     }
 }

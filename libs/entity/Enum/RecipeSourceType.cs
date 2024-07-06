@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum RecipeSourceType
 {
-    public enum RecipeSourceType
-    {
-        Player = 0,
-        Source = 1,
-        Dye = 60
-    };
-}
+    Player = 0,
+    Source = 1,
+    Dye = 60
+};

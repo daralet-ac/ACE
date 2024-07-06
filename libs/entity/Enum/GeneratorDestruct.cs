@@ -1,10 +1,9 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum GeneratorDestruct
 {
-    public enum GeneratorDestruct
-    {
-        Undef,
-        Nothing,
-        Destroy,
-        Kill
-    }
+    Undef,
+    Nothing,
+    Destroy,
+    Kill
 }

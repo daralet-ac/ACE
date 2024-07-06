@@ -1,14 +1,13 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum ChessPieceType
 {
-    public enum ChessPieceType
-    {
-        Empty,
-        Pawn,
-        Rook,
-        Knight,
-        Bishop,
-        Queen,
-        King,
-        Count
-    }
+    Empty,
+    Pawn,
+    Rook,
+    Knight,
+    Bishop,
+    Queen,
+    King,
+    Count
 }

@@ -1,16 +1,15 @@
 using System.Numerics;
 
-namespace ACE.Entity
-{
-    public class Frame
-    {
-        public Vector3 Origin { get; set; }
-        public Quaternion Orientation { get; set; }
+namespace ACE.Entity;
 
-        public Frame()
-        {
-            Origin = Vector3.Zero;
-            Orientation = Quaternion.Identity;
-        }
+public class Frame
+{
+    public Vector3 Origin { get; set; }
+    public Quaternion Orientation { get; set; }
+
+    public Frame()
+    {
+        Origin = Vector3.Zero;
+        Orientation = Quaternion.Identity;
     }
 }

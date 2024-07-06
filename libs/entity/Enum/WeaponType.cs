@@ -1,20 +1,18 @@
+namespace ACE.Entity.Enum;
 
-namespace ACE.Entity.Enum
+public enum WeaponType
 {
-    public enum WeaponType
-    {
-        Undef,
-        Unarmed,
-        Sword,
-        Axe,
-        Mace,
-        Spear,
-        Dagger,
-        Staff,
-        Bow,
-        Crossbow,
-        Thrown,
-        TwoHanded,
-        Magic
-    }
+    Undef,
+    Unarmed,
+    Sword,
+    Axe,
+    Mace,
+    Spear,
+    Dagger,
+    Staff,
+    Bow,
+    Crossbow,
+    Thrown,
+    TwoHanded,
+    Magic
 }

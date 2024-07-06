@@ -1,11 +1,9 @@
+namespace ACE.Entity.Enum;
 
-namespace ACE.Entity.Enum
+public enum SkillAdvancementClass : uint
 {
-    public enum SkillAdvancementClass : uint
-    {
-        Inactive,
-        Untrained,
-        Trained,
-        Specialized
-    }
+    Inactive,
+    Untrained,
+    Trained,
+    Specialized
 }

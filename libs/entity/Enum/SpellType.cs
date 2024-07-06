@@ -1,22 +1,21 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum SpellType
 {
-    public enum SpellType
-    {
-        Undef,
-        Enchantment,
-        Projectile,
-        Boost,
-        Transfer,
-        PortalLink,
-        PortalRecall,
-        PortalSummon,
-        PortalSending,
-        Dispel,
-        LifeProjectile,
-        FellowBoost,
-        FellowEnchantment,
-        FellowPortalSending,
-        FellowDispel,
-        EnchantmentProjectile
-    }
+    Undef,
+    Enchantment,
+    Projectile,
+    Boost,
+    Transfer,
+    PortalLink,
+    PortalRecall,
+    PortalSummon,
+    PortalSending,
+    Dispel,
+    LifeProjectile,
+    FellowBoost,
+    FellowEnchantment,
+    FellowPortalSending,
+    FellowDispel,
+    EnchantmentProjectile
 }

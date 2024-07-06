@@ -1,12 +1,10 @@
+namespace ACE.Entity.Enum;
 
-namespace ACE.Entity.Enum
+public enum HouseType
 {
-    public enum HouseType
-    {
-        Undef,
-        Cottage,
-        Villa,
-        Mansion,
-        Apartment
-    }
+    Undef,
+    Cottage,
+    Villa,
+    Mansion,
+    Apartment
 }

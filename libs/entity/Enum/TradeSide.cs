@@ -1,8 +1,7 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum TradeSide
 {
-    public enum TradeSide
-    {
-        Self = 0x1,
-        Partner = 0x2,
-    };
-}
+    Self = 0x1,
+    Partner = 0x2,
+};

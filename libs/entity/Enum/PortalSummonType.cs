@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum PortalSummonType
 {
-    public enum PortalSummonType
-    {
-        Undef,
-        LinkedPortalOne,
-        LinkedPortalTwo
-    }
+    Undef,
+    LinkedPortalOne,
+    LinkedPortalTwo
 }
