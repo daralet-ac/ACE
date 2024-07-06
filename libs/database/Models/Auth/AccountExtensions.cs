@@ -1,49 +1,31 @@
-using ACE.Common.Cryptography;
-
 using System;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using ACE.Common.Cryptography;
 using Serilog;
-using Serilog.Events;
 
-namespace ACE.Database.Models.Auth
+namespace ACE.Database.Models.Auth;
+
+public static class AccountExtensions
 {
-    public static class AccountExtensions
+    private static readonly ILogger _log = Log.ForContext(typeof(AccountExtensions));
+
+    public static bool PasswordMatches(this Account account, string password)
     {
-        private static readonly ILogger _log = Log.ForContext(typeof(AccountExtensions));
-
-        public static bool PasswordMatches(this Account account, string password)
+        if (account.PasswordSalt == "use bcrypt") // Account password is using bcrypt
         {
-            if (account.PasswordSalt == "use bcrypt") // Account password is using bcrypt
+            if (
+                Common.ConfigManager.Config.Server.Accounts.ForceWorkFactorMigration
+                && (
+                    BCryptProvider.GetPasswordWorkFactor(account.PasswordHash)
+                    != Common.ConfigManager.Config.Server.Accounts.PasswordHashWorkFactor
+                )
+            )
+            // Upgrade (or downgrade) Password workfactor if not the same as config specifies, ForceWorkFactorMigration is TRUE and Password Matches
             {
-                if (Common.ConfigManager.Config.Server.Accounts.ForceWorkFactorMigration &&
-                    (BCryptProvider.GetPasswordWorkFactor(account.PasswordHash) != Common.ConfigManager.Config.Server.Accounts.PasswordHashWorkFactor))
-                // Upgrade (or downgrade) Password workfactor if not the same as config specifies, ForceWorkFactorMigration is TRUE and Password Matches
-                {
-                    if (BCryptProvider.Verify(password, account.PasswordHash))
-                    {
-                        account.SetPassword(password);
-                        account.SetSaltForBCrypt();
-
-                        DatabaseManager.Authentication.UpdateAccount(account);
-
-                        return true;
-                    }
-                    else
-                        return false;
-                }
-                else
-                    return BCryptProvider.Verify(password, account.PasswordHash);
-            }
-            else // Account password is using SHA512 salt
-            {
-                _log.Debug("{AccountName} password verified using SHA512 hash/salt, migrating to bcrypt.", account.AccountName);
-
-                var input = GetPasswordHash(account, password);
-
-                if (input == account.PasswordHash) // If password matches, migrate to bcrypt
+                if (BCryptProvider.Verify(password, account.PasswordHash))
                 {
                     account.SetPassword(password);
                     account.SetSaltForBCrypt();
@@ -53,73 +35,104 @@ namespace ACE.Database.Models.Auth
                     return true;
                 }
                 else
+                {
                     return false;
+                }
             }
-        }
-
-        public static void SetPassword(this Account account, string value)
-        {
-            account.PasswordHash = GetPasswordHash(value);
-        }
-
-        public static void SetSalt(this Account account, string value)
-        {
-            account.PasswordSalt = value;
-        }
-
-        public static void SetSaltForBCrypt(this Account account)
-        {
-            SetSalt(account, "use bcrypt"); // this is used just to indicate that the password is using bcrypt. For migration purposes only.
-        }
-
-        private static string GetPasswordHash(string password)
-        {
-            var workFactor = Common.ConfigManager.Config.Server.Accounts.PasswordHashWorkFactor;
-
-            if (workFactor < 4)
+            else
             {
-                _log.Warning("PasswordHashWorkFactor in config less than minimum value of 4, using 4 and continuing.");
-                workFactor = 4;
+                return BCryptProvider.Verify(password, account.PasswordHash);
             }
-            else if (workFactor > 31)
+        }
+        else // Account password is using SHA512 salt
+        {
+            _log.Debug(
+                "{AccountName} password verified using SHA512 hash/salt, migrating to bcrypt.",
+                account.AccountName
+            );
+
+            var input = GetPasswordHash(account, password);
+
+            if (input == account.PasswordHash) // If password matches, migrate to bcrypt
             {
-                _log.Warning("PasswordHashWorkFactor in config greater than minimum value of 31, using 31 and continuing.");
-                workFactor = 31;
+                account.SetPassword(password);
+                account.SetSaltForBCrypt();
+
+                DatabaseManager.Authentication.UpdateAccount(account);
+
+                return true;
             }
-
-            return BCryptProvider.HashPassword(password, workFactor);
+            else
+            {
+                return false;
+            }
         }
+    }
 
-        private static string GetPasswordHash(Account account, string password)
+    public static void SetPassword(this Account account, string value)
+    {
+        account.PasswordHash = GetPasswordHash(value);
+    }
+
+    public static void SetSalt(this Account account, string value)
+    {
+        account.PasswordSalt = value;
+    }
+
+    public static void SetSaltForBCrypt(this Account account)
+    {
+        SetSalt(account, "use bcrypt"); // this is used just to indicate that the password is using bcrypt. For migration purposes only.
+    }
+
+    private static string GetPasswordHash(string password)
+    {
+        var workFactor = Common.ConfigManager.Config.Server.Accounts.PasswordHashWorkFactor;
+
+        if (workFactor < 4)
         {
-            byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-            byte[] saltBytes = Convert.FromBase64String(account.PasswordSalt);
-            byte[] buffer = passwordBytes.Concat(saltBytes).ToArray();
-            byte[] hash;
-
-            using (var hasher = SHA512.Create())
-                hash = hasher.ComputeHash(buffer);
-
-            return Convert.ToBase64String(hash);
+            _log.Warning("PasswordHashWorkFactor in config less than minimum value of 4, using 4 and continuing.");
+            workFactor = 4;
         }
-
-        public static void UpdateLastLogin(this Account account, IPAddress address)
+        else if (workFactor > 31)
         {
-            account.LastLoginIP = address.GetAddressBytes();
-            account.LastLoginTime = DateTime.UtcNow;
-            account.TotalTimesLoggedIn++;
-
-            DatabaseManager.Authentication.UpdateAccount(account);
+            _log.Warning("PasswordHashWorkFactor in config greater than minimum value of 31, using 31 and continuing.");
+            workFactor = 31;
         }
 
-        public static void UnBan(this Account account)
+        return BCryptProvider.HashPassword(password, workFactor);
+    }
+
+    private static string GetPasswordHash(Account account, string password)
+    {
+        var passwordBytes = Encoding.UTF8.GetBytes(password);
+        var saltBytes = Convert.FromBase64String(account.PasswordSalt);
+        var buffer = passwordBytes.Concat(saltBytes).ToArray();
+        byte[] hash;
+
+        using (var hasher = SHA512.Create())
         {
-            account.BanExpireTime = null;
-            account.BannedByAccountId = null;
-            account.BannedTime = null;
-            account.BanReason = null;
-
-            DatabaseManager.Authentication.UpdateAccount(account);
+            hash = hasher.ComputeHash(buffer);
         }
+
+        return Convert.ToBase64String(hash);
+    }
+
+    public static void UpdateLastLogin(this Account account, IPAddress address)
+    {
+        account.LastLoginIP = address.GetAddressBytes();
+        account.LastLoginTime = DateTime.UtcNow;
+        account.TotalTimesLoggedIn++;
+
+        DatabaseManager.Authentication.UpdateAccount(account);
+    }
+
+    public static void UnBan(this Account account)
+    {
+        account.BanExpireTime = null;
+        account.BannedByAccountId = null;
+        account.BannedTime = null;
+        account.BanReason = null;
+
+        DatabaseManager.Authentication.UpdateAccount(account);
     }
 }

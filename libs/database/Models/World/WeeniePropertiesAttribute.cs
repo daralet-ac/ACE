@@ -1,19 +1,15 @@
-using System;
-using System.Collections.Generic;
-
 #nullable disable
 
-namespace ACE.Database.Models.World
-{
-    public partial class WeeniePropertiesAttribute
-    {
-        public uint Id { get; set; }
-        public uint ObjectId { get; set; }
-        public ushort Type { get; set; }
-        public uint InitLevel { get; set; }
-        public uint LevelFromCP { get; set; }
-        public uint CPSpent { get; set; }
+namespace ACE.Database.Models.World;
 
-        public virtual Weenie Object { get; set; }
-    }
+public partial class WeeniePropertiesAttribute
+{
+    public uint Id { get; set; }
+    public uint ObjectId { get; set; }
+    public ushort Type { get; set; }
+    public uint InitLevel { get; set; }
+    public uint LevelFromCP { get; set; }
+    public uint CPSpent { get; set; }
+
+    public virtual Weenie Object { get; set; }
 }

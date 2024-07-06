@@ -1,20 +1,18 @@
 using System.Collections.Generic;
-
 using ACE.Database.Models.Shard;
 
-namespace ACE.Database.Entity
+namespace ACE.Database.Entity;
+
+public class PossessedBiotas
 {
-    public class PossessedBiotas
+    public List<Biota> Inventory { get; } = new List<Biota>();
+
+    public List<Biota> WieldedItems { get; } = new List<Biota>();
+
+    public PossessedBiotas(ICollection<Biota> inventory, ICollection<Biota> wieldedItems)
     {
-        public List<Biota> Inventory { get; } = new List<Biota>();
+        Inventory.AddRange(inventory);
 
-        public List<Biota> WieldedItems { get; } = new List<Biota>();
-
-        public PossessedBiotas(ICollection<Biota> inventory, ICollection<Biota> wieldedItems)
-        {
-            Inventory.AddRange(inventory);
-
-            WieldedItems.AddRange(wieldedItems);
-        }
+        WieldedItems.AddRange(wieldedItems);
     }
 }

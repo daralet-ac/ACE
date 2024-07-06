@@ -1,16 +1,12 @@
-using System;
-using System.Collections.Generic;
-
 #nullable disable
 
-namespace ACE.Database.Models.Shard
-{
-    public partial class HousePermission
-    {
-        public uint HouseId { get; set; }
-        public uint PlayerGuid { get; set; }
-        public bool Storage { get; set; }
+namespace ACE.Database.Models.Shard;
 
-        public virtual Biota House { get; set; }
-    }
+public partial class HousePermission
+{
+    public uint HouseId { get; set; }
+    public uint PlayerGuid { get; set; }
+    public bool Storage { get; set; }
+
+    public virtual Biota House { get; set; }
 }

@@ -1,21 +1,19 @@
-using System;
 using System.Collections.Generic;
 
 #nullable disable
 
-namespace ACE.Database.Models.Auth
+namespace ACE.Database.Models.Auth;
+
+public partial class Accesslevel
 {
-    public partial class Accesslevel
+    public Accesslevel()
     {
-        public Accesslevel()
-        {
-            Account = new HashSet<Account>();
-        }
-
-        public uint Level { get; set; }
-        public string Name { get; set; }
-        public string Prefix { get; set; }
-
-        public virtual ICollection<Account> Account { get; set; }
+        Account = new HashSet<Account>();
     }
+
+    public uint Level { get; set; }
+    public string Name { get; set; }
+    public string Prefix { get; set; }
+
+    public virtual ICollection<Account> Account { get; set; }
 }
