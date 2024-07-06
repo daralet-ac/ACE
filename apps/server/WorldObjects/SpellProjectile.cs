@@ -13,7 +13,6 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
-using Lifestoned.DataModel.Shared;
 using DamageType = ACE.Entity.Enum.DamageType;
 using Position = ACE.Entity.Position;
 

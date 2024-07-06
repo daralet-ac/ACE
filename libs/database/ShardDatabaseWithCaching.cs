@@ -177,11 +177,7 @@ public class ShardDatabaseWithCaching : ShardDatabase
             rwLock.EnterReadLock();
             try
             {
-                Adapter.BiotaUpdater.UpdateDatabaseBiota(
-                    cachedBiota.Context,
-                    biota,
-                    cachedBiota.CachedObject
-                );
+                Adapter.BiotaUpdater.UpdateDatabaseBiota(cachedBiota.Context, biota, cachedBiota.CachedObject);
             }
             finally
             {

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Numerics;
 using ACE.Server.Physics;
-using ACE.Server.Physics.Animation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ACE.Server.Tests.Physics;

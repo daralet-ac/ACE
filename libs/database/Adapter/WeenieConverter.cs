@@ -485,10 +485,7 @@ public static class WeenieConverter
         throw new NotImplementedException();
     }
 
-    public static Models.Shard.Biota ConvertToDatabaseBiota(
-        ACE.Database.Models.World.Weenie weenie,
-        uint id
-    )
+    public static Models.Shard.Biota ConvertToDatabaseBiota(ACE.Database.Models.World.Weenie weenie, uint id)
     {
         var result = new Models.Shard.Biota();
 
