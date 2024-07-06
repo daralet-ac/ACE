@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum GeneratorType
 {
-    public enum GeneratorType
-    {
-        Undef,
-        Relative,
-        Absolute
-    }
+    Undef,
+    Relative,
+    Absolute
 }

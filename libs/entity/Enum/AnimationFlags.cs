@@ -1,10 +1,9 @@
 using System;
 
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+[Flags]
+public enum AnimationFlags
 {
-    [Flags]
-    public enum AnimationFlags
-    {
-        PosFrames = 0x1
-    }
+    PosFrames = 0x1
 }

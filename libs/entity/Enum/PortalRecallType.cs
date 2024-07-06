@@ -1,12 +1,11 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum PortalRecallType
 {
-    public enum PortalRecallType
-    {
-        Undef,
-        LastLifestone,
-        LinkedLifestone,
-        LastPortal,
-        LinkedPortalOne,
-        LinkedPortalTwo
-    }
+    Undef,
+    LastLifestone,
+    LinkedLifestone,
+    LastPortal,
+    LinkedPortalOne,
+    LinkedPortalTwo
 }

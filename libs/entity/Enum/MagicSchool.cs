@@ -1,12 +1,11 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum MagicSchool
 {
-    public enum MagicSchool
-    {
-        None = 0,
-        WarMagic = 1,
-        LifeMagic = 2,
-        PortalMagic = 3,
-        CreatureEnchantment = 4,
-        VoidMagic = 5,
-    }
+    None = 0,
+    WarMagic = 1,
+    LifeMagic = 2,
+    PortalMagic = 3,
+    CreatureEnchantment = 4,
+    VoidMagic = 5,
 }

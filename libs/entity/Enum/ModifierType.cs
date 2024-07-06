@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum ModifierType
 {
-    public enum ModifierType
-    {
-        None,
-        Buffed,
-        Debuffed
-    };
-}
+    None,
+    Buffed,
+    Debuffed
+};

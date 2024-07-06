@@ -1,10 +1,9 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum TreasureType
 {
-    public enum TreasureType
-    {
-        Undef,
-        Item,
-        MagicItem,
-        MundaneItem,
-    };
-}
+    Undef,
+    Item,
+    MagicItem,
+    MundaneItem,
+};

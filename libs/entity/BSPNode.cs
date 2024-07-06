@@ -1,18 +1,17 @@
 using System.Collections.Generic;
 
-namespace ACE.Entity
+namespace ACE.Entity;
+
+public class BSPNode
 {
-    public class BSPNode
-    {
-        public uint Type { get; set; }
+    public uint Type { get; set; }
 
-        public Plane SplittingPlane { get; set; }
+    public Plane SplittingPlane { get; set; }
 
-        public BSPNode PosNode { get; set; }
-        public BSPNode NegNode { get; set; }
+    public BSPNode PosNode { get; set; }
+    public BSPNode NegNode { get; set; }
 
-        public Sphere Sphere { get; set; }
+    public Sphere Sphere { get; set; }
 
-        public List<ushort> InPolys { get; set; } // List of PolygonIds
-    }
+    public List<ushort> InPolys { get; set; } // List of PolygonIds
 }

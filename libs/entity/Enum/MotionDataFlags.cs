@@ -1,11 +1,10 @@
 using System;
 
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+[Flags]
+public enum MotionDataFlags : byte
 {
-    [Flags]
-    public enum MotionDataFlags : byte
-    {
-        HasVelocity = 0x1,
-        HasOmega = 0x2
-    }
+    HasVelocity = 0x1,
+    HasOmega = 0x2
 }

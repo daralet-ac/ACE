@@ -1,8 +1,7 @@
-namespace ACE.Entity
+namespace ACE.Entity;
+
+public class AnimationPartChange
 {
-    public class AnimationPartChange
-    {
-        public byte PartIndex { get; set; }
-        public uint PartID { get; set; }
-    }
+    public byte PartIndex { get; set; }
+    public uint PartID { get; set; }
 }

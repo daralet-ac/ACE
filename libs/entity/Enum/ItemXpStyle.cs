@@ -1,11 +1,9 @@
+namespace ACE.Entity.Enum;
 
-namespace ACE.Entity.Enum
+public enum ItemXpStyle
 {
-    public enum ItemXpStyle
-    {
-        Undef,
-        Fixed,
-        ScalesWithLevel,
-        FixedPlusBase   // unused?
-    }
+    Undef,
+    Fixed,
+    ScalesWithLevel,
+    FixedPlusBase // unused?
 }

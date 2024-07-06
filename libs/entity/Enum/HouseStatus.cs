@@ -1,10 +1,8 @@
+namespace ACE.Entity.Enum;
 
-namespace ACE.Entity.Enum
+public enum HouseStatus
 {
-    public enum HouseStatus
-    {
-        Disabled = -1,
-        InActive,
-        Active
-    }
+    Disabled = -1,
+    InActive,
+    Active
 }

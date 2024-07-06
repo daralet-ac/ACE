@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum GeneratorDefinedTimes
 {
-    public enum GeneratorDefinedTimes
-    {
-        Undef,
-        Dusk,
-        Dawn
-    }
+    Undef,
+    Dusk,
+    Dawn
 }

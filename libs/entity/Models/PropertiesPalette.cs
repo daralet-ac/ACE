@@ -1,23 +1,20 @@
-using System;
+namespace ACE.Entity.Models;
 
-namespace ACE.Entity.Models
+public class PropertiesPalette
 {
-    public class PropertiesPalette
+    public uint SubPaletteId { get; set; }
+    public ushort Offset { get; set; }
+    public ushort Length { get; set; }
+
+    public PropertiesPalette Clone()
     {
-        public uint SubPaletteId { get; set; }
-        public ushort Offset { get; set; }
-        public ushort Length { get; set; }
-
-        public PropertiesPalette Clone()
+        var result = new PropertiesPalette
         {
-            var result = new PropertiesPalette
-            {
-                SubPaletteId = SubPaletteId,
-                Offset = Offset,
-                Length = Length,
-            };
+            SubPaletteId = SubPaletteId,
+            Offset = Offset,
+            Length = Length,
+        };
 
-            return result;
-        }
+        return result;
     }
 }

@@ -1,10 +1,8 @@
+namespace ACE.Entity.Enum;
 
-namespace ACE.Entity.Enum
+public enum AttunedStatus
 {
-    public enum AttunedStatus
-    {
-        Normal,
-        Attuned,
-        Sticky
-    }
+    Normal,
+    Attuned,
+    Sticky
 }

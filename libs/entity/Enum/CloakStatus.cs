@@ -1,11 +1,10 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum CloakStatus
 {
-    public enum CloakStatus
-    {
-        Undef,
-        Off,
-        On,
-        Player,
-        Creature
-    }
+    Undef,
+    Off,
+    On,
+    Player,
+    Creature
 }

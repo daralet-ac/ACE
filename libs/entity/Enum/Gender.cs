@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum Gender
 {
-    public enum Gender
-    {
-        Invalid = 0,
-        Male = 1,
-        Female = 2
-    }
+    Invalid = 0,
+    Male = 1,
+    Female = 2
 }

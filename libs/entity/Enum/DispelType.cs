@@ -1,12 +1,11 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+/// <summary>
+/// The type of spells to dispel
+/// </summary>
+public enum DispelType
 {
-    /// <summary>
-    /// The type of spells to dispel
-    /// </summary>
-    public enum DispelType
-    {
-        All,
-        Positive,
-        Negative
-    }
+    All,
+    Positive,
+    Negative
 }

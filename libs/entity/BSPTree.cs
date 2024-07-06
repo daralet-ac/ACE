@@ -1,12 +1,6 @@
-using System;
-using System.IO;
+namespace ACE.Entity;
 
-using ACE.Entity.Enum;
-
-namespace ACE.Entity
+public class BSPTree
 {
-    public class BSPTree
-    {
-        public BSPNode RootNode { get; set; }
-    }
+    public BSPNode RootNode { get; set; }
 }

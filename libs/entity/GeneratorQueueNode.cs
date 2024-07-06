@@ -1,8 +1,7 @@
-namespace ACE.Entity
+namespace ACE.Entity;
+
+public class GeneratorQueueNode
 {
-    public class GeneratorQueueNode
-    {
-        public uint Slot;
-        public double SpawnTime;
-    }
+    public uint Slot;
+    public double SpawnTime;
 }

@@ -1,21 +1,14 @@
-using System;
+namespace ACE.Entity.Models;
 
-namespace ACE.Entity.Models
+public class PropertiesAnimPart
 {
-    public class PropertiesAnimPart
+    public byte Index { get; set; }
+    public uint AnimationId { get; set; }
+
+    public PropertiesAnimPart Clone()
     {
-        public byte Index { get; set; }
-        public uint AnimationId { get; set; }
+        var result = new PropertiesAnimPart { Index = Index, AnimationId = AnimationId, };
 
-        public PropertiesAnimPart Clone()
-        {
-            var result = new PropertiesAnimPart
-            {
-                Index = Index,
-                AnimationId = AnimationId,
-            };
-
-            return result;
-        }
+        return result;
     }
 }

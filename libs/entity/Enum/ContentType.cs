@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
-{
-    public enum ContentType
-    {
-        Patch = 1,
+namespace ACE.Entity.Enum;
 
-        Quest = 2
-    }
+public enum ContentType
+{
+    Patch = 1,
+
+    Quest = 2
 }

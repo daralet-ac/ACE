@@ -1,17 +1,18 @@
 using System.Collections.Generic;
 
-namespace ACE.Entity
+namespace ACE.Entity;
+
+public static class LINQExtensions
 {
-    public static class LINQExtensions
+    public static ulong Sum(this IEnumerable<ulong> values)
     {
-        public static ulong Sum(this IEnumerable<ulong> values)
+        ulong sum = 0;
+
+        foreach (var value in values)
         {
-            ulong sum = 0;
-
-            foreach (var value in values)
-                sum += value;
-
-            return sum;
+            sum += value;
         }
+
+        return sum;
     }
 }

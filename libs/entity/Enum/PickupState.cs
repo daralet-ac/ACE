@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum PickupState
 {
-    public enum PickupState
-    {
-        None,
-        Start,
-        Return
-    }
+    None,
+    Start,
+    Return
 }

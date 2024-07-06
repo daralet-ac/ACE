@@ -1,12 +1,11 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum GeneratorTimeType
 {
-    public enum GeneratorTimeType
-    {
-        Undef,
-        RealTime,
-        Defined,
-        Event,
-        Night,
-        Day
-    }
+    Undef,
+    RealTime,
+    Defined,
+    Event,
+    Night,
+    Day
 }

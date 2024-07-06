@@ -1,10 +1,9 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum FellowUpdateType
 {
-    public enum FellowUpdateType
-    {
-        Undef,
-        Full,
-        Stats,
-        Vitals
-    };
-}
+    Undef,
+    Full,
+    Stats,
+    Vitals
+};

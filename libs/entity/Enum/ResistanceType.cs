@@ -1,21 +1,20 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum ResistanceType
 {
-    public enum ResistanceType
-    {
-        Undef,
-        Slash,
-        Pierce,
-        Bludgeon,
-        Fire,
-        Cold,
-        Acid,
-        Electric,
-        Nether,
-        HealthDrain,
-        HealthBoost,
-        StaminaDrain,
-        StaminaBoost,
-        ManaDrain,
-        ManaBoost
-    }
+    Undef,
+    Slash,
+    Pierce,
+    Bludgeon,
+    Fire,
+    Cold,
+    Acid,
+    Electric,
+    Nether,
+    HealthDrain,
+    HealthBoost,
+    StaminaDrain,
+    StaminaBoost,
+    ManaDrain,
+    ManaBoost
 }

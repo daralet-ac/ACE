@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum RequirementType
 {
-    public enum RequirementType
-    {
-        Target = 0,
-        Source = 1,
-        Player = 2
-    };
-}
+    Target = 0,
+    Source = 1,
+    Player = 2
+};

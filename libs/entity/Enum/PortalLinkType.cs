@@ -1,10 +1,9 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum PortalLinkType
 {
-    public enum PortalLinkType
-    {
-        Undef,
-        LinkedLifestone,
-        LinkedPortalOne,
-        LinkedPortalTwo
-    }
+    Undef,
+    LinkedLifestone,
+    LinkedPortalOne,
+    LinkedPortalTwo
 }

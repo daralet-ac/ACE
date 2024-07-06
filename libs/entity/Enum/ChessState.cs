@@ -1,9 +1,8 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum ChessState
 {
-    public enum ChessState
-    {
-        WaitingForPlayers,
-        InProgress,
-        Finished
-    }
+    WaitingForPlayers,
+    InProgress,
+    Finished
 }

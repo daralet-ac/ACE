@@ -1,11 +1,10 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum DelayedActionType
 {
-    public enum DelayedActionType
-    {
-        Start,
-        Move,
-        MovePass,
-        Stalemate,
-        Quit
-    }
+    Start,
+    Move,
+    MovePass,
+    Stalemate,
+    Quit
 }

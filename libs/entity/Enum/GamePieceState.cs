@@ -1,13 +1,12 @@
-namespace ACE.Entity.Enum
+namespace ACE.Entity.Enum;
+
+public enum GamePieceState
 {
-    public enum GamePieceState
-    {
-        None,
-        MoveToSquare,
-        WaitingForMoveToSquare,
-        WaitingForMoveToSquareAnimComplete,
-        MoveToAttack,
-        WaitingForMoveToAttack,
-        Combat
-    }
+    None,
+    MoveToSquare,
+    WaitingForMoveToSquare,
+    WaitingForMoveToSquareAnimComplete,
+    MoveToAttack,
+    WaitingForMoveToAttack,
+    Combat
 }

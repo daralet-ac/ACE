@@ -1,16 +1,14 @@
 using System;
-
 using ACE.Entity.Enum;
 
-namespace ACE.Entity
-{
-    public class AbilityVitalAttribute : Attribute
-    {
-        public AbilityVitalAttribute(Vital vital)
-        {
-            Vital = vital;
-        }
+namespace ACE.Entity;
 
-        public Vital Vital { get; }
+public class AbilityVitalAttribute : Attribute
+{
+    public AbilityVitalAttribute(Vital vital)
+    {
+        Vital = vital;
     }
+
+    public Vital Vital { get; }
 }
