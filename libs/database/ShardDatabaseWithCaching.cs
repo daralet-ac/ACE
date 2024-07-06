@@ -177,7 +177,7 @@ public class ShardDatabaseWithCaching : ShardDatabase
             rwLock.EnterReadLock();
             try
             {
-                ACE.Database.Adapter.BiotaUpdater.UpdateDatabaseBiota(
+                Adapter.BiotaUpdater.UpdateDatabaseBiota(
                     cachedBiota.Context,
                     biota,
                     cachedBiota.CachedObject
@@ -202,13 +202,13 @@ public class ShardDatabaseWithCaching : ShardDatabase
         {
             if (existingBiota == null)
             {
-                existingBiota = ACE.Database.Adapter.BiotaConverter.ConvertFromEntityBiota(biota);
+                existingBiota = Adapter.BiotaConverter.ConvertFromEntityBiota(biota);
 
                 context.Biota.Add(existingBiota);
             }
             else
             {
-                ACE.Database.Adapter.BiotaUpdater.UpdateDatabaseBiota(context, biota, existingBiota);
+                Adapter.BiotaUpdater.UpdateDatabaseBiota(context, biota, existingBiota);
             }
         }
         finally

@@ -1,7 +1,6 @@
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
-using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Entity.Chess;
 using ACE.Server.Network.GameMessages.Messages;
@@ -46,7 +45,7 @@ public class GamePiece : Creature
             this,
             () =>
             {
-                EnqueueBroadcastMotion(new Motion(MotionStance.NonCombat, MotionCommand.Dead));
+                EnqueueBroadcastMotion(new ACE.Server.Entity.Motion(MotionStance.NonCombat, MotionCommand.Dead));
             }
         );
         killChain.AddDelaySeconds(5);
@@ -157,7 +156,7 @@ public class GamePiece : Creature
         }
     }
 
-    public Motion LastMoveTo;
+    public ACE.Server.Entity.Motion LastMoveTo;
 
     public void MoveWeenie(Position to, float distanceToObject, bool finalHeading)
     {
@@ -166,7 +165,7 @@ public class GamePiece : Creature
             GetMovementSpeed();
         }
 
-        var moveToPosition = new Motion(this, to);
+        var moveToPosition = new ACE.Server.Entity.Motion(this, to);
         moveToPosition.MoveToParameters.DistanceToObject = distanceToObject;
         moveToPosition.MoveToParameters.MovementParameters &= ~MovementParams.UseSpheres;
 

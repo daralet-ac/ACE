@@ -1,5 +1,5 @@
 using ACE.Entity.Enum;
-using ACE.Server.Network.Structure;
+using ACE.Server.Network.Motion;
 
 namespace ACE.Server.Physics.Animation;
 

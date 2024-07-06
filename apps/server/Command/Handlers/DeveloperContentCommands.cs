@@ -24,7 +24,7 @@ using ACE.Server.Physics.Extensions;
 using ACE.Server.WorldObjects;
 using Microsoft.EntityFrameworkCore;
 
-namespace ACE.Server.Command.Handlers.Processors;
+namespace ACE.Server.Command.Handlers;
 
 public class DeveloperContentCommands
 {

@@ -603,7 +603,7 @@ public class WorldDatabase
     /// <summary>
     /// Get the version information stored in database
     /// </summary>
-    public ACE.Database.Models.World.Version GetVersion(WorldDbContext context)
+    public Version GetVersion(WorldDbContext context)
     {
         var version = context.Version.FirstOrDefault(r => r.Id == 1);
 
@@ -613,7 +613,7 @@ public class WorldDatabase
     /// <summary>
     /// Get the version information stored in database
     /// </summary>
-    public ACE.Database.Models.World.Version GetVersion()
+    public Version GetVersion()
     {
         using (var context = new WorldDbContext())
         {

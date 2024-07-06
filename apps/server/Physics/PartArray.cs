@@ -6,6 +6,7 @@ using ACE.Entity.Enum;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Collision;
 using ACE.Server.Physics.Common;
+using ACE.Server.Physics.Managers;
 
 namespace ACE.Server.Physics;
 
@@ -543,7 +544,7 @@ public class PartArray
         }
     }
 
-    public bool SetPart(List<DatLoader.Entity.AnimationPartChange> changes)
+    public bool SetPart(List<AnimationPartChange> changes)
     {
         if (Setup == null)
         {

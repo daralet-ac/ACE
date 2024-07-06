@@ -23,7 +23,7 @@ public class ShardDatabase
 
     public bool Exists(bool retryUntilFound)
     {
-        var config = Common.ConfigManager.Config.MySql.Shard;
+        var config = ConfigManager.Config.MySql.Shard;
 
         for (; ; )
         {
@@ -627,13 +627,13 @@ public class ShardDatabase
             {
                 if (existingBiota == null)
                 {
-                    existingBiota = ACE.Database.Adapter.BiotaConverter.ConvertFromEntityBiota(biota);
+                    existingBiota = Adapter.BiotaConverter.ConvertFromEntityBiota(biota);
 
                     context.Biota.Add(existingBiota);
                 }
                 else
                 {
-                    ACE.Database.Adapter.BiotaUpdater.UpdateDatabaseBiota(context, biota, existingBiota);
+                    Adapter.BiotaUpdater.UpdateDatabaseBiota(context, biota, existingBiota);
                 }
             }
             finally
@@ -1189,7 +1189,7 @@ public class ShardDatabase
 
                     if (biota != null)
                     {
-                        var convertedBiota = ACE.Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
+                        var convertedBiota = Adapter.BiotaConverter.ConvertToEntityBiota(biota);
 
                         biotas.Add(convertedBiota);
                     }

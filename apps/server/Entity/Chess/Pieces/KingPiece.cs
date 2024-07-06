@@ -1,7 +1,7 @@
 using System;
 using ACE.Entity.Enum;
 
-namespace ACE.Server.Entity.Chess;
+namespace ACE.Server.Entity.Chess.Pieces;
 
 public class KingPiece : BasePiece
 {

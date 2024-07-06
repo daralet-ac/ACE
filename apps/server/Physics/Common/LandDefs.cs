@@ -172,7 +172,7 @@ public class LandDefs
             return false;
         }
 
-        var blockRadius = LandDefs.BlockLength - radius;
+        var blockRadius = BlockLength - radius;
         return pos.X < blockRadius && pos.Y < blockRadius;
     }
 

@@ -18,7 +18,7 @@ partial class Jewel : WorldObject
         Player playerAttacker,
         Creature defender,
         float damage,
-        ACE.Entity.Enum.DamageType damageType
+        DamageType damageType
     )
     {
         // JEWEL - Bloodstone: Gain life on hit
@@ -164,7 +164,7 @@ partial class Jewel : WorldObject
         Creature defender,
         float damage,
         WorldObject damageSource,
-        ACE.Entity.Enum.DamageType damageType
+        DamageType damageType
     )
     {
         var rampProperty = "";
@@ -203,7 +203,7 @@ partial class Jewel : WorldObject
         {
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
             {
-                if (damageType == ACE.Entity.Enum.DamageType.Bludgeon)
+                if (damageType == DamageType.Bludgeon)
                 {
                     rampProperty = "Bludgeon";
                 }
@@ -211,7 +211,7 @@ partial class Jewel : WorldObject
 
             if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0)
             {
-                if (damageType == ACE.Entity.Enum.DamageType.Pierce)
+                if (damageType == DamageType.Pierce)
                 {
                     rampProperty = "Pierce";
                 }
@@ -317,7 +317,7 @@ partial class Jewel : WorldObject
         Player sourcePlayer,
         Creature targetCreature,
         ProjectileSpellType spellType,
-        ACE.Entity.Enum.DamageType damageType,
+        DamageType damageType,
         uint spellLevel,
         int? spellTypeScaler
     )
@@ -396,7 +396,7 @@ partial class Jewel : WorldObject
 
         if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
         {
-            if (damageType == ACE.Entity.Enum.DamageType.Bludgeon)
+            if (damageType == DamageType.Bludgeon)
             {
                 propertyType = "Bludgeon";
             }
@@ -404,7 +404,7 @@ partial class Jewel : WorldObject
 
         if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0)
         {
-            if (damageType == ACE.Entity.Enum.DamageType.Pierce)
+            if (damageType == DamageType.Pierce)
             {
                 propertyType = "Pierce";
             }
@@ -906,10 +906,7 @@ partial class Jewel : WorldObject
         { ACE.Entity.Enum.MaterialType.WhiteSapphire, DamageType.Bludgeon },
     };
 
-    public static Dictionary<string, ACE.Entity.Enum.Properties.PropertyInt> StringToIntProperties = new Dictionary<
-        string,
-        ACE.Entity.Enum.Properties.PropertyInt
-    >()
+    public static Dictionary<string, PropertyInt> StringToIntProperties = new Dictionary<string, PropertyInt>()
     {
         { "Strength", PropertyInt.GearStrength },
         { "Endurance", PropertyInt.GearEndurance },
@@ -969,10 +966,7 @@ partial class Jewel : WorldObject
         { 10, "Flawless" }
     };
 
-    public static Dictionary<ACE.Entity.Enum.MaterialType?, int> JewelValidLocations = new Dictionary<
-        ACE.Entity.Enum.MaterialType?,
-        int
-    >()
+    public static Dictionary<MaterialType?, int> JewelValidLocations = new Dictionary<MaterialType?, int>()
     {
         // weapon only
         { ACE.Entity.Enum.MaterialType.ImperialTopaz, 1 },
@@ -1025,10 +1019,7 @@ partial class Jewel : WorldObject
         { ACE.Entity.Enum.MaterialType.GreenJade, 32768 },
     };
 
-    public static Dictionary<ACE.Entity.Enum.MaterialType?, int> JewelUiEffect = new Dictionary<
-        ACE.Entity.Enum.MaterialType?,
-        int
-    >
+    public static Dictionary<MaterialType?, int> JewelUiEffect = new Dictionary<MaterialType?, int>
     {
         { ACE.Entity.Enum.MaterialType.Diamond, 512 },
         { ACE.Entity.Enum.MaterialType.Moonstone, 512 },
@@ -1127,10 +1118,7 @@ partial class Jewel : WorldObject
         { "Zircon", 0x06002CA6 }
     };
 
-    public static Dictionary<ACE.Entity.Enum.MaterialType, string> StringtoMaterialType = new Dictionary<
-        ACE.Entity.Enum.MaterialType,
-        string
-    >
+    public static Dictionary<MaterialType, string> StringtoMaterialType = new Dictionary<MaterialType, string>
     {
         { ACE.Entity.Enum.MaterialType.Unknown, "Unknown" },
         { ACE.Entity.Enum.MaterialType.Ceramic, "Ceramic" },
@@ -1212,10 +1200,7 @@ partial class Jewel : WorldObject
         { ACE.Entity.Enum.MaterialType.Teak, "Teak" }
     };
 
-    public static Dictionary<string, ACE.Entity.Enum.MaterialType> MaterialTypetoString = new Dictionary<
-        string,
-        ACE.Entity.Enum.MaterialType
-    >
+    public static Dictionary<string, MaterialType> MaterialTypetoString = new Dictionary<string, MaterialType>
     {
         { "Unknown", ACE.Entity.Enum.MaterialType.Unknown },
         { "Ceramic", ACE.Entity.Enum.MaterialType.Ceramic },

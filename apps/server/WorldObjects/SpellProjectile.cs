@@ -1044,7 +1044,7 @@ public class SpellProjectile : WorldObject
             resistanceMod = (float)
                 Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
-            if (sourcePlayer != null && targetPlayer != null && Spell.DamageType == ACE.Entity.Enum.DamageType.Nether)
+            if (sourcePlayer != null && targetPlayer != null && Spell.DamageType == DamageType.Nether)
             {
                 // for direct damage from void spells in pvp,
                 // apply void_pvp_modifier *on top of* the player's natural resistance to nether

@@ -1,9 +1,8 @@
 using System.IO;
 using ACE.Entity;
 using ACE.Entity.Enum;
-using ACE.Server.Entity;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 public class MovementInvalid
 {
@@ -18,7 +17,7 @@ public class MovementInvalid
         State = new InterpretedMotionState(movementData);
     }
 
-    public MovementInvalid(MovementData movementData, Motion motion)
+    public MovementInvalid(MovementData movementData, ACE.Server.Entity.Motion motion)
     {
         MovementData = movementData;
 

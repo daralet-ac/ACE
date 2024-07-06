@@ -96,10 +96,10 @@ partial class Jewel : WorldObject
                     if (materialWieldRestriction == 1)
                     {
                         if (
-                            target.ValidLocations != ACE.Entity.Enum.EquipMask.MeleeWeapon
-                            && target.ValidLocations != ACE.Entity.Enum.EquipMask.MissileWeapon
-                            && target.ValidLocations != ACE.Entity.Enum.EquipMask.Held
-                            && target.ValidLocations != ACE.Entity.Enum.EquipMask.TwoHanded
+                            target.ValidLocations != EquipMask.MeleeWeapon
+                            && target.ValidLocations != EquipMask.MissileWeapon
+                            && target.ValidLocations != EquipMask.Held
+                            && target.ValidLocations != EquipMask.TwoHanded
                         )
                         {
                             player.Session.Network.EnqueueSend(
@@ -115,7 +115,7 @@ partial class Jewel : WorldObject
                     // shield only
                     if (materialWieldRestriction == 2)
                     {
-                        if (target.ValidLocations != ACE.Entity.Enum.EquipMask.Shield)
+                        if (target.ValidLocations != EquipMask.Shield)
                         {
                             player.Session.Network.EnqueueSend(
                                 new GameMessageSystemChat(
@@ -130,11 +130,11 @@ partial class Jewel : WorldObject
                     if (materialWieldRestriction == 3)
                     {
                         if (
-                            target.ValidLocations != ACE.Entity.Enum.EquipMask.MeleeWeapon
-                            && target.ValidLocations != ACE.Entity.Enum.EquipMask.MissileWeapon
-                            && target.ValidLocations != ACE.Entity.Enum.EquipMask.Held
-                            && target.ValidLocations != ACE.Entity.Enum.EquipMask.TwoHanded
-                            && target.ValidLocations != ACE.Entity.Enum.EquipMask.Shield
+                            target.ValidLocations != EquipMask.MeleeWeapon
+                            && target.ValidLocations != EquipMask.MissileWeapon
+                            && target.ValidLocations != EquipMask.Held
+                            && target.ValidLocations != EquipMask.TwoHanded
+                            && target.ValidLocations != EquipMask.Shield
                         )
                         {
                             player.Session.Network.EnqueueSend(
@@ -165,10 +165,7 @@ partial class Jewel : WorldObject
                     // check for rending damage type matches
                     if (MaterialDamage.TryGetValue(convertedMaterialType, out var damageType))
                     {
-                        if (
-                            target.W_DamageType != damageType
-                            && target.W_DamageType != ACE.Entity.Enum.DamageType.SlashPierce
-                        )
+                        if (target.W_DamageType != damageType && target.W_DamageType != DamageType.SlashPierce)
                         {
                             player.Session.Network.EnqueueSend(
                                 new GameMessageSystemChat(
@@ -312,12 +309,12 @@ partial class Jewel : WorldObject
                     || jewel.Name.Contains("Tiger Eye")
                 )
                 {
-                    target.ValidLocations = ACE.Entity.Enum.EquipMask.FingerWearRight;
+                    target.ValidLocations = EquipMask.FingerWearRight;
                     target.Use = "This ring can only be worn on the right hand.";
                 }
                 else
                 {
-                    target.ValidLocations = ACE.Entity.Enum.EquipMask.FingerWearLeft;
+                    target.ValidLocations = EquipMask.FingerWearLeft;
                     target.Use = "This ring can only be worn on the left hand.";
                 }
             }
@@ -330,12 +327,12 @@ partial class Jewel : WorldObject
                     || jewel.Name.Contains("Zircon")
                 )
                 {
-                    target.ValidLocations = ACE.Entity.Enum.EquipMask.WristWearRight;
+                    target.ValidLocations = EquipMask.WristWearRight;
                     target.Use = "This bracelet can only be worn on the right wrist.";
                 }
                 else
                 {
-                    target.ValidLocations = ACE.Entity.Enum.EquipMask.WristWearLeft;
+                    target.ValidLocations = EquipMask.WristWearLeft;
                     target.Use = "This bracelet can only be worn on the left wrist.";
                 }
             }
@@ -726,7 +723,7 @@ partial class Jewel : WorldObject
 
         if (JewelUiEffect.TryGetValue((MaterialType)target.MaterialType, out var uiEffect))
         {
-            jewel.UiEffects = (ACE.Entity.Enum.UiEffects)uiEffect;
+            jewel.UiEffects = (UiEffects)uiEffect;
         }
 
         return;
@@ -754,20 +751,14 @@ partial class Jewel : WorldObject
 
             // if a ring or bracelet, set back to left or right wield and remove added text
 
-            if (
-                target.ValidLocations == (ACE.Entity.Enum.EquipMask)0x00080000
-                || target.ValidLocations == (ACE.Entity.Enum.EquipMask)0x00040000
-            )
+            if (target.ValidLocations == (EquipMask)0x00080000 || target.ValidLocations == (EquipMask)0x00040000)
             {
-                target.ValidLocations = ACE.Entity.Enum.EquipMask.FingerWear;
+                target.ValidLocations = EquipMask.FingerWear;
                 target.Use = "";
             }
-            if (
-                target.ValidLocations == (ACE.Entity.Enum.EquipMask)0x00010000
-                || target.ValidLocations == (ACE.Entity.Enum.EquipMask)0x00020000
-            )
+            if (target.ValidLocations == (EquipMask)0x00010000 || target.ValidLocations == (EquipMask)0x00020000)
             {
-                target.ValidLocations = ACE.Entity.Enum.EquipMask.WristWear;
+                target.ValidLocations = EquipMask.WristWear;
                 target.Use = "";
             }
             // cycle through slots, emptying out ones that aren't already
@@ -803,7 +794,7 @@ partial class Jewel : WorldObject
                         {
                             if (JewelUiEffect.TryGetValue((MaterialType)convertedMaterialType, out var uiEffect))
                             {
-                                jewel.UiEffects = (ACE.Entity.Enum.UiEffects)uiEffect;
+                                jewel.UiEffects = (UiEffects)uiEffect;
                             }
 
                             if (GemstoneIconMap.TryGetValue(socketArray[1], out var gemstoneIcon))

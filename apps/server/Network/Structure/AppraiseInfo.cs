@@ -792,7 +792,7 @@ public class AppraiseInfo
                     var value = tinkeringTypes[index];
                     if (value > 0)
                     {
-                        if (ACE.Entity.Enum.MaterialType.IsDefined(typeof(MaterialType), (MaterialType)index))
+                        if (System.Enum.IsDefined(typeof(MaterialType), (MaterialType)index))
                         {
                             var materialType = (MaterialType)index;
                             longDescAdditions += $"\n \t    {RecipeManager.GetMaterialName(materialType)}:  {value}";

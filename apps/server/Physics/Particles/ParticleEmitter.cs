@@ -4,7 +4,7 @@ using ACE.Entity.Enum;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Common;
 
-namespace ACE.Server.Physics;
+namespace ACE.Server.Physics.Particles;
 
 public class ParticleEmitter
 {

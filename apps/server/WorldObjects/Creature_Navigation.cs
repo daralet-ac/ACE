@@ -140,7 +140,7 @@ partial class Creature
     /// </summary>
     public void TurnToObject(WorldObject target, bool stopCompletely = true)
     {
-        var turnToMotion = new Motion(this, target, MovementType.TurnToObject);
+        var turnToMotion = new ACE.Server.Entity.Motion(this, target, MovementType.TurnToObject);
 
         if (!stopCompletely)
         {
@@ -240,7 +240,7 @@ partial class Creature
         var heading = frame.get_heading();
 
         // send network message to start turning creature
-        var turnToMotion = new Motion(this, position, heading);
+        var turnToMotion = new ACE.Server.Entity.Motion(this, position, heading);
         EnqueueBroadcastMotion(turnToMotion);
 
         var angle = GetAngle(position);
@@ -297,7 +297,7 @@ partial class Creature
             return 0.0f;
         }
 
-        var turnToMotion = new Motion(this, target, MovementType.TurnToObject);
+        var turnToMotion = new ACE.Server.Entity.Motion(this, target, MovementType.TurnToObject);
         EnqueueBroadcastMotion(turnToMotion);
 
         CurrentMotionState = turnToMotion;
@@ -347,9 +347,9 @@ partial class Creature
         EnqueueBroadcastMotion(motion);
     }
 
-    public Motion GetMoveToMotion(WorldObject target, float runRate)
+    public ACE.Server.Entity.Motion GetMoveToMotion(WorldObject target, float runRate)
     {
-        var motion = new Motion(this, target, MovementType.MoveToObject);
+        var motion = new ACE.Server.Entity.Motion(this, target, MovementType.MoveToObject);
         motion.MoveToParameters.MovementParameters |=
             MovementParams.CanCharge
             | MovementParams.FailWalk
@@ -372,7 +372,7 @@ partial class Creature
 
     public virtual void BroadcastMoveTo(Player player)
     {
-        Motion motion = null;
+        ACE.Server.Entity.Motion motion = null;
 
         if (AttackTarget != null)
         {
@@ -447,7 +447,9 @@ partial class Creature
                             PhysicsObj.MovementManager.MoveToManager.CancelMoveTo(WeenieError.ActionCancelled);
                             PhysicsObj.MovementManager.MoveToManager.FailProgressCount = 0;
                         }
-                        EnqueueBroadcastMotion(new Motion(CurrentMotionState.Stance, MotionCommand.Ready));
+                        EnqueueBroadcastMotion(
+                            new ACE.Server.Entity.Motion(CurrentMotionState.Stance, MotionCommand.Ready)
+                        );
                     }
 
                     //Console.WriteLine($"{Name}.Position: {Location}");
@@ -457,7 +459,7 @@ partial class Creature
         actionChain.EnqueueChain();
     }
 
-    public Motion GetMoveToPosition(
+    public ACE.Server.Entity.Motion GetMoveToPosition(
         Position position,
         float runRate = 1.0f,
         float? walkRunThreshold = null,
@@ -466,7 +468,7 @@ partial class Creature
     {
         // TODO: change parameters to accept an optional MoveToParameters
 
-        var motion = new Motion(this, position);
+        var motion = new ACE.Server.Entity.Motion(this, position);
         motion.MovementType = MovementType.MoveToPosition;
         //motion.Flag |= MovementParams.CanCharge | MovementParams.FailWalk | MovementParams.UseFinalHeading | MovementParams.MoveAway;
         if (walkRunThreshold != null)

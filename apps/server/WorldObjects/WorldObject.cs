@@ -17,8 +17,8 @@ using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Motion;
 using ACE.Server.Network.Sequence;
-using ACE.Server.Network.Structure;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Common;
@@ -290,7 +290,7 @@ public abstract partial class WorldObject : IActor
 
         if (MotionTableId != 0)
         {
-            CurrentMotionState = new Motion(MotionStance.Invalid);
+            CurrentMotionState = new ACE.Server.Entity.Motion(MotionStance.Invalid);
         }
 
         AwareList = null;
@@ -1126,7 +1126,12 @@ public abstract partial class WorldObject : IActor
     /// adds to the physics animation system, and broadcasts to nearby players
     /// </summary>
     /// <returns>The amount it takes to execute the motion</returns>
-    public float ExecuteMotion(Motion motion, bool sendClient = true, float? maxRange = null, bool persist = false)
+    public float ExecuteMotion(
+        ACE.Server.Entity.Motion motion,
+        bool sendClient = true,
+        float? maxRange = null,
+        bool persist = false
+    )
     {
         var motionCommand = motion.MotionState.ForwardCommand;
 
@@ -1179,14 +1184,14 @@ public abstract partial class WorldObject : IActor
         return animLength;
     }
 
-    public float ExecuteMotionPersist(Motion motion, bool sendClient = true, float? maxRange = null)
+    public float ExecuteMotionPersist(ACE.Server.Entity.Motion motion, bool sendClient = true, float? maxRange = null)
     {
         return ExecuteMotion(motion, sendClient, maxRange, true);
     }
 
     public void SetStance(MotionStance stance, bool broadcast = true)
     {
-        var motion = new Motion(stance);
+        var motion = new ACE.Server.Entity.Motion(stance);
 
         if (PropertyManager.GetBool("persist_movement").Item)
         {

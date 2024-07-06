@@ -76,7 +76,7 @@ public class AllegianceManager
 
         if (biota != null)
         {
-            var entityBiota = ACE.Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
+            var entityBiota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
 
             allegiance = new Allegiance(entityBiota);
         }

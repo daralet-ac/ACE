@@ -291,7 +291,7 @@ partial class Creature
             return PreCastMotion_Human(target);
         }
 
-        var motion = new Motion(this, MotionCommand.CastSpell, PreCastSpeed);
+        var motion = new ACE.Server.Entity.Motion(this, MotionCommand.CastSpell, PreCastSpeed);
         motion.MotionState.TurnSpeed = 2.25f;
         //motion.HasTarget = true;
         //motion.TargetGuid = target.Guid;
@@ -335,7 +335,7 @@ partial class Creature
 
         foreach (var windupGesture in CurrentSpell.Formula.WindupGestures)
         {
-            var motion = new Motion(this, windupGesture, PreCastSpeed);
+            var motion = new ACE.Server.Entity.Motion(this, windupGesture, PreCastSpeed);
             motion.MotionState.TurnSpeed = 2.25f;
             CurrentMotionState = motion;
 
@@ -349,7 +349,7 @@ partial class Creature
             );
         }
 
-        var castMotion = new Motion(this, CurrentSpell.Formula.CastGesture, PreCastSpeed);
+        var castMotion = new ACE.Server.Entity.Motion(this, CurrentSpell.Formula.CastGesture, PreCastSpeed);
         castMotion.MotionState.TurnSpeed = 2.25f;
         CurrentMotionState = castMotion;
 
@@ -471,7 +471,7 @@ partial class Creature
     {
         var animSpeed = IsRanged ? PostCastSpeed_Ranged : PostCastSpeed;
 
-        var motion = new Motion(this, MotionCommand.Ready, animSpeed);
+        var motion = new ACE.Server.Entity.Motion(this, MotionCommand.Ready, animSpeed);
         motion.MotionState.TurnSpeed = 2.25f;
         //motion.HasTarget = true;
         //motion.TargetGuid = target.Guid;

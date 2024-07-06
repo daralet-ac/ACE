@@ -331,13 +331,7 @@ public class Hotspot : WorldObject
 
                 if (player != null)
                 {
-                    iAmount = player.TakeDamage(
-                        this,
-                        DamageType,
-                        amount,
-                        Server.Entity.BodyPart.Foot,
-                        PartialEvasion.None
-                    );
+                    iAmount = player.TakeDamage(this, DamageType, amount, BodyPart.Foot, PartialEvasion.None);
                 }
                 else
                 {
@@ -396,12 +390,7 @@ public class Hotspot : WorldObject
         }
     }
 
-    public static void TryGenHotspot(
-        Player playerAttacker,
-        Creature defender,
-        int? tier,
-        ACE.Entity.Enum.DamageType damageType
-    )
+    public static void TryGenHotspot(Player playerAttacker, Creature defender, int? tier, DamageType damageType)
     {
         uint wcid = 0;
         var modifiedTier = (int)tier - 1;
@@ -414,7 +403,7 @@ public class Hotspot : WorldObject
         int[] healingHotspots = { 1053928, 1053929, 1053930, 1053931, 1053932 };
 
         if (
-            damageType == ACE.Entity.Enum.DamageType.Fire
+            damageType == DamageType.Fire
             && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) / 1000)
                 > ThreadSafeRandom.Next(0f, 1f)
         )
@@ -423,7 +412,7 @@ public class Hotspot : WorldObject
         }
 
         if (
-            damageType == ACE.Entity.Enum.DamageType.Cold
+            damageType == DamageType.Cold
             && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) / 1000)
                 > ThreadSafeRandom.Next(0f, 1f)
         )
@@ -432,7 +421,7 @@ public class Hotspot : WorldObject
         }
 
         if (
-            damageType == ACE.Entity.Enum.DamageType.Acid
+            damageType == DamageType.Acid
             && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) / 1000)
                 > ThreadSafeRandom.Next(0f, 1f)
         )
@@ -441,7 +430,7 @@ public class Hotspot : WorldObject
         }
 
         if (
-            damageType == ACE.Entity.Enum.DamageType.Electric
+            damageType == DamageType.Electric
             && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) / 1000)
                 > ThreadSafeRandom.Next(0f, 1f)
         )
@@ -449,11 +438,7 @@ public class Hotspot : WorldObject
             wcid = (uint)lightningHotspots[modifiedTier];
         }
 
-        if (
-            damageType == ACE.Entity.Enum.DamageType.Health
-            || damageType == ACE.Entity.Enum.DamageType.Stamina
-            || damageType == ACE.Entity.Enum.DamageType.Mana
-        )
+        if (damageType == DamageType.Health || damageType == DamageType.Stamina || damageType == DamageType.Mana)
         {
             if (
                 (double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) / 1000
@@ -480,7 +465,7 @@ public class Hotspot : WorldObject
 
         var activator = WorldObjectFactory.CreateNewWorldObject(1053933);
 
-        activator.Location = new ACE.Entity.Position(defender.Location);
+        activator.Location = new Position(defender.Location);
 
         activator.Location.LandblockId = new LandblockId(defender.Location.GetCell());
 
@@ -503,7 +488,7 @@ public class Hotspot : WorldObject
         HotspotOwner = player.Guid.Full;
         P_HotspotOwner = player;
 
-        hotspot.Location = new ACE.Entity.Position(defender.Location);
+        hotspot.Location = new Position(defender.Location);
 
         hotspot.Location.LandblockId = new LandblockId(defender.Location.GetCell());
 

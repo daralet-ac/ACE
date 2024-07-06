@@ -41,5 +41,5 @@ public static class Timers
     /// It is updated once per WorldManager.UpdateWorld() loop.<para />
     /// This can also be used as the "frame time" value. This value will be unchanged for any calculations done inside of a single Tick of WorldManager.UpdateWorld().
     /// </summary>
-    public static double PortalYearTicks { get; internal set; } = Timers.WorldStartLoreTime.Ticks;
+    public static double PortalYearTicks { get; internal set; } = WorldStartLoreTime.Ticks;
 }

@@ -1,8 +1,7 @@
 using System.IO;
 using ACE.Entity.Enum;
-using ACE.Server.Entity;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 public class TurnToParameters
 {
@@ -10,7 +9,7 @@ public class TurnToParameters
     public float Speed; // speed of the turn
     public float DesiredHeading; // the angle to turn to
 
-    public TurnToParameters(Motion motion)
+    public TurnToParameters(ACE.Server.Entity.Motion motion)
     {
         MovementParams = motion.MoveToParameters.MovementParameters;
         Speed = motion.MoveToParameters.Speed;

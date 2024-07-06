@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using ACE.Database.Models.World;
 using ACE.Server.Factories.Entity;
 
-namespace ACE.Server.Factories.Tables.Wcids;
+namespace ACE.Server.Factories.Tables;
 
 public static class AetheriaChance
 {

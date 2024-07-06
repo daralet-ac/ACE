@@ -12,7 +12,7 @@ public static class BiotaUpdater
     public static void UpdateDatabaseBiota(
         ShardDbContext context,
         ACE.Entity.Models.Biota sourceBiota,
-        ACE.Database.Models.Shard.Biota targetBiota
+        Biota targetBiota
     )
     {
         targetBiota.WeenieClassId = sourceBiota.WeenieClassId;
@@ -861,7 +861,7 @@ public static class BiotaUpdater
 
     private static void CopyValueInto(
         ACE.Entity.Models.PropertiesCreateList value,
-        ACE.Database.Models.Shard.BiotaPropertiesCreateList existingValue
+        BiotaPropertiesCreateList existingValue
     )
     {
         existingValue.DestinationType = (sbyte)value.DestinationType;
@@ -874,7 +874,7 @@ public static class BiotaUpdater
 
     private static void CopyValueInto(
         ACE.Entity.Models.PropertiesEmote value,
-        ACE.Database.Models.Shard.BiotaPropertiesEmote existingValue
+        BiotaPropertiesEmote existingValue
     )
     {
         existingValue.Category = (uint)value.Category;
@@ -890,7 +890,7 @@ public static class BiotaUpdater
 
     private static void CopyValueInto(
         ACE.Entity.Models.PropertiesEmoteAction value,
-        ACE.Database.Models.Shard.BiotaPropertiesEmoteAction existingValue,
+        BiotaPropertiesEmoteAction existingValue,
         uint order
     )
     {
@@ -938,7 +938,7 @@ public static class BiotaUpdater
 
     private static void CopyValueInto(
         ACE.Entity.Models.PropertiesGenerator value,
-        ACE.Database.Models.Shard.BiotaPropertiesGenerator existingValue
+        BiotaPropertiesGenerator existingValue
     )
     {
         existingValue.Probability = value.Probability;

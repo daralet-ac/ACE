@@ -1,6 +1,6 @@
 using ACE.DatLoader.Entity;
 
-namespace ACE.Server.Physics;
+namespace ACE.Server.Physics.Scripts;
 
 public class PhysicsScriptData
 {

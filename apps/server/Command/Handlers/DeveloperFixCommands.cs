@@ -135,7 +135,7 @@ public class DeveloperFixCommands
                         player.Name,
                         attr.Key,
                         attr.Value.InitLevel,
-                        System.Environment.NewLine
+                        Environment.NewLine
                     );
 
                     // only search strength, endurance, coordination, quicknesss, focus, and self

@@ -379,21 +379,21 @@ public static class LifestonedConverter
                         // Fix MotionCommand ENUM shift post 16PY data
                         if (correctForEnumShift && efEmote.Style.HasValue)
                         {
-                            var oldStyle = (ACE.Entity.Enum.MotionCommand)efEmote.Style;
+                            var oldStyle = (MotionCommand)efEmote.Style;
                             var index = efEmote.Style.Value & 0xFFFF;
                             if (index >= 0x115)
                             {
-                                var newStyle = (ACE.Entity.Enum.MotionCommand)efEmote.Style + 3;
+                                var newStyle = (MotionCommand)efEmote.Style + 3;
                                 efEmote.Style += 3;
                             }
                         }
                         if (correctForEnumShift && efEmote.Substyle.HasValue)
                         {
-                            var oldSubstyle = (ACE.Entity.Enum.MotionCommand)efEmote.Substyle;
+                            var oldSubstyle = (MotionCommand)efEmote.Substyle;
                             var index = efEmote.Substyle.Value & 0xFFFF;
                             if (index >= 0x115)
                             {
-                                var newSubstyle = (ACE.Entity.Enum.MotionCommand)efEmote.Substyle + 3;
+                                var newSubstyle = (MotionCommand)efEmote.Substyle + 3;
                                 efEmote.Substyle += 3;
                             }
                         }

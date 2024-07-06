@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+namespace ACE.Server.Physics.Extensions;
+
 /// <summary>
 /// Extensions for <see cref="System.Collections.Generic.Queue{T}"/>.
 /// </summary>

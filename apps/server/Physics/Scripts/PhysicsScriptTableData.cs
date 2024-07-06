@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace ACE.Server.Physics;
+namespace ACE.Server.Physics.Scripts;
 
 public class PhysicsScriptTableData
 {

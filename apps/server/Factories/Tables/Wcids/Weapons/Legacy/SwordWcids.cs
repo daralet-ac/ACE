@@ -3,7 +3,7 @@ using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using WeenieClassName = ACE.Server.Factories.Enum.WeenieClassName;
 
-namespace ACE.Server.Factories.Tables.Wcids;
+namespace ACE.Server.Factories.Tables.Wcids.Weapons.Legacy;
 
 public static class SwordWcids
 {

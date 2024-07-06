@@ -873,9 +873,9 @@ public static class PlayerManager
             return false;
         }
 
-        player.SetProperty(ACE.Entity.Enum.Properties.PropertyBool.IsGagged, true);
-        player.SetProperty(ACE.Entity.Enum.Properties.PropertyFloat.GagTimestamp, Common.Time.GetUnixTime());
-        player.SetProperty(ACE.Entity.Enum.Properties.PropertyFloat.GagDuration, 300);
+        player.SetProperty(PropertyBool.IsGagged, true);
+        player.SetProperty(PropertyFloat.GagTimestamp, Time.GetUnixTime());
+        player.SetProperty(PropertyFloat.GagDuration, 300);
 
         player.SaveBiotaToDatabase();
 
@@ -893,9 +893,9 @@ public static class PlayerManager
             return false;
         }
 
-        player.RemoveProperty(ACE.Entity.Enum.Properties.PropertyBool.IsGagged);
-        player.RemoveProperty(ACE.Entity.Enum.Properties.PropertyFloat.GagTimestamp);
-        player.RemoveProperty(ACE.Entity.Enum.Properties.PropertyFloat.GagDuration);
+        player.RemoveProperty(PropertyBool.IsGagged);
+        player.RemoveProperty(PropertyFloat.GagTimestamp);
+        player.RemoveProperty(PropertyFloat.GagDuration);
 
         player.SaveBiotaToDatabase();
 

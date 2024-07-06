@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using ACE.Server.Physics.Combat;
 
-namespace ACE.Server.Physics.Combat;
+namespace ACE.Server.Physics.Managers;
 
 public class AttackManager
 {

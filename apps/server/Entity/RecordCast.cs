@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using ACE.Entity.Enum;
+using ACE.Server.Network.Motion;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 

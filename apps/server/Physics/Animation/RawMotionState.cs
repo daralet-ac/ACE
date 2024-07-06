@@ -114,7 +114,7 @@ public class RawMotionState
         TurnSpeed = 1.0f;
     }
 
-    public void SetState(Network.Structure.RawMotionState state)
+    public void SetState(Network.Motion.RawMotionState state)
     {
         CurrentHoldKey = state.CurrentHoldKey;
         CurrentStyle = (uint)state.CurrentStyle;

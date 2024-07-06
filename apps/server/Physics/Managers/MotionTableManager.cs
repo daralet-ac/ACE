@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using ACE.Entity.Enum;
+using ACE.Server.Physics.Animation;
 
-namespace ACE.Server.Physics.Animation;
+namespace ACE.Server.Physics.Managers;
 
 public class MotionTableManager
 {

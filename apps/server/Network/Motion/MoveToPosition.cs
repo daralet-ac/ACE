@@ -1,7 +1,7 @@
 using System.IO;
-using ACE.Server.Entity;
+using ACE.Server.Network.Structure;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 public class MoveToPosition
 {
@@ -9,7 +9,7 @@ public class MoveToPosition
     public MoveToParameters MoveToParams; // set of movement parameters
     public float RunRate; // run speed of the moving object
 
-    public MoveToPosition(Motion motion)
+    public MoveToPosition(ACE.Server.Entity.Motion motion)
     {
         Origin = new Origin(motion.Position);
         MoveToParams = motion.MoveToParameters;

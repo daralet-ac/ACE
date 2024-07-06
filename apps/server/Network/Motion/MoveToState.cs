@@ -2,7 +2,7 @@ using System.IO;
 using ACE.Entity;
 using ACE.Server.WorldObjects;
 
-namespace ACE.Server.Network.Structure;
+namespace ACE.Server.Network.Motion;
 
 /// <summary>
 /// Client sends this structure in F61C - MoveToState

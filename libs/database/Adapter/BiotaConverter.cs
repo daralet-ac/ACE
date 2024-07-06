@@ -11,7 +11,7 @@ namespace ACE.Database.Adapter;
 public static class BiotaConverter
 {
     public static ACE.Entity.Models.Biota ConvertToEntityBiota(
-        ACE.Database.Models.Shard.Biota biota,
+        Models.Shard.Biota biota,
         bool instantiateEmptyCollections = false
     )
     {
@@ -538,12 +538,12 @@ public static class BiotaConverter
         return result;
     }
 
-    public static ACE.Database.Models.Shard.Biota ConvertFromEntityBiota(
+    public static Models.Shard.Biota ConvertFromEntityBiota(
         ACE.Entity.Models.Biota biota,
         bool includeDatabaseRecordIds = false
     )
     {
-        var result = new ACE.Database.Models.Shard.Biota();
+        var result = new Models.Shard.Biota();
 
         result.Id = biota.Id;
         result.WeenieClassId = biota.WeenieClassId;
@@ -1048,7 +1048,7 @@ public static class BiotaConverter
         {
             foreach (var kvp in biota.HousePermissions)
             {
-                var entity = new ACE.Database.Models.Shard.HousePermission
+                var entity = new HousePermission
                 {
                     HouseId = biota.Id,
                     PlayerGuid = kvp.Key,

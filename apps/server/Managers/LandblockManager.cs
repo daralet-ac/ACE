@@ -829,7 +829,7 @@ public static class LandblockManager
         destructionQueue.Add(landblock);
     }
 
-    private static readonly System.Diagnostics.Stopwatch swTrySplitEach = new System.Diagnostics.Stopwatch();
+    private static readonly Stopwatch swTrySplitEach = new Stopwatch();
 
     /// <summary>
     /// Processes the destruction queue in a thread-safe manner

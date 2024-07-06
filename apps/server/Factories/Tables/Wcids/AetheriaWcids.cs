@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using ACE.Common;
 using ACE.Server.Factories.Enum;
 
-namespace ACE.Server.Factories.Tables;
+namespace ACE.Server.Factories.Tables.Wcids;
 
 public static class AetheriaWcids
 {

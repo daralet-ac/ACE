@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Numerics;
+using ACE.Server.Physics.Combat;
 using ACE.Server.Physics.Common;
 
-namespace ACE.Server.Physics.Combat;
+namespace ACE.Server.Physics.Managers;
 
 public class DetectionManager
 {

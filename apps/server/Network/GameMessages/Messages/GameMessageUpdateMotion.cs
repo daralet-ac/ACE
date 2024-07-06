@@ -1,4 +1,5 @@
 using ACE.Server.Entity;
+using ACE.Server.Network.Motion;
 using ACE.Server.Network.Sequence;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
@@ -13,7 +14,7 @@ public class GameMessageUpdateMotion : GameMessage
         Send(wo, movementData);
     }
 
-    public GameMessageUpdateMotion(WorldObject wo, Motion motion)
+    public GameMessageUpdateMotion(WorldObject wo, ACE.Server.Entity.Motion motion)
         : base(GameMessageOpcode.Motion, GameMessageGroup.SmartboxQueue, 88) // 88 is the max seen in retail pcaps
     {
         Send(wo, new MovementData(wo, motion));

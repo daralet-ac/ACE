@@ -238,7 +238,7 @@ partial class Player
 
                 foreach (var result in results)
                 {
-                    var salvResults = new ACE.Server.Network.Structure.SalvageResult(result);
+                    var salvResults = new Network.Structure.SalvageResult(result);
                     var materialType = Regex.Replace((salvResults.MaterialType).ToString(), "(?<!^)([A-Z])", " $1");
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(

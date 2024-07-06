@@ -5,7 +5,6 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
-using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
@@ -246,14 +245,14 @@ public class SlumLord : Container
 
     public void On()
     {
-        var on = new Motion(MotionStance.Invalid, MotionCommand.On);
+        var on = new ACE.Server.Entity.Motion(MotionStance.Invalid, MotionCommand.On);
 
         SetAndBroadcastMotion(on);
     }
 
     public void Off()
     {
-        var off = new Motion(MotionStance.Invalid, MotionCommand.Off);
+        var off = new ACE.Server.Entity.Motion(MotionStance.Invalid, MotionCommand.Off);
 
         if (CurrentLandblock != null)
         {
@@ -261,7 +260,7 @@ public class SlumLord : Container
         }
     }
 
-    private void SetAndBroadcastMotion(Motion motion)
+    private void SetAndBroadcastMotion(ACE.Server.Entity.Motion motion)
     {
         CurrentMotionState = motion;
         EnqueueBroadcastMotion(motion);

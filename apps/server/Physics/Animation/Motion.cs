@@ -1,4 +1,4 @@
-namespace ACE.Server.Physics.Animation.Internal;
+namespace ACE.Server.Physics.Animation;
 
 public class Motion
 {

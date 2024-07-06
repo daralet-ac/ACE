@@ -1249,11 +1249,11 @@ public static class AdminCommands
             if (parameters[0].StartsWith("0x"))
             {
                 var strippedcell = parameters[0].Substring(2);
-                cell = (uint)int.Parse(strippedcell, System.Globalization.NumberStyles.HexNumber);
+                cell = (uint)int.Parse(strippedcell, NumberStyles.HexNumber);
             }
             else
             {
-                cell = (uint)int.Parse(parameters[0], System.Globalization.NumberStyles.HexNumber);
+                cell = (uint)int.Parse(parameters[0], NumberStyles.HexNumber);
             }
 
             var positionData = new float[7];
@@ -1522,7 +1522,7 @@ public static class AdminCommands
         }
         if (session.Player.RemoveKnownSpell((uint)spellId))
         {
-            var spell = new Entity.Spell(spellId, false);
+            var spell = new Spell(spellId, false);
             session.Network.EnqueueSend(
                 new GameMessageSystemChat($"{spell.Name} removed from spellbook.", ChatMessageType.Broadcast)
             );
@@ -5337,7 +5337,7 @@ public static class AdminCommands
 
                     var questEntry = "";
                     questEntry +=
-                        $"Quest Name: {quest.QuestName}\nCompletions: {quest.NumTimesCompleted} | Last Completion: {quest.LastTimeCompleted} ({Common.Time.GetDateTimeFromTimestamp(quest.LastTimeCompleted).ToLocalTime()})\n";
+                        $"Quest Name: {quest.QuestName}\nCompletions: {quest.NumTimesCompleted} | Last Completion: {quest.LastTimeCompleted} ({Time.GetDateTimeFromTimestamp(quest.LastTimeCompleted).ToLocalTime()})\n";
                     var nextSolve = creature.QuestManager.GetNextSolveTime(quest.QuestName);
 
                     if (nextSolve == TimeSpan.MinValue)
@@ -5582,7 +5582,7 @@ public static class AdminCommands
                     questEntry += $"Current Set Bits: 0x{quest.NumTimesCompleted:X}\n";
                     questEntry += $"Allowed Max Bits: 0x{maxSolves:X}\n";
                     questEntry +=
-                        $"Last Set On: {quest.LastTimeCompleted} ({Common.Time.GetDateTimeFromTimestamp(quest.LastTimeCompleted).ToLocalTime()})\n";
+                        $"Last Set On: {quest.LastTimeCompleted} ({Time.GetDateTimeFromTimestamp(quest.LastTimeCompleted).ToLocalTime()})\n";
 
                     //var nextSolve = creature.QuestManager.GetNextSolveTime(quest.QuestName);
 
@@ -5646,7 +5646,7 @@ public static class AdminCommands
                         {
                             var questEntry = "";
                             questEntry +=
-                                $"Quest Name: {quest.QuestName}\nCompletions: {quest.NumTimesCompleted} | Last Completion: {quest.LastTimeCompleted} ({Common.Time.GetDateTimeFromTimestamp(quest.LastTimeCompleted).ToLocalTime()})\n";
+                                $"Quest Name: {quest.QuestName}\nCompletions: {quest.NumTimesCompleted} | Last Completion: {quest.LastTimeCompleted} ({Time.GetDateTimeFromTimestamp(quest.LastTimeCompleted).ToLocalTime()})\n";
                             var nextSolve = fellowship.QuestManager.GetNextSolveTime(quest.QuestName);
 
                             if (nextSolve == TimeSpan.MinValue)
@@ -6600,7 +6600,7 @@ public static class AdminCommands
 
         foreach (var enchantment in enchantments)
         {
-            var e = new Network.Structure.Enchantment(item, enchantment);
+            var e = new Enchantment(item, enchantment);
             var info = e.GetInfo();
             session.Network.EnqueueSend(new GameMessageSystemChat(info, ChatMessageType.Broadcast));
         }

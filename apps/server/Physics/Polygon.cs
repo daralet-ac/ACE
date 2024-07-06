@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using ACE.Entity.Enum;
-using ACE.Server.Physics.Animation;
+using ACE.Server.Physics.Common;
 using ACE.Server.Physics.Entity;
 using ACE.Server.Physics.Extensions;
 

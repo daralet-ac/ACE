@@ -175,7 +175,7 @@ public class Healer : WorldObject
 
         var motionCommand = healer.Equals(target) ? MotionCommand.SkillHealSelf : MotionCommand.SkillHealOther;
 
-        var motion = new Motion(healer, motionCommand);
+        var motion = new ACE.Server.Entity.Motion(healer, motionCommand);
         var currentStance = healer.CurrentMotionState.Stance;
         var animLength = MotionTable.GetAnimationLength(healer.MotionTableId, currentStance, motionCommand);
 
