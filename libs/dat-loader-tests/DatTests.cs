@@ -2,244 +2,353 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace ACE.DatLoader.Tests
+namespace ACE.DatLoader.Tests;
+
+[TestClass]
+public class DatTests
 {
-    [TestClass]
-    public class DatTests
+    private static string cellDatLocation = @"C:\Turbine\Asheron's Call\client_cell_1.dat";
+    private static int expectedCellDatFileCount = 805003;
+
+    private static string portalDatLocation = @"C:\Turbine\Asheron's Call\client_portal.dat";
+    private static int expectedPortalDatFileCount = 79694;
+
+    private static string localEnglishDatLocation = @"C:\Turbine\Asheron's Call\client_local_English.dat";
+    private static int expectedLocalEnglishDatFileCount = 118;
+
+    [TestMethod]
+    public void LoadCellDat_NoExceptions()
     {
-        private static string cellDatLocation = @"C:\Turbine\Asheron's Call\client_cell_1.dat";
-        private static int expectedCellDatFileCount = 805003;
+        var dat = new DatDatabase(cellDatLocation);
+        var count = dat.AllFiles.Count;
+        //Assert.AreEqual(ExpectedCellDatFileCount, count);
+        Assert.IsTrue(
+            expectedCellDatFileCount <= count,
+            $"Insufficient files parsed from .dat. Expected: >= {expectedCellDatFileCount}, Actual: {count}"
+        );
+    }
 
-        private static string portalDatLocation = @"C:\Turbine\Asheron's Call\client_portal.dat";
-        private static int expectedPortalDatFileCount = 79694;
+    [TestMethod]
+    public void LoadPortalDat_NoExceptions()
+    {
+        // Init our text encoding options. This will allow us to use more than standard ANSI text, which the client also supports.
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
-        private static string localEnglishDatLocation = @"C:\Turbine\Asheron's Call\client_local_English.dat";
-        private static int expectedLocalEnglishDatFileCount = 118;
+        var dat = new DatDatabase(portalDatLocation);
+        var count = dat.AllFiles.Count;
+        //Assert.AreEqual(expectedPortalDatFileCount, count);
+        Assert.IsTrue(
+            expectedPortalDatFileCount <= count,
+            $"Insufficient files parsed from .dat. Expected: >= {expectedPortalDatFileCount}, Actual: {count}"
+        );
+    }
 
+    [TestMethod]
+    public void LoadLocalEnglishDat_NoExceptions()
+    {
+        // Init our text encoding options. This will allow us to use more than standard ANSI text, which the client also supports.
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
-        [TestMethod]
-        public void LoadCellDat_NoExceptions()
+        var dat = new DatDatabase(localEnglishDatLocation);
+        var count = dat.AllFiles.Count;
+        //Assert.AreEqual(expectedPortalDatFileCount, count);
+        Assert.IsTrue(
+            expectedLocalEnglishDatFileCount <= count,
+            $"Insufficient files parsed from .dat. Expected: >= {expectedLocalEnglishDatFileCount}, Actual: {count}"
+        );
+    }
+
+    [TestMethod]
+    public void UnpackCellDatFiles_NoExceptions()
+    {
+        var assembly = typeof(DatDatabase).GetTypeInfo().Assembly;
+        var types = assembly
+            .GetTypes()
+            .Where(t => t.GetCustomAttributes(typeof(DatFileTypeAttribute), false).Length > 0)
+            .ToList();
+
+        if (types.Count == 0)
         {
-            DatDatabase dat = new DatDatabase(cellDatLocation);
-            int count = dat.AllFiles.Count;
-            //Assert.AreEqual(ExpectedCellDatFileCount, count);
-            Assert.IsTrue(expectedCellDatFileCount <= count, $"Insufficient files parsed from .dat. Expected: >= {expectedCellDatFileCount}, Actual: {count}");
+            throw new Exception("Failed to locate any types with DatFileTypeAttribute.");
         }
 
-        [TestMethod]
-        public void LoadPortalDat_NoExceptions()
+        var dat = new DatDatabase(cellDatLocation);
+
+        foreach (var kvp in dat.AllFiles)
         {
-            // Init our text encoding options. This will allow us to use more than standard ANSI text, which the client also supports.
-            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
-            DatDatabase dat = new DatDatabase(portalDatLocation);
-            int count = dat.AllFiles.Count;
-            //Assert.AreEqual(expectedPortalDatFileCount, count);
-            Assert.IsTrue(expectedPortalDatFileCount <= count, $"Insufficient files parsed from .dat. Expected: >= {expectedPortalDatFileCount}, Actual: {count}");
-        }
-
-        [TestMethod]
-        public void LoadLocalEnglishDat_NoExceptions()
-        {
-            // Init our text encoding options. This will allow us to use more than standard ANSI text, which the client also supports.
-            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
-            DatDatabase dat = new DatDatabase(localEnglishDatLocation);
-            int count = dat.AllFiles.Count;
-            //Assert.AreEqual(expectedPortalDatFileCount, count);
-            Assert.IsTrue(expectedLocalEnglishDatFileCount <= count, $"Insufficient files parsed from .dat. Expected: >= {expectedLocalEnglishDatFileCount}, Actual: {count}");
-        }
-
-
-        [TestMethod]
-        public void UnpackCellDatFiles_NoExceptions()
-        {
-            var assembly = typeof(DatDatabase).GetTypeInfo().Assembly;
-            var types = assembly.GetTypes().Where(t => t.GetCustomAttributes(typeof(DatFileTypeAttribute), false).Length > 0).ToList();
-
-            if (types.Count == 0)
-                throw new Exception("Failed to locate any types with DatFileTypeAttribute.");
-
-            DatDatabase dat = new DatDatabase(cellDatLocation);
-
-            foreach (var kvp in dat.AllFiles)
+            if (kvp.Key == 0xFFFF0001) // // Iteration info
             {
-                if (kvp.Key == 0xFFFF0001) // // Iteration info
-                    continue;
+                continue;
+            }
 
-                if (kvp.Value.FileSize == 0) // DatFileType.LandBlock files can be empty
-                    continue;
+            if (kvp.Value.FileSize == 0) // DatFileType.LandBlock files can be empty
+            {
+                continue;
+            }
 
-                var fileType = kvp.Value.GetFileType(DatDatabaseType.Cell);
+            var fileType = kvp.Value.GetFileType(DatDatabaseType.Cell);
 
-                if ((kvp.Key & 0xFFFF) == 0xFFFE) fileType = DatFileType.LandBlockInfo;
-                if ((kvp.Key & 0xFFFF) == 0xFFFF) fileType = DatFileType.LandBlock;
+            if ((kvp.Key & 0xFFFF) == 0xFFFE)
+            {
+                fileType = DatFileType.LandBlockInfo;
+            }
 
-                //Assert.IsNotNull(fileType, $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}, BitFlags:, 0x{kvp.Value.BitFlags:X8}");
-                Assert.IsNotNull(fileType, $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}");
+            if ((kvp.Key & 0xFFFF) == 0xFFFF)
+            {
+                fileType = DatFileType.LandBlock;
+            }
 
-                var type = types
-                    .SelectMany(m => m.GetCustomAttributes(typeof(DatFileTypeAttribute), false), (m, a) => new { m, a })
-                    .Where(t => ((DatFileTypeAttribute)t.a).FileType == fileType)
-                    .Select(t => t.m);
+            //Assert.IsNotNull(fileType, $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}, BitFlags:, 0x{kvp.Value.BitFlags:X8}");
+            Assert.IsNotNull(
+                fileType,
+                $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}"
+            );
 
-                var first = type.FirstOrDefault();
+            var type = types
+                .SelectMany(m => m.GetCustomAttributes(typeof(DatFileTypeAttribute), false), (m, a) => new { m, a })
+                .Where(t => ((DatFileTypeAttribute)t.a).FileType == fileType)
+                .Select(t => t.m);
 
-                if (first == null)
-                    throw new Exception($"Failed to Unpack fileType: {fileType}");
+            var first = type.FirstOrDefault();
 
-                var obj = Activator.CreateInstance(first);
+            if (first == null)
+            {
+                throw new Exception($"Failed to Unpack fileType: {fileType}");
+            }
 
-                var unpackable = obj as IUnpackable;
+            var obj = Activator.CreateInstance(first);
 
-                if (unpackable == null)
-                    throw new Exception($"Class for fileType: {fileType} does not implement IUnpackable.");
+            var unpackable = obj as IUnpackable;
 
-                var datReader = new DatReader(cellDatLocation, kvp.Value.FileOffset, kvp.Value.FileSize, dat.Header.BlockSize);
+            if (unpackable == null)
+            {
+                throw new Exception($"Class for fileType: {fileType} does not implement IUnpackable.");
+            }
 
-                using (var memoryStream = new MemoryStream(datReader.Buffer))
-                using (var reader = new BinaryReader(memoryStream))
+            var datReader = new DatReader(
+                cellDatLocation,
+                kvp.Value.FileOffset,
+                kvp.Value.FileSize,
+                dat.Header.BlockSize
+            );
+
+            using (var memoryStream = new MemoryStream(datReader.Buffer))
+            using (var reader = new BinaryReader(memoryStream))
+            {
+                unpackable.Unpack(reader);
+
+                if (memoryStream.Position != kvp.Value.FileSize)
                 {
-                    unpackable.Unpack(reader);
-
-                    if (memoryStream.Position != kvp.Value.FileSize)
-                        throw new Exception($"Failed to parse all bytes for fileType: {fileType}, ObjectId: 0x{kvp.Value.ObjectId:X8}. Bytes parsed: {memoryStream.Position} of {kvp.Value.FileSize}");
+                    throw new Exception(
+                        $"Failed to parse all bytes for fileType: {fileType}, ObjectId: 0x{kvp.Value.ObjectId:X8}. Bytes parsed: {memoryStream.Position} of {kvp.Value.FileSize}"
+                    );
                 }
             }
         }
+    }
 
-        [TestMethod]
-        public void UnpackPortalDatFiles_NoExceptions()
+    [TestMethod]
+    public void UnpackPortalDatFiles_NoExceptions()
+    {
+        var assembly = typeof(DatDatabase).GetTypeInfo().Assembly;
+        var types = assembly
+            .GetTypes()
+            .Where(t => t.GetCustomAttributes(typeof(DatFileTypeAttribute), false).Length > 0)
+            .ToList();
+
+        if (types.Count == 0)
         {
-            var assembly = typeof(DatDatabase).GetTypeInfo().Assembly;
-            var types = assembly.GetTypes().Where(t => t.GetCustomAttributes(typeof(DatFileTypeAttribute), false).Length > 0).ToList();
+            throw new Exception("Failed to locate any types with DatFileTypeAttribute.");
+        }
 
-            if (types.Count == 0)
-                throw new Exception("Failed to locate any types with DatFileTypeAttribute.");
+        var dat = new DatDatabase(portalDatLocation);
 
-            DatDatabase dat = new DatDatabase(portalDatLocation);
-
-            foreach (var kvp in dat.AllFiles)
+        foreach (var kvp in dat.AllFiles)
+        {
+            if (kvp.Key == 0xFFFF0001) // Iteration info
             {
-                if (kvp.Key == 0xFFFF0001) // Iteration info
-                    continue;
+                continue;
+            }
 
-                var fileType = kvp.Value.GetFileType(DatDatabaseType.Portal);
+            var fileType = kvp.Value.GetFileType(DatDatabaseType.Portal);
 
-                //Assert.IsNotNull(fileType, $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}, BitFlags:, 0x{kvp.Value.BitFlags:X8}");
-                Assert.IsNotNull(fileType, $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}");
+            //Assert.IsNotNull(fileType, $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}, BitFlags:, 0x{kvp.Value.BitFlags:X8}");
+            Assert.IsNotNull(
+                fileType,
+                $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}"
+            );
 
-                // These file types aren't converted yet
-                if (fileType == DatFileType.KeyMap) continue;
-                if (fileType == DatFileType.RenderMaterial) continue;
-                if (fileType == DatFileType.MaterialModifier) continue;
-                if (fileType == DatFileType.MaterialInstance) continue;
-                if (fileType == DatFileType.ActionMap) continue;
-                if (fileType == DatFileType.DbProperties) continue;
+            // These file types aren't converted yet
+            if (fileType == DatFileType.KeyMap)
+            {
+                continue;
+            }
 
-                var type = types
-                    .SelectMany(m => m.GetCustomAttributes(typeof(DatFileTypeAttribute), false), (m, a) => new { m, a })
-                    .Where(t => ((DatFileTypeAttribute)t.a).FileType == fileType)
-                    .Select(t => t.m);
+            if (fileType == DatFileType.RenderMaterial)
+            {
+                continue;
+            }
 
-                var first = type.FirstOrDefault();
+            if (fileType == DatFileType.MaterialModifier)
+            {
+                continue;
+            }
 
-                if (first == null)
-                    throw new Exception($"Failed to Unpack fileType: {fileType}");
+            if (fileType == DatFileType.MaterialInstance)
+            {
+                continue;
+            }
 
-                var obj = Activator.CreateInstance(first);
+            if (fileType == DatFileType.ActionMap)
+            {
+                continue;
+            }
 
-                var unpackable = obj as IUnpackable;
+            if (fileType == DatFileType.DbProperties)
+            {
+                continue;
+            }
 
-                if (unpackable == null)
-                    throw new Exception($"Class for fileType: {fileType} does not implement IUnpackable.");
+            var type = types
+                .SelectMany(m => m.GetCustomAttributes(typeof(DatFileTypeAttribute), false), (m, a) => new { m, a })
+                .Where(t => ((DatFileTypeAttribute)t.a).FileType == fileType)
+                .Select(t => t.m);
 
-                var datReader = new DatReader(portalDatLocation, kvp.Value.FileOffset, kvp.Value.FileSize, dat.Header.BlockSize);
+            var first = type.FirstOrDefault();
 
-                using (var memoryStream = new MemoryStream(datReader.Buffer))
-                using (var reader = new BinaryReader(memoryStream))
+            if (first == null)
+            {
+                throw new Exception($"Failed to Unpack fileType: {fileType}");
+            }
+
+            var obj = Activator.CreateInstance(first);
+
+            var unpackable = obj as IUnpackable;
+
+            if (unpackable == null)
+            {
+                throw new Exception($"Class for fileType: {fileType} does not implement IUnpackable.");
+            }
+
+            var datReader = new DatReader(
+                portalDatLocation,
+                kvp.Value.FileOffset,
+                kvp.Value.FileSize,
+                dat.Header.BlockSize
+            );
+
+            using (var memoryStream = new MemoryStream(datReader.Buffer))
+            using (var reader = new BinaryReader(memoryStream))
+            {
+                unpackable.Unpack(reader);
+
+                if (memoryStream.Position != kvp.Value.FileSize)
                 {
-                    unpackable.Unpack(reader);
-
-                    if (memoryStream.Position != kvp.Value.FileSize)
-                        throw new Exception($"Failed to parse all bytes for fileType: {fileType}, ObjectId: 0x{kvp.Value.ObjectId:X8}. Bytes parsed: {memoryStream.Position} of {kvp.Value.FileSize}");
+                    throw new Exception(
+                        $"Failed to parse all bytes for fileType: {fileType}, ObjectId: 0x{kvp.Value.ObjectId:X8}. Bytes parsed: {memoryStream.Position} of {kvp.Value.FileSize}"
+                    );
                 }
             }
         }
+    }
 
-        [TestMethod]
-        public void UnpackLocalEnglishDatFiles_NoExceptions()
+    [TestMethod]
+    public void UnpackLocalEnglishDatFiles_NoExceptions()
+    {
+        var assembly = typeof(DatDatabase).GetTypeInfo().Assembly;
+        var types = assembly
+            .GetTypes()
+            .Where(t => t.GetCustomAttributes(typeof(DatFileTypeAttribute), false).Length > 0)
+            .ToList();
+
+        if (types.Count == 0)
         {
-            var assembly = typeof(DatDatabase).GetTypeInfo().Assembly;
-            var types = assembly.GetTypes().Where(t => t.GetCustomAttributes(typeof(DatFileTypeAttribute), false).Length > 0).ToList();
+            throw new Exception("Failed to locate any types with DatFileTypeAttribute.");
+        }
 
-            if (types.Count == 0)
-                throw new Exception("Failed to locate any types with DatFileTypeAttribute.");
+        var dat = new DatDatabase(localEnglishDatLocation);
 
-            DatDatabase dat = new DatDatabase(localEnglishDatLocation);
-
-            foreach (var kvp in dat.AllFiles)
+        foreach (var kvp in dat.AllFiles)
+        {
+            if (kvp.Key == 0xFFFF0001) // Iteration info
             {
-                if (kvp.Key == 0xFFFF0001) // Iteration info
-                    continue;
+                continue;
+            }
 
-                var fileType = kvp.Value.GetFileType(DatDatabaseType.Language);
+            var fileType = kvp.Value.GetFileType(DatDatabaseType.Language);
 
-                //Assert.IsNotNull(fileType, $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}, BitFlags:, 0x{kvp.Value.BitFlags:X8}");
-                Assert.IsNotNull(fileType, $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}");
+            //Assert.IsNotNull(fileType, $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}, BitFlags:, 0x{kvp.Value.BitFlags:X8}");
+            Assert.IsNotNull(
+                fileType,
+                $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}"
+            );
 
-                // These file types aren't converted yet
-                if (fileType == DatFileType.UiLayout) continue;
+            // These file types aren't converted yet
+            if (fileType == DatFileType.UiLayout)
+            {
+                continue;
+            }
 
-                var type = types
-                    .SelectMany(m => m.GetCustomAttributes(typeof(DatFileTypeAttribute), false), (m, a) => new { m, a })
-                    .Where(t => ((DatFileTypeAttribute)t.a).FileType == fileType)
-                    .Select(t => t.m);
+            var type = types
+                .SelectMany(m => m.GetCustomAttributes(typeof(DatFileTypeAttribute), false), (m, a) => new { m, a })
+                .Where(t => ((DatFileTypeAttribute)t.a).FileType == fileType)
+                .Select(t => t.m);
 
-                var first = type.FirstOrDefault();
+            var first = type.FirstOrDefault();
 
-                if (first == null)
-                    throw new Exception($"Failed to Unpack fileType: {fileType}");
+            if (first == null)
+            {
+                throw new Exception($"Failed to Unpack fileType: {fileType}");
+            }
 
-                var obj = Activator.CreateInstance(first);
+            var obj = Activator.CreateInstance(first);
 
-                var unpackable = obj as IUnpackable;
+            var unpackable = obj as IUnpackable;
 
-                if (unpackable == null)
-                    throw new Exception($"Class for fileType: {fileType} does not implement IUnpackable.");
+            if (unpackable == null)
+            {
+                throw new Exception($"Class for fileType: {fileType} does not implement IUnpackable.");
+            }
 
-                var datReader = new DatReader(localEnglishDatLocation, kvp.Value.FileOffset, kvp.Value.FileSize, dat.Header.BlockSize);
+            var datReader = new DatReader(
+                localEnglishDatLocation,
+                kvp.Value.FileOffset,
+                kvp.Value.FileSize,
+                dat.Header.BlockSize
+            );
 
-                using (var memoryStream = new MemoryStream(datReader.Buffer))
-                using (var reader = new BinaryReader(memoryStream))
+            using (var memoryStream = new MemoryStream(datReader.Buffer))
+            using (var reader = new BinaryReader(memoryStream))
+            {
+                unpackable.Unpack(reader);
+
+                if (memoryStream.Position != kvp.Value.FileSize)
                 {
-                    unpackable.Unpack(reader);
-
-                    if (memoryStream.Position != kvp.Value.FileSize)
-                        throw new Exception($"Failed to parse all bytes for fileType: {fileType}, ObjectId: 0x{kvp.Value.ObjectId:X8}. Bytes parsed: {memoryStream.Position} of {kvp.Value.FileSize}");
+                    throw new Exception(
+                        $"Failed to parse all bytes for fileType: {fileType}, ObjectId: 0x{kvp.Value.ObjectId:X8}. Bytes parsed: {memoryStream.Position} of {kvp.Value.FileSize}"
+                    );
                 }
             }
         }
+    }
 
-        // uncomment if you want to run this
-        // [TestMethod]
-        public void ExtractCellDatByLandblock()
-        {
-            string output = @"c:\Turbine\cell_dat_export_by_landblock";
-            CellDatDatabase db = new CellDatDatabase(cellDatLocation);
-            db.ExtractLandblockContents(output);
-        }
+    // uncomment if you want to run this
+    // [TestMethod]
+    public void ExtractCellDatByLandblock()
+    {
+        var output = @"c:\Turbine\cell_dat_export_by_landblock";
+        var db = new CellDatDatabase(cellDatLocation);
+        db.ExtractLandblockContents(output);
+    }
 
-        // uncomment if you want to run this
-        // [TestMethod]
-        public void ExportPortalDatsWithTypeInfo()
-        {
-            string output = @"c:\Turbine\typed_portal_dat_export";
-            PortalDatDatabase db = new PortalDatDatabase(portalDatLocation);
-            db.ExtractCategorizedPortalContents(output);
-        }
+    // uncomment if you want to run this
+    // [TestMethod]
+    public void ExportPortalDatsWithTypeInfo()
+    {
+        var output = @"c:\Turbine\typed_portal_dat_export";
+        var db = new PortalDatDatabase(portalDatLocation);
+        db.ExtractCategorizedPortalContents(output);
     }
 }
