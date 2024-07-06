@@ -1,46 +1,45 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity
+namespace ACE.DatLoader.Entity;
+
+public class ObjectDesc : IUnpackable
 {
-    public class ObjectDesc : IUnpackable
+    public uint ObjId { get; private set; }
+    public Frame BaseLoc { get; } = new Frame();
+    public float Freq { get; private set; }
+    public float DisplaceX { get; private set; }
+    public float DisplaceY { get; private set; }
+    public float MinScale { get; private set; }
+    public float MaxScale { get; private set; }
+    public float MaxRotation { get; private set; }
+    public float MinSlope { get; private set; }
+    public float MaxSlope { get; private set; }
+    public uint Align { get; private set; }
+    public uint Orient { get; private set; }
+    public uint WeenieObj { get; private set; }
+
+    public void Unpack(BinaryReader reader)
     {
-        public uint ObjId { get; private set; }
-        public Frame BaseLoc { get; } = new Frame();
-        public float Freq { get; private set; }
-        public float DisplaceX { get; private set; }
-        public float DisplaceY { get; private set; }
-        public float MinScale { get; private set; }
-        public float MaxScale { get; private set; }
-        public float MaxRotation { get; private set; }
-        public float MinSlope { get; private set; }
-        public float MaxSlope { get; private set; }
-        public uint Align { get; private set; }
-        public uint Orient { get; private set; }
-        public uint WeenieObj { get; private set; }
+        ObjId = reader.ReadUInt32();
 
-        public void Unpack(BinaryReader reader)
-        {
-            ObjId = reader.ReadUInt32();
+        BaseLoc.Unpack(reader);
 
-            BaseLoc.Unpack(reader);
+        Freq = reader.ReadSingle();
 
-            Freq = reader.ReadSingle();
+        DisplaceX = reader.ReadSingle();
+        DisplaceY = reader.ReadSingle();
 
-            DisplaceX = reader.ReadSingle();
-            DisplaceY = reader.ReadSingle();
+        MinScale = reader.ReadSingle();
+        MaxScale = reader.ReadSingle();
 
-            MinScale = reader.ReadSingle();
-            MaxScale = reader.ReadSingle();
+        MaxRotation = reader.ReadSingle();
 
-            MaxRotation = reader.ReadSingle();
+        MinSlope = reader.ReadSingle();
+        MaxSlope = reader.ReadSingle();
 
-            MinSlope = reader.ReadSingle();
-            MaxSlope = reader.ReadSingle();
+        Align = reader.ReadUInt32();
+        Orient = reader.ReadUInt32();
 
-            Align = reader.ReadUInt32();
-            Orient = reader.ReadUInt32();
-
-            WeenieObj = reader.ReadUInt32();
-        }
+        WeenieObj = reader.ReadUInt32();
     }
 }

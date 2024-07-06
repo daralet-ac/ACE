@@ -1,30 +1,31 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace ACE.DatLoader.Entity
+namespace ACE.DatLoader.Entity;
+
+public class NameFilterLanguageData : IUnpackable
 {
-    public class NameFilterLanguageData : IUnpackable
+    public uint MaximumVowelsInARow;
+    public uint FirstNCharactersMustHaveAVowel;
+    public uint VowelContainingSubstringLength;
+    public uint ExtraAllowedCharacters;
+    public byte Unknown;
+
+    public List<string> CompoundLetterGroups = new List<string>();
+
+    public void Unpack(BinaryReader reader)
     {
-        public uint MaximumVowelsInARow;
-        public uint FirstNCharactersMustHaveAVowel;
-        public uint VowelContainingSubstringLength;
-        public uint ExtraAllowedCharacters;
-        public byte Unknown;
+        MaximumVowelsInARow = reader.ReadUInt32();
+        FirstNCharactersMustHaveAVowel = reader.ReadUInt32();
+        VowelContainingSubstringLength = reader.ReadUInt32();
+        ExtraAllowedCharacters = reader.ReadUInt32();
 
-        public List<string> CompoundLetterGroups = new List<string>();
+        Unknown = reader.ReadByte(); // Not sure what this is...
 
-        public void Unpack(BinaryReader reader)
+        var numLetterGroup = reader.ReadUInt32();
+        for (uint i = 0; i < numLetterGroup; i++)
         {
-            MaximumVowelsInARow = reader.ReadUInt32();
-            FirstNCharactersMustHaveAVowel = reader.ReadUInt32();
-            VowelContainingSubstringLength = reader.ReadUInt32();
-            ExtraAllowedCharacters = reader.ReadUInt32();
-
-            Unknown = reader.ReadByte(); // Not sure what this is...
-
-            uint numLetterGroup = reader.ReadUInt32();
-            for (uint i = 0; i < numLetterGroup; i++)
-                CompoundLetterGroups.Add(reader.ReadUnicodeString());
+            CompoundLetterGroups.Add(reader.ReadUnicodeString());
         }
     }
 }

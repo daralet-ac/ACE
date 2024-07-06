@@ -1,15 +1,14 @@
 using System;
 
-namespace ACE.DatLoader
-{
-    [AttributeUsage(AttributeTargets.Field)]
-    public class DatDatabaseTypeAttribute : Attribute
-    {
-        public DatDatabaseType Type { get; set; }
+namespace ACE.DatLoader;
 
-        public DatDatabaseTypeAttribute(DatDatabaseType type)
-        {
-            Type = type;
-        }
+[AttributeUsage(AttributeTargets.Field)]
+public class DatDatabaseTypeAttribute : Attribute
+{
+    public DatDatabaseType Type { get; set; }
+
+    public DatDatabaseTypeAttribute(DatDatabaseType type)
+    {
+        Type = type;
     }
 }

@@ -1,18 +1,17 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity.AnimationHooks
+namespace ACE.DatLoader.Entity.AnimationHooks;
+
+public class ScaleHook : AnimationHook
 {
-    public class ScaleHook : AnimationHook
+    public float End { get; private set; }
+    public float Time { get; private set; }
+
+    public override void Unpack(BinaryReader reader)
     {
-        public float End { get; private set; }
-        public float Time { get; private set; }
+        base.Unpack(reader);
 
-        public override void Unpack(BinaryReader reader)
-        {
-            base.Unpack(reader);
-
-            End = reader.ReadSingle();
-            Time = reader.ReadSingle();
-        }
+        End = reader.ReadSingle();
+        Time = reader.ReadSingle();
     }
 }

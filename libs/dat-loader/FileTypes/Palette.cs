@@ -1,24 +1,23 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace ACE.DatLoader.FileTypes
+namespace ACE.DatLoader.FileTypes;
+
+/// <summary>
+/// These are client_portal.dat files starting with 0x04.
+/// </summary>
+[DatFileType(DatFileType.Palette)]
+public class Palette : FileType
 {
     /// <summary>
-    /// These are client_portal.dat files starting with 0x04. 
+    /// Color data is stored in ARGB format
     /// </summary>
-    [DatFileType(DatFileType.Palette)]
-    public class Palette : FileType
+    public List<uint> Colors { get; } = new List<uint>();
+
+    public override void Unpack(BinaryReader reader)
     {
-        /// <summary>
-        /// Color data is stored in ARGB format
-        /// </summary>
-        public List<uint> Colors { get; } = new List<uint>();
+        Id = reader.ReadUInt32();
 
-        public override void Unpack(BinaryReader reader)
-        {
-            Id = reader.ReadUInt32();
-
-            Colors.Unpack(reader);
-        }
+        Colors.Unpack(reader);
     }
 }

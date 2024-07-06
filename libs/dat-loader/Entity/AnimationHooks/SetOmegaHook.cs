@@ -1,17 +1,16 @@
 using System.IO;
 using System.Numerics;
 
-namespace ACE.DatLoader.Entity.AnimationHooks
+namespace ACE.DatLoader.Entity.AnimationHooks;
+
+public class SetOmegaHook : AnimationHook
 {
-    public class SetOmegaHook : AnimationHook
+    public Vector3 Axis { get; private set; }
+
+    public override void Unpack(BinaryReader reader)
     {
-        public Vector3 Axis { get; private set; }
+        base.Unpack(reader);
 
-        public override void Unpack(BinaryReader reader)
-        {
-            base.Unpack(reader);
-
-            Axis = reader.ReadVector3();
-        }
+        Axis = reader.ReadVector3();
     }
 }

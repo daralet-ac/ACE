@@ -1,16 +1,15 @@
 using System.IO;
 
-namespace ACE.DatLoader.Entity.AnimationHooks
+namespace ACE.DatLoader.Entity.AnimationHooks;
+
+public class DefaultScriptPartHook : AnimationHook
 {
-    public class DefaultScriptPartHook : AnimationHook
+    public uint PartIndex { get; private set; }
+
+    public override void Unpack(BinaryReader reader)
     {
-        public uint PartIndex { get; private set; }
+        base.Unpack(reader);
 
-        public override void Unpack(BinaryReader reader)
-        {
-            base.Unpack(reader);
-
-            PartIndex = reader.ReadUInt32();
-        }
+        PartIndex = reader.ReadUInt32();
     }
 }

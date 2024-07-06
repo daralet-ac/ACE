@@ -2,177 +2,206 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace ACE.DatLoader.Entity
+namespace ACE.DatLoader.Entity;
+
+public class SexCG : IUnpackable
 {
-    public class SexCG : IUnpackable
+    public string Name { get; private set; }
+    public uint Scale { get; private set; }
+    public uint SetupID { get; private set; }
+    public uint SoundTable { get; private set; }
+    public uint IconImage { get; private set; }
+    public uint BasePalette { get; private set; }
+    public uint SkinPalSet { get; private set; }
+    public uint PhysicsTable { get; private set; }
+    public uint MotionTable { get; private set; }
+    public uint CombatTable { get; private set; }
+    public ObjDesc BaseObjDesc { get; } = new ObjDesc();
+    public List<uint> HairColorList { get; } = new List<uint>();
+    public List<HairStyleCG> HairStyleList { get; } = new List<HairStyleCG>();
+    public List<uint> EyeColorList { get; } = new List<uint>();
+    public List<EyeStripCG> EyeStripList { get; } = new List<EyeStripCG>();
+    public List<FaceStripCG> NoseStripList { get; } = new List<FaceStripCG>();
+    public List<FaceStripCG> MouthStripList { get; } = new List<FaceStripCG>();
+    public List<GearCG> HeadgearList { get; } = new List<GearCG>();
+    public List<GearCG> ShirtList { get; } = new List<GearCG>();
+    public List<GearCG> PantsList { get; } = new List<GearCG>();
+    public List<GearCG> FootwearList { get; } = new List<GearCG>();
+    public List<uint> ClothingColorsList { get; } = new List<uint>();
+
+    // Eyes
+    public uint GetEyeTexture(uint eyesStrip, bool isBald)
     {
-        public string Name { get; private set; }
-        public uint Scale { get; private set; }
-        public uint SetupID { get; private set; }
-        public uint SoundTable { get; private set; }
-        public uint IconImage { get; private set; }
-        public uint BasePalette { get; private set; }
-        public uint SkinPalSet { get; private set; }
-        public uint PhysicsTable { get; private set; }
-        public uint MotionTable { get; private set; }
-        public uint CombatTable { get; private set; }
-        public ObjDesc BaseObjDesc { get; } = new ObjDesc();
-        public List<uint> HairColorList { get; } = new List<uint>();
-        public List<HairStyleCG> HairStyleList { get; } = new List<HairStyleCG>();
-        public List<uint> EyeColorList { get; } = new List<uint>();
-        public List<EyeStripCG> EyeStripList { get; } = new List<EyeStripCG>();
-        public List<FaceStripCG> NoseStripList { get; } = new List<FaceStripCG>();
-        public List<FaceStripCG> MouthStripList { get; } = new List<FaceStripCG>();
-        public List<GearCG> HeadgearList { get; } = new List<GearCG>();
-        public List<GearCG> ShirtList { get; } = new List<GearCG>();
-        public List<GearCG> PantsList { get; } = new List<GearCG>();
-        public List<GearCG> FootwearList { get; } = new List<GearCG>();
-        public List<uint> ClothingColorsList { get; } = new List<uint>();
-
-        // Eyes
-        public uint GetEyeTexture(uint eyesStrip, bool isBald)
+        ObjDesc eyes;
+        if (isBald)
         {
-            ObjDesc eyes;
-            if (isBald)
-                eyes = EyeStripList[Convert.ToInt32(eyesStrip)].ObjDescBald;
-            else
-                eyes = EyeStripList[Convert.ToInt32(eyesStrip)].ObjDesc;
-            return eyes.TextureChanges[0].NewTexture;
+            eyes = EyeStripList[Convert.ToInt32(eyesStrip)].ObjDescBald;
         }
-        public uint GetDefaultEyeTexture(uint eyesStrip, bool isBald)
+        else
         {
-            ObjDesc eyes;
-            if (isBald)
-                eyes = EyeStripList[Convert.ToInt32(eyesStrip)].ObjDescBald;
-            else
-                eyes = EyeStripList[Convert.ToInt32(eyesStrip)].ObjDesc;
-            return eyes.TextureChanges[0].OldTexture;
+            eyes = EyeStripList[Convert.ToInt32(eyesStrip)].ObjDesc;
         }
 
-        // Nose
-        public uint GetNoseTexture(uint noseStrip)
+        return eyes.TextureChanges[0].NewTexture;
+    }
+
+    public uint GetDefaultEyeTexture(uint eyesStrip, bool isBald)
+    {
+        ObjDesc eyes;
+        if (isBald)
         {
-            ObjDesc nose = NoseStripList[Convert.ToInt32(noseStrip)].ObjDesc;
-            return nose.TextureChanges[0].NewTexture;
+            eyes = EyeStripList[Convert.ToInt32(eyesStrip)].ObjDescBald;
         }
-        public uint GetDefaultNoseTexture(uint noseStrip)
+        else
         {
-            ObjDesc nose = NoseStripList[Convert.ToInt32(noseStrip)].ObjDesc;
-            return nose.TextureChanges[0].OldTexture;
+            eyes = EyeStripList[Convert.ToInt32(eyesStrip)].ObjDesc;
         }
 
-        // Mouth
-        public uint GetMouthTexture(uint mouthStrip)
-        {
-            ObjDesc mouth = MouthStripList[Convert.ToInt32(mouthStrip)].ObjDesc;
-            return mouth.TextureChanges[0].NewTexture;
-        }
-        public uint GetDefaultMouthTexture(uint mouthStrip)
-        {
-            ObjDesc mouth = MouthStripList[Convert.ToInt32(mouthStrip)].ObjDesc;
-            return mouth.TextureChanges[0].OldTexture;
-        }
+        return eyes.TextureChanges[0].OldTexture;
+    }
 
-        // Hair (Head)
-        public uint? GetHeadObject(uint hairStyle)
-        {
-            HairStyleCG hairstyle = HairStyleList[Convert.ToInt32(hairStyle)];
+    // Nose
+    public uint GetNoseTexture(uint noseStrip)
+    {
+        var nose = NoseStripList[Convert.ToInt32(noseStrip)].ObjDesc;
+        return nose.TextureChanges[0].NewTexture;
+    }
 
-            // Gear Knights, both Olthoi types have multiple anim part changes.
-            if (hairstyle.ObjDesc.AnimPartChanges.Count == 1)
-                return hairstyle.ObjDesc.AnimPartChanges[0].PartID;
-            else
-                return null;
-        }
-        public uint? GetHairTexture(uint hairStyle)
-        {
-            HairStyleCG hairstyle = HairStyleList[Convert.ToInt32(hairStyle)];
+    public uint GetDefaultNoseTexture(uint noseStrip)
+    {
+        var nose = NoseStripList[Convert.ToInt32(noseStrip)].ObjDesc;
+        return nose.TextureChanges[0].OldTexture;
+    }
 
-            // OlthoiAcid has no TextureChanges
-            if (hairstyle.ObjDesc.TextureChanges.Count > 0)
-                return hairstyle.ObjDesc.TextureChanges[0].NewTexture;
-            else
-                return null;
+    // Mouth
+    public uint GetMouthTexture(uint mouthStrip)
+    {
+        var mouth = MouthStripList[Convert.ToInt32(mouthStrip)].ObjDesc;
+        return mouth.TextureChanges[0].NewTexture;
+    }
 
-        }
-        public uint? GetDefaultHairTexture(uint hairStyle)
-        {
-            HairStyleCG hairstyle = HairStyleList[Convert.ToInt32(hairStyle)];
+    public uint GetDefaultMouthTexture(uint mouthStrip)
+    {
+        var mouth = MouthStripList[Convert.ToInt32(mouthStrip)].ObjDesc;
+        return mouth.TextureChanges[0].OldTexture;
+    }
 
-            // OlthoiAcid has no TextureChanges
-            if (hairstyle.ObjDesc.TextureChanges.Count > 0)
-                return hairstyle.ObjDesc.TextureChanges[0].OldTexture;
-            else
-                return null;
-        }
+    // Hair (Head)
+    public uint? GetHeadObject(uint hairStyle)
+    {
+        var hairstyle = HairStyleList[Convert.ToInt32(hairStyle)];
 
-        // Headgear
-        public uint GetHeadgearWeenie(uint headgearStyle)
+        // Gear Knights, both Olthoi types have multiple anim part changes.
+        if (hairstyle.ObjDesc.AnimPartChanges.Count == 1)
         {
-            return HeadgearList[Convert.ToInt32(headgearStyle)].WeenieDefault;
+            return hairstyle.ObjDesc.AnimPartChanges[0].PartID;
         }
-        public uint GetHeadgearClothingTable(uint headgearStyle)
+        else
         {
-            return HeadgearList[Convert.ToInt32(headgearStyle)].ClothingTable;
+            return null;
         }
+    }
 
-        // Shirt
-        public uint GetShirtWeenie(uint shirtStyle)
-        {
-            return ShirtList[Convert.ToInt32(shirtStyle)].WeenieDefault;
-        }
-        public uint GetShirtClothingTable(uint shirtStyle)
-        {
-            return ShirtList[Convert.ToInt32(shirtStyle)].ClothingTable;
-        }
+    public uint? GetHairTexture(uint hairStyle)
+    {
+        var hairstyle = HairStyleList[Convert.ToInt32(hairStyle)];
 
-        // Pants
-        public uint GetPantsWeenie(uint pantsStyle)
+        // OlthoiAcid has no TextureChanges
+        if (hairstyle.ObjDesc.TextureChanges.Count > 0)
         {
-            return PantsList[Convert.ToInt32(pantsStyle)].WeenieDefault;
+            return hairstyle.ObjDesc.TextureChanges[0].NewTexture;
         }
-        public uint GetPantsClothingTable(uint pantsStyle)
+        else
         {
-            return PantsList[Convert.ToInt32(pantsStyle)].ClothingTable;
+            return null;
         }
+    }
 
-        // Footwear
-        public uint GetFootwearWeenie(uint footwearStyle)
+    public uint? GetDefaultHairTexture(uint hairStyle)
+    {
+        var hairstyle = HairStyleList[Convert.ToInt32(hairStyle)];
+
+        // OlthoiAcid has no TextureChanges
+        if (hairstyle.ObjDesc.TextureChanges.Count > 0)
         {
-            return FootwearList[Convert.ToInt32(footwearStyle)].WeenieDefault;
+            return hairstyle.ObjDesc.TextureChanges[0].OldTexture;
         }
-        public uint GetFootwearClothingTable(uint footwearStyle)
+        else
         {
-            return FootwearList[Convert.ToInt32(footwearStyle)].ClothingTable;
+            return null;
         }
+    }
 
-        public void Unpack(BinaryReader reader)
-        {
-            Name = reader.ReadString();
-            Scale = reader.ReadUInt32();
-            SetupID = reader.ReadUInt32();
-            SoundTable = reader.ReadUInt32();
-            IconImage = reader.ReadUInt32();
-            BasePalette = reader.ReadUInt32();
-            SkinPalSet = reader.ReadUInt32();
-            PhysicsTable = reader.ReadUInt32();
-            MotionTable = reader.ReadUInt32();
-            CombatTable = reader.ReadUInt32();
+    // Headgear
+    public uint GetHeadgearWeenie(uint headgearStyle)
+    {
+        return HeadgearList[Convert.ToInt32(headgearStyle)].WeenieDefault;
+    }
 
-            BaseObjDesc.Unpack(reader);
+    public uint GetHeadgearClothingTable(uint headgearStyle)
+    {
+        return HeadgearList[Convert.ToInt32(headgearStyle)].ClothingTable;
+    }
 
-            HairColorList.UnpackSmartArray(reader);
-            HairStyleList.UnpackSmartArray(reader);
-            EyeColorList.UnpackSmartArray(reader);
-            EyeStripList.UnpackSmartArray(reader);
-            NoseStripList.UnpackSmartArray(reader);
-            MouthStripList.UnpackSmartArray(reader);
+    // Shirt
+    public uint GetShirtWeenie(uint shirtStyle)
+    {
+        return ShirtList[Convert.ToInt32(shirtStyle)].WeenieDefault;
+    }
 
-            HeadgearList.UnpackSmartArray(reader);
-            ShirtList.UnpackSmartArray(reader);
-            PantsList.UnpackSmartArray(reader);
-            FootwearList.UnpackSmartArray(reader);
-            ClothingColorsList.UnpackSmartArray(reader);
-        }
+    public uint GetShirtClothingTable(uint shirtStyle)
+    {
+        return ShirtList[Convert.ToInt32(shirtStyle)].ClothingTable;
+    }
+
+    // Pants
+    public uint GetPantsWeenie(uint pantsStyle)
+    {
+        return PantsList[Convert.ToInt32(pantsStyle)].WeenieDefault;
+    }
+
+    public uint GetPantsClothingTable(uint pantsStyle)
+    {
+        return PantsList[Convert.ToInt32(pantsStyle)].ClothingTable;
+    }
+
+    // Footwear
+    public uint GetFootwearWeenie(uint footwearStyle)
+    {
+        return FootwearList[Convert.ToInt32(footwearStyle)].WeenieDefault;
+    }
+
+    public uint GetFootwearClothingTable(uint footwearStyle)
+    {
+        return FootwearList[Convert.ToInt32(footwearStyle)].ClothingTable;
+    }
+
+    public void Unpack(BinaryReader reader)
+    {
+        Name = reader.ReadString();
+        Scale = reader.ReadUInt32();
+        SetupID = reader.ReadUInt32();
+        SoundTable = reader.ReadUInt32();
+        IconImage = reader.ReadUInt32();
+        BasePalette = reader.ReadUInt32();
+        SkinPalSet = reader.ReadUInt32();
+        PhysicsTable = reader.ReadUInt32();
+        MotionTable = reader.ReadUInt32();
+        CombatTable = reader.ReadUInt32();
+
+        BaseObjDesc.Unpack(reader);
+
+        HairColorList.UnpackSmartArray(reader);
+        HairStyleList.UnpackSmartArray(reader);
+        EyeColorList.UnpackSmartArray(reader);
+        EyeStripList.UnpackSmartArray(reader);
+        NoseStripList.UnpackSmartArray(reader);
+        MouthStripList.UnpackSmartArray(reader);
+
+        HeadgearList.UnpackSmartArray(reader);
+        ShirtList.UnpackSmartArray(reader);
+        PantsList.UnpackSmartArray(reader);
+        FootwearList.UnpackSmartArray(reader);
+        ClothingColorsList.UnpackSmartArray(reader);
     }
 }

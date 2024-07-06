@@ -1,26 +1,27 @@
-using ACE.Entity.Enum;
 using System.Collections.Generic;
 using System.IO;
+using ACE.Entity.Enum;
 
-namespace ACE.DatLoader.FileTypes
+namespace ACE.DatLoader.FileTypes;
+
+[DatFileType(DatFileType.EnumMapper)]
+public class EnumMapper : FileType
 {
-    [DatFileType(DatFileType.EnumMapper)]
-    public class EnumMapper : FileType
+    public uint BaseEnumMap { get; private set; } // m_base_emp_did
+    public NumberingType NumberingType { get; private set; }
+    public Dictionary<uint, string> IdToStringMap { get; private set; } = new Dictionary<uint, string>(); // m_id_to_string_map
+
+    public override void Unpack(BinaryReader reader)
     {
-        public uint BaseEnumMap { get; private set; }   // m_base_emp_did
-        public NumberingType NumberingType { get; private set; }
-        public Dictionary<uint, string> IdToStringMap { get; private set; } = new Dictionary<uint, string>();    // m_id_to_string_map
+        Id = reader.ReadUInt32();
+        BaseEnumMap = reader.ReadUInt32();
 
-        public override void Unpack(BinaryReader reader)
+        NumberingType = (NumberingType)reader.ReadByte();
+
+        var num_enums = reader.ReadCompressedUInt32();
+        for (var i = 0; i < num_enums; i++)
         {
-            Id = reader.ReadUInt32();
-            BaseEnumMap = reader.ReadUInt32();
-
-            NumberingType = (NumberingType)reader.ReadByte();
-
-            uint num_enums = reader.ReadCompressedUInt32();
-            for (var i = 0; i < num_enums; i++)
-                IdToStringMap.Add(reader.ReadUInt32(), reader.ReadPString(1));
+            IdToStringMap.Add(reader.ReadUInt32(), reader.ReadPString(1));
         }
     }
 }

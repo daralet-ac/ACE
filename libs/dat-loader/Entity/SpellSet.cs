@@ -1,36 +1,38 @@
-using ACE.DatLoader.FileTypes;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using ACE.DatLoader.FileTypes;
 
-namespace ACE.DatLoader.Entity
+namespace ACE.DatLoader.Entity;
+
+public class SpellSet : IUnpackable
 {
+    // uint key is the total combined item level of all the equipped pieces in the set
+    // client calls this m_PieceCount
+    public SortedDictionary<uint, SpellSetTiers> SpellSetTiers = new SortedDictionary<uint, SpellSetTiers>();
 
-    public class SpellSet : IUnpackable
+    public uint HighestTier = 0;
+
+    public SortedDictionary<uint, SpellSetTiers> SpellSetTiersNoGaps = new SortedDictionary<uint, SpellSetTiers>();
+
+    public void Unpack(BinaryReader reader)
     {
-        // uint key is the total combined item level of all the equipped pieces in the set
-        // client calls this m_PieceCount
-        public SortedDictionary<uint, SpellSetTiers> SpellSetTiers = new SortedDictionary<uint, SpellSetTiers>();
+        SpellSetTiers.UnpackPackedHashTable(reader);
 
-        public uint HighestTier = 0;
+        HighestTier = SpellSetTiers.Keys.LastOrDefault();
 
-        public SortedDictionary<uint, SpellSetTiers> SpellSetTiersNoGaps = new SortedDictionary<uint, SpellSetTiers>();
+        SpellSetTiers lastSpellSetTier = null;
 
-        public void Unpack(BinaryReader reader)
+        for (uint i = 0; i <= HighestTier; i++)
         {
-            SpellSetTiers.UnpackPackedHashTable(reader);
-
-            HighestTier = SpellSetTiers.Keys.LastOrDefault();
-
-            SpellSetTiers lastSpellSetTier = null;
-
-            for (uint i = 0; i <= HighestTier; i++)
+            if (SpellSetTiers.TryGetValue(i, out var spellSetTiers))
             {
-                if (SpellSetTiers.TryGetValue(i, out var spellSetTiers))
-                    lastSpellSetTier = spellSetTiers;
+                lastSpellSetTier = spellSetTiers;
+            }
 
-                if (lastSpellSetTier != null)
-                    SpellSetTiersNoGaps.Add(i, lastSpellSetTier);
+            if (lastSpellSetTier != null)
+            {
+                SpellSetTiersNoGaps.Add(i, lastSpellSetTier);
             }
         }
     }
