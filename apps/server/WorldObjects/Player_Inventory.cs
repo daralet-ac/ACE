@@ -3592,12 +3592,16 @@ partial class Player
         );
 
         // Before we modify the original stack, we make sure we can add the new stack
-        if (!container.TryAddToInventory(newStack, placementPosition, true))
+        if (container != null && !container.TryAddToInventory(newStack, placementPosition, true))
         {
             Session.Network.EnqueueSend(
                 new GameEventCommunicationTransientString(Session, "TryAddToInventory failed!")
             ); // Custom error message
-            Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stack.Guid.Full));
+            if (stack != null)
+            {
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stack.Guid.Full));
+            }
+
             return false;
         }
 
@@ -3613,7 +3617,7 @@ partial class Player
         }
 
         // BANKING - for spltting objects where the target container is a bank main pack, we need to save to ensure they retain their placement position on next opening another bank
-        if (container != null && container.WeenieType == WeenieType.Storage)
+        if (container is { WeenieType: WeenieType.Storage })
         {
             if (PropertyManager.GetBool("debug_banking_system").Item)
             {
@@ -3655,13 +3659,16 @@ partial class Player
                 }
             }
 
-            newStack.BankAccountId = 0;
+            if (newStack is not null)
+            {
+                newStack.BankAccountId = 0;
+            }
         }
 
         // BANKING - for splitting objects from a bank side pack into another container, we need to remove the bank account ID stamp. This is handled at the contained container level.
         if (
-            (containerRootOwner != null && containerRootOwner.WeenieType == WeenieType.Storage)
-            || (stackRootOwner != null && stackRootOwner.WeenieType == WeenieType.Storage)
+            containerRootOwner is { WeenieType: WeenieType.Storage }
+            || stackRootOwner is { WeenieType: WeenieType.Storage }
         )
         {
             if (PropertyManager.GetBool("debug_banking_system").Item)
@@ -3671,22 +3678,25 @@ partial class Player
                 );
             }
 
-            foreach (var wo in stackFoundInContainer.Inventory.Values)
+            if (stackFoundInContainer is not null)
             {
-                if (stackFoundInContainer.WeenieType == WeenieType.Storage)
+                foreach (var wo in stackFoundInContainer.Inventory.Values)
                 {
-                    wo.BankAccountId = Account.AccountId;
-                }
-                else
-                {
-                    wo.BankAccountId = 0;
-                }
+                    if (stackFoundInContainer.WeenieType == WeenieType.Storage)
+                    {
+                        wo.BankAccountId = Account.AccountId;
+                    }
+                    else
+                    {
+                        wo.BankAccountId = 0;
+                    }
 
-                DeepSave(wo);
+                    DeepSave(wo);
 
-                if (PropertyManager.GetBool("debug_banking_system").Item)
-                {
-                    Console.WriteLine($"Deep Save: {wo.Name}");
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                    {
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                    }
                 }
             }
 
@@ -4732,24 +4742,24 @@ partial class Player
             out _
         );
 
-        var sourceContainer = sourceStack.Container as Container;
-        var targetContainer = targetStack.Container as Container;
-
         if (sourceStack == null || targetStack == null)
-        {
-            Session.Network.EnqueueSend(
-                new GameEventInventoryServerSaveFailed(Session, previousSourceStackCheck.Guid.Full, WeenieError.None)
-            );
-            return false;
-        }
-
-        if (targetStack == null || targetStack.MaxStackSize < targetStack.StackSize + amount)
         {
             Session.Network.EnqueueSend(
                 new GameEventInventoryServerSaveFailed(Session, previousSourceStackCheck.Guid.Full)
             );
             return false;
         }
+
+        if (targetStack.MaxStackSize < targetStack.StackSize + amount)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventInventoryServerSaveFailed(Session, previousSourceStackCheck.Guid.Full)
+            );
+            return false;
+        }
+
+        var sourceContainer = sourceStack.Container as Container;
+        var targetContainer = targetStack.Container as Container;
 
         if (
             amount == sourceStack.StackSize
@@ -4870,10 +4880,8 @@ partial class Player
 
         // BANKING - for SPLITTING to MERGE stacks of objects within the MAIN pack of a storage chest (from main to main)
         if (
-            targetContainer != null
-            && targetContainer.WeenieType == WeenieType.Storage
-            && sourceContainer != null
-            && sourceContainer.WeenieType == WeenieType.Storage
+            targetContainer is { WeenieType: WeenieType.Storage }
+            && sourceContainer is { WeenieType: WeenieType.Storage }
         )
         {
             if (PropertyManager.GetBool("debug_banking_system").Item)
@@ -4897,8 +4905,7 @@ partial class Player
 
         // banking - for SPLITTING to MERGE stacks of objects from the main pack of a storage chest to another container
         if (
-            sourceContainer != null
-            && sourceContainer.WeenieType == WeenieType.Storage
+            sourceContainer is { WeenieType: WeenieType.Storage }
             && targetContainer != null
             && targetContainer.WeenieType != WeenieType.Storage
         )
@@ -4936,10 +4943,9 @@ partial class Player
 
         // BANKING - for SPLITTING to MERGE objects from a non-bank container to main bank container, we need to stamp with BankAccountId
         if (
-            sourceContainer != null
+            sourceContainer is not null
             && sourceContainer.WeenieType != WeenieType.Storage
-            && targetContainer != null
-            && targetContainer.WeenieType == WeenieType.Storage
+            && targetContainer is { WeenieType: WeenieType.Storage }
         )
         {
             if (PropertyManager.GetBool("debug_banking_system").Item)
@@ -4971,63 +4977,65 @@ partial class Player
 
         // BANKING - for SPLITTING to MERGE objects to/from a bank side pack container to/from another non-bank container
         if (
-            (sourceStackRootOwner != null && sourceStackRootOwner.WeenieType == WeenieType.Storage)
-            || (targetStackRootOwner != null && targetStackRootOwner.WeenieType == WeenieType.Storage)
+            sourceStackRootOwner is { WeenieType: WeenieType.Storage }
+            || targetStackRootOwner is { WeenieType: WeenieType.Storage }
         )
         {
             if (PropertyManager.GetBool("debug_banking_system").Item)
             {
                 Console.WriteLine(
-                    $"SPLIT to MERGED stack to/from BANK SIDE pack({targetContainer?.Name}) to/from another PACK ({targetContainer.Name}): originalStack: {sourceStack?.Name} ({sourceStack?.StackSize}), newStack: {targetStack?.Name} ({targetStack?.StackSize})"
+                    $"SPLIT to MERGED stack to/from BANK SIDE pack({targetContainer?.Name}) to/from another PACK ({targetContainer?.Name}): originalStack: {sourceStack?.Name} ({sourceStack?.StackSize}), newStack: {targetStack?.Name} ({targetStack?.StackSize})"
                 );
             }
 
-            foreach (var wo in sourceContainer.Inventory.Values)
+            if (sourceContainer is not null)
             {
-                if (sourceContainer.WeenieType == WeenieType.Storage)
+                foreach (var wo in sourceContainer.Inventory.Values)
                 {
-                    wo.BankAccountId = Account.AccountId;
-                }
-                else
-                {
-                    wo.BankAccountId = 0;
-                }
+                    if (sourceContainer.WeenieType == WeenieType.Storage)
+                    {
+                        wo.BankAccountId = Account.AccountId;
+                    }
+                    else
+                    {
+                        wo.BankAccountId = 0;
+                    }
 
-                DeepSave(wo);
+                    DeepSave(wo);
 
-                if (PropertyManager.GetBool("debug_banking_system").Item)
-                {
-                    Console.WriteLine($"Deep Save: {wo.Name}");
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                    {
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                    }
                 }
             }
 
-            foreach (var wo in targetContainer.Inventory.Values)
+            if (targetContainer?.Inventory.Values is not null)
             {
-                if (targetContainer.WeenieType == WeenieType.Storage)
+                foreach (var wo in targetContainer.Inventory.Values)
                 {
-                    wo.BankAccountId = Account.AccountId;
-                }
-                else
-                {
-                    wo.BankAccountId = 0;
-                }
+                    if (targetContainer.WeenieType == WeenieType.Storage)
+                    {
+                        wo.BankAccountId = Account.AccountId;
+                    }
+                    else
+                    {
+                        wo.BankAccountId = 0;
+                    }
 
-                DeepSave(wo);
+                    DeepSave(wo);
 
-                if (PropertyManager.GetBool("debug_banking_system").Item)
-                {
-                    Console.WriteLine($"Deep Save: {wo.Name}");
+                    if (PropertyManager.GetBool("debug_banking_system").Item)
+                    {
+                        Console.WriteLine($"Deep Save: {wo.Name}");
+                    }
                 }
             }
         }
 
         var itemFoundOnCorpse = sourceStackRootOwner is Corpse;
 
-        var isFromAPlayerCorpse = false;
-        if (itemFoundOnCorpse && sourceStackRootOwner.Level > 0)
-        {
-            isFromAPlayerCorpse = true;
-        }
+        var isFromAPlayerCorpse = itemFoundOnCorpse && sourceStackRootOwner.Level > 0;
 
         if (isFromAPlayerCorpse)
         {
