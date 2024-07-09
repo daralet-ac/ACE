@@ -28,50 +28,44 @@ partial class Player
         }
 
         var result = TestStealthInternal(EnterStealthDifficulty);
-        if (result == StealthTestResult.Success)
+        switch (result)
         {
-            IsStealthed = true;
-            if (Time.GetUnixTime() < LastVanishActivated + 5)
+            case StealthTestResult.Success:
             {
+                IsStealthed = true;
+                if (Time.GetUnixTime() < LastVanishActivated + 5)
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            "You vanish in a cloud of smoke, and you cannot be detected for the next 5 seconds!",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                }
+                else
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat("You enter stealth.", ChatMessageType.Broadcast)
+                    );
+                }
+
+                EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthBegin));
+
+                ApplyStealthRunPenalty();
+
+                break;
+            }
+            case StealthTestResult.Failure:
                 Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        "You vanish in a cloud of smoke, and you cannot be detected for the next 5 seconds!",
-                        ChatMessageType.Broadcast
-                    )
+                    new GameMessageSystemChat("You fail on your attempt to enter stealth.", ChatMessageType.Broadcast)
                 );
-            }
-            else
-            {
-                Session.Network.EnqueueSend(new GameMessageSystemChat("You enter stealth.", ChatMessageType.Broadcast));
-            }
-
-            EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthBegin));
-
-            var spell = new Spell(SpellId.MireFoot);
-            var addResult = EnchantmentManager.Add(spell, null, null, true);
-
-            Session.Network.EnqueueSend(
-                new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, addResult.Enchantment))
-            );
-            HandleRunRateUpdate(spell);
-
-            RadarColor = ACE.Entity.Enum.RadarColor.Creature;
-            EnqueueBroadcast(
-                true,
-                new GameMessagePublicUpdatePropertyInt(this, PropertyInt.RadarBlipColor, (int)RadarColor)
-            );
-        }
-        else if (result == StealthTestResult.Failure)
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat("You fail on your attempt to enter stealth.", ChatMessageType.Broadcast)
-            );
-        }
-        else
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat("You are not trained in thievery!", ChatMessageType.Broadcast)
-            );
+                break;
+            case StealthTestResult.Untrained:
+            default:
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat("You are not trained in thievery!", ChatMessageType.Broadcast)
+                );
+                break;
         }
     }
 
@@ -86,7 +80,7 @@ partial class Player
         IsAttackFromStealth = isAttackFromStealth;
 
         Session.Network.EnqueueSend(
-            new GameMessageSystemChat(message == null ? "You lose stealth." : message, ChatMessageType.Broadcast)
+            new GameMessageSystemChat(message ?? "You lose stealth.", ChatMessageType.Broadcast)
         );
         var actionChain = new ActionChain();
         actionChain.AddDelaySeconds(0.25f);
@@ -104,15 +98,7 @@ partial class Player
             this,
             () =>
             {
-                var propertiesEnchantmentRegistry = EnchantmentManager.GetEnchantment((uint)SpellId.MireFoot, null);
-                if (propertiesEnchantmentRegistry != null && CombatMode == CombatMode.NonCombat)
-                {
-                    EnchantmentManager.Dispel(propertiesEnchantmentRegistry);
-                    if (!Teleporting)
-                    {
-                        HandleRunRateUpdate(new Spell(propertiesEnchantmentRegistry.SpellId));
-                    }
-                }
+                RemoveStealthRunPenalty();
             }
         );
 
@@ -120,6 +106,37 @@ partial class Player
         EnqueueBroadcast(true, new GameMessagePublicUpdatePropertyInt(this, PropertyInt.RadarBlipColor, 0));
 
         actionChain.EnqueueChain();
+    }
+
+    private void ApplyStealthRunPenalty()
+    {
+        var spell = new Spell(SpellId.StealthRunDebuff);
+        var addResult = EnchantmentManager.Add(spell, null, null, true);
+
+        Session.Network.EnqueueSend(
+            new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, addResult.Enchantment))
+        );
+        HandleRunRateUpdate(spell);
+    }
+
+    private void RemoveStealthRunPenalty()
+    {
+        const uint stealthRunDebuff = (uint)SpellId.StealthRunDebuff;
+
+        while (EnchantmentManager.HasSpell(stealthRunDebuff))
+        {
+            var propertiesEnchantmentRegistry = EnchantmentManager.GetEnchantment(stealthRunDebuff);
+            if (propertiesEnchantmentRegistry is null)
+            {
+                return;
+            }
+
+            EnchantmentManager.Dispel(propertiesEnchantmentRegistry);
+            if (!Teleporting)
+            {
+                HandleRunRateUpdate(new Spell(propertiesEnchantmentRegistry.SpellId));
+            }
+        }
     }
 
     private const double CreatureRetestDelay = 3.0;

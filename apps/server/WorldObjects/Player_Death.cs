@@ -33,7 +33,8 @@ partial class Player
     public override DeathMessage OnDeath(DamageHistoryInfo lastDamager, DamageType damageType, bool criticalHit = false)
     {
         var topDamager = DamageHistory.GetTopDamager(false);
-        CombatModeRunPenalty(false);
+        RemoveCombatModeRunPenalty();
+        RemoveStealthRunPenalty();
 
         HandlePKDeathBroadcast(lastDamager, topDamager);
 

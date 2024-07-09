@@ -671,7 +671,7 @@ partial class Player
             {
                 var spell = new Spell(enchantment.SpellId, false);
 
-                if (spell.Id == (uint)SpellId.MireFoot && !peaceMode)
+                if (spell.Id is (uint)SpellId.CombatModeRunDebuff or (uint)SpellId.StealthRunDebuff)
                 {
                     continue;
                 }
@@ -690,7 +690,7 @@ partial class Player
                 )
                 {
                     _log.Error(
-                        $"{Name}.AuditItemSpells1(): removing spell {spell.Name} from {(enchantment.HasSpellSetId ? "non-possessed" : "non-equipped")} item"
+                        $"{Name}.AuditItemSpells(): removing spell {spell.Name} from {(enchantment.HasSpellSetId ? "non-possessed" : "non-equipped")} item"
                     );
                 }
 
