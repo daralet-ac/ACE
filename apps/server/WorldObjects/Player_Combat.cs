@@ -5,7 +5,6 @@ using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
@@ -1572,8 +1571,6 @@ partial class Player
             return;
         }
 
-        LastCombatMode = newCombatMode;
-
         if (DateTime.UtcNow >= NextUseTime.AddSeconds(UseTimeEpsilon))
         {
             HandleActionChangeCombatMode_Inner(newCombatMode, forceHandCombat, callback);
@@ -1588,6 +1585,8 @@ partial class Player
             );
             actionChain.EnqueueChain();
         }
+
+        LastCombatMode = newCombatMode;
 
         if (IsAfk)
         {
@@ -1622,24 +1621,18 @@ partial class Player
         {
             case CombatMode.NonCombat:
             {
-                switch (currentCombatStance)
+                if (
+                    currentCombatStance
+                    is MotionStance.AtlatlCombat
+                        or MotionStance.CrossbowCombat
+                        or MotionStance.AtlatlCombat
+                )
                 {
-                    case MotionStance.BowCombat:
-                    case MotionStance.CrossbowCombat:
-                    case MotionStance.AtlatlCombat:
+                    var equippedAmmo = GetEquippedAmmo();
+                    if (equippedAmmo != null)
                     {
-                        var equippedAmmo = GetEquippedAmmo();
-                        if (equippedAmmo != null)
-                        {
-                            ClearChild(equippedAmmo); // We must clear the placement/parent when going back to peace
-                        }
-
-                        break;
+                        ClearChild(equippedAmmo); // We must clear the placement/parent when going back to peace
                     }
-                }
-                if (!IsStealthed)
-                {
-                    CombatModeRunPenalty(false);
                 }
 
                 break;
@@ -1654,7 +1647,6 @@ partial class Player
                     return;
                 }
 
-                CombatModeRunPenalty(true);
                 break;
 
             case CombatMode.Missile:
@@ -1670,43 +1662,39 @@ partial class Player
                     return;
                 }
 
-                switch (currentCombatStance)
+                if (
+                    currentCombatStance
+                    is MotionStance.AtlatlCombat
+                        or MotionStance.CrossbowCombat
+                        or MotionStance.AtlatlCombat
+                )
                 {
-                    case MotionStance.BowCombat:
-                    case MotionStance.CrossbowCombat:
-                    case MotionStance.AtlatlCombat:
+                    var equippedAmmo = GetEquippedAmmo();
+                    if (equippedAmmo == null)
                     {
-                        var equippedAmmo = GetEquippedAmmo();
-                        if (equippedAmmo == null)
-                        {
-                            animTime = SetCombatMode(newCombatMode, out queueTime);
+                        animTime = SetCombatMode(newCombatMode, out queueTime);
 
-                            var actionChain = new ActionChain();
-                            actionChain.AddDelaySeconds(animTime);
-                            actionChain.AddAction(
-                                this,
-                                () =>
-                                {
-                                    Session.Network.EnqueueSend(
-                                        new GameEventCommunicationTransientString(Session, "You are out of ammunition!")
-                                    );
-                                    SetCombatMode(CombatMode.NonCombat);
-                                }
-                            );
-                            actionChain.EnqueueChain();
+                        var actionChain = new ActionChain();
+                        actionChain.AddDelaySeconds(animTime);
+                        actionChain.AddAction(
+                            this,
+                            () =>
+                            {
+                                Session.Network.EnqueueSend(
+                                    new GameEventCommunicationTransientString(Session, "You are out of ammunition!")
+                                );
+                                SetCombatMode(CombatMode.NonCombat);
+                            }
+                        );
+                        actionChain.EnqueueChain();
 
-                            NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
-                            return;
-                        }
-                        else
-                        {
-                            // We must set the placement/parent when going into combat
-                            equippedAmmo.Placement = ACE.Entity.Enum.Placement.RightHandCombat;
-                            equippedAmmo.ParentLocation = ACE.Entity.Enum.ParentLocation.RightHand;
-                        }
-                        CombatModeRunPenalty(true);
-                        break;
+                        NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
+                        return;
                     }
+
+                    // We must set the placement/parent when going into combat
+                    equippedAmmo.Placement = ACE.Entity.Enum.Placement.RightHandCombat;
+                    equippedAmmo.ParentLocation = ACE.Entity.Enum.ParentLocation.RightHand;
                 }
                 break;
             }
@@ -1721,8 +1709,17 @@ partial class Player
                     return;
                 }
 
-                CombatModeRunPenalty(true);
                 break;
+        }
+
+        if (WasInPeaceModePreviously())
+        {
+            ApplyCombatModeRunPenalty();
+        }
+
+        if (IsEnteringPeaceMode(newCombatMode))
+        {
+            RemoveCombatModeRunPenalty();
         }
 
         // animTime already includes queueTime
@@ -1745,52 +1742,57 @@ partial class Player
         }
     }
 
-    private void CombatModeRunPenalty(bool enable)
+    private static bool IsEnteringPeaceMode(CombatMode newCombatMode)
     {
-        if (enable)
+        return newCombatMode == CombatMode.NonCombat;
+    }
+
+    private bool WasInPeaceModePreviously()
+    {
+        return LastCombatMode is CombatMode.Undef or CombatMode.NonCombat;
+    }
+
+    private void ApplyCombatModeRunPenalty()
+    {
+        // SPEC BONUS - Run: Ignore combat mode movement penalty
+        var skill = GetCreatureSkill(Skill.Run);
+        if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
         {
-            // SPEC BONUS - Run: Ignore combat mode movement penalty
-            var skill = GetCreatureSkill(Skill.Run);
-            if (skill.AdvancementClass != SkillAdvancementClass.Specialized)
-            {
-                var spell = new Spell(SpellId.MireFoot);
-                var addResult = EnchantmentManager.Add(spell, null, null, true);
+            return;
+        }
 
-                addResult.Enchantment.StatModValue += 0.45f;
+        var spell = new Spell(SpellId.CombatModeRunDebuff);
+        var addResult = EnchantmentManager.Add(spell, null, null, true);
 
-                Session.Network.EnqueueSend(
-                    new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, addResult.Enchantment))
-                );
-                HandleRunRateUpdate(spell);
-            }
-            else
+        Session.Network.EnqueueSend(
+            new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, addResult.Enchantment))
+        );
+        HandleRunRateUpdate(spell);
+    }
+
+    private void RemoveCombatModeRunPenalty()
+    {
+        const uint combatModeRunDebuff = (uint)SpellId.CombatModeRunDebuff;
+
+        while (EnchantmentManager.HasSpell(combatModeRunDebuff))
+        {
+            var propertiesEnchantmentRegistry = EnchantmentManager.GetEnchantment(combatModeRunDebuff);
+            if (propertiesEnchantmentRegistry is null)
             {
                 return;
             }
-        }
-        else
-        {
-            var enchantments = Biota
-                .PropertiesEnchantmentRegistry.Clone(BiotaDatabaseLock)
-                .Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.Vitae)
-                .ToList();
-            foreach (var enchantment in enchantments)
+
+            EnchantmentManager.Dispel(propertiesEnchantmentRegistry);
+            if (!Teleporting)
             {
-                if (enchantment.SpellId == (int)SpellId.MireFoot)
-                {
-                    EnchantmentManager.Dispel(enchantment);
-                    if (!Teleporting)
-                    {
-                        HandleRunRateUpdate(new Spell(enchantment.SpellId));
-                    }
-                }
+                HandleRunRateUpdate(new Spell(propertiesEnchantmentRegistry.SpellId));
             }
         }
     }
 
     public override bool CanDamage(Creature target)
     {
-        return target.Attackable && !target.Teleporting && !(target is CombatPet);
+        return target.Attackable && !target.Teleporting && target is not CombatPet;
     }
 
     // http://acpedia.org/wiki/Announcements_-_2002/04_-_Betrayal
