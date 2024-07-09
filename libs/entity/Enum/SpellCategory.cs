@@ -761,4 +761,6 @@ public enum SpellCategory : uint
     ExtraFireResistanceRaising2 = 759,
     ExtraColdResistanceRaising2 = 759,
     ExtraLightningResistanceRaising2 = 759,
+    CombatModeRunPenalty = 760,
+    StealthRunPenalty = 761,
 }

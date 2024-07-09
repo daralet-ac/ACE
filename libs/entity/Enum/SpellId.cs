@@ -6389,6 +6389,8 @@ public enum SpellId : uint
     PotionOfFireResistance,
     PotionOfColdResistance,
     PotionOfLightningResistance,
+    CombatModeRunDebuff,
+    StealthRunDebuff,
 
     NumSpells = 8192,
 
