@@ -1280,7 +1280,6 @@ partial class Creature
 
         if (olthoiNorthDebuffStacks > 0 && StackableSpellType == StackableSpellTables.StackableSpellType.OlthoiNorth)
         {
-            Console.WriteLine(1.0f + ((float)olthoiNorthDebuffStacks / 100));
             return 1.0f + ((float)olthoiNorthDebuffStacks / 100);
         }
 
