@@ -1248,6 +1248,36 @@ partial class Creature
         }
 
         var olthoiNorthDebuffStacks = killer.Player.GetOlthoiNorthSpellStacks(false);
+
+        var fellowshipCount = 0;
+
+        // If killer is in a fellowship, use average spell stack bonus of each fellow that contributed to the kill
+        if (killer.Player.Fellowship != null)
+        {
+            fellowshipCount = killer.Player.Fellowship.FellowshipMembers.Count;
+
+            if (fellowshipCount > 1)
+            {
+                var fellowshipMembers = killer.Player.Fellowship.GetFellowshipMembers().Values;
+
+                foreach (var fellow in fellowshipMembers)
+                {
+                    if (!DamageHistory.HasDamager(fellow))
+                    {
+                        fellowshipCount--;
+                        continue;
+                    }
+
+                    if (fellow != killer.Player)
+                    {
+                        olthoiNorthDebuffStacks += fellow.GetOlthoiNorthSpellStacks((false));
+                    }
+                }
+
+                olthoiNorthDebuffStacks = (uint)(olthoiNorthDebuffStacks / fellowshipCount);
+            }
+        }
+
         if (olthoiNorthDebuffStacks > 0 && StackableSpellType == StackableSpellTables.StackableSpellType.OlthoiNorth)
         {
             return 1.0f + ((float)olthoiNorthDebuffStacks / 100);
