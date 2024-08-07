@@ -149,4 +149,5 @@ public enum EmoteType
     AwardNoContribSkillXP = 10011,
     BroadcastSpellStacks = 10012,
     RemoveEnchantment = 10013,
+    StampQuestForAllFellows = 10014,
 }
