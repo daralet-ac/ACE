@@ -57,6 +57,8 @@ partial class Creature
             return;
         }
 
+        HandlePlayerCountScaling();
+
         HandleFindTarget();
 
         CheckMissHome(); // tickrate?

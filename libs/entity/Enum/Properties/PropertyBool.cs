@@ -227,6 +227,7 @@ public enum PropertyBool : ushort
     MutableQuestItem = 147,
     StruckByUnshrouded = 148,
     MenhirManaHotspot = 149,
+    UseNearbyPlayerScaling = 150,
 
     /* custom */
     [ServerOnly]
