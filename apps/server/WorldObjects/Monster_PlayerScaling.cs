@@ -8,31 +8,20 @@ namespace ACE.Server.WorldObjects;
 
 partial class Creature
 {
-    private int LastNumberOfNearbyPlayers = 0;
+    private int LastNumberOfNearbyPlayers;
+
+    private bool SkillsSet;
     private uint BaseHealth;
-    private bool BaseHealthSet = false;
-
     private uint BaseHeavyWeaponsSkill;
-    private bool BaseHeavyWeaponsSkillSet = false;
     private uint BaseDaggerSkill;
-    private bool BaseDaggerSkillSet = false;
     private uint BaseStaffSkill;
-    private bool BaseStaffSkillSet = false;
     private uint BaseUnarmedSkill;
-    private bool BaseUnarmedSkillSet = false;
     private uint BaseBowSkill;
-    private bool BaseBowSkillSet = false;
     private uint BaseThrownWeaponsSkill;
-    private bool BaseThrownWeaponsSkillSet = false;
     private uint BaseWarMagicSkill;
-    private bool BaseWarMagicSkillSet = false;
     private uint BaseLifeMagicSkill;
-    private bool BaseLifeMagicSkillSet = false;
-
     private uint BasePhysicalDefenseSkill;
-    private bool BasePhysicalDefenseSet = false;
     private uint BaseMagicDefenseSkill;
-    private bool BaseMagicDefenseSet = false;
 
     private void HandlePlayerCountScaling()
     {
@@ -111,71 +100,24 @@ partial class Creature
 
     private void SetBaseSkills()
     {
-        if (!BaseHealthSet)
+        if (SkillsSet)
         {
-            BaseHealth = Health.MaxValue;
-            BaseHealthSet = true;
+            return;
         }
 
-        if (!BaseHeavyWeaponsSkillSet)
-        {
-            BaseHeavyWeaponsSkill = GetCreatureSkill(Skill.HeavyWeapons).Current;
-            BaseHeavyWeaponsSkillSet = true;
-        }
+        BaseHealth = Health.MaxValue;
+        BaseHeavyWeaponsSkill = GetCreatureSkill(Skill.HeavyWeapons).Current;
+        BaseDaggerSkill = GetCreatureSkill(Skill.Dagger).Current;
+        BaseStaffSkill = GetCreatureSkill(Skill.Staff).Current;
+        BaseUnarmedSkill = GetCreatureSkill(Skill.UnarmedCombat).Current;
+        BaseBowSkill = GetCreatureSkill(Skill.Bow).Current;
+        BaseThrownWeaponsSkill = GetCreatureSkill(Skill.ThrownWeapon).Current;
+        BaseWarMagicSkill = GetCreatureSkill(Skill.WarMagic).Current;
+        BaseLifeMagicSkill = GetCreatureSkill(Skill.LifeMagic).Current;
+        BasePhysicalDefenseSkill = GetCreatureSkill(Skill.MeleeDefense).Current;
+        BaseMagicDefenseSkill = GetCreatureSkill(Skill.MagicDefense).Current;
 
-        if (!BaseDaggerSkillSet)
-        {
-            BaseDaggerSkill = GetCreatureSkill(Skill.Dagger).Current;
-            BaseDaggerSkillSet = true;
-        }
-
-        if (!BaseStaffSkillSet)
-        {
-            BaseStaffSkill = GetCreatureSkill(Skill.Staff).Current;
-            BaseStaffSkillSet = true;
-        }
-
-        if (!BaseUnarmedSkillSet)
-        {
-            BaseUnarmedSkill = GetCreatureSkill(Skill.UnarmedCombat).Current;
-            BaseUnarmedSkillSet = true;
-        }
-
-        if (!BaseBowSkillSet)
-        {
-            BaseBowSkill = GetCreatureSkill(Skill.Bow).Current;
-            BaseBowSkillSet = true;
-        }
-
-        if (!BaseThrownWeaponsSkillSet)
-        {
-            BaseThrownWeaponsSkill = GetCreatureSkill(Skill.ThrownWeapon).Current;
-            BaseThrownWeaponsSkillSet = true;
-        }
-
-        if (!BaseWarMagicSkillSet)
-        {
-            BaseWarMagicSkill = GetCreatureSkill(Skill.WarMagic).Current;
-            BaseWarMagicSkillSet = true;
-        }
-
-        if (!BaseLifeMagicSkillSet)
-        {
-            BaseLifeMagicSkill = GetCreatureSkill(Skill.LifeMagic).Current;
-            BaseLifeMagicSkillSet = true;
-        }
-
-        if (!BasePhysicalDefenseSet)
-        {
-            BasePhysicalDefenseSkill = GetCreatureSkill(Skill.MeleeDefense).Current;
-            BasePhysicalDefenseSet = true;
-        }
-
-        if (!BaseMagicDefenseSet)
-        {
-            BaseMagicDefenseSkill = GetCreatureSkill(Skill.MagicDefense).Current;
-            BaseMagicDefenseSet = true;
-        }
+        SkillsSet = true;
     }
 
     private void SetNewSkill(uint baseSkill, double multiplier, Skill skillType)
