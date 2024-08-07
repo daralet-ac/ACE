@@ -2370,6 +2370,57 @@ public class EmoteManager
                 }
                 break;
 
+            case EmoteType.StampQuestForAllFellows:
+
+                var targetPlayer = targetCreature as Player;
+
+                // Stamp quest for killer, regardless of if in a fellowship
+                questTarget = GetQuestTarget((EmoteType)emote.Type, targetPlayer, creature);
+
+                if (questTarget != null)
+                {
+                    var questName = emote.Message;
+
+                    if (questName.EndsWith("@#kt", StringComparison.Ordinal))
+                    {
+                        _log.Warning(
+                            $"0x{WorldObject.Guid}:{WorldObject.Name} ({WorldObject.WeenieClassId}).EmoteManager.ExecuteEmote: EmoteType.StampQuest({questName}) is a depreciated kill task method."
+                        );
+                    }
+
+                    questTarget.QuestManager.Stamp(emote.Message);
+                }
+
+                // If killer is in a fellowship, also stamp the quest for all fellows
+                if (targetPlayer != null && targetPlayer.Fellowship != null)
+                {
+                    foreach (var fellow in targetPlayer.Fellowship.GetFellowshipMembers().Values)
+                    {
+                        if (targetPlayer == fellow)
+                        {
+                            continue;
+                        }
+
+                        questTarget = GetQuestTarget((EmoteType)emote.Type, fellow, creature);
+
+                        if (questTarget != null)
+                        {
+                            var questName = emote.Message;
+
+                            if (questName.EndsWith("@#kt", StringComparison.Ordinal))
+                            {
+                                _log.Warning(
+                                    $"0x{WorldObject.Guid}:{WorldObject.Name} ({WorldObject.WeenieClassId}).EmoteManager.ExecuteEmote: EmoteType.StampQuest({questName}) is a depreciated kill task method."
+                                );
+                            }
+
+                            questTarget.QuestManager.Stamp(emote.Message);
+                        }
+                    }
+                }
+
+                break;
+
             default:
                 _log.Debug(
                     "EmoteManager.Execute - Encountered Unhandled EmoteType {EmoteType} for {WorldObjectName} ({WorldObjectWeenieClassId})",
