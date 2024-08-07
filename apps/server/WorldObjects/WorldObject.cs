@@ -1591,6 +1591,54 @@ public abstract partial class WorldObject : IActor
         }
     }
 
+    public double? NearbyPlayerVitalsScalingPerExtraPlayer
+    {
+        get => GetProperty(PropertyFloat.NearbyPlayerVitalsScalingPerExtraPlayer);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyFloat.NearbyPlayerVitalsScalingPerExtraPlayer);
+            }
+            else
+            {
+                SetProperty(PropertyFloat.NearbyPlayerVitalsScalingPerExtraPlayer, value.Value);
+            }
+        }
+    }
+
+    public double? NearbyPlayerAttackScalingPerExtraPlayer
+    {
+        get => GetProperty(PropertyFloat.NearbyPlayerAttackScalingPerExtraPlayer);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyFloat.NearbyPlayerAttackScalingPerExtraPlayer);
+            }
+            else
+            {
+                SetProperty(PropertyFloat.NearbyPlayerAttackScalingPerExtraPlayer, value.Value);
+            }
+        }
+    }
+
+    public double? NearbyPlayerDefenseScalingPerExtraPlayer
+    {
+        get => GetProperty(PropertyFloat.NearbyPlayerDefenseScalingPerExtraPlayer);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyFloat.NearbyPlayerDefenseScalingPerExtraPlayer);
+            }
+            else
+            {
+                SetProperty(PropertyFloat.NearbyPlayerDefenseScalingPerExtraPlayer, value.Value);
+            }
+        }
+    }
+
     public bool? CannotBreakStealth
     {
         get => GetProperty(PropertyBool.CannotBreakStealth);
@@ -1635,6 +1683,22 @@ public abstract partial class WorldObject : IActor
             else
             {
                 SetProperty(PropertyBool.MenhirManaHotspot, value.Value);
+            }
+        }
+    }
+
+    public bool? UseNearbyPlayerScaling
+    {
+        get => GetProperty(PropertyBool.UseNearbyPlayerScaling) ?? false;
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyBool.UseNearbyPlayerScaling);
+            }
+            else
+            {
+                SetProperty(PropertyBool.UseNearbyPlayerScaling, value.Value);
             }
         }
     }

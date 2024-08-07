@@ -8843,4 +8843,52 @@ partial class WorldObject
             }
         }
     }
+
+    public int? NearbyPlayerScalingThreshold
+    {
+        get => GetProperty(PropertyInt.NearbyPlayerScalingThreshold);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.NearbyPlayerScalingThreshold);
+            }
+            else
+            {
+                SetProperty(PropertyInt.NearbyPlayerScalingThreshold, value.Value);
+            }
+        }
+    }
+
+    public int? NearbyPlayerScalingExtraPlayersPerAdd
+    {
+        get => GetProperty(PropertyInt.NearbyPlayerScalingExtraPlayersPerAdd);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.NearbyPlayerScalingExtraPlayersPerAdd);
+            }
+            else
+            {
+                SetProperty(PropertyInt.NearbyPlayerScalingExtraPlayersPerAdd, value.Value);
+            }
+        }
+    }
+
+    public int? NearbyPlayerScalingAddWcid
+    {
+        get => GetProperty(PropertyInt.NearbyPlayerScalingAddWcid);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.NearbyPlayerScalingAddWcid);
+            }
+            else
+            {
+                SetProperty(PropertyInt.NearbyPlayerScalingAddWcid, value.Value);
+            }
+        }
+    }
 }

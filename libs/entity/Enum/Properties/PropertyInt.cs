@@ -818,6 +818,9 @@ public enum PropertyInt : ushort
     CombatFocusSkillSpellRemoved = 459,
     CombatFocusSkillSpellAdded = 460,
     StackableSpellType = 461,
+    NearbyPlayerScalingThreshold = 462,
+    NearbyPlayerScalingExtraPlayersPerAdd = 463,
+    NearbyPlayerScalingAddWcid = 464,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,

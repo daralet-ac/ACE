@@ -232,6 +232,9 @@ public enum PropertyFloat : ushort
     StaminaCostReductionMod = 191,
     RankContribution = 192,
     SworeAllegiance = 193,
+    NearbyPlayerVitalsScalingPerExtraPlayer = 194,
+    NearbyPlayerAttackScalingPerExtraPlayer = 195,
+    NearbyPlayerDefenseScalingPerExtraPlayer = 196,
 
     [ServerOnly]
     PCAPRecordedWorkmanship = 8004,
