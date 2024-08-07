@@ -106,16 +106,16 @@ partial class Creature
         }
 
         BaseHealth = Health.MaxValue;
-        BaseHeavyWeaponsSkill = GetCreatureSkill(Skill.HeavyWeapons).Current;
-        BaseDaggerSkill = GetCreatureSkill(Skill.Dagger).Current;
-        BaseStaffSkill = GetCreatureSkill(Skill.Staff).Current;
-        BaseUnarmedSkill = GetCreatureSkill(Skill.UnarmedCombat).Current;
-        BaseBowSkill = GetCreatureSkill(Skill.Bow).Current;
-        BaseThrownWeaponsSkill = GetCreatureSkill(Skill.ThrownWeapon).Current;
-        BaseWarMagicSkill = GetCreatureSkill(Skill.WarMagic).Current;
-        BaseLifeMagicSkill = GetCreatureSkill(Skill.LifeMagic).Current;
-        BasePhysicalDefenseSkill = GetCreatureSkill(Skill.MeleeDefense).Current;
-        BaseMagicDefenseSkill = GetCreatureSkill(Skill.MagicDefense).Current;
+        BaseHeavyWeaponsSkill = GetCreatureSkill(Skill.HeavyWeapons).Base;
+        BaseDaggerSkill = GetCreatureSkill(Skill.Dagger).Base;
+        BaseStaffSkill = GetCreatureSkill(Skill.Staff).Base;
+        BaseUnarmedSkill = GetCreatureSkill(Skill.UnarmedCombat).Base;
+        BaseBowSkill = GetCreatureSkill(Skill.Bow).Base;
+        BaseThrownWeaponsSkill = GetCreatureSkill(Skill.ThrownWeapon).Base;
+        BaseWarMagicSkill = GetCreatureSkill(Skill.WarMagic).Base;
+        BaseLifeMagicSkill = GetCreatureSkill(Skill.LifeMagic).Base;
+        BasePhysicalDefenseSkill = GetCreatureSkill(Skill.MeleeDefense).Base;
+        BaseMagicDefenseSkill = GetCreatureSkill(Skill.MagicDefense).Base;
 
         SkillsSet = true;
     }
