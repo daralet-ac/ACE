@@ -337,101 +337,11 @@ public class Landblock : IActor
         // get the encounter spawns for this landblock
         var encounters = DatabaseManager.World.GetCachedEncountersByLandblock(Id.Landblock, out var wasCached);
 
-        var generatedEncounterIdList = new List<uint>();
+        var generatedEncounterIdList = new List<uint>(); // used only when "increase_minimum_encounter_spawn_density" is enabled
 
         if (PropertyManager.GetBool("increase_minimum_encounter_spawn_density").Item && !wasCached)
         {
-            if (encounters.Count > 0)
-            {
-                // Landscape spawn density multiplier
-                // The maximum amount of encounters that will fit in a landblock is 64.
-                int newCount;
-                if (encounters.Count < 12)
-                {
-                    newCount = 12;
-                }
-                else
-                {
-                    newCount = encounters.Count;
-                }
-
-                if (newCount != encounters.Count)
-                {
-                    var encountersToDuplicate = new Dictionary<int, EncounterInfo>();
-                    var terrainTypeMap = new Dictionary<ushort, List<AvailableCell>>();
-
-                    foreach (var encounter in encounters)
-                    {
-                        var coords = encounter.CellX << 16 | encounter.CellY;
-                        encountersToDuplicate.Add(
-                            coords,
-                            new EncounterInfo(coords, encounter, getTerrainType(encounter.CellX, encounter.CellY))
-                        );
-                    }
-
-                    for (var cellX = 0; cellX < LandDefs.BlockSide; cellX++)
-                    {
-                        for (var cellY = 0; cellY < LandDefs.BlockSide; cellY++)
-                        {
-                            var coords = cellX << 16 | cellY;
-
-                            if (!encountersToDuplicate.ContainsKey(coords)) // Only add cells that do not yet contain encounters.
-                            {
-                                var terrainType = getTerrainType(cellX, cellY);
-
-                                if (terrainTypeMap.TryGetValue(terrainType, out var entry))
-                                {
-                                    entry.Add(new AvailableCell(cellX, cellY, terrainType));
-                                }
-                                else
-                                {
-                                    terrainTypeMap.Add(
-                                        terrainType,
-                                        new List<AvailableCell>() { new AvailableCell(cellX, cellY, terrainType) }
-                                    );
-                                }
-                            }
-                        }
-                    }
-
-                    while (encounters.Count < newCount && encountersToDuplicate.Count > 0)
-                    {
-                        var sourceEncounter = encountersToDuplicate
-                            .ElementAt(ThreadSafeRandom.Next(0, encountersToDuplicate.Count - 1))
-                            .Value;
-                        if (terrainTypeMap.TryGetValue(sourceEncounter.TerrainType, out var availableCells))
-                        {
-                            var newEncounterCell = availableCells[ThreadSafeRandom.Next(0, availableCells.Count - 1)];
-
-                            var newEncounter = new Encounter();
-                            newEncounter.WeenieClassId = sourceEncounter.Encounter.WeenieClassId;
-                            newEncounter.Landblock = sourceEncounter.Encounter.Landblock;
-                            newEncounter.LastModified = sourceEncounter.Encounter.LastModified;
-                            newEncounter.CellX = newEncounterCell.CellX;
-                            newEncounter.CellY = newEncounterCell.CellY;
-
-                            generatedEncounterIdList.Add(newEncounter.Id);
-                            encounters.Add(newEncounter);
-                            availableCells.Remove(newEncounterCell);
-                            if (availableCells.Count == 0)
-                            {
-                                terrainTypeMap.Remove(sourceEncounter.TerrainType);
-                                encountersToDuplicate = encountersToDuplicate
-                                    .Where(i => i.Value.TerrainType != sourceEncounter.TerrainType)
-                                    .ToDictionary(i => i.Key, i => i.Value);
-                            }
-                        }
-                        else
-                        {
-                            // This should never happen.
-                            terrainTypeMap.Remove(sourceEncounter.TerrainType);
-                            encountersToDuplicate = encountersToDuplicate
-                                .Where(i => i.Value.TerrainType != sourceEncounter.TerrainType)
-                                .ToDictionary(i => i.Key, i => i.Value);
-                        }
-                    }
-                }
-            }
+            IncreaseMinimumEncounterSpawnDensity(encounters, generatedEncounterIdList);
         }
 
         foreach (var encounter in encounters)
@@ -2435,4 +2345,101 @@ public class Landblock : IActor
             new Position(0x12FA030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f)
         },
     };
+
+    private void IncreaseMinimumEncounterSpawnDensity(List<Encounter> encounters, List<uint> generatedEncounterIdList)
+    {
+        if (encounters.Count > 0)
+        {
+            // Landscape spawn density multiplier
+            // The maximum amount of encounters that will fit in a landblock is 64.
+            int newCount;
+            var minmumSpawnDensity = PropertyManager.GetLong("landblock_minimum_spawn_density").Item;
+
+            if (encounters.Count < minmumSpawnDensity)
+            {
+                newCount = (int)minmumSpawnDensity;
+            }
+            else
+            {
+                newCount = encounters.Count;
+            }
+
+            if (newCount != encounters.Count)
+            {
+                var encountersToDuplicate = new Dictionary<int, EncounterInfo>();
+                var terrainTypeMap = new Dictionary<ushort, List<AvailableCell>>();
+
+                foreach (var encounter in encounters)
+                {
+                    var coords = encounter.CellX << 16 | encounter.CellY;
+                    encountersToDuplicate.Add(
+                        coords,
+                        new EncounterInfo(coords, encounter, getTerrainType(encounter.CellX, encounter.CellY))
+                    );
+                }
+
+                for (var cellX = 0; cellX < LandDefs.BlockSide; cellX++)
+                {
+                    for (var cellY = 0; cellY < LandDefs.BlockSide; cellY++)
+                    {
+                        var coords = cellX << 16 | cellY;
+
+                        if (!encountersToDuplicate.ContainsKey(coords)) // Only add cells that do not yet contain encounters.
+                        {
+                            var terrainType = getTerrainType(cellX, cellY);
+
+                            if (terrainTypeMap.TryGetValue(terrainType, out var entry))
+                            {
+                                entry.Add(new AvailableCell(cellX, cellY, terrainType));
+                            }
+                            else
+                            {
+                                terrainTypeMap.Add(
+                                    terrainType,
+                                    new List<AvailableCell>() { new AvailableCell(cellX, cellY, terrainType) }
+                                );
+                            }
+                        }
+                    }
+                }
+
+                while (encounters.Count < newCount && encountersToDuplicate.Count > 0)
+                {
+                    var sourceEncounter = encountersToDuplicate
+                        .ElementAt(ThreadSafeRandom.Next(0, encountersToDuplicate.Count - 1))
+                        .Value;
+                    if (terrainTypeMap.TryGetValue(sourceEncounter.TerrainType, out var availableCells))
+                    {
+                        var newEncounterCell = availableCells[ThreadSafeRandom.Next(0, availableCells.Count - 1)];
+
+                        var newEncounter = new Encounter();
+                        newEncounter.WeenieClassId = sourceEncounter.Encounter.WeenieClassId;
+                        newEncounter.Landblock = sourceEncounter.Encounter.Landblock;
+                        newEncounter.LastModified = sourceEncounter.Encounter.LastModified;
+                        newEncounter.CellX = newEncounterCell.CellX;
+                        newEncounter.CellY = newEncounterCell.CellY;
+
+                        generatedEncounterIdList.Add(newEncounter.Id);
+                        encounters.Add(newEncounter);
+                        availableCells.Remove(newEncounterCell);
+                        if (availableCells.Count == 0)
+                        {
+                            terrainTypeMap.Remove(sourceEncounter.TerrainType);
+                            encountersToDuplicate = encountersToDuplicate
+                                .Where(i => i.Value.TerrainType != sourceEncounter.TerrainType)
+                                .ToDictionary(i => i.Key, i => i.Value);
+                        }
+                    }
+                    else
+                    {
+                        // This should never happen.
+                        terrainTypeMap.Remove(sourceEncounter.TerrainType);
+                        encountersToDuplicate = encountersToDuplicate
+                            .Where(i => i.Value.TerrainType != sourceEncounter.TerrainType)
+                            .ToDictionary(i => i.Key, i => i.Value);
+                    }
+                }
+            }
+        }
+    }
 }
