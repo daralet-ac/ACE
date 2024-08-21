@@ -228,6 +228,7 @@ public enum PropertyBool : ushort
     StruckByUnshrouded = 148,
     MenhirManaHotspot = 149,
     UseNearbyPlayerScaling = 150,
+    IsBankContainer = 151,
 
     /* custom */
     [ServerOnly]

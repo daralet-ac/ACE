@@ -1187,7 +1187,7 @@ public static class DefaultPropertyManager
             "debug_level_scaling_system",
             new Property<bool>(false, "enable this to see level scaling system console logging")
         ),
-        ("debug_banking_system", new Property<bool>(false, "enable this to see banking system console logging"))
+        ("banking_system_logging", new Property<bool>(true, "enable this to see banking system console logging"))
     );
 
     public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties = DictOf(

@@ -1,12 +1,11 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Database;
 using ACE.Entity;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity.Actions;
-using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
@@ -39,6 +38,8 @@ public class Storage : Container
 
     private void SetEphemeralValues()
     {
+        SetProperty(PropertyInt.ShowableOnRadar, 1);
+
         IsLocked = false;
 
         IsOpen = false;
@@ -48,17 +49,12 @@ public class Storage : Container
         BankChests.Add(this);
     }
 
-    public static List<Storage> BankChests = new List<Storage> { };
+    public static readonly List<Storage> BankChests = [];
 
-    public static Player BankUser;
+    private static Player BankUser;
 
     public override void Open(Player player)
     {
-        if (PropertyManager.GetBool("debug_banking_system").Item)
-        {
-            Console.WriteLine($"\n\nSTORAGE.Open(Player {player.Name})");
-        }
-
         player.LastOpenedContainerId = Guid;
 
         IsOpen = true;
@@ -84,20 +80,12 @@ public class Storage : Container
             Guid.Full,
             player.Account.AccountId,
             true,
-            biotas =>
-            {
-                EnqueueAction(new ActionEventDelegate(() => SortBiotasIntoBank(biotas)));
-            }
+            biotas => { EnqueueAction(new ActionEventDelegate(() => SortBiotasIntoBank(biotas))); }
         );
     }
 
-    protected void SortBiotasIntoBank(IEnumerable<ACE.Database.Models.Shard.Biota> biotas)
+    private void SortBiotasIntoBank(IEnumerable<ACE.Database.Models.Shard.Biota> biotas)
     {
-        if (PropertyManager.GetBool("debug_banking_system").Item)
-        {
-            Console.WriteLine($"STORAGE.SortBiotasIntoBank(IEnumerable<ACE.Database.Models.Shard.Biota> {biotas})");
-        }
-
         var worldObjects = new List<WorldObject>();
 
         foreach (var biota in biotas)
@@ -126,11 +114,6 @@ public class Storage : Container
 
     private void SortWorldObjectsIntoBank(IList<WorldObject> worldObjects)
     {
-        if (PropertyManager.GetBool("debug_banking_system").Item)
-        {
-            Console.WriteLine($"STORAGE.SortWorldObjectsIntoBank(IList<WorldObject> {worldObjects.Count})");
-        }
-
         for (var i = worldObjects.Count - 1; i >= 0; i--)
         {
             if ((worldObjects[i].ContainerId ?? 0) == Biota.Id)
@@ -179,11 +162,6 @@ public class Storage : Container
 
     private void SendBankVaultInventory(Player player)
     {
-        if (PropertyManager.GetBool("debug_banking_system").Item)
-        {
-            Console.WriteLine($"STORAGE.SendBankVaultInventory(Player {player})");
-        }
-
         // send createobject for all objects in this container's inventory to player
         var itemsToSend = new List<GameMessage>();
 
@@ -213,11 +191,6 @@ public class Storage : Container
 
     public override void Close(Player player)
     {
-        if (PropertyManager.GetBool("debug_banking_system").Item)
-        {
-            Console.WriteLine($"\n\nSTORAGE.Close(Player {player})");
-        }
-
         if (!IsOpen)
         {
             return;
@@ -246,11 +219,6 @@ public class Storage : Container
     /// </summary>
     protected override void OnAddItem()
     {
-        if (PropertyManager.GetBool("debug_banking_system").Item)
-        {
-            Console.WriteLine($"STORAGE.OnAddItem()");
-        }
-
         if (Inventory.Count > 0)
         {
             SaveBiotaToDatabase();
@@ -262,11 +230,6 @@ public class Storage : Container
     /// </summary>
     protected override void OnRemoveItem(WorldObject removedItem)
     {
-        if (PropertyManager.GetBool("debug_banking_system").Item)
-        {
-            Console.WriteLine($"STORAGE.OnRemoveItem(WorldObject {removedItem})");
-        }
-
         SaveBiotaToDatabase();
     }
 }

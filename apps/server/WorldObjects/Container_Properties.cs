@@ -67,4 +67,20 @@ partial class Container
             }
         }
     }
+
+    public bool IsBankSideContainer
+    {
+        get => GetProperty(PropertyBool.IsBankContainer) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.IsBankContainer);
+            }
+            else
+            {
+                SetProperty(PropertyBool.IsBankContainer, value);
+            }
+        }
+    }
 }
