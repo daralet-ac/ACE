@@ -1,4 +1,4 @@
-using System.Buffers;
+using System;
 using System.IO;
 using ACE.Common.Cryptography;
 
@@ -9,6 +9,7 @@ public class ClientPacketFragment : PacketFragment
     public bool Unpack(BinaryReader payload)
     {
         Header.Unpack(payload);
+
         if (Header.Size - PacketFragmentHeader.HeaderSize < 0)
         {
             return false;
@@ -25,19 +26,12 @@ public class ClientPacketFragment : PacketFragment
 
     public uint CalculateHash32()
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(PacketFragmentHeader.HeaderSize);
+        Span<byte> buffer = stackalloc byte[PacketFragmentHeader.HeaderSize];
 
-        try
-        {
-            Header.Pack(buffer);
+        Header.Pack(buffer);
 
-            var fragmentChecksum = Hash32.Calculate(buffer, buffer.Length) + Hash32.Calculate(Data, Data.Length);
+        var fragmentChecksum = Hash32.Calculate(buffer, buffer.Length) + Hash32.Calculate(Data, Data.Length);
 
-            return fragmentChecksum;
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
+        return fragmentChecksum;
     }
 }

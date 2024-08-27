@@ -17,7 +17,13 @@ public partial class Player
     /// <param name="sourceContainer">The container the item was moved from.</param>
     /// <param name="targetContainerRootOwner">The root owner container of the container the item moved to. (Player or bank-main container)</param>
     /// <param name="sourceContainerRootOwner">The root owner container of the container the item moved from. (Player or bank-main container)</param>
-    private void CheckForBankMoveItem(WorldObject item, Container targetContainer, Container sourceContainer, Container targetContainerRootOwner, Container sourceContainerRootOwner)
+    private void CheckForBankMoveItem(
+        WorldObject item,
+        Container targetContainer,
+        Container sourceContainer,
+        Container targetContainerRootOwner,
+        Container sourceContainerRootOwner
+    )
     {
         // If targetContainerRootOwner is null, it is likely a bank-main container
         // Set targetContainerRootOwner to the targetContainer (bank-main container)
@@ -27,8 +33,10 @@ public partial class Player
         // Set sourceContainer to the sourceContainerRootOwner (Player container)
         sourceContainer ??= sourceContainerRootOwner;
 
-        if (targetContainerRootOwner is not { WeenieType: WeenieType.Storage }
-            && sourceContainerRootOwner is not { WeenieType: WeenieType.Storage })
+        if (
+            targetContainerRootOwner is not { WeenieType: WeenieType.Storage }
+            && sourceContainerRootOwner is not { WeenieType: WeenieType.Storage }
+        )
         {
             return;
         }
@@ -39,8 +47,10 @@ public partial class Player
         var bankLogTargetContainer = new BankLogContainer(targetContainer.Name, targetContainer.Guid.Full);
 
         // Move an item INTO a BANK-MAIN container. Set a BankAccountId on the item. DeepSave bank.
-        if (targetContainer is { WeenieType: WeenieType.Storage }
-            && sourceContainer is not { WeenieType: WeenieType.Storage })
+        if (
+            targetContainer is { WeenieType: WeenieType.Storage }
+            && sourceContainer is not { WeenieType: WeenieType.Storage }
+        )
         {
             if (item is Container itemAsContainer)
             {
@@ -60,21 +70,32 @@ public partial class Player
                 {
                     bankLogTargetContainer.BankPack = true;
                     bankLogSourceContainer.BankPack = true;
-                    _log.Information("(BANKING - MOVE from BANK-SIDE to BANK-MAIN)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
-                        bankLogPlayer, bankLogItem, bankLogSourceContainer, bankLogTargetContainer);
+                    _log.Information(
+                        "(BANKING - MOVE from BANK-SIDE to BANK-MAIN)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
+                        bankLogPlayer,
+                        bankLogItem,
+                        bankLogSourceContainer,
+                        bankLogTargetContainer
+                    );
                 }
                 else
                 {
                     bankLogTargetContainer.BankPack = true;
-                    _log.Information("(BANKING - MOVE from PLAYER to BANK-MAIN)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
-                        bankLogPlayer, bankLogItem, bankLogSourceContainer, bankLogTargetContainer);
+                    _log.Information(
+                        "(BANKING - MOVE from PLAYER to BANK-MAIN)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
+                        bankLogPlayer,
+                        bankLogItem,
+                        bankLogSourceContainer,
+                        bankLogTargetContainer
+                    );
                 }
             }
         }
-
         // Move an item WITHIN a BANK-MAIN container.
-        else if (targetContainer is { WeenieType: WeenieType.Storage }
-            && sourceContainer is { WeenieType: WeenieType.Storage })
+        else if (
+            targetContainer is { WeenieType: WeenieType.Storage }
+            && sourceContainer is { WeenieType: WeenieType.Storage }
+        )
         {
             foreach (var wo in targetContainer.Inventory.Values)
             {
@@ -87,13 +108,18 @@ public partial class Player
                 bankLogSourceContainer.BankPack = true;
                 _log.Information(
                     "(BANKING - MOVE within BANK-MAIN)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
-                    bankLogPlayer, bankLogItem, bankLogSourceContainer, bankLogTargetContainer);
+                    bankLogPlayer,
+                    bankLogItem,
+                    bankLogSourceContainer,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // Move an item OUT of a BANK-MAIN container. Remove the BankAccountId on the item.
-        else if (targetContainer is not { WeenieType: WeenieType.Storage }
-                 && sourceContainer is { WeenieType: WeenieType.Storage })
+        else if (
+            targetContainer is not { WeenieType: WeenieType.Storage }
+            && sourceContainer is { WeenieType: WeenieType.Storage }
+        )
         {
             if (item is Container itemContainer)
             {
@@ -113,40 +139,59 @@ public partial class Player
                 {
                     bankLogTargetContainer.BankPack = true;
                     bankLogSourceContainer.BankPack = true;
-                    _log.Information("(BANKING - MOVE from BANK-MAIN to BANK-SIDE)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
-                        bankLogPlayer, bankLogItem, bankLogSourceContainer, bankLogTargetContainer);
+                    _log.Information(
+                        "(BANKING - MOVE from BANK-MAIN to BANK-SIDE)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
+                        bankLogPlayer,
+                        bankLogItem,
+                        bankLogSourceContainer,
+                        bankLogTargetContainer
+                    );
                 }
                 else
                 {
                     bankLogSourceContainer.BankPack = true;
-                    _log.Information("(BANKING - MOVE from BANK-MAIN to PLAYER)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
-                        bankLogPlayer, bankLogItem, bankLogSourceContainer, bankLogTargetContainer);
+                    _log.Information(
+                        "(BANKING - MOVE from BANK-MAIN to PLAYER)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
+                        bankLogPlayer,
+                        bankLogItem,
+                        bankLogSourceContainer,
+                        bankLogTargetContainer
+                    );
                 }
             }
         }
-
         // Logging Only - From PLAYER to BANK-SIDE
-        else if (targetContainer.IsBankSideContainer && sourceContainerRootOwner is not {WeenieType: WeenieType.Storage})
+        else if (
+            targetContainer.IsBankSideContainer && sourceContainerRootOwner is not { WeenieType: WeenieType.Storage }
+        )
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogTargetContainer.BankPack = true;
-                _log.Information("(BANKING - MOVE from PLAYER to BANK-SIDE)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
-                    bankLogPlayer, bankLogItem, bankLogSourceContainer, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MOVE from PLAYER to BANK-SIDE)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
+                    bankLogPlayer,
+                    bankLogItem,
+                    bankLogSourceContainer,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // Logging Only - From BANK-SIDE to PLAYER
         else if (!targetContainer.IsBankSideContainer && sourceContainer.IsBankSideContainer)
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - MOVE from BANK-SIDE to PLAYER)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
-                    bankLogPlayer, bankLogItem, bankLogSourceContainer, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MOVE from BANK-SIDE to PLAYER)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
+                    bankLogPlayer,
+                    bankLogItem,
+                    bankLogSourceContainer,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // Logging Only - From BANK-SIDE to BANK-SIDE
         else if (targetContainer.IsBankSideContainer && sourceContainer.IsBankSideContainer)
         {
@@ -154,8 +199,13 @@ public partial class Player
             {
                 bankLogTargetContainer.BankPack = true;
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - MOVE from BANK-SIDE to BANK-SIDE)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
-                    bankLogPlayer, bankLogItem, bankLogSourceContainer, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MOVE from BANK-SIDE to BANK-SIDE)\n PLAYER: {@Player}\n MOVED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}\n TO CONTAINER: {@TargetContainer}",
+                    bankLogPlayer,
+                    bankLogItem,
+                    bankLogSourceContainer,
+                    bankLogTargetContainer
+                );
             }
         }
     }
@@ -196,17 +246,22 @@ public partial class Player
                 bankLogSourceContainer.BankPack = true;
                 _log.Information(
                     "(BANKING - EQUIP from BANK-SIDE)\n PLAYER: {@Player}\n EQUIPPED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}",
-                    bankLogPlayer, bankLogItem, bankLogSourceContainer);
+                    bankLogPlayer,
+                    bankLogItem,
+                    bankLogSourceContainer
+                );
             }
             else
             {
                 bankLogSourceContainer.BankPack = true;
                 _log.Information(
                     "(BANKING - EQUIP from BANK-MAIN)\n PLAYER: {@Player}\n EQUIPPED ITEM: {@Item}\n FROM CONTAINER: {@SourceContainer}",
-                    bankLogPlayer, bankLogItem, bankLogSourceContainer);
+                    bankLogPlayer,
+                    bankLogItem,
+                    bankLogSourceContainer
+                );
             }
         }
-
     }
 
     /// <summary>
@@ -220,7 +275,14 @@ public partial class Player
     /// <param name="sourceContainer">The container the source stack is in.</param>
     /// <param name="targetContainerRootOwner">The root owner container of the container the new stack moved to. (Player or bank-main container)</param>
     /// <param name="sourceContainerRootOwner">The root owner container of the container the source stack is in. (Player or bank-main container)</param>
-    private void CheckForBankSplitStack(WorldObject sourceStack, WorldObject newStack, Container targetContainer, Container sourceContainer, Container targetContainerRootOwner, Container sourceContainerRootOwner)
+    private void CheckForBankSplitStack(
+        WorldObject sourceStack,
+        WorldObject newStack,
+        Container targetContainer,
+        Container sourceContainer,
+        Container targetContainerRootOwner,
+        Container sourceContainerRootOwner
+    )
     {
         // If targetContainerRootOwner is null, it is likely a bank-main container
         // Set targetContainerRootOwner to the targetContainer (bank-main container)
@@ -230,21 +292,35 @@ public partial class Player
         // Set sourceContainer to the sourceContainerRootOwner (Player container)
         sourceContainer ??= sourceContainerRootOwner;
 
-        if (targetContainerRootOwner is not { WeenieType: WeenieType.Storage }
-            && sourceContainerRootOwner is not { WeenieType: WeenieType.Storage })
+        if (
+            targetContainerRootOwner is not { WeenieType: WeenieType.Storage }
+            && sourceContainerRootOwner is not { WeenieType: WeenieType.Storage }
+        )
         {
             return;
         }
 
         var bankLogPlayer = new BankLogPlayer(Name, Account.AccountId);
-        var bankLogSourceStack = new BankLogItem(sourceStack.Name, sourceStack.Guid.Full, sourceStack.StackSize, sourceStack.PlacementPosition);
-        var bankLogNewStack = new BankLogItem(newStack.Name, newStack.Guid.Full, newStack.StackSize, newStack.PlacementPosition);
+        var bankLogSourceStack = new BankLogItem(
+            sourceStack.Name,
+            sourceStack.Guid.Full,
+            sourceStack.StackSize,
+            sourceStack.PlacementPosition
+        );
+        var bankLogNewStack = new BankLogItem(
+            newStack.Name,
+            newStack.Guid.Full,
+            newStack.StackSize,
+            newStack.PlacementPosition
+        );
         var bankLogSourceContainer = new BankLogContainer(sourceContainer.Name, sourceContainer.Guid.Full);
         var bankLogTargetContainer = new BankLogContainer(targetContainer.Name, targetContainer.Guid.Full);
 
         // SPLIT a stack INTO BANK-MAIN. Set a BankAccountId on the new stack.
-        if (targetContainer is { WeenieType: WeenieType.Storage }
-            && sourceContainer is not {WeenieType: WeenieType.Storage})
+        if (
+            targetContainer is { WeenieType: WeenieType.Storage }
+            && sourceContainer is not { WeenieType: WeenieType.Storage }
+        )
         {
             newStack.BankAccountId = Account.AccountId;
 
@@ -261,21 +337,32 @@ public partial class Player
                     bankLogSourceContainer.BankPack = true;
                     _log.Information(
                         "(BANKING - SPLIT from BANK-SIDE to BANK-MAIN)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
-                        bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogNewStack, bankLogTargetContainer);
+                        bankLogPlayer,
+                        bankLogSourceStack,
+                        bankLogSourceContainer,
+                        bankLogNewStack,
+                        bankLogTargetContainer
+                    );
                 }
                 else
                 {
                     bankLogTargetContainer.BankPack = true;
                     _log.Information(
                         "(BANKING - SPLIT from PLAYER from BANK-MAIN)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
-                        bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogNewStack, bankLogTargetContainer);
+                        bankLogPlayer,
+                        bankLogSourceStack,
+                        bankLogSourceContainer,
+                        bankLogNewStack,
+                        bankLogTargetContainer
+                    );
                 }
             }
         }
-
         // Split a stack OUT of BANK-MAIN. Unset the BankAccountId on the new stack.
-        else if (sourceContainer is { WeenieType: WeenieType.Storage }
-                 && targetContainer is not {WeenieType: WeenieType.Storage})
+        else if (
+            sourceContainer is { WeenieType: WeenieType.Storage }
+            && targetContainer is not { WeenieType: WeenieType.Storage }
+        )
         {
             newStack.BankAccountId = 0;
 
@@ -292,21 +379,32 @@ public partial class Player
                     bankLogSourceContainer.BankPack = true;
                     _log.Information(
                         "(BANKING - SPLIT from BANK-MAIN to BANK-SIDE )\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
-                        bankLogPlayer, bankLogSourceStack, bankLogNewStack, bankLogSourceContainer, bankLogTargetContainer);
+                        bankLogPlayer,
+                        bankLogSourceStack,
+                        bankLogNewStack,
+                        bankLogSourceContainer,
+                        bankLogTargetContainer
+                    );
                 }
                 else
                 {
                     bankLogSourceContainer.BankPack = true;
                     _log.Information(
                         "(BANKING - SPLIT from BANK-MAIN to PLAYER )\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
-                        bankLogPlayer, bankLogSourceStack, bankLogNewStack, bankLogSourceContainer, bankLogTargetContainer);
+                        bankLogPlayer,
+                        bankLogSourceStack,
+                        bankLogNewStack,
+                        bankLogSourceContainer,
+                        bankLogTargetContainer
+                    );
                 }
             }
         }
-
         // Split a stack WITHIN BANK-MAIN. Set a BankAccountId on the new stack.
-        else if (targetContainer is { WeenieType: WeenieType.Storage }
-                 && sourceContainer is { WeenieType: WeenieType.Storage })
+        else if (
+            targetContainer is { WeenieType: WeenieType.Storage }
+            && sourceContainer is { WeenieType: WeenieType.Storage }
+        )
         {
             newStack.BankAccountId = Account.AccountId;
 
@@ -321,41 +419,61 @@ public partial class Player
                 bankLogSourceContainer.BankPack = true;
                 _log.Information(
                     "(BANKING - SPLIT within BANK-MAIN)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
-                    bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogNewStack, bankLogTargetContainer);
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogSourceContainer,
+                    bankLogNewStack,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // Logging Only - Split a stack OUT of PLAYER to BANK-SIDE
-        else if (targetContainer.IsBankSideContainer
-                 && !sourceContainer.IsBankSideContainer)
+        else if (targetContainer.IsBankSideContainer && !sourceContainer.IsBankSideContainer)
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogTargetContainer.BankPack = true;
-                _log.Information("(BANKING - Split from PLAYER to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogNewStack, bankLogSourceContainer, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - Split from PLAYER to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogNewStack,
+                    bankLogSourceContainer,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // Logging Only - Split a stack OUT of BANK-SIDE to PLAYER
-        else if (!targetContainer.IsBankSideContainer
-                 && sourceContainer.IsBankSideContainer)
+        else if (!targetContainer.IsBankSideContainer && sourceContainer.IsBankSideContainer)
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - Split from BANK-SIDE to PLAYER)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogNewStack, bankLogSourceContainer, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - Split from BANK-SIDE to PLAYER)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogNewStack,
+                    bankLogSourceContainer,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // Logging Only - Split a stack OUT of BANK-SIDE to BANK-SIDE
-        else if (targetContainer.IsBankSideContainer
-                 && sourceContainer.IsBankSideContainer)
+        else if (targetContainer.IsBankSideContainer && sourceContainer.IsBankSideContainer)
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogTargetContainer.BankPack = true;
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - Split from BANK-SIDE to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogNewStack, bankLogSourceContainer, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - Split from BANK-SIDE to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogNewStack,
+                    bankLogSourceContainer,
+                    bankLogTargetContainer
+                );
             }
         }
     }
@@ -377,7 +495,8 @@ public partial class Player
         Container sourceContainer,
         Container targetContainer,
         Container sourceStackRootOwner,
-        Container targetStackRootOwner)
+        Container targetStackRootOwner
+    )
     {
         // If targetStackRootOwner is null, it is likely a bank-main container
         // Set targetStackRootOwner to the targetContainer (bank-main container)
@@ -388,13 +507,25 @@ public partial class Player
         sourceContainer ??= sourceStackRootOwner;
 
         var bankLogPlayer = new BankLogPlayer(Name, Account.AccountId);
-        var bankLogSourceStack = new BankLogItem(sourceStack.Name, sourceStack.Guid.Full, sourceStack.StackSize, sourceStack.PlacementPosition);
-        var bankLogTargetStack = new BankLogItem(targetStack.Name, targetStack.Guid.Full, targetStack.StackSize, targetStack.PlacementPosition);
+        var bankLogSourceStack = new BankLogItem(
+            sourceStack.Name,
+            sourceStack.Guid.Full,
+            sourceStack.StackSize,
+            sourceStack.PlacementPosition
+        );
+        var bankLogTargetStack = new BankLogItem(
+            targetStack.Name,
+            targetStack.Guid.Full,
+            targetStack.StackSize,
+            targetStack.PlacementPosition
+        );
         var bankLogSourceContainer = new BankLogContainer(sourceContainer.Name, sourceContainer.Guid.Full);
         var bankLogTargetContainer = new BankLogContainer(targetContainer.Name, targetContainer.Guid.Full);
 
-        if (targetStackRootOwner is not { WeenieType: WeenieType.Storage }
-            && sourceStackRootOwner is not { WeenieType: WeenieType.Storage })
+        if (
+            targetStackRootOwner is not { WeenieType: WeenieType.Storage }
+            && sourceStackRootOwner is not { WeenieType: WeenieType.Storage }
+        )
         {
             return;
         }
@@ -413,7 +544,14 @@ public partial class Player
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogTargetContainer.BankPack = true;
-                _log.Information("(BANKING - MERGE from PLAYER to BANK-MAIN)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogTargetStack, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MERGE from PLAYER to BANK-MAIN)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogSourceContainer,
+                    bankLogTargetStack,
+                    bankLogTargetContainer
+                );
             }
         }
 
@@ -431,7 +569,14 @@ public partial class Player
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - MERGE from BANK-MAIN to PLAYER)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogTargetStack, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MERGE from BANK-MAIN to PLAYER)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogSourceContainer,
+                    bankLogTargetStack,
+                    bankLogTargetContainer
+                );
             }
         }
 
@@ -450,15 +595,18 @@ public partial class Player
             {
                 bankLogTargetContainer.BankPack = true;
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - MERGE from BANK-MAIN to BANK-MAIN)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogTargetStack, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MERGE from BANK-MAIN to BANK-MAIN)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogSourceContainer,
+                    bankLogTargetStack,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // MERGE stack from BANK-MAIN to BANK-SIDE
-        else if (
-            sourceContainer is { WeenieType: WeenieType.Storage }
-            && targetContainer.IsBankSideContainer
-        )
+        else if (sourceContainer is { WeenieType: WeenieType.Storage } && targetContainer.IsBankSideContainer)
         {
             foreach (var wo in sourceContainer.Inventory.Values)
             {
@@ -469,15 +617,18 @@ public partial class Player
             {
                 bankLogTargetContainer.BankPack = true;
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - MERGE BANK-MAIN to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogTargetStack, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MERGE BANK-MAIN to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogSourceContainer,
+                    bankLogTargetStack,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // MERGE stack from BANK-SIDE to BANK-MAIN
-        else if (
-            sourceContainer.IsBankSideContainer
-            && targetContainer is { WeenieType: WeenieType.Storage }
-        )
+        else if (sourceContainer.IsBankSideContainer && targetContainer is { WeenieType: WeenieType.Storage })
         {
             foreach (var wo in targetContainer.Inventory.Values)
             {
@@ -488,47 +639,63 @@ public partial class Player
             {
                 bankLogTargetContainer.BankPack = true;
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - MERGE BANK-SIDE to BANK-MAIN)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogTargetStack, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MERGE BANK-SIDE to BANK-MAIN)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogSourceContainer,
+                    bankLogTargetStack,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // Logging Only - MERGE stack from PLAYER to BANK-SIDE
-        else if (
-            sourceStackRootOwner is not {WeenieType: WeenieType.Storage}
-            && targetContainer.IsBankSideContainer
-        )
+        else if (sourceStackRootOwner is not { WeenieType: WeenieType.Storage } && targetContainer.IsBankSideContainer)
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogTargetContainer.BankPack = true;
-                _log.Information("(BANKING - MERGE PLAYER to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogTargetStack, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MERGE PLAYER to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogSourceContainer,
+                    bankLogTargetStack,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // Logging Only - MERGE stack from BANK-SIDE to PLAYER
-        else if (
-            sourceContainer.IsBankSideContainer
-            && targetStackRootOwner is not {WeenieType: WeenieType.Storage}
-        )
+        else if (sourceContainer.IsBankSideContainer && targetStackRootOwner is not { WeenieType: WeenieType.Storage })
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - MERGE BANK-SIDE to PLAYER)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogTargetStack, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MERGE BANK-SIDE to PLAYER)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogSourceContainer,
+                    bankLogTargetStack,
+                    bankLogTargetContainer
+                );
             }
         }
-
         // Logging Only - MERGE stack from BANK-SIDE to BANK-SIDE
-        else if (
-            sourceContainer.IsBankSideContainer
-            && targetContainer.IsBankSideContainer
-        )
+        else if (sourceContainer.IsBankSideContainer && targetContainer.IsBankSideContainer)
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
                 bankLogTargetContainer.BankPack = true;
                 bankLogSourceContainer.BankPack = true;
-                _log.Information("(BANKING - MERGE BANK-SIDE to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}", bankLogPlayer, bankLogSourceStack, bankLogSourceContainer, bankLogTargetStack, bankLogTargetContainer);
+                _log.Information(
+                    "(BANKING - MERGE BANK-SIDE to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO MERGE WITH ANOTHER STACK: {@NewStack}\n IN CONTAINER {@NewContainer}",
+                    bankLogPlayer,
+                    bankLogSourceStack,
+                    bankLogSourceContainer,
+                    bankLogTargetStack,
+                    bankLogTargetContainer
+                );
             }
         }
     }

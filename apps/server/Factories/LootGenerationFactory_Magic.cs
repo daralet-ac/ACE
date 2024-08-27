@@ -875,8 +875,6 @@ public static partial class LootGenerationFactory
     {
         var maxSpellPower = GetMaxSpellPower(wo);
 
-        (float min, float max) range = (1.0f, 1.0f);
-
         if (
             !roll.IsClothing
             && !roll.IsArmor

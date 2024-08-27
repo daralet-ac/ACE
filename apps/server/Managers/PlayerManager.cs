@@ -430,7 +430,7 @@ public static class PlayerManager
 
         AllegianceManager.LoadPlayer(player);
 
-        player.SendFriendStatusUpdates();
+        player.SendFriendStatusUpdates(false, !player.GetAppearOffline());
 
         return true;
     }
@@ -468,8 +468,7 @@ public static class PlayerManager
             playersLock.ExitWriteLock();
         }
 
-        player.SendFriendStatusUpdates(false);
-        player.HandleAllegianceOnLogout();
+        player.SendFriendStatusUpdates(!player.GetAppearOffline(), false);
 
         return true;
     }

@@ -11,7 +11,7 @@ public class DatDatabase
 {
     private readonly ILogger _log = Log.ForContext<DatDatabase>();
 
-    private static readonly uint DAT_HEADER_OFFSET = 0x140;
+    private const uint DAT_HEADER_OFFSET = 0x140;
 
     public string FilePath { get; }
 

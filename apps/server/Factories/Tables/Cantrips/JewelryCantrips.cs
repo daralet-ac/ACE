@@ -62,7 +62,7 @@ public static class JewelryCantrips
         SpellId.CANTRIPPIERCINGWARD1,
     };
 
-    private static readonly int NumLevels = 4;
+    private const int NumLevels = 4;
 
     // original api
     public static readonly SpellId[][] Table = new SpellId[spells.Count][];

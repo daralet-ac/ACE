@@ -217,7 +217,7 @@ public class Pet : Creature
         }
     }
 
-    private static readonly double slowTickSeconds = 1.0;
+    private const double slowTickSeconds = 1.0;
     private double nextSlowTickTime;
 
     /// <summary>
@@ -254,8 +254,8 @@ public class Pet : Creature
     // if the passive pet is between min-max distance to owner,
     // it will turn and start running torwards its owner
 
-    private static readonly float MinDistance = 2.0f;
-    private static readonly float MaxDistance = 192.0f;
+    private const float MinDistance = 2.0f;
+    private const float MaxDistance = 192.0f;
 
     private void StartFollow()
     {

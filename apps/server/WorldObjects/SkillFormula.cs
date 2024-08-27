@@ -5,18 +5,18 @@ namespace ACE.Server.WorldObjects;
 public class SkillFormula
 {
     // everything else: melee weapons (including finesse), thrown weapons, atlatls
-    public static readonly float DefaultMod = 0.011f;
+    public const float DefaultMod = 0.011f;
 
     // bows and crossbows
-    public static readonly float BowMod = 0.011f;
+    public const float BowMod = 0.011f;
 
     // magic
-    public static readonly float SpellMod = 1000.0f;
+    public const float SpellMod = 1000.0f;
 
     // defenses
-    public static readonly float ArmorMod = 100.0f;
-    public static readonly float ShieldMod = 2000.0f;
-    public static readonly float WardMod = 100.0f;
+    public const float ArmorMod = 100.0f;
+    public const float ShieldMod = 2000.0f;
+    public const float WardMod = 100.0f;
 
     public static float GetAttributeMod(int currentAttribute, ACE.Entity.Enum.Skill skill = ACE.Entity.Enum.Skill.None)
     {

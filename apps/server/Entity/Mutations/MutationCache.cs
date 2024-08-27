@@ -647,7 +647,7 @@ public static class MutationCache
         return null;
     }
 
-    private static readonly string prefix = "ACE.Server.Entity.Mutations.";
+    private const string prefix = "ACE.Server.Entity.Mutations.";
 
     private static List<string> ReadScript(string filename)
     {

@@ -308,8 +308,9 @@ partial class Player
     /// </summary>
     public void SetAppearOffline(bool appearOffline)
     {
+        var previousAppearOffline = GetAppearOffline();
         SetCharacterOption(CharacterOption.AppearOffline, appearOffline);
-        SendFriendStatusUpdates();
+        SendFriendStatusUpdates(!previousAppearOffline, !GetAppearOffline());
     }
 
     // =====================================

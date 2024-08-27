@@ -767,7 +767,7 @@ partial class Player
     /// <summary>
     /// The maximum # of items a player can drop
     /// </summary>
-    public static readonly int MaxItemsDropped = 14;
+    public const int MaxItemsDropped = 14;
 
     /// <summary>
     /// Rolls for the # of items to drop for a player death

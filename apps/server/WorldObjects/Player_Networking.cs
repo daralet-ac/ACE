@@ -344,34 +344,20 @@ partial class Player
     /// <summary>
     /// Will send out GameEventFriendsListUpdate packets to everyone online that has this player as a friend.
     /// </summary>
-    public void SendFriendStatusUpdates()
+    public void SendFriendStatusUpdates(bool previouslyOnline, bool isOnline)
     {
-        var inverseFriends = PlayerManager.GetOnlineInverseFriends(Guid);
+        var appearOffline = GetAppearOffline();
+        var previouslyOnlineAndIsNowOffline = previouslyOnline && !isOnline;
+        var previouslyOfflineAndIsNowOnline = !previouslyOnline && isOnline;
+        var previouslyOfflineAndAppearOffline = !previouslyOnline && appearOffline;
 
-        foreach (var friend in inverseFriends)
+        if ((!previouslyOfflineAndIsNowOnline || previouslyOfflineAndAppearOffline) && !previouslyOnlineAndIsNowOffline)
         {
-            var playerFriend = new CharacterPropertiesFriendList
-            {
-                CharacterId = friend.Guid.Full,
-                FriendId = Guid.Full
-            };
-            friend.Session.Network.EnqueueSend(
-                new GameEventFriendsListUpdate(
-                    friend.Session,
-                    GameEventFriendsListUpdate.FriendsUpdateTypeFlag.FriendStatusChanged,
-                    playerFriend,
-                    true,
-                    !GetAppearOffline()
-                )
-            );
+            return;
         }
-    }
 
-    /// <summary>
-    /// Will send out GameEventFriendsListUpdate packets to everyone online that has this player as a friend.
-    /// </summary>
-    public void SendFriendStatusUpdates(bool onlineStatus)
-    {
+        var msg = $"{Name} has {(isOnline ? "come on" : "gone off")}line.";
+
         var inverseFriends = PlayerManager.GetOnlineInverseFriends(Guid);
 
         foreach (var friend in inverseFriends)
@@ -387,9 +373,10 @@ partial class Player
                     GameEventFriendsListUpdate.FriendsUpdateTypeFlag.FriendStatusChanged,
                     playerFriend,
                     true,
-                    onlineStatus
+                    isOnline
                 )
             );
+            friend.SendMessage(msg);
         }
     }
 

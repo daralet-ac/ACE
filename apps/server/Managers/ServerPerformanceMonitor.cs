@@ -50,7 +50,7 @@ public static class ServerPerformanceMonitor
         Player_Tick_UpdateObjectPhysics,
         WorldObject_Tick_UpdateObjectPhysics,
 
-        // These are all found in Landblock.TickLandblockGroupThreadSafeWork()
+        // These are all found in Landblock.TickMultiThreadedWork()
         Landblock_Tick_RunActions,
         Landblock_Tick_Monster_Tick,
         Landblock_Tick_GeneratorUpdate,
@@ -62,7 +62,7 @@ public static class ServerPerformanceMonitor
         Landblock_Tick_Player_Tick,
         Landblock_Tick_WorldObject_Heartbeat,
 
-        // These are all found in various places and are cumulative per Landblock_Tick
+        // These are all found in various places and are cumulative per LandblockManager.Tick()
         Monster_Awareness_FindNextTarget,
         Monster_Navigation_UpdatePosition_PUO,
         LootGenerationFactory_CreateRandomLootObjects,

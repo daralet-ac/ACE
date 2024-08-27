@@ -493,7 +493,7 @@ partial class WorldObject
     /// <summary>
     /// PvP damaged is halved, automatically displayed in the client
     /// </summary>
-    public static readonly float ElementalDamageBonusPvPReduction = 0.5f;
+    public const float ElementalDamageBonusPvPReduction = 0.5f;
 
     /// <summary>
     /// Returns a multiplicative elemental damage modifier for the magic caster weapon type
@@ -1473,7 +1473,7 @@ partial class WorldObject
     // - 1/3 - 2/3 sec. Power-up Time = High Backhand
     // -       2/3 sec+ Power-up Time = High Slash
 
-    public static readonly float ThrustThreshold = 0.33f;
+    public const float ThrustThreshold = 0.33f;
 
     /// <summary>
     /// Returns TRUE if this is a thrust/slash weapon,

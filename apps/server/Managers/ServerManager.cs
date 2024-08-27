@@ -321,7 +321,7 @@ public static class ServerManager
                 if (sdt.TotalSeconds > 10)
                 {
                     player.Session.WorldBroadcast(
-                        $"Broadcast from System> {(sdt.TotalMinutes > 1.5 ? "ATTENTION" : "WARNING")} - This Asheron's Call Server is shutting down in {time}.{(sdt.TotalMinutes <= 3 ? " Please log out." : "")}"
+                        $"Broadcast from System> {(sdt.TotalMinutes > 1.5 ? "ATTENTION" : "WARNING")} - This Asheron's Call Server will be shutting down in {time}{(sdt.TotalMinutes <= 1 ? "!" : ".")}{(sdt.TotalMinutes <= 3 ? $" Please log out{(sdt.TotalMinutes <= 1 ? "!" : ".")}" : "")}"
                     );
                 }
                 else
@@ -357,7 +357,7 @@ public static class ServerManager
 
         if (sdt.TotalSeconds > 10)
         {
-            return $"Broadcast from System> {(sdt.TotalMinutes > 1.5 ? "ATTENTION" : "WARNING")} - This Asheron's Call Server is shutting down in {timeToShutdown}.{(sdt.TotalMinutes <= 3 ? " Please log out." : "")}";
+            return $"Broadcast from System> {(sdt.TotalMinutes > 1.5 ? "ATTENTION" : "WARNING")} - This Asheron's Call Server will be shutting down in {timeToShutdown}{(sdt.TotalMinutes <= 1 ? "!" : ".")}{(sdt.TotalMinutes <= 3 ? $" Please log out{(sdt.TotalMinutes <= 1 ? "!" : ".")}" : "")}";
         }
         else
         {
