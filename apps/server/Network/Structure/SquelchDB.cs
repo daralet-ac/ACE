@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ACE.Database.Models.Shard;
 using ACE.Entity.Enum;
 using ACE.Server.Managers;
@@ -49,9 +50,10 @@ public class SquelchDB
         foreach (var squelch in squelches)
         {
             var squelchPlayer = PlayerManager.FindByGuid(squelch.SquelchCharacterId);
-            if (squelchPlayer == null)
+
+            if (squelchPlayer == null && squelch.SquelchAccountId == 0)
             {
-                _log.Warning($"BuildSquelchDB(): couldn't find character {squelch.SquelchCharacterId:X8}");
+                _log.Warning("BuildSquelchDB(): couldn't find character 0x{PlayerId:X8}", squelch.SquelchCharacterId);
                 continue;
             }
 
@@ -65,6 +67,29 @@ public class SquelchDB
             else
             {
                 // account squelch
+                if (squelchPlayer == null)
+                {
+                    var squelchedAccountPlayers = PlayerManager.GetAccountPlayers(squelch.SquelchAccountId);
+
+                    var mostRecentLoggedInCharacterForSquelchedAccount = squelchedAccountPlayers
+                        ?.OrderByDescending(p =>
+                            p.Value.GetProperty(ACE.Entity.Enum.Properties.PropertyFloat.LoginTimestamp) ?? 0
+                        )
+                        .FirstOrDefault();
+
+                    if (mostRecentLoggedInCharacterForSquelchedAccount == null)
+                    {
+                        _log.Warning(
+                            "BuildSquelchDB(): couldn't find character 0x{PlayerId:X8} and account {AccountId} has no other characters",
+                            squelch.SquelchCharacterId,
+                            squelch.SquelchAccountId
+                        );
+                        continue;
+                    }
+
+                    squelchPlayer = mostRecentLoggedInCharacterForSquelchedAccount?.Value;
+                }
+
                 Accounts.Add(squelchPlayer.Account.AccountName, squelchPlayer.Guid.Full);
             }
         }

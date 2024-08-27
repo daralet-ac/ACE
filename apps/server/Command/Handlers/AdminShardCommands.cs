@@ -134,6 +134,16 @@ public static class AdminShardCommands
     )]
     public static void ShutdownServer(Session session, params string[] parameters)
     {
+        if (ServerManager.ShutdownInitiated)
+        {
+            CommandHandlerHelper.WriteOutputInfo(
+                session,
+                "Shutdown is already in progress.",
+                ChatMessageType.Broadcast
+            );
+            return;
+        }
+
         var adminText = "";
         if (parameters.Length > 0)
         {
@@ -186,7 +196,7 @@ public static class AdminShardCommands
         }
 
         var genericMsgToPlayers =
-            $"Broadcast from {(hideName ? "System" : $"{adminName}")}> {(timeTillShutdown.TotalMinutes > 1.5 ? "ATTENTION" : "WARNING")} - This Asheron's Call Server is shutting down in {time}.{(timeTillShutdown.TotalMinutes <= 3 ? " Please log out." : "")}";
+            $"Broadcast from {(hideName ? "System" : $"{adminName}")}> {(timeTillShutdown.TotalMinutes > 1.5 ? "ATTENTION" : "WARNING")} - This Asheron's Call Server will be shutting down in {time}{(sdt.TotalMinutes <= 1 ? "!" : ".")}{(timeTillShutdown.TotalMinutes <= 3 ? $" Please log out{(sdt.TotalMinutes <= 1 ? "!" : ".")}" : "")}";
 
         if (sdt.TotalMilliseconds == 0)
         {

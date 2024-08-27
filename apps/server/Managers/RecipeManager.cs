@@ -2132,11 +2132,6 @@ public partial class RecipeManager
         }
     }
 
-    /// <summary>
-    /// flag to use c# logic instead of mutate script logic
-    /// </summary>
-    private static readonly bool useMutateNative = true;
-
     public static bool TryMutate(
         Player player,
         WorldObject source,
@@ -2146,11 +2141,6 @@ public partial class RecipeManager
         HashSet<uint> modified
     )
     {
-        if (useMutateNative)
-        {
-            return TryMutateNative(player, source, target, recipe, dataId);
-        }
-
         var numTimesTinkered = target.NumTimesTinkered;
 
         var mutationScript = MutationCache.GetMutation(dataId);

@@ -17,7 +17,7 @@ public class ChanceTable<T> : List<(T result, float chance)>
     private bool verified;
     private ChanceTableType TableType;
     private float TotalWeight = 1.0f;
-    private static readonly decimal threshold = 0.0000001M;
+    private const decimal threshold = 0.0000001M;
 
     private readonly ILogger _log = Log.ForContext<ChanceTable<T>>();
 

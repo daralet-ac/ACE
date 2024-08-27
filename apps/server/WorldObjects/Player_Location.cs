@@ -239,85 +239,7 @@ partial class Player
         MotionCommand.MarketplaceRecall
     );
 
-    public void HandleActionTeleToMarketPlace()
-    {
-        return;
-
-        if (IsOlthoiPlayer)
-        {
-            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.OlthoiCanOnlyRecallToLifestone));
-            return;
-        }
-
-        if (PKTimerActive)
-        {
-            Session.Network.EnqueueSend(
-                new GameEventWeenieError(Session, WeenieError.YouHaveBeenInPKBattleTooRecently)
-            );
-            return;
-        }
-
-        if (RecallsDisabled)
-        {
-            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.ExitTrainingAcademyToUseCommand));
-            return;
-        }
-
-        if (TooBusyToRecall)
-        {
-            Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YoureTooBusy));
-            return;
-        }
-
-        if (CombatMode != CombatMode.NonCombat)
-        {
-            // this should be handled by a different thing, probably a function that forces player into peacemode
-            var updateCombatMode = new GameMessagePrivateUpdatePropertyInt(
-                this,
-                PropertyInt.CombatMode,
-                (int)CombatMode.NonCombat
-            );
-            SetCombatMode(CombatMode.NonCombat);
-            Session.Network.EnqueueSend(updateCombatMode);
-        }
-
-        EnqueueBroadcast(
-            new GameMessageSystemChat($"{Name} is recalling to the marketplace.", ChatMessageType.Recall),
-            LocalBroadcastRange,
-            ChatMessageType.Recall
-        );
-
-        SendMotionAsCommands(MotionCommand.MarketplaceRecall, MotionStance.NonCombat);
-
-        var startPos = new Position(Location);
-
-        // TODO: (OptimShi): Actual animation length is longer than in retail. 18.4s
-        // float mpAnimationLength = MotionTable.GetAnimationLength((uint)MotionTableId, MotionCommand.MarketplaceRecall);
-        // mpChain.AddDelaySeconds(mpAnimationLength);
-        var mpChain = new ActionChain();
-        mpChain.AddDelaySeconds(14);
-
-        // Then do teleport
-        IsBusy = true;
-        mpChain.AddAction(
-            this,
-            () =>
-            {
-                IsBusy = false;
-                var endPos = new Position(Location);
-                if (startPos.SquaredDistanceTo(endPos) > RecallMoveThresholdSq)
-                {
-                    Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YouHaveMovedTooFar));
-                    return;
-                }
-
-                Teleport(MarketplaceDrop);
-            }
-        );
-
-        // Set the chain to run
-        mpChain.EnqueueChain();
-    }
+    public void HandleActionTeleToMarketPlace() { }
 
     private static readonly Motion motionAllegianceHometownRecall = new Motion(
         MotionStance.NonCombat,
@@ -998,7 +920,7 @@ partial class Player
         }
     }
 
-    public static readonly float RunFactor = 1.5f;
+    public const float RunFactor = 1.5f;
 
     /// <summary>
     /// Returns the amount of time for player to rotate by the # of degrees

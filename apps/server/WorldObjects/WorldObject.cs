@@ -1238,8 +1238,8 @@ public abstract partial class WorldObject : IActor
     /// </summary>
     public bool IsLinkSpot => WeenieType == WeenieType.Generic && WeenieClassName.Equals("portaldestination");
 
-    public static readonly float LocalBroadcastRange = 96.0f;
-    public static readonly float LocalBroadcastRangeSq = LocalBroadcastRange * LocalBroadcastRange;
+    public const float LocalBroadcastRange = 96.0f;
+    public const float LocalBroadcastRangeSq = LocalBroadcastRange * LocalBroadcastRange;
 
     public SetPosition ScatterPos { get; set; }
 

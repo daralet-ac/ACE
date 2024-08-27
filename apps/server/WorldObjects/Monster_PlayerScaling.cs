@@ -25,7 +25,6 @@ partial class Creature
 
     private void HandlePlayerCountScaling()
     {
-
         if (!(UseNearbyPlayerScaling ?? false))
         {
             return;
@@ -123,11 +122,7 @@ partial class Creature
     private void SetNewSkill(uint baseSkill, double multiplier, Skill skillType)
     {
         var newSkill = (uint)(baseSkill + baseSkill * multiplier);
-        var propertiesSkill = new PropertiesSkill()
-        {
-            InitLevel = newSkill,
-            SAC = SkillAdvancementClass.Trained
-        };
+        var propertiesSkill = new PropertiesSkill() { InitLevel = newSkill, SAC = SkillAdvancementClass.Trained };
 
         Skills[skillType] = new CreatureSkill(this, skillType, propertiesSkill);
     }

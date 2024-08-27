@@ -80,7 +80,10 @@ public class Storage : Container
             Guid.Full,
             player.Account.AccountId,
             true,
-            biotas => { EnqueueAction(new ActionEventDelegate(() => SortBiotasIntoBank(biotas))); }
+            biotas =>
+            {
+                EnqueueAction(new ActionEventDelegate(() => SortBiotasIntoBank(biotas)));
+            }
         );
     }
 

@@ -336,9 +336,9 @@ public static class ScrollSpells
         //SpellId.CurseWeakness1,
     };
 
-    private static readonly int NumLevels = 7;
+    private const int NumLevels = 7;
 
-    private static readonly int MaxLevels = 8;
+    private const int MaxLevels = 8;
 
     private static readonly int NumSpells =
         creatureSpells.Count + lifeSpells.Count + itemSpells.Count + warSpells.Count + voidSpells.Count;

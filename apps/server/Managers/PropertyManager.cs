@@ -1268,7 +1268,13 @@ public static class DefaultPropertyManager
         ),
         ("max_level", new Property<long>(275, "Set the max character level.")),
         ("monster_visual_awareness_range", new Property<long>(30, "Set outdoors monster visual range.")),
-        ("landblock_minimum_spawn_density", new Property<long>(8, "Set minimum spawn density for outdoor landblocks. Requires the 'increase_minimum_encounter_spawn_density' to be enabled."))
+        (
+            "landblock_minimum_spawn_density",
+            new Property<long>(
+                8,
+                "Set minimum spawn density for outdoor landblocks. Requires the 'increase_minimum_encounter_spawn_density' to be enabled."
+            )
+        )
     );
 
     public static readonly ReadOnlyDictionary<string, Property<double>> DefaultDoubleProperties = DictOf(

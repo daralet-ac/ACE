@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.World;
@@ -26,7 +24,7 @@ public static partial class LootGenerationFactory
     private static readonly ILogger _log = Log.ForContext(typeof(LootGenerationFactory));
 
     // Used for cumulative ServerPerformanceMonitor event recording
-    private static readonly ThreadLocal<Stopwatch> stopwatch = new ThreadLocal<Stopwatch>(() => new Stopwatch());
+    // private static readonly ThreadLocal<Stopwatch> stopwatch = new ThreadLocal<Stopwatch>(() => new Stopwatch());
 
     static LootGenerationFactory()
     {
@@ -233,7 +231,7 @@ public static partial class LootGenerationFactory
             return CreateRandomLootObjects_New(profile);
         }
 
-        stopwatch.Value.Restart();
+        // stopwatch.Value.Restart();
 
         try
         {
@@ -368,16 +366,16 @@ public static partial class LootGenerationFactory
         }
         finally
         {
-            ServerPerformanceMonitor.AddToCumulativeEvent(
-                ServerPerformanceMonitor.CumulativeEventHistoryType.LootGenerationFactory_CreateRandomLootObjects,
-                stopwatch.Value.Elapsed.TotalSeconds
-            );
+            // ServerPerformanceMonitor.AddToCumulativeEvent(
+            //     ServerPerformanceMonitor.CumulativeEventHistoryType.LootGenerationFactory_CreateRandomLootObjects,
+            //     stopwatch.Value.Elapsed.TotalSeconds
+            // );
         }
     }
 
     public static List<WorldObject> CreateRandomLootObjects_New(TreasureDeath profile)
     {
-        stopwatch.Value.Restart();
+        // stopwatch.Value.Restart();
 
         try
         {
@@ -562,10 +560,10 @@ public static partial class LootGenerationFactory
         }
         finally
         {
-            ServerPerformanceMonitor.AddToCumulativeEvent(
-                ServerPerformanceMonitor.CumulativeEventHistoryType.LootGenerationFactory_CreateRandomLootObjects,
-                stopwatch.Value.Elapsed.TotalSeconds
-            );
+            // ServerPerformanceMonitor.AddToCumulativeEvent(
+            //     ServerPerformanceMonitor.CumulativeEventHistoryType.LootGenerationFactory_CreateRandomLootObjects,
+            //     stopwatch.Value.Elapsed.TotalSeconds
+            // );
         }
     }
 
@@ -1707,8 +1705,8 @@ public static partial class LootGenerationFactory
         return gemResult.MaterialType;
     }
 
-    public static readonly float WeaponBulk = 0.50f;
-    public static readonly float ArmorBulk = 0.25f;
+    public const float WeaponBulk = 0.50f;
+    public const float ArmorBulk = 0.25f;
 
     private static bool MutateBurden(WorldObject wo, TreasureDeath treasureDeath, bool isWeapon)
     {
@@ -1798,9 +1796,9 @@ public static partial class LootGenerationFactory
     }
 
     // increase for a wider variance in item value ranges
-    private static readonly float valueFactor = 1.0f / 3.0f;
+    private const float valueFactor = 1.0f / 3.0f;
 
-    private static readonly float valueNonFactor = 1.0f - valueFactor;
+    private const float valueNonFactor = 1.0f - valueFactor;
 
     private static void MutateValue_Generic(WorldObject wo, int tier)
     {

@@ -138,8 +138,8 @@ public partial class Player : Creature, IPlayer
 
     public SquelchManager SquelchManager;
 
-    public static readonly float MaxRadarRange_Indoors = 25.0f;
-    public static readonly float MaxRadarRange_Outdoors = 75.0f;
+    public const float MaxRadarRange_Indoors = 25.0f;
+    public const float MaxRadarRange_Outdoors = 75.0f;
 
     public DateTime PrevObjSend;
     public DateTime PrevWho;

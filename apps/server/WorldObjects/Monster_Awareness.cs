@@ -289,7 +289,7 @@ partial class Creature
 
     public virtual bool FindNextTarget(bool onTakeDamage, Creature untargetablePlayer = null)
     {
-        stopwatch.Restart();
+        // stopwatch.Restart();
         try
         {
             SelectTargetingTactic();
@@ -671,10 +671,10 @@ partial class Creature
         }
         finally
         {
-            ServerPerformanceMonitor.AddToCumulativeEvent(
-                ServerPerformanceMonitor.CumulativeEventHistoryType.Monster_Awareness_FindNextTarget,
-                stopwatch.Elapsed.TotalSeconds
-            );
+            // ServerPerformanceMonitor.AddToCumulativeEvent(
+            //     ServerPerformanceMonitor.CumulativeEventHistoryType.Monster_Awareness_FindNextTarget,
+            //     stopwatch.Elapsed.TotalSeconds
+            // );
         }
     }
 
@@ -868,12 +868,12 @@ partial class Creature
     /// The most common value from retail
     /// Some other common values are in the range of 12-25
     /// </summary>
-    public static readonly float VisualAwarenessRange_Default = 18.0f;
+    public const float VisualAwarenessRange_Default = 18.0f;
 
     /// <summary>
     /// The highest value found in the current database
     /// </summary>
-    public static readonly float VisualAwarenessRange_Highest = 75.0f;
+    public const float VisualAwarenessRange_Highest = 75.0f;
 
     public double? VisualAwarenessRange
     {

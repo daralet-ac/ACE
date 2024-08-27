@@ -76,7 +76,7 @@ public class Cloak
         }
     }
 
-    private static readonly float TwoThirds = 2.0f / 3.0f;
+    private const float TwoThirds = 2.0f / 3.0f;
 
     /// <summary>
     /// Rolls for a chance at procing a cloak spell
@@ -227,7 +227,7 @@ public class Cloak
     /// <summary>
     /// The amount of damage reduced by a cloak proced with PropertyInt.CloakWeaveProc=2
     /// </summary>
-    public static readonly int DamageReductionAmount = 200;
+    public const int DamageReductionAmount = 200;
 
     public static int GetDamageReductionAmount(WorldObject source)
     {

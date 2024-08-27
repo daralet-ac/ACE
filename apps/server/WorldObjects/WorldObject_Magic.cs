@@ -1696,21 +1696,21 @@ partial class WorldObject
 
         if (spell.School == MagicSchool.LifeMagic)
         {
-            if (spell.Name.Contains("Blight"))
+            if (spell.DamageType.HasFlag(DamageType.Mana))
             {
                 var tryDamage = (int)
                     Math.Round(caster.GetCreatureVital(PropertyAttribute2nd.Mana).Current * spell.DrainPercentage);
                 damage = (uint)-caster.UpdateVitalDelta(caster.Mana, -tryDamage);
                 damageType = DamageType.Mana;
             }
-            else if (spell.Name.Contains("Tenacity"))
+            else if (spell.DamageType.HasFlag(DamageType.Stamina))
             {
                 var tryDamage = (int)
                     Math.Round(caster.GetCreatureVital(PropertyAttribute2nd.Stamina).Current * spell.DrainPercentage);
                 damage = (uint)-caster.UpdateVitalDelta(caster.Stamina, -tryDamage);
                 damageType = DamageType.Stamina;
             }
-            else
+            else if (spell.DamageType.HasFlag(DamageType.Health))
             {
                 var tryDamage = (int)
                     Math.Round(caster.GetCreatureVital(PropertyAttribute2nd.Health).Current * spell.DrainPercentage);
@@ -1720,6 +1720,11 @@ partial class WorldObject
 
                 //if (player != null && player.Fellowship != null)
                 //player.Fellowship.OnVitalUpdate(player);
+            }
+            else
+            {
+                _log.Warning("Unknown DamageType for LifeProjectile {SpellName} - {SpellId}", spell.Name, spell.Id);
+                return;
             }
         }
 
@@ -2561,7 +2566,7 @@ partial class WorldObject
         );
     }
 
-    public static readonly float ProjHeight = 2.0f / 3.0f;
+    public const float ProjHeight = 2.0f / 3.0f;
 
     public Vector3 CalculatePreOffset(Spell spell, ProjectileSpellType spellType, WorldObject target)
     {
@@ -2771,7 +2776,7 @@ partial class WorldObject
 
     public static readonly Quaternion OneEighty = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, (float)Math.PI);
 
-    public static readonly float ProjHeightArc = 5.0f / 6.0f;
+    public const float ProjHeightArc = 5.0f / 6.0f;
 
     /// <summary>
     /// Calculates the spell projectile velocity in global space
@@ -3445,7 +3450,7 @@ partial class WorldObject
         IsAffecting = false;
     }
 
-    private static readonly double defaultIgnoreSomeMagicProjectileDamage = 0.25;
+    private const double defaultIgnoreSomeMagicProjectileDamage = 0.25;
 
     public double? GetAbsorbMagicDamage()
     {

@@ -2091,6 +2091,15 @@ partial class Player
         }
         item.Ethereal = ethereal;
 
+        if (item.Ethereal == null)
+        {
+            var defaultPhysicsState = (PhysicsState)(item.GetProperty(PropertyInt.PhysicsState) ?? 0);
+
+            item.Ethereal = defaultPhysicsState.HasFlag(PhysicsState.Ethereal);
+        }
+
+        item.EnqueueBroadcastPhysicsState();
+
         return true;
     }
 
@@ -4701,7 +4710,14 @@ partial class Player
             }
         }
 
-        CheckForBankSplitAndMerge(sourceStack, targetStack, sourceContainer, targetContainer, sourceStackRootOwner, targetStackRootOwner);
+        CheckForBankSplitAndMerge(
+            sourceStack,
+            targetStack,
+            sourceContainer,
+            targetContainer,
+            sourceStackRootOwner,
+            targetStackRootOwner
+        );
 
         var itemFoundOnCorpse = sourceStackRootOwner is Corpse;
 

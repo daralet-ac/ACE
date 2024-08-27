@@ -9,13 +9,15 @@ namespace ACE.DatLoader.Tests;
 [TestClass]
 public class DatTests
 {
-    private static string cellDatLocation = @"C:\Turbine\Asheron's Call\client_cell_1.dat";
+    private static string DAT_PATH = @"C:\Turbine\Asheron's Call\";
+
+    private static string cellDatLocation = DAT_PATH + "client_cell_1.dat";
     private static int expectedCellDatFileCount = 805003;
 
-    private static string portalDatLocation = @"C:\Turbine\Asheron's Call\client_portal.dat";
+    private static string portalDatLocation = DAT_PATH + "client_portal.dat";
     private static int expectedPortalDatFileCount = 79694;
 
-    private static string localEnglishDatLocation = @"C:\Turbine\Asheron's Call\client_local_English.dat";
+    private static string localEnglishDatLocation = DAT_PATH + "client_local_English.dat";
     private static int expectedLocalEnglishDatFileCount = 118;
 
     [TestMethod]
@@ -152,6 +154,11 @@ public class DatTests
     [TestMethod]
     public void UnpackPortalDatFiles_NoExceptions()
     {
+        // We need to init the DatManager to load PortalDat.MasterProperty for the BaseProperty references for DbProperties
+        // And we need the code page for some of the PortalDat autoload types
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+        DatManager.Initialize(DAT_PATH, true, false);
+
         var assembly = typeof(DatDatabase).GetTypeInfo().Assembly;
         var types = assembly
             .GetTypes()
@@ -183,32 +190,22 @@ public class DatTests
             // These file types aren't converted yet
             if (fileType == DatFileType.KeyMap)
             {
-                continue;
+                continue; // 0x14, 2 files
             }
 
             if (fileType == DatFileType.RenderMaterial)
             {
-                continue;
+                continue; // 0x16, 1 file
             }
 
             if (fileType == DatFileType.MaterialModifier)
             {
-                continue;
+                continue; // 0x17, 1 file
             }
 
             if (fileType == DatFileType.MaterialInstance)
             {
-                continue;
-            }
-
-            if (fileType == DatFileType.ActionMap)
-            {
-                continue;
-            }
-
-            if (fileType == DatFileType.DbProperties)
-            {
-                continue;
+                continue; // 0x18, 1 file
             }
 
             var type = types
@@ -257,6 +254,11 @@ public class DatTests
     [TestMethod]
     public void UnpackLocalEnglishDatFiles_NoExceptions()
     {
+        // We need to init the DatManager to load PortalDat.MasterProperty for the BaseProperty references for UiLayout/LayoutDesc
+        // And we need the code page for some of the PortalDat autoload types
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+        DatManager.Initialize(DAT_PATH, true, false);
+
         var assembly = typeof(DatDatabase).GetTypeInfo().Assembly;
         var types = assembly
             .GetTypes()
@@ -284,12 +286,6 @@ public class DatTests
                 fileType,
                 $"Key: 0x{kvp.Key:X8}, ObjectID: 0x{kvp.Value.ObjectId:X8}, FileSize: {kvp.Value.FileSize}"
             );
-
-            // These file types aren't converted yet
-            if (fileType == DatFileType.UiLayout)
-            {
-                continue;
-            }
 
             var type = types
                 .SelectMany(m => m.GetCustomAttributes(typeof(DatFileTypeAttribute), false), (m, a) => new { m, a })

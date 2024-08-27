@@ -122,5 +122,7 @@ public class InteractionHandler
                     break;
             }
         }
+
+        await Task.CompletedTask;
     }
 }

@@ -4290,6 +4290,15 @@ public static class AdminCommands
                     }
                     item.Ethereal = ethereal;
 
+                    if (item.Ethereal == null)
+                    {
+                        var defaultPhysicsState = (PhysicsState)(item.GetProperty(PropertyInt.PhysicsState) ?? 0);
+
+                        item.Ethereal = defaultPhysicsState.HasFlag(PhysicsState.Ethereal);
+                    }
+
+                    item.EnqueueBroadcastPhysicsState();
+
                     // drop success
                     player.Session.Network.EnqueueSend(
                         new GameMessagePublicUpdateInstanceID(item, PropertyInstanceId.Container, ObjectGuid.Invalid),

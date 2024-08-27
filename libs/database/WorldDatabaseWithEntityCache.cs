@@ -986,7 +986,7 @@ public class WorldDatabaseWithEntityCache : WorldDatabase
         }
     }
 
-    private static readonly float NormalizeEpsilon = 0.00001f;
+    private const float NormalizeEpsilon = 0.00001f;
 
     private void TreasureMaterialBase_Normalize(
         Dictionary<int, Dictionary<int, List<TreasureMaterialBase>>> materialBase
