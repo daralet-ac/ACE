@@ -915,12 +915,19 @@ public static partial class LootGenerationFactory
         if (wo.Damage != null)
         {
             var baseStat = wo.Damage.Value;
-            var maxBonus = LootTables.GetMeleeSubtypeDamageRange((LootTables.WeaponSubtype)wo.WeaponSubtype, tier);
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = maxBonus * roll;
-            var final = (int)Math.Round(baseStat + bonus);
+            if (wo.WeaponSubtype != null)
+            {
+                var maxBonus = LootTables.GetMeleeSubtypeDamageRange((LootTables.WeaponSubtype)wo.WeaponSubtype, tier);
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = maxBonus * roll;
+                var final = (int)Math.Round(baseStat + bonus);
 
-            wo.SetProperty(PropertyInt.Damage, final);
+                wo.SetProperty(PropertyInt.Damage, final);
+            }
+            else
+            {
+                _log.Error($"MutateQuestItem() - WeaponSubType is null for ({wo.Name})");
+            }
         }
 
         //if (wo.ElementalDamageBonus != null)
