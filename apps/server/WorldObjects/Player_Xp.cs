@@ -79,6 +79,39 @@ partial class Player
     }
 
     /// <summary>
+    /// A player earns XP through killing a creature with the ShroudKillXpReward flag.
+    /// Xp amount is as if the killed creature is the same level as the player.
+    /// Player must be Shrouded or less than or equal to the monster's level.
+    /// Earned as "quest" xp for each available fellow member.
+    /// </summary>
+    /// <param name="playerEarner">The player who killed the creature. Only nearby fellows receive xp.</param>
+    /// <param name="killXpMod">The xpModBonus generated from the creature's archetype stats.</param>
+    public void EarnShroudKillXp(
+        Player playerEarner,
+        double killXpMod
+    )
+    {
+        var softLevelCap = PropertyManager.GetLong("soft_level_cap").Item;
+        var effectivePlayerLevel = (int)Math.Min(Level ?? 1, softLevelCap);
+        var playerTier = GetPlayerTier(effectivePlayerLevel);
+        var baseXp = GetCreatureDeathXP(effectivePlayerLevel, playerTier);
+
+        var distanceScalar = 1.0;
+        var fellowSharePercent = 1.0;
+
+        if (Fellowship != null)
+        {
+            distanceScalar = Fellowship.GetDistanceScalar(playerEarner, this, XpType.Kill);
+            fellowSharePercent = Fellowship.GetMemberSharePercent();
+        }
+
+        var xp = (long)(baseXp * killXpMod * distanceScalar * fellowSharePercent);
+
+        Console.WriteLine($"EarnShroudKillXp() - baseXp: {baseXp}, killXpMod: {killXpMod} finalXp: {xp}");
+        GrantXP(xp, XpType.Quest, ShareType.None);
+    }
+
+    /// <summary>
     /// Directly grants XP to the player, from dev commands, allegiance passup, proficiency checks, and skill gains
     /// </summary>
     /// <param name="amount">The amount of XP to grant to the player</param>
@@ -148,59 +181,58 @@ partial class Player
             return;
         }
 
-        // Gain less xp for killing monsters below your level
-        var overlevelPenalty = xpSourceLevel != null ? GetOverlevelPenalty((int)xpSourceLevel) : 1.0f;
+        var m_amount = amount;
 
+        // Max possible kill xp gained is equal to 1% of your current level cost (10% under level 10, 5% under level 20)
         if (xpType == XpType.Kill)
         {
-            // Kill XP bonus for having higher level alt characters on your account. Doesn't share with fellow.
-            var altBonus = GetAltXpBonus();
+            // Gain less xp for killing monsters below your level
+            var overlevelPenalty = xpSourceLevel != null ? GetOverlevelPenalty((int)xpSourceLevel) : 1.0f;
 
-            var regionalDebuffBonus = GetRegionalDebuffBonus(creatureWcid);
+            m_amount = (long)Math.Round(m_amount * overlevelPenalty);
 
-            amount = (long)(amount * altBonus * regionalDebuffBonus);
-        }
-
-        var m_amount = (long)Math.Round(amount * overlevelPenalty);
-
-        // Max possible kill xp gained is equal to 1% of your current level cost (10% of current level cost if under level 10)
-        if (xpType == XpType.Kill)
-        {
-            if (Level.Value < 10)
+            switch (Level)
             {
-                var currentLevelCost =
-                    DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1]
-                    - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                var maxXpPerKill = (long)(currentLevelCost * 0.1);
+                case < 10:
+                {
+                    var currentLevelCost =
+                        DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1]
+                        - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerKill = (long)(currentLevelCost * 0.1);
 
-                m_amount = Math.Min(m_amount, maxXpPerKill);
-            }
-            else if (Level.Value < 20)
-            {
-                var currentLevelCost =
-                    DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1]
-                    - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                var maxXpPerKill = (long)(currentLevelCost * 0.05);
+                    m_amount = Math.Min(m_amount, maxXpPerKill);
+                    break;
+                }
+                case < 20:
+                {
+                    var currentLevelCost =
+                        DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1]
+                        - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerKill = (long)(currentLevelCost * 0.05);
 
-                m_amount = Math.Min(m_amount, maxXpPerKill);
-            }
-            else if (Level.Value < 126)
-            {
-                var currentLevelCost =
-                    DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1]
-                    - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                var maxXpPerKill = (long)(currentLevelCost * 0.01);
+                    m_amount = Math.Min(m_amount, maxXpPerKill);
+                    break;
+                }
+                case < 126:
+                {
+                    var currentLevelCost =
+                        DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1]
+                        - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerKill = (long)(currentLevelCost * 0.01);
 
-                m_amount = Math.Min(m_amount, maxXpPerKill);
-            }
-            else if (Level.Value == 126)
-            {
-                var currentLevelCost =
-                    DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value]
-                    - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                var maxXpPerKill = (long)(currentLevelCost * 0.01);
+                    m_amount = Math.Min(m_amount, maxXpPerKill);
+                    break;
+                }
+                case 126:
+                {
+                    var currentLevelCost =
+                        DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value]
+                        - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
+                    var maxXpPerKill = (long)(currentLevelCost * 0.01);
 
-                m_amount = Math.Min(m_amount, maxXpPerKill);
+                    m_amount = Math.Min(m_amount, maxXpPerKill);
+                    break;
+                }
             }
         }
 
@@ -232,12 +264,18 @@ partial class Player
 
         var amountBeforeMods = m_amount;
 
+        // Kill XP bonus for having higher level alt characters on your account. Doesn't share with fellow.
+        var altBonus = GetAltXpBonus();
+
+        // Kill XP bonus for having regional debuffs (ie Olthoi North)
+        var regionalDebuffBonus = GetRegionalDebuffBonus(creatureWcid);
+
         // apply xp modifier
         var modifier = PropertyManager.GetDouble("xp_modifier").Item;
 
         var enchantment = GetXPAndLuminanceModifier(xpType);
 
-        m_amount = (long)Math.Round(amountBeforeMods * modifier * enchantment);
+        m_amount = (long)Math.Round(amountBeforeMods * modifier * enchantment * altBonus * regionalDebuffBonus);
 
         // Make sure UpdateXpAndLevel is done on this players thread
         EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(m_amount, xpType, xpMessage)));

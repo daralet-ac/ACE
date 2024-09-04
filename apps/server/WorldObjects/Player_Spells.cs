@@ -824,4 +824,22 @@ partial class Player
         }
         return totalStacks;
     }
+
+    public bool IsShrouded()
+    {
+        var enchantments = Biota
+            .PropertiesEnchantmentRegistry.Clone(BiotaDatabaseLock)
+            .Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.Vitae)
+            .ToList();
+
+        foreach (var enchantment in enchantments)
+        {
+            if (enchantment.SpellId == (int)SpellId.CurseWeakness1)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
