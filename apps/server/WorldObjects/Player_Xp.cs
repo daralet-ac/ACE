@@ -107,7 +107,6 @@ partial class Player
 
         var xp = (long)(baseXp * killXpMod * distanceScalar * fellowSharePercent);
 
-        Console.WriteLine($"EarnShroudKillXp() - baseXp: {baseXp}, killXpMod: {killXpMod} finalXp: {xp}");
         GrantXP(xp, XpType.Quest, ShareType.None);
     }
 
