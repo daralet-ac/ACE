@@ -259,7 +259,7 @@ public class EmoteManager
 
             case EmoteType.CapstoneCacheReward:
 
-                if (player != null && WorldObject.Tier != null)
+                if (player != null)
                 {
                     var reward = true;
 
@@ -312,24 +312,8 @@ public class EmoteManager
                         break;
                     }
 
-                    var numRewards = emote.Amount;
-
-                    // could have a basic item pool, then vary it by tier if need be, or a specific cache value passed in via the emote, etc.
-                    var itemPool = new List<uint> { 1054000, 1054002, 1054003, 1053972, 2626 };
-                    var items = new Dictionary<uint, int>();
-
-                    for (var i = 0; i < numRewards; i++)
-                    {
-                        var randomIndex = ThreadSafeRandom.Next(0, itemPool.Count - 1);
-
-                        var randomItem = itemPool[randomIndex];
-
-                        var tier = (int)WorldObject.Tier - 1;
-
-                        var amount = tier >= 3 ? ThreadSafeRandom.Next(1, tier) : 1;
-
-                        player.GiveFromEmote(WorldObject, randomItem, amount);
-                    }
+                    AwardCapstoneItems(player);
+                    AwardCapstoneTradeNotes(player);
 
                     if (WorldObject.CacheLog == null)
                     {
@@ -3156,5 +3140,108 @@ public class EmoteManager
     public void ClearProxy()
     {
         _proxy = null;
+    }
+
+    /// <summary>
+    /// Trade note awards for completing a capstone dungeon.<br /><br />
+    /// Type Odds: 40% = I, 30% = V, 20% = X, 9% = L, 1% = C<br />
+    /// Amount Odds: 40% = 1, 30% = 2, 20% = 3, 9% = 4, 1% = 5<br />
+    /// Higher level players have improved luck, up to level 50.<br />
+    /// </summary>
+    private void AwardCapstoneTradeNotes(Player player)
+    {
+        var characterLevel = Math.Min(player.Level ?? 1, 50);
+
+        var amount = 1;
+        switch (ThreadSafeRandom.Next(characterLevel, 100))
+        {
+            case <= 40:
+                break;
+            case <= 70:
+                amount = 2;
+                break;
+            case <= 90:
+                amount = 3;
+                break;
+            case <= 99:
+                amount = 4;
+                break;
+            default:
+                amount = 5;
+                break;
+        }
+
+        for (var i = 0; i < amount; i++)
+        {
+            var tradeNote = 2621u; // I note
+            switch (ThreadSafeRandom.Next(characterLevel, 100))
+            {
+                case <= 40:
+                    break;
+                case <= 70:
+                    tradeNote = 2622u; // V note
+                    break;
+                case <= 90:
+                    tradeNote = 2623u; // X note
+                    break;
+                case <= 99:
+                    tradeNote = 2624u; // L note
+                    break;
+                default:
+                    tradeNote = 2625u; // C Note
+                    break;
+            }
+
+            player.GiveFromEmote(WorldObject, tradeNote, amount);
+        }
+    }
+
+    /// <summary>
+    /// Item awards for completing a capstone dungeon.<br /><br />
+    /// Amount Odds:  40% = 1, 30% = 2, 20% = 3, 9% = 4, 1% = 5<br />
+    /// Higher level players have improved luck, up to level 50.<br />
+    /// </summary>
+    private void AwardCapstoneItems(Player player)
+    {
+        var itemPool = new List<uint>
+        {
+            1054000, // Pearl of Transference
+            1054002, // Sanguine Crystal
+            1054003, // Scourging Stone
+            1053972, // Tailoring Kit
+            1053973  // Tailoring Pattern
+        };
+
+        var numRewards = 2; // TODO: allow this to scale up when a fellowship has difficulty modifiers set
+
+        var characterLevel = Math.Min(player.Level ?? 1, 50);
+
+        var amount = 1;
+        switch (ThreadSafeRandom.Next(characterLevel, 100))
+        {
+            case <= 40:
+                break;
+            case <= 70:
+                amount = 2;
+                break;
+            case <= 90:
+                amount = 3;
+                break;
+            case <= 99:
+                amount = 4;
+                break;
+            default:
+                amount = 5;
+                break;
+        }
+
+        for (var i = 0; i < numRewards; i++)
+        {
+            var randomIndex = ThreadSafeRandom.Next(0, itemPool.Count - 1);
+
+            var randomItem = itemPool[randomIndex];
+
+            player.GiveFromEmote(WorldObject, randomItem, amount);
+        }
     }
 }
