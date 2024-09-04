@@ -7262,6 +7262,22 @@ partial class WorldObject
         }
     }
 
+    public bool? ShroudKillXpReward
+    {
+        get => GetProperty(PropertyBool.ShroudKillXpReward);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyBool.ShroudKillXpReward);
+            }
+            else
+            {
+                SetProperty(PropertyBool.ShroudKillXpReward, value.Value);
+            }
+        }
+    }
+
     public bool? UseLegacyThreatSystem
     {
         get => GetProperty(PropertyBool.UseLegacyThreatSystem);

@@ -229,6 +229,7 @@ public enum PropertyBool : ushort
     MenhirManaHotspot = 149,
     UseNearbyPlayerScaling = 150,
     IsBankContainer = 151,
+    ShroudKillXpReward = 152,
 
     /* custom */
     [ServerOnly]

@@ -290,6 +290,34 @@ partial class Creature
                     playerDamager.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
                 }
             }
+            // Monsters with ShroudKillXpReward set can grant the killer(s) xp as if the monster was the same level as
+            // the player. The player must be <= the monster level OR shrouded.
+            else if (ShroudKillXpReward == true)
+            {
+                var monsterLevel = Level ?? 1;
+
+                if (playerDamager.Fellowship != null)
+                {
+                    foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
+                    {
+                        var memberLevel = member.Level ?? 1;
+
+                        if (memberLevel <= monsterLevel || member.IsShrouded())
+                        {
+                            member.EarnShroudKillXp(playerDamager, killXpMod);
+                        }
+                    }
+                }
+                else
+                {
+                    var playerLevel = playerDamager.Level ?? 1;
+
+                    if (playerLevel <= monsterLevel || playerDamager.IsShrouded())
+                    {
+                        playerDamager.EarnShroudKillXp(playerDamager, killXpMod);
+                    }
+                }
+            }
             else
             {
                 playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill, Level, ShareType.All, WeenieClassId);

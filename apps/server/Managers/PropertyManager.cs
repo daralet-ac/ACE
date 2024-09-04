@@ -1267,6 +1267,7 @@ public static class DefaultPropertyManager
             )
         ),
         ("max_level", new Property<long>(275, "Set the max character level.")),
+        ("soft_level_cap", new Property<long>(50, "Set the 'soft' level cap (current highest possible level of monsters)")),
         ("monster_visual_awareness_range", new Property<long>(30, "Set outdoors monster visual range.")),
         (
             "landblock_minimum_spawn_density",
