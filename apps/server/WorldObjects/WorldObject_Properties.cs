@@ -7278,6 +7278,22 @@ partial class WorldObject
         }
     }
 
+    public bool IsPlayerTierChest
+    {
+        get => GetProperty(PropertyBool.IsPlayerTierChest) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.IsPlayerTierChest);
+            }
+            else
+            {
+                SetProperty(PropertyBool.IsPlayerTierChest, value);
+            }
+        }
+    }
+
     public bool? UseLegacyThreatSystem
     {
         get => GetProperty(PropertyBool.UseLegacyThreatSystem);
