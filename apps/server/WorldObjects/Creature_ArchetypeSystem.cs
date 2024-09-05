@@ -792,7 +792,7 @@ partial class Creature
     private uint GetNewPhysicalDefenseSkill(int tier, float statWeight, double physicality, double dexterity)
     {
         var target = enemyDefense[tier] + (enemyDefense[tier + 1] - enemyDefense[tier]) * statWeight;
-        var multiplier = (physicality + dexterity) / 2;
+        var multiplier = dexterity;
         var tweakedSkill = (uint)(target * multiplier);
 
         var divisor = 4;
@@ -989,7 +989,7 @@ partial class Creature
     private int GetNewArmorLevel(int tier, float statWeight, double toughness, double physicality)
     {
         var target = enemyArmorWard[tier] + (enemyArmorWard[tier + 1] - enemyArmorWard[tier]) * statWeight;
-        var multiplier = (toughness + physicality) / 2;
+        var multiplier = physicality;
         var newArmor = (int)(target * multiplier);
 
         if (DebugArchetypeSystem)
@@ -1005,7 +1005,7 @@ partial class Creature
     private int GetNewWardLevel(int tier, float statWeight, double toughness, double magic)
     {
         var target = enemyArmorWard[tier] + (enemyArmorWard[tier + 1] - enemyArmorWard[tier]) * statWeight;
-        var multiplier = (toughness + magic) / 2;
+        var multiplier = magic;
         var newWard = (int)(target * multiplier);
 
         if (DebugArchetypeSystem)
