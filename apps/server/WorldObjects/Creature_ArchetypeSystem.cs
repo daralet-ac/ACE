@@ -193,7 +193,7 @@ partial class Creature
 
             // Physical Defense
             {
-                var newSkill = GetNewPhysicalDefenseSkill(tier, statWeight, toughness, (physicality + dexterity) / 2);
+                var newSkill = GetNewPhysicalDefenseSkill(tier, statWeight, physicality, dexterity);
 
                 var skillType = Skill.MeleeDefense;
 
@@ -219,7 +219,7 @@ partial class Creature
 
             // Magic Defense
             {
-                var newSkill = GetNewMagicDefenseSkill(tier, statWeight, toughness, magic);
+                var newSkill = GetNewMagicDefenseSkill(tier, statWeight, magic);
 
                 var skillType = Skill.MagicDefense;
 
@@ -789,10 +789,10 @@ partial class Creature
         return newSkill;
     }
 
-    private uint GetNewPhysicalDefenseSkill(int tier, float statWeight, double toughness, double physicalityDexterity)
+    private uint GetNewPhysicalDefenseSkill(int tier, float statWeight, double physicality, double dexterity)
     {
         var target = enemyDefense[tier] + (enemyDefense[tier + 1] - enemyDefense[tier]) * statWeight;
-        var multiplier = (toughness + physicalityDexterity) / 2;
+        var multiplier = (physicality + dexterity) / 2;
         var tweakedSkill = (uint)(target * multiplier);
 
         var divisor = 4;
@@ -828,10 +828,10 @@ partial class Creature
         return newSkill;
     }
 
-    private uint GetNewMagicDefenseSkill(int tier, float statWeight, double toughness, double magic)
+    private uint GetNewMagicDefenseSkill(int tier, float statWeight, double magic)
     {
         var target = enemyDefense[tier] + (enemyDefense[tier + 1] - enemyDefense[tier]) * statWeight;
-        var multiplier = (toughness + magic) / 2;
+        var multiplier = magic;
         var tweakedSkill = (uint)(target * multiplier);
 
         var divisor = 4;
