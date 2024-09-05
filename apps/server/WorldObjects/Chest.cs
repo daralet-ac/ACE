@@ -217,8 +217,23 @@ public partial class Chest : Container, Lock
             return;
         }
 
-        // open chest
-        Open(player);
+        if (IsPlayerTierChest && player.IsShrouded())
+        {
+            var baseTier = Tier ?? 1;
+
+            Tier = player.GetPlayerTier(player.Level ?? 1);
+
+            Reset(ResetTimestamp);
+
+            Open(player);
+
+            Tier = baseTier;
+        }
+        else
+        {
+            // open chest
+            Open(player);
+        }
     }
 
     public override void Open(Player player)

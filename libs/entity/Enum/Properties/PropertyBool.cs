@@ -230,6 +230,7 @@ public enum PropertyBool : ushort
     UseNearbyPlayerScaling = 150,
     IsBankContainer = 151,
     ShroudKillXpReward = 152,
+    IsPlayerTierChest = 153,
 
     /* custom */
     [ServerOnly]
