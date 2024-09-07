@@ -312,8 +312,8 @@ public class EmoteManager
                         break;
                     }
 
-                    AwardCapstoneItems(player);
-                    AwardCapstoneTradeNotes(player);
+                    AwardCapstoneItems(player, emote.Amount ?? 2);
+                    AwardCapstoneTradeNotes(player, emote.Amount ?? 2);
 
                     if (WorldObject.CacheLog == null)
                     {
@@ -3143,33 +3143,15 @@ public class EmoteManager
     }
 
     /// <summary>
-    /// Trade note awards for completing a capstone dungeon.<br /><br />
+    /// Trade note awards for completing a capstone dungeon. Amount equal to double the number of rewards.<br /><br />
     /// Type Odds: 40% = I, 30% = V, 20% = X, 9% = L, 1% = C<br />
-    /// Amount Odds: 40% = 1, 30% = 2, 20% = 3, 9% = 4, 1% = 5<br />
     /// Higher level players have improved luck, up to level 50.<br />
     /// </summary>
-    private void AwardCapstoneTradeNotes(Player player)
+    private void AwardCapstoneTradeNotes(Player player, int amount)
     {
         var characterLevel = Math.Min(player.Level ?? 1, 50);
 
-        var amount = 1;
-        switch (ThreadSafeRandom.Next(characterLevel, 100))
-        {
-            case <= 40:
-                break;
-            case <= 70:
-                amount = 2;
-                break;
-            case <= 90:
-                amount = 3;
-                break;
-            case <= 99:
-                amount = 4;
-                break;
-            default:
-                amount = 5;
-                break;
-        }
+        amount *= 2;
 
         for (var i = 0; i < amount; i++)
         {
@@ -3192,7 +3174,7 @@ public class EmoteManager
                     break;
             }
 
-            player.GiveFromEmote(WorldObject, tradeNote, amount);
+            player.GiveFromEmote(WorldObject, tradeNote);
         }
     }
 
@@ -3201,7 +3183,7 @@ public class EmoteManager
     /// Amount Odds:  40% = 1, 30% = 2, 20% = 3, 9% = 4, 1% = 5<br />
     /// Higher level players have improved luck, up to level 50.<br />
     /// </summary>
-    private void AwardCapstoneItems(Player player)
+    private void AwardCapstoneItems(Player player, int numRewards)
     {
         var itemPool = new List<uint>
         {
@@ -3212,7 +3194,7 @@ public class EmoteManager
             1053973  // Tailoring Pattern
         };
 
-        var numRewards = 2; // TODO: allow this to scale up when a fellowship has difficulty modifiers set
+        //numRewards *= GetCapstoneModifier(); // TODO: allow this to scale up when a fellowship has difficulty modifiers set
 
         var characterLevel = Math.Min(player.Level ?? 1, 50);
 
