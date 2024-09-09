@@ -2,6 +2,7 @@ using System;
 using ACE.Entity.Enum;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Entity;
 
@@ -30,6 +31,8 @@ public static class LevelScaling
      *   NOTE: May need an additional modifier to add more difficulty to higher level players if imbues and other crafting are too good.
      *   Handled previously with this formula: (float gapMod = 1f - (float)(levelGap / 10f) / 12.5f)
      */
+
+    private static readonly ILogger _log = Log.ForContext(typeof(LevelScaling));
 
     private static readonly int[] AvgPlayerHealthPerTier = { 45, 95, 125, 155, 185, 215, 245, 320 };
     private static readonly int[] AvgPlayerArmorWardPerTier = { 50, 100, 130, 160, 190, 220, 250, 300 };
@@ -60,6 +63,19 @@ public static class LevelScaling
             return 1.0f;
         }
 
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetMonsterDamageDealtHealthScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetMonsterDamageDealtHealthScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            return 1.0f;
+        }
+
+
         var statAtPlayerLevel = GetPlayerHealthAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerHealthAtLevel(monster.Level.Value);
 
@@ -80,6 +96,19 @@ public static class LevelScaling
         {
             return 1.0f;
         }
+
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetMonsterDamageTakenHealthScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetMonsterDamageTakenHealthScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            return 1.0f;
+        }
+
 
         var statAtPlayerLevel = GetMonsterHealthAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetMonsterHealthAtLevel(monster.Level.Value);
@@ -102,6 +131,19 @@ public static class LevelScaling
             return 1.0f;
         }
 
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetMonsterArmorWardScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetMonsterArmorWardScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            return 1.0f;
+        }
+
+
         var statAtPlayerLevel = GetMonsterArmorWardAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetMonsterArmorWardAtLevel(monster.Level.Value);
 
@@ -123,15 +165,27 @@ public static class LevelScaling
             return 1.0f;
         }
 
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerArmorWardScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerArmorWardScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            return 1.0f;
+        }
+
         var statAtPlayerLevel = GetPlayerArmorWardAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerArmorWardAtLevel(monster.Level.Value);
 
         if (PropertyManager.GetBool("debug_level_scaling_system").Item)
         {
-            Console.WriteLine(
-                $"\nGetPlayerArmorWardScalar(Player {player.Name}, Monster {monster.Name})"
+                Console.WriteLine(
+                    $"\nGetPlayerArmorWardScalar(Player {player.Name}, Monster {monster.Name})"
                     + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtMonsterLevel / statAtPlayerLevel}"
-            );
+                );
         }
 
         return (float)statAtMonsterLevel / statAtPlayerLevel;
@@ -143,6 +197,19 @@ public static class LevelScaling
         {
             return 1.0f;
         }
+
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerAttributeScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerAttributeScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            return 1.0f;
+        }
+
 
         var statAtPlayerLevel = GetPlayerAttributeAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerAttributeAtLevel(monster.Level.Value);
@@ -165,6 +232,19 @@ public static class LevelScaling
             return 1.0f;
         }
 
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerAttackSkillScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerAttackSkillScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            return 1.0f;
+        }
+
+
         var statAtPlayerLevel = GetPlayerAttackSkillAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerAttackSkillAtLevel(monster.Level.Value);
 
@@ -185,6 +265,19 @@ public static class LevelScaling
         {
             return 1.0f;
         }
+
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerDefenseSkillScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerDefenseSkillScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            return 1.0f;
+        }
+
 
         var statAtPlayerLevel = GetPlayerDefenseSkillAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerDefenseSkillAtLevel(monster.Level.Value);
@@ -207,6 +300,19 @@ public static class LevelScaling
             return 1.0f;
         }
 
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerResistanceScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerResistanceScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            return 1.0f;
+        }
+
+
         var statAtPlayerLevel = GetPlayerResistanceAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerResistanceAtLevel(monster.Level.Value);
 
@@ -227,6 +333,19 @@ public static class LevelScaling
         {
             return 1.0f;
         }
+
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerBoostSpellScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetPlayerBoostSpellScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            return 1.0f;
+        }
+
 
         var statAtPlayerLevel = GetPlayerBoostAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerBoostAtLevel(monster.Level.Value);
