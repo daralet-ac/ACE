@@ -911,23 +911,22 @@ public static partial class LootGenerationFactory
         var lootQuality = (float)(wo.LootQualityMod ?? 0.0f);
         var armorSlots = wo.ArmorSlots ?? 1;
 
+        if (wo.WeaponSubtype == null)
+        {
+            _log.Error($"MutateQuestItem() - WeaponSubType is null for ({wo.Name})");
+            return;
+        }
+
         // Weapon Stats
         if (wo.Damage != null)
         {
             var baseStat = wo.Damage.Value;
-            if (wo.WeaponSubtype != null)
-            {
-                var maxBonus = LootTables.GetMeleeSubtypeDamageRange((LootTables.WeaponSubtype)wo.WeaponSubtype, tier);
-                var roll = GetDiminishingRoll(null, lootQuality);
-                var bonus = maxBonus * roll;
-                var final = (int)Math.Round(baseStat + bonus);
+            var maxBonus = LootTables.GetMeleeSubtypeDamageRange((LootTables.WeaponSubtype)wo.WeaponSubtype, tier);
+            var roll = GetDiminishingRoll(null, lootQuality);
+            var bonus = maxBonus * roll;
+            var final = (int)Math.Round(baseStat + bonus);
 
-                wo.SetProperty(PropertyInt.Damage, final);
-            }
-            else
-            {
-                _log.Error($"MutateQuestItem() - WeaponSubType is null for ({wo.Name})");
-            }
+            wo.SetProperty(PropertyInt.Damage, final);
         }
 
         //if (wo.ElementalDamageBonus != null)
@@ -955,7 +954,7 @@ public static partial class LootGenerationFactory
             wo.SetProperty(PropertyFloat.DamageMod, final);
         }
 
-        if (wo.ElementalDamageMod != null) // and resto mod
+        if (wo.ElementalDamageMod != null && wo.WeaponRestorationSpellsMod != null)
         {
             var magicSkill = wo.WieldSkillType2 == 34 ? Skill.WarMagic : Skill.LifeMagic;
 
@@ -1060,7 +1059,7 @@ public static partial class LootGenerationFactory
 
         if (wo.GetProperty(PropertyFloat.CriticalMultiplier) != null)
         {
-            var baseStat = wo.GetProperty(PropertyFloat.CriticalMultiplier).Value;
+            var baseStat = wo.GetProperty(PropertyFloat.CriticalMultiplier) ?? 1.0f;
             var bonusRange = (baseStat - 1) * MaxMiscBonus;
             var roll = GetDiminishingRoll(null, lootQuality);
             var bonus = bonusRange * roll;
