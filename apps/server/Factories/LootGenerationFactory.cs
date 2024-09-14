@@ -911,482 +911,488 @@ public static partial class LootGenerationFactory
         var lootQuality = (float)(wo.LootQualityMod ?? 0.0f);
         var armorSlots = wo.ArmorSlots ?? 1;
 
-        if (wo.WeaponSubtype == null)
-        {
-            _log.Error($"MutateQuestItem() - WeaponSubType is null for ({wo.Name})");
-            return;
-        }
-
         // Weapon Stats
-        if (wo.Damage != null)
+        if (wo.ItemType is ItemType.Weapon or ItemType.MissileWeapon or ItemType.MeleeWeapon or ItemType.Caster)
         {
-            var baseStat = wo.Damage.Value;
-            var maxBonus = LootTables.GetMeleeSubtypeDamageRange((LootTables.WeaponSubtype)wo.WeaponSubtype, tier);
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = maxBonus * roll;
-            var final = (int)Math.Round(baseStat + bonus);
-
-            wo.SetProperty(PropertyInt.Damage, final);
-        }
-
-        //if (wo.ElementalDamageBonus != null)
-        //{
-        //    var baseStat = wo.ElementalDamageBonus.Value;
-        //    var bonusRange = (baseStat - 1) * maxBonus;
-        //    var roll = GetDiminishingRoll(null, lootQuality);
-        //    var bonus = bonusRange * roll;
-        //    var final = (int)Math.Round(baseStat + bonus);
-
-        //    wo.SetProperty(PropertyInt.ElementalDamageBonus, final);
-        //}
-
-        if (wo.DamageMod != null)
-        {
-            var baseStat = wo.DamageMod.Value;
-            var bonusRange = LootTables.GetMissileCasterSubtypeDamageRange(
-                (LootTables.WeaponSubtype)wo.WeaponSubtype,
-                tier
-            );
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
-
-            wo.SetProperty(PropertyFloat.DamageMod, final);
-        }
-
-        if (wo.ElementalDamageMod != null && wo.WeaponRestorationSpellsMod != null)
-        {
-            var magicSkill = wo.WieldSkillType2 == 34 ? Skill.WarMagic : Skill.LifeMagic;
-
-            var baseStat =
-                magicSkill == Skill.WarMagic ? wo.ElementalDamageMod.Value : wo.WeaponRestorationSpellsMod.Value;
-            var bonusRange = LootTables.GetMissileCasterSubtypeDamageRange(
-                (LootTables.WeaponSubtype)wo.WeaponSubtype,
-                tier
-            );
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
-
-            if (magicSkill == Skill.WarMagic)
+            if (wo.WeaponSubtype == null)
             {
-                wo.SetProperty(PropertyFloat.ElementalDamageMod, final);
-                wo.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, 1 + (final - 1) / 2);
+                _log.Error($"MutateQuestItem() - WeaponSubType is null for ({wo.Name})");
+                return;
             }
-            else
+
+            if (wo.Damage != null)
             {
-                wo.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
-                wo.SetProperty(PropertyFloat.ElementalDamageMod, 1 + (final - 1) / 2);
+                var baseStat = wo.Damage.Value;
+                var maxBonus = LootTables.GetMeleeSubtypeDamageRange((LootTables.WeaponSubtype)wo.WeaponSubtype, tier);
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = maxBonus * roll;
+                var final = (int)Math.Round(baseStat + bonus);
+
+                wo.SetProperty(PropertyInt.Damage, final);
             }
-        }
 
-        if (wo.WeaponOffense != null)
-        {
-            var baseStat = wo.WeaponOffense.Value;
-            var bonusRange = WeaponModMaxBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            //if (wo.ElementalDamageBonus != null)
+            //{
+            //    var baseStat = wo.ElementalDamageBonus.Value;
+            //    var bonusRange = (baseStat - 1) * maxBonus;
+            //    var roll = GetDiminishingRoll(null, lootQuality);
+            //    var bonus = bonusRange * roll;
+            //    var final = (int)Math.Round(baseStat + bonus);
 
-            wo.SetProperty(PropertyFloat.WeaponOffense, final);
-        }
+            //    wo.SetProperty(PropertyInt.ElementalDamageBonus, final);
+            //}
 
-        if (wo.WeaponPhysicalDefense != null)
-        {
-            var baseStat = wo.WeaponPhysicalDefense.Value;
-            var bonusRange = WeaponModMaxBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.DamageMod != null)
+            {
+                var baseStat = wo.DamageMod.Value;
+                var bonusRange = LootTables.GetMissileCasterSubtypeDamageRange(
+                    (LootTables.WeaponSubtype)wo.WeaponSubtype,
+                    tier
+                );
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.WeaponPhysicalDefense, final);
-        }
+                wo.SetProperty(PropertyFloat.DamageMod, final);
+            }
 
-        if (wo.WeaponMagicalDefense != null)
-        {
-            var baseStat = wo.WeaponMagicalDefense.Value;
-            var bonusRange = WeaponModMaxBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ElementalDamageMod != null && wo.WeaponRestorationSpellsMod != null)
+            {
+                var magicSkill = wo.WieldSkillType2 == 34 ? Skill.WarMagic : Skill.LifeMagic;
 
-            wo.SetProperty(PropertyFloat.WeaponMagicalDefense, final);
-        }
+                var baseStat =
+                    magicSkill == Skill.WarMagic ? wo.ElementalDamageMod.Value : wo.WeaponRestorationSpellsMod.Value;
+                var bonusRange = LootTables.GetMissileCasterSubtypeDamageRange(
+                    (LootTables.WeaponSubtype)wo.WeaponSubtype,
+                    tier
+                );
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-        if (wo.WeaponLifeMagicMod != null)
-        {
-            var baseStat = wo.WeaponLifeMagicMod.Value;
-            var bonusRange = WeaponModMaxBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+                if (magicSkill == Skill.WarMagic)
+                {
+                    wo.SetProperty(PropertyFloat.ElementalDamageMod, final);
+                    wo.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, 1 + (final - 1) / 2);
+                }
+                else
+                {
+                    wo.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
+                    wo.SetProperty(PropertyFloat.ElementalDamageMod, 1 + (final - 1) / 2);
+                }
+            }
 
-            wo.SetProperty(PropertyFloat.WeaponLifeMagicMod, final);
-        }
+            if (wo.WeaponOffense != null)
+            {
+                var baseStat = wo.WeaponOffense.Value;
+                var bonusRange = WeaponModMaxBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-        if (wo.WeaponWarMagicMod != null)
-        {
-            var baseStat = wo.WeaponWarMagicMod.Value;
-            var bonusRange = WeaponModMaxBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+                wo.SetProperty(PropertyFloat.WeaponOffense, final);
+            }
 
-            wo.SetProperty(PropertyFloat.WeaponWarMagicMod, final);
-        }
+            if (wo.WeaponPhysicalDefense != null)
+            {
+                var baseStat = wo.WeaponPhysicalDefense.Value;
+                var bonusRange = WeaponModMaxBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-        //if (wo.WeaponRestorationSpellsMod != null)
-        //{
-        //    var baseStat = wo.WeaponRestorationSpellsMod.Value;
-        //    var bonusRange = WeaponModMaxBonus;
-        //    var roll =GetDiminishingRoll(null, lootQuality);
-        //    var bonus = bonusRange * roll;
-        //    var final = baseStat + bonus;
+                wo.SetProperty(PropertyFloat.WeaponPhysicalDefense, final);
+            }
 
-        //    wo.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
-        //}
+            if (wo.WeaponMagicalDefense != null)
+            {
+                var baseStat = wo.WeaponMagicalDefense.Value;
+                var bonusRange = WeaponModMaxBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-        if (wo.CriticalFrequency != null)
-        {
-            var baseStat = wo.CriticalFrequency.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+                wo.SetProperty(PropertyFloat.WeaponMagicalDefense, final);
+            }
 
-            wo.SetProperty(PropertyFloat.CriticalFrequency, final);
-        }
+            if (wo.WeaponLifeMagicMod != null)
+            {
+                var baseStat = wo.WeaponLifeMagicMod.Value;
+                var bonusRange = WeaponModMaxBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-        if (wo.GetProperty(PropertyFloat.CriticalMultiplier) != null)
-        {
-            var baseStat = wo.GetProperty(PropertyFloat.CriticalMultiplier) ?? 1.0f;
-            var bonusRange = (baseStat - 1) * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+                wo.SetProperty(PropertyFloat.WeaponLifeMagicMod, final);
+            }
 
-            wo.SetProperty(PropertyFloat.CriticalMultiplier, final);
-        }
+            if (wo.WeaponWarMagicMod != null)
+            {
+                var baseStat = wo.WeaponWarMagicMod.Value;
+                var bonusRange = WeaponModMaxBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-        if (wo.IgnoreArmor != null)
-        {
-            var baseStat = wo.IgnoreArmor.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+                wo.SetProperty(PropertyFloat.WeaponWarMagicMod, final);
+            }
 
-            wo.SetProperty(PropertyFloat.IgnoreArmor, final);
-        }
+            //if (wo.WeaponRestorationSpellsMod != null)
+            //{
+            //    var baseStat = wo.WeaponRestorationSpellsMod.Value;
+            //    var bonusRange = WeaponModMaxBonus;
+            //    var roll =GetDiminishingRoll(null, lootQuality);
+            //    var bonus = bonusRange * roll;
+            //    var final = baseStat + bonus;
 
-        if (wo.IgnoreWard != null)
-        {
-            var baseStat = wo.IgnoreWard.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            //    wo.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
+            //}
 
-            wo.SetProperty(PropertyFloat.IgnoreWard, final);
+            if (wo.CriticalFrequency != null)
+            {
+                var baseStat = wo.CriticalFrequency.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.CriticalFrequency, final);
+            }
+
+            if (wo.GetProperty(PropertyFloat.CriticalMultiplier) != null)
+            {
+                var baseStat = wo.GetProperty(PropertyFloat.CriticalMultiplier) ?? 1.0f;
+                var bonusRange = (baseStat - 1) * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.CriticalMultiplier, final);
+            }
+
+            if (wo.IgnoreArmor != null)
+            {
+                var baseStat = wo.IgnoreArmor.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.IgnoreArmor, final);
+            }
+
+            if (wo.IgnoreWard != null)
+            {
+                var baseStat = wo.IgnoreWard.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.IgnoreWard, final);
+            }
         }
 
         // Armor Base Stats
-        if (wo.ArmorLevel != null)
+        if (wo.ItemType is ItemType.Armor or ItemType.Clothing)
         {
-            var baseStat = wo.ArmorLevel.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = (int)Math.Round(baseStat + bonus);
+            if (wo.ArmorLevel != null)
+            {
+                var baseStat = wo.ArmorLevel.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = (int)Math.Round(baseStat + bonus);
 
-            wo.SetProperty(PropertyInt.ArmorLevel, final);
-        }
+                wo.SetProperty(PropertyInt.ArmorLevel, final);
+            }
 
-        if (wo.WardLevel != null)
-        {
-            var baseStat = wo.WardLevel.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = (int)Math.Round(baseStat + bonus);
+            if (wo.WardLevel != null)
+            {
+                var baseStat = wo.WardLevel.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = (int)Math.Round(baseStat + bonus);
 
-            wo.SetProperty(PropertyInt.WardLevel, final);
-        }
+                wo.SetProperty(PropertyInt.WardLevel, final);
+            }
 
-        if (wo.ArmorModVsAcid != null)
-        {
-            var baseStat = wo.ArmorModVsAcid.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorModVsAcid != null)
+            {
+                var baseStat = wo.ArmorModVsAcid.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorModVsAcid, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorModVsAcid, final);
+            }
 
-        if (wo.ArmorModVsBludgeon != null)
-        {
-            var baseStat = wo.ArmorModVsBludgeon.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorModVsBludgeon != null)
+            {
+                var baseStat = wo.ArmorModVsBludgeon.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorModVsBludgeon, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorModVsBludgeon, final);
+            }
 
-        if (wo.ArmorModVsCold != null)
-        {
-            var baseStat = wo.ArmorModVsCold.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorModVsCold != null)
+            {
+                var baseStat = wo.ArmorModVsCold.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorModVsCold, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorModVsCold, final);
+            }
 
-        if (wo.ArmorModVsElectric != null)
-        {
-            var baseStat = wo.ArmorModVsElectric.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorModVsElectric != null)
+            {
+                var baseStat = wo.ArmorModVsElectric.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorModVsElectric, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorModVsElectric, final);
+            }
 
-        if (wo.ArmorModVsFire != null)
-        {
-            var baseStat = wo.ArmorModVsFire.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorModVsFire != null)
+            {
+                var baseStat = wo.ArmorModVsFire.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorModVsFire, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorModVsFire, final);
+            }
 
-        if (wo.ArmorModVsPierce != null)
-        {
-            var baseStat = wo.ArmorModVsPierce.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorModVsPierce != null)
+            {
+                var baseStat = wo.ArmorModVsPierce.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorModVsPierce, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorModVsPierce, final);
+            }
 
-        if (wo.ArmorModVsSlash != null)
-        {
-            var baseStat = wo.ArmorModVsSlash.Value;
-            var bonusRange = baseStat * MaxMiscBonus;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorModVsSlash != null)
+            {
+                var baseStat = wo.ArmorModVsSlash.Value;
+                var bonusRange = baseStat * MaxMiscBonus;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorModVsSlash, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorModVsSlash, final);
+            }
 
-        // Armor Mods
-        if (wo.ArmorAttackMod != null)
-        {
-            var baseStat = wo.ArmorAttackMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            // Armor Mods
+            if (wo.ArmorAttackMod != null)
+            {
+                var baseStat = wo.ArmorAttackMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorAttackMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorAttackMod, final);
+            }
 
-        if (wo.ArmorDeceptionMod != null)
-        {
-            var baseStat = wo.ArmorDeceptionMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorDeceptionMod != null)
+            {
+                var baseStat = wo.ArmorDeceptionMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorDeceptionMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorDeceptionMod, final);
+            }
 
-        if (wo.ArmorDualWieldMod != null)
-        {
-            var baseStat = wo.ArmorDualWieldMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorDualWieldMod != null)
+            {
+                var baseStat = wo.ArmorDualWieldMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorDualWieldMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorDualWieldMod, final);
+            }
 
-        if (wo.ArmorHealthMod != null)
-        {
-            var baseStat = wo.ArmorHealthMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorHealthMod != null)
+            {
+                var baseStat = wo.ArmorHealthMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorHealthMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorHealthMod, final);
+            }
 
-        if (wo.ArmorHealthRegenMod != null)
-        {
-            var baseStat = wo.ArmorHealthRegenMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorHealthRegenMod != null)
+            {
+                var baseStat = wo.ArmorHealthRegenMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorHealthRegenMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorHealthRegenMod, final);
+            }
 
-        if (wo.ArmorLifeMagicMod != null)
-        {
-            var baseStat = wo.ArmorLifeMagicMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorLifeMagicMod != null)
+            {
+                var baseStat = wo.ArmorLifeMagicMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorLifeMagicMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorLifeMagicMod, final);
+            }
 
-        if (wo.ArmorMagicDefMod != null)
-        {
-            var baseStat = wo.ArmorMagicDefMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorMagicDefMod != null)
+            {
+                var baseStat = wo.ArmorMagicDefMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorMagicDefMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorMagicDefMod, final);
+            }
 
-        if (wo.ArmorManaMod != null)
-        {
-            var baseStat = wo.ArmorManaMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorManaMod != null)
+            {
+                var baseStat = wo.ArmorManaMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorManaMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorManaMod, final);
+            }
 
-        if (wo.ArmorManaRegenMod != null)
-        {
-            var baseStat = wo.ArmorManaRegenMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorManaRegenMod != null)
+            {
+                var baseStat = wo.ArmorManaRegenMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorManaRegenMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorManaRegenMod, final);
+            }
 
-        if (wo.ArmorPerceptionMod != null)
-        {
-            var baseStat = wo.ArmorPerceptionMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorPerceptionMod != null)
+            {
+                var baseStat = wo.ArmorPerceptionMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorPerceptionMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorPerceptionMod, final);
+            }
 
-        if (wo.ArmorPhysicalDefMod != null)
-        {
-            var baseStat = wo.ArmorPhysicalDefMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorPhysicalDefMod != null)
+            {
+                var baseStat = wo.ArmorPhysicalDefMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorPhysicalDefMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorPhysicalDefMod, final);
+            }
 
-        if (wo.ArmorRunMod != null)
-        {
-            var baseStat = wo.ArmorRunMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorRunMod != null)
+            {
+                var baseStat = wo.ArmorRunMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorRunMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorRunMod, final);
+            }
 
-        if (wo.ArmorShieldMod != null)
-        {
-            var baseStat = wo.ArmorShieldMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorShieldMod != null)
+            {
+                var baseStat = wo.ArmorShieldMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorShieldMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorShieldMod, final);
+            }
 
-        if (wo.ArmorStaminaMod != null)
-        {
-            var baseStat = wo.ArmorStaminaMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorStaminaMod != null)
+            {
+                var baseStat = wo.ArmorStaminaMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorStaminaMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorStaminaMod, final);
+            }
 
-        if (wo.ArmorStaminaRegenMod != null)
-        {
-            var baseStat = wo.ArmorStaminaRegenMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorStaminaRegenMod != null)
+            {
+                var baseStat = wo.ArmorStaminaRegenMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorStaminaRegenMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorStaminaRegenMod, final);
+            }
 
-        if (wo.ArmorThieveryMod != null)
-        {
-            var baseStat = wo.ArmorThieveryMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorThieveryMod != null)
+            {
+                var baseStat = wo.ArmorThieveryMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorThieveryMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorThieveryMod, final);
+            }
 
-        if (wo.ArmorTwohandedCombatMod != null)
-        {
-            var baseStat = wo.ArmorTwohandedCombatMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorTwohandedCombatMod != null)
+            {
+                var baseStat = wo.ArmorTwohandedCombatMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorTwohandedCombatMod, final);
-        }
+                wo.SetProperty(PropertyFloat.ArmorTwohandedCombatMod, final);
+            }
 
-        if (wo.ArmorWarMagicMod != null)
-        {
-            var baseStat = wo.ArmorWarMagicMod.Value;
-            var bonusRange = 0.1f / armorSlots;
-            var roll = GetDiminishingRoll(null, lootQuality);
-            var bonus = bonusRange * roll;
-            var final = baseStat + bonus;
+            if (wo.ArmorWarMagicMod != null)
+            {
+                var baseStat = wo.ArmorWarMagicMod.Value;
+                var bonusRange = 0.1f / armorSlots;
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
 
-            wo.SetProperty(PropertyFloat.ArmorWarMagicMod, final);
+                wo.SetProperty(PropertyFloat.ArmorWarMagicMod, final);
+            }
         }
     }
 
