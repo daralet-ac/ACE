@@ -77,7 +77,7 @@ public class UpgradeKit : Stackable
             if (
                 !player.ConfirmationManager.EnqueueSend(
                     new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                    $"This will upgrade {target.Name} to your current wield tier ({PlayerTierWieldDifficulty((player))})."
+                    $"This will upgrade {target.Name} to your current wield tier. Its wield difficulty will be increased to {PlayerTierWieldDifficulty((player))}."
                 )
             )
             {
@@ -120,7 +120,7 @@ public class UpgradeKit : Stackable
                         ChatMessageType.Craft
                     )
                 );
-                player.TryConsumeFromInventoryWithNetworking(source);
+                player.TryConsumeFromInventoryWithNetworking(source, 1);
             }
         );
 
