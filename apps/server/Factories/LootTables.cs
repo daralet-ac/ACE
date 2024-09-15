@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using ACE.Entity.Enum;
 using ACE.Server.Factories.Tables.Cantrips;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Factories;
 
 public static class LootTables
 {
+    private static readonly ILogger _log = Log.ForContext(typeof(LootTables));
+
     /// <summary>
     /// A mapping of MaterialTypes to value modifiers
     /// </summary>
@@ -3799,6 +3802,12 @@ public static class LootTables
 
     public static int GetMeleeSubtypeDamageRange(WeaponSubtype weaponSubtype, int tier)
     {
+        if (tier > 7)
+        {
+            _log.Error("GetMeleeSubtypeDamageRange({WeaponSubtype}, {Tier}) - Tier should not be greater than 7.", weaponSubtype, tier);
+            return 0;
+        }
+
         switch (weaponSubtype)
         {
             case WeaponSubtype.AxeLarge:
@@ -3845,8 +3854,68 @@ public static class LootTables
         }
     }
 
+     public static int GetMeleeSubtypeMinimumDamage(WeaponSubtype weaponSubtype, int tier)
+    {
+        if (tier > 7)
+        {
+            _log.Error("GetMeleeSubtypeMinimumDamage({WeaponSubtype}, {Tier}) - Tier should not be greater than 7.", weaponSubtype, tier);
+            return 0;
+        }
+
+        switch (weaponSubtype)
+        {
+            case WeaponSubtype.AxeLarge:
+                return AxeLargeMinDamage[tier];
+            case WeaponSubtype.AxeMedium:
+                return AxeMediumMinDamage[tier];
+            case WeaponSubtype.AxeSmall:
+                return AxeSmallMinDamage[tier];
+            case WeaponSubtype.DaggerLarge:
+                return DaggerLargeMinDamage[tier];
+            case WeaponSubtype.DaggerSmall:
+                return DaggerSmallMinDamage[tier];
+            case WeaponSubtype.MaceLarge:
+                return MaceLargeMinDamage[tier];
+            case WeaponSubtype.MaceMedium:
+                return MaceMediumMinDamage[tier];
+            case WeaponSubtype.MaceSmall:
+                return MaceSmallMinDamage[tier];
+            case WeaponSubtype.SpearLarge:
+                return SpearLargeMinDamage[tier];
+            case WeaponSubtype.SpearMedium:
+                return SpearMediumMinDamage[tier];
+            case WeaponSubtype.SpearSmall:
+                return SpearSmallMinDamage[tier];
+            case WeaponSubtype.StaffLarge:
+                return StaffLargeMinDamage[tier];
+            case WeaponSubtype.StaffMedium:
+                return StaffMediumMinDamage[tier];
+            case WeaponSubtype.StaffSmall:
+                return StaffSmallMinDamage[tier];
+            case WeaponSubtype.SwordLarge:
+                return SwordLargeMinDamage[tier];
+            case WeaponSubtype.SwordMedium:
+                return SwordMediumMinDamage[tier];
+            case WeaponSubtype.SwordSmall:
+                return SwordSmallMinDamage[tier];
+            case WeaponSubtype.Ua:
+                return UaMinDamage[tier];
+            default:
+            {
+                Console.WriteLine("Error: GetMeleeSubtypeMinimumDamage() - Incorrect Weapon Subtype");
+                return 0;
+            }
+        }
+    }
+
     public static float GetMissileCasterSubtypeDamageRange(WeaponSubtype weaponSubtype, int tier)
     {
+        if (tier > 7)
+        {
+            _log.Error("GetMissileCasterSubtypeDamageRange({WeaponSubtype}, {Tier}) - Tier should not be greater than 7.", weaponSubtype, tier);
+            return 0;
+        }
+
         switch (weaponSubtype)
         {
             case WeaponSubtype.AtlatlLarge:

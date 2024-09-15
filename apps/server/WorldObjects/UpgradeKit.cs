@@ -1,6 +1,7 @@
 ﻿using System;
 using ACE.Entity;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
@@ -141,14 +142,46 @@ public class UpgradeKit : Stackable
 
     public static void UpgradeItem(Player player, WorldObject source, WorldObject target)
     {
-        target.WieldDifficulty = PlayerTierWieldDifficulty((player));
+        var currentWieldDifficulty = target.WieldDifficulty ?? 50;
+        var newWieldDifficulty = PlayerTierWieldDifficulty((player));
+
+        var currentTier = LootGenerationFactory.GetTierFromWieldDifficulty(currentWieldDifficulty) - 1;
+        var newTier = LootGenerationFactory.GetTierFromWieldDifficulty(newWieldDifficulty) - 1;
+
+        target.SetProperty(PropertyInt.WieldDifficulty, newWieldDifficulty);
+
+        // Weapons
+        if (target.ItemType is ItemType.Weapon or ItemType.MissileWeapon or ItemType.MeleeWeapon or ItemType.Caster)
+        {
+            if (target.WeaponSubtype == null)
+            {
+                _log.Error($"MutateQuestItem() - WeaponSubType is null for ({target.Name})");
+                return;
+            }
+
+            if (target.Damage != null)
+            {
+                var currentBaseStat = target.Damage.Value;
+                var currentTierMinimum = LootTables.GetMeleeSubtypeMinimumDamage((LootTables.WeaponSubtype)target.WeaponSubtype, currentTier);
+                var currentRange = LootTables.GetMeleeSubtypeDamageRange((LootTables.WeaponSubtype)target.WeaponSubtype, currentTier);
+                var currentRoll = currentBaseStat - currentTierMinimum;
+
+                var currentPercentile = (float)currentRoll / currentRange;
+
+                var newTierMinimum = LootTables.GetMeleeSubtypeMinimumDamage((LootTables.WeaponSubtype)target.WeaponSubtype, newTier);
+                var newTierRange = LootTables.GetMeleeSubtypeDamageRange((LootTables.WeaponSubtype)target.WeaponSubtype, newTier);
+                var percentileAddition = newTierRange * currentPercentile;
+                var final = Convert.ToInt32(newTierMinimum + percentileAddition);
+
+                target.SetProperty(PropertyInt.Damage, final);
+            }
+        }
     }
 
     private static int PlayerTierWieldDifficulty(Player player)
     {
         var playerTier = player.GetPlayerTier(player.Level ?? 1);
-        var playerTierWieldDiff = LootGenerationFactory.GetWieldDifficultyPerTier(playerTier);
 
-        return playerTierWieldDiff;
+        return LootGenerationFactory.GetWieldDifficultyPerTier(playerTier);
     }
 }
