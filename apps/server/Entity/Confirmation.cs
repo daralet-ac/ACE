@@ -189,6 +189,10 @@ public class Confirmation_CraftInteration : Confirmation
         {
             CombatFocusAlterationGem.UseObjectOnTarget(player, source, target, true);
         }
+        else if (source.WeenieType == WeenieType.UpgradeKit)
+        {
+            UpgradeKit.UseObjectOnTarget(player, source, target, true);
+        }
         else
         {
             RecipeManager.UseObjectOnTarget(player, source, target, true);

@@ -906,6 +906,7 @@ public static partial class LootGenerationFactory
     public static void MutateQuestItem(WorldObject wo)
     {
         wo.SetProperty(PropertyBool.MutableQuestItem, false);
+        //wo.SetProperty(PropertyBool.UpgradeableQuestItem, true);
 
         var tier = GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 50);
         var lootQuality = (float)(wo.LootQualityMod ?? 0.0f);
