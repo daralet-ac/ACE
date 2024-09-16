@@ -475,28 +475,64 @@ public static class LootTables
         Caster
     };
 
-    // DARALET DAMAGE MUTATION VALUES
+    // Mana Rates [slots][tier]
+    public static readonly float[][] QuestItemManaRate =
+    [
+        [0.002083f, 0.002083f, 0.004167f, 0.008333f, 0.016667f, 0.033333f, 0.066667f, 0.125f],
+        [0.004167f, 0.004167f, 0.008333f, 0.016667f, 0.033333f, 0.066667f, 0.133333f, 0.25f],
+        [0.00625f, 0.00625f, 0.0125f, 0.025f, 0.05f, 0.1f, 0.2f, 0.375f],
+        [0.008333f, 0.008333f, 0.016667f, 0.033333f, 0.066667f, 0.133333f, 0.266667f, 0.5f],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0.014583f, 0.014583f, 0.029167f, 0.058333f, 0.116667f, 0.233333f, 0.466667f, 0.875f],
+        [0.016667f, 0.016667f, 0.033333f, 0.066667f, 0.133333f, 0.266667f, 0.533333f, 1.0f]
+    ];
+
+    // Total Mana [slots][tier]
+    public static readonly int[][] QuestItemTotalMana =
+    [
+        [15, 15, 30, 60, 120, 240, 480, 900],
+        [30, 30, 60, 120, 240, 480, 960, 1800],
+        [45, 45, 90, 180, 360, 720, 1440, 2700],
+        [60, 60, 120, 240, 480, 960, 1920, 3600],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [105, 105, 210, 420, 840, 1680, 3360, 6300],
+        [120, 120, 240, 480, 960, 1920, 3840, 7200]
+    ];
+
+    // DARALET MUTATION VALUES
     //  0|125|175|200|215|230|250|270
 
+    // Gear Mods
+    // T0 (50) | T1 (125) | T2 (175) | T3 (200) | T4 (215) | T5 (230) | T6 (250)    | T7 (270)
+    // 10%-20% | 11%-21%  | 12%-22%  | 13%-23%  | 14%-24%  | 15%-25%  | 17.5%-27.5% | 20%-30%
+
+    public const float WeaponBaseDefenseMod = 0.1f;
+    public const float WeaponDefenseModRollRange = 0.1f;
+    public static readonly float[] WeaponDefenseModBonusPerTier = [0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f];
+
+    public const float WeaponBaseOffenseMod = 0.1f;
+    public const float WeaponOffenseModRollRange = 0.1f;
+    public static readonly float[] WeaponOffenseModBonusPerTier = [0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f];
+
+    public const float WeaponBaseSkillMod = 0.1f;
+    public const float WeaponSkillModRollRange = 0.1f;
+    public static readonly float[] WeaponSkillModBonusPerTier = [0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f];
+
+    public const float ArmorBaseSkillMod = 0.1f;
+    public const float ArmorSkillModRollRange = 0.1f;
+    public static readonly float[] ArmorSkillModBonusPerTier = [0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f];
+
+    // Jewelry Ward Level per Tier
+    public static readonly int[] JewelryBaseWardLeverPerTier = [0, 10, 20, 30, 40, 50, 75, 100, 126];
+
+    // Jewelry Rating per Tier
+    public static readonly int[] JewelryBaseRatingPerTier = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    public static readonly int[] JewelryRatingRollRangePerTier = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+
     // Axe - Large (Battle Axe, Silifi, Ono)
-    public static readonly int[] AxeLargeWcids =
-    {
-        301,
-        3750,
-        3751,
-        3752,
-        3753,
-        344,
-        3865,
-        3866,
-        3867,
-        3868,
-        336,
-        3842,
-        3843,
-        3844,
-        3845
-    };
+    public static readonly int[] AxeLargeWcids = { 301, 3750, 3751, 3752, 3753, 344, 3865, 3866, 3867, 3868, 336, 3842, 3843, 3844, 3845 };
     public static readonly int[] AxeLargeMaxDamage = { 9, 17, 24, 34, 49, 72, 106, 152 };
     public static readonly int[] AxeLargeMinDamage = { 6, 12, 18, 25, 37, 54, 79, 114 };
 
@@ -3935,6 +3971,38 @@ public static class LootTables
             default:
             {
                 Console.WriteLine("Error: GetMissileCasterSubtypeDamageRange() - Incorrect Weapon Subtype");
+                return 0;
+            }
+        }
+    }
+
+    public static float GetMissileCasterSubtypeMinimumDamage(WeaponSubtype weaponSubtype, int tier)
+    {
+        if (tier > 7)
+        {
+            _log.Error("GetMissileCasterSubtypeMinimumDamage({WeaponSubtype}, {Tier}) - Tier should not be greater than 7.", weaponSubtype, tier);
+            return 0;
+        }
+
+        switch (weaponSubtype)
+        {
+            case WeaponSubtype.AtlatlLarge:
+                return AtlatlLargeMinDamageMod[tier];
+            case WeaponSubtype.AtlatlSmall:
+                return AtlatlSmallMinDamageMod[tier];
+            case WeaponSubtype.BowLarge:
+                return BowLargeMinDamageMod[tier];
+            case WeaponSubtype.BowSmall:
+                return BowSmallMinDamageMod[tier];
+            case WeaponSubtype.CrossbowLarge:
+                return CrossbowLargeMinDamageMod[tier];
+            case WeaponSubtype.CrossbowSmall:
+                return CrossbowSmallMinDamageMod[tier];
+            case WeaponSubtype.Caster:
+                return CasterMinDamageMod[tier];
+            default:
+            {
+                Console.WriteLine("Error: GetMissileCasterSubtypeMinimumDamage() - Incorrect Weapon Subtype");
                 return 0;
             }
         }
