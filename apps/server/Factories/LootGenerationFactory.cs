@@ -2741,9 +2741,9 @@ public static partial class LootGenerationFactory
         }
     }
 
-    public static int GetTierFromWieldDifficulty(int tier)
+    public static int GetTierFromWieldDifficulty(int wieldDifficulty)
     {
-        switch (tier)
+        switch (wieldDifficulty)
         {
             case 50:
                 return 1;
@@ -2763,6 +2763,54 @@ public static partial class LootGenerationFactory
                 return 8;
             default:
                 return 0;
+        }
+    }
+
+    public static int GetRequiredLevelPerTier(int tier)
+    {
+        switch (tier)
+        {
+            case 1:
+                return 1;
+            case 2:
+                return 10;
+            case 3:
+                return 20;
+            case 4:
+                return 30;
+            case 5:
+                return 40;
+            case 6:
+                return 50;
+            case 7:
+                return 75;
+            case 8:
+                return 100;
+            default:
+                return 1;
+        }
+    }
+
+    public static int GetTierFromRequiredLevel(int requiredLevel)
+    {
+        switch (requiredLevel)
+        {
+            case < 10:
+                return 1;
+            case 20:
+                return 2;
+            case 30:
+                return 3;
+            case 40:
+                return 4;
+            case 50:
+                return 5;
+            case 75:
+                return 6;
+            case 100:
+                return 7;
+            default:
+                return 8;
         }
     }
 
