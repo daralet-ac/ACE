@@ -20,5 +20,11 @@ public enum ArmorStyle
     OlthoiCeldon,
     OlthoiAmuli,
     OlthoiKoujia,
-    OlthoiArmor
+    OlthoiArmor,
+    Buckler,
+    SmallShield,
+    StandardShield,
+    LargeShield,
+    TowerShield,
+    CovenantShield
 };
