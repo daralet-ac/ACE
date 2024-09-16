@@ -117,7 +117,7 @@ public static partial class LootGenerationFactory
         var qualityMod = td.LootQualityMod != 0.0f ? td.LootQualityMod : 0.0f;
 
         // Roll Ward
-        var minWard = GetMaxValueOfTier(tier) / 2;
+        var minWard = GetMaxValueOfTier(tier);
         wo.WardLevel = (int)(minWard * GetDiminishingRoll(td) + minWard);
         var maxWardRollPercentile = (float)wo.WardLevel / (GetMaxValueOfTier(8));
 
