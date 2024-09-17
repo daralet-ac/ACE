@@ -15,6 +15,10 @@ partial class Player
     private double LastHotspotHintTick = 0;
     private double HotspotHintTickTime = 3;
 
+    private double NextTriggerTimeBlue = 0;
+    private double NextTriggerTimeYellow = 0;
+    private double NextTriggerTimeRed = 0;
+
     /// <summary>
     /// Check which Menhir Field we are in and recharge valid scarabs
     /// Recharges scarabs that are in the player's pack or equipped, and only of lower tiers
@@ -184,6 +188,20 @@ partial class Player
             empoweredScarab.StartCooldown(this);
             empoweredScarab.DecreaseStructure(1, this);
 
+            // Also stamp the player with a cooldown time for each slot, to prevent swapping scarabs to bypass cooldown.
+            switch (empoweredScarab.EmpoweredScarabColor)
+            {
+                case 0:
+                    NextTriggerTimeBlue = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+                case 1:
+                    NextTriggerTimeYellow = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+                case 2:
+                    NextTriggerTimeRed = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+            }
+
             return 1.0f - (float)empoweredScarab.EmpoweredScarabReductionAmount;
         }
 
@@ -226,7 +244,7 @@ partial class Player
     }
 
     /// <summary>
-    /// Check each equipped Empowered Scarab to see if any have a relevant effect for the casted spell
+    /// Check each equipped Empowered Scarab to see if any have a relevant effect for the cast spell
     /// </summary>
     public EmpoweredScarab CheckForReadyEmpoweredScarabEffects(
         List<EmpoweredScarab> equippedEmpoweredScarabs,
@@ -268,6 +286,20 @@ partial class Player
             empoweredScarab.NextEmpoweredScarabTriggerTime = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
             empoweredScarab.StartCooldown(this);
             empoweredScarab.DecreaseStructure(1, this);
+
+            // Also stamp the player with a cooldown time for each slot, to prevent swapping scarabs to bypass cooldown.
+            switch (empoweredScarab.EmpoweredScarabColor)
+            {
+                case 0:
+                    NextTriggerTimeBlue = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+                case 1:
+                    NextTriggerTimeYellow = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+                case 2:
+                    NextTriggerTimeRed = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+            }
 
             StartEmpoweredScarabEffect(empoweredScarab);
         }
@@ -630,12 +662,34 @@ partial class Player
 
     private bool EmpoweredScarabCooldownChecks(EmpoweredScarab empoweredScarab, double currentTime, bool onCrit = false)
     {
-        // ROLL AGAINST TRIGGER CHANCE
         if (empoweredScarab.NextEmpoweredScarabTriggerTime > currentTime)
         {
             return false;
         }
 
+        switch (empoweredScarab.EmpoweredScarabColor)
+        {
+            case 0:
+                if (NextTriggerTimeBlue > currentTime)
+                {
+                    return false;
+                }
+                break;
+            case 1:
+                if (NextTriggerTimeYellow > currentTime)
+                {
+                    return false;
+                }
+                break;
+            case 2:
+                if (NextTriggerTimeRed > currentTime)
+                {
+                    return false;
+                }
+                break;
+        }
+
+        // ROLL AGAINST TRIGGER CHANCE
         var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (empoweredScarab.EmpoweredScarabTriggerChance < rng && !onCrit)
         {
