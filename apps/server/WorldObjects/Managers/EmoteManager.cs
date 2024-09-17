@@ -3191,7 +3191,8 @@ public class EmoteManager
             1054002, // Sanguine Crystal
             1054003, // Scourging Stone
             1053972, // Tailoring Kit
-            1053973  // Tailoring Pattern
+            1053973, // Tailoring Pattern
+            1054004  // Upgrade Kit
         };
 
         //numRewards *= GetCapstoneModifier(); // TODO: allow this to scale up when a fellowship has difficulty modifiers set
