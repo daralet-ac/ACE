@@ -6391,6 +6391,10 @@ public enum SpellId : uint
     PotionOfLightningResistance,
     CombatModeRunDebuff,
     StealthRunDebuff,
+    LifeGiverMinor,
+    LifeGiverMajor,
+    LifeGiverEpic,
+    LifeGiverLegendary,
 
     NumSpells = 8192,
 
