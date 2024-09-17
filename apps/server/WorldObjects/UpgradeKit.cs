@@ -66,7 +66,16 @@ public class UpgradeKit : Stackable
             return;
         }
 
-        if (target.WieldDifficulty >= GetHighestWieldDifficultyForPlayer(player,target))
+        if (target.ItemType == ItemType.Jewelry && target.WieldDifficulty >= GetRequiredLevelFromPlayerTier(player))
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"{target.Name} is already at the highest difficulty you can wield.", ChatMessageType.Craft)
+            );
+            player.SendUseDoneEvent();
+            return;
+        }
+
+        if (target.ItemType != ItemType.Jewelry && target.WieldDifficulty >= GetHighestWieldDifficultyForPlayer(player,target))
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat($"{target.Name} is already at the highest difficulty you can wield.", ChatMessageType.Craft)
