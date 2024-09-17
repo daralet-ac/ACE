@@ -316,6 +316,38 @@ public class Gem : Stackable
                 case CombatAbility.PowerScaler:
                     if (player.EnchantmentManager.HasSpell(5379))
                     {
+                        if (player.IsBusy)
+                        {
+                            player.Session.Network.EnqueueSend(
+                                new GameMessageSystemChat(
+                                    $"You cannot dispel the Shroud while performing other actions.",
+                                    ChatMessageType.Broadcast
+                                )
+                            );
+                            return;
+                        }
+
+                        if (player.Teleporting)
+                        {
+                            player.Session.Network.EnqueueSend(
+                                new GameMessageSystemChat(
+                                    $"You cannot dispel the Shroud while teleporting.",
+                                    ChatMessageType.Broadcast
+                                )
+                            );
+                            return;
+                        }
+
+                        if (player.LastSuccessCast_Time > Time.GetUnixTime() - 5.0)
+                        {
+                            player.Session.Network.EnqueueSend(
+                                new GameMessageSystemChat(
+                                    $"You cannot dispel the Shroud if you have recently cast a spell.",
+                                    ChatMessageType.Broadcast
+                                )
+                            );
+                            return;
+                        }
                         if (player.CurrentLandblock != null && player.CurrentLandblock.IsDungeon)
                         {
                             player.Session.Network.EnqueueSend(
@@ -337,21 +369,19 @@ public class Gem : Stackable
                             );
                             return;
                         }
-                        else
+                        
+                        var enchantment = player.EnchantmentManager.GetEnchantment(5379);
+                        if (enchantment != null)
                         {
-                            var enchantment = player.EnchantmentManager.GetEnchantment(5379);
-                            if (enchantment != null)
-                            {
-                                player.EnchantmentManager.Dispel(enchantment);
-                                player.HandleSpellHooks(new Spell(5379));
-                                player.PlayParticleEffect(PlayScript.DispelCreature, player.Guid);
-                                player.Session.Network.EnqueueSend(
-                                    new GameMessageSystemChat(
-                                        $"You dispel the Shroud, and your innate strength returns.",
-                                        ChatMessageType.Broadcast
-                                    )
-                                );
-                            }
+                            player.EnchantmentManager.Dispel(enchantment);
+                            player.HandleSpellHooks(new Spell(5379));
+                            player.PlayParticleEffect(PlayScript.DispelCreature, player.Guid);
+                            player.Session.Network.EnqueueSend(
+                                new GameMessageSystemChat(
+                                    $"You dispel the Shroud, and your innate strength returns.",
+                                    ChatMessageType.Broadcast
+                                )
+                            );
                         }
                     }
                     else
