@@ -36,7 +36,7 @@ public class UpgradeKit : Stackable
         SetEphemeralValues();
     }
 
-    private void SetEphemeralValues() { }
+    private static void SetEphemeralValues() { }
 
     public override void HandleActionUseOnTarget(Player player, WorldObject target)
     {
@@ -60,7 +60,7 @@ public class UpgradeKit : Stackable
         if (!target.UpgradeableQuestItem)
         {
             player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"Only certain quest items can be upgraded.", ChatMessageType.Craft)
+                new GameMessageSystemChat("Only certain quest items can be upgraded.", ChatMessageType.Craft)
             );
             player.SendUseDoneEvent();
             return;
@@ -118,12 +118,12 @@ public class UpgradeKit : Stackable
             player,
             () =>
             {
-                if (!UpgradeItem(player, source, target))
+                if (!UpgradeItem(player, target))
                 {
                     player.EnqueueBroadcast(new GameMessageUpdateObject(target));
                     player.Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"The crafting attempt encountered an error. Please report.",
+                            "The crafting attempt encountered an error. Please report.",
                             ChatMessageType.Broadcast
                         )
                     );
@@ -157,7 +157,7 @@ public class UpgradeKit : Stackable
         player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
     }
 
-    private static bool UpgradeItem(Player player, WorldObject source, WorldObject target)
+    private static bool UpgradeItem(Player player, WorldObject target)
     {
         if (target.ItemType != ItemType.Jewelry)
         {
@@ -273,25 +273,17 @@ public class UpgradeKit : Stackable
         var targetWieldAttribute = (PropertyAttribute)target.WieldSkillType;
         var playerBaseAttributeLevel = player.Attributes[targetWieldAttribute].Base;
 
-        switch (playerBaseAttributeLevel)
+        return playerBaseAttributeLevel switch
         {
-            case >= 270:
-                return 270;
-            case >= 250:
-                return 250;
-            case >= 230:
-                return 230;
-            case >= 215:
-                return 215;
-            case >= 200:
-                return 200;
-            case >= 175:
-                return 175;
-            case >= 125:
-                return 125;
-            default:
-                return 50;
-        }
+            >= 270 => 270,
+            >= 250 => 250,
+            >= 230 => 230,
+            >= 215 => 215,
+            >= 200 => 200,
+            >= 175 => 175,
+            >= 125 => 125,
+            _ => 50
+        };
     }
 
     private static int GetRequiredLevelFromPlayerTier(Player player)
@@ -460,44 +452,29 @@ public class UpgradeKit : Stackable
 
         if (target.ArmorStyle != null)
         {
-            switch ((ArmorStyle)target.ArmorStyle)
+            armorStyleBaseArmorLevel = (ArmorStyle)target.ArmorStyle switch
             {
-                case ACE.Entity.Enum.ArmorStyle.Amuli:
-                case ACE.Entity.Enum.ArmorStyle.Chiran:
-                case ACE.Entity.Enum.ArmorStyle.OlthoiAmuli:
-                case ACE.Entity.Enum.ArmorStyle.Leather:
-                case ACE.Entity.Enum.ArmorStyle.Yoroi:
-                case ACE.Entity.Enum.ArmorStyle.Lorica:
-                case ACE.Entity.Enum.ArmorStyle.Buckler:
-                case ACE.Entity.Enum.ArmorStyle.SmallShield:
-                    armorStyleBaseArmorLevel = 75;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.StuddedLeather:
-                case ACE.Entity.Enum.ArmorStyle.Koujia:
-                case ACE.Entity.Enum.ArmorStyle.OlthoiKoujia:
-                    armorStyleBaseArmorLevel = 90;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.Chainmail:
-                case ACE.Entity.Enum.ArmorStyle.Scalemail:
-                case ACE.Entity.Enum.ArmorStyle.Nariyid:
-                case ACE.Entity.Enum.ArmorStyle.StandardShield:
-                    armorStyleBaseArmorLevel = 100;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.LargeShield:
-                    armorStyleBaseArmorLevel = 105;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.Platemail:
-                case ACE.Entity.Enum.ArmorStyle.Celdon:
-                case ACE.Entity.Enum.ArmorStyle.OlthoiCeldon:
-                case ACE.Entity.Enum.ArmorStyle.TowerShield:
-                    armorStyleBaseArmorLevel = 110;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.Covenant:
-                case ACE.Entity.Enum.ArmorStyle.OlthoiArmor:
-                case ACE.Entity.Enum.ArmorStyle.CovenantShield:
-                    armorStyleBaseArmorLevel = 125;
-                    break;
-            }
+                ACE.Entity.Enum.ArmorStyle.Amuli or ACE.Entity.Enum.ArmorStyle.Chiran
+                    or ACE.Entity.Enum.ArmorStyle.OlthoiAmuli or ACE.Entity.Enum.ArmorStyle.Leather
+                    or ACE.Entity.Enum.ArmorStyle.Yoroi or ACE.Entity.Enum.ArmorStyle.Lorica
+                    or ACE.Entity.Enum.ArmorStyle.Buckler or ACE.Entity.Enum.ArmorStyle.SmallShield
+                    => 75,
+                ACE.Entity.Enum.ArmorStyle.StuddedLeather or ACE.Entity.Enum.ArmorStyle.Koujia
+                    or ACE.Entity.Enum.ArmorStyle.OlthoiKoujia
+                    => 90,
+                ACE.Entity.Enum.ArmorStyle.Chainmail or ACE.Entity.Enum.ArmorStyle.Scalemail
+                    or ACE.Entity.Enum.ArmorStyle.Nariyid or ACE.Entity.Enum.ArmorStyle.StandardShield
+                    => 100,
+                ACE.Entity.Enum.ArmorStyle.LargeShield
+                    => 105,
+                ACE.Entity.Enum.ArmorStyle.Platemail or ACE.Entity.Enum.ArmorStyle.Celdon
+                    or ACE.Entity.Enum.ArmorStyle.OlthoiCeldon or ACE.Entity.Enum.ArmorStyle.TowerShield
+                    => 110,
+                ACE.Entity.Enum.ArmorStyle.Covenant or ACE.Entity.Enum.ArmorStyle.OlthoiArmor
+                    or ACE.Entity.Enum.ArmorStyle.CovenantShield
+                    => 125,
+                _ => armorStyleBaseArmorLevel
+            };
         }
 
         var currentLevel = target.ArmorLevel.Value;
@@ -521,42 +498,28 @@ public class UpgradeKit : Stackable
 
         if (target.ArmorStyle != null)
         {
-            switch ((ArmorStyle)target.ArmorStyle)
+            armorStyleBaseWardLevel = (ArmorStyle)target.ArmorStyle switch
             {
-                case ACE.Entity.Enum.ArmorStyle.CovenantShield:
-                    armorStyleBaseWardLevel = 10;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.TowerShield:
-                    armorStyleBaseWardLevel = 8;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.Amuli:
-                case ACE.Entity.Enum.ArmorStyle.Chiran:
-                case ACE.Entity.Enum.ArmorStyle.OlthoiAmuli:
-                case ACE.Entity.Enum.ArmorStyle.LargeShield:
-                    armorStyleBaseWardLevel = 7;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.StandardShield:
-                    armorStyleBaseWardLevel = 6;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.Buckler:
-                case ACE.Entity.Enum.ArmorStyle.SmallShield:
-                    armorStyleBaseWardLevel = 5;
-                    break;
-                case ACE.Entity.Enum.ArmorStyle.Leather:
-                case ACE.Entity.Enum.ArmorStyle.StuddedLeather:
-                case ACE.Entity.Enum.ArmorStyle.Koujia:
-                case ACE.Entity.Enum.ArmorStyle.OlthoiKoujia:
-                case ACE.Entity.Enum.ArmorStyle.Chainmail:
-                case ACE.Entity.Enum.ArmorStyle.Scalemail:
-                case ACE.Entity.Enum.ArmorStyle.Nariyid:
-                case ACE.Entity.Enum.ArmorStyle.Platemail:
-                case ACE.Entity.Enum.ArmorStyle.Celdon:
-                case ACE.Entity.Enum.ArmorStyle.OlthoiCeldon:
-                case ACE.Entity.Enum.ArmorStyle.Covenant:
-                case ACE.Entity.Enum.ArmorStyle.OlthoiArmor:
-                    armorStyleBaseWardLevel = 5;
-                    break;
-            }
+                ACE.Entity.Enum.ArmorStyle.CovenantShield
+                    => 10,
+                ACE.Entity.Enum.ArmorStyle.TowerShield
+                    => 8,
+                ACE.Entity.Enum.ArmorStyle.Amuli or ACE.Entity.Enum.ArmorStyle.Chiran
+                    or ACE.Entity.Enum.ArmorStyle.OlthoiAmuli or ACE.Entity.Enum.ArmorStyle.LargeShield
+                    => 7,
+                ACE.Entity.Enum.ArmorStyle.StandardShield
+                    => 6,
+                ACE.Entity.Enum.ArmorStyle.Buckler or ACE.Entity.Enum.ArmorStyle.SmallShield
+                    => 5,
+                ACE.Entity.Enum.ArmorStyle.Leather or ACE.Entity.Enum.ArmorStyle.StuddedLeather
+                    or ACE.Entity.Enum.ArmorStyle.Koujia or ACE.Entity.Enum.ArmorStyle.OlthoiKoujia
+                    or ACE.Entity.Enum.ArmorStyle.Chainmail or ACE.Entity.Enum.ArmorStyle.Scalemail
+                    or ACE.Entity.Enum.ArmorStyle.Nariyid or ACE.Entity.Enum.ArmorStyle.Platemail
+                    or ACE.Entity.Enum.ArmorStyle.Celdon or ACE.Entity.Enum.ArmorStyle.OlthoiCeldon
+                    or ACE.Entity.Enum.ArmorStyle.Covenant or ACE.Entity.Enum.ArmorStyle.OlthoiArmor
+                    => 5,
+                _ => armorStyleBaseWardLevel
+            };
         }
 
         var currentLevel = target.WardLevel.Value;
