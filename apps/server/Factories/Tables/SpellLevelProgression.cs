@@ -7677,6 +7677,14 @@ public static class SpellLevelProgression
         SpellId.WizardsUltimateIntellect,
     };
 
+    public static readonly List<SpellId> LifeGiver = new List<SpellId>()
+    {
+        SpellId.LifeGiverMinor,
+        SpellId.LifeGiverMajor,
+        SpellId.LifeGiverEpic,
+        SpellId.LifeGiverLegendary,
+    };
+
     static SpellLevelProgression()
     {
         // takes ~5ms
@@ -8428,6 +8436,7 @@ public static class SpellLevelProgression
         AddSpells(FellowshipHeal);
         AddSpells(FellowshipRevitalize);
         AddSpells(FellowshipManaBoost);
+        AddSpells(LifeGiver);
     }
 
     private static void AddSpells(List<SpellId> spells)
