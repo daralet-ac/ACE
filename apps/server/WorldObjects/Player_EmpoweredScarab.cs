@@ -15,6 +15,10 @@ partial class Player
     private double LastHotspotHintTick = 0;
     private double HotspotHintTickTime = 3;
 
+    private double NextTriggerTimeBlue = 0;
+    private double NextTriggerTimeYellow = 0;
+    private double NextTriggerTimeRed = 0;
+
     /// <summary>
     /// Check which Menhir Field we are in and recharge valid scarabs
     /// Recharges scarabs that are in the player's pack or equipped, and only of lower tiers
@@ -175,7 +179,8 @@ partial class Player
                 continue;
             }
 
-            if ((EmpoweredScarabEffect)empoweredScarab.EmpoweredScarabEffectId != EmpoweredScarabEffect.ManaReduction)
+            if (empoweredScarab.EmpoweredScarabEffectId != null &&
+                (EmpoweredScarabEffect)empoweredScarab.EmpoweredScarabEffectId != EmpoweredScarabEffect.ManaReduction)
             {
                 continue;
             }
@@ -184,7 +189,24 @@ partial class Player
             empoweredScarab.StartCooldown(this);
             empoweredScarab.DecreaseStructure(1, this);
 
-            return 1.0f - (float)empoweredScarab.EmpoweredScarabReductionAmount;
+            // Also stamp the player with a cooldown time for each slot, to prevent swapping scarabs to bypass cooldown.
+            switch (empoweredScarab.EmpoweredScarabColor)
+            {
+                case 0:
+                    NextTriggerTimeBlue = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+                case 1:
+                    NextTriggerTimeYellow = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+                case 2:
+                    NextTriggerTimeRed = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+            }
+
+            if (empoweredScarab.EmpoweredScarabReductionAmount != null)
+            {
+                return 1.0f - (float)empoweredScarab.EmpoweredScarabReductionAmount;
+            }
         }
 
         return 1.0f;
@@ -226,7 +248,7 @@ partial class Player
     }
 
     /// <summary>
-    /// Check each equipped Empowered Scarab to see if any have a relevant effect for the casted spell
+    /// Check each equipped Empowered Scarab to see if any have a relevant effect for the cast spell
     /// </summary>
     public EmpoweredScarab CheckForReadyEmpoweredScarabEffects(
         List<EmpoweredScarab> equippedEmpoweredScarabs,
@@ -241,7 +263,8 @@ partial class Player
 
         foreach (var empoweredScarab in equippedEmpoweredScarabs)
         {
-            if (effectsUsed.Contains((EmpoweredScarabEffect)empoweredScarab.EmpoweredScarabEffectId))
+            if (empoweredScarab.EmpoweredScarabEffectId != null &&
+                effectsUsed.Contains((EmpoweredScarabEffect)empoweredScarab.EmpoweredScarabEffectId))
             {
                 continue;
             }
@@ -257,8 +280,11 @@ partial class Player
                 continue;
             }
 
-            var effect = (EmpoweredScarabEffect)empoweredScarab.EmpoweredScarabEffectId;
-            effectsUsed.Add(effect); // This scarab's trigger successfully occurred. Add the effect ID to a list to prevent other equipped scarabs with the same effect from triggering for this spell.
+            if (empoweredScarab.EmpoweredScarabEffectId != null)
+            {
+                var effect = (EmpoweredScarabEffect)empoweredScarab.EmpoweredScarabEffectId;
+                effectsUsed.Add(effect); // This scarab's trigger successfully occurred. Add the effect ID to a list to prevent other equipped scarabs with the same effect from triggering for this spell.
+            }
 
             empoweredScarab.TriggerSpell = spell;
             empoweredScarab.IsWeaponSpell = isWeaponSpell;
@@ -269,6 +295,20 @@ partial class Player
             empoweredScarab.StartCooldown(this);
             empoweredScarab.DecreaseStructure(1, this);
 
+            // Also stamp the player with a cooldown time for each slot, to prevent swapping scarabs to bypass cooldown.
+            switch (empoweredScarab.EmpoweredScarabColor)
+            {
+                case 0:
+                    NextTriggerTimeBlue = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+                case 1:
+                    NextTriggerTimeYellow = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+                case 2:
+                    NextTriggerTimeRed = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
+                    break;
+            }
+
             StartEmpoweredScarabEffect(empoweredScarab);
         }
         return null;
@@ -276,69 +316,78 @@ partial class Player
 
     private void StartEmpoweredScarabEffect(EmpoweredScarab empoweredScarab)
     {
-        switch ((EmpoweredScarabEffect)empoweredScarab.EmpoweredScarabEffectId)
+        if (empoweredScarab.EmpoweredScarabEffectId != null)
         {
-            case EmpoweredScarabEffect.CastVuln:
-            case EmpoweredScarabEffect.CastProt:
-            case EmpoweredScarabEffect.CastItemBuff:
-            case EmpoweredScarabEffect.CastVitalRate:
-                var maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
-                empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
+            switch ((EmpoweredScarabEffect)empoweredScarab.EmpoweredScarabEffectId)
+            {
+                case EmpoweredScarabEffect.CastVuln:
+                case EmpoweredScarabEffect.CastProt:
+                case EmpoweredScarabEffect.CastItemBuff:
+                case EmpoweredScarabEffect.CastVitalRate:
+                    var maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
+                    empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
 
-                CastEmpoweredScarabSpell(empoweredScarab);
-                break;
+                    CastEmpoweredScarabSpell(empoweredScarab);
+                    break;
 
-            case EmpoweredScarabEffect.Intensity:
+                case EmpoweredScarabEffect.Intensity:
 
-                empoweredScarab.TriggerSpell.SpellPowerMod = (float)empoweredScarab.EmpoweredScarabIntensity + 1;
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"Empowered Scarab of Intensity increased the spell's intensity by {Math.Round((empoweredScarab.EmpoweredScarabIntensity ?? 1) * 100, 0)}%!",
-                        ChatMessageType.Magic
-                    )
-                );
-                break;
+                    if (empoweredScarab.EmpoweredScarabIntensity != null)
+                    {
+                        empoweredScarab.TriggerSpell.SpellPowerMod = (float)empoweredScarab.EmpoweredScarabIntensity + 1;
+                        Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                $"Empowered Scarab of Intensity increased the spell's intensity by " +
+                                $"{Math.Round((empoweredScarab.EmpoweredScarabIntensity ?? 1) * 100, 0)}%!",
+                                ChatMessageType.Magic
+                            )
+                        );
+                    }
 
-            case EmpoweredScarabEffect.Shield:
+                    break;
 
-                maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
-                empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
-                empoweredScarab.EmpoweredScarabCastSpellId = 5206; // Surge of Protection
+                case EmpoweredScarabEffect.Shield:
 
-                CastEmpoweredScarabSpell(empoweredScarab, false);
-                break;
+                    maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
+                    empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
+                    empoweredScarab.EmpoweredScarabCastSpellId = 5206; // Surge of Protection
 
-            case EmpoweredScarabEffect.Duplicate:
-
-                maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
-                empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
-                empoweredScarab.EmpoweredScarabCastSpellId = empoweredScarab.TriggerSpell.Id;
-
-                CastEmpoweredScarabSpell(empoweredScarab);
-                break;
-
-            case EmpoweredScarabEffect.Detonate:
-
-                maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
-                empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
-                empoweredScarab.EmpoweredScarabCastSpellId = DetonateSpellId(empoweredScarab.TriggerSpell);
-                empoweredScarab.SpellIntensityMultiplier = AoeSpellIntensity(empoweredScarab.TriggerSpell);
-
-                if (empoweredScarab.EmpoweredScarabCastSpellId != null)
-                {
                     CastEmpoweredScarabSpell(empoweredScarab, false);
-                }
+                    break;
 
-                break;
+                case EmpoweredScarabEffect.Duplicate:
 
-            case EmpoweredScarabEffect.Crit:
+                    maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
+                    empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
+                    empoweredScarab.EmpoweredScarabCastSpellId = empoweredScarab.TriggerSpell.Id;
 
-                maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
-                empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
-                empoweredScarab.EmpoweredScarabCastSpellId = 6328; // Surge of Crushing (Gauntlet Critical Damage Boost)
+                    CastEmpoweredScarabSpell(empoweredScarab);
+                    break;
 
-                CastEmpoweredScarabSpell(empoweredScarab, false);
-                break;
+                case EmpoweredScarabEffect.Detonate:
+
+                    maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
+                    empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
+                    empoweredScarab.EmpoweredScarabCastSpellId = DetonateSpellId(empoweredScarab.TriggerSpell);
+                    empoweredScarab.SpellIntensityMultiplier = AoeSpellIntensity(empoweredScarab.TriggerSpell);
+
+                    if (empoweredScarab.EmpoweredScarabCastSpellId != null)
+                    {
+                        CastEmpoweredScarabSpell(empoweredScarab, false);
+                    }
+
+                    break;
+
+                case EmpoweredScarabEffect.Crit:
+
+                    maxLevel = empoweredScarab.EmpoweredScarabMaxLevel ?? 1;
+                    empoweredScarab.SpellLevel = (uint)Math.Min(empoweredScarab.TriggerSpell.Level, maxLevel);
+                    empoweredScarab.EmpoweredScarabCastSpellId =
+                        6328; // Surge of Crushing (Gauntlet Critical Damage Boost)
+
+                    CastEmpoweredScarabSpell(empoweredScarab, false);
+                    break;
+            }
         }
     }
 
@@ -411,7 +460,7 @@ partial class Player
         }
 
         SpellId castSpellId;
-        if (useProgression)
+        if (useProgression && empoweredScarab.SpellLevel != null)
         {
             castSpellId = SpellLevelProgression.GetSpellAtLevel(
                 castSpellLevel1Id,
@@ -630,12 +679,34 @@ partial class Player
 
     private bool EmpoweredScarabCooldownChecks(EmpoweredScarab empoweredScarab, double currentTime, bool onCrit = false)
     {
-        // ROLL AGAINST TRIGGER CHANCE
         if (empoweredScarab.NextEmpoweredScarabTriggerTime > currentTime)
         {
             return false;
         }
 
+        switch (empoweredScarab.EmpoweredScarabColor)
+        {
+            case 0:
+                if (NextTriggerTimeBlue > currentTime)
+                {
+                    return false;
+                }
+                break;
+            case 1:
+                if (NextTriggerTimeYellow > currentTime)
+                {
+                    return false;
+                }
+                break;
+            case 2:
+                if (NextTriggerTimeRed > currentTime)
+                {
+                    return false;
+                }
+                break;
+        }
+
+        // ROLL AGAINST TRIGGER CHANCE
         var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (empoweredScarab.EmpoweredScarabTriggerChance < rng && !onCrit)
         {
