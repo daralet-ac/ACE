@@ -722,7 +722,7 @@ public partial class Container : WorldObject
                 : null;
         }
 
-        if (this is Player && worldObject.MutableQuestItem == true)
+        if (this is Player && worldObject.MutableQuestItem)
         {
             LootGenerationFactory.MutateQuestItem(worldObject);
         }

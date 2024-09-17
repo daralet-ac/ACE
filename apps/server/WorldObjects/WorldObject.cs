@@ -1703,18 +1703,34 @@ public abstract partial class WorldObject : IActor
         }
     }
 
-    public bool? MutableQuestItem
+    public bool MutableQuestItem
     {
-        get => GetProperty(PropertyBool.MutableQuestItem);
+        get => GetProperty(PropertyBool.MutableQuestItem) ?? false;
         set
         {
-            if (!value.HasValue)
+            if (!value)
             {
                 RemoveProperty(PropertyBool.MutableQuestItem);
             }
             else
             {
-                SetProperty(PropertyBool.MutableQuestItem, value.Value);
+                SetProperty(PropertyBool.MutableQuestItem, value);
+            }
+        }
+    }
+
+    public bool UpgradeableQuestItem
+    {
+        get => GetProperty(PropertyBool.UpgradeableQuestItem) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.UpgradeableQuestItem);
+            }
+            else
+            {
+                SetProperty(PropertyBool.UpgradeableQuestItem, value);
             }
         }
     }

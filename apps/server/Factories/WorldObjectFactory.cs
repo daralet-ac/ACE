@@ -157,6 +157,8 @@ public static class WorldObjectFactory
                 return new RetainingChisel(weenie, guid);
             case WeenieType.CombatFocusAlterationGem:
                 return new CombatFocusAlterationGem(weenie, guid);
+            case WeenieType.UpgradeKit:
+                return new UpgradeKit(weenie, guid);
             default:
                 return new GenericObject(weenie, guid);
         }
@@ -290,6 +292,8 @@ public static class WorldObjectFactory
                 return new RetainingChisel(biota);
             case WeenieType.CombatFocusAlterationGem:
                 return new CombatFocusAlterationGem(biota);
+            case WeenieType.UpgradeKit:
+                return new UpgradeKit(biota);
             default:
                 return new GenericObject(biota);
         }

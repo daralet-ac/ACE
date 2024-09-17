@@ -231,6 +231,7 @@ public enum PropertyBool : ushort
     IsBankContainer = 151,
     ShroudKillXpReward = 152,
     IsPlayerTierChest = 153,
+    UpgradeableQuestItem = 154,
 
     /* custom */
     [ServerOnly]
