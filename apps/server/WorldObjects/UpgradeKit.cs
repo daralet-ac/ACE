@@ -270,8 +270,8 @@ public class UpgradeKit : Stackable
             return 0;
         }
 
-        var targetWieldAttribrute = (PropertyAttribute)target.WieldSkillType;
-        var playerBaseAttributeLevel = player.Attributes[targetWieldAttribrute].Base;
+        var targetWieldAttribute = (PropertyAttribute)target.WieldSkillType;
+        var playerBaseAttributeLevel = player.Attributes[targetWieldAttribute].Base;
 
         switch (playerBaseAttributeLevel)
         {
