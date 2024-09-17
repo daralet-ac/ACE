@@ -66,10 +66,10 @@ public class UpgradeKit : Stackable
             return;
         }
 
-        if (target.WieldDifficulty >= GetWieldDifficultyFromPlayerTier((player)))
+        if (target.WieldDifficulty >= GetHighestWieldDifficultyForPlayer(player,target))
         {
             player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"The item has already been upgraded to your current wield tier.", ChatMessageType.Craft)
+                new GameMessageSystemChat($"{target.Name} is already at the highest difficulty you can wield.", ChatMessageType.Craft)
             );
             player.SendUseDoneEvent();
             return;
@@ -79,12 +79,12 @@ public class UpgradeKit : Stackable
         {
             var wieldReq = target.ItemType == ItemType.Jewelry
                 ? GetRequiredLevelFromPlayerTier(player)
-                : GetWieldDifficultyFromPlayerTier(player);
+                : GetHighestWieldDifficultyForPlayer(player, target);
             var wieldReqType = target.ItemType == ItemType.Jewelry ? "Required Level" : "Wield Difficulty";
             if (
                 !player.ConfirmationManager.EnqueueSend(
                     new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                    $"This will upgrade {target.Name} to your current wield tier. Its {wieldReqType} will be increased to {wieldReq}."
+                    $"This will upgrade {target.Name} to the highest difficulty you can wield. Its {wieldReqType} will be increased to {wieldReq}."
                 )
             )
             {
@@ -162,7 +162,7 @@ public class UpgradeKit : Stackable
         if (target.ItemType != ItemType.Jewelry)
         {
             var currentWieldDifficulty = target.WieldDifficulty ?? 50;
-            var newWieldDifficulty = GetWieldDifficultyFromPlayerTier((player));
+            var newWieldDifficulty = GetHighestWieldDifficultyForPlayer(player, target);
 
             var currentTier = LootGenerationFactory.GetTierFromWieldDifficulty(currentWieldDifficulty) - 1;
             var newTier = LootGenerationFactory.GetTierFromWieldDifficulty(newWieldDifficulty) - 1;
@@ -192,6 +192,13 @@ public class UpgradeKit : Stackable
             // Armor
             if (target.WeenieType is WeenieType.Clothing || target.ItemType == ItemType.Armor)
             {
+                if (target.ArmorStyle == null)
+                {
+                    _log.Error(
+                        $"MutateQuestItem() - ArmorStyle is null for ({target.Name}). Armor upgrade aborted.");
+                    return false;
+                }
+
                 ScaleUpArmorLevel(target, currentTier, newTier);
                 ScaleUpWardLevel(target, currentTier, newTier);
 
@@ -243,7 +250,7 @@ public class UpgradeKit : Stackable
             ScaleUpJewelryRating(PropertyInt.GearDamage, target, currentTier, newTier);
             ScaleUpJewelryRating(PropertyInt.GearDamageResist, target, currentTier, newTier);
 
-            // Wield Difficulty
+            // Level Requirement
             target.SetProperty(PropertyInt.WieldDifficulty, newRequiredLevel);
 
             // Spells
@@ -256,11 +263,35 @@ public class UpgradeKit : Stackable
         return true;
     }
 
-    private static int GetWieldDifficultyFromPlayerTier(Player player)
+    private static int GetHighestWieldDifficultyForPlayer(Player player, WorldObject target)
     {
-        var playerTier = player.GetPlayerTier(player.Level ?? 1);
+        if (target.WieldSkillType == null)
+        {
+            return 0;
+        }
 
-        return LootGenerationFactory.GetWieldDifficultyPerTier(playerTier);
+        var targetWieldAttribrute = (PropertyAttribute)target.WieldSkillType;
+        var playerBaseAttributeLevel = player.Attributes[targetWieldAttribrute].Base;
+
+        switch (playerBaseAttributeLevel)
+        {
+            case >= 270:
+                return 270;
+            case >= 250:
+                return 250;
+            case >= 230:
+                return 230;
+            case >= 215:
+                return 215;
+            case >= 200:
+                return 200;
+            case >= 175:
+                return 175;
+            case >= 125:
+                return 125;
+            default:
+                return 50;
+        }
     }
 
     private static int GetRequiredLevelFromPlayerTier(Player player)
@@ -603,7 +634,7 @@ public class UpgradeKit : Stackable
         var amountAboveMinimum = newTierRange * rollPercentile;
 
         var newBaseLevelFromTier = jewelryBaseRatingPerTier[newTier];
-        
+
         var final = Convert.ToInt32(newBaseLevelFromTier + amountAboveMinimum);
 
         target.SetProperty(property, final);
