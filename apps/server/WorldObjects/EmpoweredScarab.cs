@@ -376,7 +376,7 @@ public class EmpoweredScarab : WorldObject
         }
 
         if (
-            playerWielder.GetCreatureSkill((MagicSchool)EmpoweredScarabSchool).AdvancementClass
+            EmpoweredScarabSchool != null && playerWielder.GetCreatureSkill((MagicSchool)EmpoweredScarabSchool).AdvancementClass
             < SkillAdvancementClass.Trained
         )
         {
