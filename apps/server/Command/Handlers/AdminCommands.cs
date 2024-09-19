@@ -2604,34 +2604,32 @@ public static class AdminCommands
                     {
                         var landblock = LandblockManager.GetLandblock(instance, false);
 
-                        var permittedPlayers = "";
-                        foreach (var playerName in landblock.CapstonePlayers.Keys)
-                        {
-                            if (landblock.CapstonePlayers.TryGetValue(playerName, out var timer))
-                            {
-                                if (timer != 0)
-                                {
-                                    var convertedTime = (timer + 60 - Time.GetUnixTime()) / 60;
-                                    permittedPlayers += $"{playerName} ({Math.Round(convertedTime, 1)} min.), ";
-                                }
-                                else
-                                {
-                                    permittedPlayers += $"{playerName}, ";
-                                }
-                            }
-                        }
                         var activePlayers = "";
                         foreach (var activePlayer in landblock.ActivePlayers)
                         {
                             activePlayers += $"{activePlayer.Name}, ";
                         }
 
+                        var fellowshipPlayers = "";
+                        var landblockFellowship = landblock.CapstoneFellowship;
+                        var landblockFellowshipCount = 0;
+                        if (landblockFellowship != null)
+                        {
+                            foreach (var fellow in landblockFellowship.GetFellowshipMembers())
+                            {
+                                fellowshipPlayers += $"{fellow.Value.Name}, ";
+                                landblockFellowshipCount++;
+                            }
+                        }
+
                         instanceNum++;
-                        var dormant = landblock.IsDormant ? "|    Dormant" : "";
+                        var dormant = landblock.IsDormant ? $"| Dormant: {Math.Round(landblock.timeDormant.TotalMinutes, 1)} min." : "";
                         var uptime = landblock.CapstoneUptime / 60;
-                        var lockout = landblock.CapstoneLockout ? "|   Locked" : "";
                         session.Player.SendMessage(
-                            $"----------{dungeonName}----------\nInstance Number: {instanceNum}   |  Uptime: {Math.Round(uptime, 1)} min.   {dormant}     {lockout}\nPermitted Players ({landblock.CapstonePlayers.Count}): {permittedPlayers} \nActive Players ({landblock.ActivePlayers.Count}): {activePlayers} ",
+                            $"----------{dungeonName}----------\n" +
+                            $"Instance Number: {instanceNum} ({landblock.Id}) | Uptime: {Math.Round(uptime, 1)} min.   {dormant}\n" +
+                            $"Active Players ({landblock.ActivePlayers.Count}): {activePlayers}\n" +
+                            $"Players in Fellowship ({landblockFellowshipCount}): {fellowshipPlayers}",
                             ChatMessageType.System
                         );
                     }

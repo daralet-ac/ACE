@@ -441,6 +441,18 @@ public class Fellowship
 
                     member.Fellowship = null;
                     member.FellowedWithPatron = false;
+
+                    if (member.CurrentLandblock.IsFellowshipRequired())
+                    {
+                        member.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                "This area requires a fellowship. Teleporting home.",
+                                ChatMessageType.Broadcast
+                            )
+                        );
+
+                        WorldManager.ThreadSafeTeleport(member, member.Sanctuary);
+                    }
                 }
             }
             else
@@ -466,6 +478,18 @@ public class Fellowship
                         ChatMessageType.Broadcast
                     )
                 );
+
+                if (player.CurrentLandblock.IsFellowshipRequired())
+                {
+                    player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            "This area requires a fellowship. Teleporting home.",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+
+                    WorldManager.ThreadSafeTeleport(player, player.Sanctuary);
+                }
 
                 var fellowshipMembers = GetFellowshipMembers();
 
@@ -536,6 +560,18 @@ public class Fellowship
 
             player.Fellowship = null;
             player.FellowedWithPatron = false;
+
+            if (player.CurrentLandblock.IsFellowshipRequired())
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        "This area requires a fellowship. Teleporting home.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+
+                WorldManager.ThreadSafeTeleport(player, player.Sanctuary);
+            }
 
             CalculateXPSharing();
             UpdateAllMembers();
