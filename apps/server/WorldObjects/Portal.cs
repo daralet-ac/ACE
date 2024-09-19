@@ -317,6 +317,18 @@ public partial class Portal : WorldObject
             }
         }
 
+        // handle attempting to enter a capstone dungeon without being in a fellowship
+        if (FellowshipRequired && player.Fellowship == null)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You must be in a fellowship to enter this portal.",
+                    ChatMessageType.System
+                )
+            );
+            return new ActivationResult(false);
+        }
+
         // handle quest initial flagging
         if (Quest != null)
         {

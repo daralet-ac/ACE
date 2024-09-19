@@ -1028,29 +1028,26 @@ partial class Player
     {
         var landblockId = new LandblockId(player.Location.Landblock << 16 | 0xFFFF);
 
-        if (!Landblock.CapstoneTeleportLocations.Keys.Contains(landblockId))
+        if (!Landblock.CapstoneTeleportLocations.ContainsKey(landblockId))
         {
             return;
         }
 
         var landblock = LandblockManager.GetLandblock(landblockId, false);
 
-        if (landblock.CapstonePlayers.Keys.Contains(player.Name))
+        if (landblock.CapstonePlayers.ContainsKey(player.Name))
         {
             landblock.CapstonePlayers[player.Name] = 0;
             return;
         }
 
-        if (!landblock.CapstonePlayers.Keys.Contains(player.Name))
+        if (landblock.CapstonePlayers.Keys.Count < 9)
         {
-            if (landblock.CapstoneLockout == false && landblock.CapstonePlayers.Keys.Count < Landblock.CapstoneMax)
-            {
-                Landblock.CapstoneTeleport(player, landblock);
-            }
-            else
-            {
-                session.Player.Location = new Position(session.Player.Sanctuary);
-            }
+            Landblock.CapstoneTeleport(player, landblock);
+        }
+        else
+        {
+            session.Player.Location = new Position(session.Player.Sanctuary);
         }
     }
 

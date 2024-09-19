@@ -232,6 +232,7 @@ public enum PropertyBool : ushort
     ShroudKillXpReward = 152,
     IsPlayerTierChest = 153,
     UpgradeableQuestItem = 154,
+    FellowshipRequired = 155,
 
     /* custom */
     [ServerOnly]

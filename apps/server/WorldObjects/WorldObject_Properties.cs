@@ -8796,6 +8796,22 @@ partial class WorldObject
         }
     }
 
+    public bool FellowshipRequired
+    {
+        get => GetProperty(PropertyBool.FellowshipRequired) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.FellowshipRequired);
+            }
+            else
+            {
+                SetProperty(PropertyBool.FellowshipRequired, value);
+            }
+        }
+    }
+
     public string CacheLog
     {
         get => GetProperty(PropertyString.CacheLog);
