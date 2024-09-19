@@ -884,7 +884,7 @@ public static class PlayerCommands
             session.Network.EnqueueSend(
                 new GameMessageSystemChat(
                     $"You must be in a fellowship to invite players to a fellowship.",
-                    ChatMessageType.Broadcast
+                    ChatMessageType.Fellowship
                 )
             );
 
@@ -896,7 +896,7 @@ public static class PlayerCommands
             session.Network.EnqueueSend(
                 new GameMessageSystemChat(
                     $"You must be the leader of your fellowship or in an open fellowship to invite players.",
-                    ChatMessageType.Broadcast
+                    ChatMessageType.Fellowship
                 )
             );
 
@@ -913,7 +913,7 @@ public static class PlayerCommands
             session.Network.EnqueueSend(
                 new GameMessageSystemChat(
                     $"'{input}' does not exist.",
-                    ChatMessageType.Broadcast
+                    ChatMessageType.Fellowship
                 )
             );
 
@@ -928,7 +928,7 @@ public static class PlayerCommands
             session.Network.EnqueueSend(
                 new GameMessageSystemChat(
                     $"'{input}' is not online.",
-                    ChatMessageType.Broadcast
+                    ChatMessageType.Fellowship
                 )
             );
 
@@ -940,7 +940,7 @@ public static class PlayerCommands
             session.Network.EnqueueSend(
                 new GameMessageSystemChat(
                     $"'{input}' is already in a fellowship.",
-                    ChatMessageType.Broadcast
+                    ChatMessageType.Fellowship
                 )
             );
 
@@ -950,10 +950,10 @@ public static class PlayerCommands
         session.Network.EnqueueSend(
             new GameMessageSystemChat(
                 $"'Fellowship invite sent to {newMember.Name}.",
-                ChatMessageType.Broadcast
+                ChatMessageType.Fellowship
             )
         );
 
-        fellowship.AddFellowshipMember(inviter, newMember);
+        inviter.FellowshipRecruit(newMember);
     }
 }
