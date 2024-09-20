@@ -7,6 +7,7 @@ using ACE.Database;
 using ACE.DatLoader;
 using ACE.Entity;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
@@ -547,5 +548,18 @@ public static class CharacterHandler
         player.Level = (int)playtestLevel;
         player.TotalSkillCredits = player.GetSkillCreditsAtLevel((int)playtestLevel);
         player.AvailableSkillCredits = player.GetSkillCreditsAtLevel((int)playtestLevel);
+
+        switch (playtestLevel)
+        {
+            case >= 75:
+                player.SetProperty(PropertyInt.AetheriaBitfield, 7);
+                break;
+            case >= 50:
+                player.SetProperty(PropertyInt.AetheriaBitfield, 3);
+                break;
+            case >= 25:
+                player.SetProperty(PropertyInt.AetheriaBitfield, 1);
+                break;
+        }
     }
 }
