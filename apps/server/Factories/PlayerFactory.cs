@@ -11,6 +11,7 @@ using ACE.Entity.Models;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using Serilog;
+using Position = ACE.Entity.Position;
 
 namespace ACE.Server.Factories;
 
@@ -544,6 +545,8 @@ public static class PlayerFactory
                 break;
         }
 
+        PlaytestSettings(player);
+
         instantiation = new Position(player.Location);
 
         player.Instantiation = new Position(instantiation);
@@ -853,5 +856,41 @@ public static class PlayerFactory
 
         // This option was seen in PCAPs on new characters, and possibly was added to Defaults post PDB we have
         player.SetCharacterOption(CharacterOption.ListenToPKDeathMessages, true);
+    }
+
+    private static void PlaytestSettings(Player player)
+    {
+        var playtestLevel = PropertyManager.GetLong("playtest_starting_level").Item;
+        if (playtestLevel <= 0)
+        {
+            return;
+        }
+
+        player.TryRemoveFromInventory(player.Inventory.FirstOrDefault(k => k.Value.Name.Contains("Starter")).Key);
+        player.TryRemoveFromInventory(player.Inventory.FirstOrDefault(k => k.Value.Name.Contains("Starter")).Key);
+
+        player.TryRemoveFromInventory(player.Inventory.FirstOrDefault(k => k.Value.WeenieClassId.Equals(4746)).Key); // Flask of Water
+        player.TryRemoveFromInventory(player.Inventory.FirstOrDefault(k => k.Value.WeenieClassId.Equals(151)).Key); // Empty Flask
+
+        player.TryRemoveFromInventory(player.Inventory.FirstOrDefault(k => k.Value.WeenieClassId.Equals(1050902)).Key); // A Guide to Magic and Spellcasting
+        player.TryRemoveFromInventory(player.Inventory.FirstOrDefault(k => k.Value.WeenieClassId.Equals(1050900)).Key); // Combat Guide
+
+        var tradeNotes = WorldObjectFactory.CreateNewWorldObject(2627); // Trade Note (100,000)
+        tradeNotes.StackSize = 100;
+        player.TryAddToInventory(tradeNotes);
+
+        player.TryAddToInventory(WorldObjectFactory.CreateNewWorldObject(1000030)); // Hotel Swank Portal Gem
+        player.TryAddToInventory(WorldObjectFactory.CreateNewWorldObject(1051111)); // Shard of Shrouding
+
+        player.Location = new Position(
+            0x018A0273,
+            120.000000f,
+            -79.900000f,
+            0.005000f,
+            0.000000f,
+            0.000000f,
+            -0.707107f,
+            -0.707107f
+        );
     }
 }

@@ -13,6 +13,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.WorldObjects;
 using Serilog;
 
 namespace ACE.Server.Network.Handlers;
@@ -208,6 +209,8 @@ public static class CharacterHandler
             weenieType,
             out var player
         );
+
+        PlaytestSettings(player);
 
         if (result != PlayerFactory.CreateResult.Success || player == null)
         {
@@ -527,5 +530,22 @@ public static class CharacterHandler
                 }
             }
         );
+    }
+
+    private static void PlaytestSettings(Player player)
+    {
+        var playtestLevel = PropertyManager.GetLong("playtest_starting_level").Item;
+        if (playtestLevel <= 0)
+        {
+            return;
+        }
+
+        var xpToPlaytestLevel = player.GetXPBetweenLevels(1, (int)playtestLevel);
+
+        player.TotalExperience = (long)xpToPlaytestLevel;
+        player.AvailableExperience = (long)xpToPlaytestLevel;
+        player.Level = (int)playtestLevel;
+        player.TotalSkillCredits = player.GetSkillCreditsAtLevel((int)playtestLevel);
+        player.AvailableSkillCredits = player.GetSkillCreditsAtLevel((int)playtestLevel);
     }
 }

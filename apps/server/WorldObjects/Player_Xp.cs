@@ -711,9 +711,39 @@ partial class Player
         return levelB_totalXP - levelA_totalXP;
     }
 
+
     public ulong GetXPToNextLevel(int level)
     {
         return GetXPBetweenLevels(level, level + 1);
+    }
+
+    public int GetSkillCreditsAtLevel(int level)
+    {
+        switch (level)
+        {
+            case >= 100:
+                return 32;
+            case >= 90:
+                return 30;
+            case >= 80:
+                return 28;
+            case >= 70:
+                return 26;
+            case >= 60:
+                return 24;
+            case >= 50:
+                return 22;
+            case >= 40:
+                return 20;
+            case >= 30:
+                return 17;
+            case >= 20:
+                return 14;
+            case >= 10:
+                return 9;
+            default:
+                return 0;
+        }
     }
 
     /// <summary>
