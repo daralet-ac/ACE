@@ -1017,10 +1017,8 @@ partial class Creature
         //return recklessnessMod;
     }
 
-    public float GetSneakAttackMod(WorldObject target, out float backstabMod)
+    public float GetSneakAttackMod(WorldObject target)
     {
-        backstabMod = 0.0f;
-
         // ensure creature target
         var creatureTarget = target as Creature;
         if (creatureTarget == null)
@@ -1063,12 +1061,6 @@ partial class Creature
                 {
                     return 1.0f;
                 }
-            }
-
-            var combatAbilityTrinket = GetEquippedTrinket();
-            if (combatAbilityTrinket != null && combatAbilityTrinket.CombatAbilityId == (int)CombatAbility.Backstab)
-            {
-                backstabMod = 0.2f;
             }
 
             return 1.2f; // 20% bonus

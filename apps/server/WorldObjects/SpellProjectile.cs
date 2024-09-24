@@ -1429,14 +1429,14 @@ public class SpellProjectile : WorldObject
             {
                 // TODO: use target direction vs. projectile position, instead of player position
                 // could sneak attack be applied to void DoTs?
-                sneakAttackMod = sourcePlayer.GetSneakAttackMod(target, out var backstabMod);
+                sneakAttackMod = sourcePlayer.GetSneakAttackMod(target);
                 //Console.WriteLine("Magic sneak attack:  + sneakAttackMod);
                 heritageMod = sourcePlayer.GetHeritageBonus(sourcePlayer.GetEquippedWand()) ? 1.05f : 1.0f;
             }
             // Calc sneak bonus for monsters
             if (targetPlayer != null && sourceCreature != null)
             {
-                sneakAttackMod = sourceCreature.GetSneakAttackMod(targetPlayer, out var backstabMod);
+                sneakAttackMod = sourceCreature.GetSneakAttackMod(targetPlayer);
             }
 
             var damageRating = sourceCreature?.GetDamageRating() ?? 0;

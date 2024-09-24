@@ -1135,7 +1135,7 @@ partial class Player
         {
             var critMessage = crit == true ? "Critical Hit! " : "";
 
-            var sneakAttackMod = creature.GetSneakAttackMod(this, out var backstabMod);
+            var sneakAttackMod = creature.GetSneakAttackMod(this);
             var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
 
             var percentHp = damageTaken / Health.MaxValue;
