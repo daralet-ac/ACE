@@ -16,6 +16,7 @@ namespace ACE.Server.WorldObjects;
 
 partial class Creature
 {
+    [Flags]
     public enum DebugDamageType
     {
         None = 0x0,
