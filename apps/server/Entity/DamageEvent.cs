@@ -917,7 +917,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// JEWEL - Black Garnet - Ramping Piercing Resistance Penetration
+    /// RATING - Pierce: Ramping Piercing Resistance Penetration
+    /// (JEWEL - Black Garnet)
     /// </summary>
     private float GetRatingPierceResistanceBonus(Creature defender, Player playerAttacker)
     {
@@ -937,8 +938,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// JEWEL - Onyx: Protection vs. Slash/Pierce/Bludgeon
-    /// JEWEL - Zircon: Protection vs. Acid/Fire/Cold/Electric
+    /// RATING - Physical Ward: Protection vs. Slash/Pierce/Bludgeon (JEWEL - Onyx:)
+    /// RATING - Elemental Ward: Protection vs. Acid/Fire/Cold/Electric (JEWEL - Zircon)
     /// </summary>
     private float GetRatingElementalWard(Player playerDefender)
     {
@@ -980,7 +981,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// JEWEL - Ruby: Bonus damage below 50% HP, reduced damage above
+    /// RATING - LastStand: Bonus damage below 50% HP, reduced damage above
+    /// (JEWEL - Ruby)
     /// </summary>
     private static float GetRatingLastStand(Creature defender, Player playerAttacker)
     {
@@ -998,7 +1000,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// JEWEL - Hematite: Deal bonus damage but take the same amount
+    /// RATING - Self Harm: Deal bonus damage but take the same amount
+    /// (JEWEL - Hematite)
     /// </summary>
     private static float GetRatingSelfHarm(Player playerAttacker)
     {
@@ -1125,7 +1128,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// JEWEL - Diamond: Ramping Physical Damage Reduction
+    /// RATING - Hardened Defense: Ramping Physical Damage Reduction
+    /// (JEWEL - Diamond)
     /// </summary>
     private static float GetRatingHardenedDefenseDamageResistanceBonus(Player playerDefender)
     {
@@ -1165,9 +1169,14 @@ public class DamageEvent
         return _damageResistanceRatingBaseMod;
     }
 
+    /// <summary>
+    /// RATING - Reprisal: Evade an Incoming Crit, auto crit in return
+    /// (JEWEL - ??)
+    /// </summary>
+    /// <param name="attacker"></param>
+    /// <param name="playerDefender"></param>
     private void CheckForRatingReprisalCriticalDefense(Creature attacker, Player playerDefender)
     {
-        // Jewelcrafting Reprisal -- Evade an Incoming Crit, auto crit in return
         if (playerDefender == null)
         {
             return;
@@ -1191,7 +1200,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// JEWEL - White Sapphire: Ramping Bludgeon Crit Damage Bonus
+    /// RATING - Bludgeon: Ramping Bludgeon Crit Damage Bonus
+    /// (JEWEL - White Sapphire)
     /// </summary>
     private static float GetRatingBludgeonCriticalDamageBonus(Creature defender, Player playerAttacker)
     {
@@ -1342,7 +1352,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// Rating Thorns - Reflects damage on block (JEWEL - White Quartz)
+    /// RATING - Thorns: Reflects damage on block
+    /// (JEWEL - White Quartz)
     /// </summary>
     private void CheckForRatingThorns(Creature attacker, Creature defender, WorldObject damageSource)
     {
@@ -1441,18 +1452,14 @@ public class DamageEvent
 
         _accuracyMod = attacker.GetAccuracySkillMod(Weapon);
 
-        EffectiveAttackSkill = (uint)(
-            attacker.GetEffectiveAttackSkill() * LevelScaling.GetPlayerAttackSkillScalar(playerAttacker, defender)
-        );
+        EffectiveAttackSkill = (uint)(attacker.GetEffectiveAttackSkill() * LevelScaling.GetPlayerAttackSkillScalar(playerAttacker, defender));
 
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForAttackHeightMediumAttackSkillBonus(playerAttacker));
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForCombatAbilitySteadyShotAttackSkillBonus(playerAttacker));
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForRatingFamiliarityAttackSkillPenalty(attacker, playerDefender));
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForRatingBravadoAttackSkillBonus(playerAttacker));
 
-        _effectiveDefenseSkill = (uint)(
-            defender.GetEffectiveDefenseSkill(CombatType)
-            * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker)
+        _effectiveDefenseSkill = (uint)(defender.GetEffectiveDefenseSkill(CombatType) * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker)
         );
 
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * CheckForAttackHeightLowDefenseSkillBonus(playerDefender, playerAttacker));
@@ -1491,7 +1498,7 @@ public class DamageEvent
 
     /// <summary>
     /// RATING - Bravado: Hit chance bonus for having been attacked frequently.
-    /// JEWEL - Yellow Garnet
+    /// (JEWEL - Yellow Garnet)
     /// </summary>
     private float CheckForRatingBravadoAttackSkillBonus(Player playerAttacker)
     {
@@ -1519,7 +1526,7 @@ public class DamageEvent
 
     /// <summary>
     /// RATING - Familiarity: Evade chance bonus for having attacked target creature.
-    /// JEWEL - Fire Opal
+    /// (JEWEL - Fire Opal)
     /// </summary>
     private float CheckForRatingFamiliarityAttackSkillPenalty(Creature attacker, Player playerDefender)
     {
@@ -1772,7 +1779,7 @@ public class DamageEvent
 
     /// <summary>
     /// RATING - GearBlock: Passively increases block chance by the rating amount (additively).
-    /// JEWEL - Turquoise: Passive Block %
+    /// (JEWEL - Turquoise)
     /// </summary>
     private float GetRatingBlockChanceBonus(Creature defender)
     {
