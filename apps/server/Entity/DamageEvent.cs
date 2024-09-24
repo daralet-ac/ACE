@@ -1658,7 +1658,215 @@ public class DamageEvent
         _creaturePart = new Creature_BodyPart(defender, _propertiesBodyPart);
     }
 
-    public void ShowInfo(Creature creature)
+    /// <summary>
+    /// SPEC BONUS - Shield: Increase shield effective angle by 45 degrees (to 225)
+    /// </summary>
+    private static float GetSpecShieldEffectiveAngleBonus(Player playerDefender)
+    {
+        if (playerDefender == null)
+        {
+            return 0.0f;
+        }
+
+        return IsSkillSpecialized(playerDefender, Skill.Shield) ? 45.0f : 0.0f;
+    }
+
+    /// <summary>
+    /// SPEC BONUS - Physical Defense: Increase shield block chance up to 10% (additively).
+    /// Based on defender 'shield level' and attacker 'attack skill'.
+    /// </summary>
+    private float GetSpecPhysicalDefenseBlockChanceBonus(Player playerDefender)
+    {
+        if (playerDefender?.GetEquippedShield() == null || !IsSkillSpecialized(playerDefender, Skill.MeleeDefense))
+        {
+            return 0.0f;
+        }
+
+        var shieldArmorLevel = playerDefender.GetEquippedShield().ArmorLevel ?? 0;
+
+        var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
+
+        return 0.1f * (float)blockChanceMod;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Parry: Passively increases Block Chance by 20% (additively) while using a two-handed weapon or dual-wielding.
+    /// Increased to 35% when Parry skill is activated.
+    /// </summary>
+    private float GetCombatAbilityParryBlockChanceBonus(Player playerDefender)
+    {
+        if (playerDefender == null)
+        {
+            return 0.0f;
+        }
+
+        var blockChance = 0.0f;
+
+        if (playerDefender is not { EquippedCombatAbility: CombatAbility.Parry })
+        {
+            return blockChance;
+        }
+
+        if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack)
+        {
+            return blockChance;
+        }
+
+        blockChance = 0.2f;
+
+        if (playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration)
+        {
+            blockChance += 0.15f;
+        }
+
+        return blockChance;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Phalanx: When activated, increases block chance by 50% (additively).
+    /// </summary>
+    private float GetCombatAbilityPhalanxBlockChanceBonus(Player playerDefender)
+    {
+        return playerDefender?.LastPhalanxActivated > Time.GetUnixTime() - playerDefender?.PhalanxActivatedDuration ? 0.5f : 0.0f;
+    }
+
+    /// <summary>
+    /// RATING - GearBlock: Passively increases block chance by the rating amount (additively).
+    /// JEWEL - Turquoise: Passive Block %
+    /// </summary>
+    private float GetRatingBlockChanceBonus(Creature defender)
+    {
+        if (defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) > 0)
+        {
+            return defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock);
+        }
+
+        return 0.0f;
+    }
+
+    private bool WeaponIsSpecialized(Player playerAttacker)
+    {
+        if (playerAttacker != null)
+        {
+            if (Weapon != null)
+            {
+                switch (Weapon.WeaponSkill)
+                {
+                    case Skill.Axe:
+                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    case Skill.Mace:
+                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    case Skill.Sword:
+                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    case Skill.Spear:
+                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    case Skill.Dagger:
+                        return playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    case Skill.Staff:
+                        return playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    case Skill.UnarmedCombat:
+                        return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    case Skill.Bow:
+                        return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    case Skill.Crossbow:
+                        return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    case Skill.ThrownWeapon:
+                        return playerAttacker.GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass
+                               == SkillAdvancementClass.Specialized;
+                    default:
+                        return false;
+                }
+            }
+            else
+            {
+                return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass
+                       == SkillAdvancementClass.Specialized;
+            }
+        }
+
+        return false;
+    }
+
+    private void DpsLogging()
+    {
+        if (_attacker == null || _defender == null)
+        {
+            return;
+        }
+
+        var currentTime = Time.GetUnixTime();
+        var timeSinceLastAttack = currentTime - _attacker.LastAttackedCreatureTime;
+        if (_attacker as Player == null)
+        {
+            timeSinceLastAttack = MonsterAverageAnimationLength.GetValueMod(_attacker.CreatureType);
+        }
+
+        var damageSource = Weapon == null ? _attacker : Weapon;
+
+        Console.WriteLine($"\n---- DAMAGE LOG ({damageSource.Name}) ----");
+        Console.WriteLine(
+            $"CurrentTime: {currentTime}, LastAttackTime: {_attacker.LastAttackedCreatureTime} TimeBetweenAttacks: {timeSinceLastAttack}"
+        );
+        _attacker.LastAttackedCreatureTime = currentTime;
+
+        var critRate = _criticalChance;
+        var nonCritRate = 1 - critRate;
+        var critDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(damageSource, _attacker, _attackSkill, _defender);
+
+        var avgNonCritHit = (_baseDamageMod.MaxDamage + _baseDamageMod.MinDamage) / 2;
+        var critHit = _baseDamageMod.MaxDamage * critDamageMod;
+
+        var averageDamage = avgNonCritHit * nonCritRate + critHit * critRate;
+        var baseDps = averageDamage / timeSinceLastAttack;
+
+        var averageDamageBeforeMitigation =
+            averageDamage
+            * _powerMod
+            * _attributeMod
+            * _slayerMod
+            * _damageRatingMod
+            * _dualWieldDamageBonus
+            * _twohandedCombatDamageBonus
+            * _steadyShotActivatedMod;
+        var averageDpsBeforeMitigation = averageDamageBeforeMitigation / timeSinceLastAttack;
+
+        var averageDamageAfterMitigation =
+            averageDamageBeforeMitigation
+            * _armorMod
+            * ShieldMod
+            * _resistanceMod
+            * _damageResistanceRatingMod
+            * _levelScalingMod;
+        var averageDpsAfterMitigation = averageDamageAfterMitigation / timeSinceLastAttack;
+
+        Console.WriteLine(
+            $"TimeSinceLastAttack: {timeSinceLastAttack}"
+            + $"\n\n-- Base --\n"
+            + $"BaseDamageMod.MaxDamage: {_baseDamageMod.MaxDamage}, BaseDamageMod.MinDamage: {_baseDamageMod.MinDamage}, LiveBaseDamage: {_baseDamage}\n"
+            + $"AverageDamageNonCrit: {avgNonCritHit}, AverageDamageCrit: {critHit}, AverageDamageHit: {averageDamage}\n"
+            + $"DPS Base: {baseDps}\n\n"
+            + $"-- Before Mitigation --\n"
+            + $"PowerMod: {_powerMod}, AttributeMod: {_attributeMod}, SlayerMod: {_slayerMod}, DamageRatingMod: {_damageRatingMod}\n"
+            + $"AverageDamage Before Mitigation: {averageDamageBeforeMitigation}\n"
+            + $"DPS Before Mitigation: {averageDpsBeforeMitigation}\n\n"
+            + $"-- After Mitigation --\n"
+            + $"DamageScalar(health): {_levelScalingMod}, ArmorMod: {_armorMod}, ShieldMod: {ShieldMod}, ResistanceMod: {_resistanceMod}, DamageResistanceRatingMod: {_damageResistanceRatingMod}\n"
+            + $"AverageDamage After Mitigation: {averageDamageAfterMitigation}\n"
+            + $"DPS After Mitigation: {averageDpsAfterMitigation}\n"
+            + $"---- END DAMAGE LOG ({damageSource.Name}) ----"
+        );
+    }
+
+    private void ShowInfo(Creature creature)
     {
         var targetInfo = PlayerManager.GetOnlinePlayer(creature.DebugDamageTarget);
         if (targetInfo == null)
@@ -1877,7 +2085,7 @@ public class DamageEvent
         targetInfo.Session.Network.EnqueueSend(new GameMessageSystemChat(info, ChatMessageType.Broadcast));
     }
 
-    public void HandleLogging(Creature attacker, Creature defender)
+    private void HandleLogging(Creature attacker, Creature defender)
     {
         if (attacker != null && (attacker.DebugDamage & Creature.DebugDamageType.Attacker) != 0)
         {
@@ -1888,213 +2096,5 @@ public class DamageEvent
         {
             ShowInfo(defender);
         }
-    }
-
-    /// <summary>
-    /// SPEC BONUS - Shield: Increase shield effective angle by 45 degrees (to 225)
-    /// </summary>
-    private static float GetSpecShieldEffectiveAngleBonus(Player playerDefender)
-    {
-        if (playerDefender == null)
-        {
-            return 0.0f;
-        }
-
-        return IsSkillSpecialized(playerDefender, Skill.Shield) ? 45.0f : 0.0f;
-    }
-
-    /// <summary>
-    /// SPEC BONUS - Physical Defense: Increase shield block chance up to 10% (additively).
-    /// Based on defender 'shield level' and attacker 'attack skill'.
-    /// </summary>
-    private float GetSpecPhysicalDefenseBlockChanceBonus(Player playerDefender)
-    {
-        if (playerDefender?.GetEquippedShield() == null || !IsSkillSpecialized(playerDefender, Skill.MeleeDefense))
-        {
-            return 0.0f;
-        }
-
-        var shieldArmorLevel = playerDefender.GetEquippedShield().ArmorLevel ?? 0;
-
-        var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
-
-        return 0.1f * (float)blockChanceMod;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Parry: Passively increases Block Chance by 20% (additively) while using a two-handed weapon or dual-wielding.
-    /// Increased to 35% when Parry skill is activated.
-    /// </summary>
-    private float GetCombatAbilityParryBlockChanceBonus(Player playerDefender)
-    {
-        if (playerDefender == null)
-        {
-            return 0.0f;
-        }
-
-        var blockChance = 0.0f;
-
-        if (playerDefender is not { EquippedCombatAbility: CombatAbility.Parry })
-        {
-            return blockChance;
-        }
-
-        if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack)
-        {
-            return blockChance;
-        }
-
-        blockChance = 0.2f;
-
-        if (playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration)
-        {
-            blockChance += 0.15f;
-        }
-
-        return blockChance;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Phalanx: When activated, increases block chance by 50% (additively).
-    /// </summary>
-    private float GetCombatAbilityPhalanxBlockChanceBonus(Player playerDefender)
-    {
-        return playerDefender?.LastPhalanxActivated > Time.GetUnixTime() - playerDefender?.PhalanxActivatedDuration ? 0.5f : 0.0f;
-    }
-
-    /// <summary>
-    /// RATING - GearBlock: Passively increases block chance by the rating amount (additively).
-    /// JEWEL - Turquoise: Passive Block %
-    /// </summary>
-    private float GetRatingBlockChanceBonus(Creature defender)
-    {
-        if (defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) > 0)
-        {
-            return defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock);
-        }
-
-        return 0.0f;
-    }
-
-    private bool WeaponIsSpecialized(Player playerAttacker)
-    {
-        if (playerAttacker != null)
-        {
-            if (Weapon != null)
-            {
-                switch (Weapon.WeaponSkill)
-                {
-                    case Skill.Axe:
-                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Mace:
-                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Sword:
-                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Spear:
-                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Dagger:
-                        return playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Staff:
-                        return playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.UnarmedCombat:
-                        return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Bow:
-                        return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Crossbow:
-                        return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.ThrownWeapon:
-                        return playerAttacker.GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    default:
-                        return false;
-                }
-            }
-            else
-            {
-                return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass
-                       == SkillAdvancementClass.Specialized;
-            }
-        }
-
-        return false;
-    }
-
-    private void DpsLogging()
-    {
-        if (_attacker == null || _defender == null)
-        {
-            return;
-        }
-
-        var currentTime = Time.GetUnixTime();
-        var timeSinceLastAttack = currentTime - _attacker.LastAttackedCreatureTime;
-        if (_attacker as Player == null)
-        {
-            timeSinceLastAttack = MonsterAverageAnimationLength.GetValueMod(_attacker.CreatureType);
-        }
-
-        var damageSource = Weapon == null ? _attacker : Weapon;
-
-        Console.WriteLine($"\n---- DAMAGE LOG ({damageSource.Name}) ----");
-        Console.WriteLine(
-            $"CurrentTime: {currentTime}, LastAttackTime: {_attacker.LastAttackedCreatureTime} TimeBetweenAttacks: {timeSinceLastAttack}"
-        );
-        _attacker.LastAttackedCreatureTime = currentTime;
-
-        var critRate = _criticalChance;
-        var nonCritRate = 1 - critRate;
-        var critDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(damageSource, _attacker, _attackSkill, _defender);
-
-        var avgNonCritHit = (_baseDamageMod.MaxDamage + _baseDamageMod.MinDamage) / 2;
-        var critHit = _baseDamageMod.MaxDamage * critDamageMod;
-
-        var averageDamage = avgNonCritHit * nonCritRate + critHit * critRate;
-        var baseDps = averageDamage / timeSinceLastAttack;
-
-        var averageDamageBeforeMitigation =
-            averageDamage
-            * _powerMod
-            * _attributeMod
-            * _slayerMod
-            * _damageRatingMod
-            * _dualWieldDamageBonus
-            * _twohandedCombatDamageBonus
-            * _steadyShotActivatedMod;
-        var averageDpsBeforeMitigation = averageDamageBeforeMitigation / timeSinceLastAttack;
-
-        var averageDamageAfterMitigation =
-            averageDamageBeforeMitigation
-            * _armorMod
-            * ShieldMod
-            * _resistanceMod
-            * _damageResistanceRatingMod
-            * _levelScalingMod;
-        var averageDpsAfterMitigation = averageDamageAfterMitigation / timeSinceLastAttack;
-
-        Console.WriteLine(
-            $"TimeSinceLastAttack: {timeSinceLastAttack}"
-            + $"\n\n-- Base --\n"
-            + $"BaseDamageMod.MaxDamage: {_baseDamageMod.MaxDamage}, BaseDamageMod.MinDamage: {_baseDamageMod.MinDamage}, LiveBaseDamage: {_baseDamage}\n"
-            + $"AverageDamageNonCrit: {avgNonCritHit}, AverageDamageCrit: {critHit}, AverageDamageHit: {averageDamage}\n"
-            + $"DPS Base: {baseDps}\n\n"
-            + $"-- Before Mitigation --\n"
-            + $"PowerMod: {_powerMod}, AttributeMod: {_attributeMod}, SlayerMod: {_slayerMod}, DamageRatingMod: {_damageRatingMod}\n"
-            + $"AverageDamage Before Mitigation: {averageDamageBeforeMitigation}\n"
-            + $"DPS Before Mitigation: {averageDpsBeforeMitigation}\n\n"
-            + $"-- After Mitigation --\n"
-            + $"DamageScalar(health): {_levelScalingMod}, ArmorMod: {_armorMod}, ShieldMod: {ShieldMod}, ResistanceMod: {_resistanceMod}, DamageResistanceRatingMod: {_damageResistanceRatingMod}\n"
-            + $"AverageDamage After Mitigation: {averageDamageAfterMitigation}\n"
-            + $"DPS After Mitigation: {averageDpsAfterMitigation}\n"
-            + $"---- END DAMAGE LOG ({damageSource.Name}) ----"
-        );
     }
 }
