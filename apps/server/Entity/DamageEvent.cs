@@ -1445,79 +1445,32 @@ public class DamageEvent
             attacker.GetEffectiveAttackSkill() * LevelScaling.GetPlayerAttackSkillScalar(playerAttacker, defender)
         );
 
+        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForAttackHeightMediumAttackSkillBonus(playerAttacker));
+        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForCombatAbilitySteadyShotAttackSkillBonus(playerAttacker));
+        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForRatingFamiliarityAttackSkillPenalty(attacker, playerDefender));
+        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForRatingBravadoAttackSkillBonus(playerAttacker));
+
         _effectiveDefenseSkill = (uint)(
             defender.GetEffectiveDefenseSkill(CombatType)
             * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker)
         );
 
-        // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +15% if weapon specialized)
-        if (playerAttacker is { AttackHeight: AttackHeight.Medium })
-        {
-            var bonus = WeaponIsSpecialized(playerAttacker) ? 1.15f : 1.1f;
-
-            EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
-        }
-
-        // ATTACK HEIGHT BONUS: Low (+10% physical defense skill, +15% if weapon specialized)
-        if (playerDefender is { AttackHeight: AttackHeight.Low })
-        {
-            var bonus = WeaponIsSpecialized(playerAttacker) ? 1.15f : 1.1f;
-
-            _effectiveDefenseSkill = (uint)Math.Round(_effectiveDefenseSkill * bonus);
-        }
-
-        // COMBAT FOCUS - Steady Shot
-        if (playerAttacker != null)
-        {
-            if (_attackerCombatAbility == CombatAbility.SteadyShot)
-            {
-                const float bonus = 1.2f;
-
-                EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
-            }
-        }
-
-        if (playerDefender != null)
-        {
-            // JEWEL - Fire Opal: Evade chance bonus for having attacked target creature
-            if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
-            {
-                if (attacker.QuestManager.HasQuest($"{playerDefender.Name},Familiarity"))
-                {
-                    var rampMod =
-                        (float)attacker.QuestManager.GetCurrentSolves($"{playerDefender.Name},Familiarity") / 500;
-
-                    var familiarityPenalty =
-                        1f
-                        - (
-                            rampMod
-                            * ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) / 100)
-                        );
-
-                    EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * familiarityPenalty);
-                }
-            }
-        }
-
-        if (playerAttacker != null)
-        {
-            // JEWEL - Yellow Garnet: Hit chance bonus for having been attacked frequently
-            if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) > 0)
-            {
-                if (playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Bravado"))
-                {
-                    var rampMod =
-                        (float)playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bravado") / 1000;
-                    var bravadoBonus =
-                        1f
-                        + (rampMod * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) / 100));
-                    EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bravadoBonus);
-                }
-            }
-        }
+        _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * CheckForAttackHeightLowDefenseSkillBonus(playerDefender, playerAttacker));
 
         var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, _effectiveDefenseSkill);
 
+        evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, playerDefender);
+
+        if (evadeChance < 0)
+        {
+            evadeChance = 0;
+        }
+
+        return (float)Math.Min(evadeChance, 1.0f);
+    }
+
+    private double CheckForCombatAbilitySmokescreenEvadeChanceBonus(double evadeChance, Player playerDefender)
+    {
         // COMBAT FOCUS - Smokescreen (+10% chance to evade, +40% on Activated)
         if (_defenderCombatAbility == CombatAbility.Smokescreen)
         {
@@ -1533,16 +1486,103 @@ public class DamageEvent
             }
         }
 
-        if (evadeChance < 0)
+        return evadeChance;
+    }
+
+    /// <summary>
+    /// RATING - Bravado: Hit chance bonus for having been attacked frequently.
+    /// JEWEL - Yellow Garnet
+    /// </summary>
+    private float CheckForRatingBravadoAttackSkillBonus(Player playerAttacker)
+    {
+        if (playerAttacker == null)
         {
-            evadeChance = 0;
+            return 1.0f;
         }
 
-        //Console.WriteLine($"\n{attacker.Name} attack skill: {EffectiveAttackSkill}\n" +
-        //    $"{defender.Name} defense skill: {EffectiveDefenseSkill}\n" +
-        //    $"Evade Chance: {(float)Math.Min(evadeChance, 1.0f)}");
+        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) <= 0)
+        {
+            return 1.0f;
+        }
 
-        return (float)Math.Min(evadeChance, 1.0f);
+        if (!playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Bravado"))
+        {
+            return 1.0f;
+        }
+
+        var rampMod = (float)playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bravado") / 1000;
+
+        var bravadoBonus = 1f + (rampMod * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) / 100));
+
+        return bravadoBonus;
+    }
+
+    /// <summary>
+    /// RATING - Familiarity: Evade chance bonus for having attacked target creature.
+    /// JEWEL - Fire Opal
+    /// </summary>
+    private float CheckForRatingFamiliarityAttackSkillPenalty(Creature attacker, Player playerDefender)
+    {
+        if (playerDefender == null)
+        {
+            return 1.0f;
+        }
+
+        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) <= 0)
+        {
+            return 1.0f;
+        }
+
+        if (!attacker.QuestManager.HasQuest($"{playerDefender.Name},Familiarity"))
+        {
+            return 1.0f;
+        }
+
+        var rampMod = (float)attacker.QuestManager.GetCurrentSolves($"{playerDefender.Name},Familiarity") / 500;
+
+        var familiarityPenalty = 1f - (rampMod * ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) / 100));
+
+        return familiarityPenalty;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Steady Shot: Increased attack skill by 20%.
+    /// </summary>
+    private float CheckForCombatAbilitySteadyShotAttackSkillBonus(Player playerAttacker)
+    {
+        if (playerAttacker == null)
+        {
+            return 1.0f;
+        }
+
+        return _attackerCombatAbility == CombatAbility.SteadyShot ? 1.2f : 1.0f;
+    }
+
+    /// <summary>
+    /// ATTACK HEIGHT BONUS: Low (+10% physical defense skill, +15% if weapon specialized)
+    /// </summary>
+    /// <returns></returns>
+    private float CheckForAttackHeightLowDefenseSkillBonus(Player playerDefender, Player playerAttacker)
+    {
+        if (playerDefender is { AttackHeight: AttackHeight.Low })
+        {
+            return WeaponIsSpecialized(playerAttacker) ? 1.15f : 1.1f;
+        }
+
+        return 1.0f;
+    }
+
+    /// <summary>
+    /// ATTACK HEIGHT BONUS: Medium (+10% attack skill, +15% if weapon specialized)
+    /// </summary>
+    private float CheckForAttackHeightMediumAttackSkillBonus(Player playerAttacker)
+    {
+        if (playerAttacker is { AttackHeight: AttackHeight.Medium })
+        {
+            return WeaponIsSpecialized(playerAttacker) ? 1.15f : 1.1f;
+        }
+
+        return 1.0f;
     }
 
     /// <summary>
@@ -1593,7 +1633,7 @@ public class DamageEvent
     /// <summary>
     /// Returns the base damage for a non-player attacker
     /// </summary>
-    public void GetBaseDamage(Creature attacker, MotionCommand motionCommand, AttackHook attackHook)
+    private void GetBaseDamage(Creature attacker, MotionCommand motionCommand, AttackHook attackHook)
     {
         _attackPart = attacker.GetAttackPart(motionCommand, attackHook);
         if (_attackPart.Value == null)
@@ -1611,7 +1651,7 @@ public class DamageEvent
     /// <summary>
     /// Returns a body part for a player defender
     /// </summary>
-    public void GetBodyPart(AttackHeight attackHeight)
+    private void GetBodyPart(AttackHeight attackHeight)
     {
         // select random body part @ current attack height
         BodyPart = BodyParts.GetBodyPart(attackHeight);
@@ -1620,7 +1660,7 @@ public class DamageEvent
     /// <summary>
     /// Returns a body part for a creature defender
     /// </summary>
-    public void GetBodyPart(Creature defender, Quadrant quadrant)
+    private void GetBodyPart(Creature defender, Quadrant quadrant)
     {
         // get cached body parts table
         var bodyParts = Creature.GetBodyParts(defender.WeenieClassId);
@@ -1746,54 +1786,51 @@ public class DamageEvent
 
     private bool WeaponIsSpecialized(Player playerAttacker)
     {
-        if (playerAttacker != null)
+        if (playerAttacker == null)
         {
-            if (Weapon != null)
+            return false;
+        }
+
+        if (Weapon != null)
+        {
+            switch (Weapon.WeaponSkill)
             {
-                switch (Weapon.WeaponSkill)
-                {
-                    case Skill.Axe:
-                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Mace:
-                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Sword:
-                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Spear:
-                        return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Dagger:
-                        return playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Staff:
-                        return playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.UnarmedCombat:
-                        return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Bow:
-                        return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.Crossbow:
-                        return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    case Skill.ThrownWeapon:
-                        return playerAttacker.GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass
-                               == SkillAdvancementClass.Specialized;
-                    default:
-                        return false;
-                }
-            }
-            else
-            {
-                return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass
-                       == SkillAdvancementClass.Specialized;
+                case Skill.Axe:
+                    return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                case Skill.Mace:
+                    return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                case Skill.Sword:
+                    return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                case Skill.Spear:
+                    return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                case Skill.Dagger:
+                    return playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                case Skill.Staff:
+                    return playerAttacker.GetCreatureSkill(Skill.Staff).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                case Skill.UnarmedCombat:
+                    return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                case Skill.Bow:
+                    return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                case Skill.Crossbow:
+                    return playerAttacker.GetCreatureSkill(Skill.Bow).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                case Skill.ThrownWeapon:
+                    return playerAttacker.GetCreatureSkill(Skill.ThrownWeapon).AdvancementClass
+                           == SkillAdvancementClass.Specialized;
+                default:
+                    return false;
             }
         }
 
-        return false;
+        return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized;
     }
 
     private void DpsLogging()
