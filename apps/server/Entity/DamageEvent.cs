@@ -162,7 +162,7 @@ public class DamageEvent
         SetCombatAbilities(attacker, defender);
 
         SetInvulnerable(defender);
-        SetEvasion(attacker, defender);
+        SetEvaded(attacker, defender);
         SetBlocked(attacker, defender);
 
         if (_invulnerable || Evaded || Blocked)
@@ -266,7 +266,7 @@ public class DamageEvent
     /// If evade succeeded, determine if evade was full, partial, or none.
     /// Equal chance for each evasion type to occur.
     /// </summary>
-    private void SetEvasion(Creature attacker, Creature defender)
+    private void SetEvaded(Creature attacker, Creature defender)
     {
         var playerAttacker = attacker as Player;
 
@@ -292,7 +292,7 @@ public class DamageEvent
             return;
         }
 
-        // Roll evade type
+        // Roll evade type (33% for each evade type)
         const float fullEvadeChance = 1.0f / 3.0f;
         const float partialEvadeChance = fullEvadeChance * 2;
 
@@ -301,23 +301,24 @@ public class DamageEvent
         switch (roll)
         {
             case < fullEvadeChance:
+                PartialEvasion = PartialEvasion.All;
                 Evaded = true;
-                return;
+                break;
             case < partialEvadeChance when _defenderCombatAbility == CombatAbility.Provoke:
                 _evasionMod = 0.25f;
-                PartialEvasion = PartialEvasion.Some;
+                PartialEvasion = PartialEvasion.Some; // glancing blow w/ Provoke bonus
                 Evaded = false;
-                return;
+                break;
             case < partialEvadeChance:
                 _evasionMod = 0.5f;
-                PartialEvasion = PartialEvasion.Some;
+                PartialEvasion = PartialEvasion.Some; // glancing blow
                 Evaded = false;
-                return;
+                break;
             default:
                 _evasionMod = 1.0f;
                 PartialEvasion = PartialEvasion.None;
                 Evaded = false;
-                return;
+                break;
         }
     }
 
@@ -405,81 +406,45 @@ public class DamageEvent
         return true;
     }
 
+    /// <summary>
+    /// Checks attack angle and if defender has Spec Shield and/or Phalanx is active. If a block is possible,
+    /// check for and combine bonuses from Spec Physical Defense, Parry Ability, Phalanx Ability, and Block Rating.
+    /// Roll and set Blocked accordingly.
+    /// <list type="bullet">
+    /// <item>Shield Spec Bonus: +45 degrees to effective block angle.</item>
+    /// <item>Physical Defense Spec Bonus: Up to +10% block chance.</item>
+    /// <item>Parry Ability: Passive 20% to block chance. Additional +15% when activated.</item>
+    /// <item>Phalanx Ability: +50% to block chance.</item>
+    /// <item>Gear Block Rating: +X% block chance, equal to rating amount.</item>
+    /// </list>
+    /// </summary>
     private void SetBlocked(Creature attacker, Creature defender)
     {
-        var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
         var blockChance = 0.0f;
 
         var effectiveAngle = 180.0f;
 
-        // SPEC BONUS - Shield: Increase shield effective angle to 225 degrees
-        if (playerDefender?.GetCreatureSkill(Skill.Shield).AdvancementClass == SkillAdvancementClass.Specialized)
-        {
-            effectiveAngle = 225.0f;
-        }
+        effectiveAngle += GetSpecShieldEffectiveAngleBonus(playerDefender);
 
         // check for frontal radius prior to allowing a block unless PhalanxActivated
-        if (
-            playerDefender is not { EquippedCombatAbility: CombatAbility.Phalanx }
-            || playerDefender.LastPhalanxActivated < Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration
-        )
+        var phalanxIsNotActive = playerDefender is not { EquippedCombatAbility: CombatAbility.Phalanx }
+                            || playerDefender.LastPhalanxActivated <
+                            Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration;
+
+        var blockableAngle = Math.Abs(defender.GetAngle(attacker)) < effectiveAngle / 2.0f;
+
+        if (phalanxIsNotActive && !blockableAngle)
         {
-            var angle = defender.GetAngle(attacker);
-            if (Math.Abs(angle) > effectiveAngle / 2.0f)
-            {
-                Blocked = false;
-            }
+            Blocked = false;
+            return;
         }
 
-        if (
-            defender.GetEquippedShield() != null
-            && defender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass == SkillAdvancementClass.Specialized
-        )
-        {
-            _accuracyMod = attacker.GetAccuracySkillMod(Weapon);
-            EffectiveAttackSkill = attacker.GetEffectiveAttackSkill();
-
-            // ATTACK HEIGHT BONUS: Medium (+10% attack skill, +15% if weapon specialized)
-            if (playerAttacker is { AttackHeight: AttackHeight.Medium })
-            {
-                var bonus = WeaponIsSpecialized(playerAttacker) ? 1.15f : 1.1f;
-
-                EffectiveAttackSkill = (uint)Math.Round(EffectiveAttackSkill * bonus);
-            }
-
-            var shieldArmorLevel = defender.GetEquippedShield().ArmorLevel ?? 0;
-
-            var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
-
-            blockChance = 0.1f + 0.1f * (float)blockChanceMod;
-        }
-        // COMBAT ABILITY - Parry: 20% chance to block attacks while using a two-handed weapon or dual-wielding
-        else if (playerDefender is { EquippedCombatAbility: CombatAbility.Parry })
-        {
-            if (playerDefender.TwoHandedCombat || playerDefender.IsDualWieldAttack)
-            {
-                blockChance = 0.2f;
-
-                if (playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration)
-                {
-                    blockChance += 0.15f;
-                }
-            }
-        }
-
-        // COMBAT ABILITY - Phalanx: Activated Block Bonus
-        if (playerDefender?.LastPhalanxActivated > Time.GetUnixTime() - playerDefender?.PhalanxActivatedDuration)
-        {
-            blockChance += 0.5f;
-        }
-
-        // JEWEL - Turquoise: Passive Block %
-        if (defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) > 0)
-        {
-            blockChance += (defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) * 0.01f);
-        }
+        blockChance += GetSpecPhysicalDefenseBlockChanceBonus(playerDefender);
+        blockChance += GetCombatAbilityParryBlockChanceBonus(playerDefender);
+        blockChance += GetCombatAbilityPhalanxBlockChanceBonus(playerDefender);
+        blockChance += GetRatingBlockChanceBonus(defender);
 
         if ((ThreadSafeRandom.Next(0f, 1f) > blockChance))
         {
@@ -902,7 +867,7 @@ public class DamageEvent
             return 0.0f;
         }
 
-        return IsSkillSpecialized(playerAttacker, Skill.Spear, Skill.HeavyWeapons) ? 0.1f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Spear, Skill.HeavyWeapons) ? 0.1f : 0.0f;
     }
 
     private float GetArmorMod(Creature attacker, Creature defender)
@@ -1256,7 +1221,7 @@ public class DamageEvent
             return 0.0f;
         }
 
-        return IsSkillSpecialized(playerAttacker, Skill.Staff, Skill.Staff) ? 0.5f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Staff, Skill.Staff) ? 0.5f : 0.0f;
     }
 
     /// <summary>
@@ -1269,7 +1234,7 @@ public class DamageEvent
             return 0.0f;
         }
 
-        return IsSkillSpecialized(playerAttacker, Skill.Mace, Skill.HeavyWeapons) ? 0.5f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Mace, Skill.HeavyWeapons) ? 0.5f : 0.0f;
     }
 
     /// <summary>
@@ -1351,13 +1316,13 @@ public class DamageEvent
         }
 
         // SPEC BONUS - Martial Weapons (Axe): +5% crit chance (additively)
-        if (IsSkillSpecialized(_playerAttacker, Skill.Axe, Skill.HeavyWeapons))
+        if (IsWeaponSkillSpecialized(_playerAttacker, Skill.Axe, Skill.HeavyWeapons))
         {
             return 0.05f;
         }
 
         // SPEC BONUS - Dagger: +5% crit chance (additively)
-        if (IsSkillSpecialized(_playerAttacker, Skill.Dagger, Skill.Dagger))
+        if (IsWeaponSkillSpecialized(_playerAttacker, Skill.Dagger, Skill.Dagger))
         {
             return 0.05f;
         }
@@ -1365,10 +1330,15 @@ public class DamageEvent
         return 0.0f;
     }
 
-    private static bool IsSkillSpecialized(Player playerAttacker, Skill weaponSkill, Skill creatureSkill)
+    private static bool IsWeaponSkillSpecialized(Player player, Skill weaponSkill, Skill creatureSkill)
     {
-        return playerAttacker.GetEquippedWeapon().WeaponSkill == weaponSkill
-               && playerAttacker.GetCreatureSkill(creatureSkill).AdvancementClass == SkillAdvancementClass.Specialized;
+        return player.GetEquippedWeapon().WeaponSkill == weaponSkill
+               && player.GetCreatureSkill(creatureSkill).AdvancementClass == SkillAdvancementClass.Specialized;
+    }
+
+    private static bool IsSkillSpecialized(Player player, Skill creatureSkill)
+    {
+        return player?.GetCreatureSkill(creatureSkill).AdvancementClass == SkillAdvancementClass.Specialized;
     }
 
     /// <summary>
@@ -1918,6 +1888,92 @@ public class DamageEvent
         {
             ShowInfo(defender);
         }
+    }
+
+    /// <summary>
+    /// SPEC BONUS - Shield: Increase shield effective angle by 45 degrees (to 225)
+    /// </summary>
+    private static float GetSpecShieldEffectiveAngleBonus(Player playerDefender)
+    {
+        if (playerDefender == null)
+        {
+            return 0.0f;
+        }
+
+        return IsSkillSpecialized(playerDefender, Skill.Shield) ? 45.0f : 0.0f;
+    }
+
+    /// <summary>
+    /// SPEC BONUS - Physical Defense: Increase shield block chance up to 10% (additively).
+    /// Based on defender 'shield level' and attacker 'attack skill'.
+    /// </summary>
+    private float GetSpecPhysicalDefenseBlockChanceBonus(Player playerDefender)
+    {
+        if (playerDefender?.GetEquippedShield() == null || !IsSkillSpecialized(playerDefender, Skill.MeleeDefense))
+        {
+            return 0.0f;
+        }
+
+        var shieldArmorLevel = playerDefender.GetEquippedShield().ArmorLevel ?? 0;
+
+        var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
+
+        return 0.1f * (float)blockChanceMod;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Parry: Passively increases Block Chance by 20% (additively) while using a two-handed weapon or dual-wielding.
+    /// Increased to 35% when Parry skill is activated.
+    /// </summary>
+    private float GetCombatAbilityParryBlockChanceBonus(Player playerDefender)
+    {
+        if (playerDefender == null)
+        {
+            return 0.0f;
+        }
+
+        var blockChance = 0.0f;
+
+        if (playerDefender is not { EquippedCombatAbility: CombatAbility.Parry })
+        {
+            return blockChance;
+        }
+
+        if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack)
+        {
+            return blockChance;
+        }
+
+        blockChance = 0.2f;
+
+        if (playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration)
+        {
+            blockChance += 0.15f;
+        }
+
+        return blockChance;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Phalanx: When activated, increases block chance by 50% (additively).
+    /// </summary>
+    private float GetCombatAbilityPhalanxBlockChanceBonus(Player playerDefender)
+    {
+        return playerDefender?.LastPhalanxActivated > Time.GetUnixTime() - playerDefender?.PhalanxActivatedDuration ? 0.5f : 0.0f;
+    }
+
+    /// <summary>
+    /// RATING - GearBlock: Passively increases block chance by the rating amount (additively).
+    /// JEWEL - Turquoise: Passive Block %
+    /// </summary>
+    private float GetRatingBlockChanceBonus(Creature defender)
+    {
+        if (defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) > 0)
+        {
+            return defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock);
+        }
+
+        return 0.0f;
     }
 
     private bool WeaponIsSpecialized(Player playerAttacker)
