@@ -56,7 +56,7 @@ partial class Creature
     /// <summary>
     /// Transitions a monster from awake to idle state
     /// </summary>
-    public virtual void Sleep()
+    protected virtual void Sleep()
     {
         if (DebugMove)
         {
@@ -115,9 +115,9 @@ partial class Creature
     /// <summary>
     /// The current targeting tactic for this monster
     /// </summary>
-    public TargetingTactic CurrentTargetingTactic;
+    private TargetingTactic CurrentTargetingTactic;
 
-    public void SelectTargetingTactic()
+    private void SelectTargetingTactic()
     {
         // monsters have multiple targeting tactics, ex. Focused | Random
 
@@ -141,19 +141,14 @@ partial class Creature
         var possibleTactics = EnumHelper.GetFlags(targetingTactic);
         var rng = ThreadSafeRandom.Next(1, possibleTactics.Count - 1);
 
-        if (targetingTactic == 0)
-        {
-            rng = 0;
-        }
-
         CurrentTargetingTactic = (TargetingTactic)possibleTactics[rng];
 
         //Console.WriteLine($"{Name}.TargetingTactic: {CurrentTargetingTactic}");
     }
 
-    public double NextFindTarget;
+    private double NextFindTarget;
 
-    public virtual void HandleFindTarget()
+    protected virtual void HandleFindTarget()
     {
         if (Timers.RunningTime < NextFindTarget)
         {
@@ -163,7 +158,7 @@ partial class Creature
         FindNextTarget(false);
     }
 
-    public void SetNextTargetTime()
+    private void SetNextTargetTime()
     {
         // use rng?
 
@@ -180,7 +175,7 @@ partial class Creature
     private const int ThreatMinimum = 100;
     private double ThreatGainedSinceLastTick = 1;
 
-    public Dictionary<Creature, int> ThreatLevel;
+    private Dictionary<Creature, int> ThreatLevel;
     public Dictionary<Creature, float> PositiveThreat;
     public Dictionary<Creature, float> NegativeThreat;
 
@@ -189,10 +184,7 @@ partial class Creature
 
     public void IncreaseTargetThreatLevel(Creature targetCreature, int amount)
     {
-        if (!ThreatLevel.ContainsKey(targetCreature))
-        {
-            ThreatLevel.Add(targetCreature, ThreatMinimum);
-        }
+        ThreatLevel.TryAdd(targetCreature, ThreatMinimum);
 
         // check for modifiers
         var modifier = 1.0f;
@@ -209,7 +201,7 @@ partial class Creature
             modifier = 0.5f;
         }
 
-        if (targetPlayer.EquippedCombatAbility == CombatAbility.Provoke)
+        if (targetPlayer is { EquippedCombatAbility: CombatAbility.Provoke })
         {
             if (targetPlayer.LastProvokeActivated > Time.GetUnixTime() - targetPlayer.ProvokeActivatedDuration)
             {
@@ -221,16 +213,9 @@ partial class Creature
             }
         }
 
-        // JEWEL - Agate: Increase Threat Gain
-        if (targetPlayer != null && targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatGain) > 0)
-        {
-            modifier += (float)(targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatGain)) / 10;
-        }
-        // JEWEL - Smokey Quartz: Reduce Threat Gain
-        if (targetPlayer != null && targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatReduction) > 0)
-        {
-            modifier -= (float)(targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatReduction)) / 10;
-        }
+        modifier += CheckForRatingThreatGainBonus(targetPlayer);
+
+        modifier -= CheckForRatingThreatReduction(targetPlayer);
 
         if (modifier <= 0.1f)
         {
@@ -251,10 +236,38 @@ partial class Creature
     }
 
     /// <summary>
+    /// RATING - Threat Reduction: Reduce threat gain
+    /// (JEWEL - Smokey Quartz)
+    /// </summary>
+    private float CheckForRatingThreatReduction(Player targetPlayer)
+    {
+        if (targetPlayer != null && targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatReduction) > 0)
+        {
+            return (float)(targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatReduction)) / 10;
+        }
+
+        return 0.0f;
+    }
+
+    /// <summary>
+    /// RATING - Threat Gain: Increase threat gain
+    /// (JEWEL - Agate)
+    /// </summary>
+    private float CheckForRatingThreatGainBonus(Player targetPlayer)
+    {
+        if (targetPlayer != null && targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatGain) > 0)
+        {
+            return (float)(targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatGain)) / 10;
+        }
+
+        return 0.0f;
+    }
+
+    /// <summary>
     /// Every second, reduce threat levels towards each target by the total amount of threat gained since last tick divided by the number of targets.
     /// Minimum of amount of threat reduced is equal to 10% of total threat, above target minimums (100).
     /// </summary>
-    public void TickDownAllTargetThreatLevels()
+    private void TickDownAllTargetThreatLevels()
     {
         var totalThreat = 0;
         foreach (var kvp in ThreatLevel)
@@ -296,6 +309,7 @@ partial class Creature
             SetNextTargetTime();
 
             var visibleTargets = GetAttackTargets();
+
             if (visibleTargets.Count == 0)
             {
                 if (MonsterState != State.Return)
@@ -312,8 +326,7 @@ partial class Creature
             }
 
             if (
-                untargetablePlayer != null
-                && untargetablePlayer is Player vanishedPlayer
+                untargetablePlayer is Player vanishedPlayer
                 && Time.GetUnixTime() < vanishedPlayer.LastVanishActivated + 5
             )
             {
@@ -331,9 +344,9 @@ partial class Creature
                 }
             }
 
-            if (AttackTarget != null && GetDistance(AttackTarget) > VisualAwarenessRange)
+            if (AttackTarget is Creature attackTargetCreature && GetDistance(AttackTarget) > VisualAwarenessRange)
             {
-                ThreatLevel.Remove(AttackTarget as Creature);
+                ThreatLevel?.Remove(attackTargetCreature);
             }
 
             // Generally, a creature chooses whom to attack based on:
@@ -358,35 +371,42 @@ partial class Creature
                 foreach (var targetCreature in visibleTargets)
                 {
                     // skip targets that are already in list
-                    if (ThreatLevel.ContainsKey(targetCreature))
+                    if (ThreatLevel != null && ThreatLevel.ContainsKey(targetCreature))
                     {
                         continue;
                     }
 
                     // Add new visible targets to threat list
-                    if (!Name.Contains("Placeholder") && !Name.Contains("Boss Watchdog"))
+                    if (Name.Contains("Placeholder") || Name.Contains("Boss Watchdog"))
                     {
-                        ThreatLevel.Add(targetCreature, ThreatMinimum);
+                        continue;
                     }
+
+                    ThreatLevel?.Add(targetCreature, ThreatMinimum);
                 }
 
                 if (DebugThreatSystem)
                 {
                     Console.WriteLine("--------------");
                     _log.Information("ThreatLevel list for {Name} ({WeenieClassId}):", Name, WeenieClassId);
-                    foreach (var targetCreature in ThreatLevel.Keys)
+
+                    if (ThreatLevel != null)
                     {
-                        _log.Information("{Name}: {targetThreat}", targetCreature.Name, ThreatLevel[targetCreature]);
+                        foreach (var targetCreature in ThreatLevel.Keys)
+                        {
+                            _log.Information("{Name}: {targetThreat}", targetCreature.Name,
+                                ThreatLevel[targetCreature]);
+                        }
                     }
                 }
 
-                if (ThreatLevel.Count == 0)
+                if (ThreatLevel?.Count == 0)
                 {
                     return false;
                 }
 
                 // Set potential threat value range based on 50% of highest player's threat
-                var maxThreatValue = ThreatLevel.Values.Max();
+                var maxThreatValue = ThreatLevel?.Values.Max();
 
                 if (maxThreatValue <= ThreatMinimum)
                 {
@@ -394,136 +414,139 @@ partial class Creature
                 }
                 else
                 {
-                    var minimumAggroRange = (int)(maxThreatValue * 0.5f);
-
-                    // Add all player's witin the potential threat range to a new dictionary
-                    var potentialTargetList = new Dictionary<Creature, int>();
-                    var safeTargetList = new Dictionary<Creature, int>();
-
-                    foreach (var targetCreature in ThreatLevel)
+                    if (maxThreatValue != null)
                     {
-                        if (targetCreature.Value >= minimumAggroRange)
+                        var minimumAggroRange = (int)(maxThreatValue * 0.5f);
+
+                        // Add all player's witin the potential threat range to a new dictionary
+                        var potentialTargetList = new Dictionary<Creature, int>();
+                        var safeTargetList = new Dictionary<Creature, int>();
+
+                        foreach (var targetCreature in ThreatLevel)
                         {
-                            potentialTargetList.Add(targetCreature.Key, targetCreature.Value - minimumAggroRange);
+                            if (targetCreature.Value >= minimumAggroRange)
+                            {
+                                potentialTargetList.Add(targetCreature.Key, targetCreature.Value - minimumAggroRange);
+                            }
+
+                            if (targetCreature.Value < minimumAggroRange)
+                            {
+                                safeTargetList.Add(targetCreature.Key, targetCreature.Value);
+                            }
                         }
 
-                        if (targetCreature.Value < minimumAggroRange)
+                        if (DebugThreatSystem)
                         {
-                            safeTargetList.Add(targetCreature.Key, targetCreature.Value);
+                            Console.WriteLine("\n");
+                            _log.Information("Unsorted Potential Target List - {Name}:", Name);
+                            foreach (var targetCreature in potentialTargetList.Keys)
+                            {
+                                _log.Information(
+                                    "{Name}: {TargetThreat}",
+                                    targetCreature.Name,
+                                    potentialTargetList[targetCreature]
+                                );
+                            }
                         }
-                    }
 
-                    if (DebugThreatSystem)
-                    {
-                        Console.WriteLine("\n");
-                        _log.Information("Unsorted Potential Target List - {Name}:", Name);
-                        foreach (var targetCreature in potentialTargetList.Keys)
+                        // Sort dictionary by threat value
+                        var sortedPotentialTargetList = potentialTargetList
+                            .OrderBy(x => x.Value)
+                            .ToDictionary(x => x.Key, x => x.Value);
+                        var sortedSafeTargetList = safeTargetList
+                            .OrderBy(x => x.Value)
+                            .ToDictionary(x => x.Key, x => x.Value);
+
+                        if (DebugThreatSystem)
                         {
-                            _log.Information(
-                                "{Name}: {TargetThreat}",
-                                targetCreature.Name,
-                                potentialTargetList[targetCreature]
-                            );
+                            _log.Information("Sorted Potential Target List - {Name}:", Name);
+                            foreach (var targetCreature in sortedPotentialTargetList.Keys)
+                            {
+                                _log.Information(
+                                    "{Name}: {TargetThreat}",
+                                    targetCreature.Name,
+                                    sortedPotentialTargetList[targetCreature]
+                                );
+                            }
                         }
-                    }
 
-                    // Sort dictionary by threat value
-                    var sortedPotentialTargetList = potentialTargetList
-                        .OrderBy(x => x.Value)
-                        .ToDictionary(x => x.Key, x => x.Value);
-                    var sortedSafeTargetList = safeTargetList
-                        .OrderBy(x => x.Value)
-                        .ToDictionary(x => x.Key, x => x.Value);
-
-                    if (DebugThreatSystem)
-                    {
-                        _log.Information("Sorted Potential Target List - {Name}:", Name);
-                        foreach (var targetCreature in sortedPotentialTargetList.Keys)
+                        // Adjust values for each entry in the sorted list so that entry's value includes the sum of all previous values.
+                        // i.e. KVPs of <1,30>, <2,38>, <3,45>
+                        // would become <1,30>, <2,68>, <3,113>
+                        if (DebugThreatSystem)
                         {
-                            _log.Information(
-                                "{Name}: {TargetThreat}",
-                                targetCreature.Name,
-                                sortedPotentialTargetList[targetCreature]
-                            );
+                            _log.Information("Additive Threat Values - {Name}", Name);
                         }
-                    }
 
-                    // Adjust values for each entry in the sorted list so that entry's value includes the sum of all previous values.
-                    // i.e. KVPs of <1,30>, <2,38>, <3,45>
-                    // would become <1,30>, <2,68>, <3,113>
-                    if (DebugThreatSystem)
-                    {
-                        _log.Information("Additive Threat Values - {Name}", Name);
-                    }
+                        var lastValue = 0;
+                        foreach (var entry in sortedPotentialTargetList)
+                        {
+                            sortedPotentialTargetList[entry.Key] = entry.Value + lastValue;
+                            lastValue = sortedPotentialTargetList[entry.Key];
 
-                    var lastValue = 0;
-                    foreach (var entry in sortedPotentialTargetList)
-                    {
-                        sortedPotentialTargetList[entry.Key] = entry.Value + lastValue;
-                        lastValue = sortedPotentialTargetList[entry.Key];
+                            if (DebugThreatSystem)
+                            {
+                                _log.Information(
+                                    "{Name}: {Value}, Additive Value: {lastValue}",
+                                    entry.Key.Name,
+                                    entry.Value,
+                                    lastValue
+                                );
+                            }
+                        }
+
+                        var sortedMaxValue = sortedPotentialTargetList.Values.Max();
+                        var roll = ThreadSafeRandom.Next(1, sortedMaxValue);
 
                         if (DebugThreatSystem)
                         {
                             _log.Information(
-                                "{Name}: {Value}, Additive Value: {lastValue}",
-                                entry.Key.Name,
-                                entry.Value,
-                                lastValue
+                                "RollRange: {minimum} - {sortedMaxValue}, Roll: {roll}",
+                                1,
+                                sortedMaxValue,
+                                roll
                             );
                         }
-                    }
 
-                    var sortedMaxValue = sortedPotentialTargetList.Values.Max();
-                    var roll = ThreadSafeRandom.Next(1, sortedMaxValue);
-
-                    if (DebugThreatSystem)
-                    {
-                        _log.Information(
-                            "RollRange: {minimum} - {sortedMaxValue}, Roll: {roll}",
-                            1,
-                            sortedMaxValue,
-                            roll
-                        );
-                    }
-
-                    PositiveThreat.Clear();
-                    var difference = 0;
-                    foreach (var targetCreatureKey in sortedPotentialTargetList)
-                    {
-                        // Calculate chance to steal aggro, for Appraisal Threat Table
-                        var creatureThreatValue = targetCreatureKey.Value - difference;
-                        var chance = (float)(creatureThreatValue) / sortedMaxValue;
-                        difference += creatureThreatValue;
-
-                        PositiveThreat[targetCreatureKey.Key] = chance;
-
-                        if (DebugThreatSystem)
+                        PositiveThreat.Clear();
+                        var difference = 0;
+                        foreach (var targetCreatureKey in sortedPotentialTargetList)
                         {
-                            _log.Information(
-                                "{Name} ThreatLevel: {creatureThreatValue}, ThreatRange: {Value}, Chance: {chance}",
-                                targetCreatureKey.Key.Name,
-                                creatureThreatValue,
-                                targetCreatureKey.Value,
-                                Math.Round(chance, 2)
-                            );
-                        }
-                    }
+                            // Calculate chance to steal aggro, for Appraisal Threat Table
+                            var creatureThreatValue = targetCreatureKey.Value - difference;
+                            var chance = (float)(creatureThreatValue) / sortedMaxValue;
+                            difference += creatureThreatValue;
 
-                    foreach (var targetCreatureKey in sortedPotentialTargetList)
-                    {
-                        if (targetCreatureKey.Value > roll)
+                            PositiveThreat[targetCreatureKey.Key] = chance;
+
+                            if (DebugThreatSystem)
+                            {
+                                _log.Information(
+                                    "{Name} ThreatLevel: {creatureThreatValue}, ThreatRange: {Value}, Chance: {chance}",
+                                    targetCreatureKey.Key.Name,
+                                    creatureThreatValue,
+                                    targetCreatureKey.Value,
+                                    Math.Round(chance, 2)
+                                );
+                            }
+                        }
+
+                        foreach (var targetCreatureKey in sortedPotentialTargetList)
                         {
-                            AttackTarget = targetCreatureKey.Key;
-                            break;
+                            if (targetCreatureKey.Value > roll)
+                            {
+                                AttackTarget = targetCreatureKey.Key;
+                                break;
+                            }
                         }
-                    }
 
-                    NegativeThreat.Clear();
-                    foreach (var targetCreatureKey in sortedSafeTargetList)
-                    {
-                        // Calculate percentile for Appraisal Threat Table
-                        var percentile = targetCreatureKey.Value / minimumAggroRange;
-                        NegativeThreat[targetCreatureKey.Key] = percentile - 1;
+                        NegativeThreat.Clear();
+                        foreach (var targetCreatureKey in sortedSafeTargetList)
+                        {
+                            // Calculate percentile for Appraisal Threat Table
+                            var percentile = targetCreatureKey.Value / minimumAggroRange;
+                            NegativeThreat[targetCreatureKey.Key] = percentile - 1;
+                        }
                     }
 
                     if (DebugThreatSystem)
@@ -681,7 +704,7 @@ partial class Creature
     /// <summary>
     /// Returns a list of attackable targets currently visible to this monster
     /// </summary>
-    public List<Creature> GetAttackTargets()
+    private List<Creature> GetAttackTargets()
     {
         var visibleTargets = new List<Creature>();
 
@@ -743,7 +766,7 @@ partial class Creature
     /// <summary>
     /// Returns the list of potential attack targets, sorted by closest distance
     /// </summary>
-    public List<TargetDistance> BuildTargetDistance(List<Creature> targets, bool distSq = false)
+    protected List<TargetDistance> BuildTargetDistance(List<Creature> targets, bool distSq = false)
     {
         var targetDistance = new List<TargetDistance>();
 
@@ -766,7 +789,7 @@ partial class Creature
     /// <summary>
     /// Uses weighted RNG selection by distance to select a target
     /// </summary>
-    public Creature SelectWeightedDistance(List<TargetDistance> targetDistances)
+    private Creature SelectWeightedDistance(List<TargetDistance> targetDistances)
     {
         if (targetDistances.Count == 1)
         {
@@ -825,7 +848,7 @@ partial class Creature
         actionChain.EnqueueChain();
     }
 
-    public void CheckTargets_Inner()
+    private void CheckTargets_Inner()
     {
         Creature closestTarget = null;
         var closestDistSq = float.MaxValue;
@@ -868,7 +891,7 @@ partial class Creature
     /// The most common value from retail
     /// Some other common values are in the range of 12-25
     /// </summary>
-    public const float VisualAwarenessRange_Default = 18.0f;
+    private const float VisualAwarenessRange_Default = 18.0f;
 
     /// <summary>
     /// The highest value found in the current database
@@ -937,7 +960,7 @@ partial class Creature
 
     private float? _auralAwarenessRangeSq;
 
-    public float AuralAwarenessRangeSq
+    private float AuralAwarenessRangeSq
     {
         get
         {
@@ -966,7 +989,7 @@ partial class Creature
     /// </summary>
     private Dictionary<uint, DateTime> Alerted;
 
-    public void AlertFriendly()
+    private void AlertFriendly()
     {
         // if current attacker has already alerted this monster recently,
         // don't re-alert friendlies
@@ -1062,7 +1085,7 @@ partial class Creature
     /// <summary>
     /// Wakes up a faction monster from any non-faction monsters wandering within range
     /// </summary>
-    public void FactionMob_CheckMonsters()
+    private void FactionMob_CheckMonsters()
     {
         if (MonsterState != State.Idle)
         {
