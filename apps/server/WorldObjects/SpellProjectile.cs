@@ -820,10 +820,10 @@ public class SpellProjectile : WorldObject
             var physicalWardProtection = CheckForRatingPhysicalWardProtectionBonus(targetPlayer);
             var elementalWardProtection = CheckForRatingElementalWardProtectionBonus(targetPlayer);
 
-            var jewelElementalist = CheckForRatingElementalistDamageBonus(sourcePlayer);
-            var jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
-            var jewelSelfHarm = CheckForRatingSelfHarmDamageBonus(sourcePlayer);
-            var jewelLastStand = CheckForRatingLastStandDamageMod(sourcePlayer);
+            var jewelElementalist = 1.0f + CheckForRatingElementalistDamageBonus(sourcePlayer);
+            var jewelElemental = 1.0f + Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
+            var jewelSelfHarm = 1.0f + CheckForRatingSelfHarmDamageBonus(sourcePlayer);
+            var jewelLastStand = 1.0f + CheckForRatingLastStandDamageMod(sourcePlayer);
 
             var strikethroughMod = 1.0f / (Strikethrough + 1);
 
@@ -1144,6 +1144,7 @@ public class SpellProjectile : WorldObject
 
     /// <summary>
     /// RATING - Nullification: Ramping magic damage reduction.
+    /// Up to +2% magic damage reduction per rating (at max quest stamps).
     /// (JEWEL - Amethyst)
     /// </summary>
     private static float CheckForRatingNullificationAbsorbBonus(Player targetPlayer)
@@ -1158,9 +1159,10 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        var jewelRampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200;
+        var rampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200; // up to 1.0f
+        var ratingMod = targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) * 0.02f; // 0.02f per rating
 
-        return jewelRampMod * ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66);
+        return rampMod * ratingMod;
     }
 
     /// <summary>
@@ -1187,6 +1189,7 @@ public class SpellProjectile : WorldObject
 
     /// <summary>
     /// RATING - Ward Penetration: Ramping ward penetration.
+    /// Up to +2% ward penetration per rating (at max quest stampts).
     /// (JEWEL - Tourmaline)
     /// </summary>
     private static float CheckForRatingWardPenBonus(Creature target, Player sourcePlayer)
@@ -1201,10 +1204,10 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        var jewelWardPenMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") / 500;
-        jewelWardPenMod *= ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) / 66);
+        var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") / 500; // up to 1.0f
+        var ratingMod = sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) * 0.02f; // 0.02f per rating
 
-        return jewelWardPenMod;
+        return rampMod * ratingMod;
     }
 
     /// <summary>
@@ -1287,15 +1290,10 @@ public class SpellProjectile : WorldObject
     {
         if (sourcePlayer == null)
         {
-            return 1.0f;
+            return 0.0f;
         }
 
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
-        {
-            return 1.0f + Jewel.GetJewelLastStand(sourcePlayer);
-        }
-
-        return 1.0f;
+        return sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0 ? Jewel.GetJewelLastStand(sourcePlayer) : 0.0f;
     }
 
     /// <summary>
@@ -1306,19 +1304,20 @@ public class SpellProjectile : WorldObject
     {
         if (sourcePlayer == null)
         {
-            return 1.0f;
+            return 0.0f;
         }
 
         if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
         {
-            return 1.0f + (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
+            return (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
         }
 
-        return 1.0f;
+        return 0.0f;
     }
 
     /// <summary>
     /// RATING - Pierce: Ramping piercing resistance penetration.
+    /// Up to +2% penetration per rating (at max quest stamps).
     /// (JEWEL - Black Garnet)
     /// </summary>
     private float CheckForRatingPierceResistancePenetrationBonus(Creature target, Player sourcePlayer)
@@ -1338,13 +1337,15 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        var jewelRampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Pierce") / 500;
+        var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Pierce") / 500; // up to 1.0f;
+        var ratingMod = sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) * 0.02f; // 0.02f per rating;
 
-        return jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) / 66);
+        return rampMod * ratingMod;
     }
 
     /// <summary>
     /// RATING - Bludgeon: Ramping bludgeon crit damage.
+    /// Up to +2% crit damage per rating (at max quest stamps).
     /// (JEWEL - White Sapphire)
     /// </summary>
     private float CheckForRatingBludgeonCritDamageBonus(Creature target, Player sourcePlayer)
@@ -1364,30 +1365,33 @@ public class SpellProjectile : WorldObject
             return 1.0f;
         }
 
-        var jewelRampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Bludgeon") / 500;
+        var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Bludgeon") / 500; // up to 1.0f
+        var ratingMod = (float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) * 0.02f; // 0.02f per rating
 
-        return jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) / 50);
+        return rampMod * ratingMod;
     }
 
     /// <summary>
     /// RATING - Elementalist: Ramping War magic damage.
+    /// Up to +2% war magic damage per rating (at max quest stamps).
     /// (JEWEL - Green Garnet)
     /// </summary>
     private static float CheckForRatingElementalistDamageBonus(Player sourcePlayer)
     {
         if (sourcePlayer == null)
         {
-            return 1.0f;
+            return 0.0f;
         }
 
         if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) <= 0)
         {
-            return 1.0f;
+            return 0.0f;
         }
 
-        var jewelRampMod = (float)sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") / 500;
+        var rampMod = (float)sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") / 500; // up to 1.0f
+        var ratingMod = sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) * 0.02f; // 0.02f per rating
 
-        return 1.0f + jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) / 66);
+        return rampMod * ratingMod;
     }
 
     /// <summary>
