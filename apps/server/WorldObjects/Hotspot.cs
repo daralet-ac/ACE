@@ -393,59 +393,62 @@ public class Hotspot : WorldObject
     public static void TryGenHotspot(Player playerAttacker, Creature defender, int? tier, DamageType damageType)
     {
         uint wcid = 0;
-        var modifiedTier = (int)tier - 1;
-        modifiedTier = modifiedTier > 4 ? 4 : modifiedTier;
-
-        int[] flameHotspots = { 1053902, 1053903, 1053904, 1053905, 1053906 };
-        int[] frostHotspots = { 1053909, 1053910, 1053911, 1053912, 1053913 };
-        int[] acidHotspots = { 1053915, 1053916, 1053917, 1053918, 1053919 };
-        int[] lightningHotspots = { 1053921, 1053922, 1053923, 1053924, 1053925 };
-        int[] healingHotspots = { 1053928, 1053929, 1053930, 1053931, 1053932 };
-
-        if (
-            damageType == DamageType.Fire
-            && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) / 1000)
-                > ThreadSafeRandom.Next(0f, 1f)
-        )
+        if (tier != null)
         {
-            wcid = (uint)flameHotspots[modifiedTier];
-        }
+            var modifiedTier = (int)tier - 1;
+            modifiedTier = modifiedTier > 4 ? 4 : modifiedTier;
 
-        if (
-            damageType == DamageType.Cold
-            && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) / 1000)
-                > ThreadSafeRandom.Next(0f, 1f)
-        )
-        {
-            wcid = (uint)frostHotspots[modifiedTier];
-        }
+            int[] flameHotspots = { 1053902, 1053903, 1053904, 1053905, 1053906 };
+            int[] frostHotspots = { 1053909, 1053910, 1053911, 1053912, 1053913 };
+            int[] acidHotspots = { 1053915, 1053916, 1053917, 1053918, 1053919 };
+            int[] lightningHotspots = { 1053921, 1053922, 1053923, 1053924, 1053925 };
+            int[] healingHotspots = { 1053928, 1053929, 1053930, 1053931, 1053932 };
 
-        if (
-            damageType == DamageType.Acid
-            && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) / 1000)
-                > ThreadSafeRandom.Next(0f, 1f)
-        )
-        {
-            wcid = (uint)acidHotspots[modifiedTier];
-        }
-
-        if (
-            damageType == DamageType.Electric
-            && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) / 1000)
-                > ThreadSafeRandom.Next(0f, 1f)
-        )
-        {
-            wcid = (uint)lightningHotspots[modifiedTier];
-        }
-
-        if (damageType == DamageType.Health || damageType == DamageType.Stamina || damageType == DamageType.Mana)
-        {
             if (
-                (double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) / 1000
+                damageType == DamageType.Fire
+                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) / 100)
                 > ThreadSafeRandom.Next(0f, 1f)
             )
             {
-                wcid = (uint)healingHotspots[modifiedTier];
+                wcid = (uint)flameHotspots[modifiedTier];
+            }
+
+            if (
+                damageType == DamageType.Cold
+                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) / 100)
+                > ThreadSafeRandom.Next(0f, 1f)
+            )
+            {
+                wcid = (uint)frostHotspots[modifiedTier];
+            }
+
+            if (
+                damageType == DamageType.Acid
+                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) / 100)
+                > ThreadSafeRandom.Next(0f, 1f)
+            )
+            {
+                wcid = (uint)acidHotspots[modifiedTier];
+            }
+
+            if (
+                damageType == DamageType.Electric
+                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) / 100)
+                > ThreadSafeRandom.Next(0f, 1f)
+            )
+            {
+                wcid = (uint)lightningHotspots[modifiedTier];
+            }
+
+            if (damageType == DamageType.Health || damageType == DamageType.Stamina || damageType == DamageType.Mana)
+            {
+                if (
+                    (double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) / 1000
+                    > ThreadSafeRandom.Next(0f, 1f)
+                )
+                {
+                    wcid = (uint)healingHotspots[modifiedTier];
+                }
             }
         }
 
