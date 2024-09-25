@@ -1122,6 +1122,8 @@ partial class Creature
 
     public void HandleShroudRewards()
     {
+        return; // TODO: Needs adjustments. Currently gives rewards to lone shrouded players.
+
         var scaledDamagers = DamageHistory.TotalDamage.Values.Where(d =>
             (d.Level > Level + 10) && d.TotalDamage >= DamageHistory.TotalHealth / 10
         );
