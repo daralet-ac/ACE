@@ -1501,6 +1501,7 @@ public class DamageEvent
 
     /// <summary>
     /// RATING - Bravado: Hit chance bonus for having been attacked frequently.
+    /// Up to +1% hit chance bonus per rating (with max quest stamps).
     /// (JEWEL - Yellow Garnet)
     /// </summary>
     private float CheckForRatingBravadoAttackSkillBonus(Player playerAttacker)
@@ -1520,9 +1521,10 @@ public class DamageEvent
             return 1.0f;
         }
 
-        var rampMod = (float)playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bravado") / 1000;
+        var rampMod = (float)playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bravado") / 1000; // up to 1.0f
+        var ratingMod = playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) * 0.01f; // 0.01f per rating
 
-        var bravadoBonus = 1f + (rampMod * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) / 100));
+        var bravadoBonus = 1f + rampMod * ratingMod;
 
         return bravadoBonus;
     }
