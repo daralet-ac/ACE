@@ -1137,7 +1137,7 @@ public class SpellProjectile : WorldObject
                 // JEWEL - Ruby: Bonus damage below 50% HP, reduced damage above
                 if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
                 {
-                    jewelLastStand += Jewel.GetJewelLastStand(sourcePlayer, target);
+                    jewelLastStand += Jewel.GetJewelLastStand(sourcePlayer);
                 }
             }
 
@@ -1631,7 +1631,6 @@ public class SpellProjectile : WorldObject
             Jewel.HandleCasterAttackerBonuses(
                 sourcePlayer,
                 target,
-                SpellType,
                 Spell.DamageType,
                 Spell.Level,
                 projectileScaler
@@ -1642,7 +1641,9 @@ public class SpellProjectile : WorldObject
         if (targetPlayer != null)
         {
             Jewel.HandleCasterDefenderBonuses(targetPlayer, sourceCreature, SpellType);
-            Jewel.HandlePlayerDefenderBonuses(targetPlayer, target, damage);
+
+            Jewel.CheckForRatingHealthToStamina(targetPlayer, target, damage);
+            Jewel.CheckForRatingHealthToMana(targetPlayer, target, damage);
         }
 
         // show debug info

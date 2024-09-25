@@ -993,7 +993,7 @@ public class DamageEvent
 
         if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
         {
-            return 1.0f + Jewel.GetJewelLastStand(playerAttacker, defender);
+            return 1.0f + Jewel.GetJewelLastStand(playerAttacker);
         }
 
         return 1.0f;
@@ -1023,14 +1023,14 @@ public class DamageEvent
         var playerAttack = attacker as Player;
         var playerDefender = defender as Player;
 
-        CheckForJewelPostDamageEffects(attacker, defender, damageSource, playerAttack, playerDefender);
+        CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttack, playerDefender);
         CheckForCombatAbilityFuryRecklessSelfDamage(playerAttack);
     }
 
     /// <summary>
-    /// JEWELCRAFTING POST-DAMAGE STAMPS / PROCS / BONUSES
+    /// RATING (jewels) POST-DAMAGE STAMPS / PROCS / BONUSES
     /// </summary>
-    private void CheckForJewelPostDamageEffects(
+    private void CheckForRatingPostDamageEffects(
         Creature attacker,
         Creature defender,
         WorldObject damageSource,
@@ -1041,13 +1041,13 @@ public class DamageEvent
         if (playerAttacker != null)
         {
             Jewel.HandlePlayerAttackerBonuses(playerAttacker, defender, Damage, DamageType);
-            Jewel.HandleMeleeAttackerBonuses(playerAttacker, defender, Damage, damageSource, DamageType);
+            Jewel.HandleMeleeAttackerBonuses(playerAttacker, defender, DamageType);
         }
 
         if (playerDefender != null)
         {
-            Jewel.HandleMeleeDefenderBonuses(playerDefender, attacker, Damage);
             Jewel.HandlePlayerDefenderBonuses(playerDefender, attacker, Damage);
+            Jewel.HandleMeleeDefenderBonuses(playerDefender);
         }
     }
 
