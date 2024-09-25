@@ -3564,7 +3564,7 @@ public class PhysicsObj
         {
             strikethrough = true;
 
-            if (spellProjectile.Strikethrough >= spellProjectile.StrikethroughLimit)
+            if (spellProjectile.Strikethrough >= SpellProjectile.StrikethroughLimit)
             {
                 strikethrough = false;
             }

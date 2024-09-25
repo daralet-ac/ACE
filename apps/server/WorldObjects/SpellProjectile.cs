@@ -27,13 +27,13 @@ public class SpellProjectile : WorldObject
     public float DistanceToTarget { get; set; }
     public uint LifeProjectileDamage { get; set; }
 
-    public PartialEvasion PartialEvasion;
+    private PartialEvasion _partialEvasion;
 
-    public int Strikethrough = 0;
-    public int StrikethroughLimit = 3;
-    public double StrikethroughChance = 0.5f;
+    public int Strikethrough;
+    public const int StrikethroughLimit = 3;
+    private const double StrikethroughChance = 0.5f;
 
-    public List<uint> StrikethroughTargets = new List<uint>();
+    private readonly List<uint> _strikethroughTargets = [];
 
     public SpellProjectileInfo Info { get; set; }
 
@@ -147,7 +147,10 @@ public class SpellProjectile : WorldObject
         if ((RotationSpeed ?? 0) != 0)
         {
             AlignPath = false;
-            PhysicsObj.Omega = new Vector3((float)(Math.PI * 2 * RotationSpeed), 0, 0);
+            if (RotationSpeed != null)
+            {
+                PhysicsObj.Omega = new Vector3((float)(Math.PI * 2 * RotationSpeed), 0, 0);
+            }
         }
     }
 
@@ -182,7 +185,7 @@ public class SpellProjectile : WorldObject
 
         if (
             spell.Category >= SpellCategory.AcidRing && spell.Category <= SpellCategory.SlashingRing
-            || spell.SpreadAngle == 360
+            || Math.Abs(spell.SpreadAngle - 360) < 1
         )
         {
             return ProjectileSpellType.Ring;
@@ -323,9 +326,9 @@ public class SpellProjectile : WorldObject
     {
         //Console.WriteLine($"{Name}.OnCollideObject({target.Name})");
 
-        if (target != null && StrikethroughTargets != null)
+        if (target != null && _strikethroughTargets != null)
         {
-            if (StrikethroughTargets.Contains(target.Guid.Full))
+            if (_strikethroughTargets.Contains(target.Guid.Full))
             {
                 return;
             }
@@ -421,14 +424,10 @@ public class SpellProjectile : WorldObject
             if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.EnchantmentProjectile)
             {
                 // handle EnchantmentProjectile successfully landing on target
-                ProjectileSource.CreateEnchantment(
-                    creatureTarget,
-                    ProjectileSource,
-                    ProjectileLauncher,
-                    Spell,
-                    false,
-                    FromProc
-                );
+                if (ProjectileSource != null)
+                {
+                    ProjectileSource.CreateEnchantment(creatureTarget, ProjectileSource, ProjectileLauncher, Spell, false, FromProc);
+                }
             }
             else
             {
@@ -437,10 +436,7 @@ public class SpellProjectile : WorldObject
 
             Strikethrough++;
 
-            if (creatureTarget != null)
-            {
-                StrikethroughTargets.Add(creatureTarget.Guid.Full);
-            }
+            _strikethroughTargets?.Add(creatureTarget.Guid.Full);
 
             // if this SpellProjectile has a TargetEffect, play it on successful hit
             DoSpellEffects(Spell, ProjectileSource, creatureTarget, true);
@@ -528,7 +524,7 @@ public class SpellProjectile : WorldObject
     /// Calculates the damage for a spell projectile
     /// Used by war magic, void magic, and life magic projectiles
     /// </summary>
-    public float? CalculateDamage(
+    private float? CalculateDamage(
         WorldObject source,
         Creature target,
         ref bool criticalHit,
@@ -591,17 +587,10 @@ public class SpellProjectile : WorldObject
 
         resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true);
 
-        // Combat Ability - Reflect (reflect resisted spells back to the caster)
-        if (resisted && targetPlayer != null && sourceCreature != null)
-        {
-            if (targetPlayer.EquippedCombatAbility == CombatAbility.Reflect)
-            {
-                targetPlayer.TryCastSpell(Spell, sourceCreature, null, null, false, false, false, true);
-            }
-        }
+        CheckForCombatAbilityReflectSpell(resisted, targetPlayer, sourceCreature);
 
         var resistedMod = 1.0f;
-        PartialEvasion = partialEvasion;
+        _partialEvasion = partialEvasion;
 
         if (!overpower && sourcePlayer != null)
         {
@@ -626,48 +615,8 @@ public class SpellProjectile : WorldObject
 
         // critical hit
         var criticalChance = GetWeaponMagicCritFrequency(weapon, sourceCreature, attackSkill, target);
-
-        // SPEC BONUS - War Magic (Scepter): +5% crit chance (additively)
-        if (sourcePlayer != null && weapon != null)
-        {
-            if (
-                weapon.WeaponSkill == Skill.WarMagic
-                && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized
-                && LootGenerationFactory.GetCasterSubType(weapon) == 1
-            )
-            {
-                criticalChance += 0.05f;
-            }
-        }
-
-        // Iron Fist Crit Rate Bonus
-        if (sourcePlayer != null)
-        {
-            if (sourcePlayer.EquippedCombatAbility == CombatAbility.IronFist)
-            {
-                if (sourcePlayer.LastIronFistActivated > Time.GetUnixTime() - sourcePlayer.IronFistActivatedDuration)
-                {
-                    criticalChance += 0.25f;
-                }
-                else
-                {
-                    criticalChance += 0.1f;
-                }
-            }
-        }
-        // Jewelcrafting Reprisal Bonus - Autocrit
-
-        if (sourcePlayer != null)
-        {
-            if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
-            {
-                if (sourcePlayer.QuestManager.HasQuest($"{target.Guid}/Reprisal"))
-                {
-                    criticalChance = 1f;
-                    sourcePlayer.QuestManager.Erase($"{target.Guid}/Reprisal");
-                }
-            }
-        }
+        criticalChance += CheckForWarSpecCriticalChanceBonus(sourcePlayer, weapon);
+        criticalChance = CheckForRatingReprisalAutoCrit(target, sourcePlayer, criticalChance);
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) < criticalChance)
         {
@@ -682,63 +631,16 @@ public class SpellProjectile : WorldObject
                 }
             }
 
-            var perceptionDefended = false;
-            // SPEC BONUS: Perception - 50% chance to prevent a critical hit
-            if (targetPlayer != null)
-            {
-                var perception = targetPlayer.GetCreatureSkill(Skill.AssessCreature);
-                if (perception.AdvancementClass == SkillAdvancementClass.Specialized)
-                {
-                    var skillCheck = (float)targetPlayer.GetModdedPerceptionSkill() / (float)attackSkill.Current;
-                    var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
-
-                    if (criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f))
-                    {
-                        perceptionDefended = true;
-                        targetPlayer.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"Your perception skill allowed you to prevent a critical strike!",
-                                ChatMessageType.Magic
-                            )
-                        );
-                    }
-                }
-            }
+            var perceptionDefended = CheckForPerceptionSpecCriticalDefense(targetPlayer, attackSkill);
 
             if (!critDefended && perceptionDefended == false)
             {
                 criticalHit = true;
             }
 
-            // Jewelcrafting Reprisal-- Chance to resist an incoming critical
-            if (criticalHit)
+            if (CheckForRatingReprisalCritResist(criticalHit, ref resisted, targetPlayer, sourceCreature))
             {
-                if (targetPlayer != null && sourceCreature != null)
-                {
-                    if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) > 0)
-                    {
-                        if (
-                            (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) / 2)
-                            >= ThreadSafeRandom.Next(0, 100)
-                        )
-                        {
-                            targetPlayer.QuestManager.HandleReprisalQuest();
-                            targetPlayer.QuestManager.Stamp($"{sourceCreature.Guid}/Reprisal");
-                            resisted = true;
-                            targetPlayer.Reprisal = true;
-                            PartialEvasion = PartialEvasion.All;
-                            targetPlayer.SendChatMessage(
-                                this,
-                                $"Reprisal! You resist the spell cast by {sourceCreature.Name}.",
-                                ChatMessageType.Magic
-                            );
-                            targetPlayer.Session.Network.EnqueueSend(
-                                new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell, 1.0f)
-                            );
-                            return null;
-                        }
-                    }
-                }
+                return null;
             }
 
             // EMPOWERED SCARAB - Crushing
@@ -756,7 +658,6 @@ public class SpellProjectile : WorldObject
         }
 
         var wardPenMod = 0.0f;
-
         if (sourcePlayer != null)
         {
             wardPenMod = sourcePlayer.GetIgnoreWardMod(weapon);
@@ -764,29 +665,8 @@ public class SpellProjectile : WorldObject
 
         var ignoreWardMod = Math.Min(wardRendingMod, wardPenMod);
 
-        // JEWEL - Tourmaline: Ramping Ward Pen
-        if (sourcePlayer != null)
-        {
-            if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) > 0)
-            {
-                var jewelWardPenMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") / 500;
-                jewelWardPenMod *= ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) / 66);
-                ignoreWardMod -= jewelWardPenMod;
-            }
-        }
-
-        // SPEC BONUS - War Magic (Orb): +10% ward penetration (additively)
-        if (sourcePlayer != null && weapon != null)
-        {
-            if (
-                weapon.WeaponSkill == Skill.WarMagic
-                && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized
-                && LootGenerationFactory.GetCasterSubType(weapon) == 0
-            )
-            {
-                ignoreWardMod -= 0.1f;
-            }
-        }
+        ignoreWardMod -= CheckForRatingWardPenBonus(target, sourcePlayer);
+        ignoreWardMod -= CheckForWarSpecWardPenBonus(sourcePlayer, weapon);
 
         var wardMod = GetWardMod(sourceCreature, target, ignoreWardMod);
 
@@ -796,17 +676,7 @@ public class SpellProjectile : WorldObject
         var isPVP = sourcePlayer != null && targetPlayer != null;
         var absorbMod = GetAbsorbMod(target, this);
 
-        // JEWEL - Amethyst: Ramping Magic Absorb
-        if (targetPlayer != null)
-        {
-            if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
-            {
-                var jewelRampMod =
-                    (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200;
-                absorbMod -=
-                    jewelRampMod * ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66);
-            }
-        }
+        absorbMod -= CheckForRatingNullificationAbsorbBonus(targetPlayer);
 
         //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
         if (isPVP && (target.CombatMode == CombatMode.Melee || target.CombatMode == CombatMode.Missile))
@@ -832,100 +702,17 @@ public class SpellProjectile : WorldObject
         // Possible 2x + damage bonus for the slayer property
         var slayerMod = GetWeaponCreatureSlayerModifier(weapon, sourceCreature, target);
 
-        // COMBAT ABILITY - Overload (x1.5) and Battery (scaling penalty with mana lost, 0 penalty when activated)
-        var combatFocusDamageMod = 1.0f;
-        if (sourcePlayer != null)
-        {
-            // Overload - Increased effectiveness up to 25%+ with Overload stacks, double bonus + erase stacks on activated ability
-            if (
-                sourcePlayer.EquippedCombatAbility == CombatAbility.Overload
-                && sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload")
-            )
-            {
-                if (sourcePlayer.OverloadActivated == false)
-                {
-                    var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-                    var overloadMod = (float)overloadStacks / 2000;
-                    combatFocusDamageMod += overloadMod;
-                }
-                if (
-                    sourcePlayer.OverloadActivated
-                    && sourcePlayer.LastOverloadActivated > Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration
-                )
-                {
-                    sourcePlayer.OverloadActivated = false;
-                    sourcePlayer.OverloadDumped = true;
-                    var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-                    var overloadMod = (float)overloadStacks / 1000;
-                    combatFocusDamageMod += overloadMod;
-                    sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
-                }
-                // reset if player didn't cast overload discharge within ten sec
-                if (
-                    sourcePlayer.OverloadActivated
-                    && sourcePlayer.LastOverloadActivated < Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration
-                )
-                {
-                    sourcePlayer.OverloadActivated = false;
-                    sourcePlayer.OverloadDumped = false;
-                    sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
-                }
-            }
-            else if (
-                sourcePlayer.EquippedCombatAbility == CombatAbility.Battery
-                && sourcePlayer.LastBatteryActivated < Time.GetUnixTime() - sourcePlayer.BatteryActivatedDuration
-            )
-            {
-                var maxMana = (float)sourcePlayer.Mana.MaxValue;
-                var currentMana = (float)sourcePlayer.Mana.Current == 0 ? 1 : (float)sourcePlayer.Mana.Current;
+        var combatAbilityDamageMod = 1.0f;
+        combatAbilityDamageMod += CheckForCombatAbilityOverloadDamageMod(sourcePlayer);
+        combatAbilityDamageMod -= CheckForCombatAbilityBatteryDamagePenalty(sourcePlayer);
+        combatAbilityDamageMod += CheckForCombatAbilityEnchantedWeaponDamageBonus(sourcePlayer);
 
-                if ((currentMana / maxMana) > 0.75)
-                {
-                    combatFocusDamageMod = 1f;
-                }
-                else
-                {
-                    var newMax = maxMana * 0.75;
-                    var manaMod = 1f - 0.25f * ((newMax - currentMana) / newMax);
-                    combatFocusDamageMod -= (float)manaMod;
-                }
-            }
-            else if (
-                sourcePlayer.EquippedCombatAbility == CombatAbility.EnchantedWeapon
-                && sourcePlayer.LastEnchantedWeaponActivated
-                    > Time.GetUnixTime() - sourcePlayer.EnchantedWeaponActivatedDuration
-            )
-            {
-                if (
-                    sourcePlayer.GetEquippedMeleeWeapon != null
-                    || sourcePlayer.GetEquippedMissileLauncher != null
-                    || sourcePlayer.GetEquippedMissileWeapon != null
-                )
-                {
-                    combatFocusDamageMod += 0.25f;
-                }
-            }
-        }
-
-        // SPEC BONUS - Magic Defense
-        var specDefenseMod = 1.0f;
-        if (
-            targetPlayer != null
-            && targetPlayer.GetCreatureSkill(Skill.MagicDefense).AdvancementClass == SkillAdvancementClass.Specialized
-        )
-        {
-            var magicDefenseSkill =
-                targetPlayer.GetModdedMagicDefSkill()
-                * LevelScaling.GetPlayerDefenseSkillScalar(targetPlayer, sourceCreature);
-            var bonusAmount = (float)Math.Min(magicDefenseSkill, 500) / 50;
-
-            specDefenseMod = 0.9f - bonusAmount * 0.01f;
-        }
+        var specDefenseMod = CheckForMagicDefenseSpecDefenseMod(targetPlayer, sourceCreature);
 
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
         {
-            lifeMagicDamage = LifeProjectileDamage * Spell.DamageRatio * combatFocusDamageMod;
+            lifeMagicDamage = LifeProjectileDamage * Spell.DamageRatio * combatAbilityDamageMod;
 
             // could life magic projectiles crit?
             // if so, did they use the same 1.5x formula as war magic, instead of 2.0x?
@@ -1002,46 +789,22 @@ public class SpellProjectile : WorldObject
                 // verify: CriticalMultiplier only applied to the additional crit damage,
                 // whereas CD/CDR applied to the total damage (base damage + additional crit damage)
                 weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
+                weaponCritDamageMod += CheckForWarMagicSpecCriticalDamageBonus(sourcePlayer, weapon);
 
                 critDamageBonus *= weaponCritDamageMod;
 
-                // SPEC BONUS - War Magic (Wand/Baton): +50% crit damage (additively)
-                if (sourcePlayer != null && weapon != null)
-                {
-                    if (
-                        weapon.WeaponSkill == Skill.WarMagic
-                        && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass
-                            == SkillAdvancementClass.Specialized
-                        && LootGenerationFactory.GetCasterSubType(weapon) == 2
-                    )
-                    {
-                        weaponCritDamageMod += 0.5f;
-                    }
-                }
-
                 criticalDamageMod = 2.0f + weaponCritDamageMod;
-
-                if (sourcePlayer != null && sourcePlayer.EquippedCombatAbility == CombatAbility.IronFist)
-                {
-                    criticalDamageMod -= 0.2f;
-                }
+                criticalDamageMod *= CheckForRatingBludgeonCritDamageBonus(target, sourcePlayer);
             }
 
             baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
 
-            weaponResistanceMod = GetWeaponResistanceModifier(
-                weapon,
-                sourceCreature,
-                attackSkill,
-                Spell.DamageType,
-                target
-            );
+            weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType, target);
 
             // if attacker/weapon has IgnoreMagicResist directly, do not transfer to spell projectile
             // only pass if SpellProjectile has it directly, such as 2637 - Invoking Aun Tanua
 
-            resistanceMod = (float)
-                Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
+            resistanceMod = (float)Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
 
             if (sourcePlayer != null && targetPlayer != null && Spell.DamageType == DamageType.Nether)
             {
@@ -1052,96 +815,17 @@ public class SpellProjectile : WorldObject
                 resistanceMod *= (float)PropertyManager.GetDouble("void_pvp_modifier").Item;
             }
 
-            // ----- Jewelcrafting Protection -----
+            resistanceMod += CheckForRatingPierceResistancePenetrationBonus(target, sourcePlayer);
 
-            var jewelcraftingProtection = 1f;
+            var physicalWardProtection = CheckForRatingPhysicalWardProtectionBonus(targetPlayer);
+            var elementalWardProtection = CheckForRatingElementalWardProtectionBonus(targetPlayer);
 
-            if (targetPlayer != null)
-            { // JEWEL - Onyx: Protection vs. Slash/Pierce/Bludgeon
-                if (
-                    Spell.DamageType == DamageType.Slash
-                    || Spell.DamageType == DamageType.Pierce
-                    || Spell.DamageType == DamageType.Bludgeon
-                )
-                {
-                    if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) > 0)
-                    {
-                        jewelcraftingProtection = (
-                            1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) / 100)
-                        );
-                    }
-                }
-                // JEWEL - Zircon: Protection vs. Acid/Fire/Cold/Electric
-                if (
-                    Spell.DamageType == DamageType.Acid
-                    || Spell.DamageType == DamageType.Fire
-                    || Spell.DamageType == DamageType.Cold
-                    || Spell.DamageType == DamageType.Electric
-                )
-                {
-                    if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) > 0)
-                    {
-                        jewelcraftingProtection = (
-                            1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) / 100)
-                        );
-                    }
-                }
-            }
-            var jewelElementalist = 1f;
-            var jewelElemental = 1f;
-            var jewelLastStand = 1f;
-            var jewelSelfHarm = 1f;
+            var jewelElementalist = CheckForRatingElementalistDamageBonus(sourcePlayer);
+            var jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
+            var jewelSelfHarm = CheckForRatingSelfHarmDamageBonus(sourcePlayer);
+            var jewelLastStand = CheckForRatingLastStandDamageMod(sourcePlayer);
 
-            if (sourcePlayer != null)
-            { // JEWEL - Green Garnet: Ramping War Magic Damage
-                if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) > 0)
-                {
-                    var jewelRampMod =
-                        (float)sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") / 500;
-                    jewelElementalist +=
-                        jewelRampMod
-                        * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) / 66);
-                }
-                // JEWEL - White Sapphire: Ramping Bludgeon Crit Damage Bonus
-                if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
-                {
-                    if (Spell.DamageType == DamageType.Bludgeon)
-                    {
-                        var jewelRampMod =
-                            (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Bludgeon") / 500;
-                        critDamageBonus *=
-                            jewelRampMod
-                            * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) / 50);
-                    }
-                }
-                // JEWEL - Black Garnet - Ramping Piercing Resistance Penetration
-                if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0)
-                {
-                    if (Spell.DamageType == DamageType.Pierce)
-                    {
-                        var jewelRampMod =
-                            (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Pierce") / 500;
-                        resistanceMod +=
-                            jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) / 66);
-                    }
-                }
-                // JEWEL - Hematite: Deal bonus damage but take the same amount
-                if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
-                {
-                    jewelSelfHarm += (float)(sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) / 100);
-                }
-
-                // JEWEL - Aquamarine, Emerald, Jet, Red Garnet: Bonus elemental damage
-                jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
-
-                // JEWEL - Ruby: Bonus damage below 50% HP, reduced damage above
-                if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
-                {
-                    jewelLastStand += Jewel.GetJewelLastStand(sourcePlayer);
-                }
-            }
-
-            var strikethroughMod = 1f / (Strikethrough + 1);
+            var strikethroughMod = 1.0f / (Strikethrough + 1);
 
             // ----- FINAL CALCULATION ------------
             var damageBeforeMitigation =
@@ -1150,7 +834,7 @@ public class SpellProjectile : WorldObject
                 * attributeMod
                 * elementalDamageMod
                 * slayerMod
-                * combatFocusDamageMod
+                * combatAbilityDamageMod
                 * jewelElementalist
                 * jewelElemental
                 * jewelSelfHarm
@@ -1164,7 +848,8 @@ public class SpellProjectile : WorldObject
                 * resistanceMod
                 * resistedMod
                 * specDefenseMod
-                * jewelcraftingProtection;
+                * physicalWardProtection
+                * elementalWardProtection;
 
             if (sourcePlayer != null)
             {
@@ -1235,7 +920,530 @@ public class SpellProjectile : WorldObject
         return finalDamage;
     }
 
-    public float GetAbsorbMod(Creature target, WorldObject source)
+    /// <summary>
+    /// SPEC BONUS - War Magic (Wand/Baton): +50% crit damage (additively)
+    /// </summary>
+    private static float CheckForWarMagicSpecCriticalDamageBonus(Player sourcePlayer, WorldObject weapon)
+    {
+        if (sourcePlayer == null || weapon == null)
+        {
+            return 0.0f;
+        }
+
+        if (
+            weapon.WeaponSkill == Skill.WarMagic
+            && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized
+            && LootGenerationFactory.GetCasterSubType(weapon) == 2
+        )
+        {
+            return 0.5f;
+        }
+
+        return 0.0f;
+    }
+
+    /// <summary>
+    /// SPEC BONUS - Magic Defense: Magic damage reduced by 10% + 1% per 50 skill level.
+    /// </summary>
+    private static float CheckForMagicDefenseSpecDefenseMod(Player targetPlayer, Creature sourceCreature)
+    {
+        if (targetPlayer == null || targetPlayer.GetCreatureSkill(Skill.MagicDefense).AdvancementClass != SkillAdvancementClass.Specialized)
+        {
+            return 1.0f;
+        }
+
+        var magicDefenseSkill = targetPlayer.GetModdedMagicDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(targetPlayer, sourceCreature);
+
+        var bonusAmount = Math.Min(magicDefenseSkill, 500) / 50;
+
+        return 0.9f - bonusAmount * 0.01f;
+
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Enchant: +25% increased damage with spells while a melee/missile weapon is equipped.
+    /// </summary>
+    private static float CheckForCombatAbilityEnchantedWeaponDamageBonus(Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 0.0f;
+        }
+
+        if (sourcePlayer.EquippedCombatAbility != CombatAbility.EnchantedWeapon
+            || !(sourcePlayer.LastEnchantedWeaponActivated
+                 > Time.GetUnixTime() - sourcePlayer.EnchantedWeaponActivatedDuration))
+        {
+            return 0.0f;
+        }
+
+        if (sourcePlayer.GetEquippedMeleeWeapon() != null || sourcePlayer.GetEquippedMissileLauncher() != null || sourcePlayer.GetEquippedMissileWeapon() != null)
+        {
+            return 0.25f;
+        }
+
+        return 0.0f;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Battery: Up to 25% damage penalty, if current mana drops below 75%. (-25% at 0 mana)
+    /// </summary>
+    private static float CheckForCombatAbilityBatteryDamagePenalty(Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 0.0f;
+        }
+
+        if (sourcePlayer.EquippedCombatAbility != CombatAbility.Battery
+            || !(sourcePlayer.LastBatteryActivated < Time.GetUnixTime() - sourcePlayer.BatteryActivatedDuration))
+        {
+            return 0.0f;
+        }
+
+        var maxMana = (float)sourcePlayer.Mana.MaxValue;
+        var currentMana = (float)sourcePlayer.Mana.Current == 0 ? 1 : (float)sourcePlayer.Mana.Current;
+
+        // If current mana is over 75% full, no penalty
+        if ((currentMana / maxMana) > 0.75)
+        {
+            return 0.0f;
+        }
+
+        // Else, Up to 25% reduced damage depending on how low current mana is.
+        var newMax = maxMana * 0.75;
+        var manaMod = 0.25f * ((newMax - currentMana) / newMax);
+
+        return (float)manaMod;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Overload: Increased effectiveness up to 25%+ with Overload stacks, double bonus +
+    /// erase stacks on activated ability.
+    /// </summary>
+    private static float CheckForCombatAbilityOverloadDamageMod(Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 0.0f;
+        }
+
+        if (sourcePlayer.EquippedCombatAbility != CombatAbility.Overload || !sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload"))
+        {
+            return 0.0f;
+        }
+
+        switch (sourcePlayer.OverloadActivated)
+        {
+            case false:
+            {
+                var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
+                var overloadMod = (float)overloadStacks / 2000;
+
+                return overloadMod;
+            }
+            case true
+            when sourcePlayer.LastOverloadActivated > Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration:
+            {
+                sourcePlayer.OverloadActivated = false;
+                sourcePlayer.OverloadDumped = true;
+
+                var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
+                var overloadMod = (float)overloadStacks / 1000;
+
+                sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
+
+                return overloadMod;
+            }
+        }
+
+        if (!sourcePlayer.OverloadActivated || !(sourcePlayer.LastOverloadActivated < Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration))
+        {
+            return 0.0f;
+        }
+
+        // reset if player didn't cast overload discharge within ten sec
+        sourcePlayer.OverloadActivated = false;
+        sourcePlayer.OverloadDumped = false;
+        sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
+
+        return 0.0f;
+    }
+
+    /// <summary>
+    /// SPEC BONUS - Perception: Up to 50% chance to prevent a critical hit
+    /// </summary>
+    private static bool CheckForPerceptionSpecCriticalDefense(Player targetPlayer, CreatureSkill attackSkill)
+    {
+        if (targetPlayer == null)
+        {
+            return false;
+        }
+
+        var perception = targetPlayer.GetCreatureSkill(Skill.AssessCreature);
+        if (perception.AdvancementClass != SkillAdvancementClass.Specialized)
+        {
+            return false;
+        }
+
+        var skillCheck = (float)targetPlayer.GetModdedPerceptionSkill() / attackSkill.Current;
+        var criticalDefenseChance = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
+
+        if (!(criticalDefenseChance > ThreadSafeRandom.Next(0f, 1f)))
+        {
+            return false;
+        }
+
+        targetPlayer.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"Your perception skill allowed you to prevent a critical strike!",
+                ChatMessageType.Magic
+            )
+        );
+
+        return true;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Reflect: Reflect resist spells back to the caster.
+    /// </summary>
+    private void CheckForCombatAbilityReflectSpell(bool resisted, Player targetPlayer, Creature sourceCreature)
+    {
+        if (!resisted || targetPlayer == null || sourceCreature == null)
+        {
+            return;
+        }
+
+        if (targetPlayer.EquippedCombatAbility == CombatAbility.Reflect)
+        {
+            targetPlayer.TryCastSpell(Spell, sourceCreature, null, null, false, false, false);
+        }
+    }
+
+    /// <summary>
+    /// SPEC BONUS - War Magic (Scepter): +5% critical chance (additively).
+    /// </summary>
+    private static float CheckForWarSpecCriticalChanceBonus(Player sourcePlayer, WorldObject weapon)
+    {
+        if (sourcePlayer == null || weapon == null)
+        {
+            return 0.0f;
+        }
+
+        if (
+            weapon.WeaponSkill == Skill.WarMagic
+            && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized
+            && LootGenerationFactory.GetCasterSubType(weapon) == 1
+        )
+        {
+            return 0.05f;
+        }
+
+        return 0.0f;
+    }
+
+    /// <summary>
+    /// RATING - Nullification: Ramping magic damage reduction.
+    /// (JEWEL - Amethyst)
+    /// </summary>
+    private static float CheckForRatingNullificationAbsorbBonus(Player targetPlayer)
+    {
+        if (targetPlayer == null)
+        {
+            return 0.0f;
+        }
+
+        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) <= 0)
+        {
+            return 0.0f;
+        }
+
+        var jewelRampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200;
+
+        return jewelRampMod * ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66);
+    }
+
+    /// <summary>
+    /// SPEC BONUS - War Magic (Orb): +10% ward penetration (additively).
+    /// </summary>
+    private static float CheckForWarSpecWardPenBonus(Player sourcePlayer, WorldObject weapon)
+    {
+        if (sourcePlayer == null || weapon == null)
+        {
+            return 0.0f;
+        }
+
+        if (
+            weapon.WeaponSkill == Skill.WarMagic
+            && sourcePlayer.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized
+            && LootGenerationFactory.GetCasterSubType(weapon) == 0
+        )
+        {
+            return 0.1f;
+        }
+
+        return 0.0f;
+    }
+
+    /// <summary>
+    /// RATING - Ward Penetration: Ramping ward penetration.
+    /// (JEWEL - Tourmaline)
+    /// </summary>
+    private static float CheckForRatingWardPenBonus(Creature target, Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 0.0f;
+        }
+
+        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) <= 0)
+        {
+            return 0.0f;
+        }
+
+        var jewelWardPenMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") / 500;
+        jewelWardPenMod *= ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) / 66);
+
+        return jewelWardPenMod;
+    }
+
+    /// <summary>
+    /// RATING - Reprisal: Crit resist.
+    /// (JEWEL - ??)
+    /// </summary>
+    private bool CheckForRatingReprisalCritResist(bool criticalHit, ref bool resisted, Player targetPlayer, Creature sourceCreature)
+    {
+        if (!criticalHit)
+        {
+            return false;
+        }
+
+        if (targetPlayer == null || sourceCreature == null)
+        {
+            return false;
+        }
+
+        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) <= 0)
+        {
+            return false;
+        }
+
+        if ((targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) / 2) < ThreadSafeRandom.Next(0, 100))
+        {
+            return false;
+        }
+
+        targetPlayer.QuestManager.HandleReprisalQuest();
+        targetPlayer.QuestManager.Stamp($"{sourceCreature.Guid}/Reprisal");
+
+        resisted = true;
+        targetPlayer.Reprisal = true;
+        _partialEvasion = PartialEvasion.All;
+
+        targetPlayer.SendChatMessage(
+            this,
+            $"Reprisal! You resist the spell cast by {sourceCreature.Name}.",
+            ChatMessageType.Magic
+        );
+
+        targetPlayer.Session.Network.EnqueueSend(
+            new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell)
+        );
+
+        return true;
+    }
+
+    /// <summary>
+    /// RATING - Reprisal: Auto-crit.
+    /// (JEWEL - ??)
+    /// </summary>
+    private static float CheckForRatingReprisalAutoCrit(Creature target, Player sourcePlayer, float criticalChance)
+    {
+        if (sourcePlayer == null)
+        {
+            return criticalChance;
+        }
+
+        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) <= 0)
+        {
+            return criticalChance;
+        }
+
+        if (!sourcePlayer.QuestManager.HasQuest($"{target.Guid}/Reprisal"))
+        {
+            return criticalChance;
+        }
+
+        sourcePlayer.QuestManager.Erase($"{target.Guid}/Reprisal");
+
+        return 1.0f;
+    }
+
+    /// <summary>
+    /// RATING - Last Stand: Bonus damage below 50% HP, reduced damage above.
+    /// (JEWEL - Ruby)
+    /// </summary>
+    private static float CheckForRatingLastStandDamageMod(Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 1.0f;
+        }
+
+        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
+        {
+            return 1.0f + Jewel.GetJewelLastStand(sourcePlayer);
+        }
+
+        return 1.0f;
+    }
+
+    /// <summary>
+    /// RATING - Self Harm: Deal bonus damage but take the same amount.
+    /// (JEWEL - Hematite)
+    /// </summary>
+    private static float CheckForRatingSelfHarmDamageBonus(Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 1.0f;
+        }
+
+        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
+        {
+            return 1.0f + (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
+        }
+
+        return 1.0f;
+    }
+
+    /// <summary>
+    /// RATING - Pierce: Ramping piercing resistance penetration.
+    /// (JEWEL - Black Garnet)
+    /// </summary>
+    private float CheckForRatingPierceResistancePenetrationBonus(Creature target, Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 0.0f;
+        }
+
+        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) <= 0)
+        {
+            return 0.0f;
+        }
+
+        if (Spell.DamageType != DamageType.Pierce)
+        {
+            return 0.0f;
+        }
+
+        var jewelRampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Pierce") / 500;
+
+        return jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) / 66);
+    }
+
+    /// <summary>
+    /// RATING - Bludgeon: Ramping bludgeon crit damage.
+    /// (JEWEL - White Sapphire)
+    /// </summary>
+    private float CheckForRatingBludgeonCritDamageBonus(Creature target, Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 1.0f;
+        }
+
+        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) <= 0)
+        {
+            return 1.0f;
+        }
+
+        if (Spell.DamageType != DamageType.Bludgeon)
+        {
+            return 1.0f;
+        }
+
+        var jewelRampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Bludgeon") / 500;
+
+        return jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) / 50);
+    }
+
+    /// <summary>
+    /// RATING - Elementalist: Ramping War magic damage.
+    /// (JEWEL - Green Garnet)
+    /// </summary>
+    private static float CheckForRatingElementalistDamageBonus(Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 1.0f;
+        }
+
+        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) <= 0)
+        {
+            return 1.0f;
+        }
+
+        var jewelRampMod = (float)sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") / 500;
+
+        return 1.0f + jewelRampMod * ((float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) / 66);
+    }
+
+    /// <summary>
+    /// RATING - Elemental Ward: Protection vs Acid/Frost/Fire/Electric.
+    /// (JEWEL - Zircon)
+    /// </summary>
+    private float CheckForRatingElementalWardProtectionBonus(Player targetPlayer)
+    {
+        if (targetPlayer == null)
+        {
+            return 1.0f;
+        }
+
+        if (Spell.DamageType != DamageType.Acid
+            && Spell.DamageType != DamageType.Fire
+            && Spell.DamageType != DamageType.Cold
+            && Spell.DamageType != DamageType.Electric)
+        {
+            return 1.0f;
+        }
+
+        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) > 0)
+        {
+            return (1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) / 100));
+        }
+
+        return 1.0f;
+    }
+
+    /// <summary>
+    /// RATING - Physical Ward: Protection vs Slash/Pierce/Bludge.
+    /// (JEWEL - Onyx)
+    /// </summary>
+    private float CheckForRatingPhysicalWardProtectionBonus(Player targetPlayer)
+    {
+        if (targetPlayer == null)
+        {
+            return 1.0f;
+        }
+
+        if (Spell.DamageType != DamageType.Slash
+            && Spell.DamageType != DamageType.Pierce
+            && Spell.DamageType != DamageType.Bludgeon)
+        {
+            return 1.0f;
+        }
+
+        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) > 0)
+        {
+            return (1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) / 100));
+        }
+
+        return 1.0f;
+    }
+
+    private float GetAbsorbMod(Creature target, WorldObject source)
     {
         switch (target.CombatMode)
         {
@@ -1273,7 +1481,7 @@ public class SpellProjectile : WorldObject
         return 1.0f;
     }
 
-    public float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
+    private float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
     {
         var wardLevel = target.GetWardLevel() * LevelScaling.GetPlayerArmorWardScalar(target, caster);
 
@@ -1283,22 +1491,15 @@ public class SpellProjectile : WorldObject
     /// <summary>
     /// Calculates the amount of damage a shield absorbs from magic projectile
     /// </summary>
-    public static float GetShieldMod(Creature target, WorldObject shield, WorldObject source)
+    private static float GetShieldMod(Creature target, WorldObject shield, WorldObject source)
     {
-        var bypassShieldAngleCheck = false;
-
-        // COMBAT ABILITY - Phalanx
-        var combatAbilityTrinket = target.GetEquippedTrinket();
-        if (combatAbilityTrinket != null && combatAbilityTrinket.CombatAbilityId == (int)CombatAbility.Phalanx)
-        {
-            bypassShieldAngleCheck = true;
-        }
+        var bypassShieldAngleCheck = CheckForCombatAbilityPhalanxBypassSpellAngle(target);
 
         if (!bypassShieldAngleCheck)
         {
             // is spell projectile in front of creature target,
             // within shield effectiveness area?
-            var effectiveAngle = 180.0f;
+            const float effectiveAngle = 180.0f;
             var angle = target.GetAngle(source);
             if (Math.Abs(angle) > effectiveAngle / 2.0f)
             {
@@ -1340,10 +1541,20 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
+    /// COMBAT ABILITY - Phalanx: Apply shield ward damage reduction to spells from behind player.
+    /// </summary>
+    private static bool CheckForCombatAbilityPhalanxBypassSpellAngle(Creature target)
+    {
+        var combatAbilityTrinket = target.GetEquippedTrinket();
+
+        return combatAbilityTrinket is { CombatAbilityId: (int)CombatAbility.Phalanx };
+    }
+
+    /// <summary>
     /// Calculates the damage reduction modifier for bows and casters
     /// with 'Magic Absorbing' property
     /// </summary>
-    public float AbsorbMagic(Creature target, WorldObject item)
+    private static float AbsorbMagic(Creature target, WorldObject item)
     {
         // https://asheron.fandom.com/wiki/Category:Magic_Absorbing
 
@@ -1381,7 +1592,7 @@ public class SpellProjectile : WorldObject
     /// <summary>
     /// Called for a spell projectile to damage its target
     /// </summary>
-    public void DamageTarget(Creature target, float damage, bool critical, bool critDefended, bool overpower)
+    private void DamageTarget(Creature target, float damage, bool critical, bool critDefended, bool overpower)
     {
         var targetPlayer = target as Player;
 
@@ -1455,7 +1666,7 @@ public class SpellProjectile : WorldObject
             }
             if (pkBattle)
             {
-                pkDamageRatingMod = Creature.GetPositiveRatingMod(sourceCreature?.GetPKDamageRating() ?? 0);
+                pkDamageRatingMod = Creature.GetPositiveRatingMod(sourceCreature.GetPKDamageRating());
                 pkDamageResistRatingMod = Creature.GetNegativeRatingMod(target.GetPKDamageResistRating());
 
                 damageRatingMod = Creature.AdditiveCombine(damageRatingMod, pkDamageRatingMod);
@@ -1480,123 +1691,11 @@ public class SpellProjectile : WorldObject
                 percent = damage / target.Health.MaxValue;
             }
 
-            // Mana Barrier
-            if (targetPlayer == null || !targetPlayer.ManaBarrierToggle)
-            {
-                amount = (uint)-target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
-                target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
-            }
-            if (targetPlayer != null && targetPlayer.ManaBarrierToggle)
-            {
-                var toggles = targetPlayer.GetInventoryItemsOfWCID(1051110);
-                var skill = targetPlayer.GetCreatureSkill((Skill)16);
-
-                var expectedSkill = (float)(targetPlayer.Level * 5);
-                var currentSkill = (float)skill.Current;
-
-                // create a scaling mod. if expected skill is much higher than currentSkill, you will be multiplying the amount of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
-                // capped at 1f so high skill gets the proper ratio of health-to-mana, but no better than that.
-
-                var skillModifier = expectedSkill / currentSkill <= 1f ? 1f : expectedSkill / currentSkill;
-
-                var manaDamage = (damage * 0.25) * 3 * skillModifier;
-                if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                {
-                    manaDamage = (damage * 0.25) * 1.5 * skillModifier;
-                }
-
-                if (targetPlayer.ManaBarrierToggle)
-                {
-                    if (targetPlayer.Mana.Current >= manaDamage)
-                    {
-                        amount = (uint)(damage * 0.75);
-                        targetPlayer.PlayParticleEffect(PlayScript.RestrictionEffectBlue, targetPlayer.Guid);
-                        targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-Math.Round(manaDamage));
-                        targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
-                        targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
-                    }
-                    // if not enough mana, barrier falls and player takes remainder of damage as health
-                    else
-                    {
-                        targetPlayer.ToggleManaBarrierSetting();
-                        targetPlayer.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
-                        );
-                        if (toggles != null)
-                        {
-                            foreach (var toggle in toggles)
-                            {
-                                targetPlayer.EnchantmentManager.StartCooldown(toggle);
-                            }
-                        }
-
-                        targetPlayer.PlayParticleEffect(PlayScript.HealthDownBlue, targetPlayer.Guid);
-                        // find mana damage overage and reconvert to HP damage
-                        var manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 1.5;
-                        if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                        {
-                            manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 3;
-                        }
-
-                        amount = (uint)((damage * 0.75) + manaRemainder);
-                        targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-(targetPlayer.Mana.Current - 1));
-                        targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-(amount));
-                        targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
-                    }
-                }
-            }
+            amount = CheckForCombatAbilityManaBarrier(target, damage, targetPlayer, amount);
         }
 
-        //if (targetPlayer != null && targetPlayer.Fellowship != null)
-        //targetPlayer.Fellowship.OnVitalUpdate(targetPlayer);
+        var overloadPercent = HandleCombatAbilityOverloadStamps(sourcePlayer, sourceCreature, out var overload);
 
-
-        /* amount = (uint)Math.Round(damage);    // full amount for debugging
-
-        Console.WriteLine($" -criticalHit? {critical}\n" +
-            $" -damageRatingMod: {damageRatingMod}\n" +
-            $" -damageResistRatingMod: {damageResistRatingMod}\n" +
-            $" -FINAL: {amount}"); */
-
-        // Overload Stamps + Messages
-        var overloadPercent = 0;
-        var overload = false;
-
-        if (sourcePlayer != null)
-        {
-            var combatAbility = CombatAbility.None;
-            var combatFocus = sourceCreature.GetEquippedCombatFocus();
-            if (combatFocus != null)
-            {
-                combatAbility = combatFocus.GetCombatAbility();
-            }
-
-            if (combatAbility == CombatAbility.Overload)
-            {
-                overload = true;
-                var projectileScaler = 1;
-                if (SpellType == ProjectileSpellType.Streak)
-                {
-                    projectileScaler = 5;
-                }
-
-                if (SpellType == ProjectileSpellType.Blast)
-                {
-                    projectileScaler = 3;
-                }
-
-                if (
-                    SpellType == ProjectileSpellType.Volley
-                    || SpellType == ProjectileSpellType.Ring
-                    || SpellType == ProjectileSpellType.Wall
-                )
-                {
-                    projectileScaler = 6;
-                }
-
-                overloadPercent = Player.HandleOverloadStamps(sourcePlayer, projectileScaler, Spell.Level);
-            }
-        }
         // add threat to damaged targets
         if (target.IsMonster && sourcePlayer != null)
         {
@@ -1604,47 +1703,7 @@ public class SpellProjectile : WorldObject
             target.IncreaseTargetThreatLevel(sourcePlayer, (int)(percentOfTargetMaxHealth * 1000));
         }
 
-        // Jewelcrafting Post-Damage Handling
-
-        if (sourcePlayer != null)
-        {
-            var projectileScaler = 1;
-            if (SpellType == ProjectileSpellType.Streak)
-            {
-                projectileScaler = 5;
-            }
-
-            if (SpellType == ProjectileSpellType.Blast)
-            {
-                projectileScaler = 3;
-            }
-
-            if (
-                SpellType == ProjectileSpellType.Volley
-                || SpellType == ProjectileSpellType.Ring
-                || SpellType == ProjectileSpellType.Wall
-            )
-            {
-                projectileScaler = 6;
-            }
-
-            Jewel.HandleCasterAttackerBonuses(
-                sourcePlayer,
-                target,
-                Spell.DamageType,
-                Spell.Level,
-                projectileScaler
-            );
-            Jewel.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, Spell.DamageType);
-        }
-
-        if (targetPlayer != null)
-        {
-            Jewel.HandleCasterDefenderBonuses(targetPlayer, sourceCreature, SpellType);
-
-            Jewel.CheckForRatingHealthToStamina(targetPlayer, target, damage);
-            Jewel.CheckForRatingHealthToMana(targetPlayer, target, damage);
-        }
+        HandlePostDamageRatingEffects(target, damage, sourcePlayer, targetPlayer, sourceCreature); // (jewel effects)
 
         // show debug info
         if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
@@ -1683,30 +1742,27 @@ public class SpellProjectile : WorldObject
             string verb = null,
                 plural = null;
             Strings.GetAttackVerb(Spell.DamageType, percent, ref verb, ref plural);
-            var type = Spell.DamageType.GetName().ToLower();
 
             var critMsg = critical ? "Critical hit! " : "";
             var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
             var overpowerMsg = overpower ? "Overpower! " : "";
             var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
-            var resistSome = PartialEvasion == PartialEvasion.Some ? "Partial resist! " : "";
+            var resistSome = _partialEvasion == PartialEvasion.Some ? "Partial resist! " : "";
             var strikeThrough = Strikethrough > 0 ? "Strikethrough! " : "";
 
-            var nonHealth =
-                Spell.Category == SpellCategory.StaminaLowering || Spell.Category == SpellCategory.ManaLowering;
+            var nonHealth = Spell.Category is SpellCategory.StaminaLowering or SpellCategory.ManaLowering;
 
             if (sourcePlayer != null)
             {
                 var critProt = critDefended ? " Your critical hit was avoided with their augmentation!" : "";
 
-                if (sourcePlayer.OverloadDumped == true)
+                if (sourcePlayer.OverloadDumped)
                 {
                     sourcePlayer.OverloadDumped = false;
                     overloadMsg = "Overload Discharged! ";
                 }
 
-                var attackerMsg =
-                    $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
+                var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
                 // could these crit / sneak attack?
                 if (nonHealth)
@@ -1765,7 +1821,7 @@ public class SpellProjectile : WorldObject
                 }
             }
         }
-        else if (targetPlayer != null && !targetPlayer.IsInDeathProcess)
+        else if (targetPlayer is { IsInDeathProcess: false })
         {
             targetPlayer.IsInDeathProcess = true;
             var lastDamager = ProjectileSource != null ? new DamageHistoryInfo(ProjectileSource) : null;
@@ -1778,6 +1834,173 @@ public class SpellProjectile : WorldObject
             target.OnDeath(lastDamager, Spell.DamageType, critical);
             target.Die();
         }
+    }
+
+    private void HandlePostDamageRatingEffects(Creature target, float damage, Player sourcePlayer, Player targetPlayer,
+        Creature sourceCreature)
+    {
+        if (sourcePlayer != null)
+        {
+            var projectileScaler = 1;
+            if (SpellType == ProjectileSpellType.Streak)
+            {
+                projectileScaler = 5;
+            }
+
+            if (SpellType == ProjectileSpellType.Blast)
+            {
+                projectileScaler = 3;
+            }
+
+            if (
+                SpellType == ProjectileSpellType.Volley
+                || SpellType == ProjectileSpellType.Ring
+                || SpellType == ProjectileSpellType.Wall
+            )
+            {
+                projectileScaler = 6;
+            }
+
+            Jewel.HandleCasterAttackerBonuses(sourcePlayer, target, Spell.DamageType, Spell.Level, projectileScaler);
+            Jewel.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, Spell.DamageType);
+        }
+
+        if (targetPlayer != null)
+        {
+            Jewel.HandleCasterDefenderBonuses(targetPlayer, sourceCreature, SpellType);
+
+            Jewel.CheckForRatingHealthToStamina(targetPlayer, target, damage);
+            Jewel.CheckForRatingHealthToMana(targetPlayer, target, damage);
+        }
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Overload: Handle overload stamps.
+    /// </summary>
+    private int HandleCombatAbilityOverloadStamps(Player sourcePlayer, Creature sourceCreature, out bool overload)
+    {
+        // Overload Stamps + Messages
+        var overloadPercent = 0;
+        overload = false;
+
+        if (sourcePlayer == null)
+        {
+            return overloadPercent;
+        }
+
+        var combatAbility = CombatAbility.None;
+        var combatFocus = sourceCreature.GetEquippedCombatFocus();
+        if (combatFocus != null)
+        {
+            combatAbility = combatFocus.GetCombatAbility();
+        }
+
+        if (combatAbility != CombatAbility.Overload)
+        {
+            return overloadPercent;
+        }
+
+        overload = true;
+        var projectileScaler = 1;
+        switch (SpellType)
+        {
+            case ProjectileSpellType.Streak:
+                projectileScaler = 5;
+                break;
+            case ProjectileSpellType.Blast:
+                projectileScaler = 3;
+                break;
+            case ProjectileSpellType.Volley:
+            case ProjectileSpellType.Ring:
+            case ProjectileSpellType.Wall:
+                projectileScaler = 6;
+                break;
+        }
+
+        overloadPercent = Player.HandleOverloadStamps(sourcePlayer, projectileScaler, Spell.Level);
+
+        return overloadPercent;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Mana Barrier: Some damage taken from mana instead of health.
+    /// </summary>
+    private uint CheckForCombatAbilityManaBarrier(Creature target, float damage, Player targetPlayer, uint amount)
+    {
+        if (targetPlayer is not { ManaBarrierToggle: true })
+        {
+            amount = (uint)-target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
+
+            target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+
+            return amount;
+        }
+
+        if (targetPlayer.Level == null || !targetPlayer.ManaBarrierToggle)
+        {
+            return amount;
+        }
+
+        var toggles = targetPlayer.GetInventoryItemsOfWCID(1051110);
+        var skill = targetPlayer.GetCreatureSkill((Skill)16);
+
+        var expectedSkill = (float)(targetPlayer.Level * 5);
+        var currentSkill = (float)skill.Current;
+
+        // Create a scaling mod. If expected skill is much higher than currentSkill, you will be multiplying the amount
+        // of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
+        // Capped at 1.0f so high skill gets the proper ratio of health-to-mana, but no better than that.
+
+        var skillModifier = expectedSkill / currentSkill <= 1f ? 1f : expectedSkill / currentSkill;
+
+        var manaDamage = (damage * 0.25) * 3 * skillModifier;
+        if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+        {
+            manaDamage = (damage * 0.25) * 1.5 * skillModifier;
+        }
+
+        if (targetPlayer.Mana.Current >= manaDamage)
+        {
+            amount = (uint)(damage * 0.75);
+
+            targetPlayer.PlayParticleEffect(PlayScript.RestrictionEffectBlue, targetPlayer.Guid);
+            targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-Math.Round(manaDamage));
+            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
+            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+        }
+        // if not enough mana, barrier falls and player takes remainder of damage as health
+        else
+        {
+            targetPlayer.ToggleManaBarrierSetting();
+            targetPlayer.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
+            );
+            if (toggles != null)
+            {
+                foreach (var toggle in toggles)
+                {
+                    targetPlayer.EnchantmentManager.StartCooldown(toggle);
+                }
+            }
+
+            targetPlayer.PlayParticleEffect(PlayScript.HealthDownBlue, targetPlayer.Guid);
+
+            // find mana damage overage and reconvert to HP damage
+            var manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 1.5;
+
+            if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+            {
+                manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 3;
+            }
+
+            amount = (uint)((damage * 0.75) + manaRemainder);
+
+            targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-(targetPlayer.Mana.Current - 1));
+            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-(amount));
+            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+        }
+
+        return amount;
     }
 
     /// <summary>
@@ -1814,7 +2037,7 @@ public class SpellProjectile : WorldObject
         PhysicsObj.set_active(true);
     }
 
-    public static void ShowInfo(
+    private static void ShowInfo(
         Creature observed,
         Spell spell,
         CreatureSkill skill,
@@ -1916,7 +2139,7 @@ public class SpellProjectile : WorldObject
         observer.DebugDamageBuffer += info;
     }
 
-    public static void ShowInfo(
+    private static void ShowInfo(
         Creature observed,
         float heritageMod,
         float sneakAttackMod,
@@ -1991,20 +2214,18 @@ public class SpellProjectile : WorldObject
     /// </summary>
     private bool GetResistedMod(out float resistedMod)
     {
-        if (PartialEvasion == PartialEvasion.None)
+        switch (_partialEvasion)
         {
-            resistedMod = 1.0f;
-            return false;
-        }
-        else if (PartialEvasion == PartialEvasion.Some)
-        {
-            resistedMod = 0.5f;
-            return false;
-        }
-        else
-        {
-            resistedMod = 0.0f;
-            return true;
+            case PartialEvasion.None:
+                resistedMod = 1.0f;
+                return false;
+            case PartialEvasion.Some:
+                resistedMod = 0.5f;
+                return false;
+            case PartialEvasion.All:
+            default:
+                resistedMod = 0.0f;
+                return true;
         }
     }
 }
