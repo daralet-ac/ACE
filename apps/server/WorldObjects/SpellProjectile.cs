@@ -1396,6 +1396,7 @@ public class SpellProjectile : WorldObject
 
     /// <summary>
     /// RATING - Elemental Ward: Protection vs Acid/Frost/Fire/Electric.
+    /// +1% acid/frost/fire/electric damage protection per rating.
     /// (JEWEL - Zircon)
     /// </summary>
     private float CheckForRatingElementalWardProtectionBonus(Player targetPlayer)
@@ -1423,6 +1424,7 @@ public class SpellProjectile : WorldObject
 
     /// <summary>
     /// RATING - Physical Ward: Protection vs Slash/Pierce/Bludge.
+    /// +1% slash/pierce/bludge damage protection per rating.
     /// (JEWEL - Onyx)
     /// </summary>
     private float CheckForRatingPhysicalWardProtectionBonus(Player targetPlayer)
