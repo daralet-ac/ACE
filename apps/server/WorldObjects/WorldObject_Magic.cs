@@ -1067,10 +1067,10 @@ partial class WorldObject
         {
             if (tPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
             {
-                var jewelRampMod = (float)tPlayer.QuestManager.GetCurrentSolves($"{tPlayer.Name},Nullification") / 200;
-                tryBoost *= (int)(
-                    jewelRampMod * ((float)tPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66)
-                );
+                var rampMod = (float)tPlayer.QuestManager.GetCurrentSolves($"{tPlayer.Name},Nullification") / 200;
+                var ratingMod = tPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) * 0.02f;
+
+                tryBoost *= (int)(rampMod * ratingMod);
             }
         }
 
@@ -1390,12 +1390,11 @@ partial class WorldObject
             {
                 if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) > 0)
                 {
-                    var jewelRampMod =
-                        (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200;
-                    var xferReduction = (int)(
-                        jewelRampMod
-                        * ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) / 66)
-                    );
+                    var rampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200;
+                    var ratingMod = targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) * 0.02f;
+
+                    var xferReduction = (int)(rampMod * ratingMod);
+
                     srcVitalChange = (uint)(srcVitalChange * xferReduction);
                     destVitalChange = (uint)(destVitalChange * xferReduction);
                 }

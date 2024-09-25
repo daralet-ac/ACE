@@ -917,7 +917,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// RATING - Pierce: Ramping Piercing Resistance Penetration
+    /// RATING - Pierce: Ramping Piercing Resistance Penetration.
+    /// Up to +2% penetration per rating (at max quest stamps).
     /// (JEWEL - Black Garnet)
     /// </summary>
     private float GetRatingPierceResistanceBonus(Creature defender, Player playerAttacker)
@@ -932,9 +933,10 @@ public class DamageEvent
             return 0.0f;
         }
 
-        var jewelcraftingRampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Pierce") / 500;
+        var rampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Pierce") / 500; // up to 1.0f;
+        var ratingMod = playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) * 0.02f; // 0.02f per rating;
 
-        return jewelcraftingRampMod * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) / 66);
+        return rampMod * ratingMod;
     }
 
     /// <summary>
@@ -1128,7 +1130,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// RATING - Hardened Defense: Ramping Physical Damage Reduction
+    /// RATING - Hardened Defense: Ramping Physical Damage Reduction.
+    /// Up to +2% physical damage reduction per rating (at max quest stamps).
     /// (JEWEL - Diamond)
     /// </summary>
     private static float GetRatingHardenedDefenseDamageResistanceBonus(Player playerDefender)
@@ -1143,11 +1146,10 @@ public class DamageEvent
             return 0.0f;
         }
 
-        var jewelcraftingRampMod =
-            (float)playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") / 200;
+        var rampMod = (float)playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") / 200; // up to 1.0f
+        var ratingMod = playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) * 0.02f; // 0.02f per rating
 
-        return jewelcraftingRampMod
-               * ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) / 66);
+        return rampMod * ratingMod;
     }
 
     private float GetDamageResistRatingMod(Creature defender, bool pkBattle)
@@ -1200,7 +1202,8 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// RATING - Bludgeon: Ramping Bludgeon Crit Damage Bonus
+    /// RATING - Bludgeon: Ramping Bludgeon Crit Damage Bonus.
+    /// Up to +2% crit damage per rating (at max quest stamps).
     /// (JEWEL - White Sapphire)
     /// </summary>
     private static float GetRatingBludgeonCriticalDamageBonus(Creature defender, Player playerAttacker)
@@ -1215,10 +1218,10 @@ public class DamageEvent
             return 0.0f;
         }
 
-        var jewelcraftingRampMod =
-            (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bludgeon") / 500;
+        var rampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bludgeon") / 500; // up to 1.0f
+        var ratingMod = (float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) / 50; // 0.02f per rating
 
-        return jewelcraftingRampMod * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) / 50);
+        return rampMod * ratingMod;
     }
 
     /// <summary>

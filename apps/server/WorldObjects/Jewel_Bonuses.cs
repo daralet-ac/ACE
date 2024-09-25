@@ -110,7 +110,7 @@ partial class Jewel
 
     public static float HandleElementalBonuses(Player playerAttacker, DamageType damageType)
     {
-        var jewelElemental = 1.0f;
+        var jewelElemental = 0.0f;
 
         if (playerAttacker == null)
         {
