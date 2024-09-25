@@ -256,7 +256,7 @@ partial class Player
 
         AttackTarget = null;
         MeleeTarget = null;
-        MissileTarget = null;
+        _missileTarget = null;
 
         AttackQueue.Clear();
 
