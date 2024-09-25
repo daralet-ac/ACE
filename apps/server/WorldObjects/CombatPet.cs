@@ -62,7 +62,7 @@ public partial class CombatPet : Pet
         return true;
     }
 
-    public override void HandleFindTarget()
+    protected override void HandleFindTarget()
     {
         var creature = AttackTarget as Creature;
 
@@ -129,7 +129,7 @@ public partial class CombatPet : Pet
         return monsters;
     }
 
-    public override void Sleep()
+    protected override void Sleep()
     {
         // pets dont really go to sleep, per say
         // they keep scanning for new targets,
