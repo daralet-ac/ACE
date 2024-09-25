@@ -21,21 +21,18 @@ partial class Player
         set => _accuracyLevel = value;
     }
 
-    public Creature MissileTarget;
+    private Creature _missileTarget;
 
-    public PowerAccuracy GetAccuracyRange()
+    private PowerAccuracy GetAccuracyRange()
     {
-        if (AccuracyLevel < 0.33f)
+        switch (AccuracyLevel)
         {
-            return PowerAccuracy.Low;
-        }
-        else if (AccuracyLevel < 0.66f)
-        {
-            return PowerAccuracy.Medium;
-        }
-        else
-        {
-            return PowerAccuracy.High;
+            case < 0.33f:
+                return PowerAccuracy.Low;
+            case < 0.66f:
+                return PowerAccuracy.Medium;
+            default:
+                return PowerAccuracy.High;
         }
     }
 
@@ -102,7 +99,7 @@ partial class Player
         AttackHeight = (AttackHeight)attackHeight;
         AttackQueue.Add(accuracyLevel);
 
-        if (MissileTarget == null)
+        if (_missileTarget == null)
         {
             AccuracyLevel = accuracyLevel; // verify
         }
@@ -116,7 +113,7 @@ partial class Player
             return;
         }
 
-        if (Attacking || MissileTarget != null && MissileTarget.IsAlive)
+        if (Attacking || _missileTarget != null && _missileTarget.IsAlive)
         {
             return;
         }
@@ -131,13 +128,13 @@ partial class Player
         //log.Info($"{Name}.HandleActionTargetedMissileAttack({targetGuid:X8}, {attackHeight}, {accuracyLevel})");
 
         AttackTarget = target;
-        MissileTarget = target;
+        _missileTarget = target;
 
         var attackSequence = ++AttackSequence;
 
         // record stance here and pass it along
         // accounts for odd client behavior with swapping bows during repeat attacks
-        var stance = CurrentMotionState.Stance;
+        var motionStance = CurrentMotionState.Stance;
 
         // turn if required
         var rotateTime = Rotate(target);
@@ -152,14 +149,14 @@ partial class Player
         actionChain.AddDelaySeconds(delayTime);
 
         // do missile attack
-        actionChain.AddAction(this, () => LaunchMissile(target, attackSequence, stance));
+        actionChain.AddAction(this, () => LaunchMissile(target, attackSequence, motionStance));
         actionChain.EnqueueChain();
     }
 
     /// <summary>
     /// Launches a missile attack from player to target
     /// </summary>
-    public void LaunchMissile(WorldObject target, int attackSequence, MotionStance stance, bool subsequent = false)
+    private void LaunchMissile(WorldObject target, int attackSequence, MotionStance motionStance, bool subsequent = false)
     {
         if (AttackSequence != attackSequence)
         {
@@ -183,7 +180,7 @@ partial class Player
         var launcher = GetEquippedMissileLauncher();
 
         var creature = target as Creature;
-        if (!IsAlive || IsBusy || MissileTarget == null || creature == null || !creature.IsAlive || suicideInProgress)
+        if (!IsAlive || IsBusy || _missileTarget == null || creature == null || !creature.IsAlive || suicideInProgress)
         {
             OnAttackDone();
             return;
@@ -289,18 +286,8 @@ partial class Player
                 {
                     numCleaves = 2;
                 }
-                // JEWEL - Imperial Topaz - Bonus cleave chance
-                if (
-                    this.GetEquippedItemsRatingSum(PropertyInt.GearSlash) > 0
-                    && launcher.W_DamageType == DamageType.Slash
-                    && ammo.W_DamageType == DamageType.Slash
-                )
-                {
-                    if (GetEquippedItemsRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 200))
-                    {
-                        numCleaves += 1;
-                    }
-                }
+
+                numCleaves += CheckForRatingSlashCleaveBonus(launcher, ammo);
 
                 var cleaveTargets = creature.GetNearbyMonsters(10);
                 var cleaveCount = 0;
@@ -312,7 +299,7 @@ partial class Player
                         break;
                     }
 
-                    if (cleave.Translucency == 1 || cleave.Visibility == true)
+                    if (cleave.Translucency == 1 || cleave.Visibility)
                     {
                         continue;
                     }
@@ -325,42 +312,39 @@ partial class Player
                     }
 
                     var angle = GetAngle(cleave);
-                    var angleWrong = false;
+                    var angleWrong = Math.Abs(angle) > CleaveAngle / 2.0f;
 
-                    if (Math.Abs(angle) > CleaveAngle / 2.0f)
+                    if (angleWrong)
                     {
-                        angleWrong = true;
+                        continue;
                     }
 
-                    if (!angleWrong)
-                    {
-                        var newaimVelocity = GetAimVelocity(cleave, projectileSpeed);
+                    var newaimVelocity = GetAimVelocity(cleave, projectileSpeed);
 
-                        var newaimLevel = GetAimLevel(newaimVelocity);
+                    var newaimLevel = GetAimLevel(newaimVelocity);
 
-                        var newlocalOrigin = GetProjectileSpawnOrigin(ammo.WeenieClassId, newaimLevel);
+                    var newlocalOrigin = GetProjectileSpawnOrigin(ammo.WeenieClassId, newaimLevel);
 
-                        var newvelocity = CalculateProjectileVelocity(
-                            newlocalOrigin,
-                            cleave,
-                            projectileSpeed,
-                            out var neworigin,
-                            out var neworientation
-                        );
+                    var newvelocity = CalculateProjectileVelocity(
+                        newlocalOrigin,
+                        cleave,
+                        projectileSpeed,
+                        out var neworigin,
+                        out var neworientation
+                    );
 
-                        var bonusProjectile = LaunchProjectile(
-                            launcher,
-                            ammo,
-                            cleave,
-                            neworigin,
-                            neworientation,
-                            newvelocity
-                        );
+                    var bonusProjectile = LaunchProjectile(
+                        launcher,
+                        ammo,
+                        cleave,
+                        neworigin,
+                        neworientation,
+                        newvelocity
+                    );
 
-                        UpdateAmmoAfterLaunch(ammo);
+                    UpdateAmmoAfterLaunch(ammo);
 
-                        cleaveCount++;
-                    }
+                    cleaveCount++;
                 }
             }
         );
@@ -387,11 +371,11 @@ partial class Player
 
         // reload animation
         var animSpeed = GetAnimSpeed(target as Creature);
-        var reloadTime = EnqueueMotionPersist(actionChain, stance, MotionCommand.Reload, animSpeed);
+        var reloadTime = EnqueueMotionPersist(actionChain, motionStance, MotionCommand.Reload, animSpeed);
 
         // reset for next projectile
-        EnqueueMotionPersist(actionChain, stance, MotionCommand.Ready);
-        var linkTime = MotionTable.GetAnimationLength(MotionTableId, stance, MotionCommand.Reload, MotionCommand.Ready);
+        EnqueueMotionPersist(actionChain, motionStance, MotionCommand.Ready);
+        var linkTime = MotionTable.GetAnimationLength(MotionTableId, motionStance, MotionCommand.Reload, MotionCommand.Ready);
         //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
 
         LastAttackAnimationLength = launchTime + reloadTime + linkTime;
@@ -463,7 +447,7 @@ partial class Player
                         this,
                         () =>
                         {
-                            LaunchMissile(target, attackSequence, stance, true);
+                            LaunchMissile(target, attackSequence, motionStance, true);
                         }
                     );
                     nextAttack.EnqueueChain();
@@ -483,6 +467,22 @@ partial class Player
         }
     }
 
+    /// <summary>
+    /// RATING - Slash: 1% chance per rating to gain +1 cleave target.
+    /// (JEWEL - Imperial Topaz)
+    /// </summary>
+    private int CheckForRatingSlashCleaveBonus(WorldObject launcher, WorldObject ammo)
+    {
+        if (this.GetEquippedItemsRatingSum(PropertyInt.GearSlash) <= 0
+            || launcher.W_DamageType != DamageType.Slash
+            || ammo.W_DamageType != DamageType.Slash)
+        {
+            return 0;
+        }
+
+        return GetEquippedItemsRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 100) ? 1 : 0;
+    }
+
     // TODO: the damage pipeline currently uses the creature ammo instead of the projectile
     // for calculating damage. when the last arrow is launched, the player ammo will be null
     // give projectiles an owner, and have the damage pipeline take the actual damage source object
@@ -490,6 +490,11 @@ partial class Player
 
     public override float GetAimHeight(WorldObject target)
     {
+        if (AttackHeight == null)
+        {
+            return 2.0f;
+        }
+
         switch (AttackHeight.Value)
         {
             case ACE.Entity.Enum.AttackHeight.High:
@@ -500,6 +505,7 @@ partial class Player
             case ACE.Entity.Enum.AttackHeight.Low:
                 return 3.0f;
         }
+
         return 2.0f;
     }
 
@@ -526,7 +532,7 @@ partial class Player
         }
     }
 
-    public bool TargetInRange(WorldObject target)
+    private bool TargetInRange(WorldObject target)
     {
         // 2d or 3d distance?
         var dist = Location.DistanceTo(target.Location);
