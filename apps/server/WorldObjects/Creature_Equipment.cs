@@ -390,7 +390,7 @@ partial class Creature
             && (wo.GearPhysicalWard ?? 0) == 0
             && (wo.GearMagicFind ?? 0) == 0
             && (wo.GearBlock ?? 0) == 0
-            && (wo.GearItemManaUseage ?? 0) == 0
+            && (wo.GearItemManaUsage ?? 0) == 0
             && (wo.GearLifesteal ?? 0) == 0
             && (wo.GearSelfHarm ?? 0) == 0
             && (wo.GearThorns ?? 0) == 0
@@ -454,7 +454,7 @@ partial class Creature
                 { PropertyInt.GearPhysicalWard, 0 },
                 { PropertyInt.GearMagicFind, 0 },
                 { PropertyInt.GearBlock, 0 },
-                { PropertyInt.GearItemManaUseage, 0 },
+                { PropertyInt.GearItemManaUsage, 0 },
                 { PropertyInt.GearLifesteal, 0 },
                 { PropertyInt.GearSelfHarm, 0 },
                 { PropertyInt.GearThorns, 0 },
@@ -512,7 +512,7 @@ partial class Creature
         equippedItemsRatingCache[PropertyInt.GearPhysicalWard] += (wo.GearPhysicalWard ?? 0);
         equippedItemsRatingCache[PropertyInt.GearMagicFind] += (wo.GearMagicFind ?? 0);
         equippedItemsRatingCache[PropertyInt.GearBlock] += (wo.GearBlock ?? 0);
-        equippedItemsRatingCache[PropertyInt.GearItemManaUseage] += (wo.GearItemManaUseage ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearItemManaUsage] += (wo.GearItemManaUsage ?? 0);
         equippedItemsRatingCache[PropertyInt.GearLifesteal] += (wo.GearLifesteal ?? 0);
         equippedItemsRatingCache[PropertyInt.GearSelfHarm] += (wo.GearSelfHarm ?? 0);
         equippedItemsRatingCache[PropertyInt.GearThorns] += (wo.GearThorns ?? 0);
@@ -576,7 +576,7 @@ partial class Creature
         equippedItemsRatingCache[PropertyInt.GearPhysicalWard] -= (wo.GearPhysicalWard ?? 0);
         equippedItemsRatingCache[PropertyInt.GearMagicFind] -= (wo.GearMagicFind ?? 0);
         equippedItemsRatingCache[PropertyInt.GearBlock] -= (wo.GearBlock ?? 0);
-        equippedItemsRatingCache[PropertyInt.GearItemManaUseage] -= (wo.GearItemManaUseage ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearItemManaUsage] -= (wo.GearItemManaUsage ?? 0);
         equippedItemsRatingCache[PropertyInt.GearLifesteal] -= (wo.GearLifesteal ?? 0);
         equippedItemsRatingCache[PropertyInt.GearSelfHarm] -= (wo.GearSelfHarm ?? 0);
         equippedItemsRatingCache[PropertyInt.GearThorns] -= (wo.GearThorns ?? 0);

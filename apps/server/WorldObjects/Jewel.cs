@@ -507,7 +507,7 @@ partial class Jewel : WorldObject
                 CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
                 break;
             case ACE.Entity.Enum.MaterialType.Moonstone:
-                jewelProperty = "Item Mana Useage";
+                jewelProperty = "Item Mana Usage";
                 appendedName = "of the Thrifty Scholar";
                 CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
                 break;

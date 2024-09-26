@@ -789,13 +789,7 @@ partial class Player
                 burnRate *= GetNegativeRatingMod(LumAugItemManaUsage * 5);
             }
 
-            // JEWEL - Moonstone: Reduced Item Mana Useage
-            if (GetEquippedItemsRatingSum(PropertyInt.GearItemManaUseage) > 0)
-            {
-                var moonstone = GetEquippedItemsRatingSum(PropertyInt.GearItemManaUseage);
-                var moonstoneMod = 100f / (100 + moonstone * 5);
-                burnRate *= moonstoneMod;
-            }
+            burnRate *= CheckForRatingItemManaUsage();
 
             item.ItemManaRateAccumulator += (float)(burnRate * CachedHeartbeatInterval);
 
@@ -824,6 +818,23 @@ partial class Player
                 HandleManaDepleted(item);
             }
         }
+    }
+
+    /// <summary>
+    /// RATING - Item Mana Usage
+    /// (JEWEL - Moonstone)
+    /// </summary>
+    private double CheckForRatingItemManaUsage()
+    {
+        if (GetEquippedItemsRatingSum(PropertyInt.GearItemManaUsage) <= 0)
+        {
+            return 1.0f;
+        }
+
+        var moonstoneRating = GetEquippedItemsRatingSum(PropertyInt.GearItemManaUsage);
+        var moonstoneMod = 100f / (100 + moonstoneRating * 5);
+
+        return moonstoneMod;
     }
 
     private bool CheckLowMana(WorldObject item, double burnRate)

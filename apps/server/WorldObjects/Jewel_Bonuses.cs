@@ -795,9 +795,7 @@ partial class Jewel
 
         // multiply gear last stand as % by the modifier--if negative (above 50% HP), mod goes sub 1, which added to the 1f in DamageEvent results in a damage penalty.
 
-        var lastStandMod = (
-            modifiedLastStand * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) / 50)
-        );
+        var lastStandMod = (modifiedLastStand * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) / 50));
 
         return lastStandMod;
     }
@@ -1160,7 +1158,7 @@ partial class Jewel
         { "Physical Warding", PropertyInt.GearPhysicalWard },
         { "Block Rating", PropertyInt.GearBlock },
         { "Magic Find", PropertyInt.GearMagicFind },
-        { "Item Mana Useage", PropertyInt.GearItemManaUseage },
+        { "Item Mana Usage", PropertyInt.GearItemManaUsage },
         { "Shield Deflection", PropertyInt.GearThorns },
         { "Life Steal", PropertyInt.GearLifesteal },
         { "Blood Frenzy", PropertyInt.GearSelfHarm },
