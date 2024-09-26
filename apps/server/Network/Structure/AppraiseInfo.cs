@@ -857,26 +857,334 @@ public class AppraiseInfo
             var acidMod = (float)wo.ArmorModVsAcid;
             var electricMod = (float)wo.ArmorModVsElectric;
 
-            extraPropertiesText +=
-                $"Slashing: {GetProtectionLevelText(slashingMod)} ({string.Format("{0:0.00}", slashingMod)}) \n";
-            extraPropertiesText +=
-                $"Piercing: {GetProtectionLevelText(piercingMod)} ({string.Format("{0:0.00}", piercingMod)}) \n";
-            extraPropertiesText +=
-                $"Bludgeoning: {GetProtectionLevelText(bludgeoningMod)} ({string.Format("{0:0.00}", bludgeoningMod)}) \n";
+            extraPropertiesText += $"Slashing: {GetProtectionLevelText(slashingMod)} ({string.Format("{0:0.00}", slashingMod)}) \n";
+            extraPropertiesText += $"Piercing: {GetProtectionLevelText(piercingMod)} ({string.Format("{0:0.00}", piercingMod)}) \n";
+            extraPropertiesText += $"Bludgeoning: {GetProtectionLevelText(bludgeoningMod)} ({string.Format("{0:0.00}", bludgeoningMod)}) \n";
             extraPropertiesText += $"Fire: {GetProtectionLevelText(fireMod)} ({string.Format("{0:0.00}", fireMod)}) \n";
             extraPropertiesText += $"Cold: {GetProtectionLevelText(coldMod)} ({string.Format("{0:0.00}", coldMod)}) \n";
             extraPropertiesText += $"Acid: {GetProtectionLevelText(acidMod)} ({string.Format("{0:0.00}", acidMod)}) \n";
-            extraPropertiesText +=
-                $"Electric: {GetProtectionLevelText(electricMod)} ({string.Format("{0:0.00}", electricMod)}) \n\n";
+            extraPropertiesText += $"Electric: {GetProtectionLevelText(electricMod)} ({string.Format("{0:0.00}", electricMod)}) \n\n";
 
             hasExtraPropertiesText = true;
         }
 
         // -------- WEAPON PROPERTIES --------
+        // (Additional Properties)
+        var hasAdditionalProperties = false;
+        var additionalPropertiesList = new List<string>();
+
         // Ward Rending
         if (PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffect) && imbuedEffect == 0x8000)
         {
-            extraPropertiesText += $"Additional Properties: Ward Rending\n";
+            additionalPropertiesList.Add("Ward Rending");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Strength
+        if (PropertiesInt.TryGetValue(PropertyInt.GearStrength, out var gearStrength) && gearStrength != 0)
+        {
+            additionalPropertiesList.Add($"Mighty Thews ({gearStrength})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Endurance
+        if (PropertiesInt.TryGetValue(PropertyInt.GearEndurance, out var gearEndurance) && gearEndurance != 0)
+        {
+            additionalPropertiesList.Add($"Perseverance ({gearEndurance})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Coordination
+        if (PropertiesInt.TryGetValue(PropertyInt.GearCoordination, out var gearCoordination) && gearCoordination != 0)
+        {
+            additionalPropertiesList.Add($"Dexterous Hand ({gearCoordination})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Quickness
+        if (PropertiesInt.TryGetValue(PropertyInt.GearQuickness, out var gearQuickness) && gearQuickness != 0)
+        {
+            additionalPropertiesList.Add($"Swift-footed ({gearQuickness})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Focus
+        if (PropertiesInt.TryGetValue(PropertyInt.GearFocus, out var gearFocus) && gearFocus != 0)
+        {
+            additionalPropertiesList.Add($"Focused Mind ({gearFocus})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Self
+        if (PropertiesInt.TryGetValue(PropertyInt.GearSelf, out var gearSelf) && gearSelf != 0)
+        {
+            additionalPropertiesList.Add($"Erudite Mind ({gearSelf})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Lifesteal
+        if (PropertiesInt.TryGetValue(PropertyInt.GearLifesteal, out var gearLifesteal) && gearLifesteal != 0)
+        {
+            additionalPropertiesList.Add($"Sanguine Thirst ({gearLifesteal})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear SelfHarm
+        if (PropertiesInt.TryGetValue(PropertyInt.GearSelfHarm, out var gearSelfHarm) && gearSelfHarm != 0)
+        {
+            additionalPropertiesList.Add($"Blood Frenzy ({gearSelfHarm})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear ThreatGain
+        if (PropertiesInt.TryGetValue(PropertyInt.GearThreatGain, out var gearThreatGain) && gearThreatGain != 0)
+        {
+            additionalPropertiesList.Add($"Provocation ({gearThreatGain})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear ThreatReduction
+        if (PropertiesInt.TryGetValue(PropertyInt.GearThreatReduction, out var gearThreatReduction) && gearThreatReduction != 0)
+        {
+            additionalPropertiesList.Add($"Clouded Vision ({gearThreatReduction})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Elemental Ward
+        if (PropertiesInt.TryGetValue(PropertyInt.GearElementalWard, out var gearElementalWard) && gearElementalWard != 0)
+        {
+            additionalPropertiesList.Add($"Pristmatic Ward ({gearElementalWard})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Physical Ward
+        if (PropertiesInt.TryGetValue(PropertyInt.GearPhysicalWard, out var gearPhysicalWard) && gearPhysicalWard != 0)
+        {
+            additionalPropertiesList.Add($"Black Bulwark ({gearPhysicalWard})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Magic Find
+        if (PropertiesInt.TryGetValue(PropertyInt.GearMagicFind, out var gearMagicFind) && gearMagicFind != 0)
+        {
+            additionalPropertiesList.Add($"Seeker ({gearMagicFind})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Block
+        if (PropertiesInt.TryGetValue(PropertyInt.GearBlock, out var gearBlock) && gearBlock != 0)
+        {
+            additionalPropertiesList.Add($"Stalwart Defense ({gearBlock})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Item Mana Usage
+        if (PropertiesInt.TryGetValue(PropertyInt.GearItemManaUsage, out var gearItemManaUsage) && gearItemManaUsage != 0)
+        {
+            additionalPropertiesList.Add($"Thrifty Scholar ({gearItemManaUsage})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Thorns
+        if (PropertiesInt.TryGetValue(PropertyInt.GearThorns, out var gearThorns) && gearThorns != 0)
+        {
+            additionalPropertiesList.Add($"Swift Retribution ({gearThorns})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Vitals Transfer
+        if (PropertiesInt.TryGetValue(PropertyInt.GearVitalsTransfer, out var gearVitalsTransfer) && gearVitalsTransfer != 0)
+        {
+            additionalPropertiesList.Add($"Tilted Scales ({gearVitalsTransfer})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Last Stand
+        if (PropertiesInt.TryGetValue(PropertyInt.GearLastStand, out var gearLastStand) && gearLastStand != 0)
+        {
+            additionalPropertiesList.Add($"Red Fury ({gearLastStand})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Selflessness
+        if (PropertiesInt.TryGetValue(PropertyInt.GearSelflessness, out var gearSelflessness) && gearSelflessness != 0)
+        {
+            additionalPropertiesList.Add($"Selfless Spirit ({gearSelflessness})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Familiarity
+        if (PropertiesInt.TryGetValue(PropertyInt.GearFamiliarity, out var gearFamiliarity) && gearFamiliarity != 0)
+        {
+            additionalPropertiesList.Add($"Familiar Foe ({gearFamiliarity})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Bravado
+        if (PropertiesInt.TryGetValue(PropertyInt.GearBravado, out var gearBravado) && gearBravado != 0)
+        {
+            additionalPropertiesList.Add($"Bravado ({gearBravado})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Health To Stamina
+        if (PropertiesInt.TryGetValue(PropertyInt.GearHealthToStamina, out var gearHealthToStamina) && gearHealthToStamina != 0)
+        {
+            additionalPropertiesList.Add($"Masochist ({gearHealthToStamina})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Health To Mana
+        if (PropertiesInt.TryGetValue(PropertyInt.GearHealthToMana, out var gearHealthToMana) && gearHealthToMana != 0)
+        {
+            additionalPropertiesList.Add($"Austere Anchorite ({gearHealthToMana})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Experience Gain
+        if (PropertiesInt.TryGetValue(PropertyInt.GearExperienceGain, out var gearExperienceGain) && gearExperienceGain != 0)
+        {
+            additionalPropertiesList.Add($"Illuminated Mind ({gearExperienceGain})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Manasteal
+        if (PropertiesInt.TryGetValue(PropertyInt.GearManasteal, out var gearManasteal) && gearManasteal != 0)
+        {
+            additionalPropertiesList.Add($"Ophidian ({gearManasteal})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Bludgeon
+        if (PropertiesInt.TryGetValue(PropertyInt.GearBludgeon, out var gearBludgeon) && gearBludgeon != 0)
+        {
+            additionalPropertiesList.Add($"Skull-cracker ({gearBludgeon})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Pierce
+        if (PropertiesInt.TryGetValue(PropertyInt.GearPierce, out var gearPierce) && gearPierce != 0)
+        {
+            additionalPropertiesList.Add($"Precision Strikes ({gearPierce})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Slash
+        if (PropertiesInt.TryGetValue(PropertyInt.GearSlash, out var gearSlash) && gearSlash != 0)
+        {
+            additionalPropertiesList.Add($"Falcon's Gyre ({gearSlash})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Fire
+        if (PropertiesInt.TryGetValue(PropertyInt.GearFire, out var gearFire) && gearFire != 0)
+        {
+            additionalPropertiesList.Add($"Blazing Brand ({gearFire})");
+
+            hasAdditionalProperties = true;
+
+            PropertiesString[PropertyString.LongDesc] +=
+                $"\n\n~Blazing Brand ({gearFire}): Grants a {gearFire}% bonus to Fire damage " +
+                $"and a {gearFire}% chance on hit to set the ground beneath your target ablaze, damaging nearby enemies.";
+        }
+        // Gear Frost
+        if (PropertiesInt.TryGetValue(PropertyInt.GearFrost, out var gearFrost) && gearFrost != 0)
+        {
+            additionalPropertiesList.Add($"Bone-chiller ({gearFrost})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Acid
+        if (PropertiesInt.TryGetValue(PropertyInt.GearAcid, out var gearAcid) && gearAcid != 0)
+        {
+            additionalPropertiesList.Add($"Devourin Mist ({gearAcid})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Lightning
+        if (PropertiesInt.TryGetValue(PropertyInt.GearLightning, out var gearLightning) && gearLightning != 0)
+        {
+            additionalPropertiesList.Add($"Astyrrian's Rage ({gearLightning})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Heal Bubble
+        if (PropertiesInt.TryGetValue(PropertyInt.GearHealBubble, out var gearHealBubble) && gearHealBubble != 0)
+        {
+            additionalPropertiesList.Add($"Purified Soul ({gearHealBubble})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Comp Burn
+        if (PropertiesInt.TryGetValue(PropertyInt.GearCompBurn, out var gearCompBurn) && gearCompBurn != 0)
+        {
+            additionalPropertiesList.Add($"Meticulous Magus ({gearCompBurn})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Pyreal Find
+        if (PropertiesInt.TryGetValue(PropertyInt.GearPyrealFind, out var gearPyrealFind) && gearPyrealFind != 0)
+        {
+            additionalPropertiesList.Add($"Prosperity ({gearPyrealFind})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Nullification
+        if (PropertiesInt.TryGetValue(PropertyInt.GearNullification, out var gearNullification) && gearNullification != 0)
+        {
+            additionalPropertiesList.Add($"Nullification ({gearNullification})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Ward Penetration
+        if (PropertiesInt.TryGetValue(PropertyInt.GearWardPen, out var gearWardPen) && gearWardPen != 0)
+        {
+            additionalPropertiesList.Add($"Ruthless Discernment ({gearWardPen})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Stamina Reduction
+        if (PropertiesInt.TryGetValue(PropertyInt.GearStamReduction, out var gearStamReduction) && gearStamReduction != 0)
+        {
+            additionalPropertiesList.Add($"Third Wind ({gearStamReduction})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Hardened Defense
+        if (PropertiesInt.TryGetValue(PropertyInt.GearHardenedDefense, out var gearHardenedDefense) && gearHardenedDefense != 0)
+        {
+            additionalPropertiesList.Add($"Hardened Fortification ({gearHardenedDefense})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Reprisal
+        if (PropertiesInt.TryGetValue(PropertyInt.GearReprisal, out var gearReprisal) && gearReprisal != 0)
+        {
+            additionalPropertiesList.Add($"Vicious Reprisal ({gearReprisal})");
+
+            hasAdditionalProperties = true;
+        }
+        // Gear Elementalist
+        if (PropertiesInt.TryGetValue(PropertyInt.GearElementalist, out var gearElementalist) && gearElementalist != 0)
+        {
+            additionalPropertiesList.Add($"Elementalist ({gearElementalist})");
+
+            hasAdditionalProperties = true;
+        }
+        // Set Additional Properties
+        if (hasAdditionalProperties)
+        {
+            var additionaPropertiesString = "";
+
+            foreach (var property in additionalPropertiesList)
+            {
+                additionaPropertiesString += property + ", ";
+            }
+
+            additionaPropertiesString = additionaPropertiesString.TrimEnd();
+            additionaPropertiesString = additionaPropertiesString.TrimEnd(',');
+
+            extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n\n";
 
             hasExtraPropertiesText = true;
         }
