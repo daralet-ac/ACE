@@ -1173,10 +1173,8 @@ public class DamageEvent
 
     /// <summary>
     /// RATING - Reprisal: Evade an Incoming Crit, auto crit in return
-    /// (JEWEL - ??)
+    /// (JEWEL - Black Opal)
     /// </summary>
-    /// <param name="attacker"></param>
-    /// <param name="playerDefender"></param>
     private void CheckForRatingReprisalCriticalDefense(Creature attacker, Player playerDefender)
     {
         if (playerDefender == null)
