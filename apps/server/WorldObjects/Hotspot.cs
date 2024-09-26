@@ -406,7 +406,7 @@ public class Hotspot : WorldObject
 
             if (
                 damageType == DamageType.Fire
-                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) / 100)
+                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) / 200)
                 > ThreadSafeRandom.Next(0f, 1f)
             )
             {
@@ -415,7 +415,7 @@ public class Hotspot : WorldObject
 
             if (
                 damageType == DamageType.Cold
-                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) / 100)
+                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) / 200)
                 > ThreadSafeRandom.Next(0f, 1f)
             )
             {
@@ -424,7 +424,7 @@ public class Hotspot : WorldObject
 
             if (
                 damageType == DamageType.Acid
-                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) / 100)
+                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) / 200)
                 > ThreadSafeRandom.Next(0f, 1f)
             )
             {
@@ -433,7 +433,7 @@ public class Hotspot : WorldObject
 
             if (
                 damageType == DamageType.Electric
-                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) / 100)
+                && ((double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) / 200)
                 > ThreadSafeRandom.Next(0f, 1f)
             )
             {
@@ -443,7 +443,7 @@ public class Hotspot : WorldObject
             if (damageType == DamageType.Health || damageType == DamageType.Stamina || damageType == DamageType.Mana)
             {
                 if (
-                    (double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) / 1000
+                    (double)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) / 200
                     > ThreadSafeRandom.Next(0f, 1f)
                 )
                 {
