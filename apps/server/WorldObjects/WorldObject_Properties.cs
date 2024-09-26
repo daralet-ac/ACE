@@ -7677,18 +7677,18 @@ partial class WorldObject
         }
     }
 
-    public int? GearItemManaUseage
+    public int? GearItemManaUsage
     {
-        get => GetProperty(PropertyInt.GearItemManaUseage);
+        get => GetProperty(PropertyInt.GearItemManaUsage);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.GearItemManaUseage);
+                RemoveProperty(PropertyInt.GearItemManaUsage);
             }
             else
             {
-                SetProperty(PropertyInt.GearItemManaUseage, value.Value);
+                SetProperty(PropertyInt.GearItemManaUsage, value.Value);
             }
         }
     }

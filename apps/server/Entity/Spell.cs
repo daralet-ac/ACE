@@ -168,12 +168,7 @@ public partial class Spell : IEquatable<Spell>
 
         //DebugComponents();
 
-        var jewelcraftingCompBurn = 1f;
-        // JEWEL - Malachite: Reduced comp burn chance
-        if (player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn) > 0)
-        {
-            jewelcraftingCompBurn = 1f - ((float)(player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn)) / 30);
-        }
+        var compBurnRating = CheckForRatingCompBurn(player);
 
         foreach (var component in Formula.CurrentFormula)
         {
@@ -184,7 +179,7 @@ public partial class Spell : IEquatable<Spell>
             }
 
             // component burn rate = spell base rate * component destruction modifier * skillMod?
-            var burnRate = baseRate * spellComponent.CDM * skillMod * jewelcraftingCompBurn;
+            var burnRate = baseRate * spellComponent.CDM * skillMod * compBurnRating;
 
             // TODO: curve?
             var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
@@ -194,6 +189,23 @@ public partial class Spell : IEquatable<Spell>
             }
         }
         return consumed;
+    }
+
+    /// <summary>
+    /// RATING - Comp Burn: Reduce comp burn chance by 1% per 3 rating.
+    /// (JEWEL - Malachite)
+    /// </summary>
+    private static float CheckForRatingCompBurn(Player player)
+    {
+        // JEWEL - Malachite: Reduced comp burn chance
+        if (player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn) <= 0)
+        {
+            return 1.0f;
+        }
+
+        var ratingMod = player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn) / 30;
+
+        return 1.0f - ratingMod;
     }
 
     public void DebugComponents()

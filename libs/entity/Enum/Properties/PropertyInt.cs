@@ -779,7 +779,7 @@ public enum PropertyInt : ushort
     GearPhysicalWard = 420,
     GearMagicFind = 421,
     GearBlock = 422,
-    GearItemManaUseage = 423,
+    GearItemManaUsage = 423,
     GearThorns = 424,
     GearVitalsTransfer = 425,
     GearLastStand = 426,
