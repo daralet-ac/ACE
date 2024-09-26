@@ -86,7 +86,7 @@ public class Food : Stackable
         {
             var spell = new Spell(SpellDID.Value);
 
-            if (spell.MetaSpellType == SpellType.Dispel && !VerifyDispelPKStatus(this, player))
+            if (spell.MetaSpellType == SpellType.Dispel && !VerifyDispelPkStatus(this, player))
             {
                 return;
             }

@@ -1401,7 +1401,7 @@ partial class Player
         var itemCaster = isWeaponSpell ? caster : null;
 
         // verify after windup, still consumes mana
-        if (spell.MetaSpellType == SpellType.Dispel && !VerifyDispelPKStatus(this, target))
+        if (spell.MetaSpellType == SpellType.Dispel && !VerifyDispelPkStatus(this, target))
         {
             return;
         }

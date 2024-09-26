@@ -150,7 +150,7 @@ public class Gem : Stackable
         {
             var spell = new Spell(SpellDID.Value);
 
-            if (spell.MetaSpellType == SpellType.Dispel && !VerifyDispelPKStatus(this, player))
+            if (spell.MetaSpellType == SpellType.Dispel && !VerifyDispelPkStatus(this, player))
             {
                 return;
             }
@@ -369,7 +369,7 @@ public class Gem : Stackable
                             );
                             return;
                         }
-                        
+
                         var enchantment = player.EnchantmentManager.GetEnchantment(5379);
                         if (enchantment != null)
                         {
