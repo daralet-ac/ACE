@@ -687,32 +687,75 @@ public class AppraiseInfo
 
         // LONG DESCRIPTION
 
-        if (wo.NumTimesTinkered <= 0)
+        // if (wo.NumTimesTinkered <= 0)
+        // {
+        //     var appraisalLongDescDecoration = AppraisalLongDescDecorations.None;
+        //
+        //     if (wo.ItemWorkmanship > 0)
+        //     {
+        //         appraisalLongDescDecoration |= AppraisalLongDescDecorations.PrependWorkmanship;
+        //     }
+        //
+        //     if (wo.MaterialType > 0)
+        //     {
+        //         appraisalLongDescDecoration |= AppraisalLongDescDecorations.PrependMaterial;
+        //     }
+        //
+        //     if (wo.GemType > 0 && wo.GemCount > 0)
+        //     {
+        //         appraisalLongDescDecoration |= wo.NumTimesTinkered > 0 ? 0 : AppraisalLongDescDecorations.AppendGemInfo;
+        //     }
+        //
+        //     if (appraisalLongDescDecoration > 0 && wo.LongDesc != null && wo.LongDesc.StartsWith(wo.Name))
+        //     {
+        //         PropertiesInt[PropertyInt.AppraisalLongDescDecoration] = (int)appraisalLongDescDecoration;
+        //     }
+        //     else
+        //     {
+        //         PropertiesInt.Remove(PropertyInt.AppraisalLongDescDecoration);
+        //     }
+        // }
+
+        var longDescAdditions = "";
+        var hasLongDescAdditions = true;
+
+        if (wo.MaterialType != null && wo.ItemWorkmanship != null)
         {
-            var appraisalLongDescDecoration = AppraisalLongDescDecorations.None;
+            var prependMaterial = RecipeManager.GetMaterialName((MaterialType)wo.MaterialType);
+            var prependWorkmanship = Salvage.WorkmanshipNames[(int)wo.ItemWorkmanship - 1];
+            var modifiedGemType = RecipeManager.GetMaterialName(wo.GemType ?? MaterialType.Unknown);
 
-            if (wo.ItemWorkmanship > 0)
+            if (wo.GemType != null && wo.GemCount is >= 1)
             {
-                appraisalLongDescDecoration |= AppraisalLongDescDecorations.PrependWorkmanship;
-            }
+                if (wo.GemCount > 1)
+                {
+                    if (
+                        (int)wo.GemType == 26
+                        || (int)wo.GemType == 37
+                        || (int)wo.GemType == 40
+                        || (int)wo.GemType == 46
+                        || (int)wo.GemType == 49
+                    )
+                    {
+                        modifiedGemType += "es";
+                    }
+                    else if ((int)wo.GemType == 38)
+                    {
+                        modifiedGemType = "Rubies";
+                    }
+                    else
+                    {
+                        modifiedGemType += "s";
+                    }
+                }
 
-            if (wo.MaterialType > 0)
-            {
-                appraisalLongDescDecoration |= AppraisalLongDescDecorations.PrependMaterial;
-            }
-
-            if (wo.GemType > 0 && wo.GemCount > 0)
-            {
-                appraisalLongDescDecoration |= wo.NumTimesTinkered > 0 ? 0 : AppraisalLongDescDecorations.AppendGemInfo;
-            }
-
-            if (appraisalLongDescDecoration > 0 && wo.LongDesc != null && wo.LongDesc.StartsWith(wo.Name))
-            {
-                PropertiesInt[PropertyInt.AppraisalLongDescDecoration] = (int)appraisalLongDescDecoration;
+                longDescAdditions =
+                    $"{prependWorkmanship} {prependMaterial} {wo.Name}, set with {wo.GemCount} {modifiedGemType}";
             }
             else
             {
-                PropertiesInt.Remove(PropertyInt.AppraisalLongDescDecoration);
+                longDescAdditions =
+                    $"{prependWorkmanship} {prependMaterial} {wo.Name}";
             }
         }
 
@@ -720,57 +763,17 @@ public class AppraiseInfo
         {
             // for tinkered items, we need to replace the Decorations
 
-            var prependMaterial = RecipeManager.GetMaterialName((MaterialType)wo.MaterialType);
-
-            var prependWorkmanship = Salvage.WorkmanshipNames[(int)wo.ItemWorkmanship - 1];
-
-            var modifiedGemType = RecipeManager.GetMaterialName(wo.GemType ?? MaterialType.Unknown);
-
-            if (wo.GemCount > 1)
-            {
-                if (
-                    (int)wo.GemType == 26
-                    || (int)wo.GemType == 37
-                    || (int)wo.GemType == 40
-                    || (int)wo.GemType == 46
-                    || (int)wo.GemType == 49
-                )
-                {
-                    modifiedGemType += "es";
-                }
-                else if ((int)wo.GemType == 38)
-                {
-                    modifiedGemType = "Rubies";
-                }
-                else
-                {
-                    modifiedGemType += "s";
-                }
-            }
 
             // then we need to check the tinker log array, parse it and convert values to items to write to long desc
 
-            string longDescAdditions;
-            var hasLongDescAdditions = false;
-
             if (wo.NumTimesTinkered > 0 && wo.TinkerLog != null)
             {
-                hasLongDescAdditions = true;
-
                 var tinkerLogArray = wo.TinkerLog.Split(',');
 
                 var tinkeringTypes = new int[80];
 
-                if (wo.GemCount != null && wo.GemCount >= 1)
-                {
-                    longDescAdditions =
-                        $"{prependWorkmanship} {prependMaterial} {wo.Name}, set with {wo.GemCount} {modifiedGemType}\n\nThis item has been tinkered with:\n";
-                }
-                else
-                {
-                    longDescAdditions =
-                        $"{prependWorkmanship} {prependMaterial} {wo.Name}\n\nThis item has been tinkered with:\n";
-                }
+                longDescAdditions +=
+                    $"This item has been tinkered with:\n";
 
                 foreach (var s in tinkerLogArray)
                 {
@@ -819,13 +822,13 @@ public class AppraiseInfo
                         longDescAdditions += $"\n\n \t    Failures:  {Math.Abs(sumofTinksinLog)}";
                     }
                 }
-
-                if (hasLongDescAdditions)
-                {
-                    longDescAdditions += "";
-                    PropertiesString[PropertyString.LongDesc] = longDescAdditions;
-                }
             }
+        }
+
+        if (hasLongDescAdditions)
+        {
+            longDescAdditions += "";
+            PropertiesString[PropertyString.LongDesc] = longDescAdditions;
         }
 
         // USE
@@ -873,6 +876,8 @@ public class AppraiseInfo
         var hasAdditionalProperties = false;
         var additionalPropertiesList = new List<string>();
 
+        var additionalPropertiesLongDescriptionsText = "";
+
         // Ward Rending
         if (PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffect) && imbuedEffect == 0x8000)
         {
@@ -883,293 +888,505 @@ public class AppraiseInfo
         // Gear Strength
         if (PropertiesInt.TryGetValue(PropertyInt.GearStrength, out var gearStrength) && gearStrength != 0)
         {
-            additionalPropertiesList.Add($"Mighty Thews ({gearStrength})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearStrength);
+
+            additionalPropertiesList.Add($"Mighty Thews {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Mighty Thews {ratingRomanNumeral}: Grants a {gearStrength} bonus to base Strength.\n";
         }
         // Gear Endurance
         if (PropertiesInt.TryGetValue(PropertyInt.GearEndurance, out var gearEndurance) && gearEndurance != 0)
         {
-            additionalPropertiesList.Add($"Perseverance ({gearEndurance})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearEndurance);
+
+            additionalPropertiesList.Add($"Perseverance {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Perseverance {ratingRomanNumeral}: Grants a {gearEndurance} bonus to base Strength.\n";
         }
         // Gear Coordination
         if (PropertiesInt.TryGetValue(PropertyInt.GearCoordination, out var gearCoordination) && gearCoordination != 0)
         {
-            additionalPropertiesList.Add($"Dexterous Hand ({gearCoordination})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearCoordination);
+
+            additionalPropertiesList.Add($"Dexterous Hand {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Dexterous Hand {ratingRomanNumeral}: Grants a {gearCoordination} bonus to base Coordination.\n";
         }
         // Gear Quickness
         if (PropertiesInt.TryGetValue(PropertyInt.GearQuickness, out var gearQuickness) && gearQuickness != 0)
         {
-            additionalPropertiesList.Add($"Swift-footed ({gearQuickness})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearQuickness);
+
+            additionalPropertiesList.Add($"Swift-footed {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Swift-footed {ratingRomanNumeral}: Grants a {gearQuickness} bonus to base Quickness.\n";
         }
         // Gear Focus
         if (PropertiesInt.TryGetValue(PropertyInt.GearFocus, out var gearFocus) && gearFocus != 0)
         {
-            additionalPropertiesList.Add($"Focused Mind ({gearFocus})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearFocus);
+
+            additionalPropertiesList.Add($"Focused Mind {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Focused Mind {ratingRomanNumeral}: Grants a {gearFocus} bonus to base Focus.\n";
         }
         // Gear Self
         if (PropertiesInt.TryGetValue(PropertyInt.GearSelf, out var gearSelf) && gearSelf != 0)
         {
-            additionalPropertiesList.Add($"Erudite Mind ({gearSelf})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearSelf);
+
+            additionalPropertiesList.Add($"Erudite Mind {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Erudite Mind {ratingRomanNumeral}: Grants a {gearSelf} bonus to base Self.\n";
         }
         // Gear Lifesteal
         if (PropertiesInt.TryGetValue(PropertyInt.GearLifesteal, out var gearLifesteal) && gearLifesteal != 0)
         {
-            additionalPropertiesList.Add($"Sanguine Thirst ({gearLifesteal})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearLifesteal);
+
+            additionalPropertiesList.Add($"Sanguine Thirst {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Sanguine Thirst {ratingRomanNumeral}: Grants a {gearLifesteal}% chance on hit to gain health. Amount healed is based on the amount of damage done.\n";
         }
         // Gear SelfHarm
         if (PropertiesInt.TryGetValue(PropertyInt.GearSelfHarm, out var gearSelfHarm) && gearSelfHarm != 0)
         {
-            additionalPropertiesList.Add($"Blood Frenzy ({gearSelfHarm})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearSelfHarm);
+
+            additionalPropertiesList.Add($"Blood Frenzy {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Blood Frenzy {ratingRomanNumeral}: Grants {gearSelfHarm}% extra damage dealt to your opponent each time you attack, however you will take that much damage as well.\n";
         }
         // Gear ThreatGain
         if (PropertiesInt.TryGetValue(PropertyInt.GearThreatGain, out var gearThreatGain) && gearThreatGain != 0)
         {
-            additionalPropertiesList.Add($"Provocation ({gearThreatGain})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearThreatGain);
+
+            additionalPropertiesList.Add($"Provocation {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Provocation {ratingRomanNumeral}: Grants a {gearThreatGain}% bonus to threat generation.\n";
         }
         // Gear ThreatReduction
         if (PropertiesInt.TryGetValue(PropertyInt.GearThreatReduction, out var gearThreatReduction) && gearThreatReduction != 0)
         {
-            additionalPropertiesList.Add($"Clouded Vision ({gearThreatReduction})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearThreatReduction);
+
+            additionalPropertiesList.Add($"Clouded Vision {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Clouded Vision {ratingRomanNumeral}: Grants a {gearThreatReduction}% bonus to threat reduction.\n";
         }
         // Gear Elemental Ward
         if (PropertiesInt.TryGetValue(PropertyInt.GearElementalWard, out var gearElementalWard) && gearElementalWard != 0)
         {
-            additionalPropertiesList.Add($"Pristmatic Ward ({gearElementalWard})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearElementalWard);
+
+            additionalPropertiesList.Add($"Pristmatic Ward {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Pristmatic Ward {ratingRomanNumeral}: Grants {gearElementalWard}% protection against Flame, Frost, Lightning, and Acid damage types.\n";
         }
         // Gear Physical Ward
         if (PropertiesInt.TryGetValue(PropertyInt.GearPhysicalWard, out var gearPhysicalWard) && gearPhysicalWard != 0)
         {
-            additionalPropertiesList.Add($"Black Bulwark ({gearPhysicalWard})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearPhysicalWard);
+
+            additionalPropertiesList.Add($"Black Bulwark {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Black Bulwark {ratingRomanNumeral}: Grants {gearPhysicalWard}% protection against Piercing, Bludgeoning, and Slashing damage types.\n";
         }
         // Gear Magic Find
         if (PropertiesInt.TryGetValue(PropertyInt.GearMagicFind, out var gearMagicFind) && gearMagicFind != 0)
         {
-            additionalPropertiesList.Add($"Seeker ({gearMagicFind})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearMagicFind);
+
+            additionalPropertiesList.Add($"Seeker {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Seeker {ratingRomanNumeral}: Grants a {gearMagicFind}% bonus to monster loot quality.\n";
         }
         // Gear Block
         if (PropertiesInt.TryGetValue(PropertyInt.GearBlock, out var gearBlock) && gearBlock != 0)
         {
-            additionalPropertiesList.Add($"Stalwart Defense ({gearBlock})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearBlock);
+
+            additionalPropertiesList.Add($"Stalwart Defense {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Stalwart Defense {ratingRomanNumeral}: Grants {gearBlock}% chance to block attacks.\n";
         }
         // Gear Item Mana Usage
         if (PropertiesInt.TryGetValue(PropertyInt.GearItemManaUsage, out var gearItemManaUsage) && gearItemManaUsage != 0)
         {
-            additionalPropertiesList.Add($"Thrifty Scholar ({gearItemManaUsage})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearItemManaUsage);
+
+            additionalPropertiesList.Add($"Thrifty Scholar {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Thrifty Scholar {ratingRomanNumeral}: Grants a {gearItemManaUsage * 5}% reduction to mana consumed by equipped items.\n";
         }
         // Gear Thorns
         if (PropertiesInt.TryGetValue(PropertyInt.GearThorns, out var gearThorns) && gearThorns != 0)
         {
-            additionalPropertiesList.Add($"Swift Retribution ({gearThorns})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearThorns);
+
+            additionalPropertiesList.Add($"Swift Retribution {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Swift Retribution {ratingRomanNumeral}: Deflect {gearThorns * 5}% of an attacker's damage back at " +
+                $"them when successfully blocked, so long as the opponent is within melee range.\n";
         }
         // Gear Vitals Transfer
         if (PropertiesInt.TryGetValue(PropertyInt.GearVitalsTransfer, out var gearVitalsTransfer) && gearVitalsTransfer != 0)
         {
-            additionalPropertiesList.Add($"Tilted Scales ({gearVitalsTransfer})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearVitalsTransfer);
+
+            additionalPropertiesList.Add($"Tilted Scales {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Tilted Scales {ratingRomanNumeral}: Grants a {gearVitalsTransfer}% bonus to your Vitals Transfer spells, " +
+                $"but an equivalent reduction in the effectiveness of your other Restoration spells.\n";
         }
         // Gear Last Stand
         if (PropertiesInt.TryGetValue(PropertyInt.GearLastStand, out var gearLastStand) && gearLastStand != 0)
         {
-            additionalPropertiesList.Add($"Red Fury ({gearLastStand})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearLastStand);
+
+            additionalPropertiesList.Add($"Red Fury {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Red Fury {ratingRomanNumeral}: Grants increased damage as your health falls below 50%, " +
+                $"up to a maximum bonus of {gearLastStand}% at 25% HP.\nAbove 50% Health, you receive a damage reduction " +
+                $"penalty scaling up to {gearLastStand}% at full HP.\n";
         }
         // Gear Selflessness
         if (PropertiesInt.TryGetValue(PropertyInt.GearSelflessness, out var gearSelflessness) && gearSelflessness != 0)
         {
-            additionalPropertiesList.Add($"Selfless Spirit ({gearSelflessness})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearSelflessness);
+
+            additionalPropertiesList.Add($"Selfless Spirit {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Selfless Spirit {ratingRomanNumeral}: Grants a {gearSelflessness * 2}% bonus to your restoration spells when cast on others, but an equivalent reduction in their effectiveness when cast on yourself.\n";
         }
         // Gear Familiarity
         if (PropertiesInt.TryGetValue(PropertyInt.GearFamiliarity, out var gearFamiliarity) && gearFamiliarity != 0)
         {
-            additionalPropertiesList.Add($"Familiar Foe ({gearFamiliarity})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearFamiliarity);
+
+            additionalPropertiesList.Add($"Familiar Foe {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Familiar Foe {ratingRomanNumeral}: Grants an increased evade and resist chance versus the target you are attacking, the amount ramping from 0% to {gearFamiliarity * 2}% based on how often you have hit the target.\n";
         }
         // Gear Bravado
         if (PropertiesInt.TryGetValue(PropertyInt.GearBravado, out var gearBravado) && gearBravado != 0)
         {
-            additionalPropertiesList.Add($"Bravado ({gearBravado})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearBravado);
+
+            additionalPropertiesList.Add($"Bravado {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Bravado {ratingRomanNumeral}: Grants an increased physical hit chance, the amount ramping from a 0% " +
+                $"to {gearBravado}% based on how often you have been recently physically attacked.\n";
         }
         // Gear Health To Stamina
         if (PropertiesInt.TryGetValue(PropertyInt.GearHealthToStamina, out var gearHealthToStamina) && gearHealthToStamina != 0)
         {
-            additionalPropertiesList.Add($"Masochist ({gearHealthToStamina})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearHealthToStamina);
+
+            additionalPropertiesList.Add($"Masochist {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Masochist {ratingRomanNumeral}: Grants a {gearHealthToStamina}% chance to regain stamina after being hit. Amount regained is based on damage received.\n";
         }
         // Gear Health To Mana
         if (PropertiesInt.TryGetValue(PropertyInt.GearHealthToMana, out var gearHealthToMana) && gearHealthToMana != 0)
         {
-            additionalPropertiesList.Add($"Austere Anchorite ({gearHealthToMana})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearHealthToMana);
+
+            additionalPropertiesList.Add($"Austere Anchorite {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Austere Anchorite {ratingRomanNumeral}: Grants a {gearHealthToStamina}% chance to regain mana after being hit. Amount regained is based on damage received.\n";
         }
         // Gear Experience Gain
         if (PropertiesInt.TryGetValue(PropertyInt.GearExperienceGain, out var gearExperienceGain) && gearExperienceGain != 0)
         {
-            additionalPropertiesList.Add($"Illuminated Mind ({gearExperienceGain})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearExperienceGain);
+
+            additionalPropertiesList.Add($"Illuminated Mind {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Illuminated Mind {ratingRomanNumeral}: Grants a {(float)gearExperienceGain / 2}% bonus to experience gain.\n";
         }
         // Gear Manasteal
         if (PropertiesInt.TryGetValue(PropertyInt.GearManasteal, out var gearManasteal) && gearManasteal != 0)
         {
-            additionalPropertiesList.Add($"Ophidian ({gearManasteal})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearManasteal);
+
+            additionalPropertiesList.Add($"Ophidian {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Ophidian {ratingRomanNumeral}: Grants a {gearManasteal}% chance on hit to gain health. Amount gained is based on amount of damage done.\n";
         }
         // Gear Bludgeon
         if (PropertiesInt.TryGetValue(PropertyInt.GearBludgeon, out var gearBludgeon) && gearBludgeon != 0)
         {
-            additionalPropertiesList.Add($"Skull-cracker ({gearBludgeon})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearBludgeon);
+
+            additionalPropertiesList.Add($"Skull-cracker {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Skull-cracker {ratingRomanNumeral}: Grants bonus critical bludgeoning damage, the amount ramping from +0% to +{gearBludgeon * 2}% based on how many times you have struck your target.\n";
         }
         // Gear Pierce
         if (PropertiesInt.TryGetValue(PropertyInt.GearPierce, out var gearPierce) && gearPierce != 0)
         {
-            additionalPropertiesList.Add($"Precision Strikes ({gearPierce})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearPierce);
+
+            additionalPropertiesList.Add($"Precision Strikes {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Precision Strikes {ratingRomanNumeral}: Grants piercing resistance penetration, the amount ramping from +0% to +{gearPierce * 2}% based on how often you have hit your target.\n";
         }
         // Gear Slash
         if (PropertiesInt.TryGetValue(PropertyInt.GearSlash, out var gearSlash) && gearSlash != 0)
         {
-            additionalPropertiesList.Add($"Falcon's Gyre ({gearSlash})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearSlash);
+
+            additionalPropertiesList.Add($"Falcon's Gyre {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Falcon's Gyre {ratingRomanNumeral}: Grants {(float)gearSlash / 2}% chance to cleave a second target on hit.\n";
         }
         // Gear Fire
         if (PropertiesInt.TryGetValue(PropertyInt.GearFire, out var gearFire) && gearFire != 0)
         {
-            additionalPropertiesList.Add($"Blazing Brand ({gearFire})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearFire);
+
+            additionalPropertiesList.Add($"Blazing Brand {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
 
-            PropertiesString[PropertyString.LongDesc] +=
-                $"\n\n~Blazing Brand ({gearFire}): Grants a {gearFire}% bonus to Fire damage " +
-                $"and a {gearFire}% chance on hit to set the ground beneath your target ablaze, damaging nearby enemies.";
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Blazing Brand {ratingRomanNumeral}: Grants a {gearFire}% bonus to Fire damage " +
+                $"and a {(float)gearFire / 2}% chance on hit to set the ground beneath your target ablaze, damaging nearby enemies.\n";
         }
         // Gear Frost
         if (PropertiesInt.TryGetValue(PropertyInt.GearFrost, out var gearFrost) && gearFrost != 0)
         {
-            additionalPropertiesList.Add($"Bone-chiller ({gearFrost})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearFrost);
+
+            additionalPropertiesList.Add($"Bone-chiller {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Bone-chiller {ratingRomanNumeral}: Grants a {gearFrost}% bonus to Cold damage " +
+                $"and a {(float)gearFrost / 2}% chance on hit to surround your target with chilling mist, damaging nearby enemies.\n";
         }
         // Gear Acid
         if (PropertiesInt.TryGetValue(PropertyInt.GearAcid, out var gearAcid) && gearAcid != 0)
         {
-            additionalPropertiesList.Add($"Devourin Mist ({gearAcid})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearAcid);
+
+            additionalPropertiesList.Add($"Devouring Mist {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Devouring Mist {ratingRomanNumeral}: Grants a {gearAcid}% bonus to Acid damage, and a {(float)gearAcid / 2}% chance on hit to " +
+                $"surround your target with acidic mist.\n";
         }
         // Gear Lightning
         if (PropertiesInt.TryGetValue(PropertyInt.GearLightning, out var gearLightning) && gearLightning != 0)
         {
-            additionalPropertiesList.Add($"Astyrrian's Rage ({gearLightning})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearLightning);
+
+            additionalPropertiesList.Add($"Astyrrian's Rage {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Astyrrian's Rage {ratingRomanNumeral}: Grants a {gearLightning}% bonus to Lightning damage, and a {(float)gearLightning / 2}% chance on " +
+                $"hit to electrify the ground beneath your target, damaging nearby enemies.\n";
         }
         // Gear Heal Bubble
         if (PropertiesInt.TryGetValue(PropertyInt.GearHealBubble, out var gearHealBubble) && gearHealBubble != 0)
         {
-            additionalPropertiesList.Add($"Purified Soul ({gearHealBubble})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearHealBubble);
+
+            additionalPropertiesList.Add($"Purified Soul {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Purified Soul {ratingRomanNumeral}: Grants a +{gearHealBubble}% bonus to your restoration spells, " +
+                $"and a {(float)gearHealBubble / 2}% chance to create a sphere of healing energy on top of your target " +
+                $"when casting a restoration spell.\n";
         }
         // Gear Comp Burn
         if (PropertiesInt.TryGetValue(PropertyInt.GearCompBurn, out var gearCompBurn) && gearCompBurn != 0)
         {
-            additionalPropertiesList.Add($"Meticulous Magus ({gearCompBurn})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearCompBurn);
+
+            additionalPropertiesList.Add($"Meticulous Magus {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Meticulous Magus {ratingRomanNumeral}: Grants a {gearCompBurn * 3}% reduction to your chance to burn spell components.\n";
         }
         // Gear Pyreal Find
         if (PropertiesInt.TryGetValue(PropertyInt.GearPyrealFind, out var gearPyrealFind) && gearPyrealFind != 0)
         {
-            additionalPropertiesList.Add($"Prosperity ({gearPyrealFind})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearPyrealFind);
+
+            additionalPropertiesList.Add($"Prosperity {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Prosperity {ratingRomanNumeral}: Grants a {(float)gearPyrealFind / 2}% chance for monsters to drop an additional item on death.\n";
         }
         // Gear Nullification
         if (PropertiesInt.TryGetValue(PropertyInt.GearNullification, out var gearNullification) && gearNullification != 0)
         {
-            additionalPropertiesList.Add($"Nullification ({gearNullification})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearNullification);
+
+            additionalPropertiesList.Add($"Nullification {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Nullification {ratingRomanNumeral}: Grants magic absorb, the amount ramping from 0% to {gearNullification * 2}%, based on how often you have recently have been hit with magic.\n";
         }
         // Gear Ward Penetration
         if (PropertiesInt.TryGetValue(PropertyInt.GearWardPen, out var gearWardPen) && gearWardPen != 0)
         {
-            additionalPropertiesList.Add($"Ruthless Discernment ({gearWardPen})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearWardPen);
+
+            additionalPropertiesList.Add($"Ruthless Discernment {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Ruthless Discernment {ratingRomanNumeral}: Grants ward penetration, the amount ramping from +0% to +{gearWardPen * 2}%, based on how often you have recently hit your target.\n";
         }
         // Gear Stamina Reduction
         if (PropertiesInt.TryGetValue(PropertyInt.GearStamReduction, out var gearStamReduction) && gearStamReduction != 0)
         {
-            additionalPropertiesList.Add($"Third Wind ({gearStamReduction})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearStamReduction);
+
+            additionalPropertiesList.Add($"Third Wind {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Third Wind {ratingRomanNumeral}: Grants {gearStamReduction}% stamina cost reduction.\n";
         }
         // Gear Hardened Defense
         if (PropertiesInt.TryGetValue(PropertyInt.GearHardenedDefense, out var gearHardenedDefense) && gearHardenedDefense != 0)
         {
-            additionalPropertiesList.Add($"Hardened Fortification ({gearHardenedDefense})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearHardenedDefense);
+
+            additionalPropertiesList.Add($"Hardened Fortification {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Hardened Fortification {ratingRomanNumeral}: Grants resistance to physical damage, the amount ramping from 0 to {gearHardenedDefense * 2}%, based on how often you have recently have been hit.\n";
         }
         // Gear Reprisal
         if (PropertiesInt.TryGetValue(PropertyInt.GearReprisal, out var gearReprisal) && gearReprisal != 0)
         {
-            additionalPropertiesList.Add($"Vicious Reprisal ({gearReprisal})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearReprisal);
+
+            additionalPropertiesList.Add($"Vicious Reprisal {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Vicious Reprisal {ratingRomanNumeral}: Grants {(float)gearReprisal / 2}% chance to evade an incoming critical hit. Your next attack against that enemy will be a guaranteed critical strike.\n";
         }
         // Gear Elementalist
         if (PropertiesInt.TryGetValue(PropertyInt.GearElementalist, out var gearElementalist) && gearElementalist != 0)
         {
-            additionalPropertiesList.Add($"Elementalist ({gearElementalist})");
+            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearElementalist);
+
+            additionalPropertiesList.Add($"Elementalist {ratingRomanNumeral}");
 
             hasAdditionalProperties = true;
+
+            additionalPropertiesLongDescriptionsText +=
+                $"~ Elementalist {ratingRomanNumeral}: Grants a bonus to War Magic spells, the amount ramping from +0% to +{gearElementalist * 2}% based on how often you have recently hit your target.\n";
         }
         // Set Additional Properties
         if (hasAdditionalProperties)
@@ -1181,12 +1398,18 @@ public class AppraiseInfo
                 additionaPropertiesString += property + ", ";
             }
 
+            // Use
             additionaPropertiesString = additionaPropertiesString.TrimEnd();
             additionaPropertiesString = additionaPropertiesString.TrimEnd(',');
 
             extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n\n";
 
             hasExtraPropertiesText = true;
+
+            // Long
+            additionalPropertiesLongDescriptionsText =
+                "Property Descriptions:\n" + additionalPropertiesLongDescriptionsText + "\n\n" + PropertiesString[PropertyString.LongDesc];
+            PropertiesString[PropertyString.LongDesc] = additionalPropertiesLongDescriptionsText;
         }
         // Ignore Armor
         if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreArmor, out var ignoreArmor) && ignoreArmor != 0)
@@ -1993,6 +2216,34 @@ public class AppraiseInfo
         {
             extraPropertiesText += "";
             PropertiesString[PropertyString.Use] = extraPropertiesText;
+        }
+    }
+
+    private string ConvertIntToRomanNumeral(int number)
+    {
+        switch (number)
+        {
+            case 1: return "I";
+            case 2: return "II";
+            case 3: return "III";
+            case 4: return "IV";
+            case 5: return "V";
+            case 6: return "VI";
+            case 7: return "VII";
+            case 8: return "VII";
+            case 9: return "IX";
+            case 10: return "X";
+            case 11: return "XI";
+            case 12: return "XII";
+            case 13: return "XIII";
+            case 14: return "XIV";
+            case 15: return "XV";
+            case 16: return "XVI";
+            case 17: return "XVII";
+            case 18: return "XVIII";
+            case 19: return "XIX";
+            case 20: return "XX";
+            default: return number.ToString();
         }
     }
 

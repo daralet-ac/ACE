@@ -816,10 +816,10 @@ partial class Jewel
             return description;
         }
 
-        var half = Math.Round((float)amount / 2, 1);
-        var oneHalf = Math.Round((float)amount * 1.5, 1);
         var oneTenth = Math.Round((float)amount / 10, 2);
-        var threeQ = Math.Round((float)amount * 0.66, 1);
+        var half = Math.Round((float)amount / 2, 1);
+        var doubled = Math.Round((float)amount * 2.0f, 1);
+        var tripled = Math.Round((float)amount * 3.0f, 1);
 
         if (!int.TryParse(parts[5], out var originalWorkmanship))
         {
@@ -883,11 +883,11 @@ partial class Jewel
                 break;
             case ACE.Entity.Enum.MaterialType.Amber:
                 description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% chance to regain stamina after being hit. Chance and amount regained scale based on damage recieved.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% chance to regain stamina after being hit. Amount regained is based on damage received.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.LapisLazuli:
                 description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% chance to regain mana after being hit. Chance and amount regained scale based on damage recieved.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% chance to regain mana after being hit. Amount regained sis based on damage received.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Moonstone:
                 description =
@@ -895,21 +895,21 @@ partial class Jewel
                 break;
             case ACE.Entity.Enum.MaterialType.Malachite:
                 description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount * 3}% reduction to your chance to burn spell components.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {tripled}% reduction to your chance to burn spell components.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Citrine:
                 description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% Stamina cost reduction.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% stamina cost reduction.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
                 break;
 
             // bracelet right
             case ACE.Entity.Enum.MaterialType.Amethyst:
                 description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant magic absorb, the amount ramping from 0 to {oneHalf}% based on how often you have recently have been hit with magic.\n\nOnce socketed, the bracelet can only be worn on the right wrist.\n\n";
+                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant magic absorb, the amount ramping from 0 to {doubled}% based on how often you have recently have been hit with magic.\n\nOnce socketed, the bracelet can only be worn on the right wrist.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Diamond:
                 description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant resistance to physical damage, the amount ramping from 0 to {oneHalf}% based on how often you have recently have been hit.\n\nOnce socketed, the bracelet can only be worn on the right wrist.\n\n";
+                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant resistance to physical damage, the amount ramping from 0 to {doubled}% based on how often you have recently have been hit.\n\nOnce socketed, the bracelet can only be worn on the right wrist.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Onyx:
                 description =
@@ -933,29 +933,29 @@ partial class Jewel
             // weapon + shield
             case ACE.Entity.Enum.MaterialType.BlackOpal:
                 description =
-                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to to grant {half}% chance to evade an incoming critical hit. Your next attack against that enemy will be a guaranteed critical strike.\n\n";
+                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant {half}% chance to evade an incoming critical hit. Your next attack against that enemy will be a guaranteed critical strike.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.FireOpal:
                 description =
-                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to to grant an increased evade and resist chance versus the target you are attacking, the amount ramping from 0% to {amount}% based on how often you have hit the target.\n\n";
+                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant an increased evade and resist chance versus the target you are attacking, the amount ramping from 0% to {amount}% based on how often you have hit the target.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.YellowGarnet:
                 description =
-                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to to grant an increased physical hit chance, the amount ramping from a 0% to {amount}% based on how often you have been recently physically attacked.\n\n";
+                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant an increased physical hit chance, the amount ramping from a 0% to {amount}% based on how often you have been recently physically attacked.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Ruby:
                 description =
-                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to to grant increased damage as your health falls below 50%, up to a maximum bonus of {amount}% at 25% HP.\nAbove 50% Health, you receive a damage reduction penalty scaling up to {amount}% at full HP.\n\n";
+                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant increased damage as your health falls below 50%, up to a maximum bonus of {amount}% at 25% HP.\nAbove 50% Health, you receive a damage reduction penalty scaling up to {amount}% at full HP.\n\n";
                 break;
 
             // weapon only
             case ACE.Entity.Enum.MaterialType.Bloodstone:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {half}% chance on hit to gain health. Chance and amount scale based on amount of damage done.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {amount}% chance on hit to gain health. Amount gained is based on amount of damage done.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Opal:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {half}% chance on hit to gain mana. Chance and amount scale based on amount of damage done.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {amount}% chance on hit to gain mana. Amount gained is based on amount of damage done.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Hematite:
                 description =
@@ -963,35 +963,35 @@ partial class Jewel
                 break;
             case ACE.Entity.Enum.MaterialType.RoseQuartz:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {oneHalf}% bonus to your Vitals Transfer spells, but an equivalent reduction in the effectiveness of your Restoration spells.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to your Vitals Transfer spells, but an equivalent reduction in the effectiveness of your other Restoration spells.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.LavenderJade:
                 description =
-                    $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant a {oneHalf}% bonus to your restoration spells when cast on others, but an equivalent reduction in their effectiveness when cast on yourself.\n\n";
+                    $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant a {doubled}% bonus to your restoration spells when cast on others, but an equivalent reduction in their effectiveness when cast on yourself.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.GreenGarnet:
                 description =
-                    $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant a bonus to War Magic spells, the amount ramping from 0% to {oneHalf}% based on how often you have hit your target.\n\n";
+                    $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant a bonus to War Magic spells, the amount ramping from 0% to {doubled}% based on how often you have recently hit your target.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Tourmaline:
                 description =
-                    $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant Ward penetration, the amount ramping from 0% to {oneHalf}% based on how often you have hit your target.\n\n";
+                    $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant Ward penetration, the amount ramping from 0% to {doubled}% based on how often you have recently hit your target.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteJade:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {threeQ}% bonus to your restoration spells, and a {oneTenth}% to create a sphere of healing energy on top of your target on casting a restoration spell.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {amount}% bonus to your restoration spells, and a {half}% to create a sphere of healing energy on top of your target on casting a restoration spell.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Aquamarine:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {threeQ}% bonus to Frost damage, and a {oneTenth}% chance on hit to surround your target with chilling mist, damaging nearby enemies.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to Frost damage, and a {half}% chance on hit to surround your target with chilling mist, damaging nearby enemies.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.BlackGarnet:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant it piercing resistance penetration, the amount ramping from 0% to {oneHalf}% based on how often you have hit your target.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant it piercing resistance penetration, the amount ramping from +0% to +{doubled}% based on how often you have hit your target.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Emerald:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {threeQ}% bonus to Acid damage, and a {oneTenth}% chance on hit to surround your target with acidic mist, damaging nearby enemies.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to Acid damage, and a {half}% chance on hit to surround your target with acidic mist, damaging nearby enemies.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.ImperialTopaz:
                 description =
@@ -999,15 +999,15 @@ partial class Jewel
                 break;
             case ACE.Entity.Enum.MaterialType.Jet:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {threeQ}% bonus to Lightning damage, and a {oneTenth}% chance on hit to electrify the ground beneath your target, damaging nearby enemies.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to Lightning damage, and a {half}% chance on hit to electrify the ground beneath your target, damaging nearby enemies.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.RedGarnet:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {threeQ}% bonus to Fire damage, and a {oneTenth}% chance on hit to set the ground beneath your target ablaze, damaging nearby enemies.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to Fire damage, and a {half}% chance on hit to set the ground beneath your target ablaze, damaging nearby enemies.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteSapphire:
                 description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant bonus critical bludgeoning damage, the amount ramping from 0% to {amount * 2}% based on how many times you have struck your target.\n\n";
+                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant bonus critical bludgeoning damage, the amount ramping from +0% to +{doubled}% based on how many times you have struck your target.\n\n";
                 break;
         }
         return description;
@@ -1028,10 +1028,10 @@ partial class Jewel
             return description;
         }
 
-        var half = Math.Round((float)amount / 2, 1);
-        var oneHalf = Math.Round((float)amount * 1.5, 1);
         var oneTenth = Math.Round((float)amount / 10, 2);
-        var threeQ = Math.Round((float)amount * 0.66, 1);
+        var half = Math.Round((float)amount / 2, 1);
+        var doubled = Math.Round((float)amount * 2, 1);
+        var tripled = Math.Round((float)amount * 3, 1);
 
         switch (convertedMaterialType)
         {
@@ -1061,7 +1061,7 @@ partial class Jewel
                 description = $"\n\t Socket:  {parts[1]} (-{amount * 5}% Item Mana Consumption)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Malachite:
-                description = $"\n\t Socket:  {parts[1]} (+{amount * 3}% Component Burn Reduction)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{tripled}% Component Burn Reduction)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.GreenJade:
                 description = $"\n\t Socket:  {parts[1]} (+{half}% Prosperity)\n";
@@ -1069,10 +1069,10 @@ partial class Jewel
 
             // bracelet right
             case ACE.Entity.Enum.MaterialType.Amethyst:
-                description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Magic Absorb)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping Magic Absorb)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Diamond:
-                description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Physical Damage Resistance)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping Physical Damage Resistance)\n";
                 break;
             // shield
             case ACE.Entity.Enum.MaterialType.WhiteQuartz:
@@ -1091,40 +1091,40 @@ partial class Jewel
                 description = $"\n\t Socket:  {parts[1]} (+{half}% Mana Leech)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.RoseQuartz:
-                description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Vitals Transfer)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Vitals Transfer)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.LavenderJade:
-                description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Selflessness)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Selflessness)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.GreenGarnet:
-                description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping War Damage)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping War Damage)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Tourmaline:
-                description = $"\n\t Socket:  {parts[1]} (+{oneHalf}% Ramping Ward Pen)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping Ward Pen)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteJade:
-                description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Restoration)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{amount}% Restoration)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Aquamarine:
-                description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Frost Damage)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{amount}% Frost Damage)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.BlackGarnet:
                 description = $"\n\t Socket:  {parts[1]} (+{amount}% Ramping Pierce Pen)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Emerald:
-                description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Acid Damage)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{amount}% Acid Damage)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.ImperialTopaz:
                 description = $"\n\t Socket:  {parts[1]} (+{half}% Cleave Chance)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Jet:
-                description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Lightning Damage)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{amount}% Lightning Damage)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.RedGarnet:
-                description = $"\n\t Socket:  {parts[1]} (+{threeQ}% Fire Damage)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{amount}% Fire Damage)\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteSapphire:
-                description = $"\n\t Socket:  {parts[1]} (+{amount * 2}% Ramping Bludgeon Crit Damage)\n";
+                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping Bludgeon Crit Damage)\n";
                 break;
             default:
                 description = $"\n\t Socket:  {parts[1]} (+{amount}%  {parts[3]})\n";
