@@ -1212,7 +1212,7 @@ public class SpellProjectile : WorldObject
 
     /// <summary>
     /// RATING - Reprisal: Crit resist.
-    /// (JEWEL - ??)
+    /// (JEWEL - Black Opal)
     /// </summary>
     private bool CheckForRatingReprisalCritResist(bool criticalHit, ref bool resisted, Player targetPlayer, Creature sourceCreature)
     {
@@ -1258,7 +1258,7 @@ public class SpellProjectile : WorldObject
 
     /// <summary>
     /// RATING - Reprisal: Auto-crit.
-    /// (JEWEL - ??)
+    /// (JEWEL - Black Opal)
     /// </summary>
     private static float CheckForRatingReprisalAutoCrit(Creature target, Player sourcePlayer, float criticalChance)
     {

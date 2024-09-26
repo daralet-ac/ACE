@@ -127,7 +127,7 @@ partial class Jewel
 
     /// <summary>
     /// RATING - Lightning: Increases lightning damage by (rating)%.
-    /// (JEWEL - ??)
+    /// (JEWEL - Jet)
     /// </summary>
     private static float CheckForRatingLightningDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
@@ -141,7 +141,7 @@ partial class Jewel
 
     /// <summary>
     /// RATING - Cold: Increases cold damage by (rating)%.
-    /// (JEWEL - ??)
+    /// (JEWEL - Aquamarine)
     /// </summary>
     private static float CheckForRatingColdDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
@@ -155,7 +155,7 @@ partial class Jewel
 
     /// <summary>
     /// RATING - Fire: Increases fire damage by (rating)%.
-    /// (JEWEL - ??)
+    /// (JEWEL - Red Garnet)
     /// </summary>
     private static float CheckForRatingFireDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
@@ -169,7 +169,7 @@ partial class Jewel
 
     /// <summary>
     /// RATING - Acid: Increases acid damage by (rating)%.
-    /// (JEWEL - ??)
+    /// (JEWEL - Emerald)
     /// </summary>
     private static float CheckForRatingAcidDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
@@ -528,7 +528,7 @@ partial class Jewel
 
     /// <summary>
     /// RATING - Pierce: Adds quest stamps for Pierce rating.
-    /// (JEWEL - ??)
+    /// (JEWEL - Black Garnet)
     /// </summary>
     private static string CheckForRatingPierceMeleeStamps(Player playerAttacker, DamageType damageType, string rampProperty)
     {
@@ -545,7 +545,7 @@ partial class Jewel
 
     /// <summary>
     /// RATING - Bludgeon: Adds quest stamps for Bludgeon rating.
-    /// (JEWEL - ??)
+    /// (JEWEL - White Sapphire)
     /// </summary>
     private static string CheckForRatingBludgeonMeleeStamps(Player playerAttacker, DamageType damageType, string rampProperty)
     {
@@ -764,7 +764,7 @@ partial class Jewel
 
     /// <summary>
     /// RATING - Last Stand: .
-    /// (JEWEL - ??)
+    /// (JEWEL - Ruby)
     /// </summary>
     public static float GetJewelLastStand(Player playerAttacker)
     {
