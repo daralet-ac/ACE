@@ -241,9 +241,9 @@ partial class Creature
     /// </summary>
     private float CheckForRatingThreatReduction(Player targetPlayer)
     {
-        if (targetPlayer != null && targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatReduction) > 0)
+        if (targetPlayer != null && targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatReduction) > 0)
         {
-            return (float)(targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatReduction)) / 10;
+            return (float)(targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatReduction)) / 10;
         }
 
         return 0.0f;
@@ -255,9 +255,9 @@ partial class Creature
     /// </summary>
     private float CheckForRatingThreatGainBonus(Player targetPlayer)
     {
-        if (targetPlayer != null && targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatGain) > 0)
+        if (targetPlayer != null && targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatGain) > 0)
         {
-            return (float)(targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearThreatGain)) / 10;
+            return (float)(targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatGain)) / 10;
         }
 
         return 0.0f;

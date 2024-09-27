@@ -224,7 +224,7 @@ partial class Creature
         var enchantments = EnchantmentManager.GetRating(PropertyInt.DamageRating);
 
         // equipment ratings
-        var equipment = GetEquippedItemsRatingSum(PropertyInt.GearDamage);
+        var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearDamage);
 
         // weakness as negative damage rating?
         // TODO: this should be factored in as a separate weakness rating...
@@ -252,7 +252,7 @@ partial class Creature
         var enchantments = EnchantmentManager.GetRating(PropertyInt.DamageResistRating);
 
         // equipment ratings
-        var equipment = GetEquippedItemsRatingSum(PropertyInt.GearDamageResist);
+        var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearDamageResist);
 
         // nether DoTs as negative DRR?
         // TODO: this should be factored in as a separate nether damage rating...
@@ -329,7 +329,7 @@ partial class Creature
         var enchantments = EnchantmentManager.GetRating(PropertyInt.CritRating);
 
         // equipment ratings
-        var equipment = GetEquippedItemsRatingSum(PropertyInt.GearCrit);
+        var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCrit);
 
         // augmentations
         var augBonus = 0;
@@ -351,7 +351,7 @@ partial class Creature
         var enchantments = EnchantmentManager.GetRating(PropertyInt.CritDamageRating);
 
         // equipment ratings
-        var equipment = GetEquippedItemsRatingSum(PropertyInt.GearCritDamage);
+        var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCritDamage);
 
         // augmentations
         var augBonus = 0;
@@ -377,7 +377,7 @@ partial class Creature
         var enchantments = EnchantmentManager.GetRating(PropertyInt.CritResistRating);
 
         // equipment ratings
-        var equipment = GetEquippedItemsRatingSum(PropertyInt.GearCritResist);
+        var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCritResist);
 
         // no augs / lum augs?
         return critResistRating + enchantments + equipment;
@@ -392,7 +392,7 @@ partial class Creature
         var enchantments = EnchantmentManager.GetRating(PropertyInt.CritDamageResistRating);
 
         // equipment ratings
-        var equipment = GetEquippedItemsRatingSum(PropertyInt.GearCritDamageResist);
+        var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCritDamageResist);
 
         var lumAugBonus = 0;
         if (this is Player player)
@@ -412,7 +412,7 @@ partial class Creature
         var enchantments = EnchantmentManager.GetRating(PropertyInt.HealingBoostRating);
 
         // equipment ratings
-        var equipment = GetEquippedItemsRatingSum(PropertyInt.GearHealingBoost);
+        var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealingBoost);
 
         var lumAugBonus = 0;
         if (this is Player player)
@@ -488,7 +488,7 @@ partial class Creature
 
     public int GetGearMaxHealth()
     {
-        return GetEquippedItemsRatingSum(PropertyInt.GearMaxHealth);
+        return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearMaxHealth);
     }
 
     public int GetPKDamageRating()
@@ -499,7 +499,7 @@ partial class Creature
         var enchantments = EnchantmentManager.GetRating(PropertyInt.PKDamageRating);
 
         // equipment ratings
-        var equipment = GetEquippedItemsRatingSum(PropertyInt.GearPKDamageRating);
+        var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPKDamageRating);
 
         return pkDamageRating + equipment + enchantments;
     }
@@ -512,19 +512,19 @@ partial class Creature
         var enchantments = EnchantmentManager.GetRating(PropertyInt.PKDamageResistRating);
 
         // equipment ratings
-        var equipment = GetEquippedItemsRatingSum(PropertyInt.GearPKDamageResistRating);
+        var equipment = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPKDamageResistRating);
 
         return pkDamageResistRating + equipment + enchantments;
     }
 
     public int GetGearPKDamageRating()
     {
-        return GetEquippedItemsRatingSum(PropertyInt.GearPKDamageRating);
+        return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPKDamageRating);
     }
 
     public int GetGearPKDamageResistRating()
     {
-        return GetEquippedItemsRatingSum(PropertyInt.GearPKDamageResistRating);
+        return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPKDamageResistRating);
     }
 
     public int GetItemManaReductionRating()

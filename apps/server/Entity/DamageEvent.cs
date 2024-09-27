@@ -837,6 +837,11 @@ public class DamageEvent
 
     private float GetIgnoreArmorMod(Creature attacker, Creature defender)
     {
+        if (Weapon is null or { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
+        {
+            return 1.0f;
+        }
+
         var playerAttacker = attacker as Player;
 
         var armorRendingMod = GetArmorRendingMod(defender, playerAttacker);
@@ -847,7 +852,12 @@ public class DamageEvent
 
     private float GetArmorRendingMod(Creature defender, Player playerAttacker)
     {
-        if (Weapon != null && Weapon.HasImbuedEffect(ImbuedEffectType.ArmorRending))
+        if (Weapon is null or { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
+        {
+            return 1.0f;
+        }
+
+        if (Weapon.HasImbuedEffect(ImbuedEffectType.ArmorRending))
         {
             return 1.0f - WorldObject.GetArmorRendingMod(_attackSkill, playerAttacker, defender);
         }
@@ -928,13 +938,13 @@ public class DamageEvent
             return 0.0f;
         }
 
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) <= 0 || DamageType != DamageType.Pierce)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) <= 0 || DamageType != DamageType.Pierce)
         {
             return 0.0f;
         }
 
         var rampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Pierce") / 500; // up to 1.0f;
-        var ratingMod = playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) * 0.02f; // 0.02f per rating;
+        var ratingMod = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) * 0.02f; // 0.02f per rating;
 
         return rampMod * ratingMod;
     }
@@ -956,9 +966,9 @@ public class DamageEvent
             case DamageType.Pierce:
             case DamageType.Bludgeon:
             {
-                if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) > 0)
+                if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPhysicalWard) > 0)
                 {
-                    return (1 - ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) / 100));
+                    return (1 - ((float)playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPhysicalWard) / 100));
                 }
 
                 break;
@@ -968,9 +978,9 @@ public class DamageEvent
             case DamageType.Cold:
             case DamageType.Electric:
             {
-                if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) > 0)
+                if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalWard) > 0)
                 {
-                    return (1 - ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) / 100));
+                    return (1 - ((float)playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalWard) / 100));
                 }
 
                 break;
@@ -986,14 +996,14 @@ public class DamageEvent
     /// RATING - LastStand: Bonus damage below 50% HP, reduced damage above
     /// (JEWEL - Ruby)
     /// </summary>
-    private static float GetRatingLastStand(Creature defender, Player playerAttacker)
+    private float GetRatingLastStand(Creature defender, Player playerAttacker)
     {
         if (playerAttacker == null)
         {
             return 1.0f;
         }
 
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLastStand) > 0)
         {
             return 1.0f + Jewel.GetJewelLastStand(playerAttacker);
         }
@@ -1005,16 +1015,16 @@ public class DamageEvent
     /// RATING - Self Harm: Deal bonus damage but take the same amount
     /// (JEWEL - Hematite)
     /// </summary>
-    private static float GetRatingSelfHarm(Player playerAttacker)
+    private float GetRatingSelfHarm(Player playerAttacker)
     {
         if (playerAttacker == null)
         {
             return 1.0f;
         }
 
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) > 0)
         {
-            return (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
+            return (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
         }
 
         return 1.0f;
@@ -1134,20 +1144,20 @@ public class DamageEvent
     /// Up to +2% physical damage reduction per rating (at max quest stamps).
     /// (JEWEL - Diamond)
     /// </summary>
-    private static float GetRatingHardenedDefenseDamageResistanceBonus(Player playerDefender)
+    private float GetRatingHardenedDefenseDamageResistanceBonus(Player playerDefender)
     {
         if (playerDefender == null)
         {
             return 0.0f;
         }
 
-        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) <= 0)
+        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHardenedDefense) <= 0)
         {
             return 0.0f;
         }
 
         var rampMod = (float)playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") / 200; // up to 1.0f
-        var ratingMod = playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) * 0.02f; // 0.02f per rating
+        var ratingMod = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHardenedDefense) * 0.02f; // 0.02f per rating
 
         return rampMod * ratingMod;
     }
@@ -1182,12 +1192,12 @@ public class DamageEvent
             return;
         }
 
-        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) <= 0)
+        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) <= 0)
         {
             return;
         }
 
-        if ((playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) / 2) < ThreadSafeRandom.Next(0, 100))
+        if ((playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) / 2) < ThreadSafeRandom.Next(0, 100))
         {
             return;
         }
@@ -1211,13 +1221,13 @@ public class DamageEvent
             return 0.0f;
         }
 
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) <= 0)
         {
             return 0.0f;
         }
 
         var rampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bludgeon") / 500; // up to 1.0f
-        var ratingMod = (float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) / 50; // 0.02f per rating
+        var ratingMod = (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) / 50; // 0.02f per rating
 
         return rampMod * ratingMod;
     }
@@ -1302,7 +1312,7 @@ public class DamageEvent
             return false;
         }
 
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) <= 0)
         {
             return false;
         }
@@ -1365,7 +1375,7 @@ public class DamageEvent
             return;
         }
 
-        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearThorns) <= 0)
+        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThorns) <= 0)
         {
             return;
         }
@@ -1375,7 +1385,7 @@ public class DamageEvent
 
         var damage = GetNonCriticalDamageBeforeMitigation();
 
-        var thornsAmount = damage * playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearThorns) / 20;
+        var thornsAmount = damage * playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThorns) / 20;
 
         attacker.UpdateVitalDelta(attacker.Health, -(int)thornsAmount);
         attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)thornsAmount);
@@ -1509,7 +1519,7 @@ public class DamageEvent
             return 1.0f;
         }
 
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBravado) <= 0)
         {
             return 1.0f;
         }
@@ -1520,7 +1530,7 @@ public class DamageEvent
         }
 
         var rampMod = (float)playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bravado") / 1000; // up to 1.0f
-        var ratingMod = playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBravado) * 0.01f; // 0.01f per rating
+        var ratingMod = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBravado) * 0.01f; // 0.01f per rating
 
         var bravadoBonus = 1f + rampMod * ratingMod;
 
@@ -1538,7 +1548,7 @@ public class DamageEvent
             return 1.0f;
         }
 
-        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) <= 0)
+        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) <= 0)
         {
             return 1.0f;
         }
@@ -1550,7 +1560,7 @@ public class DamageEvent
 
         var rampMod = (float)attacker.QuestManager.GetCurrentSolves($"{playerDefender.Name},Familiarity") / 500;
 
-        var familiarityPenalty = 1f - (rampMod * ((float)playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) / 100));
+        var familiarityPenalty = 1f - (rampMod * ((float)playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) / 100));
 
         return familiarityPenalty;
     }
@@ -1786,9 +1796,9 @@ public class DamageEvent
     /// </summary>
     private float GetRatingBlockChanceBonus(Creature defender)
     {
-        if (defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock) > 0)
+        if (defender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlock) > 0)
         {
-            return defender.GetEquippedItemsRatingSum(PropertyInt.GearBlock);
+            return defender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlock);
         }
 
         return 0.0f;

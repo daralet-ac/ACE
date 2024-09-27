@@ -198,12 +198,12 @@ public partial class Spell : IEquatable<Spell>
     private static float CheckForRatingCompBurn(Player player)
     {
         // JEWEL - Malachite: Reduced comp burn chance
-        if (player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn) <= 0)
+        if (player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCompBurn) <= 0)
         {
             return 1.0f;
         }
 
-        var ratingMod = player.GetEquippedItemsRatingSum(PropertyInt.GearCompBurn) / 30;
+        var ratingMod = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCompBurn) / 30;
 
         return 1.0f - ratingMod;
     }

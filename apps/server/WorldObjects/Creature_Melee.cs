@@ -155,7 +155,7 @@ partial class Creature
         var player = this as Player;
         var jewelCleave = false;
         // JEWEL - Imperial Topaz - Bonus cleave chance
-        if (GetEquippedItemsRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 100))
+        if (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 100))
         {
             jewelCleave = true;
         }

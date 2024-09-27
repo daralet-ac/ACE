@@ -473,14 +473,14 @@ partial class Player
     /// </summary>
     private int CheckForRatingSlashCleaveBonus(WorldObject launcher, WorldObject ammo)
     {
-        if (this.GetEquippedItemsRatingSum(PropertyInt.GearSlash) <= 0
+        if (this.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) <= 0
             || launcher.W_DamageType != DamageType.Slash
             || ammo.W_DamageType != DamageType.Slash)
         {
             return 0;
         }
 
-        return GetEquippedItemsRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 100) ? 1 : 0;
+        return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 100) ? 1 : 0;
     }
 
     // TODO: the damage pipeline currently uses the creature ammo instead of the projectile

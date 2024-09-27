@@ -1734,4 +1734,20 @@ public abstract partial class WorldObject : IActor
             }
         }
     }
+
+    public bool SpecialPropertiesRequireMana
+    {
+        get => GetProperty(PropertyBool.SpecialPropertiesRequireMana) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.SpecialPropertiesRequireMana);
+            }
+            else
+            {
+                SetProperty(PropertyBool.SpecialPropertiesRequireMana, value);
+            }
+        }
+    }
 }

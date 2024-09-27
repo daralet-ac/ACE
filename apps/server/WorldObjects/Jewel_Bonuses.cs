@@ -131,9 +131,9 @@ partial class Jewel
     /// </summary>
     private static float CheckForRatingLightningDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) > 0 && damageType == DamageType.Electric)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning) > 0 && damageType == DamageType.Electric)
         {
-            jewelElemental += (float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) / 100;
+            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning) / 100;
         }
 
         return jewelElemental;
@@ -145,9 +145,9 @@ partial class Jewel
     /// </summary>
     private static float CheckForRatingColdDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) > 0 && damageType == DamageType.Cold)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost) > 0 && damageType == DamageType.Cold)
         {
-            jewelElemental += (float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) / 100;
+            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost) / 100;
         }
 
         return jewelElemental;
@@ -159,9 +159,9 @@ partial class Jewel
     /// </summary>
     private static float CheckForRatingFireDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) > 0 && damageType == DamageType.Fire)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire) > 0 && damageType == DamageType.Fire)
         {
-            jewelElemental += (float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) / 100;
+            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire) / 100;
         }
 
         return jewelElemental;
@@ -173,9 +173,9 @@ partial class Jewel
     /// </summary>
     private static float CheckForRatingAcidDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) > 0 && damageType == DamageType.Acid)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid) > 0 && damageType == DamageType.Acid)
         {
-            jewelElemental += (float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) / 100;
+            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid) / 100;
         }
 
         return jewelElemental;
@@ -187,7 +187,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingNullificationStamps(Player targetPlayer)
     {
-        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) <= 0)
+        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) <= 0)
         {
             return;
         }
@@ -306,7 +306,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingElementalistCasterStamps(Player sourcePlayer, int baseStamps)
     {
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalist) <= 0)
         {
             return;
         }
@@ -331,7 +331,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingWardPenCasterStamps(Player sourcePlayer, Creature targetCreature, int baseStamps)
     {
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearWardPen) <= 0)
         {
             return;
         }
@@ -356,7 +356,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingFamiliarityCasterStamps(Player sourcePlayer, Creature targetCreature, int baseStamps)
     {
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) <= 0)
         {
             return;
         }
@@ -382,7 +382,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingPierceCasterStamps(Player sourcePlayer, Creature targetCreature, DamageType damageType, int baseStamps)
     {
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) <= 0)
         {
             return;
         }
@@ -412,7 +412,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingBludgeonCasterStamps(Player sourcePlayer, Creature targetCreature, DamageType damageType, int baseStamps)
     {
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) <= 0)
         {
             return;
         }
@@ -442,7 +442,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingBravadoMeleeStamps(Player playerDefender)
     {
-        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearBravado) <= 0)
+        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBravado) <= 0)
         {
             return;
         }
@@ -467,7 +467,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingHardenedDefenseMeleeStamps(Player playerDefender)
     {
-        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHardenedDefense) <= 0)
+        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHardenedDefense) <= 0)
         {
             return;
         }
@@ -492,7 +492,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingStamReductionMeleeStamps(Player playerAttacker, double scaledStamps)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearStamReduction) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearStamReduction) <= 0)
         {
             return;
         }
@@ -518,7 +518,7 @@ partial class Jewel
     /// </summary>
     private static string CheckForRatingFamiliarityMeleeStamps(Player playerAttacker, string rampProperty)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) > 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) > 0)
         {
             rampProperty = "Familiarity";
         }
@@ -532,7 +532,7 @@ partial class Jewel
     /// </summary>
     private static string CheckForRatingPierceMeleeStamps(Player playerAttacker, DamageType damageType, string rampProperty)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPierce) > 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) > 0)
         {
             if (damageType == DamageType.Pierce)
             {
@@ -549,7 +549,7 @@ partial class Jewel
     /// </summary>
     private static string CheckForRatingBludgeonMeleeStamps(Player playerAttacker, DamageType damageType, string rampProperty)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) > 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) > 0)
         {
             if (damageType == DamageType.Bludgeon)
             {
@@ -566,12 +566,12 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingProsperityFindStamps(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPyrealFind) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPyrealFind) <= 0)
         {
             return;
         }
 
-        var pyrealFind = playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearPyrealFind);
+        var pyrealFind = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPyrealFind);
 
         defender.QuestManager.Stamp($"{playerAttacker.Name}/Prosperity/{pyrealFind}/{damage}");
     }
@@ -582,12 +582,12 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingMagicFindStamps(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearMagicFind) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearMagicFind) <= 0)
         {
             return;
         }
 
-        var magicFind = playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearMagicFind);
+        var magicFind = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearMagicFind);
 
         defender.QuestManager.Stamp($"{playerAttacker.Name}/MagicFind/{magicFind}/{damage}");
     }
@@ -598,10 +598,10 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingElementalHotspot(Player playerAttacker, Creature defender, DamageType damageType)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFire) <= 0
-            && playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearFrost) <= 0
-            && playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearAcid) <= 0
-            && playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLightning) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire) <= 0
+            && playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost) <= 0
+            && playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid) <= 0
+            && playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning) <= 0)
         {
             return;
         }
@@ -622,12 +622,12 @@ partial class Jewel
     private static void CheckForRatingSelfHarm(Player playerAttacker, float damage)
     {
         // JEWEL - Hematite: Self-harm damage
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) <= 0)
         {
             return;
         }
 
-        var jewelSelfHarm = (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
+        var jewelSelfHarm = (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
         var selfHarm = (int)(jewelSelfHarm * damage);
 
         playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarm);
@@ -649,12 +649,12 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingManaOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearManasteal) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearManasteal) <= 0)
         {
             return;
         }
 
-        var chance = (float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearManasteal);
+        var chance = (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearManasteal);
 
         if (playerAttacker == defender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
         {
@@ -679,12 +679,12 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingLifeOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLifesteal) <= 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLifesteal) <= 0)
         {
             return;
         }
 
-        var chance = playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLifesteal) * 0.01f;
+        var chance = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLifesteal) * 0.01f;
 
         if (playerAttacker == defender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
         {
@@ -709,12 +709,12 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToMana(Player playerDefender, Creature attacker, float damage)
     {
-        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHealthToMana) <= 0)
+        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToMana) <= 0)
         {
             return;
         }
 
-        var chance = playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHealthToMana) * 0.01f;
+        var chance = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToMana) * 0.01f;
 
         if (attacker == playerDefender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
         {
@@ -738,12 +738,12 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToStamina(Player playerDefender, Creature attacker, float damage)
     {
-        if (playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHealthToStamina) <= 0)
+        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToStamina) <= 0)
         {
             return;
         }
 
-        var chance = playerDefender.GetEquippedItemsRatingSum(PropertyInt.GearHealthToStamina) * 0.01f;
+        var chance = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToStamina) * 0.01f;
 
         if (attacker == playerDefender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
         {
@@ -795,7 +795,7 @@ partial class Jewel
 
         // multiply gear last stand as % by the modifier--if negative (above 50% HP), mod goes sub 1, which added to the 1f in DamageEvent results in a damage penalty.
 
-        var lastStandMod = (modifiedLastStand * ((float)playerAttacker.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) / 50));
+        var lastStandMod = (modifiedLastStand * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLastStand) / 50));
 
         return lastStandMod;
     }
