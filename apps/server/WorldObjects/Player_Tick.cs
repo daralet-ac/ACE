@@ -826,12 +826,12 @@ partial class Player
     /// </summary>
     private double CheckForRatingItemManaUsage()
     {
-        if (GetEquippedItemsRatingSum(PropertyInt.GearItemManaUsage) <= 0)
+        if (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearItemManaUsage) <= 0)
         {
             return 1.0f;
         }
 
-        var moonstoneRating = GetEquippedItemsRatingSum(PropertyInt.GearItemManaUsage);
+        var moonstoneRating = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearItemManaUsage);
         var moonstoneMod = 100f / (100 + moonstoneRating * 5);
 
         return moonstoneMod;

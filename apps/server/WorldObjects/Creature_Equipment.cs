@@ -624,6 +624,31 @@ partial class Creature
         return 0;
     }
 
+    public int GetEquippedAndActivatedItemRatingSum(PropertyInt rating)
+    {
+        var ratingAmount = 0;
+
+        foreach (var item in EquippedObjects.Values)
+        {
+            if (item.SpecialPropertiesRequireMana && item.ItemCurMana == 0)
+            {
+                continue;
+            }
+
+            var properties = GetProperties(item);
+
+            foreach (var property in properties)
+            {
+                if (property.Key == rating && property.Value != null)
+                {
+                    ratingAmount += property.Value.Value;
+                }
+            }
+        }
+
+        return ratingAmount;
+    }
+
     public int GetEquippedItemsWardSum(PropertyInt wardLevel)
     {
         if (equippedItemsRatingCache == null)

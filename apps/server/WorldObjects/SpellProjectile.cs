@@ -1154,13 +1154,13 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) <= 0)
+        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) <= 0)
         {
             return 0.0f;
         }
 
         var rampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200; // up to 1.0f
-        var ratingMod = targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) * 0.02f; // 0.02f per rating
+        var ratingMod = targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) * 0.02f; // 0.02f per rating
 
         return rampMod * ratingMod;
     }
@@ -1199,13 +1199,13 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearWardPen) <= 0)
         {
             return 0.0f;
         }
 
         var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") / 500; // up to 1.0f
-        var ratingMod = sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearWardPen) * 0.02f; // 0.02f per rating
+        var ratingMod = sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearWardPen) * 0.02f; // 0.02f per rating
 
         return rampMod * ratingMod;
     }
@@ -1226,12 +1226,12 @@ public class SpellProjectile : WorldObject
             return false;
         }
 
-        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) <= 0)
+        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) <= 0)
         {
             return false;
         }
 
-        if ((targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) / 2) < ThreadSafeRandom.Next(0, 100))
+        if ((targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) / 2) < ThreadSafeRandom.Next(0, 100))
         {
             return false;
         }
@@ -1267,7 +1267,7 @@ public class SpellProjectile : WorldObject
             return criticalChance;
         }
 
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearReprisal) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) <= 0)
         {
             return criticalChance;
         }
@@ -1293,7 +1293,7 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        return sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearLastStand) > 0 ? Jewel.GetJewelLastStand(sourcePlayer) : 0.0f;
+        return sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLastStand) > 0 ? Jewel.GetJewelLastStand(sourcePlayer) : 0.0f;
     }
 
     /// <summary>
@@ -1307,9 +1307,9 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) > 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) > 0)
         {
-            return (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
+            return (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
         }
 
         return 0.0f;
@@ -1327,7 +1327,7 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) <= 0)
         {
             return 0.0f;
         }
@@ -1338,7 +1338,7 @@ public class SpellProjectile : WorldObject
         }
 
         var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Pierce") / 500; // up to 1.0f;
-        var ratingMod = sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearPierce) * 0.02f; // 0.02f per rating;
+        var ratingMod = sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) * 0.02f; // 0.02f per rating;
 
         return rampMod * ratingMod;
     }
@@ -1355,7 +1355,7 @@ public class SpellProjectile : WorldObject
             return 1.0f;
         }
 
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) <= 0)
         {
             return 1.0f;
         }
@@ -1366,7 +1366,7 @@ public class SpellProjectile : WorldObject
         }
 
         var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Bludgeon") / 500; // up to 1.0f
-        var ratingMod = (float)sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearBludgeon) * 0.02f; // 0.02f per rating
+        var ratingMod = (float)sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) * 0.02f; // 0.02f per rating
 
         return rampMod * ratingMod;
     }
@@ -1383,13 +1383,13 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        if (sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) <= 0)
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalist) <= 0)
         {
             return 0.0f;
         }
 
         var rampMod = (float)sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") / 500; // up to 1.0f
-        var ratingMod = sourcePlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalist) * 0.02f; // 0.02f per rating
+        var ratingMod = sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalist) * 0.02f; // 0.02f per rating
 
         return rampMod * ratingMod;
     }
@@ -1414,9 +1414,9 @@ public class SpellProjectile : WorldObject
             return 1.0f;
         }
 
-        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) > 0)
+        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalWard) > 0)
         {
-            return (1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearElementalWard) / 100));
+            return (1 - ((float)targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalWard) / 100));
         }
 
         return 1.0f;
@@ -1441,9 +1441,9 @@ public class SpellProjectile : WorldObject
             return 1.0f;
         }
 
-        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) > 0)
+        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPhysicalWard) > 0)
         {
-            return (1 - ((float)targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearPhysicalWard) / 100));
+            return (1 - ((float)targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPhysicalWard) / 100));
         }
 
         return 1.0f;

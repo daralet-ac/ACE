@@ -389,6 +389,11 @@ partial class WorldObject
         {
             var criticalStrikeBonus = DefaultPhysicalCritFrequency + GetCriticalStrikeMod(skill, wielder, target);
 
+            if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
+            {
+                criticalStrikeBonus = DefaultPhysicalCritFrequency;
+            }
+
             critRate = Math.Max(critRate, criticalStrikeBonus);
         }
 
@@ -438,6 +443,11 @@ partial class WorldObject
 
             var criticalStrikeMod = DefaultMagicCritFrequency + GetCriticalStrikeMod(skill, wielder, target, isPvP);
 
+            if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
+            {
+                criticalStrikeMod = DefaultMagicCritFrequency;
+            }
+
             critRate = Math.Max(critRate, criticalStrikeMod);
         }
 
@@ -469,6 +479,11 @@ partial class WorldObject
         if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.CripplingBlow))
         {
             var cripplingBlowMod = DefaultCritDamageMultiplier + GetCripplingBlowMod(skill, wielder, target);
+
+            if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
+            {
+                cripplingBlowMod = DefaultCritDamageMultiplier;
+            }
 
             critDamageMod = Math.Max(critDamageMod, cripplingBlowMod);
         }
@@ -676,6 +691,11 @@ partial class WorldObject
         if (rendDamageType != ImbuedEffectType.Undef && weapon.HasImbuedEffect(rendDamageType) && skill != null)
         {
             var rendingMod = DefaultModifier + GetRendingMod(skill, wielder, target);
+
+            if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
+            {
+                rendingMod = DefaultModifier;
+            }
 
             resistMod = Math.Max(resistMod, rendingMod);
         }
@@ -927,6 +947,11 @@ partial class WorldObject
 
     public float GetArmorCleavingMod(WorldObject weapon)
     {
+        if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
+        {
+            return 1.0f;
+        }
+
         // investigate: should this value be on creatures directly?
         var creatureMod = GetArmorCleavingMod();
         var weaponMod = weapon != null ? weapon.GetArmorCleavingMod() : 1.0f;
@@ -1017,7 +1042,12 @@ partial class WorldObject
 
     public float GetIgnoreWardMod(WorldObject weapon)
     {
-        if (weapon == null || weapon.IgnoreWard == null)
+        if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
+        {
+            return 1.0f;
+        }
+
+        if (weapon.IgnoreWard == null)
         {
             return 1.0f;
         }

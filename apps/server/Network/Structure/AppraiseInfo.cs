@@ -1455,6 +1455,8 @@ public class AppraiseInfo
 
         _extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n\n";
 
+        _extraPropertiesText += "(This item's properties will not activate if it is out of mana)\n\n";
+
         _hasExtraPropertiesText = true;
     }
 

@@ -233,6 +233,7 @@ public enum PropertyBool : ushort
     IsPlayerTierChest = 153,
     UpgradeableQuestItem = 154,
     FellowshipRequired = 155,
+    SpecialPropertiesRequireMana = 156,
 
     /* custom */
     [ServerOnly]

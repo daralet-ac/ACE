@@ -393,7 +393,7 @@ partial class WorldObject
             return 0.0f;
         }
 
-        if (targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) <= 0)
+        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) <= 0)
         {
             return 0.0f;
         }
@@ -404,7 +404,7 @@ partial class WorldObject
         }
 
         var rampMod = (float)casterCreature.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Familiarity") / 500; // up to 1.0f
-        var ratingMod = targetPlayer.GetEquippedItemsRatingSum(PropertyInt.GearFamiliarity) * 0.01f; // 0.01 per rating
+        var ratingMod = targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) * 0.01f; // 0.01 per rating
 
         return rampMod * ratingMod;
     }
@@ -1111,13 +1111,13 @@ partial class WorldObject
             return 1.0f;
         }
 
-        if (tPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) <= 0)
+        if (tPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) <= 0)
         {
             return 1.0f;
         }
 
         var rampMod = (float)tPlayer.QuestManager.GetCurrentSolves($"{tPlayer.Name},Nullification") / 200; // up to 1.0f
-        var ratingMod = tPlayer.GetEquippedItemsRatingSum(PropertyInt.GearNullification) * 0.02f; // 0.02f per rating
+        var ratingMod = tPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) * 0.02f; // 0.02f per rating
 
         return rampMod * ratingMod;
     }
@@ -1133,12 +1133,12 @@ partial class WorldObject
             return 1.0f;
         }
 
-        if (player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) <= 0)
+        if (player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearVitalsTransfer) <= 0)
         {
             return 1.0f;
         }
 
-        var ratingMod = player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) * 0.02f;
+        var ratingMod = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearVitalsTransfer) * 0.02f;
 
         return 1.0f - ratingMod;
     }
@@ -1154,12 +1154,12 @@ partial class WorldObject
             return 1.0f;
         }
 
-        if (player.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) <= 0 || targetCreature.IsMonster)
+        if (player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealBubble) <= 0 || targetCreature.IsMonster)
         {
             return 1.0f;
         }
 
-        var ratingMod = player.GetEquippedItemsRatingSum(PropertyInt.GearHealBubble) * 0.01f;
+        var ratingMod = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealBubble) * 0.01f;
 
         if (weapon is { Tier: not null })
         {
@@ -1180,12 +1180,12 @@ partial class WorldObject
             return 1.0f;
         }
 
-        if (player.GetEquippedItemsRatingSum(PropertyInt.GearSelflessness) <= 0 || targetCreature.IsMonster)
+        if (player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelflessness) <= 0 || targetCreature.IsMonster)
         {
             return 1.0f;
         }
 
-        var ratingMod = player.GetEquippedItemsRatingSum(PropertyInt.GearSelflessness) * 0.02f;
+        var ratingMod = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelflessness) * 0.02f;
 
         if (targetCreature == this)
         {
@@ -1772,12 +1772,12 @@ partial class WorldObject
             return 1.0f;
         }
 
-        if (player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) <= 0)
+        if (player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearVitalsTransfer) <= 0)
         {
             return 1.0f;
         }
 
-        var ratingMod = player.GetEquippedItemsRatingSum(PropertyInt.GearVitalsTransfer) * 0.02f;
+        var ratingMod = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearVitalsTransfer) * 0.02f;
 
         return 1.0f + ratingMod;
     }
@@ -1927,12 +1927,12 @@ partial class WorldObject
             return;
         }
 
-        if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) <= 0)
+        if (caster.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) <= 0)
         {
             return;
         }
 
-        if (caster.GetEquippedItemsRatingSum(PropertyInt.GearSlash) <= ThreadSafeRandom.Next(1, 100))
+        if (caster.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) <= ThreadSafeRandom.Next(1, 100))
         {
             return;
         }
