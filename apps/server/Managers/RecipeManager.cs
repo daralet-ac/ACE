@@ -2131,6 +2131,10 @@ public partial class RecipeManager
             target.RemoveProperty(PropertyDataId.Setup);
         }
     }
+    /// <summary>
+    /// flag to use c# logic instead of mutate script logic
+    /// </summary>
+    private static readonly bool useMutateNative = true;
 
     public static bool TryMutate(
         Player player,
@@ -2141,6 +2145,11 @@ public partial class RecipeManager
         HashSet<uint> modified
     )
     {
+        if (useMutateNative)
+        {
+            return TryMutateNative(player, source, target, recipe, dataId);
+        }
+
         var numTimesTinkered = target.NumTimesTinkered;
 
         var mutationScript = MutationCache.GetMutation(dataId);
