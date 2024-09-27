@@ -713,7 +713,7 @@ public class UpgradeKit : Stackable
             }
 
             ratingList.Add((PropertyInt)i);
-            totalRatings += ratingValue.Value;
+            //totalRatings += ratingValue.Value;
         }
 
         int[] ratingValuesPerSlotPerTier = [4, 6, 8, 10, 12, 16, 18, 20];
