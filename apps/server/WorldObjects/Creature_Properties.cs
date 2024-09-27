@@ -765,7 +765,7 @@ partial class Creature
         return moddedShieldSkill;
     }
 
-    public double? GetArmorAssessMod()
+    public double? GetArmorPerceptionMod()
     {
         double? mod;
 
@@ -784,7 +784,7 @@ partial class Creature
     public uint GetModdedPerceptionSkill()
     {
         var assessSkill = GetCreatureSkill(Skill.AssessCreature);
-        var armorAssessSkillMod = GetArmorAssessMod() + 1;
+        var armorAssessSkillMod = GetArmorPerceptionMod() + 1;
         var tempAssessSkill = assessSkill.Current * armorAssessSkillMod;
         var moddedAssessSkill = (uint)tempAssessSkill;
 

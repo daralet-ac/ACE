@@ -524,6 +524,24 @@ public static class LootTables
     public const float ArmorSkillModRollRange = 0.1f;
     public static readonly float[] ArmorSkillModBonusPerTier = [0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f];
 
+    // Bonus resistance cleaving per tier
+    public static readonly float[] BonusResistanceCleavingPerTier = [0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f];
+
+    // Bonus ignore armor per tier for spear/crossbow
+    public static readonly float[] BonusIgnoreArmorPerTier = [0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f];
+
+    // Bonus ignore ward per tier for Orb
+    public static readonly float[] BonusIgnoreWardPerTier = [0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f];
+
+    // Bonus stamina cost reduction per tier for Sword/UA
+    public static readonly float[] StaminaCostReductionPerTier = [0.0f, 0.01f, 0.02f, 0.03f, 0.04f, 0.05f, 0.075f, 0.1f];
+
+    // Bonus crit chance for Axe/Dagger/Bow/Scepter
+    public static readonly float[] BonusCritChancePerTier = [0.0f, 0.01f, 0.015f, 0.02f, 0.025f, 0.03f, 0.4f, 0.05f];
+
+    // Bonus crit multi per tier for Mace/Staff/Atlatl/Wand
+    public static readonly float[] BonusCritMultiplierPerTier = [0.0f, 0.1f, 0.15f, 0.2f, 0.25f, 0.3f, 0.4f, 0.5f];
+
     // Jewelry Ward Level per Tier
     public static readonly int[] JewelryBaseWardLeverPerTier = [0, 10, 20, 30, 40, 50, 75, 100, 126];
 

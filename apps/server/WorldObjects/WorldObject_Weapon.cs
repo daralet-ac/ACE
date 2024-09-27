@@ -643,7 +643,7 @@ partial class WorldObject
         Creature wielder,
         CreatureSkill skill,
         DamageType damageType,
-        Creature target
+        Creature target = null
     )
     {
         var resistMod = DefaultModifier;
@@ -785,12 +785,13 @@ partial class WorldObject
     private static float MinCriticalStrikeMod = 0.05f;
     private static float MaxCriticalStrikeMod = 0.1f;
 
-    public static float GetCriticalStrikeMod(CreatureSkill skill, Creature wielder, Creature target, bool isPvP = false)
+    public static float GetCriticalStrikeMod(CreatureSkill skill, Creature wielder, Creature target = null, bool isPvP = false)
     {
         var baseMod = MinCriticalStrikeMod;
 
         var skillType = GetImbuedSkillType(skill);
-        var baseSkill = GetBaseSkillImbued(skill) * LevelScaling.GetPlayerAttackSkillScalar(wielder, target);
+        var levelScalar = target != null ? LevelScaling.GetPlayerAttackSkillScalar(wielder, target) : 1.0f;
+        var baseSkill = GetBaseSkillImbued(skill) * levelScalar;
 
         switch (skillType)
         {
@@ -816,10 +817,11 @@ partial class WorldObject
     private static float MinCripplingBlowMod = 0.5f;
     private static float MaxCripplingBlowMod = 1.0f;
 
-    public static float GetCripplingBlowMod(CreatureSkill skill, Creature wielder, Creature target)
+    public static float GetCripplingBlowMod(CreatureSkill skill, Creature wielder, Creature target = null)
     {
         var skillType = GetImbuedSkillType(skill);
-        var baseSkill = GetBaseSkillImbued(skill) * LevelScaling.GetPlayerAttackSkillScalar(wielder, target);
+        var levelScalar = target != null ? LevelScaling.GetPlayerAttackSkillScalar(wielder, target) : 1.0f;
+        var baseSkill = GetBaseSkillImbued(skill) * levelScalar;
 
         var baseMod = MinCripplingBlowMod;
 
@@ -847,10 +849,11 @@ partial class WorldObject
     private static float MinRendingMod = 0.15f;
     private static float MaxRendingMod = 0.30f;
 
-    public static float GetRendingMod(CreatureSkill skill, Creature wielder, Creature target)
+    public static float GetRendingMod(CreatureSkill skill, Creature wielder, Creature target = null)
     {
         var skillType = GetImbuedSkillType(skill);
-        var baseSkill = GetBaseSkillImbued(skill) * LevelScaling.GetPlayerAttackSkillScalar(wielder, target);
+        var levelScalar = target != null ? LevelScaling.GetPlayerAttackSkillScalar(wielder, target) : 1.0f;
+        var baseSkill = GetBaseSkillImbued(skill) * levelScalar;
 
         var rendingMod = MinRendingMod;
 
@@ -878,10 +881,11 @@ partial class WorldObject
     public static float MinArmorRendingMod = 0.2f;
     public static float MaxArmorRendingMod = 0.4f;
 
-    public static float GetArmorRendingMod(CreatureSkill skill, Creature wielder, Creature target)
+    public static float GetArmorRendingMod(CreatureSkill skill, Creature wielder, Creature target = null)
     {
         var skillType = GetImbuedSkillType(skill);
-        var baseSkill = GetBaseSkillImbued(skill) * LevelScaling.GetPlayerAttackSkillScalar(wielder, target);
+        var levelScalar = target != null ? LevelScaling.GetPlayerAttackSkillScalar(wielder, target) : 1.0f;
+        var baseSkill = GetBaseSkillImbued(skill) * levelScalar;
 
         var armorRendingMod = MinArmorRendingMod;
 
