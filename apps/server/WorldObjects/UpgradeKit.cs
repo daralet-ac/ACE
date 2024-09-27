@@ -231,6 +231,8 @@ public class UpgradeKit : Stackable
                 ScaleUpArmorSkillMod(PropertyFloat.ArmorWarMagicMod, target, currentTier, newTier);
             }
 
+            ScaleUpSpecialRatings(target, newTier);
+
             // Wield Difficulty
             target.SetProperty(PropertyInt.WieldDifficulty, newWieldDifficulty);
 
@@ -258,6 +260,8 @@ public class UpgradeKit : Stackable
             ScaleUpJewelryRating(PropertyInt.GearCritResist, target, currentTier, newTier);
             ScaleUpJewelryRating(PropertyInt.GearDamage, target, currentTier, newTier);
             ScaleUpJewelryRating(PropertyInt.GearDamageResist, target, currentTier, newTier);
+
+            ScaleUpSpecialRatings(target, newTier);
 
             // Level Requirement
             target.SetProperty(PropertyInt.WieldDifficulty, newRequiredLevel);
@@ -685,6 +689,43 @@ public class UpgradeKit : Stackable
         foreach (var spellId in spellsToAdd)
         {
             target.Biota.GetOrAddKnownSpell(spellId, target.BiotaDatabaseLock, out _);
+        }
+    }
+
+    /// <summary>
+    /// Scale up special ratings. (jewel ratings)
+    /// </summary>
+    private static void ScaleUpSpecialRatings(WorldObject target, int newTier)
+    {
+        var ratingList = new List<PropertyInt>();
+        // var totalRatings = 0; TODO: To be used if jewel ratings get added to mutable quest item system
+
+        const int firstGearRatingId = 409;
+        const int lastGearRatingId = 450;
+
+        for (var i = firstGearRatingId; i < lastGearRatingId; i++)
+        {
+            var ratingValue = target.GetProperty((PropertyInt)i);
+
+            if (ratingValue == null)
+            {
+                continue;
+            }
+
+            ratingList.Add((PropertyInt)i);
+            totalRatings += ratingValue.Value;
+        }
+
+        int[] ratingValuesPerSlotPerTier = [4, 6, 8, 10, 12, 16, 18, 20];
+        var isItemTwoHanded = target.IsTwoHanded || target.WeenieType == WeenieType.MissileLauncher;
+
+        var multiplier = isItemTwoHanded ? 2.0f : 1.0f;
+
+        var newRatingValue = Convert.ToInt32(ratingValuesPerSlotPerTier[newTier] * multiplier / ratingList.Count);
+
+        foreach (var itemRating in ratingList)
+        {
+            target.SetProperty(itemRating, newRatingValue);
         }
     }
 }
