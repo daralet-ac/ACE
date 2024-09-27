@@ -7,6 +7,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
+using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
 using ACE.Server.WorldObjects;
@@ -54,6 +55,15 @@ public class AppraiseInfo
 
     // This helps ensure the item will identify properly. Some "items" are technically "Creatures".
     private bool NPCLooksLikeObject;
+
+    // Custom 'Use' and 'LongDesc'
+    private bool _hasAdditionalProperties;
+    private List<string> _additionalPropertiesList = new List<string>();
+    private bool _hasLongDescAdditions = true;
+    private string _longDescAdditions = "";
+    private string _extraPropertiesText;
+    private string _additionalPropertiesLongDescriptionsText = "";
+    private bool _hasExtraPropertiesText = false;
 
     public AppraiseInfo()
     {
@@ -716,9 +726,167 @@ public class AppraiseInfo
         //     }
         // }
 
-        var longDescAdditions = "";
-        var hasLongDescAdditions = true;
 
+        SetCustomDecorationLongText(wo);
+
+        SetTinkeringLongText(wo);
+
+        if (_hasLongDescAdditions)
+        {
+            _longDescAdditions += "";
+            PropertiesString[PropertyString.LongDesc] = _longDescAdditions;
+        }
+
+        // USE
+        if (PropertiesString.TryGetValue(PropertyString.Use, out var useText) && useText.Length > 0)
+        {
+            _extraPropertiesText = $"{useText}\n";
+        }
+        else
+        {
+            _extraPropertiesText = "";
+        }
+
+        // Protection Levels ('Use' text)
+        SetProtectionLevelsUseText(wo);
+
+        // Retail Imbues ('Use' and 'LongDesc' text)
+        SetArmorRendUseLongText(wo);
+        SetArmorCleavingUseLongText(wo);
+
+        SetResistanceRendLongText(ImbuedEffectType.AcidRending, wo, "Acid");
+        SetResistanceRendLongText(ImbuedEffectType.BludgeonRending, wo, "Bludgeoning");
+        SetResistanceRendLongText(ImbuedEffectType.ColdRending, wo, "Cold");
+        SetResistanceRendLongText(ImbuedEffectType.ElectricRending, wo, "Lightning");
+        SetResistanceRendLongText(ImbuedEffectType.FireRending, wo, "Fire");
+        SetResistanceRendLongText(ImbuedEffectType.PierceRending, wo, "Pierce");
+        SetResistanceRendLongText(ImbuedEffectType.SlashRending, wo, "Slash");
+
+        SetResistanceCleavingUseLongText(wo);
+
+        SetCripplingBlowUseLongText(wo);
+        SetCrushingBlowUseLongText(wo);
+
+        SetCriticalStrikeUseLongText(wo);
+        SetBitingStrikeUseLongText(wo);
+
+        // "Additional Properties" ('Use' and 'LongDesc' text)
+        SetWardRendingUseLongText(wo);
+        SetWardCleavingUseLongText(wo);
+
+        SetStaminaReductionUseLongText(wo);
+
+        SetGearRatingText(PropertyInt.GearStrength, "Mighty Thews", "Grants a +(ONE) bonus to base Strength.");
+        SetGearRatingText(PropertyInt.GearEndurance, "Perseverance", "Grants a +(ONE) bonus to base Endurance.");
+        SetGearRatingText(PropertyInt.GearCoordination, "Dexterous Hand", "Grants a +(ONE) bonus to base Coordination.");
+        SetGearRatingText(PropertyInt.GearQuickness, "Swift-footed", "Grants a +(ONE) bonus to base Quickness.");
+        SetGearRatingText(PropertyInt.GearFocus, "Focused Mind", "Grants a +(ONE) bonus to base Focus.");
+        SetGearRatingText(PropertyInt.GearSelf, "Erudite Mind", "Grants a +(ONE) bonus to base Self.");
+        SetGearRatingText(PropertyInt.GearLifesteal, "Sanguine Thirst", "Grants a (ONE)% chance on hit to gain health. Amount healed is based on the amount of damage done.");
+        SetGearRatingText(PropertyInt.GearSelfHarm, "Blood Frenzy", $"Grants (ONE)% extra damage dealt to your opponent each time you attack, however you will take that much damage as well.");
+        SetGearRatingText(PropertyInt.GearThreatGain, "Provocation", $"Grants a (ONE)% bonus to threat generation.");
+        SetGearRatingText(PropertyInt.GearThreatReduction, "Clouded Vision", $"Grants a (ONE)% bonus to threat reduction.");
+        SetGearRatingText(PropertyInt.GearElementalWard, "Prismatic Ward", $"Grants (ONE)% protection against Flame, Frost, Lightning, and Acid damage types.");
+        SetGearRatingText(PropertyInt.GearPhysicalWard, "Black Bulwark", $"Grants (ONE)% protection against Piercing, Bludgeoning, and Slashing damage types.");
+        SetGearRatingText(PropertyInt.GearMagicFind, "Seeker", $"Grants a (ONE)% bonus to monster loot quality.");
+        SetGearRatingText(PropertyInt.GearBlock, "Stalwart Defense", $"Grants (ONE)% chance to block attacks.");
+        SetGearRatingText(PropertyInt.GearItemManaUsage, "Thrifty Scholar", $"Grants a (ONE)% reduction to mana consumed by equipped items.", 5.0f);
+        SetGearRatingText(PropertyInt.GearThorns, "Swift Retribution", $"Deflect (ONE)% of an attacker's damage back at them when successfully blocked, so long as the opponent is within melee range.", 5.0f);
+        SetGearRatingText(PropertyInt.GearVitalsTransfer, "Tilted Scales", $"Grants a (ONE)% bonus to your Vitals Transfer spells, but an equivalent reduction in the effectiveness of your other Restoration spells.");
+        SetGearRatingText(PropertyInt.GearLastStand, "Red Fury", $"Grants increased damage as your health falls below 50%, up to a maximum bonus of (ONE)% at 25% HP. Above 50% Health, you receive a damage reduction penalty scaling up to (ONE)% at full HP.");
+        SetGearRatingText(PropertyInt.GearSelflessness, "Selfless Spirit", $"Grants a (ONE)% bonus to your restoration spells when cast on others, but an equivalent reduction in their effectiveness when cast on yourself.", 2.0f);
+        SetGearRatingText(PropertyInt.GearFamiliarity, "Familiar Foe", $"Grants an increased evade and resist chance versus the target you are attacking, the amount ramping from 0% to (ONE)% based on how often you have hit the target.", 2.0f);
+        SetGearRatingText(PropertyInt.GearBravado, "Bravado", $"Grants an increased physical hit chance, the amount ramping from a 0% to (ONE)% based on how often you have been recently physically attacked.");
+        SetGearRatingText(PropertyInt.GearHealthToStamina, "Masochist", $"Grants a (ONE)% chance to regain stamina after being hit. Amount regained is based on damage received.");
+        SetGearRatingText(PropertyInt.GearHealthToMana, "Austere Anchorite", $"Grants a (ONE)% chance to regain mana after being hit. Amount regained is based on damage received.");
+        SetGearRatingText(PropertyInt.GearExperienceGain, "Illuminated Mind", $"Grants a (ONE)% bonus to experience gain.", 0.5f);
+        SetGearRatingText(PropertyInt.GearManasteal, "Ophidian", $"Grants a (ONE)% chance on hit to gain health. Amount gained is based on amount of damage done.");
+        SetGearRatingText(PropertyInt.GearBludgeon, "Skull-cracker", $"Grants bonus critical bludgeoning damage, the amount ramping from +0% to +(ONE)% based on how many times you have struck your target.", 2.0f);
+        SetGearRatingText(PropertyInt.GearPierce, "Precision Strikes", $"Grants piercing resistance penetration, the amount ramping from +0% to +(ONE)% based on how often you have hit your target.", 2.0f);
+        SetGearRatingText(PropertyInt.GearSlash, "Falcon's Gyre", $"Grants (ONE)% chance to cleave a second target on hit.", 0.5f);
+        SetGearRatingText(PropertyInt.GearFire, "Blazing Brand", $"Grants a (ONE)% bonus to Fire damage and a (TWO)% chance on hit to set the ground beneath your target ablaze, damaging nearby enemies.", 1.0f, 0.5f);
+        SetGearRatingText(PropertyInt.GearFrost, "Bone-chiller", $"Grants a (ONE)% bonus to Cold damage and a (TWO)% chance on hit to surround your target with chilling mist, damaging nearby enemies.", 1.0f, 0.5f);
+        SetGearRatingText(PropertyInt.GearAcid, "Devouring Mist", $"Grants a (ONE)% bonus to Acid damage, and a (TWO)% chance on hit to surround your target with acidic mist.", 1.0f, 0.5f);
+        SetGearRatingText(PropertyInt.GearLightning, "Astyrrian's Rage", $"Grants a (ONE)% bonus to Lightning damage, and a (TWO)% chance on hit to electrify the ground beneath your target, damaging nearby enemies.", 1.0f, 0.5f);
+        SetGearRatingText(PropertyInt.GearHealBubble, "Purified Soul", $"Grants a +(ONE)% bonus to your restoration spells, and a (TWO)% chance to create a sphere of healing energy on top of your target when casting a restoration spell.", 1.0f, 0.5f);
+        SetGearRatingText(PropertyInt.GearCompBurn, "Meticulous Magus", $"Grants a (ONE)% reduction to your chance to burn spell components.", 3.0f);
+        SetGearRatingText(PropertyInt.GearPyrealFind, "Prosperity", $"Grants a (ONE)% chance for monsters to drop an additional item on death.", 0.5f);
+        SetGearRatingText(PropertyInt.GearNullification, "Nullification", $"Grants magic absorb, the amount ramping from 0% to (ONE)%, based on how often you have recently have been hit with magic.", 2.0f);
+        SetGearRatingText(PropertyInt.GearWardPen, "Ruthless Discernment", $"Grants ward penetration, the amount ramping from +0% to +(ONE)%, based on how often you have recently hit your target.", 2.0f);
+        SetGearRatingText(PropertyInt.GearStamReduction, "Third Wind", $"Grants (ONE)% stamina cost reduction.");
+        SetGearRatingText(PropertyInt.GearHardenedDefense, "Hardened Fortification", $"Grants resistance to physical damage, the amount ramping from 0 to (ONE)%, based on how often you have recently have been hit.", 2.0f);
+        SetGearRatingText(PropertyInt.GearReprisal, "Vicious Reprisal", $"Grants (ONE)% chance to evade an incoming critical hit. Your next attack against that enemy will be a guaranteed critical strike.", 0.5f);
+        SetGearRatingText(PropertyInt.GearElementalist, "Elementalist", $"Grants a bonus to War Magic spells, the amount ramping from +0% to +(ONE)% based on how often you have recently hit your target.", 2.0f);
+
+        SetAdditionalPropertiesUseText();
+
+        // Spell proc rate ('Use' text)
+        SetSpellProcRateUseText(wo);
+
+        // -------- WEAPON ATTACK/DEFENSE MODS --------
+        _extraPropertiesText += "\n";
+
+        // Attack Mod for Bows
+        SetBowAttackModUseText(wo);
+
+        SetWeaponWarMagicUseText();
+        SetWeaponLifeMagicUseText();
+        SetWeaponPhysicalDefenseUseText(wo);
+        SetWeaponMagicDefenseUseText(wo);
+        SetWeaponRestoModUseText();
+        SetBowElementalWarningUseText(wo);
+
+        // -- ARMOR --
+        SetArmorWardLevelUseText(wo);
+        SetArmorWeightClassUseText(wo);
+        SetArmorResourcePenaltyUseText(wo);
+
+        SetJewelryManaConUseText(wo);
+
+        var playerWielder = wo as Player;
+        SetArmorModUseText(PropertyFloat.ArmorWarMagicMod, wo, "Bonus to War Magic Skill: +(ONE)%", (float)(playerWielder?.GetArmorWarMagicMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorLifeMagicMod, wo, "Bonus to Life Magic Skill: +(ONE)%", (float)(playerWielder?.GetArmorLifeMagicMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorAttackMod, wo, "Bonus to Attack Skill: +(ONE)%", (float)(playerWielder?.GetArmorAttackMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorPhysicalDefMod, wo, "Bonus to Physical Defense: +(ONE)%", (float)(playerWielder?.GetArmorPhysicalDefMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorMagicDefMod, wo, "Bonus to Magic Defense: +(ONE)%", (float)(playerWielder?.GetArmorMagicDefMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorDualWieldMod, wo, "Bonus to Dual Wield Skill: +(ONE)%", (float)(playerWielder?.GetArmorDualWieldMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorTwohandedCombatMod, wo, "Bonus to Two-handed Combat Skill: +(ONE)%", (float)(playerWielder?.GetArmorTwohandedCombatMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorRunMod, wo, "Bonus to Run Skill: +(ONE)%", (float)(playerWielder?.GetArmorRunMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorThieveryMod, wo, "Bonus to Thievery Skill: +(ONE)%", (float)(playerWielder?.GetArmorThieveryMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorShieldMod, wo, "Bonus to Shield Skill: +(ONE)%", (float)(playerWielder?.GetArmorShieldMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorPerceptionMod, wo, "Bonus to Perception Skill: +(ONE)%", (float)(playerWielder?.GetArmorPerceptionMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorDeceptionMod, wo, "Bonus to Deception Skill: +(ONE)%", (float)(playerWielder?.GetArmorDeceptionMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorHealthMod, wo, "Bonus to Maximum Health: +(ONE)%", (float)(playerWielder?.GetArmorHealthMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorHealthRegenMod, wo, "Bonus to Health Regen: +(ONE)%", (float)(playerWielder?.GetArmorHealthRegenMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorStaminaMod, wo, "Bonus to Maximum Stamina: +(ONE)%", (float)(playerWielder?.GetArmorStaminaMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorStaminaRegenMod, wo, "Bonus to Stamina Regen: +(ONE)%", (float)(playerWielder?.GetArmorStaminaRegenMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorManaMod, wo, "Bonus to Maximum Mana: +(ONE)%", (float)(playerWielder?.GetArmorManaMod() ?? 0.0));
+        SetArmorModUseText(PropertyFloat.ArmorManaRegenMod, wo, "Bonus to Mana Regen: +(ONE)%", (float)(playerWielder?.GetArmorManaRegenMod() ?? 0.0));
+
+        SetDamagePenaltyUseText();
+
+        SetJewelcraftingUseText(wo);
+
+        SetSalvageBagUseText(wo);
+
+        // -------- EMPOWERED SCARABS --------
+
+        SetEmpoweredScarabUseText(wo);
+
+        if (_hasExtraPropertiesText)
+        {
+            _extraPropertiesText += "";
+            PropertiesString[PropertyString.Use] = _extraPropertiesText;
+        }
+
+        // Additional Long
+        _additionalPropertiesLongDescriptionsText =
+            "Property Descriptions:\n" + _additionalPropertiesLongDescriptionsText + "\n\n" + PropertiesString[PropertyString.LongDesc];
+        PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
+    }
+
+    private void SetCustomDecorationLongText(WorldObject wo)
+    {
         if (wo.MaterialType != null && wo.ItemWorkmanship != null)
         {
             var prependMaterial = RecipeManager.GetMaterialName((MaterialType)wo.MaterialType);
@@ -749,1380 +917,97 @@ public class AppraiseInfo
                     }
                 }
 
-                longDescAdditions =
+                _longDescAdditions =
                     $"{prependWorkmanship} {prependMaterial} {wo.Name}, set with {wo.GemCount} {modifiedGemType}";
             }
             else
             {
-                longDescAdditions =
+                _longDescAdditions =
                     $"{prependWorkmanship} {prependMaterial} {wo.Name}";
             }
         }
+    }
 
-        if (wo.NumTimesTinkered >= 1)
+    private void SetTinkeringLongText(WorldObject wo)
+    {
+        if (wo.NumTimesTinkered < 1)
         {
-            // for tinkered items, we need to replace the Decorations
+            return;
+        }
+        // for tinkered items, we need to replace the Decorations
 
 
-            // then we need to check the tinker log array, parse it and convert values to items to write to long desc
+        // then we need to check the tinker log array, parse it and convert values to items to write to long desc
 
-            if (wo.NumTimesTinkered > 0 && wo.TinkerLog != null)
+        if (wo.NumTimesTinkered <= 0 || wo.TinkerLog == null)
+        {
+            return;
+        }
+
+        var tinkerLogArray = wo.TinkerLog.Split(',');
+
+        var tinkeringTypes = new int[80];
+
+        _longDescAdditions +=
+            $"This item has been tinkered with:\n";
+
+        foreach (var s in tinkerLogArray)
+        {
+            if (int.TryParse(s, out var index))
             {
-                var tinkerLogArray = wo.TinkerLog.Split(',');
-
-                var tinkeringTypes = new int[80];
-
-                longDescAdditions +=
-                    $"This item has been tinkered with:\n";
-
-                foreach (var s in tinkerLogArray)
+                if (index >= 0 && index < tinkeringTypes.Length)
                 {
-                    if (int.TryParse(s, out var index))
-                    {
-                        if (index >= 0 && index < tinkeringTypes.Length)
-                        {
-                            tinkeringTypes[index] += 1;
-                        }
-                    }
-                }
-
-                var sumofTinksinLog = 0;
-
-                // cycle through the parsed tinkering log, adding Material Name and value stored in the element (num times that salvage has been applied)
-
-                for (var index = 0; index < tinkeringTypes.Length; index++)
-                {
-                    var value = tinkeringTypes[index];
-                    if (value > 0)
-                    {
-                        if (System.Enum.IsDefined(typeof(MaterialType), (MaterialType)index))
-                        {
-                            var materialType = (MaterialType)index;
-                            longDescAdditions += $"\n \t    {RecipeManager.GetMaterialName(materialType)}:  {value}";
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Unknown variable at index {index}: {value}");
-                        }
-                        sumofTinksinLog += value;
-                    }
-                }
-
-                // check for failure on first tink, or string of failures with no success
-                if (sumofTinksinLog == 0 && wo.NumTimesTinkered >= 1)
-                {
-                    longDescAdditions += $"\n\n \t    Failures:    {wo.NumTimesTinkered}";
-                }
-                // check for any failures whatsoever by comparing sumofTinksInLog to NumTimesTinkered
-                else
-                {
-                    sumofTinksinLog -= wo.NumTimesTinkered;
-                    if (sumofTinksinLog < 0)
-                    {
-                        longDescAdditions += $"\n\n \t    Failures:  {Math.Abs(sumofTinksinLog)}";
-                    }
+                    tinkeringTypes[index] += 1;
                 }
             }
         }
 
-        if (hasLongDescAdditions)
+        var sumofTinksinLog = 0;
+
+        // cycle through the parsed tinkering log, adding Material Name and value stored in the element (num times that salvage has been applied)
+
+        for (var index = 0; index < tinkeringTypes.Length; index++)
         {
-            longDescAdditions += "";
-            PropertiesString[PropertyString.LongDesc] = longDescAdditions;
+            var value = tinkeringTypes[index];
+            if (value > 0)
+            {
+                if (System.Enum.IsDefined(typeof(MaterialType), (MaterialType)index))
+                {
+                    var materialType = (MaterialType)index;
+                    _longDescAdditions += $"\n \t    {RecipeManager.GetMaterialName(materialType)}:  {value}";
+                }
+                else
+                {
+                    Console.WriteLine($"Unknown variable at index {index}: {value}");
+                }
+                sumofTinksinLog += value;
+            }
         }
 
-        // USE
-
-        string extraPropertiesText;
-        if (PropertiesString.TryGetValue(PropertyString.Use, out var useText) && useText.Length > 0)
+        // check for failure on first tink, or string of failures with no success
+        if (sumofTinksinLog == 0 && wo.NumTimesTinkered >= 1)
         {
-            extraPropertiesText = $"{useText}\n";
+            _longDescAdditions += $"\n\n \t    Failures:    {wo.NumTimesTinkered}";
         }
+        // check for any failures whatsoever by comparing sumofTinksInLog to NumTimesTinkered
         else
         {
-            extraPropertiesText = "";
-        }
-
-        var hasExtraPropertiesText = false;
-
-        // Protection Levels
-        if (
-            PropertiesInt.TryGetValue(PropertyInt.ArmorLevel, out var armorLevel)
-            && armorLevel == 0
-            && wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth
-        )
-        {
-            var slashingMod = (float)wo.ArmorModVsSlash;
-            var piercingMod = (float)wo.ArmorModVsPierce;
-            var bludgeoningMod = (float)wo.ArmorModVsBludgeon;
-            var fireMod = (float)wo.ArmorModVsFire;
-            var coldMod = (float)wo.ArmorModVsCold;
-            var acidMod = (float)wo.ArmorModVsAcid;
-            var electricMod = (float)wo.ArmorModVsElectric;
-
-            extraPropertiesText += $"Slashing: {GetProtectionLevelText(slashingMod)} ({string.Format("{0:0.00}", slashingMod)}) \n";
-            extraPropertiesText += $"Piercing: {GetProtectionLevelText(piercingMod)} ({string.Format("{0:0.00}", piercingMod)}) \n";
-            extraPropertiesText += $"Bludgeoning: {GetProtectionLevelText(bludgeoningMod)} ({string.Format("{0:0.00}", bludgeoningMod)}) \n";
-            extraPropertiesText += $"Fire: {GetProtectionLevelText(fireMod)} ({string.Format("{0:0.00}", fireMod)}) \n";
-            extraPropertiesText += $"Cold: {GetProtectionLevelText(coldMod)} ({string.Format("{0:0.00}", coldMod)}) \n";
-            extraPropertiesText += $"Acid: {GetProtectionLevelText(acidMod)} ({string.Format("{0:0.00}", acidMod)}) \n";
-            extraPropertiesText += $"Electric: {GetProtectionLevelText(electricMod)} ({string.Format("{0:0.00}", electricMod)}) \n\n";
-
-            hasExtraPropertiesText = true;
-        }
-
-        // -------- WEAPON PROPERTIES --------
-        // (Additional Properties)
-        var hasAdditionalProperties = false;
-        var additionalPropertiesList = new List<string>();
-
-        var additionalPropertiesLongDescriptionsText = "";
-
-        // Ward Rending
-        if (PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffect) && imbuedEffect == 0x8000)
-        {
-            additionalPropertiesList.Add("Ward Rending");
-
-            hasAdditionalProperties = true;
-        }
-        // Gear Strength
-        if (PropertiesInt.TryGetValue(PropertyInt.GearStrength, out var gearStrength) && gearStrength != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearStrength);
-
-            additionalPropertiesList.Add($"Mighty Thews {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Mighty Thews {ratingRomanNumeral}: Grants a {gearStrength} bonus to base Strength.\n";
-        }
-        // Gear Endurance
-        if (PropertiesInt.TryGetValue(PropertyInt.GearEndurance, out var gearEndurance) && gearEndurance != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearEndurance);
-
-            additionalPropertiesList.Add($"Perseverance {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Perseverance {ratingRomanNumeral}: Grants a {gearEndurance} bonus to base Strength.\n";
-        }
-        // Gear Coordination
-        if (PropertiesInt.TryGetValue(PropertyInt.GearCoordination, out var gearCoordination) && gearCoordination != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearCoordination);
-
-            additionalPropertiesList.Add($"Dexterous Hand {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Dexterous Hand {ratingRomanNumeral}: Grants a {gearCoordination} bonus to base Coordination.\n";
-        }
-        // Gear Quickness
-        if (PropertiesInt.TryGetValue(PropertyInt.GearQuickness, out var gearQuickness) && gearQuickness != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearQuickness);
-
-            additionalPropertiesList.Add($"Swift-footed {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Swift-footed {ratingRomanNumeral}: Grants a {gearQuickness} bonus to base Quickness.\n";
-        }
-        // Gear Focus
-        if (PropertiesInt.TryGetValue(PropertyInt.GearFocus, out var gearFocus) && gearFocus != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearFocus);
-
-            additionalPropertiesList.Add($"Focused Mind {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Focused Mind {ratingRomanNumeral}: Grants a {gearFocus} bonus to base Focus.\n";
-        }
-        // Gear Self
-        if (PropertiesInt.TryGetValue(PropertyInt.GearSelf, out var gearSelf) && gearSelf != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearSelf);
-
-            additionalPropertiesList.Add($"Erudite Mind {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Erudite Mind {ratingRomanNumeral}: Grants a {gearSelf} bonus to base Self.\n";
-        }
-        // Gear Lifesteal
-        if (PropertiesInt.TryGetValue(PropertyInt.GearLifesteal, out var gearLifesteal) && gearLifesteal != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearLifesteal);
-
-            additionalPropertiesList.Add($"Sanguine Thirst {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Sanguine Thirst {ratingRomanNumeral}: Grants a {gearLifesteal}% chance on hit to gain health. Amount healed is based on the amount of damage done.\n";
-        }
-        // Gear SelfHarm
-        if (PropertiesInt.TryGetValue(PropertyInt.GearSelfHarm, out var gearSelfHarm) && gearSelfHarm != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearSelfHarm);
-
-            additionalPropertiesList.Add($"Blood Frenzy {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Blood Frenzy {ratingRomanNumeral}: Grants {gearSelfHarm}% extra damage dealt to your opponent each time you attack, however you will take that much damage as well.\n";
-        }
-        // Gear ThreatGain
-        if (PropertiesInt.TryGetValue(PropertyInt.GearThreatGain, out var gearThreatGain) && gearThreatGain != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearThreatGain);
-
-            additionalPropertiesList.Add($"Provocation {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Provocation {ratingRomanNumeral}: Grants a {gearThreatGain}% bonus to threat generation.\n";
-        }
-        // Gear ThreatReduction
-        if (PropertiesInt.TryGetValue(PropertyInt.GearThreatReduction, out var gearThreatReduction) && gearThreatReduction != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearThreatReduction);
-
-            additionalPropertiesList.Add($"Clouded Vision {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Clouded Vision {ratingRomanNumeral}: Grants a {gearThreatReduction}% bonus to threat reduction.\n";
-        }
-        // Gear Elemental Ward
-        if (PropertiesInt.TryGetValue(PropertyInt.GearElementalWard, out var gearElementalWard) && gearElementalWard != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearElementalWard);
-
-            additionalPropertiesList.Add($"Pristmatic Ward {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Pristmatic Ward {ratingRomanNumeral}: Grants {gearElementalWard}% protection against Flame, Frost, Lightning, and Acid damage types.\n";
-        }
-        // Gear Physical Ward
-        if (PropertiesInt.TryGetValue(PropertyInt.GearPhysicalWard, out var gearPhysicalWard) && gearPhysicalWard != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearPhysicalWard);
-
-            additionalPropertiesList.Add($"Black Bulwark {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Black Bulwark {ratingRomanNumeral}: Grants {gearPhysicalWard}% protection against Piercing, Bludgeoning, and Slashing damage types.\n";
-        }
-        // Gear Magic Find
-        if (PropertiesInt.TryGetValue(PropertyInt.GearMagicFind, out var gearMagicFind) && gearMagicFind != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearMagicFind);
-
-            additionalPropertiesList.Add($"Seeker {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Seeker {ratingRomanNumeral}: Grants a {gearMagicFind}% bonus to monster loot quality.\n";
-        }
-        // Gear Block
-        if (PropertiesInt.TryGetValue(PropertyInt.GearBlock, out var gearBlock) && gearBlock != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearBlock);
-
-            additionalPropertiesList.Add($"Stalwart Defense {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Stalwart Defense {ratingRomanNumeral}: Grants {gearBlock}% chance to block attacks.\n";
-        }
-        // Gear Item Mana Usage
-        if (PropertiesInt.TryGetValue(PropertyInt.GearItemManaUsage, out var gearItemManaUsage) && gearItemManaUsage != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearItemManaUsage);
-
-            additionalPropertiesList.Add($"Thrifty Scholar {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Thrifty Scholar {ratingRomanNumeral}: Grants a {gearItemManaUsage * 5}% reduction to mana consumed by equipped items.\n";
-        }
-        // Gear Thorns
-        if (PropertiesInt.TryGetValue(PropertyInt.GearThorns, out var gearThorns) && gearThorns != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearThorns);
-
-            additionalPropertiesList.Add($"Swift Retribution {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Swift Retribution {ratingRomanNumeral}: Deflect {gearThorns * 5}% of an attacker's damage back at " +
-                $"them when successfully blocked, so long as the opponent is within melee range.\n";
-        }
-        // Gear Vitals Transfer
-        if (PropertiesInt.TryGetValue(PropertyInt.GearVitalsTransfer, out var gearVitalsTransfer) && gearVitalsTransfer != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearVitalsTransfer);
-
-            additionalPropertiesList.Add($"Tilted Scales {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Tilted Scales {ratingRomanNumeral}: Grants a {gearVitalsTransfer}% bonus to your Vitals Transfer spells, " +
-                $"but an equivalent reduction in the effectiveness of your other Restoration spells.\n";
-        }
-        // Gear Last Stand
-        if (PropertiesInt.TryGetValue(PropertyInt.GearLastStand, out var gearLastStand) && gearLastStand != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearLastStand);
-
-            additionalPropertiesList.Add($"Red Fury {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Red Fury {ratingRomanNumeral}: Grants increased damage as your health falls below 50%, " +
-                $"up to a maximum bonus of {gearLastStand}% at 25% HP.\nAbove 50% Health, you receive a damage reduction " +
-                $"penalty scaling up to {gearLastStand}% at full HP.\n";
-        }
-        // Gear Selflessness
-        if (PropertiesInt.TryGetValue(PropertyInt.GearSelflessness, out var gearSelflessness) && gearSelflessness != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearSelflessness);
-
-            additionalPropertiesList.Add($"Selfless Spirit {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Selfless Spirit {ratingRomanNumeral}: Grants a {gearSelflessness * 2}% bonus to your restoration spells when cast on others, but an equivalent reduction in their effectiveness when cast on yourself.\n";
-        }
-        // Gear Familiarity
-        if (PropertiesInt.TryGetValue(PropertyInt.GearFamiliarity, out var gearFamiliarity) && gearFamiliarity != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearFamiliarity);
-
-            additionalPropertiesList.Add($"Familiar Foe {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Familiar Foe {ratingRomanNumeral}: Grants an increased evade and resist chance versus the target you are attacking, the amount ramping from 0% to {gearFamiliarity * 2}% based on how often you have hit the target.\n";
-        }
-        // Gear Bravado
-        if (PropertiesInt.TryGetValue(PropertyInt.GearBravado, out var gearBravado) && gearBravado != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearBravado);
-
-            additionalPropertiesList.Add($"Bravado {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Bravado {ratingRomanNumeral}: Grants an increased physical hit chance, the amount ramping from a 0% " +
-                $"to {gearBravado}% based on how often you have been recently physically attacked.\n";
-        }
-        // Gear Health To Stamina
-        if (PropertiesInt.TryGetValue(PropertyInt.GearHealthToStamina, out var gearHealthToStamina) && gearHealthToStamina != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearHealthToStamina);
-
-            additionalPropertiesList.Add($"Masochist {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Masochist {ratingRomanNumeral}: Grants a {gearHealthToStamina}% chance to regain stamina after being hit. Amount regained is based on damage received.\n";
-        }
-        // Gear Health To Mana
-        if (PropertiesInt.TryGetValue(PropertyInt.GearHealthToMana, out var gearHealthToMana) && gearHealthToMana != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearHealthToMana);
-
-            additionalPropertiesList.Add($"Austere Anchorite {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Austere Anchorite {ratingRomanNumeral}: Grants a {gearHealthToStamina}% chance to regain mana after being hit. Amount regained is based on damage received.\n";
-        }
-        // Gear Experience Gain
-        if (PropertiesInt.TryGetValue(PropertyInt.GearExperienceGain, out var gearExperienceGain) && gearExperienceGain != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearExperienceGain);
-
-            additionalPropertiesList.Add($"Illuminated Mind {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Illuminated Mind {ratingRomanNumeral}: Grants a {(float)gearExperienceGain / 2}% bonus to experience gain.\n";
-        }
-        // Gear Manasteal
-        if (PropertiesInt.TryGetValue(PropertyInt.GearManasteal, out var gearManasteal) && gearManasteal != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearManasteal);
-
-            additionalPropertiesList.Add($"Ophidian {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Ophidian {ratingRomanNumeral}: Grants a {gearManasteal}% chance on hit to gain health. Amount gained is based on amount of damage done.\n";
-        }
-        // Gear Bludgeon
-        if (PropertiesInt.TryGetValue(PropertyInt.GearBludgeon, out var gearBludgeon) && gearBludgeon != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearBludgeon);
-
-            additionalPropertiesList.Add($"Skull-cracker {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Skull-cracker {ratingRomanNumeral}: Grants bonus critical bludgeoning damage, the amount ramping from +0% to +{gearBludgeon * 2}% based on how many times you have struck your target.\n";
-        }
-        // Gear Pierce
-        if (PropertiesInt.TryGetValue(PropertyInt.GearPierce, out var gearPierce) && gearPierce != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearPierce);
-
-            additionalPropertiesList.Add($"Precision Strikes {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Precision Strikes {ratingRomanNumeral}: Grants piercing resistance penetration, the amount ramping from +0% to +{gearPierce * 2}% based on how often you have hit your target.\n";
-        }
-        // Gear Slash
-        if (PropertiesInt.TryGetValue(PropertyInt.GearSlash, out var gearSlash) && gearSlash != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearSlash);
-
-            additionalPropertiesList.Add($"Falcon's Gyre {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Falcon's Gyre {ratingRomanNumeral}: Grants {(float)gearSlash / 2}% chance to cleave a second target on hit.\n";
-        }
-        // Gear Fire
-        if (PropertiesInt.TryGetValue(PropertyInt.GearFire, out var gearFire) && gearFire != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearFire);
-
-            additionalPropertiesList.Add($"Blazing Brand {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Blazing Brand {ratingRomanNumeral}: Grants a {gearFire}% bonus to Fire damage " +
-                $"and a {(float)gearFire / 2}% chance on hit to set the ground beneath your target ablaze, damaging nearby enemies.\n";
-        }
-        // Gear Frost
-        if (PropertiesInt.TryGetValue(PropertyInt.GearFrost, out var gearFrost) && gearFrost != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearFrost);
-
-            additionalPropertiesList.Add($"Bone-chiller {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Bone-chiller {ratingRomanNumeral}: Grants a {gearFrost}% bonus to Cold damage " +
-                $"and a {(float)gearFrost / 2}% chance on hit to surround your target with chilling mist, damaging nearby enemies.\n";
-        }
-        // Gear Acid
-        if (PropertiesInt.TryGetValue(PropertyInt.GearAcid, out var gearAcid) && gearAcid != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearAcid);
-
-            additionalPropertiesList.Add($"Devouring Mist {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Devouring Mist {ratingRomanNumeral}: Grants a {gearAcid}% bonus to Acid damage, and a {(float)gearAcid / 2}% chance on hit to " +
-                $"surround your target with acidic mist.\n";
-        }
-        // Gear Lightning
-        if (PropertiesInt.TryGetValue(PropertyInt.GearLightning, out var gearLightning) && gearLightning != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearLightning);
-
-            additionalPropertiesList.Add($"Astyrrian's Rage {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Astyrrian's Rage {ratingRomanNumeral}: Grants a {gearLightning}% bonus to Lightning damage, and a {(float)gearLightning / 2}% chance on " +
-                $"hit to electrify the ground beneath your target, damaging nearby enemies.\n";
-        }
-        // Gear Heal Bubble
-        if (PropertiesInt.TryGetValue(PropertyInt.GearHealBubble, out var gearHealBubble) && gearHealBubble != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearHealBubble);
-
-            additionalPropertiesList.Add($"Purified Soul {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Purified Soul {ratingRomanNumeral}: Grants a +{gearHealBubble}% bonus to your restoration spells, " +
-                $"and a {(float)gearHealBubble / 2}% chance to create a sphere of healing energy on top of your target " +
-                $"when casting a restoration spell.\n";
-        }
-        // Gear Comp Burn
-        if (PropertiesInt.TryGetValue(PropertyInt.GearCompBurn, out var gearCompBurn) && gearCompBurn != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearCompBurn);
-
-            additionalPropertiesList.Add($"Meticulous Magus {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Meticulous Magus {ratingRomanNumeral}: Grants a {gearCompBurn * 3}% reduction to your chance to burn spell components.\n";
-        }
-        // Gear Pyreal Find
-        if (PropertiesInt.TryGetValue(PropertyInt.GearPyrealFind, out var gearPyrealFind) && gearPyrealFind != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearPyrealFind);
-
-            additionalPropertiesList.Add($"Prosperity {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Prosperity {ratingRomanNumeral}: Grants a {(float)gearPyrealFind / 2}% chance for monsters to drop an additional item on death.\n";
-        }
-        // Gear Nullification
-        if (PropertiesInt.TryGetValue(PropertyInt.GearNullification, out var gearNullification) && gearNullification != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearNullification);
-
-            additionalPropertiesList.Add($"Nullification {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Nullification {ratingRomanNumeral}: Grants magic absorb, the amount ramping from 0% to {gearNullification * 2}%, based on how often you have recently have been hit with magic.\n";
-        }
-        // Gear Ward Penetration
-        if (PropertiesInt.TryGetValue(PropertyInt.GearWardPen, out var gearWardPen) && gearWardPen != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearWardPen);
-
-            additionalPropertiesList.Add($"Ruthless Discernment {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Ruthless Discernment {ratingRomanNumeral}: Grants ward penetration, the amount ramping from +0% to +{gearWardPen * 2}%, based on how often you have recently hit your target.\n";
-        }
-        // Gear Stamina Reduction
-        if (PropertiesInt.TryGetValue(PropertyInt.GearStamReduction, out var gearStamReduction) && gearStamReduction != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearStamReduction);
-
-            additionalPropertiesList.Add($"Third Wind {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Third Wind {ratingRomanNumeral}: Grants {gearStamReduction}% stamina cost reduction.\n";
-        }
-        // Gear Hardened Defense
-        if (PropertiesInt.TryGetValue(PropertyInt.GearHardenedDefense, out var gearHardenedDefense) && gearHardenedDefense != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearHardenedDefense);
-
-            additionalPropertiesList.Add($"Hardened Fortification {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Hardened Fortification {ratingRomanNumeral}: Grants resistance to physical damage, the amount ramping from 0 to {gearHardenedDefense * 2}%, based on how often you have recently have been hit.\n";
-        }
-        // Gear Reprisal
-        if (PropertiesInt.TryGetValue(PropertyInt.GearReprisal, out var gearReprisal) && gearReprisal != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearReprisal);
-
-            additionalPropertiesList.Add($"Vicious Reprisal {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Vicious Reprisal {ratingRomanNumeral}: Grants {(float)gearReprisal / 2}% chance to evade an incoming critical hit. Your next attack against that enemy will be a guaranteed critical strike.\n";
-        }
-        // Gear Elementalist
-        if (PropertiesInt.TryGetValue(PropertyInt.GearElementalist, out var gearElementalist) && gearElementalist != 0)
-        {
-            var ratingRomanNumeral = ConvertIntToRomanNumeral(gearElementalist);
-
-            additionalPropertiesList.Add($"Elementalist {ratingRomanNumeral}");
-
-            hasAdditionalProperties = true;
-
-            additionalPropertiesLongDescriptionsText +=
-                $"~ Elementalist {ratingRomanNumeral}: Grants a bonus to War Magic spells, the amount ramping from +0% to +{gearElementalist * 2}% based on how often you have recently hit your target.\n";
-        }
-        // Set Additional Properties
-        if (hasAdditionalProperties)
-        {
-            var additionaPropertiesString = "";
-
-            foreach (var property in additionalPropertiesList)
+            sumofTinksinLog -= wo.NumTimesTinkered;
+            if (sumofTinksinLog < 0)
             {
-                additionaPropertiesString += property + ", ";
-            }
-
-            // Use
-            additionaPropertiesString = additionaPropertiesString.TrimEnd();
-            additionaPropertiesString = additionaPropertiesString.TrimEnd(',');
-
-            extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n\n";
-
-            hasExtraPropertiesText = true;
-
-            // Long
-            additionalPropertiesLongDescriptionsText =
-                "Property Descriptions:\n" + additionalPropertiesLongDescriptionsText + "\n\n" + PropertiesString[PropertyString.LongDesc];
-            PropertiesString[PropertyString.LongDesc] = additionalPropertiesLongDescriptionsText;
-        }
-        // Ignore Armor
-        if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreArmor, out var ignoreArmor) && ignoreArmor != 0)
-        {
-            var wielder = (Creature)wo.Wielder;
-            extraPropertiesText += $"+{Math.Round((ignoreArmor * 100), 0)}% Armor Cleaving\n";
-
-            hasExtraPropertiesText = true;
-        }
-        // Ward Cleaving
-        if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreWard, out var ignoreWard) && ignoreWard != 0)
-        {
-            var wielder = (Creature)wo.Wielder;
-            extraPropertiesText += $"+{Math.Round((ignoreWard * 100), 0)}% Ward Cleaving\n";
-
-            hasExtraPropertiesText = true;
-        }
-        // Crit Multiplier
-        if (PropertiesFloat.TryGetValue(PropertyFloat.CriticalMultiplier, out var critMultiplier) && critMultiplier > 1)
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            extraPropertiesText += $"+{Math.Round((critMultiplier - 1) * 100, 0)}% Critical Damage\n";
-
-            hasExtraPropertiesText = true;
-        }
-        // Crit Chance
-        if (PropertiesFloat.TryGetValue(PropertyFloat.CriticalFrequency, out var critFrequency) && critFrequency > 0.0f)
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            extraPropertiesText += $"+{Math.Round((critFrequency - 0.1) * 100, 1)}% Critical Chance\n";
-
-            hasExtraPropertiesText = true;
-        }
-        // Stamina Reduction Mod
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.StaminaCostReductionMod, out var staminaCostReductionMod)
-            && staminaCostReductionMod > 0.001f
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            extraPropertiesText += $"{Math.Round((staminaCostReductionMod - 0.1) * 100, 1)}% Stamina Cost Reduction\n";
-
-            hasExtraPropertiesText = true;
-        }
-        // Spell Proc Rate
-        if (PropertiesFloat.TryGetValue(PropertyFloat.ProcSpellRate, out var procSpellRate) && procSpellRate > 0.0f)
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            extraPropertiesText += $"Cast on strike chance: {Math.Round(procSpellRate * 100, 1)}%\n";
-
-            hasExtraPropertiesText = true;
-        }
-
-        // -------- WEAPON ATTACK/DEFENSE MODS --------
-        extraPropertiesText += "\n";
-        // Attack Mod for Bows
-        if (PropertiesFloat.TryGetValue(PropertyFloat.WeaponOffense, out var weaponOffense) && weaponOffense > 1.001)
-        {
-            var weaponMod = (weaponOffense - 1) * 100;
-            if (
-                wo.WeaponSkill == Skill.Bow
-                || wo.WeaponSkill == Skill.Crossbow
-                || wo.WeaponSkill == Skill.MissileWeapons
-            )
-            {
-                extraPropertiesText += $"Bonus to Attack Skill: +{Math.Round(weaponMod, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Weapon Mod - War Magic
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.WeaponWarMagicMod, out var weaponWarMagicMod)
-            && weaponWarMagicMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            extraPropertiesText += $"Bonus to War Magic Skill: +{Math.Round((weaponWarMagicMod) * 100, 1)}%\n";
-
-            hasExtraPropertiesText = true;
-        }
-        // Weapon Mod - Life Magic
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.WeaponLifeMagicMod, out var weaponLifeMagicMod)
-            && weaponLifeMagicMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            extraPropertiesText += $"Bonus to Life Magic Skill: +{Math.Round((weaponLifeMagicMod) * 100, 1)}%\n";
-
-            hasExtraPropertiesText = true;
-        }
-        // Weapon Physical Defense
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.WeaponPhysicalDefense, out var weaponPhysicalDefense)
-            && weaponPhysicalDefense > 1.001
-        )
-        {
-            var weaponMod =
-                (weaponPhysicalDefense + wo.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponPhysicalDefense) - 1)
-                * 100;
-            extraPropertiesText += $"Bonus to Physical Defense: +{Math.Round(weaponMod, 1)}%\n";
-
-            hasExtraPropertiesText = true;
-        }
-        // Weapon Magic Defense
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.WeaponMagicalDefense, out var weaponMagicalDefense)
-            && weaponMagicalDefense > 1.001
-        )
-        {
-            var weaponMod =
-                (weaponMagicalDefense + wo.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponPhysicalDefense) - 1)
-                * 100;
-            extraPropertiesText += $"Bonus to Magic Defense: +{Math.Round(weaponMod, 1)}%\n";
-
-            hasExtraPropertiesText = true;
-        }
-
-        // Weapon Mod - Life Spell Restoration Mod
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.WeaponRestorationSpellsMod, out var weaponLifeMagicVitalMod)
-            && weaponLifeMagicVitalMod >= 1.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            extraPropertiesText +=
-                $"Healing Bonus for Restoration Spells: +{Math.Round((weaponLifeMagicVitalMod - 1) * 100, 1)}%\n";
-
-            hasExtraPropertiesText = true;
-        }
-
-        // Weapon - ELemental Bow Warning
-        if (
-            PropertiesInt.TryGetValue(PropertyInt.DamageType, out var damageType)
-            && damageType != (int)DamageType.Undef
-        )
-        {
-            if (wo.IsAmmoLauncher)
-            {
-                var element = "";
-                switch (damageType)
-                {
-                    case (int)DamageType.Slash:
-                        element = "slashing";
-                        break;
-                    case (int)DamageType.Pierce:
-                        element = "piercing";
-                        break;
-                    case (int)DamageType.Bludgeon:
-                        element = "bludgeoning";
-                        break;
-                    case (int)DamageType.Acid:
-                        element = "acid";
-                        break;
-                    case (int)DamageType.Fire:
-                        element = "fire";
-                        break;
-                    case (int)DamageType.Cold:
-                        element = "cold";
-                        break;
-                    case (int)DamageType.Electric:
-                        element = "electric";
-                        break;
-                    default:
-                        element = "";
-                        break;
-                }
-
-                extraPropertiesText += $"\nThe Damage Modifier on this weapon only applies to {element} damage.\n";
-
-                hasExtraPropertiesText = true;
+                _longDescAdditions += $"\n\n \t    Failures:  {Math.Abs(sumofTinksinLog)}";
             }
         }
+    }
 
-        // -- ARMOR --
-
-        // Ward Level
-        if (PropertiesInt.TryGetValue(PropertyInt.WardLevel, out var wardLevel) && wardLevel != 0)
-        {
-            var wielder = (Creature)wo.Wielder;
-            if (wielder != null)
-            {
-                var totalWardLevel = wielder.GetWardLevel();
-                extraPropertiesText += $"Ward Level: {wardLevel}  ({totalWardLevel})\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Ward Level: {wardLevel}\n\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-
-        // Armor Weight Class
-        if (PropertiesInt.TryGetValue(PropertyInt.ArmorWeightClass, out var armorWieghtClass) && armorWieghtClass > 0)
-        {
-            var weightClassText = "";
-
-            if (wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth)
-            {
-                weightClassText = "Cloth";
-            }
-            else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Light)
-            {
-                weightClassText = "Light";
-            }
-            else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Heavy)
-            {
-                weightClassText = "Heavy";
-            }
-
-            extraPropertiesText += $"Weight Class: {weightClassText}\n";
-
-            hasExtraPropertiesText = true;
-        }
-
-        // Armor Penalty - Attack Resource
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorResourcePenalty, out var armoResourcePenalty)
-            && armoResourcePenalty >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalArmorResourcePenalty = wielder.GetArmorResourcePenalty();
-                extraPropertiesText +=
-                    $"Penalty to Stamina/Mana usage: {Math.Round((armoResourcePenalty) * 100, 1)}%  ({Math.Round((double)(totalArmorResourcePenalty * 100), 2)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText +=
-                    $"Penalty to Stamina/Mana usage: {Math.Round((armoResourcePenalty) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Jewelry Mod - Mana Conversion
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ManaConversionMod, out var manaConversionMod)
-            && manaConversionMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wo.ItemType == ItemType.Jewelry || wo.ItemType == ItemType.Armor || wo.ItemType == ItemType.Clothing)
-            {
-                extraPropertiesText += $"Bonus to Mana Conversion Skill: +{Math.Round(manaConversionMod * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - War Magic
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorWarMagicMod, out var armorWarMagicMod)
-            && armorWarMagicMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalWarMagicMod = wielder.GetArmorWarMagicMod();
-                extraPropertiesText +=
-                    $"Bonus to War Magic Skill: +{Math.Round((armorWarMagicMod) * 100, 1)}%  ({Math.Round((double)(totalWarMagicMod * 100), 2)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to War Magic Skill: +{Math.Round((armorWarMagicMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Life Magic
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorLifeMagicMod, out var armorLifeMagicMod)
-            && armorLifeMagicMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalLifeMagicMod = wielder.GetArmorLifeMagicMod();
-                extraPropertiesText +=
-                    $"Bonus to Life Magic Skill: +{Math.Round((armorLifeMagicMod) * 100, 1)}%  ({Math.Round((double)totalLifeMagicMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Life Magic Skill: +{Math.Round((armorLifeMagicMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Attack Skill
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorAttackMod, out var armorAttackMod)
-            && armorAttackMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalAttackMod = wielder.GetArmorAttackMod();
-                extraPropertiesText +=
-                    $"Bonus to Attack Skill: +{Math.Round((armorAttackMod) * 100, 1)}%  ({Math.Round((double)totalAttackMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Attack Skill: +{Math.Round((armorAttackMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Physical Def
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorPhysicalDefMod, out var armorPhysicalDefMod)
-            && armorPhysicalDefMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalPhysicalDefMod = wielder.GetArmorPhysicalDefMod();
-                extraPropertiesText +=
-                    $"Bonus to Physical Defense: +{Math.Round((armorPhysicalDefMod) * 100, 1)}%  ({Math.Round((double)totalPhysicalDefMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Physical Defense: +{Math.Round((armorPhysicalDefMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Magic Def
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorMagicDefMod, out var armorMagicDefenseMod)
-            && armorMagicDefenseMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalMagicDefMod = wielder.GetArmorMagicDefMod();
-                extraPropertiesText +=
-                    $"Bonus to Magic Defense: +{Math.Round((armorMagicDefenseMod) * 100, 1)}%  ({Math.Round((double)totalMagicDefMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Magic Defense: +{Math.Round((armorMagicDefenseMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Dual Wield
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorDualWieldMod, out var armorDualWieldMod)
-            && armorDualWieldMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalDualWieldMod = wielder.GetArmorDualWieldMod();
-                extraPropertiesText +=
-                    $"Bonus to Dual Wield Skill: +{Math.Round((armorDualWieldMod) * 100, 1)}%  ({Math.Round((double)totalDualWieldMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Dual Wield Skill: +{Math.Round((armorDualWieldMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Two-handed Combat
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorTwohandedCombatMod, out var armorTwonandedCombatMod)
-            && armorTwonandedCombatMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalTwohandedCombatMod = wielder.GetArmorDualWieldMod();
-                extraPropertiesText +=
-                    $"Bonus to Two-handed Combat Skill: +{Math.Round((armorTwonandedCombatMod) * 100, 1)}%  ({Math.Round((double)totalTwohandedCombatMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText +=
-                    $"Bonus to Two-handed Combat Skill: +{Math.Round((armorTwonandedCombatMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Run
-        if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorRunMod, out var armorRunMod) && armorRunMod >= 0.001)
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalRunMod = wielder.GetArmorRunMod();
-                extraPropertiesText +=
-                    $"Bonus to Run Skill: +{Math.Round((armorRunMod) * 100, 1)}%  ({Math.Round((double)totalRunMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Run Skill: +{Math.Round((armorRunMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Thievery
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorThieveryMod, out var armorThieveryMod)
-            && armorThieveryMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalThieveryMod = wielder.GetArmorThieveryMod();
-                extraPropertiesText +=
-                    $"Bonus to Thievery Skill: +{Math.Round((armorThieveryMod) * 100, 1)}%  ({Math.Round((double)totalThieveryMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Thievery Skill: +{Math.Round((armorThieveryMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Shield
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorShieldMod, out var armorShieldMod)
-            && armorShieldMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalShieldMod = wielder.GetArmorShieldMod();
-                extraPropertiesText +=
-                    $"Bonus to Shield Skill: +{Math.Round((armorShieldMod) * 100, 1)}%  ({Math.Round((double)totalShieldMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Shield Skill: +{Math.Round((armorShieldMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Perception
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorPerceptionMod, out var armorAssessMod)
-            && armorAssessMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalAssessMod = wielder.GetArmorAssessMod();
-                extraPropertiesText +=
-                    $"Bonus to Perception Skill: +{Math.Round((armorAssessMod) * 100, 1)}%  ({Math.Round((double)totalAssessMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Perception Skill: +{Math.Round((armorAssessMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Deception
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorDeceptionMod, out var armorDeceptionMod)
-            && armorDeceptionMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalDecptionMod = wielder.GetArmorDeceptionMod();
-                extraPropertiesText +=
-                    $"Bonus to Deception Skill: +{Math.Round((armorDeceptionMod) * 100, 1)}%  ({Math.Round((double)totalDecptionMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Deception Skill: +{Math.Round((armorDeceptionMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Max Health
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorHealthMod, out var armorHealthMod)
-            && armorHealthMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalHealthMod = wielder.GetArmorHealthMod();
-                extraPropertiesText +=
-                    $"Bonus to Maximum Health: +{Math.Round((armorHealthMod) * 100, 1)}%  ({Math.Round((double)totalHealthMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Maximum Health: +{Math.Round((armorHealthMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Health Regen
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorHealthRegenMod, out var armorHealthRegenMod)
-            && armorHealthRegenMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalHealthRegenMod = wielder.GetArmorHealthRegenMod();
-                extraPropertiesText +=
-                    $"Bonus to Health Regen: +{Math.Round((armorHealthRegenMod) * 100, 1)}%  ({Math.Round((double)totalHealthRegenMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Health Regen: +{Math.Round((armorHealthRegenMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Max Stamina
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorStaminaMod, out var armorStaminaMod)
-            && armorStaminaMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalStaminaMod = wielder.GetArmorStaminaMod();
-                extraPropertiesText +=
-                    $"Bonus to Maximum Stamina: +{Math.Round((armorStaminaMod) * 100, 1)}%  ({Math.Round((double)totalStaminaMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Maximum Stamina: +{Math.Round((armorStaminaMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Stamina Regen
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorStaminaRegenMod, out var armorStaminaRegenMod)
-            && armorStaminaRegenMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalStaminaRegenMod = wielder.GetArmorStaminaRegenMod();
-                extraPropertiesText +=
-                    $"Bonus to Stamina Regen: +{Math.Round(armorStaminaRegenMod * 100, 1)}%  ({Math.Round((double)totalStaminaRegenMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Stamina Regen: +{Math.Round((armorStaminaRegenMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Mana
-        if (PropertiesFloat.TryGetValue(PropertyFloat.ArmorManaMod, out var armorManaMod) && armorManaMod >= 0.001)
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalManaMod = wielder.GetArmorManaMod();
-                extraPropertiesText +=
-                    $"Bonus to Maximum Mana: +{Math.Round((armorManaMod) * 100, 1)}%  ({Math.Round((double)totalManaMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Maximum Mana: +{Math.Round((armorManaMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-        // Armor Mod - Mana Regen
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.ArmorManaRegenMod, out var armorManaRegenMod)
-            && armorManaRegenMod >= 0.001
-        )
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            if (wielder != null)
-            {
-                var totalManaRegenMod = wielder.GetArmorManaRegenMod();
-                extraPropertiesText +=
-                    $"Bonus to Mana Regen: +{Math.Round((armorManaRegenMod) * 100, 1)}%  ({Math.Round((double)totalManaRegenMod * 100, 1)}%)\n";
-            }
-            else
-            {
-                extraPropertiesText += $"Bonus to Mana Regen: +{Math.Round((armorManaRegenMod) * 100, 1)}%\n";
-            }
-
-            hasExtraPropertiesText = true;
-        }
-
-        // Damage Penalty
-        if (PropertiesInt.TryGetValue(PropertyInt.DamageRating, out var damageRating) && damageRating < 0)
-        {
-            var wielder = (Creature)wo.Wielder;
-
-            extraPropertiesText += $"Damage Penalty: {damageRating}%\n";
-
-            hasExtraPropertiesText = true;
-        }
-
-        // ----- JEWELCRAFTING ------
-        if (PropertiesString.TryGetValue(PropertyString.JewelSocket1, out var jewelSocket1))
-        {
-            var parts = jewelSocket1.Split('/');
-
-            hasExtraPropertiesText = true;
-
-            if (wo.WeenieType == WeenieType.Jewel)
-            {
-                extraPropertiesText += Jewel.GetJewelDescription(jewelSocket1);
-                extraPropertiesText +=
-                    $"Once socketed into an item, this jewel becomes permanently attuned to your character. Items with contained jewels become attuned and will remain so until all jewels are removed.\n\nJewels may be unsocketed using an Intricate Carving Tool. There is no skill check or destruction chance.";
-            }
-            if (wo.WeenieType != WeenieType.Jewel)
-            {
-                if (jewelSocket1.StartsWith("Empty"))
-                {
-                    extraPropertiesText += "\n\t  Empty Jewel Socket\n";
-                }
-                else
-                {
-                    extraPropertiesText += Jewel.GetSocketDescription(jewelSocket1);
-                }
-            }
-        }
-
-        if (PropertiesString.TryGetValue(PropertyString.JewelSocket2, out var jewelSocket2))
-        {
-            var parts = jewelSocket2.Split('/');
-
-            hasExtraPropertiesText = true;
-
-            if (wo.WeenieType != WeenieType.Jewel)
-            {
-                if (jewelSocket2.StartsWith("Empty"))
-                {
-                    extraPropertiesText += "\n\t  Empty Jewel Socket\n";
-                }
-                else
-                {
-                    extraPropertiesText += Jewel.GetSocketDescription(jewelSocket2);
-                }
-            }
-        }
-
-        // -------- SALVAGE BAGS ---
-
-        if (PropertiesInt.TryGetValue(PropertyInt.Structure, out var structure) && structure >= 0)
-        {
-            if (wo.WeenieType == WeenieType.Salvage)
-            {
-                extraPropertiesText += $"\nThis bag contains {structure} units of salvage.\n";
-                hasExtraPropertiesText = true;
-            }
-        }
-        // -------- EMPOWERED SCARABS --------
-
+    private void SetEmpoweredScarabUseText(WorldObject wo)
+    {
         // Max Level
-        if (
-            PropertiesInt.TryGetValue(PropertyInt.EmpoweredScarabMaxLevel, out var manaScarabMaxLevel)
-            && manaScarabMaxLevel > 0
-        )
+        if (PropertiesInt.TryGetValue(PropertyInt.EmpoweredScarabMaxLevel, out var manaScarabMaxLevel) && manaScarabMaxLevel > 0)
         {
-            var wielder = (Creature)wo.Wielder;
+            _extraPropertiesText += $"\nMax Spell Level: {manaScarabMaxLevel}\n";
 
-            extraPropertiesText += $"\nMax Spell Level: {manaScarabMaxLevel}\n";
-
-            hasExtraPropertiesText = true;
+            _hasExtraPropertiesText = true;
         }
 
         // Proc Chance
@@ -2131,9 +1016,9 @@ public class AppraiseInfo
             && manaScarabTriggerChance > 0.01
         )
         {
-            extraPropertiesText += $"Proc Chance: {Math.Round((double)manaScarabTriggerChance * 100, 0)}%\n";
+            _extraPropertiesText += $"Proc Chance: {Math.Round(manaScarabTriggerChance * 100, 0)}%\n";
 
-            hasExtraPropertiesText = true;
+            _hasExtraPropertiesText = true;
         }
 
         // Frequency
@@ -2144,10 +1029,10 @@ public class AppraiseInfo
         {
             if (wo.WeenieType == WeenieType.EmpoweredScarab)
             {
-                extraPropertiesText += $"Cooldown: {Math.Round((double)cooldownDuration, 1)} seconds\n";
+                _extraPropertiesText += $"Cooldown: {Math.Round(cooldownDuration, 1)} seconds\n";
             }
 
-            hasExtraPropertiesText = true;
+            _hasExtraPropertiesText = true;
         }
 
         // Max Level
@@ -2155,10 +1040,10 @@ public class AppraiseInfo
         {
             if (wo.WeenieType != WeenieType.Salvage)
             {
-                extraPropertiesText += $"Max Number of Uses: {maxStructure}\n";
+                _extraPropertiesText += $"Max Number of Uses: {maxStructure}\n";
             }
 
-            hasExtraPropertiesText = true;
+            _hasExtraPropertiesText = true;
         }
 
         // Intensity
@@ -2167,9 +1052,9 @@ public class AppraiseInfo
             && manaScarabIntensity > 0.01
         )
         {
-            extraPropertiesText += $"Bonus Intensity: {Math.Round((double)manaScarabIntensity * 100, 1)}%\n";
+            _extraPropertiesText += $"Bonus Intensity: {Math.Round(manaScarabIntensity * 100, 1)}%\n";
 
-            hasExtraPropertiesText = true;
+            _hasExtraPropertiesText = true;
         }
 
         // Mana Reduction
@@ -2178,16 +1063,13 @@ public class AppraiseInfo
             && manaScarabReductionAmount > 0.01
         )
         {
-            extraPropertiesText += $"Mana Cost Reduction: {Math.Round((double)manaScarabReductionAmount * 100, 1)}%\n";
+            _extraPropertiesText += $"Mana Cost Reduction: {Math.Round(manaScarabReductionAmount * 100, 1)}%\n";
 
-            hasExtraPropertiesText = true;
+            _hasExtraPropertiesText = true;
         }
 
         // Reserved Mana
-        if (
-            PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabManaReserved, out var manaScarabManaReserved)
-            && manaScarabManaReserved > 0
-        )
+        if (PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabManaReserved, out var manaScarabManaReserved) && manaScarabManaReserved > 0)
         {
             var wielder = (Creature)wo.Wielder;
 
@@ -2201,22 +1083,703 @@ public class AppraiseInfo
                     totalReservedMana += manaScarab.EmpoweredScarabManaReserved ?? 0;
                 }
 
-                extraPropertiesText +=
+                _extraPropertiesText +=
                     $"Mana Reservation: {Math.Round(manaScarabManaReserved * 100, 1)}% ({Math.Round(totalReservedMana * 100, 1)}%)\n";
             }
             else
             {
-                extraPropertiesText += $"Mana Reservation: {Math.Round(manaScarabManaReserved * 100, 1)}%\n";
+                _extraPropertiesText += $"Mana Reservation: {Math.Round(manaScarabManaReserved * 100, 1)}%\n";
             }
 
-            hasExtraPropertiesText = true;
+            _hasExtraPropertiesText = true;
+        }
+    }
+
+    private void SetSalvageBagUseText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.Structure, out var structure) || structure < 0)
+        {
+            return;
         }
 
-        if (hasExtraPropertiesText)
+        if (wo.WeenieType != WeenieType.Salvage)
         {
-            extraPropertiesText += "";
-            PropertiesString[PropertyString.Use] = extraPropertiesText;
+            return;
         }
+
+        _extraPropertiesText += $"\nThis bag contains {structure} units of salvage.\n";
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetJewelcraftingUseText(WorldObject wo)
+    {
+        if (PropertiesString.TryGetValue(PropertyString.JewelSocket1, out var jewelSocket1))
+        {
+            var parts = jewelSocket1.Split('/');
+
+            _hasExtraPropertiesText = true;
+
+            if (wo.WeenieType == WeenieType.Jewel)
+            {
+                _extraPropertiesText += Jewel.GetJewelDescription(jewelSocket1);
+                _extraPropertiesText +=
+                    $"Once socketed into an item, this jewel becomes permanently attuned to your character. Items with contained jewels become attuned and will remain so until all jewels are removed.\n\nJewels may be unsocketed using an Intricate Carving Tool. There is no skill check or destruction chance.";
+            }
+            if (wo.WeenieType != WeenieType.Jewel)
+            {
+                if (jewelSocket1.StartsWith("Empty"))
+                {
+                    _extraPropertiesText += "\n\t  Empty Jewel Socket\n";
+                }
+                else
+                {
+                    _extraPropertiesText += Jewel.GetSocketDescription(jewelSocket1);
+                }
+            }
+        }
+
+        if (PropertiesString.TryGetValue(PropertyString.JewelSocket2, out var jewelSocket2))
+        {
+            var parts = jewelSocket2.Split('/');
+
+            _hasExtraPropertiesText = true;
+
+            if (wo.WeenieType != WeenieType.Jewel)
+            {
+                if (jewelSocket2.StartsWith("Empty"))
+                {
+                    _extraPropertiesText += "\n\t  Empty Jewel Socket\n";
+                }
+                else
+                {
+                    _extraPropertiesText += Jewel.GetSocketDescription(jewelSocket2);
+                }
+            }
+        }
+    }
+
+    private void SetDamagePenaltyUseText()
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.DamageRating, out var damageRating) || damageRating >= 0)
+        {
+            return;
+        }
+
+        _extraPropertiesText += $"Damage Penalty: {damageRating}%\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetArmorModUseText(PropertyFloat propertyFloat, WorldObject wo, string text, float totalMod, float multiplierOne = 100.0f, float multiplierTwo = 100.0f)
+    {
+        if (!PropertiesFloat.TryGetValue(propertyFloat, out var armorMod) || !(armorMod >= 0.001))
+        {
+            return;
+        }
+
+        var wielder = (Creature)wo.Wielder;
+
+        var mod = Math.Round((armorMod) * multiplierOne, 1);
+        var finalText = text.Replace("(ONE)", $"{mod}");
+
+        if (wielder != null && totalMod != 0.0f)
+        {
+            totalMod = (float)Math.Round((totalMod * multiplierTwo), 2);
+
+            finalText += $"  ({totalMod}%)";
+
+            _extraPropertiesText = finalText;
+        }
+        else
+        {
+            _extraPropertiesText += finalText;
+        }
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetJewelryManaConUseText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.ManaConversionMod, out var manaConversionMod) ||
+            !(manaConversionMod >= 0.001))
+        {
+            return;
+        }
+
+        if (wo.ItemType == ItemType.Jewelry || wo.ItemType == ItemType.Armor || wo.ItemType == ItemType.Clothing)
+        {
+            _extraPropertiesText += $"Bonus to Mana Conversion Skill: +{Math.Round(manaConversionMod * 100, 1)}%\n";
+        }
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetArmorResourcePenaltyUseText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.ArmorResourcePenalty, out var armoResourcePenalty) ||
+            !(armoResourcePenalty >= 0.001))
+        {
+            return;
+        }
+
+        var wielder = (Creature)wo.Wielder;
+
+        if (wielder != null)
+        {
+            var totalArmorResourcePenalty = wielder.GetArmorResourcePenalty();
+            _extraPropertiesText +=
+                $"Penalty to Stamina/Mana usage: {Math.Round((armoResourcePenalty) * 100, 1)}%  ({Math.Round((double)(totalArmorResourcePenalty * 100), 2)}%)\n";
+        }
+        else
+        {
+            _extraPropertiesText +=
+                $"Penalty to Stamina/Mana usage: {Math.Round((armoResourcePenalty) * 100, 1)}%\n";
+        }
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetArmorWardLevelUseText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.WardLevel, out var wardLevel) || wardLevel == 0)
+        {
+            return;
+        }
+
+        var wielder = (Creature)wo.Wielder;
+
+        if (wielder != null)
+        {
+            var totalWardLevel = wielder.GetWardLevel();
+            _extraPropertiesText += $"Ward Level: {wardLevel}  ({totalWardLevel})\n";
+        }
+        else
+        {
+            _extraPropertiesText += $"Ward Level: {wardLevel}\n\n";
+        }
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetArmorWeightClassUseText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.ArmorWeightClass, out var armorWieghtClass) || armorWieghtClass <= 0)
+        {
+            return;
+        }
+
+        var weightClassText = "";
+
+        if (wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth)
+        {
+            weightClassText = "Cloth";
+        }
+        else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Light)
+        {
+            weightClassText = "Light";
+        }
+        else if (wo.ArmorWeightClass == (int)ArmorWeightClass.Heavy)
+        {
+            weightClassText = "Heavy";
+        }
+
+        _extraPropertiesText += $"Weight Class: {weightClassText}\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetBowElementalWarningUseText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.DamageType, out var damageType) ||
+            damageType == (int)DamageType.Undef)
+        {
+            return;
+        }
+
+        if (!wo.IsAmmoLauncher)
+        {
+            return;
+        }
+
+        var element = "";
+        switch (damageType)
+        {
+            case (int)DamageType.Slash:
+                element = "slashing";
+                break;
+            case (int)DamageType.Pierce:
+                element = "piercing";
+                break;
+            case (int)DamageType.Bludgeon:
+                element = "bludgeoning";
+                break;
+            case (int)DamageType.Acid:
+                element = "acid";
+                break;
+            case (int)DamageType.Fire:
+                element = "fire";
+                break;
+            case (int)DamageType.Cold:
+                element = "cold";
+                break;
+            case (int)DamageType.Electric:
+                element = "electric";
+                break;
+            default:
+                element = "";
+                break;
+        }
+
+        _extraPropertiesText += $"\nThe Damage Modifier on this weapon only applies to {element} damage.\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetWeaponRestoModUseText()
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.WeaponRestorationSpellsMod, out var weaponLifeMagicVitalMod) ||
+            !(weaponLifeMagicVitalMod >= 1.001))
+        {
+            return;
+        }
+
+        _extraPropertiesText += $"Healing Bonus for Restoration Spells: +{Math.Round((weaponLifeMagicVitalMod - 1) * 100, 1)}%\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetWeaponMagicDefenseUseText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.WeaponMagicalDefense, out var weaponMagicalDefense) ||
+            !(weaponMagicalDefense > 1.001))
+        {
+            return;
+        }
+
+        var weaponMod = (weaponMagicalDefense + wo.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponPhysicalDefense) - 1) * 100;
+
+        _extraPropertiesText += $"Bonus to Magic Defense: +{Math.Round(weaponMod, 1)}%\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetWeaponPhysicalDefenseUseText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.WeaponPhysicalDefense, out var weaponPhysicalDefense) ||
+            !(weaponPhysicalDefense > 1.001))
+        {
+            return;
+        }
+
+        var weaponMod = (weaponPhysicalDefense + wo.EnchantmentManager.GetAdditiveMod(PropertyFloat.WeaponPhysicalDefense) - 1) * 100;
+
+        _extraPropertiesText += $"Bonus to Physical Defense: +{Math.Round(weaponMod, 1)}%\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetWeaponLifeMagicUseText()
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.WeaponLifeMagicMod, out var weaponLifeMagicMod) ||
+            !(weaponLifeMagicMod >= 0.001))
+        {
+            return;
+        }
+
+        _extraPropertiesText += $"Bonus to Life Magic Skill: +{Math.Round((weaponLifeMagicMod) * 100, 1)}%\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetWeaponWarMagicUseText()
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.WeaponWarMagicMod, out var weaponWarMagicMod) ||
+            !(weaponWarMagicMod >= 0.001))
+        {
+            return;
+        }
+
+        _extraPropertiesText += $"Bonus to War Magic Skill: +{Math.Round((weaponWarMagicMod) * 100, 1)}%\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetBowAttackModUseText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.WeaponOffense, out var weaponOffense) ||
+            !(weaponOffense > 1.001))
+        {
+            return;
+        }
+
+        var weaponMod = (weaponOffense - 1) * 100;
+        if (wo.WeaponSkill is Skill.Bow or Skill.Crossbow or Skill.MissileWeapons)
+        {
+            _extraPropertiesText += $"Bonus to Attack Skill: +{Math.Round(weaponMod, 1)}%\n";
+        }
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetSpellProcRateUseText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.ProcSpellRate, out var procSpellRate) || !(procSpellRate > 0.0f))
+        {
+            return;
+        }
+
+        var wielder = (Creature)wo.Wielder;
+
+        _extraPropertiesText += $"Cast on strike chance: {Math.Round(procSpellRate * 100, 1)}%\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetAdditionalPropertiesUseText()
+    {
+        if (!_hasAdditionalProperties)
+        {
+            return;
+        }
+
+        var additionaPropertiesString = "";
+
+        foreach (var property in _additionalPropertiesList)
+        {
+            additionaPropertiesString += property + ", ";
+        }
+
+        // Use
+        additionaPropertiesString = additionaPropertiesString.TrimEnd();
+        additionaPropertiesString = additionaPropertiesString.TrimEnd(',');
+
+        _extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n\n";
+
+        _hasExtraPropertiesText = true;
+    }
+
+    private void SetStaminaReductionUseLongText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.StaminaCostReductionMod, out var staminaCostReductionMod) ||
+            !(staminaCostReductionMod > 0.001f))
+        {
+            return;
+        }
+
+        _additionalPropertiesList.Add("Stamina Cost Reduction");
+
+        var ratingAmount = Math.Round((staminaCostReductionMod * 100), 0);
+
+        var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
+        var rangeMinAtTier = Math.Round(LootTables.StaminaCostReductionPerTier[itemTier - 1] * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Stamina Cost Reduction: Reduces stamina cost of attack by {ratingAmount}%. " +
+            $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%).\n";
+    }
+
+    private void SetBitingStrikeUseLongText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.CriticalFrequency, out var critFrequency) ||
+            !(critFrequency > 0.0f))
+        {
+            return;
+        }
+
+        var wielder = (Creature)wo.Wielder;
+
+        var ratingAmount = Math.Round((critFrequency - 0.1) * 100, 0);
+
+        var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
+        var rangeMinAtTier = Math.Round(LootTables.BonusCritChancePerTier[itemTier - 1] * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Biting Strike: Increases critical chance by +{ratingAmount}%, additively. " +
+            $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 5}%).\n";
+    }
+
+    private void SetCriticalStrikeUseLongText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffectCriticalStrike) ||
+            imbuedEffectCriticalStrike != (int)ImbuedEffectType.CriticalStrike)
+        {
+            return;
+        }
+
+        var wielder = wo.Wielder as Player;
+
+        if (wo.OwnerId == null && wielder == null)
+        {
+            return;
+        }
+
+        var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
+
+        var criticalStrikeAmount = WorldObject.GetCriticalStrikeMod(owner.GetCreatureSkill(wo.WeaponSkill), owner);
+        var amountFormatted = Math.Round(criticalStrikeAmount * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Crippling Blow: Increases critical damage by +{amountFormatted}%, additively. " +
+            $"Value is based on wielder attack skill (5% to 10%).\n";
+    }
+
+    private void SetCrushingBlowUseLongText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.CriticalMultiplier, out var critMultiplier) ||
+            !(critMultiplier > 1))
+        {
+            return;
+        }
+
+        var wielder = (Creature)wo.Wielder;
+
+        var ratingAmount = Math.Round((critMultiplier - 1) * 100, 0);
+
+        var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
+        var rangeMinAtTier = Math.Round(LootTables.BonusCritMultiplierPerTier[itemTier - 1] * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Crushing Blow: Increases critical damage by +{ratingAmount}%, additively. " +
+            $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 50}%)\n";
+    }
+
+    private void SetCripplingBlowUseLongText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffectCripplingBlow) ||
+            imbuedEffectCripplingBlow != (int)ImbuedEffectType.CripplingBlow)
+        {
+            return;
+        }
+
+        var wielder = wo.Wielder as Player;
+
+        if (wo.OwnerId == null && wielder == null)
+        {
+            return;
+        }
+
+        var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
+
+        var cripplingBlowAmount = WorldObject.GetCripplingBlowMod(owner.GetCreatureSkill(wo.WeaponSkill), owner);
+        var amountFormatted = Math.Round(cripplingBlowAmount * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Crippling Blow: Increases critical damage by +{amountFormatted}%, additively. " +
+            $"Value is based on wielder attack skill (range: 50% to 100%).\n";
+    }
+
+    private void SetArmorCleavingUseLongText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.IgnoreArmor, out var ignoreArmor) || ignoreArmor == 0)
+        {
+            return;
+        }
+
+        var ratingAmount = Math.Round((ignoreArmor * 100), 0);
+
+        var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
+        var rangeMinAtTier = Math.Round(LootTables.BonusIgnoreArmorPerTier[itemTier - 1] * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Armor Cleaving: Increases armor ignored by +{ratingAmount}%, additively " +
+            $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%)\n";
+    }
+
+    private void SetArmorRendUseLongText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffectArmorRend) ||
+            imbuedEffectArmorRend != (int)ImbuedEffectType.ArmorRending)
+        {
+            return;
+        }
+
+        var wielder = wo.Wielder as Player;
+
+        if (wo.OwnerId == null && wielder == null)
+        {
+            return;
+        }
+
+        var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
+
+        var rendingAmount = WorldObject.GetArmorRendingMod(owner.GetCreatureSkill(wo.WeaponSkill), owner);
+        var amountFormatted = Math.Round(rendingAmount * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Armor Rending: Increases armor ignored by +{amountFormatted}%, additively. " +
+            $"Value is based on wielder attack skill (20% to 40%).\n";
+    }
+
+    private void SetResistanceCleavingUseLongText(WorldObject wo)
+    {
+        if (!PropertiesFloat.TryGetValue(PropertyFloat.ResistanceModifier, out var resistanceModifier) || resistanceModifier == 0)
+        {
+            return;
+        }
+
+        var ratingAmount = Math.Round((resistanceModifier * 100), 0);
+
+        var element = "";
+        switch (wo.ResistanceModifierType)
+        {
+            case DamageType.Acid:
+                element = "Acid";
+                break;
+            case DamageType.Bludgeon:
+                element = "Bludgeoning";
+                break;
+            case DamageType.Cold:
+                element = "Cold";
+                break;
+            case DamageType.Electric:
+                element = "Lightning";
+                break;
+            case DamageType.Fire:
+                element = "Fire";
+                break;
+            case DamageType.Pierce:
+                element = "Piercing";
+                break;
+            case DamageType.Slash:
+                element = "Slashing";
+                break;
+        }
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Resistance Cleaving ({element}): Increases {element.ToLower()} damage by +{ratingAmount}%, additively.\n";
+    }
+
+    private void SetResistanceRendLongText(ImbuedEffectType imbuedEffectType, WorldObject wo, string elementName)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffect) ||
+            imbuedEffect != (int)imbuedEffectType)
+        {
+            return;
+        }
+
+        var wielder = wo.Wielder as Player;
+
+        if (wo.OwnerId == null && wielder == null)
+        {
+            return;
+        }
+
+        var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
+
+        var rendingAmount = WorldObject.GetRendingMod(owner.GetCreatureSkill(wo.WeaponSkill), owner);
+        var amountFormatted = Math.Round(rendingAmount * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ {elementName} Rending: Increases {elementName.ToLower()} damage by +{amountFormatted}%, additively. " +
+            $"Value is based on wielder attack skill (15% to 30%).\n";
+    }
+
+    private void SetWardCleavingUseLongText(WorldObject wo)
+    {
+        if (PropertiesFloat.TryGetValue(PropertyFloat.IgnoreWard, out var ignoreWard) && ignoreWard != 0)
+        {
+            _additionalPropertiesList.Add("Ward Cleaving");
+
+            var ratingAmount = Math.Round((ignoreWard * 100), 0);
+
+            var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
+            var rangeMinAtTier = Math.Round(LootTables.BonusIgnoreWardPerTier[itemTier - 1] * 100, 0);
+
+            _hasExtraPropertiesText = true;
+
+            _additionalPropertiesLongDescriptionsText +=
+                $"~ Ward Cleaving: Increases ward ignored by +{ratingAmount}%, additively. " +
+                $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%).\n";
+        }
+    }
+
+    private void SetWardRendingUseLongText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.ImbuedEffect, out var imbuedEffect) || imbuedEffect != 0x8000)
+        {
+            return;
+        }
+
+        _additionalPropertiesList.Add("Ward Rending");
+
+        var wielder = wo.Wielder as Player;
+
+        if (wo.OwnerId == null && wielder == null)
+        {
+            return;
+        }
+
+        var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
+
+        var rendingAmount = WorldObject.GetWardRendingMod(owner.GetCreatureSkill(wo.WeaponSkill));
+        var amountFormatted = Math.Round(rendingAmount * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Ward Rending: Increases ward ignored by +{amountFormatted}%, additively. " +
+            $"Value is based on wielder attack skill (20% to 40%).\n";
+    }
+
+    private void SetProtectionLevelsUseText(WorldObject wo)
+    {
+        if (PropertiesInt.TryGetValue(PropertyInt.ArmorLevel, out var armorLevel) && armorLevel == 0 && wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth)
+        {
+            var slashingMod = (float)(wo.ArmorModVsSlash ?? 1.0f);
+            var piercingMod = (float)(wo.ArmorModVsPierce ?? 1.0f);
+            var bludgeoningMod = (float)(wo.ArmorModVsBludgeon ?? 1.0f);
+            var fireMod = (float)(wo.ArmorModVsFire ?? 1.0f);
+            var coldMod = (float)(wo.ArmorModVsCold ?? 1.0f);
+            var acidMod = (float)(wo.ArmorModVsAcid ?? 1.0f);
+            var electricMod = (float)(wo.ArmorModVsElectric ?? 1.0f);
+
+            _extraPropertiesText += $"Slashing: {GetProtectionLevelText(slashingMod)} ({string.Format("{0:0.00}", slashingMod)}) \n";
+            _extraPropertiesText += $"Piercing: {GetProtectionLevelText(piercingMod)} ({string.Format("{0:0.00}", piercingMod)}) \n";
+            _extraPropertiesText += $"Bludgeoning: {GetProtectionLevelText(bludgeoningMod)} ({string.Format("{0:0.00}", bludgeoningMod)}) \n";
+            _extraPropertiesText += $"Fire: {GetProtectionLevelText(fireMod)} ({string.Format("{0:0.00}", fireMod)}) \n";
+            _extraPropertiesText += $"Cold: {GetProtectionLevelText(coldMod)} ({string.Format("{0:0.00}", coldMod)}) \n";
+            _extraPropertiesText += $"Acid: {GetProtectionLevelText(acidMod)} ({string.Format("{0:0.00}", acidMod)}) \n";
+            _extraPropertiesText += $"Electric: {GetProtectionLevelText(electricMod)} ({string.Format("{0:0.00}", electricMod)}) \n\n";
+
+            _hasExtraPropertiesText = true;
+        }
+    }
+
+    private void SetGearRatingText(PropertyInt propertyInt, string name, string description, float multiplierOne = 1.0f, float multiplierTwo = 1.0f)
+    {
+        if (!PropertiesInt.TryGetValue(propertyInt, out var gearRating) || gearRating == 0)
+        {
+            return;
+        }
+
+        var ratingRomanNumeral = ConvertIntToRomanNumeral(gearRating);
+
+        _additionalPropertiesList.Add($"{name} {ratingRomanNumeral}");
+
+        _hasAdditionalProperties = true;
+
+        var desc = description.Replace("(ONE)", $"{gearRating * multiplierOne}");
+        desc = desc.Replace("(TWO)", $"{gearRating * multiplierTwo}");
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ {name} {ratingRomanNumeral}: {desc}\n";
     }
 
     private string ConvertIntToRomanNumeral(int number)

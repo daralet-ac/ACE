@@ -537,7 +537,7 @@ public static partial class LootGenerationFactory
     /// </summary>
     private static void RollBonusCritChance(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
     {
-        float[] minMod = { 0.0f, 0.01f, 0.015f, 0.02f, 0.025f, 0.03f, 0.0375f, 0.05f };
+        float[] minMod = { 0.0f, 0.01f, 0.015f, 0.02f, 0.025f, 0.03f, 0.04f, 0.05f };
 
         var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
         var critChanceMod = 0.05f * GetDiminishingRoll(treasureDeath);
@@ -555,7 +555,7 @@ public static partial class LootGenerationFactory
     /// </summary>
     private static void RollBonusCritDamage(TreasureDeath treasureDeath, WorldObject wo, out float percentile)
     {
-        float[] minMod = { 0.0f, 0.1f, 0.15f, 0.2f, 0.25f, 0.3f, 0.375f, 0.5f };
+        float[] minMod = { 0.0f, 0.1f, 0.15f, 0.2f, 0.25f, 0.3f, 0.4f, 0.5f };
 
         var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
         var critDamageMod = 0.5f * GetDiminishingRoll(treasureDeath);
