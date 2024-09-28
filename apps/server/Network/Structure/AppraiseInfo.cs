@@ -1188,11 +1188,11 @@ public class AppraiseInfo
 
             finalText += $"  ({totalMod}%)";
 
-            _extraPropertiesText = finalText;
+            _extraPropertiesText = finalText + "\n";
         }
         else
         {
-            _extraPropertiesText += finalText;
+            _extraPropertiesText += finalText + "\n";
         }
 
         _hasExtraPropertiesText = true;
