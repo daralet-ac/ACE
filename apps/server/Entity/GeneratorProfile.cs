@@ -314,60 +314,63 @@ public class GeneratorProfile
 
         var spawned = new List<WorldObject>();
 
-        foreach (var obj in objects)
+        if (objects != null)
         {
-            //log.DebugFormat("{0}.Spawn({1})", _generator.Name, obj.Name);
+            foreach (var obj in objects)
+            {
+                //log.DebugFormat("{0}.Spawn({1})", _generator.Name, obj.Name);
 
-            obj.Generator = Generator;
-            obj.GeneratorId = Generator.Guid.Full;
+                obj.Generator = Generator;
+                obj.GeneratorId = Generator.Guid.Full;
 
-            var success = false;
+                var success = false;
 
-            if (RegenLocationType.HasFlag(RegenLocationType.Specific))
-            {
-                success = Spawn_Specific(obj);
-            }
-            else if (RegenLocationType.HasFlag(RegenLocationType.Scatter))
-            {
-                success = Spawn_Scatter(obj);
-            }
-            else if (RegenLocationType.HasFlag(RegenLocationType.Contain))
-            {
-                success = Spawn_Container(obj);
-            }
-            else if (RegenLocationType.HasFlag(RegenLocationType.Shop))
-            {
-                success = Spawn_Shop(obj);
-            }
-            else
-            {
-                success = Spawn_Default(obj);
-            }
+                if (RegenLocationType.HasFlag(RegenLocationType.Specific))
+                {
+                    success = Spawn_Specific(obj);
+                }
+                else if (RegenLocationType.HasFlag(RegenLocationType.Scatter))
+                {
+                    success = Spawn_Scatter(obj);
+                }
+                else if (RegenLocationType.HasFlag(RegenLocationType.Contain))
+                {
+                    success = Spawn_Container(obj);
+                }
+                else if (RegenLocationType.HasFlag(RegenLocationType.Shop))
+                {
+                    success = Spawn_Shop(obj);
+                }
+                else
+                {
+                    success = Spawn_Default(obj);
+                }
 
-            // if first spawn fails, don't continually attempt to retry
-            if (success || FirstSpawn)
-            {
-                spawned.Add(obj);
-            }
+                // if first spawn fails, don't continually attempt to retry
+                if (success || FirstSpawn)
+                {
+                    spawned.Add(obj);
+                }
 
-            // If the object failed to spawn, we still destroy it. This cleans up the object and releases the GUID.
-            // This object still may be returned in the spawned collection if FirstSpawn is true. This is to prevent retry spam.
-            if (!success)
-            {
-                _log.Debug(
-                    "[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} {GeneratorName}.Spawn(): failed to spawn {WorldObjectName} (0x{WorldObjectGuid}:{WorldObjectWeenieClassId}) from profile {LinkId} at {RegenLocationType}\nGenerator Location: {GeneratorLocation}\nWorld Object Location: {WorldObjectLocation}",
-                    Generator.Guid,
-                    Generator.WeenieClassId,
-                    Generator.Name,
-                    obj.Name,
-                    obj.Guid,
-                    obj.WeenieClassId,
-                    LinkId,
-                    RegenLocationType,
-                    Generator.Location?.ToLOCString(),
-                    obj.Location.ToLOCString()
-                );
-                obj.Destroy();
+                // If the object failed to spawn, we still destroy it. This cleans up the object and releases the GUID.
+                // This object still may be returned in the spawned collection if FirstSpawn is true. This is to prevent retry spam.
+                if (!success)
+                {
+                    _log.Debug(
+                        "[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} {GeneratorName}.Spawn(): failed to spawn {WorldObjectName} (0x{WorldObjectGuid}:{WorldObjectWeenieClassId}) from profile {LinkId} at {RegenLocationType}\nGenerator Location: {GeneratorLocation}\nWorld Object Location: {WorldObjectLocation}",
+                        Generator.Guid,
+                        Generator.WeenieClassId,
+                        Generator.Name,
+                        obj.Name,
+                        obj.Guid,
+                        obj.WeenieClassId,
+                        LinkId,
+                        RegenLocationType,
+                        Generator.Location?.ToLOCString(),
+                        obj.Location.ToLOCString()
+                    );
+                    obj.Destroy();
+                }
             }
         }
 

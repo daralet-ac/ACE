@@ -2376,7 +2376,7 @@ public static partial class LootGenerationFactory
                 }
                 break;
             case TreasureItemType_Orig.ArtObject:
-                if (wo.WeenieType == WeenieType.Generic && wo.ItemType == ItemType.MissileWeapon)
+                if (wo is { WeenieType: WeenieType.Generic, ItemType: ItemType.MissileWeapon })
                 {
                     MutateDinnerware(wo, treasureDeath, isMagical, treasureRoll);
                 }

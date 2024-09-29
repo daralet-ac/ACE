@@ -157,7 +157,7 @@ public class Storage : Container
         foreach (var container in sideContainers)
         {
             var cont = container as Container;
-            cont.SortWorldObjectsIntoInventory(worldObjects);
+            cont?.SortWorldObjectsIntoInventory(worldObjects);
         }
 
         SendBankVaultInventory(BankUser);

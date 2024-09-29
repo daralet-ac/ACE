@@ -93,10 +93,13 @@ public class AllegianceManager
         if (biota == null)
         {
             allegiance = WorldObjectFactory.CreateNewWorldObject("allegiance") as Allegiance;
-            allegiance.MonarchId = monarch.Guid.Full;
-            allegiance.Init(monarch.Guid);
+            if (allegiance != null)
+            {
+                allegiance.MonarchId = monarch.Guid.Full;
+                allegiance.Init(monarch.Guid);
 
-            allegiance.SaveBiotaToDatabase();
+                allegiance.SaveBiotaToDatabase();
+            }
         }
 
         AddPlayers(allegiance);
@@ -516,30 +519,33 @@ public class AllegianceManager
         player.UpdateProperty(PropertyInstanceId.Monarch, null, true);
 
         // vassals now become monarchs...
-        foreach (var vassalNode in allegianceNode.Vassals.Values)
+        if (allegianceNode != null)
         {
-            var vassal = PlayerManager.FindByGuid(vassalNode.PlayerGuid);
-
-            if (vassal == null)
+            foreach (var vassalNode in allegianceNode.Vassals.Values)
             {
-                continue;
-            }
+                var vassal = PlayerManager.FindByGuid(vassalNode.PlayerGuid);
 
-            vassal.PatronId = null;
-            vassal.UpdateProperty(PropertyInstanceId.Monarch, null, true);
-
-            // walk the allegiance tree from this node, update monarch ids
-            vassalNode.Walk(
-                (node) =>
+                if (vassal == null)
                 {
-                    node.Player.UpdateProperty(PropertyInstanceId.Monarch, vassalNode.PlayerGuid.Full, true);
+                    continue;
+                }
 
-                    node.Player.SaveBiotaToDatabase();
-                },
-                false
-            );
+                vassal.PatronId = null;
+                vassal.UpdateProperty(PropertyInstanceId.Monarch, null, true);
 
-            players.Add(vassal);
+                // walk the allegiance tree from this node, update monarch ids
+                vassalNode.Walk(
+                    (node) =>
+                    {
+                        node.Player.UpdateProperty(PropertyInstanceId.Monarch, vassalNode.PlayerGuid.Full, true);
+
+                        node.Player.SaveBiotaToDatabase();
+                    },
+                    false
+                );
+
+                players.Add(vassal);
+            }
         }
 
         RemoveCache(allegiance);

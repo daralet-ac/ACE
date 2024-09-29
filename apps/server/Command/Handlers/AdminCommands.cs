@@ -1438,7 +1438,7 @@ public static class AdminCommands
             }
             else
             {
-                msg = $"{wo.Name} (0x{wo.Guid}) has no trophies.";
+                msg = $"{wo?.Name} (0x{wo?.Guid}) has no trophies.";
             }
 
             session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.System));
@@ -4124,7 +4124,7 @@ public static class AdminCommands
                 }
                 else
                 {
-                    session.Network.EnqueueSend(
+                    session?.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             $"Unable to start event named {eventName} .",
                             ChatMessageType.Broadcast
