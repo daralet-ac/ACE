@@ -66,6 +66,18 @@ public class UpgradeKit : Stackable
             return;
         }
 
+        var requiredUpgradeKits = GetRequiredUpgradeKits(player, target);
+        var highestWieldDifficultyForPlayer = GetHighestWieldDifficultyForPlayer(player, target);
+
+        if (source.StackSize < requiredUpgradeKits)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Upgrading {target.Name} to the highest difficulty you can wield ({highestWieldDifficultyForPlayer}) requires {requiredUpgradeKits} Upgrade kits.", ChatMessageType.Craft)
+            );
+            player.SendUseDoneEvent();
+            return;
+        }
+
         if (target.ItemType == ItemType.Jewelry && target.WieldDifficulty >= GetRequiredLevelFromPlayerTier(player))
         {
             player.Session.Network.EnqueueSend(
@@ -75,7 +87,7 @@ public class UpgradeKit : Stackable
             return;
         }
 
-        if (target.ItemType != ItemType.Jewelry && target.WieldDifficulty >= GetHighestWieldDifficultyForPlayer(player,target))
+        if (target.ItemType != ItemType.Jewelry && target.WieldDifficulty >= highestWieldDifficultyForPlayer)
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat($"{target.Name} is already at the highest difficulty you can wield.", ChatMessageType.Craft)
@@ -93,7 +105,8 @@ public class UpgradeKit : Stackable
             if (
                 !player.ConfirmationManager.EnqueueSend(
                     new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                    $"This will upgrade {target.Name} to the highest difficulty you can wield. Its {wieldReqType} will be increased to {wieldReq}."
+                    $"This will upgrade {target.Name} to the highest difficulty you can wield. Its {wieldReqType} will be increased to {wieldReq}.\n\n" +
+                    $"{requiredUpgradeKits} Upgrade Kits will be consumed."
                 )
             )
             {
@@ -146,7 +159,7 @@ public class UpgradeKit : Stackable
                             ChatMessageType.Broadcast
                         )
                     );
-                    player.TryConsumeFromInventoryWithNetworking(source, 1);
+                    player.TryConsumeFromInventoryWithNetworking(source, requiredUpgradeKits);
                 }
             }
         );
@@ -727,5 +740,23 @@ public class UpgradeKit : Stackable
         {
             target.SetProperty(itemRating, newRatingValue);
         }
+    }
+
+    private static int GetRequiredUpgradeKits(Player player, WorldObject target)
+    {
+        var newWieldReq = GetHighestWieldDifficultyForPlayer(player, target);
+
+        switch (newWieldReq)
+        {
+            case 125: return 1;
+            case 175: return 2;
+            case 200: return 3;
+            case 215: return 4;
+            case 230: return 5;
+            case 250: return 6;
+            case 270: return 7;
+        }
+
+        return 1;
     }
 }
