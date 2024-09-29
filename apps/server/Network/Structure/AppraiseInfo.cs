@@ -800,7 +800,7 @@ public class AppraiseInfo
         SetGearRatingText(PropertyInt.GearHealthToStamina, "Masochist", $"Grants a (ONE)% chance to regain stamina after being hit. Amount regained is based on damage received.");
         SetGearRatingText(PropertyInt.GearHealthToMana, "Austere Anchorite", $"Grants a (ONE)% chance to regain mana after being hit. Amount regained is based on damage received.");
         SetGearRatingText(PropertyInt.GearExperienceGain, "Illuminated Mind", $"Grants a (ONE)% bonus to experience gain.", 0.5f);
-        SetGearRatingText(PropertyInt.GearManasteal, "Ophidian", $"Grants a (ONE)% chance on hit to gain health. Amount gained is based on amount of damage done.");
+        SetGearRatingText(PropertyInt.GearManasteal, "Ophidian", $"Grants a (ONE)% chance on hit to gain mana. Amount gained is based on amount of damage done.");
         SetGearRatingText(PropertyInt.GearBludgeon, "Skull-cracker", $"Grants bonus critical bludgeoning damage, the amount ramping from +0% to +(ONE)% based on how many times you have struck your target.", 2.0f);
         SetGearRatingText(PropertyInt.GearPierce, "Precision Strikes", $"Grants piercing resistance penetration, the amount ramping from +0% to +(ONE)% based on how often you have hit your target.", 2.0f);
         SetGearRatingText(PropertyInt.GearSlash, "Falcon's Gyre", $"Grants (ONE)% chance to cleave a second target on hit.", 0.5f);
