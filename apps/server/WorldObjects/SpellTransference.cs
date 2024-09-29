@@ -116,7 +116,7 @@ public class SpellTransference : Stackable
         if (source.SpellExtracted == null)
         {
             var pearlStackSize = source.StackSize ?? 1;
-            var workmanshipScaling = (int)target.ItemWorkmanship - 3;
+            var workmanshipScaling = (target.ItemWorkmanship ?? 1) - 3;
             var amountToAdd = workmanshipScaling < 1 ? 1 : workmanshipScaling;
             var consumed = amountToAdd > 1 ? $"and consuming {amountToAdd} pearls" : "";
 
@@ -684,7 +684,7 @@ public class SpellTransference : Stackable
             }
         }
 
-        var tier = target.Tier.Value - 1;
+        var tier = (target.Tier ?? 1) - 1;
 
         if (target.ProcSpell != null)
         {

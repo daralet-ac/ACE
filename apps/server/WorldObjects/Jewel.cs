@@ -271,14 +271,13 @@ partial class Jewel : WorldObject
                 {
                     if (int.TryParse(parts[4], out var propertyValue))
                     {
-                        target.GetType().GetProperty($"{jewelProperty}").SetValue(target, propertyValue);
+                        target.GetType().GetProperty($"{jewelProperty}")?.SetValue(target, propertyValue);
 
                         // find an empty socket and write the jewel log
 
                         for (var i = 1; i <= 8; i++)
                         {
-                            var currentSocket = (string)
-                                target.GetType().GetProperty($"JewelSocket{i}").GetValue(target);
+                            var currentSocket = (string)target.GetType().GetProperty($"JewelSocket{i}")?.GetValue(target);
 
                             if (currentSocket == null || !currentSocket.StartsWith("Empty"))
                             {
@@ -289,7 +288,7 @@ partial class Jewel : WorldObject
                                 target
                                     .GetType()
                                     .GetProperty($"JewelSocket{i}")
-                                    .SetValue(
+                                    ?.SetValue(
                                         target,
                                         $"{parts[0]}/{parts[1]}/{parts[2]}/{parts[3]}/{parts[4]}/{parts[5]}"
                                     );
@@ -301,7 +300,7 @@ partial class Jewel : WorldObject
             }
 
             // if a ring or bracelet, change valid locations to left or right only
-            if ((int)target.ValidLocations == 786432)
+            if (target.ValidLocations != null && (int)target.ValidLocations == 786432)
             {
                 if (
                     jewel.Name.Contains("Carnelian")
@@ -318,7 +317,7 @@ partial class Jewel : WorldObject
                     target.Use = "This ring can only be worn on the left hand.";
                 }
             }
-            if ((int)target.ValidLocations == 196608)
+            if (target.ValidLocations != null && (int)target.ValidLocations == 196608)
             {
                 if (
                     jewel.Name.Contains("Amethyst")
@@ -339,7 +338,6 @@ partial class Jewel : WorldObject
 
             target.Attuned = (AttunedStatus?)1;
             target.Bonded = (BondedStatus?)1;
-            return;
         }
     }
 
@@ -349,17 +347,15 @@ partial class Jewel : WorldObject
 
         for (var i = 1; i <= 8; i++)
         {
-            var currentSocket = (string)target.GetType().GetProperty($"JewelSocket{i}").GetValue(target);
+            var currentSocket = (string)target.GetType().GetProperty($"JewelSocket{i}")?.GetValue(target);
 
             if (currentSocket == null || !currentSocket.StartsWith("Empty"))
             {
                 continue;
             }
-            else
-            {
-                hasEmptySockets = true;
-                break;
-            }
+
+            hasEmptySockets = true;
+            break;
         }
 
         return hasEmptySockets;
@@ -765,7 +761,7 @@ partial class Jewel : WorldObject
 
             for (var i = 1; i <= 2; i++)
             {
-                var currentSocket = (string)target.GetType().GetProperty($"JewelSocket{i}").GetValue(target);
+                var currentSocket = (string)target.GetType().GetProperty($"JewelSocket{i}")?.GetValue(target);
 
                 if (currentSocket == null || currentSocket.StartsWith("Empty"))
                 {
@@ -808,8 +804,8 @@ partial class Jewel : WorldObject
 
                         if (StringToIntProperties.TryGetValue(socketArray[3], out var jewelProperty))
                         {
-                            target.GetType().GetProperty($"{jewelProperty}").SetValue(target, null);
-                            target.GetType().GetProperty($"JewelSocket{i}").SetValue(target, $"Empty");
+                            target.GetType().GetProperty($"{jewelProperty}")?.SetValue(target, null);
+                            target.GetType().GetProperty($"JewelSocket{i}")?.SetValue(target, $"Empty");
                         }
 
                         jewel.Attuned = (AttunedStatus?)1;

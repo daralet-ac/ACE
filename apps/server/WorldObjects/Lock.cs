@@ -239,37 +239,40 @@ public class UnlockerHelper
                                     if (thievery.AdvancementClass == SkillAdvancementClass.Specialized)
                                     {
                                         var chest = target as Chest;
-                                        var lockDifficulty = LockHelper.GetResistLockpick(target);
-
-                                        var effectiveLockpickSkill = GetEffectiveLockpickSkill(player, unlocker);
-                                        var skillCheck = (float)effectiveLockpickSkill / lockDifficulty;
-                                        var lootQualityBonusCheck = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
-
-                                        if (lootQualityBonusCheck > ThreadSafeRandom.Next(0f, 1f))
+                                        if (chest != null)
                                         {
-                                            var baseLootQualityMod = chest.LootQualityMod;
-                                            var difference = 1 - (baseLootQualityMod ?? 0);
-                                            var bonus = difference * 0.25f;
+                                            var lockDifficulty = LockHelper.GetResistLockpick(target);
 
-                                            if (chest.LootQualityMod != null)
+                                            var effectiveLockpickSkill = GetEffectiveLockpickSkill(player, unlocker);
+                                            var skillCheck = (float)effectiveLockpickSkill / lockDifficulty;
+                                            var lootQualityBonusCheck = skillCheck > 1f ? 0.5f : skillCheck * 0.5f;
+
+                                            if (lootQualityBonusCheck > ThreadSafeRandom.Next(0f, 1f))
                                             {
-                                                chest.LootQualityMod += bonus;
+                                                var baseLootQualityMod = chest.LootQualityMod;
+                                                var difference = 1 - (baseLootQualityMod ?? 0);
+                                                var bonus = difference * 0.25f;
+
+                                                if (chest.LootQualityMod != null)
+                                                {
+                                                    chest.LootQualityMod += bonus;
+                                                }
+                                                else
+                                                {
+                                                    chest.LootQualityMod = bonus;
+                                                }
+
+                                                chest.Reset();
+
+                                                chest.LootQualityMod = baseLootQualityMod;
+
+                                                player.Session.Network.EnqueueSend(
+                                                    new GameMessageSystemChat(
+                                                        $"Your thievery skill allowed you to find higher quality loot!",
+                                                        ChatMessageType.Broadcast
+                                                    )
+                                                );
                                             }
-                                            else
-                                            {
-                                                chest.LootQualityMod = bonus;
-                                            }
-
-                                            chest.Reset();
-
-                                            chest.LootQualityMod = baseLootQualityMod;
-
-                                            player.Session.Network.EnqueueSend(
-                                                new GameMessageSystemChat(
-                                                    $"Your thievery skill allowed you to find higher quality loot!",
-                                                    ChatMessageType.Broadcast
-                                                )
-                                            );
                                         }
                                     }
                                 }

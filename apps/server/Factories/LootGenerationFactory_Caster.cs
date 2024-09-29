@@ -787,11 +787,14 @@ public static partial class LootGenerationFactory
         double elementBonus = 0;
 
         int[] maxModPerTier = { 10, 20, 30, 40, 50, 75, 100, 126 };
-        var maxMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 100;
-        var minMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 200;
-        var bonusAmount = (maxMod - minMod) * GetDiminishingRoll(treasureDeath);
+        if (treasureDeath != null)
+        {
+            var maxMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 100;
+            var minMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 200;
+            var bonusAmount = (maxMod - minMod) * GetDiminishingRoll(treasureDeath);
 
-        elementBonus = minMod + bonusAmount;
+            elementBonus = minMod + bonusAmount;
+        }
 
         elementBonus += 1;
 
@@ -803,12 +806,17 @@ public static partial class LootGenerationFactory
     /// </summary>
     private static double RollRestorationSpellsMod(int? wield, TreasureDeath treasureDeath = null)
     {
-        int[] maxModPerTier = { 10, 20, 30, 40, 50, 75, 100, 126 };
-        var maxMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 100;
-        var minMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 200;
-        var bonusAmount = (maxMod - minMod) * GetDiminishingRoll(treasureDeath);
+        var restorationMod = 0.0;
 
-        var restorationMod = minMod + bonusAmount + 1;
+        int[] maxModPerTier = { 10, 20, 30, 40, 50, 75, 100, 126 };
+        if (treasureDeath != null)
+        {
+            var maxMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 100;
+            var minMod = (float)maxModPerTier[treasureDeath.Tier - 1] / 200;
+            var bonusAmount = (maxMod - minMod) * GetDiminishingRoll(treasureDeath);
+
+            restorationMod = minMod + bonusAmount + 1;
+        }
 
         return restorationMod;
     }

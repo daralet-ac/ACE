@@ -557,7 +557,10 @@ partial class WorldObject
 
             if (elementalDamageType != DamageType.Undef && elementalDamageType == damageType)
             {
-                return (float)weapon.DamageMod.Value;
+                if (weapon.DamageMod != null)
+                {
+                    return (float)weapon.DamageMod.Value;
+                }
             }
         }
         return 1.0f;
@@ -1327,6 +1330,12 @@ partial class WorldObject
         var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (rng >= chance)
         {
+            return;
+        }
+
+        if (ProcSpell == null)
+        {
+            _log.Error("TryProcItem() - ProcSpell = null for {Weapon}", this);
             return;
         }
 

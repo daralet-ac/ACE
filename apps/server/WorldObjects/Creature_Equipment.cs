@@ -1337,13 +1337,14 @@ partial class Creature
                     modifier = createList.GetSetModifier(i, dropRateMod);
                 }
 
-                var probability = (float)
-                    Math.Round(
-                        shadeOrProbability * (item.WeenieClassId != 0 ? modifier.TrophyMod : modifier.NoneMod),
-                        4
-                    );
+                if (modifier != null)
+                {
+                    var probability = (float)
+                        Math.Round(shadeOrProbability * (item.WeenieClassId != 0 ? modifier.TrophyMod : modifier.NoneMod), 4);
 
-                totalProbability += probability;
+                    totalProbability += probability;
+                }
+
                 //Console.WriteLine($"Modifier: {modifier}, Prob: {probability}, TotalProb: {totalProbability}");
                 if (rngSelected || rng >= totalProbability)
                 {
@@ -1473,7 +1474,7 @@ partial class Creature
         }
     }
 
-    public void UpdateArmorModBuffs()
+    protected void UpdateArmorModBuffs()
     {
         var player = this as Player;
 
@@ -1487,12 +1488,15 @@ partial class Creature
         {
             var spell = new Server.Entity.Spell(SpellId.OntheRun);
             var addResult = EnchantmentManager.Add(spell, null, null, true);
-            addResult.Enchantment.StatModValue = (float)GetArmorRunMod() + 1;
+            addResult.Enchantment.StatModValue = (float)(GetArmorRunMod() ?? 0) + 1;
 
-            player.Session.Network.EnqueueSend(
-                new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment))
-            );
-            player.HandleRunRateUpdate(spell);
+            if (player != null)
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment))
+                );
+                player.HandleRunRateUpdate(spell);
+            }
         }
         else
         {
@@ -1511,12 +1515,15 @@ partial class Creature
         {
             var spell = new Server.Entity.Spell(SpellId.Ardence);
             var addResult = EnchantmentManager.Add(spell, null, null, true);
-            addResult.Enchantment.StatModValue = (float)GetArmorHealthMod() + 1;
+            addResult.Enchantment.StatModValue = (float)(GetArmorHealthMod() ?? 0) + 1;
 
-            player.Session.Network.EnqueueSend(
-                new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment))
-            );
-            player.HandleMaxVitalUpdate(spell);
+            if (player != null)
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment))
+                );
+                player.HandleMaxVitalUpdate(spell);
+            }
         }
         else
         {
@@ -1535,12 +1542,15 @@ partial class Creature
         {
             var spell = new Server.Entity.Spell(SpellId.Vim);
             var addResult = EnchantmentManager.Add(spell, null, null, true);
-            addResult.Enchantment.StatModValue = (float)GetArmorStaminaMod() + 1;
+            addResult.Enchantment.StatModValue = (float)(GetArmorStaminaMod() ?? 0) + 1;
 
-            player.Session.Network.EnqueueSend(
-                new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment))
-            );
-            player.HandleMaxVitalUpdate(spell);
+            if (player != null)
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment))
+                );
+                player.HandleMaxVitalUpdate(spell);
+            }
         }
         else
         {
@@ -1560,12 +1570,15 @@ partial class Creature
             var spell = new Server.Entity.Spell(SpellId.Volition);
             var addResult = EnchantmentManager.Add(spell, null, null, true);
 
-            addResult.Enchantment.StatModValue = (float)GetArmorManaMod() + 1;
+            addResult.Enchantment.StatModValue = (float)(GetArmorManaMod() ?? 0) + 1;
 
-            player.Session.Network.EnqueueSend(
-                new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment))
-            );
-            player.HandleMaxVitalUpdate(spell);
+            if (player != null)
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameEventMagicUpdateEnchantment(player.Session, new Enchantment(this, addResult.Enchantment))
+                );
+                player.HandleMaxVitalUpdate(spell);
+            }
         }
         else
         {

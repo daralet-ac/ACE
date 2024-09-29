@@ -35,7 +35,7 @@ namespace ACE.Server.WorldObjects;
 /// </summary>
 public abstract partial class WorldObject : IActor
 {
-    private static readonly ILogger _log = Log.ForContext(typeof(WorldObject));
+    protected static readonly ILogger _log = Log.ForContext(typeof(WorldObject));
 
     /// <summary>
     /// If this object was created from a weenie (and not a database biota), this is the source.
