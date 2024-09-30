@@ -59,7 +59,7 @@ public class AppraiseInfo
     // Custom 'Use' and 'LongDesc'
     private bool _hasAdditionalProperties;
     private List<string> _additionalPropertiesList = new List<string>();
-    private bool _hasLongDescAdditions = true;
+    private bool _hasLongDescAdditions = false;
     private string _longDescAdditions = "";
     private string _extraPropertiesText;
     private string _additionalPropertiesLongDescriptionsText = "";
@@ -877,16 +877,16 @@ public class AppraiseInfo
         {
             _extraPropertiesText += "";
             PropertiesString[PropertyString.Use] = _extraPropertiesText;
-        }
 
-        // Additional Long
-        if (_hasLongDescAdditions)
-        {
-            _additionalPropertiesLongDescriptionsText +=
-                "Property Descriptions:\n" + _additionalPropertiesLongDescriptionsText + "\n\n" +
-                PropertiesString[PropertyString.LongDesc];
+            // Additional Long
+            if (_additionalPropertiesLongDescriptionsText.Length > 0)
+            {
+                _additionalPropertiesLongDescriptionsText =
+                    "Property Descriptions:\n" + _additionalPropertiesLongDescriptionsText + "\n\n" +
+                    PropertiesString[PropertyString.LongDesc];
 
-            PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
+                PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
+            }
         }
     }
 
@@ -930,6 +930,8 @@ public class AppraiseInfo
                 _longDescAdditions =
                     $"{prependWorkmanship} {prependMaterial} {wo.Name}";
             }
+
+            _hasLongDescAdditions = true;
         }
     }
 
@@ -952,6 +954,8 @@ public class AppraiseInfo
         var tinkerLogArray = wo.TinkerLog.Split(',');
 
         var tinkeringTypes = new int[80];
+
+        _hasLongDescAdditions = true;
 
         _longDescAdditions +=
             $"This item has been tinkered with:\n";
