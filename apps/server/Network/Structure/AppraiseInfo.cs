@@ -880,9 +880,14 @@ public class AppraiseInfo
         }
 
         // Additional Long
-        _additionalPropertiesLongDescriptionsText =
-            "Property Descriptions:\n" + _additionalPropertiesLongDescriptionsText + "\n\n" + PropertiesString[PropertyString.LongDesc];
-        PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
+        if (_hasLongDescAdditions)
+        {
+            _additionalPropertiesLongDescriptionsText +=
+                "Property Descriptions:\n" + _additionalPropertiesLongDescriptionsText + "\n\n" +
+                PropertiesString[PropertyString.LongDesc];
+
+            PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
+        }
     }
 
     private void SetCustomDecorationLongText(WorldObject wo)
