@@ -73,6 +73,12 @@ public class Salvage : WorldObject
 
         // check salvage units
         var salvageCost = (target.ItemWorkmanship ?? 1) * (target.ArmorSlots ?? 1);
+
+        if (PropertyManager.GetBool("bypass_crafting_checks").Item)
+        {
+            salvageCost = 1;
+        }
+Console.WriteLine($"{source.Structure} {salvageCost}");
         var units = salvageCost == 1 ? "unit" : "units";
         if (source.Structure < (ushort)salvageCost)
         {
@@ -89,11 +95,26 @@ public class Salvage : WorldObject
         // verify player has skill trained + that salvage type can be used on target
         var useableType = false;
 
+        if (source.MaterialType == null)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Something went wrong. Please notify an admin.",
+                    ChatMessageType.System
+                )
+            );
+            player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+
+            _log.Error("UseObjectOnTarget() - source.MaterialType for {Source} is null. Aborting craft.", source);
+
+            return;
+        }
+
         if (TinkeringTarget.TryGetValue(source.MaterialType, out var tinkeringSkill))
         {
             var skill = player.GetCreatureSkill(tinkeringSkill);
 
-            if (skill.AdvancementClass < SkillAdvancementClass.Trained)
+            if (skill.AdvancementClass < SkillAdvancementClass.Trained && PropertyManager.GetBool("bypass_crafting_checks").Item == false)
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
@@ -104,10 +125,8 @@ public class Salvage : WorldObject
                 player.SendUseDoneEvent();
                 return;
             }
-            else
-            {
-                useableType = CheckTinkerType(player, source, target, tinkeringSkill);
-            }
+
+            useableType = CheckTinkerType(player, source, target, tinkeringSkill);
         }
 
         if (!useableType)
@@ -144,6 +163,11 @@ public class Salvage : WorldObject
         if (ImbueSalvage.Contains((MaterialType)source.MaterialType))
         {
             successChance /= 3.0f;
+        }
+
+        if (PropertyManager.GetBool("bypass_crafting_checks").Item)
+        {
+            successChance = 1.0f;
         }
 
         var percent = (int)(successChance * 100);
@@ -194,7 +218,7 @@ public class Salvage : WorldObject
                     player,
                     source,
                     target,
-                    (double)successChance,
+                    successChance,
                     difficulty,
                     creatureSkill,
                     tinkeringSkill
@@ -1044,12 +1068,19 @@ public class Salvage : WorldObject
         // update salvage bag structure
         var workmanship = target.ItemWorkmanship ?? 1;
 
-        if (source.Structure >= (ushort)((target.ArmorSlots ?? 1) * workmanship))
+        var salvageCost = (ushort)((target.ArmorSlots ?? 1) * workmanship);
+
+        if (PropertyManager.GetBool("bypass_crafting_checks").Item)
         {
-            source.Structure -= (ushort)((target.ArmorSlots ?? 1) * workmanship);
+            salvageCost = 1;
+        }
+
+        if (source.Structure >= salvageCost)
+        {
+            source.Structure -= salvageCost;
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"Your tinkering consumed {(target.ArmorSlots ?? 1) * workmanship} units of {RecipeManager.GetMaterialName(source.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown)}. The {target.Name} has been tinkered {target.NumTimesTinkered} times.",
+                    $"Your tinkering consumed {salvageCost} units of {RecipeManager.GetMaterialName(source.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown)}. The {target.Name} has been tinkered {target.NumTimesTinkered} times.",
                     ChatMessageType.Broadcast
                 )
             );

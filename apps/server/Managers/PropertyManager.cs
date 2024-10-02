@@ -800,7 +800,8 @@ public static class DefaultPropertyManager
         ("debug_crafting_system", new Property<bool>(false, "enable this to see crafting system console logging")),
         ("debug_loot_quality_system", new Property<bool>(false, "enable this to see loot quality system console logging")),
         ("debug_level_scaling_system", new Property<bool>(false, "enable this to see level scaling system console logging")),
-        ("banking_system_logging", new Property<bool>(true, "enable this to see banking system console logging")));
+        ("banking_system_logging", new Property<bool>(true, "enable this to see banking system console logging")),
+        ("bypass_crafting_checks", new Property<bool>(false, "enable this to allow players to succeed at crafting recipes without needing the skill.")));
 
     public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties = DictOf(
         ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),

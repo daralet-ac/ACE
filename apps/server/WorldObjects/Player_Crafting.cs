@@ -499,10 +499,10 @@ partial class Player
             var relativeDifficulty = difficulty - creatureSkill.Current;
             var difficultyMod = 1 + Math.Clamp(relativeDifficulty, -50, 50) / 50;
 
-            var xP = player.GetXPBetweenSkillLevels(
+            var xP = (player.GetXPBetweenSkillLevels(
                 creatureSkill.AdvancementClass,
                 creatureSkill.Ranks,
-                creatureSkill.Ranks + 1
+                creatureSkill.Ranks + 1) ?? 0
             );
             var totalXp = (uint)(xP * progressMod * difficultyMod * armorSlots);
 
