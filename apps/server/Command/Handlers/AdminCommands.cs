@@ -6904,14 +6904,14 @@ public static class AdminCommands
         LootSwap.UpdateTables(folder);
     }
 
-    [CommandHandler("clearvpnblocklist", AccessLevel.Sentinel, CommandHandlerFlag.None,
+    [CommandHandler("clearvpnblocklist", AccessLevel.Admin, CommandHandlerFlag.None,
         "Clears the list of IPs that are blocked due to VPN/proxy check")]
     public static void HandleClearVpnBlockList(Session session, params string[] parameters)
     {
         AuthenticationHandler.ClearVpnBlockedIPs();
     }
 
-    [CommandHandler("removeipfromvpnblocklist", AccessLevel.Sentinel, CommandHandlerFlag.None, 1,
+    [CommandHandler("removeipfromvpnblocklist", AccessLevel.Admin, CommandHandlerFlag.None, 1,
         "Removes a single IP from the list of IPs that are blocked due to VPN/proxy check")]
     public static void HandleRemoveIpFromVpnBlockList(Session session, params string[] parameters)
     {
