@@ -879,6 +879,10 @@ public static class PlayerFactory
         tradeNotes.StackSize = 100;
         player.TryAddToInventory(tradeNotes);
 
+        var pearlOfSpellTransference = WorldObjectFactory.CreateNewWorldObject(1054000); // Pearl of Spell Transference
+        pearlOfSpellTransference.StackSize = 100;
+        player.TryAddToInventory(pearlOfSpellTransference);
+
         player.TryAddToInventory(WorldObjectFactory.CreateNewWorldObject(1000030)); // Hotel Swank Portal Gem
         player.TryAddToInventory(WorldObjectFactory.CreateNewWorldObject(1051111)); // Shard of Shrouding
 
