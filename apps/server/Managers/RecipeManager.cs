@@ -242,7 +242,7 @@ public partial class RecipeManager
 
         //Console.WriteLine("Required skill: " + skill.Skill);
 
-        if (playerSkill.AdvancementClass < SkillAdvancementClass.Trained)
+        if (playerSkill.AdvancementClass < SkillAdvancementClass.Trained && PropertyManager.GetBool("bypass_crafting_checks").Item == false)
         {
             player.SendWeenieError(WeenieError.YouAreNotTrainedInThatTradeSkill);
             return null;
@@ -253,6 +253,11 @@ public partial class RecipeManager
         var playerCurrentPlusLumAugSkilledCraft = playerSkill.Current + (uint)player.LumAugSkilledCraft;
 
         var successChance = SkillCheck.GetSkillChance(playerCurrentPlusLumAugSkilledCraft, recipe.Difficulty);
+
+        if (PropertyManager.GetBool("bypass_crafting_checks").Item)
+        {
+            successChance = 1.0f;
+        }
 
         return successChance;
     }
