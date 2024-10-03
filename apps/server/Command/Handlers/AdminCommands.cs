@@ -23,6 +23,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Handlers;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 using ACE.Server.WorldObjects.Entity;
@@ -6901,5 +6902,25 @@ public static class AdminCommands
             return;
         }
         LootSwap.UpdateTables(folder);
+    }
+
+    [CommandHandler("clearvpnblocklist", AccessLevel.Admin, CommandHandlerFlag.None,
+        "Clears the list of IPs that are blocked due to VPN/proxy check")]
+    public static void HandleClearVpnBlockList(Session session, params string[] parameters)
+    {
+        AuthenticationHandler.ClearVpnBlockedIPs();
+    }
+
+    [CommandHandler("removeipfromvpnblocklist", AccessLevel.Admin, CommandHandlerFlag.None, 1,
+        "Removes a single IP from the list of IPs that are blocked due to VPN/proxy check")]
+    public static void HandleRemoveIpFromVpnBlockList(Session session, params string[] parameters)
+    {
+        if (parameters.Count() != 1)
+        {
+            CommandHandlerHelper.WriteOutputInfo(session, $"Invalid parameters.  Please include a single IP to clear from the VPN block list.");
+            return;
+        }
+
+        AuthenticationHandler.RemoveIpFromVpnBlockList(parameters[0]);
     }
 }
