@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.IO;
 using System.Threading.Tasks;
-using System.Text.Json;
 using ACE.Server.Managers;
 using Serilog;
 
@@ -32,11 +31,10 @@ public static class VpnDetection
 {
     private static readonly ILogger _log = Log.ForContext(typeof(VpnDetection));
 
-    private static string ApiKey { get; set; } = PropertyManager.GetString("proxycheck_api_key").Item;
+    private static string ApiKey { get; } = PropertyManager.GetString("proxycheck_api_key").Item;
 
     public static async Task<IspInfo> CheckVpn(string ip)
     {
-        //Console.WriteLine("In VPNDetection.CheckVPN");
         if(string.IsNullOrEmpty(ip) || ip.Equals("127.0.0.1"))
         {
             return null;
@@ -61,10 +59,6 @@ public static class VpnDetection
             using (var sr = new StreamReader(stream))
             {
                 var data = await sr.ReadToEndAsync();
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                };
 
                 var d1 = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(data);
                 var d = d1[ip];
@@ -88,7 +82,7 @@ public static class VpnDetection
                 {
                     _log.Debug("VPN detected for ip = {Ip} with ISPInfo = {IspInfo}", ip, ispInfo);
                 }
-                //Console.WriteLine($"VPNDetection.CheckVPN returning ISPInfo = {ispinfo.ToString()}");
+
                 return ispInfo;
             }
         }
