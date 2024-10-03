@@ -195,7 +195,7 @@ public class UpgradeKit : Stackable
                 if (target.WeaponSubtype == null)
                 {
                     _log.Error(
-                        $"MutateQuestItem() - WeaponSubType is null for ({target.Name}). Weapon upgrade aborted.");
+                        "MutateQuestItem() - WeaponSubType is null for ({Target}). Weapon upgrade aborted.", target);
                     return false;
                 }
 
@@ -217,7 +217,7 @@ public class UpgradeKit : Stackable
                 if (target.ArmorStyle == null)
                 {
                     _log.Error(
-                        $"MutateQuestItem() - ArmorStyle is null for ({target.Name}). Armor upgrade aborted.");
+                        "MutateQuestItem() - ArmorStyle is null for ({target}). Armor upgrade aborted.", target);
                     return false;
                 }
 
@@ -296,19 +296,34 @@ public class UpgradeKit : Stackable
             return 0;
         }
 
-        var targetWieldAttribute = (PropertyAttribute)target.WieldSkillType;
-        var playerBaseAttributeLevel = player.Attributes[targetWieldAttribute].Base;
-
-        return playerBaseAttributeLevel switch
+        if (target.WieldRequirements == WieldRequirement.RawAttrib)
         {
-            >= 270 => 270,
-            >= 250 => 250,
-            >= 230 => 230,
-            >= 215 => 215,
-            >= 200 => 200,
-            >= 175 => 175,
-            >= 125 => 125,
-            _ => 50
+            var targetWieldAttribute = (PropertyAttribute)target.WieldSkillType;
+            var playerBaseAttributeLevel = player.Attributes[targetWieldAttribute].Base;
+
+            return playerBaseAttributeLevel switch
+            {
+                >= 270 => 270,
+                >= 250 => 250,
+                >= 230 => 230,
+                >= 215 => 215,
+                >= 200 => 200,
+                >= 175 => 175,
+                >= 125 => 125,
+                _ => 50
+            };
+        }
+
+        return player.Level switch
+        {
+            >= 100 => 100,
+            >= 75 => 75,
+            >= 50 => 50,
+            >= 40 => 40,
+            >= 30 => 30,
+            >= 20 => 20,
+            >= 10 => 10,
+            _ => 1
         };
     }
 
@@ -323,6 +338,12 @@ public class UpgradeKit : Stackable
     {
         if (target.Damage == null)
         {
+            return;
+        }
+
+        if (target.WeenieType == WeenieType.MissileLauncher)
+        {
+            _log.Error("ScaleUpDamage() - {Target} damage is not null.");
             return;
         }
 
@@ -694,6 +715,12 @@ public class UpgradeKit : Stackable
             }
         }
 
+        if (spellsToAdd.Count == 0)
+        {
+            _log.Error("ScaleUpSpells() - spellsToAdd.Count == 0 for {Target}", target);
+            return;
+        }
+
         foreach (var spellId in spellsToRemove)
         {
             target.Biota.TryRemoveKnownSpell(spellId, target.BiotaDatabaseLock);
@@ -746,15 +773,29 @@ public class UpgradeKit : Stackable
     {
         var newWieldReq = GetHighestWieldDifficultyForPlayer(player, target);
 
+        if (target.WieldRequirements == WieldRequirement.RawAttrib)
+        {
+            switch (newWieldReq)
+            {
+                case 125: return 1;
+                case 175: return 2;
+                case 200: return 3;
+                case 215: return 4;
+                case 230: return 5;
+                case 250: return 6;
+                case 270: return 7;
+            }
+        }
+
         switch (newWieldReq)
         {
-            case 125: return 1;
-            case 175: return 2;
-            case 200: return 3;
-            case 215: return 4;
-            case 230: return 5;
-            case 250: return 6;
-            case 270: return 7;
+            case 10: return 1;
+            case 20: return 2;
+            case 30: return 3;
+            case 40: return 4;
+            case 50: return 5;
+            case 75: return 6;
+            case 100: return 7;
         }
 
         return 1;
