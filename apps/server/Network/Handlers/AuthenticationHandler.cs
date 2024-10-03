@@ -233,7 +233,7 @@ public static class AuthenticationHandler
             {
                 if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
                 {
-                    _log.Information($"client {loginRequest.Account} connected with non matching password so booting");
+                    _log.Information("client {LoginRequest.Account} connected with non matching password so booting", loginRequest.Account);
                 }
                 else
                 {
@@ -295,7 +295,7 @@ public static class AuthenticationHandler
 
                      if (isVpn)
                      {
-                         _log.Information($"Blocked login attempt for account {session.Account} from IP {currIp} due to VPN detection");
+                         _log.Information("Blocked login attempt for account {Session.Account} from IP {CurrIp} due to VPN detection", session.Account, currIp);
                          var bootMsg = " Connections from VPN / proxy disallowed by server policy";
                          session.Terminate(SessionTerminationReason.AccountBooted, new GameMessageBootAccount(bootMsg), null, bootMsg);
                          return;
@@ -303,7 +303,7 @@ public static class AuthenticationHandler
                  }
                  catch (Exception ex)
                  {
-                     _log.Error($"Exception during VPN detection check for account = {session.Account}.  Ex: {ex}");
+                     _log.Error("Exception during VPN detection check for account = {Session.Account}.  Ex: {Ex}", session.Account, ex);
                  }
              }
 
@@ -450,13 +450,13 @@ public static class AuthenticationHandler
             if (ispInfo != null && !String.IsNullOrEmpty(ispInfo.Proxy) && ispInfo.Proxy.Equals("yes"))
             {
                 Console.WriteLine($"ISPInfo = {ispInfo}");
-                _log.Warning($"VPN detected with ISPInfo = {ispInfo}");
+                _log.Warning("VPN detected with ISPInfo = {IspInfo}", ispInfo);
                 isVpn = true;
             }
         }
         catch (Exception ex)
         {
-            _log.Error($"Exception in AuthenticationHandler.CheckForVPN. Ex: {ex}");
+            _log.Error("Exception in AuthenticationHandler.CheckForVPN. Ex: {Ex}", ex);
         }
 
         //Console.WriteLine($"AuthenticationHandler.CheckForVpn returning isVpn = {isVpn}");

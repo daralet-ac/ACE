@@ -52,7 +52,7 @@ public static class VpnDetection
         var task = req.GetResponseAsync();
         if (await Task.WhenAny(task, Task.Delay(3000)) != task)
         {
-            _log.Warning($"VPNDetection.CheckVPN task timed out for ip = {ip}");
+            _log.Warning("VPNDetection.CheckVPN task timed out for ip = {Ip}", ip);
             return null; //timed out
         }
         var resp = task.Result;
@@ -86,7 +86,7 @@ public static class VpnDetection
 
                 if(!string.IsNullOrEmpty(ispInfo.Proxy) && ispInfo.Proxy.ToLower().Equals("yes"))
                 {
-                    _log.Debug($"VPN detected for ip = {ip} with ISPInfo = {ispInfo.ToString()}");
+                    _log.Debug("VPN detected for ip = {Ip} with ISPInfo = {IspInfo}", ip, ispInfo);
                 }
                 //Console.WriteLine($"VPNDetection.CheckVPN returning ISPInfo = {ispinfo.ToString()}");
                 return ispInfo;
