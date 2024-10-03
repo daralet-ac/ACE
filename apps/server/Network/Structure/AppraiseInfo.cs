@@ -881,9 +881,11 @@ public class AppraiseInfo
             // Additional Long
             if (_additionalPropertiesLongDescriptionsText.Length > 0)
             {
+                PropertiesString.TryGetValue(PropertyString.LongDesc, out var longDescString);
+
                 _additionalPropertiesLongDescriptionsText =
                     "Property Descriptions:\n" + _additionalPropertiesLongDescriptionsText + "\n\n" +
-                    PropertiesString[PropertyString.LongDesc];
+                    longDescString;
 
                 PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
             }
