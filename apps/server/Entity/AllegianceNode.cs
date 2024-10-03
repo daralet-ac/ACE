@@ -75,29 +75,8 @@ public class AllegianceNode
         CalculateRank();
     }
 
-    public void CalculateRank()
+    private void CalculateRank()
     {
-        /* (RETAIL)
-        // http://asheron.wikia.com/wiki/Rank
-
-        // A player's allegiance rank is a function of the number of Vassals and how they are
-        // organized. First, take the two highest ranked vassals. Now the Patron's rank will either be
-        // one higher than the lower of the two, or equal to the highest rank vassal, whichever is greater.
-
-        // sort vassals by rank
-        var sortedVassals = Vassals.Values.OrderByDescending(v => v.Rank).ToList();
-
-        // get 2 highest rank vassals
-        var r1 = sortedVassals.Count > 0 ? sortedVassals[0].Rank : 0;
-        var r2 = sortedVassals.Count > 1 ? sortedVassals[1].Rank : 0;
-
-        var lower = Math.Min(r1, r2);
-        var higher = Math.Max(r1, r2);
-
-        Rank = Math.Min(10, Math.Max(lower + 1, higher));
-        (RETAIL) */
-
-
         // NEW RANK FORMULA
         // A player's allegiance rank depends on the number of unique accounts are under them in
         // their allegiance tree. Accounts who are also above them in the chain do not count towards
@@ -148,13 +127,13 @@ public class AllegianceNode
         }
     }
 
-    public double GetUniqueFollowers(AllegianceNode player)
+    private double GetUniqueFollowers(AllegianceNode playerNode)
     {
         double uniqueFollowers = 0;
 
-        var vassals = player.Vassals.Values.ToList();
+        var vassals = playerNode.Vassals.Values.ToList();
 
-        if (vassals == null || Vassals.Count == 0)
+        if (Vassals.Count == 0)
         {
             return 0;
         }
@@ -182,10 +161,7 @@ public class AllegianceNode
 
             if (vassal.Vassals.Count > 0)
             {
-                foreach (var follower in vassal.Vassals.Values)
-                {
-                    uniqueFollowers += GetUniqueFollowers(vassal);
-                }
+                uniqueFollowers += GetUniqueFollowers(vassal);
             }
         }
 

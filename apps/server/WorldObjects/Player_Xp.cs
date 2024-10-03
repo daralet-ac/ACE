@@ -843,6 +843,8 @@ partial class Player
             {
                 (trinket as CombatFocus).OnLevelUp(this, (int)startingLevel);
             }
+
+            SetPlayerAllegianceRankContribution();
         }
     }
 
