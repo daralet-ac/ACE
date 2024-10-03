@@ -975,8 +975,9 @@ public static class PlayerCommands
 
         CommandHandlerHelper.WriteOutputInfo(
             session,
-            $"\nAllegiance Rank: {rank}\n" +
-            $" - Follower Rank: {followerRank}, for having at least {currentRankFollowers} unique followers. Next rank at {nextRankFollowers} unique followers.\n" +
+            $"Allegiance Rank: {rank}\n" +
+            $" - Follower Rank: {followerRank}, for having at least {currentRankFollowers} unique followers. Next rank at {nextRankFollowers} unique followers. " +
+            $"(The 'unique follower' value of a character is determined by its level relative to the total amount of character levels on the same account)\n" +
             $" - Leadership Bonus Rank: {leadershipRank}, for having at least {currentRankLeadership} leadership skill. Next bonus rank at {nextRankLeadership} leadership skill."
         );
 
@@ -987,7 +988,7 @@ public static class PlayerCommands
 
         CommandHandlerHelper.WriteOutputInfo(
             session,
-            $"\nCurrent Unique Followers: {uniqueFollowers}"
+            $"Current Unique Followers: {uniqueFollowers}"
         );
 
         foreach (var followerNameAndContribution in ordered)
