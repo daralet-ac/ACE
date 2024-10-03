@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
 using ACE.Entity;
@@ -17,6 +18,8 @@ partial class Player
 {
     public Allegiance Allegiance { get; set; }
     public AllegianceNode AllegianceNode { get; set; }
+
+    public Dictionary<string, double> FollowerRankContributions = [];
 
     public bool HasAllegiance
     {
@@ -720,6 +723,8 @@ partial class Player
                     );
                 }
             }
+
+            SetPlayerAllegianceRankContribution();
         }
     }
 
@@ -737,34 +742,89 @@ partial class Player
                 }
             }
 
-            var accountPlayers = PlayerManager.GetAccountPlayers(Account.AccountId);
+            SetPlayerAllegianceRankContribution();
+        }
+    }
 
-            double totalLevels = 0;
+    public void SetPlayerAllegianceRankContribution()
+    {
+        var accountPlayers = PlayerManager.GetAccountPlayers(Account.AccountId);
 
-            foreach (var accountPlayer in accountPlayers.Values)
+        double totalLevels = 0;
+
+        foreach (var accountPlayer in accountPlayers.Values)
+        {
+            if (accountPlayer.Level < 10)
             {
-                if (accountPlayer.Level < 10)
-                {
-                    continue;
-                }
-
-                totalLevels += (double)accountPlayer.Level;
+                continue;
             }
 
-            foreach (var player in accountPlayers.Values)
+            if (accountPlayer.Level != null)
             {
-                if (player.Level < 10)
-                {
-                    continue;
-                }
-
-                var rankContrib = ((double)player.Level / totalLevels);
-
-                player.SetProperty(PropertyFloat.RankContribution, rankContrib);
-
-                player.SaveBiotaToDatabase();
+                totalLevels += (accountPlayer.Level.Value);
             }
         }
+
+        foreach (var player in accountPlayers.Values)
+        {
+            if (player.Level < 10)
+            {
+                continue;
+            }
+
+            if (player.Level != null)
+            {
+                var rankContrib = (player.Level.Value / totalLevels);
+
+                player.SetProperty(PropertyFloat.RankContribution, rankContrib);
+            }
+
+            player.SaveBiotaToDatabase();
+        }
+    }
+
+    public double GetFollowerAllegianceRankContributions(AllegianceNode playerNode)
+    {
+        double uniqueFollowers = 0;
+
+        var vassals = playerNode.Vassals.Values;
+
+        if (AllegianceNode.Vassals.Count == 0)
+        {
+            return 0;
+        }
+
+        foreach (var vassal in vassals)
+        {
+            // check to see if player has logged in within the past 2 weeks
+            if (vassal.Player.GetProperty(PropertyFloat.LoginTimestamp) + 1209600 < Time.GetUnixTime())
+            {
+                continue;
+            }
+
+            // check to see if this character is an alt on the same account
+            if (vassal.Player.Account.AccountId == Account.AccountId)
+            {
+                continue;
+            }
+
+            var rankContrib =  vassal.Player.GetProperty(PropertyFloat.RankContribution);
+
+            if (rankContrib != null)
+            {
+                var contributionRounded = Math.Round(rankContrib.Value, 2);
+
+                FollowerRankContributions.Add(vassal.Player.Name, contributionRounded);
+                uniqueFollowers += (double)rankContrib;
+            }
+
+            if (vassal.Vassals.Count > 0)
+            {
+                uniqueFollowers += GetFollowerAllegianceRankContributions(vassal);
+            }
+        }
+
+        return uniqueFollowers;
     }
 
     public string GetPrefix(Player allegianceMember)
@@ -2135,6 +2195,81 @@ partial class Player
             }
 
             return (AllegiancePermissionLevel)(AllegianceOfficerRank ?? 0);
+        }
+    }
+
+    public int GetFollowerRank()
+    {
+        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var rankWithoutLeadership = Math.Max(((AllegianceRank ?? 0) - leadershipRank), 0);
+
+        return (int)rankWithoutLeadership;
+    }
+
+    public int GetLeadershipRank()
+    {
+        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+
+        return (int)leadershipRank;
+    }
+
+    public int GetCurrentRankFollowers()
+    {
+        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var rankWithoutLeadership = Math.Max(((AllegianceRank ?? 0) - leadershipRank), 0);
+
+        switch (rankWithoutLeadership)
+        {
+            case 7: return 50;
+            case 6: return 25;
+            case 5: return 15;
+            case 4: return 10;
+            case 3: return 6;
+            case 2: return 3;
+            case 1: return 1;
+            default: return 0;
+        }
+    }
+
+    public int GetNextRankFollowers()
+    {
+        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var rankWithoutLeadership = Math.Max(((AllegianceRank ?? 0) - leadershipRank), 0);
+
+        switch (rankWithoutLeadership)
+        {
+            case 6: return 50;
+            case 5: return 25;
+            case 4: return 15;
+            case 3: return 10;
+            case 2: return 6;
+            case 1: return 3;
+            default: return 1;
+        }
+    }
+
+    public int GetCurrentRankLeadership()
+    {
+        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+
+        switch (leadershipRank)
+        {
+            case 3: return 300;
+            case 2: return 200;
+            case 1: return 100;
+            default: return 0;
+        }
+    }
+
+    public int GetNextRankLeadership()
+    {
+        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+
+        switch (leadershipRank)
+        {
+            case 2: return 300;
+            case 1: return 200;
+            default: return 100;
         }
     }
 }

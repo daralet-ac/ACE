@@ -956,4 +956,46 @@ public static class PlayerCommands
 
         inviter.FellowshipRecruit(newMember);
     }
+
+    // allegiance rank
+    [CommandHandler("allegiance-rank", AccessLevel.Player, CommandHandlerFlag.None, 0, "Show your current allegiance rank breakdown", "")]
+    public static void HandleAllegianceRank(Session session, params string[] parameters)
+    {
+        var player = session.Player;
+        var rank = player.AllegianceRank ?? 0;
+
+        var followerRank = player.GetFollowerRank();
+        var leadershipRank = player.GetLeadershipRank();
+
+        var currentRankFollowers = player.GetCurrentRankFollowers();
+        var nextRankFollowers = player.GetNextRankFollowers();
+
+        var currentRankLeadership = player.GetCurrentRankLeadership();
+        var nextRankLeadership = player.GetNextRankLeadership();
+
+        CommandHandlerHelper.WriteOutputInfo(
+            session,
+            $"\nAllegiance Rank: {rank}\n" +
+            $" - Follower Rank: {followerRank}, for having at least {currentRankFollowers} unique followers. Next rank at {nextRankFollowers} unique followers.\n" +
+            $" - Leadership Bonus Rank: {leadershipRank}, for having at least {currentRankLeadership} leadership skill. Next bonus rank at {nextRankLeadership} leadership skill."
+        );
+
+        player.FollowerRankContributions.Clear();
+
+        var uniqueFollowers = Math.Round(player.GetFollowerAllegianceRankContributions(player.AllegianceNode), 2);
+        var ordered = player.FollowerRankContributions.OrderByDescending(x => x.Value);
+
+        CommandHandlerHelper.WriteOutputInfo(
+            session,
+            $"\nCurrent Unique Followers: {uniqueFollowers}"
+        );
+
+        foreach (var followerNameAndContribution in ordered)
+        {
+            CommandHandlerHelper.WriteOutputInfo(
+                session,
+                $" - {followerNameAndContribution.Key}: {followerNameAndContribution.Value}"
+            );
+        }
+    }
 }

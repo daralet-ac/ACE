@@ -394,6 +394,8 @@ public class AllegianceManager
         {
             allegiance.RemoveApprovedVassal(vassal.Guid.Full);
         }
+
+        vassal.SetPlayerAllegianceRankContribution();
     }
 
     /// <summary>
