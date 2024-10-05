@@ -897,7 +897,7 @@ public class AppraiseInfo
         if (wo.MaterialType != null && wo.ItemWorkmanship != null)
         {
             var prependMaterial = RecipeManager.GetMaterialName((MaterialType)wo.MaterialType);
-            var prependWorkmanship = Salvage.WorkmanshipNames[(int)wo.ItemWorkmanship - 1];
+            var prependWorkmanship = Salvage.WorkmanshipNames[Math.Clamp((int)wo.ItemWorkmanship, 1, 10) - 1];
             var modifiedGemType = RecipeManager.GetMaterialName(wo.GemType ?? MaterialType.Unknown);
 
             if (wo.GemType != null && wo.GemCount is >= 1)
