@@ -97,7 +97,7 @@ public static class MutationCache
         {
             var line = _line;
 
-            var commentIdx = line.IndexOf("//");
+            var commentIdx = line.IndexOf("//", StringComparison.Ordinal);
 
             if (commentIdx != -1)
             {

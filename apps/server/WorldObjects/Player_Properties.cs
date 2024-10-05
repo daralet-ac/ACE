@@ -2221,7 +2221,7 @@ partial class Player
         }
     }
 
-    public void UpdateProperty(WorldObject obj, PropertyInt prop, int? value, bool broadcast = false)
+    public new void UpdateProperty(WorldObject obj, PropertyInt prop, int? value, bool broadcast = false)
     {
         if (value != null)
         {
@@ -2237,7 +2237,7 @@ partial class Player
         SendNetwork(msg, broadcast);
     }
 
-    public void UpdateProperty(WorldObject obj, PropertyBool prop, bool? value, bool broadcast = false)
+    public new void UpdateProperty(WorldObject obj, PropertyBool prop, bool? value, bool broadcast = false)
     {
         if (value != null)
         {
@@ -2253,7 +2253,7 @@ partial class Player
         SendNetwork(msg, broadcast);
     }
 
-    public void UpdateProperty(WorldObject obj, PropertyFloat prop, double? value, bool broadcast = false)
+    public new void UpdateProperty(WorldObject obj, PropertyFloat prop, double? value, bool broadcast = false)
     {
         if (value != null)
         {

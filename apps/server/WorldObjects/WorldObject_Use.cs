@@ -558,14 +558,12 @@ partial class WorldObject
                                 )
                             );
                             return new ActivationResult(false);
-                            ;
                         }
 
                         if (target.IsDead)
                         {
                             //player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your target no longer exists.", ChatMessageType.Broadcast));
                             return new ActivationResult(false);
-                            ;
                         }
 
                         if (player.GetDistance(target) > 5)
@@ -577,7 +575,6 @@ partial class WorldObject
                                 )
                             );
                             return new ActivationResult(false);
-                            ;
                         }
 
                         var targetTier = target.Tier ?? 1;
@@ -610,7 +607,6 @@ partial class WorldObject
                                 new GameMessageSystemChat($"You do not have enough stamina.", ChatMessageType.Broadcast)
                             );
                             return new ActivationResult(false);
-                            ;
                         }
                     }
                     break;
@@ -639,14 +635,12 @@ partial class WorldObject
                                 )
                             );
                             return new ActivationResult(false);
-                            ;
                         }
 
                         if (target.IsDead)
                         {
                             //player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your target no longer exists.", ChatMessageType.Broadcast));
                             return new ActivationResult(false);
-                            ;
                         }
 
                         if (player.GetDistance(target) > 30)
@@ -658,7 +652,6 @@ partial class WorldObject
                                 )
                             );
                             return new ActivationResult(false);
-                            ;
                         }
 
                         var targetTier = target.Tier ?? 1;
@@ -670,7 +663,6 @@ partial class WorldObject
                                 new GameMessageSystemChat($"You do not have enough stamina.", ChatMessageType.Broadcast)
                             );
                             return new ActivationResult(false);
-                            ;
                         }
                     }
                     break;
@@ -695,14 +687,12 @@ partial class WorldObject
                                 )
                             );
                             return new ActivationResult(false);
-                            ;
                         }
 
                         if (target.IsDead)
                         {
                             //player.Session.Network.EnqueueSend(new GameMessageSystemChat($"Your target no longer exists.", ChatMessageType.Broadcast));
                             return new ActivationResult(false);
-                            ;
                         }
 
                         if (player.GetDistance(target) > 30)
@@ -714,7 +704,6 @@ partial class WorldObject
                                 )
                             );
                             return new ActivationResult(false);
-                            ;
                         }
 
                         var targetTier = target.Tier ?? 1;
@@ -726,7 +715,6 @@ partial class WorldObject
                                 new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
                             );
                             return new ActivationResult(false);
-                            ;
                         }
                     }
                     break;
