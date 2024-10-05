@@ -2737,7 +2737,7 @@ public static partial class LootGenerationFactory
             case 8:
                 return 270;
             default:
-                return 0;
+                return 50;
         }
     }
 
@@ -2762,7 +2762,7 @@ public static partial class LootGenerationFactory
             case 270:
                 return 8;
             default:
-                return 0;
+                return 1;
         }
     }
 
