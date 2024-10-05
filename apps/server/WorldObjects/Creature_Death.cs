@@ -1272,7 +1272,7 @@ partial class Creature
 
     private float GetSpellStackBonus(DamageHistoryInfo killer)
     {
-        if (!killer.IsPlayer)
+        if (killer is not { IsPlayer: true })
         {
             return 1.0f;
         }
