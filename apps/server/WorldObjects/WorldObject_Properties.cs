@@ -2672,7 +2672,6 @@ partial class WorldObject
             {
                 return (CoverageMask?)GetProperty(PropertyInt.ClothingPriority);
             }
-            ;
         }
         set
         {

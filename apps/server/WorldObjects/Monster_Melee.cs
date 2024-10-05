@@ -239,7 +239,7 @@ partial class Creature
         if (!CombatTable.Stances.TryGetValue(CurrentMotionState.Stance, out var stanceManeuvers))
         {
             _log.Error(
-                $"{Name} ({Guid}).GetCombatManeuver() - couldn't find stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}"
+                $"{Name} ({Guid}-{WeenieClassId}).GetCombatManeuver() - couldn't find stance {CurrentMotionState.Stance} in CMT {CombatTableDID:X8}"
             );
             return null;
         }

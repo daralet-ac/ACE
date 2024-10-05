@@ -297,7 +297,6 @@ public static class ModManager
                 _log.Information(message);
                 break;
         }
-        ;
     }
 
     public static void Message(string name, string message)

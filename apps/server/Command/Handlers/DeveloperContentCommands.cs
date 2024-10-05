@@ -1268,7 +1268,7 @@ public class DeveloperContentCommands
         sqlCommands = sqlCommands.Replace("\r\n", "\n");
 
         // not sure why ExecuteSqlCommand doesn't parse this correctly..
-        var idx = sqlCommands.IndexOf($"/* Lifestoned Changelog:");
+        var idx = sqlCommands.IndexOf($"/* Lifestoned Changelog:", StringComparison.Ordinal);
         if (idx != -1)
         {
             sqlCommands = sqlCommands.Substring(0, idx);

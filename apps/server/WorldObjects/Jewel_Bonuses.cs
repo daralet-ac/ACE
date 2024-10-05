@@ -507,7 +507,6 @@ partial class Jewel
         else
         {
             playerAttacker.QuestManager.Stamp($"{playerAttacker.Name},StamReduction");
-            ;
             playerAttacker.QuestManager.Increment($"{playerAttacker.Name},StamReduction", (int)scaledStamps);
         }
     }
