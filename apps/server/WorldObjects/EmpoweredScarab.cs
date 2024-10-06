@@ -499,7 +499,7 @@ public class EmpoweredScarab : WorldObject
 
     private void ActivateReservedMana(Player player, float reservedMana)
     {
-        var spell = new Spell(SpellId.InfirmedMana);
+        var spell = new Spell(SpellId.ManaReservationPenalty);
 
         var addResult = EnchantmentManager.Add(spell, null, null, true);
         addResult.Enchantment.StatModValue = reservedMana;
@@ -512,11 +512,11 @@ public class EmpoweredScarab : WorldObject
 
     private void DeactivateReservedMana(Player player)
     {
-        var spell = new Spell(SpellId.InfirmedMana);
+        var spell = new Spell(SpellId.ManaReservationPenalty);
 
         var enchantments = player
             .Biota.PropertiesEnchantmentRegistry.Clone(BiotaDatabaseLock)
-            .Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.InfirmedMana)
+            .Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.ManaReservationPenalty)
             .ToList();
 
         foreach (var enchantment in enchantments)

@@ -6395,6 +6395,7 @@ public enum SpellId : uint
     LifeGiverMajor,
     LifeGiverEpic,
     LifeGiverLegendary,
+    ManaReservationPenalty,
 
     NumSpells = 8192,
 
