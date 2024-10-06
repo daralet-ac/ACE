@@ -683,28 +683,31 @@ partial class Jewel : WorldObject
         // Difficulty "Failure" Penalty - Rather than destroying jewels, we just lower their quality by 1 for each 20 points of skill below expected.
         var skill = player.GetCreatureSkill(Skill.ItemTinkering);
         var skillLevel = skill.Current;
-        var difficulty = (uint)(target.Workmanship * 20);
-
-        if (skillLevel < difficulty - 20)
+        if (target.Workmanship != null)
         {
-            var difference = difficulty - skillLevel;
-            var reductionPenalty = (int)difference / 20;
-            modifiedBase -= reductionPenalty;
-        }
+            var difficulty = (uint)(target.Workmanship * 20);
 
-        if (modifiedBase < 1)
-        {
-            modifiedBase = 1;
-        }
+            if (skillLevel < difficulty - 20)
+            {
+                var difference = difficulty - skillLevel;
+                var reductionPenalty = (int)difference / 20;
+                modifiedBase -= reductionPenalty;
+            }
 
-        player.TryAwardCraftingXp(player, skill, Skill.ItemTinkering, (int)difficulty);
+            if (modifiedBase < 1 && PropertyManager.GetBool("bypass_crafting_checks").Item == false)
+            {
+                modifiedBase = 1;
+            }
+
+            player.TryAwardCraftingXp(player, skill, Skill.ItemTinkering, (int)difficulty);
+        }
 
         // get quality name + write socket and jewel name
         // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem workmanship
 
         if (JewelQuality.TryGetValue(modifiedBase, out var qualityName))
         {
-            if (StringtoMaterialType.TryGetValue((MaterialType)target.MaterialType, out var materialType))
+            if (target.MaterialType != null && StringtoMaterialType.TryGetValue((MaterialType)target.MaterialType, out var materialType))
             {
                 jewel.JewelSocket1 =
                     $"{qualityName}/{materialType}/{appendedName}/{jewelProperty}/{modifiedBase}/{target.Workmanship}";
@@ -717,7 +720,7 @@ partial class Jewel : WorldObject
             }
         }
 
-        if (JewelUiEffect.TryGetValue((MaterialType)target.MaterialType, out var uiEffect))
+        if (target.MaterialType != null && JewelUiEffect.TryGetValue((MaterialType)target.MaterialType, out var uiEffect))
         {
             jewel.UiEffects = (UiEffects)uiEffect;
         }
@@ -775,43 +778,33 @@ partial class Jewel : WorldObject
 
                     // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem workmanship
 
-                    if (
-                        socketArray[0] != null
-                        && socketArray[1] != null
-                        && socketArray[2] != null
-                        && socketArray[3] != null
-                        && socketArray[4] != null
-                        && socketArray[5] != null
-                    )
+                    // get materialtype in order to set ui and ID
+
+                    if (MaterialTypetoString.TryGetValue(socketArray[1], out var convertedMaterialType))
                     {
-                        // get materialtype in order to set ui and ID
-
-                        if (MaterialTypetoString.TryGetValue(socketArray[1], out var convertedMaterialType))
+                        if (JewelUiEffect.TryGetValue((MaterialType)convertedMaterialType, out var uiEffect))
                         {
-                            if (JewelUiEffect.TryGetValue((MaterialType)convertedMaterialType, out var uiEffect))
-                            {
-                                jewel.UiEffects = (UiEffects)uiEffect;
-                            }
-
-                            if (GemstoneIconMap.TryGetValue(socketArray[1], out var gemstoneIcon))
-                            {
-                                jewel.IconId = gemstoneIcon;
-                            }
+                            jewel.UiEffects = (UiEffects)uiEffect;
                         }
 
-                        jewel.JewelSocket1 = currentSocket;
-                        jewel.Name = $"{socketArray[0]} {socketArray[1]} {socketArray[2]}";
-
-                        if (StringToIntProperties.TryGetValue(socketArray[3], out var jewelProperty))
+                        if (GemstoneIconMap.TryGetValue(socketArray[1], out var gemstoneIcon))
                         {
-                            target.GetType().GetProperty($"{jewelProperty}")?.SetValue(target, null);
-                            target.GetType().GetProperty($"JewelSocket{i}")?.SetValue(target, $"Empty");
+                            jewel.IconId = gemstoneIcon;
                         }
-
-                        jewel.Attuned = (AttunedStatus?)1;
-                        jewel.Bonded = (BondedStatus?)1;
-                        player.TryCreateInInventoryWithNetworking(jewel);
                     }
+
+                    jewel.JewelSocket1 = currentSocket;
+                    jewel.Name = $"{socketArray[0]} {socketArray[1]} {socketArray[2]}";
+
+                    if (StringToIntProperties.TryGetValue(socketArray[3], out var jewelProperty))
+                    {
+                        target.GetType().GetProperty($"{jewelProperty}")?.SetValue(target, null);
+                        target.GetType().GetProperty($"JewelSocket{i}")?.SetValue(target, $"Empty");
+                    }
+
+                    jewel.Attuned = (AttunedStatus?)1;
+                    jewel.Bonded = (BondedStatus?)1;
+                    player.TryCreateInInventoryWithNetworking(jewel);
                 }
             }
 
