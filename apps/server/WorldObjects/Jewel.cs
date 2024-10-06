@@ -687,14 +687,14 @@ partial class Jewel : WorldObject
         {
             var difficulty = (uint)(target.Workmanship * 20);
 
-            if (skillLevel < difficulty - 20)
+            if (skillLevel < difficulty - 20 && PropertyManager.GetBool("bypass_crafting_checks").Item == false)
             {
                 var difference = difficulty - skillLevel;
                 var reductionPenalty = (int)difference / 20;
                 modifiedBase -= reductionPenalty;
             }
 
-            if (modifiedBase < 1 && PropertyManager.GetBool("bypass_crafting_checks").Item == false)
+            if (modifiedBase < 1)
             {
                 modifiedBase = 1;
             }
