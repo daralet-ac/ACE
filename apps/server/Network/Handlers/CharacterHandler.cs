@@ -546,8 +546,8 @@ public static class CharacterHandler
         player.TotalExperience = (long)xpToPlaytestLevel;
         player.AvailableExperience = (long)xpToPlaytestLevel;
         player.Level = (int)playtestLevel;
-        player.TotalSkillCredits = player.GetSkillCreditsAtLevel((int)playtestLevel);
-        player.AvailableSkillCredits = player.GetSkillCreditsAtLevel((int)playtestLevel);
+        player.TotalSkillCredits += player.GetSkillCreditsAtLevel((int)playtestLevel);
+        player.AvailableSkillCredits += player.GetSkillCreditsAtLevel((int)playtestLevel);
 
         switch (playtestLevel)
         {
