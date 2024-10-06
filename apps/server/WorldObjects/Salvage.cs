@@ -76,9 +76,9 @@ public class Salvage : WorldObject
 
         if (PropertyManager.GetBool("bypass_crafting_checks").Item)
         {
-            salvageCost = 1;
+            salvageCost = 0;
         }
-Console.WriteLine($"{source.Structure} {salvageCost}");
+
         var units = salvageCost == 1 ? "unit" : "units";
         if (source.Structure < (ushort)salvageCost)
         {
@@ -1072,7 +1072,7 @@ Console.WriteLine($"{source.Structure} {salvageCost}");
 
         if (PropertyManager.GetBool("bypass_crafting_checks").Item)
         {
-            salvageCost = 1;
+            salvageCost = 0;
         }
 
         if (source.Structure >= salvageCost)
