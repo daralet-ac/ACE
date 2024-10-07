@@ -83,5 +83,6 @@ public enum WeenieType : uint
     RetainingChisel,
     TailoringKit,
     CombatFocusAlterationGem,
-    UpgradeKit
+    UpgradeKit,
+    SpellPurge,
 }

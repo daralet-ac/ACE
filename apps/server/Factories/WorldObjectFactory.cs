@@ -153,6 +153,8 @@ public static class WorldObjectFactory
                 return new Salvage(weenie, guid);
             case WeenieType.SpellTransference:
                 return new SpellTransference(weenie, guid);
+            case WeenieType.SpellPurge:
+                return new SpellPurge(weenie, guid);
             case WeenieType.RetainingChisel:
                 return new RetainingChisel(weenie, guid);
             case WeenieType.CombatFocusAlterationGem:
@@ -288,6 +290,8 @@ public static class WorldObjectFactory
                 return new Salvage(biota);
             case WeenieType.SpellTransference:
                 return new SpellTransference(biota);
+            case WeenieType.SpellPurge:
+                return new SpellPurge(biota);
             case WeenieType.RetainingChisel:
                 return new RetainingChisel(biota);
             case WeenieType.CombatFocusAlterationGem:

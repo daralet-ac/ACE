@@ -174,6 +174,9 @@ public class Confirmation_CraftInteration : Confirmation
 
         switch (source.WeenieType)
         {
+            case WeenieType.SpellPurge:
+                SpellPurge.UseObjectOnTarget(player, source, target, !repeatConfirmation);
+                break;
             case WeenieType.SpellTransference:
                 SpellTransference.UseObjectOnTarget(player, source, target, !repeatConfirmation);
                 break;
