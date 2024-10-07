@@ -234,6 +234,7 @@ public enum PropertyBool : ushort
     UpgradeableQuestItem = 154,
     FellowshipRequired = 155,
     SpecialPropertiesRequireMana = 156,
+    RepeatConfirmation = 157,
 
     /* custom */
     [ServerOnly]

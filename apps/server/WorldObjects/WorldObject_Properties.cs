@@ -8938,4 +8938,20 @@ partial class WorldObject
             }
         }
     }
+
+    public int? RemainingConfirmations
+    {
+        get => GetProperty(PropertyInt.RemainingConfirmations);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.RemainingConfirmations);
+            }
+            else
+            {
+                SetProperty(PropertyInt.RemainingConfirmations, value.Value);
+            }
+        }
+    }
 }
