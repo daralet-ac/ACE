@@ -212,7 +212,7 @@ public class SpellPurge : Stackable
             {
                 player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
             }
-            else
+            else if (target.RemainingConfirmations == 1)
             {
                 player.SendUseDoneEvent();
             }
@@ -257,7 +257,7 @@ public class SpellPurge : Stackable
 
                 if (source.SpellToExtract == null)
                 {
-                    _log.Error("UseObjectOnTarget() - {Source}.SpellExtracted is null. Cannot perform spell purge.", source);
+                    _log.Error("UseObjectOnTarget() - {Source}.SpellToRemove is null. Cannot perform spell purge.", source);
                     return;
                 }
 
