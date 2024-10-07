@@ -213,6 +213,8 @@ public static class VendorBaseItems
         { (5, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
         { (6, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
         { (7, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
+        // Pearl of Spell Purging
+        { (0, false, HeritageAny, 1054001, 0, 0.0, -1) }, // Large Component Pouch
     };
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
