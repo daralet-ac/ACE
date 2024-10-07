@@ -115,8 +115,7 @@ public class SpellTransference : Stackable
         if (source.SpellExtracted == null)
         {
             var pearlStackSize = source.StackSize ?? 1;
-            var workmanshipScaling = (target.ItemWorkmanship ?? 1) - 3;
-            var amountToAdd = workmanshipScaling < 1 ? 1 : workmanshipScaling;
+            var amountToAdd = Math.Clamp((target.ItemWorkmanship ?? 1) - 1, 1, 10);
             var consumed = amountToAdd > 1 ? $"and consuming {amountToAdd} pearls" : "";
 
             if (player.IsBusy)
@@ -239,7 +238,6 @@ public class SpellTransference : Stackable
                 var chosenSpell = new Spell((uint)source.SpellToExtract);
                 var chance = 100;
 
-                var showDialog = player.GetCharacterOption(CharacterOption.UseCraftingChanceOfSuccessDialog);
                 if (!confirmed)
                 {
                     if (
@@ -350,11 +348,6 @@ public class SpellTransference : Stackable
                     player,
                     () =>
                     {
-                        if (!showDialog)
-                        {
-                            player.SendUseDoneEvent();
-                        }
-
                         player.IsBusy = false;
                     }
                 );
