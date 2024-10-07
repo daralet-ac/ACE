@@ -821,6 +821,7 @@ public enum PropertyInt : ushort
     NearbyPlayerScalingThreshold = 462,
     NearbyPlayerScalingExtraPlayersPerAdd = 463,
     NearbyPlayerScalingAddWcid = 464,
+    RemainingConfirmations = 465,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,

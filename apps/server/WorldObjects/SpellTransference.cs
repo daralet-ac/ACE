@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
@@ -208,141 +207,162 @@ public class SpellTransference : Stackable
             }
             // if not confirmed yet, we select a spell from the item and assign the ID to the pearl's SpellToExtract property.
             // confirmation runs this method a second time after hitting yes
-            // so with multi-spell items, if we don't somehow save the previous spell it will roll again, potentially picking a different one
+            // with multi-spell items, repeated "No" confirmations will cycle through the item's spells
             if (!confirmed)
             {
-                var spellToExtractRoll = ThreadSafeRandom.Next(0, spellCount - 1);
+
+                if (target.RemainingConfirmations == null)
+                {
+                    target.RemainingConfirmations = spellCount;
+                }
+
+                var spellToExtractRoll = (target.RemainingConfirmations ?? 1) - 1;
                 var spellToExtractId = spells[spellToExtractRoll];
 
                 source.SpellToExtract = (uint?)spellToExtractId;
+
+                target.RemainingConfirmations--;
+                if (target.RemainingConfirmations == 0)
+                {
+                    target.RemainingConfirmations = null;
+                }
+
             }
 
-            var chosenSpell = new Spell((uint)source.SpellToExtract);
-            var chance = 100;
-
-            var showDialog = player.GetCharacterOption(CharacterOption.UseCraftingChanceOfSuccessDialog);
-            if (showDialog && !confirmed)
+            if (source.SpellToExtract == null)
             {
-                if (
-                    !player.ConfirmationManager.EnqueueSend(
-                        new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                        $"Extract {chosenSpell.Name} from {target.NameWithMaterial}, destroying it {consumed} in the process?\n\nIf this item contains more than one spell, you may cancel and attempt again for a different choice.\n\n"
-                    )
-                )
-                {
-                    player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
-                }
-                else
-                {
-                    player.SendUseDoneEvent();
-                }
-
-                if (PropertyManager.GetBool("craft_exact_msg").Item)
-                {
-                    var exactMsg = $"You have a 100% chance of extracting a spell from {target.NameWithMaterial}.";
-
-                    player.Session.Network.EnqueueSend(new GameMessageSystemChat(exactMsg, ChatMessageType.Craft));
-                }
+                _log.Error("UseObjectOnTarget() - {Source}.SpellToExtract is null", source);
                 return;
             }
 
-            var actionChain = new ActionChain();
-
-            var animTime = 0.0f;
-
-            player.IsBusy = true;
-
-            if (player.CombatMode != CombatMode.NonCombat)
             {
-                var stanceTime = player.SetCombatMode(CombatMode.NonCombat);
-                actionChain.AddDelaySeconds(stanceTime);
+                var chosenSpell = new Spell((uint)source.SpellToExtract);
+                var chance = 100;
 
-                animTime += stanceTime;
-            }
-
-            animTime += player.EnqueueMotion(actionChain, MotionCommand.ClapHands);
-
-            actionChain.AddAction(
-                player,
-                () =>
+                var showDialog = player.GetCharacterOption(CharacterOption.UseCraftingChanceOfSuccessDialog);
+                if (!confirmed)
                 {
-                    if (!RecipeManager.VerifyUse(player, source, target, true))
+                    if (
+                        !player.ConfirmationManager.EnqueueSend(
+                            new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
+                            $"Extract {chosenSpell.Name} from {target.NameWithMaterial}, destroying it {consumed} in the process?\n\nIf this item contains more than one spell, you may cancel and attempt again for a different choice.\n\n"
+                        )
+                    )
                     {
-                        player.SendTransientError(
-                            "Either you or one of the items involved does not pass the requirements for this craft interaction."
-                        );
-                        return;
+                        player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
                     }
-                    var pearl = WorldObjectFactory.CreateNewWorldObject(1054001);
-                    var success = true;
-                    var spellName = "";
-                    if (success)
-                    {
-                        var spell = new Spell((int)source.SpellToExtract);
-                        spellName = spell.Name;
-
-                        pearl.SpellExtracted = source.SpellToExtract;
-
-                        var itemType = "";
-                        if (target.ItemType == ItemType.Jewelry)
-                        {
-                            itemType = "a piece of jewelry";
-                        }
-                        if (target.ItemType == ItemType.Armor)
-                        {
-                            itemType = "a piece of armor";
-                        }
-                        if (target.ItemType == ItemType.MissileWeapon || target.ItemType == ItemType.MeleeWeapon)
-                        {
-                            itemType = "a missile or melee weapon";
-                        }
-                        if (target.ItemType == ItemType.Caster)
-                        {
-                            itemType = "a magic caster";
-                        }
-                        if (target.ItemType == ItemType.Clothing)
-                        {
-                            itemType = "a piece of clothing";
-                        }
-
-                        player.TryConsumeFromInventoryWithNetworking(source, amountToAdd);
-
-                        pearl.Tier = target.Tier;
-                        var wieldReq = LootGenerationFactory.GetWieldDifficultyPerTier(pearl.Tier ?? 1);
-                        pearl.LongDesc =
-                            $"This pearl contains the spell {spell.Name}.\n\nIt may only be applied to {itemType} with a Wield Requirement of {wieldReq} or greater.\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character.\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
-                        pearl.TinkerLog = $"{target.ItemType}";
-                        pearl.UiEffects = ACE.Entity.Enum.UiEffects.BoostMana;
-                        player.EnqueueBroadcast(new GameMessageUpdateObject(source));
-                        player.PlayParticleEffect(PlayScript.EnchantUpBlue, player.Guid);
-
-                        player.TryConsumeFromInventoryWithNetworking(target);
-
-                        player.TryCreateInInventoryWithNetworking(pearl);
-                    }
-
-                    BroadcastSpellExtraction(player, spellName, target, chance, success);
-                }
-            );
-
-            player.EnqueueMotion(actionChain, MotionCommand.Ready);
-
-            actionChain.AddAction(
-                player,
-                () =>
-                {
-                    if (!showDialog)
+                    else
                     {
                         player.SendUseDoneEvent();
                     }
 
-                    player.IsBusy = false;
+                    if (PropertyManager.GetBool("craft_exact_msg").Item)
+                    {
+                        var exactMsg = $"You have a 100% chance of extracting a spell from {target.NameWithMaterial}.";
+
+                        player.Session.Network.EnqueueSend(new GameMessageSystemChat(exactMsg, ChatMessageType.Craft));
+                    }
+                    return;
                 }
-            );
 
-            actionChain.EnqueueChain();
+                var actionChain = new ActionChain();
 
-            player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
+                var animTime = 0.0f;
+
+                player.IsBusy = true;
+
+                if (player.CombatMode != CombatMode.NonCombat)
+                {
+                    var stanceTime = player.SetCombatMode(CombatMode.NonCombat);
+                    actionChain.AddDelaySeconds(stanceTime);
+
+                    animTime += stanceTime;
+                }
+
+                animTime += player.EnqueueMotion(actionChain, MotionCommand.ClapHands);
+
+                actionChain.AddAction(
+                    player,
+                    () =>
+                    {
+                        if (!RecipeManager.VerifyUse(player, source, target, true))
+                        {
+                            player.SendTransientError(
+                                "Either you or one of the items involved does not pass the requirements for this craft interaction."
+                            );
+                            return;
+                        }
+                        var pearl = WorldObjectFactory.CreateNewWorldObject(1054001);
+                        var success = true;
+                        var spellName = "";
+                        if (success)
+                        {
+                            var spell = new Spell((int)source.SpellToExtract);
+                            spellName = spell.Name;
+
+                            pearl.SpellExtracted = source.SpellToExtract;
+
+                            var itemType = "";
+                            if (target.ItemType == ItemType.Jewelry)
+                            {
+                                itemType = "a piece of jewelry";
+                            }
+                            if (target.ItemType == ItemType.Armor)
+                            {
+                                itemType = "a piece of armor";
+                            }
+                            if (target.ItemType == ItemType.MissileWeapon || target.ItemType == ItemType.MeleeWeapon)
+                            {
+                                itemType = "a missile or melee weapon";
+                            }
+                            if (target.ItemType == ItemType.Caster)
+                            {
+                                itemType = "a magic caster";
+                            }
+                            if (target.ItemType == ItemType.Clothing)
+                            {
+                                itemType = "a piece of clothing";
+                            }
+
+                            player.TryConsumeFromInventoryWithNetworking(source, amountToAdd);
+
+                            pearl.Tier = target.Tier;
+                            var wieldReq = LootGenerationFactory.GetWieldDifficultyPerTier(pearl.Tier ?? 1);
+                            pearl.LongDesc =
+                                $"This pearl contains the spell {spell.Name}.\n\nIt may only be applied to {itemType} with a Wield Requirement of {wieldReq} or greater.\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character.\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
+                            pearl.TinkerLog = $"{target.ItemType}";
+                            pearl.UiEffects = ACE.Entity.Enum.UiEffects.BoostMana;
+                            player.EnqueueBroadcast(new GameMessageUpdateObject(source));
+                            player.PlayParticleEffect(PlayScript.EnchantUpBlue, player.Guid);
+
+                            player.TryConsumeFromInventoryWithNetworking(target);
+
+                            player.TryCreateInInventoryWithNetworking(pearl);
+                        }
+
+                        BroadcastSpellExtraction(player, spellName, target, chance, success);
+                    }
+                );
+
+                player.EnqueueMotion(actionChain, MotionCommand.Ready);
+
+                actionChain.AddAction(
+                    player,
+                    () =>
+                    {
+                        if (!showDialog)
+                        {
+                            player.SendUseDoneEvent();
+                        }
+
+                        player.IsBusy = false;
+                    }
+                );
+
+                actionChain.EnqueueChain();
+
+                player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
+            }
         }
         // handle Transference
         else
@@ -524,10 +544,16 @@ public class SpellTransference : Stackable
                         extraMessage = $"\nThis will replace {spellToReplace.Name}!\n";
                     }
 
+                    var potentialArcaneLoreReq = CalculateArcaneLore(target, (int)spellToAdd.Id);
+                    var arcaneLoreString = potentialArcaneLoreReq > 0
+                        ? $"The {target.Name}'s arcane lore activation requirement will become {potentialArcaneLoreReq}.\n\n" : "";
+
                     if (
                         !player.ConfirmationManager.EnqueueSend(
                             new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                            $"Transfer {spellToAdd.Name} to {target.NameWithMaterial}?\n\nThe pearl will be consumed, and the {target.Name} will become bound to your character.\n\n{extraMessage}"
+                            $"Transfer {spellToAdd.Name} to {target.NameWithMaterial}?\n\n" +
+                            $"{arcaneLoreString}" +
+                            $"The pearl will be consumed and the {target.Name} will become bound to your character.\n\n{extraMessage}"
                         )
                     )
                     {
@@ -645,19 +671,26 @@ public class SpellTransference : Stackable
         }
     }
 
-    public static int CalculateArcaneLore(WorldObject target)
+    public static int CalculateArcaneLore(WorldObject target, int? potentialSpell = null)
     {
         var numSpells = 0;
         var increasedDifficulty = 0.0f;
 
-        if (target.Biota.PropertiesSpellBook != null)
+        var spellBook = target.Biota.PropertiesSpellBook;
+
+        if (potentialSpell != null)
+        {
+            spellBook.Add(potentialSpell.Value, 1.0f);
+        }
+
+        if (spellBook != null)
         {
             int MINOR = 0,
                 MAJOR = 1,
                 EPIC = 2,
                 LEGENDARY = 3;
 
-            foreach (SpellId spellId in target.Biota.PropertiesSpellBook.Keys)
+            foreach (SpellId spellId in spellBook.Keys)
             {
                 numSpells++;
 

@@ -149,13 +149,6 @@ public class Confirmation_CraftInteration : Confirmation
             return;
         }
 
-        if (!response)
-        {
-            player.SendWeenieError(WeenieError.YouChickenOut);
-
-            return;
-        }
-
         // inventory only?
         var source = player.FindObject(SourceGuid.Full, Player.SearchLocations.LocationsICanMove);
         var target = player.FindObject(TargetGuid.Full, Player.SearchLocations.LocationsICanMove);
@@ -165,37 +158,46 @@ public class Confirmation_CraftInteration : Confirmation
             return;
         }
 
-        if (source.WeenieType == WeenieType.SpellTransference)
+        var repeatConfirmation = source.RepeatConfirmation && target.RemainingConfirmations > 0;
+
+        if (!response && !repeatConfirmation)
         {
-            SpellTransference.UseObjectOnTarget(player, source, target, true);
+            player.SendWeenieError(WeenieError.YouChickenOut);
+
+            return;
         }
-        else if (source.WeenieType == WeenieType.Jewel)
+
+        if (response)
         {
-            Jewel.UseObjectOnTarget(player, source, target, true);
+            repeatConfirmation = false;
         }
-        else if (source.WeenieType == WeenieType.ArmorPatch)
+
+        switch (source.WeenieType)
         {
-            ArmorPatch.UseObjectOnTarget(player, source, target, true);
-        }
-        else if (source.WeenieType == WeenieType.TailoringKit)
-        {
-            TailoringKit.UseObjectOnTarget(player, source, target, true);
-        }
-        else if (source.WeenieType == WeenieType.Salvage)
-        {
-            Salvage.UseObjectOnTarget(player, source, target, true);
-        }
-        else if (source.WeenieType == WeenieType.CombatFocusAlterationGem)
-        {
-            CombatFocusAlterationGem.UseObjectOnTarget(player, source, target, true);
-        }
-        else if (source.WeenieType == WeenieType.UpgradeKit)
-        {
-            UpgradeKit.UseObjectOnTarget(player, source, target, true);
-        }
-        else
-        {
-            RecipeManager.UseObjectOnTarget(player, source, target, true);
+            case WeenieType.SpellTransference:
+                SpellTransference.UseObjectOnTarget(player, source, target, !repeatConfirmation);
+                break;
+            case WeenieType.Jewel:
+                Jewel.UseObjectOnTarget(player, source, target, true);
+                break;
+            case WeenieType.ArmorPatch:
+                ArmorPatch.UseObjectOnTarget(player, source, target, true);
+                break;
+            case WeenieType.TailoringKit:
+                TailoringKit.UseObjectOnTarget(player, source, target, true);
+                break;
+            case WeenieType.Salvage:
+                Salvage.UseObjectOnTarget(player, source, target, true);
+                break;
+            case WeenieType.CombatFocusAlterationGem:
+                CombatFocusAlterationGem.UseObjectOnTarget(player, source, target, true);
+                break;
+            case WeenieType.UpgradeKit:
+                UpgradeKit.UseObjectOnTarget(player, source, target, true);
+                break;
+            default:
+                RecipeManager.UseObjectOnTarget(player, source, target, true);
+                break;
         }
     }
 }

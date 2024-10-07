@@ -1750,4 +1750,20 @@ public abstract partial class WorldObject : IActor
             }
         }
     }
+
+    public bool RepeatConfirmation
+    {
+        get => GetProperty(PropertyBool.RepeatConfirmation) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.RepeatConfirmation);
+            }
+            else
+            {
+                SetProperty(PropertyBool.RepeatConfirmation, true);
+            }
+        }
+    }
 }
