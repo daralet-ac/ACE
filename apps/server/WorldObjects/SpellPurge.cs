@@ -128,7 +128,7 @@ public class SpellPurge : Stackable
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You require {amountToAdd} Pearls of Spell Purging to remove a spell from {target.NameWithMaterial}.",
+                    $"You require a stack of {amountToAdd} Pearls of Spell Purging to remove a spell from {target.NameWithMaterial}.",
                     ChatMessageType.Craft
                 )
             );
