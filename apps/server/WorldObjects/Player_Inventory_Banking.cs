@@ -519,8 +519,8 @@ public partial class Player
             targetStack.StackSize,
             targetStack.PlacementPosition
         );
-        var bankLogSourceContainer = new BankLogContainer(sourceContainer.Name, sourceContainer.Guid.Full);
-        var bankLogTargetContainer = new BankLogContainer(targetContainer.Name, targetContainer.Guid.Full);
+        var bankLogSourceContainer = new BankLogContainer(sourceContainer?.Name, sourceContainer?.Guid.Full);
+        var bankLogTargetContainer = new BankLogContainer(targetContainer?.Name, targetContainer?.Guid.Full);
 
         if (
             targetStackRootOwner is not { WeenieType: WeenieType.Storage }
@@ -606,7 +606,7 @@ public partial class Player
             }
         }
         // MERGE stack from BANK-MAIN to BANK-SIDE
-        else if (sourceContainer is { WeenieType: WeenieType.Storage } && targetContainer.IsBankSideContainer)
+        else if (targetContainer != null && sourceContainer is { WeenieType: WeenieType.Storage } && targetContainer.IsBankSideContainer)
         {
             foreach (var wo in sourceContainer.Inventory.Values)
             {
@@ -628,7 +628,7 @@ public partial class Player
             }
         }
         // MERGE stack from BANK-SIDE to BANK-MAIN
-        else if (sourceContainer.IsBankSideContainer && targetContainer is { WeenieType: WeenieType.Storage })
+        else if (sourceContainer is { IsBankSideContainer: true } && targetContainer is { WeenieType: WeenieType.Storage })
         {
             foreach (var wo in targetContainer.Inventory.Values)
             {
@@ -650,7 +650,7 @@ public partial class Player
             }
         }
         // Logging Only - MERGE stack from PLAYER to BANK-SIDE
-        else if (sourceStackRootOwner is not { WeenieType: WeenieType.Storage } && targetContainer.IsBankSideContainer)
+        else if (targetContainer != null && sourceStackRootOwner is not { WeenieType: WeenieType.Storage } && targetContainer.IsBankSideContainer)
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -666,7 +666,7 @@ public partial class Player
             }
         }
         // Logging Only - MERGE stack from BANK-SIDE to PLAYER
-        else if (sourceContainer.IsBankSideContainer && targetStackRootOwner is not { WeenieType: WeenieType.Storage })
+        else if (sourceContainer is { IsBankSideContainer: true } && targetStackRootOwner is not { WeenieType: WeenieType.Storage })
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -682,7 +682,7 @@ public partial class Player
             }
         }
         // Logging Only - MERGE stack from BANK-SIDE to BANK-SIDE
-        else if (sourceContainer.IsBankSideContainer && targetContainer.IsBankSideContainer)
+        else if (targetContainer != null && sourceContainer is { IsBankSideContainer: true } && targetContainer.IsBankSideContainer)
         {
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
