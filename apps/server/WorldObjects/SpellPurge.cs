@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
@@ -212,10 +211,6 @@ public class SpellPurge : Stackable
             {
                 player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
             }
-            else if (target.RemainingConfirmations == 1)
-            {
-                player.SendUseDoneEvent();
-            }
 
             if (PropertyManager.GetBool("craft_exact_msg").Item)
             {
@@ -279,7 +274,7 @@ public class SpellPurge : Stackable
             player,
             () =>
             {
-                //player.SendUseDoneEvent();
+                player.SendUseDoneEvent();
                 player.IsBusy = false;
             }
         );
@@ -294,8 +289,14 @@ public class SpellPurge : Stackable
         var numSpells = 0;
         var increasedDifficulty = 0.0f;
 
-        var spellBook = target.Biota.PropertiesSpellBook.ToDictionary(entry => entry.Key,
-            entry => entry.Value);
+        var targetSpellBook = target.Biota.PropertiesSpellBook;
+
+        if (targetSpellBook == null)
+        {
+            return 0;
+        }
+
+        var spellBook = new Dictionary<int,float>(targetSpellBook);
 
         if (potentialRemovedSpell != null)
         {
