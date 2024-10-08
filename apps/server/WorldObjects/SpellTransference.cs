@@ -246,10 +246,6 @@ public class SpellTransference : Stackable
                 {
                     player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
                 }
-                else if (target.RemainingConfirmations == 1)
-                {
-                    player.SendUseDoneEvent();
-                }
 
                 if (PropertyManager.GetBool("craft_exact_msg").Item)
                 {
@@ -346,10 +342,7 @@ public class SpellTransference : Stackable
                 player,
                 () =>
                 {
-                    if (target.RemainingConfirmations > 1)
-                    {
-                        player.SendUseDoneEvent();
-                    }
+                    player.SendUseDoneEvent();
                     player.IsBusy = false;
                 }
             );
@@ -665,49 +658,53 @@ public class SpellTransference : Stackable
         }
     }
 
-    public static int CalculateArcaneLore(WorldObject target, int? potentialSpell = null)
+    private static int CalculateArcaneLore(WorldObject target, int? potentialSpell = null)
     {
         var numSpells = 0;
         var increasedDifficulty = 0.0f;
 
-        var spellBook = target.Biota.PropertiesSpellBook;
+        var targetSpellBook = target.Biota.PropertiesSpellBook;
+
+        if (targetSpellBook == null)
+        {
+            return 0;
+        }
+
+        var spellBook = new Dictionary<int,float>(targetSpellBook);
 
         if (potentialSpell != null)
         {
             spellBook.Add(potentialSpell.Value, 1.0f);
         }
 
-        if (spellBook != null)
+        int MINOR = 0,
+            MAJOR = 1,
+            EPIC = 2,
+            LEGENDARY = 3;
+
+        foreach (SpellId spellId in spellBook.Keys)
         {
-            int MINOR = 0,
-                MAJOR = 1,
-                EPIC = 2,
-                LEGENDARY = 3;
+            numSpells++;
 
-            foreach (SpellId spellId in spellBook.Keys)
+            var cantripLevels = SpellLevelProgression.GetSpellLevels(spellId);
+
+            var cantripLevel = cantripLevels.IndexOf(spellId);
+
+            if (cantripLevel == MINOR)
             {
-                numSpells++;
-
-                var cantripLevels = SpellLevelProgression.GetSpellLevels(spellId);
-
-                var cantripLevel = cantripLevels.IndexOf(spellId);
-
-                if (cantripLevel == MINOR)
-                {
-                    increasedDifficulty += 5;
-                }
-                else if (cantripLevel == MAJOR)
-                {
-                    increasedDifficulty += 10;
-                }
-                else if (cantripLevel == EPIC)
-                {
-                    increasedDifficulty += 15;
-                }
-                else if (cantripLevel == LEGENDARY)
-                {
-                    increasedDifficulty += 20;
-                }
+                increasedDifficulty += 5;
+            }
+            else if (cantripLevel == MAJOR)
+            {
+                increasedDifficulty += 10;
+            }
+            else if (cantripLevel == EPIC)
+            {
+                increasedDifficulty += 15;
+            }
+            else if (cantripLevel == LEGENDARY)
+            {
+                increasedDifficulty += 20;
             }
         }
 

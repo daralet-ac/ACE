@@ -164,6 +164,11 @@ public class Confirmation_CraftInteration : Confirmation
         {
             player.SendWeenieError(WeenieError.YouChickenOut);
 
+            if (source.WeenieType is WeenieType.SpellTransference or WeenieType.SpellPurge)
+            {
+                player.SendUseDoneEvent();
+            }
+
             return;
         }
 
