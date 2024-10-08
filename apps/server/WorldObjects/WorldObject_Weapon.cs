@@ -513,13 +513,13 @@ partial class WorldObject
 
         var elementalDamageMod = weapon.ElementalDamageMod ?? 1.0f;
 
-        // additive to base multiplier
+        // multiplicative to base multiplier
         var wielderEnchantments = wielder.EnchantmentManager.GetElementalDamageMod();
         var weaponEnchantments = weapon.EnchantmentManager.GetElementalDamageMod();
 
         var enchantments = wielderEnchantments + weaponEnchantments;
 
-        var modifier = (float)(elementalDamageMod + enchantments);
+        var modifier = (float)((elementalDamageMod - 1.0f) * (1.0f + enchantments) + 1.0f);
 
         if (modifier > 1.0f && target is Player)
         {

@@ -688,7 +688,9 @@ public class AppraiseInfo
 
             if (enchantmentBonus != 0)
             {
-                PropertiesFloat[PropertyFloat.ElementalDamageMod] += enchantmentBonus;
+                PropertiesFloat.TryGetValue(PropertyFloat.ElementalDamageMod, out var baseElementalDamageMod);
+
+                PropertiesFloat[PropertyFloat.ElementalDamageMod] = (baseElementalDamageMod - 1.0f) * (1.0f + enchantmentBonus) + 1.0f;
 
                 ResistHighlight = ResistMaskHelper.GetHighlightMask(wo);
                 ResistColor = ResistMaskHelper.GetColorMask(wo);
