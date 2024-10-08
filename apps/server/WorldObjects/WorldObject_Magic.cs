@@ -550,12 +550,13 @@ partial class WorldObject
         // Empowered Scarabs
         if (this is Player)
         {
-            if (targetCreature != null)
+            if (targetCreature != null && !equip)
             {
                 var player = this as Player;
                 player?.CheckForEmpoweredScarabOnCastEffects(targetCreature, spell, true);
             }
         }
+
         switch (spell.MetaSpellType)
         {
             case SpellType.Enchantment:
