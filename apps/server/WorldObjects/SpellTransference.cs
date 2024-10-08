@@ -346,7 +346,10 @@ public class SpellTransference : Stackable
                 player,
                 () =>
                 {
-                    player.SendUseDoneEvent();
+                    if (target.RemainingConfirmations > 1)
+                    {
+                        player.SendUseDoneEvent();
+                    }
                     player.IsBusy = false;
                 }
             );
