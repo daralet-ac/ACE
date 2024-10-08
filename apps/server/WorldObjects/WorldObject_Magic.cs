@@ -671,6 +671,16 @@ partial class WorldObject
             return;
         }
 
+        if (spell.Id == 5206) // Surge of Protection
+        {
+            target = caster;
+        }
+        else if (target == null)
+        {
+            _log.Warning("DoSpellEffects(spell = {Spell}, caster = {Caster}, target = null, projectileHit = {ProjectileHit}) - Target is null.", spell, caster, projectileHit);
+            return;
+        }
+
         var targetBroadcaster = target.Wielder ?? target;
 
         targetBroadcaster.EnqueueBroadcast(
