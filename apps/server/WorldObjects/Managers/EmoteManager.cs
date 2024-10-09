@@ -501,7 +501,14 @@ public class EmoteManager
                         out var wasEquipped
                     );
 
-                    WorldObject.DeleteObject(rootOwner);
+                    if (wo?.StackSize > 1)
+                    {
+                        player.TryConsumeFromInventoryWithNetworking(wo, 1);
+                    }
+                    else
+                    {
+                        WorldObject.DeleteObject(rootOwner);
+                    }
                 }
                 else
                 {
