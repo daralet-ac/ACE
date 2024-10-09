@@ -775,4 +775,19 @@ partial class Player
             && empoweredScarab.EmpoweredScarabMaxLevel >= spell.Level
             && onCrit;
     }
+
+    private void UpdateEmpoweredScarabManaReservation()
+    {
+        var equippedEmpoweredScarabs = GetEquippedEmpoweredScarabs();
+
+        if (equippedEmpoweredScarabs == null)
+        {
+            return;
+        }
+
+        foreach (var scarab in equippedEmpoweredScarabs)
+        {
+            scarab.OnEquip(this);
+        }
+    }
 }

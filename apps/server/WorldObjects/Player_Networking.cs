@@ -153,6 +153,7 @@ partial class Player
         AuditItemSpells();
         AuditEquippedItems();
         UpdateArmorModBuffs();
+        UpdateEmpoweredScarabManaReservation();
 
         HandleMissingXp();
         HandleSkillCreditRefund();
