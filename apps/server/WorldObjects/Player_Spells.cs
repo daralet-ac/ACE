@@ -656,10 +656,10 @@ partial class Player
 
         // this is a legacy method, but is still a decent failsafe to catch any existing issues
 
-        // get active item enchantments -- exclude vitae and level scaler
+        // get active item enchantments -- exclude vitae, level scaler, and mana reservation
         var enchantments = Biota
             .PropertiesEnchantmentRegistry.Clone(BiotaDatabaseLock)
-            .Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.Vitae && i.SpellId != 5379)
+            .Where(i => i.Duration == -1 && i.SpellId != (int)SpellId.Vitae && i.SpellId != (int)SpellId.CurseWeakness1 && i.SpellId != (int)SpellId.ManaReservationPenalty)
             .ToList();
 
         foreach (var enchantment in enchantments)
