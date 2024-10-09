@@ -422,7 +422,19 @@ public class EnchantmentManager
 
         if (Player != null)
         {
-            var layer = (entry.SpellId == (uint)SpellId.Vitae) ? (ushort)0 : entry.LayerId; // this line is to force vitae to be layer 0 to match retail pcaps. We save it as layer 1 to make EF Core happy.
+            // this line is to force vitae to be layer 0 to match retail pcaps. We save it as layer 1 to make EF Core happy.
+            var layer = (entry.SpellId == (uint)SpellId.Vitae) ? (ushort)0 : entry.LayerId;
+
+            // if player has multiple entries/layers of the same spell, only send expiration message/sound for the final entry
+            var entryTopLayer = GetEnchantment((uint)spellID);
+            if (entryTopLayer != null)
+            {
+                if (layer != entryTopLayer.LayerId)
+                {
+                    return;
+                }
+            }
+
             Player.Session.Network.EnqueueSend(
                 new GameEventMagicRemoveEnchantment(Player.Session, (ushort)entry.SpellId, layer)
             );
