@@ -823,7 +823,10 @@ public static class DefaultPropertyManager
         ("soft_level_cap", new Property<long>(50, "Set the 'soft' level cap (current highest possible level of monsters)")),
         ("playtest_starting_level", new Property<long>(0, "Set the starting level for newly created characters. If above 1, also spawns new characters in Hotel Swank.")),
         ("monster_visual_awareness_range", new Property<long>(30, "Set outdoors monster visual range.")),
-        ("landblock_minimum_spawn_density", new Property<long>(8, "Set minimum spawn density for outdoor landblocks. Requires the 'increase_minimum_encounter_spawn_density' to be enabled."))
+        ("landblock_minimum_spawn_density", new Property<long>(8, "Set minimum spawn density for outdoor landblocks. Requires the 'increase_minimum_encounter_spawn_density' to be enabled.")),
+        ("olthoi_north_camp_south_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Southern Camp.")),
+        ("olthoi_north_camp_west_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Western Camp.")),
+        ("olthoi_north_camp_north_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Northern Camp."))
     );
 
     public static readonly ReadOnlyDictionary<string, Property<double>> DefaultDoubleProperties = DictOf(

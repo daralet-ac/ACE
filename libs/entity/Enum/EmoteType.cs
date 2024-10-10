@@ -150,4 +150,6 @@ public enum EmoteType
     BroadcastSpellStacks = 10012,
     RemoveEnchantment = 10013,
     StampQuestForAllFellows = 10014,
+    AdjustServerPropertyLong = 10015,
+    InqServerPropertyLong = 10016,
 }
