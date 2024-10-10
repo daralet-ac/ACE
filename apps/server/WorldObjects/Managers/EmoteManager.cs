@@ -2426,6 +2426,51 @@ public class EmoteManager
 
                 break;
 
+            case EmoteType.AdjustServerPropertyLong:
+
+                var adjustPropertyString = emote.Message;
+                var adjustmentAmount = Convert.ToInt64(emote.Amount);
+                var currentValue = PropertyManager.GetLong(adjustPropertyString).Item;
+
+                if (adjustPropertyString != null)
+                {
+                    var newValue = currentValue + adjustmentAmount;
+
+                    if (newValue >= 0)
+                    {
+                        PropertyManager.ModifyLong(adjustPropertyString, newValue);
+                    }
+                }
+
+                break;
+
+            case EmoteType.InqServerPropertyLong:
+
+                var inqPropertyString = emote.Message;
+
+                if (inqPropertyString != null)
+                {
+                    var propertyValue = PropertyManager.GetLong(inqPropertyString).Item;
+
+                    if (HasValidTestNoQuality(emote.Message))
+                    {
+                        ExecuteEmoteSet(EmoteCategory.TestNoQuality, emote.Message, targetObject, true);
+                    }
+                    else
+                    {
+                        success = propertyValue >= (emote.Min ?? int.MinValue) && propertyValue <= (emote.Max ?? int.MaxValue);
+
+                        ExecuteEmoteSet(
+                            success ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
+                            emote.Message,
+                            targetObject,
+                            true
+                        );
+                    }
+                }
+
+                break;
+
             default:
                 _log.Debug(
                     "EmoteManager.Execute - Encountered Unhandled EmoteType {EmoteType} for {WorldObjectName} ({WorldObjectWeenieClassId})",
@@ -2903,6 +2948,21 @@ public class EmoteManager
                     : ""
             );
         }
+
+        var olthoiNorthCampSouthSupplyLevel = PropertyManager.GetLong("olthoi_north_camp_south_supply_level").Item;
+        var olthoiNorthCampSouthSupplyPercentile = $"{Math.Round(olthoiNorthCampSouthSupplyLevel / 10.0f, 1)}";
+
+        result = result.Replace("%onss", olthoiNorthCampSouthSupplyPercentile);
+
+        var olthoiNorthCampNorthSupplyLevel = PropertyManager.GetLong("olthoi_north_camp_north_supply_level").Item;
+        var olthoiNorthCampNorthSupplyPercentile = $"{Math.Round(olthoiNorthCampNorthSupplyLevel / 10.0f, 1)}";
+
+        result = result.Replace("%onns", olthoiNorthCampNorthSupplyPercentile);
+
+        var olthoiNorthCampWestSupplyLevel = PropertyManager.GetLong("olthoi_north_camp_west_supply_level").Item;
+        var olthoiNorthCampWestSupplyPercentile = $"{Math.Round(olthoiNorthCampWestSupplyLevel / 10.0f, 1)}";
+
+        result = result.Replace("%onws", olthoiNorthCampWestSupplyPercentile);
 
         return result;
     }
