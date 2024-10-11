@@ -274,6 +274,11 @@ public class DamageEvent
         _evasionMod = 1.0f;
         PartialEvasion = PartialEvasion.None;
 
+        if (defender.CombatMode is CombatMode.NonCombat)
+        {
+            return;
+        }
+
         // Check for guaranteed hits
         var isOverpower = CheckForOverpower(attacker, defender);
         var isSteadyShotNoEvade = CheckForCombatAbilitySteadyShotNoEvade(playerAttacker, _attackerCombatAbility);
@@ -422,8 +427,13 @@ public class DamageEvent
     {
         var playerDefender = defender as Player;
 
-        var blockChance = 0.0f;
+        if (defender.CombatMode is CombatMode.NonCombat)
+        {
+            Blocked = false;
+            return;
+        }
 
+        var blockChance = 0.0f;
         var effectiveAngle = 180.0f;
 
         effectiveAngle += GetSpecShieldEffectiveAngleBonus(playerDefender);
@@ -680,15 +690,12 @@ public class DamageEvent
         var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
-        if (playerDefender != null && (playerDefender.IsLoggingOut || playerDefender.PKLogout))
+        if (playerDefender != null && (playerDefender.IsLoggingOut || playerDefender.PKLogout || playerDefender.CombatMode is CombatMode.NonCombat))
         {
             return 1.0f;
         }
 
-        if (
-            CheckForPlayerStealthGuaranteedCritical(playerAttacker, playerDefender)
-            || CheckForRatingReprisal(playerAttacker)
-        )
+        if (CheckForPlayerStealthGuaranteedCritical(playerAttacker, playerDefender) || CheckForRatingReprisal(playerAttacker))
         {
             return 1.0f;
         }
