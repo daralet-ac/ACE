@@ -1534,6 +1534,11 @@ public class AppraiseInfo
 
         var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
 
+        if (owner == null)
+        {
+            return;
+        }
+
         var criticalStrikeAmount = WorldObject.GetCriticalStrikeMod(owner.GetCreatureSkill(wo.WeaponSkill), owner);
         var amountFormatted = Math.Round(criticalStrikeAmount * 100, 0);
 
@@ -1583,6 +1588,11 @@ public class AppraiseInfo
 
         var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
 
+        if (owner == null)
+        {
+            return;
+        }
+
         var cripplingBlowAmount = WorldObject.GetCripplingBlowMod(owner.GetCreatureSkill(wo.WeaponSkill), owner);
         var amountFormatted = Math.Round(cripplingBlowAmount * 100, 0);
 
@@ -1628,6 +1638,11 @@ public class AppraiseInfo
         }
 
         var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
+
+        if (owner == null)
+        {
+            return;
+        }
 
         var rendingAmount = WorldObject.GetArmorRendingMod(owner.GetCreatureSkill(wo.WeaponSkill), owner);
         var amountFormatted = Math.Round(rendingAmount * 100, 0);
@@ -1697,6 +1712,11 @@ public class AppraiseInfo
 
         var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
 
+        if (owner == null)
+        {
+            return;
+        }
+
         var rendingAmount = WorldObject.GetRendingMod(owner.GetCreatureSkill(wo.WeaponSkill), owner);
         var amountFormatted = Math.Round(rendingAmount * 100, 0);
 
@@ -1743,6 +1763,11 @@ public class AppraiseInfo
         }
 
         var owner = wielder ?? PlayerManager.GetOnlinePlayer(wo.OwnerId.Value);
+
+        if (owner == null)
+        {
+            return;
+        }
 
         var rendingAmount = WorldObject.GetWardRendingMod(owner.GetCreatureSkill(wo.WeaponSkill));
         var amountFormatted = Math.Round(rendingAmount * 100, 0);
