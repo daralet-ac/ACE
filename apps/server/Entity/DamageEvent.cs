@@ -1798,7 +1798,7 @@ public class DamageEvent
     {
         if (defender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlock) > 0)
         {
-            return defender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlock);
+            return defender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlock) * 0.01f;
         }
 
         return 0.0f;
