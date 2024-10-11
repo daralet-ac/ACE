@@ -1045,6 +1045,11 @@ partial class WorldObject
 
     public float GetIgnoreWardMod(WorldObject weapon)
     {
+        if (weapon == null)
+        {
+            return 1.0f;
+        }
+
         if (weapon is { SpecialPropertiesRequireMana: true, ItemCurMana: 0 })
         {
             return 1.0f;
