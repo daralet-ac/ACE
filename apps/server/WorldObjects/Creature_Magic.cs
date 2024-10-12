@@ -3,6 +3,7 @@ using System.Linq;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
+using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
@@ -99,6 +100,8 @@ partial class Creature
             }
         }
 
+        var manaCostMultiplier = PropertyManager.GetDouble("mana_cost_multiplier").Item;
+
         // Mana Conversion
         var manaConversion = caster.GetCreatureSkill(Skill.ManaConversion);
 
@@ -107,7 +110,7 @@ partial class Creature
             || spell.Flags.HasFlag(SpellFlags.IgnoresManaConversion)
         )
         {
-            return baseCost;
+            return Convert.ToUInt32(baseCost * manaCostMultiplier);
         }
 
         var difficulty = spell.Level * 50;
@@ -125,7 +128,7 @@ partial class Creature
         // Final Calculation
         var manaCost = GetManaCost(caster, difficulty, baseCost, mana_conversion_skill);
 
-        return manaCost;
+        return Convert.ToUInt32(manaCost * manaCostMultiplier);
     }
 
     public static uint GetManaCost(Creature caster, uint difficulty, uint manaCost, uint manaConv)
