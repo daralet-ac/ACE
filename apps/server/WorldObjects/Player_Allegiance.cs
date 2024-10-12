@@ -785,14 +785,14 @@ partial class Player
 
     public double GetFollowerAllegianceRankContributions(AllegianceNode playerNode)
     {
-        double uniqueFollowers = 0;
-
-        var vassals = playerNode.Vassals.Values;
-
-        if (AllegianceNode.Vassals.Count == 0)
+        if (playerNode == null || AllegianceNode.Vassals.Count == 0)
         {
             return 0;
         }
+
+        double uniqueFollowers = 0;
+
+        var vassals = playerNode.Vassals.Values;
 
         foreach (var vassal in vassals)
         {
