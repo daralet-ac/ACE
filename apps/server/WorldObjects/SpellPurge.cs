@@ -256,6 +256,11 @@ public class SpellPurge : Stackable
                     return;
                 }
 
+                if (target.ProcSpell == source.SpellToExtract)
+                {
+                    target.ProcSpell = null;
+                }
+
                 target.Biota.TryRemoveKnownSpell((int)source.SpellToExtract.Value, target.BiotaDatabaseLock);
                 target.ItemDifficulty = CalculateArcaneLore(target);
 
