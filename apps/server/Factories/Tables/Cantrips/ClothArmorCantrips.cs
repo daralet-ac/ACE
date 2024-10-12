@@ -132,7 +132,7 @@ public static class ClothArmorCantrips
         (SpellId.CANTRIPJUMPINGPROWESS1, 1.0f),
         (SpellId.CANTRIPJUMPINGPROWESS1, 1.0f),
         (SpellId.CANTRIPLOCKPICKPROWESS1, 1.0f),
-        (SpellId.CANTRIPMANACONVERSIONPROWESS1, 0.01f ),
+        (SpellId.CANTRIPMANACONVERSIONPROWESS1, 1.0f ),
         (SpellId.CANTRIPMONSTERATTUNEMENT1, 1.0f),
         (SpellId.CANTRIPDECEPTIONPROWESS1, 1.0f),
         (SpellId.CANTRIPSPRINT1, 1.0f),
