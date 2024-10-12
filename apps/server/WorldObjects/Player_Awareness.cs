@@ -290,10 +290,10 @@ partial class Player
     {
         if (monster != null && IsAttemptingToPerceiveThreats && NextThreatTableTime < Time.GetUnixTime())
         {
-            var skillCheck = SkillCheck.GetSkillChance(
-                GetModdedPerceptionSkill(),
-                monster.GetCreatureSkill(Skill.Deception).Current
-            );
+            var playerPerception = GetModdedPerceptionSkill();
+            var targetDeceptionHalved = Convert.ToUInt32(monster.GetCreatureSkill(Skill.Deception).Current * 0.5);
+
+            var skillCheck = SkillCheck.GetSkillChance(playerPerception, targetDeceptionHalved);
 
             if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
             {
