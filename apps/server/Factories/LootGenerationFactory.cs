@@ -2138,17 +2138,8 @@ public static partial class LootGenerationFactory
                     case TreasureWeaponType.Sword:
                         wcid = SwordWcids.Roll(heritage, treasureDeath.Tier, out weaponType);
                         break;
-                    case TreasureWeaponType.Staff:
-                        wcid = StaffWcids.Roll(heritage, treasureDeath.Tier);
-                        break;
-                    case TreasureWeaponType.Atlatl:
-                        wcid = AtlatlWcids.Roll(treasureDeath.Tier, out weaponType);
-                        break; // all thrown weapons
-                    case TreasureWeaponType.Crossbow:
-                        wcid = CrossbowWcids.Roll(treasureDeath.Tier, out weaponType);
-                        break;
-                    case TreasureWeaponType.Bow:
-                        wcid = BowWcids.Roll(heritage, treasureDeath.Tier, out weaponType);
+                    case TreasureWeaponType.Thrown:
+                        wcid = ThrownWcids.Roll(treasureDeath.Tier, out weaponType);
                         break;
                 }
 
@@ -2172,6 +2163,9 @@ public static partial class LootGenerationFactory
                         break;
                     case TreasureWeaponType.Dagger:
                         wcid = DaggerWcids.Roll(heritage, treasureDeath.Tier, out weaponType);
+                        break;
+                    case TreasureWeaponType.Staff:
+                        wcid = StaffWcids.Roll(heritage, treasureDeath.Tier);
                         break;
                     case TreasureWeaponType.Atlatl:
                         wcid = AtlatlWcids.Roll(treasureDeath.Tier, out weaponType);

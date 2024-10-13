@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using ACE.Common;
 using ACE.Database;
@@ -276,6 +277,36 @@ public class GeneratorProfile
             {
                 Generator.GeneratedTreasureItem = true;
                 GeneratedTreasureItem = true;
+            }
+
+            // Consolidate stackable items
+            var stacksToRemove = new List<WorldObject>();
+            if (objects != null)
+            {
+                foreach (var objectOne in objects.Where(objectOne => objectOne.MaxStackSize > 1 && !stacksToRemove.Contains(objectOne)))
+                {
+                    foreach (var objectTwo in objects)
+                    {
+                        if (objectOne.Guid == objectTwo.Guid || objectOne.WeenieClassId != objectTwo.WeenieClassId || stacksToRemove.Contains(objectTwo))
+                        {
+                            continue;
+                        }
+
+                        var newStack = objectOne.StackSize + objectTwo.StackSize;
+                        objectOne.SetStackSize(newStack);
+
+                        stacksToRemove.Add(objectTwo);
+                        break;
+                    }
+                }
+            }
+
+            foreach (var item in stacksToRemove)
+            {
+                if (objects != null && objects.Contains(item))
+                {
+                    objects.Remove(item);
+                }
             }
         }
         else
