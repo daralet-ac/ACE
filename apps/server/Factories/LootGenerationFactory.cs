@@ -2470,7 +2470,6 @@ public static partial class LootGenerationFactory
                     case TreasureWeaponType.Axe:
                     case TreasureWeaponType.Mace:
                     case TreasureWeaponType.Spear:
-                    case TreasureWeaponType.Staff:
                     case TreasureWeaponType.Sword:
                         MutateMeleeWeapon(wo, treasureDeath, isMagical, treasureRoll);
                         break;
@@ -2494,6 +2493,7 @@ public static partial class LootGenerationFactory
                 {
                     case TreasureWeaponType.Dagger:
                     case TreasureWeaponType.Unarmed:
+                    case TreasureWeaponType.Staff:
                         MutateMeleeWeapon(wo, treasureDeath, isMagical, treasureRoll);
                         break;
 
