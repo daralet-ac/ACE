@@ -65,7 +65,7 @@ public static partial class LootGenerationFactory
 
     private static readonly Dictionary<string, uint> Vuln_SpellIds = new Dictionary<string, uint>()
     {
-        { "black", 39 }, // black
+        { "black", 25 }, // black
         { "white", 1048 }, // white
         { "purple", 1084 }, // purple
         { "blue", 1060 }, // blue
