@@ -1339,7 +1339,14 @@ public class EmoteManager
 
                 var motionCommand = MotionCommandHelper.GetMotion(emote.Motion.Value);
                 var motion = new Motion(targetObject, motionCommand, emote.Extent);
-                targetObject.EnqueueBroadcastMotion(motion);
+                if (player != null)
+                {
+                    player.ExecuteMotion(motion);
+                }
+                else
+                {
+                    targetObject.EnqueueBroadcastMotion(motion);
+                }
                 break;
 
             /* plays an animation on the source object */

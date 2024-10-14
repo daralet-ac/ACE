@@ -31,10 +31,7 @@ partial class Player
         var heldEmpoweredScarabsRed = GetHeldEmpoweredScarabsRed();
 
         // if player is within the mana field, is not meditating, and has any empowered scarab on them: trigger a blue effect flash on the player every 3 seconds.
-        var forwardCommand =
-            CurrentMovementData.MovementType == MovementType.Invalid && CurrentMovementData.Invalid != null
-                ? CurrentMovementData.Invalid.State.ForwardCommand
-                : MotionCommand.Invalid;
+        var forwardCommand = CurrentMotionState.MotionState.ForwardCommand;
         if (forwardCommand != MotionCommand.MeditateState)
         {
             if (LastHotspotHintTick + HotspotHintTickTime < Time.GetUnixTime())
@@ -789,5 +786,46 @@ partial class Player
         {
             scarab.OnEquip(this);
         }
+    }
+
+    public bool HasRechargeableScarabs(int hotspotTier)
+    {
+        var heldEmpoweredScarabsBlue = GetHeldEmpoweredScarabsBlue();
+        var heldEmpoweredScarabsYellow = GetHeldEmpoweredScarabsYellow();
+        var heldEmpoweredScarabsRed = GetHeldEmpoweredScarabsRed();
+
+        var equippedEmpoweredScarabBlue = GetEquippedEmpoweredScarabOfType(EmpoweredScarabColor.Blue);
+        var equippedEmpoweredScarabYellow = GetEquippedEmpoweredScarabOfType(EmpoweredScarabColor.Yellow);
+        var equippedEmpoweredScarabRed = GetEquippedEmpoweredScarabOfType(EmpoweredScarabColor.Red);
+
+        return hotspotTier switch
+        {
+            0 => // Low
+                equippedEmpoweredScarabBlue?.Structure < equippedEmpoweredScarabBlue?.MaxStructure,
+            1 => // Moderate
+                equippedEmpoweredScarabYellow?.Structure < equippedEmpoweredScarabYellow?.MaxStructure
+                || EmpoweredScarabInListCanBeRecharged(heldEmpoweredScarabsBlue),
+            2 => // High
+                equippedEmpoweredScarabRed?.Structure < equippedEmpoweredScarabRed?.MaxStructure
+                || EmpoweredScarabInListCanBeRecharged(heldEmpoweredScarabsYellow)
+                || EmpoweredScarabInListCanBeRecharged(heldEmpoweredScarabsBlue),
+            3 => // Lyceum
+                EmpoweredScarabInListCanBeRecharged(heldEmpoweredScarabsRed)
+                || EmpoweredScarabInListCanBeRecharged(heldEmpoweredScarabsYellow)
+                || EmpoweredScarabInListCanBeRecharged(heldEmpoweredScarabsBlue),
+            _ => false
+        };
+    }
+
+    private bool EmpoweredScarabInListCanBeRecharged(List<EmpoweredScarab> listOfEmpoweredScarabs)
+    {
+        return listOfEmpoweredScarabs.Any(empoweredScarab => empoweredScarab.Structure < empoweredScarab.MaxStructure);
+    }
+
+    public bool HasMatchingMenhirBonusStat(int empoweredScarabBonusStat, int empoweredScarabBonusStatAmount)
+    {
+        var equippedEmpoweredScarabs = GetEquippedEmpoweredScarabs();
+
+        return equippedEmpoweredScarabs.Any(empoweredScarab => (empoweredScarab.EmpoweredScarabBonusStat ?? 0) == empoweredScarabBonusStat && (empoweredScarab.EmpoweredScarabBonusStatAmount ?? 0) == empoweredScarabBonusStatAmount);
     }
 }

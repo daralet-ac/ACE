@@ -13,6 +13,14 @@ using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.WorldObjects;
 
+public enum MenhirManaHotspot
+{
+    Low = 0,
+    Moderate = 1,
+    High = 2,
+    Lyceum = 3
+}
+
 public class Hotspot : WorldObject
 {
     public Hotspot(Weenie weenie, ObjectGuid guid)
@@ -276,10 +284,7 @@ public class Hotspot : WorldObject
             creature.HotspotImmunityTimestamp = currentTime + immunityTime;
         }
 
-        if (player != null && MenhirManaHotspot == true)
-        {
-            player.RechargeEmpoweredScarabs(this);
-        }
+        CheckForMenhirScarabRecharge(player);
 
         if (player != null && CampfireHotspot == true)
         {
@@ -388,6 +393,46 @@ public class Hotspot : WorldObject
         {
             OnEmote(creature);
         }
+    }
+
+    private void CheckForMenhirScarabRecharge(Player player)
+    {
+        if (player == null || MenhirManaHotspot != true)
+        {
+            return;
+        }
+
+        var tier = Tier ?? 0;
+
+        if (!player.HasRechargeableScarabs(tier) && player.HasMatchingMenhirBonusStat(EmpoweredScarabBonusStat ?? 0, EmpoweredScarabBonusStatAmount ?? 0))
+        {
+            switch ((MenhirManaHotspot)tier)
+            {
+                case WorldObjects.MenhirManaHotspot.Low:
+                    player.SendTransientError("You don't have any blue scarabs equipped that can be recharged or altered at this menhir ring.");
+                    break;
+                case WorldObjects.MenhirManaHotspot.Moderate:
+                    player.SendTransientError("You don't have any yellow scarabs equipped (or blue scarabs held) that can be recharged or altered at this menhir ring.");
+                    break;
+                case WorldObjects.MenhirManaHotspot.High:
+                    player.SendTransientError("You don't have any red scarabs equipped (or blue/yellow scarabs held) that can be recharged or altered at this menhir ring.");
+                    break;
+                case WorldObjects.MenhirManaHotspot.Lyceum:
+                    player.SendTransientError("You don't have any blue/yellow/red scarabs held that can be recharged at this menhir ring.");
+                    break;
+            }
+
+            return;
+        }
+
+        var forwardCommand = player.CurrentMotionState.MotionState.ForwardCommand;
+        if (forwardCommand != MotionCommand.MeditateState)
+        {
+            EmoteManager.OnAttack(player);
+            return;
+        }
+
+        player.RechargeEmpoweredScarabs(this);
     }
 
     public static void TryGenHotspot(Player playerAttacker, Creature defender, int? tier, DamageType damageType)

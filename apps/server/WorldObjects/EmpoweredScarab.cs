@@ -365,11 +365,7 @@ public class EmpoweredScarab : WorldObject
             return;
         }
 
-        var forwardCommand =
-            playerWielder.CurrentMovementData.MovementType == MovementType.Invalid
-            && playerWielder.CurrentMovementData.Invalid != null
-                ? playerWielder.CurrentMovementData.Invalid.State.ForwardCommand
-                : MotionCommand.Invalid;
+        var forwardCommand = playerWielder.CurrentMotionState.MotionState.ForwardCommand;
         if (forwardCommand != MotionCommand.MeditateState)
         {
             return;
@@ -401,6 +397,9 @@ public class EmpoweredScarab : WorldObject
     public void SetScarabBonus(int bonusStat, int amount)
     {
         ResetScarabBonus();
+
+        EmpoweredScarabBonusStat = bonusStat;
+        EmpoweredScarabBonusStatAmount = amount;
 
         switch (bonusStat)
         {

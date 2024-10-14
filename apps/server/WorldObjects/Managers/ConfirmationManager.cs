@@ -17,7 +17,7 @@ public class ConfirmationManager
 
     private readonly ILogger _log = Log.ForContext<ConfirmationManager>();
 
-    private const double confirmationTimeout = 30;
+    private const double confirmationTimeout = 60;
 
     private UIntSequence contextSequence = new UIntSequence();
 
