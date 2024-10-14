@@ -264,6 +264,21 @@ partial class Creature
         return equippedEmpoweredScarabs;
     }
 
+    public EmpoweredScarab GetEquippedEmpoweredScarabOfType(EmpoweredScarabColor empoweredScarabColor)
+    {
+        var equippedEmpoweredScarabs = GetEquippedEmpoweredScarabs();
+
+        foreach (var empoweredScarab in equippedEmpoweredScarabs.ToList())
+        {
+            if (empoweredScarab?.EmpoweredScarabColor != null && empoweredScarab.EmpoweredScarabColor == (int)empoweredScarabColor)
+            {
+                return empoweredScarab;
+            }
+        }
+
+        return null;
+    }
+
     public List<EmpoweredScarab> GetHeldEmpoweredScarabsBlue()
     {
         uint empoweredScarabBlue_Life_wcid = 1050250;
