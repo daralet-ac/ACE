@@ -35,7 +35,14 @@ public class Creature_BodyPart
     {
         var effectiveArmorVsType = GetEffectiveArmorVsType(damageType, armorLayers, attacker, weapon, armorRendingMod);
 
-        effectiveArmorVsType = effectiveArmorVsType * LevelScaling.GetMonsterArmorWardScalar(attacker, Creature);
+        if (attacker is Player)
+        {
+            effectiveArmorVsType *= LevelScaling.GetMonsterArmorWardScalar(attacker, Creature);
+        }
+        else
+        {
+            effectiveArmorVsType *= LevelScaling.GetPlayerArmorWardScalar(Creature, attacker);
+        }
 
         return SkillFormula.CalcArmorMod(effectiveArmorVsType);
     }
