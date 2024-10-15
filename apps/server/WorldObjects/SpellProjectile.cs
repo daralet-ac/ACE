@@ -709,6 +709,8 @@ public class SpellProjectile : WorldObject
 
         var specDefenseMod = CheckForMagicDefenseSpecDefenseMod(targetPlayer, sourceCreature);
 
+        var levelScalingMod = GetLevelScalingMod(sourceCreature, target, targetPlayer);
+
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
         {
@@ -754,7 +756,8 @@ public class SpellProjectile : WorldObject
                 * absorbMod
                 * wardMod
                 * resistedMod
-                * specDefenseMod;
+                * specDefenseMod
+                * levelScalingMod;
         }
         // war/void magic projectiles
         else
@@ -849,7 +852,8 @@ public class SpellProjectile : WorldObject
                 * resistedMod
                 * specDefenseMod
                 * physicalWardProtection
-                * elementalWardProtection;
+                * elementalWardProtection
+                * levelScalingMod;
 
             if (sourcePlayer != null)
             {
@@ -918,6 +922,13 @@ public class SpellProjectile : WorldObject
             );
         }
         return finalDamage;
+    }
+
+    private static float GetLevelScalingMod(Creature attacker, Creature defender, Player playerDefender)
+    {
+        return playerDefender != null
+            ? LevelScaling.GetMonsterDamageDealtHealthScalar(playerDefender, attacker)
+            : LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
     }
 
     /// <summary>
