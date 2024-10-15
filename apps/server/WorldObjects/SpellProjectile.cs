@@ -1489,7 +1489,16 @@ public class SpellProjectile : WorldObject
 
     private float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
     {
-        var wardLevel = target.GetWardLevel() * LevelScaling.GetPlayerArmorWardScalar(target, caster);
+        var wardLevel = target.GetWardLevel();
+
+        if (caster is Player)
+        {
+            wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetMonsterArmorWardScalar(caster, target));
+        }
+        else if (target is Player)
+        {
+            wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetPlayerArmorWardScalar(target, caster));
+        }
 
         return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod);
     }
