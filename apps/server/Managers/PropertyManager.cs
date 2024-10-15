@@ -796,12 +796,14 @@ public static class DefaultPropertyManager
         ("block_vpn_connections", new Property<bool>(false, "enable this to block user sessions from IPs identified as VPN proxies")),
         ("increase_minimum_encounter_spawn_density", new Property<bool>(true, "enable this to increase the density of random encounters that spawn in low density landblocks")),
         ("command_who_enabled", new Property<bool>(true, "disable this to prevent players from listing online players in their allegiance")),
+
         ("debug_threat_system", new Property<bool>(false, "enable this to see threat system console logging")),
         ("debug_crafting_system", new Property<bool>(false, "enable this to see crafting system console logging")),
         ("debug_loot_quality_system", new Property<bool>(false, "enable this to see loot quality system console logging")),
         ("debug_level_scaling_system", new Property<bool>(false, "enable this to see level scaling system console logging")),
         ("banking_system_logging", new Property<bool>(true, "enable this to see banking system console logging")),
-        ("bypass_crafting_checks", new Property<bool>(false, "enable this to allow players to succeed at crafting recipes without needing the skill.")));
+        ("bypass_crafting_checks", new Property<bool>(false, "enable this to allow players to succeed at crafting recipes without needing the skill.")),
+        ("create_corpse_on_player_death", new Property<bool>(true, "disable this to prevent players from creating a corpse on death.")));
 
     public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties = DictOf(
         ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),

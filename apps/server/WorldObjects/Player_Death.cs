@@ -256,22 +256,9 @@ partial class Player
 
         if (IsPKDeath(topDamager) || AugmentationSpellsRemainPastDeath == 0)
         {
-            var allEnchantments = new List<ACE.Entity.Models.PropertiesEnchantmentRegistry>();
-            allEnchantments.AddRange(EnchantmentManager.GetEnchantments(MagicSchool.CreatureEnchantment));
-            allEnchantments.AddRange(EnchantmentManager.GetEnchantments(MagicSchool.LifeMagic));
-            allEnchantments.AddRange(EnchantmentManager.GetEnchantments(MagicSchool.PortalMagic));
-
-            foreach (var enchantment in allEnchantments.ToList())
-            {
-                if (EnchantmentManager.DeathPersistentSpellCategory(enchantment.SpellCategory))
-                {
-                    allEnchantments.Remove(enchantment);
-                }
-            }
-
-            var msgPurgeEnchantments = new GameEventMagicDispelMultipleEnchantments(Session, allEnchantments);
-            Session.Network.EnqueueSend(msgPurgeEnchantments);
+            var msgPurgeEnchantments = new GameEventMagicPurgeEnchantments(Session);
             EnchantmentManager.RemoveAllEnchantments();
+            Session.Network.EnqueueSend(msgPurgeEnchantments);
         }
         else
         {
@@ -297,7 +284,10 @@ partial class Player
             this,
             () =>
             {
-                CreateCorpse(topDamager, hadVitae);
+                if (PropertyManager.GetBool("create_corpse_on_player_death").Item)
+                {
+                    CreateCorpse(topDamager, hadVitae);
+                }
 
                 ThreadSafeTeleportOnDeath(); // enter portal space
 
