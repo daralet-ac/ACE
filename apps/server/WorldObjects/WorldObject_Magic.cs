@@ -592,7 +592,7 @@ partial class WorldObject
                     GenerateSupportSpellThreat(spell, targetCreature);
                 }
 
-                HandleCastSpell_Transfer(spell, targetCreature, showMsg);
+                HandleCastSpell_Transfer(spell, targetCreature, showMsg, weapon);
                 break;
 
             case SpellType.Projectile:
@@ -886,15 +886,15 @@ partial class WorldObject
                 : GetDrainResistanceType(spell.VitalDamageType);
 
         double? weaponRestorationMod = 1.0;
-        if (weapon != null && weapon.WeaponRestorationSpellsMod > 1)
+        if (weapon is { WeaponRestorationSpellsMod: > 1 })
         {
             weaponRestorationMod = weapon.WeaponRestorationSpellsMod;
         }
 
-        var spelTargetProcSpellMod = SelfTargetSpellProcMod(fromProc, spell, weapon, player);
+        var selfTargetProcSpellMod = SelfTargetSpellProcMod(fromProc, spell, weapon, player);
 
         var tryBoost = (int)(
-            ThreadSafeRandom.Next(minBoostValue, maxBoostValue) * weaponRestorationMod * spelTargetProcSpellMod
+            ThreadSafeRandom.Next(minBoostValue, maxBoostValue) * weaponRestorationMod * selfTargetProcSpellMod
         );
 
         // Boost Crits
@@ -1399,7 +1399,7 @@ partial class WorldObject
     /// Handles casting SpellType.Transfer spells
     /// usually for Life Magic, ie. Stamina to Mana, Drain
     /// </summary>
-    private void HandleCastSpell_Transfer(Spell spell, Creature targetCreature, bool showMsg = true)
+    private void HandleCastSpell_Transfer(Spell spell, Creature targetCreature, bool showMsg = true, WorldObject weapon = null)
     {
         var player = this as Player;
         var creature = this as Creature;
@@ -1499,6 +1499,14 @@ partial class WorldObject
 
             var overload = false;
             var overloadPercent = 0;
+
+            // Restoration Spell Mod
+            if (weapon is { WeaponRestorationSpellsMod: > 1 })
+            {
+                var weaponRestorationMod = weapon.WeaponRestorationSpellsMod;
+
+                destVitalChange = Convert.ToUInt32(destVitalChange * weaponRestorationMod);
+            }
 
             // COMBAT ABILITIES: Spell Effectiveness Mods
             if (player != null)
