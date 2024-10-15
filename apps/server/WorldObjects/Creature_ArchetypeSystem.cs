@@ -26,30 +26,8 @@ partial class Creature
     private static readonly float[] enemyDamage = { 1.0f, 1.5f, 3.0f, 3.3f, 3.6f, 3.9f, 4.2f, 5.0f, 6.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
 
     private static readonly int[] avgPlayerHealth = { 25, 45, 95, 125, 155, 185, 215, 245, 320 };
-    private static readonly float[] avgPlayerArmorReduction =
-    {
-        0.75f,
-        0.57f,
-        0.40f,
-        0.31f,
-        0.25f,
-        0.21f,
-        0.18f,
-        0.16f,
-        0.1f
-    };
-    private static readonly float[] avgPlayerLifeProtReduction =
-    {
-        1.0f,
-        0.9f,
-        0.9f,
-        0.85f,
-        0.85f,
-        0.8f,
-        0.8f,
-        0.75f,
-        0.75f
-    };
+    private static readonly float[] avgPlayerArmorReduction = { 0.75f, 0.57f, 0.40f, 0.31f, 0.25f, 0.21f, 0.18f, 0.16f, 0.1f };
+    private static readonly float[] avgPlayerLifeProtReduction = { 1.0f, 0.9f, 0.9f, 0.85f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
     private static readonly int[] avgPlayerMeleeDefense = { 10, 75, 150, 175, 200, 225, 275, 350, 500 };
 
     private void SetSkills(
@@ -1021,7 +999,7 @@ partial class Creature
     private uint GetNewHealthLevel(int tier, float statWeight, double toughness, double physicality)
     {
         var target = enemyHealth[tier] + (enemyHealth[tier + 1] - enemyHealth[tier]) * statWeight;
-        var multiplier = (toughness + physicality) / 2;
+        var multiplier = toughness;
         var tweakedVital = (uint)(target * multiplier);
 
         var divisor = 2;
@@ -1060,7 +1038,7 @@ partial class Creature
     private double GetNewHealthRegenLevel(int tier, float statWeight, double toughness, double physicality)
     {
         var target = enemyHealthRegen[tier] + (enemyHealthRegen[tier + 1] - enemyHealthRegen[tier]) * statWeight;
-        var multiplier = (toughness + physicality) / 2;
+        var multiplier = toughness;
         var newVital = (target * multiplier);
 
         if (DebugArchetypeSystem)
