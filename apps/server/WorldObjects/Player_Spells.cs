@@ -54,6 +54,8 @@ partial class Player
         {
             var errorMessage = new GameMessageSystemChat("SpellID not found in Spell Table", ChatMessageType.Broadcast);
             Session.Network.EnqueueSend(errorMessage);
+
+            _log.Error("SpellId: ({SpellId}) not found in Spell Table.", spellId);
             return;
         }
 

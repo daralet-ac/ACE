@@ -518,17 +518,22 @@ partial class Player
                     );
                 }
                 //
-                else
+                else if (empoweredScarab.TriggerSpell.IsFellowshipSpell && Fellowship?.TotalMembers > 1)
                 {
-                    if (empoweredScarab.TriggerSpell.IsSelfTargeted)
+                    foreach (var fellowshipMember in Fellowship.GetFellowshipMembers())
                     {
-                        CreatePlayerSpell(this, castSpell, empoweredScarab.IsWeaponSpell);
-                    }
-                    else
-                    {
-                        CreatePlayerSpell(empoweredScarab.SpellTarget, castSpell, empoweredScarab.IsWeaponSpell);
+                        CreatePlayerSpell(fellowshipMember.Value, castSpell, empoweredScarab.IsWeaponSpell);
                     }
                 }
+                else if (empoweredScarab.TriggerSpell.IsSelfTargeted)
+                {
+                    CreatePlayerSpell(this, castSpell, empoweredScarab.IsWeaponSpell);
+                }
+                else
+                {
+                    CreatePlayerSpell(empoweredScarab.SpellTarget, castSpell, empoweredScarab.IsWeaponSpell);
+                }
+
             }
         );
 
