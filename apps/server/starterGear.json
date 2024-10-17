@@ -74,16 +74,6 @@
           "stacksize": "1"
         },
         {
-          "weenieId": "1050900",
-          "name": "CombatGuide",
-          "stacksize": "1"
-        },
-        {
-          "weenieId": "1050902",
-          "name": "MagicGuide",
-          "stacksize": "1"
-        },
-        {
           "weenieId": "151",
           "name": "Empty Flask",
           "stacksize": "10"
