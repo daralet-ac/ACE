@@ -381,8 +381,8 @@ public partial class Player
                         "(BANKING - SPLIT from BANK-MAIN to BANK-SIDE )\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
                         bankLogPlayer,
                         bankLogSourceStack,
-                        bankLogNewStack,
                         bankLogSourceContainer,
+                        bankLogNewStack,
                         bankLogTargetContainer
                     );
                 }
@@ -393,8 +393,8 @@ public partial class Player
                         "(BANKING - SPLIT from BANK-MAIN to PLAYER )\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
                         bankLogPlayer,
                         bankLogSourceStack,
-                        bankLogNewStack,
                         bankLogSourceContainer,
+                        bankLogNewStack,
                         bankLogTargetContainer
                     );
                 }
@@ -437,8 +437,8 @@ public partial class Player
                     "(BANKING - Split from PLAYER to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
                     bankLogPlayer,
                     bankLogSourceStack,
-                    bankLogNewStack,
                     bankLogSourceContainer,
+                    bankLogNewStack,
                     bankLogTargetContainer
                 );
             }
@@ -453,8 +453,8 @@ public partial class Player
                     "(BANKING - Split from BANK-SIDE to PLAYER)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
                     bankLogPlayer,
                     bankLogSourceStack,
-                    bankLogNewStack,
                     bankLogSourceContainer,
+                    bankLogNewStack,
                     bankLogTargetContainer
                 );
             }
@@ -470,8 +470,8 @@ public partial class Player
                     "(BANKING - Split from BANK-SIDE to BANK-SIDE)\n PLAYER: {@Player}\n SPLIT STACK: {@Stack}\n FROM CONTAINER: {@PrevContainer}\n TO NEW STACK: {@NewStack}\n IN CONTAINER: {@NewContainer}",
                     bankLogPlayer,
                     bankLogSourceStack,
-                    bankLogNewStack,
                     bankLogSourceContainer,
+                    bankLogNewStack,
                     bankLogTargetContainer
                 );
             }

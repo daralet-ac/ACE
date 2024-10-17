@@ -132,6 +132,11 @@ partial class Player
                 RemoveTrackedEquippedObject(creature, wieldedItem);
             }
         }
+
+        if (wo is Storage storage)
+        {
+            storage.OnDestroy();
+        }
     }
 
     public void TrackEquippedObject(Creature wielder, WorldObject wieldedItem)

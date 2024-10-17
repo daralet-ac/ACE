@@ -1028,6 +1028,11 @@ public abstract partial class WorldObject : IActor
             {
                 item.Destroy();
             }
+
+            if (this is Storage storage)
+            {
+                storage.OnDestroy();
+            }
         }
 
         if (this is Creature creature)
