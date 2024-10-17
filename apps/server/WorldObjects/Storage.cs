@@ -36,6 +36,11 @@ public class Storage : Container
         SetEphemeralValues();
     }
 
+    public void OnDestroy()
+    {
+        BankChests.Remove(this);
+    }
+
     private void SetEphemeralValues()
     {
         SetProperty(PropertyInt.ShowableOnRadar, 1);
@@ -45,6 +50,8 @@ public class Storage : Container
         IsOpen = false;
 
         BumpVelocity = true;
+
+        Translucency = 0F;
 
         BankChests.Add(this);
     }
