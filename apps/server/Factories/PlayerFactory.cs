@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
 using ACE.Database;
+using ACE.Database.Models.Shard;
 using ACE.DatLoader;
 using ACE.DatLoader.FileTypes;
 using ACE.Entity;
@@ -545,6 +546,8 @@ public static class PlayerFactory
                 break;
         }
 
+        CheckForAndStampAccountQuests(player);
+
         PlaytestSettings(player);
 
         instantiation = new Position(player.Location);
@@ -588,6 +591,27 @@ public static class PlayerFactory
         CharacterCreateSetDefaultCharacterOptions(player);
 
         return CreateResult.Success;
+    }
+
+    private static void CheckForAndStampAccountQuests(Player player)
+    {
+        var characters = DatabaseManager.Shard.BaseDatabase.GetCharacters(player.Account.AccountId, true);
+        foreach (var character in characters)
+        {
+            if (character.IsDeleted)
+            {
+                continue;
+            }
+
+            var allCharacterQuests = character.GetQuests(player.CharacterDatabaseLock);
+            foreach (var questRegistry in allCharacterQuests)
+            {
+                if (questRegistry.QuestName.StartsWith("ACCOUNT_"))
+                {
+                    player.QuestManager.Stamp(questRegistry.QuestName);
+                }
+            }
+        }
     }
 
     private static WorldObject GetClothingObject(uint weenieClassId, uint palette, double shade)
