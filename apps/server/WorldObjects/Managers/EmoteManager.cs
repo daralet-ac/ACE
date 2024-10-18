@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Database;
+using ACE.Database.Models.Shard;
 using ACE.DatLoader;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -959,48 +960,6 @@ public class EmoteManager
                     // Do normal Emote Checks for the quest and solves
                     var hasQuest = questTarget.QuestManager.HasQuest(emote.Message);
                     var canSolve = questTarget.QuestManager.CanSolve(emote.Message);
-
-                    var questName = emote.Message.ToString();
-                    questName = QuestManager.GetQuestName(questName);
-
-                    // Now check if it's an account quest
-
-                    if (canSolve == true && questName.StartsWith("ACCOUNT_"))
-                    {
-                        if (questTarget is Player)
-                        {
-                            Database.Models.Auth.Account account;
-                            var quester = questTarget as Player;
-                            account = quester.Account;
-
-                            var characters = DatabaseManager.Shard.BaseDatabase.GetCharacters(account.AccountId, true);
-
-                            var questFile = DatabaseManager.World.GetCachedQuest(questName);
-
-                            foreach (var character in characters)
-                            {
-                                var matchingQuest = character.CharacterPropertiesQuestRegistry.FirstOrDefault(q =>
-                                    q.QuestName.Equals(questName, StringComparison.OrdinalIgnoreCase)
-                                );
-
-                                if (matchingQuest != null && questFile != null)
-                                {
-                                    // if there's a matching stamp on another chararacter, check whether it's on cooldown or not
-                                    var currentTime = (uint)Time.GetUnixTime();
-                                    uint nextSolveTime;
-
-                                    nextSolveTime = matchingQuest.LastTimeCompleted + questFile.MinDelta;
-
-                                    if (currentTime <= nextSolveTime)
-                                    {
-                                        canSolve = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    //  verify: QuestSuccess = player has quest, but their quest timer is currently still on cooldown.
-                    // for account quests, finding any account on cooldown means canSolve = true;
 
                     success = hasQuest && !canSolve;
 
@@ -2004,6 +1963,52 @@ public class EmoteManager
                         _log.Warning(
                             $"0x{WorldObject.Guid}:{WorldObject.Name} ({WorldObject.WeenieClassId}).EmoteManager.ExecuteEmote: EmoteType.StampQuest({questName}) is a depreciated kill task method."
                         );
+                    }
+
+                    if (questName.StartsWith("ACCOUNT_") && questTarget is Player questPlayer)
+                    {
+                        var questNameTrimmed = QuestManager.GetQuestName(questName);
+                        var characters = DatabaseManager.Shard.BaseDatabase.GetCharacters(questPlayer.Account.AccountId, true);
+
+                        foreach (var character in characters)
+                        {
+                            if (character.IsDeleted)
+                            {
+                                continue;
+                            }
+
+                            var quest = character.GetOrCreateQuest(questNameTrimmed, questPlayer.CharacterDatabaseLock, out var questRegistryWasCreated);
+
+                            if (questRegistryWasCreated)
+                            {
+                                quest.LastTimeCompleted = (uint)Time.GetUnixTime();
+                                quest.NumTimesCompleted = 1; // initial add / first solve
+
+                                quest.CharacterId = character.Id;
+
+                                if (Debug)
+                                {
+                                    Console.WriteLine($"{character.Name}.QuestManager.Update({quest}): added quest");
+                                }
+
+                                questPlayer.CharacterChangesDetected = true;
+                                questPlayer.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
+                            }
+                            else
+                            {
+                                if (questPlayer.QuestManager.IsMaxSolves(questName))
+                                {
+                                    continue;
+                                }
+
+                                // update existing quest
+                                quest.LastTimeCompleted = (uint)Time.GetUnixTime();
+                                quest.NumTimesCompleted++;
+
+                                questPlayer.CharacterChangesDetected = true;
+                                questPlayer.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
+                            }
+                        }
                     }
 
                     questTarget.QuestManager.Stamp(emote.Message);
