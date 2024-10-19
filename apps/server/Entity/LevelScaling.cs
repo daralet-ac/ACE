@@ -68,11 +68,11 @@ public static class LevelScaling
         var statAtPlayerLevel = GetPlayerHealthAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerHealthAtLevel(monster.Level.Value);
 
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && player is Player)
         {
             Console.WriteLine(
                 $"\nGetMonsterDamageDealtHealthScalar(Player {player.Name}, Monster {monster.Name})"
-                    + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtPlayerLevel / statAtMonsterLevel}"
+                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtPlayerLevel / statAtMonsterLevel}"
             );
         }
 
@@ -102,15 +102,15 @@ public static class LevelScaling
         var statAtPlayerLevel = GetMonsterHealthAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetMonsterHealthAtLevel(monster.Level.Value);
 
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && player is Player)
         {
             Console.WriteLine(
                 $"\nGetMonsterDamageTakenHealthScalar(Player {player.Name}, Monster {monster.Name})"
-                    + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {((float)statAtMonsterLevel / statAtPlayerLevel + 1) / 2}"
+                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtMonsterLevel / statAtPlayerLevel}"
             );
         }
 
-        return ((float)statAtMonsterLevel / statAtPlayerLevel + 1) / 2;
+        return (float)statAtMonsterLevel / statAtPlayerLevel;
     }
 
     public static float GetMonsterArmorWardScalar(Creature player, Creature monster)
@@ -136,11 +136,11 @@ public static class LevelScaling
         var statAtPlayerLevel = GetMonsterArmorWardAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetMonsterArmorWardAtLevel(monster.Level.Value);
 
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && player is Player)
         {
             Console.WriteLine(
                 $"\nGetMonsterArmorWardScalar(Player {player.Name}, Monster {monster.Name})"
-                    + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtPlayerLevel / statAtMonsterLevel}"
+                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtPlayerLevel / statAtMonsterLevel}"
             );
         }
 
@@ -169,12 +169,12 @@ public static class LevelScaling
         var statAtPlayerLevel = GetPlayerArmorWardAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerArmorWardAtLevel(monster.Level.Value);
 
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && player is Player)
         {
-                Console.WriteLine(
-                    $"\nGetPlayerArmorWardScalar(Player {player.Name}, Monster {monster.Name})"
-                    + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtMonsterLevel / statAtPlayerLevel}"
-                );
+            Console.WriteLine(
+                $"\nGetPlayerArmorWardScalar(Player {player.Name}, Monster {monster.Name})"
+                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtMonsterLevel / statAtPlayerLevel}"
+            );
         }
 
         return (float)statAtMonsterLevel / statAtPlayerLevel;
@@ -203,7 +203,7 @@ public static class LevelScaling
         var statAtPlayerLevel = GetPlayerAttributeAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerAttributeAtLevel(monster.Level.Value);
 
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && player is Player)
         {
             Console.WriteLine(
                 $"\nGetPlayerAttributeScalar(Player {player.Name}, Monster {monster.Name})"
@@ -237,7 +237,7 @@ public static class LevelScaling
         var statAtPlayerLevel = GetPlayerAttackSkillAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerAttackSkillAtLevel(monster.Level.Value);
 
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && player is Player)
         {
             Console.WriteLine(
                 $"\nGetPlayerAttackSkillScalar(Player {player.Name}, Monster {monster.Name})"
@@ -271,7 +271,7 @@ public static class LevelScaling
         var statAtPlayerLevel = GetPlayerDefenseSkillAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerDefenseSkillAtLevel(monster.Level.Value);
 
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && player is Player)
         {
             Console.WriteLine(
                 $"\nGetPlayerDefenseSkillScalar(Player {player.Name}, Monster {monster.Name})"
@@ -305,7 +305,7 @@ public static class LevelScaling
         var statAtPlayerLevel = GetPlayerResistanceAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerResistanceAtLevel(monster.Level.Value);
 
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && player is Player)
         {
             Console.WriteLine(
                 $"\nGetPlayerResistanceScalar(Player {player.Name}, Monster {monster.Name})"
@@ -313,7 +313,7 @@ public static class LevelScaling
             );
         }
 
-        return (float)statAtMonsterLevel / statAtPlayerLevel;
+        return statAtMonsterLevel / statAtPlayerLevel;
     }
 
     public static float GetPlayerBoostSpellScalar(Creature player, Creature monster)
@@ -339,7 +339,7 @@ public static class LevelScaling
         var statAtPlayerLevel = GetPlayerBoostAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetPlayerBoostAtLevel(monster.Level.Value);
 
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && player is Player)
         {
             Console.WriteLine(
                 $"\nGetPlayerBoostSpellScalar(Player {player.Name}, Monster {monster.Name})"
