@@ -153,7 +153,7 @@ public class DamageEvent
 
     private float DoCalculateDamage(Creature attacker, Creature defender, WorldObject damageSource)
     {
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item && (attacker is Player || defender is Player))
         {
             Console.WriteLine($"\n\n---- LEVEL SCALING - {attacker.Name} vs {defender.Name} ----");
         }
