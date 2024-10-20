@@ -277,7 +277,7 @@ partial class WorldObject
         // Retrieve target's Magic Defense Skill
         var difficulty = (uint)(
             targetCreature.GetModdedMagicDefSkill()
-            * LevelScaling.GetPlayerDefenseSkillScalar(casterCreature, targetCreature)
+            * LevelScaling.GetPlayerDefenseSkillScalar(targetCreature, casterCreature)
         );
 
         var resistChanceMod = 1.0f;

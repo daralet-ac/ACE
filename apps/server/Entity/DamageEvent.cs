@@ -802,7 +802,7 @@ public class DamageEvent
     private float GetMitigation(Creature attacker, Creature defender)
     {
         var playerAttacker = attacker as Player;
-        var playerDefender = attacker as Player;
+        var playerDefender = defender as Player;
 
         _ignoreArmorMod = GetIgnoreArmorMod(attacker, defender);
         _ignoreArmorMod -= GetSpearSpecIgnoreArmorBonus(attacker);
