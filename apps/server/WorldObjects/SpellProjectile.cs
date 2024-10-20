@@ -802,6 +802,11 @@ public class SpellProjectile : WorldObject
 
             baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
 
+            if (criticalHit && sourceCreature is not Player)
+            {
+                baseDamage = Spell.MedianDamage;
+            }
+
             weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType, target);
 
             // if attacker/weapon has IgnoreMagicResist directly, do not transfer to spell projectile
