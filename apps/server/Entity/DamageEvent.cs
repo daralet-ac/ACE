@@ -736,7 +736,9 @@ public class DamageEvent
             _damageRatingMod = Creature.AdditiveCombine(_damageRatingMod, _pkDamageMod);
         }
 
-        return _baseDamageMod.MaxDamage
+        var baseDamage = playerAttacker != null ? _baseDamageMod.MaxDamage : _baseDamageMod.MedianDamage;
+
+        return baseDamage
                * _attributeMod
                * _powerMod
                * _slayerMod

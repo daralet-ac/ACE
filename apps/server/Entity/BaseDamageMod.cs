@@ -35,6 +35,8 @@ public class BaseDamageMod
 
     public float MinDamage => MaxDamage * (1.0f - BaseDamage.Variance * VarianceMod);
 
+    public float MedianDamage => (MaxDamage + MinDamage) / 2;
+
     public Range Range => new Range(MinDamage, MaxDamage);
 
     public BaseDamageMod(BaseDamage baseDamage)

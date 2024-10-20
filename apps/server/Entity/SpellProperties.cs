@@ -401,6 +401,11 @@ partial class Spell
         get => (int)(BaseIntensity * SpellPowerMod) + Variance;
     }
 
+    public int MedianDamage
+    {
+        get => (int)((MaxDamage + MinDamage) / 2.0);
+    }
+
     /// <summary>
     /// The weenie class ID associated for this spell, ie. the projectile weenie class id
     /// </summary>
