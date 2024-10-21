@@ -1016,59 +1016,62 @@ partial class Player
         }
         else
         {
-            var toggles = GetInventoryItemsOfWCID(1051110);
             var skill = GetCreatureSkill((Skill)16);
 
-            var expectedSkill = (float)(Level * 5);
-            var currentSkill = (float)skill.Current;
-
-            // create a scaling mod. if expected skill is much higher than currentSkill, you will be multiplying the amount of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
-            // capped at 1f so high skill gets the proper ratio of health-to-mana, but no better than that.
-
-            var skillModifier = expectedSkill / currentSkill <= 1f ? 1f : expectedSkill / currentSkill;
-
-            // 25% of damage taken as mana, x3 for trained
-            var manaDamage = (amount * 0.25) * 3 * skillModifier;
-            if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+            if (Level != null)
             {
-                manaDamage = (amount * 0.25) * 1.5 * skillModifier;
-            }
+                var expectedSkill = (float)(Level * 5);
+                var currentSkill = (float)skill.Current;
 
-            if (Mana.Current >= manaDamage)
-            {
-                damageTaken = (uint)(amount * 0.75f);
-                PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
-                UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
-                UpdateVitalDelta(Health, (int)-damageTaken);
-                DamageHistory.Add(source, damageType, (uint)-damageTaken);
-            }
-            // if not enough mana, barrier falls and player takes remainder of damage as health
-            else
-            {
-                ToggleManaBarrierSetting();
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
-                );
-                if (toggles != null)
+                // create a scaling mod. if expected skill is much higher than currentSkill, you will be multiplying the amount of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
+                // capped at 1f so high skill gets the proper ratio of health-to-mana, but no better than that.
+
+                var skillModifier = Math.Max(expectedSkill / currentSkill, 1.0f);
+
+                // 25% of damage taken as mana, x3 for trained
+                var manaDamage = (amount * 0.25) * 3 * skillModifier;
+                if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
                 {
-                    foreach (var toggle in toggles)
+                    manaDamage = (amount * 0.25) * 1.5 * skillModifier;
+                }
+
+                if (Mana.Current >= manaDamage)
+                {
+                    damageTaken = (uint)(amount * 0.75f);
+                    PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
+                    UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
+                    UpdateVitalDelta(Health, (int)-damageTaken);
+                    DamageHistory.Add(source, damageType, (uint)-damageTaken);
+                }
+                // if not enough mana, barrier falls and player takes remainder of damage as health
+                else
+                {
+                    ToggleManaBarrierSetting();
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
+                    );
+
+                    var sharedCooldowns = GetInventoryItemsOfWCID(1051110); // Mana Barrier
+                    sharedCooldowns.AddRange(GetInventoryItemsOfWCID(1051114)); // Evasive Stance
+
+                    foreach (var toggle in sharedCooldowns)
                     {
                         EnchantmentManager.StartCooldown(toggle);
                     }
-                }
-                PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
+                    PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
 
-                // find mana damage overage and reconvert to HP damage
-                var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
-                if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                {
-                    manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
-                }
+                    // find mana damage overage and reconvert to HP damage
+                    var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
+                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                    {
+                        manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
+                    }
 
-                damageTaken = (uint)((amount * 0.75) + manaRemainder);
-                UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
-                UpdateVitalDelta(Health, (int)-(damageTaken));
-                DamageHistory.Add(source, damageType, (uint)-damageTaken);
+                    damageTaken = (uint)((amount * 0.75) + manaRemainder);
+                    UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
+                    UpdateVitalDelta(Health, (int)-(damageTaken));
+                    DamageHistory.Add(source, damageType, (uint)-damageTaken);
+                }
             }
         }
 

@@ -167,8 +167,11 @@ public class DamageEvent
 
         if (_invulnerable || Evaded || Blocked)
         {
-            CheckForParryRiposte(attacker, defender, damageSource);
-            CheckForRatingThorns(attacker, defender, damageSource);
+            if (Blocked)
+            {
+                CheckForParryRiposte(attacker, defender, damageSource);
+                CheckForRatingThorns(attacker, defender, damageSource);
+            }
 
             return 0.0f;
         }
@@ -185,8 +188,8 @@ public class DamageEvent
         Damage = _damageBeforeMitigation * mitigation;
         _damageMitigated = _damageBeforeMitigation - Damage;
 
-        PostDamageEffects(attacker, defender, damageSource);
-        OptionalDamageMultiplierSettings();
+        PostDamageMitigationEffects(attacker, defender, damageSource);
+
         //DpsLogging();
 
         return Damage;
@@ -571,16 +574,18 @@ public class DamageEvent
         return playerAttacker is { EquippedCombatAbility: CombatAbility.Multishot } ? 0.75f : 1.0f;
     }
 
-    private void OptionalDamageMultiplierSettings()
+    private void PostDamageMitigationEffects()
     {
+        Damage = CheckForCombatAbilityEvasiveStance(Damage, _playerDefender);
+
         if (_attacker.IsMonster)
         {
-            Damage = Damage * 1.0f;
+            Damage *= 1.0f;
         }
 
         if (!_attacker.IsMonster)
         {
-            Damage = Damage * 1.0f;
+            Damage *= 1.0f;
         }
     }
 
@@ -1039,13 +1044,25 @@ public class DamageEvent
         return 1.0f;
     }
 
-    private void PostDamageEffects(Creature attacker, Creature defender, WorldObject damageSource)
+    private void PostDamageMitigationEffects(Creature attacker, Creature defender, WorldObject damageSource)
     {
         var playerAttack = attacker as Player;
         var playerDefender = defender as Player;
 
+        Damage = CheckForCombatAbilityEvasiveStance(Damage, _playerDefender);
+
         CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttack, playerDefender);
         CheckForCombatAbilityFuryRecklessSelfDamage(playerAttack);
+
+        if (_attacker.IsMonster)
+        {
+            Damage *= 1.0f;
+        }
+
+        if (!_attacker.IsMonster)
+        {
+            Damage *= 1.0f;
+        }
     }
 
     /// <summary>
@@ -1860,6 +1877,102 @@ public class DamageEvent
         }
 
         return playerAttacker.GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Evasive Stance: Some damage taken from stamina instead of health.
+    /// Damage taken reduced by 25%. Stamina consumed ranges from 'damage taken' to 'damage taken x3', depending
+    /// on Run/Jump skill levels and if specialized. Uses whichever skill grants the better benefit.
+    /// </summary>
+    private float CheckForCombatAbilityEvasiveStance(float damage, Player targetPlayer)
+    {
+        if (targetPlayer is not { EvasiveStanceToggle: true })
+        {
+            return damage;
+        }
+
+        if (targetPlayer.Level == null || !targetPlayer.EvasiveStanceToggle)
+        {
+            return damage;
+        }
+
+        // Create a scaling mod. If expected skill is much higher than currentSkill, you will be multiplying the amount
+        // of stamina damage significantly, so low skill players will not get much benefit before skill drops.
+        // Capped at 1.0f so high skill gets the proper ratio of health-to-stamina, but no better than that.
+
+        var skillRun = targetPlayer.GetCreatureSkill(Skill.Run);
+        var skillJump = targetPlayer.GetCreatureSkill(Skill.Jump);
+
+        var currentSkillRun = (float)skillRun.Current;
+        var currentSkillJump = (float)skillJump.Current;
+
+        var expectedSkill = (float)(targetPlayer.Level * 5);
+
+        var skillModifierRun = Math.Max(expectedSkill / currentSkillRun, 1.0f);
+        var skillModifierJump = Math.Max(expectedSkill / currentSkillJump, 1.0f);
+
+        var staminaDamageRun = (damage * 0.25) * 3 * skillModifierRun;
+        if (skillRun.AdvancementClass == SkillAdvancementClass.Specialized)
+        {
+            staminaDamageRun = (damage * 0.25) * 1.5 * skillModifierRun;
+        }
+
+        var staminaDamageJump = (damage * 0.25) * 3 * skillModifierJump;
+        if (skillJump.AdvancementClass == SkillAdvancementClass.Specialized)
+        {
+            staminaDamageJump = (damage * 0.25) * 1.5 * skillModifierJump;
+        }
+
+        // Use whichever skill prevents more stamina loss
+        var staminaDamage = Math.Min(staminaDamageRun, staminaDamageJump);
+
+        if (targetPlayer.Stamina.Current >= staminaDamage)
+        {
+            var amount = (uint)(damage * 0.75);
+
+            targetPlayer.PlayParticleEffect(PlayScript.RestrictionEffectGold, targetPlayer.Guid, 0.1f);
+            targetPlayer.UpdateVitalDelta(targetPlayer.Stamina, (int)-Math.Round(staminaDamage));
+            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
+            targetPlayer.DamageHistory.Add(_attacker, _damageSource.W_DamageType, amount);
+        }
+        // if not enough stamina, evasive stance falls and player takes remainder of damage as health
+        else
+        {
+            targetPlayer.ToggleEvasiveStanceSetting();
+            targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat($"You lose concentration and drop out of Evasive Stance!", ChatMessageType.Combat));
+
+            var sharedCooldowns = targetPlayer.GetInventoryItemsOfWCID(1051114); // Evasive Stance
+            sharedCooldowns.AddRange(targetPlayer.GetInventoryItemsOfWCID(1051110)); // Mana Barrier
+
+            foreach (var toggle in sharedCooldowns)
+            {
+                targetPlayer.EnchantmentManager.StartCooldown(toggle);
+            }
+
+            targetPlayer.PlayParticleEffect(PlayScript.HealthDownYellow, targetPlayer.Guid);
+
+            // find stamina damage overage and reconvert to HP damage
+            var staminaRemainderRun = (staminaDamage - targetPlayer.Stamina.Current) / skillModifierRun / 1.5;
+            if (skillRun.AdvancementClass == SkillAdvancementClass.Specialized)
+            {
+                staminaRemainderRun = (staminaDamage - targetPlayer.Stamina.Current) / skillModifierRun / 3;
+            }
+
+            var staminaRemainderJump = (staminaDamage - targetPlayer.Stamina.Current) / skillModifierRun / 1.5;
+            if (skillJump.AdvancementClass == SkillAdvancementClass.Specialized)
+            {
+                staminaRemainderJump = (staminaDamage - targetPlayer.Stamina.Current) / skillModifierRun / 3;
+            }
+
+            var staminaRemainder = Math.Min(staminaRemainderRun, staminaRemainderJump);
+            var amount = (uint)((damage * 0.75) + staminaRemainder);
+
+            targetPlayer.UpdateVitalDelta(targetPlayer.Stamina, (int)-(targetPlayer.Stamina.Current - 1));
+            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-(amount));
+            targetPlayer.DamageHistory.Add(_attacker, _damageSource.W_DamageType, amount);
+        }
+
+        return damage;
     }
 
     private void DpsLogging()

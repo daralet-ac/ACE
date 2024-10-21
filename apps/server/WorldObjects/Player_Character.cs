@@ -168,6 +168,15 @@ partial class Player
         return newSetting;
     }
 
+    public bool ToggleEvasiveStanceSetting()
+    {
+        var newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed5);
+        SetCharacterOptions2(CharacterOptions2.NotUsed5, newSetting);
+
+        CachedEvasiveStanceToggle = newSetting;
+        return newSetting;
+    }
+
     // =====================================
     // CharacterPropertiesContract
     // =====================================

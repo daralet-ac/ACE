@@ -295,6 +295,14 @@ public class Gem : Stackable
                     player.TryUseActivated(this);
                     break;
                 case CombatAbility.ManaBarrier:
+                    if (player.EvasiveStanceToggle)
+                    {
+                        player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat($"You cannot use Mana Barrier while Evasive Stance is active.", ChatMessageType.Broadcast)
+                        );
+                        break;
+                    }
+
                     if (player.ToggleManaBarrierSetting())
                     {
                         player.Session.Network.EnqueueSend(
@@ -309,6 +317,33 @@ public class Gem : Stackable
                     {
                         player.Session.Network.EnqueueSend(
                             new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
+                        );
+                        player.PlayParticleEffect(PlayScript.DispelLife, player.Guid);
+                    }
+                    break;
+                case CombatAbility.EvasiveStance:
+                    if (player.ManaBarrierToggle)
+                    {
+                        player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat($"You cannot use Evasive Stance while Mana Barrier is active.", ChatMessageType.Broadcast)
+                        );
+                        break;
+                    }
+
+                    if (player.ToggleEvasiveStanceSetting())
+                    {
+                        player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                $"You move into an evasive stance!",
+                                ChatMessageType.Broadcast
+                            )
+                        );
+                        player.PlayParticleEffect(PlayScript.ShieldUpYellow, player.Guid);
+                    }
+                    else
+                    {
+                        player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
                         );
                         player.PlayParticleEffect(PlayScript.DispelLife, player.Guid);
                     }
