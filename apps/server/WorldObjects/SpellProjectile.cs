@@ -1971,9 +1971,7 @@ public class SpellProjectile : WorldObject
         {
             return amount;
         }
-
-        var toggles = targetPlayer.GetInventoryItemsOfWCID(1051110);
-        var skill = targetPlayer.GetCreatureSkill((Skill)16);
+        var skill = targetPlayer.GetCreatureSkill(Skill.ManaConversion);
 
         var expectedSkill = (float)(targetPlayer.Level * 5);
         var currentSkill = (float)skill.Current;
@@ -1982,7 +1980,7 @@ public class SpellProjectile : WorldObject
         // of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
         // Capped at 1.0f so high skill gets the proper ratio of health-to-mana, but no better than that.
 
-        var skillModifier = expectedSkill / currentSkill <= 1f ? 1f : expectedSkill / currentSkill;
+        var skillModifier = Math.Max(expectedSkill / currentSkill, 1.0f);
 
         var manaDamage = (damage * 0.25) * 3 * skillModifier;
         if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
@@ -2006,12 +2004,13 @@ public class SpellProjectile : WorldObject
             targetPlayer.Session.Network.EnqueueSend(
                 new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
             );
-            if (toggles != null)
+
+            var sharedCooldowns = targetPlayer.GetInventoryItemsOfWCID(1051110); // Mana Barrier
+            sharedCooldowns.AddRange(targetPlayer.GetInventoryItemsOfWCID(1051114)); // Evasive Stance
+
+            foreach (var toggle in sharedCooldowns)
             {
-                foreach (var toggle in toggles)
-                {
-                    targetPlayer.EnchantmentManager.StartCooldown(toggle);
-                }
+                targetPlayer.EnchantmentManager.StartCooldown(toggle);
             }
 
             targetPlayer.PlayParticleEffect(PlayScript.HealthDownBlue, targetPlayer.Guid);

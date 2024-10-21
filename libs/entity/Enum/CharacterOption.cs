@@ -187,7 +187,10 @@ public enum CharacterOption
     SlashThrustToggle = 0x39,
 
     [CharacterOptions2(CharacterOptions2.NotUsed4)] // Mana Barrier Toggle
-    ManaBarrierToggle = 0x3A
+    ManaBarrierToggle = 0x3A,
+
+    [CharacterOptions2(CharacterOptions2.NotUsed5)] // Evasive Stance Toggle
+    EvasiveStanceToggle = 0x3B
 }
 
 public static class CharacterOptionExtensions

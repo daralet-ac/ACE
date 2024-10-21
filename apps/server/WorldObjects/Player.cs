@@ -132,6 +132,20 @@ public partial class Player : Creature, IPlayer
         }
     }
 
+    private bool? CachedEvasiveStanceToggle = null;
+    public bool EvasiveStanceToggle
+    {
+        get
+        {
+            if (!CachedEvasiveStanceToggle.HasValue)
+            {
+                CachedEvasiveStanceToggle = GetCharacterOption(CharacterOption.EvasiveStanceToggle);
+            }
+
+            return CachedEvasiveStanceToggle ?? false;
+        }
+    }
+
     public Hotspot WellRestedHotspot;
 
     public ConfirmationManager ConfirmationManager;

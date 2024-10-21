@@ -28,5 +28,6 @@ public enum CombatAbility
     Multishot,
     ActivatedCombatAbilities,
     ManaBarrier,
-    PowerScaler
+    PowerScaler,
+    EvasiveStance
 }
