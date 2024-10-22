@@ -502,7 +502,6 @@ public static class LevelScaling
         {
             return false;
         }
-        Console.WriteLine($"pLevel: {player?.Name}, mLevel: {monster?.Name}");
 
         if (player.Level.HasValue && monster.Level.HasValue && player.Level <= monster.Level)
         {
@@ -515,5 +514,21 @@ public static class LevelScaling
         }
 
         return true;
+    }
+
+    public static int MaxExposeSpellLevel(Creature target)
+    {
+        var targetLevel = target.Level;
+
+        switch (targetLevel)
+        {
+            case < 20: return 1;
+            case < 30: return 2;
+            case < 40: return 3;
+            case < 50: return 4;
+            case < 75: return 5;
+            case < 100: return 6;
+            default: return 7;
+        }
     }
 }
