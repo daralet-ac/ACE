@@ -93,8 +93,7 @@ partial class Player
     {
         var softLevelCap = PropertyManager.GetLong("soft_level_cap").Item;
         var effectivePlayerLevel = (int)Math.Min(Level ?? 1, softLevelCap);
-        var playerTier = GetPlayerTier(effectivePlayerLevel);
-        var baseXp = GetCreatureDeathXP(effectivePlayerLevel, playerTier);
+        var baseXp = GetCreatureDeathXP(effectivePlayerLevel, effectivePlayerLevel);
 
         var distanceScalar = 1.0;
         var fellowSharePercent = 1.0;
@@ -182,56 +181,16 @@ partial class Player
 
         var m_amount = amount;
 
-        // Max possible kill xp gained is equal to 1% of your current level cost (10% under level 10, 5% under level 20)
         if (xpType == XpType.Kill)
         {
-            // Gain less xp for killing monsters below your level
-            var overlevelPenalty = xpSourceLevel != null ? GetOverlevelPenalty((int)xpSourceLevel) : 1.0f;
-
-            m_amount = (long)Math.Round(m_amount * overlevelPenalty);
-
-            switch (Level)
+            // Gain full xp for creatures up to 5 levels higher than the player. Above that, the same xp as a creature 5 levels higher.
+            if (Level != null)
             {
-                case < 10:
-                {
-                    var currentLevelCost =
-                        DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1]
-                        - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                    var maxXpPerKill = (long)(currentLevelCost * 0.1);
+                var softlevelCap = PropertyManager.GetLong("soft_level_cap").Item;
+                var maxFullXpKillLevel = Math.Min(Level.Value + 5, (int)softlevelCap);
+                var maxXpPerKill = (long)GetCreatureDeathXP(maxFullXpKillLevel, maxFullXpKillLevel);
 
-                    m_amount = Math.Min(m_amount, maxXpPerKill);
-                    break;
-                }
-                case < 20:
-                {
-                    var currentLevelCost =
-                        DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1]
-                        - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                    var maxXpPerKill = (long)(currentLevelCost * 0.05);
-
-                    m_amount = Math.Min(m_amount, maxXpPerKill);
-                    break;
-                }
-                case < 126:
-                {
-                    var currentLevelCost =
-                        DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value + 1]
-                        - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                    var maxXpPerKill = (long)(currentLevelCost * 0.01);
-
-                    m_amount = Math.Min(m_amount, maxXpPerKill);
-                    break;
-                }
-                case 126:
-                {
-                    var currentLevelCost =
-                        DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value]
-                        - DatManager.PortalDat.XpTable.CharacterLevelXPList[Level.Value];
-                    var maxXpPerKill = (long)(currentLevelCost * 0.01);
-
-                    m_amount = Math.Min(m_amount, maxXpPerKill);
-                    break;
-                }
+                m_amount = Math.Min(m_amount, maxXpPerKill);
             }
         }
 
@@ -263,6 +222,9 @@ partial class Player
 
         var amountBeforeMods = m_amount;
 
+        // Gain less xp for killing monsters below your level. TODO: give quests a source level.
+        var overlevelPenalty = xpSourceLevel != null ? GetOverlevelPenalty((int)xpSourceLevel) : 1.0f;
+
         // Kill XP bonus for having higher level alt characters on your account. Doesn't share with fellow.
         var altBonus = GetAltXpBonus();
 
@@ -274,7 +236,7 @@ partial class Player
 
         var enchantment = GetXPAndLuminanceModifier(xpType);
 
-        m_amount = (long)Math.Round(amountBeforeMods * modifier * enchantment * altBonus * regionalDebuffBonus);
+        m_amount = (long)Math.Round(amountBeforeMods * modifier * enchantment * altBonus * regionalDebuffBonus * overlevelPenalty);
 
         // Make sure UpdateXpAndLevel is done on this players thread
         EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(m_amount, xpType, xpMessage)));
@@ -442,6 +404,11 @@ partial class Player
     /// </summary>
     private void UpdateLoyalty(Entity.CreatureSkill loyalty, long amount)
     {
+        if (Level == null)
+        {
+            return;
+        }
+
         var nextLevelXP = GetXPBetweenLevels(Level.Value, Level.Value + 1);
         var proportion = (double)amount / (double)nextLevelXP;
 
@@ -449,6 +416,11 @@ partial class Player
         var levelOffset = Math.Clamp((float)playerLevel / 10, 1, 10);
 
         var nextRankXP = GetXPBetweenSkillLevels(loyalty.AdvancementClass, loyalty.Ranks, loyalty.Ranks + 1);
+        if (nextRankXP == null)
+        {
+            return;
+        }
+
         var baseLoyaltyXP = (long)nextRankXP * proportion * levelOffset;
 
         double fellowshipMod = 1;
@@ -1121,18 +1093,26 @@ partial class Player
     }
 
     /// <summary>
-    /// Returns XP modifier for killing enemies below your level
+    /// Returns XP modifier for killing enemies below your level.
+    /// 10% less per level, multiplicatively. (50% per level once soft level cap has been reached)
     /// </summary>
-    private float GetOverlevelPenalty(int xpSourceLevel)
+    private float GetOverlevelPenalty(int? xpSourceLevel)
     {
-        var penalty = 1.0f;
+        if (xpSourceLevel == null)
+        {
+            return 1.0f;
+        }
+
         var levelDifference = Level - xpSourceLevel;
+        var atSoftCap = Level >= PropertyManager.GetLong("soft_level_cap").Item;
+
+        var penalty = 1.0f;
 
         if (levelDifference > 0)
         {
             for (var i = 0; i < levelDifference; i++)
             {
-                penalty *= 0.9f;
+                penalty *= atSoftCap ? 0.5f : 0.9f;
             }
         }
         //Console.WriteLine($"LevelDifference: {levelDifference}.  Penalty: {Math.Round(penalty * 100)}%");
