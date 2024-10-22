@@ -274,7 +274,7 @@ partial class Creature
 
             var killXpMod = KillXpMod ?? 1.0;
 
-            var totalXP = GetCreatureDeathXP(Level ?? 0, Tier ?? 1) * damagePercent * (float)killXpMod;
+            var totalXp = GetCreatureDeathXP(Level ?? 0, playerDamager.Level ?? 1) * damagePercent * (float)killXpMod;
 
             if (BossKillXpReward == true)
             {
@@ -320,7 +320,7 @@ partial class Creature
             }
             else
             {
-                playerDamager.EarnXP((long)Math.Round(totalXP), XpType.Kill, Level, ShareType.All, WeenieClassId);
+                playerDamager.EarnXP((long)Math.Round(totalXp), XpType.Kill, Level, ShareType.All, WeenieClassId);
             }
 
             // handle luminance
@@ -332,49 +332,41 @@ partial class Creature
         }
     }
 
-    public static int GetCreatureDeathXP(int level, int tier = 1)
+    public static int GetCreatureDeathXP(int creatureLevel, int killerLevel = 1)
     {
         var baseXp = 0.0;
 
         ulong levelTotalXP;
 
-        if (level <= 125)
-        {
-            levelTotalXP =
-                DatManager.PortalDat.XpTable.CharacterLevelXPList[level + 1]
-                - DatManager.PortalDat.XpTable.CharacterLevelXPList[level];
-        }
-        else
-        {
-            levelTotalXP =
-                DatManager.PortalDat.XpTable.CharacterLevelXPList[126]
-                - DatManager.PortalDat.XpTable.CharacterLevelXPList[125];
-        }
+        creatureLevel = Math.Clamp(creatureLevel, 1, 125);
 
-        switch (tier)
+        levelTotalXP = DatManager.PortalDat.XpTable.CharacterLevelXPList[creatureLevel + 1]
+                       - DatManager.PortalDat.XpTable.CharacterLevelXPList[creatureLevel];
+
+        switch (killerLevel)
         {
-            case 1:
+            case < 10:
                 baseXp = levelTotalXP * 0.05f;
                 break;
-            case 2:
+            case < 20:
                 baseXp = levelTotalXP * 0.01f;
                 break;
-            case 3:
+            case < 30:
                 baseXp = levelTotalXP * 0.005f;
                 break;
-            case 4:
+            case < 40:
                 baseXp = levelTotalXP * 0.004f;
                 break;
-            case 5:
+            case < 50:
                 baseXp = levelTotalXP * 0.003f;
                 break;
-            case 6:
+            case < 75:
                 baseXp = levelTotalXP * 0.002f;
                 break;
-            case 7:
+            case < 100:
                 baseXp = levelTotalXP * 0.001f;
                 break;
-            case 8:
+            default:
                 baseXp = levelTotalXP * 0.0005f;
                 break;
         }
