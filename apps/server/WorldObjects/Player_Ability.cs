@@ -254,19 +254,6 @@ partial class Player
 
         var avoidChance = 1.0f - SkillCheck.GetSkillChance(attackerPerceptionSkill, targetDeceptionSkill);
 
-        var combatAbility = CombatAbility.None;
-        var combatFocus = GetEquippedCombatFocus();
-        if (combatFocus != null)
-        {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
-
-        // COMBAT ABILITY - Iron Fist: 20% increased chance to expose enemy weaknesses
-        if (combatAbility == CombatAbility.IronFist)
-        {
-            avoidChance -= 0.2f;
-        }
-
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (avoidChance > roll)
         {
@@ -293,10 +280,8 @@ partial class Player
             }
             return;
         }
-        else
-        {
-            Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.AssessCreature), targetDeceptionSkill);
-        }
+
+        Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.AssessCreature), targetDeceptionSkill);
 
         var vulnerabilitySpellLevels = SpellLevelProgression.GetSpellLevels(SpellId.VulnerabilityOther1);
         var imperilSpellLevels = SpellLevelProgression.GetSpellLevels(SpellId.ImperilOther1);
@@ -307,7 +292,13 @@ partial class Player
         }
 
         var overRoll = roll - avoidChance;
+
         var maxSpellLevel = (int)Math.Clamp(Math.Floor((double)attackerPerceptionSkill / 50), 1, 7);
+        if (IsShrouded())
+        {
+            maxSpellLevel = Math.Min(maxSpellLevel, LevelScaling.MaxExposeSpellLevel(target));
+        }
+
         var spellLevel = (int)Math.Clamp(Math.Floor(overRoll * 10), 1, maxSpellLevel);
 
         var vulnerabilitySpell = new Spell(vulnerabilitySpellLevels[spellLevel - 1]);
@@ -316,10 +307,9 @@ partial class Player
         string spellTypePrefix;
         switch (spellLevel)
         {
-            case 1:
+            default:
                 spellTypePrefix = "a slight";
                 break;
-            default:
             case 2:
                 spellTypePrefix = "a minor";
                 break;
@@ -395,19 +385,6 @@ partial class Player
 
             var avoidChance = 1.0f - SkillCheck.GetSkillChance(attackerPerceptionSkill, targetDeceptionSkill);
 
-            var combatAbility = CombatAbility.None;
-            var combatFocus = GetEquippedCombatFocus();
-            if (combatFocus != null)
-            {
-                combatAbility = combatFocus.GetCombatAbility();
-            }
-
-            // COMBAT ABILITY - Iron Fist: 20% increased chance to expose enemy weaknesses
-            if (combatAbility == CombatAbility.IronFist)
-            {
-                avoidChance -= 0.2f;
-            }
-
             var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
             if (avoidChance > roll)
             {
@@ -434,10 +411,8 @@ partial class Player
                 }
                 return;
             }
-            else
-            {
-                Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.AssessCreature), targetDeceptionSkill);
-            }
+
+            Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.AssessCreature), targetDeceptionSkill);
 
             var magicYieldSpellLevels = SpellLevelProgression.GetSpellLevels(SpellId.MagicYieldOther1);
             var succumbSpellLevels = SpellLevelProgression.GetSpellLevels(SpellId.ExposeWeakness1); // Succumb
@@ -448,7 +423,13 @@ partial class Player
             }
 
             var overRoll = roll - avoidChance;
+
             var maxSpellLevel = (int)Math.Clamp(Math.Floor((double)attackerPerceptionSkill / 50), 1, 7);
+            if (IsShrouded())
+            {
+                maxSpellLevel = Math.Min(maxSpellLevel, LevelScaling.MaxExposeSpellLevel(target));
+            }
+
             var spellLevel = (int)Math.Clamp(Math.Floor(overRoll * 10), 1, maxSpellLevel);
 
             var magicYieldSpell = new Spell(magicYieldSpellLevels[spellLevel - 1]);
@@ -457,10 +438,9 @@ partial class Player
             string spellTypePrefix;
             switch (spellLevel)
             {
-                case 1:
+                default:
                     spellTypePrefix = "a slight";
                     break;
-                default:
                 case 2:
                     spellTypePrefix = "a minor";
                     break;
