@@ -184,14 +184,14 @@ partial class Player
         if (xpType == XpType.Kill)
         {
             // Gain full xp for creatures up to 5 levels higher than the player. Above that, the same xp as a creature 5 levels higher.
-            if (Level != null)
-            {
-                var softlevelCap = PropertyManager.GetLong("soft_level_cap").Item;
-                var maxFullXpKillLevel = Math.Min(Level.Value + 5, (int)softlevelCap);
-                var maxXpPerKill = (long)GetCreatureDeathXP(maxFullXpKillLevel, maxFullXpKillLevel);
-
-                m_amount = Math.Min(m_amount, maxXpPerKill);
-            }
+            // if (Level != null)
+            // {
+            //     var softlevelCap = PropertyManager.GetLong("soft_level_cap").Item;
+            //     var maxFullXpKillLevel = Math.Min(Level.Value + 5, (int)softlevelCap);
+            //     var maxXpPerKill = (long)GetCreatureDeathXP(maxFullXpKillLevel, maxFullXpKillLevel);
+            //
+            //     m_amount = Math.Min(m_amount, maxXpPerKill);
+            // }
         }
 
         // Max possible quest xp gained is equal to 50% of your current level cost (200% of current level cost if under level 10)
