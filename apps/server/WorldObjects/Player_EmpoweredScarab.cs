@@ -223,17 +223,6 @@ partial class Player
             return;
         }
 
-        if (creatureToCastSpellFrom != null)
-        {
-            foreach (var scarab in equippedEmpoweredScarabs)
-            {
-                if (scarab.EmpoweredScarabEffectId != (int)EmpoweredScarabEffect.Detonate)
-                {
-                    creatureToCastSpellFrom = null;
-                }
-            }
-        }
-
         CheckForReadyEmpoweredScarabEffects(
             equippedEmpoweredScarabs,
             target,
@@ -286,7 +275,11 @@ partial class Player
             empoweredScarab.TriggerSpell = spell;
             empoweredScarab.IsWeaponSpell = isWeaponSpell;
             empoweredScarab.SpellTarget = target;
-            empoweredScarab.CreatureToCastSpellFrom = creatureToCastSpellFrom;
+
+            if (empoweredScarab.EmpoweredScarabEffectId is (int)EmpoweredScarabEffect.Detonate)
+            {
+                empoweredScarab.CreatureToCastSpellFrom = creatureToCastSpellFrom;
+            }
 
             empoweredScarab.NextEmpoweredScarabTriggerTime = currentTime + empoweredScarab.CooldownDuration ?? 20.0;
             empoweredScarab.StartCooldown(this);
