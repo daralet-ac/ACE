@@ -1292,11 +1292,14 @@ partial class Creature
 
                     if (fellow != killer.Player)
                     {
-                        olthoiNorthDebuffStacks += fellow.GetOlthoiNorthSpellStacks((false));
+                        olthoiNorthDebuffStacks += fellow.GetOlthoiNorthSpellStacks();
                     }
                 }
 
-                olthoiNorthDebuffStacks = (uint)(olthoiNorthDebuffStacks / fellowshipCount);
+                if (fellowshipCount > 1)
+                {
+                    olthoiNorthDebuffStacks = (uint)(olthoiNorthDebuffStacks / fellowshipCount);
+                }
             }
         }
 
