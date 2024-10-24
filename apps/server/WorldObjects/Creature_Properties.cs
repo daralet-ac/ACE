@@ -937,7 +937,7 @@ partial class Creature
     {
         double? mod;
 
-        mod = GetEquippedItemsSkillModSum(PropertyFloat.EmpoweredScarabManaReserved);
+        mod = GetEquippedItemsSkillModSum(PropertyFloat.SigilTrinketManaReserved);
 
         return mod;
     }

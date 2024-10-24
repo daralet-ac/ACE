@@ -404,7 +404,7 @@ public class Hotspot : WorldObject
 
         var tier = Tier ?? 0;
 
-        if (!player.HasRechargeableScarabs(tier) && player.HasMatchingMenhirBonusStat(EmpoweredScarabBonusStat ?? 0, EmpoweredScarabBonusStatAmount ?? 0))
+        if (!player.HasRechargeableSigilTrinkets(tier) && player.HasMatchingMenhirBonusStat(SigilTrinketBonusStat ?? 0, SigilTrinketBonusStatAmount ?? 0))
         {
             switch ((MenhirManaHotspot)tier)
             {
@@ -432,7 +432,7 @@ public class Hotspot : WorldObject
             return;
         }
 
-        player.RechargeEmpoweredScarabs(this);
+        player.RechargeSigilTrinkets(this);
     }
 
     public static void TryGenHotspot(Player playerAttacker, Creature defender, int? tier, DamageType damageType)

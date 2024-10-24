@@ -74,7 +74,7 @@ public enum WeenieType : uint
     Pet,
     PetDevice,
     CombatPet,
-    EmpoweredScarab,
+    SigilTrinket,
     CombatFocus,
     ArmorPatch,
     Jewel,

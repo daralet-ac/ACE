@@ -24,25 +24,25 @@ public static partial class LootGenerationFactory
                         wield = 50;
                         break;
                     case 2:
-                        wield = 100;
+                        wield = 125;
                         break;
                     case 3:
-                        wield = 150;
-                        break;
-                    case 4:
                         wield = 175;
                         break;
+                    case 4:
+                        wield = 230;
+                        break;
                     case 5:
-                        wield = 200;
+                        wield = 260;
                         break;
                     case 6:
-                        wield = 220;
+                        wield = 290;
                         break;
                     case 7:
-                        wield = 240;
+                        wield = 320;
                         break;
                     case 8:
-                        wield = 260;
+                        wield = 350;
                         break;
                 }
                 break;
@@ -55,25 +55,25 @@ public static partial class LootGenerationFactory
                         wield = 50;
                         break;
                     case 2:
-                        wield = 100;
+                        wield = 125;
                         break;
                     case 3:
-                        wield = 150;
-                        break;
-                    case 4:
                         wield = 175;
                         break;
+                    case 4:
+                        wield = 230;
+                        break;
                     case 5:
-                        wield = 200;
+                        wield = 260;
                         break;
                     case 6:
-                        wield = 220;
+                        wield = 290;
                         break;
                     case 7:
-                        wield = 240;
+                        wield = 320;
                         break;
                     case 8:
-                        wield = 260;
+                        wield = 350;
                         break;
                 }
                 break;
@@ -86,25 +86,25 @@ public static partial class LootGenerationFactory
                         wield = 50;
                         break;
                     case 2:
-                        wield = 100;
+                        wield = 125;
                         break;
                     case 3:
-                        wield = 150;
-                        break;
-                    case 4:
                         wield = 175;
                         break;
+                    case 4:
+                        wield = 230;
+                        break;
                     case 5:
-                        wield = 200;
+                        wield = 260;
                         break;
                     case 6:
-                        wield = 220;
+                        wield = 290;
                         break;
                     case 7:
-                        wield = 240;
+                        wield = 320;
                         break;
                     case 8:
-                        wield = 260;
+                        wield = 350;
                         break;
                 }
                 break;

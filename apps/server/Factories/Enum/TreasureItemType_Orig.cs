@@ -71,5 +71,7 @@ public enum TreasureItemType_Orig
     WeaponRogue,
     WeaponCaster,
     AnimalParts,
-    EmpoweredScarabs
+    SigilTrinketWarrior,
+    SigilTrinketRogue,
+    SigilTrinketCaster
 }

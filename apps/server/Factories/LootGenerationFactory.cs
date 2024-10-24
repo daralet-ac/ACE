@@ -762,8 +762,22 @@ public static partial class LootGenerationFactory
                 wo = CreateAnimalParts(profile);
                 break;
 
-            case TreasureItemType.EmpoweredScarabs:
-                wo = CreateEmpoweredScarab(profile);
+            case TreasureItemType.SigilTrinketWarrior:
+                SigilTrinketType[] warriorSigilTrinkets = [SigilTrinketType.Compass, SigilTrinketType.Top, SigilTrinketType.PocketWatch];
+                var sigilRng = ThreadSafeRandom.Next(0, 2);
+                wo = CreateSigilTrinket(profile, warriorSigilTrinkets[sigilRng]);
+                break;
+
+            case TreasureItemType.SigilTrinketRogue:
+                SigilTrinketType[] rogueSigilTrinkets = [SigilTrinketType.Compass, SigilTrinketType.Top, SigilTrinketType.PocketWatch];
+                sigilRng = ThreadSafeRandom.Next(0, 2);
+                wo = CreateSigilTrinket(profile, rogueSigilTrinkets[sigilRng]);
+                break;
+
+            case TreasureItemType.SigilTrinketCaster:
+                SigilTrinketType[] casterSigilTrinkets = [SigilTrinketType.Compass, SigilTrinketType.Top, SigilTrinketType.PocketWatch];
+                sigilRng = ThreadSafeRandom.Next(0, 2);
+                wo = CreateSigilTrinket(profile, casterSigilTrinkets[sigilRng]);
                 break;
         }
         return wo;
@@ -883,10 +897,10 @@ public static partial class LootGenerationFactory
             // mundane add-on
             MutateAetheria_New(item, profile);
         }
-        else if (EmpoweredScarabWcids.Contains(roll.Wcid))
+        else if (SigilTrinketWcids.Contains(roll.Wcid))
         {
             // mundane add-on
-            MutateEmpoweredanaScarab(item, profile);
+            MutateSigilTrinket(item, profile);
         }
         // other mundane items (mana stones, food/drink, healing kits, lockpicks, and spell components/peas) don't get mutated
         // it should be safe to return false here, for the 1 caller that currently uses this method
@@ -2192,9 +2206,35 @@ public static partial class LootGenerationFactory
                 treasureRoll.Wcid = AnimalPartsWcids.Roll(treasureDeath.Tier);
                 break;
 
-            case TreasureItemType_Orig.EmpoweredScarabs:
+            case TreasureItemType_Orig.SigilTrinketWarrior:
+                SigilTrinketType[] warriorSigilTrinkets = [SigilTrinketType.Compass, SigilTrinketType.Top, SigilTrinketType.PocketWatch];
+                var sigilRng = ThreadSafeRandom.Next(0, 2);
 
-                treasureRoll.Wcid = EmpoweredScarabWcids.Roll(treasureDeath.Tier);
+                treasureRoll.Wcid = SigilTrinketWcids.Roll(treasureDeath.Tier, warriorSigilTrinkets[sigilRng]);
+                if (treasureRoll.Wcid == WeenieClassName.undef)
+                {
+                    treasureRoll = null;
+                }
+
+                break;
+
+            case TreasureItemType_Orig.SigilTrinketRogue:
+                SigilTrinketType[] rogueSigilTrinkets = [SigilTrinketType.Goggles, SigilTrinketType.PuzzleBox, SigilTrinketType.PocketWatch];
+                sigilRng = ThreadSafeRandom.Next(0, 2);
+
+                treasureRoll.Wcid = SigilTrinketWcids.Roll(treasureDeath.Tier, rogueSigilTrinkets[sigilRng]);
+                if (treasureRoll.Wcid == WeenieClassName.undef)
+                {
+                    treasureRoll = null;
+                }
+
+                break;
+
+            case TreasureItemType_Orig.SigilTrinketCaster:
+                SigilTrinketType[] casterSigilTrinkets = [SigilTrinketType.Scarab, SigilTrinketType.PuzzleBox, SigilTrinketType.Top];
+                sigilRng = ThreadSafeRandom.Next(0, 2);
+
+                treasureRoll.Wcid = SigilTrinketWcids.Roll(treasureDeath.Tier, casterSigilTrinkets[sigilRng]);
                 if (treasureRoll.Wcid == WeenieClassName.undef)
                 {
                     treasureRoll = null;
@@ -2515,8 +2555,16 @@ public static partial class LootGenerationFactory
                 MutateCaster(wo, treasureDeath, isMagical, GetWieldDifficultyPerTier(treasureDeath.Tier), treasureRoll);
                 break;
 
-            case TreasureItemType_Orig.EmpoweredScarabs:
-                MutateEmpoweredanaScarab(wo, treasureDeath);
+            case TreasureItemType_Orig.SigilTrinketWarrior:
+                MutateSigilTrinket(wo, treasureDeath);
+                break;
+
+            case TreasureItemType_Orig.SigilTrinketRogue:
+                MutateSigilTrinket(wo, treasureDeath);
+                break;
+
+            case TreasureItemType_Orig.SigilTrinketCaster:
+                MutateSigilTrinket(wo, treasureDeath);
                 break;
 
             // other mundane items (mana stones, food/drink, healing kits, lockpicks, and spell components/peas) don't get mutated

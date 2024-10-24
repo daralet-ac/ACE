@@ -7309,50 +7309,50 @@ partial class WorldObject
         }
     }
 
-    public int? EmpoweredScarabElement
+    public int? SigilTrinketElement
     {
-        get => GetProperty(PropertyInt.EmpoweredScarabElement);
+        get => GetProperty(PropertyInt.SigilTrinketElement);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.EmpoweredScarabElement);
+                RemoveProperty(PropertyInt.SigilTrinketElement);
             }
             else
             {
-                SetProperty(PropertyInt.EmpoweredScarabElement, value.Value);
+                SetProperty(PropertyInt.SigilTrinketElement, value.Value);
             }
         }
     }
 
-    public int? EmpoweredScarabBonusStat
+    public int? SigilTrinketBonusStat
     {
-        get => GetProperty(PropertyInt.EmpoweredScarabBonusStat);
+        get => GetProperty(PropertyInt.SigilTrinketBonusStat);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.EmpoweredScarabBonusStat);
+                RemoveProperty(PropertyInt.SigilTrinketBonusStat);
             }
             else
             {
-                SetProperty(PropertyInt.EmpoweredScarabBonusStat, value.Value);
+                SetProperty(PropertyInt.SigilTrinketBonusStat, value.Value);
             }
         }
     }
 
-    public int? EmpoweredScarabBonusStatAmount
+    public int? SigilTrinketBonusStatAmount
     {
-        get => GetProperty(PropertyInt.EmpoweredScarabBonusStatAmount);
+        get => GetProperty(PropertyInt.SigilTrinketBonusStatAmount);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.EmpoweredScarabBonusStatAmount);
+                RemoveProperty(PropertyInt.SigilTrinketBonusStatAmount);
             }
             else
             {
-                SetProperty(PropertyInt.EmpoweredScarabBonusStatAmount, value.Value);
+                SetProperty(PropertyInt.SigilTrinketBonusStatAmount, value.Value);
             }
         }
     }

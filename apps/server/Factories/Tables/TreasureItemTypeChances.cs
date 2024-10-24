@@ -46,7 +46,7 @@ public static class TreasureItemTypeChances
         (TreasureItemType.Clothing, 2.0f),
         //( TreasureItemType.Cloak,           0.25f ),
         (TreasureItemType.Jewelry, 1.0f),
-        (TreasureItemType.EmpoweredScarabs, 0.25f)
+        (TreasureItemType.SigilTrinketWarrior, 0.25f)
     };
 
     public static readonly ChanceTable<TreasureItemType> TimelineDefaultNonMagical = new ChanceTable<TreasureItemType>(
@@ -59,7 +59,7 @@ public static class TreasureItemTypeChances
         (TreasureItemType.Clothing, 2.0f),
         //( TreasureItemType.Cloak,           0.25f ),
         (TreasureItemType.Jewelry, 1.0f),
-        (TreasureItemType.EmpoweredScarabs, 0.25f)
+        (TreasureItemType.SigilTrinketWarrior, 0.25f)
     };
 
     // LootBias.Armor

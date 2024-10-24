@@ -95,7 +95,8 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.ArmorWarrior, 0.4f),
         (TreasureItemType_Orig.WeaponWarrior, 0.3f),
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.15f),
+        (TreasureItemType_Orig.Jewelry, 0.1f),
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.05f),
     };
 
     // Rogue Profile
@@ -104,8 +105,8 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.ArmorRogue, 0.4f),
         (TreasureItemType_Orig.WeaponRogue, 0.3f),
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.14f),
-        (TreasureItemType_Orig.EmpoweredScarabs, 0.01f),
+        (TreasureItemType_Orig.Jewelry, 0.1f),
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.05f),
     };
 
     // Caster Profile
@@ -115,7 +116,7 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.WeaponCaster, 0.3f),
         (TreasureItemType_Orig.Clothing, 0.15f),
         (TreasureItemType_Orig.Jewelry, 0.1f),
-        (TreasureItemType_Orig.EmpoweredScarabs, 0.05f),
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.05f),
     };
 
     // WarriorRogue Profile
@@ -126,7 +127,9 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.ArmorRogue, 0.2f),
         (TreasureItemType_Orig.WeaponRogue, 0.15f),
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.15f),
+        (TreasureItemType_Orig.Jewelry, 0.11f),
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.02f),
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.02f),
     };
 
     // WarriorCaster Profile
@@ -137,8 +140,9 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.ArmorCaster, 0.2f),
         (TreasureItemType_Orig.WeaponCaster, 0.15f),
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.12f),
-        (TreasureItemType_Orig.EmpoweredScarabs, 0.03f),
+        (TreasureItemType_Orig.Jewelry, 0.11f),
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.02f),
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.02f),
     };
 
     // RogueCaster Profile
@@ -150,7 +154,8 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.WeaponCaster, 0.15f),
         (TreasureItemType_Orig.Clothing, 0.15f),
         (TreasureItemType_Orig.Jewelry, 0.11f),
-        (TreasureItemType_Orig.EmpoweredScarabs, 0.04f),
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.02f),
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.02f),
     };
 
     // Balanced Profile
@@ -163,8 +168,10 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.ArmorCaster, 0.15f),
         (TreasureItemType_Orig.WeaponCaster, 0.11f),
         (TreasureItemType_Orig.Clothing, 0.12f),
-        (TreasureItemType_Orig.Jewelry, 0.08f),
-        (TreasureItemType_Orig.EmpoweredScarabs, 0.02f),
+        (TreasureItemType_Orig.Jewelry, 0.09f),
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.01f),
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.01f),
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.01f),
     };
 
     // Animal Parts Profile
@@ -173,10 +180,12 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.AnimalParts, 1.0f),
     };
 
-    // Empowered Scarabs Profile
+    // Sigil Trinkets Profile
     private static ChanceTable<TreasureItemType_Orig> itemProfile20 = new ChanceTable<TreasureItemType_Orig>()
     {
-        (TreasureItemType_Orig.EmpoweredScarabs, 1.0f),
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.33f),
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.33f),
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.34f)
     };
 
     /// <summary>

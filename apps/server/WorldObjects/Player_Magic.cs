@@ -1084,7 +1084,7 @@ partial class Player
         var itemCaster = isWeaponSpell ? caster : null;
 
         // EMPOWERED SCARAB - Mana Cost Reduction
-        var manaModifier = GetEmpoweredScarabManaReductionMod();
+        var manaModifier = GetSigilTrinketManaReductionMod();
         var before = manaUsed;
         manaUsed = (uint)(manaUsed * manaModifier);
 
@@ -1154,7 +1154,7 @@ partial class Player
                 if ((spell.Flags & SpellFlags.FellowshipSpell) == 0)
                 {
                     // EMPOWERED SCARAB - Vuln | Prot | Artifice | Growth | Intensity | Duplicate
-                    CheckForEmpoweredScarabOnCastEffects(target, spell, isWeaponSpell);
+                    CheckForSigilTrinketOnCastEffects(target, spell, isWeaponSpell);
 
                     CreatePlayerSpell(target, spell, isWeaponSpell);
                 }

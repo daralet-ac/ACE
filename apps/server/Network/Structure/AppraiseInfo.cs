@@ -1016,7 +1016,7 @@ public class AppraiseInfo
     private void SetEmpoweredScarabUseText(WorldObject wo)
     {
         // Max Level
-        if (PropertiesInt.TryGetValue(PropertyInt.EmpoweredScarabMaxLevel, out var manaScarabMaxLevel) && manaScarabMaxLevel > 0)
+        if (PropertiesInt.TryGetValue(PropertyInt.SigilTrinketMaxLevel, out var manaScarabMaxLevel) && manaScarabMaxLevel > 0)
         {
             _extraPropertiesText += $"\nMax Spell Level: {manaScarabMaxLevel}\n";
 
@@ -1025,7 +1025,7 @@ public class AppraiseInfo
 
         // Proc Chance
         if (
-            PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabTriggerChance, out var manaScarabTriggerChance)
+            PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketTriggerChance, out var manaScarabTriggerChance)
             && manaScarabTriggerChance > 0.01
         )
         {
@@ -1040,7 +1040,7 @@ public class AppraiseInfo
             && cooldownDuration > 0.01
         )
         {
-            if (wo.WeenieType == WeenieType.EmpoweredScarab)
+            if (wo.WeenieType == WeenieType.SigilTrinket)
             {
                 _extraPropertiesText += $"Cooldown: {Math.Round(cooldownDuration, 1)} seconds\n";
             }
@@ -1061,7 +1061,7 @@ public class AppraiseInfo
 
         // Intensity
         if (
-            PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabIntensity, out var manaScarabIntensity)
+            PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketIntensity, out var manaScarabIntensity)
             && manaScarabIntensity > 0.01
         )
         {
@@ -1072,7 +1072,7 @@ public class AppraiseInfo
 
         // Mana Reduction
         if (
-            PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabReductionAmount, out var manaScarabReductionAmount)
+            PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketReductionAmount, out var manaScarabReductionAmount)
             && manaScarabReductionAmount > 0.01
         )
         {
@@ -1082,18 +1082,18 @@ public class AppraiseInfo
         }
 
         // Reserved Mana
-        if (PropertiesFloat.TryGetValue(PropertyFloat.EmpoweredScarabManaReserved, out var manaScarabManaReserved) && manaScarabManaReserved > 0)
+        if (PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketManaReserved, out var manaScarabManaReserved) && manaScarabManaReserved > 0)
         {
             var wielder = (Creature)wo.Wielder;
 
             if (wielder != null)
             {
-                var equippedManaScarabs = wielder.GetEquippedEmpoweredScarabs();
+                var equippedManaScarabs = wielder.GetEquippedSigilTrinkets();
                 var totalReservedMana = 0.0;
 
                 foreach (var manaScarab in equippedManaScarabs)
                 {
-                    totalReservedMana += manaScarab.EmpoweredScarabManaReserved ?? 0;
+                    totalReservedMana += manaScarab.SigilTrinketManaReserved ?? 0;
                 }
 
                 _extraPropertiesText +=

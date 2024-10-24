@@ -6396,6 +6396,8 @@ public enum SpellId : uint
     LifeGiverEpic,
     LifeGiverLegendary,
     ManaReservationPenalty,
+    StaminaReservationPenalty,
+    HealthReservationPenalty,
 
     NumSpells = 8192,
 
@@ -6434,9 +6436,9 @@ public enum SpellId : uint
     PortalGemCooldown = 0x8000 | 1000, // 15 second cooldown
 
     // Timeline
-    EmpoweredScarabBlueCooldown = 0x8000 | 10000, // varies
-    EmpoweredScarabYellowCooldown = 0x8000 | 10001, // varies
-    EmpoweredScarabRedCooldown = 0x8000 | 10002, // varies
+    SigilTrinketBlueCooldown = 0x8000 | 10000, // varies
+    SigilTrinketYellowCooldown = 0x8000 | 10001, // varies
+    SigilTrinketRedCooldown = 0x8000 | 10002, // varies
 
     HealingKitCooldown = 0x8000 | 10003, // varies
 
