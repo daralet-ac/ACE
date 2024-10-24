@@ -742,7 +742,7 @@ public enum PropertyInt : ushort
     [SendOnLogin]
     Enlightenment = 390,
 
-    // Timeline
+    // Daralet
     WardLevel = 391,
     ArmorSlots = 392,
     ArmorWeightClass = 393,
@@ -753,17 +753,17 @@ public enum PropertyInt : ushort
     ArmorStyle = 398,
     WeaponSubtype = 399,
     ArmorPatchAmount = 400,
-    EmpoweredScarabColor = 401,
+    SigilTrinketColor = 401,
 
     [ServerOnly]
-    EmpoweredScarabSchool = 402,
+    SigilTrinketSchool = 402,
 
     [ServerOnly]
-    EmpoweredScarabEffectId = 403,
-    EmpoweredScarabMaxLevel = 404,
-    EmpoweredScarabElement = 405,
-    EmpoweredScarabBonusStat = 406,
-    EmpoweredScarabBonusStatAmount = 407,
+    SigilTrinketEffectId = 403,
+    SigilTrinketMaxLevel = 404,
+    SigilTrinketElement = 405,
+    SigilTrinketBonusStat = 406,
+    SigilTrinketBonusStatAmount = 407,
     JewelSockets = 408,
     GearStrength = 409,
     GearEndurance = 410,
@@ -822,6 +822,7 @@ public enum PropertyInt : ushort
     NearbyPlayerScalingExtraPlayersPerAdd = 463,
     NearbyPlayerScalingAddWcid = 464,
     RemainingConfirmations = 465,
+    SigilTrinketType = 466,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,

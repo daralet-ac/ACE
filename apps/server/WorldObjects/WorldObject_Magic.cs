@@ -553,7 +553,7 @@ partial class WorldObject
             if (targetCreature != null && !equip)
             {
                 var player = this as Player;
-                player?.CheckForEmpoweredScarabOnCastEffects(targetCreature, spell, true);
+                player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true);
             }
         }
 

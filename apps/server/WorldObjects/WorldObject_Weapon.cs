@@ -1445,7 +1445,7 @@ partial class WorldObject
                     }
                 }
 
-                var scarabReduction = playerAttacker.GetEmpoweredScarabManaReductionMod();
+                var scarabReduction = playerAttacker.GetSigilTrinketManaReductionMod();
 
                 if (playerAttacker.Mana.Current < (uint)(baseCost * scarabReduction))
                 {

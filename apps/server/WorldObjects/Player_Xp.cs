@@ -996,10 +996,12 @@ partial class Player
         {
             OnItemLevelUp(item, prevItemLevel);
 
-            if (item.WeenieType == WeenieType.EmpoweredScarab)
+            if (item.WeenieType == WeenieType.SigilTrinket)
             {
-                var empoweredScarab = item as EmpoweredScarab;
-                empoweredScarab.OnLevelUp();
+                if (item is SigilTrinket sigilTrinket)
+                {
+                    sigilTrinket.OnLevelUp();
+                }
             }
 
             var actionChain = new ActionChain();

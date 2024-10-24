@@ -372,7 +372,7 @@ partial class Player
         // handle item spells
         if (
             item.ItemCurMana > 0
-            || item is EmpoweredScarab
+            || item is SigilTrinket
             || item.ValidLocations == EquipMask.TrinketOne
             || item.ArmorWeightClass == 1
         )
@@ -393,7 +393,7 @@ partial class Player
         }
 
         // handle mana scarabs
-        var manaScarab = item as EmpoweredScarab;
+        var manaScarab = item as SigilTrinket;
         if (manaScarab != null)
         {
             manaScarab.OnEquip(this);

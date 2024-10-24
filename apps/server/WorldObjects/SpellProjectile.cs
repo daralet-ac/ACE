@@ -456,7 +456,7 @@ public class SpellProjectile : WorldObject
             // EMPOWERED SCARAB - Detonation Check for Cast-On-Strike
             if (player != null && FromProc)
             {
-                player.CheckForEmpoweredScarabOnCastEffects(target, Spell, true, creatureTarget);
+                player.CheckForSigilTrinketOnCastEffects(target, Spell, true, creatureTarget);
             }
 
             if (sourceCreature != null && ProjectileTarget != null && !FromProc)
@@ -486,7 +486,7 @@ public class SpellProjectile : WorldObject
                     // EMPOWERED SCARAB - Detonate
                     if (player != null)
                     {
-                        player.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, creatureTarget);
+                        player.CheckForSigilTrinketOnCastEffects(target, Spell, false, creatureTarget);
                     }
                 }
                 else
@@ -646,7 +646,7 @@ public class SpellProjectile : WorldObject
             // EMPOWERED SCARAB - Crushing
             if (criticalHit && sourcePlayer != null && Spell.School == MagicSchool.WarMagic)
             {
-                sourcePlayer.CheckForEmpoweredScarabOnCastEffects(target, Spell, false, null, true);
+                sourcePlayer.CheckForSigilTrinketOnCastEffects(target, Spell, false, null, true);
             }
         }
 

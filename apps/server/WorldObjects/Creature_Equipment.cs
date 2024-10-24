@@ -232,126 +232,88 @@ partial class Creature
         return EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.TrinketOne);
     }
 
-    public List<EmpoweredScarab> GetEquippedEmpoweredScarabs()
+    public List<SigilTrinket> GetEquippedSigilTrinkets()
     {
-        var empoweredScarabBlue =
+        var trinketsBlue =
             EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.SigilOne)
-            as EmpoweredScarab;
-        var empoweredScarabYellow =
+            as SigilTrinket;
+        var trinketsYellow =
             EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.SigilTwo)
-            as EmpoweredScarab;
-        var empoweredScarabRed =
+            as SigilTrinket;
+        var trinketsRed =
             EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.SigilThree)
-            as EmpoweredScarab;
+            as SigilTrinket;
 
-        var equippedEmpoweredScarabs = new List<EmpoweredScarab>();
+        var equippedTrinkets = new List<SigilTrinket>();
 
-        if (empoweredScarabBlue != null)
+        if (trinketsBlue != null)
         {
-            equippedEmpoweredScarabs.Add(empoweredScarabBlue);
+            equippedTrinkets.Add(trinketsBlue);
         }
 
-        if (empoweredScarabYellow != null)
+        if (trinketsYellow != null)
         {
-            equippedEmpoweredScarabs.Add(empoweredScarabYellow);
+            equippedTrinkets.Add(trinketsYellow);
         }
 
-        if (empoweredScarabRed != null)
+        if (trinketsRed != null)
         {
-            equippedEmpoweredScarabs.Add(empoweredScarabRed);
+            equippedTrinkets.Add(trinketsRed);
         }
 
-        return equippedEmpoweredScarabs;
+        return equippedTrinkets;
     }
 
-    public EmpoweredScarab GetEquippedEmpoweredScarabOfType(EmpoweredScarabColor empoweredScarabColor)
+    protected SigilTrinket GetEquippedSigilTrinketOfType(SigilTrinketColor sigilTrinketColor)
     {
-        var equippedEmpoweredScarabs = GetEquippedEmpoweredScarabs();
+        var equippedTrinkets = GetEquippedSigilTrinkets();
 
-        foreach (var empoweredScarab in equippedEmpoweredScarabs.ToList())
-        {
-            if (empoweredScarab?.EmpoweredScarabColor != null && empoweredScarab.EmpoweredScarabColor == (int)empoweredScarabColor)
-            {
-                return empoweredScarab;
-            }
-        }
-
-        return null;
+        return equippedTrinkets.ToList().FirstOrDefault(trinket => trinket?.SigilTrinketColor != null && trinket.SigilTrinketColor == (int)sigilTrinketColor);
     }
 
-    public List<EmpoweredScarab> GetHeldEmpoweredScarabsBlue()
+    protected List<SigilTrinket> GetHeldSigilTrinketsBlue()
     {
-        uint empoweredScarabBlue_Life_wcid = 1050250;
-        uint empoweredScarabBlue_War_wcid = 1050251;
+        const uint empoweredScarabBlueLifeWcid = 1050250;
+        const uint empoweredScarabBlueWarWcid = 1050251;
 
-        var empoweredScarabsBlueLife = GetInventoryItemsOfWCID(empoweredScarabBlue_Life_wcid)
-            .ConvertAll(x => (EmpoweredScarab)x);
-        var empoweredScarabsBlueWar = GetInventoryItemsOfWCID(empoweredScarabBlue_War_wcid)
-            .ConvertAll(x => (EmpoweredScarab)x);
+        var empoweredScarabsBlueLife = GetInventoryItemsOfWCID(empoweredScarabBlueLifeWcid).ConvertAll(x => (SigilTrinket)x);
+        var empoweredScarabsBlueWar = GetInventoryItemsOfWCID(empoweredScarabBlueWarWcid).ConvertAll(x => (SigilTrinket)x);
 
-        var heldEmpoweredScarabsBlue = new List<EmpoweredScarab>();
+        var heldTrinketsBlue = new List<SigilTrinket>();
+        heldTrinketsBlue.AddRange(empoweredScarabsBlueLife);
+        heldTrinketsBlue.AddRange(empoweredScarabsBlueWar);
 
-        if (empoweredScarabsBlueLife != null)
-        {
-            heldEmpoweredScarabsBlue.AddRange(empoweredScarabsBlueLife);
-        }
-
-        if (empoweredScarabsBlueWar != null)
-        {
-            heldEmpoweredScarabsBlue.AddRange(empoweredScarabsBlueWar);
-        }
-
-        return heldEmpoweredScarabsBlue;
+        return heldTrinketsBlue;
     }
 
-    public List<EmpoweredScarab> GetHeldEmpoweredScarabsYellow()
+    protected List<SigilTrinket> GetHeldSigilTrinketsYellow()
     {
-        uint empoweredScarabYellow_Life_wcid = 1050252;
-        uint empoweredScarabYellow_War_wcid = 1050253;
+        const uint empoweredScarabYellowLifeWcid = 1050252;
+        const uint empoweredScarabYellowWarWcid = 1050253;
 
-        var empoweredScarabsYellowLife = GetInventoryItemsOfWCID(empoweredScarabYellow_Life_wcid)
-            .ConvertAll(x => (EmpoweredScarab)x);
-        var empoweredScarabsYellowWar = GetInventoryItemsOfWCID(empoweredScarabYellow_War_wcid)
-            .ConvertAll(x => (EmpoweredScarab)x);
+        var empoweredScarabsYellowLife = GetInventoryItemsOfWCID(empoweredScarabYellowLifeWcid).ConvertAll(x => (SigilTrinket)x);
+        var empoweredScarabsYellowWar = GetInventoryItemsOfWCID(empoweredScarabYellowWarWcid).ConvertAll(x => (SigilTrinket)x);
 
-        var heldEmpoweredScarabsYellow = new List<EmpoweredScarab>();
+        var heldTrinketsYellow = new List<SigilTrinket>();
+        heldTrinketsYellow.AddRange(empoweredScarabsYellowLife);
+        heldTrinketsYellow.AddRange(empoweredScarabsYellowWar);
 
-        if (empoweredScarabsYellowLife != null)
-        {
-            heldEmpoweredScarabsYellow.AddRange(empoweredScarabsYellowLife);
-        }
-
-        if (empoweredScarabsYellowWar != null)
-        {
-            heldEmpoweredScarabsYellow.AddRange(empoweredScarabsYellowWar);
-        }
-
-        return heldEmpoweredScarabsYellow;
+        return heldTrinketsYellow;
     }
 
-    public List<EmpoweredScarab> GetHeldEmpoweredScarabsRed()
+    protected List<SigilTrinket> GetHeldSigilTrinketsRed()
     {
-        uint empoweredScarabRed_Life_wcid = 1050254;
-        uint empoweredScarabRed_War_wcid = 1050255;
+        const uint empoweredScarabRedLifeWcid = 1050254;
+        const uint empoweredScarabRedWarWcid = 1050255;
 
-        var empoweredScarabsRedLife = GetInventoryItemsOfWCID(empoweredScarabRed_Life_wcid)
-            .ConvertAll(x => (EmpoweredScarab)x);
-        var empoweredScarabsRedWar = GetInventoryItemsOfWCID(empoweredScarabRed_War_wcid)
-            .ConvertAll(x => (EmpoweredScarab)x);
+        var empoweredScarabsRedLife = GetInventoryItemsOfWCID(empoweredScarabRedLifeWcid).ConvertAll(x => (SigilTrinket)x);
+        var empoweredScarabsRedWar = GetInventoryItemsOfWCID(empoweredScarabRedWarWcid).ConvertAll(x => (SigilTrinket)x);
 
-        var heldEmpoweredScarabsRed = new List<EmpoweredScarab>();
+        var heldTrinketsRed = new List<SigilTrinket>();
+        heldTrinketsRed.AddRange(empoweredScarabsRedLife);
+        heldTrinketsRed.AddRange(empoweredScarabsRedWar);
 
-        if (empoweredScarabsRedLife != null)
-        {
-            heldEmpoweredScarabsRed.AddRange(empoweredScarabsRedLife);
-        }
-
-        if (empoweredScarabsRedWar != null)
-        {
-            heldEmpoweredScarabsRed.AddRange(empoweredScarabsRedWar);
-        }
-
-        return heldEmpoweredScarabsRed;
+        return heldTrinketsRed;
     }
 
     public CombatFocus GetEquippedCombatFocus()
@@ -1046,7 +1008,7 @@ partial class Creature
         }
 
         // handle mana scarabs
-        var manaScarab = worldObject as EmpoweredScarab;
+        var manaScarab = worldObject as SigilTrinket;
         if (manaScarab != null)
         {
             manaScarab.OnDequip(this as Player);

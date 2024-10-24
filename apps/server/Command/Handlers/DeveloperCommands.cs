@@ -3390,7 +3390,7 @@ public static class DeveloperCommands
         if (
             wo.TsysMutationData == null
             && !Aetheria.IsAetheria(wo.WeenieClassId)
-            && !EmpoweredScarab.IsEmpoweredScarab(wo.WeenieClassId)
+            && !SigilTrinket.IsSigilTrinket(wo.WeenieClassId)
             && !(wo is PetDevice)
         )
         {

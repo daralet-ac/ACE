@@ -195,10 +195,10 @@ public enum PropertyDataId : ushort
 
     // Timeline
     [ServerOnly]
-    EmpoweredScarabCastSpellId = 62,
+    SigilTrinketCastSpellId = 62,
 
     [ServerOnly]
-    EmpoweredScarabTriggerSpellId = 63,
+    SigilTrinketTriggerSpellId = 63,
 
     [ServerOnly]
     SpellExtracted = 64,
