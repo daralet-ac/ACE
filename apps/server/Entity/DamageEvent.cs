@@ -100,6 +100,7 @@ public class DamageEvent
     public CombatType CombatType { get; private set; }
     public DamageType DamageType { get; private set; }
     public WorldObject Weapon { get; private set; }
+    public WorldObject Offhand { get; private set; }
 
     public bool HasDamage => !Evaded && !Blocked && !LifestoneProtection;
 
@@ -157,6 +158,11 @@ public class DamageEvent
         if (PropertyManager.GetBool("debug_level_scaling_system").Item && (attacker is Player || defender is Player))
         {
             Console.WriteLine($"\n\n---- LEVEL SCALING - {attacker.Name} vs {defender.Name} ----");
+        }
+
+        if (defender.Name is "Placeholder")
+        {
+            return 0;
         }
 
         SetCombatSources(attacker, defender, damageSource);
@@ -219,6 +225,8 @@ public class DamageEvent
             damageSource.ProjectileSource == null
                 ? attacker.GetEquippedMeleeWeapon()
                 : (damageSource.ProjectileLauncher ?? damageSource.ProjectileAmmo);
+
+        Offhand = attacker.GetEquippedOffHand();
 
         _attackType = attacker.AttackType;
         _attackHeight = attacker.AttackHeight ?? AttackHeight.Medium;
