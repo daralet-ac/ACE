@@ -873,7 +873,7 @@ public class AppraiseInfo
 
         // -------- EMPOWERED SCARABS --------
 
-        SetEmpoweredScarabUseText(wo);
+        SetSigilTrinketUseText(wo);
 
         if (_hasExtraPropertiesText)
         {
@@ -1013,23 +1013,38 @@ public class AppraiseInfo
         }
     }
 
-    private void SetEmpoweredScarabUseText(WorldObject wo)
+    private void SetSigilTrinketUseText(WorldObject wo)
     {
-        // Max Level
-        if (PropertiesInt.TryGetValue(PropertyInt.SigilTrinketMaxLevel, out var manaScarabMaxLevel) && manaScarabMaxLevel > 0)
+        if (wo is not SigilTrinket sigilTrinket)
         {
-            _extraPropertiesText += $"\nMax Spell Level: {manaScarabMaxLevel}\n";
+            return;
+        }
+
+        // Max Level
+        if (PropertiesInt.TryGetValue(PropertyInt.SigilTrinketMaxTier, out var sigilTrinketTier) &&
+            sigilTrinketTier > 0)
+        {
+            if (sigilTrinket.WieldSkillType is (int)Skill.WarMagic or (int)Skill.LifeMagic)
+            {
+                _extraPropertiesText += $"\nMax Spell Level: {sigilTrinketTier}\n";
+            }
+            // else
+            // {
+            //     var wieldReq = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketTier + 1);
+            //
+            //     _extraPropertiesText += $"\nMax Wield Req: {wieldReq}\n";
+            // }
 
             _hasExtraPropertiesText = true;
         }
 
         // Proc Chance
         if (
-            PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketTriggerChance, out var manaScarabTriggerChance)
-            && manaScarabTriggerChance > 0.01
+            PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketTriggerChance, out var sigilTrinketTriggerChance)
+            && sigilTrinketTriggerChance > 0.01
         )
         {
-            _extraPropertiesText += $"Proc Chance: {Math.Round(manaScarabTriggerChance * 100, 0)}%\n";
+            _extraPropertiesText += $"Proc Chance: {Math.Round(sigilTrinketTriggerChance * 100, 0)}%\n";
 
             _hasExtraPropertiesText = true;
         }
@@ -1040,10 +1055,7 @@ public class AppraiseInfo
             && cooldownDuration > 0.01
         )
         {
-            if (wo.WeenieType == WeenieType.SigilTrinket)
-            {
-                _extraPropertiesText += $"Cooldown: {Math.Round(cooldownDuration, 1)} seconds\n";
-            }
+            _extraPropertiesText += $"Cooldown: {Math.Round(cooldownDuration, 1)} seconds\n";
 
             _hasExtraPropertiesText = true;
         }
@@ -1051,57 +1063,110 @@ public class AppraiseInfo
         // Max Level
         if (PropertiesInt.TryGetValue(PropertyInt.MaxStructure, out var maxStructure) && maxStructure > 0)
         {
-            if (wo.WeenieType != WeenieType.Salvage)
-            {
-                _extraPropertiesText += $"Max Number of Uses: {maxStructure}\n";
-            }
+            _extraPropertiesText += $"Max Number of Uses: {maxStructure}\n";
 
             _hasExtraPropertiesText = true;
         }
 
         // Intensity
         if (
-            PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketIntensity, out var manaScarabIntensity)
-            && manaScarabIntensity > 0.01
+            PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketIntensity, out var sigilTrinketIntensity)
+            && sigilTrinketIntensity > 0.01
         )
         {
-            _extraPropertiesText += $"Bonus Intensity: {Math.Round(manaScarabIntensity * 100, 1)}%\n";
+            _extraPropertiesText += $"Bonus Intensity: {Math.Round(sigilTrinketIntensity * 100, 1)}%\n";
 
             _hasExtraPropertiesText = true;
         }
 
         // Mana Reduction
         if (
-            PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketReductionAmount, out var manaScarabReductionAmount)
-            && manaScarabReductionAmount > 0.01
+            PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketReductionAmount, out var sigilTrinketReductionAmount)
+            && sigilTrinketReductionAmount > 0.01
         )
         {
-            _extraPropertiesText += $"Mana Cost Reduction: {Math.Round(manaScarabReductionAmount * 100, 1)}%\n";
+            _extraPropertiesText += $"Mana Cost Reduction: {Math.Round(sigilTrinketReductionAmount * 100, 1)}%\n";
 
             _hasExtraPropertiesText = true;
         }
 
-        // Reserved Mana
-        if (PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketManaReserved, out var manaScarabManaReserved) && manaScarabManaReserved > 0)
+        // Reserved Health
+        if (PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketHealthReserved, out var sigilTrinketHealthReserved)
+            && sigilTrinketHealthReserved > 0)
         {
             var wielder = (Creature)wo.Wielder;
 
             if (wielder != null)
             {
-                var equippedManaScarabs = wielder.GetEquippedSigilTrinkets();
-                var totalReservedMana = 0.0;
+                var equippedSigilTrinkets = wielder.GetEquippedSigilTrinkets();
+                var totalReservedHealth = 0.0;
 
-                foreach (var manaScarab in equippedManaScarabs)
+                foreach (var equippedSigilTrinket in equippedSigilTrinkets)
                 {
-                    totalReservedMana += manaScarab.SigilTrinketManaReserved ?? 0;
+                    totalReservedHealth += equippedSigilTrinket.SigilTrinketHealthReserved ?? 0;
                 }
 
                 _extraPropertiesText +=
-                    $"Mana Reservation: {Math.Round(manaScarabManaReserved * 100, 1)}% ({Math.Round(totalReservedMana * 100, 1)}%)\n";
+                    $"Health Reservation: {Math.Round(sigilTrinketHealthReserved * 100, 1)}% ({Math.Round(totalReservedHealth * 100, 1)}%)\n";
             }
             else
             {
-                _extraPropertiesText += $"Mana Reservation: {Math.Round(manaScarabManaReserved * 100, 1)}%\n";
+                _extraPropertiesText += $"Health Reservation: {Math.Round(sigilTrinketHealthReserved * 100, 1)}%\n";
+            }
+
+            _hasExtraPropertiesText = true;
+        }
+
+        // Reserved Stamina
+        if (PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketStaminaReserved, out var sigilTrinketStaminaReserved)
+            && sigilTrinketStaminaReserved > 0)
+        {
+            var wielder = (Creature)wo.Wielder;
+
+            if (wielder != null)
+            {
+                var equippedSigilTrinkets = wielder.GetEquippedSigilTrinkets();
+                var totalReservedStamina = 0.0;
+
+                foreach (var equippedSigilTrinket in equippedSigilTrinkets)
+                {
+                    totalReservedStamina += equippedSigilTrinket.SigilTrinketStaminaReserved ?? 0;
+                }
+
+                _extraPropertiesText +=
+                    $"Stamina Reservation: {Math.Round(sigilTrinketStaminaReserved * 100, 1)}% ({Math.Round(totalReservedStamina * 100, 1)}%)\n";
+            }
+            else
+            {
+                _extraPropertiesText +=
+                    $"Stamina Reservation: {Math.Round(sigilTrinketStaminaReserved * 100, 1)}%\n";
+            }
+
+            _hasExtraPropertiesText = true;
+        }
+
+        // Reserved Mana
+        if (PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketManaReserved, out var sigilTrinketManaReserved) &&
+            sigilTrinketManaReserved > 0)
+        {
+            var wielder = (Creature)wo.Wielder;
+
+            if (wielder != null)
+            {
+                var equippedSigilTrinkets = wielder.GetEquippedSigilTrinkets();
+                var totalReservedMana = 0.0;
+
+                foreach (var equippedSigilTrinket in equippedSigilTrinkets)
+                {
+                    totalReservedMana += equippedSigilTrinket.SigilTrinketManaReserved ?? 0;
+                }
+
+                _extraPropertiesText +=
+                    $"Mana Reservation: {Math.Round(sigilTrinketManaReserved * 100, 1)}% ({Math.Round(totalReservedMana * 100, 1)}%)\n";
+            }
+            else
+            {
+                _extraPropertiesText += $"Mana Reservation: {Math.Round(sigilTrinketManaReserved * 100, 1)}%\n";
             }
 
             _hasExtraPropertiesText = true;

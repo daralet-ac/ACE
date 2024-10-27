@@ -29,6 +29,8 @@ namespace ACE.Server.WorldObjects;
 
 partial class WorldObject
 {
+    private bool _isSigilTrinketSpell = false;
+
     /// <summary>
     /// Instantly casts a spell for a WorldObject (ie. spell traps)
     /// </summary>
@@ -521,9 +523,12 @@ partial class WorldObject
         bool isWeaponSpell = false,
         bool fromProc = false,
         bool equip = false,
-        bool showMsg = true
+        bool showMsg = true,
+        bool sigilTrinketSpell = false
     )
     {
+        _isSigilTrinketSpell = sigilTrinketSpell;
+
         var targetCreature = !spell.IsSelfTargeted || spell.IsFellowshipSpell ? target as Creature : this as Creature;
 
         if (this is Gem || this is Food || this is Hook)
@@ -553,7 +558,21 @@ partial class WorldObject
             if (targetCreature != null && !equip)
             {
                 var player = this as Player;
-                player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true);
+                switch (spell.School)
+                {
+                    case MagicSchool.LifeMagic:
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabIntensity, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabShield, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastProt, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastVuln, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastItemBuff, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate, null, false, _isSigilTrinketSpell);
+                        break;
+                    case MagicSchool.WarMagic:
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabIntensity, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabShield, null, false, _isSigilTrinketSpell);
+                        break;
+                }
             }
         }
 

@@ -181,6 +181,8 @@ partial class Player
                 }
             }
 
+            CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might);
+
             target.IncreaseTargetThreatLevel(this, (int)threat);
 
             LastAttackedCreature = target;

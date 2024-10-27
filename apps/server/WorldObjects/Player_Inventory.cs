@@ -3100,7 +3100,8 @@ partial class Player
             case WieldRequirement.Training:
                 // verify skill is trained / specialized
                 skill = GetCreatureSkill(ConvertToMoASkill((Skill)skillOrAttribute), false);
-                if ((int)skill.AdvancementClass <= difficulty)
+
+                if ((int)skill.AdvancementClass < difficulty)
                 {
                     return WeenieError.SkillTooLow;
                 }

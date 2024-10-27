@@ -14,32 +14,32 @@ public static partial class LootGenerationFactory
     [
         new Dictionary<string, uint>() // 0 - Compass
         {
-            { "black", 100690698 }, // black
-            { "gray", 100690701 }, // gray
-            { "olive", 100690705 }, // olive
-            { "white", 100690704 }, // white
-            { "purple", 100690707 }, // purple
-            { "blue", 100690706 }, // blue
-            { "green", 100690700 }, // green
-            { "yellow", 100690699 }, // yellow
-            { "orange", 100690702 }, // orange
-            { "red", 100693226 }, // red
-            { "iron", 100690703 } // iron
+            { "black", 100690601 }, // black
+            { "gray", 100690594 },
+            { "olive", 100690619 }, // brown
+            { "white", 100690596 }, // white
+            { "purple", 100690600 }, // purple
+            { "blue", 100690595 }, // blue
+            { "green", 100690598 }, // green
+            { "yellow", 100690566 }, // yellow
+            { "orange", 100690602 }, // orange
+            { "red", 100690597 }, // red
+            { "iron", 100690599 } //
         },
 
-        new Dictionary<string, uint>() // 1 - Goggles
+        new Dictionary<string, uint>() // 1 - Puzzle Box
         {
-            { "black", 100690698 }, // black
-            { "gray", 100690701 }, // gray
-            { "olive", 100690705 }, // olive
-            { "white", 100690704 }, // white
-            { "purple", 100690707 }, // purple
-            { "blue", 100690706 }, // blue
-            { "green", 100690700 }, // green
-            { "yellow", 100690699 }, // yellow
-            { "orange", 100690702 }, // orange
-            { "red", 100693226 }, // red
-            { "iron", 100690703 } // iron
+            { "black", 100690665 }, // black
+            { "gray", 100690658 }, // gray
+            { "olive", 100690661 }, // teal
+            { "white", 100690664 }, // white
+            { "purple", 100690663 }, // purple
+            { "blue", 100690657 }, // blue
+            { "green", 100690660 }, // green
+            { "yellow", 100690662 }, // yellow
+            { "orange", 100690666 }, // brown
+            { "red", 100690659 }, // red
+            { "iron", 0 } // iron
         },
 
         new Dictionary<string, uint>() // 2 - Scarabs
@@ -59,49 +59,48 @@ public static partial class LootGenerationFactory
 
         new Dictionary<string, uint>() // 3 - Pocket Watch
         {
-            { "black", 100690698 }, // black
-            { "gray", 100690701 }, // gray
-            { "olive", 100690705 }, // olive
-            { "white", 100690704 }, // white
-            { "purple", 100690707 }, // purple
-            { "blue", 100690706 }, // blue
-            { "green", 100690700 }, // green
-            { "yellow", 100690699 }, // yellow
-            { "orange", 100690702 }, // orange
-            { "red", 100693226 }, // red
-            { "iron", 100690703 } // iron
+            { "black", 100690620 }, // black
+            { "gray", 0 },
+            { "olive", 100690619 }, // brown
+            { "white", 100690614 }, // white
+            { "purple", 100690618 }, // purple
+            { "blue", 100690613 }, // blue
+            { "green", 100690616 }, // green
+            { "yellow", 100690592 }, // yellow
+            { "orange", 100690593 }, // orange
+            { "red", 100690615 }, // red
+            { "iron", 100690617 } //
         },
 
         new Dictionary<string, uint>() // 4 - Top
         {
-            { "black", 100690698 }, // black
-            { "gray", 100690701 }, // gray
-            { "olive", 100690705 }, // olive
-            { "white", 100690704 }, // white
-            { "purple", 100690707 }, // purple
-            { "blue", 100690706 }, // blue
-            { "green", 100690700 }, // green
-            { "yellow", 100690699 }, // yellow
-            { "orange", 100690702 }, // orange
-            { "red", 100693226 }, // red
-            { "iron", 100690703 } // iron
+            { "black", 100690676 }, // black
+            { "gray", 100690669 }, // gray
+            { "olive", 100690672 }, // teal
+            { "white", 100690675 }, // white
+            { "purple", 100690674 }, // purple
+            { "blue", 100690668 }, // blue
+            { "green", 100690671 }, // green
+            { "yellow", 100690673 }, // yellow
+            { "orange", 100690677 }, // brown
+            { "red", 100690670 }, // red
+            { "iron", 0 } // iron
         },
 
-        new Dictionary<string, uint>() // 5 - Puzzle Box
+        new Dictionary<string, uint>() // 5 - Goggles
         {
-            { "black", 100690698 }, // black
-            { "gray", 100690701 }, // gray
-            { "olive", 100690705 }, // olive
-            { "white", 100690704 }, // white
-            { "purple", 100690707 }, // purple
-            { "blue", 100690706 }, // blue
-            { "green", 100690700 }, // green
-            { "yellow", 100690699 }, // yellow
-            { "orange", 100690702 }, // orange
-            { "red", 100693226 }, // red
-            { "iron", 100690703 } // iron
-        }
-
+        { "black", 100690611 }, // black
+        { "gray", 100690610 }, // gray
+        { "olive", 100690612 }, // brown
+        { "white", 100690604 }, // white
+        { "purple", 100690609 }, // purple
+        { "blue", 100690603 }, // blue
+        { "green", 100690606 }, // green
+        { "yellow", 100690608 }, // yellow
+        { "orange", 100690607 }, // orange
+        { "red", 100690605 }, // red
+        { "iron", 100690703 } // iron
+        },
     ];
 
     private static readonly Dictionary<string, uint> VulnProtIconOverlayIds = new()
@@ -223,8 +222,6 @@ public static partial class LootGenerationFactory
 
     private static void MutateSigilTrinket(WorldObject wo, TreasureDeath profile)
     {
-        string color;
-
         if (wo is not SigilTrinket sigilTrinket)
         {
             return;
@@ -232,83 +229,127 @@ public static partial class LootGenerationFactory
 
         sigilTrinket.CooldownDuration = GetCooldown(profile);
         sigilTrinket.SigilTrinketTriggerChance = GetChance(profile);
-        sigilTrinket.SigilTrinketMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
-        sigilTrinket.WieldDifficulty = RollWieldDifficulty(profile.Tier);
+        sigilTrinket.SigilTrinketMaxTier = Math.Clamp(profile.Tier - 1, 1, 7);
+        sigilTrinket.WieldRequirements = WieldRequirement.Training;
+        sigilTrinket.WieldDifficulty = 3; // Specialized
         sigilTrinket.ItemMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
         sigilTrinket.ItemBaseXp = GetBaseLevelCost(profile);
         sigilTrinket.ItemTotalXp = 0;
 
+        sigilTrinket.SigilTrinketHealthReserved = 0;
+        sigilTrinket.SigilTrinketStaminaReserved = 0;
+        sigilTrinket.SigilTrinketManaReserved = 0;
+
+        var wieldSkillRng = ThreadSafeRandom.Next(0, 1);
         switch (sigilTrinket.SigilTrinketType)
         {
             case (int)SigilTrinketType.Compass:
                 sigilTrinket.SigilTrinketHealthReserved = GetReservedVital(profile);
+                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.Shield : (int)Skill.TwoHandedCombat;
+
+                if (sigilTrinket.WieldSkillType == (int)Skill.Shield)
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxShieldEffectId);
+
+                    SetShieldCompassStats(profile, sigilTrinket);
+                }
+                else
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxTwohandedCombatEffectId);
+
+                    SetTwohandedCombatCompassStats(profile, sigilTrinket);
+                }
                 break;
-            case (int)SigilTrinketType.Goggles:
+            case (int)SigilTrinketType.PuzzleBox:
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile);
+                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.DualWield : (int)Skill.Lockpick;
+
+                if (sigilTrinket.WieldSkillType == (int)Skill.DualWield)
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxDualWieldEffectId);
+
+                    SetDualWieldPuzzleBoxStats(profile, sigilTrinket);
+                }
+                else
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxThieveryEffectId);
+
+                    SetThieveryPuzzleBoxStats(profile, sigilTrinket);
+                }
                 break;
             case (int)SigilTrinketType.Scarab:
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile);
+                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.LifeMagic : (int)Skill.WarMagic;
+
+                if (sigilTrinket.WieldSkillType == (int)Skill.LifeMagic)
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxLifeMagicEffectId);
+
+                    SetLifeMagicScarabStats(profile, sigilTrinket);
+                }
+                else
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxWarMagicEffectId);
+
+                    SetWarMagicScarabStats(profile, sigilTrinket);
+                }
                 break;
             case (int)SigilTrinketType.PocketWatch:
                 sigilTrinket.SigilTrinketHealthReserved = GetReservedVital(profile, true);
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile, true);
+                sigilTrinket.WieldSkillType = (int)Skill.MeleeDefense;
+                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxPhysicalDefenseEffectId);
+
+                SetPhysicalDefensePocketWatchStats(profile, sigilTrinket);
                 break;
             case (int)SigilTrinketType.Top:
                 sigilTrinket.SigilTrinketHealthReserved = GetReservedVital(profile, true);
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile, true);
+                sigilTrinket.WieldSkillType = (int)Skill.MagicDefense;
+                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxMagicDefenseEffectId);
+
+                SetMagicDefenseTopStats(profile, sigilTrinket);
                 break;
-            case (int)SigilTrinketType.PuzzleBox:
+            case (int)SigilTrinketType.Goggles:
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile, true);
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile, true);
-                break;
-        }
-        sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile);
+                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.AssessPerson : (int)Skill.Deception;
 
-        switch (sigilTrinket.WieldSkillType)
-        {
-            case (int)Skill.LifeMagic:
-                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(1, 7);
-                break;
-            case (int)Skill.WarMagic:
-                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(5, 10);
+                if (sigilTrinket.WieldSkillType == (int)Skill.AssessCreature)
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxPerceptionEffectId);
+
+                    SetPerceptionGogglesStats(profile, sigilTrinket);
+                }
+                else
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxDeceptionEffectId);
+
+                    SetDeceptionGogglesStats(profile, sigilTrinket);
+                }
                 break;
         }
+    }
+
+    private static void SetLifeMagicScarabStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        var element = ThreadSafeRandom.Next(0, 7);
+        var color = element switch
+        {
+            1 => "white",
+            2 => "purple",
+            3 => "blue",
+            4 => "green",
+            5 => "yellow",
+            6 => "orange",
+            7 => "red",
+            _ => "black"
+        };
 
         switch (sigilTrinket.SigilTrinketEffectId)
         {
-            // PROT
-            case (int)SigilTrinketEffect.ScarabCastProt:
+            case (int)SigilTrinketLifeMagicEffect.ScarabCastProt:
             {
-                var element = ThreadSafeRandom.Next(0, 7);
-
-                switch (element)
-                {
-                    default:
-                        color = "black";
-                        break;
-                    case 1:
-                        color = "white";
-                        break;
-                    case 2:
-                        color = "purple";
-                        break;
-                    case 3:
-                        color = "blue";
-                        break;
-                    case 4:
-                        color = "green";
-                        break;
-                    case 5:
-                        color = "yellow";
-                        break;
-                    case 6:
-                        color = "orange";
-                        break;
-                    case 7:
-                        color = "red";
-                        break;
-                }
-
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["white"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["white"];
                 sigilTrinket.IconOverlayId = VulnProtIconOverlayIds[color];
@@ -321,39 +362,8 @@ public static partial class LootGenerationFactory
                     + $"The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
                 break;
             }
-            // VULN
-            case (int)SigilTrinketEffect.ScarabCastVuln:
+            case (int)SigilTrinketLifeMagicEffect.ScarabCastVuln:
             {
-                var element = ThreadSafeRandom.Next(0, 7);
-
-                switch (element)
-                {
-                    default:
-                        color = "black";
-                        break;
-                    case 1:
-                        color = "white";
-                        break;
-                    case 2:
-                        color = "purple";
-                        break;
-                    case 3:
-                        color = "blue";
-                        break;
-                    case 4:
-                        color = "green";
-                        break;
-                    case 5:
-                        color = "yellow";
-                        break;
-                    case 6:
-                        color = "orange";
-                        break;
-                    case 7:
-                        color = "red";
-                        break;
-                }
-
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["black"];
                 sigilTrinket.IconOverlayId = VulnProtIconOverlayIds[color];
@@ -366,8 +376,7 @@ public static partial class LootGenerationFactory
                     + $"The level of the debuff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
                 break;
             }
-            // RATE
-            case (int)SigilTrinketEffect.ScarabCastVitalRate:
+            case (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["green"];
 
@@ -378,8 +387,7 @@ public static partial class LootGenerationFactory
                     + "Whenever the wielder casts a Mana Boost or Mana Drain spell, there is a chance the target will also be affected by Mana Renewal or Mana Depletion.\n\n"
                     + "The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
                 break;
-            // ITEM BUFF
-            case (int)SigilTrinketEffect.ScarabCastItemBuff:
+            case (int)SigilTrinketLifeMagicEffect.ScarabCastItemBuff:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["purple"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["purple"];
 
@@ -390,8 +398,7 @@ public static partial class LootGenerationFactory
                     + "Whenever the wielder casts a Mana Boost spell, there is a chance the target will also be affected by Spirit Drinker.\n\n"
                     + "The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
                 break;
-            // INTENSITY
-            case (int)SigilTrinketEffect.ScarabIntensity:
+            case (int)SigilTrinketLifeMagicEffect.ScarabIntensity:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["red"];
 
@@ -404,8 +411,7 @@ public static partial class LootGenerationFactory
                     + $"Intensity increases damage and restoration amounts.\n\n"
                     + $"Only affects spells that are less than or equal to the Max level value.";
                 break;
-            // SHIELD
-            case (int)SigilTrinketEffect.ScarabShield:
+            case (int)SigilTrinketLifeMagicEffect.ScarabShield:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["gray"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["gray"];
 
@@ -415,8 +421,7 @@ public static partial class LootGenerationFactory
                     + $"gain a protective buff, increasing damage reduction rating by 25 for 12 seconds.\n\n"
                     + $"Only affects spells that are less than or equal to the Max level value.";
                 break;
-            // MANA REDUCTION
-            case (int)SigilTrinketEffect.ScarabManaReduction:
+            case (int)SigilTrinketLifeMagicEffect.ScarabManaReduction:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["blue"];
 
@@ -429,8 +434,50 @@ public static partial class LootGenerationFactory
                     $"Whenever the wielder casts any spell, there is a chance that the cost of the spell will be reduced.\n\n"
                     + "Only affects spells that are less than or equal to the Max level value.";
                 break;
-            // DUPLICATE
-            case (int)SigilTrinketEffect.ScarabDuplicate:
+        }
+    }
+
+    private static void SetWarMagicScarabStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        switch (sigilTrinket.SigilTrinketEffectId)
+        {
+            case (int)SigilTrinketWarMagicEffect.ScarabIntensity:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["red"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of Intensity";
+                sigilTrinket.Use =
+                    $"Whenever the wielder casts any spell, there is a chance the spell will "
+                    + $"gain bonus intensity.\n\n"
+                    + $"Intensity increases damage and restoration amounts.\n\n"
+                    + $"Only affects spells that are less than or equal to the Max level value.";
+                break;
+            case (int)SigilTrinketWarMagicEffect.ScarabShield:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["gray"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["gray"];
+
+                sigilTrinket.Name += " of Shielding";
+                sigilTrinket.Use =
+                    $"Whenever the wielder casts any spell, there is a chance they will "
+                    + $"gain a protective buff, increasing damage reduction rating by 25 for 12 seconds.\n\n"
+                    + $"Only affects spells that are less than or equal to the Max level value.";
+                break;
+            case (int)SigilTrinketWarMagicEffect.ScarabManaReduction:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["blue"];
+
+                sigilTrinket.SigilTrinketManaReserved = 0;
+                sigilTrinket.SigilTrinketReductionAmount = GetReductionAmount(profile);
+                sigilTrinket.CooldownDuration -= 5;
+
+                sigilTrinket.Name += " of Reduction";
+                sigilTrinket.Use =
+                    $"Whenever the wielder casts any spell, there is a chance that the cost of the spell will be reduced.\n\n"
+                    + "Only affects spells that are less than or equal to the Max level value.";
+                break;
+            case (int)SigilTrinketWarMagicEffect.ScarabDuplicate:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["olive"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["olive"];
                 sigilTrinket.Name += " of Duplication";
@@ -438,8 +485,7 @@ public static partial class LootGenerationFactory
                     $"Whenever the wielder casts a War spell, there is a chance that the spell will be duplicated and cast against the same target.\n\n"
                     + "Only affects spells that are less than or equal to the Max level value.";
                 break;
-            // DETONATE
-            case (int)SigilTrinketEffect.ScarabDetonate:
+            case (int)SigilTrinketWarMagicEffect.ScarabDetonate:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["yellow"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["yellow"];
                 sigilTrinket.Name += " of Detonation";
@@ -447,8 +493,7 @@ public static partial class LootGenerationFactory
                     $"Whenever the wielder damages a creature with a War spell, there is a chance that the spell will detonate on impact, causing an explosion of the same element.\n\n"
                     + "Only affects spells that are less than or equal to the Max level value.";
                 break;
-            // CRUSHING
-            case (int)SigilTrinketEffect.ScarabCrit:
+            case (int)SigilTrinketWarMagicEffect.ScarabCrit:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["orange"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["orange"];
 
@@ -458,6 +503,386 @@ public static partial class LootGenerationFactory
                 sigilTrinket.Use =
                     $"Whenever the wielder performs a critical strike with a War spell, they gain an offensive buff, increasing critical damage rating by 50 for 12 seconds.\n\n"
                     + "Only affects spells that are less than or equal to the Max level value.";
+                break;
+        }
+    }
+
+    private static void SetShieldCompassStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        switch (sigilTrinket.SigilTrinketEffectId)
+        {
+            case (int)SigilTrinketShieldEffect.Aggression:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["olive"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["olive"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of Aggression";
+
+                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
+                sigilTrinket.Use =
+                    $"Whenever the wielder performs an attack on an enemy, they have a chance to generate increased threat towards that enemy.\n\n"
+                    + $"Can only occur while using a shield, with a wield requirement of up to {wieldReq}.";
+                break;
+            case (int)SigilTrinketShieldEffect.PH2:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["blue"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH2";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketShieldEffect.PH3:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["green"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH3";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketShieldEffect.PH4:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["black"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH4";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+        }
+    }
+
+    private static void SetTwohandedCombatCompassStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        switch (sigilTrinket.SigilTrinketEffectId)
+        {
+            case (int)SigilTrinketTwohandedCombatEffect.Might:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["red"];
+
+                sigilTrinket.Name += " of Might";
+
+                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
+                sigilTrinket.Use =
+                    $"Whenever the wielder attacks a creature with more than 50% power, there is a chance that a normal hit will be converted into a critical hit.\n\n" +
+                    $"Can only occur while using a two-handed weapon, with a wield requirement of up to {wieldReq}.";
+                break;
+            case (int)SigilTrinketTwohandedCombatEffect.PH2:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["blue"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH2";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketTwohandedCombatEffect.PH3:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["green"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH3";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketTwohandedCombatEffect.PH4:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["black"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH4";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+        }
+    }
+
+    private static void SetDualWieldPuzzleBoxStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        switch (sigilTrinket.SigilTrinketEffectId)
+        {
+            case (int)SigilTrinketDualWieldEffect.PH1:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["red"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH1";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketDualWieldEffect.PH2:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["blue"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH2";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketDualWieldEffect.PH3:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["green"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH3";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketDualWieldEffect.PH4:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["black"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH4";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+        }
+    }
+
+    private static void SetThieveryPuzzleBoxStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        switch (sigilTrinket.SigilTrinketEffectId)
+        {
+            case (int)SigilTrinketThieveryEffect.PH1:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["red"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH1";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketThieveryEffect.PH2:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["blue"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH2";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketThieveryEffect.PH3:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["green"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH3";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketThieveryEffect.PH4:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["black"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH4";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+        }
+    }
+
+    private static void SetPhysicalDefensePocketWatchStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        switch (sigilTrinket.SigilTrinketEffectId)
+        {
+            case (int)SigilTrinketPhysicalDefenseEffect.PH1:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["red"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH1";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketPhysicalDefenseEffect.PH2:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["blue"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH2";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketPhysicalDefenseEffect.PH3:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["green"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH3";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketPhysicalDefenseEffect.PH4:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["black"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH4";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+        }
+    }
+
+    private static void SetMagicDefenseTopStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        switch (sigilTrinket.SigilTrinketEffectId)
+        {
+            case (int)SigilTrinketMagicDefenseEffect.PH1:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["red"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH1";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketMagicDefenseEffect.PH2:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["blue"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH2";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketMagicDefenseEffect.PH3:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["green"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH3";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketMagicDefenseEffect.PH4:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["black"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH4";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+        }
+    }
+
+    private static void SetPerceptionGogglesStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        switch (sigilTrinket.SigilTrinketEffectId)
+        {
+            case (int)SigilTrinketPerceptionEffect.PH1:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["red"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH1";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketPerceptionEffect.PH2:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["blue"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH2";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketPerceptionEffect.PH3:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["green"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH3";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketPerceptionEffect.PH4:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["black"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH4";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+        }
+    }
+
+    private static void SetDeceptionGogglesStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    {
+        switch (sigilTrinket.SigilTrinketEffectId)
+        {
+            case (int)SigilTrinketDeceptionEffect.PH1:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["red"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH1";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketDeceptionEffect.PH2:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["blue"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH2";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketDeceptionEffect.PH3:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["green"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH3";
+                sigilTrinket.Use =
+                    $"(PH)";
+                break;
+            case (int)SigilTrinketDeceptionEffect.PH4:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["black"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of PH4";
+                sigilTrinket.Use =
+                    $"(PH)";
                 break;
         }
     }
@@ -493,13 +918,17 @@ public static partial class LootGenerationFactory
         return MaxCooldown - roll;
     }
 
-    private static double GetReservedVital(TreasureDeath treasureDeath, bool hybrid = false)
+    /// <summary>
+    /// Roll for reserved vital amount. 50% less reserved for hybrid trinkets and 50% less reserved for health vitals.
+    /// </summary>
+    private static double GetReservedVital(TreasureDeath treasureDeath, bool hybrid = false, bool health = false)
     {
         const double range = MaxReservedVital - MinReservedVital;
         var hybridMultiplier = hybrid ? 0.5 : 1.0;
-        var roll = range * hybridMultiplier * GetDiminishingRoll(treasureDeath);
+        var healthMultiplier = health ? 0.5 : 1.0;
+        var roll = range * hybridMultiplier * healthMultiplier * GetDiminishingRoll(treasureDeath);
 
-        return MaxReservedVital * hybridMultiplier - roll;
+        return MaxReservedVital * hybridMultiplier * healthMultiplier - roll;
     }
 
     private static double GetIntensity(TreasureDeath treasureDeath)
