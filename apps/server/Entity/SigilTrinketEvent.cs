@@ -57,10 +57,6 @@ public class SigilTrinketEvent
         {
             var effectName = SigilTrinket.GetEffectName((Skill)sigilTrinket.WieldSkillType, (int)sigilTrinket.SigilTrinketEffectId);
             _effectsUsed.Add(effectName);
-            foreach (var effectString in _effectsUsed)
-            {
-                Console.WriteLine(effectString);
-            }
         }
 
         sigilTrinket.NextTrinketTriggerTime = Time.GetUnixTime() + sigilTrinket.CooldownDuration ?? 20.0;
@@ -114,7 +110,7 @@ public class SigilTrinketEvent
                     sigilTrinket.TriggerSpell.SpellPowerMod = (float)sigilTrinket.SigilTrinketIntensity + 1;
                     Player.Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Empowered Scarab of Intensity increased the spell's intensity by " +
+                            $"Sigil Scarab of Intensity increased the spell's intensity by " +
                             $"{Math.Round((sigilTrinket.SigilTrinketIntensity ?? 1) * 100, 0)}%!",
                             ChatMessageType.Magic
                         )
@@ -160,8 +156,31 @@ public class SigilTrinketEvent
                 CastSigilTrinketSpell(sigilTrinket, false);
                 break;
             case ((int)Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might):
+            case ((int)Skill.Shield, (int)SigilTrinketShieldEffect.Might):
 
                 DamageEvent.CriticalOverridedByTrinket = true;
+
+                Player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Sigil Compass of Might coverted a normal hit into a critical hit!",
+                        ChatMessageType.CombatSelf
+                    )
+                );
+                break;
+            case ((int)Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression):
+            case ((int)Skill.Shield, (int)SigilTrinketShieldEffect.Aggression):
+
+                if (Target is Creature creatureTarget)
+                {
+                    creatureTarget.IncreaseTargetThreatLevel(Player, 100);
+
+                    Player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Sigil Compass of Aggression added a substantial amount of threat to your target!",
+                            ChatMessageType.CombatSelf
+                        )
+                    );
+                }
                 break;
         }
     }
@@ -412,7 +431,12 @@ public class SigilTrinketEvent
                 return IsValidForCrushing(sigilTrinket);
 
             case (Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might):
+            case (Skill.Shield, (int)SigilTrinketShieldEffect.Might):
                 return IsValidForMight(sigilTrinket);
+
+            case (Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression):
+            case (Skill.Shield, (int)SigilTrinketShieldEffect.Aggression):
+                return IsValidForAggression(sigilTrinket);
         }
 
         return true;
@@ -519,18 +543,56 @@ public class SigilTrinketEvent
 
     private bool IsValidForMight(SigilTrinket sigilTrinket)
     {
-        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.LifeMagic;
-        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate;
+        var validSkillEffectTwohand = sigilTrinket.WieldSkillType == (int)Skill.TwoHandedCombat && sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketTwohandedCombatEffect.Might;
+        var validSkillEffectShield = sigilTrinket.WieldSkillType == (int)Skill.Shield && sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketShieldEffect.Might;
 
-        var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
         var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
         var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
-        var validWieldReq = weaponWieldReq <= maxWield;
 
-        var isTwohanded = DamageEvent.Weapon.IsTwoHanded;
+        var validWieldReqTwohand = false;
+        if (DamageEvent.Weapon is {IsTwoHanded: true})
+        {
+            var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+            validWieldReqTwohand = weaponWieldReq <= maxWield;
+        }
+
+        var validWieldReqShield = false;
+        if (DamageEvent.Offhand is { IsShield: true })
+        {
+            var shieldWieldReq = DamageEvent.Offhand.WieldDifficulty ?? 1;
+            validWieldReqShield = shieldWieldReq <= maxWield;
+        }
+
         var isPowerAttack = Player.GetPowerAccuracyBar() > 0.5f;
 
-        return validSkill && validEffectId && validWieldReq && isTwohanded && isPowerAttack;
+        return isPowerAttack && ((validSkillEffectTwohand && validWieldReqTwohand) || (validSkillEffectShield && validWieldReqShield));
+    }
+
+    private bool IsValidForAggression(SigilTrinket sigilTrinket)
+    {
+        var validSkillEffectTwohand = sigilTrinket.WieldSkillType == (int)Skill.TwoHandedCombat && sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketTwohandedCombatEffect.Aggression;
+        var validSkillEffectShield = sigilTrinket.WieldSkillType == (int)Skill.Shield && sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketShieldEffect.Aggression;
+
+        var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
+        var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
+
+        var validWieldReqTwohand = false;
+        if (DamageEvent.Weapon is {IsTwoHanded: true})
+        {
+            var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+            validWieldReqTwohand = weaponWieldReq <= maxWield;
+        }
+
+        var validWieldReqShield = false;
+        if (DamageEvent.Offhand is { IsShield: true })
+        {
+            var shieldWieldReq = DamageEvent.Offhand.WieldDifficulty ?? 1;
+            validWieldReqShield = shieldWieldReq <= maxWield;
+        }
+
+        var isPowerAttack = Player.GetPowerAccuracyBar() > 0.5f;
+
+        return isPowerAttack && ((validSkillEffectTwohand && validWieldReqTwohand) || (validSkillEffectShield && validWieldReqShield));
     }
 
     //  --- COOLDOWN CHECKS ---

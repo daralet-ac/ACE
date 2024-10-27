@@ -16,7 +16,7 @@ public static partial class LootGenerationFactory
         {
             { "black", 100690601 }, // black
             { "gray", 100690594 },
-            { "olive", 100690619 }, // brown
+            { "olive", 100690602 }, // brown
             { "white", 100690596 }, // white
             { "purple", 100690600 }, // purple
             { "blue", 100690595 }, // blue
@@ -511,6 +511,19 @@ public static partial class LootGenerationFactory
     {
         switch (sigilTrinket.SigilTrinketEffectId)
         {
+            case (int)SigilTrinketShieldEffect.Might:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["red"];
+
+                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+
+                sigilTrinket.Name += " of Might";
+
+                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
+                sigilTrinket.Use =
+                    $"Whenever the wielder attacks a creature with more than 50% power, there is a chance that a normal hit will be converted into a critical hit.\n\n" +
+                    $"Can only occur while using a shield, with a wield requirement of up to {wieldReq}.";
+                break;
             case (int)SigilTrinketShieldEffect.Aggression:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["olive"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["olive"];
@@ -519,41 +532,31 @@ public static partial class LootGenerationFactory
 
                 sigilTrinket.Name += " of Aggression";
 
-                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
+                wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
                 sigilTrinket.Use =
                     $"Whenever the wielder performs an attack on an enemy, they have a chance to generate increased threat towards that enemy.\n\n"
                     + $"Can only occur while using a shield, with a wield requirement of up to {wieldReq}.";
                 break;
-            case (int)SigilTrinketShieldEffect.PH2:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["blue"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH2";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketShieldEffect.PH3:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["green"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH3";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketShieldEffect.PH4:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["black"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH4";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
+            // case (int)SigilTrinketShieldEffect.PH3:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["green"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH3";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketShieldEffect.PH4:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["black"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH4";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
         }
     }
 
@@ -572,36 +575,39 @@ public static partial class LootGenerationFactory
                     $"Whenever the wielder attacks a creature with more than 50% power, there is a chance that a normal hit will be converted into a critical hit.\n\n" +
                     $"Can only occur while using a two-handed weapon, with a wield requirement of up to {wieldReq}.";
                 break;
-            case (int)SigilTrinketTwohandedCombatEffect.PH2:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["blue"];
+            case (int)SigilTrinketTwohandedCombatEffect.Aggression:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["olive"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["olive"];
 
                 sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
 
-                sigilTrinket.Name += " of PH2";
+                sigilTrinket.Name += " of Aggression";
+
+                wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
                 sigilTrinket.Use =
-                    $"(PH)";
+                    $"Whenever the wielder performs an attack on an enemy, they have a chance to generate increased threat towards that enemy.\n\n"
+                    + $"Can only occur while using a two-handed weapon, with a wield requirement of up to {wieldReq}.";
                 break;
-            case (int)SigilTrinketTwohandedCombatEffect.PH3:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["green"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH3";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketTwohandedCombatEffect.PH4:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["black"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH4";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
+            // case (int)SigilTrinketTwohandedCombatEffect.PH3:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["green"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH3";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketTwohandedCombatEffect.PH4:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["black"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH4";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
         }
     }
 

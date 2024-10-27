@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
@@ -225,7 +224,6 @@ partial class Player
             TriggerSpell = spell
         };
 
-        Console.WriteLine($"\n\nGetSigilTrinketManaReductionMod(Skill {skill}, EffectId {effectId})");
         foreach (var sigilTrinket in equippedSigilTrinkets)
         {
             if (sigilTrinketEvent.HasReadySigilTrinketEffect(sigilTrinket))
@@ -311,7 +309,7 @@ partial class Player
             Skill = skill,
             EffectId = effectId
         };
-Console.WriteLine($"CheckForSigilTrinketOnCastEffects(Spell {spell.Name}, Skill {skill}, EffectId {effectId}");
+
         foreach (var sigilTrinket in equippedSigilTrinkets)
         {
             if (sigilTrinketEvent.HasReadySigilTrinketEffect(sigilTrinket))

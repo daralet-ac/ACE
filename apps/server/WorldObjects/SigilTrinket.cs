@@ -54,18 +54,14 @@ public enum SigilTrinketWarMagicEffect
 
 public enum SigilTrinketShieldEffect
 {
-    Aggression,
-    PH2,
-    PH3,
-    PH4
+    Might,
+    Aggression
 }
 
 public enum SigilTrinketTwohandedCombatEffect
 {
     Might,
-    PH2,
-    PH3,
-    PH4
+    Aggression
 }
 
 public enum SigilTrinketDualWieldEffect

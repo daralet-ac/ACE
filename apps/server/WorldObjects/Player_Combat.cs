@@ -154,6 +154,9 @@ partial class Player
 
         var damageEvent = DamageEvent.CalculateDamage(this, target, damageSource);
 
+        CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression);
+        CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Shield, (int)SigilTrinketShieldEffect.Aggression);
+
         target.OnAttackReceived(
             this,
             (damageSource == null || damageSource.ProjectileSource == null) ? CombatType.Melee : CombatType.Missile,
@@ -180,8 +183,6 @@ partial class Player
                     threat *= 1.2f;
                 }
             }
-
-            CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might);
 
             target.IncreaseTargetThreatLevel(this, (int)threat);
 
