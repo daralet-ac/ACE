@@ -1445,7 +1445,11 @@ partial class WorldObject
                     }
                 }
 
-                var scarabReduction = playerAttacker.GetSigilTrinketManaReductionMod();
+                var scarabReduction = spell.School == MagicSchool.LifeMagic
+                    ? playerAttacker.GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic,
+                        (int)SigilTrinketLifeMagicEffect.ScarabManaReduction)
+                    : playerAttacker.GetSigilTrinketManaReductionMod(spell, Skill.WarMagic,
+                        (int)SigilTrinketWarMagicEffect.ScarabManaReduction);
 
                 if (playerAttacker.Mana.Current < (uint)(baseCost * scarabReduction))
                 {

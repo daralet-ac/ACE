@@ -764,4 +764,6 @@ public enum SpellCategory : uint
     CombatModeRunPenalty = 766,
     StealthRunPenalty = 767,
     ManaReservationPenalty = 768,
+    StaminaReservationPenalty = 769,
+    HealthReservationPenalty = 770,
 }

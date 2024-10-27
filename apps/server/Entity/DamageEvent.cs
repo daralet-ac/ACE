@@ -87,6 +87,7 @@ public class DamageEvent
         (Weapon?.IgnoreMagicResist ?? false) || (_attacker?.IgnoreMagicResist ?? false); // ignores life armor / prots
 
     public bool Blocked { get; private set; }
+    public bool CriticalOverridedByTrinket { get; set; }
     public bool Evaded { get; private set; }
     public bool LifestoneProtection { get; private set; }
     public PartialEvasion PartialEvasion { get; private set; }
@@ -479,7 +480,11 @@ public class DamageEvent
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (roll > _criticalChance || _criticalDefended)
         {
-            return GetNonCriticalDamageBeforeMitigation();
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might);
+            if (!CriticalOverridedByTrinket)
+            {
+                return GetNonCriticalDamageBeforeMitigation();
+            }
         }
 
         IsCritical = true;

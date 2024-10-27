@@ -872,7 +872,7 @@ partial class Player
     // 20 from MoveToManager threshold?
     public const float MaxAngle = 5;
 
-    public void DoCastSpell(MagicState _state, bool checkAngle = true)
+    public void DoCastSpell(MagicState _state, bool checkAngle = true, bool sigilTrinketSpell = false)
     {
         //Console.WriteLine("DoCastSpell");
 
@@ -902,7 +902,8 @@ partial class Player
             state.ManaUsed,
             state.Target,
             state.Status,
-            checkAngle
+            checkAngle,
+            sigilTrinketSpell
         );
     }
 
@@ -949,7 +950,8 @@ partial class Player
         uint manaUsed,
         WorldObject target,
         CastingPreCheckStatus castingPreCheckStatus,
-        bool checkAngle = true
+        bool checkAngle = true,
+        bool sigilTrinketSpell = false
     )
     {
         if (target != null)
@@ -1009,7 +1011,7 @@ partial class Player
             return;
         }
 
-        DoCastSpell_Inner(spell, casterItem, manaUsed, target, castingPreCheckStatus);
+        DoCastSpell_Inner(spell, casterItem, manaUsed, target, castingPreCheckStatus, true, sigilTrinketSpell);
     }
 
     public WorldObject TurnTarget;
@@ -1054,7 +1056,8 @@ partial class Player
         uint manaUsed,
         WorldObject target,
         CastingPreCheckStatus castingPreCheckStatus,
-        bool finishCast = true
+        bool finishCast = true,
+        bool sigilTrinketSpell = false
     )
     {
         if (RecordCast.Enabled)
@@ -1083,19 +1086,25 @@ partial class Player
 
         var itemCaster = isWeaponSpell ? caster : null;
 
-        // EMPOWERED SCARAB - Mana Cost Reduction
-        var manaModifier = GetSigilTrinketManaReductionMod();
-        var before = manaUsed;
-        manaUsed = (uint)(manaUsed * manaModifier);
-
-        if (manaModifier < 1.0f)
+        // SIGIL SCARAB - Mana Cost Reduction
+        if (!sigilTrinketSpell)
         {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"Empowered Scarab of Reduction reduced the spell's cost by {Math.Round((1.0f - manaModifier) * 100, 0)}%, from {before} to {manaUsed}!  ",
-                    ChatMessageType.Magic
-                )
-            );
+            var manaModifier = spell.School == MagicSchool.LifeMagic
+                ? GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabManaReduction)
+                : GetSigilTrinketManaReductionMod(spell, Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabManaReduction);
+
+            var before = manaUsed;
+            manaUsed = (uint)(manaUsed * manaModifier);
+
+            if (manaModifier < 1.0f)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Sigil Scarab of Reduction reduced the spell's cost by {Math.Round((1.0f - manaModifier) * 100, 0)}%, from {before} to {manaUsed}!  ",
+                        ChatMessageType.Magic
+                    )
+                );
+            }
         }
 
         if (!isWeaponSpell)
@@ -1153,9 +1162,6 @@ partial class Player
 
                 if ((spell.Flags & SpellFlags.FellowshipSpell) == 0)
                 {
-                    // EMPOWERED SCARAB - Vuln | Prot | Artifice | Growth | Intensity | Duplicate
-                    CheckForSigilTrinketOnCastEffects(target, spell, isWeaponSpell);
-
                     CreatePlayerSpell(target, spell, isWeaponSpell);
                 }
                 else
@@ -1290,7 +1296,8 @@ partial class Player
         WorldObject target,
         TargetCategory targetCategory,
         uint spellId,
-        WorldObject casterItem
+        WorldObject casterItem,
+        bool sigilTrinketSpell = false
     )
     {
         var creatureTarget = target as Creature;
@@ -1368,7 +1375,7 @@ partial class Player
 
         if (!FastTick)
         {
-            spellChain.AddAction(this, () => DoCastSpell(MagicState));
+            spellChain.AddAction(this, () => DoCastSpell(MagicState, sigilTrinketSpell));
         }
 
         spellChain.EnqueueChain();
@@ -1388,7 +1395,7 @@ partial class Player
         }
     }
 
-    private void CreatePlayerSpell(WorldObject target, Spell spell, bool isWeaponSpell)
+    private void CreatePlayerSpell(WorldObject target, Spell spell, bool isWeaponSpell, bool sigilTrinketSpell = false)
     {
         var targetCreature = target as Creature;
         var targetPlayer = target as Player;
@@ -1465,7 +1472,7 @@ partial class Player
                     }
                 }
 
-                HandleCastSpell(spell, target, itemCaster, caster, isWeaponSpell);
+                HandleCastSpell(spell, target, itemCaster, caster, isWeaponSpell, false, false, false, sigilTrinketSpell);
 
                 if (!spell.IsProjectile)
                 {
@@ -1504,7 +1511,7 @@ partial class Player
     /// <summary>
     /// Method used for handling player untargeted spell casts
     /// </summary>
-    public bool CreatePlayerSpell(uint spellId)
+    public bool CreatePlayerSpell(uint spellId, bool sigilTrinketSpell = false)
     {
         var spell = ValidateSpell(spellId);
         if (spell == null)
@@ -1541,7 +1548,7 @@ partial class Player
 
         if (!FastTick)
         {
-            spellChain.AddAction(this, () => DoCastSpell(MagicState));
+            spellChain.AddAction(this, () => DoCastSpell(MagicState, true, sigilTrinketSpell));
         }
 
         spellChain.EnqueueChain();

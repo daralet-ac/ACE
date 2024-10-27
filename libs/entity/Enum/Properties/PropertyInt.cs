@@ -760,7 +760,7 @@ public enum PropertyInt : ushort
 
     [ServerOnly]
     SigilTrinketEffectId = 403,
-    SigilTrinketMaxLevel = 404,
+    SigilTrinketMaxTier = 404,
     SigilTrinketElement = 405,
     SigilTrinketBonusStat = 406,
     SigilTrinketBonusStatAmount = 407,

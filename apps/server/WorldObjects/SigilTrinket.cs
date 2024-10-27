@@ -23,21 +23,27 @@ public enum SigilTrinketColor
 
 public enum SigilTrinketType
 {
-    Compass,    // warrior
-    Goggles,    // rogue
-    Scarab,     // caster
-    PocketWatch,// warrior-rogue
-    Top,        // warrior-caster
-    PuzzleBox   // rogue-caster
+    Compass,        // warrior - Shield/Twohand
+    PuzzleBox,      // rogue - DualWield
+    Scarab,         // caster - War/Life
+    PocketWatch,    // warrior-rogue - PhysicalDefense
+    Top,            // warrior-caster - MagicDefense
+    Goggles         // rogue-caster - Perception/Deception
 }
 
-public enum SigilTrinketEffect
+public enum SigilTrinketLifeMagicEffect
 {
-    None,
     ScarabCastProt,
     ScarabCastVuln,
     ScarabCastItemBuff,
     ScarabCastVitalRate,
+    ScarabIntensity,
+    ScarabShield,
+    ScarabManaReduction
+}
+
+public enum SigilTrinketWarMagicEffect
+{
     ScarabIntensity,
     ScarabShield,
     ScarabManaReduction,
@@ -46,8 +52,84 @@ public enum SigilTrinketEffect
     ScarabCrit
 }
 
+public enum SigilTrinketShieldEffect
+{
+    Aggression,
+    PH2,
+    PH3,
+    PH4
+}
+
+public enum SigilTrinketTwohandedCombatEffect
+{
+    Might,
+    PH2,
+    PH3,
+    PH4
+}
+
+public enum SigilTrinketDualWieldEffect
+{
+    PH1,
+    PH2,
+    PH3,
+    PH4
+}
+
+public enum SigilTrinketThieveryEffect
+{
+    PH1,
+    PH2,
+    PH3,
+    PH4
+}
+
+public enum SigilTrinketPerceptionEffect
+{
+    PH1,
+    PH2,
+    PH3,
+    PH4
+}
+
+public enum SigilTrinketDeceptionEffect
+{
+    PH1,
+    PH2,
+    PH3,
+    PH4
+}
+
+public enum SigilTrinketPhysicalDefenseEffect
+{
+    PH1,
+    PH2,
+    PH3,
+    PH4
+}
+
+public enum SigilTrinketMagicDefenseEffect
+{
+    PH1,
+    PH2,
+    PH3,
+    PH4
+}
+
 public class SigilTrinket : WorldObject
 {
+    public static int maxLifeMagicEffectId = Enum.GetValues(typeof(SigilTrinketLifeMagicEffect)).Cast<int>().Max();
+    public static int maxWarMagicEffectId = Enum.GetValues(typeof(SigilTrinketWarMagicEffect)).Cast<int>().Max();
+    public static int maxTwohandedCombatEffectId = Enum.GetValues(typeof(SigilTrinketTwohandedCombatEffect)).Cast<int>().Max();
+    public static int maxShieldEffectId = Enum.GetValues(typeof(SigilTrinketShieldEffect)).Cast<int>().Max();
+    public static int maxDualWieldEffectId = Enum.GetValues(typeof(SigilTrinketDualWieldEffect)).Cast<int>().Max();
+    public static int maxThieveryEffectId = Enum.GetValues(typeof(SigilTrinketThieveryEffect)).Cast<int>().Max();
+    public static int maxPerceptionEffectId = Enum.GetValues(typeof(SigilTrinketPerceptionEffect)).Cast<int>().Max();
+    public static int maxDeceptionEffectId = Enum.GetValues(typeof(SigilTrinketDeceptionEffect)).Cast<int>().Max();
+    public static int maxPhysicalDefenseEffectId = Enum.GetValues(typeof(SigilTrinketPhysicalDefenseEffect)).Cast<int>().Max();
+    public static int maxMagicDefenseEffectId = Enum.GetValues(typeof(SigilTrinketMagicDefenseEffect)).Cast<int>().Max();
+
+
     public static readonly List<SpellCategory> LifeBeneficialTriggerSpells =
     [
         SpellCategory.HealingRaising,
@@ -213,18 +295,18 @@ public class SigilTrinket : WorldObject
         }
     }
 
-    public int? SigilTrinketMaxLevel
+    public int? SigilTrinketMaxTier
     {
-        get => GetProperty(PropertyInt.SigilTrinketMaxLevel);
+        get => GetProperty(PropertyInt.SigilTrinketMaxTier);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.SigilTrinketMaxLevel);
+                RemoveProperty(PropertyInt.SigilTrinketMaxTier);
             }
             else
             {
-                SetProperty(PropertyInt.SigilTrinketMaxLevel, value.Value);
+                SetProperty(PropertyInt.SigilTrinketMaxTier, value.Value);
             }
         }
     }
@@ -360,7 +442,7 @@ public class SigilTrinket : WorldObject
     public Spell TriggerSpell { get; set; }
     public uint? SpellLevel { get; set; }
     public bool IsWeaponSpell { get; set; }
-    public WorldObject SpellTarget { get; set; }
+    public WorldObject SigilTrinketTarget { get; set; }
     public Creature CreatureToCastSpellFrom { get; set; }
     public bool UseProgression { get; set; }
     public float SpellIntensityMultiplier { get; set; }
@@ -413,7 +495,7 @@ public class SigilTrinket : WorldObject
             return;
         }
 
-        if (SigilTrinketSkill != null && playerWielder.GetCreatureSkill((MagicSchool)SigilTrinketSkill).AdvancementClass < SkillAdvancementClass.Trained)
+        if (WieldSkillType != null && playerWielder.GetCreatureSkill((MagicSchool)WieldSkillType).AdvancementClass < SkillAdvancementClass.Trained)
         {
             return;
         }
@@ -649,14 +731,40 @@ public class SigilTrinket : WorldObject
     {
         uint[] trinketWcids =
         {
-            (int)Factories.Enum.WeenieClassName.empoweredScarabBlue_Life,
-            (int)Factories.Enum.WeenieClassName.empoweredScarabBlue_War,
-            (int)Factories.Enum.WeenieClassName.empoweredScarabYellow_Life,
-            (int)Factories.Enum.WeenieClassName.empoweredScarabYellow_War,
-            (int)Factories.Enum.WeenieClassName.empoweredScarabRed_Life,
-            (int)Factories.Enum.WeenieClassName.empoweredScarabRed_War
+            (int)Factories.Enum.WeenieClassName.sigilScarabBlue,
+            (int)Factories.Enum.WeenieClassName.sigilScarabYellow,
+            (int)Factories.Enum.WeenieClassName.sigilScarabRed
         };
 
         return trinketWcids.Contains(wcid);
+    }
+
+    public static string GetEffectName(Skill skill, int effectId)
+    {
+        switch (skill)
+        {
+            case Skill.LifeMagic:
+                return ((SigilTrinketLifeMagicEffect)effectId).ToString();
+            case Skill.WarMagic:
+                return ((SigilTrinketWarMagicEffect)effectId).ToString();
+            case Skill.Shield:
+                return ((SigilTrinketShieldEffect)effectId).ToString();
+            case Skill.TwoHandedCombat:
+                return ((SigilTrinketTwohandedCombatEffect)effectId).ToString();
+            case Skill.DualWield:
+                return ((SigilTrinketDualWieldEffect)effectId).ToString();
+            case Skill.Lockpick:
+                return ((SigilTrinketThieveryEffect)effectId).ToString();
+            case Skill.AssessPerson:
+                return ((SigilTrinketPerceptionEffect)effectId).ToString();
+            case Skill.Deception:
+                return ((SigilTrinketDeceptionEffect)effectId).ToString();
+            case Skill.MeleeDefense:
+                return ((SigilTrinketPhysicalDefenseEffect)effectId).ToString();
+            case Skill.MagicDefense:
+                return ((SigilTrinketMagicDefenseEffect)effectId).ToString();
+        }
+
+        return null;
     }
 }
