@@ -102,7 +102,7 @@ public enum SigilTrinketDeceptionEffect
 
 public enum SigilTrinketPhysicalDefenseEffect
 {
-    PH1
+    Evasion
     // PH2,
     // PH3,
     // PH4
@@ -110,7 +110,7 @@ public enum SigilTrinketPhysicalDefenseEffect
 
 public enum SigilTrinketMagicDefenseEffect
 {
-    PH1
+    Absorption
     // PH2,
     // PH3,
     // PH4

@@ -89,9 +89,9 @@ public class DamageEvent
     public bool Blocked { get; private set; }
     public float CriticalDamageBonusFromTrinket { get; set; }
     public bool CriticalOverridedByTrinket { get; set; }
-    public bool Evaded { get; private set; }
+    public bool Evaded { get; set; }
     public bool LifestoneProtection { get; private set; }
-    public PartialEvasion PartialEvasion { get; private set; }
+    public PartialEvasion PartialEvasion { get; set; }
     public uint EffectiveAttackSkill { get; private set; }
     public float SneakAttackMod { get; private set; }
     public bool IsCritical { get; private set; }
@@ -101,6 +101,7 @@ public class DamageEvent
     public CombatType CombatType { get; private set; }
     public DamageType DamageType { get; private set; }
     public WorldObject Weapon { get; private set; }
+    public WorldObject DefenderWeapon { get; private set; }
     public WorldObject Offhand { get; private set; }
 
     public bool HasDamage => !Evaded && !Blocked && !LifestoneProtection;
@@ -227,6 +228,9 @@ public class DamageEvent
                 ? attacker.GetEquippedMeleeWeapon()
                 : (damageSource.ProjectileLauncher ?? damageSource.ProjectileAmmo);
 
+        DefenderWeapon =
+            defender.GetEquippedWeapon();
+
         Offhand = attacker.GetEquippedOffHand();
 
         _attackType = attacker.AttackType;
@@ -337,6 +341,11 @@ public class DamageEvent
                 PartialEvasion = PartialEvasion.None;
                 Evaded = false;
                 break;
+        }
+
+        if (defender is Player playerDefender && PartialEvasion == PartialEvasion.Some)
+        {
+            playerDefender.CheckForSigilTrinketOnAttackEffects(playerAttacker, this, Skill.MeleeDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion);
         }
     }
 

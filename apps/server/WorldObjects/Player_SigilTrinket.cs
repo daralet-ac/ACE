@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
@@ -305,6 +306,43 @@ partial class Player
             TriggerSpell = spell,
             IsWeaponSpell = isWeaponSpell,
             CreatureToCastSpellFrom = creatureToCastSpellFrom,
+            OnCrit = onCrit,
+            Skill = skill,
+            EffectId = effectId
+        };
+
+        foreach (var sigilTrinket in equippedSigilTrinkets)
+        {
+            if (sigilTrinketEvent.HasReadySigilTrinketEffect(sigilTrinket))
+            {
+                sigilTrinketEvent.StartSigilTrinketEffect(sigilTrinket);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Check for sigil trinket effects when casting a spell or hitting a target with a spell
+    /// </summary>
+    /// <param name="spellSource">Spell source, if any</param>
+    /// <param name="spell">The spell cast by source</param>
+    /// <param name="onCrit">If the spell crit</param>
+    /// <param name="damage"></param>
+    /// <param name="skill"></param>
+    /// <param name="effectId"></param>
+    public void CheckForSigilTrinketOnSpellHitReceivedEffects(WorldObject spellSource, Spell spell, int damage, Skill skill, int effectId, bool onCrit = false)
+    {
+        var equippedSigilTrinkets = GetEquippedSigilTrinkets();
+        if (equippedSigilTrinkets.Count == 0)
+        {
+            return;
+        }
+
+        var sigilTrinketEvent = new SigilTrinketEvent
+        {
+            Player = this,
+            Target = spellSource,
+            TriggerSpell = spell,
+            SpellDamageReceived = Math.Max(damage, 0),
             OnCrit = onCrit,
             Skill = skill,
             EffectId = effectId

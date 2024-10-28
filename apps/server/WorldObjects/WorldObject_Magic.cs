@@ -29,6 +29,7 @@ namespace ACE.Server.WorldObjects;
 
 partial class WorldObject
 {
+    public float SigilTrinketSpellDamageReduction;
     private bool _isSigilTrinketSpell = false;
 
     /// <summary>
@@ -887,6 +888,7 @@ partial class WorldObject
     {
         var player = this as Player;
         var creature = this as Creature;
+        var targetPlayer = targetCreature as Player;
 
         // prevent double deaths from indirect casts
         // caster is already checked in player/monster, and re-checking caster here would break death emotes such as bunny smite
@@ -974,6 +976,8 @@ partial class WorldObject
             }
         }
 
+
+
         var overload = false;
         var overloadPercent = 0;
 
@@ -1004,6 +1008,10 @@ partial class WorldObject
         // LEVEL SCALING - Reduces harms against enemies, and restoration for players
         var scalar = LevelScaling.GetPlayerBoostSpellScalar(player, targetCreature);
         tryBoost = (int)(tryBoost * scalar);
+
+        SigilTrinketSpellDamageReduction = 1.0f;
+        targetPlayer?.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, tryBoost, Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption);
+        tryBoost = Convert.ToInt32(tryBoost * SigilTrinketSpellDamageReduction);
 
         switch (spell.VitalDamageType)
         {
@@ -1066,7 +1074,7 @@ partial class WorldObject
             }
         }
 
-        if (targetCreature is Player targetPlayer && player != targetPlayer)
+        if (targetPlayer != null && player != targetPlayer)
         {
             string targetMessage;
 
@@ -1869,6 +1877,13 @@ partial class WorldObject
                 _log.Warning("Unknown DamageType for LifeProjectile {SpellName} - {SpellId}", spell.Name, spell.Id);
                 return;
             }
+        }
+
+        if (target is Player targetPlayer)
+        {
+            SigilTrinketSpellDamageReduction = 1.0f;
+            targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, (int)damage, Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption);
+            damage = Convert.ToUInt32(damage * SigilTrinketSpellDamageReduction);
         }
 
         var projectileSpellType = SpellProjectile.GetProjectileSpellType(spell.Id);

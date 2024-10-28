@@ -27,9 +27,13 @@ public class SigilTrinketEvent
     public Spell TriggerSpell;
     public bool IsWeaponSpell;
     public Creature CreatureToCastSpellFrom;
+    public WorldObject SpellSource;
 
     // OnAttack variables
     public DamageEvent DamageEvent;
+
+    // OnSpellHitReceived variables
+    public int SpellDamageReceived;
 
     /// <summary>
     /// Check equipped Sigil Trinket to see if any have a relevant effect for the trigger action
@@ -194,7 +198,7 @@ public class SigilTrinketEvent
 
                 Player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"Sigil Compass of Assailment boosts your damage for the next 10 seconds!",
+                        $"Sigil Puzzle Box of Assailment boosts your damage for the next 10 seconds!",
                         ChatMessageType.CombatSelf
                     )
                 );
@@ -206,8 +210,38 @@ public class SigilTrinketEvent
 
                 Player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"Sigil Compass of Treachery doubled your critical damage!",
+                        $"Sigil Puzzle Box of Treachery doubled your critical damage!",
                         ChatMessageType.CombatSelf
+                    )
+                );
+
+                break;
+            case ((int)Skill.MeleeDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion):
+
+                DamageEvent.PartialEvasion = PartialEvasion.All;
+                DamageEvent.Evaded = true;
+
+                Player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Sigil Pocket Watch of Evasion converted a glancing blow into a full evade!",
+                        ChatMessageType.CombatSelf
+                    )
+                );
+
+                break;
+            case ((int)Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption):
+
+                const float spellDamageReductionMod = 0.75f;
+
+                Target.SigilTrinketSpellDamageReduction = spellDamageReductionMod;
+
+                var damageReduced = Convert.ToUInt32(SpellDamageReceived * (1 - spellDamageReductionMod));
+                Player.UpdateVitalDelta(Player.Mana, damageReduced);
+
+                Player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Sigil Top of Absorption converted {damageReduced} spell damage into mana!",
+                        ChatMessageType.Magic
                     )
                 );
 
@@ -470,6 +504,12 @@ public class SigilTrinketEvent
 
             case (Skill.Lockpick, (int)SigilTrinketThieveryEffect.Treachery):
                 return IsValidForTreachery(sigilTrinket);
+
+            case (Skill.MeleeDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion):
+                return IsValidForEvasion(sigilTrinket);
+
+            case (Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption):
+                return IsValidForAbsorption(sigilTrinket);
         }
 
         return true;
@@ -663,6 +703,38 @@ public class SigilTrinketEvent
         }
 
         return validSkill && validEffectId && validWieldReq && isSneakAttack && OnCrit;
+    }
+
+    private bool IsValidForEvasion(SigilTrinket sigilTrinket)
+    {
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.MeleeDefense;
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketPhysicalDefenseEffect.Evasion;
+
+        var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
+        var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
+
+        var weaponWieldReq = DamageEvent.DefenderWeapon.WieldDifficulty ?? 1;
+        var validWieldReq = weaponWieldReq <= maxWield;
+
+        var isGlancingBlow = DamageEvent.PartialEvasion == PartialEvasion.Some;
+
+        return validSkill && validEffectId && validWieldReq && isGlancingBlow;
+    }
+
+    private bool IsValidForAbsorption(SigilTrinket sigilTrinket)
+    {
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.MagicDefense;
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketMagicDefenseEffect.Absorption;
+
+        var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
+        var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
+
+        var weaponWieldReq = Player.GetEquippedWeapon().WieldDifficulty ?? 1;
+        var validWieldReq = weaponWieldReq <= maxWield;
+
+        var isHealthDamageSpell = TriggerSpell.VitalDamageType is not DamageType.Stamina and not DamageType.Mana;
+
+        return validSkill && validEffectId && validWieldReq && isHealthDamageSpell;
     }
 
     //  --- COOLDOWN CHECKS ---
