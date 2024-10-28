@@ -532,7 +532,7 @@ public static partial class LootGenerationFactory
 
                 sigilTrinket.Name += " of Aggression";
 
-                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
+                wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
                 sigilTrinket.Use =
                     $"Whenever the wielder performs an attack on an enemy, they have a chance to generate increased threat towards that enemy.\n\n"
                     + $"Can only occur while using a shield, with a wield requirement of up to {wieldReq}.";
