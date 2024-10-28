@@ -169,7 +169,7 @@ public class SigilTrinketEvent
                 break;
             case ((int)Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression):
             case ((int)Skill.Shield, (int)SigilTrinketShieldEffect.Aggression):
-
+            {
                 if (Target is Creature creatureTarget)
                 {
                     creatureTarget.IncreaseTargetThreatLevel(Player, 100);
@@ -181,7 +181,38 @@ public class SigilTrinketEvent
                         )
                     );
                 }
+
                 break;
+            }
+            case ((int)Skill.DualWield, (int)SigilTrinketDualWieldEffect.Assailment):
+                maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
+                sigilTrinket.SpellLevel =
+                    (uint)maxLevel; // TODO: if wielding a lower tier weapon, cast lower tier spell (like war/life checks)
+                sigilTrinket.SigilTrinketCastSpellId = 6328; // Surge of Crushing (Gauntlet Critical Damage Boost) TODO: Create unique spell buff for this
+
+                CastSigilTrinketSpell(sigilTrinket, false);
+
+                Player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Sigil Compass of Assailment boosts your damage for the next 10 seconds!",
+                        ChatMessageType.CombatSelf
+                    )
+                );
+
+                break;
+            case ((int)Skill.Lockpick, (int)SigilTrinketThieveryEffect.Treachery):
+
+                DamageEvent.CriticalDamageBonusFromTrinket += 1.0f;
+
+                Player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Sigil Compass of Treachery doubled your critical damage!",
+                        ChatMessageType.CombatSelf
+                    )
+                );
+
+                break;
+
         }
     }
 
@@ -198,8 +229,6 @@ public class SigilTrinketEvent
                 switch (sigilTrinket.TriggerSpell.Category)
                 {
                     case SpellCategory.HealthRaising:
-                        castSpellLevel1Id = SpellId.RegenerationOther1;
-                        break;
                     case SpellCategory.HealingRaising:
                         castSpellLevel1Id = SpellId.RegenerationOther1;
                         break;
@@ -226,8 +255,6 @@ public class SigilTrinketEvent
                 switch (sigilTrinket.TriggerSpell.Category)
                 {
                     case SpellCategory.HealthRaising:
-                        castSpellLevel1Id = SpellId.DefenderOther1;
-                        break;
                     case SpellCategory.HealingRaising:
                         castSpellLevel1Id = SpellId.DefenderOther1;
                         break;
@@ -310,14 +337,14 @@ public class SigilTrinketEvent
                     Player.CreateSigilSpellProjectilesFromTarget(castSpell, sigilTrinket.CreatureToCastSpellFrom);
                 }
                 // Trigger spells affect all targets of fellowship boost spells
-                else if (sigilTrinket.TriggerSpell.IsFellowshipSpell && Player.Fellowship?.TotalMembers > 1)
+                else if (sigilTrinket.TriggerSpell is {IsFellowshipSpell: true} && Player.Fellowship?.TotalMembers > 1)
                 {
                     foreach (var fellowshipMember in Player.Fellowship.GetFellowshipMembers())
                     {
                         Player.CreateSigilPlayerSpell(fellowshipMember.Value, castSpell, sigilTrinket.IsWeaponSpell);
                     }
                 }
-                else if (sigilTrinket.TriggerSpell.IsSelfTargeted)
+                else if (sigilTrinket.TriggerSpell is {IsSelfTargeted: true})
                 {
                     Player.CreateSigilPlayerSpell(Player, castSpell, sigilTrinket.IsWeaponSpell);
                 }
@@ -437,6 +464,12 @@ public class SigilTrinketEvent
             case (Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression):
             case (Skill.Shield, (int)SigilTrinketShieldEffect.Aggression):
                 return IsValidForAggression(sigilTrinket);
+
+            case (Skill.DualWield, (int)SigilTrinketDualWieldEffect.Assailment):
+                return IsValidForAssailment(sigilTrinket);
+
+            case (Skill.Lockpick, (int)SigilTrinketThieveryEffect.Treachery):
+                return IsValidForTreachery(sigilTrinket);
         }
 
         return true;
@@ -593,6 +626,43 @@ public class SigilTrinketEvent
         var isPowerAttack = Player.GetPowerAccuracyBar() > 0.5f;
 
         return isPowerAttack && ((validSkillEffectTwohand && validWieldReqTwohand) || (validSkillEffectShield && validWieldReqShield));
+    }
+
+    private bool IsValidForAssailment(SigilTrinket sigilTrinket)
+    {
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.DualWield;
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketDualWieldEffect.Assailment;
+
+        var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
+        var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
+
+        var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+        var validWieldReq = weaponWieldReq <= maxWield;
+
+        var isDualWieldAttack = Player is { IsDualWieldAttack: true };
+
+        return validSkill && validEffectId && validWieldReq && isDualWieldAttack && OnCrit;
+    }
+
+    private bool IsValidForTreachery(SigilTrinket sigilTrinket)
+    {
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.Lockpick;
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketThieveryEffect.Treachery;
+
+        var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
+        var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
+
+        var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+        var validWieldReq = weaponWieldReq <= maxWield;
+
+        var isSneakAttack = false;
+        if (Target is Creature creatureTarget)
+        {
+            var angle = creatureTarget.GetAngle(Player);
+            isSneakAttack = Math.Abs(angle) > 90.0f;
+        }
+
+        return validSkill && validEffectId && validWieldReq && isSneakAttack && OnCrit;
     }
 
     //  --- COOLDOWN CHECKS ---

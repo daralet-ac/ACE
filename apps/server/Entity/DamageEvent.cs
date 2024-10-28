@@ -87,6 +87,7 @@ public class DamageEvent
         (Weapon?.IgnoreMagicResist ?? false) || (_attacker?.IgnoreMagicResist ?? false); // ignores life armor / prots
 
     public bool Blocked { get; private set; }
+    public float CriticalDamageBonusFromTrinket { get; set; }
     public bool CriticalOverridedByTrinket { get; set; }
     public bool Evaded { get; private set; }
     public bool LifestoneProtection { get; private set; }
@@ -739,10 +740,14 @@ public class DamageEvent
         var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
+        CriticalDamageBonusFromTrinket = 1.0f;
+        playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Lockpick, (int)SigilTrinketThieveryEffect.Treachery, true);
+
         _criticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, attacker, _attackSkill, defender);
         _criticalDamageMod += GetMaceSpecCriticalDamageBonus(playerAttacker);
         _criticalDamageMod += GetStaffSpecCriticalDamageBonus(playerAttacker);
         _criticalDamageMod += GetRatingBludgeonCriticalDamageBonus(defender, playerAttacker);
+        _criticalDamageMod *= CriticalDamageBonusFromTrinket;
 
         CheckForRatingReprisalCriticalDefense(attacker, playerDefender);
 
