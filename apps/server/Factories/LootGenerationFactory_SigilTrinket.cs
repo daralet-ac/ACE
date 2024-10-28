@@ -713,17 +713,18 @@ public static partial class LootGenerationFactory
 
     private static void SetPhysicalDefensePocketWatchStats(TreasureDeath profile, SigilTrinket sigilTrinket)
     {
+        var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
+
         switch (sigilTrinket.SigilTrinketEffectId)
         {
-            case (int)SigilTrinketPhysicalDefenseEffect.PH1:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["red"];
+            case (int)SigilTrinketPhysicalDefenseEffect.Evasion:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["yellow"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["yellow"];
 
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH1";
+                sigilTrinket.Name += " of Evasion";
                 sigilTrinket.Use =
-                    $"(PH)";
+                    $"Whenever the wielder receives a glancing blow, they have a chance to convert it to a full evade.\n\n"
+                    + $"Can only occur while wielding a weapon with a wield requirement of up to {wieldReq}.";
                 break;
             // case (int)SigilTrinketPhysicalDefenseEffect.PH2:
             //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
@@ -760,17 +761,18 @@ public static partial class LootGenerationFactory
 
     private static void SetMagicDefenseTopStats(TreasureDeath profile, SigilTrinket sigilTrinket)
     {
+        var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
+
         switch (sigilTrinket.SigilTrinketEffectId)
         {
-            case (int)SigilTrinketMagicDefenseEffect.PH1:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["red"];
+            case (int)SigilTrinketMagicDefenseEffect.Absorption:
+                sigilTrinket.PaletteTemplate = PaletteTemplateColors["purple"];
+                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["purple"];
 
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH1";
+                sigilTrinket.Name += " of Absorption";
                 sigilTrinket.Use =
-                    $"(PH)";
+                    $"Whenever the wielder is damaged by a spell, they have a chance to convert some of the damage into mana.\n\n"
+                    + $"Can only occur while wielding a weapon with a wield requirement of up to {wieldReq}.";
                 break;
             // case (int)SigilTrinketMagicDefenseEffect.PH2:
             //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
