@@ -249,13 +249,13 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.Shield)
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxShieldEffectId);
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxShieldEffectId);
 
                     SetShieldCompassStats(profile, sigilTrinket);
                 }
                 else
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxTwohandedCombatEffectId);
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxTwohandedCombatEffectId);
 
                     SetTwohandedCombatCompassStats(profile, sigilTrinket);
                 }
@@ -266,13 +266,13 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.DualWield)
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxDualWieldEffectId);
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxDualWieldEffectId);
 
                     SetDualWieldPuzzleBoxStats(profile, sigilTrinket);
                 }
                 else
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxThieveryEffectId);
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxThieveryEffectId);
 
                     SetThieveryPuzzleBoxStats(profile, sigilTrinket);
                 }
@@ -283,13 +283,13 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.LifeMagic)
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxLifeMagicEffectId);
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxLifeMagicEffectId);
 
                     SetLifeMagicScarabStats(profile, sigilTrinket);
                 }
                 else
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxWarMagicEffectId);
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxWarMagicEffectId);
 
                     SetWarMagicScarabStats(profile, sigilTrinket);
                 }
@@ -298,7 +298,7 @@ public static partial class LootGenerationFactory
                 sigilTrinket.SigilTrinketHealthReserved = GetReservedVital(profile, true);
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile, true);
                 sigilTrinket.WieldSkillType = (int)Skill.MeleeDefense;
-                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxPhysicalDefenseEffectId);
+                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPhysicalDefenseEffectId);
 
                 SetPhysicalDefensePocketWatchStats(profile, sigilTrinket);
                 break;
@@ -306,7 +306,7 @@ public static partial class LootGenerationFactory
                 sigilTrinket.SigilTrinketHealthReserved = GetReservedVital(profile, true);
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile, true);
                 sigilTrinket.WieldSkillType = (int)Skill.MagicDefense;
-                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxMagicDefenseEffectId);
+                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxMagicDefenseEffectId);
 
                 SetMagicDefenseTopStats(profile, sigilTrinket);
                 break;
@@ -317,13 +317,13 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.AssessCreature)
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxPerceptionEffectId);
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPerceptionEffectId);
 
                     SetPerceptionGogglesStats(profile, sigilTrinket);
                 }
                 else
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.maxDeceptionEffectId);
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxDeceptionEffectId);
 
                     SetDeceptionGogglesStats(profile, sigilTrinket);
                 }
@@ -532,7 +532,7 @@ public static partial class LootGenerationFactory
 
                 sigilTrinket.Name += " of Aggression";
 
-                wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
+                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
                 sigilTrinket.Use =
                     $"Whenever the wielder performs an attack on an enemy, they have a chance to generate increased threat towards that enemy.\n\n"
                     + $"Can only occur while using a shield, with a wield requirement of up to {wieldReq}.";
@@ -615,93 +615,99 @@ public static partial class LootGenerationFactory
     {
         switch (sigilTrinket.SigilTrinketEffectId)
         {
-            case (int)SigilTrinketDualWieldEffect.PH1:
+            case (int)SigilTrinketDualWieldEffect.Assailment:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["red"];
 
                 sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
 
-                sigilTrinket.Name += " of PH1";
+                sigilTrinket.Name += " of Assailment";
+
+                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
                 sigilTrinket.Use =
-                    $"(PH)";
+                    $"Whenever the wielder performs an critical hit on an enemy, they have a chance to gain a damage buff for 10 seconds.\n\n"
+                    + $"Can only occur while dual-wielding, with a wield requirement of up to {wieldReq}.";
                 break;
-            case (int)SigilTrinketDualWieldEffect.PH2:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["blue"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH2";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketDualWieldEffect.PH3:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["green"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH3";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketDualWieldEffect.PH4:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["black"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH4";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
+            // case (int)SigilTrinketDualWieldEffect.PH2:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["blue"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH2";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketDualWieldEffect.PH3:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["green"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH3";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketDualWieldEffect.PH4:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["black"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH4";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
         }
     }
 
     private static void SetThieveryPuzzleBoxStats(TreasureDeath profile, SigilTrinket sigilTrinket)
     {
+        var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
+
         switch (sigilTrinket.SigilTrinketEffectId)
         {
-            case (int)SigilTrinketThieveryEffect.PH1:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["red"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH1";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketThieveryEffect.PH2:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["blue"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH2";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketThieveryEffect.PH3:
+            case (int)SigilTrinketThieveryEffect.Treachery:
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["green"];
 
                 sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
 
-                sigilTrinket.Name += " of PH3";
+                sigilTrinket.Name += " of Treachery";
                 sigilTrinket.Use =
-                    $"(PH)";
+                    $"Whenever the wielder performs a sneak attack critical hit on an enemy, they have a chance to deal double critical damage.\n\n"
+                    + $"Can only occur while performing sneak attacks, using a weapon with a wield requirement of up to {wieldReq}.";
                 break;
-            case (int)SigilTrinketThieveryEffect.PH4:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["black"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH4";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
+            // case (int)SigilTrinketThieveryEffect.PH2:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["blue"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH2";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketThieveryEffect.PH3:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["green"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH3";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketThieveryEffect.PH4:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["black"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH4";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
         }
     }
 
@@ -719,36 +725,36 @@ public static partial class LootGenerationFactory
                 sigilTrinket.Use =
                     $"(PH)";
                 break;
-            case (int)SigilTrinketPhysicalDefenseEffect.PH2:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["blue"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH2";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketPhysicalDefenseEffect.PH3:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["green"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH3";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketPhysicalDefenseEffect.PH4:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["black"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH4";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
+            // case (int)SigilTrinketPhysicalDefenseEffect.PH2:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["blue"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH2";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketPhysicalDefenseEffect.PH3:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["green"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH3";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketPhysicalDefenseEffect.PH4:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["black"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH4";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
         }
     }
 
@@ -766,36 +772,36 @@ public static partial class LootGenerationFactory
                 sigilTrinket.Use =
                     $"(PH)";
                 break;
-            case (int)SigilTrinketMagicDefenseEffect.PH2:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["blue"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH2";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketMagicDefenseEffect.PH3:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["green"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH3";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketMagicDefenseEffect.PH4:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["black"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH4";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
+            // case (int)SigilTrinketMagicDefenseEffect.PH2:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["blue"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH2";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketMagicDefenseEffect.PH3:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["green"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH3";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketMagicDefenseEffect.PH4:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["black"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH4";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
         }
     }
 
@@ -813,36 +819,36 @@ public static partial class LootGenerationFactory
                 sigilTrinket.Use =
                     $"(PH)";
                 break;
-            case (int)SigilTrinketPerceptionEffect.PH2:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["blue"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH2";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketPerceptionEffect.PH3:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["green"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH3";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketPerceptionEffect.PH4:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["black"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH4";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
+            // case (int)SigilTrinketPerceptionEffect.PH2:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["blue"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH2";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketPerceptionEffect.PH3:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["green"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH3";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketPerceptionEffect.PH4:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["black"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH4";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
         }
     }
 
@@ -860,36 +866,36 @@ public static partial class LootGenerationFactory
                 sigilTrinket.Use =
                     $"(PH)";
                 break;
-            case (int)SigilTrinketDeceptionEffect.PH2:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["blue"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH2";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketDeceptionEffect.PH3:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["green"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH3";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
-            case (int)SigilTrinketDeceptionEffect.PH4:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["black"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of PH4";
-                sigilTrinket.Use =
-                    $"(PH)";
-                break;
+            // case (int)SigilTrinketDeceptionEffect.PH2:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["blue"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH2";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketDeceptionEffect.PH3:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["green"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH3";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
+            // case (int)SigilTrinketDeceptionEffect.PH4:
+            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
+            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["black"];
+            //
+            //     sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
+            //
+            //     sigilTrinket.Name += " of PH4";
+            //     sigilTrinket.Use =
+            //         $"(PH)";
+            //     break;
         }
     }
 

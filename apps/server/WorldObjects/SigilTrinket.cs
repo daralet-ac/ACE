@@ -56,74 +56,78 @@ public enum SigilTrinketShieldEffect
 {
     Might,
     Aggression
+    // PH3,
+    // PH4
 }
 
 public enum SigilTrinketTwohandedCombatEffect
 {
     Might,
     Aggression
+    // PH3,
+    // PH4
 }
 
 public enum SigilTrinketDualWieldEffect
 {
-    PH1,
-    PH2,
-    PH3,
-    PH4
+    Assailment
+    // PH2,
+    // PH3,
+    // PH4
 }
 
 public enum SigilTrinketThieveryEffect
 {
-    PH1,
-    PH2,
-    PH3,
-    PH4
+    Treachery,
+    // PH2,
+    // PH3,
+    // PH4
 }
 
 public enum SigilTrinketPerceptionEffect
 {
-    PH1,
-    PH2,
-    PH3,
-    PH4
+    PH1
+    // PH2,
+    // PH3,
+    // PH4
 }
 
 public enum SigilTrinketDeceptionEffect
 {
-    PH1,
-    PH2,
-    PH3,
-    PH4
+    PH1
+    // PH2,
+    // PH3,
+    // PH4
 }
 
 public enum SigilTrinketPhysicalDefenseEffect
 {
-    PH1,
-    PH2,
-    PH3,
-    PH4
+    PH1
+    // PH2,
+    // PH3,
+    // PH4
 }
 
 public enum SigilTrinketMagicDefenseEffect
 {
-    PH1,
-    PH2,
-    PH3,
-    PH4
+    PH1
+    // PH2,
+    // PH3,
+    // PH4
 }
 
 public class SigilTrinket : WorldObject
 {
-    public static int maxLifeMagicEffectId = Enum.GetValues(typeof(SigilTrinketLifeMagicEffect)).Cast<int>().Max();
-    public static int maxWarMagicEffectId = Enum.GetValues(typeof(SigilTrinketWarMagicEffect)).Cast<int>().Max();
-    public static int maxTwohandedCombatEffectId = Enum.GetValues(typeof(SigilTrinketTwohandedCombatEffect)).Cast<int>().Max();
-    public static int maxShieldEffectId = Enum.GetValues(typeof(SigilTrinketShieldEffect)).Cast<int>().Max();
-    public static int maxDualWieldEffectId = Enum.GetValues(typeof(SigilTrinketDualWieldEffect)).Cast<int>().Max();
-    public static int maxThieveryEffectId = Enum.GetValues(typeof(SigilTrinketThieveryEffect)).Cast<int>().Max();
-    public static int maxPerceptionEffectId = Enum.GetValues(typeof(SigilTrinketPerceptionEffect)).Cast<int>().Max();
-    public static int maxDeceptionEffectId = Enum.GetValues(typeof(SigilTrinketDeceptionEffect)).Cast<int>().Max();
-    public static int maxPhysicalDefenseEffectId = Enum.GetValues(typeof(SigilTrinketPhysicalDefenseEffect)).Cast<int>().Max();
-    public static int maxMagicDefenseEffectId = Enum.GetValues(typeof(SigilTrinketMagicDefenseEffect)).Cast<int>().Max();
+    public static readonly int MaxLifeMagicEffectId = Enum.GetValues(typeof(SigilTrinketLifeMagicEffect)).Cast<int>().Max();
+    public static readonly int MaxWarMagicEffectId = Enum.GetValues(typeof(SigilTrinketWarMagicEffect)).Cast<int>().Max();
+    public static readonly int MaxTwohandedCombatEffectId = Enum.GetValues(typeof(SigilTrinketTwohandedCombatEffect)).Cast<int>().Max();
+    public static readonly int MaxShieldEffectId = Enum.GetValues(typeof(SigilTrinketShieldEffect)).Cast<int>().Max();
+    public static readonly int MaxDualWieldEffectId = Enum.GetValues(typeof(SigilTrinketDualWieldEffect)).Cast<int>().Max();
+    public static readonly int MaxThieveryEffectId = Enum.GetValues(typeof(SigilTrinketThieveryEffect)).Cast<int>().Max();
+    public static readonly int MaxPerceptionEffectId = Enum.GetValues(typeof(SigilTrinketPerceptionEffect)).Cast<int>().Max();
+    public static readonly int MaxDeceptionEffectId = Enum.GetValues(typeof(SigilTrinketDeceptionEffect)).Cast<int>().Max();
+    public static readonly int MaxPhysicalDefenseEffectId = Enum.GetValues(typeof(SigilTrinketPhysicalDefenseEffect)).Cast<int>().Max();
+    public static readonly int MaxMagicDefenseEffectId = Enum.GetValues(typeof(SigilTrinketMagicDefenseEffect)).Cast<int>().Max();
 
 
     public static readonly List<SpellCategory> LifeBeneficialTriggerSpells =
