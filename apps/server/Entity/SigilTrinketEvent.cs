@@ -155,7 +155,7 @@ public class SigilTrinketEvent
 
                 maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
                 sigilTrinket.SpellLevel = (uint)Math.Min(sigilTrinket.TriggerSpell.Level, maxLevel);
-                sigilTrinket.SigilTrinketCastSpellId = 6328; // Surge of Crushing (Gauntlet Critical Damage Boost)
+                sigilTrinket.SigilTrinketCastSpellId = (int)SpellId.SigilTrinketCriticalDamageBoost;
 
                 CastSigilTrinketSpell(sigilTrinket, false);
                 break;
@@ -176,11 +176,11 @@ public class SigilTrinketEvent
             {
                 if (Target is Creature creatureTarget)
                 {
-                    creatureTarget.IncreaseTargetThreatLevel(Player, 100);
+                    creatureTarget.DoubleThreatFromNextAttackTargets.Add(Player);
 
                     Player.Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Sigil Compass of Aggression added a substantial amount of threat to your target!",
+                            $"Sigil Compass of Aggression doubled the amount of threat your attack produced against your target!",
                             ChatMessageType.CombatSelf
                         )
                     );
@@ -192,13 +192,13 @@ public class SigilTrinketEvent
                 maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
                 sigilTrinket.SpellLevel =
                     (uint)maxLevel; // TODO: if wielding a lower tier weapon, cast lower tier spell (like war/life checks)
-                sigilTrinket.SigilTrinketCastSpellId = 6328; // Surge of Crushing (Gauntlet Critical Damage Boost) TODO: Create unique spell buff for this
+                sigilTrinket.SigilTrinketCastSpellId = (int)SpellId.SigilTrinketCriticalChanceBoost;
 
                 CastSigilTrinketSpell(sigilTrinket, false);
 
                 Player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"Sigil Puzzle Box of Assailment boosts your damage for the next 10 seconds!",
+                        $"Sigil Puzzle Box of Assailment boosts your critical chance for the next 10 seconds!",
                         ChatMessageType.CombatSelf
                     )
                 );
@@ -246,7 +246,38 @@ public class SigilTrinketEvent
                 );
 
                 break;
+            case ((int)Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure):
 
+                maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
+                sigilTrinket.SpellLevel = (uint)maxLevel; // TODO: if wielding a lower tier weapon, cast lower tier spell (like war/life checks)
+                sigilTrinket.SigilTrinketCastSpellId = (int)SpellId.SigilTrinketDamageBoost;
+
+                CastSigilTrinketSpell(sigilTrinket, false);
+
+                Player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Sigil Goggles of Exposure boosts your damage for the next 10 seconds!",
+                        ChatMessageType.Magic
+                    )
+                );
+
+                break;
+            case ((int)Skill.Deception, (int)SigilTrinketDeceptionEffect.Avoidance):
+            {
+                if (Target is Creature creatureTarget)
+                {
+                    creatureTarget.SkipThreatFromNextAttackTargets.Add(Player);
+
+                    Player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Sigil Goggles of Avoidance prevented your attack from adding threat to your target!",
+                            ChatMessageType.CombatSelf
+                        )
+                    );
+                }
+
+                break;
+            }
         }
     }
 
@@ -510,6 +541,12 @@ public class SigilTrinketEvent
 
             case (Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption):
                 return IsValidForAbsorption(sigilTrinket);
+
+            case (Skill.AssessPerson, (int)SigilTrinketPerceptionEffect.Exposure):
+                return IsValidForExposure(sigilTrinket);
+
+            case (Skill.Deception, (int)SigilTrinketDeceptionEffect.Avoidance):
+                return IsValidForAvoidance(sigilTrinket);
         }
 
         return true;
@@ -735,6 +772,36 @@ public class SigilTrinketEvent
         var isHealthDamageSpell = TriggerSpell.VitalDamageType is not DamageType.Stamina and not DamageType.Mana;
 
         return validSkill && validEffectId && validWieldReq && isHealthDamageSpell;
+    }
+
+    private bool IsValidForExposure(SigilTrinket sigilTrinket)
+    {
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.AssessPerson;
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketPerceptionEffect.Exposure;
+
+        var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
+        var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
+
+        var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+        var validWieldReq = weaponWieldReq <= maxWield;
+
+        return validSkill && validEffectId && validWieldReq;
+    }
+
+    private bool IsValidForAvoidance(SigilTrinket sigilTrinket)
+    {
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.Deception;
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketDeceptionEffect.Avoidance;
+
+        var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
+        var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
+
+        var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+        var validWieldReq = weaponWieldReq <= maxWield;
+
+        var isPowerAttack = Player.GetPowerAccuracyBar() > 0.5f;
+
+        return validSkill && validEffectId && validWieldReq && isPowerAttack;
     }
 
     //  --- COOLDOWN CHECKS ---

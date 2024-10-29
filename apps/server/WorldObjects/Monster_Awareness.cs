@@ -182,8 +182,26 @@ partial class Creature
     private double FocusedTauntDuration = 10;
     private double FeignWeaknessDuration = 10;
 
+    public List<Player> SkipThreatFromNextAttackTargets = [];
+    public List<Player> DoubleThreatFromNextAttackTargets = [];
+
     public void IncreaseTargetThreatLevel(Creature targetCreature, int amount)
     {
+        if (targetCreature is Player player)
+        {
+            if (SkipThreatFromNextAttackTargets != null && SkipThreatFromNextAttackTargets.Contains(player))
+            {
+                SkipThreatFromNextAttackTargets.Remove(player);
+                return;
+            }
+
+            if (DoubleThreatFromNextAttackTargets != null && DoubleThreatFromNextAttackTargets.Contains(player))
+            {
+                DoubleThreatFromNextAttackTargets.Remove(player);
+                amount *= 2;
+            }
+        }
+
         ThreatLevel.TryAdd(targetCreature, ThreatMinimum);
 
         // check for modifiers
