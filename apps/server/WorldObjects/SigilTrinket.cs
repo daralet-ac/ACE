@@ -86,7 +86,7 @@ public enum SigilTrinketThieveryEffect
 
 public enum SigilTrinketPerceptionEffect
 {
-    PH1
+    Exposure
     // PH2,
     // PH3,
     // PH4
@@ -94,7 +94,7 @@ public enum SigilTrinketPerceptionEffect
 
 public enum SigilTrinketDeceptionEffect
 {
-    PH1
+    Avoidance
     // PH2,
     // PH3,
     // PH4

@@ -766,4 +766,7 @@ public enum SpellCategory : uint
     ManaReservationPenalty = 768,
     StaminaReservationPenalty = 769,
     HealthReservationPenalty = 770,
+    SigilTrinketCriticalChanceBoost = 771,
+    SigilTrinketCriticalDamageBoost = 772,
+    SigilTrinketDamageBoost = 773,
 }

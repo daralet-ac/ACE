@@ -6398,6 +6398,9 @@ public enum SpellId : uint
     ManaReservationPenalty,
     StaminaReservationPenalty,
     HealthReservationPenalty,
+    SigilTrinketCriticalChanceBoost,
+    SigilTrinketCriticalDamageBoost,
+    SigilTrinketDamageBoost,
 
     NumSpells = 8192,
 

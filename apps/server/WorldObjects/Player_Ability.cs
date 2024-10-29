@@ -366,6 +366,11 @@ partial class Player
                 TryCastSpell(imperilSpellLevel, target, this, null, false, false, false, false);
             }
         }
+
+        if (targetAsPlayer == null)
+        {
+            CheckForSigilTrinketOnCastEffects(target, null, false, Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure);
+        }
     }
 
     public void TryUseExposeMagicalWeakness(WorldObject ability)
@@ -496,6 +501,11 @@ partial class Player
                 {
                     TryCastSpell(succumbSpellLevel, target, this, null, false, false, false, false);
                 }
+            }
+
+            if (targetAsPlayer == null)
+            {
+                CheckForSigilTrinketOnCastEffects(target, null, false, Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure);
             }
         }
     }
