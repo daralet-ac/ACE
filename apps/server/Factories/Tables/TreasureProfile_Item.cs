@@ -167,7 +167,7 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.WeaponRogue, 0.11f),
         (TreasureItemType_Orig.ArmorCaster, 0.15f),
         (TreasureItemType_Orig.WeaponCaster, 0.11f),
-        (TreasureItemType_Orig.Clothing, 0.12f),
+        (TreasureItemType_Orig.Clothing, 0.1f),
         (TreasureItemType_Orig.Jewelry, 0.09f),
         (TreasureItemType_Orig.SigilTrinketWarrior, 0.01f),
         (TreasureItemType_Orig.SigilTrinketRogue, 0.01f),
