@@ -61,7 +61,7 @@ partial class Player
             {
                 if (sigilTrinket.SigilTrinketColor == 0)
                 {
-                    sigilTrinket.RechargeSigilTrinket(manaField);
+                    sigilTrinket.RechargeSigilTrinket(manaField, this);
                 }
 
                 SetSigilTrinketsBonus(manaField);
@@ -74,7 +74,7 @@ partial class Player
             {
                 if (sigilTrinket.SigilTrinketColor == 0 || sigilTrinket.SigilTrinketColor == 1)
                 {
-                    sigilTrinket.RechargeSigilTrinket(manaField);
+                    sigilTrinket.RechargeSigilTrinket(manaField, this);
                 }
 
                 SetSigilTrinketsBonus(manaField);
@@ -82,7 +82,7 @@ partial class Player
 
             foreach (var sigilTrinket in heldSigilTrinketsBlue)
             {
-                sigilTrinket.RechargeSigilTrinket(manaField);
+                sigilTrinket.RechargeSigilTrinket(manaField, this);
             }
         }
 
@@ -90,19 +90,19 @@ partial class Player
         {
             foreach (var sigilTrinket in equippedSigilTrinkets)
             {
-                sigilTrinket.RechargeSigilTrinket(manaField);
+                sigilTrinket.RechargeSigilTrinket(manaField, this);
 
                 SetSigilTrinketsBonus(manaField);
             }
 
             foreach (var sigilTrinket in heldSigilTrinketsBlue)
             {
-                sigilTrinket.RechargeSigilTrinket(manaField);
+                sigilTrinket.RechargeSigilTrinket(manaField, this);
             }
 
             foreach (var sigilTrinket in heldSigilTrinketsYellow)
             {
-                sigilTrinket.RechargeSigilTrinket(manaField);
+                sigilTrinket.RechargeSigilTrinket(manaField, this);
             }
         }
 
@@ -110,17 +110,17 @@ partial class Player
         {
             foreach (var sigilTrinket in heldSigilTrinketsBlue)
             {
-                sigilTrinket.RechargeSigilTrinket(manaField);
+                sigilTrinket.RechargeSigilTrinket(manaField, this);
             }
 
             foreach (var sigilTrinket in heldSigilTrinketsYellow)
             {
-                sigilTrinket.RechargeSigilTrinket(manaField);
+                sigilTrinket.RechargeSigilTrinket(manaField, this);
             }
 
             foreach (var sigilTrinket in heldSigilTrinketsRed)
             {
-                sigilTrinket.RechargeSigilTrinket(manaField);
+                sigilTrinket.RechargeSigilTrinket(manaField, this);
             }
         }
     }

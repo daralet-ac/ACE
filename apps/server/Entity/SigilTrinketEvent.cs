@@ -653,6 +653,11 @@ public class SigilTrinketEvent
 
     private bool IsValidForMight(SigilTrinket sigilTrinket)
     {
+        if (Player.GetEquippedWeapon() == null)
+        {
+            return false;
+        }
+
         var validSkillEffectTwohand = sigilTrinket.WieldSkillType == (int)Skill.TwoHandedCombat && sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketTwohandedCombatEffect.Might;
         var validSkillEffectShield = sigilTrinket.WieldSkillType == (int)Skill.Shield && sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketShieldEffect.Might;
 
@@ -680,6 +685,11 @@ public class SigilTrinketEvent
 
     private bool IsValidForAggression(SigilTrinket sigilTrinket)
     {
+        if (Player.GetEquippedWeapon() == null)
+        {
+            return false;
+        }
+
         var validSkillEffectTwohand = sigilTrinket.WieldSkillType == (int)Skill.TwoHandedCombat && sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketTwohandedCombatEffect.Aggression;
         var validSkillEffectShield = sigilTrinket.WieldSkillType == (int)Skill.Shield && sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketShieldEffect.Aggression;
 
@@ -707,6 +717,11 @@ public class SigilTrinketEvent
 
     private bool IsValidForAssailment(SigilTrinket sigilTrinket)
     {
+        if (Player.GetEquippedWeapon() == null)
+        {
+            return false;
+        }
+
         var validSkill = sigilTrinket.WieldSkillType == (int)Skill.DualWield;
         var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketDualWieldEffect.Assailment;
 
@@ -723,6 +738,11 @@ public class SigilTrinketEvent
 
     private bool IsValidForTreachery(SigilTrinket sigilTrinket)
     {
+        if (Player.GetEquippedWeapon() == null)
+        {
+            return false;
+        }
+
         var validSkill = sigilTrinket.WieldSkillType == (int)Skill.Lockpick;
         var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketThieveryEffect.Treachery;
 
@@ -744,6 +764,11 @@ public class SigilTrinketEvent
 
     private bool IsValidForEvasion(SigilTrinket sigilTrinket)
     {
+        if (Player.GetEquippedWeapon() == null)
+        {
+            return false;
+        }
+
         var validSkill = sigilTrinket.WieldSkillType == (int)Skill.MeleeDefense;
         var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketPhysicalDefenseEffect.Evasion;
 
@@ -760,6 +785,11 @@ public class SigilTrinketEvent
 
     private bool IsValidForAbsorption(SigilTrinket sigilTrinket)
     {
+        if (Player.GetEquippedWeapon() == null)
+        {
+            return false;
+        }
+
         var validSkill = sigilTrinket.WieldSkillType == (int)Skill.MagicDefense;
         var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketMagicDefenseEffect.Absorption;
 
@@ -776,6 +806,11 @@ public class SigilTrinketEvent
 
     private bool IsValidForExposure(SigilTrinket sigilTrinket)
     {
+        if (Player.GetEquippedWeapon() == null)
+        {
+            return false;
+        }
+
         var validSkill = sigilTrinket.WieldSkillType == (int)Skill.AssessPerson;
         var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketPerceptionEffect.Exposure;
 
@@ -790,6 +825,11 @@ public class SigilTrinketEvent
 
     private bool IsValidForAvoidance(SigilTrinket sigilTrinket)
     {
+        if (Player.GetEquippedWeapon() == null)
+        {
+            return false;
+        }
+
         var validSkill = sigilTrinket.WieldSkillType == (int)Skill.Deception;
         var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketDeceptionEffect.Avoidance;
 
