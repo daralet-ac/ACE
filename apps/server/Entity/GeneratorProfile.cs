@@ -320,6 +320,16 @@ public class GeneratorProfile
                 return null;
             }
 
+            if (wo is Creature creature && creature.Level > PropertyManager.GetLong("soft_level_cap").Item && creature.Attackable)
+            {
+                _log.Warning(
+                    "[GENERATOR] Preventing spawn of '{CreatureName}' ({CreatureWcid}) due to level ({CreatureLevel}) being higher than soft cap ({SoftCap}). Landblock: {Landblock}",
+                    creature.Name, creature.WeenieClassId, creature.Level, PropertyManager.GetLong("soft_level_cap").Item,
+                    Generator.CurrentLandblock.Id);
+
+                return null;
+            }
+
             if (Biota.PaletteId.HasValue && Biota.PaletteId > 0)
             {
                 wo.PaletteTemplate = (int)Biota.PaletteId;
