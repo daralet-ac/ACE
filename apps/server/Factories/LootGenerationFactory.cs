@@ -769,13 +769,13 @@ public static partial class LootGenerationFactory
                 break;
 
             case TreasureItemType.SigilTrinketRogue:
-                SigilTrinketType[] rogueSigilTrinkets = [SigilTrinketType.Compass, SigilTrinketType.Top, SigilTrinketType.PocketWatch];
+                SigilTrinketType[] rogueSigilTrinkets = [SigilTrinketType.PuzzleBox, SigilTrinketType.Goggles, SigilTrinketType.PocketWatch];
                 sigilRng = ThreadSafeRandom.Next(0, 2);
                 wo = CreateSigilTrinket(profile, rogueSigilTrinkets[sigilRng]);
                 break;
 
             case TreasureItemType.SigilTrinketCaster:
-                SigilTrinketType[] casterSigilTrinkets = [SigilTrinketType.Compass, SigilTrinketType.Top, SigilTrinketType.PocketWatch];
+                SigilTrinketType[] casterSigilTrinkets = [SigilTrinketType.Scarab, SigilTrinketType.Top, SigilTrinketType.Goggles];
                 sigilRng = ThreadSafeRandom.Next(0, 2);
                 wo = CreateSigilTrinket(profile, casterSigilTrinkets[sigilRng]);
                 break;
@@ -922,7 +922,7 @@ public static partial class LootGenerationFactory
         wo.SetProperty(PropertyBool.MutableQuestItem, false);
         //wo.SetProperty(PropertyBool.UpgradeableQuestItem, true);
 
-        var tier = GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 50);
+        var tier = Math.Clamp((GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 50) - 1), 0, 7);
         var lootQuality = (float)(wo.LootQualityMod ?? 0.0f);
         var armorSlots = wo.ArmorSlots ?? 1;
 
