@@ -476,33 +476,32 @@ public class SigilTrinket : WorldObject
         SpellStatModValMultiplier = 1.0f;
     }
 
-    public void RechargeSigilTrinket(Hotspot manaField)
+    public void RechargeSigilTrinket(Hotspot manaField, Player player)
     {
         if (manaField == null)
         {
             return;
         }
 
-        var playerWielder = Wielder as Player;
-        if (playerWielder == null)
+        if (player == null)
         {
             return;
         }
 
-        var forwardCommand = playerWielder.CurrentMotionState.MotionState.ForwardCommand;
+        var forwardCommand = player.CurrentMotionState.MotionState.ForwardCommand;
         if (forwardCommand != MotionCommand.MeditateState)
         {
             return;
         }
 
-        if (WieldSkillType != null && playerWielder.GetCreatureSkill((MagicSchool)WieldSkillType).AdvancementClass < SkillAdvancementClass.Trained)
+        if (WieldSkillType != null && player.GetCreatureSkill((Skill)WieldSkillType).AdvancementClass < SkillAdvancementClass.Trained)
         {
             return;
         }
 
         if (Structure < MaxStructure)
         {
-            IncreaseStructure(50, playerWielder);
+            IncreaseStructure(50, player);
         }
     }
 
