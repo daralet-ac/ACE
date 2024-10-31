@@ -320,27 +320,13 @@ public class GeneratorProfile
                 return null;
             }
 
-            if (wo is Creature { Attackable: true } creature)
+            if (wo is Creature { Attackable: true, UseArchetypeSystem: not true } creature)
             {
-                if (creature.UseArchetypeSystem != true)
-                {
-                    _log.Warning(
-                        "[GENERATOR] Preventing spawn of '{CreatureName}' ({CreatureWcid}) due to not using archetype system. Landblock: {Landblock}",
-                        creature.Name, creature.WeenieClassId, Generator.CurrentLandblock.Id);
+                _log.Warning(
+                    "[GENERATOR] Preventing spawn of '{CreatureName}' ({CreatureWcid}) due to not using archetype system. Landblock: {Landblock}",
+                    creature.Name, creature.WeenieClassId, Generator.CurrentLandblock.Id);
 
-                    return null;
-                }
-
-                if (creature.Level > PropertyManager.GetLong("soft_level_cap").Item)
-                {
-                    _log.Warning(
-                        "[GENERATOR] Preventing spawn of '{CreatureName}' ({CreatureWcid}) due to level ({CreatureLevel}) being higher than soft cap ({SoftCap}). Landblock: {Landblock}",
-                        creature.Name, creature.WeenieClassId, creature.Level,
-                        PropertyManager.GetLong("soft_level_cap").Item,
-                        Generator.CurrentLandblock.Id);
-
-                    return null;
-                }
+                return null;
             }
 
             if (Biota.PaletteId.HasValue && Biota.PaletteId > 0)
