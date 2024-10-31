@@ -323,8 +323,8 @@ public class GeneratorProfile
             if (wo is Creature { Attackable: true, UseArchetypeSystem: not true } creature)
             {
                 _log.Warning(
-                    "[GENERATOR] Preventing spawn of '{CreatureName}' ({CreatureWcid}) due to not using archetype system. Landblock: {Landblock}",
-                    creature.Name, creature.WeenieClassId, Generator.CurrentLandblock.Id);
+                    "[GENERATOR] Preventing spawn of '{CreatureName}' ({CreatureWcid}) due to not using archetype system. Landblock: {Landblock}, Loc: {Loc}",
+                    creature.Name, creature.WeenieClassId, Generator.CurrentLandblock.Id, Generator.Location.ToLOCString());
 
                 return null;
             }
