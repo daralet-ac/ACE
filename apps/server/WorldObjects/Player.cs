@@ -24,7 +24,6 @@ using ACE.Server.Physics;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects.Managers;
-using Serilog;
 using Biota = ACE.Entity.Models.Biota;
 using MotionTable = ACE.DatLoader.FileTypes.MotionTable;
 
@@ -32,8 +31,6 @@ namespace ACE.Server.WorldObjects;
 
 public partial class Player : Creature, IPlayer
 {
-    private readonly ILogger _log = Log.ForContext<Player>();
-
     public Account Account { get; }
 
     public Character Character { get; }

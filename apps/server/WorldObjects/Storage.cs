@@ -9,15 +9,12 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 using Biota = ACE.Entity.Models.Biota;
 
 namespace ACE.Server.WorldObjects;
 
 public class Storage : Container
 {
-    private readonly ILogger _log = Log.ForContext<Storage>();
-
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>

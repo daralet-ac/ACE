@@ -9,14 +9,11 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public partial class Portal : WorldObject
 {
-    private readonly ILogger _log = Log.ForContext<Portal>();
-
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>

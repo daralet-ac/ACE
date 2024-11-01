@@ -193,7 +193,6 @@ public class SpellPurge : Stackable
         }
 
         var chosenSpell = new Spell((uint)source.SpellToExtract);
-        var chance = 100;
 
         if (!confirmed)
         {

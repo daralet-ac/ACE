@@ -7,14 +7,11 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public class TailoringKit : Stackable
 {
-    private static readonly ILogger _log = Log.ForContext(typeof(TailoringKit));
-
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>

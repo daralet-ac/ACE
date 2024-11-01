@@ -5,14 +5,11 @@ using ACE.Entity.Models;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public class RetainingChisel : WorldObject
 {
-    private static readonly ILogger _log = Log.ForContext(typeof(RetainingChisel));
-
     public RetainingChisel(Weenie weenie, ObjectGuid guid)
         : base(weenie, guid)
     {

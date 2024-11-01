@@ -11,14 +11,11 @@ using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public partial class Corpse : Container
 {
-    private readonly ILogger _log = Log.ForContext<Corpse>();
-
     /// <summary>
     /// The maximum number of seconds for an empty corpse to stick around
     /// </summary>

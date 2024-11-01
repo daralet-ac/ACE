@@ -8,14 +8,11 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public class ManaStone : WorldObject
 {
-    private readonly ILogger _log = Log.ForContext<ManaStone>();
-
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>

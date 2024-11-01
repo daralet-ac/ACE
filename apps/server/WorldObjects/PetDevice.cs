@@ -10,7 +10,6 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
@@ -19,8 +18,6 @@ namespace ACE.Server.WorldObjects;
 /// </summary>
 public class PetDevice : WorldObject
 {
-    private readonly ILogger _log = Log.ForContext<PetDevice>();
-
     public int? PetClass
     {
         get => GetProperty(PropertyInt.PetClass);

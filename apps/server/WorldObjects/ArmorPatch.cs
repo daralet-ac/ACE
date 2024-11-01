@@ -6,14 +6,11 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public class ArmorPatch : Stackable
 {
-    private static readonly ILogger _log = Log.ForContext(typeof(ArmorPatch));
-
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>

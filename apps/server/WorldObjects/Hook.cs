@@ -9,7 +9,6 @@ using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
@@ -18,8 +17,6 @@ namespace ACE.Server.WorldObjects;
 /// </summary>
 public class Hook : Container
 {
-    private readonly ILogger _log = Log.ForContext<Hook>();
-
     public House House
     {
         get => ParentLink as House;

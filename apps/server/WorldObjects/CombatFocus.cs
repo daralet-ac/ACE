@@ -9,7 +9,6 @@ using ACE.Server.Factories.Tables;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
@@ -26,8 +25,6 @@ public enum CombatFocusType
 
 public class CombatFocus : WorldObject
 {
-    private readonly ILogger _log = Log.ForContext<CombatFocus>();
-
     private List<SpellId> CurrentSpells = new List<SpellId>();
 
     public int? CombatFocusType
