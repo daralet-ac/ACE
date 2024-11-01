@@ -14,7 +14,6 @@ using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
@@ -65,8 +64,6 @@ public class VendorItemComparer : IComparer<WorldObject>
 /// </summary>
 public class Vendor : Creature
 {
-    private readonly ILogger _log = Log.ForContext<Vendor>();
-
     private static readonly VendorItemComparer VendorItemComparer = new VendorItemComparer();
 
     public readonly Dictionary<ObjectGuid, WorldObject> DefaultItemsForSale = new Dictionary<ObjectGuid, WorldObject>();

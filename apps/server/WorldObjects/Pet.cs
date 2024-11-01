@@ -10,7 +10,6 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Physics.Animation;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
@@ -22,8 +21,6 @@ public class Pet : Creature
     public Player P_PetOwner;
 
     public PetDevice P_PetDevice;
-
-    private readonly ILogger _log = Log.ForContext<Pet>();
 
     public uint? PetDevice
     {

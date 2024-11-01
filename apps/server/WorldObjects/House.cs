@@ -13,14 +13,11 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public class House : WorldObject
 {
-    private readonly ILogger _log = Log.ForContext<House>();
-
     // TODO now that the new biota model uses a dictionary for this, see if we can remove this duplicate dictionary
     public Dictionary<ObjectGuid, bool> Guests;
 

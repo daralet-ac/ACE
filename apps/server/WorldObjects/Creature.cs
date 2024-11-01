@@ -11,14 +11,11 @@ using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects.Entity;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public partial class Creature : Container
 {
-    private static readonly ILogger _log = Log.ForContext(typeof(Creature));
-
     public bool IsHumanoid
     {
         get => (this is Player || AiAllowedCombatStyle != CombatStyle.Undef);

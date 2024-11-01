@@ -6,14 +6,11 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Network.GameEvent.Events;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public sealed class HousePortal : Portal
 {
-    private readonly ILogger _log = Log.ForContext<HousePortal>();
-
     public House House => ParentLink as House;
 
     /// <summary>

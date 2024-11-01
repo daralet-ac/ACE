@@ -4,14 +4,11 @@ using ACE.Entity.Enum;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Network.GameMessages.Messages;
-using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 public class CombatFocusAlterationGem : WorldObject
 {
-    private readonly ILogger _log = Log.ForContext<CombatFocus>();
-
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
