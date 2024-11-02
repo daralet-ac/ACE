@@ -1094,16 +1094,13 @@ partial class Creature
                 {
                     var wo = WorldObjectFactory.CreateNewWorldObject(item);
 
-                    if (wo != null)
+                    if (corpse != null)
                     {
-                        if (corpse != null)
-                        {
-                            corpse.TryAddToInventory(wo);
-                        }
-                        else
-                        {
-                            droppedItems.Add(wo);
-                        }
+                        corpse.TryAddToInventory(wo);
+                    }
+                    else
+                    {
+                        droppedItems.Add(wo);
                     }
                 }
             }

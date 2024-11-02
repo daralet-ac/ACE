@@ -749,6 +749,9 @@ public class AppraiseInfo
             _extraPropertiesText = "";
         }
 
+        // Trophy Quality Level
+        SetTrophyQualityLevelText(wo);
+
         // Protection Levels ('Use' text)
         SetProtectionLevelsUseText(wo);
 
@@ -891,6 +894,17 @@ public class AppraiseInfo
 
                 PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
             }
+        }
+    }
+
+    private void SetTrophyQualityLevelText(WorldObject wo)
+    {
+        if (PropertiesInt.TryGetValue(PropertyInt.TrophyQuality, out var trophyQuality) && trophyQuality > 0)
+        {
+            var qualityName = LootGenerationFactory.GetTrophyQualityName(trophyQuality);
+
+            _extraPropertiesText += $"\nQuality Level: {trophyQuality}";
+            PropertiesString[PropertyString.Use] = _extraPropertiesText;
         }
     }
 

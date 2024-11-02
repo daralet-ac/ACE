@@ -20,6 +20,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Enum;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
@@ -1403,6 +1404,16 @@ public static class DeveloperCommands
             if (stackSizeForThisWeenieId > 1)
             {
                 loot.SetStackSize(stackSizeForThisWeenieId);
+            }
+
+
+            if (loot.TrophyQuality != null)
+            {
+                var trophyQuality = WorkmanshipChance.Roll(loot.Tier ?? 1);
+                loot.SetProperty(PropertyInt.TrophyQuality, trophyQuality);
+
+                var name = LootGenerationFactory.GetTrophyQualityName(trophyQuality);
+                loot.SetProperty(PropertyString.Name, name);
             }
 
             session.Player.TryCreateInInventoryWithNetworking(loot);
@@ -3392,6 +3403,7 @@ public static class DeveloperCommands
             && !Aetheria.IsAetheria(wo.WeenieClassId)
             && !SigilTrinket.IsSigilTrinket(wo.WeenieClassId)
             && !(wo is PetDevice)
+            && wo.TrophyQuality == null
         )
         {
             session.Network.EnqueueSend(

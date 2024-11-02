@@ -8954,4 +8954,20 @@ partial class WorldObject
             }
         }
     }
+
+    public int? TrophyQuality
+    {
+        get => GetProperty(PropertyInt.TrophyQuality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.TrophyQuality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.TrophyQuality, value.Value);
+            }
+        }
+    }
 }
