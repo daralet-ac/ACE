@@ -4,9 +4,7 @@ using ACE.Database;
 using ACE.Database.Models.World;
 using ACE.Entity;
 using ACE.Entity.Enum;
-using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
-using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using Serilog;
@@ -509,11 +507,7 @@ public static class WorldObjectFactory
 
         if (wo.TrophyQuality != null)
         {
-            var trophyQuality = WorkmanshipChance.Roll(wo.Tier ?? 1);
-            wo.SetProperty(PropertyInt.TrophyQuality, trophyQuality);
-
-            var name = LootGenerationFactory.GetTrophyQualityName(trophyQuality);
-            wo.SetProperty(PropertyString.Name, name);
+            LootGenerationFactory.MutateTrophy(wo);
         }
 
         return wo;

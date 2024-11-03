@@ -124,7 +124,7 @@ partial class Player
         return true;
     }
 
-    public bool TryConsumeFromInventoryWithNetworking(WorldObject item, int amount = int.MaxValue)
+    public bool TryConsumeFromInventoryWithNetworking(WorldObject item, int amount = int.MaxValue, uint? guid = null)
     {
         if (amount >= (item.StackSize ?? 1))
         {
@@ -172,7 +172,7 @@ partial class Player
         return true;
     }
 
-    public bool TryConsumeFromInventoryWithNetworking(uint wcid, int amount = int.MaxValue)
+    public bool TryConsumeFromInventoryWithNetworking(uint wcid, int amount = int.MaxValue, uint? guid = null)
     {
         var items = GetInventoryItemsOfWCID(wcid);
         //items = items.OrderBy(o => o.Value).ToList();
@@ -180,8 +180,13 @@ partial class Player
         var leftReq = amount;
         foreach (var item in items)
         {
+            if (guid != null && item.Guid.Full != guid)
+            {
+                continue;
+            }
+
             var removeNum = Math.Min(leftReq, item.StackSize ?? 1);
-            if (!TryConsumeFromInventoryWithNetworking(item, removeNum))
+            if (!TryConsumeFromInventoryWithNetworking(item, removeNum, guid))
             {
                 return false;
             }
@@ -5148,6 +5153,11 @@ partial class Player
             }
             else if (emoteResult.Category == EmoteCategory.Refuse)
             {
+                if (target is Creature creatureTarget)
+                {
+                    creatureTarget.RefusalItem = (item, item.Guid.Full);
+                }
+
                 if (!target.ExamineItemsSilently.HasValue || target.ExamineItemsSilently == false)
                 {
                     Session.Network.EnqueueSend(
