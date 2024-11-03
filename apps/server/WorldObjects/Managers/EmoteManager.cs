@@ -594,10 +594,14 @@ public class EmoteManager
 
                 if (player != null && emote.WeenieClassId != null)
                 {
+                    var trophyQualityIteration = 0u;
                     if (WorldObject is Creature { RefusalItem.Item1.Value: not null } creatureObject)
                     {
                         stackSize = creatureObject.RefusalItem.Item1.Value ?? 1;
+                        trophyQualityIteration = (uint)((creatureObject.RefusalItem.Item1.TrophyQuality - 1) ?? 0);
                     }
+
+                    var weenieClassId = emote.WeenieClassId + trophyQualityIteration;
 
                     var motionChain = new ActionChain();
 
@@ -611,7 +615,7 @@ public class EmoteManager
                         () =>
                             player.GiveFromEmote(
                                 WorldObject,
-                                emote.WeenieClassId ?? 0,
+                                weenieClassId ?? 0,
                                 stackSize > 0 ? stackSize : 1,
                                 emote.Palette ?? 0,
                                 emote.Shade ?? 0
