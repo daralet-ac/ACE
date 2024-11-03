@@ -63,6 +63,11 @@ public partial class Creature : Container
     public float attacksReceivedPerSecond;
 
     /// <summary>
+    /// A stored reference of a "Refused" item, to allow the TakeItem emote to take the specific guid shown to NPC
+    /// </summary>
+    public (WorldObject, uint?) RefusalItem;
+
+    /// <summary>
     /// Currently used to handle some edge cases for faction mobs
     /// DamageHistory.HasDamager() has the following issues:
     /// - if a player attacks a same-factioned mob but is evaded, the mob would quickly de-aggro

@@ -594,9 +594,14 @@ public class EmoteManager
 
                 if (player != null && emote.WeenieClassId != null)
                 {
+                    if (WorldObject is Creature { RefusalItem.Item1.Value: not null } creatureObject)
+                    {
+                        stackSize = creatureObject.RefusalItem.Item1.Value ?? 1;
+                    }
+
                     var motionChain = new ActionChain();
 
-                    if (!WorldObject.DontTurnOrMoveWhenGiving && creature != null && targetCreature != null)
+                    if (!WorldObject.DontTurnOrMoveWhenGiving && creature != null)
                     {
                         delay = creature.Rotate(targetCreature);
                         motionChain.AddDelaySeconds(delay);
@@ -1239,10 +1244,18 @@ public class EmoteManager
 
                 if (player != null)
                 {
+                    var emoteMessage = emote.TestString;
+
+                    if (WorldObject is Creature { RefusalItem.Item1: not null } creatureObject)
+                    {
+                        emoteMessage = emoteMessage.Replace("(TrophyName)", creatureObject.RefusalItem.Item1.Name);
+                        emoteMessage = emoteMessage.Replace("(TrophyValue)", creatureObject.RefusalItem.Item1.Value.ToString());
+                    }
+
                     if (
                         !player.ConfirmationManager.EnqueueSend(
                             new Confirmation_YesNo(WorldObject.Guid, player.Guid, emote.Message),
-                            Replace(emote.TestString, WorldObject, targetObject, emoteSet.Quest)
+                            Replace(emoteMessage, WorldObject, targetObject, emoteSet.Quest)
                         )
                     )
                     {
@@ -2057,21 +2070,19 @@ public class EmoteManager
                         break;
                     }
 
-                    if (
-                        (
-                            player.GetNumInventoryItemsOfWCID(weenieItemToTake) > 0
-                            && player.TryConsumeFromInventoryWithNetworking(
-                                weenieItemToTake,
-                                amountToTake == -1 ? int.MaxValue : amountToTake
-                            )
-                        )
-                        || (
-                            player.GetNumEquippedObjectsOfWCID(weenieItemToTake) > 0
-                            && player.TryConsumeFromEquippedObjectsWithNetworking(
-                                weenieItemToTake,
-                                amountToTake == -1 ? int.MaxValue : amountToTake
-                            )
-                        )
+                    // If a guid was stored during a Refuse emote, make sure that specific item is taken
+                    uint? refusalItemGuidId = null;
+
+                    if (creature?.RefusalItem.Item2 != null)
+                    {
+                        refusalItemGuidId = creature.RefusalItem.Item2;
+
+                        creature.RefusalItem.Item1 = null;
+                        creature.RefusalItem.Item2 = null;
+                    }
+
+                    if ((player.GetNumInventoryItemsOfWCID(weenieItemToTake) > 0 && player.TryConsumeFromInventoryWithNetworking(weenieItemToTake, amountToTake == -1 ? int.MaxValue : amountToTake, refusalItemGuidId))
+                        || (player.GetNumEquippedObjectsOfWCID(weenieItemToTake) > 0 && player.TryConsumeFromEquippedObjectsWithNetworking(weenieItemToTake, amountToTake == -1 ? int.MaxValue : amountToTake))
                     )
                     {
                         var itemTaken = DatabaseManager.World.GetCachedWeenie(weenieItemToTake);

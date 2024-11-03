@@ -6,32 +6,24 @@ namespace ACE.Server.Factories.Tables;
 
 public static class WorkmanshipChance
 {
-    private static ChanceTable<int> T1_Chances = new ChanceTable<int>() { (1, 0.95f), (2, 0.05f), };
+    private static ChanceTable<int> T1_Chances = [(1, 1.0f)];
 
-    private static ChanceTable<int> T2_Chances = new ChanceTable<int>() { (1, 0.9f), (2, 0.1f), };
+    private static ChanceTable<int> T2_Chances = [(1, 0.7f), (2, 0.29f), (3, 0.009f), (4, 0.001f)];
 
-    private static ChanceTable<int> T3_Chances = new ChanceTable<int>() { (1, 0.45f), (2, 0.5f), (3, 0.05f), };
+    private static ChanceTable<int> T3_Chances = [(1, 0.6f), (2, 0.3f), (3, 0.09f), (4, 0.009f), (5, 0.001f)];
 
-    private static ChanceTable<int> T4_Chances = new ChanceTable<int>() { (2, 0.45f), (3, 0.5f), (4, 0.05f), };
+    private static ChanceTable<int> T4_Chances = [(2, 0.6f), (3, 0.3f), (4, 0.09f), (5, 0.009f), (6, 0.001f)];
 
-    private static ChanceTable<int> T5_Chances = new ChanceTable<int>() { (3, 0.45f), (4, 0.5f), (5, 0.05f), };
+    private static ChanceTable<int> T5_Chances = [(3, 0.6f), (4, 0.3f), (5, 0.09f), (6, 0.009f), (7, 0.001f)];
 
-    private static ChanceTable<int> T6_Chances = new ChanceTable<int>() { (4, 0.45f), (5, 0.5f), (6, 0.05f), };
+    private static ChanceTable<int> T6_Chances = [(4, 0.6f), (5, 0.3f), (6, 0.09f), (7, 0.009f), (8, 0.001f)];
 
-    private static ChanceTable<int> T7_Chances = new ChanceTable<int>() { (5, 0.45f), (6, 0.5f), (7, 0.05f), };
+    private static ChanceTable<int> T7_Chances = [(5, 0.6f), (6, 0.3f), (7, 0.09f), (8, 0.009f), (9, 0.001f)];
 
-    private static ChanceTable<int> T8_Chances = new ChanceTable<int>()
-    {
-        (5, 0.3f),
-        (6, 0.5f),
-        (7, 0.15f),
-        (8, 0.04f),
-        (9, 0.008f),
-        (10, 0.002f),
-    };
+    private static ChanceTable<int> T8_Chances = [(6, 0.6f), (7, 0.3f), (8, 0.09f), (9, 0.009f), (10, 0.001f)];
 
-    private static readonly List<ChanceTable<int>> workmanshipChances = new List<ChanceTable<int>>()
-    {
+    private static readonly List<ChanceTable<int>> workmanshipChances =
+    [
         T1_Chances,
         T2_Chances,
         T3_Chances,
@@ -39,8 +31,8 @@ public static class WorkmanshipChance
         T5_Chances,
         T6_Chances,
         T7_Chances,
-        T8_Chances,
-    };
+        T8_Chances
+    ];
 
     /// <summary>
     /// Rolls for a 1-10 workmanship for an item
@@ -55,14 +47,15 @@ public static class WorkmanshipChance
 
         var workmanshipChance = workmanshipChances[tier - 1];
 
-        if (qualityMod >= 0)
+        var baseWorkmanship = workmanshipChance.Roll(qualityMod, true);
+
+        var cantripBonus = 0;
+        if (cantripLevel > 0)
         {
-            return workmanshipChance.Roll(qualityMod, true) + Math.Max(0, cantripLevel - 2);
+            cantripBonus = Math.Clamp(cantripLevel - 2, 1, 10);
         }
-        else
-        {
-            return workmanshipChance.Roll(qualityMod, false) + Math.Max(0, cantripLevel - 2);
-        }
+
+        return baseWorkmanship + cantripBonus;
     }
 
     /// <summary>

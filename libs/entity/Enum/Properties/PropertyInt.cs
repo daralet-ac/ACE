@@ -823,6 +823,7 @@ public enum PropertyInt : ushort
     NearbyPlayerScalingAddWcid = 464,
     RemainingConfirmations = 465,
     SigilTrinketType = 466,
+    TrophyQuality = 467,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,

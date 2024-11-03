@@ -902,6 +902,11 @@ public static partial class LootGenerationFactory
             // mundane add-on
             MutateSigilTrinket(item, profile);
         }
+        else if (item.TrophyQuality != null)
+        {
+            // mutate trophy quality
+            MutateTrophy(item);
+        }
         // other mundane items (mana stones, food/drink, healing kits, lockpicks, and spell components/peas) don't get mutated
         // it should be safe to return false here, for the 1 caller that currently uses this method
         // since it's not this function's responsibility to determine if an item is a lootgen item,
@@ -2943,5 +2948,41 @@ public static partial class LootGenerationFactory
                       break;
               }
           } */
+    }
+
+    public static string GetTrophyQualityName(int trophyQuality)
+    {
+        return trophyQuality switch
+        {
+            2 => "Inferior",
+            3 => "Poor",
+            4 => "Crude",
+            5 => "Ordinary",
+            6 => "Good",
+            7 => "Great",
+            8 => "Excellent",
+            9 => "Superb",
+            10 => "Peerless",
+            _ => "Damaged"
+        };
+    }
+
+    public static void MutateTrophy(WorldObject wo)
+    {
+        if (wo.TrophyQuality == null)
+        {
+            return;
+        }
+
+        var trophyQuality = WorkmanshipChance.Roll(wo.Tier ?? 1);
+        wo.SetProperty(PropertyInt.TrophyQuality, trophyQuality);
+
+        var name = GetTrophyQualityName(trophyQuality);
+        wo.SetProperty(PropertyString.Name, name + " " + wo.Name);
+
+        var multiplier = trophyQuality * trophyQuality;
+        var value = (wo.Value ?? 0) * multiplier;
+        wo.SetProperty(PropertyInt.Value, value);
+        wo.SetProperty(PropertyInt.StackUnitValue, value);
     }
 }

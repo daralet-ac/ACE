@@ -1405,6 +1405,12 @@ public static class DeveloperCommands
                 loot.SetStackSize(stackSizeForThisWeenieId);
             }
 
+
+            if (loot.TrophyQuality != null)
+            {
+                LootGenerationFactory.MutateTrophy(loot);
+            }
+
             session.Player.TryCreateInInventoryWithNetworking(loot);
         }
     }
@@ -3392,6 +3398,7 @@ public static class DeveloperCommands
             && !Aetheria.IsAetheria(wo.WeenieClassId)
             && !SigilTrinket.IsSigilTrinket(wo.WeenieClassId)
             && !(wo is PetDevice)
+            && wo.TrophyQuality == null
         )
         {
             session.Network.EnqueueSend(

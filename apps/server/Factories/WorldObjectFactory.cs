@@ -505,6 +505,11 @@ public static class WorldObjectFactory
             wo.Shade = item.Shade;
         }
 
+        if (wo.TrophyQuality != null)
+        {
+            LootGenerationFactory.MutateTrophy(wo);
+        }
+
         return wo;
     }
 }
