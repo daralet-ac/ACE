@@ -6,20 +6,20 @@ using static ACE.Server.Commands.DeveloperCommands.DeveloperCommandUtilities;
 
 namespace ACE.Server.Commands.DeveloperCommands;
 
-public class KnownObjects
+public class RetaliateTargets
 {
     /// <summary>
-    /// Shows the list of objects currently known to an object
+    /// Shows the list of retaliate targets for a monster
     /// </summary>
     [CommandHandler(
-        "knownobjs",
+        "retaliatetargets",
         AccessLevel.Developer,
         CommandHandlerFlag.RequiresWorld,
         0,
-        "Shows the list of objects currently known to an object",
+        "Shows the list of retaliate targets for a monster",
         "<optional guid, or optional 'target' for last appraisal target>"
     )]
-    public static void HandleKnownObjs(Session session, params string[] parameters)
+    public static void HandleRetaliateTargets(Session session, params string[] parameters)
     {
         var target = GetObjectMaintTarget(session, parameters);
         if (target == null)
@@ -27,9 +27,11 @@ public class KnownObjects
             return;
         }
 
-        Console.WriteLine($"\nKnown objects to {target.Name}: {target.PhysicsObj.ObjMaint.GetKnownObjectsCount()}");
+        Console.WriteLine(
+            $"\nRetaliate targets to {target.Name}: {target.PhysicsObj.ObjMaint.GetRetaliateTargetsCount()}"
+        );
 
-        foreach (var obj in target.PhysicsObj.ObjMaint.GetKnownObjectsValues())
+        foreach (var obj in target.PhysicsObj.ObjMaint.GetRetaliateTargetsValues())
         {
             Console.WriteLine($"{obj.Name} ({obj.ID:X8})");
         }

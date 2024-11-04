@@ -6,20 +6,20 @@ using static ACE.Server.Commands.DeveloperCommands.DeveloperCommandUtilities;
 
 namespace ACE.Server.Commands.DeveloperCommands;
 
-public class KnownObjects
+public class VisiblePlayers
 {
     /// <summary>
-    /// Shows the list of objects currently known to an object
+    /// Shows the list of players visible to a player
     /// </summary>
     [CommandHandler(
-        "knownobjs",
+        "visibleplayers",
         AccessLevel.Developer,
         CommandHandlerFlag.RequiresWorld,
         0,
-        "Shows the list of objects currently known to an object",
+        "Shows the list of players visible to a player",
         "<optional guid, or optional 'target' for last appraisal target>"
     )]
-    public static void HandleKnownObjs(Session session, params string[] parameters)
+    public static void HandleVisiblePlayers(Session session, params string[] parameters)
     {
         var target = GetObjectMaintTarget(session, parameters);
         if (target == null)
@@ -27,9 +27,11 @@ public class KnownObjects
             return;
         }
 
-        Console.WriteLine($"\nKnown objects to {target.Name}: {target.PhysicsObj.ObjMaint.GetKnownObjectsCount()}");
+        Console.WriteLine(
+            $"\nVisible players to {target.Name}: {target.PhysicsObj.ObjMaint.GetVisibleObjectsValuesWhere(o => o.IsPlayer).Count}"
+        );
 
-        foreach (var obj in target.PhysicsObj.ObjMaint.GetKnownObjectsValues())
+        foreach (var obj in target.PhysicsObj.ObjMaint.GetVisibleObjectsValuesWhere(o => o.IsPlayer))
         {
             Console.WriteLine($"{obj.Name} ({obj.ID:X8})");
         }
