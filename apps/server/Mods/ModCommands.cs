@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Text;
 using ACE.Entity.Enum;
-using ACE.Server.Command;
+using ACE.Server.Commands.Handlers;
 using ACE.Server.Network;
 using HarmonyLib;
 

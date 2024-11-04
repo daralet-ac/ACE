@@ -1,7 +1,7 @@
 using System;
 using ACE.Common.Extensions;
 using ACE.Entity.Enum;
-using ACE.Server.Command;
+using ACE.Server.Commands.Handlers;
 using ACE.Server.Network.GameMessages.Messages;
 using Serilog;
 
