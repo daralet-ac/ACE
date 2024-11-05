@@ -126,7 +126,7 @@ public static class ThrownWcids
         //( WeenieClassName.djaridelectric,             1.0f ),
     };
 
-    private static readonly List<ChanceTable<WeenieClassName>> atlatlTiers = new List<ChanceTable<WeenieClassName>>()
+    private static readonly List<ChanceTable<WeenieClassName>> thrownTiers = new List<ChanceTable<WeenieClassName>>()
     {
         T1_T4_Chances,
         T1_T4_Chances,
@@ -140,7 +140,7 @@ public static class ThrownWcids
 
     public static WeenieClassName Roll(int tier, out TreasureWeaponType weaponType)
     {
-        var roll = atlatlTiers[tier - 1].Roll();
+        var roll = thrownTiers[tier - 1].Roll();
 
         switch (roll) // Modify weapon type so we get correct mutations.
         {
@@ -194,7 +194,7 @@ public static class ThrownWcids
 
     static ThrownWcids()
     {
-        foreach (var atlatlTier in atlatlTiers)
+        foreach (var atlatlTier in thrownTiers)
         {
             foreach (var entry in atlatlTier)
             {

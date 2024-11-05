@@ -68,31 +68,6 @@ public partial class LootGenerationFactory
             wo.ProcSpellRate = procRate;
             wo.ProcSpell = (uint)itemProc;
             wo.ProcSpellSelfTargeted = spell.IsSelfTargeted;
-
-            // Weapons with proc spells deal less physical damage
-            if (
-                wo.W_WeaponType == WeaponType.Sword
-                || wo.W_WeaponType == WeaponType.Axe
-                || wo.W_WeaponType == WeaponType.Mace
-                || wo.W_WeaponType == WeaponType.Spear
-                || wo.W_WeaponType == WeaponType.Staff
-                || wo.W_WeaponType == WeaponType.Dagger
-                || wo.W_WeaponType == WeaponType.Unarmed
-            )
-            {
-                wo.Damage = (int)(wo.Damage.Value * 0.75f);
-            }
-            if (
-                wo.W_WeaponType == WeaponType.Bow
-                || wo.W_WeaponType == WeaponType.Crossbow
-                || wo.W_WeaponType == WeaponType.Thrown
-            )
-            {
-                var difference = wo.DamageMod - 1.0;
-                var newMod = difference * 0.75;
-
-                wo.DamageMod = 1.0 + newMod;
-            }
         }
         return true;
     }

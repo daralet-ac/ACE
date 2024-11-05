@@ -2188,7 +2188,7 @@ public static partial class LootGenerationFactory
                         break;
                     case TreasureWeaponType.Atlatl:
                         wcid = AtlatlWcids.Roll(treasureDeath.Tier, out weaponType);
-                        break; // all thrown weapons
+                        break;
                     case TreasureWeaponType.Crossbow:
                         wcid = CrossbowWcids.Roll(treasureDeath.Tier, out weaponType);
                         break;

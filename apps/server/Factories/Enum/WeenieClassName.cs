@@ -41887,7 +41887,7 @@ public enum WeenieClassName
     ace87831_surface = 87831,
     ace87832_rootsofskuldgenerator = 87832,
 
-    //TIMELINE
+    // Daralet
     orblife = 1050100,
     orbslash = 1050101,
     orbpierce = 1050102,
@@ -41899,6 +41899,8 @@ public enum WeenieClassName
     scepterlife = 1050108,
     stafflife = 1050109,
     batonlife = 1050110,
+    shieldkitesmall = 1050111,
+    shieldroundsmall = 1050112,
     manaFieldLow = 1050200,
     manaFieldLow_CritChance1 = 1050201,
     manaFieldLow_CritChance2 = 1050202,

@@ -3261,7 +3261,9 @@ public static class LootTables
         93, // Round Shield
         95, // Round Tower Shield
         92, // Large Kite Shield
-        94 // Large Round Shield
+        94, // Large Round Shield
+        1050111, // Small Kite Shield
+        1050112, // Small Round Shield
     };
 
     public static readonly int[] MiscClothing =
@@ -3353,7 +3355,9 @@ public static class LootTables
         94, // Large Round Shield
         95, // Round Tower Shield
         21158, // Covenant Shield
-        37291 // Olthoi Shield
+        37291, // Olthoi Shield
+        1050111, // Small Kite Shield
+        1050112, // Small Round Shield
     };
 
     public static readonly int[] LeatherArmor =

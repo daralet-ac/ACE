@@ -2353,13 +2353,15 @@ partial class Player
             var mainHandWeapon = GetEquippedMainHand();
             if (mainHandWeapon != null && mainHandWeapon.WeaponSkill == Skill.ThrownWeapon)
             {
-                // prevent non-buckler shields from ever being equipped with thrown weapons
-                if (item.WeenieClassId != (uint)Factories.Enum.WeenieClassName.buckler)
+                // prevent non-small shields from ever being equipped with thrown weapons
+                if (item.WeenieClassId is not (uint)Factories.Enum.WeenieClassName.shieldkitesmall
+                    and not (uint)Factories.Enum.WeenieClassName.shieldroundsmall
+                    and not (uint)Factories.Enum.WeenieClassName.buckler)
                 {
                     Session.Network.EnqueueSend(
                         new GameEventCommunicationTransientString(
                             Session,
-                            $"Non-buckler shields cannot be equipped with thrown weapons."
+                            $"This shield is too large to equipped with thrown weapons."
                         )
                     );
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
@@ -2372,7 +2374,7 @@ partial class Player
                     Session.Network.EnqueueSend(
                         new GameEventCommunicationTransientString(
                             Session,
-                            $"Your Thrown Weapons skill must be specialized to equip a buckler with thrown weapons."
+                            $"Your Thrown Weapons skill must be specialized to equip a small shield with thrown weapons."
                         )
                     );
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
@@ -2388,12 +2390,14 @@ partial class Player
             if (shield != null)
             {
                 // prevent thrown weapons from ever being equipped with non-buckler shields
-                if (shield.WeenieClassId != (uint)Factories.Enum.WeenieClassName.buckler)
+                if (shield.WeenieClassId is not (uint)Factories.Enum.WeenieClassName.buckler
+                    and not (uint)Factories.Enum.WeenieClassName.shieldkitesmall
+                    and not (uint)Factories.Enum.WeenieClassName.shieldroundsmall)
                 {
                     Session.Network.EnqueueSend(
                         new GameEventCommunicationTransientString(
                             Session,
-                            $"Thrown weapons cannot be equipped with non-buckler shields."
+                            $"Your equipped shield is too large to equipped with thrown weapons."
                         )
                     );
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
@@ -2406,7 +2410,7 @@ partial class Player
                     Session.Network.EnqueueSend(
                         new GameEventCommunicationTransientString(
                             Session,
-                            $"Your Thrown Weapons skill must be specialized to equip thrown weapons with a buckler."
+                            $"Your Thrown Weapons skill must be specialized to equip a thrown weapon with a small shield."
                         )
                     );
                     Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));

@@ -28,17 +28,17 @@ public static class WeaponTypeChance
         // and not deeper in WeaponWcids.cs
     };
 
-    private static ChanceTable<TreasureWeaponType> MeleeChances = new ChanceTable<TreasureWeaponType>()
+    private static ChanceTable<TreasureWeaponType> MeleeChances = new ChanceTable<TreasureWeaponType>(ChanceTableType.Weight)
     {
-        (TreasureWeaponType.Sword, 0.125f),
-        (TreasureWeaponType.Mace, 0.125f),
-        (TreasureWeaponType.Axe, 0.125f),
-        (TreasureWeaponType.Spear, 0.125f),
-        (TreasureWeaponType.Unarmed, 0.125f),
-        (TreasureWeaponType.Staff, 0.125f),
-        (TreasureWeaponType.Dagger, 0.125f),
-        (TreasureWeaponType.TwoHandedWeapon, 0.125f), // see TreasureWeaponType for an explanation of why this is here,
-        // and not deeper in WeaponWcids.cs
+        (TreasureWeaponType.Sword, 1.0f),
+        (TreasureWeaponType.Mace, 1.0f),
+        (TreasureWeaponType.Axe, 1.0f),
+        (TreasureWeaponType.Spear, 1.0f),
+        (TreasureWeaponType.Unarmed, 1.0f),
+        (TreasureWeaponType.Staff, 1.0f),
+        (TreasureWeaponType.Dagger, 1.0f),
+        (TreasureWeaponType.TwoHandedWeapon, 1.0f),
+        (TreasureWeaponType.Dagger, 1.0f)
     };
 
     private static ChanceTable<TreasureWeaponType> MissileChances = new ChanceTable<TreasureWeaponType>()
@@ -54,6 +54,7 @@ public static class WeaponTypeChance
         (TreasureWeaponType.Mace, 1.0f),
         (TreasureWeaponType.Axe, 1.0f),
         (TreasureWeaponType.Spear, 1.0f),
+        (TreasureWeaponType.Thrown, 1.0f),
     };
 
     private static ChanceTable<TreasureWeaponType> RogueChances = new ChanceTable<TreasureWeaponType>(ChanceTableType.Weight)

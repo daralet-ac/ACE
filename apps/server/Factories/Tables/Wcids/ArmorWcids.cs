@@ -140,8 +140,10 @@ public static class ArmorWcids
     )
     {
         // shields
-        (WeenieClassName.shieldkite, 0.25f),
-        (WeenieClassName.shieldround, 0.25f),
+        (WeenieClassName.shieldkitesmall, 0.2f),
+        (WeenieClassName.shieldroundsmall, 0.2f),
+        (WeenieClassName.shieldkite, 0.2f),
+        (WeenieClassName.shieldround, 0.2f),
         // headgear
         (WeenieClassName.capmetal, 0.33f),
         (WeenieClassName.mailcoif, 0.33f),
@@ -169,8 +171,10 @@ public static class ArmorWcids
     )
     {
         //shields
-        (WeenieClassName.shieldkite, 0.25f),
-        (WeenieClassName.shieldround, 0.25f),
+        (WeenieClassName.shieldkitesmall, 0.2f),
+        (WeenieClassName.shieldroundsmall, 0.2f),
+        (WeenieClassName.shieldkite, 0.2f),
+        (WeenieClassName.shieldround, 0.2f),
         // headgear
         (WeenieClassName.baigha, 0.33f),
         (WeenieClassName.basinetscalemail, 0.33f),

@@ -14,58 +14,26 @@ public static class WeaponWcids
     {
         switch (treasureRoll.WeaponType)
         {
-            /*case TreasureWeaponType.Sword:
-                return RollSwordWcid(treasureDeath);
-
-            case TreasureWeaponType.Mace:
-                return RollMaceWcid(treasureDeath);
-
-            case TreasureWeaponType.Axe:
-                return RollAxeWcid(treasureDeath);
-
-            case TreasureWeaponType.Spear:
-                return RollSpearWcid(treasureDeath);
-
-            case TreasureWeaponType.Unarmed:
-                return RollUnarmedWcid(treasureDeath);
-
-            case TreasureWeaponType.Staff:
-                return RollStaffWcid(treasureDeath);
-
-            case TreasureWeaponType.Dagger:
-                return RollDaggerWcid(treasureDeath);*/
-
-            case TreasureWeaponType.Axe:
-            case TreasureWeaponType.Dagger:
-            case TreasureWeaponType.Mace:
-            case TreasureWeaponType.Spear:
-            case TreasureWeaponType.Staff:
             case TreasureWeaponType.Sword:
+                return RollSwordWcid(treasureDeath, treasureRoll);
+
+            case TreasureWeaponType.Mace:
+                return RollMaceWcid(treasureDeath, treasureRoll);
+
+            case TreasureWeaponType.Axe:
+                return RollAxeWcid(treasureDeath, treasureRoll);
+
+            case TreasureWeaponType.Spear:
+                return RollSpearWcid(treasureDeath, treasureRoll);
+
             case TreasureWeaponType.Unarmed:
-                switch (treasureRoll.WeaponType)
-                {
-                    case TreasureWeaponType.Sword:
-                        return RollSwordWcid(treasureDeath, treasureRoll);
+                return RollUnarmedWcid(treasureDeath, treasureRoll);
 
-                    case TreasureWeaponType.Mace:
-                        return RollMaceWcid(treasureDeath, treasureRoll);
+            case TreasureWeaponType.Staff:
+                return RollStaffWcid(treasureDeath, treasureRoll);
 
-                    case TreasureWeaponType.Axe:
-                        return RollAxeWcid(treasureDeath, treasureRoll);
-
-                    case TreasureWeaponType.Spear:
-                        return RollSpearWcid(treasureDeath, treasureRoll);
-
-                    case TreasureWeaponType.Unarmed:
-                        return RollUnarmedWcid(treasureDeath, treasureRoll);
-
-                    case TreasureWeaponType.Staff:
-                        return RollStaffWcid(treasureDeath, treasureRoll);
-
-                    case TreasureWeaponType.Dagger:
-                        return RollDaggerWcid(treasureDeath, treasureRoll);
-                }
-                return RollMeleeWeapon(ref treasureRoll.WeaponType);
+            case TreasureWeaponType.Dagger:
+                return RollDaggerWcid(treasureDeath, treasureRoll);
 
             case TreasureWeaponType.Bow:
                 return RollBowWcid(treasureDeath, treasureRoll);
@@ -73,9 +41,11 @@ public static class WeaponWcids
             case TreasureWeaponType.Crossbow:
                 return RollCrossbowWcid(treasureDeath, treasureRoll);
 
-            case TreasureWeaponType.Thrown:
             case TreasureWeaponType.Atlatl:
                 return RollAtlatlWcid(treasureDeath, treasureRoll);
+
+            case TreasureWeaponType.Thrown:
+                return RollThrownWcid(treasureDeath, treasureRoll);
 
             case TreasureWeaponType.Caster:
                 return RollCaster(treasureDeath);
@@ -190,7 +160,12 @@ public static class WeaponWcids
 
     public static WeenieClassName RollAtlatlWcid(TreasureDeath treasureDeath, TreasureRoll treasureRoll)
     {
-        return AtlatlWcids.Roll(treasureDeath.Tier, out treasureRoll.WeaponType); // all thrown weapons
+        return AtlatlWcids.Roll(treasureDeath.Tier, out treasureRoll.WeaponType);
+    }
+
+    public static WeenieClassName RollThrownWcid(TreasureDeath treasureDeath, TreasureRoll treasureRoll)
+    {
+        return ThrownWcids.Roll(treasureDeath.Tier, out treasureRoll.WeaponType); // all thrown weapons
     }
 
     public static WeenieClassName RollCaster(TreasureDeath treasureDeath)
