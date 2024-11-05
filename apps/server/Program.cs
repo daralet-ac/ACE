@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using ACE.Common;
 using ACE.Database;
 using ACE.DatLoader;
-using ACE.Server.Command;
+using ACE.Server.Commands.Handlers;
 using ACE.Server.Discord;
 using ACE.Server.Managers;
 using ACE.Server.Mods;
