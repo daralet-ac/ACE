@@ -1,14 +1,14 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Entity.Enum;
-using ACE.Server.Commands;
+using ACE.Server.Commands.Handlers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameMessages.Messages;
 
-namespace ACE.Server.Command.Handlers;
+namespace ACE.Server.Commands.PlayerCommands;
 
-public static class HelpCommands
+public class AceHelp
 {
     // acehelp (command)
     [CommandHandler("acehelp", AccessLevel.Player, CommandHandlerFlag.None, 0, "Displays help.", "(command)")]

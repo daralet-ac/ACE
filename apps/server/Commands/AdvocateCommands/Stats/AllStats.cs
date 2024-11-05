@@ -1,6 +1,7 @@
 ﻿using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Network;
+using ACE.Server.Commands.DeveloperCommands.DatabaseCommands;
 
 namespace ACE.Server.Commands.AdvocateCommands.Stats;
 
@@ -26,6 +27,6 @@ public class AllStats
 
         GcStatus.HandleGCStatus(session, parameters);
 
-        DeveloperDatabaseCommands.HandleDatabaseQueueInfo(session, parameters);
+        DatabaseQueueInfo.HandleDatabaseQueueInfo(session, parameters);
     }
 }
