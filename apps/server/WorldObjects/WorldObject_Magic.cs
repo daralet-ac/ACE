@@ -691,7 +691,7 @@ partial class WorldObject
             return;
         }
 
-        if (spell.Id == 5206) // Surge of Protection
+        if (spell.IsSelfTargeted || spell.Id == 5206) // Surge of Protection
         {
             target = caster;
         }
