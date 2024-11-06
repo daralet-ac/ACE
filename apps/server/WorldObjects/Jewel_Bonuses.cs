@@ -922,7 +922,7 @@ partial class Jewel
             // shield
             case ACE.Entity.Enum.MaterialType.Turquoise:
                 description =
-                    $"Socket this jewel in a shield of workmanship {workmanship} or greater to grant {amount}% chance to block attacks.\n\n";
+                    $"Socket this jewel in a shield of workmanship {workmanship} or greater to grant +{amount}% chance to block attacks.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteQuartz:
                 description =
