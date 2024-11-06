@@ -1119,7 +1119,7 @@ public static partial class LootGenerationFactory
             if (wo.ArmorLevel != null)
             {
                 var baseStat = wo.ArmorLevel.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = (baseStat * 1.1f) - baseStat;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = (int)Math.Round(baseStat + bonus);
@@ -1130,7 +1130,7 @@ public static partial class LootGenerationFactory
             if (wo.WardLevel != null)
             {
                 var baseStat = wo.WardLevel.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = (baseStat * 1.1f) - baseStat;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = (int)Math.Round(baseStat + bonus);
@@ -1141,7 +1141,7 @@ public static partial class LootGenerationFactory
             if (wo.ArmorModVsAcid != null)
             {
                 var baseStat = wo.ArmorModVsAcid.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = (baseStat * 1.1f) - baseStat;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
@@ -1152,7 +1152,7 @@ public static partial class LootGenerationFactory
             if (wo.ArmorModVsBludgeon != null)
             {
                 var baseStat = wo.ArmorModVsBludgeon.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = (baseStat * 1.1f) - baseStat;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
@@ -1163,7 +1163,7 @@ public static partial class LootGenerationFactory
             if (wo.ArmorModVsCold != null)
             {
                 var baseStat = wo.ArmorModVsCold.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = (baseStat * 1.1f) - baseStat;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
@@ -1174,7 +1174,7 @@ public static partial class LootGenerationFactory
             if (wo.ArmorModVsElectric != null)
             {
                 var baseStat = wo.ArmorModVsElectric.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = (baseStat * 1.1f) - baseStat;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
@@ -1185,7 +1185,7 @@ public static partial class LootGenerationFactory
             if (wo.ArmorModVsFire != null)
             {
                 var baseStat = wo.ArmorModVsFire.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = (baseStat * 1.1f) - baseStat;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
@@ -1196,7 +1196,7 @@ public static partial class LootGenerationFactory
             if (wo.ArmorModVsPierce != null)
             {
                 var baseStat = wo.ArmorModVsPierce.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = (baseStat * 1.1f) - baseStat;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
@@ -1207,7 +1207,7 @@ public static partial class LootGenerationFactory
             if (wo.ArmorModVsSlash != null)
             {
                 var baseStat = wo.ArmorModVsSlash.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = (baseStat * 1.1f) - baseStat;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
