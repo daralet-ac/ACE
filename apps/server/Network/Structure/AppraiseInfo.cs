@@ -794,7 +794,7 @@ public class AppraiseInfo
         SetGearRatingText(PropertyInt.GearElementalWard, "Prismatic Ward", $"Grants (ONE)% protection against Flame, Frost, Lightning, and Acid damage types.");
         SetGearRatingText(PropertyInt.GearPhysicalWard, "Black Bulwark", $"Grants (ONE)% protection against Piercing, Bludgeoning, and Slashing damage types.");
         SetGearRatingText(PropertyInt.GearMagicFind, "Seeker", $"Grants a (ONE)% bonus to monster loot quality.");
-        SetGearRatingText(PropertyInt.GearBlock, "Stalwart Defense", $"Grants (ONE)% chance to block attacks.");
+        SetGearRatingText(PropertyInt.GearBlock, "Stalwart Defense", $"Grants +(ONE)% chance to block attacks.");
         SetGearRatingText(PropertyInt.GearItemManaUsage, "Thrifty Scholar", $"Grants a (ONE)% reduction to mana consumed by equipped items.", 5.0f);
         SetGearRatingText(PropertyInt.GearThorns, "Swift Retribution", $"Deflect (ONE)% of an attacker's damage back at them when successfully blocked, so long as the opponent is within melee range.", 5.0f);
         SetGearRatingText(PropertyInt.GearVitalsTransfer, "Tilted Scales", $"Grants a (ONE)% bonus to your Vitals Transfer spells, but an equivalent reduction in the effectiveness of your other Restoration spells.");
