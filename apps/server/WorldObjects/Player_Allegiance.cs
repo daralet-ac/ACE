@@ -894,7 +894,11 @@ partial class Player
 
                     if (SworeAllegiance != null)
                     {
-                        timeMod = 1 + (Time.GetUnixTime() - (double)onlineVassal.SworeAllegiance) / 7892352;
+                        if (onlineVassal.SworeAllegiance != null)
+                        {
+                            timeMod = 1 + (Time.GetUnixTime() - (double)onlineVassal.SworeAllegiance) / 7892352;
+                        }
+
                         if (timeMod > 2)
                         {
                             timeMod = 2;
@@ -2256,12 +2260,12 @@ partial class Player
 
     public int GetCurrentRankLeadership()
     {
-        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var leadershipRank = GetLeadershipRank();
 
         switch (leadershipRank)
         {
-            case 3: return 300;
-            case 2: return 200;
+            case 3: return 200;
+            case 2: return 150;
             case 1: return 100;
             default: return 0;
         }
@@ -2269,12 +2273,12 @@ partial class Player
 
     public int GetNextRankLeadership()
     {
-        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var leadershipRank = GetLeadershipRank();
 
         switch (leadershipRank)
         {
-            case 2: return 300;
-            case 1: return 200;
+            case 2: return 200;
+            case 1: return 150;
             default: return 100;
         }
     }
