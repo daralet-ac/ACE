@@ -401,7 +401,7 @@ partial class Creature
     {
         var wardLevel = 0;
 
-        if (WardLevel != null && WardLevel.HasValue)
+        if (WardLevel is not null)
         {
             wardLevel = (int)WardLevel;
         }
@@ -417,7 +417,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorHealthMod != null && ArmorHealthMod.HasValue)
+        if (ArmorHealthMod is not null)
         {
             mod = ArmorHealthMod;
         }
@@ -429,11 +429,11 @@ partial class Creature
         return mod;
     }
 
-    public double? GetArmorHealthRegenMod()
+    public double GetArmorHealthRegenMod()
     {
         double? mod;
 
-        if (ArmorHealthRegenMod != null && ArmorHealthRegenMod.HasValue)
+        if (ArmorHealthRegenMod is not null)
         {
             mod = ArmorHealthRegenMod;
         }
@@ -442,24 +442,14 @@ partial class Creature
             mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorHealthRegenMod);
         }
 
-        return mod;
-    }
-
-    public uint GetModdedHealthRegenVital()
-    {
-        var healthVital = GetCreatureVital(PropertyAttribute2nd.Health);
-        var armorHealthVitalMod = GetArmorHealthRegenMod() + 1;
-        var tempHealthVital = healthVital.MaxValue * armorHealthVitalMod;
-        var moddedHealthVital = (uint)tempHealthVital;
-
-        return moddedHealthVital - healthVital.MaxValue;
+        return mod ?? 0.0f;
     }
 
     public double? GetArmorStaminaMod()
     {
         double? mod;
 
-        if (ArmorStaminaMod != null && ArmorStaminaMod.HasValue)
+        if (ArmorStaminaMod is not null)
         {
             mod = ArmorStaminaMod;
         }
@@ -471,11 +461,11 @@ partial class Creature
         return mod;
     }
 
-    public double? GetArmorStaminaRegenMod()
+    public double GetArmorStaminaRegenMod()
     {
         double? mod;
 
-        if (ArmorStaminaRegenMod != null && ArmorStaminaRegenMod.HasValue)
+        if (ArmorStaminaRegenMod is not null)
         {
             mod = ArmorStaminaRegenMod;
         }
@@ -484,24 +474,14 @@ partial class Creature
             mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorStaminaRegenMod);
         }
 
-        return mod;
-    }
-
-    public uint GetModdedStaminaRegenVital()
-    {
-        var staminaVital = GetCreatureVital(PropertyAttribute2nd.MaxStamina);
-        var armorStaminaVitalMod = GetArmorStaminaRegenMod() + 1;
-        var tempStaminaVital = staminaVital.Current * armorStaminaVitalMod;
-        var moddedStaminaVital = (uint)tempStaminaVital;
-
-        return moddedStaminaVital;
+        return mod ?? 0.0f;
     }
 
     public double? GetArmorManaMod()
     {
         double? mod;
 
-        if (ArmorManaMod != null && ArmorManaMod.HasValue)
+        if (ArmorManaMod is not null)
         {
             mod = ArmorManaMod;
         }
@@ -513,11 +493,11 @@ partial class Creature
         return mod;
     }
 
-    public double? GetArmorManaRegenMod()
+    public double GetArmorManaRegenMod()
     {
         double? mod;
 
-        if (ArmorManaRegenMod != null && ArmorManaRegenMod.HasValue)
+        if (ArmorManaRegenMod is not null)
         {
             mod = ArmorManaRegenMod;
         }
@@ -526,24 +506,14 @@ partial class Creature
             mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorManaRegenMod);
         }
 
-        return mod;
-    }
-
-    public uint GetModdedManaRegenVital()
-    {
-        var manaVital = GetCreatureVital(PropertyAttribute2nd.MaxMana);
-        var armorManaVitalMod = GetArmorManaRegenMod() + 1;
-        var tempManaVital = manaVital.Current * armorManaVitalMod;
-        var moddedManaVital = (uint)tempManaVital;
-
-        return moddedManaVital;
+        return mod ?? 0.0f;
     }
 
     public double? GetArmorAttackMod()
     {
         double? mod;
 
-        if (ArmorAttackMod != null && ArmorAttackMod.HasValue)
+        if (ArmorAttackMod is not null)
         {
             mod = ArmorAttackMod;
         }
@@ -559,7 +529,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorPhysicalDefMod != null && ArmorPhysicalDefMod.HasValue)
+        if (ArmorPhysicalDefMod is not null)
         {
             mod = ArmorPhysicalDefMod;
         }
@@ -571,47 +541,21 @@ partial class Creature
         return mod;
     }
 
-    public uint GetModdedMeleeDefSkill()
+    public uint GetModdedPhysicalDefSkill()
     {
         var meleeDefSkill = GetCreatureSkill(Skill.MeleeDefense);
-        var armorMeleeDefSkillMod = GetArmorPhysicalDefMod() + 1;
+        var armorMeleeDefSkillMod = (GetArmorPhysicalDefMod() ?? 0) + 1;
         var tempMeleeDefSkill = meleeDefSkill.Current * armorMeleeDefSkillMod;
         var moddedMeleeDefSkill = (uint)tempMeleeDefSkill;
 
         return moddedMeleeDefSkill;
     }
 
-    public double? GetArmorMissileDefMod()
-    {
-        double? mod;
-
-        if (ArmorMissileDefMod != null && ArmorMissileDefMod.HasValue)
-        {
-            mod = ArmorMissileDefMod;
-        }
-        else
-        {
-            mod = GetEquippedItemsSkillModSum(PropertyFloat.ArmorMissileDefMod);
-        }
-
-        return mod;
-    }
-
-    public uint GetModdedMissileDefSkill()
-    {
-        var missileDefSkill = GetCreatureSkill(Skill.MissileDefense);
-        var armorMissileDefSkillMod = GetArmorMissileDefMod() + 1;
-        var tempMissileDefSkill = missileDefSkill.Current * armorMissileDefSkillMod;
-        var moddedMissileDefSkill = (uint)tempMissileDefSkill;
-
-        return moddedMissileDefSkill;
-    }
-
     public double? GetArmorMagicDefMod()
     {
         double? mod;
 
-        if (ArmorMagicDefMod != null && ArmorMagicDefMod.HasValue)
+        if (ArmorMagicDefMod is not null)
         {
             mod = ArmorMagicDefMod;
         }
@@ -626,7 +570,7 @@ partial class Creature
     public uint GetModdedMagicDefSkill()
     {
         var magicDefSkill = GetCreatureSkill(Skill.MagicDefense);
-        var armorMagicDefSkillMod = GetArmorMagicDefMod() + 1;
+        var armorMagicDefSkillMod = (GetArmorMagicDefMod() ?? 0) + 1;
         var tempMagicDefSkill = magicDefSkill.Current * armorMagicDefSkillMod;
         var moddedMagicDefSkill = (uint)tempMagicDefSkill;
 
@@ -654,7 +598,7 @@ partial class Creature
     public uint GetModdedRunSkill()
     {
         var runSkill = GetCreatureSkill(Skill.Run);
-        var armorRunSkillMod = GetArmorRunMod() + 1;
+        var armorRunSkillMod = (GetArmorRunMod() ?? 0) + 1;
         var tempRunSkill = runSkill.Current * armorRunSkillMod;
         var moddedRunSkill = (uint)tempRunSkill;
 
@@ -665,7 +609,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorDualWieldMod != null && ArmorDualWieldMod.HasValue)
+        if (ArmorDualWieldMod is not null)
         {
             mod = ArmorDualWieldMod;
         }
@@ -680,7 +624,7 @@ partial class Creature
     public uint GetModdedDualWieldSkill()
     {
         var dualWieldSkill = GetCreatureSkill(Skill.DualWield);
-        var armorDualWieldSkillMod = GetArmorDualWieldMod() + 1;
+        var armorDualWieldSkillMod = (GetArmorDualWieldMod() ?? 0) + 1;
         var tempDualWieldSkill = dualWieldSkill.Current * armorDualWieldSkillMod;
         var moddedDualWieldSkill = (uint)tempDualWieldSkill;
 
@@ -691,7 +635,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorTwohandedCombatMod != null && ArmorTwohandedCombatMod.HasValue)
+        if (ArmorTwohandedCombatMod is not null)
         {
             mod = ArmorTwohandedCombatMod;
         }
@@ -706,7 +650,7 @@ partial class Creature
     public uint GetModdedTwohandedCombatSkill()
     {
         var twohandedCombatSkill = GetCreatureSkill(Skill.TwoHandedCombat);
-        var armorTwohandedCombatSkillMod = GetArmorTwohandedCombatMod() + 1;
+        var armorTwohandedCombatSkillMod = (GetArmorTwohandedCombatMod() ?? 0) + 1;
         var tempTwohandedCombatSkill = twohandedCombatSkill.Current * armorTwohandedCombatSkillMod;
         var moddedTwohandedCombatSkill = (uint)tempTwohandedCombatSkill;
 
@@ -717,7 +661,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorThieveryMod != null && ArmorThieveryMod.HasValue)
+        if (ArmorThieveryMod is not null)
         {
             mod = ArmorThieveryMod;
         }
@@ -732,7 +676,7 @@ partial class Creature
     public uint GetModdedThieverySkill()
     {
         var thieverySkill = GetCreatureSkill(Skill.Lockpick); // Thievery
-        var armorThieverySkillMod = GetArmorThieveryMod() + 1;
+        var armorThieverySkillMod = (GetArmorThieveryMod() ?? 0) + 1;
         var tempThieverySkill = thieverySkill.Current * armorThieverySkillMod;
         var moddedThieverySkill = (uint)tempThieverySkill;
 
@@ -743,7 +687,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorShieldMod != null && ArmorShieldMod.HasValue)
+        if (ArmorShieldMod is not null)
         {
             mod = ArmorShieldMod;
         }
@@ -758,7 +702,7 @@ partial class Creature
     public uint GetModdedShieldSkill()
     {
         var shieldSkill = GetCreatureSkill(Skill.Shield);
-        var armorShieldSkillMod = GetArmorShieldMod() + 1;
+        var armorShieldSkillMod = (GetArmorShieldMod() ?? 0) + 1;
         var tempShieldSkill = shieldSkill.Current * armorShieldSkillMod;
         var moddedShieldSkill = (uint)tempShieldSkill;
 
@@ -769,7 +713,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorPerceptionMod != null && ArmorPerceptionMod.HasValue)
+        if (ArmorPerceptionMod is not null)
         {
             mod = ArmorPerceptionMod;
         }
@@ -784,7 +728,7 @@ partial class Creature
     public uint GetModdedPerceptionSkill()
     {
         var assessSkill = GetCreatureSkill(Skill.AssessCreature);
-        var armorAssessSkillMod = GetArmorPerceptionMod() + 1;
+        var armorAssessSkillMod = (GetArmorPerceptionMod() ?? 0) + 1;
         var tempAssessSkill = assessSkill.Current * armorAssessSkillMod;
         var moddedAssessSkill = (uint)tempAssessSkill;
 
@@ -795,7 +739,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorDeceptionMod != null && ArmorDeceptionMod.HasValue)
+        if (ArmorDeceptionMod is not null)
         {
             mod = ArmorDeceptionMod;
         }
@@ -810,7 +754,7 @@ partial class Creature
     public uint GetModdedDeceptionSkill()
     {
         var deceptionSkill = GetCreatureSkill(Skill.Deception);
-        var armorDeceptionSkillMod = GetArmorDeceptionMod() + 1;
+        var armorDeceptionSkillMod = (GetArmorDeceptionMod() ?? 0) + 1;
         var tempDeceptionSkill = deceptionSkill.Current * armorDeceptionSkillMod;
         var moddedDeceptionSkill = (uint)tempDeceptionSkill;
 
@@ -821,7 +765,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorWarMagicMod != null && ArmorWarMagicMod.HasValue)
+        if (ArmorWarMagicMod is not null)
         {
             mod = ArmorWarMagicMod;
         }
@@ -837,7 +781,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorWarMagicMod != null && WeaponWarMagicMod.HasValue)
+        if (WeaponWarMagicMod is not null)
         {
             mod = WeaponWarMagicMod;
         }
@@ -852,7 +796,7 @@ partial class Creature
     public uint GetModdedWarMagicSkill()
     {
         var warMagicSkill = GetCreatureSkill(Skill.WarMagic);
-        var warMagicSkillMod = GetArmorWarMagicMod() + GetWeaponWarMagicMod() + 1;
+        var warMagicSkillMod = (GetArmorWarMagicMod() + GetWeaponWarMagicMod() ?? 0) + 1;
         var tempWarMagicSkill = warMagicSkill.Current * warMagicSkillMod;
         var moddedWarMagicSkill = (uint)tempWarMagicSkill;
 
@@ -863,7 +807,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorLifeMagicMod != null && ArmorLifeMagicMod.HasValue)
+        if (ArmorLifeMagicMod is not null)
         {
             mod = ArmorLifeMagicMod;
         }
@@ -879,7 +823,7 @@ partial class Creature
     {
         double? mod;
 
-        if (WeaponLifeMagicMod != null && WeaponLifeMagicMod.HasValue)
+        if (WeaponLifeMagicMod is not null)
         {
             mod = WeaponLifeMagicMod;
         }
@@ -894,7 +838,7 @@ partial class Creature
     public uint GetModdedLifeMagicSkill()
     {
         var lifeMagicSkill = GetCreatureSkill(Skill.LifeMagic);
-        var lifeMagicSkillMod = GetArmorLifeMagicMod() + GetWeaponLifeMagicMod() + 1;
+        var lifeMagicSkillMod = (GetArmorLifeMagicMod() + GetWeaponLifeMagicMod() ?? 0) + 1;
         var tempLifeMagicSkill = lifeMagicSkill.Current * lifeMagicSkillMod;
         var moddedLifeMagicSkill = (uint)tempLifeMagicSkill;
 
@@ -905,7 +849,7 @@ partial class Creature
     {
         double? mod;
 
-        if (WeaponRestorationSpellsMod != null && WeaponRestorationSpellsMod.HasValue)
+        if (WeaponRestorationSpellsMod is not null)
         {
             mod = WeaponRestorationSpellsMod;
         }
@@ -921,7 +865,7 @@ partial class Creature
     {
         double? mod;
 
-        if (ArmorResourcePenalty != null && ArmorResourcePenalty.HasValue)
+        if (ArmorResourcePenalty is not null)
         {
             mod = ArmorResourcePenalty;
         }

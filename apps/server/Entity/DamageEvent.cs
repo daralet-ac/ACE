@@ -1185,7 +1185,7 @@ public class DamageEvent
         }
 
         var playerDefenderPhysicalDefense =
-            playerDefender.GetModdedMeleeDefSkill()
+            playerDefender.GetModdedPhysicalDefSkill()
             * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker);
         var bonusAmount = Math.Min(playerDefenderPhysicalDefense, 500) / 50;
 

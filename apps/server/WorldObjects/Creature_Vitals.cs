@@ -151,31 +151,23 @@ partial class Creature
         float maxVital = vital.MaxValue;
         var diminishedMaxVital = maxVital * (1000 / (1000 + maxVital));
 
-        var vitalTypeBaseMod = vital == Health ? 10 : 5;
+        var vitalTypeBaseMod = vital == Health ? 0.1f : 0.2f;
 
         var vitalTypeArmorMod = 1.0;
         if (vital == Health)
         {
-            vitalTypeArmorMod = (double)GetArmorHealthRegenMod() + 1;
+            vitalTypeArmorMod = GetArmorHealthRegenMod() + 1;
         }
         else if (vital == Stamina)
         {
-            vitalTypeArmorMod = (double)GetArmorStaminaRegenMod() + 1;
+            vitalTypeArmorMod = GetArmorStaminaRegenMod() + 1;
         }
         else if (vital == Mana)
         {
-            vitalTypeArmorMod = (double)GetArmorManaRegenMod() + 1;
+            vitalTypeArmorMod = GetArmorManaRegenMod() + 1;
         }
 
-        if (this is Player)
-        {
-            currentTick =
-                diminishedMaxVital / vitalTypeBaseMod * stanceMod * enchantmentMod * augMod * vitalTypeArmorMod;
-        }
-        else
-        {
-            currentTick = vital.RegenRate * stanceMod * enchantmentMod * augMod;
-        }
+        currentTick = diminishedMaxVital * vitalTypeBaseMod * vitalTypeArmorMod * stanceMod * enchantmentMod * augMod;
 
         // add in partially accumulated / rounded vitals from previous tick(s)
         var totalTick = currentTick + vital.PartialRegen;
