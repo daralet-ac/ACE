@@ -2208,9 +2208,15 @@ partial class Player
 
     public int GetLeadershipRank()
     {
-        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var leadershipSkill = GetCreatureSkill(Skill.Leadership).Base;
 
-        return (int)leadershipRank;
+        return leadershipSkill switch
+        {
+            > 200 => 3,
+            > 150 => 2,
+            > 100 => 1,
+            _ => 0
+        };
     }
 
     public int GetCurrentRankFollowers()
