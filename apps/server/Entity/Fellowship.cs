@@ -5,6 +5,7 @@ using System.Linq;
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
+using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
@@ -331,9 +332,78 @@ public class Fellowship
         player.Fellowship = null;
         player.FellowedWithPatron = false;
 
+        CheckForFellowRequiredLandblock(player);
+
         CalculateXPSharing();
 
         UpdateAllMembers();
+    }
+
+    private void CheckForFellowRequiredLandblock(Player player)
+    {
+        if (player.CurrentLandblock.IsFellowshipRequired())
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "This area requires being in a fellowship. You have 1 minute to rejoin the original fellowship or else you will be teleported away.",
+                    ChatMessageType.Broadcast
+                )
+            );
+
+            var actionChain = new ActionChain();
+
+            actionChain.AddDelaySeconds(30);
+
+            actionChain.AddAction(
+                player, () =>
+                {
+                    if (player.CurrentLandblock.IsFellowshipRequired() && player.Fellowship != this)
+                    {
+                        player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                "You have 30 seconds to rejoin the fellowship.",
+                                ChatMessageType.Broadcast
+                            )
+                        );
+                    }
+                });
+
+            actionChain.AddDelaySeconds(20);
+
+            actionChain.AddAction(
+                player, () =>
+                {
+                    if (player.CurrentLandblock.IsFellowshipRequired() && player.Fellowship != this)
+                    {
+                        player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                "You have 10 seconds to rejoin the fellowship.",
+                                ChatMessageType.Broadcast
+                            )
+                        );
+                    }
+                });
+
+            actionChain.AddDelaySeconds(10);
+
+            actionChain.AddAction(
+                player, () =>
+                {
+                    if (player.CurrentLandblock.IsFellowshipRequired() && player.Fellowship != this)
+                    {
+                        player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                "Teleporting away.",
+                                ChatMessageType.Broadcast
+                            )
+                        );
+
+                        WorldManager.ThreadSafeTeleport(player, player.Sanctuary);
+                    }
+                });
+
+            actionChain.EnqueueChain();
+        }
     }
 
     private void UpdateAllMembers()
@@ -441,18 +511,6 @@ public class Fellowship
 
                     member.Fellowship = null;
                     member.FellowedWithPatron = false;
-
-                    if (member.CurrentLandblock.IsFellowshipRequired())
-                    {
-                        member.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                "This area requires a fellowship. Teleporting home.",
-                                ChatMessageType.Broadcast
-                            )
-                        );
-
-                        WorldManager.ThreadSafeTeleport(member, member.Sanctuary);
-                    }
                 }
             }
             else
@@ -561,17 +619,7 @@ public class Fellowship
             player.Fellowship = null;
             player.FellowedWithPatron = false;
 
-            if (player.CurrentLandblock.IsFellowshipRequired())
-            {
-                player.Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        "This area requires a fellowship. Teleporting home.",
-                        ChatMessageType.Broadcast
-                    )
-                );
-
-                WorldManager.ThreadSafeTeleport(player, player.Sanctuary);
-            }
+            CheckForFellowRequiredLandblock(player);
 
             CalculateXPSharing();
             UpdateAllMembers();
