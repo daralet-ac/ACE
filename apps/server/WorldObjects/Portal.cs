@@ -327,7 +327,7 @@ public partial class Portal : WorldObject
         }
 
         // handle quest initial flagging
-        if (Quest != null)
+        if (Quest != null && !IsGateway)
         {
             EmoteManager.OnQuest(player);
         }
