@@ -61,6 +61,26 @@ partial class Player
 
     public void FellowshipQuit(bool disband)
     {
+        if (disband)
+        {
+            foreach (var member in Fellowship.GetFellowshipMembers())
+            {
+                if (member.Value.CurrentLandblock.IsFellowshipRequired())
+                {
+                    var leader = PlayerManager.GetOnlinePlayer(Fellowship.FellowshipLeaderGuid);
+
+                    leader.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            "A member of this fellowship is in an area that prevents disbanding.",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+
+                    return;
+                }
+            }
+        }
+
         if (Fellowship != null)
         {
             Fellowship.QuitFellowship(this, disband);
