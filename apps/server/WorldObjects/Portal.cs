@@ -136,6 +136,8 @@ public partial class Portal : WorldObject
     /// </summary>
     private const float minTimeSinceLastPortal = 3.5f;
 
+    public bool PlayerUsingTieOrSummonSpell;
+
     public override ActivationResult CheckUseRequirements(WorldObject activator)
     {
         if (!(activator is Player player))
@@ -315,7 +317,7 @@ public partial class Portal : WorldObject
         }
 
         // handle attempting to enter a capstone dungeon without being in a fellowship
-        if (FellowshipRequired && player.Fellowship == null)
+        if (FellowshipRequired && player.Fellowship == null && !PlayerUsingTieOrSummonSpell)
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
@@ -325,6 +327,8 @@ public partial class Portal : WorldObject
             );
             return new ActivationResult(false);
         }
+
+        PlayerUsingTieOrSummonSpell = false;
 
         // handle quest initial flagging
         if (Quest != null && !IsGateway)
