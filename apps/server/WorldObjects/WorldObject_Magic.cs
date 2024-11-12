@@ -2076,6 +2076,8 @@ partial class WorldObject
                         break;
                     }
 
+                    tiePortal.PlayerUsingTieOrSummonSpell = true;
+
                     var result = tiePortal.CheckUseRequirements(player);
 
                     if (!result.Success && result.Message != null)
@@ -2365,6 +2367,8 @@ partial class WorldObject
                 return;
             }
 
+            summonPortal.PlayerUsingTieOrSummonSpell = true;
+
             var result = summonPortal.CheckUseRequirements(player);
             if (!result.Success)
             {
@@ -2439,6 +2443,7 @@ partial class WorldObject
         gateway.MinLevel = portal.MinLevel;
         gateway.MaxLevel = portal.MaxLevel;
         gateway.PortalRestrictions = portal.PortalRestrictions;
+        gateway.FellowshipRequired = portal.FellowshipRequired;
         gateway.AccountRequirements = portal.AccountRequirements;
         gateway.AdvocateQuest = portal.AdvocateQuest;
 
