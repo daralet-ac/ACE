@@ -213,8 +213,9 @@ public static class VendorBaseItems
         { (5, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
         { (6, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
         { (7, true, HeritageSho, 1055057, 0, 0.0, -1) }, // Large Component Pouch
-        // Pearl of Spell Purging
-        { (0, false, HeritageAny, 1054001, 0, 0.0, -1) }, // Large Component Pouch
+        // Pearls
+        { (0, false, HeritageAny, 1054000, 0, 0.0, -1) }, // Pearl of Spell Transference
+        { (0, false, HeritageAny, 1054005, 0, 0.0, -1) }, // Pearl of Spell Purging
     };
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -228,6 +229,7 @@ public static class VendorBaseItems
         int
     )>()
     {
+        { (0, false, HeritageAny, 1054004, 0, 0.0, -1) }, // Upgrade Kit
         };
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -254,6 +256,7 @@ public static class VendorBaseItems
         int
     )>()
     {
+        { (0, false, HeritageAny, 1054004, 0, 0.0, -1) }, // Upgrade Kit
         };
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -780,5 +783,6 @@ public static class VendorBaseItems
         int
     )>()
     {
+        { (0, false, HeritageAny, 1054004, 0, 0.0, -1) }, // Upgrade Kit
         };
 }

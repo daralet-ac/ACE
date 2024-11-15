@@ -76,7 +76,8 @@ public class SpellPurge : Stackable
     public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target, bool confirmed = false)
     {
         var pearlStackSize = source.StackSize ?? 1;
-        var amountToAdd = Math.Clamp((target.ItemWorkmanship ?? 1) - 1, 1, 10);
+        var targetWorkmanship = Math.Clamp((target.ItemWorkmanship ?? 1) - 1, 1, 10);
+        var amountToAdd = targetWorkmanship * targetWorkmanship;
 
         if (player.IsBusy)
         {

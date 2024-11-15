@@ -115,7 +115,8 @@ public class SpellTransference : Stackable
         if (source.SpellExtracted == null)
         {
             var pearlStackSize = source.StackSize ?? 1;
-            var amountToAdd = Math.Clamp((target.ItemWorkmanship ?? 1) - 1, 1, 10);
+            var targetWorkmanship = Math.Clamp((target.ItemWorkmanship ?? 1) - 1, 1, 10);
+            var amountToAdd = targetWorkmanship * targetWorkmanship;
             var consumed = amountToAdd > 1 ? $"and consuming {amountToAdd} pearls" : "";
 
             if (player.IsBusy)
