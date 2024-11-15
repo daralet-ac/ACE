@@ -775,24 +775,24 @@ public class UpgradeKit : Stackable
             switch (newWieldReq)
             {
                 case 125: return 1;
-                case 175: return 2;
-                case 200: return 3;
-                case 215: return 4;
-                case 230: return 5;
-                case 250: return 6;
-                case 270: return 7;
+                case 175: return 4;
+                case 200: return 9;
+                case 215: return 16;
+                case 230: return 15;
+                case 250: return 36;
+                case 270: return 49;
             }
         }
 
         switch (newWieldReq)
         {
             case 10: return 1;
-            case 20: return 2;
-            case 30: return 3;
-            case 40: return 4;
-            case 50: return 5;
-            case 75: return 6;
-            case 100: return 7;
+            case 20: return 4;
+            case 30: return 9;
+            case 40: return 16;
+            case 50: return 25;
+            case 75: return 36;
+            case 100: return 49;
         }
 
         return 1;

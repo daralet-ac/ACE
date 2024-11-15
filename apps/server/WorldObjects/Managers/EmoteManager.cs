@@ -3237,15 +3237,13 @@ public class EmoteManager
     }
 
     /// <summary>
-    /// Trade note awards for completing a capstone dungeon. Amount equal to double the number of rewards.<br /><br />
+    /// Trade note awards for completing a capstone dungeon.<br /><br />
     /// Type Odds: 40% = I, 30% = V, 20% = X, 9% = L, 1% = C<br />
     /// Higher level players have improved luck, up to level 50.<br />
     /// </summary>
     private void AwardCapstoneTradeNotes(Player player, int amount)
     {
         var characterLevel = Math.Min(player.Level ?? 1, 50);
-
-        amount *= 2;
 
         for (var i = 0; i < amount; i++)
         {
@@ -3279,14 +3277,14 @@ public class EmoteManager
     /// </summary>
     private void AwardCapstoneItems(Player player, int numRewards)
     {
-        var itemPool = new List<uint>
+        var itemPool = new List<(uint,int)>
         {
-            1054000, // Pearl of Transference
-            1054002, // Sanguine Crystal
-            1054003, // Scourging Stone
-            1053972, // Tailoring Kit
-            1053973, // Tailoring Pattern
-            1054004  // Upgrade Kit
+            (1054000,2), // Pearl of Transference
+            (1054005,10), // Pearl of Spell Purging
+            (1054002,1), // Sanguine Crystal
+            (1054003,1), // Scourging Stone
+            (1053972,1), // Tailoring Kit
+            (1054004,2)  // Upgrade Kit
         };
 
         //numRewards *= GetCapstoneModifier(); // TODO: allow this to scale up when a fellowship has difficulty modifiers set
@@ -3318,7 +3316,9 @@ public class EmoteManager
 
             var randomItem = itemPool[randomIndex];
 
-            player.GiveFromEmote(WorldObject, randomItem, amount);
+            var amountToGive = amount * randomItem.Item2;
+
+            player.GiveFromEmote(WorldObject, randomItem.Item1, amountToGive);
         }
     }
 }
