@@ -1419,9 +1419,13 @@ public partial class RecipeManager
 
         WorldObject result = null;
 
+        var trophyQuality = (source.TrophyQuality ?? 0) > (target.TrophyQuality ?? 0)
+            ? source.TrophyQuality ?? 0
+            : target.TrophyQuality ?? 0;
+
         if (createItem > 0)
         {
-            result = CreateItem(player, createItem, createAmount);
+            result = CreateItem(player, createItem, createAmount, trophyQuality);
         }
 
         var modified = ModifyItem(player, recipe, source, target, result, success);
@@ -1489,7 +1493,7 @@ public partial class RecipeManager
         _log.Debug($"[TINKERING] {msg} | Chance: {chance}");
     }
 
-    public static WorldObject CreateItem(Player player, uint wcid, uint amount)
+    public static WorldObject CreateItem(Player player, uint wcid, uint amount, int trophyQuality = 0)
     {
         var wo = WorldObjectFactory.CreateNewWorldObject(wcid);
 
@@ -1504,8 +1508,41 @@ public partial class RecipeManager
             wo.SetStackSize((int)amount);
         }
 
+        if (trophyQuality > 0)
+        {
+            switch (wcid)
+            {
+                case 1054201: // Silifi of Crimson Stars
+                    var wieldReqFromQuality = GetWieldReqFromQuality(trophyQuality);
+
+                    // for quality levels above 7, wield req doesn't increase but we increase loot quality for mutation rolls
+                    if (trophyQuality > 7)
+                    {
+                        wo.LootQualityMod = (trophyQuality - 7) * 0.1 + 0.5f;
+                    }
+
+                    UpgradeKit.UpgradeItem(player, wo, wieldReqFromQuality);
+
+                    break;
+            }
+        }
+
         player.TryCreateInInventoryWithNetworking(wo);
         return wo;
+    }
+
+    private static int GetWieldReqFromQuality(int trophyQuality)
+    {
+        switch (trophyQuality)
+        {
+            case 1: return 125;
+            case 2: return 175;
+            case 3: return 200;
+            case 4: return 215;
+            case 5: return 230;
+            case 6: return 250;
+            default: return 270;
+        }
     }
 
     public static void DestroyItem(Player player, Recipe recipe, WorldObject item, uint amount, string msg)
