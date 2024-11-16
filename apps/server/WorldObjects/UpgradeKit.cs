@@ -176,12 +176,14 @@ public class UpgradeKit : Stackable
         player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
     }
 
-    private static bool UpgradeItem(Player player, WorldObject target)
+    public static bool UpgradeItem(Player player, WorldObject target, int forcedNewWieldDifficulty = 0)
     {
         if (target.ItemType != ItemType.Jewelry)
         {
             var currentWieldDifficulty = target.WieldDifficulty ?? 50;
-            var newWieldDifficulty = GetHighestWieldDifficultyForPlayer(player, target);
+            var newWieldDifficulty = forcedNewWieldDifficulty > 0
+                ? forcedNewWieldDifficulty
+                : GetHighestWieldDifficultyForPlayer(player, target);
 
             var currentTier = LootGenerationFactory.GetTierFromWieldDifficulty(currentWieldDifficulty) - 1;
             var newTier = LootGenerationFactory.GetTierFromWieldDifficulty(newWieldDifficulty) - 1;
@@ -751,6 +753,11 @@ public class UpgradeKit : Stackable
 
             ratingList.Add((PropertyInt)i);
             //totalRatings += ratingValue.Value;
+        }
+
+        if (ratingList.Count == 0)
+        {
+            return;
         }
 
         int[] ratingValuesPerSlotPerTier = [4, 6, 8, 10, 12, 16, 18, 20];
