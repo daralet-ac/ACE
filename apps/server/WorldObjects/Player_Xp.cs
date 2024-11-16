@@ -810,13 +810,46 @@ partial class Player
                 currentCredits
             );
 
-            var trinket = GetEquippedTrinket();
-            if (trinket != null && trinket.WeenieType == WeenieType.CombatFocus)
+            if (GetEquippedTrinket() is CombatFocus combatFocus)
             {
-                (trinket as CombatFocus).OnLevelUp(this, (int)startingLevel);
+                combatFocus.OnLevelUp(this, (int)startingLevel);
             }
 
             SetPlayerAllegianceRankContribution();
+
+            CheckForBetaQuestComplete();
+        }
+    }
+
+    private void CheckForBetaQuestComplete()
+    {
+        switch (Level)
+        {
+            case >= 50:
+                QuestManager.Stamp("ACCOUNT_BetaLevel50");
+                QuestManager.Stamp("ACCOUNT_BetaLevel40");
+                QuestManager.Stamp("ACCOUNT_BetaLevel30");
+                QuestManager.Stamp("ACCOUNT_BetaLevel20");
+                QuestManager.Stamp("ACCOUNT_BetaLevel10");
+                break;
+            case >= 40:
+                QuestManager.Stamp("ACCOUNT_BetaLevel40");
+                QuestManager.Stamp("ACCOUNT_BetaLevel30");
+                QuestManager.Stamp("ACCOUNT_BetaLevel20");
+                QuestManager.Stamp("ACCOUNT_BetaLevel10");
+                break;
+            case >= 30:
+                QuestManager.Stamp("ACCOUNT_BetaLevel30");
+                QuestManager.Stamp("ACCOUNT_BetaLevel20");
+                QuestManager.Stamp("ACCOUNT_BetaLevel10");
+                break;
+            case >= 20:
+                QuestManager.Stamp("ACCOUNT_BetaLevel20");
+                QuestManager.Stamp("ACCOUNT_BetaLevel10");
+                break;
+            case >= 10:
+                QuestManager.Stamp("ACCOUNT_BetaLevel10");
+                break;
         }
     }
 
