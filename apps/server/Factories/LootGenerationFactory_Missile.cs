@@ -93,7 +93,18 @@ public static partial class LootGenerationFactory
             }
         }
 
-        // Add element/material to weapons above starter tier:
+        MaterialType[] material =
+        [
+            MaterialType.Ebony,
+            MaterialType.Mahogany,
+            MaterialType.Oak,
+            MaterialType.Pine,
+            MaterialType.Teak
+        ];
+        var materialType = ThreadSafeRandom.Next(0, 4);
+        wo.MaterialType = material[materialType];
+
+        // Add element to weapons above starter tier:
         // Longbow, Shortbow, Nayin, Shouyumi, Yag, Yumi, Warbow, Heavy Xbow, Light Xbow, Atlatl, Royal Atlatl
         if (wo.Tier > 1)
         {
@@ -102,17 +113,6 @@ public static partial class LootGenerationFactory
             {
                 RollMissileElement(profile, wo);
             }
-
-            MaterialType[] material =
-            {
-                MaterialType.Ebony,
-                MaterialType.Mahogany,
-                MaterialType.Oak,
-                MaterialType.Pine,
-                MaterialType.Teak
-            };
-            var materialType = ThreadSafeRandom.Next(0, 4);
-            wo.MaterialType = material[materialType];
 
             MutateColor(wo);
 
