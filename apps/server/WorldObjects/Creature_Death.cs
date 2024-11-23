@@ -638,6 +638,11 @@ partial class Creature
 
             foreach (var item in loot)
             {
+                if (item is null)
+                {
+                    continue;
+                }
+
                 if (!string.IsNullOrEmpty(item.Quest)) // if the item has a Quest string, make the creature a "generator" of the item so that the pickup action applies the quest.
                 {
                     item.GeneratorId = Guid.Full;
