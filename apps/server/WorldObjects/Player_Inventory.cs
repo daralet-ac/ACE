@@ -3110,7 +3110,7 @@ partial class Player
                 // verify skill is trained / specialized
                 skill = GetCreatureSkill(ConvertToMoASkill((Skill)skillOrAttribute), false);
 
-                if ((int)skill.AdvancementClass < difficulty)
+                if ((int)skill.AdvancementClass < difficulty + 1)
                 {
                     return WeenieError.SkillTooLow;
                 }
