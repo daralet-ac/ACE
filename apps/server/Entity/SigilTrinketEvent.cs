@@ -162,14 +162,17 @@ public class SigilTrinketEvent
             case ((int)Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might):
             case ((int)Skill.Shield, (int)SigilTrinketShieldEffect.Might):
 
-                DamageEvent.CriticalOverridedByTrinket = true;
+                if(DamageEvent != null)
+                {
+                    DamageEvent.CriticalOverridedByTrinket = true;
 
-                Player.Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"Sigil Compass of Might coverted a normal hit into a critical hit!",
-                        ChatMessageType.CombatSelf
-                    )
-                );
+                    Player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Sigil Compass of Might coverted a normal hit into a critical hit!",
+                            ChatMessageType.CombatSelf
+                        )
+                    );
+                }
                 break;
             case ((int)Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression):
             case ((int)Skill.Shield, (int)SigilTrinketShieldEffect.Aggression):
