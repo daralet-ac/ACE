@@ -1596,7 +1596,7 @@ public class DamageEvent
     /// </summary>
     private float CheckForRatingFamiliarityAttackSkillPenalty(Creature attacker, Player playerDefender)
     {
-        if (playerDefender == null)
+        if (playerDefender == null || attacker == null)
         {
             return 1.0f;
         }

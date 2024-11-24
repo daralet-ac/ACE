@@ -391,7 +391,7 @@ partial class WorldObject
     /// </summary>
     private static float CheckForRatingFamiliaritySpellResistBonus(Player targetPlayer, Creature casterCreature)
     {
-        if (targetPlayer == null)
+        if (targetPlayer == null || casterCreature == null)
         {
             return 0.0f;
         }
