@@ -432,16 +432,16 @@ partial class Player
                     var damageEvent = DamageTarget(creature, weapon);
 
                     // handle target procs
-                    if (damageEvent != null && damageEvent.HasDamage && !targetProc)
+                    if (damageEvent is { HasDamage: true } && !targetProc)
                     {
                         TryProcEquippedItems(this, creature, false, weapon);
                         targetProc = true;
                     }
 
                     if (
-                        weapon != null && weapon.IsCleaving
-                        || (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) > 0)
-                            && damageEvent.DamageType == DamageType.Slash
+                        damageEvent != null && (weapon is { IsCleaving: true }
+                                                || (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) > 0)
+                                                && damageEvent.DamageType == DamageType.Slash)
                     )
                     {
                         var cleave = GetCleaveTarget(creature, weapon);
