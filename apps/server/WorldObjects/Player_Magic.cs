@@ -1472,7 +1472,7 @@ partial class Player
                     }
                 }
 
-                HandleCastSpell(spell, target, itemCaster, caster, isWeaponSpell, false, false, false, sigilTrinketSpell);
+                HandleCastSpell(spell, target, itemCaster, caster, isWeaponSpell, false, false, true, sigilTrinketSpell);
 
                 if (!spell.IsProjectile)
                 {
