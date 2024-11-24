@@ -219,7 +219,7 @@ public partial class Player
     /// <param name="sourceContainer">The container the item is being moved to.</param>
     private void CheckForBankMoveToEquip(WorldObject item, Container sourceContainer)
     {
-        if (sourceContainer is not { WeenieType: WeenieType.Storage, IsBankSideContainer: true })
+        if (sourceContainer is not { WeenieType: WeenieType.Storage} and not {IsBankSideContainer: true })
         {
             return;
         }
