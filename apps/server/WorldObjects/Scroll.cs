@@ -108,7 +108,7 @@ public class Scroll : WorldObject
                 if (!player.CanReadScroll(this, out var spec))
                 {
                     var msg = "";
-                    if (spec)
+                    if (spec && playerSkill.AdvancementClass < SkillAdvancementClass.Specialized)
                     {
                         msg = $"You must be specialized in {playerSkill.Skill.ToSentence()} to learn this spell!";
                     }
