@@ -15,14 +15,14 @@ partial class Player
         if (!Attributes.TryGetValue(attribute, out var creatureAttribute))
         {
             _log.Error($"{Name}.HandleActionRaiseAttribute({attribute}, {amount}) - invalid attribute");
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, null));
             return false;
         }
 
         if (amount > AvailableExperience)
         {
-            _log.Error(
-                $"{Name}.HandleActionRaiseAttribute({attribute}, {amount}) - amount > AvailableExperience ({AvailableExperience})"
-            );
+            _log.Error($"{Name}.HandleActionRaiseAttribute({attribute}, {amount}) - amount > AvailableExperience ({AvailableExperience})");
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, creatureAttribute));
             return false;
         }
 
@@ -30,11 +30,8 @@ partial class Player
 
         if (!SpendAttributeXp(creatureAttribute, amount))
         {
-            ChatPacket.SendServerMessage(
-                Session,
-                $"Your attempt to raise {attribute} has failed.",
-                ChatMessageType.Broadcast
-            );
+            ChatPacket.SendServerMessage(Session, $"You do not have enough experience to raise your {attribute}.", ChatMessageType.Broadcast);
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, creatureAttribute));
             return false;
         }
 

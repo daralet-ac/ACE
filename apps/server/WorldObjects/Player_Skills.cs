@@ -5,6 +5,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
+using ACE.Server.Network;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 
@@ -22,14 +23,14 @@ partial class Player
         if (creatureSkill == null || creatureSkill.AdvancementClass < SkillAdvancementClass.Trained)
         {
             _log.Error($"{Name}.HandleActionRaiseSkill({skill}, {amount}) - trained or specialized skill not found");
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
             return false;
         }
 
         if (amount > AvailableExperience)
         {
-            _log.Error(
-                $"{Name}.HandleActionRaiseSkill({skill}, {amount}) - amount > AvailableExperience ({AvailableExperience})"
-            );
+            _log.Error($"{Name}.HandleActionRaiseSkill({skill}, {amount}) - amount > AvailableExperience ({AvailableExperience})");
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
             return false;
         }
 
@@ -87,6 +88,7 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
             case Skill.Leadership:
                 Session.Network.EnqueueSend(
@@ -95,6 +97,7 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
             case Skill.Loyalty:
                 Session.Network.EnqueueSend(
@@ -103,6 +106,7 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
             case Skill.Alchemy:
                 Session.Network.EnqueueSend(
@@ -112,6 +116,7 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
             case Skill.Cooking:
                 Session.Network.EnqueueSend(
@@ -121,6 +126,7 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
             case Skill.WeaponTinkering:
                 Session.Network.EnqueueSend(
@@ -130,6 +136,7 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
             case Skill.ArmorTinkering:
                 Session.Network.EnqueueSend(
@@ -139,6 +146,7 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
             case Skill.Fletching:
                 Session.Network.EnqueueSend(
@@ -148,6 +156,7 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
             case Skill.ItemTinkering:
                 Session.Network.EnqueueSend(
@@ -157,6 +166,7 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
             case Skill.MagicItemTinkering:
                 Session.Network.EnqueueSend(
@@ -166,24 +176,23 @@ partial class Player
                         ChatMessageType.Advancement
                     )
                 );
+                Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
         }
 
         var skillXPTable = GetSkillXPTable(creatureSkill.AdvancementClass);
         if (skillXPTable == null)
         {
-            _log.Error(
-                $"{Name}.SpendSkillXp({creatureSkill.Skill}, {amount}) - player tried to raise {creatureSkill.AdvancementClass} skill"
-            );
+            ChatPacket.SendServerMessage(Session, $"You do not have enough experience to raise your {creatureSkill.Skill.ToSentence()} skill.", ChatMessageType.Broadcast);
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
             return false;
         }
 
         // ensure skill is not already max rank
         if (creatureSkill.IsMaxRank)
         {
-            _log.Error(
-                $"{Name}.SpendSkillXp({creatureSkill.Skill}, {amount}) - player tried to raise skill beyond max rank"
-            );
+            ChatPacket.SendServerMessage(Session, $"You do not have enough experience to raise your {creatureSkill.Skill.ToSentence()} skill.", ChatMessageType.Broadcast);
+            Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
             return false;
         }
 
