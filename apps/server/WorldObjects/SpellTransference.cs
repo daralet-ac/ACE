@@ -589,7 +589,7 @@ public class SpellTransference : Stackable
                             target.ProcSpell = (uint)spellToAddId;
                             target.ProcSpellSelfTargeted = spellToAdd.IsSelfTargeted;
                             target.WieldRequirements2 = WieldRequirement.Training;
-                            target.WieldDifficulty2 = 1;
+                            target.WieldDifficulty2 = 2;
 
                             if (spellToAdd.School == MagicSchool.LifeMagic)
                             {
