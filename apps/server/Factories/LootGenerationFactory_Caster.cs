@@ -176,7 +176,7 @@ public static partial class LootGenerationFactory
         wo.WieldSkillType = GetWeaponPrimaryAttribute((Skill)wo.WieldSkillType2);
 
         wo.WieldRequirements2 = WieldRequirement.Training;
-        wo.WieldDifficulty2 = 1;
+        wo.WieldDifficulty2 = 2;
 
         // Roll Elemental Damage Mod
         TryMutateCasterWeaponDamage(wo, profile, out var damagePercentile);

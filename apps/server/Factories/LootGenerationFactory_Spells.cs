@@ -77,7 +77,7 @@ public partial class LootGenerationFactory
         var procSpellId = SpellId.Undef;
 
         wo.WieldRequirements3 = WieldRequirement.Training;
-        wo.WieldDifficulty3 = 1;
+        wo.WieldDifficulty3 = 2;
 
         var warSpell = ThreadSafeRandom.Next(0, 1) == 0 ? true : false;
         if (warSpell)

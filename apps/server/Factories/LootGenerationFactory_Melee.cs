@@ -151,7 +151,7 @@ public static partial class LootGenerationFactory
         wo.WieldSkillType = GetWeaponPrimaryAttribute(wo.WeaponSkill);
 
         wo.WieldRequirements2 = WieldRequirement.Training;
-        wo.WieldDifficulty2 = 1;
+        wo.WieldDifficulty2 = 2;
         wo.WieldSkillType2 = GetWeaponWieldSkill(wo.WeaponSkill);
 
         // Max damage
