@@ -497,7 +497,7 @@ partial class Player
         if (isAffecting)
         {
             item.OnSpellsActivated();
-            item.ItemCurMana--;
+            //item.ItemCurMana--;
         }
 
         return true;
