@@ -259,6 +259,13 @@ public class SpellPurge : Stackable
                 if (target.ProcSpell == source.SpellToExtract)
                 {
                     target.ProcSpell = null;
+
+                    if (target is { WieldSkillType3: (int)Skill.LifeMagic or (int)Skill.WarMagic })
+                    {
+                        target.WieldSkillType3 = 0;
+                        target.WieldDifficulty3 = 0;
+                        target.WieldRequirements3 = 0;
+                    }
                 }
 
                 target.Biota.TryRemoveKnownSpell((int)source.SpellToExtract.Value, target.BiotaDatabaseLock);
