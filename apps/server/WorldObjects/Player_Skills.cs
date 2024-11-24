@@ -687,11 +687,7 @@ partial class Player
         var skillAdvancementClass = IsAdvancedSpell(scroll.Spell)
             ? SkillAdvancementClass.Specialized
             : SkillAdvancementClass.Trained;
-        spec = skillAdvancementClass == SkillAdvancementClass.Specialized ? true : false;
-
-        Console.WriteLine(
-            $"{playerSkill.AdvancementClass}  {skillAdvancementClass} {playerSkill.Current}  {minSkill}  {spec}"
-        );
+        spec = skillAdvancementClass == SkillAdvancementClass.Specialized;
 
         return playerSkill.AdvancementClass >= skillAdvancementClass && playerSkill.Current >= minSkill;
     }
