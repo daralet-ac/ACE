@@ -276,7 +276,7 @@ partial class Creature
 
             var totalXp = GetCreatureDeathXP(Level ?? 0, playerDamager.Level ?? 1) * damagePercent * (float)killXpMod;
 
-            if (BossKillXpReward == true)
+            if (BossKillXpReward == true && DamageHistory!.TopDamager.Player.Guid == kvp.Key)
             {
                 if (playerDamager.Fellowship != null)
                 {
@@ -292,7 +292,7 @@ partial class Creature
             }
             // Monsters with ShroudKillXpReward set can grant the killer(s) xp as if the monster was the same level as
             // the player. The player must be <= the monster level OR shrouded.
-            else if (ShroudKillXpReward == true)
+            else if (ShroudKillXpReward == true && DamageHistory!.TopDamager.Player.Guid == kvp.Key)
             {
                 var monsterLevel = Level ?? 1;
 
