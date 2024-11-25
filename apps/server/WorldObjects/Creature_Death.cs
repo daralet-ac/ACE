@@ -276,45 +276,53 @@ partial class Creature
 
             var totalXp = GetCreatureDeathXP(Level ?? 0, playerDamager.Level ?? 1) * damagePercent * (float)killXpMod;
 
-            if (BossKillXpReward == true && DamageHistory!.TopDamager.Player.Guid == kvp.Key)
+            var topDamager = DamageHistory.TopDamager;
+
+            if (BossKillXpReward == true)
             {
-                if (playerDamager.Fellowship != null)
+                if (topDamager.Player != null && topDamager.Player.Guid == kvp.Key)
                 {
-                    foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
+                    if (playerDamager.Fellowship != null)
                     {
-                        member.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                        foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
+                        {
+                            member.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                        }
                     }
-                }
-                else
-                {
-                    playerDamager.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                    else
+                    {
+                        playerDamager.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                    }
                 }
             }
             // Monsters with ShroudKillXpReward set can grant the killer(s) xp as if the monster was the same level as
             // the player. The player must be <= the monster level OR shrouded.
-            else if (ShroudKillXpReward == true && DamageHistory!.TopDamager.Player.Guid == kvp.Key)
+            else if (ShroudKillXpReward == true)
             {
-                var monsterLevel = Level ?? 1;
-
-                if (playerDamager.Fellowship != null)
+                if (topDamager.Player != null && topDamager.Player.Guid == kvp.Key)
                 {
-                    foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
-                    {
-                        var memberLevel = member.Level ?? 1;
+                    var monsterLevel = Level ?? 1;
 
-                        if (memberLevel <= monsterLevel || member.IsShrouded())
+                    if (playerDamager.Fellowship != null)
+                    {
+                        foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
                         {
-                            member.EarnShroudKillXp(playerDamager, killXpMod);
+                            var memberLevel = member.Level ?? 1;
+
+                            if (memberLevel <= monsterLevel || member.IsShrouded())
+                            {
+                                member.EarnShroudKillXp(playerDamager, killXpMod);
+                            }
                         }
                     }
-                }
-                else
-                {
-                    var playerLevel = playerDamager.Level ?? 1;
-
-                    if (playerLevel <= monsterLevel || playerDamager.IsShrouded())
+                    else
                     {
-                        playerDamager.EarnShroudKillXp(playerDamager, killXpMod);
+                        var playerLevel = playerDamager.Level ?? 1;
+
+                        if (playerLevel <= monsterLevel || playerDamager.IsShrouded())
+                        {
+                            playerDamager.EarnShroudKillXp(playerDamager, killXpMod);
+                        }
                     }
                 }
             }
