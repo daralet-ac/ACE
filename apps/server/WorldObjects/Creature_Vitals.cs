@@ -160,7 +160,7 @@ partial class Creature
 
             if (this is not Player)
             {
-                vitalTypeBaseMod *= 0.5f;
+                vitalTypeBaseMod *= 0.1f;
             }
         }
         else if (vital == Stamina)
