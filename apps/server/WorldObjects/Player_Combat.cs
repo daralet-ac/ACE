@@ -1014,71 +1014,21 @@ partial class Player
 
         uint damageTaken = 0;
 
-        if (!ManaBarrierToggle)
+        if (!ManaBarrierToggle && !EvasiveStanceToggle)
         {
             // update health
             damageTaken = (uint)-UpdateVitalDelta(Health, (int)-amount);
             DamageHistory.Add(source, damageType, damageTaken);
         }
-        else
+        else if (ManaBarrierToggle)
         {
-            var skill = GetCreatureSkill((Skill)16);
+            CombatAbilityManaBarrier(amount, source, damageType);
 
-            if (Level != null)
-            {
-                var expectedSkill = (float)(Level * 5);
-                var currentSkill = (float)skill.Current;
+        }
+        else if (EvasiveStanceToggle)
+        {
+            CombatAbilityEvasiveStance(amount, source, damageType);
 
-                // create a scaling mod. if expected skill is much higher than currentSkill, you will be multiplying the amount of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
-                // capped at 1f so high skill gets the proper ratio of health-to-mana, but no better than that.
-
-                var skillModifier = Math.Max(expectedSkill / currentSkill, 1.0f);
-
-                // 25% of damage taken as mana, x3 for trained
-                var manaDamage = (amount * 0.25) * 3 * skillModifier;
-                if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                {
-                    manaDamage = (amount * 0.25) * 1.5 * skillModifier;
-                }
-
-                if (Mana.Current >= manaDamage)
-                {
-                    damageTaken = (uint)(amount * 0.75f);
-                    PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
-                    UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
-                    UpdateVitalDelta(Health, (int)-damageTaken);
-                    DamageHistory.Add(source, damageType, (uint)-damageTaken);
-                }
-                // if not enough mana, barrier falls and player takes remainder of damage as health
-                else
-                {
-                    ToggleManaBarrierSetting();
-                    Session.Network.EnqueueSend(
-                        new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
-                    );
-
-                    var sharedCooldowns = GetInventoryItemsOfWCID(1051110); // Mana Barrier
-                    sharedCooldowns.AddRange(GetInventoryItemsOfWCID(1051114)); // Evasive Stance
-
-                    foreach (var toggle in sharedCooldowns)
-                    {
-                        EnchantmentManager.StartCooldown(toggle);
-                    }
-                    PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
-
-                    // find mana damage overage and reconvert to HP damage
-                    var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
-                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                    {
-                        manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
-                    }
-
-                    damageTaken = (uint)((amount * 0.75) + manaRemainder);
-                    UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
-                    UpdateVitalDelta(Health, (int)-(damageTaken));
-                    DamageHistory.Add(source, damageType, (uint)-damageTaken);
-                }
-            }
         }
 
         // update stamina
@@ -1225,6 +1175,170 @@ partial class Player
         }
 
         return (int)damageTaken;
+    }
+
+    private void CombatAbilityManaBarrier(uint amount, WorldObject source, DamageType damageType)
+    {
+        var skill = GetCreatureSkill(Skill.ManaConversion);
+
+            if (Level != null)
+            {
+                var expectedSkill = (float)(Level * 5);
+                var currentSkill = (float)skill.Current;
+
+                // create a scaling mod. if expected skill is much higher than currentSkill, you will be multiplying the amount of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
+                // capped at 1f so high skill gets the proper ratio of health-to-mana, but no better than that.
+
+                var skillModifier = Math.Max(expectedSkill / currentSkill, 1.0f);
+
+                // 25% of damage taken as mana, x3 for trained
+                var manaDamage = (amount * 0.25) * 3 * skillModifier;
+                if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                {
+                    manaDamage = (amount * 0.25) * 1.5 * skillModifier;
+                }
+
+                if (Mana.Current >= manaDamage)
+                {
+                    var finalAmount = (uint)(amount * 0.75f);
+                    PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
+                    UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
+                    UpdateVitalDelta(Health, (int)-finalAmount);
+                    DamageHistory.Add(source, damageType, (uint)-finalAmount);
+                }
+                // if not enough mana, barrier falls and player takes remainder of damage as health
+                else
+                {
+                    ToggleManaBarrierSetting();
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
+                    );
+
+                    var sharedCooldowns = GetInventoryItemsOfWCID(1051110); // Mana Barrier
+                    sharedCooldowns.AddRange(GetInventoryItemsOfWCID(1051114)); // Evasive Stance
+
+                    foreach (var toggle in sharedCooldowns)
+                    {
+                        EnchantmentManager.StartCooldown(toggle);
+                    }
+                    PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
+
+                    // find mana damage overage and reconvert to HP damage
+                    var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
+                    if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
+                    {
+                        manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
+                    }
+
+                    var finalAmount = (uint)((amount * 0.75) + manaRemainder);
+                    UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
+                    UpdateVitalDelta(Health, (int)-(finalAmount));
+                    DamageHistory.Add(source, damageType, (uint)-finalAmount);
+                }
+
+                if (!IsDead)
+                {
+                    return;
+                }
+
+                var lastDamager = new DamageHistoryInfo(this);
+
+                OnDeath(lastDamager, DamageType.Health);
+                Die();
+            }
+    }
+
+    private void CombatAbilityEvasiveStance(uint amount, WorldObject source, DamageType damageType)
+    {
+        // Create a scaling mod. If expected skill is much higher than currentSkill, you will be multiplying the amount
+            // of stamina damage significantly, so low skill players will not get much benefit before skill drops.
+            // Capped at 1.0f so high skill gets the proper ratio of health-to-stamina, but no better than that.
+
+            var skillRun = GetCreatureSkill(Skill.Run);
+            var skillJump = GetCreatureSkill(Skill.Jump);
+
+            var currentSkillRun = (float)skillRun.Current;
+            var currentSkillJump = (float)skillJump.Current;
+
+            if (Level != null)
+            {
+                var expectedSkill = (float)(Level * 5);
+
+                var skillModifierRun = Math.Max(expectedSkill / currentSkillRun, 1.0f);
+                var skillModifierJump = Math.Max(expectedSkill / currentSkillJump, 1.0f);
+
+                var staminaDamageRun = (amount * 0.25) * 3 * skillModifierRun;
+                if (skillRun.AdvancementClass == SkillAdvancementClass.Specialized)
+                {
+                    staminaDamageRun = (amount * 0.25) * 1.5 * skillModifierRun;
+                }
+
+                var staminaDamageJump = (amount * 0.25) * 3 * skillModifierJump;
+                if (skillJump.AdvancementClass == SkillAdvancementClass.Specialized)
+                {
+                    staminaDamageJump = (amount * 0.25) * 1.5 * skillModifierJump;
+                }
+
+                // Use whichever skill prevents more stamina loss
+                var staminaDamage = Math.Min(staminaDamageRun, staminaDamageJump);
+
+                if (Stamina.Current >= staminaDamage)
+                {
+                    var finalAmount = (uint)(amount * 0.75);
+
+                    PlayParticleEffect(PlayScript.RestrictionEffectGold, Guid, 0.1f);
+                    UpdateVitalDelta(Stamina, (int)-Math.Round(staminaDamage));
+                    UpdateVitalDelta(Health, (int)-Math.Round((float)finalAmount));
+                    DamageHistory.Add(source, damageType, finalAmount);
+                }
+                // if not enough stamina, evasive stance falls and player takes remainder of damage as health
+                else
+                {
+                    ToggleEvasiveStanceSetting();
+                    Session.Network.EnqueueSend(new GameMessageSystemChat(
+                        $"You lose concentration and drop out of Evasive Stance!", ChatMessageType.Combat));
+
+                    var sharedCooldowns = GetInventoryItemsOfWCID(1051114); // Evasive Stance
+                    sharedCooldowns.AddRange(GetInventoryItemsOfWCID(1051110)); // Mana Barrier
+
+                    foreach (var toggle in sharedCooldowns)
+                    {
+                        EnchantmentManager.StartCooldown(toggle);
+                    }
+
+                    PlayParticleEffect(PlayScript.HealthDownYellow, Guid);
+
+                    // find stamina damage overage and reconvert to HP damage
+                    var staminaRemainderRun = (staminaDamage - Stamina.Current) / skillModifierRun / 1.5;
+                    if (skillRun.AdvancementClass == SkillAdvancementClass.Specialized)
+                    {
+                        staminaRemainderRun = (staminaDamage - Stamina.Current) / skillModifierRun / 3;
+                    }
+
+                    var staminaRemainderJump = (staminaDamage - Stamina.Current) / skillModifierRun / 1.5;
+                    if (skillJump.AdvancementClass == SkillAdvancementClass.Specialized)
+                    {
+                        staminaRemainderJump = (staminaDamage - Stamina.Current) / skillModifierRun / 3;
+                    }
+
+                    var staminaRemainder = Math.Min(staminaRemainderRun, staminaRemainderJump);
+                    var finalAmount = (uint)((amount * 0.75) + staminaRemainder);
+
+                    UpdateVitalDelta(Stamina, (int)-(Stamina.Current - 1));
+                    UpdateVitalDelta(Health, (int)-(finalAmount));
+                    DamageHistory.Add(source, damageType, finalAmount);
+                }
+
+                if (!IsDead)
+                {
+                    return;
+                }
+
+                var lastDamager = new DamageHistoryInfo(this);
+
+                OnDeath(lastDamager, DamageType.Health);
+                Die();
+            }
     }
 
     public string GetArmorType(BodyPart bodyPart)
