@@ -369,7 +369,7 @@ partial class Player
 
         if (targetAsPlayer == null)
         {
-            CheckForSigilTrinketOnCastEffects(target, null, false, Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure);
+            CheckForSigilTrinketOnCastEffects(target, vulnerabilitySpell, false, Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure);
         }
     }
 
@@ -505,7 +505,7 @@ partial class Player
 
             if (targetAsPlayer == null)
             {
-                CheckForSigilTrinketOnCastEffects(target, null, false, Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure);
+                CheckForSigilTrinketOnCastEffects(target, magicYieldSpell, false, Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure);
             }
         }
     }
