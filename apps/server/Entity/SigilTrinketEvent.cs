@@ -626,8 +626,8 @@ public class SigilTrinketEvent
 
     private bool IsValidForDuplicate(SigilTrinket sigilTrinket)
     {
-        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.LifeMagic;
-        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate;
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.WarMagic;
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketWarMagicEffect.ScarabDuplicate;
         var validSpellCategory = SigilTrinket.WarProjectileTriggerCategories.Contains(TriggerSpell.Category);
         var validSpellLevel = sigilTrinket.SigilTrinketMaxTier >= TriggerSpell.Level;
 
@@ -636,8 +636,8 @@ public class SigilTrinketEvent
 
     private bool IsValidForDetonate(SigilTrinket sigilTrinket)
     {
-        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.LifeMagic;
-        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate;
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.WarMagic;
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketWarMagicEffect.ScarabDetonate;
         var validSpellCategory = SigilTrinket.WarProjectileTriggerCategories.Contains(TriggerSpell.Category);
         var validSpellLevel = sigilTrinket.SigilTrinketMaxTier >= TriggerSpell.Level;
 
@@ -646,8 +646,8 @@ public class SigilTrinketEvent
 
     private bool IsValidForCrushing(SigilTrinket sigilTrinket)
     {
-        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.LifeMagic;
-        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate;
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.WarMagic;
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketWarMagicEffect.ScarabCrit;
         var validSpellCategory = SigilTrinket.WarProjectileTriggerCategories.Contains(TriggerSpell.Category);
         var validSpellLevel = sigilTrinket.SigilTrinketMaxTier >= TriggerSpell.Level;
 
