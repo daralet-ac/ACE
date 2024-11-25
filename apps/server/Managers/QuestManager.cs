@@ -222,6 +222,8 @@ public class QuestManager
                 player.CharacterChangesDetected = true;
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
+
+                _log.Information("{Player} completed quest: {Quest}", player, quest.QuestName);
             }
         }
         else
@@ -252,6 +254,8 @@ public class QuestManager
                 player.CharacterChangesDetected = true;
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
+
+                _log.Information("{Player} completed quest: {Quest}", player, quest.QuestName);
             }
         }
     }
