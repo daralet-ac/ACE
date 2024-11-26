@@ -886,7 +886,7 @@ partial class Jewel
                 break;
             case ACE.Entity.Enum.MaterialType.LapisLazuli:
                 description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% chance to regain mana after being hit. Amount regained sis based on damage received.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% chance to regain mana after being hit. Amount regained is based on damage received.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Moonstone:
                 description =
