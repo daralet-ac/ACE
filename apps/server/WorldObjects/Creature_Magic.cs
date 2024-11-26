@@ -149,7 +149,8 @@ partial class Creature
 
             manaCost = manaCost - savedMana;
 
-            if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized)
+            if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized
+                && manaCost <= caster.Mana.Current)
             {
                 var conversionAmount = (int)Math.Round(savedMana * 0.5f);
                 caster.UpdateVitalDelta(caster.Health, conversionAmount);
