@@ -1063,7 +1063,7 @@ public class DamageEvent
 
         if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) > 0)
         {
-            return (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
+            return (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) * 0.01f + 1.0f);
         }
 
         return 1.0f;
