@@ -201,7 +201,7 @@ public class SigilTrinketEvent
 
                 Player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"Sigil Puzzle Box of Assailment boosts your critical chance for the next 10 seconds!",
+                        $"Sigil Puzzle Box of Assailment boosts your critical damage for the next 10 seconds!",
                         ChatMessageType.CombatSelf
                     )
                 );

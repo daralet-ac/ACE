@@ -609,7 +609,7 @@ public static partial class LootGenerationFactory
 
                 var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
                 sigilTrinket.Use =
-                    $"Whenever the wielder performs an critical hit on an enemy, they have a chance to gain a 25% damage buff for 10 seconds.\n\n"
+                    $"Whenever the wielder performs an critical hit on an enemy, they have a chance to gain a 50% critical damage buff, additively, for 10 seconds.\n\n"
                     + $"Can only occur while dual-wielding, with a wield requirement of up to {wieldReq}.";
                 break;
             // case (int)SigilTrinketDualWieldEffect.PH2:
