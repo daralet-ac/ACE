@@ -223,7 +223,10 @@ public class QuestManager
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
 
-                _log.Information("{Player} completed quest: {Quest}", player, quest.QuestName);
+                if (!FilteredQuestNames.Contains(quest.QuestName))
+                {
+                    _log.Information("{Player} completed quest: {Quest}", player.Name, quest.QuestName);
+                }
             }
         }
         else
@@ -1002,4 +1005,19 @@ public class QuestManager
             return 0f;
         }
     }
+
+    private string[] FilteredQuestNames =
+    [
+        "Overload",
+        "Elementalist",
+        "WardPen",
+        "Nullification",
+        "Pierce",
+        "Familiarity",
+        "Bludgeon",
+        "Bravado",
+        "Hardened Defense",
+        "StamReduction"
+
+    ];
 }
