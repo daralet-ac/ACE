@@ -545,7 +545,8 @@ partial class Creature
     {
         var meleeDefSkill = GetCreatureSkill(Skill.MeleeDefense);
         var armorMeleeDefSkillMod = (GetArmorPhysicalDefMod() ?? 0) + 1;
-        var tempMeleeDefSkill = meleeDefSkill.Current * armorMeleeDefSkillMod;
+        var weaponPhysicalDefenseSkillMod = GetWeaponPhysicalDefenseModifier(this) - 1.0f;
+        var tempMeleeDefSkill = meleeDefSkill.Current * (armorMeleeDefSkillMod + weaponPhysicalDefenseSkillMod);
         var moddedMeleeDefSkill = (uint)tempMeleeDefSkill;
 
         return moddedMeleeDefSkill;
@@ -571,7 +572,8 @@ partial class Creature
     {
         var magicDefSkill = GetCreatureSkill(Skill.MagicDefense);
         var armorMagicDefSkillMod = (GetArmorMagicDefMod() ?? 0) + 1;
-        var tempMagicDefSkill = magicDefSkill.Current * armorMagicDefSkillMod;
+        var weaponMagicDefSkillMod = GetWeaponMagicDefenseModifier(this) - 1.0f;
+        var tempMagicDefSkill = magicDefSkill.Current * (armorMagicDefSkillMod + weaponMagicDefSkillMod);
         var moddedMagicDefSkill = (uint)tempMagicDefSkill;
 
         return moddedMagicDefSkill;

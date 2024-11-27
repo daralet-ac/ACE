@@ -664,23 +664,12 @@ partial class Creature
     /// </summary>
     public uint GetEffectiveDefenseSkill(CombatType combatType)
     {
-        var defenseSkill = Skill.MeleeDefense;
-        var armorDefenseMod = GetArmorPhysicalDefMod();
-        var defenseMod = GetWeaponPhysicalDefenseModifier(this) + armorDefenseMod;
         var burdenMod = GetBurdenMod();
-
         var imbuedEffectType = ImbuedEffectType.MeleeDefense;
         var defenseImbues = GetDefenseImbues(imbuedEffectType);
-
         var stanceMod = this is Player player ? player.GetDefenseStanceMod() : 1.0f;
 
-        //if (this is Player)
-        //Console.WriteLine($"StanceMod: {stanceMod}");
-
-        var effectiveDefense = (uint)
-            Math.Round(
-                GetCreatureSkill(defenseSkill).Current * (float)defenseMod * burdenMod * stanceMod + defenseImbues
-            );
+        var effectiveDefense = (uint)Math.Round(GetModdedPhysicalDefSkill() * burdenMod * stanceMod + defenseImbues);
 
         if (IsExhausted)
         {
