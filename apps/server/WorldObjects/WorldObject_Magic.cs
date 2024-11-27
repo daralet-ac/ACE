@@ -553,7 +553,7 @@ partial class WorldObject
             }
         }
 
-        // Empowered Scarabs
+        // Sigil Scarabs
         if (this is Player)
         {
             if (targetCreature != null && !equip)
@@ -572,6 +572,7 @@ partial class WorldObject
                     case MagicSchool.WarMagic:
                         player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabIntensity, null, false, _isSigilTrinketSpell);
                         player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabShield, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabDuplicate, null, false, _isSigilTrinketSpell);
                         break;
                 }
             }
@@ -1877,13 +1878,6 @@ partial class WorldObject
                 _log.Warning("Unknown DamageType for LifeProjectile {SpellName} - {SpellId}", spell.Name, spell.Id);
                 return;
             }
-        }
-
-        if (target is Player targetPlayer)
-        {
-            SigilTrinketSpellDamageReduction = 1.0f;
-            targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, (int)damage, Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption);
-            damage = Convert.ToUInt32(damage * SigilTrinketSpellDamageReduction);
         }
 
         var projectileSpellType = SpellProjectile.GetProjectileSpellType(spell.Id);

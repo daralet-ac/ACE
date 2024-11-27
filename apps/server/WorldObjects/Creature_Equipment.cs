@@ -137,7 +137,7 @@ partial class Creature
     public WorldObject GetEquippedWeapon(bool forceMainHand = false)
     {
         var meleeWeapon = GetEquippedMeleeWeapon(forceMainHand);
-        return meleeWeapon ?? GetEquippedMissileWeapon();
+        return meleeWeapon ?? GetEquippedMissileWeapon() ?? GetEquippedMainHand();
     }
 
     /// <summary>
