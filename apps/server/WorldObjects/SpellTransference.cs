@@ -328,7 +328,7 @@ public class SpellTransference : Stackable
                         player.EnqueueBroadcast(new GameMessageUpdateObject(source));
                         player.PlayParticleEffect(PlayScript.EnchantUpBlue, player.Guid);
 
-                        player.TryConsumeFromInventoryWithNetworking(target);
+                        player.TryConsumeFromInventoryWithNetworking(target, amountToAdd);
 
                         player.TryCreateInInventoryWithNetworking(pearl);
                     }
