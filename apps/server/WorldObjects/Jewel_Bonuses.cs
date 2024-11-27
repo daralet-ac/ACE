@@ -39,7 +39,7 @@ partial class Jewel
         var numStrikes = playerAttacker.GetNumStrikes(playerAttacker.AttackType);
         if (numStrikes == 2)
         {
-            if (playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded)
+            if (playerAttacker.GetEquippedWeapon() is {W_WeaponType: WeaponType.TwoHanded})
             {
                 scaledStamps /= 2f;
             }
