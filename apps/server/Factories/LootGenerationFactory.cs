@@ -905,7 +905,7 @@ public static partial class LootGenerationFactory
         else if (item.TrophyQuality != null)
         {
             // mutate trophy quality
-            MutateTrophy(item);
+            MutateTrophy(item, profile.Tier);
         }
         // other mundane items (mana stones, food/drink, healing kits, lockpicks, and spell components/peas) don't get mutated
         // it should be safe to return false here, for the 1 caller that currently uses this method
@@ -2967,14 +2967,14 @@ public static partial class LootGenerationFactory
         };
     }
 
-    public static void MutateTrophy(WorldObject wo)
+    public static void MutateTrophy(WorldObject wo, int tier)
     {
         if (wo.TrophyQuality == null)
         {
             return;
         }
 
-        var trophyQuality = WorkmanshipChance.Roll(wo.Tier ?? 1);
+        var trophyQuality = WorkmanshipChance.Roll(tier);
         wo.SetProperty(PropertyInt.TrophyQuality, trophyQuality);
 
         var name = GetTrophyQualityName(trophyQuality);

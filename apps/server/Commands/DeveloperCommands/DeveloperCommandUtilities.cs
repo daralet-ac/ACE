@@ -50,7 +50,7 @@ public static class DeveloperCommandUtilities
 
             if (loot.TrophyQuality != null)
             {
-                LootGenerationFactory.MutateTrophy(loot);
+                LootGenerationFactory.MutateTrophy(loot, loot.Tier ?? 1);
             }
 
             session.Player.TryCreateInInventoryWithNetworking(loot);

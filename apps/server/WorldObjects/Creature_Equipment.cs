@@ -1214,7 +1214,7 @@ partial class Creature
 
         foreach (var item in items)
         {
-            var wo = WorldObjectFactory.CreateNewWorldObject(item);
+            var wo = WorldObjectFactory.CreateNewWorldObject(item, Tier ?? 1);
 
             if (wo == null)
             {
