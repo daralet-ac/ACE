@@ -151,11 +151,11 @@ partial class WorldObject
         uint targetMagicDefenseSkill,
         out PartialEvasion partialResist,
         out float resistChance,
-        float chanceMod = 1.0f
+        float chanceMod = 0.0f
     )
     {
         // uses regular 0.03 factor, and not magic casting 0.07 factor
-        var chance = 1.0 - (SkillCheck.GetSkillChance((int)casterMagicSkill, (int)targetMagicDefenseSkill) * chanceMod);
+        var chance = (1.0 - SkillCheck.GetSkillChance((int)casterMagicSkill, (int)targetMagicDefenseSkill)) + chanceMod;
         resistChance = (float)chance;
         var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
 
@@ -283,12 +283,12 @@ partial class WorldObject
             * LevelScaling.GetPlayerDefenseSkillScalar(targetCreature, casterCreature)
         );
 
-        var resistChanceMod = 1.0f;
+        var resistChanceMod = 0.0f;
 
         var player = this as Player;
         var targetPlayer = target as Player;
 
-        resistChanceMod *= CheckForCombatAbilityReflectMagicDefBonus(targetPlayer);
+        resistChanceMod += CheckForCombatAbilityReflectMagicDefBonus(targetPlayer);
         resistChanceMod += CheckForRatingFamiliaritySpellResistBonus(targetPlayer, casterCreature);
 
         var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, resistChanceMod);
@@ -417,7 +417,7 @@ partial class WorldObject
     /// </summary>
     private static float CheckForCombatAbilityReflectMagicDefBonus(Player targetPlayer)
     {
-        var mod = 1.0f;
+        var mod = 0.0f;
 
         if (targetPlayer == null)
         {
@@ -429,11 +429,11 @@ partial class WorldObject
             return mod;
         }
 
-        mod = 1.2f;
+        mod = 0.25f;
 
         if (targetPlayer.LastReflectActivated > Time.GetUnixTime() - targetPlayer.ReflectActivatedDuration)
         {
-            mod = 1.5f;
+            mod = 0.5f;
         }
 
         return mod;
