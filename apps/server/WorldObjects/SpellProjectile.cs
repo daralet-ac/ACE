@@ -417,6 +417,14 @@ public class SpellProjectile : WorldObject
             ref resisted
         );
 
+        if (targetPlayer != null && damage != null)
+        {
+            SigilTrinketSpellDamageReduction = 1.0f;
+            targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, Spell, (int)damage, Skill.MagicDefense,
+                (int)SigilTrinketMagicDefenseEffect.Absorption);
+            damage = Convert.ToUInt32(damage * SigilTrinketSpellDamageReduction);
+        }
+
         creatureTarget.OnAttackReceived(sourceCreature, CombatType.Magic, critical, resisted, (int)Spell.Level);
 
         if (damage != null)
