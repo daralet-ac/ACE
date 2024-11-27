@@ -1392,7 +1392,7 @@ public class SpellProjectile : WorldObject
         var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Bludgeon") / 500; // up to 1.0f
         var ratingMod = (float)sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) * 0.02f; // 0.02f per rating
 
-        return rampMod * ratingMod;
+        return rampMod * ratingMod + 1.0f;
     }
 
     /// <summary>
