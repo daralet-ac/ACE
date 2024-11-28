@@ -223,7 +223,7 @@ public class QuestManager
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
 
-                if (!FilteredQuestNames.Contains(quest.QuestName))
+                if (!quest.QuestName.Contains(","))
                 {
                     _log.Information("{Player} completed quest: {Quest}", player.Name, quest.QuestName);
                 }
@@ -258,7 +258,10 @@ public class QuestManager
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
 
-                _log.Information("{Player} completed quest: {Quest}", player, quest.QuestName);
+                if (!quest.QuestName.Contains(","))
+                {
+                    _log.Information("{Player} completed quest: {Quest}", player.Name, quest.QuestName);
+                }
             }
         }
     }
