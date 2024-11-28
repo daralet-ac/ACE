@@ -641,8 +641,9 @@ public partial class Creature : Container
 
     public int GetCreatureAvgTierHealth()
     {
+
         var statWeight = 0.0f;
-        var level = (float)Level.Value;
+        var level = (float)(Level ?? 1);
         var tier = (Tier ?? 1) - 1;
 
         switch (tier)
