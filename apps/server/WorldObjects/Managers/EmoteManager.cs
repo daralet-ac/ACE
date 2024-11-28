@@ -594,14 +594,22 @@ public class EmoteManager
 
                 if (player != null && emote.WeenieClassId != null)
                 {
-                    var trophyQualityIteration = 0u;
-                    if (WorldObject is Creature { RefusalItem.Item1.Value: not null } creatureObject)
+
+                    var weenieClassId = emote.WeenieClassId;
+
+                    // Trophies
+                    if (WorldObject is Creature { RefusalItem.Item1.Value: not null} creatureObject)
                     {
                         stackSize = creatureObject.RefusalItem.Item1.Value ?? 1;
-                        trophyQualityIteration = (uint)((creatureObject.RefusalItem.Item1.TrophyQuality - 1) ?? 0);
-                    }
 
-                    var weenieClassId = emote.WeenieClassId + trophyQualityIteration;
+                        // For Trophy Smith, allow wcid to iterate to provide a scaled reward based on trophy quality
+                        var trophyQualityIteration = 0u;
+                        if (creatureObject is { WeenieClassId: 3932 })
+                        {
+                            trophyQualityIteration = (uint)((creatureObject.RefusalItem.Item1.TrophyQuality - 1) ?? 0);
+                            weenieClassId += trophyQualityIteration;
+                        }
+                    }
 
                     var motionChain = new ActionChain();
 
