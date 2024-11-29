@@ -653,7 +653,7 @@ partial class Jewel
             return;
         }
 
-        var chance = (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearManasteal);
+        var chance = (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearManasteal) / 100;
 
         if (playerAttacker == defender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
         {
