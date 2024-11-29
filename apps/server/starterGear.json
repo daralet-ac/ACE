@@ -628,18 +628,6 @@
     {
       "id": "12",
       "name": "Thrown Weapons",
-      "gear": [
-        {
-          "weenieId": "23109",
-          "name": "Starter Atlatl",
-          "stacksize": "1"
-        },
-        {
-          "weenieId": "12464",
-          "name": "Atlatl Darts",
-          "stacksize": "200"
-        }
-      ],
       "heritage": [
         {
           "id": "1",
