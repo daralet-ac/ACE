@@ -832,7 +832,7 @@ public class SpellProjectile : WorldObject
             var elementalWardProtection = CheckForRatingElementalWardProtectionBonus(targetPlayer);
 
             var jewelElementalist = 1.0f + CheckForRatingElementalistDamageBonus(sourcePlayer);
-            var jewelElemental = 1.0f + Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
+            var jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
             var jewelSelfHarm = 1.0f + CheckForRatingSelfHarmDamageBonus(sourcePlayer);
             var jewelLastStand = 1.0f + CheckForRatingLastStandDamageMod(sourcePlayer);
 
