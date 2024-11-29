@@ -352,7 +352,7 @@ public static class LevelScaling
     // --- Private Get At-Level Helpers ---
     private static int GetPlayerHealthAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight);
+        GetRangeAndStatWeight(level, out var range, out var statweight, true);
 
         var stat =
             (AvgPlayerHealthPerTier[range + 1] - AvgPlayerHealthPerTier[range]) * statweight
@@ -363,7 +363,7 @@ public static class LevelScaling
 
     private static int GetPlayerArmorWardAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight);
+        GetRangeAndStatWeight(level, out var range, out var statweight, true);
 
         var stat =
             (AvgPlayerArmorWardPerTier[range + 1] - AvgPlayerArmorWardPerTier[range]) * statweight
@@ -374,7 +374,7 @@ public static class LevelScaling
 
     private static int GetPlayerAttributeAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight);
+        GetRangeAndStatWeight(level, out var range, out var statweight, true);
 
         var stat =
             (AvgPlayerAttributePerTier[range + 1] - AvgPlayerAttributePerTier[range]) * statweight
@@ -385,7 +385,7 @@ public static class LevelScaling
 
     private static int GetPlayerAttackSkillAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight);
+        GetRangeAndStatWeight(level, out var range, out var statweight, true);
 
         var stat =
             (AvgPlayerAttackSkillPerTier[range + 1] - AvgPlayerAttackSkillPerTier[range]) * statweight
@@ -396,7 +396,7 @@ public static class LevelScaling
 
     private static int GetPlayerDefenseSkillAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight);
+        GetRangeAndStatWeight(level, out var range, out var statweight, true);
 
         var stat =
             (AvgPlayerDefenseSkillPerTier[range + 1] - AvgPlayerDefenseSkillPerTier[range]) * statweight
@@ -407,7 +407,7 @@ public static class LevelScaling
 
     private static float GetPlayerResistanceAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight);
+        GetRangeAndStatWeight(level, out var range, out var statweight, true);
 
         var stat =
             (AvgPlayerResistancePerTier[range + 1] - AvgPlayerResistancePerTier[range]) * statweight
@@ -418,7 +418,7 @@ public static class LevelScaling
 
     private static int GetPlayerBoostAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight);
+        GetRangeAndStatWeight(level, out var range, out var statweight, true);
 
         var stat =
             (AvgPlayerBoostPerTier[range + 1] - AvgPlayerBoostPerTier[range]) * statweight
@@ -449,37 +449,42 @@ public static class LevelScaling
         return (int)stat;
     }
 
-    private static void GetRangeAndStatWeight(int level, out int range, out float statweight)
+    private static void GetRangeAndStatWeight(int level, out int range, out float statweight, bool player = false)
     {
+        // Use playerScalar mod to account for the fact that player's receive a large jump in stats the moment
+        // they equip a new tier of gear. Progression during a tier of gear won't get them close to the next tier's stats.
+        // Perhaps up to 50% of the way.
+        var playerScalar = player ? 0.5f : 1.0f;
+
         switch (level)
         {
             case < 20:
                 range = 0;
-                statweight = (level - 10.0f) / 10;
+                statweight = (level - 10.0f) / 10 * playerScalar;
                 break;
             case < 30:
                 range = 1;
-                statweight = (level - 20.0f) / 10;
+                statweight = (level - 20.0f) / 10 * playerScalar;
                 break;
             case < 40:
                 range = 2;
-                statweight = (level - 30.0f) / 10;
+                statweight = (level - 30.0f) / 10 * playerScalar;
                 break;
             case < 50:
                 range = 3;
-                statweight = (level - 40.0f) / 10;
+                statweight = (level - 40.0f) / 10 * playerScalar;
                 break;
             case < 75:
                 range = 4;
-                statweight = (level - 50.0f) / 25;
+                statweight = (level - 50.0f) / 25 * playerScalar;
                 break;
             case < 100:
                 range = 5;
-                statweight = (level - 75.0f) / 25;
+                statweight = (level - 75.0f) / 25 * playerScalar;
                 break;
             default:
                 range = 6;
-                statweight = (level - 100.0f) / 26;
+                statweight = (level - 100.0f) / 26 * playerScalar;
                 break;
         }
 
