@@ -733,11 +733,6 @@ public class SpellProjectile : WorldObject
                 weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
 
                 criticalDamageMod = 2.0f + weaponCritDamageMod;
-
-                if (sourcePlayer != null && sourcePlayer.EquippedCombatAbility == CombatAbility.IronFist)
-                {
-                    criticalDamageMod -= 0.2f;
-                }
             }
 
             weaponResistanceMod = GetWeaponResistanceModifier(
