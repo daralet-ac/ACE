@@ -11,7 +11,6 @@ using Discord.Interactions;
 
 namespace ACE.Server.Discord.Modules;
 
-[RequireRole("Admin")]
 [Group("export", "Export weenie and landblock commands")]
 public class ExportModule : InteractionModuleBase<SocketInteractionContext>
 {

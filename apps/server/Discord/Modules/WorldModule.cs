@@ -5,7 +5,6 @@ using Discord.Interactions;
 
 namespace ACE.Server.Discord.Modules;
 
-[RequireRole("Admin")]
 [Group("world", "World commands")]
 public class WorldModule : InteractionModuleBase<SocketInteractionContext>
 {
@@ -83,11 +82,15 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
         WorldManager.Close(null, true);
 
         await DeferAsync(true);
-        await Context.Interaction.ModifyOriginalResponseAsync(x =>
-        {
-            x.Content = "World is now closed!";
-            x.Components = null;
-        });
+        var embed = new EmbedBuilder()
+            .WithColor(new Color(217, 50, 50))
+            .WithAuthor(Context.Interaction.User)
+            .WithDescription("# World is now closed!")
+            .WithCurrentTimestamp()
+            .Build();
+
+        await Context.Interaction.DeleteOriginalResponseAsync();
+        await Context.Interaction.InteractionChannel.SendMessageAsync(embed: embed);
     }
 
     [ComponentInteraction("openWorld", true)]
@@ -96,11 +99,15 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
         WorldManager.Open(null);
 
         await DeferAsync(true);
-        await Context.Interaction.ModifyOriginalResponseAsync(x =>
-        {
-            x.Content = "World is now open!";
-            x.Components = null;
-        });
+        var embed = new EmbedBuilder()
+            .WithColor(new Color(75, 181, 67))
+            .WithAuthor(Context.Interaction.User)
+            .WithDescription("# World is now open!")
+            .WithCurrentTimestamp()
+            .Build();
+
+        await Context.Interaction.DeleteOriginalResponseAsync();
+        await Context.Interaction.InteractionChannel.SendMessageAsync(embed: embed);
     }
 
     [ComponentInteraction("cancel", true)]

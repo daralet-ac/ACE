@@ -16,7 +16,6 @@ using Serilog;
 
 namespace ACE.Server.Discord.Modules;
 
-[RequireRole("Admin")]
 [Group("import", "Import weenie and landblock commands")]
 public class ImportModule : InteractionModuleBase<SocketInteractionContext>
 {

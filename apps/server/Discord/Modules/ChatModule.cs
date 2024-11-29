@@ -8,7 +8,6 @@ namespace ACE.Server.Discord.Modules;
 
 public class ChatModule : InteractionModuleBase<SocketInteractionContext>
 {
-    [RequireRole("Admin")]
     [SlashCommand("gamecast", "Broadcast messages to the world on behave of SYSTEM")]
     public async Task Gamecast(string message)
     {
