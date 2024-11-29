@@ -197,7 +197,7 @@ partial class Creature
         {
             // select a magic spell
             //CurrentSpell = GetRandomSpell();
-            if (CurrentSpell is {IsProjectile: true })
+            if (CurrentSpell is not null and { IsProjectile: true })
             {
                 if (isVisible == null)
                 {
