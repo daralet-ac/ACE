@@ -13,7 +13,6 @@ namespace ACE.Server.Discord.Modules;
 
 public class AccountModule : InteractionModuleBase<SocketInteractionContext>
 {
-    [RequireRole("Admin")]
     [SlashCommand("allow-ip", "Temporarily adds a user's IP to the multiple account allow list.")]
     public async Task AllowIp(string ip)
     {
@@ -47,7 +46,6 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
         );
     }
 
-    [RequireRole("Admin")]
     [SlashCommand("list-players", "List currently online players")]
     public async Task ListPlayers(bool showAdmins = true, bool ephemeral = true)
     {
