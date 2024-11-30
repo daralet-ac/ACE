@@ -927,7 +927,26 @@ public class EmoteManager
                     items.AddRange(player.GetEquippedObjectsOfWCID(emote.WeenieClassId ?? 0));
                     var numItems = items.Sum(i => i.StackSize ?? 1);
 
-                    success = numItems >= numRequired;
+                    uint? refusalItemGuidId = null;
+                    if (creature?.RefusalItem.Item2 != null)
+                    {
+                        refusalItemGuidId = creature.RefusalItem.Item2;
+
+                        success = false;
+
+                        foreach (var item in items)
+                        {
+                            if (item.Guid.Full == refusalItemGuidId)
+                            {
+                                success = true;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        success = numItems >= numRequired;
+                    }
 
                     ExecuteEmoteSet(
                         success ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
