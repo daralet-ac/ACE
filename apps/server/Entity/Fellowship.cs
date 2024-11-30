@@ -537,7 +537,7 @@ public class Fellowship
                     )
                 );
 
-                if (player.CurrentLandblock.IsFellowshipRequired())
+                if (player.CurrentLandblock is not null && player.CurrentLandblock.IsFellowshipRequired())
                 {
                     player.Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
