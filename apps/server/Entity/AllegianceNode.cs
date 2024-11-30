@@ -86,13 +86,12 @@ public class AllegianceNode
         //
         // Leadership bonus = Leadership / 100
         // Follower Rank:
-        // - 1 unique follower = 1
-        // - 3 = 2
-        // - 6 = 3
-        // - 10 = 4
-        // - 15 = 5
-        // - 25 - 6
-        // - 50 = 7
+        // - 1 unique follower = 2
+        // - 3 = 3
+        // - 6 = 4
+        // - 10 = 5
+        // - 20 = 6
+        // - 50 - 7
 
         var uniqueFollowers = GetUniqueFollowers(this);
 
@@ -103,26 +102,23 @@ public class AllegianceNode
             case >= 50:
                 Rank = 7 + leadershipBonus;
                 break;
-            case >= 25:
+            case >= 20:
                 Rank = 6 + leadershipBonus;
                 break;
-            case >= 15:
+            case >= 10:
                 Rank = 5 + leadershipBonus;
                 break;
-            case >= 10:
+            case >= 6:
                 Rank = 4 + leadershipBonus;
                 break;
-            case >= 6:
+            case >= 3:
                 Rank = 3 + leadershipBonus;
                 break;
-            case >= 3:
+            case >= 1:
                 Rank = 2 + leadershipBonus;
                 break;
-            case >= 1:
-                Rank = 1 + leadershipBonus;
-                break;
             default:
-                Rank = 0 + leadershipBonus;
+                Rank = 1 + leadershipBonus;
                 break;
         }
     }
