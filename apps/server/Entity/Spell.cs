@@ -179,6 +179,7 @@ public partial class Spell : IEquatable<Spell>
             }
 
             // component burn rate = spell base rate * component destruction modifier * skillMod?
+            Console.WriteLine($"TryBurnComps() - base: {baseRate}, CDM: {spellComponent.CDM}, skillMod: {skillMod}, compBurnRating: {compBurnRating}");
             var burnRate = baseRate * spellComponent.CDM * skillMod * compBurnRating;
 
             // TODO: curve?
