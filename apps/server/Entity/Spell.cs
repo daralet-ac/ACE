@@ -158,7 +158,8 @@ public partial class Spell : IEquatable<Spell>
         var consumed = new List<uint>();
 
         // the base rate for each component is defined per-spell
-        var baseRate = ComponentLoss;
+        //var baseRate = ComponentLoss;
+        var baseRate = (float)Level / 100;
 
         // get magic skill mod
         var magicSkill = GetMagicSkill();
@@ -180,7 +181,7 @@ public partial class Spell : IEquatable<Spell>
 
             // component burn rate = spell base rate * component destruction modifier * skillMod?
             var burnRate = baseRate * spellComponent.CDM * skillMod * compBurnRating;
-
+            
             // TODO: curve?
             var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
             if (rng < burnRate)
