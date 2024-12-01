@@ -2037,6 +2037,90 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
+    /// COMBAT ABILITY - Mana Barrier: Some damage taken from mana instead of health.
+    /// </summary>
+    private uint CheckForCombatAbilityEvasiveStance(Creature target, float damage, Player targetPlayer, uint amount)
+    {
+        if (targetPlayer is not { EvasiveStanceToggle: true })
+        {
+            amount = (uint)-target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
+
+            target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+
+            return amount;
+        }
+
+        if (targetPlayer.Level == null || !targetPlayer.EvasiveStanceToggle)
+        {
+            return amount;
+        }
+
+        var runSkill = targetPlayer.GetCreatureSkill(Skill.Run);
+        var jumpSkill = targetPlayer.GetCreatureSkill(Skill.Jump);
+
+        var expectedSkill = (float)(targetPlayer.Level * 5);
+        var currentSkill = runSkill.Current > jumpSkill.Current ? (float)runSkill.Current : (float)jumpSkill.Current;
+
+        var skillSpecialized = runSkill.AdvancementClass == SkillAdvancementClass.Specialized || jumpSkill.AdvancementClass == SkillAdvancementClass.Specialized;
+
+        // Create a scaling mod. If expected skill is much higher than currentSkill, you will be multiplying the amount
+        // of stamina damage singificantly, so low skill players will not get much benefit before bubble bursts.
+        // Capped at 1.0f so high skill gets the proper ratio of health-to-stamina, but no better than that.
+
+        var skillModifier = Math.Max(expectedSkill / currentSkill, 1.0f);
+
+        var staminaDamage = (damage * 0.25) * 3 * skillModifier;
+        if (skillSpecialized)
+        {
+            staminaDamage = (damage * 0.25) * 1.5 * skillModifier;
+        }
+
+        if (targetPlayer.Stamina.Current >= staminaDamage)
+        {
+            amount = (uint)(damage * 0.75);
+
+            targetPlayer.PlayParticleEffect(PlayScript.RestrictionEffectGold, targetPlayer.Guid);
+            targetPlayer.UpdateVitalDelta(targetPlayer.Stamina, (int)-Math.Round(staminaDamage));
+            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
+            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+        }
+        // if not enough mana, barrier falls and player takes remainder of damage as health
+        else
+        {
+            targetPlayer.ToggleEvasiveStanceSetting();
+            targetPlayer.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You run out of stamina and are fall out of your Evasive Stance!", ChatMessageType.Magic)
+            );
+
+            var sharedCooldowns = targetPlayer.GetInventoryItemsOfWCID(1051110); // Mana Barrier
+            sharedCooldowns.AddRange(targetPlayer.GetInventoryItemsOfWCID(1051114)); // Evasive Stance
+
+            foreach (var toggle in sharedCooldowns)
+            {
+                targetPlayer.EnchantmentManager.StartCooldown(toggle);
+            }
+
+            targetPlayer.PlayParticleEffect(PlayScript.HealthDownYellow, targetPlayer.Guid);
+
+            // find stamina damage overage and reconvert to HP damage
+            var staminaRemainder = (staminaDamage - targetPlayer.Stamina.Current) / skillModifier / 1.5;
+
+            if (skillSpecialized)
+            {
+                staminaRemainder = (staminaDamage - targetPlayer.Stamina.Current) / skillModifier / 3;
+            }
+
+            amount = (uint)((damage * 0.75) + staminaRemainder);
+
+            targetPlayer.UpdateVitalDelta(targetPlayer.Stamina, (int)-(targetPlayer.Stamina.Current - 1));
+            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-(amount));
+            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+        }
+
+        return amount;
+    }
+
+    /// <summary>
     /// Sets the physics state for a launched projectile
     /// </summary>
     public void SetProjectilePhysicsState(WorldObject target, bool useGravity)
