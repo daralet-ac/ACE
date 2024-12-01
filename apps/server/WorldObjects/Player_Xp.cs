@@ -104,7 +104,9 @@ partial class Player
             fellowSharePercent = Fellowship.GetMemberSharePercent();
         }
 
-        var xp = (long)(baseXp * killXpMod * distanceScalar * fellowSharePercent);
+        var overSoftCapPenalty = GetOverlevelPenalty(effectivePlayerLevel);
+
+        var xp = (long)(baseXp * killXpMod * distanceScalar * fellowSharePercent * overSoftCapPenalty);
 
         GrantXP(xp, XpType.Quest, ShareType.None);
     }
