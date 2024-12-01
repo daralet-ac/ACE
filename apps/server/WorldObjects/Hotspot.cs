@@ -237,6 +237,11 @@ public class Hotspot : WorldObject
 
     private void Activate()
     {
+        if (Creatures == null)
+        {
+            return;
+        }
+
         foreach (var creatureGuid in Creatures.ToList())
         {
             var creature = CurrentLandblock.GetObject(creatureGuid) as Creature;
