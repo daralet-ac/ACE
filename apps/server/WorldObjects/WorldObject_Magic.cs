@@ -999,10 +999,16 @@ partial class WorldObject
 
         string srcVital;
 
-        tryBoost = Convert.ToInt32(tryBoost * CheckForRatingSelflessnessBoostMod(targetCreature, player));
-        tryBoost = Convert.ToInt32(tryBoost * CheckForRatingHealBubbleHotspot(spell, targetCreature, weapon, player));
-        tryBoost = Convert.ToInt32(tryBoost * CheckForRatingVitalsTransferBoostPenalty(player));
-        tryBoost = Convert.ToInt32(tryBoost * CheckForRatingNullificationBoostDefenseBonus(targetCreature));
+        if (tryBoost > 0) // heal jewel mods
+        {
+            tryBoost = Convert.ToInt32(tryBoost * CheckForRatingSelflessnessBoostMod(targetCreature, player));
+            tryBoost = Convert.ToInt32(tryBoost * CheckForRatingHealBubbleHotspot(spell, targetCreature, weapon, player));
+            tryBoost = Convert.ToInt32(tryBoost * CheckForRatingVitalsTransferBoostPenalty(player));
+        }
+        else // harm jewel mods
+        {
+            tryBoost = Convert.ToInt32(tryBoost * CheckForRatingNullificationBoostDefenseBonus(targetCreature));
+        }
 
         ResetRatingElementalistQuestStamps(player);
 
@@ -1158,7 +1164,7 @@ partial class WorldObject
         var rampMod = (float)tPlayer.QuestManager.GetCurrentSolves($"{tPlayer.Name},Nullification") / 200; // up to 1.0f
         var ratingMod = tPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) * 0.02f; // 0.02f per rating
 
-        return rampMod * ratingMod;
+        return 1.0f - (rampMod * ratingMod);
     }
 
     /// <summary>
