@@ -163,8 +163,14 @@ public partial class Spell : IEquatable<Spell>
 
         // get magic skill mod
         var magicSkill = GetMagicSkill();
-        var playerSkill = player.GetCreatureSkill(magicSkill);
-        var skillMod = Math.Min(1.0f, (float)Power / playerSkill.Current);
+        var playerSkill = player.GetCreatureSkill(magicSkill).Current;
+
+        if (magicSkill is Skill.WarMagic or Skill.LifeMagic)
+        {
+            playerSkill = magicSkill == Skill.WarMagic ? player.GetModdedWarMagicSkill() : player.GetModdedLifeMagicSkill();
+        }
+
+        var skillMod = Math.Min(1.0f, (float)Power / playerSkill);
         //Console.WriteLine($"TryBurnComponents.SkillMod: {skillMod}");
 
         //DebugComponents();
