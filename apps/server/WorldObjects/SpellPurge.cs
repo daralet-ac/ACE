@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -204,6 +204,7 @@ public class SpellPurge : Stackable
 
             var confirmationMessage =
                 $"Remove {chosenSpell.Name} from {target.NameWithMaterial}?\n\n" +
+                $"If this item contains more than one spell, selecting 'No' will cycle through the remaining spells.\n\n" +
                 $"{arcaneLoreString}" +
                 $" {amountToAdd} Pearls of Purging will be consumed.\n\n";
 
