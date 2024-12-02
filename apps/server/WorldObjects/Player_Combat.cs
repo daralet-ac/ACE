@@ -1926,35 +1926,24 @@ partial class Player
     // - These abilities are player-only, creatures with high endurance will not benefit from any of these changes.
     // - Come May, you can type @help endurance for a summary of the April changes to Endurance.
 
+    /// <summary>
+    /// Daralet version - Now acts as a multiplier, reducing damage by up to an additional 20%.
+    /// Uses "Current" Str+End attribute amounts so that those buffs are desired for damage reduction.
+    /// Starts at 200 Str+End and caps at 600. Effects all damage types equally.
+    /// </summary>
+    /// <returns></returns>
     public override float GetNaturalResistance(DamageType damageType)
     {
-        if (damageType == DamageType.Undef)
+        var strAndEnd = Strength.Current + Endurance.Current;
+        var amountForScaling = (int)strAndEnd - 200;
+
+        if (amountForScaling <= 0)
         {
             return 1.0f;
         }
 
-        // http://acpedia.org/wiki/Announcements_-_11th_Anniversary_Preview#Void_Magic_and_You.21
-        // Creatures under Asheron’s protection take half damage from any nether type spell.
-        if (damageType == DamageType.Nether)
-        {
-            return 0.5f;
-        }
-
-        // base strength and endurance give the player a natural resistance to damage,
-        // which caps at 50% (equivalent to level 5 life prots)
-        // these do not stack with life protection spells
-
-        // - natural resistances are ignored by hollow damage
-
-        var strAndEnd = Strength.Base + Endurance.Base;
-
-        if (strAndEnd <= 200)
-        {
-            return 1.0f;
-        }
-
-        var naturalResistance = 1.0f - (float)(strAndEnd - 200) / 300 * 0.5f;
-        naturalResistance = Math.Max(naturalResistance, 0.5f);
+        var naturalResistance = 1.0f -  ((float)(amountForScaling) / 600 * 0.2f);
+        naturalResistance = Math.Clamp(naturalResistance, 0.8f, 1.0f);
 
         return naturalResistance;
     }

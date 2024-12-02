@@ -275,13 +275,7 @@ partial class Creature
         var vulnMod = EnchantmentManager.GetVulnerabilityResistanceMod(damageType);
 
         var naturalResistMod = GetNaturalResistance(damageType);
-
-        // protection mod becomes either life protection or natural resistance,
-        // whichever is more powerful (more powerful = lower value here)
-        if (protMod > naturalResistMod)
-        {
-            protMod = naturalResistMod;
-        }
+        protMod *= naturalResistMod;
 
         // does this stack with natural resistance?
         if (this is Player player)
