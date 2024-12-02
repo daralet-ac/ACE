@@ -5900,6 +5900,8 @@ partial class Player
         return GetEquippedObjectsOfWCID(weenieClassId).Select(i => i.StackSize ?? 1).Sum();
     }
 
+    const float SpecializedPackBurdenMod = 0.25f;
+
     public void RecalculateBurden()
     {
         if (Session == null)
@@ -5918,7 +5920,7 @@ partial class Player
             {
                 if (inventoryObject.EncumbranceVal != null)
                 {
-                    totalBurden += (int)inventoryObject.EncumbranceVal / 2;
+                    totalBurden += (int)(inventoryObject.EncumbranceVal * SpecializedPackBurdenMod);
                 }
             }
             else
