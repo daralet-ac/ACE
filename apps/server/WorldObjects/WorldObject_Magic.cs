@@ -977,8 +977,6 @@ partial class WorldObject
             }
         }
 
-
-
         var overload = false;
         var overloadPercent = 0;
 
@@ -999,15 +997,16 @@ partial class WorldObject
 
         string srcVital;
 
-        if (tryBoost > 0) // heal jewel mods
+        if (tryBoost > 0) // heal
         {
             tryBoost = Convert.ToInt32(tryBoost * CheckForRatingSelflessnessBoostMod(targetCreature, player));
             tryBoost = Convert.ToInt32(tryBoost * CheckForRatingHealBubbleHotspot(spell, targetCreature, weapon, player));
             tryBoost = Convert.ToInt32(tryBoost * CheckForRatingVitalsTransferBoostPenalty(player));
         }
-        else // harm jewel mods
+        else // harm
         {
             tryBoost = Convert.ToInt32(tryBoost * CheckForRatingNullificationBoostDefenseBonus(targetCreature));
+            tryBoost = Convert.ToInt32(tryBoost * SkillFormula.CalcWardMod(targetCreature.GetWardLevel()));
         }
 
         ResetRatingElementalistQuestStamps(player);
@@ -1554,8 +1553,8 @@ partial class WorldObject
 
                 overload = CheckForCombatAbilityOverloadVitalTransferBonus(spell, combatAbility, false, player, ref overloadPercent, ref srcVitalChange, ref destVitalChange);
 
-                srcVitalChange = CheckForCombatAbilityBatteryVitalTransferPenalty(combatAbility, player, srcVitalChange, ref destVitalChange);
-                srcVitalChange = CheckForCombatAbilityEnchantVitalTransferBonus(player, srcVitalChange, ref destVitalChange);
+                destVitalChange = CheckForCombatAbilityBatteryVitalTransferPenalty(combatAbility, player, srcVitalChange, ref destVitalChange);
+                destVitalChange = CheckForCombatAbilityEnchantVitalTransferBonus(player, srcVitalChange, ref destVitalChange);
             }
 
             // LEVEL SCALING - Reduce Drain effectiveness vs. monsters, and increase vs. player
