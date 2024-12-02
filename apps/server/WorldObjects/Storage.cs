@@ -169,11 +169,35 @@ public class Storage : Container
 
     private void SendBankVaultInventory(Player player)
     {
+        if (player is null)
+        {
+            _log.Error("SendBankVaultInventory(Player) - Player is null");
+            return;
+        }
+
+        if (Inventory is null)
+        {
+            _log.Error("SendBankVaultInventory(Player) - Inventory is null", player);
+            return;
+        }
+
         // send createobject for all objects in this container's inventory to player
         var itemsToSend = new List<GameMessage>();
 
         foreach (var item in Inventory.Values.Where(i => i.BankAccountId == player.Account.AccountId))
         {
+            if (item is null)
+            {
+                _log.Error("SendBankVaultInventory(Player {Player}) - item is null", player.Name);
+                continue;
+            }
+
+            if (item.BankAccountId is null)
+            {
+                _log.Error("SendBankVaultInventory(Player {Player}) - {Item}.BankAccountId is null", player.Name, item.Name);
+                continue;
+            }
+
             itemsToSend.Add(new GameMessageCreateObject(item));
 
             if (item is Container container)
