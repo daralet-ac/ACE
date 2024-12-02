@@ -13,6 +13,7 @@ using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects.Entity;
+using Serilog;
 
 namespace ACE.Server.WorldObjects.Managers;
 
@@ -27,6 +28,7 @@ public enum StackType
 
 public class EnchantmentManager
 {
+    private static readonly ILogger _log = Log.ForContext(typeof(EnchantmentManager));
     public WorldObject WorldObject { get; }
     public Player Player { get; }
 
@@ -274,6 +276,13 @@ public class EnchantmentManager
         bool isWeaponSpell = false
     )
     {
+        if (spell is {Id: 42823})
+        {
+            _log.Error(
+                "[MYSTERY ENCHANTMENT] - Spell: {Spell}, Caster: {Caster}, Weapon: {Weapon}, Equip: {Equip}, IsWeaponSpell: {IsWeaponSpell}",
+                spell!.Name, caster!.Name, weapon!.Name, equip, isWeaponSpell);
+        }
+
         var entry = new PropertiesEnchantmentRegistry();
 
         entry.EnchantmentCategory = (uint)spell.MetaSpellType;
