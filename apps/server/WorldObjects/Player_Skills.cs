@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ACE.DatLoader;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -408,7 +409,10 @@ partial class Player
         else
         {
             // refund xp and skill credits
-            RefundXP(creatureSkill.ExperienceSpent);
+            if (!IsTradeSkill(skill))
+            {
+                RefundXP(creatureSkill.ExperienceSpent);
+            }
 
             // temple untraining 'always trained' skills:
             // cannot be untrained, but skill XP can be recovered
