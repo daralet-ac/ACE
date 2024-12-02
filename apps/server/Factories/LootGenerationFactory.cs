@@ -1457,11 +1457,21 @@ public static partial class LootGenerationFactory
         var materialStones = LootTables.DefaultMaterial[3];
         var materialCloth = LootTables.DefaultMaterial[4];
         var materialLeather = LootTables.DefaultMaterial[5];
+        var materialImbueGems = LootTables.DefaultMaterial[6];
 
+        var imbueGemMaterialChance = 0.25f;
         var weenieType = wo.WeenieType;
+
         switch (weenieType)
         {
             case WeenieType.Caster:
+            
+                if (ThreadSafeRandom.Next(0.0f, 1.0f) < imbueGemMaterialChance)
+                {
+                    var roll = ThreadSafeRandom.Next(0, materialImbueGems.Length - 1);
+                    material = (MaterialType)materialImbueGems[roll];
+                }
+                else
                 {
                     uint[] orbs = { 2366, 1050101, 1050102, 1050103, 1050104, 1050105, 1050106, 1050107 };
                     if (orbs.Contains(wo.WeenieClassId))
@@ -1483,6 +1493,7 @@ public static partial class LootGenerationFactory
                         }
                     }
                 }
+            
                 break;
             case WeenieType.Clothing:
                 {
@@ -1541,8 +1552,16 @@ public static partial class LootGenerationFactory
             case WeenieType.Generic:
                 if (wo.ItemType == ItemType.Jewelry)
                 {
-                    var roll = ThreadSafeRandom.Next(0, materialMetals.Length - 1);
-                    material = (MaterialType)materialMetals[roll];
+                    if (ThreadSafeRandom.Next(0.0f, 1.0f) < imbueGemMaterialChance)
+                    {
+                        var roll = ThreadSafeRandom.Next(0, materialImbueGems.Length - 1);
+                        material = (MaterialType)materialImbueGems[roll];
+                    }
+                    else
+                    {
+                        var roll = ThreadSafeRandom.Next(0, materialMetals.Length - 1);
+                        material = (MaterialType)materialMetals[roll];
+                    }
                 }
                 else
                 {

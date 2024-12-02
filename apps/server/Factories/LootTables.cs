@@ -2917,6 +2917,20 @@ public static class LootTables
             (int)MaterialType.GromnieHide,
             (int)MaterialType.ReedSharkHide
         },
+        // Imbue Gems
+        new int[]
+        {
+            (int)MaterialType.Sunstone,
+            (int)MaterialType.BlackOpal,
+            (int)MaterialType.FireOpal,
+            (int)MaterialType.RedGarnet,
+            (int)MaterialType.Emerald,
+            (int)MaterialType.Aquamarine,
+            (int)MaterialType.BlackGarnet,
+            (int)MaterialType.ImperialTopaz,
+            (int)MaterialType.Jet,
+            (int)MaterialType.WhiteSapphire,
+        }
     };
 
     public enum ArmorType
