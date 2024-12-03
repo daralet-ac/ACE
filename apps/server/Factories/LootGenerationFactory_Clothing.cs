@@ -1138,9 +1138,9 @@ public static partial class LootGenerationFactory
         {
             case 44: // Buckler
                 return 0.05f;
-            // case 91: // Small Kite Shield
-            // case 93: // Small Round Shield
-            //     return 0.05f;
+            case 1050111: // Small Kite Shield
+            case 1050112: // Small Round Shield
+                 return 0.05f;
             case 91: // Kite Shield
             case 93: // Round Shield
                 return 0.1f;
