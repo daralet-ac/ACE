@@ -627,11 +627,17 @@ public class SpellTransference : Stackable
                         }
 
                         var newManaRate = LootGenerationFactory.CalculateManaRate(target);
-                        var newMaxMana = (int)spellToAdd.BaseMana * 15;
+
+                        var tier = Math.Clamp((target.Tier ?? 1) - 1, 1, 7);
+                        var newMaxMana = 15;
+                        for (var i = 1; i < tier; i++)
+                        {
+                            newMaxMana *= 2;
+                        }
 
                         if (newMaxMana > (target.ItemMaxMana ?? 0))
                         {
-                            target.ItemMaxMana += newMaxMana;
+                            target.ItemMaxMana = newMaxMana;
                             target.ItemCurMana = Math.Clamp(target.ItemCurMana ?? 0, 0, target.ItemMaxMana ?? 0);
 
                             target.ManaRate = newManaRate;
