@@ -735,7 +735,7 @@ public static partial class LootGenerationFactory
 
                 sigilTrinket.Name += " of Absorption";
                 sigilTrinket.Use =
-                    $"Whenever the wielder is damaged by a spell, they have a chance to convert some of the damage into mana gained.\n\n"
+                    $"Whenever the wielder is damaged by a spell, they have a chance to prevent half of the damage and convert it into mana gained.\n\n"
                     + $"Can only occur while wielding a weapon with a wield requirement of up to {wieldReq}.";
                 break;
             // case (int)SigilTrinketMagicDefenseEffect.PH2:
