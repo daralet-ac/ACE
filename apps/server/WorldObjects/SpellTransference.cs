@@ -325,6 +325,12 @@ public class SpellTransference : Stackable
                             $"This pearl contains the spell {spell.Name}.\n\nIt may only be applied to {itemType} with a Wield Requirement of {wieldReq} or greater.\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character.\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
                         pearl.TinkerLog = $"{target.ItemType}";
                         pearl.UiEffects = ACE.Entity.Enum.UiEffects.BoostMana;
+
+                        if (MiniSpellIcons.TryGetValue((SpellId)spell.Id, out var icon))
+                        {
+                            pearl.IconOverlayId = icon;
+                        }
+
                         player.EnqueueBroadcast(new GameMessageUpdateObject(source));
                         player.PlayParticleEffect(PlayScript.EnchantUpBlue, player.Guid);
 
@@ -529,10 +535,10 @@ public class SpellTransference : Stackable
                     }
                     else if (spellToReplace != null)
                     {
-                        extraMessage = $"\nThis will replace {spellToReplace.Name}!\n";
+                        extraMessage = $"\nThis will replace {spellToReplace.Name}!\n\n";
                     }
 
-                    var potentialArcaneLoreReq = CalculateArcaneLore(target, (int)spellToAdd.Id);
+                    var potentialArcaneLoreReq = CalculateArcaneLore(target, (int)spellToAdd.Id, (int)spellToReplace!.Id);
                     var arcaneLoreString = potentialArcaneLoreReq > 0
                         ? $"The {target.Name}'s arcane lore activation requirement will become {potentialArcaneLoreReq}.\n\n" : "";
 
@@ -606,6 +612,7 @@ public class SpellTransference : Stackable
                             if (spellToReplace != null)
                             {
                                 target.Biota.TryRemoveKnownSpell((int)spellToReplace.Id, target.BiotaDatabaseLock);
+                                target.Biota.GetOrAddKnownSpell((int)spellToAddId, target.BiotaDatabaseLock, out _);
                             }
                             else
                             {
@@ -613,13 +620,12 @@ public class SpellTransference : Stackable
                             }
                         }
 
-                        var newMaxBaseMana = LootGenerationFactory.GetCombinedSpellManaCost(target);
                         var newManaRate = LootGenerationFactory.CalculateManaRate(target);
                         var newMaxMana = (int)spellToAdd.BaseMana * 15;
 
                         if (newMaxMana > (target.ItemMaxMana ?? 0))
                         {
-                            target.ItemMaxMana = newMaxMana;
+                            target.ItemMaxMana += newMaxMana;
                             target.ItemCurMana = Math.Clamp(target.ItemCurMana ?? 0, 0, target.ItemMaxMana ?? 0);
 
                             target.ManaRate = newManaRate;
@@ -659,7 +665,7 @@ public class SpellTransference : Stackable
         }
     }
 
-    private static int CalculateArcaneLore(WorldObject target, int? potentialSpell = null)
+    private static int CalculateArcaneLore(WorldObject target, int? potentialSpell = null, int? potentialRemovedSpell = null)
     {
         var numSpells = 0;
         var increasedDifficulty = 0.0f;
@@ -676,6 +682,11 @@ public class SpellTransference : Stackable
         if (potentialSpell != null)
         {
             spellBook.Add(potentialSpell.Value, 1.0f);
+        }
+
+        if (potentialRemovedSpell != null)
+        {
+            spellBook.Remove(potentialRemovedSpell.Value);
         }
 
         int MINOR = 0,
@@ -775,5 +786,166 @@ public class SpellTransference : Stackable
         (SpellId.FlameBolt1, 1.0f),
         (SpellId.FrostBolt1, 1.0f),
         (SpellId.LightningBolt1, 1.0f),
+    };
+
+    private static Dictionary<SpellId, uint> MiniSpellIcons = new Dictionary<SpellId, uint>()
+    {
+        {SpellId.CANTRIPSTRENGTH1, 100686688},
+        {SpellId.CANTRIPSTRENGTH2, 100686688},
+        {SpellId.CANTRIPSTRENGTH3, 100686688},
+        {SpellId.CantripStrength4, 100686688},
+        {SpellId.CANTRIPENDURANCE1, 100686648},
+        {SpellId.CANTRIPENDURANCE2, 100686648},
+        {SpellId.CANTRIPENDURANCE3, 100686648},
+        {SpellId.CantripEndurance4, 100686648},
+        {SpellId.CANTRIPCOORDINATION1, 100686641},
+        {SpellId.CANTRIPCOORDINATION2, 100686641},
+        {SpellId.CANTRIPCOORDINATION3, 100686641},
+        {SpellId.CantripCoordination4, 100686641},
+        {SpellId.CANTRIPQUICKNESS1, 100686680},
+        {SpellId.CANTRIPQUICKNESS2, 100686680},
+        {SpellId.CANTRIPQUICKNESS3, 100686680},
+        {SpellId.CantripQuickness4, 100686680},
+        {SpellId.CANTRIPFOCUS1, 100686652},
+        {SpellId.CANTRIPFOCUS2, 100686652},
+        {SpellId.CANTRIPFOCUS3, 100686652},
+        {SpellId.CantripFocus4, 100686652},
+        {SpellId.CANTRIPWILLPOWER1, 100686682},
+        {SpellId.CANTRIPWILLPOWER2, 100686682},
+        {SpellId.CANTRIPWILLPOWER3, 100686682},
+        {SpellId.CantripWillpower4, 100686682},
+        {SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1, 100692248},
+        {SpellId.CANTRIPHEAVYWEAPONSAPTITUDE2, 100692248},
+        {SpellId.CANTRIPHEAVYWEAPONSAPTITUDE3, 100692248},
+        {SpellId.CantripHeavyWeaponsAptitude4, 100692248},
+        //{SpellCategory.CascadeAxeRaising, 100692248},
+        //{SpellCategory.CascadeMaceRaising, 100692248},
+        //{SpellCategory.ExtraSpearSkillRaising, 100692248},
+        {SpellId.CANTRIPFINESSEWEAPONSAPTITUDE1, 100686644}, // Dagger
+        {SpellId.CANTRIPFINESSEWEAPONSAPTITUDE2, 100686644},
+        {SpellId.CANTRIPFINESSEWEAPONSAPTITUDE3, 100686644},
+        {SpellId.CantripFinesseWeaponsAptitude4, 100686644},
+        {SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1, 100686686}, // Staff?
+        {SpellId.CANTRIPLIGHTWEAPONSAPTITUDE2, 100686686},
+        {SpellId.CANTRIPLIGHTWEAPONSAPTITUDE3, 100686686},
+        {SpellId.CantripLightWeaponsAptitude4, 100686686},
+        {SpellId.CANTRIPUNARMEDAPTITUDE1, 100686692}, // UA
+        {SpellId.CANTRIPUNARMEDAPTITUDE2, 100686692}, // UA
+        {SpellId.CANTRIPUNARMEDAPTITUDE3, 100686692}, // UA
+        {SpellId.CANTRIPUNARMEDAPTITUDE4, 100686692}, // UA
+        {SpellId.CANTRIPINVULNERABILITY1, 100686675},
+        {SpellId.CANTRIPINVULNERABILITY2, 100686675},
+        {SpellId.CANTRIPINVULNERABILITY3, 100686675},
+        {SpellId.CantripInvulnerability4, 100686675},
+        {SpellId.CANTRIPIMPREGNABILITY1, 100686675},
+        {SpellId.CANTRIPIMPREGNABILITY2, 100686675},
+        {SpellId.CANTRIPIMPREGNABILITY3, 100686675},
+        {SpellId.CantripImpenetrability4, 100686675},
+        {SpellId.CANTRIPMAGICRESISTANCE1, 100686671},
+        {SpellId.CANTRIPMAGICRESISTANCE2, 100686671},
+        {SpellId.CANTRIPMAGICRESISTANCE3, 100686671},
+        {SpellId.CantripMagicResistance4, 100686671},
+        {SpellId.CantripShieldAptitude1, 100692246},
+        {SpellId.CantripShieldAptitude2, 100692246},
+        {SpellId.CantripShieldAptitude3, 100692246},
+        {SpellId.CantripShieldAptitude4, 100692246},
+        {SpellId.CANTRIPMISSILEWEAPONSAPTITUDE1, 100686638},
+        {SpellId.CANTRIPMISSILEWEAPONSAPTITUDE2, 100686638},
+        {SpellId.CANTRIPMISSILEWEAPONSAPTITUDE3, 100686638},
+        {SpellId.CantripMissileWeaponsAptitude4, 100686638},
+        //{SpellCategory.ExtraCrossbowSkillRaising, 100686638},
+        {SpellId.CANTRIPDECEPTIONPROWESS1, 100686645},
+        {SpellId.CANTRIPDECEPTIONPROWESS2, 100686645},
+        {SpellId.CANTRIPDECEPTIONPROWESS3, 100686645},
+        {SpellId.CantripDeceptionProwess4, 100686645},
+        {SpellId.CANTRIPMONSTERATTUNEMENT1, 100686631},
+        {SpellId.CANTRIPMONSTERATTUNEMENT2, 100686631},
+        {SpellId.CANTRIPMONSTERATTUNEMENT3, 100686631},
+        {SpellId.CantripMonsterAttunement4, 100686631},
+        {SpellId.CantripDualWieldAptitude1, 100692245},
+        {SpellId.CantripDualWieldAptitude2, 100692245},
+        {SpellId.CantripDualWieldAptitude3, 100692245},
+        {SpellId.CantripDualWieldAptitude4, 100692245},
+        {SpellId.CANTRIPTWOHANDEDAPTITUDE1, 100686633},
+        {SpellId.CANTRIPTWOHANDEDAPTITUDE2, 100686633},
+        {SpellId.CANTRIPTWOHANDEDAPTITUDE3, 100686633},
+        {SpellId.CantripTwoHandedAptitude4, 100686633},
+        {SpellId.CANTRIPSPRINT1, 100686681},
+        {SpellId.CANTRIPSPRINT2, 100686681},
+        {SpellId.CANTRIPSPRINT3, 100686681},
+        {SpellId.CantripSprint4, 100686681},
+        {SpellId.CANTRIPJUMPINGPROWESS1, 100686662},
+        {SpellId.CANTRIPJUMPINGPROWESS2, 100686662},
+        {SpellId.CANTRIPJUMPINGPROWESS3, 100686662},
+        {SpellId.CantripJumpingProwess4, 100686662},
+        {SpellId.CANTRIPHEALINGPROWESS1, 100686655},
+        {SpellId.CANTRIPHEALINGPROWESS2, 100686655},
+        {SpellId.CANTRIPHEALINGPROWESS3, 100686655},
+        {SpellId.CantripHealingProwess4, 100686655},
+        {SpellId.CANTRIPLOCKPICKPROWESS1, 100686668},
+        {SpellId.CANTRIPLOCKPICKPROWESS2, 100686668},
+        {SpellId.CANTRIPLOCKPICKPROWESS3, 100686668},
+        {SpellId.CantripLockpickProwess4, 100686668},
+        {SpellId.CANTRIPARCANEPROWESS1, 100686628},
+        {SpellId.CANTRIPARCANEPROWESS2, 100686628},
+        {SpellId.CANTRIPARCANEPROWESS3, 100686628},
+        {SpellId.CantripArcaneProwess4, 100686628},
+        {SpellId.CANTRIPWARMAGICAPTITUDE1, 100686693},
+        {SpellId.CANTRIPWARMAGICAPTITUDE2, 100686693},
+        {SpellId.CANTRIPWARMAGICAPTITUDE3, 100686693},
+        {SpellId.CantripWarMagicAptitude4, 100686693},
+        {SpellId.CANTRIPLIFEMAGICAPTITUDE1, 100686664},
+        {SpellId.CANTRIPLIFEMAGICAPTITUDE2, 100686664},
+        {SpellId.CANTRIPLIFEMAGICAPTITUDE3, 100686664},
+        {SpellId.CantripLifeMagicAptitude4, 100686664},
+        {SpellId.CANTRIPMANACONVERSIONPROWESS1, 100686664},
+        {SpellId.CANTRIPMANACONVERSIONPROWESS2, 100686664},
+        {SpellId.CANTRIPMANACONVERSIONPROWESS3, 100686664},
+        {SpellId.CantripManaConversionProwess4, 100686664},
+
+        {SpellId.CANTRIPARMOR1, 100686629},
+        {SpellId.CANTRIPARMOR2, 100686629},
+        {SpellId.CANTRIPARMOR3, 100686629},
+        {SpellId.CantripArmor4, 100686629},
+        {SpellId.CANTRIPACIDWARD1, 100686625},
+        {SpellId.CANTRIPACIDWARD2, 100686625},
+        {SpellId.CANTRIPACIDWARD3, 100686625},
+        {SpellId.CantripAcidWard4, 100686625},
+        {SpellId.CANTRIPFLAMEWARD1, 100686649},
+        {SpellId.CANTRIPFLAMEWARD2, 100686649},
+        {SpellId.CANTRIPFLAMEWARD3, 100686649},
+        {SpellId.CantripFlameWard4, 100686649},
+        {SpellId.CANTRIPFROSTWARD1, 100686654},
+        {SpellId.CANTRIPFROSTWARD2, 100686654},
+        {SpellId.CANTRIPFROSTWARD3, 100686654},
+        {SpellId.CantripFrostWard4, 100686654},
+        {SpellId.CANTRIPSTORMWARD1, 100686667},
+        {SpellId.CANTRIPSTORMWARD2, 100686667},
+        {SpellId.CANTRIPSTORMWARD3, 100686667},
+        {SpellId.CantripStormWard4, 100686667},
+        {SpellId.CANTRIPSLASHINGWARD1, 100686683},
+        {SpellId.CANTRIPSLASHINGWARD2, 100686683},
+        {SpellId.CANTRIPSLASHINGWARD3, 100686683},
+        {SpellId.CantripSlashingWard4, 100686683},
+        {SpellId.CANTRIPPIERCINGWARD1, 100686678},
+        {SpellId.CANTRIPPIERCINGWARD2, 100686678},
+        {SpellId.CANTRIPPIERCINGWARD3, 100686678},
+        {SpellId.CantripPiercingWard4, 100686678},
+        {SpellId.CANTRIPBLUDGEONINGWARD1, 100686637},
+        {SpellId.CANTRIPBLUDGEONINGWARD2, 100686637},
+        {SpellId.CANTRIPBLUDGEONINGWARD3, 100686637},
+        {SpellId.CantripBludgeoningWard4, 100686637},
+        {SpellId.CANTRIPHEALTHGAIN1, 100686656},
+        {SpellId.CANTRIPHEALTHGAIN2, 100686656},
+        {SpellId.CANTRIPHEALTHGAIN3, 100686656},
+        {SpellId.CantripHealthGain4, 100686656},
+        {SpellId.CANTRIPSTAMINAGAIN1, 100686687},
+        {SpellId.CANTRIPSTAMINAGAIN2, 100686687},
+        {SpellId.CANTRIPSTAMINAGAIN3, 100686687},
+        {SpellId.CantripStaminaGain4, 100686687},
+        {SpellId.CANTRIPMANAGAIN1, 100686674},
+        {SpellId.CANTRIPMANAGAIN2, 100686674},
+        {SpellId.CANTRIPMANAGAIN3, 100686674},
+        {SpellId.CantripManaGain4, 100686674}
     };
 }
