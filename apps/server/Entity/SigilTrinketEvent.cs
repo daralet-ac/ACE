@@ -234,7 +234,7 @@ public class SigilTrinketEvent
                 break;
             case ((int)Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption):
 
-                const float spellDamageReductionMod = 0.75f;
+                const float spellDamageReductionMod = 0.5f;
 
                 Target.SigilTrinketSpellDamageReduction = spellDamageReductionMod;
 
