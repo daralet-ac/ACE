@@ -538,7 +538,13 @@ public class SpellTransference : Stackable
                         extraMessage = $"\nThis will replace {spellToReplace.Name}!\n\n";
                     }
 
-                    var potentialArcaneLoreReq = CalculateArcaneLore(target, (int)spellToAdd.Id, (int)spellToReplace!.Id);
+                    int? spellToReplaceId = null;
+                    if (spellToReplace != null)
+                    {
+                        spellToReplaceId = (int)spellToReplace.Id;
+                    }
+
+                    var potentialArcaneLoreReq = CalculateArcaneLore(target, (int)spellToAdd.Id, spellToReplaceId);
                     var arcaneLoreString = potentialArcaneLoreReq > 0
                         ? $"The {target.Name}'s arcane lore activation requirement will become {potentialArcaneLoreReq}.\n\n" : "";
 
