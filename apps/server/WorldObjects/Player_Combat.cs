@@ -196,6 +196,7 @@ partial class Player
         var crit = damageEvent.IsCritical;
         var critMessage = crit == true ? "Critical Hit! " : "";
 
+
         if (damageEvent.HasDamage)
         {
             OnDamageTarget(target, damageEvent.CombatType, damageEvent.IsCritical);
@@ -237,7 +238,7 @@ partial class Player
             }
         }
 
-        if (damageEvent.HasDamage && target.IsAlive)
+        if (damageEvent.HasDamage && target.IsAlive && target.SilentCombat is not true)
         {
             // notify attacker
             var intDamage = (uint)Math.Round(damageEvent.Damage);
@@ -367,6 +368,7 @@ partial class Player
                     var painSound = (Sound)Enum.Parse(typeof(Sound), "Wound" + ThreadSafeRandom.Next(1, 3), true);
                     Session.Network.EnqueueSend(new GameMessageSound(target.Guid, painSound, 1.0f));
                 }
+
                 var splatter = (PlayScript)
                     Enum.Parse(typeof(PlayScript), "Splatter" + GetSplatterHeight() + GetSplatterDir(target));
                 Session.Network.EnqueueSend(new GameMessageScript(target.Guid, splatter));
@@ -385,6 +387,7 @@ partial class Player
                 target.EmoteManager.OnReceiveCritical(this);
             }
         }
+
 
         if (targetPlayer == null)
         {

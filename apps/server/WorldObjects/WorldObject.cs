@@ -1771,4 +1771,20 @@ public abstract partial class WorldObject : IActor
             }
         }
     }
+
+    public bool? SilentCombat
+    {
+        get => GetProperty(PropertyBool.SilentCombat);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyBool.SilentCombat);
+            }
+            else
+            {
+                SetProperty(PropertyBool.SilentCombat, value.Value);
+            }
+        }
+    }
 }
