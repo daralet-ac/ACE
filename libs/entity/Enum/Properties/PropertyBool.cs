@@ -235,6 +235,7 @@ public enum PropertyBool : ushort
     FellowshipRequired = 155,
     SpecialPropertiesRequireMana = 156,
     RepeatConfirmation = 157,
+    SilentCombat = 158,
 
     /* custom */
     [ServerOnly]

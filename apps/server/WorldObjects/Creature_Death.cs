@@ -51,6 +51,11 @@ partial class Creature
     /// <param name="criticalHit">True if the death blow was a critical hit, generates a critical death message</param>
     public virtual DeathMessage OnDeath(DamageHistoryInfo lastDamager, DamageType damageType, bool criticalHit = false)
     {
+        if (SilentCombat is true)
+        {
+            return new DeathMessage("", "", "");
+        }
+
         if (onDeathEntered)
         {
             return GetDeathMessage(lastDamager, damageType, criticalHit);
