@@ -242,7 +242,7 @@ partial class Player
                     var materialType = Regex.Replace((salvResults.MaterialType).ToString(), "(?<!^)([A-Z])", " $1");
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"You obtain {salvResults.Units} {materialType} (ws {salvResults.Workmanship.ToString("N2")}) using your knowledge of {((NewSkillNames)salvageSkill).ToSentence()}.",
+                            $"You obtain {salvResults.Units} {materialType} (ws {salvResults.Workmanship.ToString("N2")}).",
                             ChatMessageType.Broadcast
                         )
                     );
@@ -432,7 +432,7 @@ partial class Player
 
         message = salvageResults.GetMessage(
             salvageItem.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown,
-            GetMaxSkill(TinkeringSkills).Skill
+            Skill.Salvaging
         );
         message.Amount += (uint)addStructure;
 
