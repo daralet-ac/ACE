@@ -70,7 +70,7 @@ partial class Player
 
         var skillCheck = SkillCheck.GetSkillChance(
             Strength.Current * 2,
-            target.GetCreatureSkill(Skill.AssessCreature).Current
+            target.GetCreatureSkill(Skill.Perception).Current
         );
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
@@ -110,7 +110,7 @@ partial class Player
         {
             var skillCheck = SkillCheck.GetSkillChance(
                 Strength.Current * 2,
-                target.GetCreatureSkill(Skill.AssessCreature).Current
+                target.GetCreatureSkill(Skill.Perception).Current
             );
 
             if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
@@ -151,7 +151,7 @@ partial class Player
         {
             var skillCheck = SkillCheck.GetSkillChance(
                 GetModdedDeceptionSkill(),
-                target.GetCreatureSkill(Skill.AssessCreature).Current
+                target.GetCreatureSkill(Skill.Perception).Current
             );
 
             if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
@@ -193,7 +193,7 @@ partial class Player
             return;
         }
 
-        var thieverySkill = GetCreatureSkill(Skill.Lockpick); // Thievery
+        var thieverySkill = GetCreatureSkill(Skill.Thievery); // Thievery
         if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
         {
             return;
@@ -208,7 +208,7 @@ partial class Player
             // generous bonus to skill check to start
             var skillCheck = SkillCheck.GetSkillChance(
                 GetModdedThieverySkill() + 50,
-                target.GetCreatureSkill(Skill.AssessCreature).Current
+                target.GetCreatureSkill(Skill.Perception).Current
             );
 
             if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
@@ -281,7 +281,7 @@ partial class Player
             return;
         }
 
-        Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.AssessCreature), targetDeceptionSkill);
+        Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.Perception), targetDeceptionSkill);
 
         var vulnerabilitySpellLevels = SpellLevelProgression.GetSpellLevels(SpellId.VulnerabilityOther1);
         var imperilSpellLevels = SpellLevelProgression.GetSpellLevels(SpellId.ImperilOther1);
@@ -355,7 +355,7 @@ partial class Player
             TryCastSpell(vulnerabilitySpell, target, this, null, false, false, false, false);
         }
 
-        if (GetCreatureSkill(Skill.AssessCreature).AdvancementClass == SkillAdvancementClass.Specialized)
+        if (GetCreatureSkill(Skill.Perception).AdvancementClass == SkillAdvancementClass.Specialized)
         {
             if (imperilSpellLevel.NonComponentTargetType == ItemType.None)
             {
@@ -369,7 +369,7 @@ partial class Player
 
         if (targetAsPlayer == null)
         {
-            CheckForSigilTrinketOnCastEffects(target, vulnerabilitySpell, false, Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure);
+            CheckForSigilTrinketOnCastEffects(target, vulnerabilitySpell, false, Skill.Perception, (int)SigilTrinketPerceptionEffect.Exposure);
         }
     }
 
@@ -417,7 +417,7 @@ partial class Player
                 return;
             }
 
-            Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.AssessCreature), targetDeceptionSkill);
+            Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.Perception), targetDeceptionSkill);
 
             var magicYieldSpellLevels = SpellLevelProgression.GetSpellLevels(SpellId.MagicYieldOther1);
             var succumbSpellLevels = SpellLevelProgression.GetSpellLevels(SpellId.ExposeWeakness1); // Succumb
@@ -491,7 +491,7 @@ partial class Player
                 TryCastSpell(magicYieldSpell, target, this, null, false, false, false, false);
             }
 
-            if (GetCreatureSkill(Skill.AssessCreature).AdvancementClass == SkillAdvancementClass.Specialized)
+            if (GetCreatureSkill(Skill.Perception).AdvancementClass == SkillAdvancementClass.Specialized)
             {
                 if (succumbSpellLevel.NonComponentTargetType == ItemType.None)
                 {
@@ -505,7 +505,7 @@ partial class Player
 
             if (targetAsPlayer == null)
             {
-                CheckForSigilTrinketOnCastEffects(target, magicYieldSpell, false, Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure);
+                CheckForSigilTrinketOnCastEffects(target, magicYieldSpell, false, Skill.Perception, (int)SigilTrinketPerceptionEffect.Exposure);
             }
         }
     }

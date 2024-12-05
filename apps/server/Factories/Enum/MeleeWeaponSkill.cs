@@ -24,7 +24,7 @@ public static class MeleeWeaponSkillExtensions
     {
         switch (skill)
         {
-            case Skill.HeavyWeapons:
+            case Skill.MartialWeapons:
                 return MeleeWeaponSkill.HeavyWeapons;
             case Skill.LightWeapons:
                 return MeleeWeaponSkill.LightWeapons;

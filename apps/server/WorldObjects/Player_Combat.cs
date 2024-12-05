@@ -157,7 +157,7 @@ partial class Player
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Shield, (int)SigilTrinketShieldEffect.Aggression);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.DualWield, (int)SigilTrinketDualWieldEffect.Assailment, damageEvent.IsCritical);
-        CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Lockpick, (int)SigilTrinketThieveryEffect.Treachery, damageEvent.IsCritical);
+        CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Thievery, (int)SigilTrinketThieveryEffect.Treachery, damageEvent.IsCritical);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Deception, (int)SigilTrinketDeceptionEffect.Avoidance);
 
         target.OnAttackReceived(
@@ -458,8 +458,8 @@ partial class Player
         }
 
         var attackType = GetCombatType();
-        var defenseSkill = attackType == CombatType.Missile ? Skill.MissileDefense : Skill.MeleeDefense;
-        var defenseMod = defenseSkill == Skill.MeleeDefense ? GetWeaponPhysicalDefenseModifier(creature) : 1.0f;
+        var defenseSkill = attackType == CombatType.Missile ? Skill.MissileDefense : Skill.PhysicalDefense;
+        var defenseMod = defenseSkill == Skill.PhysicalDefense ? GetWeaponPhysicalDefenseModifier(creature) : 1.0f;
         var effectiveDefense = (uint)Math.Round(creature.GetCreatureSkill(defenseSkill).Current * defenseMod);
 
         if (creature.IsExhausted)
@@ -539,7 +539,7 @@ partial class Player
         // in order for this specific ability to work. This benefit is tied to Endurance only, and it caps out at around a 75% chance
         // to avoid losing a point of stamina per successful evasion.
 
-        var defenseSkill = GetCreatureSkill(Skill.MeleeDefense);
+        var defenseSkill = GetCreatureSkill(Skill.PhysicalDefense);
 
         if (CombatMode != CombatMode.NonCombat)
         {
@@ -1536,7 +1536,7 @@ partial class Player
         // SPEC BONUS - Martial Weapons (Sword): Stamina costs for melee attacks reduced by 10%
         if (
             GetCurrentWeaponSkill() == Skill.Sword
-            && GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass == SkillAdvancementClass.Specialized
+            && GetCreatureSkill(Skill.MartialWeapons).AdvancementClass == SkillAdvancementClass.Specialized
         )
         {
             staminaCostReductionMod -= 0.1f;

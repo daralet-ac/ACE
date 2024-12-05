@@ -557,7 +557,7 @@ public partial class LootGenerationFactory
         {
             case Skill.TwoHandedCombat:
                 return SpellId.CANTRIPTWOHANDEDAPTITUDE1;
-            case Skill.HeavyWeapons:
+            case Skill.MartialWeapons:
                 return SpellId.CANTRIPHEAVYWEAPONSAPTITUDE1;
             case Skill.LightWeapons:
                 return SpellId.CANTRIPLIGHTWEAPONSAPTITUDE1;

@@ -79,7 +79,7 @@ partial class Creature
     {
         var multiplier = (NearbyPlayerAttackScalingPerExtraPlayer ?? 1.0) * extraPlayers;
 
-        SetNewSkill(BaseHeavyWeaponsSkill, multiplier, Skill.HeavyWeapons);
+        SetNewSkill(BaseHeavyWeaponsSkill, multiplier, Skill.MartialWeapons);
         SetNewSkill(BaseDaggerSkill, multiplier, Skill.Dagger);
         SetNewSkill(BaseStaffSkill, multiplier, Skill.Staff);
         SetNewSkill(BaseUnarmedSkill, multiplier, Skill.UnarmedCombat);
@@ -93,7 +93,7 @@ partial class Creature
     {
         var multiplier = (NearbyPlayerDefenseScalingPerExtraPlayer ?? 1.0) * extraPlayers;
 
-        SetNewSkill(BasePhysicalDefenseSkill, multiplier, Skill.MeleeDefense);
+        SetNewSkill(BasePhysicalDefenseSkill, multiplier, Skill.PhysicalDefense);
         SetNewSkill(BaseMagicDefenseSkill, multiplier, Skill.MagicDefense);
     }
 
@@ -105,7 +105,7 @@ partial class Creature
         }
 
         BaseHealth = Health.MaxValue;
-        BaseHeavyWeaponsSkill = GetCreatureSkill(Skill.HeavyWeapons).Base;
+        BaseHeavyWeaponsSkill = GetCreatureSkill(Skill.MartialWeapons).Base;
         BaseDaggerSkill = GetCreatureSkill(Skill.Dagger).Base;
         BaseStaffSkill = GetCreatureSkill(Skill.Staff).Base;
         BaseUnarmedSkill = GetCreatureSkill(Skill.UnarmedCombat).Base;
@@ -113,7 +113,7 @@ partial class Creature
         BaseThrownWeaponsSkill = GetCreatureSkill(Skill.ThrownWeapon).Base;
         BaseWarMagicSkill = GetCreatureSkill(Skill.WarMagic).Base;
         BaseLifeMagicSkill = GetCreatureSkill(Skill.LifeMagic).Base;
-        BasePhysicalDefenseSkill = GetCreatureSkill(Skill.MeleeDefense).Base;
+        BasePhysicalDefenseSkill = GetCreatureSkill(Skill.PhysicalDefense).Base;
         BaseMagicDefenseSkill = GetCreatureSkill(Skill.MagicDefense).Base;
 
         SkillsSet = true;

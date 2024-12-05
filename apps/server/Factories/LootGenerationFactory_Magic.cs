@@ -1031,7 +1031,7 @@ public static partial class LootGenerationFactory
 
             if (rng < 0.5f)
             {
-                skill = Skill.MeleeDefense;
+                skill = Skill.PhysicalDefense;
             }
             else
             {

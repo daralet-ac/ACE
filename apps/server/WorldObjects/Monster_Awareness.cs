@@ -659,7 +659,7 @@ partial class Creature
             // With Specialized Deception and the Smokescreen combat ability, it's possible for a player to receive 100% chance to avoid aggro.
             if (visibleTargets.Count > 1 && player != null && player.IsAttemptingToDeceive)
             {
-                var monsterPerception = GetCreatureSkill(Skill.AssessCreature).Current;
+                var monsterPerception = GetCreatureSkill(Skill.Perception).Current;
                 var playerDeception = player.GetCreatureSkill(Skill.Deception).Current;
 
                 var skillCheck = SkillCheck.GetSkillChance(monsterPerception, playerDeception);

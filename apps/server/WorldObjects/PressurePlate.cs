@@ -174,7 +174,7 @@ public class PressurePlate : WorldObject
             player,
             () =>
             {
-                if (player.Skills[Skill.Lockpick].AdvancementClass < SkillAdvancementClass.Trained)
+                if (player.Skills[Skill.Thievery].AdvancementClass < SkillAdvancementClass.Trained)
                 {
                     player.Session.Network.EnqueueSend(
                         new GameEventUseDone(player.Session, WeenieError.YouArentTrainedInLockpicking)
@@ -185,7 +185,7 @@ public class PressurePlate : WorldObject
                 var difficulty = (uint)(ResistLockpick ?? 0);
                 if (unlocker.WeenieType == WeenieType.Lockpick)
                 {
-                    var lockpickSkill = player.GetCreatureSkill(Skill.Lockpick);
+                    var lockpickSkill = player.GetCreatureSkill(Skill.Thievery);
                     var effectiveLockpickSkill = UnlockerHelper.GetEffectiveLockpickSkill(player, unlocker);
 
                     var pickChance = SkillCheck.GetSkillChance(effectiveLockpickSkill, difficulty);

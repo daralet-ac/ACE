@@ -366,7 +366,7 @@ partial class Jewel : WorldObject
 
         // calculate bonuses to the carving roll  TODO : 100 skill at level 20 gives you 0.5 quality mod. Need to determine what an appropriate skill is by level to set this correctly
 
-        var playerskill = player.GetCreatureSkill((Skill.ItemTinkering));
+        var playerskill = player.GetCreatureSkill((Skill.Jewelcrafting));
 
         var qualityMod = (double)playerskill.Current / (100 * (double)player.Level / 10);
 
@@ -678,7 +678,7 @@ partial class Jewel : WorldObject
         }
 
         // Difficulty "Failure" Penalty - Rather than destroying jewels, we just lower their quality by 1 for each 20 points of skill below expected.
-        var skill = player.GetCreatureSkill(Skill.ItemTinkering);
+        var skill = player.GetCreatureSkill(Skill.Jewelcrafting);
         var skillLevel = skill.Current;
         if (target.Workmanship != null)
         {
@@ -696,7 +696,7 @@ partial class Jewel : WorldObject
                 modifiedBase = 1;
             }
 
-            player.TryAwardCraftingXp(player, skill, Skill.ItemTinkering, (int)difficulty);
+            player.TryAwardCraftingXp(player, skill, Skill.Jewelcrafting, (int)difficulty);
         }
 
         // get quality name + write socket and jewel name

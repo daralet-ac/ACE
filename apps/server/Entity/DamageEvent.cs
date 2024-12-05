@@ -345,7 +345,7 @@ public class DamageEvent
 
         if (defender is Player playerDefender && PartialEvasion == PartialEvasion.Some)
         {
-            playerDefender.CheckForSigilTrinketOnAttackEffects(playerAttacker, this, Skill.MeleeDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion);
+            playerDefender.CheckForSigilTrinketOnAttackEffects(playerAttacker, this, Skill.PhysicalDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion);
         }
     }
 
@@ -748,7 +748,7 @@ public class DamageEvent
         var playerDefender = defender as Player;
 
         CriticalDamageBonusFromTrinket = 1.0f;
-        playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Lockpick, (int)SigilTrinketThieveryEffect.Treachery, true);
+        playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Thievery, (int)SigilTrinketThieveryEffect.Treachery, true);
 
         _criticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, attacker, _attackSkill, defender);
         _criticalDamageMod += GetMaceSpecCriticalDamageBonus(playerAttacker);
@@ -916,7 +916,7 @@ public class DamageEvent
             return 0.0f;
         }
 
-        return IsWeaponSkillSpecialized(playerAttacker, Skill.Spear, Skill.HeavyWeapons) ? 0.1f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Spear, Skill.MartialWeapons) ? 0.1f : 0.0f;
     }
 
     private float GetArmorMod(Creature attacker, Creature defender)
@@ -1174,7 +1174,7 @@ public class DamageEvent
     {
         if (
             playerDefender == null
-            || playerDefender.GetCreatureSkill(Skill.MeleeDefense).AdvancementClass != SkillAdvancementClass.Specialized
+            || playerDefender.GetCreatureSkill(Skill.PhysicalDefense).AdvancementClass != SkillAdvancementClass.Specialized
         )
         {
             return 1.0f;
@@ -1304,7 +1304,7 @@ public class DamageEvent
             return 0.0f;
         }
 
-        return IsWeaponSkillSpecialized(playerAttacker, Skill.Mace, Skill.HeavyWeapons) ? 0.5f : 0.0f;
+        return IsWeaponSkillSpecialized(playerAttacker, Skill.Mace, Skill.MartialWeapons) ? 0.5f : 0.0f;
     }
 
     /// <summary>
@@ -1317,7 +1317,7 @@ public class DamageEvent
             return false;
         }
 
-        var perception = playerDefender.GetCreatureSkill(Skill.AssessCreature);
+        var perception = playerDefender.GetCreatureSkill(Skill.Perception);
         if (perception.AdvancementClass != SkillAdvancementClass.Specialized)
         {
             return false;
@@ -1386,7 +1386,7 @@ public class DamageEvent
         }
 
         // SPEC BONUS - Martial Weapons (Axe): +5% crit chance (additively)
-        if (IsWeaponSkillSpecialized(_playerAttacker, Skill.Axe, Skill.HeavyWeapons))
+        if (IsWeaponSkillSpecialized(_playerAttacker, Skill.Axe, Skill.MartialWeapons))
         {
             return 0.05f;
         }
@@ -1786,7 +1786,7 @@ public class DamageEvent
     /// </summary>
     private float GetSpecPhysicalDefenseBlockChanceBonus(Player playerDefender)
     {
-        if (playerDefender?.GetEquippedShield() == null || !IsSkillSpecialized(playerDefender, Skill.MeleeDefense))
+        if (playerDefender?.GetEquippedShield() == null || !IsSkillSpecialized(playerDefender, Skill.PhysicalDefense))
         {
             return 0.0f;
         }
@@ -1865,16 +1865,16 @@ public class DamageEvent
             switch (Weapon.WeaponSkill)
             {
                 case Skill.Axe:
-                    return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                    return playerAttacker.GetCreatureSkill(Skill.MartialWeapons).AdvancementClass
                            == SkillAdvancementClass.Specialized;
                 case Skill.Mace:
-                    return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                    return playerAttacker.GetCreatureSkill(Skill.MartialWeapons).AdvancementClass
                            == SkillAdvancementClass.Specialized;
                 case Skill.Sword:
-                    return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                    return playerAttacker.GetCreatureSkill(Skill.MartialWeapons).AdvancementClass
                            == SkillAdvancementClass.Specialized;
                 case Skill.Spear:
-                    return playerAttacker.GetCreatureSkill(Skill.HeavyWeapons).AdvancementClass
+                    return playerAttacker.GetCreatureSkill(Skill.MartialWeapons).AdvancementClass
                            == SkillAdvancementClass.Specialized;
                 case Skill.Dagger:
                     return playerAttacker.GetCreatureSkill(Skill.Dagger).AdvancementClass

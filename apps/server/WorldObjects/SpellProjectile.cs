@@ -1099,7 +1099,7 @@ public class SpellProjectile : WorldObject
             return false;
         }
 
-        var perception = targetPlayer.GetCreatureSkill(Skill.AssessCreature);
+        var perception = targetPlayer.GetCreatureSkill(Skill.Perception);
         if (perception.AdvancementClass != SkillAdvancementClass.Specialized)
         {
             return false;

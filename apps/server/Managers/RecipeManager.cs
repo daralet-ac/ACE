@@ -202,7 +202,7 @@ public partial class RecipeManager
             return true;
         }
 
-        if (recipe.Skill == (uint)Skill.ItemTinkering)
+        if (recipe.Skill == (uint)Skill.Jewelcrafting)
         {
             return true;
         }
@@ -636,14 +636,14 @@ public partial class RecipeManager
                 }
 
                 // change activation requirement: missile defense -> melee defense
-                target.ItemSkillLimit = Skill.MeleeDefense;
+                target.ItemSkillLimit = Skill.PhysicalDefense;
                 target.ItemSkillLevelLimit = (int)(target.ItemSkillLevelLimit / 0.7f);
                 break;
 
             case 0x38000034: // Silver
 
                 // handled in requirements, only here for legacy support?
-                if (target.ItemSkillLimit != Skill.MeleeDefense || target.ItemSkillLevelLimit == null)
+                if (target.ItemSkillLimit != Skill.PhysicalDefense || target.ItemSkillLevelLimit == null)
                 {
                     return false;
                 }

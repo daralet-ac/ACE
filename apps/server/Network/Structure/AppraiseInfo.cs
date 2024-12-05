@@ -245,7 +245,7 @@ public class AppraiseInfo
                 {
                     PropertiesInt[PropertyInt.ResistLockpick] = (int)resistLockpick;
 
-                    var pickSkill = examiner.Skills[Skill.Lockpick].Current;
+                    var pickSkill = examiner.Skills[Skill.Thievery].Current;
 
                     var successChance = SkillCheck.GetSkillChance((int)pickSkill, (int)resistLockpick) * 100;
 

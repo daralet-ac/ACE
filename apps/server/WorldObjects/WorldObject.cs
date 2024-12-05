@@ -1258,13 +1258,13 @@ public abstract partial class WorldObject : IActor
             case Skill.Crossbow:
                 return Skill.Bow;
             case Skill.Sword:
-                return Skill.HeavyWeapons;
+                return Skill.MartialWeapons;
             case Skill.Axe:
-                return Skill.HeavyWeapons;
+                return Skill.MartialWeapons;
             case Skill.Mace:
-                return Skill.HeavyWeapons;
+                return Skill.MartialWeapons;
             case Skill.Spear:
-                return Skill.HeavyWeapons;
+                return Skill.MartialWeapons;
             default:
                 return skill;
         }

@@ -315,7 +315,7 @@ public static partial class LootGenerationFactory
             case Skill.Axe:
             case Skill.Mace:
             case Skill.Spear:
-                return (int)Skill.HeavyWeapons;
+                return (int)Skill.MartialWeapons;
             case Skill.ThrownWeapon:
                 return (int)Skill.ThrownWeapon;
             case Skill.Bow:

@@ -53,7 +53,7 @@ partial class Creature
             {
                 var newSkill = GetNewMeleeAttackSkill(tier, statWeight, physicality, dexterity);
 
-                var skillType = Skill.HeavyWeapons;
+                var skillType = Skill.MartialWeapons;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
@@ -61,7 +61,7 @@ partial class Creature
                     SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[Skill.HeavyWeapons] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.MartialWeapons] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Unarmed Attack Skill
@@ -173,7 +173,7 @@ partial class Creature
             {
                 var newSkill = GetNewPhysicalDefenseSkill(tier, statWeight, physicality, dexterity);
 
-                var skillType = Skill.MeleeDefense;
+                var skillType = Skill.PhysicalDefense;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
@@ -181,7 +181,7 @@ partial class Creature
                     SAC = SkillAdvancementClass.Specialized
                 };
 
-                Skills[Skill.MeleeDefense] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.PhysicalDefense] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Missile Defense
@@ -214,7 +214,7 @@ partial class Creature
             {
                 var newSkill = GetNewPerceptionSkill(tier, statWeight, intelligence);
 
-                var skillType = Skill.AssessCreature;
+                var skillType = Skill.Perception;
 
                 var propertiesSkill = new PropertiesSkill()
                 {
@@ -222,7 +222,7 @@ partial class Creature
                     SAC = SkillAdvancementClass.Trained
                 };
 
-                Skills[Skill.AssessCreature] = new CreatureSkill(this, skillType, propertiesSkill);
+                Skills[Skill.Perception] = new CreatureSkill(this, skillType, propertiesSkill);
             }
 
             // Deception
@@ -1184,7 +1184,7 @@ partial class Creature
         // player melee def
         var weightedPlayerMeleeDef =
             avgPlayerMeleeDefense[tier] + (avgPlayerMeleeDefense[tier + 1] - avgPlayerMeleeDefense[tier]) * statWeight;
-        var enemyAttackSkill = Skills[Skill.HeavyWeapons].Current;
+        var enemyAttackSkill = Skills[Skill.MartialWeapons].Current;
 
         // player evade
         var playerEvadeChance = 1 - SkillCheck.GetSkillChance((int)enemyAttackSkill, (int)weightedPlayerMeleeDef);

@@ -120,11 +120,11 @@ partial class Player
 
     public static List<Skill> TinkeringSkills = new List<Skill>()
     {
-        Skill.ArmorTinkering,
-        Skill.WeaponTinkering,
-        Skill.ItemTinkering,
-        Skill.MagicItemTinkering,
-        Skill.Fletching
+        Skill.Tailoring,
+        Skill.Blacksmithing,
+        Skill.Jewelcrafting,
+        Skill.Spellcrafting,
+        Skill.Woodworking
     };
 
     private bool ToolIsValidUst(uint tool)

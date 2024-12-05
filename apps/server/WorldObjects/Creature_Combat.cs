@@ -476,7 +476,7 @@ partial class Creature
         var unarmed = GetCreatureSkill(Skill.UnarmedCombat);
         var dagger = GetCreatureSkill(Skill.Dagger);
         var staff = GetCreatureSkill(Skill.Staff);
-        var martialWeapons = GetCreatureSkill(Skill.HeavyWeapons);
+        var martialWeapons = GetCreatureSkill(Skill.MartialWeapons);
         var sword = GetCreatureSkill(Skill.Sword);
 
         maxMelee = unarmed;
@@ -587,7 +587,7 @@ partial class Creature
                     attribute = Coordination;
                     break;
                 case Skill.Axe:
-                case Skill.HeavyWeapons:
+                case Skill.MartialWeapons:
                 case Skill.Mace:
                 case Skill.Spear:
                 case Skill.Sword:
@@ -1017,8 +1017,8 @@ partial class Creature
         }
 
         // SPEC BONUS - Perception: Reduced chance to receive sneak attacks
-        var attackerThievery = creatureTarget.GetCreatureSkill(Skill.Lockpick);
-        var targetPerception = creatureTarget.GetCreatureSkill(Skill.AssessCreature); // Perception
+        var attackerThievery = creatureTarget.GetCreatureSkill(Skill.Thievery);
+        var targetPerception = creatureTarget.GetCreatureSkill(Skill.Perception); // Perception
         if (targetPerception.AdvancementClass == SkillAdvancementClass.Specialized)
         {
             var skillCheck = SkillCheck.GetSkillChance(targetPerception.Current, attackerThievery.Current);
@@ -1032,7 +1032,7 @@ partial class Creature
         var behind = Math.Abs(angle) > 90.0f;
 
         // SPEC BONUS - Thievery: Increase sneak attack angle
-        var thievery = GetCreatureSkill(Skill.Lockpick); // Thievery
+        var thievery = GetCreatureSkill(Skill.Thievery); // Thievery
         if (thievery.AdvancementClass < SkillAdvancementClass.Specialized)
         {
             behind = Math.Abs(angle) > 45.0f;
@@ -1331,7 +1331,7 @@ partial class Creature
             return;
         }
 
-        var skill = GetCreatureSkill(Skill.AssessCreature);
+        var skill = GetCreatureSkill(Skill.Perception);
         if (skill.AdvancementClass < SkillAdvancementClass.Trained)
         {
             return;
@@ -1580,7 +1580,7 @@ partial class Creature
         switch (combatType)
         {
             case CombatType.Melee:
-                return Skill.MeleeDefense;
+                return Skill.PhysicalDefense;
             case CombatType.Missile:
                 return Skill.MissileDefense;
             case CombatType.Magic:
@@ -1938,7 +1938,7 @@ partial class Creature
 
         switch (skill)
         {
-            case Skill.HeavyWeapons:
+            case Skill.MartialWeapons:
                 return Coordination.Current * 0.0005f;
             case Skill.Dagger:
                 return Quickness.Current * 0.0005f;
