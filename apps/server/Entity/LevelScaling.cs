@@ -54,13 +54,13 @@ public static class LevelScaling
 
         if (player.Level == null)
         {
-            _log.Error("LevelScaling.GetMonsterDamageDealtHealthScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            _log.Error("LevelScaling.GetMonsterDamageDealtHealthScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
             return 1.0f;
         }
 
         if (monster.Level == null)
         {
-            _log.Error("LevelScaling.GetMonsterDamageDealtHealthScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            _log.Error("LevelScaling.GetMonsterDamageDealtHealthScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
             return 1.0f;
         }
 
@@ -88,13 +88,13 @@ public static class LevelScaling
 
         if (player.Level == null)
         {
-            _log.Error("LevelScaling.GetMonsterDamageTakenHealthScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            _log.Error("LevelScaling.GetMonsterDamageTakenHealthScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
             return 1.0f;
         }
 
         if (monster.Level == null)
         {
-            _log.Error("LevelScaling.GetMonsterDamageTakenHealthScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            _log.Error("LevelScaling.GetMonsterDamageTakenHealthScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
             return 1.0f;
         }
 
@@ -122,13 +122,13 @@ public static class LevelScaling
 
         if (player.Level == null)
         {
-            _log.Error("LevelScaling.GetMonsterArmorWardScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            _log.Error("LevelScaling.GetMonsterArmorWardScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
             return 1.0f;
         }
 
         if (monster.Level == null)
         {
-            _log.Error("LevelScaling.GetMonsterArmorWardScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            _log.Error("LevelScaling.GetMonsterArmorWardScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
             return 1.0f;
         }
 
@@ -156,13 +156,13 @@ public static class LevelScaling
 
         if (player.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerArmorWardScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            _log.Error("LevelScaling.GetPlayerArmorWardScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
             return 1.0f;
         }
 
         if (monster.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerArmorWardScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            _log.Error("LevelScaling.GetPlayerArmorWardScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
             return 1.0f;
         }
 
@@ -189,13 +189,13 @@ public static class LevelScaling
 
         if (player.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerAttributeScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            _log.Error("LevelScaling.GetPlayerAttributeScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
             return 1.0f;
         }
 
         if (monster.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerAttributeScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            _log.Error("LevelScaling.GetPlayerAttributeScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
             return 1.0f;
         }
 
@@ -223,13 +223,13 @@ public static class LevelScaling
 
         if (player.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerAttackSkillScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            _log.Error("LevelScaling.GetPlayerAttackSkillScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
             return 1.0f;
         }
 
         if (monster.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerAttackSkillScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            _log.Error("LevelScaling.GetPlayerAttackSkillScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
             return 1.0f;
         }
 
@@ -256,13 +256,13 @@ public static class LevelScaling
 
         if (player.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerDefenseSkillScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            _log.Error("LevelScaling.GetPlayerDefenseSkillScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
             return 1.0f;
         }
 
         if (monster.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerDefenseSkillScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            _log.Error("LevelScaling.GetPlayerDefenseSkillScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
             return 1.0f;
         }
 
@@ -290,13 +290,13 @@ public static class LevelScaling
 
         if (player.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerResistanceScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            _log.Error("LevelScaling.GetPlayerResistanceScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
             return 1.0f;
         }
 
         if (monster.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerResistanceScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            _log.Error("LevelScaling.GetPlayerResistanceScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
             return 1.0f;
         }
 
@@ -324,13 +324,13 @@ public static class LevelScaling
 
         if (player.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerBoostSpellScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player);
+            _log.Error("LevelScaling.GetPlayerBoostSpellScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
             return 1.0f;
         }
 
         if (monster.Level == null)
         {
-            _log.Error("LevelScaling.GetPlayerBoostSpellScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster);
+            _log.Error("LevelScaling.GetPlayerBoostSpellScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
             return 1.0f;
         }
 
