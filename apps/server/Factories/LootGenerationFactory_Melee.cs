@@ -230,7 +230,7 @@ public static partial class LootGenerationFactory
 
         switch (wo.WeaponSkill)
         {
-            case Skill.HeavyWeapons:
+            case Skill.MartialWeapons:
 
                 success = MutateHeavyWeapon(wo, profile, wieldDifficulty);
                 break;
@@ -803,7 +803,7 @@ public static partial class LootGenerationFactory
 
         switch (category)
         {
-            case Skill.HeavyWeapons:
+            case Skill.MartialWeapons:
                 switch (type)
                 {
                     case LootWeaponType.Axe:
@@ -1566,7 +1566,7 @@ public static partial class LootGenerationFactory
 
         switch (weaponType)
         {
-            case Skill.HeavyWeapons:
+            case Skill.MartialWeapons:
                 damageTable = LootTables.HeavyWeaponDamageTable[(int)baseWeapon, GetMeleeWieldToIndex(wieldDiff)];
                 break;
             case Skill.FinesseWeapons:

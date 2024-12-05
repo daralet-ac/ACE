@@ -537,7 +537,7 @@ partial class Creature
 
     public uint GetModdedPhysicalDefSkill()
     {
-        var meleeDefSkill = GetCreatureSkill(Skill.MeleeDefense);
+        var meleeDefSkill = GetCreatureSkill(Skill.PhysicalDefense);
         var armorMeleeDefSkillMod = (GetArmorPhysicalDefMod() ?? 0) + 1;
         var weaponPhysicalDefenseSkillMod = GetWeaponPhysicalDefenseModifier(this) - 1.0f;
         var tempMeleeDefSkill = meleeDefSkill.Current * (armorMeleeDefSkillMod + weaponPhysicalDefenseSkillMod);
@@ -671,7 +671,7 @@ partial class Creature
 
     public uint GetModdedThieverySkill()
     {
-        var thieverySkill = GetCreatureSkill(Skill.Lockpick); // Thievery
+        var thieverySkill = GetCreatureSkill(Skill.Thievery); // Thievery
         var armorThieverySkillMod = (GetArmorThieveryMod() ?? 0) + 1;
         var tempThieverySkill = thieverySkill.Current * armorThieverySkillMod;
         var moddedThieverySkill = (uint)tempThieverySkill;
@@ -723,7 +723,7 @@ partial class Creature
 
     public uint GetModdedPerceptionSkill()
     {
-        var assessSkill = GetCreatureSkill(Skill.AssessCreature);
+        var assessSkill = GetCreatureSkill(Skill.Perception);
         var armorAssessSkillMod = (GetArmorPerceptionMod() ?? 0) + 1;
         var tempAssessSkill = assessSkill.Current * armorAssessSkillMod;
         var moddedAssessSkill = (uint)tempAssessSkill;

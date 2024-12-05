@@ -16,7 +16,7 @@ public enum Skill
     Crossbow, /* Retired */
     Dagger, /* Retired */
     Mace, /* Retired */
-    MeleeDefense,
+    PhysicalDefense,
     MissileDefense,
     Sling, /* Retired */
     Spear, /* Retired */
@@ -28,33 +28,33 @@ public enum Skill
     MagicDefense,
     ManaConversion,
     Spellcraft, /* Unimplemented */
-    ItemTinkering,
+    Jewelcrafting,
     AssessPerson,
     Deception,
     Healing,
     Jump,
-    Lockpick,
+    Thievery,
     Run,
     Awareness, /* Unimplemented */
     ArmsAndArmorRepair, /* Unimplemented */
-    AssessCreature,
-    WeaponTinkering,
-    ArmorTinkering,
-    MagicItemTinkering,
+    Perception,
+    Blacksmithing,
+    Tailoring,
+    Spellcrafting,
     CreatureEnchantment,
     PortalMagic,
     LifeMagic,
     WarMagic,
     Leadership,
     Loyalty,
-    Fletching,
+    Woodworking,
     Alchemy,
     Cooking,
     Salvaging,
     TwoHandedCombat,
     Gearcraft, /* Retired */
     VoidMagic,
-    HeavyWeapons,
+    MartialWeapons,
     LightWeapons,
     FinesseWeapons,
     MissileWeapons,
@@ -64,8 +64,7 @@ public enum Skill
     SneakAttack,
     DirtyFighting,
     Challenge, /* Unimplemented */
-    Summoning,
-    Sneaking
+    Summoning
 }
 
 public enum NewSkillNames
@@ -124,8 +123,7 @@ public enum NewSkillNames
     SneakAttack,
     DirtyFighting,
     Challenge, /* Unimplemented */
-    Summoning,
-    Stealth
+    Summoning
 }
 
 public static class SkillExtensions
@@ -172,7 +170,7 @@ public static class SkillExtensions
                 return "Dagger";
             case Skill.Mace:
                 return "Mace";
-            case Skill.MeleeDefense:
+            case Skill.PhysicalDefense:
                 return "Melee Defense";
             case Skill.MissileDefense:
                 return "Missile Defense";
@@ -196,7 +194,7 @@ public static class SkillExtensions
                 return "Mana Conversion";
             case Skill.Spellcraft:
                 return "Spellcraft";
-            case Skill.ItemTinkering:
+            case Skill.Jewelcrafting:
                 return "Item Tinkering";
             case Skill.AssessPerson:
                 return "Assess Person";
@@ -206,7 +204,7 @@ public static class SkillExtensions
                 return "Healing";
             case Skill.Jump:
                 return "Jump";
-            case Skill.Lockpick:
+            case Skill.Thievery:
                 return "Lockpick";
             case Skill.Run:
                 return "Run";
@@ -214,13 +212,13 @@ public static class SkillExtensions
                 return "Awareness";
             case Skill.ArmsAndArmorRepair:
                 return "Arms And Armor Repair";
-            case Skill.AssessCreature:
+            case Skill.Perception:
                 return "Assess Creature";
-            case Skill.WeaponTinkering:
+            case Skill.Blacksmithing:
                 return "Weapon Tinkering";
-            case Skill.ArmorTinkering:
+            case Skill.Tailoring:
                 return "Armor Tinkering";
-            case Skill.MagicItemTinkering:
+            case Skill.Spellcrafting:
                 return "Magic Item Tinkering";
             case Skill.CreatureEnchantment:
                 return "Creature Enchantment";
@@ -232,7 +230,7 @@ public static class SkillExtensions
                 return "Leadership";
             case Skill.Loyalty:
                 return "Loyalty";
-            case Skill.Fletching:
+            case Skill.Woodworking:
                 return "Fletching";
             case Skill.Alchemy:
                 return "Alchemy";
@@ -246,7 +244,7 @@ public static class SkillExtensions
                 return "Gearcraft";
             case Skill.VoidMagic:
                 return "Void Magic";
-            case Skill.HeavyWeapons:
+            case Skill.MartialWeapons:
                 return "Heavy Weapons";
             case Skill.LightWeapons:
                 return "Light Weapons";
@@ -303,7 +301,7 @@ public static class SkillHelper
 
     public static HashSet<Skill> ValidSkills = new HashSet<Skill>
     {
-        Skill.HeavyWeapons, // Martial Weapons
+        Skill.MartialWeapons, // Martial Weapons
         Skill.Dagger,
         Skill.Staff,
         Skill.UnarmedCombat,
@@ -316,24 +314,24 @@ public static class SkillHelper
         Skill.PortalMagic,
         Skill.ManaConversion,
         Skill.ArcaneLore,
-        Skill.MeleeDefense, // Physical Defense
+        Skill.PhysicalDefense, // Physical Defense
         Skill.MagicDefense,
         Skill.Shield,
         Skill.Healing,
-        Skill.AssessCreature, // Perception
+        Skill.Perception, // Perception
         Skill.Deception,
-        Skill.Lockpick, // Thievery
+        Skill.Thievery, // Thievery
         Skill.Jump,
         Skill.Run,
         Skill.Leadership,
         Skill.Loyalty,
-        Skill.Fletching, // Woodworking
+        Skill.Woodworking, // Woodworking
         Skill.Alchemy,
         Skill.Cooking,
-        Skill.WeaponTinkering, // Blacksmithing
-        Skill.ArmorTinkering, // Tailoring
-        Skill.MagicItemTinkering, // Spellcrafting
-        Skill.ItemTinkering, // Jewelcrafting
+        Skill.Blacksmithing, // Blacksmithing
+        Skill.Tailoring, // Tailoring
+        Skill.Spellcrafting, // Spellcrafting
+        Skill.Jewelcrafting, // Jewelcrafting
 
         //Skill.Axe,
         //Skill.Crossbow,
@@ -357,7 +355,7 @@ public static class SkillHelper
 
     public static HashSet<Skill> AttackSkills = new HashSet<Skill>
     {
-        Skill.HeavyWeapons, // Martial Weapons
+        Skill.MartialWeapons, // Martial Weapons
         Skill.Dagger,
         Skill.Staff,
         Skill.UnarmedCombat,
@@ -371,7 +369,7 @@ public static class SkillHelper
 
     public static HashSet<Skill> DefenseSkills = new HashSet<Skill>()
     {
-        Skill.MeleeDefense,
+        Skill.PhysicalDefense,
         Skill.MissileDefense,
         Skill.MagicDefense,
         Skill.Shield // confirmed in client

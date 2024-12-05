@@ -194,7 +194,7 @@ partial class Player
 
         var angleMod = 2.0f - angle / 90.0f; // mod ranges from 0.0 (180 angle) to 2.0 (0 angle)
 
-        var difficulty = (uint)(GetCreatureSkill(Skill.AssessCreature).Current * monsterDistanceBonus * angleMod);
+        var difficulty = (uint)(GetCreatureSkill(Skill.Perception).Current * monsterDistanceBonus * angleMod);
 
         //Console.WriteLine($"\nCreature: {creature.Name} {creature.WeenieClassId} - distance: {distance}, distanceBonus: {monsterDistanceBonus}, angle: {angle}, angleBonus: {angleMod}");
 
@@ -238,7 +238,7 @@ partial class Player
 
     private StealthTestResult TestStealthInternal(uint difficulty)
     {
-        var thieverySkill = GetCreatureSkill(Skill.Lockpick); // Thievery
+        var thieverySkill = GetCreatureSkill(Skill.Thievery); // Thievery
         if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
         {
             return StealthTestResult.Untrained;
@@ -274,7 +274,7 @@ partial class Player
 
     public bool TestPerception(WorldObject wo)
     {
-        var perceptionSkill = GetCreatureSkill(Skill.AssessCreature); // Perception
+        var perceptionSkill = GetCreatureSkill(Skill.Perception); // Perception
         var chance = SkillCheck.GetSkillChance(perceptionSkill.Current, (uint)(wo.ResistPerception ?? 0));
         if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
         {

@@ -210,7 +210,7 @@ public class SigilTrinketEvent
                 );
 
                 break;
-            case ((int)Skill.Lockpick, (int)SigilTrinketThieveryEffect.Treachery):
+            case ((int)Skill.Thievery, (int)SigilTrinketThieveryEffect.Treachery):
 
                 if (DamageEvent is null)
                 {
@@ -228,7 +228,7 @@ public class SigilTrinketEvent
                 );
 
                 break;
-            case ((int)Skill.MeleeDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion):
+            case ((int)Skill.PhysicalDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion):
 
                 if (DamageEvent is null)
                 {
@@ -270,7 +270,7 @@ public class SigilTrinketEvent
                 );
 
                 break;
-            case ((int)Skill.AssessCreature, (int)SigilTrinketPerceptionEffect.Exposure):
+            case ((int)Skill.Perception, (int)SigilTrinketPerceptionEffect.Exposure):
 
                 maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
                 sigilTrinket.SpellLevel = (uint)maxLevel; // TODO: if wielding a lower tier weapon, cast lower tier spell (like war/life checks)
@@ -557,10 +557,10 @@ public class SigilTrinketEvent
             case (Skill.DualWield, (int)SigilTrinketDualWieldEffect.Assailment):
                 return IsValidForAssailment(sigilTrinket);
 
-            case (Skill.Lockpick, (int)SigilTrinketThieveryEffect.Treachery):
+            case (Skill.Thievery, (int)SigilTrinketThieveryEffect.Treachery):
                 return IsValidForTreachery(sigilTrinket);
 
-            case (Skill.MeleeDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion):
+            case (Skill.PhysicalDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion):
                 return IsValidForEvasion(sigilTrinket);
 
             case (Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption):
@@ -767,7 +767,7 @@ public class SigilTrinketEvent
             return false;
         }
 
-        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.Lockpick;
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.Thievery;
         var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketThieveryEffect.Treachery;
 
         var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
@@ -793,7 +793,7 @@ public class SigilTrinketEvent
             return false;
         }
 
-        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.MeleeDefense;
+        var validSkill = sigilTrinket.WieldSkillType == (int)Skill.PhysicalDefense;
         var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketPhysicalDefenseEffect.Evasion;
 
         var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;

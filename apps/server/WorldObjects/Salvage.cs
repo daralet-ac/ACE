@@ -241,7 +241,7 @@ public class Salvage : WorldObject
     public static bool CheckTinkerType(Player player, WorldObject source, WorldObject target, Skill tinkeringSkill)
     {
         if (
-            tinkeringSkill == Skill.WeaponTinkering && target.ItemType == ItemType.MeleeWeapon
+            tinkeringSkill == Skill.Blacksmithing && target.ItemType == ItemType.MeleeWeapon
             || target.WeenieType == WeenieType.Missile
             || target.ArmorWeightClass == 4
         )
@@ -249,7 +249,7 @@ public class Salvage : WorldObject
             return true;
         }
 
-        if (tinkeringSkill == Skill.ItemTinkering && target.ItemType == ItemType.Jewelry)
+        if (tinkeringSkill == Skill.Jewelcrafting && target.ItemType == ItemType.Jewelry)
         {
             return true;
         }
@@ -268,17 +268,17 @@ public class Salvage : WorldObject
             }
         }
 
-        if (tinkeringSkill == Skill.ArmorTinkering && target.ArmorWeightClass == 2)
+        if (tinkeringSkill == Skill.Tailoring && target.ArmorWeightClass == 2)
         {
             return true;
         }
 
-        if (tinkeringSkill == Skill.ArmorTinkering && target.ArmorWeightClass == 1 && target.ArmorLevel > 0)
+        if (tinkeringSkill == Skill.Tailoring && target.ArmorWeightClass == 1 && target.ArmorLevel > 0)
         {
             return true;
         }
 
-        if (tinkeringSkill == Skill.Fletching && target.WeenieType == WeenieType.MissileLauncher)
+        if (tinkeringSkill == Skill.Woodworking && target.WeenieType == WeenieType.MissileLauncher)
         {
             return true;
         }
@@ -1411,68 +1411,68 @@ public class Salvage : WorldObject
     {
         // Spellcrafting
         
-        { ACE.Entity.Enum.MaterialType.Amethyst, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Aquamarine, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.BlackGarnet, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.BlackOpal, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Emerald, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.FireOpal, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.GreenGarnet, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.ImperialTopaz, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Jet, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.LavenderJade, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Malachite, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Opal, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.RedGarnet, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.RoseQuartz, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Sunstone, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Tourmaline, Skill.MagicItemTinkering },
-        { ACE.Entity.Enum.MaterialType.WhiteSapphire, Skill.MagicItemTinkering },
+        { ACE.Entity.Enum.MaterialType.Amethyst, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.Aquamarine, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.BlackGarnet, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.BlackOpal, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.Emerald, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.FireOpal, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.GreenGarnet, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.ImperialTopaz, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.Jet, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.LavenderJade, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.Malachite, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.Opal, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.RedGarnet, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.RoseQuartz, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.Sunstone, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.Tourmaline, Skill.Spellcrafting },
+        { ACE.Entity.Enum.MaterialType.WhiteSapphire, Skill.Spellcrafting },
         // Jewelcrafting
-        { ACE.Entity.Enum.MaterialType.Agate, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Amber, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Azurite, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Bloodstone, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Carnelian, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Citrine, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Diamond, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.GreenJade, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Hematite, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.LapisLazuli, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Moonstone, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Onyx, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Peridot, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.RedJade, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Ruby, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Sapphire, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Serpentine, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.SmokeyQuartz, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.TigerEye, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Turquoise, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.WhiteJade, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.WhiteQuartz, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.YellowGarnet, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.YellowTopaz, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Zircon, Skill.ItemTinkering },
+        { ACE.Entity.Enum.MaterialType.Agate, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Amber, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Azurite, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Bloodstone, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Carnelian, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Citrine, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Diamond, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.GreenJade, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Hematite, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.LapisLazuli, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Moonstone, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Onyx, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Peridot, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.RedJade, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Ruby, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Sapphire, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Serpentine, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.SmokeyQuartz, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.TigerEye, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Turquoise, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.WhiteJade, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.WhiteQuartz, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.YellowGarnet, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.YellowTopaz, Skill.Jewelcrafting },
+        { ACE.Entity.Enum.MaterialType.Zircon, Skill.Jewelcrafting },
         // Tailoring
-        { ACE.Entity.Enum.MaterialType.Leather, Skill.ArmorTinkering },
-        { ACE.Entity.Enum.MaterialType.ArmoredilloHide, Skill.ArmorTinkering },
-        { ACE.Entity.Enum.MaterialType.GromnieHide, Skill.ArmorTinkering },
-        { ACE.Entity.Enum.MaterialType.ReedSharkHide, Skill.ArmorTinkering },
-        { ACE.Entity.Enum.MaterialType.Linen, Skill.ArmorTinkering },
-        { ACE.Entity.Enum.MaterialType.Satin, Skill.ArmorTinkering },
-        { ACE.Entity.Enum.MaterialType.Silk, Skill.ArmorTinkering },
-        { ACE.Entity.Enum.MaterialType.Velvet, Skill.ArmorTinkering },
-        { ACE.Entity.Enum.MaterialType.Wool, Skill.ArmorTinkering },
+        { ACE.Entity.Enum.MaterialType.Leather, Skill.Tailoring },
+        { ACE.Entity.Enum.MaterialType.ArmoredilloHide, Skill.Tailoring },
+        { ACE.Entity.Enum.MaterialType.GromnieHide, Skill.Tailoring },
+        { ACE.Entity.Enum.MaterialType.ReedSharkHide, Skill.Tailoring },
+        { ACE.Entity.Enum.MaterialType.Linen, Skill.Tailoring },
+        { ACE.Entity.Enum.MaterialType.Satin, Skill.Tailoring },
+        { ACE.Entity.Enum.MaterialType.Silk, Skill.Tailoring },
+        { ACE.Entity.Enum.MaterialType.Velvet, Skill.Tailoring },
+        { ACE.Entity.Enum.MaterialType.Wool, Skill.Tailoring },
         // Blacksmithing
-        { ACE.Entity.Enum.MaterialType.Brass, Skill.WeaponTinkering },
-        { ACE.Entity.Enum.MaterialType.Bronze, Skill.WeaponTinkering },
-        { ACE.Entity.Enum.MaterialType.Copper, Skill.WeaponTinkering },
-        { ACE.Entity.Enum.MaterialType.Gold, Skill.WeaponTinkering },
-        { ACE.Entity.Enum.MaterialType.Iron, Skill.WeaponTinkering },
-        { ACE.Entity.Enum.MaterialType.Pyreal, Skill.WeaponTinkering },
-        { ACE.Entity.Enum.MaterialType.Silver, Skill.WeaponTinkering },
-        { ACE.Entity.Enum.MaterialType.Steel, Skill.WeaponTinkering },
+        { ACE.Entity.Enum.MaterialType.Brass, Skill.Blacksmithing },
+        { ACE.Entity.Enum.MaterialType.Bronze, Skill.Blacksmithing },
+        { ACE.Entity.Enum.MaterialType.Copper, Skill.Blacksmithing },
+        { ACE.Entity.Enum.MaterialType.Gold, Skill.Blacksmithing },
+        { ACE.Entity.Enum.MaterialType.Iron, Skill.Blacksmithing },
+        { ACE.Entity.Enum.MaterialType.Pyreal, Skill.Blacksmithing },
+        { ACE.Entity.Enum.MaterialType.Silver, Skill.Blacksmithing },
+        { ACE.Entity.Enum.MaterialType.Steel, Skill.Blacksmithing },
         // Stoneworking
         /*
         {ACE.Entity.Enum.MaterialType.Alabaster, "Stoneworking"},
@@ -1485,11 +1485,11 @@ public class Salvage : WorldObject
         {ACE.Entity.Enum.MaterialType.Ivory, "Stoneworking"}, */
 
         // Woodworking
-        { ACE.Entity.Enum.MaterialType.Wood, Skill.Fletching },
-        { ACE.Entity.Enum.MaterialType.Ebony, Skill.Fletching },
-        { ACE.Entity.Enum.MaterialType.Mahogany, Skill.Fletching },
-        { ACE.Entity.Enum.MaterialType.Oak, Skill.Fletching },
-        { ACE.Entity.Enum.MaterialType.Pine, Skill.Fletching },
-        { ACE.Entity.Enum.MaterialType.Teak, Skill.Fletching }
+        { ACE.Entity.Enum.MaterialType.Wood, Skill.Woodworking },
+        { ACE.Entity.Enum.MaterialType.Ebony, Skill.Woodworking },
+        { ACE.Entity.Enum.MaterialType.Mahogany, Skill.Woodworking },
+        { ACE.Entity.Enum.MaterialType.Oak, Skill.Woodworking },
+        { ACE.Entity.Enum.MaterialType.Pine, Skill.Woodworking },
+        { ACE.Entity.Enum.MaterialType.Teak, Skill.Woodworking }
     };
 }

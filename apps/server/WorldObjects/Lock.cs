@@ -154,7 +154,7 @@ public class UnlockerHelper
 
     public static uint GetEffectiveLockpickSkill(Player player, WorldObject unlocker)
     {
-        var lockpickSkill = player.GetCreatureSkill(Skill.Lockpick).Current;
+        var lockpickSkill = player.GetCreatureSkill(Skill.Thievery).Current;
 
         var additiveBonus = unlocker.GetProperty(PropertyInt.LockpickMod) ?? 0;
         var multiplicativeBonus = unlocker.GetProperty(PropertyFloat.LockpickMod) ?? 1.0f;
@@ -185,8 +185,8 @@ public class UnlockerHelper
             {
                 if (
                     unlocker.WeenieType == WeenieType.Lockpick
-                    && player.Skills[Skill.Lockpick].AdvancementClass != SkillAdvancementClass.Trained
-                    && player.Skills[Skill.Lockpick].AdvancementClass != SkillAdvancementClass.Specialized
+                    && player.Skills[Skill.Thievery].AdvancementClass != SkillAdvancementClass.Trained
+                    && player.Skills[Skill.Thievery].AdvancementClass != SkillAdvancementClass.Specialized
                 )
                 {
                     player.Session.Network.EnqueueSend(
@@ -229,13 +229,13 @@ public class UnlockerHelper
                                 // which differs from PicklockFail and LockSuccess being in the target sound table
                                 player.EnqueueBroadcast(new GameMessageSound(player.Guid, Sound.Lockpicking, 1.0f));
 
-                                var lockpickSkill = player.GetCreatureSkill(Skill.Lockpick);
+                                var lockpickSkill = player.GetCreatureSkill(Skill.Thievery);
                                 Proficiency.OnSuccessUse(player, lockpickSkill, difficulty);
 
                                 // SPEC BONUS - Thievery: Up to 50% chance to receive a loot quality bonus when successfully picking a locked chest (25% bonus towards "remaining" loot quality mod
                                 if (target.WeenieType == WeenieType.Chest)
                                 {
-                                    var thievery = player.GetCreatureSkill(Skill.Lockpick);
+                                    var thievery = player.GetCreatureSkill(Skill.Thievery);
                                     if (thievery.AdvancementClass == SkillAdvancementClass.Specialized)
                                     {
                                         var chest = target as Chest;

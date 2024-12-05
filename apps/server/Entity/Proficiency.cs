@@ -35,7 +35,7 @@ public class Proficiency
         }
 
         // Bandaid for Thievery skill (awards outrageous amounts of XP when succeeding difficult checks)
-        if (skill.Skill == Skill.Lockpick)
+        if (skill.Skill == Skill.Thievery)
         {
             return;
         }

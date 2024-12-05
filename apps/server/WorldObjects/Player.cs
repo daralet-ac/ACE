@@ -425,15 +425,15 @@ public partial class Player : Creature, IPlayer
             player = obj as Player;
 
             Skill skill;
-            skill = Skill.AssessCreature;
+            skill = Skill.Perception;
 
             var currentSkill = (int)GetModdedPerceptionSkill();
             var difficulty = (int)creature.GetCreatureSkill(Skill.Deception).Current;
 
             if (
                 PropertyManager.GetBool("assess_creature_mod").Item
-                && skill == Skill.AssessCreature
-                && Skills[Skill.AssessCreature].AdvancementClass < SkillAdvancementClass.Trained
+                && skill == Skill.Perception
+                && Skills[Skill.Perception].AdvancementClass < SkillAdvancementClass.Trained
             )
             {
                 currentSkill = (int)(Focus.Current / 2);

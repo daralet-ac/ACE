@@ -752,13 +752,13 @@ public class SigilTrinket : WorldObject
                 return ((SigilTrinketTwohandedCombatEffect)effectId).ToString();
             case Skill.DualWield:
                 return ((SigilTrinketDualWieldEffect)effectId).ToString();
-            case Skill.Lockpick:
+            case Skill.Thievery:
                 return ((SigilTrinketThieveryEffect)effectId).ToString();
             case Skill.AssessPerson:
                 return ((SigilTrinketPerceptionEffect)effectId).ToString();
             case Skill.Deception:
                 return ((SigilTrinketDeceptionEffect)effectId).ToString();
-            case Skill.MeleeDefense:
+            case Skill.PhysicalDefense:
                 return ((SigilTrinketPhysicalDefenseEffect)effectId).ToString();
             case Skill.MagicDefense:
                 return ((SigilTrinketMagicDefenseEffect)effectId).ToString();

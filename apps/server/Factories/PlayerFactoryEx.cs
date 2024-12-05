@@ -859,17 +859,17 @@ public static class PlayerFactoryEx
         var player = Create275Base(characterCreateInfo, weenie, guid, accountId);
 
         // Trained skills
-        player.TrainSkill(Skill.HeavyWeapons, 6);
+        player.TrainSkill(Skill.MartialWeapons, 6);
         player.TrainSkill(Skill.Healing, 6);
-        player.TrainSkill(Skill.MeleeDefense, 10);
+        player.TrainSkill(Skill.PhysicalDefense, 10);
         player.TrainSkill(Skill.MissileDefense, 6);
         player.TrainSkill(Skill.Shield, 2);
 
         // Specialized skills
-        player.SpecializeSkill(Skill.HeavyWeapons, 6);
+        player.SpecializeSkill(Skill.MartialWeapons, 6);
         player.SpecializeSkill(Skill.Healing, 4);
         player.SpecializeSkill(Skill.MagicDefense, 12);
-        player.SpecializeSkill(Skill.MeleeDefense, 10);
+        player.SpecializeSkill(Skill.PhysicalDefense, 10);
         player.SpecializeSkill(Skill.Shield, 2);
 
         // 0 remaining skill points.
@@ -908,16 +908,16 @@ public static class PlayerFactoryEx
 
         // Trained skills
         player.TrainSkill(Skill.Healing, 6);
-        player.TrainSkill(Skill.MeleeDefense, 10);
+        player.TrainSkill(Skill.PhysicalDefense, 10);
         player.TrainSkill(Skill.MissileDefense, 6);
         player.TrainSkill(Skill.MissileWeapons, 6);
-        player.TrainSkill(Skill.Fletching, 4);
+        player.TrainSkill(Skill.Woodworking, 4);
 
         // Specialized skills
         player.SpecializeSkill(Skill.MagicDefense, 12);
-        player.SpecializeSkill(Skill.MeleeDefense, 10);
+        player.SpecializeSkill(Skill.PhysicalDefense, 10);
         player.SpecializeSkill(Skill.MissileWeapons, 6);
-        player.SpecializeSkill(Skill.Fletching, 4);
+        player.SpecializeSkill(Skill.Woodworking, 4);
 
         // 0 remaining skill points.
         // If/When we add the 4 skill points in LevelUpPlayer, we can spend them here as well
@@ -954,7 +954,7 @@ public static class PlayerFactoryEx
         var player = Create275Base(characterCreateInfo, weenie, guid, accountId);
 
         // Trained skills
-        player.TrainSkill(Skill.MeleeDefense, 10);
+        player.TrainSkill(Skill.PhysicalDefense, 10);
         player.TrainSkill(Skill.MissileDefense, 6);
         player.TrainSkill(Skill.Summoning, 8);
         player.TrainSkill(Skill.WarMagic, 16);

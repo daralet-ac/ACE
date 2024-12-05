@@ -136,10 +136,10 @@ public class VerifyPlayerSkillCredits
                     switch (skill.Key)
                     {
                         // these can only be speced through augs, they have >= 999 in the spec data
-                        case Skill.ArmorTinkering:
-                        case Skill.ItemTinkering:
-                        case Skill.MagicItemTinkering:
-                        case Skill.WeaponTinkering:
+                        case Skill.Tailoring:
+                        case Skill.Jewelcrafting:
+                        case Skill.Spellcrafting:
+                        case Skill.Blacksmithing:
                         case Skill.Salvaging:
                             continue;
                     }

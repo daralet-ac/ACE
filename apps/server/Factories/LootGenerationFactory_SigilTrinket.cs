@@ -262,7 +262,7 @@ public static partial class LootGenerationFactory
                 break;
             case (int)SigilTrinketType.PuzzleBox:
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile);
-                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.DualWield : (int)Skill.Lockpick;
+                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.DualWield : (int)Skill.Thievery;
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.DualWield)
                 {
@@ -297,7 +297,7 @@ public static partial class LootGenerationFactory
             case (int)SigilTrinketType.PocketWatch:
                 sigilTrinket.SigilTrinketHealthReserved = GetReservedVital(profile, true);
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile, true);
-                sigilTrinket.WieldSkillType = (int)Skill.MeleeDefense;
+                sigilTrinket.WieldSkillType = (int)Skill.PhysicalDefense;
                 sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPhysicalDefenseEffectId);
 
                 SetPhysicalDefensePocketWatchStats(profile, sigilTrinket);
@@ -313,9 +313,9 @@ public static partial class LootGenerationFactory
             case (int)SigilTrinketType.Goggles:
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile, true);
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile, true);
-                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.AssessCreature : (int)Skill.Deception;
+                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.Perception : (int)Skill.Deception;
 
-                if (sigilTrinket.WieldSkillType == (int)Skill.AssessCreature)
+                if (sigilTrinket.WieldSkillType == (int)Skill.Perception)
                 {
                     sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPerceptionEffectId);
 

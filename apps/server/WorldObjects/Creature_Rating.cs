@@ -312,7 +312,7 @@ partial class Creature
             return 0;
         }
 
-        var divisor = skill == Skill.MeleeDefense ? 60 : 50;
+        var divisor = skill == Skill.PhysicalDefense ? 60 : 50;
 
         // floor?
         return (int)creatureSkill.Base / divisor;

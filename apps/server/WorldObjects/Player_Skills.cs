@@ -128,7 +128,7 @@ partial class Player
                 );
                 Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
-            case Skill.WeaponTinkering:
+            case Skill.Blacksmithing:
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
                         cannotRaiseMsg
@@ -138,7 +138,7 @@ partial class Player
                 );
                 Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
-            case Skill.ArmorTinkering:
+            case Skill.Tailoring:
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
                         cannotRaiseMsg
@@ -148,7 +148,7 @@ partial class Player
                 );
                 Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
-            case Skill.Fletching:
+            case Skill.Woodworking:
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
                         cannotRaiseMsg
@@ -158,7 +158,7 @@ partial class Player
                 );
                 Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
-            case Skill.ItemTinkering:
+            case Skill.Jewelcrafting:
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
                         cannotRaiseMsg
@@ -168,7 +168,7 @@ partial class Player
                 );
                 Session.Network.EnqueueSend(new GameMessagePrivateUpdateSkill(this, creatureSkill));
                 return false;
-            case Skill.MagicItemTinkering:
+            case Skill.Spellcrafting:
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
                         cannotRaiseMsg
@@ -794,7 +794,7 @@ partial class Player
     public static HashSet<Skill> MeleeSkills = new HashSet<Skill>()
     {
         Skill.LightWeapons,
-        Skill.HeavyWeapons,
+        Skill.MartialWeapons,
         Skill.FinesseWeapons,
         Skill.DualWield,
         Skill.TwoHandedCombat,
@@ -831,10 +831,10 @@ partial class Player
 
     public static List<Skill> AugSpecSkills = new List<Skill>()
     {
-        Skill.ArmorTinkering,
-        Skill.ItemTinkering,
-        Skill.MagicItemTinkering,
-        Skill.WeaponTinkering,
+        Skill.Tailoring,
+        Skill.Jewelcrafting,
+        Skill.Spellcrafting,
+        Skill.Blacksmithing,
         Skill.Salvaging
     };
 
@@ -882,19 +882,19 @@ partial class Player
 
         switch (skill)
         {
-            case Skill.ArmorTinkering:
+            case Skill.Tailoring:
                 playerHasAugmentation = AugmentationSpecializeArmorTinkering > 0;
                 break;
 
-            case Skill.ItemTinkering:
+            case Skill.Jewelcrafting:
                 playerHasAugmentation = AugmentationSpecializeItemTinkering > 0;
                 break;
 
-            case Skill.MagicItemTinkering:
+            case Skill.Spellcrafting:
                 playerHasAugmentation = AugmentationSpecializeMagicItemTinkering > 0;
                 break;
 
-            case Skill.WeaponTinkering:
+            case Skill.Blacksmithing:
                 playerHasAugmentation = AugmentationSpecializeWeaponTinkering > 0;
                 break;
 
@@ -1472,12 +1472,12 @@ partial class Player
     {
         if (
             skill == Skill.Alchemy
-            || skill == Skill.ArmorTinkering
+            || skill == Skill.Tailoring
             || skill == Skill.Cooking
-            || skill == Skill.Fletching
-            || skill == Skill.MagicItemTinkering
-            || skill == Skill.ItemTinkering
-            || skill == Skill.WeaponTinkering
+            || skill == Skill.Woodworking
+            || skill == Skill.Spellcrafting
+            || skill == Skill.Jewelcrafting
+            || skill == Skill.Blacksmithing
         )
         {
             return true;
@@ -1488,7 +1488,7 @@ partial class Player
 
     static Player()
     {
-        PlayerSkills.Add(Skill.HeavyWeapons); // Martial Weapons
+        PlayerSkills.Add(Skill.MartialWeapons); // Martial Weapons
         PlayerSkills.Add(Skill.Dagger);
         PlayerSkills.Add(Skill.Staff);
         PlayerSkills.Add(Skill.UnarmedCombat);
@@ -1505,23 +1505,23 @@ partial class Player
         PlayerSkills.Add(Skill.ManaConversion);
         PlayerSkills.Add(Skill.ArcaneLore);
 
-        PlayerSkills.Add(Skill.AssessCreature); // Perception
+        PlayerSkills.Add(Skill.Perception); // Perception
         PlayerSkills.Add(Skill.Deception);
-        PlayerSkills.Add(Skill.Lockpick); // Thievery
+        PlayerSkills.Add(Skill.Thievery); // Thievery
 
         PlayerSkills.Add(Skill.Leadership);
         PlayerSkills.Add(Skill.Loyalty);
 
-        PlayerSkills.Add(Skill.MeleeDefense);
+        PlayerSkills.Add(Skill.PhysicalDefense);
         PlayerSkills.Add(Skill.MagicDefense);
 
         PlayerSkills.Add(Skill.Alchemy);
         PlayerSkills.Add(Skill.Cooking);
-        PlayerSkills.Add(Skill.Fletching); // Woodworking
-        PlayerSkills.Add(Skill.WeaponTinkering); // Blacksmithing
-        PlayerSkills.Add(Skill.ArmorTinkering); // Tailoring
-        PlayerSkills.Add(Skill.MagicItemTinkering); // Spellcrafting
-        PlayerSkills.Add(Skill.ItemTinkering); // Jewelcrafting
+        PlayerSkills.Add(Skill.Woodworking); // Woodworking
+        PlayerSkills.Add(Skill.Blacksmithing); // Blacksmithing
+        PlayerSkills.Add(Skill.Tailoring); // Tailoring
+        PlayerSkills.Add(Skill.Spellcrafting); // Spellcrafting
+        PlayerSkills.Add(Skill.Jewelcrafting); // Jewelcrafting
         PlayerSkills.Add(Skill.PortalMagic);
 
         PlayerSkills.Remove(Skill.AssessPerson);
@@ -1548,35 +1548,35 @@ partial class Player
     /// </summary>
     public static HashSet<Skill> PlayerSkills = new HashSet<Skill>()
     {
-        Skill.MeleeDefense,
+        Skill.PhysicalDefense,
         Skill.MissileDefense,
         Skill.ArcaneLore,
         Skill.MagicDefense,
         Skill.ManaConversion,
-        Skill.ItemTinkering,
+        Skill.Jewelcrafting,
         Skill.AssessPerson,
         Skill.Deception,
         Skill.Healing,
         Skill.Jump,
-        Skill.Lockpick,
+        Skill.Thievery,
         Skill.Run,
-        Skill.AssessCreature,
-        Skill.WeaponTinkering,
-        Skill.ArmorTinkering,
-        Skill.MagicItemTinkering,
+        Skill.Perception,
+        Skill.Blacksmithing,
+        Skill.Tailoring,
+        Skill.Spellcrafting,
         Skill.CreatureEnchantment,
         Skill.PortalMagic,
         Skill.LifeMagic,
         Skill.WarMagic,
         Skill.Leadership,
         Skill.Loyalty,
-        Skill.Fletching,
+        Skill.Woodworking,
         Skill.Alchemy,
         Skill.Cooking,
         Skill.Salvaging,
         Skill.TwoHandedCombat,
         Skill.VoidMagic,
-        Skill.HeavyWeapons,
+        Skill.MartialWeapons,
         Skill.LightWeapons,
         Skill.FinesseWeapons,
         Skill.MissileWeapons,
