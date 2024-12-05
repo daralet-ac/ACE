@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ACE.Common;
 using ACE.Entity.Enum;
@@ -162,17 +162,21 @@ public class SigilTrinketEvent
             case ((int)Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might):
             case ((int)Skill.Shield, (int)SigilTrinketShieldEffect.Might):
 
-                if(DamageEvent != null)
+                if (DamageEvent is null)
                 {
-                    DamageEvent.CriticalOverridedByTrinket = true;
-
-                    Player.Session.Network.EnqueueSend(
-                        new GameMessageSystemChat(
-                            $"Sigil Compass of Might coverted a normal hit into a critical hit!",
-                            ChatMessageType.CombatSelf
-                        )
-                    );
+                    _log.Error("StartSigilTrinketEffect({SigilTrinket}) - DamageEvent is null for Compass of Might case.", sigilTrinket.Name);
+                    break;
                 }
+
+                DamageEvent.CriticalOverridedByTrinket = true;
+
+                Player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Sigil Compass of Might coverted a normal hit into a critical hit!",
+                        ChatMessageType.CombatSelf
+                    )
+                );
+                
                 break;
             case ((int)Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression):
             case ((int)Skill.Shield, (int)SigilTrinketShieldEffect.Aggression):
@@ -193,8 +197,7 @@ public class SigilTrinketEvent
             }
             case ((int)Skill.DualWield, (int)SigilTrinketDualWieldEffect.Assailment):
                 maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
-                sigilTrinket.SpellLevel =
-                    (uint)maxLevel; // TODO: if wielding a lower tier weapon, cast lower tier spell (like war/life checks)
+                sigilTrinket.SpellLevel = (uint)maxLevel; // TODO: if wielding a lower tier weapon, cast lower tier spell (like war/life checks)
                 sigilTrinket.SigilTrinketCastSpellId = (int)SpellId.SigilTrinketCriticalChanceBoost;
 
                 CastSigilTrinketSpell(sigilTrinket, false);
@@ -209,6 +212,12 @@ public class SigilTrinketEvent
                 break;
             case ((int)Skill.Lockpick, (int)SigilTrinketThieveryEffect.Treachery):
 
+                if (DamageEvent is null)
+                {
+                    _log.Error("StartSigilTrinketEffect({SigilTrinket}) - DamageEvent is null for Puzzle Box of Treachery case.", sigilTrinket.Name);
+                    break;
+                }
+
                 DamageEvent.CriticalDamageBonusFromTrinket += 1.0f;
 
                 Player.Session.Network.EnqueueSend(
@@ -220,6 +229,12 @@ public class SigilTrinketEvent
 
                 break;
             case ((int)Skill.MeleeDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion):
+
+                if (DamageEvent is null)
+                {
+                    _log.Error("StartSigilTrinketEffect({SigilTrinket}) - DamageEvent is null for Pocket Watch of Evasion case.", sigilTrinket.Name);
+                    break;
+                }
 
                 DamageEvent.PartialEvasion = PartialEvasion.All;
                 DamageEvent.Evaded = true;
@@ -233,6 +248,12 @@ public class SigilTrinketEvent
 
                 break;
             case ((int)Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption):
+
+                if (Target is null)
+                {
+                    _log.Error("StartSigilTrinketEffect({SigilTrinket}) - Target is null for Top of Absorption case.", sigilTrinket.Name);
+                    break;
+                }
 
                 const float spellDamageReductionMod = 0.5f;
 
