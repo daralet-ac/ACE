@@ -1410,7 +1410,8 @@ public class Salvage : WorldObject
     public static Dictionary<MaterialType?, Skill> TinkeringTarget = new Dictionary<MaterialType?, Skill>
     {
         // Spellcrafting
-
+        
+        { ACE.Entity.Enum.MaterialType.Amethyst, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.Aquamarine, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.BlackGarnet, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.BlackOpal, Skill.MagicItemTinkering },
@@ -1419,15 +1420,17 @@ public class Salvage : WorldObject
         { ACE.Entity.Enum.MaterialType.GreenGarnet, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.ImperialTopaz, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.Jet, Skill.MagicItemTinkering },
+        { ACE.Entity.Enum.MaterialType.LavenderJade, Skill.MagicItemTinkering },
+        { ACE.Entity.Enum.MaterialType.Malachite, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.Opal, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.RedGarnet, Skill.MagicItemTinkering },
+        { ACE.Entity.Enum.MaterialType.RoseQuartz, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.Sunstone, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.Tourmaline, Skill.MagicItemTinkering },
         { ACE.Entity.Enum.MaterialType.WhiteSapphire, Skill.MagicItemTinkering },
         // Jewelcrafting
         { ACE.Entity.Enum.MaterialType.Agate, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Amber, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Amethyst, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Azurite, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Bloodstone, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Carnelian, Skill.ItemTinkering },
@@ -1436,13 +1439,10 @@ public class Salvage : WorldObject
         { ACE.Entity.Enum.MaterialType.GreenJade, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Hematite, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.LapisLazuli, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.LavenderJade, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.Malachite, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Moonstone, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Onyx, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Peridot, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.RedJade, Skill.ItemTinkering },
-        { ACE.Entity.Enum.MaterialType.RoseQuartz, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Ruby, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Sapphire, Skill.ItemTinkering },
         { ACE.Entity.Enum.MaterialType.Serpentine, Skill.ItemTinkering },
