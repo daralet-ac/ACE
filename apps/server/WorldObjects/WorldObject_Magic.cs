@@ -1011,6 +1011,16 @@ partial class WorldObject
 
         ResetRatingElementalistQuestStamps(player);
 
+        var lethalityMod = Convert.ToSingle(creature!.ArchetypeLethality ?? 1.0f);
+        tryBoost = Convert.ToInt32(tryBoost * lethalityMod);
+
+        // Attribute Mod
+        if (player is not null)
+        {
+            var attributeMod = player.GetAttributeMod(weapon, true, targetCreature);
+            tryBoost = Convert.ToInt32(tryBoost * attributeMod);
+        }
+
         // LEVEL SCALING - Reduces harms against enemies, and restoration for players
         var scalar = LevelScaling.GetPlayerBoostSpellScalar(player, targetCreature);
         tryBoost = (int)(tryBoost * scalar);
@@ -1555,6 +1565,13 @@ partial class WorldObject
 
                 destVitalChange = CheckForCombatAbilityBatteryVitalTransferPenalty(combatAbility, player, srcVitalChange, ref destVitalChange);
                 destVitalChange = CheckForCombatAbilityEnchantVitalTransferBonus(player, srcVitalChange, ref destVitalChange);
+            }
+
+            // Attribute Mod
+            if (player is not null)
+            {
+                var attributeMod = player.GetAttributeMod(weapon, true, targetCreature);
+                destVitalChange = Convert.ToUInt32(destVitalChange * attributeMod);
             }
 
             // LEVEL SCALING - Reduce Drain effectiveness vs. monsters, and increase vs. player
