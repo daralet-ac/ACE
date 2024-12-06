@@ -715,7 +715,11 @@ public class SpellProjectile : WorldObject
         combatAbilityDamageMod -= CheckForCombatAbilityBatteryDamagePenalty(sourcePlayer);
         combatAbilityDamageMod += CheckForCombatAbilityEnchantedWeaponDamageBonus(sourcePlayer);
 
-        var lethalityMod = Convert.ToSingle(sourceCreature!.ArchetypeLethality ?? 1.0f);
+        var lethalityMod = 1.0f;
+        if (sourceCreature is not null)
+        {
+            lethalityMod = Convert.ToSingle(sourceCreature.ArchetypeLethality ?? 1.0f);
+        }
 
         var specDefenseMod = CheckForMagicDefenseSpecDefenseMod(targetPlayer, sourceCreature);
 
