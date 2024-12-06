@@ -414,16 +414,16 @@ public class Hotspot : WorldObject
             switch ((MenhirManaHotspot)tier)
             {
                 case WorldObjects.MenhirManaHotspot.Low:
-                    player.SendTransientError("You don't have any blue scarabs equipped that can be recharged or altered at this menhir ring.");
+                    player.SendTransientError("You don't have any blue sigil trinkets equipped that can be recharged or altered at this menhir ring.");
                     break;
                 case WorldObjects.MenhirManaHotspot.Moderate:
-                    player.SendTransientError("You don't have any yellow scarabs equipped (or blue scarabs held) that can be recharged or altered at this menhir ring.");
+                    player.SendTransientError("You don't have any yellow sigil trinkets equipped (or blue sigil trinkets held) that can be recharged or altered at this menhir ring.");
                     break;
                 case WorldObjects.MenhirManaHotspot.High:
-                    player.SendTransientError("You don't have any red scarabs equipped (or blue/yellow scarabs held) that can be recharged or altered at this menhir ring.");
+                    player.SendTransientError("You don't have any red sigil trinkets equipped (or blue/yellow sigil trinkets held) that can be recharged or altered at this menhir ring.");
                     break;
                 case WorldObjects.MenhirManaHotspot.Lyceum:
-                    player.SendTransientError("You don't have any blue/yellow/red scarabs held that can be recharged at this menhir ring.");
+                    player.SendTransientError("You don't have any blue/yellow/red sigil trinkets held that can be recharged at this menhir ring.");
                     break;
             }
 
