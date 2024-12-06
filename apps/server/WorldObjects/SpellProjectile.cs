@@ -715,6 +715,8 @@ public class SpellProjectile : WorldObject
         combatAbilityDamageMod -= CheckForCombatAbilityBatteryDamagePenalty(sourcePlayer);
         combatAbilityDamageMod += CheckForCombatAbilityEnchantedWeaponDamageBonus(sourcePlayer);
 
+        var lethalityMod = Convert.ToSingle(sourceCreature!.ArchetypeLethality ?? 1.0f);
+
         var specDefenseMod = CheckForMagicDefenseSpecDefenseMod(targetPlayer, sourceCreature);
 
         var levelScalingMod = GetLevelScalingMod(sourceCreature, target, targetPlayer);
@@ -760,6 +762,7 @@ public class SpellProjectile : WorldObject
                 * wardMod
                 * resistedMod
                 * specDefenseMod
+                * lethalityMod
                 * levelScalingMod;
         }
         // war/void magic projectiles
