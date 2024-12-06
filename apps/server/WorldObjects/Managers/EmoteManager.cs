@@ -2430,8 +2430,14 @@ public class EmoteManager
                 break;
 
             case EmoteType.StampQuestForAllFellows:
-
                 var targetPlayer = targetCreature as Player;
+
+                _log.Information("StampQuestForAllFellows - Creature: {Creature}, Quest: {Quest}", targetCreature.Name, emote.Message);
+
+                if (targetPlayer is not null)
+                {
+                    _log.Information("StampQuestForAllFellows - Player: {Player}, Fellowship?: {Fellow}, Quest: {Quest}", targetPlayer.Name, targetPlayer.Fellowship, emote.Message);
+                }
 
                 // Stamp quest for killer, regardless of if in a fellowship
                 questTarget = GetQuestTarget((EmoteType)emote.Type, targetPlayer, creature);
