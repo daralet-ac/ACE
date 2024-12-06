@@ -1011,8 +1011,11 @@ partial class WorldObject
 
         ResetRatingElementalistQuestStamps(player);
 
-        var lethalityMod = Convert.ToSingle(creature!.ArchetypeLethality ?? 1.0f);
-        tryBoost = Convert.ToInt32(tryBoost * lethalityMod);
+        if (creature is not null)
+        {
+            var lethalityMod = Convert.ToSingle(creature.ArchetypeLethality ?? 1.0f);
+            tryBoost = Convert.ToInt32(tryBoost * lethalityMod);
+        }
 
         // Attribute Mod
         if (player is not null)
