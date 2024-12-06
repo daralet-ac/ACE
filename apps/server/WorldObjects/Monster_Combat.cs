@@ -195,9 +195,19 @@ partial class Creature
 
         while (CurrentAttack == CombatType.Magic)
         {
+            if (CurrentAttack is null)
+            {
+                _log.Error("Monster_Combat.GetMaxRange() - CurrentAttack is null for creature: {Monster}", Name);
+            }
+
+            if (CurrentSpell is null)
+            {
+                _log.Error("Monster_Combat.GetMaxRange() - CurrentSpell is null for creature: {Monster}", Name);
+            }
+
             // select a magic spell
             //CurrentSpell = GetRandomSpell();
-            if (CurrentSpell is not null and { IsProjectile: true })
+            if (CurrentSpell is { IsProjectile: true })
             {
                 if (isVisible == null)
                 {
