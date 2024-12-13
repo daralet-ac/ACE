@@ -485,7 +485,8 @@ partial class Player
         CreatureSkill creatureSkill,
         Skill skill,
         int difficulty,
-        int armorSlots = 1
+        int armorSlots = 1,
+        float bonusMod = 1.0f
     )
     {
         // check to ensure appropriately difficult craft before granting (is player skill no more than 50 points above relative difficulty)
@@ -504,7 +505,7 @@ partial class Player
                 creatureSkill.Ranks,
                 creatureSkill.Ranks + 1) ?? 0
             );
-            var totalXp = (uint)(xP * progressMod * difficultyMod * armorSlots);
+            var totalXp = (uint)(xP * progressMod * difficultyMod * armorSlots * bonusMod);
 
             player.NoContribSkillXp(player, skill, totalXp, false);
 
