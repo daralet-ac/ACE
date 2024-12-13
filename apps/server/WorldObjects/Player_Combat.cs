@@ -2193,34 +2193,26 @@ partial class Player
             return damageType;
         }
 
-        // get single damage type
-        if (damageType == (DamageType.Pierce | DamageType.Slash))
+        switch (damageType)
         {
-            if ((AttackType & AttackType.Punches) != 0)
+            // get single damage type
+            case DamageType.Pierce | DamageType.Slash when (AttackType & AttackType.Punches) != 0:
             {
-                if (SlashThrustToggle)
-                {
-                    return DamageType.Pierce;
-                }
-                else
-                {
-                    return DamageType.Slash;
-                }
+                return SlashThrustToggle ? DamageType.Pierce : DamageType.Slash;
             }
-
-            if ((AttackType & AttackType.Thrusts) != 0)
-            {
+            case DamageType.Pierce | DamageType.Slash when (AttackType & AttackType.Thrusts) != 0:
                 return DamageType.Pierce;
-            }
-            else
-            {
+            case DamageType.Pierce | DamageType.Slash:
                 return DamageType.Slash;
+            case DamageType.Slash | DamageType.Fire:
+                return SlashThrustToggle ? DamageType.Slash : DamageType.Fire;
+            default:
+            {
+                var powerLevel = combatType == CombatType.Melee ? (float?)PowerLevel : null;
+
+                return damageType.SelectDamageType(powerLevel);
             }
         }
-
-        var powerLevel = combatType == CombatType.Melee ? (float?)PowerLevel : null;
-
-        return damageType.SelectDamageType(powerLevel);
     }
 
     public WorldObject HandArmor =>
