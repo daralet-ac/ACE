@@ -722,6 +722,7 @@ public partial class Container : WorldObject
         if (this is Player && worldObject.MutableQuestItem)
         {
             LootGenerationFactory.MutateQuestItem(worldObject);
+            EnqueueBroadcast(new GameMessageUpdateObject(worldObject));
         }
 
         // CUSTOM - Automatic Ivorying
@@ -733,6 +734,8 @@ public partial class Container : WorldObject
                 worldObject.AllowedWielder = this.Guid.Full;
                 worldObject.CraftsmanName = this.Name;
                 worldObject.Ivoryable = null;
+
+                EnqueueBroadcast(new GameMessageUpdateObject(worldObject));
             }
         }
 
