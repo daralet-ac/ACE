@@ -706,9 +706,15 @@ public class DamageEvent
 
     private static float GetLevelScalingMod(Creature attacker, Creature defender, Player playerDefender)
     {
-        return playerDefender != null
+        var monsterHealthScalingMod = playerDefender != null
             ? LevelScaling.GetMonsterDamageDealtHealthScalar(playerDefender, attacker)
             : LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
+
+        var timeToKillMonsterScalingMod = playerDefender != null
+            ? LevelScaling.GetMonsterDamageTakenTtkScalar(playerDefender, attacker)
+            : LevelScaling.GetMonsterDamageTakenTtkScalar(attacker, defender);
+
+        return monsterHealthScalingMod * timeToKillMonsterScalingMod;
     }
 
     private float GetCriticalChance(Creature attacker, Creature defender)
