@@ -142,8 +142,8 @@ public class Salvage : WorldObject
         var workmanshipMod = (salvageWorkmanship - itemWorkmanship) * 20.0f;
 
         // attempt mod - ranges from 1.0 to 1.9
-        var tinkeredCount = target.NumTimesTinkered;
-        var attemptMod = tinkeredCount * 0.1f + 1.0;
+        var attemptNum = Math.Clamp(target.NumTimesTinkered + 1, 1, 10);
+        var attemptMod = attemptNum * 0.1f + 1.0;
 
         var difficulty = (int)Math.Max(((baseDifficulty - workmanshipMod) * attemptMod), 1);
 
