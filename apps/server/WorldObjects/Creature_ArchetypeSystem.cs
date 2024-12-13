@@ -366,6 +366,14 @@ partial class Creature
                 );
             }
 
+            // Set Base Damage (for use with weapons)
+            Damage = Convert.ToInt32(baseAvgDamage);
+
+            if (GetEquippedWeapon() is not null && Damage is not null)
+            {
+                MutateWeaponForArchetype(GetEquippedWeapon(), Damage.Value);
+            }
+
             // Set Body Parts
             if (Weenie != null)
             {
