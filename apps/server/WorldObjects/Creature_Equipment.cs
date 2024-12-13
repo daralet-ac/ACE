@@ -847,6 +847,11 @@ partial class Creature
             UpdateArmorModBuffs();
         }
 
+        if (UseArchetypeSystem is true && Damage is not null)
+        {
+            MutateWeaponForArchetype(worldObject, Damage.Value);
+        }
+
         EncumbranceVal += (worldObject.EncumbranceVal ?? 0);
         Value += (worldObject.Value ?? 0);
 
@@ -1568,6 +1573,17 @@ partial class Creature
                     player.HandleMaxVitalUpdate(new Server.Entity.Spell(SpellId.Volition));
                 }
             }
+        }
+    }
+
+    private void MutateWeaponForArchetype(WorldObject worldObject, int avgDamage)
+    {
+        if (worldObject is { WeenieType: WeenieType.MeleeWeapon })
+        {
+            var variance = worldObject.DamageVariance ?? 1.0f;
+            var baseDamage = Math.Max((int)(avgDamage / (1.0f - (variance / 2))), 1);
+
+            worldObject.SetProperty(PropertyInt.Damage, baseDamage);
         }
     }
 }
