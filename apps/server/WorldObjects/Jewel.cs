@@ -696,7 +696,7 @@ partial class Jewel : WorldObject
                 modifiedBase = 1;
             }
 
-            player.TryAwardCraftingXp(player, skill, Skill.Jewelcrafting, (int)difficulty);
+            player.TryAwardCraftingXp(player, skill, Skill.Jewelcrafting, (int)difficulty, 1, 10.0f);
         }
 
         // get quality name + write socket and jewel name
