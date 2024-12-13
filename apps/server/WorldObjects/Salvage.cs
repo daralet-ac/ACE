@@ -132,30 +132,24 @@ public class Salvage : WorldObject
             return;
         }
 
-        // calculate chance + crafting dialog
+        var salvageWorkmanship = source.Workmanship ?? 1;
+        var itemWorkmanship = target.Workmanship ?? 1;
 
-        var sourceWorkmanship = source.Workmanship ?? 0;
-        var itemWorkmanship = target.Workmanship ?? 0;
+        // base difficulty - ranges from 0 to 180
+        var baseDifficulty = itemWorkmanship * 20.0f - 20;
 
+        // workmanship mod - ranges from -180 to +180
+        var workmanshipMod = (salvageWorkmanship - itemWorkmanship) * 20.0f;
+
+        // attempt mod - ranges from 1.0 to 1.9
         var tinkeredCount = target.NumTimesTinkered;
+        var attemptMod = tinkeredCount * 0.1f + 1.0;
 
-        var attemptMod = TinkeringDifficulty[tinkeredCount];
+        var difficulty = (int)Math.Max(((baseDifficulty - workmanshipMod) * attemptMod), 1);
 
+        // roll skill check
         var creatureSkill = player.GetCreatureSkill(tinkeringSkill);
-
-        var workmanshipMod = 1.0f;
-        if (sourceWorkmanship >= itemWorkmanship)
-        {
-            workmanshipMod = 2.0f;
-        }
-
-        var difficulty = (int)
-            Math.Floor(
-                (((50f) + (itemWorkmanship * 20f) - (sourceWorkmanship * workmanshipMod * 2f)) * attemptMod) / 2
-            );
-
-        // weight player base by 50+ to account for no buffs + 0 skill start, halve difficulty of EOR formula
-        var successChance = SkillCheck.GetSkillChance((int)creatureSkill.Current + 50, difficulty);
+        var successChance = SkillCheck.GetSkillChance((int)creatureSkill.Current, difficulty);
 
         if (ImbueSalvage.Contains((MaterialType)source.MaterialType))
         {
@@ -1363,21 +1357,6 @@ public class Salvage : WorldObject
         }
     }
 
-    public static List<float> TinkeringDifficulty = new List<float>()
-    {
-        // attempt #
-        1.0f, // 1
-        1.1f, // 2
-        1.3f, // 3
-        1.6f, // 4
-        2.0f, // 5
-        2.25f, // 6
-        2.5f, // 7
-        2.75f, // 8
-        3.0f, // 9
-        3.25f // 10
-    };
-
     public static List<string> WorkmanshipNames = new List<string>()
     {
         "Poorly crafted", // 1
@@ -1410,7 +1389,7 @@ public class Salvage : WorldObject
     public static Dictionary<MaterialType?, Skill> TinkeringTarget = new Dictionary<MaterialType?, Skill>
     {
         // Spellcrafting
-        
+
         { ACE.Entity.Enum.MaterialType.Amethyst, Skill.Spellcrafting },
         { ACE.Entity.Enum.MaterialType.Aquamarine, Skill.Spellcrafting },
         { ACE.Entity.Enum.MaterialType.BlackGarnet, Skill.Spellcrafting },
