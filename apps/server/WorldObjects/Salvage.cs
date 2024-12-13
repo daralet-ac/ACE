@@ -141,7 +141,7 @@ public class Salvage : WorldObject
         // workmanship mod - ranges from -180 to +180
         var workmanshipMod = (salvageWorkmanship - itemWorkmanship) * 20.0f;
 
-        // attempt mod - ranges from 1.0 to 1.9
+        // attempt mod - ranges from 1.1 to 2.0
         var attemptNum = Math.Clamp(target.NumTimesTinkered + 1, 1, 10);
         var attemptMod = attemptNum * 0.1f + 1.0;
 
