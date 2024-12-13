@@ -45,6 +45,8 @@ public static class LevelScaling
     private static readonly int[] AvgMonsterArmorWardPerTier = [20, 45, 68, 101, 152, 228, 342, 513];
     private static readonly int[] AvgMonsterHealthPerTier = [50, 150, 350, 500, 800, 1200, 1600, 2000];
 
+    private static readonly float[] AvgTimeToKillMonster = [4.1f, 13.9f, 15.0f, 17.5f, 17.6f, 20.8f, 24.6f, 27.1f];
+
     public static float GetMonsterDamageDealtHealthScalar(Creature player, Creature monster)
     {
         if (!CanScalePlayer(player, monster))
@@ -111,6 +113,40 @@ public static class LevelScaling
         }
 
         return (float)statAtMonsterLevel / statAtPlayerLevel;
+    }
+
+    public static float GetMonsterDamageTakenTtkScalar(Creature player, Creature monster)
+    {
+        if (!CanScalePlayer(player, monster))
+        {
+            return 1.0f;
+        }
+
+        if (player.Level == null)
+        {
+            _log.Error("LevelScaling.GetMonsterDamageTakenTtkScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
+            return 1.0f;
+        }
+
+        if (monster.Level == null)
+        {
+            _log.Error("LevelScaling.GetMonsterDamageTakenTtkScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
+            return 1.0f;
+        }
+
+
+        var statAtPlayerLevel = GetTtkMonsterAtLevel(player.Level.Value);
+        var statAtMonsterLevel = GetTtkMonsterAtLevel(monster.Level.Value);
+
+        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
+        {
+            Console.WriteLine(
+                $"\nGetMonsterDamageTakenTtkScalar(Player {player.Name}, Monster {monster.Name})"
+                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtMonsterLevel / statAtPlayerLevel}"
+            );
+        }
+
+        return (float)statAtPlayerLevel / statAtMonsterLevel;
     }
 
     public static float GetMonsterArmorWardScalar(Creature player, Creature monster)
@@ -434,6 +470,17 @@ public static class LevelScaling
         var stat =
             (AvgMonsterHealthPerTier[range + 1] - AvgMonsterHealthPerTier[range]) * statweight
             + AvgMonsterHealthPerTier[range];
+
+        return (int)stat;
+    }
+
+    private static int GetTtkMonsterAtLevel(int level)
+    {
+        GetRangeAndStatWeight(level, out var range, out var statweight);
+
+        var stat =
+            (AvgTimeToKillMonster[range + 1] - AvgTimeToKillMonster[range]) * statweight
+            + AvgTimeToKillMonster[range];
 
         return (int)stat;
     }
