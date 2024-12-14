@@ -146,6 +146,7 @@ public class Salvage : WorldObject
         var attemptMod = attemptNum * 0.1f + 1.0;
 
         var difficulty = (int)Math.Max(((baseDifficulty - workmanshipMod) * attemptMod), 1);
+        var craftingXpDifficulty = baseDifficulty * attemptMod;
 
         // roll skill check
         var creatureSkill = player.GetCreatureSkill(tinkeringSkill);
@@ -163,8 +164,11 @@ public class Salvage : WorldObject
 
         var percent = (int)(successChance * 100);
 
+        var craftingXpString = creatureSkill.Current < craftingXpDifficulty + 50 ? "will" : "will not";
+
         var floorMsg =
-            $"You determine that you have a {percent} percent chance to succeed and will require {salvageCost} {units} of salvage.";
+            $"You determine that you have a {percent} percent chance to succeed and will require {salvageCost} {units} of salvage.\n\n" +
+            $"This craft {craftingXpString} award xp towards your {tinkeringSkill}.";
 
         if (!confirmed)
         {
@@ -210,7 +214,7 @@ public class Salvage : WorldObject
                     source,
                     target,
                     successChance,
-                    difficulty,
+                    (int)craftingXpDifficulty,
                     creatureSkill,
                     tinkeringSkill
                 );
