@@ -210,7 +210,7 @@ public class Salvage : WorldObject
                     source,
                     target,
                     successChance,
-                    difficulty,
+                    (int)baseDifficulty,
                     creatureSkill,
                     tinkeringSkill
                 );
