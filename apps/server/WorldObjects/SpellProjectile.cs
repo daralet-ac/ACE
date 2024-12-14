@@ -941,9 +941,15 @@ public class SpellProjectile : WorldObject
 
     private static float GetLevelScalingMod(Creature attacker, Creature defender, Player playerDefender)
     {
-        return playerDefender != null
+        var monsterHealthScalingMod = playerDefender != null
             ? LevelScaling.GetMonsterDamageDealtHealthScalar(playerDefender, attacker)
             : LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
+
+        var timeToKillMonsterScalingMod = playerDefender != null
+            ? 1.0f
+            : LevelScaling.GetMonsterDamageTakenTtkScalar(attacker, defender);
+
+        return monsterHealthScalingMod * timeToKillMonsterScalingMod;
     }
 
     /// <summary>

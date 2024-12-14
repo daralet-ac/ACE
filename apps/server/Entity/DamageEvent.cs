@@ -711,7 +711,7 @@ public class DamageEvent
             : LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
 
         var timeToKillMonsterScalingMod = playerDefender != null
-            ? LevelScaling.GetMonsterDamageTakenTtkScalar(playerDefender, attacker)
+            ? 1.0f
             : LevelScaling.GetMonsterDamageTakenTtkScalar(attacker, defender);
 
         return monsterHealthScalingMod * timeToKillMonsterScalingMod;
