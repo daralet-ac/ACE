@@ -21,6 +21,7 @@ public class DamageEvent
     private readonly ILogger _log = Log.ForContext<DamageEvent>();
 
     private float _accuracyMod;
+    private float _ammoEffectMod;
     private List<WorldObject> _armor;
     private float _armorMod;
     private Creature _attacker;
@@ -553,7 +554,7 @@ public class DamageEvent
         _attackHeightDamageBonus += GetHighAttackHeightBonus(playerAttacker);
         _ratingElementalDamageBonus = Jewel.HandleElementalBonuses(playerAttacker, DamageType);
         _levelScalingMod = GetLevelScalingMod(attacker, defender, playerDefender);
-
+        _ammoEffectMod = GetAmmoEffectMod(Weapon, playerAttacker);
 
         if (!_pkBattle)
         {
@@ -806,6 +807,7 @@ public class DamageEvent
                * _combatAbilityMultishotDamagePenalty
                * _combatAbilityProvokeDamageBonus
                * _combatAbilityFuryDamageBonus
+               * _ammoEffectMod
                * _levelScalingMod;
     }
 
@@ -1857,6 +1859,27 @@ public class DamageEvent
         }
 
         return 0.0f;
+    }
+
+    public static float GetAmmoEffectMod(WorldObject weapon, Player player)
+    {
+        if (weapon is {IsAmmoLauncher: not true} || player is null)
+        {
+            return 1.0f;
+        }
+
+        var ammo = player.GetEquippedAmmo() as Ammunition;
+
+        if (ammo?.AmmoEffectUsesRemaining is null)
+        {
+            return 1.0f;
+        }
+
+        switch ((AmmoEffect)(ammo.AmmoEffect ?? 0))
+        {
+            case AmmoEffect.Sharpened: return 1.1f;
+            default: return 1.0f;
+        }
     }
 
     private bool WeaponIsSpecialized(Player playerAttacker)

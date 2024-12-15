@@ -517,6 +517,16 @@ partial class Player
         // hide previously held ammo
         EnqueueBroadcast(new GameMessagePickupEvent(ammo));
 
+        if (ammo is Ammunition {AmmoEffectUsesRemaining: not null} ammunition)
+        {
+            ammunition.AmmoEffectUsesRemaining -= 1;
+
+            if (ammunition.AmmoEffectUsesRemaining < 1)
+            {
+                ammunition.AmmoEffectUsesRemaining = null;
+            }
+        }
+
         if (ammo.UnlimitedUse)
         {
             return;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using ACE.Database;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -834,6 +835,9 @@ public class AppraiseInfo
         // Attack Mod for Bows
         SetBowAttackModUseText(wo);
 
+        // Ammo
+        SetAmmoEffectUseText(wo);
+
         SetWeaponWarMagicUseText();
         SetWeaponLifeMagicUseText();
         SetWeaponPhysicalDefenseUseText(wo);
@@ -1511,6 +1515,41 @@ public class AppraiseInfo
         }
 
         _hasExtraPropertiesText = true;
+    }
+
+    private void SetAmmoEffectUseText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.AmmoEffectUsesRemaining, out var ammoEffectUsesRemaining) ||
+            !(ammoEffectUsesRemaining > 0))
+        {
+            return;
+        }
+
+        if (!PropertiesInt.TryGetValue(PropertyInt.AmmoEffect, out var ammoEffect) ||
+            !(ammoEffect >= 0))
+        {
+            return;
+        }
+
+        var ammoEffectString = Regex.Replace(((AmmoEffect)ammoEffect).ToString(), "(\\B[A-Z])", " $1");
+
+        if (wo.WeenieType is WeenieType.Ammunition)
+        {
+            _extraPropertiesText += $"Ammo Effect: {ammoEffectString}\n";
+            _extraPropertiesText += $"Effect Uses Remaining: {ammoEffectUsesRemaining}\n";
+
+            var propertyDescription = "";
+
+            switch ((AmmoEffect)ammoEffect)
+            {
+                case AmmoEffect.Sharpened:
+                    propertyDescription = "~Sharpened: Increases damage by 10%.";
+                    break;
+            }
+
+            _additionalPropertiesLongDescriptionsText += $"{propertyDescription}";
+            _hasExtraPropertiesText = true;
+        }
     }
 
     private void SetSpellProcRateUseText(WorldObject wo)
