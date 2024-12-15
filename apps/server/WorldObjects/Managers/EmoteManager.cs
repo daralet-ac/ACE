@@ -2432,11 +2432,16 @@ public class EmoteManager
             case EmoteType.StampQuestForAllFellows:
                 var targetPlayer = targetCreature as Player;
 
-                _log.Information("StampQuestForAllFellows - Creature: {Creature}, Quest: {Quest}", targetCreature.Name, emote.Message);
-
-                if (targetPlayer is not null)
+                // If emote is triggered by a player-created hotspot, reference the hotspot's player
+                if (targetObject is Hotspot {P_HotspotOwner: not null} targetHotspot)
                 {
-                    _log.Information("StampQuestForAllFellows - Player: {Player}, Fellowship?: {Fellow}, Quest: {Quest}", targetPlayer.Name, targetPlayer.Fellowship, emote.Message);
+                    targetPlayer = targetHotspot.P_HotspotOwner;
+                }
+
+                if (targetPlayer is null)
+                {
+                    _log.Error("ExecuteEmote({EmoteSet}, {Emote}, {TargetObject}) - StampQuestForAllFellows - targetPlayer is null.", emoteSet, emote, targetObject);
+                    break;
                 }
 
                 // Stamp quest for killer, regardless of if in a fellowship
