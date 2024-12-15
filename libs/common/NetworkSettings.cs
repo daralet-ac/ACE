@@ -32,4 +32,9 @@ public class NetworkSettings
     /// <remarks>
     /// </remarks>
     public string[] AllowUnlimitedSessionsFromIPAddresses { get; set; } = { };
+
+    /// <summary>
+    /// Webhook URL for in-game /cg
+    /// </summary>
+    public string DiscordCgWebhookUrl { get; set; } = "";
 }

@@ -1,5 +1,7 @@
 using System;
 using System.Text;
+using System.Threading.Tasks;
+using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
@@ -14,6 +16,19 @@ namespace ACE.Server.Network.Handlers;
 public static class TurbineChatHandler
 {
     private static readonly ILogger _log = Log.ForContext(typeof(TurbineChatHandler));
+    public enum TurbineChatChannelId : uint
+    {
+        Allegiance              = 1,
+        General                 = 2,
+        Trade                   = 3,
+        LFG                     = 4,
+        Roleplay                = 5,
+        Olthoi                  = 6,
+        Society                 = 7,
+        SocietyCelestialHand    = 8,
+        SocietyEldrytchWeb      = 9,
+        SocietyRadiantBlood     = 10
+    }
 
     [GameMessage(GameMessageOpcode.TurbineChat, SessionState.WorldConnected)]
     public static void TurbineChatReceived(ClientMessage clientMessage, Session session)
@@ -519,6 +534,11 @@ public static class TurbineChatHandler
                         adjustedchatType
                     )
                 );
+
+                if (adjustedchatType == ChatType.General && adjustedChannelID == TurbineChatChannel.General)
+                {
+                    _ = SendWebhookedChat(gameMessageTurbineChat.SenderName, gameMessageTurbineChat.Message, ConfigManager.Config.Server.Network.DiscordCgWebhookUrl, adjustedChannelID);
+                }
             }
 
             LogTurbineChat(adjustedChannelID, session.Player.Name, message, senderID, adjustedchatType);
@@ -528,6 +548,78 @@ public static class TurbineChatHandler
             Console.WriteLine($"Unhandled TurbineChatHandler ChatNetworkBlobType: 0x{(uint)chatBlobType:X4}");
         }
     }
+
+    static bool webhookMissingErrorEmitted = false;
+    public static async Task SendWebhookedChat(string sender, string message, string webhookUrl = null, uint? channelId = null)
+        {
+            if(!string.IsNullOrEmpty(message))
+            {
+                message = message.Replace('@', ' ');
+            }
+
+            if (channelId != null)
+            {
+                if (!System.Enum.TryParse<TurbineChatChannelId>(channelId.ToString(), out var channelEnum))
+                {
+                    //log.Warn($"SendWebhookedChat: Invalid channel ID {channelId}");
+                    return;
+                }
+                var channelName = $"{channelEnum}";
+                await SendWebhookedChat(sender, message, webhookUrl, channelName);
+            }
+            else
+            {
+                await SendWebhookedChat(sender, message, webhookUrl, "");
+            }
+        }
+
+        public static async Task SendWebhookedChat(string sender, string message, string webhookUrl = null, string channelName = "")
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    var webhook = webhookUrl;
+                    if (webhook == null)
+                    {
+                        webhook = PropertyManager.GetString("turbine_chat_webhook").Item;
+                        if (webhook == "")
+                        {
+                            if (!webhookMissingErrorEmitted)
+                            {
+                                webhookMissingErrorEmitted = true;
+                                //log.Warn("server property turbine_chat_webhook must be set in order to output chat to a Discord channel.");
+                            }
+                            return;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(channelName))
+                    {
+                        channelName = $"[{channelName}] ";
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(sender))
+                    {
+                        sender = $"{sender}: ";
+                    }
+
+                    var dict = new System.Collections.Generic.Dictionary<string, string>();
+                    dict["content"] = $"{channelName}{sender}\"{message}\"";
+
+                    var payload = Newtonsoft.Json.JsonConvert.SerializeObject(dict);
+                    using (var wc = new System.Net.WebClient())
+                    {
+                        wc.Headers.Add("Content-Type", "application/json");
+                        wc.UploadString(webhook, payload);
+                    }
+                }
+                catch (Exception)
+                {
+                    //log.Error(ex);
+                }
+            });
+        }
 
     private static void HandleChatReject(
         Session session,

@@ -6,6 +6,12 @@ namespace ACE.Server.Network.GameMessages.Messages;
 
 public class GameMessageTurbineChat : GameMessage
 {
+    public uint Channel { get; set; }
+    public string SenderName { get; set; }
+    public string Message { get; set; }
+    public uint SenderID { get; set; }
+    public ChatType ChatType { get; set; }
+
     public GameMessageTurbineChat(
         ChatNetworkBlobType chatNetworkBlobType,
         ChatNetworkBlobDispatchType chatNetworkBlobDispatchType,
@@ -17,6 +23,12 @@ public class GameMessageTurbineChat : GameMessage
     )
         : base(GameMessageOpcode.TurbineChat, GameMessageGroup.LoginQueue)
     {
+        Channel = channel;
+        SenderName = senderName;
+        Message = message;
+        SenderID = senderID;
+        ChatType = chatType;
+
         /*uint messageSize;       // the number of bytes that follow after this DWORD
         ChatNetworkBlobType type;   // the type of data contained in this message
         uint blobDispatchType;  // 1?
