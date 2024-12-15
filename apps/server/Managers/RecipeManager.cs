@@ -813,6 +813,10 @@ public partial class RecipeManager
                 Jewel.HandleUnsocketing(player, source, target);
                 break;
 
+            case 0x39000004: // Ammo Sharpening
+                Ammunition.HandleAmmoSharpening(player, source, target);
+                break;
+
             default:
                 _log.Error(
                     $"{player.Name}.RecipeManager.Tinkering_ModifyItem({source.Name} ({source.Guid}), {target.Name} ({target.Guid})) - unknown mutation id: {dataId:X8}"

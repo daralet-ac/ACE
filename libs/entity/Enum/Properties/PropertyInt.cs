@@ -824,6 +824,8 @@ public enum PropertyInt : ushort
     RemainingConfirmations = 465,
     SigilTrinketType = 466,
     TrophyQuality = 467,
+    AmmoEffect = 468,
+    AmmoEffectUsesRemaining = 469,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
