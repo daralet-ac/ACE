@@ -852,6 +852,11 @@ partial class Creature
             MutateWeaponForArchetype(worldObject, Damage.Value);
         }
 
+        if (worldObject.IsAmmoLauncher)
+        {
+            CheckForAutoEquipAmmo(worldObject);
+        }
+
         EncumbranceVal += (worldObject.EncumbranceVal ?? 0);
         Value += (worldObject.Value ?? 0);
 
@@ -860,6 +865,65 @@ partial class Creature
         worldObject.OnWield(this);
 
         return true;
+    }
+
+    private void CheckForAutoEquipAmmo(WorldObject missileLauncher)
+    {
+        if (this is not Player player)
+        {
+            return;
+        }
+
+        var sideContainers = Inventory
+            .Values.Where(i => i.WeenieType == WeenieType.Container)
+            .Select(i => i as Container)
+            .OrderBy(i => i.PlacementPosition)
+            .ToList();
+
+        foreach (var container in sideContainers)
+        {
+            if (container.Name.Contains("Quiver"))
+            {
+                var element = missileLauncher.W_DamageType;
+
+                var matchingElementAmmo = new List<WorldObject>();
+                foreach (var ammo in container.Inventory)
+                {
+                    if (ammo.Value.W_DamageType == element && ammo.Value.AmmoType == missileLauncher.AmmoType)
+                    {
+                        matchingElementAmmo.Add(ammo.Value);
+                    }
+                }
+
+                if (matchingElementAmmo.Count == 0)
+                {
+                    return;
+                }
+
+                var currentEquippedAmmo = GetEquippedAmmo();
+                var highestDamageMatchingAmmo = currentEquippedAmmo?.W_DamageType == element ? currentEquippedAmmo : matchingElementAmmo[0];
+
+                foreach (var ammo in matchingElementAmmo)
+                {
+                    if (highestDamageMatchingAmmo.Damage < ammo.Damage)
+                    {
+                        highestDamageMatchingAmmo = ammo;
+                    }
+                }
+
+                if (currentEquippedAmmo is null || highestDamageMatchingAmmo != currentEquippedAmmo)
+                {
+                    if (currentEquippedAmmo is not null)
+                    {
+                        player.HandleActionPutItemInContainer(currentEquippedAmmo.Guid.Full, container.Guid.Full);
+                    }
+
+                    player.HandleActionGetAndWieldItem(highestDamageMatchingAmmo.Guid.Full, EquipMask.MissileAmmo);
+
+                    return;
+                }
+            }
+        }
     }
 
     protected bool TryWieldObjectWithBroadcasting(WorldObject worldObject, EquipMask wieldedLocation)
