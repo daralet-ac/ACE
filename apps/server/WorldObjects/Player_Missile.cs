@@ -378,8 +378,8 @@ partial class Player
         var linkTime = MotionTable.GetAnimationLength(MotionTableId, motionStance, MotionCommand.Reload, MotionCommand.Ready);
         //var cycleTime = MotionTable.GetCycleLength(MotionTableId, CurrentMotionState.Stance, MotionCommand.Ready);
 
-        LastAttackAnimationLength = launchTime + reloadTime + linkTime;
-        //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}");
+        LastAttackAnimationLength = linkTime;
+        //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}, TOTAL: {LastAttackAnimationLength}");
 
         var staminaCost = GetAttackStamina(GetAccuracyRange(), (float)LastAttackAnimationLength, weapon);
         UpdateVitalDelta(Stamina, -staminaCost);

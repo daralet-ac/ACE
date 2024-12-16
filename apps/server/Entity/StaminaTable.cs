@@ -58,8 +58,9 @@ public static class StaminaTable
         var powerLevelMod = (float)Math.Pow(powerAccuracyLevel, 2);
 
         // WeaponAnimationLength mod
-        var divisor = 4.0f;
+        var divisor = 5.0f;
         var animLengthMod = (animLength + powerAccuracyLevel) / (divisor + powerAccuracyLevel);
+        //Console.WriteLine($"AnimLengthMod: ({animLength} + {powerAccuracyLevel}) / ({divisor} + {powerAccuracyLevel}) = {animLengthMod}");
 
         // Weight class resource penalty mod
         var weightClassPenaltyMod = weightClassPenalty ?? 1.0f;
@@ -67,14 +68,15 @@ public static class StaminaTable
         // Final calculation
         var finalCost = baseCost * powerLevelMod * animLengthMod * weightClassPenaltyMod;
 
-        //Console.WriteLine($"GetStaminaCost()\n" +
-        //    $" -Base Cost: {baseCost}\n" +
-        //    $" -WeaponTier: {weaponTier}\n" +
-        //    $" -WeightClassPenalty: {weightClassPenalty}\n" +
-        //    $" -PowerLevel: {powerAccuracyLevel} PowerLevelMod: {powerLevelMod}\n" +
-        //    $" -WeaponAnim: {animLength} AnimLengthMod: {animLengthMod}\n" +
-        //    $" -Final Cost: {finalCost}\n\n" +
-        //    $" Cost per min: {60 / (animLength + powerAccuracyLevel) * finalCost}");
+        // Console.WriteLine($"GetStaminaCost()\n" +
+        //     $" -Base Cost: {baseCost}\n" +
+        //     $" -WeaponTier: {weaponTier}\n" +
+        //     $" -WeightClassPenalty: {weightClassPenalty}\n" +
+        //     $" -PowerLevel: {powerAccuracyLevel} PowerLevelMod: {powerLevelMod}\n" +
+        //     $" -WeaponAnim: {animLength} AnimLengthMod: {animLengthMod}\n" +
+        //     $" -Final Cost: {finalCost}\n" +
+        //     $" -AttacksPerMin: {60 / (animLength + powerAccuracyLevel)}\n" +
+        //     $" -Cost per min: {(60 / (animLength + powerAccuracyLevel)) * finalCost}");
 
         return finalCost;
     }
