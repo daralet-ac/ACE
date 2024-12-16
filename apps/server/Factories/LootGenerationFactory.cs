@@ -840,6 +840,7 @@ public static partial class LootGenerationFactory
             || LightWeaponWcids.TryGetValue(roll.Wcid, out weaponType)
             || FinesseWeaponWcids.TryGetValue(roll.Wcid, out weaponType)
             || TwoHandedWeaponWcids.TryGetValue(roll.Wcid, out weaponType)
+            || ThrownWcids.TryGetValue(roll.Wcid, out weaponType)
         )
         {
             roll.ItemType = TreasureItemType_Orig.Weapon;
@@ -1465,7 +1466,7 @@ public static partial class LootGenerationFactory
         switch (weenieType)
         {
             case WeenieType.Caster:
-            
+
                 if (ThreadSafeRandom.Next(0.0f, 1.0f) < imbueGemMaterialChance)
                 {
                     var roll = ThreadSafeRandom.Next(0, materialImbueGems.Length - 1);
@@ -1493,7 +1494,7 @@ public static partial class LootGenerationFactory
                         }
                     }
                 }
-            
+
                 break;
             case WeenieType.Clothing:
                 {
@@ -2535,6 +2536,7 @@ public static partial class LootGenerationFactory
                     case TreasureWeaponType.Mace:
                     case TreasureWeaponType.Spear:
                     case TreasureWeaponType.Sword:
+                    case TreasureWeaponType.Thrown:
                         MutateMeleeWeapon(wo, treasureDeath, isMagical, treasureRoll);
                         break;
 
