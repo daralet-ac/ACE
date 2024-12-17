@@ -149,9 +149,14 @@ public class EmoteManager
                 break;
 
             case EmoteType.AwardSkillRanks:
-                if (player != null)
+                if (player != null && emote.Stat != null)
                 {
-                    player.GrantSkillRanks((Skill)emote.Stat, (int)emote.Amount);
+                    for (var i = 0; i < (emote.Amount ?? 1); i++)
+                    {
+                        player.HandleActionRaiseSkill((Skill)emote.Stat, 0, true);
+
+                    }
+                    //player.GrantSkillRanks((Skill)emote.Stat, (int)emote.Amount);
                 }
 
                 break;
@@ -947,7 +952,6 @@ public class EmoteManager
                     {
                         success = numItems >= numRequired;
                     }
-
                     ExecuteEmoteSet(
                         success ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
                         emote.Message,
