@@ -598,7 +598,7 @@ public class EmoteManager
                     var weenieClassId = emote.WeenieClassId;
 
                     // Trophies
-                    if (WorldObject is Creature { RefusalItem.Item1.Value: not null} creatureObject)
+                    if (WorldObject is Creature { RefusalItem.Item1: { Value: not null, TrophyQuality: not null } } creatureObject)
                     {
                         stackSize = creatureObject.RefusalItem.Item1.Value ?? 1;
 
