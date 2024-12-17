@@ -869,7 +869,7 @@ partial class Creature
 
     private void CheckForAutoEquipAmmo(WorldObject missileLauncher)
     {
-        if (this is not Player player)
+        if (this is not Player player || missileLauncher.W_DamageType is DamageType.Undef)
         {
             return;
         }
@@ -913,12 +913,22 @@ partial class Creature
 
                 if (currentEquippedAmmo is null || highestDamageMatchingAmmo != currentEquippedAmmo)
                 {
+                    var actionChain = new ActionChain();
+                    
                     if (currentEquippedAmmo is not null)
                     {
-                        player.HandleActionPutItemInContainer(currentEquippedAmmo.Guid.Full, container.Guid.Full);
+                        actionChain.AddAction(player, () => player.HandleActionPutItemInContainer(currentEquippedAmmo.Guid.Full, player.Guid.Full));
+                        actionChain.AddDelaySeconds(0.1);
+                        actionChain.AddAction(player, () => player.HandleActionGetAndWieldItem(highestDamageMatchingAmmo.Guid.Full, EquipMask.MissileAmmo));
+                        actionChain.AddDelaySeconds(0.1);
+                        actionChain.AddAction(player, () => player.HandleActionPutItemInContainer(currentEquippedAmmo.Guid.Full, container.Guid.Full));
+                    }
+                    else
+                    {
+                        actionChain.AddAction(player, () => player.HandleActionGetAndWieldItem(highestDamageMatchingAmmo.Guid.Full, EquipMask.MissileAmmo));
                     }
 
-                    player.HandleActionGetAndWieldItem(highestDamageMatchingAmmo.Guid.Full, EquipMask.MissileAmmo);
+                    actionChain.EnqueueChain();
 
                     return;
                 }
