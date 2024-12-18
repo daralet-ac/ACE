@@ -1513,6 +1513,11 @@ public static partial class LootGenerationFactory
                         var roll = ThreadSafeRandom.Next(0, materialMetals.Length - 1);
                         material = (MaterialType)materialMetals[roll];
                     }
+                    else if (wo.ItemType is ItemType.Clothing)
+                    {
+                        var roll = ThreadSafeRandom.Next(0, materialCloth.Length - 1);
+                        material = (MaterialType)materialCloth[roll];
+                    }
                 }
                 break;
             case WeenieType.MissileLauncher:
@@ -1564,6 +1569,11 @@ public static partial class LootGenerationFactory
                         material = (MaterialType)materialMetals[roll];
                     }
                 }
+                else if (wo.ValidLocations is EquipMask.Shield)
+                {
+                    var roll = ThreadSafeRandom.Next(0, materialMetals.Length - 1);
+                    material = (MaterialType)materialMetals[roll];
+                }
                 else
                 {
                     material = MaterialType.Unknown;
@@ -1572,6 +1582,7 @@ public static partial class LootGenerationFactory
                 break;
             default:
                 material = MaterialType.Unknown;
+                _log.Error("Material type is unknown for: {WorldObject}", wo.Name);
                 break;
         }
 

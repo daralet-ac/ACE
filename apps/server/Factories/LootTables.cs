@@ -2930,6 +2930,7 @@ public static class LootTables
             (int)MaterialType.ImperialTopaz,
             (int)MaterialType.Jet,
             (int)MaterialType.WhiteSapphire,
+            (int)MaterialType.Tourmaline,
         }
     };
 
