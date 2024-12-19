@@ -585,6 +585,12 @@ partial class Creature
             Console.WriteLine($"{Name}.MoveToHome()");
         }
 
+        if (PhysicsObj is null )
+        {
+            _log.Error("PhysicsObj is null for wcid: {WCID}", WeenieClassId);
+            return;
+        }
+
         var prevAttackTarget = AttackTarget;
 
         MonsterState = State.Return;
