@@ -9,7 +9,6 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
-using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects.Entity;
 
 namespace ACE.Server.WorldObjects;
@@ -603,23 +602,14 @@ public partial class Creature : Container
     {
         var visibleTargets = new List<Creature>();
 
-        foreach (
-            var obj in PhysicsObj.ObjMaint.GetVisibleObjects(PhysicsObj.CurCell, ObjectMaint.VisibleObjectType.All)
-        )
+        foreach (var obj in PhysicsObj.ObjMaint.GetVisibleObjects(PhysicsObj.CurCell))
         {
             var creature = obj.WeenieObj.WorldObject as Creature;
 
-            if (creature == null)
-            {
-                continue;
-            }
-
-            if (!creature.IsMonster)
-            {
-                continue;
-            }
-
-            if (GetDistance(creature) > distance)
+            if (creature is null
+                || !creature.IsMonster
+                || GetDistance(creature) > distance
+                || creature.WeenieClassId is 1020001)
             {
                 continue;
             }
