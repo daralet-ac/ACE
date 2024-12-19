@@ -115,7 +115,7 @@ public class Storage : Container
 
         if (worldObjects.Count > 0)
         {
-            _log.Error("Inventory detected without a container to put it in to.");
+            _log.Error("[BANKING] Inventory detected without a container to put it into. BankAccountId: {BankId}. Number of objects affected: {Count}.", this.BankAccountId, worldObjects.Count);
         }
     }
 
