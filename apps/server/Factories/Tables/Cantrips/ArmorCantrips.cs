@@ -160,6 +160,10 @@ public static class ArmorCantrips
         (SpellId.CANTRIPSLASHINGWARD1, 1.0f),
         (SpellId.CANTRIPSTORMWARD1, 1.0f),
 
+        (SpellId.CANTRIPHEALTHGAIN1, 1.0f),
+        (SpellId.CANTRIPSTAMINAGAIN1, 1.0f),
+        (SpellId.CANTRIPMANAGAIN1, 1.0f),
+
         (SpellId.CANTRIPARCANEPROWESS1, 1.0f ),
         (SpellId.CANTRIPDECEPTIONPROWESS1, 1.0f ),
         (SpellId.CANTRIPHEALINGPROWESS1, 1.0f ),
