@@ -59,17 +59,16 @@ public static class CantripChance
 
     private static ChanceTable<int> T5_CantripLevel = new ChanceTable<int>() { (1, 0.50f), (2, 0.50f), };
 
-    private static ChanceTable<int> T6_CantripLevel = new ChanceTable<int>() { (1, 0.40f), (2, 0.50f), (3, 0.10f), };
+    private static ChanceTable<int> T6_CantripLevel = new ChanceTable<int>() { (1, 0.25f), (2, 0.74f), (3, 0.01f), };
 
-    private static ChanceTable<int> T7_CantripLevel = new ChanceTable<int>() { (1, 0.20f), (2, 0.40f), (3, 0.40f), };
+    private static ChanceTable<int> T7_CantripLevel = new ChanceTable<int>() { (2, 0.75f), (3, 0.25f), };
 
-    private static ChanceTable<int> T8_CantripLevel = new ChanceTable<int>() { (2, 0.40f), (3, 0.50f), (4, 0.10f) };
+    private static ChanceTable<int> T8_CantripLevel = new ChanceTable<int>() { (2, 0.50f), (3, 0.49f), (4, 0.01f) };
 
     private static readonly List<ChanceTable<int>> _cantripLevels = new List<ChanceTable<int>>()
     {
         T1_CantripLevel,
         T2_CantripLevel,
-        T3_CantripLevel,
         T3_CantripLevel,
         T4_CantripLevel,
         T5_CantripLevel,
