@@ -1073,12 +1073,18 @@ public class Salvage : WorldObject
         if (source.Structure >= salvageCost)
         {
             source.Structure -= salvageCost;
+
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
                     $"Your tinkering consumed {salvageCost} units of {RecipeManager.GetMaterialName(source.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown)}. The {target.Name} has been tinkered {target.NumTimesTinkered} times.",
                     ChatMessageType.Broadcast
                 )
             );
+
+            if (source.Structure < 1)
+            {
+                source.Destroy();
+            }
         }
 
         source.Name = $"Salvage ({source.Structure})";
