@@ -54,14 +54,14 @@ public static class WeaponTypeChance
         (TreasureWeaponType.Mace, 1.0f),
         (TreasureWeaponType.Axe, 1.0f),
         (TreasureWeaponType.Spear, 1.0f),
-        (TreasureWeaponType.Thrown, 1.0f),
+        (TreasureWeaponType.Thrown, 2.0f),
     };
 
     private static ChanceTable<TreasureWeaponType> RogueChances = new ChanceTable<TreasureWeaponType>(ChanceTableType.Weight)
     {
-        (TreasureWeaponType.Unarmed, 1.0f),
-        (TreasureWeaponType.Dagger, 1.0f),
-        (TreasureWeaponType.Staff, 1.0f),
+        (TreasureWeaponType.Unarmed, 3.0f),
+        (TreasureWeaponType.Dagger, 3.0f),
+        (TreasureWeaponType.Staff, 3.0f),
         (TreasureWeaponType.Atlatl, 1.0f),
         (TreasureWeaponType.Bow, 1.0f),
         (TreasureWeaponType.Crossbow, 1.0f),
