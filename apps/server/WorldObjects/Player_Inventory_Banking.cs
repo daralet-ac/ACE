@@ -1,4 +1,5 @@
-﻿using ACE.Entity.Enum;
+﻿using System.Linq;
+using ACE.Entity.Enum;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects.Logging;
 
@@ -59,10 +60,13 @@ public partial class Player
 
             item.BankAccountId = Account.AccountId;
 
-            foreach (var wo in targetContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(sourceContainer);
+            DeepSave(targetContainer);
+
+            // foreach (var wo in targetContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -89,6 +93,8 @@ public partial class Player
                         bankLogTargetContainer
                     );
                 }
+
+                VerifyMovedItemPosition(targetContainer, sourceContainer, item);
             }
         }
         // Move an item WITHIN a BANK-MAIN container.
@@ -97,10 +103,12 @@ public partial class Player
             && sourceContainer is { WeenieType: WeenieType.Storage }
         )
         {
-            foreach (var wo in targetContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(targetContainer);
+
+            // foreach (var wo in targetContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -113,6 +121,8 @@ public partial class Player
                     bankLogSourceContainer,
                     bankLogTargetContainer
                 );
+
+                VerifyMovedItemPosition(targetContainer, sourceContainer, item);
             }
         }
         // Move an item OUT of a BANK-MAIN container. Remove the BankAccountId on the item.
@@ -128,10 +138,13 @@ public partial class Player
 
             item.BankAccountId = 0;
 
-            foreach (var wo in targetContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(sourceContainer);
+            DeepSave(targetContainer);
+
+            // foreach (var wo in targetContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -158,6 +171,8 @@ public partial class Player
                         bankLogTargetContainer
                     );
                 }
+
+                VerifyMovedItemPosition(targetContainer, sourceContainer, item);
             }
         }
         // Logging Only - From PLAYER to BANK-SIDE
@@ -175,6 +190,8 @@ public partial class Player
                     bankLogSourceContainer,
                     bankLogTargetContainer
                 );
+
+                VerifyMovedItemPosition(targetContainer, sourceContainer, item);
             }
         }
         // Logging Only - From BANK-SIDE to PLAYER
@@ -190,6 +207,8 @@ public partial class Player
                     bankLogSourceContainer,
                     bankLogTargetContainer
                 );
+
+                VerifyMovedItemPosition(targetContainer, sourceContainer, item);
             }
         }
         // Logging Only - From BANK-SIDE to BANK-SIDE
@@ -206,6 +225,8 @@ public partial class Player
                     bankLogSourceContainer,
                     bankLogTargetContainer
                 );
+
+                VerifyMovedItemPosition(targetContainer, sourceContainer, item);
             }
         }
     }
@@ -231,12 +252,14 @@ public partial class Player
         if (sourceContainer is { WeenieType: WeenieType.Storage })
         {
             item.BankAccountId = 0;
-            DeepSave(item);
 
-            foreach (var wo in sourceContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(item);
+            DeepSave(sourceContainer);
+
+            // foreach (var wo in sourceContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
         }
 
         if (PropertyManager.GetBool("banking_system_logging").Item)
@@ -324,10 +347,13 @@ public partial class Player
         {
             newStack.BankAccountId = Account.AccountId;
 
-            foreach (var wo in targetContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(sourceContainer);
+            DeepSave(targetContainer);
+
+            // foreach (var wo in targetContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -356,6 +382,8 @@ public partial class Player
                         bankLogTargetContainer
                     );
                 }
+
+                VerifySplitStackPosition(targetContainer, sourceContainer, newStack, sourceStack);
             }
         }
         // Split a stack OUT of BANK-MAIN. Unset the BankAccountId on the new stack.
@@ -366,10 +394,13 @@ public partial class Player
         {
             newStack.BankAccountId = 0;
 
-            foreach (var wo in sourceContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(sourceContainer);
+            DeepSave(targetContainer);
+
+            // foreach (var wo in sourceContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -398,6 +429,8 @@ public partial class Player
                         bankLogTargetContainer
                     );
                 }
+
+                VerifySplitStackPosition(targetContainer, sourceContainer, newStack, sourceStack);
             }
         }
         // Split a stack WITHIN BANK-MAIN. Set a BankAccountId on the new stack.
@@ -408,10 +441,12 @@ public partial class Player
         {
             newStack.BankAccountId = Account.AccountId;
 
-            foreach (var wo in targetContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(targetContainer);
+
+            // foreach (var wo in targetContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -425,6 +460,8 @@ public partial class Player
                     bankLogNewStack,
                     bankLogTargetContainer
                 );
+
+                VerifySplitStackPosition(targetContainer, sourceContainer, newStack, sourceStack);
             }
         }
         // Logging Only - Split a stack OUT of PLAYER to BANK-SIDE
@@ -441,6 +478,8 @@ public partial class Player
                     bankLogNewStack,
                     bankLogTargetContainer
                 );
+
+                VerifySplitStackPosition(targetContainer, sourceContainer, newStack, sourceStack);
             }
         }
         // Logging Only - Split a stack OUT of BANK-SIDE to PLAYER
@@ -457,6 +496,8 @@ public partial class Player
                     bankLogNewStack,
                     bankLogTargetContainer
                 );
+
+                VerifySplitStackPosition(targetContainer, sourceContainer, newStack, sourceStack);
             }
         }
         // Logging Only - Split a stack OUT of BANK-SIDE to BANK-SIDE
@@ -474,6 +515,8 @@ public partial class Player
                     bankLogNewStack,
                     bankLogTargetContainer
                 );
+
+                VerifySplitStackPosition(targetContainer, sourceContainer, newStack, sourceStack);
             }
         }
     }
@@ -536,10 +579,12 @@ public partial class Player
             && sourceStackRootOwner is not { WeenieType: WeenieType.Storage }
         )
         {
-            foreach (var wo in targetContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(targetContainer);
+
+            // foreach (var wo in targetContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -552,6 +597,8 @@ public partial class Player
                     bankLogTargetStack,
                     bankLogTargetContainer
                 );
+
+                VerifyMergeStackPosition(targetContainer, sourceContainer, targetStack);
             }
         }
 
@@ -561,10 +608,12 @@ public partial class Player
             && sourceContainer is { WeenieType: WeenieType.Storage }
         )
         {
-            foreach (var wo in sourceContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(sourceContainer);
+
+            // foreach (var wo in sourceContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -577,6 +626,8 @@ public partial class Player
                     bankLogTargetStack,
                     bankLogTargetContainer
                 );
+
+                VerifyMergeStackPosition(targetContainer, sourceContainer, targetStack);
             }
         }
 
@@ -586,10 +637,12 @@ public partial class Player
             && sourceContainer is { WeenieType: WeenieType.Storage }
         )
         {
-            foreach (var wo in targetContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(targetContainer);
+
+            // foreach (var wo in targetContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -603,15 +656,20 @@ public partial class Player
                     bankLogTargetStack,
                     bankLogTargetContainer
                 );
+
+                VerifyMergeStackPosition(targetContainer, sourceContainer, targetStack);
             }
         }
         // MERGE stack from BANK-MAIN to BANK-SIDE
         else if (targetContainer != null && sourceContainer is { WeenieType: WeenieType.Storage } && targetContainer.IsBankSideContainer)
         {
-            foreach (var wo in sourceContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(sourceContainer);
+            DeepSave(targetContainer);
+
+            // foreach (var wo in sourceContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -625,15 +683,20 @@ public partial class Player
                     bankLogTargetStack,
                     bankLogTargetContainer
                 );
+
+                VerifyMergeStackPosition(targetContainer, sourceContainer, targetStack);
             }
         }
         // MERGE stack from BANK-SIDE to BANK-MAIN
         else if (sourceContainer is { IsBankSideContainer: true } && targetContainer is { WeenieType: WeenieType.Storage })
         {
-            foreach (var wo in targetContainer.Inventory.Values)
-            {
-                DeepSave(wo);
-            }
+            DeepSave(sourceContainer);
+            DeepSave(targetContainer);
+
+            // foreach (var wo in targetContainer.Inventory.Values)
+            // {
+            //     DeepSave(wo);
+            // }
 
             if (PropertyManager.GetBool("banking_system_logging").Item)
             {
@@ -647,6 +710,8 @@ public partial class Player
                     bankLogTargetStack,
                     bankLogTargetContainer
                 );
+
+                VerifyMergeStackPosition(targetContainer, sourceContainer, targetStack);
             }
         }
         // Logging Only - MERGE stack from PLAYER to BANK-SIDE
@@ -663,6 +728,8 @@ public partial class Player
                     bankLogTargetStack,
                     bankLogTargetContainer
                 );
+
+                VerifyMergeStackPosition(targetContainer, sourceContainer, targetStack);
             }
         }
         // Logging Only - MERGE stack from BANK-SIDE to PLAYER
@@ -679,6 +746,8 @@ public partial class Player
                     bankLogTargetStack,
                     bankLogTargetContainer
                 );
+
+                VerifyMergeStackPosition(targetContainer, sourceContainer, targetStack);
             }
         }
         // Logging Only - MERGE stack from BANK-SIDE to BANK-SIDE
@@ -696,6 +765,119 @@ public partial class Player
                     bankLogTargetStack,
                     bankLogTargetContainer
                 );
+
+                VerifyMergeStackPosition(targetContainer, sourceContainer, targetStack);
+            }
+        }
+    }
+
+    private void VerifyMovedItemPosition(Container targetContainer, Container sourceContainer, WorldObject wo)
+    {
+        if (wo is null || sourceContainer is null || targetContainer is null)
+        {
+            _log.Error("[BANKING] Null object detected during banking transaction. " +
+                       "Item: {Item}, SourceContainer: {SourceContainer}, TargetContainer: {TargetContainer}",
+                wo is null, sourceContainer is null, targetContainer is null);
+
+            return;
+        }
+
+        foreach (var worldObject in targetContainer.Inventory.Where(worldObject => worldObject.Value.Guid == wo.Guid))
+        {
+            if (worldObject.Value.PlacementPosition != wo.PlacementPosition)
+            {
+                _log.Error("[BANKING] Placement position mismatch for '{WorldObject}'. " +
+                           "Object Placement Position: {ObjectPlacementPosition}, " +
+                           "Container's Placement Position: {ContainerPlacementPosition}",
+                    wo.Name, wo.PlacementPosition, worldObject.Value.PlacementPosition);
+            }
+            else
+            {
+                _log.Information("[BANKING] '{Item}' placement position matches '{Container}' placement position record.", wo.Name, targetContainer.Name);
+            }
+        }
+
+        if (sourceContainer != targetContainer)
+        {
+            foreach (var worldObject in sourceContainer.Inventory.Where(worldObject => worldObject.Value.Guid == wo.Guid))
+            {
+                _log.Error(
+                    "[BANKING] Bank object '{WorldObject}' has not properly moved from container '{SourceContainer}'" +
+                    " to container '{TargetContainer}'", wo.Name, sourceContainer.Name, targetContainer.Name);
+            }
+        }
+    }
+
+    private void VerifySplitStackPosition(Container targetContainer, Container sourceContainer, WorldObject newStack, WorldObject sourceStack)
+    {
+        if (newStack is null || sourceStack is null || sourceContainer is null || targetContainer is null)
+        {
+            _log.Error("[BANKING] Null object detected during banking transaction. " +
+                       "NewStack: {NewStack}, SourceStack: {SourceStack}, SourceContainer: {SourceContainer}, TargetContainer: {TargetContainer}",
+                newStack is null, sourceStack is null, sourceContainer is null, targetContainer is null);
+
+            return;
+        }
+
+        foreach (var worldObject in targetContainer.Inventory.Where(worldObject => worldObject.Value.Guid == newStack.Guid))
+        {
+            if (worldObject.Value.PlacementPosition != newStack.PlacementPosition)
+            {
+                _log.Error("[BANKING] Placement position mismatch for '{WorldObject}'. " +
+                           "NewStack Placement Position: {ObjectPlacementPosition}, " +
+                           "Container's Placement Position: {ContainerPlacementPosition}",
+                    newStack.Name, newStack.PlacementPosition, worldObject.Value.PlacementPosition);
+            }
+            else
+            {
+                _log.Information("[BANKING] '{NewStack}' placement position matches '{Container}' placement position record.", newStack.Name, targetContainer.Name);
+            }
+        }
+
+        if (sourceContainer != targetContainer)
+        {
+            foreach (var worldObject in sourceContainer.Inventory.Where(worldObject => worldObject.Value.Guid == newStack.Guid))
+            {
+                _log.Error(
+                    "[BANKING] Bank newStack '{NewStack}' has not properly moved from container '{SourceContainer}'" +
+                    " to container '{TargetContainer}'", newStack.Name, sourceContainer.Name, targetContainer.Name);
+            }
+        }
+    }
+
+    private void VerifyMergeStackPosition(Container targetContainer, Container sourceContainer, WorldObject mergedStack)
+    {
+        if (mergedStack is null || sourceContainer is null || targetContainer is null)
+        {
+            _log.Error("[BANKING] Null object detected during banking transaction. " +
+                       "MergedStack: {MergedStack}, SourceContainer: {SourceContainer}, TargetContainer: {TargetContainer}",
+                mergedStack is null, sourceContainer is null, targetContainer is null);
+
+            return;
+        }
+
+        foreach (var worldObject in targetContainer.Inventory.Where(worldObject => worldObject.Value.Guid == mergedStack.Guid))
+        {
+            if (worldObject.Value.PlacementPosition != mergedStack.PlacementPosition)
+            {
+                _log.Error("[BANKING] Placement position mismatch for '{WorldObject}'. " +
+                           "MergedStack Placement Position: {ObjectPlacementPosition}, " +
+                           "Container's Placement Position: {ContainerPlacementPosition}",
+                    mergedStack.Name, mergedStack.PlacementPosition, worldObject.Value.PlacementPosition);
+            }
+            else
+            {
+                _log.Information("[BANKING] '{MergedStack}' placement position matches '{Container}' placement position record.", mergedStack.Name, targetContainer.Name);
+            }
+        }
+
+        if (sourceContainer != targetContainer)
+        {
+            foreach (var worldObject in sourceContainer.Inventory.Where(worldObject => worldObject.Value.Guid == mergedStack.Guid))
+            {
+                _log.Error(
+                    "[BANKING] Bank MergedStack '{MergedStack}' has not properly moved from container '{SourceContainer}'" +
+                    " to container '{TargetContainer}'", mergedStack.Name, sourceContainer.Name, targetContainer.Name);
             }
         }
     }
