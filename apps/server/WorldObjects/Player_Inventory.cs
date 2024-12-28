@@ -5777,7 +5777,7 @@ partial class Player
 
     public void AuditInventory()
     {
-        var emptySalvageBags = EquippedObjects.Values.Where(i => i.CurrentWieldedLocation == EquipMask.None);
+        var emptySalvageBags = Inventory.Values.Where(i => i.WeenieType is WeenieType.Salvage && i.Structure is < 1);
 
         foreach (var emptySalvageBag in emptySalvageBags)
         {
