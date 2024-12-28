@@ -1080,11 +1080,6 @@ public class Salvage : WorldObject
                     ChatMessageType.Broadcast
                 )
             );
-
-            if (source.Structure < 1)
-            {
-                source.Destroy();
-            }
         }
 
         source.Name = $"Salvage ({source.Structure})";
@@ -1110,13 +1105,11 @@ public class Salvage : WorldObject
             player.MoveItemToFirstContainerSlot(obj);
         }
 
-        if (obj != null && obj.Structure == 0)
+        if (obj.Structure < 1)
         {
             var salvageName = obj.NameWithMaterial.Replace(" (0)", "");
-            player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"The {salvageName} is consumed.", ChatMessageType.Broadcast)
-            );
-            player.Session.Network.EnqueueSend(new GameMessageDeleteObject(obj));
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {salvageName} is consumed.", ChatMessageType.Broadcast));
+            player.TryConsumeFromInventoryWithNetworking(obj);
         }
     }
 
