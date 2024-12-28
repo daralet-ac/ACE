@@ -1033,22 +1033,7 @@ partial class Player
             return;
         }
 
-        var landblock = LandblockManager.GetLandblock(landblockId, false);
-
-        if (landblock.CapstonePlayers.ContainsKey(player.Name))
-        {
-            landblock.CapstonePlayers[player.Name] = 0;
-            return;
-        }
-
-        if (landblock.CapstonePlayers.Keys.Count < 9)
-        {
-            Landblock.CapstoneTeleport(player, landblock);
-        }
-        else
-        {
-            session.Player.Location = new Position(session.Player.Sanctuary);
-        }
+        session.Player.Location = new Position(session.Player.Sanctuary);
     }
 
     public static Dictionary<int, string> DungeonList = new Dictionary<int, string>
