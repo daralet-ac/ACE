@@ -152,6 +152,7 @@ partial class Player
 
         AuditItemSpells();
         AuditEquippedItems();
+        AuditInventory();
         UpdateArmorModBuffs();
         UpdateSigilTrinketManaReservation();
 

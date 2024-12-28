@@ -5775,6 +5775,17 @@ partial class Player
         }
     }
 
+    public void AuditInventory()
+    {
+        var emptySalvageBags = EquippedObjects.Values.Where(i => i.CurrentWieldedLocation == EquipMask.None);
+
+        foreach (var emptySalvageBag in emptySalvageBags)
+        {
+            _log.Warning($"{Name}.AuditInventory() - removing {emptySalvageBag.Name} ({emptySalvageBag.Guid})");
+            TryConsumeFromInventoryWithNetworking(emptySalvageBag);
+        }
+    }
+
     /// <summary>
     /// Returns the Equipped items matching a weenie class id
     /// </summary>
