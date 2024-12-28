@@ -40,6 +40,11 @@ public class SigilTrinketEvent
     /// </summary>
     public bool HasReadySigilTrinketEffect(SigilTrinket sigilTrinket)
     {
+        if (sigilTrinket.Structure < 1)
+        {
+            return false;
+        }
+
         if (!SigilTrinketValidationChecks(sigilTrinket))
         {
             return false;
@@ -499,7 +504,12 @@ public class SigilTrinketEvent
     // --- VALIDATION CHECKS ---
     private bool SigilTrinketValidationChecks(SigilTrinket sigilTrinket)
     {
-        if (sigilTrinket.SigilTrinketEffectId == null || sigilTrinket.WieldSkillType == null)
+        if (sigilTrinket.SigilTrinketEffectId is null || sigilTrinket.SigilTrinketEffectId != EffectId)
+        {
+            return false;
+        }
+
+        if (sigilTrinket.WieldSkillType is null || (Skill)sigilTrinket.WieldSkillType != Skill)
         {
             return false;
         }
