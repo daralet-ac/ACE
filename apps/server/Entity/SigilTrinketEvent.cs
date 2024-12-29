@@ -181,7 +181,7 @@ public class SigilTrinketEvent
                         ChatMessageType.CombatSelf
                     )
                 );
-                
+
                 break;
             case ((int)Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression):
             case ((int)Skill.Shield, (int)SigilTrinketShieldEffect.Aggression):
@@ -762,8 +762,12 @@ public class SigilTrinketEvent
         var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
         var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
 
-        var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
-        var validWieldReq = weaponWieldReq <= maxWield;
+        var validWieldReq = false;
+        if (DamageEvent.Weapon is not null)
+        {
+            var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+            validWieldReq = weaponWieldReq <= maxWield;
+        }
 
         var isDualWieldAttack = Player is { IsDualWieldAttack: true };
 
@@ -783,8 +787,12 @@ public class SigilTrinketEvent
         var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
         var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
 
-        var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
-        var validWieldReq = weaponWieldReq <= maxWield;
+        var validWieldReq = false;
+        if (DamageEvent.Weapon is not null)
+        {
+            var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+            validWieldReq = weaponWieldReq <= maxWield;
+        }
 
         var isSneakAttack = false;
         if (Target is Creature creatureTarget)
@@ -809,8 +817,12 @@ public class SigilTrinketEvent
         var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
         var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
 
-        var weaponWieldReq = DamageEvent.DefenderWeapon.WieldDifficulty ?? 1;
-        var validWieldReq = weaponWieldReq <= maxWield;
+        var validWieldReq = false;
+        if (DamageEvent.DefenderWeapon is not null)
+        {
+            var weaponWieldReq = DamageEvent.DefenderWeapon.WieldDifficulty ?? 1;
+            validWieldReq = weaponWieldReq <= maxWield;
+        }
 
         var isGlancingBlow = DamageEvent.PartialEvasion == PartialEvasion.Some;
 
@@ -830,8 +842,12 @@ public class SigilTrinketEvent
         var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
         var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
 
-        var weaponWieldReq = Player.GetEquippedWeapon().WieldDifficulty ?? 1;
-        var validWieldReq = weaponWieldReq <= maxWield;
+        var validWieldReq = false;
+        if (Player.GetEquippedWeapon() is not null)
+        {
+            var weaponWieldReq = Player.GetEquippedWeapon().WieldDifficulty ?? 1;
+            validWieldReq = weaponWieldReq <= maxWield;
+        }
 
         var isHealthDamageSpell = TriggerSpell.VitalDamageType is not DamageType.Stamina and not DamageType.Mana;
 
@@ -851,8 +867,12 @@ public class SigilTrinketEvent
         var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
         var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
 
-        var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
-        var validWieldReq = weaponWieldReq <= maxWield;
+        var validWieldReq = false;
+        if (DamageEvent.Weapon is not null)
+        {
+            var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+            validWieldReq = weaponWieldReq <= maxWield;
+        }
 
         return validSkill && validEffectId && validWieldReq;
     }
@@ -870,8 +890,12 @@ public class SigilTrinketEvent
         var sigilTrinketMaxtier = sigilTrinket.SigilTrinketMaxTier ?? 1;
         var maxWield = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketMaxtier + 1);
 
-        var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
-        var validWieldReq = weaponWieldReq <= maxWield;
+        var validWieldReq = false;
+        if (DamageEvent.Weapon is not null)
+        {
+            var weaponWieldReq = DamageEvent.Weapon.WieldDifficulty ?? 1;
+            validWieldReq = weaponWieldReq <= maxWield;
+        }
 
         var isPowerAttack = Player.GetPowerAccuracyBar() > 0.5f;
 
