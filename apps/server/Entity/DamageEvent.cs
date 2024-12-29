@@ -77,7 +77,7 @@ public class DamageEvent
     private float _resistanceMod;
     private float _slayerMod;
     private float _specDefenseMod;
-    private float _steadyShotActivatedMod;
+    private float _combatAbilitySteadyShotDamageBonus;
     private float _twohandedCombatDamageBonus;
     private float _weaponResistanceMod;
 
@@ -394,9 +394,7 @@ public class DamageEvent
         if (
             attackerCombatAbility != CombatAbility.SteadyShot
             || playerAttacker.GetEquippedMissileLauncher() == null
-            || !(
-                playerAttacker.LastSteadyShotActivated > Time.GetUnixTime() - playerAttacker.SteadyShotActivatedDuration
-            )
+            || !(playerAttacker.LastSteadyShotActivated > Time.GetUnixTime() - playerAttacker.SteadyShotActivatedDuration)
         )
         {
             return false;
@@ -405,7 +403,6 @@ public class DamageEvent
         Evaded = false;
         PartialEvasion = PartialEvasion.None;
         _evasionMod = 1f;
-        _steadyShotActivatedMod = 1.25f;
 
         return true;
     }
@@ -549,6 +546,7 @@ public class DamageEvent
         _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
         _combatAbilityProvokeDamageBonus = GetCombatAbilityProvokeDamageBonus(playerAttacker);
         _combatAbilityFuryDamageBonus = GetCombatAbilityRecklessDamageBonus(attacker, defender, playerAttacker);
+        _combatAbilitySteadyShotDamageBonus = GetCombatAbilitySteadyShotDamageBonus(attacker, defender, playerAttacker);
         _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
         SneakAttackMod = attacker.GetSneakAttackMod(defender);
         _attackHeightDamageBonus += GetHighAttackHeightBonus(playerAttacker);
@@ -692,6 +690,25 @@ public class DamageEvent
         return recklessMod;
     }
 
+    private float GetCombatAbilitySteadyShotDamageBonus(Creature attacker, Creature defender, Player playerAttacker)
+    {
+        if (playerAttacker == null)
+        {
+            return 1.0f;
+        }
+
+        if (
+            _attackerCombatAbility is not CombatAbility.SteadyShot
+            || playerAttacker.GetEquippedMissileLauncher() == null
+            || !(playerAttacker.LastSteadyShotActivated > Time.GetUnixTime() - playerAttacker.SteadyShotActivatedDuration)
+        )
+        {
+            return 1.0f;
+        }
+
+        return 1.25f;
+    }
+
     /// <summary>
     /// ATTACK HEIGHT BONUS - High: (10% increased damage, 15% if weapon is specialized)
     /// </summary>
@@ -790,6 +807,7 @@ public class DamageEvent
                * _combatAbilityMultishotDamagePenalty
                * _combatAbilityProvokeDamageBonus
                * _combatAbilityFuryDamageBonus
+               * _combatAbilitySteadyShotDamageBonus
                * SneakAttackMod
                * _attackHeightDamageBonus
                * _levelScalingMod;
@@ -811,6 +829,7 @@ public class DamageEvent
                * _combatAbilityMultishotDamagePenalty
                * _combatAbilityProvokeDamageBonus
                * _combatAbilityFuryDamageBonus
+               * _combatAbilitySteadyShotDamageBonus
                * _ammoEffectMod
                * _levelScalingMod;
     }
@@ -1942,6 +1961,11 @@ public class DamageEvent
             return;
         }
 
+        // if (_attacker.Name is not "")
+        // {
+        //     return;
+        // }
+
         var currentTime = Time.GetUnixTime();
         var timeSinceLastAttack = currentTime - _attacker.LastAttackedCreatureTime;
         if (_attacker as Player == null)
@@ -1975,7 +1999,7 @@ public class DamageEvent
             * _damageRatingMod
             * _dualWieldDamageBonus
             * _twohandedCombatDamageBonus
-            * _steadyShotActivatedMod;
+            * _combatAbilitySteadyShotDamageBonus;
         var averageDpsBeforeMitigation = averageDamageBeforeMitigation / timeSinceLastAttack;
 
         var averageDamageAfterMitigation =
@@ -1994,7 +2018,7 @@ public class DamageEvent
             + $"AverageDamageNonCrit: {avgNonCritHit}, AverageDamageCrit: {critHit}, AverageDamageHit: {averageDamage}\n"
             + $"DPS Base: {baseDps}\n\n"
             + $"-- Before Mitigation --\n"
-            + $"PowerMod: {_powerMod}, AttributeMod: {_attributeMod}, SlayerMod: {_slayerMod}, DamageRatingMod: {_damageRatingMod}\n"
+            + $"PowerMod: {_powerMod}, AttributeMod: {_attributeMod}, SlayerMod: {_slayerMod}, DamageRatingMod: {_damageRatingMod}, DualWieldMod: {_dualWieldDamageBonus}, TwoHandMod: {_twohandedCombatDamageBonus}, SteadyShotMod: {_combatAbilitySteadyShotDamageBonus}\n"
             + $"AverageDamage Before Mitigation: {averageDamageBeforeMitigation}\n"
             + $"DPS Before Mitigation: {averageDpsBeforeMitigation}\n\n"
             + $"-- After Mitigation --\n"
