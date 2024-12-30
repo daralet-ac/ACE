@@ -164,6 +164,9 @@ public class Storage : Container
             cont?.SortWorldObjectsIntoInventory(worldObjects);
         }
 
+        EncumbranceVal = 0;
+        Value = 0;
+
         SendBankVaultInventory(BankUser);
     }
 
@@ -242,7 +245,22 @@ public class Storage : Container
 
         FinishClose(BankUser);
 
+        var itemsToSend = new List<GameMessage>();
+
+        foreach (var item in Inventory.Values)
+        {
+            itemsToSend.Add(new GameMessageDeleteObject(item));
+        }
+
+        player.Session.Network.EnqueueSend(itemsToSend.ToArray());
+
         BankUser = null;
+
+        var landblock = CurrentLandblock;
+        if (landblock is not null)
+        {
+            landblock.ReloadObject(this);
+        }
     }
 
     /// <summary>
