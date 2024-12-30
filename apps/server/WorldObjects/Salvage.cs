@@ -1107,9 +1107,11 @@ public class Salvage : WorldObject
 
         if (obj.Structure < 1)
         {
+            player.TryConsumeFromInventoryWithNetworking(obj);
+            player.Session.Network.EnqueueSend(new GameMessageDeleteObject(obj));
+
             var salvageName = obj.NameWithMaterial.Replace(" (0)", "");
             player.Session.Network.EnqueueSend(new GameMessageSystemChat($"The {salvageName} is consumed.", ChatMessageType.Broadcast));
-            player.TryConsumeFromInventoryWithNetworking(obj);
         }
     }
 
