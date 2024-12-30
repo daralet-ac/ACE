@@ -135,7 +135,7 @@ public static class TreasureProfile_Mundane
         (TreasureItemType_Orig.SpellComponent, 0.125f),
         (TreasureItemType_Orig.Gem, 0.01f),
         (TreasureItemType_Orig.ManaStone, 0.025f),
-        (TreasureItemType_Orig.Scroll, 0.025f),
+        (TreasureItemType_Orig.Scroll, 0.05f),
     };
 
     /// <summary>
