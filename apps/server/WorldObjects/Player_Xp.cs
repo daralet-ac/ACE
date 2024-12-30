@@ -53,7 +53,7 @@ partial class Player
     /// <param name="bossKillXpMonsterMax">The percentage of the monster level cost to award as xp. Default is 5%.</param>
     /// <param name="bossKillXpPlayerMax">The percentage of the player level cost to award as xp. Default is 5%.</param>
     public void EarnBossKillXP(
-        int? xpSourceLevel,
+        int xpSourceLevel,
         double? bossKillXpMonsterMax,
         double? bossKillXpPlayerMax,
         Player playerEarner
@@ -62,7 +62,9 @@ partial class Player
         var maxAwardPercentFromMonsterLevel = bossKillXpMonsterMax ?? 0.05;
         var maxAwardPercentFromPlayerLevel = bossKillXpPlayerMax ?? 0.05;
 
-        var monsterLevelXpCost = GetXPBetweenLevels(xpSourceLevel.Value, xpSourceLevel.Value + 1);
+        var monsterLevelXpCost = GetXPBetweenLevels(xpSourceLevel, xpSourceLevel + 1);
+
+        var overlevelPenalty = GetOverlevelPenalty(xpSourceLevel);
 
         var distanceScalar = 1.0;
         var fellowSharePercent = 1.0;
@@ -73,7 +75,7 @@ partial class Player
             fellowSharePercent = Fellowship.GetMemberSharePercent();
         }
 
-        var max = (long)(monsterLevelXpCost * maxAwardPercentFromMonsterLevel * distanceScalar * fellowSharePercent);
+        var max = (long)(monsterLevelXpCost * maxAwardPercentFromMonsterLevel * distanceScalar * fellowSharePercent * overlevelPenalty);
 
         GrantLevelProportionalXp(maxAwardPercentFromPlayerLevel, 0, max);
     }

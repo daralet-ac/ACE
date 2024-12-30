@@ -291,12 +291,12 @@ partial class Creature
                     {
                         foreach (var member in playerDamager.Fellowship.GetFellowshipMembers().Values)
                         {
-                            member.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                            member.EarnBossKillXP(Level ?? 1, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
                         }
                     }
                     else
                     {
-                        playerDamager.EarnBossKillXP(Level, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
+                        playerDamager.EarnBossKillXP(Level ?? 1, BossKillXpMonsterMax, BossKillXpPlayerMax, playerDamager);
                     }
                 }
             }
