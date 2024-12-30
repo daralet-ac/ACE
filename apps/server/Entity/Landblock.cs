@@ -1527,6 +1527,33 @@ public class Landblock : IActor
         actionQueue.Clear();
     }
 
+    public void ReloadObject(WorldObject wo)
+    {
+        ProcessPendingWorldObjectAdditionsAndRemovals();
+        SaveDB();
+
+        if (!wo.BiotaOriginatedFromOrHasBeenSavedToDatabase())
+        {
+            wo.Destroy(false);
+        }
+        else
+        {
+            RemoveWorldObjectInternal(wo.Guid);
+        }
+
+        ProcessPendingWorldObjectAdditionsAndRemovals();
+        actionQueue.Clear();
+
+        DatabaseManager.World.ClearCachedInstancesByLandblock(Id.Landblock);
+
+        Task.Run(() =>
+        {
+            CreateWorldObjects();
+
+            SpawnDynamicShardObjects();
+        });
+    }
+
     private void SaveDB()
     {
         var biotas = new Collection<(Biota biota, ReaderWriterLockSlim rwLock)>();
