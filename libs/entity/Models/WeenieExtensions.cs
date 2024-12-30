@@ -205,6 +205,10 @@ public static class WeenieExtensions
             case WeenieType.Gem:
             case WeenieType.Missile:
             case WeenieType.SpellComponent:
+            case WeenieType.SpellPurge:
+            case WeenieType.SpellTransference:
+            case WeenieType.ArmorPatch:
+            case WeenieType.UpgradeKit:
 
                 return true;
         }
