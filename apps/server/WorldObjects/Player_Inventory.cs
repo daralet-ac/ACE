@@ -466,7 +466,7 @@ partial class Player
         }
 
         // handle special case
-        if (item.ItemCurMana == 1)
+        if (item.ItemCurMana is 1 or 0)
         {
             item.ItemCurMana = 0;
             return false;
