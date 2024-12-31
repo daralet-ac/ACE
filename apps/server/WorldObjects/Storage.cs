@@ -245,14 +245,14 @@ public class Storage : Container
 
         FinishClose(BankUser);
 
-        var itemsToSend = new List<GameMessage>();
-
-        foreach (var item in Inventory.Values)
-        {
-            itemsToSend.Add(new GameMessageDeleteObject(item));
-        }
-
-        player.Session.Network.EnqueueSend(itemsToSend.ToArray());
+        // var itemsToSend = new List<GameMessage>();
+        //
+        // foreach (var item in Inventory.Values)
+        // {
+        //     itemsToSend.Add(new GameMessageDeleteObject(item));
+        // }
+        //
+        // player.Session.Network.EnqueueSend(itemsToSend.ToArray());
 
         BankUser = null;
 
