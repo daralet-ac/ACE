@@ -95,22 +95,26 @@ public class Storage : Container
     {
         var worldObjects = new List<WorldObject>();
 
-        foreach (var biota in biotas)
+        lock (worldObjects)
         {
-            worldObjects.Add(Factories.WorldObjectFactory.CreateWorldObject(biota));
-        }
-
-        // check for GUID in any other banks and remove from inventory if so.
-        foreach (var worldObject in worldObjects)
-        {
-            foreach (var bank in BankChests)
+            foreach (var biota in biotas)
             {
-                if (bank.Inventory.Keys.Contains(worldObject.Guid))
+                worldObjects.Add(Factories.WorldObjectFactory.CreateWorldObject(biota));
+            }
+
+            // check for GUID in any other banks and remove from inventory if so.
+            foreach (var worldObject in worldObjects)
+            {
+                foreach (var bank in BankChests)
                 {
-                    bank.Inventory.Remove(worldObject.Guid);
+                    if (bank.Inventory.Keys.Contains(worldObject.Guid))
+                    {
+                        bank.Inventory.Remove(worldObject.Guid);
+                    }
                 }
             }
         }
+
         SortWorldObjectsIntoBank(worldObjects);
 
         if (worldObjects.Count > 0)
