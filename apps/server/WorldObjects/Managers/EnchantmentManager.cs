@@ -188,6 +188,14 @@ public class EnchantmentManager
         {
             var newEntry = BuildEntry(spell, caster, weapon, equip, isWeaponSpell);
             newEntry.LayerId = 1;
+
+            if (newEntry is {SpellId: 42823})
+            {
+                _log.Error(
+                    "[MYSTERY ENCHANTMENT] - Spell: {Spell}, Caster: {Caster}, Weapon: {Weapon}, Equip: {Equip}, IsWeaponSpell: {IsWeaponSpell}",
+                    spell!.Name, caster!.Name, weapon!.Name, equip, isWeaponSpell);
+            }
+
             WorldObject.Biota.PropertiesEnchantmentRegistry.AddEnchantment(newEntry, WorldObject.BiotaDatabaseLock);
             WorldObject.ChangesDetected = true;
 
@@ -222,6 +230,13 @@ public class EnchantmentManager
                 {
                     newEntry.StatModValue = entry.StatModValue;
                 }
+            }
+
+            if (newEntry is {SpellId: 42823})
+            {
+                _log.Error(
+                    "[MYSTERY ENCHANTMENT] - Spell: {Spell}, Caster: {Caster}, Weapon: {Weapon}, Equip: {Equip}, IsWeaponSpell: {IsWeaponSpell}",
+                    spell!.Name, caster!.Name, weapon!.Name, equip, isWeaponSpell);
             }
 
             WorldObject.Biota.PropertiesEnchantmentRegistry.AddEnchantment(newEntry, WorldObject.BiotaDatabaseLock);
