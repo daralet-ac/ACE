@@ -143,7 +143,7 @@ public class EmoteManager
 
                 if (player != null)
                 {
-                    player.GrantLevelProportionalXp(emote.Percent ?? 0, min, max);
+                    player.GrantLevelProportionalXp(emote.Percent ?? 0, min, max, player.Level ?? 1);
                 }
 
                 break;

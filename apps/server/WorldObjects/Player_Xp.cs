@@ -20,6 +20,9 @@ partial class Player
     /// <param name="amount">The amount of XP being added</param>
     /// <param name="xpType">The source of XP being added</param>
     /// <param name="shareable">True if this XP can be shared with Fellowship</param>
+    /// <param name="xpSourceLevel"></param>
+    /// <param name="shareType"></param>
+    /// <param name="creatureWcid"></param>
     public void EarnXP(
         long amount,
         XpType xpType,
@@ -34,14 +37,7 @@ partial class Player
 
         var xpMessage = "";
 
-        var m_amount = (long)amount;
-
-        if (m_amount < 0)
-        {
-            _log.Warning($"{Name}.EarnXP({amount}, {shareType})");
-            _log.Warning($"modifier: m_amount: {m_amount}");
-            return;
-        }
+        var m_amount = amount;
 
         GrantXP(m_amount, xpType, xpSourceLevel, shareType, xpMessage, creatureWcid);
     }
@@ -52,6 +48,7 @@ partial class Player
     /// <param name="xpSourceLevel">The level of the killed boss monster</param>
     /// <param name="bossKillXpMonsterMax">The percentage of the monster level cost to award as xp. Default is 5%.</param>
     /// <param name="bossKillXpPlayerMax">The percentage of the player level cost to award as xp. Default is 5%.</param>
+    /// <param name="playerEarner"></param>
     public void EarnBossKillXP(
         int? xpSourceLevel,
         double? bossKillXpMonsterMax,
@@ -62,7 +59,7 @@ partial class Player
         var maxAwardPercentFromMonsterLevel = bossKillXpMonsterMax ?? 0.05;
         var maxAwardPercentFromPlayerLevel = bossKillXpPlayerMax ?? 0.05;
 
-        var monsterLevelXpCost = GetXPBetweenLevels(xpSourceLevel.Value, xpSourceLevel.Value + 1);
+        var monsterLevelXpCost = GetXPBetweenLevels(xpSourceLevel ?? 1, (xpSourceLevel ?? 1) + 1);
 
         var distanceScalar = 1.0;
         var fellowSharePercent = 1.0;
@@ -75,7 +72,7 @@ partial class Player
 
         var max = (long)(monsterLevelXpCost * maxAwardPercentFromMonsterLevel * distanceScalar * fellowSharePercent);
 
-        GrantLevelProportionalXp(maxAwardPercentFromPlayerLevel, 0, max);
+        GrantLevelProportionalXp(maxAwardPercentFromPlayerLevel, 0, max, xpSourceLevel);
     }
 
     /// <summary>
@@ -152,6 +149,10 @@ partial class Player
     /// <param name="amount">The amount of XP to grant to the player</param>
     /// <param name="xpType">The source of the XP being granted</param>
     /// <param name="shareable">If TRUE, this XP can be shared with fellowship members</param>
+    /// <param name="xpSourceLevel"></param>
+    /// <param name="shareType"></param>
+    /// <param name="xpMessage"></param>
+    /// <param name="creatureWcid"></param>
     public void GrantXP(
         long amount,
         XpType xpType,
@@ -239,6 +240,14 @@ partial class Player
         var enchantment = GetXPAndLuminanceModifier(xpType);
 
         m_amount = (long)Math.Round(amountBeforeMods * modifier * enchantment * altBonus * regionalDebuffBonus * overlevelPenalty);
+
+        // Console.WriteLine($"GrantXp(amount = {amount}, xpType = {xpType}, xpSourceLevel = {xpSourceLevel}, shareType = {shareType}, xpMessage = {xpMessage}, creatureWcid = {creatureWcid})\n" +
+        //                   $"-amountBeforeMods: {amountBeforeMods}\n" +
+        //                   $"-serverMod: {modifier}\n" +
+        //                   $"-enchantmentMod: {enchantment}\n" +
+        //                   $"-altBonusMod: {altBonus}\n" +
+        //                   $"-regionalDebuffBonusMod: {regionalDebuffBonus}\n" +
+        //                   $"-overlevelPenalty: {overlevelPenalty}");
 
         // Make sure UpdateXpAndLevel is done on this players thread
         EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(m_amount, xpType, xpMessage)));
@@ -975,14 +984,16 @@ partial class Player
     /// <summary>
     /// Raise the available XP by a percentage of the current level XP or a maximum
     /// </summary>
-    public void GrantLevelProportionalXp(double percent, long min, long max)
+    public void GrantLevelProportionalXp(double percent, long min, long max, int? xpSourceLevel)
     {
         if (max == 0)
         {
             return;
         }
 
-        var nextLevelXP = GetXPBetweenLevels(Level.Value, Level.Value + 1);
+        var level = Level ?? 1;
+
+        var nextLevelXP = GetXPBetweenLevels(level, level + 1);
 
         var scaledXP = (long)Math.Round(nextLevelXP * percent);
 
@@ -997,7 +1008,7 @@ partial class Player
         }
 
         // apply xp modifiers?
-        EarnXP(scaledXP, XpType.Quest, Level, ShareType.Allegiance);
+        EarnXP(scaledXP, XpType.Quest, xpSourceLevel, ShareType.Allegiance);
     }
 
     /// <summary>
