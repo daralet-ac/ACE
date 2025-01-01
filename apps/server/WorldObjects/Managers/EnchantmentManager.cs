@@ -390,7 +390,10 @@ public class EnchantmentManager
         newEntry.EnchantmentCategory = (uint)EnchantmentMask.Cooldown;
 
         var enchantmentRegistry = WorldObject.Biota.PropertiesEnchantmentRegistry.GetEnchantmentBySpell(newEntry.SpellId, newEntry.CasterObjectId, new ReaderWriterLockSlim());
-        if (newEntry.SpellId == enchantmentRegistry.SpellId && newEntry.CasterObjectId == enchantmentRegistry.CasterObjectId)
+        if (enchantmentRegistry is not null
+            && newEntry.SpellId == enchantmentRegistry.SpellId
+            && newEntry.CasterObjectId == enchantmentRegistry.CasterObjectId
+        )
         {
             _log.Error("EnchantmentManager.StartCooldown({Item}) - Attempting to add duplicate cooldown enchantment ({SpellId}) to registry. Aborting.", item.Name, newEntry.SpellId);
             return false;
