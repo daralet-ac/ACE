@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Entity.Enum;
@@ -189,13 +190,6 @@ public class EnchantmentManager
             var newEntry = BuildEntry(spell, caster, weapon, equip, isWeaponSpell);
             newEntry.LayerId = 1;
 
-            if (newEntry is {SpellId: 42823})
-            {
-                _log.Error(
-                    "[MYSTERY ENCHANTMENT] - Spell: {Spell}, Caster: {Caster}, Weapon: {Weapon}, Equip: {Equip}, IsWeaponSpell: {IsWeaponSpell}",
-                    spell!.Name, caster!.Name, weapon!.Name, equip, isWeaponSpell);
-            }
-
             WorldObject.Biota.PropertiesEnchantmentRegistry.AddEnchantment(newEntry, WorldObject.BiotaDatabaseLock);
             WorldObject.ChangesDetected = true;
 
@@ -230,13 +224,6 @@ public class EnchantmentManager
                 {
                     newEntry.StatModValue = entry.StatModValue;
                 }
-            }
-
-            if (newEntry is {SpellId: 42823})
-            {
-                _log.Error(
-                    "[MYSTERY ENCHANTMENT] - Spell: {Spell}, Caster: {Caster}, Weapon: {Weapon}, Equip: {Equip}, IsWeaponSpell: {IsWeaponSpell}",
-                    spell!.Name, caster!.Name, weapon!.Name, equip, isWeaponSpell);
             }
 
             WorldObject.Biota.PropertiesEnchantmentRegistry.AddEnchantment(newEntry, WorldObject.BiotaDatabaseLock);
@@ -291,13 +278,6 @@ public class EnchantmentManager
         bool isWeaponSpell = false
     )
     {
-        if (spell is {Id: 42823})
-        {
-            _log.Error(
-                "[MYSTERY ENCHANTMENT] - Spell: {Spell}, Caster: {Caster}, Weapon: {Weapon}, Equip: {Equip}, IsWeaponSpell: {IsWeaponSpell}",
-                spell!.Name, caster!.Name, weapon!.Name, equip, isWeaponSpell);
-        }
-
         var entry = new PropertiesEnchantmentRegistry();
 
         entry.EnchantmentCategory = (uint)spell.MetaSpellType;
@@ -408,6 +388,13 @@ public class EnchantmentManager
         newEntry.DegradeLimit = -666;
         newEntry.StatModType = EnchantmentTypeFlags.Cooldown;
         newEntry.EnchantmentCategory = (uint)EnchantmentMask.Cooldown;
+
+        var enchantmentRegistry = WorldObject.Biota.PropertiesEnchantmentRegistry.GetEnchantmentBySpell(newEntry.SpellId, newEntry.CasterObjectId, new ReaderWriterLockSlim());
+        if (newEntry.SpellId == enchantmentRegistry.SpellId && newEntry.CasterObjectId == enchantmentRegistry.CasterObjectId)
+        {
+            _log.Error("EnchantmentManager.StartCooldown({Item}) - Attempting to add duplicate cooldown enchantment ({SpellId}) to registry. Aborting.", item.Name, newEntry.SpellId);
+            return false;
+        }
 
         newEntry.LayerId = 1; // cooldown at layer 1, any spells at layer 2?
         WorldObject.Biota.PropertiesEnchantmentRegistry.AddEnchantment(newEntry, WorldObject.BiotaDatabaseLock);
