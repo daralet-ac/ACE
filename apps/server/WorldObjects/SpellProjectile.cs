@@ -1742,8 +1742,13 @@ public class SpellProjectile : WorldObject
                 percent = damage / target.Health.MaxValue;
             }
 
+            amount = Convert.ToUInt32(damage);
+
             amount = CheckForCombatAbilityManaBarrier(target, damage, targetPlayer, amount);
             amount = CheckForCombatAbilityEvasiveStance(target, damage, targetPlayer, amount);
+
+            target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
+            target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
         }
 
         var overloadPercent = HandleCombatAbilityOverloadStamps(sourcePlayer, sourceCreature, out var overload);
@@ -1981,10 +1986,6 @@ public class SpellProjectile : WorldObject
     {
         if (targetPlayer is not { ManaBarrierToggle: true })
         {
-            amount = (uint)-target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
-
-            target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
-
             return amount;
         }
 
@@ -1992,6 +1993,7 @@ public class SpellProjectile : WorldObject
         {
             return amount;
         }
+
         var skill = targetPlayer.GetCreatureSkill(Skill.ManaConversion);
 
         var expectedSkill = (float)(targetPlayer.Level * 5);
@@ -2015,8 +2017,6 @@ public class SpellProjectile : WorldObject
 
             targetPlayer.PlayParticleEffect(PlayScript.RestrictionEffectBlue, targetPlayer.Guid);
             targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-Math.Round(manaDamage));
-            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
-            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
         }
         // if not enough mana, barrier falls and player takes remainder of damage as health
         else
@@ -2045,8 +2045,6 @@ public class SpellProjectile : WorldObject
             amount = (uint)((damage * 0.75) + manaRemainder);
 
             targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-(targetPlayer.Mana.Current - 1));
-            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-(amount));
-            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
         }
 
         return amount;
@@ -2059,10 +2057,6 @@ public class SpellProjectile : WorldObject
     {
         if (targetPlayer is not { EvasiveStanceToggle: true })
         {
-            amount = (uint)-target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
-
-            target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
-
             return amount;
         }
 
@@ -2097,8 +2091,6 @@ public class SpellProjectile : WorldObject
 
             targetPlayer.PlayParticleEffect(PlayScript.RestrictionEffectGold, targetPlayer.Guid);
             targetPlayer.UpdateVitalDelta(targetPlayer.Stamina, (int)-Math.Round(staminaDamage));
-            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-Math.Round((float)amount));
-            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
         }
         // if not enough mana, barrier falls and player takes remainder of damage as health
         else
@@ -2127,8 +2119,6 @@ public class SpellProjectile : WorldObject
             amount = (uint)((damage * 0.75) + staminaRemainder);
 
             targetPlayer.UpdateVitalDelta(targetPlayer.Stamina, (int)-(targetPlayer.Stamina.Current - 1));
-            targetPlayer.UpdateVitalDelta(targetPlayer.Health, (int)-(amount));
-            targetPlayer.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
         }
 
         return amount;
