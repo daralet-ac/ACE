@@ -151,12 +151,21 @@ public class EmoteManager
             case EmoteType.AwardSkillRanks:
                 if (player != null && emote.Stat != null)
                 {
-                    for (var i = 0; i < (emote.Amount ?? 1); i++)
-                    {
-                        player.HandleActionRaiseSkill((Skill)emote.Stat, 0, true);
+                    var stat = emote.Stat.Value;
+                    var amount = emote.Amount ?? 1;
 
+                    if ((Skill)stat is Skill.PortalMagic)
+                    {
+                        player.GrantSkillRanks((Skill)stat, amount);
                     }
-                    //player.GrantSkillRanks((Skill)emote.Stat, (int)emote.Amount);
+                    else
+                    {
+                        for (var i = 0; i < (emote.Amount ?? 1); i++)
+                        {
+                            player.HandleActionRaiseSkill((Skill)stat, 0, true);
+
+                        }
+                    }
                 }
 
                 break;
