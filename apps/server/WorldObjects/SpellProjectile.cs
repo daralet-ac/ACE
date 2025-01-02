@@ -1743,6 +1743,7 @@ public class SpellProjectile : WorldObject
             }
 
             amount = CheckForCombatAbilityManaBarrier(target, damage, targetPlayer, amount);
+            amount = CheckForCombatAbilityEvasiveStance(target, damage, targetPlayer, amount);
         }
 
         var overloadPercent = HandleCombatAbilityOverloadStamps(sourcePlayer, sourceCreature, out var overload);
@@ -2025,12 +2026,10 @@ public class SpellProjectile : WorldObject
                 new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
             );
 
-            var sharedCooldowns = targetPlayer.GetInventoryItemsOfWCID(1051110); // Mana Barrier
-            sharedCooldowns.AddRange(targetPlayer.GetInventoryItemsOfWCID(1051114)); // Evasive Stance
-
-            foreach (var toggle in sharedCooldowns)
+            var manaBarrier = targetPlayer.GetInventoryItemsOfWCID(1051110); // Mana Barrier
+            if (manaBarrier[0] is not null)
             {
-                targetPlayer.EnchantmentManager.StartCooldown(toggle);
+                targetPlayer.EnchantmentManager.StartCooldown(manaBarrier[0]);
             }
 
             targetPlayer.PlayParticleEffect(PlayScript.HealthDownBlue, targetPlayer.Guid);
@@ -2109,12 +2108,10 @@ public class SpellProjectile : WorldObject
                 new GameMessageSystemChat($"You run out of stamina and are fall out of your Evasive Stance!", ChatMessageType.Magic)
             );
 
-            var sharedCooldowns = targetPlayer.GetInventoryItemsOfWCID(1051110); // Mana Barrier
-            sharedCooldowns.AddRange(targetPlayer.GetInventoryItemsOfWCID(1051114)); // Evasive Stance
-
-            foreach (var toggle in sharedCooldowns)
+            var evasiveStance = targetPlayer.GetInventoryItemsOfWCID(1051114); // Evasive Stance
+            if (evasiveStance[0] is not null)
             {
-                targetPlayer.EnchantmentManager.StartCooldown(toggle);
+                targetPlayer.EnchantmentManager.StartCooldown(evasiveStance[0]);
             }
 
             targetPlayer.PlayParticleEffect(PlayScript.HealthDownYellow, targetPlayer.Guid);
