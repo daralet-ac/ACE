@@ -1217,13 +1217,8 @@ partial class Player
                     new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
                 );
 
-                var sharedCooldowns = GetInventoryItemsOfWCID(1051110); // Mana Barrier
-                sharedCooldowns.AddRange(GetInventoryItemsOfWCID(1051114)); // Evasive Stance
+                EnchantmentManager.StartCooldown(source);
 
-                foreach (var toggle in sharedCooldowns)
-                {
-                    EnchantmentManager.StartCooldown(toggle);
-                }
                 PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
 
                 // find mana damage overage and reconvert to HP damage
@@ -1291,13 +1286,7 @@ partial class Player
                 Session.Network.EnqueueSend(new GameMessageSystemChat(
                     $"You lose concentration and drop out of Evasive Stance!", ChatMessageType.Combat));
 
-                var sharedCooldowns = GetInventoryItemsOfWCID(1051114); // Evasive Stance
-                sharedCooldowns.AddRange(GetInventoryItemsOfWCID(1051110)); // Mana Barrier
-
-                foreach (var toggle in sharedCooldowns)
-                {
-                    EnchantmentManager.StartCooldown(toggle);
-                }
+                EnchantmentManager.StartCooldown(source);
 
                 PlayParticleEffect(PlayScript.HealthDownYellow, Guid);
 

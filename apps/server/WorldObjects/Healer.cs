@@ -146,7 +146,7 @@ public class Healer : WorldObject
             return;
         }
 
-        var baseCooldown = CooldownDuration ?? 15.0f;
+        CooldownDuration = 15.0f;
 
         // SPEC BONUS - Healing: Cooldown reduced by 50%
         if (healer.GetCreatureSkill(Skill.Healing).AdvancementClass == SkillAdvancementClass.Specialized)
@@ -156,7 +156,6 @@ public class Healer : WorldObject
 
         NextHealKitUseTime = currentTime + CooldownDuration.Value;
         StartCooldown(healer);
-        CooldownDuration = baseCooldown;
 
         DoHealMotion(healer, targetPlayer, true);
     }
