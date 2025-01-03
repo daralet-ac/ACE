@@ -497,6 +497,8 @@ public class DamageEvent
         if (roll > _criticalChance || _criticalDefended)
         {
             _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might);
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Shield, (int)SigilTrinketShieldEffect.Might);
+            
             if (!CriticalOverridedByTrinket)
             {
                 return GetNonCriticalDamageBeforeMitigation();
