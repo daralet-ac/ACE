@@ -91,4 +91,6 @@ public partial class BiotaPropertiesEnchantmentRegistry
     public uint SpellSetId { get; set; }
 
     public virtual Biota Object { get; set; }
+
+    public uint SpellStacks { get; set; }
 }

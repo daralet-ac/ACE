@@ -357,6 +357,7 @@ CREATE TABLE `biota_properties_enchantment_registry` (
   `stat_Mod_Key` int unsigned NOT NULL DEFAULT '0' COMMENT 'along with flags, indicates which attribute is affected by the spell',
   `stat_Mod_Value` float NOT NULL DEFAULT '0' COMMENT 'the effect value/amount',
   `spell_Set_Id` int unsigned NOT NULL DEFAULT '0' COMMENT 'Id of the Spell Set for this spell',
+  `spell_Stacks` int unsigned NOT NULL DEFAULT '0' COMMENT 'number of spell stacks for this spell',
   PRIMARY KEY (`object_Id`,`spell_Id`,`caster_Object_Id`,`layer_Id`),
   UNIQUE KEY `wcid_enchantmentregistry_objectId_spellId_layerId_uidx` (`object_Id`,`spell_Id`,`layer_Id`),
   CONSTRAINT `wcid_enchantmentregistry` FOREIGN KEY (`object_Id`) REFERENCES `biota` (`id`) ON DELETE CASCADE
