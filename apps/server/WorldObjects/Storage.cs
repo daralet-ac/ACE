@@ -15,6 +15,10 @@ namespace ACE.Server.WorldObjects;
 
 public class Storage : Container
 {
+    public static readonly List<Storage> BankChests = [];
+
+    private static Player _bankUser;
+
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
@@ -35,7 +39,10 @@ public class Storage : Container
 
     public void OnDestroy()
     {
-        BankChests.Remove(this);
+        lock (BankChests)
+        {
+            BankChests.Remove(this);
+        }
     }
 
     private void SetEphemeralValues()
@@ -50,12 +57,11 @@ public class Storage : Container
 
         Translucency = 0F;
 
-        BankChests.Add(this);
+        lock (BankChests)
+        {
+            BankChests.Add(this);
+        }
     }
-
-    public static readonly List<Storage> BankChests = [];
-
-    private static Player BankUser;
 
     public override void Open(Player player)
     {
@@ -65,7 +71,7 @@ public class Storage : Container
 
         Viewer = player.Guid.Full;
 
-        BankUser = player;
+        _bankUser = player;
 
         Translucency = 1f;
 
@@ -95,22 +101,16 @@ public class Storage : Container
     {
         var worldObjects = new List<WorldObject>();
 
-        lock (worldObjects)
+        lock (BankChests)
         {
-            foreach (var biota in biotas)
-            {
-                worldObjects.Add(Factories.WorldObjectFactory.CreateWorldObject(biota));
-            }
+            worldObjects.AddRange(biotas.Select(Factories.WorldObjectFactory.CreateWorldObject));
 
             // check for GUID in any other banks and remove from inventory if so.
             foreach (var worldObject in worldObjects)
             {
                 foreach (var bank in BankChests)
                 {
-                    if (bank.Inventory.Keys.Contains(worldObject.Guid))
-                    {
-                        bank.Inventory.Remove(worldObject.Guid);
-                    }
+                    bank.Inventory.Remove(worldObject.Guid);
                 }
             }
         }
@@ -123,7 +123,7 @@ public class Storage : Container
         }
     }
 
-    private void SortWorldObjectsIntoBank(IList<WorldObject> worldObjects)
+    private void SortWorldObjectsIntoBank(List<WorldObject> worldObjects)
     {
         for (var i = worldObjects.Count - 1; i >= 0; i--)
         {
@@ -132,7 +132,7 @@ public class Storage : Container
                 worldObjects[i].ContainerId = Biota.Id;
                 worldObjects[i].OwnerId = Biota.Id;
 
-                if (!Inventory.Keys.Contains(worldObjects[i].Guid))
+                if (!Inventory.ContainsKey(worldObjects[i].Guid))
                 {
                     Inventory[worldObjects[i].Guid] = worldObjects[i];
                 }
@@ -171,7 +171,7 @@ public class Storage : Container
         EncumbranceVal = 0;
         Value = 0;
 
-        SendBankVaultInventory(BankUser);
+        SendBankVaultInventory(_bankUser);
     }
 
     private void SendBankVaultInventory(Player player)
@@ -184,7 +184,7 @@ public class Storage : Container
 
         if (Inventory is null)
         {
-            _log.Error("SendBankVaultInventory(Player) - Inventory is null", player);
+            _log.Error("SendBankVaultInventory(Player) - Inventory is null");
             return;
         }
 
@@ -193,12 +193,6 @@ public class Storage : Container
 
         foreach (var item in Inventory.Values.Where(i => i.BankAccountId == player.Account.AccountId))
         {
-            if (item is null)
-            {
-                _log.Error("SendBankVaultInventory(Player {Player}) - item is null", player.Name);
-                continue;
-            }
-
             if (item.BankAccountId is null)
             {
                 _log.Error("SendBankVaultInventory(Player {Player}) - {Item}.BankAccountId is null", player.Name, item.Name);
@@ -238,16 +232,13 @@ public class Storage : Container
 
         SaveBiotaToDatabase();
 
-        if (BankUser != null)
-        {
-            BankUser.Session.Network.EnqueueSend(
-                new GameEventTell(this, "Please return with more items.", BankUser, ChatMessageType.Tell)
-            );
-        }
+        _bankUser?.Session.Network.EnqueueSend(
+            new GameEventTell(this, "Please return with more items.", _bankUser, ChatMessageType.Tell)
+        );
 
         PlayParticleEffect(PlayScript.UnHide, Guid);
 
-        FinishClose(BankUser);
+        FinishClose(_bankUser);
 
         // var itemsToSend = new List<GameMessage>();
         //
@@ -258,13 +249,10 @@ public class Storage : Container
         //
         // player.Session.Network.EnqueueSend(itemsToSend.ToArray());
 
-        BankUser = null;
+        _bankUser = null;
 
         var landblock = CurrentLandblock;
-        if (landblock is not null)
-        {
-            landblock.ReloadObject(this);
-        }
+        landblock?.ReloadObject(this);
     }
 
     /// <summary>
