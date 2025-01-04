@@ -630,6 +630,10 @@ public partial class ShardDbContext : DbContext
                 .HasComment("Id of the Spell Set for this spell")
                 .HasColumnName("spell_Set_Id");
             entity
+                .Property(e => e.SpellStacks)
+                .HasComment("number of spell stacks for this spell")
+                .HasColumnName("spell_stacks");
+            entity
                 .Property(e => e.StartTime)
                 .HasComment("the amount of time this enchantment has been active")
                 .HasColumnName("start_Time");

@@ -812,6 +812,7 @@ public class BiotaSQLWriter : SQLWriter
                 + ", `stat_Mod_Key`"
                 + ", `stat_Mod_Value`"
                 + ", `spell_Set_Id`)"
+                + ", `spell_stacks`)"
         );
 
         var lineGenerator = new Func<int, string>(i =>

@@ -817,6 +817,7 @@ public static class BiotaUpdater
                 existingValue.StatModKey = value.StatModKey;
                 existingValue.StatModValue = value.StatModValue;
                 existingValue.SpellSetId = (uint)value.SpellSetId;
+                existingValue.SpellStacks = value.SpellStacks;
             }
         }
         foreach (var value in targetBiota.BiotaPropertiesEnchantmentRegistry)
