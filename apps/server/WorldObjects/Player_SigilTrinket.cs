@@ -342,7 +342,7 @@ partial class Player
             Player = this,
             Target = spellSource,
             TriggerSpell = spell,
-            SpellDamageReceived = Math.Max(damage, 0),
+            SpellDamageReceived = Math.Abs(damage),
             OnCrit = onCrit,
             Skill = skill,
             EffectId = effectId
