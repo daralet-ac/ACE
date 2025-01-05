@@ -519,6 +519,7 @@ public static class BiotaConverter
                     StatModKey = record.StatModKey,
                     StatModValue = record.StatModValue,
                     SpellSetId = (EquipmentSet)record.SpellSetId,
+                    SpellStacks = record.SpellStacks
                 };
 
                 result.PropertiesEnchantmentRegistry.Add(newEntity);
@@ -1038,6 +1039,7 @@ public static class BiotaConverter
                     StatModKey = value.StatModKey,
                     StatModValue = value.StatModValue,
                     SpellSetId = (uint)value.SpellSetId,
+                    SpellStacks = value.SpellStacks
                 };
 
                 result.BiotaPropertiesEnchantmentRegistry.Add(entity);
