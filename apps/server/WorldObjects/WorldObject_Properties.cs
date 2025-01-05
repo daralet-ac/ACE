@@ -8970,4 +8970,20 @@ partial class WorldObject
             }
         }
     }
+
+    public int? AltCurrencyValue
+    {
+        get => GetProperty(PropertyInt.AltCurrencyValue);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.AltCurrencyValue);
+            }
+            else
+            {
+                SetProperty(PropertyInt.AltCurrencyValue, value.Value);
+            }
+        }
+    }
 }

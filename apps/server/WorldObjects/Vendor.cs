@@ -347,6 +347,11 @@ public class Vendor : Creature
     {
         foreach (var kvp in DefaultItemsForSale)
         {
+            if (UseAltCurrencValue(kvp.Value.AltCurrencyValue))
+            {
+                kvp.Value.Value = kvp.Value.AltCurrencyValue;
+            }
+
             action(kvp.Value);
         }
 
@@ -732,11 +737,11 @@ public class Vendor : Creature
         return true;
     }
 
-    public uint GetSellCost(WorldObject item) => GetSellCost(item.Value, item.ItemType);
+    public uint GetSellCost(WorldObject item) => GetSellCost(item.Value, item.ItemType, item.AltCurrencyValue);
 
     public uint GetSellCost(Weenie item) => GetSellCost(item.GetValue(), item.GetItemType());
 
-    private uint GetSellCost(int? value, ItemType? itemType)
+    private uint GetSellCost(int? value, ItemType? itemType, int? altCurrencyValue = null)
     {
         var sellRate = SellPrice ?? 1.0;
         if (itemType == ItemType.PromissoryNote)
@@ -744,8 +749,18 @@ public class Vendor : Creature
             sellRate = 1.15;
         }
 
+        if (UseAltCurrencValue(altCurrencyValue))
+        {
+            value = altCurrencyValue;
+        }
+
         var cost = Math.Max(1, (uint)Math.Ceiling(((float)sellRate * (value ?? 0)) - 0.1));
         return cost;
+    }
+
+    private bool UseAltCurrencValue(int? altCurrencyValue)
+    {
+        return AlternateCurrency is not null && altCurrencyValue is not null;
     }
 
     public int GetBuyCost(WorldObject item) => GetBuyCost(item.Value, item.ItemType);
