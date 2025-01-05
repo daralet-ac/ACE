@@ -826,6 +826,7 @@ public enum PropertyInt : ushort
     TrophyQuality = 467,
     AmmoEffect = 468,
     AmmoEffectUsesRemaining = 469,
+    AltCurrencyValue = 470,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
