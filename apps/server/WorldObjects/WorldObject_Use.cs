@@ -542,7 +542,7 @@ partial class WorldObject
                     {
                         Creature target = null;
                         if (
-                            player.LastAttackedCreatureTime > Time.GetUnixTime() - 5.0
+                            player.LastAttackedCreatureTime > Time.GetUnixTime() - 10.0
                             && player.LastAttackedCreature != null
                         )
                         {
@@ -619,7 +619,7 @@ partial class WorldObject
                     {
                         Creature target = null;
                         if (
-                            player.LastAttackedCreatureTime > Time.GetUnixTime() - 5.0
+                            player.LastAttackedCreatureTime > Time.GetUnixTime() - 10.0
                             && player.LastAttackedCreature != null
                         )
                         {
@@ -671,7 +671,7 @@ partial class WorldObject
                     {
                         Creature target = null;
                         if (
-                            player.LastAttackedCreatureTime > Time.GetUnixTime() - 5.0
+                            player.LastAttackedCreatureTime > Time.GetUnixTime() - 10.0
                             && player.LastAttackedCreature != null
                         )
                         {
