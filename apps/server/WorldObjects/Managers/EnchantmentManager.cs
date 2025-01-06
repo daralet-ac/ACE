@@ -223,6 +223,7 @@ public class EnchantmentManager
                 if (spell.Id == entry.SpellId)
                 {
                     newEntry.StatModValue = entry.StatModValue;
+                    newEntry.SpellStacks = entry.SpellStacks;
                 }
             }
 

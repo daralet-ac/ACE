@@ -75,6 +75,7 @@ public class AddEnchantmentResult
 
         var stackAdded = false;
         var entryStatModValue = 1.0f;
+        var spellStacks = 0u;
 
         foreach (var entry in entries.OrderByDescending(i => i.PowerLevel))
         {
@@ -98,6 +99,7 @@ public class AddEnchantmentResult
                             entryStatModValue = entry.StatModValue;
 
                             entry.SpellStacks++;
+                            spellStacks = entry.SpellStacks;
 
                             stackAdded = true;
 
@@ -110,6 +112,7 @@ public class AddEnchantmentResult
                         {
                             //Console.WriteLine($"Set Dupe Entry.StatModValue from: {entry.StatModValue} to {entryStatModValue}");
                             entry.StatModValue = entryStatModValue;
+                            entry.SpellStacks = spellStacks;
                         }
                     }
 
@@ -120,9 +123,6 @@ public class AddEnchantmentResult
                     // then i cast strength 6 on myself
                     // the self-cast would find the existing spell from the item, but it wouldn't refresh that one
                     // it should cast to its own layer?
-
-                    //if (Refresh.Count > 1)
-                    //Console.WriteLine($"AddEnchantmentResult.BuildStack(): multiple refresh entries");
                 }
                 else
                 {

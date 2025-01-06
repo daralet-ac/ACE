@@ -2429,15 +2429,13 @@ public class EmoteManager
 
                 if (player != null)
                 {
-                    var spellToRemove = emote.SpellId;
+                    var emoteSpellId = Convert.ToUInt32(emote.SpellId);
 
-                    if (spellToRemove != null)
+                    if (emoteSpellId != 0)
                     {
-                        var enchantment = player.EnchantmentManager.GetEnchantment((uint)spellToRemove);
-                        if (enchantment != null)
-                        {
-                            player.EnchantmentManager.Remove(enchantment);
-                        }
+                        var spellToRemove = new Spell(emoteSpellId);
+                        var enchantments = player.EnchantmentManager.GetEnchantments(spellToRemove.Category);
+                        player.EnchantmentManager.Dispel(enchantments);
                     }
                 }
                 break;
