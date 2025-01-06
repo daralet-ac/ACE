@@ -127,7 +127,7 @@ partial class Player
         }
 
         // Make sure UpdateXpAndLevel is done on this players thread
-        EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(amount, xpType)));
+        EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(amount, amount, xpType)));
 
         // for passing XP up the allegiance chain,
         // this function is only called at the very beginning, to start the process.
@@ -241,6 +241,8 @@ partial class Player
 
         m_amount = (long)Math.Round(amountBeforeMods * modifier * enchantment * altBonus * regionalDebuffBonus * overlevelPenalty);
 
+        var amountWithoutLevelPenalty = (long)Math.Round(amountBeforeMods * modifier * enchantment * altBonus * regionalDebuffBonus);
+
         // Console.WriteLine($"GrantXp(amount = {amount}, xpType = {xpType}, xpSourceLevel = {xpSourceLevel}, shareType = {shareType}, xpMessage = {xpMessage}, creatureWcid = {creatureWcid})\n" +
         //                   $"-amountBeforeMods: {amountBeforeMods}\n" +
         //                   $"-serverMod: {modifier}\n" +
@@ -250,7 +252,7 @@ partial class Player
         //                   $"-overlevelPenalty: {overlevelPenalty}");
 
         // Make sure UpdateXpAndLevel is done on this players thread
-        EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(m_amount, xpType, xpMessage)));
+        EnqueueAction(new ActionEventDelegate(() => UpdateXpAndLevel(m_amount, amountWithoutLevelPenalty, xpType, xpMessage)));
 
         // for passing XP up the allegiance chain,
         // this function is only called at the very beginning, to start the process.
@@ -313,7 +315,7 @@ partial class Player
     /// <summary>
     /// Adds XP to a player's total XP, handles triggers (vitae, level up)
     /// </summary>
-    private void UpdateXpAndLevel(long amount, XpType xpType, string xpMessage = "")
+    private void UpdateXpAndLevel(long amount, long amountWithoutLevelPenalty, XpType xpType, string xpMessage = "")
     {
         // until we are max level we must make sure that we send
         var xpTable = DatManager.PortalDat.XpTable;
@@ -396,13 +398,13 @@ partial class Player
 
         if (HasVitae && xpType != XpType.Allegiance)
         {
-            UpdateXpVitae(amount);
+            UpdateXpVitae(amountWithoutLevelPenalty);
         }
 
         var loyalty = GetCreatureSkill(Skill.Loyalty);
         if (loyalty.AdvancementClass >= SkillAdvancementClass.Trained && !loyalty.IsMaxRank)
         {
-            UpdateLoyalty(loyalty, amount);
+            UpdateLoyalty(loyalty, amountWithoutLevelPenalty);
         }
     }
 
