@@ -61,7 +61,7 @@ public class ListPlayers
                 continue;
             }
 
-            message += $"{player.Name} : {player.Session.AccountId}\n";
+            message += $"{player.Name} - Lv: {player.Level}, Acct: {player.Session.AccountId}\n";
             playerCounter++;
         }
 
