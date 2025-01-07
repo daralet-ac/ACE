@@ -574,6 +574,8 @@ partial class Creature
 
         if (homeDistSq > HomeRadiusSq)
         {
+            SetMaxVitals();
+
             MoveToHome();
         }
     }
