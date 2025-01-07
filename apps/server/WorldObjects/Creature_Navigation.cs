@@ -8,6 +8,7 @@ using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics.Animation;
 using ACE.Server.Physics.Extensions;
+using Time = ACE.Common.Time;
 
 namespace ACE.Server.WorldObjects;
 
@@ -535,5 +536,22 @@ partial class Creature
 
         // broadcast blip to new position
         SendUpdatePosition(true);
+    }
+
+    private void CheckCannotReachTarget()
+    {
+        const double timeToReset = 10.0;
+        var cannotReachTarget = LastAttackedCreatureTime != 0 && LastAttackedCreatureTime < Time.GetUnixTime() - timeToReset;
+        var meleeCombatMode = CombatMode == CombatMode.Melee;
+
+        if (!meleeCombatMode || !cannotReachTarget)
+        {
+            return;
+        }
+        LastAttackedCreatureTime = 0;
+
+        SetMaxVitals();
+
+        MoveToHome();
     }
 }
