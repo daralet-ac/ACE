@@ -952,7 +952,7 @@ public class EmoteManager
                         {
                             if (item.Guid.Full == refusalItemGuidId)
                             {
-                                success = true;
+                                success = numItems >= numRequired;
                                 break;
                             }
                         }
@@ -961,6 +961,7 @@ public class EmoteManager
                     {
                         success = numItems >= numRequired;
                     }
+
                     ExecuteEmoteSet(
                         success ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
                         emote.Message,

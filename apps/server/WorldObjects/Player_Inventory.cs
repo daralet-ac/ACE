@@ -5157,7 +5157,7 @@ partial class Player
             }
             else if (emoteResult.Category == EmoteCategory.Refuse)
             {
-                if (target is Creature creatureTarget)
+                if (target is Creature creatureTarget && item.TrophyQuality is not null)
                 {
                     creatureTarget.RefusalItem = (item, item.Guid.Full);
                 }
