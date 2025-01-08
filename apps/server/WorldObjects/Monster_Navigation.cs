@@ -589,7 +589,7 @@ partial class Creature
 
         if (PhysicsObj is null )
         {
-            _log.Error("PhysicsObj is null for wcid: {WCID}", WeenieClassId);
+            _log.Error("MonsterNavigation.MoveToHome() - PhysicsObj is null for wcid: {WCID}", WeenieClassId);
             return;
         }
 
@@ -599,6 +599,12 @@ partial class Creature
         AttackTarget = null;
 
         var home = GetPosition(PositionType.Home);
+
+        if (home is null)
+        {
+            _log.Error("MonsterNavigation.MoveToHome() - 'home' is null for wcid: {WCID}", WeenieClassId);
+            return;
+        }
 
         if (Location.Equals(home))
         {
@@ -613,6 +619,13 @@ partial class Creature
         var homePos = new Physics.Common.Position(home);
 
         var mvp = GetMovementParameters();
+
+        if (mvp is null)
+        {
+            _log.Error("MonsterNavigation.MoveToHome() - mvp is null for wcid: {WCID}", WeenieClassId);
+            return;
+        }
+
         mvp.DistanceToObject = 0.6f;
         mvp.DesiredHeading = homePos.Frame.get_heading();
 
