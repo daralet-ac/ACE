@@ -61,8 +61,6 @@ partial class Creature
 
         HandleFindTarget();
 
-        CheckCannotReachTarget();
-
         CheckMissHome(); // tickrate?
 
         if (currentUnixTime > NextMonsterThreatTickTime)

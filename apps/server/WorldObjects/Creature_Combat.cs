@@ -747,11 +747,10 @@ partial class Creature
             }
         }
 
-        var playerAttacker = attacker as Player;
-        if (playerAttacker != null)
+        if (attacker is Player playerAttacker)
         {
             playerAttacker.LastAttackedCreature = this;
-            playerAttacker.LastAttackedCreatureTime = Time.GetUnixTime();
+            playerAttacker.LastAttackTime = Time.GetUnixTime();
         }
 
         numRecentAttacksReceived++;

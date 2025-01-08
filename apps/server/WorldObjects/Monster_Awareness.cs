@@ -31,6 +31,9 @@ partial class Creature
     {
         MonsterState = State.Awake;
         IsAwake = true;
+        //LastHeartbeatPosition = Location;
+        LastAttackTime = Time.GetUnixTime();
+
         //DoAttackStance();
         EmoteManager.OnWakeUp(AttackTarget as Creature);
         EmoteManager.OnNewEnemy(AttackTarget as Creature);

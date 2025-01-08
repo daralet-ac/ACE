@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Network.GameMessages.Messages;
 
@@ -49,6 +50,13 @@ partial class Creature
         else if (attacksReceivedPerSecond > 0.0f)
         {
             attacksReceivedPerSecond = 0.0f;
+        }
+
+        CheckCannotReachTarget();
+
+        if (Location is not null)
+        {
+            LastHeartbeatPosition = new Position(Location);
         }
 
         // delete items when RemainingLifespan <= 0

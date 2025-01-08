@@ -190,7 +190,7 @@ partial class Player
             target.IncreaseTargetThreatLevel(this, (int)threat);
 
             LastAttackedCreature = target;
-            LastAttackedCreatureTime = Time.GetUnixTime();
+            LastAttackTime = Time.GetUnixTime();
         }
 
         var crit = damageEvent.IsCritical;

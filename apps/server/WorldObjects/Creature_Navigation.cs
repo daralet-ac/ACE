@@ -26,6 +26,14 @@ partial class Creature
     }
 
     /// <summary>
+    /// Returns the 3D distance between this creature and a position
+    /// </summary>
+    public float GetDistance(Position position)
+    {
+        return position is null ? 0.0f : Location.DistanceTo(position);
+    }
+
+    /// <summary>
     /// Returns the 2D angle between current direction
     /// and position from an input target
     /// </summary>
@@ -540,15 +548,27 @@ partial class Creature
 
     private void CheckCannotReachTarget()
     {
-        const double timeToReset = 10.0;
-        var cannotReachTarget = LastAttackedCreatureTime != 0 && LastAttackedCreatureTime < Time.GetUnixTime() - timeToReset;
-        var meleeCombatMode = CombatMode == CombatMode.Melee;
-
-        if (!meleeCombatMode || !cannotReachTarget)
+        // creature must be in melee combat mode and an active state
+        if (CombatMode is not CombatMode.Melee || MonsterState is not State.Awake || Attackable is not true)
         {
             return;
         }
-        LastAttackedCreatureTime = 0;
+
+        // creature must have not attacked for at least 10 seconds
+        const double timeThreshold = 10.0;
+        if (LastAttackTime > Time.GetUnixTime() - timeThreshold)
+        {
+            return;
+        }
+
+        // creature must have stayed in a relatively similar area without performing an attack
+        const double travelDistanceThreshold = 1.0;
+        if (LastHeartbeatPosition is null || Location.DistanceTo(LastHeartbeatPosition) > travelDistanceThreshold)
+        {
+            return;
+        }
+
+        LastAttackTime = Time.GetUnixTime();
 
         SetMaxVitals();
 
