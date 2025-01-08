@@ -308,6 +308,12 @@ partial class Creature
                 break;
         }
 
+        if (AttackTarget is Creature creatureAttackTarget)
+        {
+            LastAttackedCreature = creatureAttackTarget;
+            LastAttackTime = Common.Time.GetUnixTime();
+        }
+
         EmoteManager.OnAttack(AttackTarget);
 
         ResetAttack();

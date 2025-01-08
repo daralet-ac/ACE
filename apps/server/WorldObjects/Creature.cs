@@ -53,7 +53,8 @@ public partial class Creature : Container
     public Dictionary<uint, int> ammoHitWith;
 
     public Creature LastAttackedCreature;
-    public double LastAttackedCreatureTime;
+    public double LastAttackTime;
+    public Position LastHeartbeatPosition;
 
     /// <summary>
     /// A decaying count of attacks this creature has received recently.

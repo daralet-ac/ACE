@@ -498,7 +498,7 @@ public class DamageEvent
         {
             _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might);
             _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Shield, (int)SigilTrinketShieldEffect.Might);
-            
+
             if (!CriticalOverridedByTrinket)
             {
                 return GetNonCriticalDamageBeforeMitigation();
@@ -1969,7 +1969,7 @@ public class DamageEvent
         // }
 
         var currentTime = Time.GetUnixTime();
-        var timeSinceLastAttack = currentTime - _attacker.LastAttackedCreatureTime;
+        var timeSinceLastAttack = currentTime - _attacker.LastAttackTime;
         if (_attacker as Player == null)
         {
             timeSinceLastAttack = MonsterAverageAnimationLength.GetValueMod(_attacker.CreatureType);
@@ -1979,9 +1979,9 @@ public class DamageEvent
 
         Console.WriteLine($"\n---- DAMAGE LOG ({damageSource.Name}) ----");
         Console.WriteLine(
-            $"CurrentTime: {currentTime}, LastAttackTime: {_attacker.LastAttackedCreatureTime} TimeBetweenAttacks: {timeSinceLastAttack}"
+            $"CurrentTime: {currentTime}, LastAttackTime: {_attacker.LastAttackTime} TimeBetweenAttacks: {timeSinceLastAttack}"
         );
-        _attacker.LastAttackedCreatureTime = currentTime;
+        _attacker.LastAttackTime = currentTime;
 
         var critRate = _criticalChance;
         var nonCritRate = 1 - critRate;
