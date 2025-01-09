@@ -548,7 +548,7 @@ partial class Creature
 
     private void CheckCannotReachTarget()
     {
-        if (ReturnHomeWhenStuck is not true)
+        if (ReturnHomeWhenStuck is not true && BossKillXpReward is not true)
         {
             return;
         }
