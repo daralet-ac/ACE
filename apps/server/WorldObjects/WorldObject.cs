@@ -1787,4 +1787,20 @@ public abstract partial class WorldObject : IActor
             }
         }
     }
+
+    public bool? ReturnHomeWhenStuck
+    {
+        get => GetProperty(PropertyBool.ReturnHomeWhenStuck);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyBool.ReturnHomeWhenStuck);
+            }
+            else
+            {
+                SetProperty(PropertyBool.ReturnHomeWhenStuck, value.Value);
+            }
+        }
+    }
 }
