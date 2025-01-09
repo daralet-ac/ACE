@@ -236,6 +236,7 @@ public enum PropertyBool : ushort
     SpecialPropertiesRequireMana = 156,
     RepeatConfirmation = 157,
     SilentCombat = 158,
+    ReturnHomeWhenStuck = 159,
 
     /* custom */
     [ServerOnly]

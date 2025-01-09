@@ -548,6 +548,11 @@ partial class Creature
 
     private void CheckCannotReachTarget()
     {
+        if (ReturnHomeWhenStuck is not true && BossKillXpReward is not true)
+        {
+            return;
+        }
+
         // creature must be in melee combat mode and an active state
         if (CombatMode is not CombatMode.Melee || MonsterState is not State.Awake || Attackable is not true)
         {
