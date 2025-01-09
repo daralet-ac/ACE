@@ -113,6 +113,7 @@ public class AddEnchantmentResult
                             //Console.WriteLine($"Set Dupe Entry.StatModValue from: {entry.StatModValue} to {entryStatModValue}");
                             entry.StatModValue = entryStatModValue;
                             entry.SpellStacks = spellStacks;
+                            entry.StartTime = 0;
                         }
                     }
 
