@@ -92,86 +92,148 @@ public static class TreasureProfile_Item
     // Warrior Profile
     private static ChanceTable<TreasureItemType_Orig> itemProfile12 = new ChanceTable<TreasureItemType_Orig>()
     {
-        (TreasureItemType_Orig.ArmorWarrior, 0.4f),
-        (TreasureItemType_Orig.WeaponWarrior, 0.3f),
+        // armor (30%)
+        (TreasureItemType_Orig.ArmorWarrior, 0.15f), // 15%
+        (TreasureItemType_Orig.ArmorRogue, 0.075f), // 7.5%
+        (TreasureItemType_Orig.ArmorCaster, 0.075f), // 7.5%
+        // weapon (30%)
+        (TreasureItemType_Orig.WeaponWarrior, 0.15f), // 15%
+        (TreasureItemType_Orig.WeaponRogue, 0.075f), // 7.5%
+        (TreasureItemType_Orig.WeaponCaster, 0.075f), // 7.5%
+        // jewelry (20%)
+        (TreasureItemType_Orig.Jewelry, 0.2f),
+        // clothing (15%)
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.1f),
-        (TreasureItemType_Orig.SigilTrinketWarrior, 0.05f),
+        // sigil trinket (5%)
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.025f), // 2.5%
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.0125f), // 1.25%
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.0125f) // 1.25%
     };
 
     // Rogue Profile
     private static ChanceTable<TreasureItemType_Orig> itemProfile13 = new ChanceTable<TreasureItemType_Orig>()
     {
-        (TreasureItemType_Orig.ArmorRogue, 0.4f),
-        (TreasureItemType_Orig.WeaponRogue, 0.3f),
+        // armor (30%)
+        (TreasureItemType_Orig.ArmorRogue, 0.15f), // 15%
+        (TreasureItemType_Orig.ArmorWarrior, 0.075f), // 7.5%
+        (TreasureItemType_Orig.ArmorCaster, 0.075f), // 7.5%
+        // weapon (30%)
+        (TreasureItemType_Orig.WeaponRogue, 0.15f), // 15%
+        (TreasureItemType_Orig.WeaponWarrior, 0.075f), // 7.5%
+        (TreasureItemType_Orig.WeaponCaster, 0.075f), // 7.5%
+        // jewelry (20%)
+        (TreasureItemType_Orig.Jewelry, 0.2f),
+        // clothing (15%)
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.1f),
-        (TreasureItemType_Orig.SigilTrinketRogue, 0.05f),
+        // sigil trinket (5%)
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.025f), // 2.5%
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.0125f), // 1.25%
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.0125f) // 1.25%
     };
 
     // Caster Profile
     private static ChanceTable<TreasureItemType_Orig> itemProfile14 = new ChanceTable<TreasureItemType_Orig>()
     {
-        (TreasureItemType_Orig.ArmorCaster, 0.4f),
-        (TreasureItemType_Orig.WeaponCaster, 0.3f),
+        // armor (30%)
+        (TreasureItemType_Orig.ArmorCaster, 0.15f), // 15%
+        (TreasureItemType_Orig.ArmorRogue, 0.075f), // 7.5%
+        (TreasureItemType_Orig.ArmorWarrior, 0.075f), // 7.5%
+        // weapon (30%)
+        (TreasureItemType_Orig.WeaponCaster, 0.15f), // 15%
+        (TreasureItemType_Orig.WeaponRogue, 0.075f), // 7.5%
+        (TreasureItemType_Orig.WeaponWarrior, 0.075f), // 7.5%
+        // jewelry (20%)
+        (TreasureItemType_Orig.Jewelry, 0.2f),
+        // clothing (15%)
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.1f),
-        (TreasureItemType_Orig.SigilTrinketCaster, 0.05f),
+        // sigil trinket (5%)
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.025f), // 2.5%
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.0125f), // 1.25%
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.0125f) // 1.25%
     };
 
     // WarriorRogue Profile
     private static ChanceTable<TreasureItemType_Orig> itemProfile15 = new ChanceTable<TreasureItemType_Orig>()
     {
-        (TreasureItemType_Orig.ArmorWarrior, 0.2f),
-        (TreasureItemType_Orig.WeaponWarrior, 0.15f),
-        (TreasureItemType_Orig.ArmorRogue, 0.2f),
-        (TreasureItemType_Orig.WeaponRogue, 0.15f),
+        // armor (30%)
+        (TreasureItemType_Orig.ArmorWarrior, 0.12f), // 12%
+        (TreasureItemType_Orig.ArmorRogue, 0.12f), // 12%
+        (TreasureItemType_Orig.ArmorCaster, 0.06f), // 6%
+        // weapon (30%)
+        (TreasureItemType_Orig.WeaponWarrior, 0.12f), // 12%
+        (TreasureItemType_Orig.WeaponRogue, 0.12f), // 12%
+        (TreasureItemType_Orig.WeaponCaster, 0.06f), // 6%
+        // jewelry (20%)
+        (TreasureItemType_Orig.Jewelry, 0.2f),
+        // clothing (15%)
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.11f),
-        (TreasureItemType_Orig.SigilTrinketWarrior, 0.02f),
-        (TreasureItemType_Orig.SigilTrinketRogue, 0.02f),
+        // sigil trinket (5%)
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.02f), // 2%
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.02f), // 2%
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.01f) // 1%
     };
 
     // WarriorCaster Profile
     private static ChanceTable<TreasureItemType_Orig> itemProfile16 = new ChanceTable<TreasureItemType_Orig>()
     {
-        (TreasureItemType_Orig.ArmorWarrior, 0.2f),
-        (TreasureItemType_Orig.WeaponWarrior, 0.15f),
-        (TreasureItemType_Orig.ArmorCaster, 0.2f),
-        (TreasureItemType_Orig.WeaponCaster, 0.15f),
+        // armor (30%)
+        (TreasureItemType_Orig.ArmorWarrior, 0.12f), // 12%
+        (TreasureItemType_Orig.ArmorCaster, 0.12f), // 12%
+        (TreasureItemType_Orig.ArmorRogue, 0.06f), // 6%
+        // weapon (30%)
+        (TreasureItemType_Orig.WeaponWarrior, 0.12f), // 12%
+        (TreasureItemType_Orig.WeaponCaster, 0.12f), // 12%
+        (TreasureItemType_Orig.WeaponRogue, 0.06f), // 6%
+        // jewelry (20%)
+        (TreasureItemType_Orig.Jewelry, 0.2f),
+        // clothing (15%)
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.11f),
-        (TreasureItemType_Orig.SigilTrinketWarrior, 0.02f),
-        (TreasureItemType_Orig.SigilTrinketCaster, 0.02f),
+        // sigil trinket (5%)
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.02f), // 2%
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.02f), // 2%
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.01f) // 1%
     };
 
     // RogueCaster Profile
     private static ChanceTable<TreasureItemType_Orig> itemProfile17 = new ChanceTable<TreasureItemType_Orig>()
     {
-        (TreasureItemType_Orig.ArmorRogue, 0.2f),
-        (TreasureItemType_Orig.WeaponRogue, 0.15f),
-        (TreasureItemType_Orig.ArmorCaster, 0.2f),
-        (TreasureItemType_Orig.WeaponCaster, 0.15f),
+        // armor (30%)
+        (TreasureItemType_Orig.ArmorCaster, 0.12f), // 12%
+        (TreasureItemType_Orig.ArmorRogue, 0.12f), // 12%
+        (TreasureItemType_Orig.ArmorWarrior, 0.06f), // 6%
+        // weapon (30%)
+        (TreasureItemType_Orig.WeaponCaster, 0.12f), // 12%
+        (TreasureItemType_Orig.WeaponRogue, 0.12f), // 12%
+        (TreasureItemType_Orig.WeaponWarrior, 0.06f), // 6%
+        // jewelry (20%)
+        (TreasureItemType_Orig.Jewelry, 0.2f),
+        // clothing (15%)
         (TreasureItemType_Orig.Clothing, 0.15f),
-        (TreasureItemType_Orig.Jewelry, 0.11f),
-        (TreasureItemType_Orig.SigilTrinketRogue, 0.02f),
-        (TreasureItemType_Orig.SigilTrinketCaster, 0.02f),
+        // sigil trinket (5%)
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.02f), // 2%
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.02f), // 2%
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.01f) // 1%
     };
 
     // Balanced Profile
     private static ChanceTable<TreasureItemType_Orig> itemProfile18 = new ChanceTable<TreasureItemType_Orig>()
     {
-        (TreasureItemType_Orig.ArmorWarrior, 0.15f),
-        (TreasureItemType_Orig.WeaponWarrior, 0.11f),
-        (TreasureItemType_Orig.ArmorRogue, 0.15f),
-        (TreasureItemType_Orig.WeaponRogue, 0.11f),
-        (TreasureItemType_Orig.ArmorCaster, 0.15f),
-        (TreasureItemType_Orig.WeaponCaster, 0.11f),
-        (TreasureItemType_Orig.Clothing, 0.1f),
-        (TreasureItemType_Orig.Jewelry, 0.09f),
-        (TreasureItemType_Orig.SigilTrinketWarrior, 0.01f),
-        (TreasureItemType_Orig.SigilTrinketRogue, 0.01f),
-        (TreasureItemType_Orig.SigilTrinketCaster, 0.01f),
+        // armor (30%)
+        (TreasureItemType_Orig.ArmorWarrior, 0.1f), // 10%
+        (TreasureItemType_Orig.ArmorRogue, 0.1f), // 10%
+        (TreasureItemType_Orig.ArmorCaster, 0.1f), // 10%
+        // weapon (30%)
+        (TreasureItemType_Orig.WeaponWarrior, 0.1f), // 10%
+        (TreasureItemType_Orig.WeaponRogue, 0.1f), // 10%
+        (TreasureItemType_Orig.WeaponCaster, 0.1f), // 10%
+        // jewelry (20%)
+        (TreasureItemType_Orig.Jewelry, 0.2f),
+        // clothing (14%)
+        (TreasureItemType_Orig.Clothing, 0.14f),
+        // sigil trinket (6%)
+        (TreasureItemType_Orig.SigilTrinketWarrior, 0.02f), // 2%
+        (TreasureItemType_Orig.SigilTrinketRogue, 0.02f), // 2%
+        (TreasureItemType_Orig.SigilTrinketCaster, 0.02f) // 2%
     };
 
     // Animal Parts Profile
