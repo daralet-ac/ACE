@@ -287,7 +287,7 @@ partial class Player
                     numCleaves = 2;
                 }
 
-                numCleaves += CheckForRatingSlashCleaveBonus(launcher, ammo);
+                numCleaves += CheckForRatingSlashCleaveBonus(ammo);
 
                 var cleaveTargets = creature.GetNearbyMonsters(10);
                 var cleaveCount = 0;
@@ -471,11 +471,9 @@ partial class Player
     /// RATING - Slash: 1% chance per rating to gain +1 cleave target.
     /// (JEWEL - Imperial Topaz)
     /// </summary>
-    private int CheckForRatingSlashCleaveBonus(WorldObject launcher, WorldObject ammo)
+    private int CheckForRatingSlashCleaveBonus(WorldObject ammo)
     {
-        if (this.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) <= 0
-            || launcher.W_DamageType != DamageType.Slash
-            || ammo.W_DamageType != DamageType.Slash)
+        if (ammo is not { W_DamageType: DamageType.Slash })
         {
             return 0;
         }
