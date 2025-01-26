@@ -153,14 +153,11 @@ partial class Creature
     public List<Creature> GetCleaveTarget(Creature target, WorldObject weapon)
     {
         var player = this as Player;
-        var jewelCleave = false;
-        // JEWEL - Imperial Topaz - Bonus cleave chance
-        if (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 100))
-        {
-            jewelCleave = true;
-        }
 
-        if (!weapon.IsCleaving && !jewelCleave)
+        // JEWEL - Imperial Topaz - Bonus cleave chance
+        var jewelCleave = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 100);
+
+        if (weapon is not {IsCleaving: true} && !jewelCleave)
         {
             return null;
         }
