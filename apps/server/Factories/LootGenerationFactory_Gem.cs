@@ -140,7 +140,7 @@ public static partial class LootGenerationFactory
 
         var castableMana = (int)_spell.BaseMana * 5;
 
-        wo.ItemMaxMana = RollItemMaxMana_New(wo, roll, castableMana);
+        wo.ItemMaxMana = RollItemMaxMana_New(wo.Tier ?? 1, wo.ArmorSlots ?? 1);
         wo.ItemCurMana = wo.ItemMaxMana;
 
         // verified
