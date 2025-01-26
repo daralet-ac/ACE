@@ -95,7 +95,7 @@ public static partial class LootGenerationFactory
                     }
                 }
 
-                wo.ItemMaxMana = RollItemMaxMana_New(wo, roll, combinedSpellCost);
+                wo.ItemMaxMana = RollItemMaxMana_New(wo.Tier ?? 1, wo.ArmorSlots ?? 1);
                 wo.ItemCurMana = wo.ItemMaxMana;
 
                 wo.ItemSpellcraft = RollSpellcraft(wo, roll, profile);
@@ -707,7 +707,7 @@ public static partial class LootGenerationFactory
         (1600, 1800), // T8
     };
 
-    private static int RollItemMaxMana(int tier, int numSpells)
+    public static int RollItemMaxMana(int tier, int numSpells)
     {
         var range = itemMaxMana_RandomRange[tier - 1];
 
@@ -719,13 +719,8 @@ public static partial class LootGenerationFactory
     /// <summary>
     /// Rolls the ItemMaxMana for an object
     /// </summary>
-    private static int RollItemMaxMana_New(WorldObject wo, TreasureRoll roll, int combinedSpellCost)
+    public static int RollItemMaxMana_New(int tier = 1, int armorSlots = 1)
     {
-        //Console.WriteLine($"{wo.Name}  maxSpellMana: {maxSpellMana}");
-
-        var tier = wo.Tier ?? 1.0;
-        var armorSlots = wo.ArmorSlots ?? 1.0f;
-
         var baseMaxMana = 15;
         switch (tier)
         {
@@ -755,44 +750,9 @@ public static partial class LootGenerationFactory
                 break;
         }
 
-        (int min, int max) range;
+        var rng = ThreadSafeRandom.Next(0.8f, 1.2f);
 
-        if (
-            roll.IsClothing
-            || roll.IsArmor
-            || roll.IsWeapon
-            || roll.IsDinnerware
-            || roll.ItemType == TreasureItemType_Orig.WeaponCaster
-            || roll.ItemType == TreasureItemType_Orig.WeaponRogue
-            || roll.ItemType == TreasureItemType_Orig.WeaponWarrior
-            || roll.ItemType == TreasureItemType_Orig.ArmorCaster
-            || roll.ItemType == TreasureItemType_Orig.ArmorRogue
-            || roll.ItemType == TreasureItemType_Orig.ArmorWarrior
-        )
-        {
-            range.min = 4;
-            range.max = 6;
-        }
-        else if (roll.IsJewelry)
-        {
-            // includes crowns
-            range.min = 4;
-            range.max = 6;
-        }
-        else if (roll.IsGem)
-        {
-            range.min = 5;
-            range.max = 5;
-        }
-        else
-        {
-            _log.Error($"RollItemMaxMana({wo.Name}, {roll.ItemType}, {combinedSpellCost}) - unknown item type");
-            return 1;
-        }
-
-        var rng = ThreadSafeRandom.Next((float)range.min, (float)range.max);
-
-        return (int)Math.Ceiling(baseMaxMana * armorSlots);
+        return (int)Math.Ceiling((decimal)(baseMaxMana * armorSlots * rng));
     }
 
     /// <summary>

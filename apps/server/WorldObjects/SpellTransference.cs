@@ -627,13 +627,16 @@ public class SpellTransference : Stackable
                         }
 
                         var newManaRate = LootGenerationFactory.CalculateManaRate(target);
-
                         var tier = Math.Clamp((target.Tier ?? 1) - 1, 1, 7);
-                        var newMaxMana = 15;
-                        for (var i = 1; i < tier; i++)
+                        var allSpells = target.Biota.GetKnownSpellsIds(target.BiotaDatabaseLock);
+
+                        if (target.ProcSpell != null && target.ProcSpell != 0)
                         {
-                            newMaxMana *= 2;
+                            allSpells.Add((int)target.ProcSpell);
                         }
+
+                        var numSpells = allSpells.Count;
+                        var newMaxMana = LootGenerationFactory.RollItemMaxMana_New(tier, numSpells);
 
                         if (newMaxMana > (target.ItemMaxMana ?? 0))
                         {
