@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Linq;
+using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
+using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.Network;
 
@@ -61,7 +64,13 @@ public class ListPlayers
                 continue;
             }
 
-            message += $"{player.Name} - Lv: {player.Level}, Acct: {player.Session.AccountId}\n";
+            var locationName = GetLocationName(player.Location.LandblockId.Raw) ?? player.Location.LandblockId.ToString();
+            var coordinates = player.Location.GetMapCoordStr();
+            var paranthesis = coordinates != null ? $" ({coordinates})" : " (Indoors)";
+
+            var location = $"{locationName}{paranthesis}";
+
+            message += $"{player.Name} - Lv: {player.Level}, Acct: {player.Account.AccountName} ({player.Session.AccountId}), Loc: {location}\n";
             playerCounter++;
         }
 
@@ -69,4 +78,87 @@ public class ListPlayers
 
         CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.Broadcast);
     }
+
+    private static string GetLocationName(uint cellId)
+    {
+        Console.WriteLine($"0 - CellId: {cellId}");
+        using var ctx = new WorldDbContext();
+
+        var query =
+            from landblockName in ctx.LandblockName
+            where
+                landblockName.ObjCellId == cellId
+            select new
+            {
+                Name = landblockName.Name
+            };
+
+        var name = query.ToList().FirstOrDefault()?.Name;
+
+        Console.WriteLine($"1 - Cell: {cellId} {query.FirstOrDefault()}");
+
+        if (query.FirstOrDefault() is null)
+        {
+            var landblockId = (cellId | 0xFFFF) - 0xFFFF;
+
+            query =
+                from landblockName in ctx.LandblockName
+                where
+                    landblockName.ObjCellId == landblockId
+                select new
+                {
+                    landblockName.Name
+                };
+
+            name = query.ToList().FirstOrDefault()?.Name;
+
+            Console.WriteLine($"2 - LB: {landblockId} {query.FirstOrDefault()}");
+        }
+
+        return name;
+    }
+
+    // public static string GetDungeonName(uint landblock)
+    // {
+    //     var searchLandblock = landblock.ToString();
+    //
+    //     using (var ctx = new WorldDbContext())
+    //     {
+    //         var query =
+    //             from weenie in ctx.Weenie
+    //             join wstr in ctx.WeeniePropertiesString on weenie.ClassId equals wstr.ObjectId
+    //             join wpos in ctx.WeeniePropertiesPosition on weenie.ClassId equals wpos.ObjectId
+    //             where
+    //                 weenie.Type == (int)WeenieType.Portal
+    //                 && wstr.Type == (int)PropertyString.Name
+    //                 && wpos.PositionType == (int)PositionType.Destination
+    //             select new
+    //             {
+    //                 Weenie = weenie,
+    //                 Name = wstr,
+    //                 Dest = wpos
+    //             };
+    //
+    //         var results = query.ToList();
+    //
+    //         foreach (var result in results)
+    //         {
+    //             Console.WriteLine($"Weenie: {result.Weenie.ClassName}, Name: {result.Name.Value}, DestId: {result.Dest.ObjCellId}");
+    //         }
+    //
+    //         Console.WriteLine(searchLandblock);
+    //
+    //         var dest = results
+    //             .Where(i => i.Dest.ObjCellId.ToString().Equals(searchLandblock, StringComparison.OrdinalIgnoreCase))
+    //             .Select(i => i.Name)
+    //             .FirstOrDefault();
+    //
+    //         if (dest == null)
+    //         {
+    //             return null;
+    //         }
+    //
+    //         return dest.Value;
+    //     }
+    // }
 }

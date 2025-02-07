@@ -21,6 +21,8 @@ public partial class WorldDbContext : DbContext
 
     public virtual DbSet<LandblockInstanceLink> LandblockInstanceLink { get; set; }
 
+    public virtual DbSet<LandblockName> LandblockName { get; set; }
+
     public virtual DbSet<PointsOfInterest> PointsOfInterest { get; set; }
 
     public virtual DbSet<Quest> Quest { get; set; }
@@ -340,6 +342,31 @@ public partial class WorldDbContext : DbContext
                 .WithMany(p => p.LandblockInstanceLink)
                 .HasForeignKey(d => d.ParentGuid)
                 .HasConstraintName("instance_link");
+        });
+
+        modelBuilder.Entity<LandblockName>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("landblock_name", tb => tb.HasComment("Landblock Names for /listplayers command"));
+
+            entity.Property(e => e.Id).HasComment("Unique Id of this landblock/cell").HasColumnName("id");
+
+            entity.Property(e => e.ObjCellId).HasComment("ObjCellId of this landblock/cell").HasColumnName("obj_cell_id");
+
+            entity
+                .Property(e => e.Name)
+                .IsRequired()
+                .HasComment("Name for Landblock/Cell")
+                .HasColumnType("text")
+                .HasColumnName("name");
+
+            entity
+                .Property(e => e.LastModified)
+                .ValueGeneratedOnAddOrUpdate()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime")
+                .HasColumnName("last_Modified");
         });
 
         modelBuilder.Entity<PointsOfInterest>(entity =>
