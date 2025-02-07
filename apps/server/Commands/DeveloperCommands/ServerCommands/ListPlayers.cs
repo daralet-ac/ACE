@@ -23,8 +23,7 @@ public class ListPlayers
     )]
     public static void HandleListPlayers(Session session, params string[] parameters)
     {
-        var message = "";
-        uint playerCounter = 0;
+        var message = " \n";
 
         AccessLevel? targetAccessLevel = null;
         if (parameters?.Length > 0)
@@ -57,6 +56,8 @@ public class ListPlayers
             message += $"Listing only {targetAccessLevel.Value.ToString()}s:\n";
         }
 
+        message += $"Total connected Players: {PlayerManager.GetAllOnline().Count}\n";
+
         foreach (var player in PlayerManager.GetAllOnline())
         {
             if (targetAccessLevel.HasValue && player.Account.AccessLevel != ((uint)targetAccessLevel.Value))
@@ -70,13 +71,12 @@ public class ListPlayers
 
             var location = $"{locationName}{paranthesis}";
 
-            message += $"{player.Name} - Lv: {player.Level}, Acct: {player.Account.AccountName} ({player.Session.AccountId}), Loc: {location}\n";
-            playerCounter++;
+
+            message += $"{player.Name} ({player.Account.AccountName}/{player.Session.AccountId})  -  Lv: {player.Level}  -  Loc: {location}\n";
         }
 
-        message += $"Total connected Players: {playerCounter}\n";
 
-        CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.Broadcast);
+        CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.System);
     }
 
     private static string GetLocationName(uint cellId)
