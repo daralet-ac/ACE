@@ -346,11 +346,9 @@ public partial class WorldDbContext : DbContext
 
         modelBuilder.Entity<LandblockName>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PRIMARY");
+            entity.HasKey(e => e.ObjCellId).HasName("PRIMARY");
 
             entity.ToTable("landblock_name", tb => tb.HasComment("Landblock Names for /listplayers command"));
-
-            entity.Property(e => e.Id).HasComment("Unique Id of this landblock/cell").HasColumnName("id");
 
             entity.Property(e => e.ObjCellId).HasComment("ObjCellId of this landblock/cell").HasColumnName("obj_cell_id");
 

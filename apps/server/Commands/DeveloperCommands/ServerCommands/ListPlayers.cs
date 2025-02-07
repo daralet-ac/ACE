@@ -81,7 +81,6 @@ public class ListPlayers
 
     private static string GetLocationName(uint cellId)
     {
-        Console.WriteLine($"0 - CellId: {cellId}");
         using var ctx = new WorldDbContext();
 
         var query =
@@ -94,8 +93,6 @@ public class ListPlayers
             };
 
         var name = query.ToList().FirstOrDefault()?.Name;
-
-        Console.WriteLine($"1 - Cell: {cellId} {query.FirstOrDefault()}");
 
         if (query.FirstOrDefault() is null)
         {
@@ -111,8 +108,6 @@ public class ListPlayers
                 };
 
             name = query.ToList().FirstOrDefault()?.Name;
-
-            Console.WriteLine($"2 - LB: {landblockId} {query.FirstOrDefault()}");
         }
 
         return name;
