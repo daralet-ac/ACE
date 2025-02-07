@@ -112,48 +112,4 @@ public class ListPlayers
 
         return name;
     }
-
-    // public static string GetDungeonName(uint landblock)
-    // {
-    //     var searchLandblock = landblock.ToString();
-    //
-    //     using (var ctx = new WorldDbContext())
-    //     {
-    //         var query =
-    //             from weenie in ctx.Weenie
-    //             join wstr in ctx.WeeniePropertiesString on weenie.ClassId equals wstr.ObjectId
-    //             join wpos in ctx.WeeniePropertiesPosition on weenie.ClassId equals wpos.ObjectId
-    //             where
-    //                 weenie.Type == (int)WeenieType.Portal
-    //                 && wstr.Type == (int)PropertyString.Name
-    //                 && wpos.PositionType == (int)PositionType.Destination
-    //             select new
-    //             {
-    //                 Weenie = weenie,
-    //                 Name = wstr,
-    //                 Dest = wpos
-    //             };
-    //
-    //         var results = query.ToList();
-    //
-    //         foreach (var result in results)
-    //         {
-    //             Console.WriteLine($"Weenie: {result.Weenie.ClassName}, Name: {result.Name.Value}, DestId: {result.Dest.ObjCellId}");
-    //         }
-    //
-    //         Console.WriteLine(searchLandblock);
-    //
-    //         var dest = results
-    //             .Where(i => i.Dest.ObjCellId.ToString().Equals(searchLandblock, StringComparison.OrdinalIgnoreCase))
-    //             .Select(i => i.Name)
-    //             .FirstOrDefault();
-    //
-    //         if (dest == null)
-    //         {
-    //             return null;
-    //         }
-    //
-    //         return dest.Value;
-    //     }
-    // }
 }
