@@ -1803,4 +1803,20 @@ public abstract partial class WorldObject : IActor
             }
         }
     }
+
+    public bool? ResetFromHotspot
+    {
+        get => GetProperty(PropertyBool.ResetFromHotspot);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyBool.ResetFromHotspot);
+            }
+            else
+            {
+                SetProperty(PropertyBool.ResetFromHotspot, value.Value);
+            }
+        }
+    }
 }
