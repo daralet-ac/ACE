@@ -367,10 +367,8 @@ partial class Jewel : WorldObject
         // calculate bonuses to the carving roll  TODO : 100 skill at level 20 gives you 0.5 quality mod. Need to determine what an appropriate skill is by level to set this correctly
 
         var playerskill = player.GetCreatureSkill((Skill.Jewelcrafting));
-
-        var qualityMod = (double)playerskill.Current / (100 * (double)player.Level / 10);
-
-        //Console.WriteLine(qualityMod);
+        var playerLevel = player.Level ?? 1;
+        var qualityMod = (double)playerskill.Current / (100 * (double)playerLevel / 10);
 
         var random = new Random();
 
@@ -390,7 +388,16 @@ partial class Jewel : WorldObject
     {
         var jewelProperty = "";
         var appendedName = "";
-        var baseValue = (int)target.ItemWorkmanship;
+
+        var baseValue = 1;
+        if (target.ItemWorkmanship is null)
+        {
+            _log.Error("ModifyCarvedJewel(Player {Player}, Target {Target}, Jewel {Jewel}) - Target workmanship is null. Defaulting to 1 workmanship.", player.Name, target.Name, jewel.Name);
+        }
+        else
+        {
+            baseValue = (int)target.ItemWorkmanship;
+        }
 
         switch (target.MaterialType)
         {
