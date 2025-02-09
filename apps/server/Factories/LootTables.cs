@@ -472,7 +472,13 @@ public static class LootTables
         BowSmall,
         CrossbowLarge,
         CrossbowSmall,
-        Caster
+        Caster,
+        ThrownAxe,
+        ThrownJavelin,
+        ThrownClub,
+        ThrownDart,
+        ThrownDagger,
+        ThrownShuriken
     };
 
     // Mana Rates [slots][tier]
@@ -709,6 +715,30 @@ public static class LootTables
     // UA (Cestus, Katar, Nekode)
     public static readonly int[] UaMaxDamage = { 4, 8, 12, 17, 25, 37, 54, 78 };
     public static readonly int[] UaMinDamage = { 3, 6, 9, 13, 18, 27, 40, 59 };
+
+    // Thrown (Axe)
+    public static readonly int[] ThrownAxeMaxDamage = { 15, 30, 44, 64, 95, 142, 212, 309 };
+    public static readonly int[] ThrownAxeMinDamage = { 11, 22, 33, 48, 71, 107, 159, 232 };
+
+    // Thrown (Javelin)
+    public static readonly int[] ThrownJavelinMaxDamage = { 14, 27, 40, 58, 85, 128, 191, 279 };
+    public static readonly int[] ThrownJavelinMinDamage = { 10, 20, 30, 43, 64, 96, 143, 209 };
+
+    // Thrown (Club)
+    public static readonly int[] ThrownClubMaxDamage = { 16, 32, 48, 69, 103, 155, 231, 336 };
+    public static readonly int[] ThrownClubMinDamage = { 12, 24, 36, 52, 77, 116, 173, 252 };
+
+    // Thrown (Dart/Spike)
+    public static readonly int[] ThrownDartMaxDamage = { 12, 24, 36, 53, 79, 118, 177, 258 };
+    public static readonly int[] ThrownDartMinDamage = { 9, 18, 27, 40, 59, 89, 132, 193 };
+
+    // Thrown (Dagger)
+    public static readonly int[] ThrownDaggerMaxDamage = { 14, 27, 40, 58, 87, 131, 196, 286 };
+    public static readonly int[] ThrownDaggerMinDamage = { 10, 20, 30, 44, 65, 98, 147, 214 };
+
+    // Thrown (Shuriken)
+    public static readonly int[] ThrownShurikenMaxDamage = { 15, 29, 44, 64, 95, 143, 213, 311 };
+    public static readonly int[] ThrownShurikenMinDamage = { 11, 22, 33, 48, 71, 107, 160, 233 };
 
     // 2H Axe (Great Axe)
     public static readonly int[] TwohandAxeMaxDamage = { 4, 9, 12, 17, 25, 36, 53, 76 };
@@ -3919,6 +3949,18 @@ public static class LootTables
                 return SwordSmallMaxDamage[tier] - SwordSmallMinDamage[tier];
             case WeaponSubtype.Ua:
                 return UaMaxDamage[tier] - UaMinDamage[tier];
+            case WeaponSubtype.ThrownAxe:
+                return ThrownAxeMaxDamage[tier] - ThrownAxeMinDamage[tier];
+            case WeaponSubtype.ThrownJavelin:
+                return ThrownJavelinMaxDamage[tier] - ThrownJavelinMinDamage[tier];
+            case WeaponSubtype.ThrownClub:
+                return ThrownClubMaxDamage[tier] - ThrownClubMinDamage[tier];
+            case WeaponSubtype.ThrownDart:
+                return ThrownDartMaxDamage[tier] - ThrownDartMinDamage[tier];
+            case WeaponSubtype.ThrownDagger:
+                return ThrownDaggerMaxDamage[tier] - ThrownDaggerMinDamage[tier];
+            case WeaponSubtype.ThrownShuriken:
+                return ThrownShurikenMaxDamage[tier] - ThrownShurikenMinDamage[tier];
             default:
             {
                 Console.WriteLine("Error: GetMeleeSubtypeDamageRange() - Incorrect Weapon Subtype");
@@ -3973,6 +4015,18 @@ public static class LootTables
                 return SwordSmallMinDamage[tier];
             case WeaponSubtype.Ua:
                 return UaMinDamage[tier];
+            case WeaponSubtype.ThrownAxe:
+                return ThrownAxeMinDamage[tier];
+            case WeaponSubtype.ThrownJavelin:
+                return ThrownJavelinMinDamage[tier];
+            case WeaponSubtype.ThrownClub:
+                return ThrownClubMinDamage[tier];
+            case WeaponSubtype.ThrownDart:
+                return ThrownDartMinDamage[tier];
+            case WeaponSubtype.ThrownDagger:
+                return ThrownDaggerMinDamage[tier];
+            case WeaponSubtype.ThrownShuriken:
+                return ThrownShurikenMinDamage[tier];
             default:
             {
                 Console.WriteLine("Error: GetMeleeSubtypeMinimumDamage() - Incorrect Weapon Subtype");
@@ -3986,7 +4040,7 @@ public static class LootTables
         if (tier > 7)
         {
             _log.Error("GetMissileCasterSubtypeDamageRange({WeaponSubtype}, {Tier}) - Tier should not be greater than 7.", weaponSubtype, tier);
-            return 0;
+            return 1;
         }
 
         switch (weaponSubtype)
@@ -4007,8 +4061,8 @@ public static class LootTables
                 return CasterMaxDamageMod[tier] - CasterMinDamageMod[tier];
             default:
             {
-                Console.WriteLine("Error: GetMissileCasterSubtypeDamageRange() - Incorrect Weapon Subtype");
-                return 0;
+                _log.Error("GetMissileCasterSubtypeDamageRange() - Incorrect Weapon Subtype");
+                return 1;
             }
         }
     }
@@ -4018,7 +4072,7 @@ public static class LootTables
         if (tier > 7)
         {
             _log.Error("GetMissileCasterSubtypeMinimumDamage({WeaponSubtype}, {Tier}) - Tier should not be greater than 7.", weaponSubtype, tier);
-            return 0;
+            return 1;
         }
 
         switch (weaponSubtype)
@@ -4039,8 +4093,8 @@ public static class LootTables
                 return CasterMinDamageMod[tier];
             default:
             {
-                Console.WriteLine("Error: GetMissileCasterSubtypeMinimumDamage() - Incorrect Weapon Subtype");
-                return 0;
+                _log.Error("GetMissileCasterSubtypeMinimumDamage() - Incorrect Weapon Subtype");
+                return 1;
             }
         }
     }
