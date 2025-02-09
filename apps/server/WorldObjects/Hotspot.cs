@@ -66,6 +66,12 @@ public class Hotspot : WorldObject
             return;
         }
 
+        if (AffectsOnlyAis && creature is {ResetFromHotspot: true})
+        {
+            creature.SetMaxVitals();
+            creature.MoveToHome();
+        }
+
         if (!Creatures.Contains(creature.Guid))
         {
             //Console.WriteLine($"{Name} ({Guid}).OnCollideObject({creature.Name})");

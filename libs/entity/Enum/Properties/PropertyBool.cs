@@ -237,6 +237,7 @@ public enum PropertyBool : ushort
     RepeatConfirmation = 157,
     SilentCombat = 158,
     ReturnHomeWhenStuck = 159,
+    ResetFromHotspot = 160,
 
     /* custom */
     [ServerOnly]
