@@ -352,12 +352,7 @@ partial class Player
 
         // stamina usage
         // TODO: ensure enough stamina for attack
-        var staminaCost = GetAttackStamina(
-            GetPowerRange(),
-            (float)LastAttackAnimationLength,
-            weapon,
-            dualWieldStaminaBonus
-        );
+        var staminaCost = GetAttackStamina((float)LastAttackAnimationLength, weapon);
 
         if (EquippedCombatAbility == CombatAbility.Fury && QuestManager.HasQuest($"{this.Name},Reckless"))
         {

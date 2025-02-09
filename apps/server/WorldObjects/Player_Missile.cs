@@ -381,7 +381,7 @@ partial class Player
         LastAttackAnimationLength = linkTime;
         //Console.WriteLine($"LaunchTime: {launchTime}, Reload: {reloadTime} (BaseReload: {reloadTime*animSpeed}), Link: {linkTime}, TOTAL: {LastAttackAnimationLength}");
 
-        var staminaCost = GetAttackStamina(GetAccuracyRange(), (float)LastAttackAnimationLength, weapon);
+        var staminaCost = GetAttackStamina((float)LastAttackAnimationLength, weapon);
         UpdateVitalDelta(Stamina, -staminaCost);
 
         var combatAbility = CombatAbility.None;
