@@ -1450,58 +1450,27 @@ partial class Player
     /// <summary>
     /// Calculates the amount of stamina required to perform this attack
     /// </summary>
-    public int GetAttackStamina(
-        PowerAccuracy powerAccuracy,
-        float attackAnimLength,
-        WorldObject weapon,
-        bool dualWieldStaminaBonus = false
-    )
+    private int GetAttackStamina(float attackAnimLength, WorldObject weapon)
     {
-        // Stamina cost for melee and missile attacks is based on the total burden of what you are holding
-        // in your hands (main hand and offhand), and your power/accuracy bar.
-
-        // Attacking(Low power / accuracy bar)   1 point per 700 burden units
-        //                                       1 point per 1200 burden units
-        //                                       1.5 points per 1600 burden units
-        // Attacking(Mid power / accuracy bar)   1 point per 700 burden units
-        //                                       2 points per 1200 burden units
-        //                                       3 points per 1600 burden units
-        // Attacking(High power / accuracy bar)  2 point per 700 burden units
-        //                                       4 points per 1200 burden units
-        //                                       6 points per 1600 burden units
-
-        // The higher a player's base Endurance, the less stamina one uses while attacking. This benefit is tied to Endurance only,
-        // and caps out at 50% less stamina used per attack. Scaling is similar to other Endurance bonuses. Applies only to players.
-
         // When stamina drops to 0, your melee and missile defenses also drop to 0 and you will be incapable of attacking.
         // In addition, you will suffer a 50% penalty to your weapon skill. This applies to players and creatures.
 
-        var combatAbility = CombatAbility.None;
-        var combatFocus = GetEquippedCombatFocus();
-        if (combatFocus != null)
-        {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
-
         var weaponTier = Math.Max(GetMainHandWeaponTier(), GetOffHandWeaponTier());
-
-        var weaponSpeedMain = GetEquippedMainHand() != null ? (int)GetEquippedMainHand().WeaponTime : 0;
-        var weaponSpeedOff =
-            GetEquippedOffHand() != null && !GetEquippedOffHand().IsShield ? (int)GetEquippedOffHand().WeaponTime : 0;
-
         var powerAccuracyLevel = GetEquippedMissileWeapon() != null ? AccuracyLevel : PowerLevel;
+        var weightClassPenalty = (float)(1 + GetArmorResourcePenalty() ?? 0);
+        var baseCost = StaminaTable.GetStaminaCost(weaponTier, attackAnimLength, powerAccuracyLevel, weightClassPenalty);
 
-        var weaponSpeed = Math.Max(weaponSpeedMain, weaponSpeedOff);
+        var staminaCostReductionMod = GetStaminaReductionMod(weapon);
 
-        var weightClassPenalty = (float)(1 + GetArmorResourcePenalty());
+        baseCost *= staminaCostReductionMod;
 
-        var baseCost = StaminaTable.GetStaminaCost(
-            weaponTier,
-            attackAnimLength,
-            powerAccuracyLevel,
-            weightClassPenalty
-        );
+        var staminaCost = Math.Max(baseCost, 1);
 
+        return (int)Math.Round(staminaCost);
+    }
+
+    private float GetStaminaReductionMod(WorldObject weapon)
+    {
         var staminaCostReductionMod = 1.0f;
 
         // Sword/UA implicit rolled bonuses
@@ -1531,19 +1500,7 @@ partial class Player
             staminaCostReductionMod -= 0.1f;
         }
 
-        baseCost *= staminaCostReductionMod;
-
-        var staminaCost = Math.Max(baseCost, 1);
-
-        //Console.WriteLine($"GetAttackStamina({powerAccuracy}) - burden: {burden}, baseCost: {baseCost}, staminaMod: {staminaMod}, staminaCost: {staminaCost}");
-
-        //var currentTime = Time.GetUnixTime();
-        //var difference = currentTime - TimeSinceLastStaminaUse;
-        //TimeSinceLastStaminaUse = currentTime;
-        //var staminaPerTime = baseCost / difference;
-        //Console.WriteLine($"StaminaUsed: {Math.Round(baseCost, 2)}, TimeBetweenAttacks: {Math.Round(difference, 2)},  StaminaPerTime: {Math.Round(staminaPerTime, 2)}");
-
-        return (int)Math.Round(staminaCost);
+        return staminaCostReductionMod;
     }
 
     /// <summary>
