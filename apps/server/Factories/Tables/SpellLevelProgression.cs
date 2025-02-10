@@ -7685,6 +7685,22 @@ public static class SpellLevelProgression
         SpellId.LifeGiverLegendary,
     };
 
+    public static readonly List<SpellId> StaminaGiver = new List<SpellId>()
+    {
+        SpellId.StaminaGiverMinor,
+        SpellId.StaminaGiverMajor,
+        SpellId.StaminaGiverEpic,
+        SpellId.StaminaGiverLegendary,
+    };
+
+    public static readonly List<SpellId> ManaGiver = new List<SpellId>()
+    {
+        SpellId.ManaGiverMinor,
+        SpellId.ManaGiverMajor,
+        SpellId.ManaGiverEpic,
+        SpellId.ManaGiverLegendary,
+    };
+
     static SpellLevelProgression()
     {
         // takes ~5ms
@@ -8437,6 +8453,8 @@ public static class SpellLevelProgression
         AddSpells(FellowshipRevitalize);
         AddSpells(FellowshipManaBoost);
         AddSpells(LifeGiver);
+        AddSpells(StaminaGiver);
+        AddSpells(ManaGiver);
     }
 
     private static void AddSpells(List<SpellId> spells)
