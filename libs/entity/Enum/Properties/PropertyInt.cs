@@ -782,7 +782,7 @@ public enum PropertyInt : ushort
     GearItemManaUsage = 423,
     GearThorns = 424,
     GearVitalsTransfer = 425,
-    GearLastStand = 426,
+    GearRedFury = 426,
     GearSelflessness = 427,
     GearVipersStrike = 428,
     GearFamiliarity = 429,

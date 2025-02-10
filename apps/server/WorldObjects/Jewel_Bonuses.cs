@@ -762,41 +762,41 @@ partial class Jewel
     }
 
     /// <summary>
-    /// RATING - Last Stand: .
+    /// RATING - Red Fury: .
     /// (JEWEL - Ruby)
     /// </summary>
-    public static float GetJewelLastStand(Player playerAttacker)
+    public static float GetJewelRedFury(Player playerAttacker)
     {
         // find proportion of players health
 
-        var modifiedLastStand = 0f;
+        var modifiedRedFury = 0f;
 
         var percentHealthRemaining = (float)playerAttacker.Health.Current / playerAttacker.Health.MaxValue;
 
-        // reduce the bonus from LastStand proportionately as HP rises from 25% to 50% of HP. Full bonus at 25%, 0 bonus at 50%, penalty at 50%+
+        // reduce the bonus from RedFury proportionately as HP rises from 25% to 50% of HP. Full bonus at 25%, 0 bonus at 50%, penalty at 50%+
 
         switch (percentHealthRemaining)
         {
             case <= 0.25f:
-                modifiedLastStand = 1f;
+                modifiedRedFury = 1f;
                 break;
             case <= 0.5f:
                 //  interpolate between 1 and 0 as percentHealthRemaining goes from 0.25 to 0.5
-                modifiedLastStand = 1f - (percentHealthRemaining - 0.25f) / 0.25f;
+                modifiedRedFury = 1f - (percentHealthRemaining - 0.25f) / 0.25f;
                 break;
             case <= 0.75f:
-                modifiedLastStand = -(percentHealthRemaining - 0.5f) / 0.25f;
+                modifiedRedFury = -(percentHealthRemaining - 0.5f) / 0.25f;
                 break;
             default:
-                modifiedLastStand = -1f;
+                modifiedRedFury = -1f;
                 break;
         }
 
         // multiply gear last stand as % by the modifier--if negative (above 50% HP), mod goes sub 1, which added to the 1f in DamageEvent results in a damage penalty.
 
-        var lastStandMod = (modifiedLastStand * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLastStand) / 50));
+        var RedFuryMod = (modifiedRedFury * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) / 50));
 
-        return lastStandMod;
+        return RedFuryMod;
     }
 
     // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem workmanship
@@ -1167,7 +1167,7 @@ partial class Jewel
         { "Health To Stamina", PropertyInt.GearHealthToStamina },
         { "Health To Mana", PropertyInt.GearHealthToMana },
         { "Experience Gain", PropertyInt.GearExperienceGain },
-        { "Last Stand", PropertyInt.GearLastStand },
+        { "Red Fury", PropertyInt.GearRedFury },
         { "Manasteal", PropertyInt.GearManasteal },
         { "Vitals Transfer", PropertyInt.GearVitalsTransfer },
         { "Bludgeon", PropertyInt.GearBludgeon },

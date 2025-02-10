@@ -7756,18 +7756,18 @@ partial class WorldObject
         }
     }
 
-    public int? GearLastStand
+    public int? GearRedFury
     {
-        get => GetProperty(PropertyInt.GearLastStand);
+        get => GetProperty(PropertyInt.GearRedFury);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.GearLastStand);
+                RemoveProperty(PropertyInt.GearRedFury);
             }
             else
             {
-                SetProperty(PropertyInt.GearLastStand, value.Value);
+                SetProperty(PropertyInt.GearRedFury, value.Value);
             }
         }
     }

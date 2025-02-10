@@ -71,7 +71,7 @@ public class DamageEvent
     private Quadrant _quadrant;
     private float _ratingElementalDamageBonus;
     private float _ratingElementalWard;
-    private float _ratingLastStand;
+    private float _ratingRedFury;
     private float _ratingSelfHarm;
     private float _recklessnessMod;
     private float _resistanceMod;
@@ -894,7 +894,7 @@ public class DamageEvent
 
         _ratingElementalWard = GetRatingElementalWard(playerDefender);
         _ratingSelfHarm = GetRatingSelfHarm(playerAttacker);
-        _ratingLastStand = GetRatingLastStand(defender, playerAttacker);
+        _ratingRedFury = GetRatingRedFury(defender, playerAttacker);
 
         return _armorMod
                * ShieldMod
@@ -904,7 +904,7 @@ public class DamageEvent
                * _specDefenseMod
                * _ratingElementalWard
                * _ratingSelfHarm
-               * _ratingLastStand;
+               * _ratingRedFury;
     }
 
     private float GetIgnoreArmorMod(Creature attacker, Creature defender)
@@ -1065,19 +1065,19 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// RATING - LastStand: Bonus damage below 50% HP, reduced damage above
+    /// RATING - Red Fury: Bonus damage below 50% HP, reduced damage above
     /// (JEWEL - Ruby)
     /// </summary>
-    private float GetRatingLastStand(Creature defender, Player playerAttacker)
+    private float GetRatingRedFury(Creature defender, Player playerAttacker)
     {
         if (playerAttacker == null)
         {
             return 1.0f;
         }
 
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLastStand) > 0)
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) > 0)
         {
-            return 1.0f + Jewel.GetJewelLastStand(playerAttacker);
+            return 1.0f + Jewel.GetJewelRedFury(playerAttacker);
         }
 
         return 1.0f;
