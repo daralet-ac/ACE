@@ -6401,6 +6401,14 @@ public enum SpellId : uint
     SigilTrinketCriticalChanceBoost,
     SigilTrinketCriticalDamageBoost,
     SigilTrinketDamageBoost,
+    ManaGiverMinor,
+    ManaGiverMajor,
+    ManaGiverEpic,
+    ManaGiverLegendary,
+    StaminaGiverMinor,
+    StaminaGiverMajor,
+    StaminaGiverEpic,
+    StaminaGiverLegendary,
 
     NumSpells = 8192,
 
