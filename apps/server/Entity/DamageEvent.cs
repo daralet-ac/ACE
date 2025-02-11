@@ -72,6 +72,7 @@ public class DamageEvent
     private float _ratingElementalDamageBonus;
     private float _ratingElementalWard;
     private float _ratingRedFury;
+    private float _ratingYellowFury;
     private float _ratingSelfHarm;
     private float _recklessnessMod;
     private float _resistanceMod;
@@ -894,7 +895,8 @@ public class DamageEvent
 
         _ratingElementalWard = GetRatingElementalWard(playerDefender);
         _ratingSelfHarm = GetRatingSelfHarm(playerAttacker);
-        _ratingRedFury = GetRatingRedFury(defender, playerAttacker);
+        _ratingRedFury = GetRatingRedFury(playerAttacker);
+        _ratingYellowFury = GetRatingYellowFury(playerAttacker);
 
         return _armorMod
                * ShieldMod
@@ -904,7 +906,8 @@ public class DamageEvent
                * _specDefenseMod
                * _ratingElementalWard
                * _ratingSelfHarm
-               * _ratingRedFury;
+               * _ratingRedFury
+               * _ratingYellowFury;
     }
 
     private float GetIgnoreArmorMod(Creature attacker, Creature defender)
@@ -1065,10 +1068,10 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// RATING - Red Fury: Bonus damage below 50% HP, reduced damage above
+    /// RATING - Red Fury: Bonus damage as health drops from 100% to 25%
     /// (JEWEL - Ruby)
     /// </summary>
-    private float GetRatingRedFury(Creature defender, Player playerAttacker)
+    private float GetRatingRedFury(Player playerAttacker)
     {
         if (playerAttacker == null)
         {
@@ -1078,6 +1081,25 @@ public class DamageEvent
         if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) > 0)
         {
             return 1.0f + Jewel.GetJewelRedFury(playerAttacker);
+        }
+
+        return 1.0f;
+    }
+
+    /// <summary>
+    /// RATING - Yellow Fury: Bonus damage as stamina drops from 100% to 25%
+    /// (JEWEL - ??)
+    /// </summary>
+    private float GetRatingYellowFury(Player playerAttacker)
+    {
+        if (playerAttacker == null)
+        {
+            return 1.0f;
+        }
+
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearYellowFury) > 0)
+        {
+            return 1.0f + Jewel.GetJewelYellowFury(playerAttacker);
         }
 
         return 1.0f;

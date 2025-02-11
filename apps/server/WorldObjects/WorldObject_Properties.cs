@@ -7772,6 +7772,38 @@ partial class WorldObject
         }
     }
 
+    public int? GearYellowFury
+    {
+        get => GetProperty(PropertyInt.GearYellowFury);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearYellowFury);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearYellowFury, value.Value);
+            }
+        }
+    }
+
+    public int? GearBlueFury
+    {
+        get => GetProperty(PropertyInt.GearBlueFury);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearBlueFury);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearBlueFury, value.Value);
+            }
+        }
+    }
+
     public int? GearSelflessness
     {
         get => GetProperty(PropertyInt.GearSelflessness);

@@ -767,36 +767,34 @@ partial class Jewel
     /// </summary>
     public static float GetJewelRedFury(Player playerAttacker)
     {
-        // find proportion of players health
-
-        var modifiedRedFury = 0f;
-
         var percentHealthRemaining = (float)playerAttacker.Health.Current / playerAttacker.Health.MaxValue;
+        var mod = Math.Min(((1.0f - percentHealthRemaining) / 0.75f), 1.0f);
 
-        // reduce the bonus from RedFury proportionately as HP rises from 25% to 50% of HP. Full bonus at 25%, 0 bonus at 50%, penalty at 50%+
+        return mod * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) / 100);
+    }
 
-        switch (percentHealthRemaining)
-        {
-            case <= 0.25f:
-                modifiedRedFury = 1f;
-                break;
-            case <= 0.5f:
-                //  interpolate between 1 and 0 as percentHealthRemaining goes from 0.25 to 0.5
-                modifiedRedFury = 1f - (percentHealthRemaining - 0.25f) / 0.25f;
-                break;
-            case <= 0.75f:
-                modifiedRedFury = -(percentHealthRemaining - 0.5f) / 0.25f;
-                break;
-            default:
-                modifiedRedFury = -1f;
-                break;
-        }
+    /// <summary>
+    /// RATING - Yellow Fury: .
+    /// (JEWEL - ??)
+    /// </summary>
+    public static float GetJewelYellowFury(Player playerAttacker)
+    {
+        var percentStaminaRemaining = (float)playerAttacker.Stamina.Current / playerAttacker.Stamina.MaxValue;
+        var mod = Math.Min(((1.0f - percentStaminaRemaining) / 0.75f), 1.0f);
 
-        // multiply gear last stand as % by the modifier--if negative (above 50% HP), mod goes sub 1, which added to the 1f in DamageEvent results in a damage penalty.
+        return mod * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearYellowFury) / 100);
+    }
 
-        var RedFuryMod = (modifiedRedFury * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) / 50));
+    /// <summary>
+    /// RATING - Blue Fury: .
+    /// (JEWEL - ??)
+    /// </summary>
+    public static float GetJewelBlueFury(Player playerAttacker)
+    {
+        var percentManaRemaining = (float)playerAttacker.Mana.Current / playerAttacker.Mana.MaxValue;
+        var mod = Math.Min(((1.0f - percentManaRemaining) / 0.75f), 1.0f);
 
-        return RedFuryMod;
+        return mod * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlueFury) / 100);
     }
 
     // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem workmanship
@@ -1168,6 +1166,8 @@ partial class Jewel
         { "Health To Mana", PropertyInt.GearHealthToMana },
         { "Experience Gain", PropertyInt.GearExperienceGain },
         { "Red Fury", PropertyInt.GearRedFury },
+        { "Yellow Fury", PropertyInt.GearYellowFury },
+        { "Blue Fury", PropertyInt.GearBlueFury },
         { "Manasteal", PropertyInt.GearManasteal },
         { "Vitals Transfer", PropertyInt.GearVitalsTransfer },
         { "Bludgeon", PropertyInt.GearBludgeon },

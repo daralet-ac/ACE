@@ -373,6 +373,8 @@ partial class Creature
             && (wo.GearThorns ?? 0) == 0
             && (wo.GearVitalsTransfer ?? 0) == 0
             && (wo.GearRedFury ?? 0) == 0
+            && (wo.GearYellowFury ?? 0) == 0
+            && (wo.GearBlueFury ?? 0) == 0
             && (wo.GearSelflessness ?? 0) == 0
             && (wo.GearVipersStrike ?? 0) == 0
             && (wo.GearFamiliarity ?? 0) == 0
@@ -437,6 +439,8 @@ partial class Creature
                 { PropertyInt.GearThorns, 0 },
                 { PropertyInt.GearVitalsTransfer, 0 },
                 { PropertyInt.GearRedFury, 0 },
+                { PropertyInt.GearYellowFury, 0 },
+                { PropertyInt.GearBlueFury, 0 },
                 { PropertyInt.GearSelflessness, 0 },
                 { PropertyInt.GearVipersStrike, 0 },
                 { PropertyInt.GearFamiliarity, 0 },

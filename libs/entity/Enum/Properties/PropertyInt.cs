@@ -827,6 +827,8 @@ public enum PropertyInt : ushort
     AmmoEffect = 468,
     AmmoEffectUsesRemaining = 469,
     AltCurrencyValue = 470,
+    GearYellowFury = 471,
+    GearBlueFury = 472,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
