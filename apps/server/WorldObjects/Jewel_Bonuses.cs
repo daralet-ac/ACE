@@ -942,7 +942,7 @@ partial class Jewel
                 break;
             case ACE.Entity.Enum.MaterialType.Ruby:
                 description =
-                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant increased damage as your health falls below 50%, up to a maximum bonus of {amount}% at 25% HP.\nAbove 50% Health, you receive a damage reduction penalty scaling up to {amount}% at full HP.\n\n";
+                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant increased damage as your health falls below 100%, up to a maximum bonus of {amount}% at 25% health.\n\n";
                 break;
 
             // weapon only
