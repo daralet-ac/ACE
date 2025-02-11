@@ -739,19 +739,16 @@ public class UpgradeKit : Stackable
         var ratingList = new List<PropertyInt>();
         // var totalRatings = 0; TODO: To be used if jewel ratings get added to mutable quest item system
 
-        const int firstGearRatingId = 409;
-        const int lastGearRatingId = 450;
-
-        for (var i = firstGearRatingId; i < lastGearRatingId; i++)
+        foreach (var id in GearRatingIds)
         {
-            var ratingValue = target.GetProperty((PropertyInt)i);
+            var ratingValue = target.GetProperty(id);
 
             if (ratingValue == null)
             {
                 continue;
             }
 
-            ratingList.Add((PropertyInt)i);
+            ratingList.Add(id);
             //totalRatings += ratingValue.Value;
         }
 
@@ -772,6 +769,54 @@ public class UpgradeKit : Stackable
             target.SetProperty(itemRating, newRatingValue);
         }
     }
+
+    private static readonly PropertyInt[] GearRatingIds = new[]
+    {
+        PropertyInt.GearAcid,
+        PropertyInt.GearBlock,
+        PropertyInt.GearBludgeon,
+        PropertyInt.GearBlueFury,
+        PropertyInt.GearBravado,
+        PropertyInt.GearCompBurn,
+        PropertyInt.GearCoordination,
+        PropertyInt.GearElementalist,
+        PropertyInt.GearElementalWard,
+        PropertyInt.GearEndurance,
+        PropertyInt.GearExperienceGain,
+        PropertyInt.GearFamiliarity,
+        PropertyInt.GearFire,
+        PropertyInt.GearFocus,
+        PropertyInt.GearFrost,
+        PropertyInt.GearHardenedDefense,
+        PropertyInt.GearHealBubble,
+        PropertyInt.GearHealthToMana,
+        PropertyInt.GearHealthToStamina,
+        PropertyInt.GearItemManaUsage,
+        PropertyInt.GearLifesteal,
+        PropertyInt.GearLightning,
+        PropertyInt.GearMagicFind,
+        PropertyInt.GearManasteal,
+        PropertyInt.GearNullification,
+        PropertyInt.GearPhysicalWard,
+        PropertyInt.GearPierce,
+        PropertyInt.GearPyrealFind,
+        PropertyInt.GearQuickness,
+        PropertyInt.GearRedFury,
+        PropertyInt.GearReprisal,
+        PropertyInt.GearSelf,
+        PropertyInt.GearSelflessness,
+        PropertyInt.GearSelfHarm,
+        PropertyInt.GearSlash,
+        PropertyInt.GearStamReduction,
+        PropertyInt.GearStrength,
+        PropertyInt.GearThorns,
+        PropertyInt.GearThreatGain,
+        PropertyInt.GearThreatReduction,
+        PropertyInt.GearVipersStrike,
+        PropertyInt.GearVitalsTransfer,
+        PropertyInt.GearWardPen,
+        PropertyInt.GearYellowFury
+    };
 
     private static int GetRequiredUpgradeKits(Player player, WorldObject target)
     {
