@@ -841,7 +841,8 @@ public class SpellProjectile : WorldObject
             var jewelElementalist = 1.0f + CheckForRatingElementalistDamageBonus(sourcePlayer);
             var jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
             var jewelSelfHarm = 1.0f + CheckForRatingSelfHarmDamageBonus(sourcePlayer);
-            var jewelLastStand = 1.0f + CheckForRatingLastStandDamageMod(sourcePlayer);
+            var jewelRedFury = 1.0f + CheckForRatingRedFuryDamageMod(sourcePlayer);
+            var jewelBlueFury = 1.0f + CheckForRatingBlueFuryDamageMod(sourcePlayer);
 
             var strikethroughMod = 1.0f / (Strikethrough + 1);
 
@@ -856,7 +857,7 @@ public class SpellProjectile : WorldObject
                 * jewelElementalist
                 * jewelElemental
                 * jewelSelfHarm
-                * jewelLastStand
+                * jewelRedFury
                 * strikethroughMod;
 
             finalDamage =
@@ -1319,17 +1320,31 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// RATING - Last Stand: Bonus damage below 50% HP, reduced damage above.
+    /// RATING - Red Fury: Bonus damage as health drops from 100% to 25%
     /// (JEWEL - Ruby)
     /// </summary>
-    private static float CheckForRatingLastStandDamageMod(Player sourcePlayer)
+    private static float CheckForRatingRedFuryDamageMod(Player sourcePlayer)
     {
         if (sourcePlayer == null)
         {
             return 0.0f;
         }
 
-        return sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLastStand) > 0 ? Jewel.GetJewelLastStand(sourcePlayer) : 0.0f;
+        return sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) > 0 ? Jewel.GetJewelRedFury(sourcePlayer) : 0.0f;
+    }
+
+    /// <summary>
+    /// RATING - Blue Fury: Bonus damage as mana drops from 100% to 25%
+    /// (JEWEL - ??)
+    /// </summary>
+    private static float CheckForRatingBlueFuryDamageMod(Player sourcePlayer)
+    {
+        if (sourcePlayer == null)
+        {
+            return 0.0f;
+        }
+
+        return sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlueFury) > 0 ? Jewel.GetJewelBlueFury(sourcePlayer) : 0.0f;
     }
 
     /// <summary>

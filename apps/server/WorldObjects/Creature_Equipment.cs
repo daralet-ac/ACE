@@ -372,7 +372,9 @@ partial class Creature
             && (wo.GearSelfHarm ?? 0) == 0
             && (wo.GearThorns ?? 0) == 0
             && (wo.GearVitalsTransfer ?? 0) == 0
-            && (wo.GearLastStand ?? 0) == 0
+            && (wo.GearRedFury ?? 0) == 0
+            && (wo.GearYellowFury ?? 0) == 0
+            && (wo.GearBlueFury ?? 0) == 0
             && (wo.GearSelflessness ?? 0) == 0
             && (wo.GearVipersStrike ?? 0) == 0
             && (wo.GearFamiliarity ?? 0) == 0
@@ -436,7 +438,9 @@ partial class Creature
                 { PropertyInt.GearSelfHarm, 0 },
                 { PropertyInt.GearThorns, 0 },
                 { PropertyInt.GearVitalsTransfer, 0 },
-                { PropertyInt.GearLastStand, 0 },
+                { PropertyInt.GearRedFury, 0 },
+                { PropertyInt.GearYellowFury, 0 },
+                { PropertyInt.GearBlueFury, 0 },
                 { PropertyInt.GearSelflessness, 0 },
                 { PropertyInt.GearVipersStrike, 0 },
                 { PropertyInt.GearFamiliarity, 0 },
@@ -494,7 +498,7 @@ partial class Creature
         equippedItemsRatingCache[PropertyInt.GearSelfHarm] += (wo.GearSelfHarm ?? 0);
         equippedItemsRatingCache[PropertyInt.GearThorns] += (wo.GearThorns ?? 0);
         equippedItemsRatingCache[PropertyInt.GearVitalsTransfer] += (wo.GearVitalsTransfer ?? 0);
-        equippedItemsRatingCache[PropertyInt.GearLastStand] += (wo.GearLastStand ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearRedFury] += (wo.GearRedFury ?? 0);
         equippedItemsRatingCache[PropertyInt.GearSelflessness] += (wo.GearSelflessness ?? 0);
         equippedItemsRatingCache[PropertyInt.GearVipersStrike] += (wo.GearVipersStrike ?? 0);
         equippedItemsRatingCache[PropertyInt.GearFamiliarity] += (wo.GearFamiliarity ?? 0);
@@ -558,7 +562,7 @@ partial class Creature
         equippedItemsRatingCache[PropertyInt.GearSelfHarm] -= (wo.GearSelfHarm ?? 0);
         equippedItemsRatingCache[PropertyInt.GearThorns] -= (wo.GearThorns ?? 0);
         equippedItemsRatingCache[PropertyInt.GearVitalsTransfer] -= (wo.GearVitalsTransfer ?? 0);
-        equippedItemsRatingCache[PropertyInt.GearLastStand] -= (wo.GearLastStand ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearRedFury] -= (wo.GearRedFury ?? 0);
         equippedItemsRatingCache[PropertyInt.GearSelflessness] -= (wo.GearSelflessness ?? 0);
         equippedItemsRatingCache[PropertyInt.GearVipersStrike] -= (wo.GearVipersStrike ?? 0);
         equippedItemsRatingCache[PropertyInt.GearFamiliarity] -= (wo.GearFamiliarity ?? 0);
@@ -914,7 +918,7 @@ partial class Creature
                 if (currentEquippedAmmo is null || highestDamageMatchingAmmo != currentEquippedAmmo)
                 {
                     var actionChain = new ActionChain();
-                    
+
                     if (currentEquippedAmmo is not null)
                     {
                         actionChain.AddAction(player, () => player.HandleActionPutItemInContainer(currentEquippedAmmo.Guid.Full, player.Guid.Full));

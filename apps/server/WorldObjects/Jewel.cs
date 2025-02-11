@@ -542,7 +542,7 @@ partial class Jewel : WorldObject
                 CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
                 break;
             case ACE.Entity.Enum.MaterialType.Ruby:
-                jewelProperty = "Last Stand";
+                jewelProperty = "Red Fury";
                 appendedName = "of Red Fury";
                 CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
                 break;
