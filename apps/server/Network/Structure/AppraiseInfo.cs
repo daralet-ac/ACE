@@ -782,12 +782,12 @@ public class AppraiseInfo
 
         SetStaminaReductionUseLongText(wo);
 
-        SetGearRatingText(PropertyInt.GearStrength, "Mighty Thews", "Grants a +(ONE) bonus to base Strength.");
-        SetGearRatingText(PropertyInt.GearEndurance, "Perseverance", "Grants a +(ONE) bonus to base Endurance.");
-        SetGearRatingText(PropertyInt.GearCoordination, "Dexterous Hand", "Grants a +(ONE) bonus to base Coordination.");
-        SetGearRatingText(PropertyInt.GearQuickness, "Swift-footed", "Grants a +(ONE) bonus to base Quickness.");
-        SetGearRatingText(PropertyInt.GearFocus, "Focused Mind", "Grants a +(ONE) bonus to base Focus.");
-        SetGearRatingText(PropertyInt.GearSelf, "Erudite Mind", "Grants a +(ONE) bonus to base Self.");
+        SetGearRatingText(PropertyInt.GearStrength, "Mighty Thews", "Grants a +(ONE) bonus to current Strength.");
+        SetGearRatingText(PropertyInt.GearEndurance, "Perseverance", "Grants a +(ONE) bonus to current Endurance.");
+        SetGearRatingText(PropertyInt.GearCoordination, "Dexterous Hand", "Grants a +(ONE) bonus to current Coordination.");
+        SetGearRatingText(PropertyInt.GearQuickness, "Swift-footed", "Grants a +(ONE) bonus to current Quickness.");
+        SetGearRatingText(PropertyInt.GearFocus, "Focused Mind", "Grants a +(ONE) bonus to current Focus.");
+        SetGearRatingText(PropertyInt.GearSelf, "Erudite Mind", "Grants a +(ONE) bonus to current Self.");
         SetGearRatingText(PropertyInt.GearLifesteal, "Sanguine Thirst", "Grants a (ONE)% chance on hit to gain health. Amount healed is based on the amount of damage done.");
         SetGearRatingText(PropertyInt.GearSelfHarm, "Blood Frenzy", $"Grants (ONE)% extra damage dealt to your opponent each time you attack, however you will take that much damage as well.");
         SetGearRatingText(PropertyInt.GearThreatGain, "Provocation", $"Grants a (ONE)% bonus to threat generation.");
@@ -1586,9 +1586,9 @@ public class AppraiseInfo
         additionaPropertiesString = additionaPropertiesString.TrimEnd();
         additionaPropertiesString = additionaPropertiesString.TrimEnd(',');
 
-        _extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n\n";
+        _extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n(This item's properties will not activate if it is out of mana)\n\n";
 
-        _extraPropertiesText += "(This item's properties will not activate if it is out of mana)\n\n";
+        //_extraPropertiesText += "(This item's properties will not activate if it is out of mana)\n\n";
 
         _hasExtraPropertiesText = true;
     }
