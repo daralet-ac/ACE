@@ -6409,6 +6409,12 @@ public enum SpellId : uint
     StaminaGiverMajor,
     StaminaGiverEpic,
     StaminaGiverLegendary,
+    RatingStrength,
+    RatingEndurance,
+    RatingCoordination,
+    RatingQuickness,
+    RatingFocus,
+    RatingSelf,
 
     NumSpells = 8192,
 

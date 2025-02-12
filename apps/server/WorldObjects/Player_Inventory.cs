@@ -17,6 +17,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects;
 
@@ -404,50 +405,40 @@ partial class Player
             manaScarab.OnEquip(this);
         }
 
-        // handle gear attribute ratings
-        if (item.GearStrength > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Strength];
-            playerAttr.Ranks += (uint)item.GearStrength;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearEndurance > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Endurance];
-            playerAttr.Ranks += (uint)item.GearEndurance;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearCoordination > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Coordination];
-            playerAttr.Ranks += (uint)item.GearCoordination;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearQuickness > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Quickness];
-            playerAttr.Ranks += (uint)item.GearQuickness;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearFocus > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Focus];
-            playerAttr.Ranks += (uint)item.GearFocus;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearSelf > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Self];
-            playerAttr.Ranks += (uint)item.GearSelf;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
+        HandleGearAttributeRatings(item, SpellId.RatingStrength, PropertyInt.GearStrength, SpellCategory.GearRatingStrength);
+        HandleGearAttributeRatings(item, SpellId.RatingEndurance, PropertyInt.GearEndurance, SpellCategory.GearRatingEndurance);
+        HandleGearAttributeRatings(item, SpellId.RatingCoordination, PropertyInt.GearCoordination, SpellCategory.GearRatingCoordination);
+        HandleGearAttributeRatings(item, SpellId.RatingQuickness, PropertyInt.GearQuickness, SpellCategory.GearRatingQuickness);
+        HandleGearAttributeRatings(item, SpellId.RatingFocus, PropertyInt.GearFocus, SpellCategory.GearRatingFocus);
+        HandleGearAttributeRatings(item, SpellId.RatingSelf, PropertyInt.GearSelf, SpellCategory.GearRatingSelf);
 
         return true;
+    }
+
+    private void HandleGearAttributeRatings(WorldObject item, SpellId spellId, PropertyInt propertyInt, SpellCategory spellCategory)
+    {
+        var totalRating = GetEquippedAndActivatedItemRatingSum(propertyInt);
+
+        if (totalRating > 0 && EnchantmentManager.GetEnchantment((uint)spellId) is null)
+        {
+            CreateItemSpell(item, (uint)spellId);
+        }
+
+        var allEnchantments = EnchantmentManager.GetEnchantments(spellCategory);
+        if (totalRating == 0)
+        {
+            foreach (var enchantment in allEnchantments)
+            {
+                EnchantmentManager.Dispel(enchantment);
+            }
+        }
+
+        foreach (var enchantment in allEnchantments)
+        {
+            enchantment.StatModValue = totalRating;
+            enchantment.Duration = -1;
+            Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, enchantment)));
+        }
     }
 
     public bool TryActivateSpells(WorldObject item)
@@ -614,48 +605,12 @@ partial class Player
             }
         }
 
-        // handle gear attribute ratings
-        if (item.GearStrength > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Strength];
-            playerAttr.Ranks -= (uint)item.GearStrength;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearEndurance > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Endurance];
-            playerAttr.Ranks -= (uint)item.GearEndurance;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearCoordination > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Coordination];
-            playerAttr.Ranks -= (uint)item.GearCoordination;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearQuickness > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Quickness];
-            playerAttr.Ranks -= (uint)item.GearQuickness;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearFocus > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Focus];
-            playerAttr.Ranks -= (uint)item.GearFocus;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
-
-        if (item.GearSelf > 0)
-        {
-            var playerAttr = Attributes[PropertyAttribute.Self];
-            playerAttr.Ranks -= (uint)item.GearSelf;
-            Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(this, playerAttr));
-        }
+        HandleGearAttributeRatings(item, SpellId.RatingStrength, PropertyInt.GearStrength, SpellCategory.GearRatingStrength);
+        HandleGearAttributeRatings(item, SpellId.RatingEndurance, PropertyInt.GearEndurance, SpellCategory.GearRatingEndurance);
+        HandleGearAttributeRatings(item, SpellId.RatingCoordination, PropertyInt.GearCoordination, SpellCategory.GearRatingCoordination);
+        HandleGearAttributeRatings(item, SpellId.RatingQuickness, PropertyInt.GearQuickness, SpellCategory.GearRatingQuickness);
+        HandleGearAttributeRatings(item, SpellId.RatingFocus, PropertyInt.GearFocus, SpellCategory.GearRatingFocus);
+        HandleGearAttributeRatings(item, SpellId.RatingSelf, PropertyInt.GearSelf, SpellCategory.GearRatingSelf);
 
         return true;
     }
