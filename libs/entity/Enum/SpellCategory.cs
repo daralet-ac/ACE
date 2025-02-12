@@ -769,4 +769,10 @@ public enum SpellCategory : uint
     SigilTrinketCriticalChanceBoost = 771,
     SigilTrinketCriticalDamageBoost = 772,
     SigilTrinketDamageBoost = 773,
+    GearRatingStrength,
+    GearRatingEndurance,
+    GearRatingCoordination,
+    GearRatingQuickness,
+    GearRatingFocus,
+    GearRatingSelf,
 }
