@@ -833,6 +833,23 @@ CREATE TABLE `house_permission` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
+--
+-- Table structure for table `account_session_log`
+--
+
+DROP TABLE IF EXISTS `account_session_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `account_session_log` (
+`id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+`account_id` INT UNSIGNED NOT NULL,
+`account_name` VARCHAR(50) NOT NULL,
+`session_ip` VARCHAR(45) NOT NULL,
+`login_date_time` DATETIME NOT NULL,
+PRIMARY KEY (`id`)
+) ENGINE=INNODB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;

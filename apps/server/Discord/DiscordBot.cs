@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using ACE.Common;
+using ACE.Database;
 using ACE.Server.Managers;
 using Discord;
 using Discord.Interactions;
@@ -50,6 +51,7 @@ public class DiscordBot
         await _services.GetRequiredService<InteractionHandler>().InitializeAsync();
 
         _client.Ready += CreatePopulationChannelUpdateTimer;
+        _client.Ready += CreateUniquePopulationChannelUpdateTimer;
         _client.Ready += CreateDayNightCycleChannelUpdateTimer;
 
         await _client.LoginAsync(TokenType.Bot, _configuration.GetValue<string>("Token"));
@@ -86,7 +88,7 @@ public class DiscordBot
         }
 
         var oldChannelName = channel.Name;
-        var newChannelName = $"Population: \ud83d\udfe2 {PlayerManager.GetOnlineCount()}";
+        var newChannelName = $"Population: \ud83d\udfe2 {PlayerManager.GetOnlineCount()})";
         if (string.Equals(oldChannelName, newChannelName))
         {
             return;
@@ -102,6 +104,59 @@ public class DiscordBot
         {
             await channel.ModifyAsync(prop => prop.Name = newChannelName);
             _log.Information("Population channel name updated.");
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, ex.Message);
+        }
+    }
+
+    private Task CreateUniquePopulationChannelUpdateTimer()
+    {
+        var updateInterval = _configuration
+            .GetSection("StatChannels")
+            .GetSection("UniquePop")
+            .GetValue<double>("UpdateInterval");
+
+        var timer = new Timer { AutoReset = true, Interval = updateInterval };
+
+        timer.Elapsed += DoUniquePopulationChannelUpdate;
+
+        timer.Start();
+
+        return Task.CompletedTask;
+    }
+
+    private async void DoUniquePopulationChannelUpdate(object sender, ElapsedEventArgs e)
+    {
+        var uniquePopulationChannelId = _configuration
+            .GetSection("StatChannels")
+            .GetSection("UniquePop")
+            .GetValue<ulong>("ChannelId");
+        if (await _client.GetChannelAsync(uniquePopulationChannelId) is not IVoiceChannel channel)
+        {
+            return;
+        }
+
+        var uniqueIpsOneDay = DatabaseManager.Shard.BaseDatabase.GetUniqueIPsInTheLast(TimeSpan.FromHours(24));
+
+        var oldChannelName = channel.Name;
+        var newChannelName = $"Unique Pop (24h): {uniqueIpsOneDay})";
+        if (string.Equals(oldChannelName, newChannelName))
+        {
+            return;
+        }
+
+        _log.Information(
+            "Updating population channel name. Old: {OldPopulationChannelName} | New: {NewPopulationChannelName}",
+            oldChannelName,
+            newChannelName
+        );
+
+        try
+        {
+            await channel.ModifyAsync(prop => prop.Name = newChannelName);
+            _log.Information("Unique population channel name updated.");
         }
         catch (Exception ex)
         {

@@ -1340,4 +1340,40 @@ public class ShardDatabase
             rwLock.ExitReadLock();
         }
     }
+
+    public void LogAccountSessionStart(uint accountId, string accountName, string sessionIp)
+    {
+        var logEntry = new AccountSessionLog();
+
+        try
+        {
+            logEntry.AccountId = accountId;
+            logEntry.AccountName = accountName;
+            logEntry.SessionIp = sessionIp;
+            logEntry.LoginDateTime = DateTime.Now;
+
+            using (var context = new ShardDbContext())
+            {
+                context.AccountSessions.Add(logEntry);
+                context.SaveChanges();
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Error($"Exception in LogAccountSessionStart saving session log data to DB. Ex: {ex}");
+        }
+    }
+
+    public virtual int GetUniqueIPsInTheLast(TimeSpan timeSpan)
+    {
+        var since = DateTime.Now - timeSpan;
+
+        using var context = new ShardDbContext();
+
+        var count = context.AccountSessions
+            .Where(a => a.LoginDateTime > since)
+            .GroupBy(a => a.SessionIp).Count();
+
+        return count;
+    }
 }
