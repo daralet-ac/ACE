@@ -88,7 +88,7 @@ public class DiscordBot
         }
 
         var oldChannelName = channel.Name;
-        var newChannelName = $"Population: \ud83d\udfe2 {PlayerManager.GetOnlineCount()})";
+        var newChannelName = $"Population: \ud83d\udfe2 {PlayerManager.GetOnlineCount()}";
         if (string.Equals(oldChannelName, newChannelName))
         {
             return;
@@ -141,7 +141,7 @@ public class DiscordBot
         var uniqueIpsOneDay = DatabaseManager.Shard.BaseDatabase.GetUniqueIPsInTheLast(TimeSpan.FromHours(24));
 
         var oldChannelName = channel.Name;
-        var newChannelName = $"Unique Pop (24h): {uniqueIpsOneDay})";
+        var newChannelName = $"Unique Pop (24h): {uniqueIpsOneDay}";
         if (string.Equals(oldChannelName, newChannelName))
         {
             return;
