@@ -803,7 +803,12 @@ public static class DefaultPropertyManager
         ("debug_level_scaling_system", new Property<bool>(false, "enable this to see level scaling system console logging")),
         ("banking_system_logging", new Property<bool>(true, "enable this to see banking system console logging")),
         ("bypass_crafting_checks", new Property<bool>(false, "enable this to allow players to succeed at crafting recipes without needing the skill.")),
-        ("create_corpse_on_player_death", new Property<bool>(true, "disable this to prevent players from creating a corpse on death.")));
+        ("create_corpse_on_player_death", new Property<bool>(true, "disable this to prevent players from creating a corpse on death.")),
+        ("pop_show_current", new Property<bool>(true, "")),
+        ("pop_show_24_hours", new Property<bool>(true, "")),
+        ("pop_show_7_days", new Property<bool>(true, "")),
+        ("pop_show_30_days", new Property<bool>(true, "")));
+
 
     public static readonly ReadOnlyDictionary<string, Property<long>> DefaultLongProperties = DictOf(
         ("char_delete_time", new Property<long>(3600, "the amount of time in seconds a deleted character can be restored")),

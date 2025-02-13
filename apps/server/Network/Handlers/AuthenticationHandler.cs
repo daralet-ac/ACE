@@ -307,6 +307,15 @@ public static class AuthenticationHandler
 
         session.SetAccount(account.AccountId, account.AccountName, (AccessLevel)account.AccessLevel);
         session.State = SessionState.AuthConnectResponse;
+
+        try
+        {
+            DatabaseManager.Shard.LogAccountSessionStart(session.AccountId, session.Account, session.EndPointC2S.Address.ToString());
+        }
+        catch(Exception ex)
+        {
+            _log.Error($"Exception in AuthenticationHandler.AccountSelectCallback logging account session start. Ex: {ex}");
+        }
     }
 
     public static void HandleConnectResponse(Session session)

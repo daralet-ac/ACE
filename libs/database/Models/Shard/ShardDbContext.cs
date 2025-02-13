@@ -89,6 +89,8 @@ public partial class ShardDbContext : DbContext
 
     public virtual DbSet<HousePermission> HousePermission { get; set; }
 
+    public virtual DbSet<AccountSessionLog> AccountSessions { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -1356,6 +1358,22 @@ public partial class ShardDbContext : DbContext
                 .WithMany(p => p.HousePermission)
                 .HasForeignKey(d => d.HouseId)
                 .HasConstraintName("biota_Id_house_Id");
+        });
+
+        modelBuilder.Entity<AccountSessionLog>(entity =>
+        {
+            entity.HasKey(e => e.Id)
+                .HasName("PRIMARY");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.ToTable("account_session_log");
+            entity.Property(e => e.AccountId)
+                .HasColumnName("account_id");
+            entity.Property(e => e.AccountName)
+                .HasColumnName("account_name");
+            entity.Property(e => e.SessionIp)
+                .HasColumnName("session_ip");
+            entity.Property(e => e.LoginDateTime)
+                .HasColumnName("login_date_time");
         });
 
         OnModelCreatingPartial(modelBuilder);

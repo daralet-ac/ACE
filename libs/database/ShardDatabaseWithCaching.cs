@@ -234,4 +234,24 @@ public class ShardDatabaseWithCaching : ShardDatabase
 
         return base.RemoveBiota(id);
     }
+
+    private Dictionary<TimeSpan, (int Count, DateTime CachedTime)> UniqueIPsCountCache = new Dictionary<TimeSpan, (int Count, DateTime CachedTime)>();
+    public override int GetUniqueIPsInTheLast(TimeSpan timeSpan)
+    {
+        if (UniqueIPsCountCache.TryGetValue(timeSpan, out var value))
+        {
+            if (value.CachedTime + TimeSpan.FromMinutes(1) > DateTime.Now)
+            {
+                return value.Count;
+            }
+
+            UniqueIPsCountCache.Remove(timeSpan);
+        }
+
+        var count = base.GetUniqueIPsInTheLast(timeSpan);
+
+        UniqueIPsCountCache.Add(timeSpan, (count, DateTime.Now));
+
+        return count;
+    }
 }

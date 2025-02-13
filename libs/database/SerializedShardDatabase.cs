@@ -312,4 +312,21 @@ public class SerializedShardDatabase
             })
         );
     }
+
+    public void LogAccountSessionStart(uint accountId, string accountName, string sessionIp)
+    {
+        _queue.Add(new Task(() =>
+        {
+            BaseDatabase.LogAccountSessionStart(accountId, accountName, sessionIp);
+        }));
+    }
+
+    public void GetUniqueIPsInTheLast(TimeSpan timeSpan, Action<int> callback)
+    {
+        _queue.Add(new Task(() =>
+        {
+            var result = BaseDatabase.GetUniqueIPsInTheLast(timeSpan);
+            callback?.Invoke(result);
+        }));
+    }
 }
