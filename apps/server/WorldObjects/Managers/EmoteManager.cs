@@ -1732,12 +1732,62 @@ public class EmoteManager
 
                 break;
 
+            case EmoteType.ResetAttributeXp:
+
+                if (emote.Stat is null || player is null)
+                {
+                    _log.Error("emote.Stat or Player is null for {ResetGem}.", WorldObject.Name);
+                    break;
+                }
+
+                var propertyAttribute = (PropertyAttribute)emote.Stat;
+
+                if ((int)propertyAttribute > 6)
+                {
+                    _log.Error("emote.Stat is out of range for {ResetGem}. Should be 1-6.", WorldObject.Name);
+                    break;
+                }
+
+                player.RefundXP(player.Attributes[propertyAttribute].ExperienceSpent);
+                player.Attributes[propertyAttribute].Ranks = 0;
+                player.Attributes[propertyAttribute].ExperienceSpent = 0;
+                player.Session.Network.EnqueueSend(new GameMessagePrivateUpdateAttribute(player, player.Attributes[propertyAttribute]));
+
+                player.SendMessage($"You successfully reset your {propertyAttribute} attribute to its innate state. All experience spent on the attribute has been restored.");
+
+                break;
+
             case EmoteType.ResetHomePosition:
 
                 if (WorldObject.Location != null)
                 {
                     WorldObject.Home = new Position(WorldObject.Location);
                 }
+
+                break;
+
+            case EmoteType.ResetVitalXp:
+
+                if (emote.Stat is null || player is null)
+                {
+                    _log.Error("emote.Stat or Player is null for {ResetGem}.", WorldObject.Name);
+                    break;
+                }
+
+                var propertyVital = (PropertyAttribute2nd)emote.Stat;
+
+                if ((int)propertyVital > 6)
+                {
+                    _log.Error("emote.Stat is out of range for {ResetGem}. Should be 1, 3, or 5.", WorldObject.Name);
+                    break;
+                }
+
+                player.RefundXP(player.Vitals[propertyVital].ExperienceSpent);
+                player.Vitals[propertyVital].Ranks = 0;
+                player.Vitals[propertyVital].ExperienceSpent = 0;
+                player.Session.Network.EnqueueSend(new GameMessagePrivateUpdateVital(player, player.Vitals[propertyVital]));
+
+                player.SendMessage($"You successfully reset your {propertyVital.ToString().Remove(0,3)} attribute to its innate state. All experience spent on the attribute has been restored.");
 
                 break;
 
