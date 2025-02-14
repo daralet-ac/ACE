@@ -417,6 +417,11 @@ partial class Player
 
     private void HandleGearAttributeRatings(WorldObject item, SpellId spellId, PropertyInt propertyInt, SpellCategory spellCategory)
     {
+        if (ItemDoesNotHaveGearRating(item, propertyInt))
+        {
+            return;
+        }
+
         var totalRating = GetEquippedAndActivatedItemRatingSum(propertyInt);
 
         if (totalRating > 0 && EnchantmentManager.GetEnchantment((uint)spellId) is null)
@@ -438,6 +443,27 @@ partial class Player
             enchantment.StatModValue = totalRating;
             enchantment.Duration = -1;
             Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, enchantment)));
+        }
+    }
+
+    private bool ItemDoesNotHaveGearRating(WorldObject item, PropertyInt propertyInt)
+    {
+        switch (propertyInt)
+        {
+            case PropertyInt.GearStrength:
+                return item.GearStrength is null or 0;
+            case PropertyInt.GearEndurance:
+                return item.GearEndurance is null or 0;
+            case PropertyInt.GearCoordination:
+                return item.GearCoordination is null or 0;
+            case PropertyInt.GearQuickness:
+                return item.GearQuickness is null or 0;
+            case PropertyInt.GearFocus:
+                return item.GearFocus is null or 0;
+            case PropertyInt.GearSelf:
+                return item.GearSelf is null or 0;
+            default:
+                return false;
         }
     }
 
@@ -2918,35 +2944,6 @@ partial class Player
             return WeenieError.YouDoNotOwnThatItem; // Unsure of the exact message
         }
 
-        if (item.ArmorWeightClass != (int)ACE.Entity.Enum.ArmorWeightClass.None)
-        {
-            var req = item.WeightClassReqAmount ?? 0;
-            var attributeTotal = 0;
-
-            if (item.ArmorWeightClass == (int)ACE.Entity.Enum.ArmorWeightClass.Cloth)
-            {
-                Attributes.TryGetValue(PropertyAttribute.Focus, out var focus);
-                Attributes.TryGetValue(PropertyAttribute.Self, out var self);
-                attributeTotal = (int)Math.Max(focus.Base, self.Base);
-            }
-            else if (item.ArmorWeightClass == (int)ACE.Entity.Enum.ArmorWeightClass.Light)
-            {
-                Attributes.TryGetValue(PropertyAttribute.Coordination, out var coordination);
-                Attributes.TryGetValue(PropertyAttribute.Quickness, out var quickness);
-                attributeTotal = (int)Math.Max(coordination.Base, quickness.Base);
-            }
-            else if (item.ArmorWeightClass == (int)ACE.Entity.Enum.ArmorWeightClass.Heavy)
-            {
-                Attributes.TryGetValue(PropertyAttribute.Strength, out var strength);
-                Attributes.TryGetValue(PropertyAttribute.Endurance, out var endurance);
-                attributeTotal = (int)Math.Max(strength.Base, endurance.Base);
-            }
-
-            if (attributeTotal < req)
-            {
-                return WeenieError.SkillTooLow;
-            }
-        }
         var result = CheckWieldRequirement(item.WieldRequirements, item.WieldSkillType, item.WieldDifficulty);
         if (result != WeenieError.None)
         {
@@ -3011,7 +3008,7 @@ partial class Player
 
                 // verify primary attribute - current / buffed
                 Attributes.TryGetValue((PropertyAttribute)skillOrAttribute, out var attribute);
-                if (attribute.Current < difficulty)
+                if (attribute?.Current < difficulty)
                 {
                     return WeenieError.SkillTooLow;
                 }
@@ -3022,7 +3019,10 @@ partial class Player
 
                 // verify primary attribute - base
                 Attributes.TryGetValue((PropertyAttribute)skillOrAttribute, out attribute);
-                if (attribute.Base < difficulty)
+
+                var rating = GetAttributeRating(skillOrAttribute);
+
+                if (attribute?.Base + rating < difficulty)
                 {
                     return WeenieError.SkillTooLow;
                 }
@@ -3033,7 +3033,7 @@ partial class Player
 
                 // verify vital - current maxvalue
                 Vitals.TryGetValue((PropertyAttribute2nd)skillOrAttribute, out var vital);
-                if (vital.MaxValue < difficulty)
+                if (vital?.MaxValue < difficulty)
                 {
                     return WeenieError.SkillTooLow;
                 }
@@ -3044,7 +3044,7 @@ partial class Player
 
                 // verify vital - base
                 Vitals.TryGetValue((PropertyAttribute2nd)skillOrAttribute, out vital);
-                if (vital.Base < difficulty)
+                if (vital?.Base < difficulty)
                 {
                     return WeenieError.SkillTooLow;
                 }
@@ -3117,6 +3117,27 @@ partial class Player
         }
 
         return WeenieError.None;
+    }
+
+    private int GetAttributeRating(int skillOrAttribute)
+    {
+        switch ((PropertyAttribute)skillOrAttribute)
+        {
+            case PropertyAttribute.Strength:
+                return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearStrength);
+            case PropertyAttribute.Endurance:
+                return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearEndurance);
+            case PropertyAttribute.Coordination:
+                return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCoordination);
+            case PropertyAttribute.Quickness:
+                return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearQuickness);
+            case PropertyAttribute.Focus:
+                return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFocus);
+            case PropertyAttribute.Self:
+                return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelf);
+            default:
+                return 0;
+        }
     }
 
     // =========================================
