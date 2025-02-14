@@ -152,4 +152,6 @@ public enum EmoteType
     StampQuestForAllFellows = 10014,
     AdjustServerPropertyLong = 10015,
     InqServerPropertyLong = 10016,
+    ResetAttributeXp = 10017,
+    ResetVitalXp = 10018,
 }
