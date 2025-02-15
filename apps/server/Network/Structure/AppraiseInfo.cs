@@ -781,6 +781,7 @@ public class AppraiseInfo
         SetWardCleavingUseLongText(wo);
 
         SetStaminaReductionUseLongText(wo);
+        SetNoCompsRequiredSchoolUseLongText(wo);
 
         SetGearRatingText(PropertyInt.GearStrength, "Mighty Thews", "Grants a +(ONE) bonus to current Strength.");
         SetGearRatingText(PropertyInt.GearEndurance, "Perseverance", "Grants a +(ONE) bonus to current Endurance.");
@@ -1897,6 +1898,39 @@ public class AppraiseInfo
         _additionalPropertiesLongDescriptionsText +=
             $"~ Ward Rending: Increases ward ignored by +{amountFormatted}%, additively. " +
             $"Value is based on wielder attack skill (20% to 40%).\n";
+    }
+
+    private void SetNoCompsRequiredSchoolUseLongText(WorldObject wo)
+    {
+        if (!PropertiesInt.TryGetValue(PropertyInt.NoCompsRequiredForMagicSchool, out var noCompsForPortalSpells) ||
+            noCompsForPortalSpells is 0)
+        {
+            return;
+        }
+
+        switch (noCompsForPortalSpells)
+        {
+            case (int)MagicSchool.WarMagic:
+                _additionalPropertiesList.Add("War Primacy");
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ War Primacy: War Magic spells cast do not require or consume components. Spells from other schools cannot be cast.";
+                break;
+            case (int)MagicSchool.LifeMagic:
+                _additionalPropertiesList.Add("Life Primacy");
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ Life Primacy: Life Magic spells cast do not require or consume components. Spells from other schools cannot be cast.";
+                break;
+            case (int)MagicSchool.PortalMagic:
+                _additionalPropertiesList.Add("Portal Primacy");
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ Portal Primacy: Portal Magic spells cast do not require or consume components. Spells from other schools cannot be cast.";
+                break;
+        }
+
+
+        _hasExtraPropertiesText = true;
+        _hasAdditionalProperties = true;
+
     }
 
     private void SetProtectionLevelsUseText(WorldObject wo)
