@@ -405,6 +405,9 @@ partial class Player
             manaScarab.OnEquip(this);
         }
 
+        // handle special cases
+        OnEquipNoCompsForPortalSpellsItem(item);
+
         HandleGearAttributeRatings(item, SpellId.RatingStrength, PropertyInt.GearStrength, SpellCategory.GearRatingStrength);
         HandleGearAttributeRatings(item, SpellId.RatingEndurance, PropertyInt.GearEndurance, SpellCategory.GearRatingEndurance);
         HandleGearAttributeRatings(item, SpellId.RatingCoordination, PropertyInt.GearCoordination, SpellCategory.GearRatingCoordination);
@@ -413,6 +416,23 @@ partial class Player
         HandleGearAttributeRatings(item, SpellId.RatingSelf, PropertyInt.GearSelf, SpellCategory.GearRatingSelf);
 
         return true;
+    }
+
+    private void OnEquipNoCompsForPortalSpellsItem(WorldObject item)
+    {
+        if (item is {NoCompsRequiredForMagicSchool: null})
+        {
+            return;
+        }
+
+        Session.Player.SpellComponentsRequired = false;
+        Session.Player.EnqueueBroadcast(
+            new GameMessagePublicUpdatePropertyBool(
+                Session.Player,
+                PropertyBool.SpellComponentsRequired,
+                Session.Player.SpellComponentsRequired
+            )
+        );
     }
 
     private void HandleGearAttributeRatings(WorldObject item, SpellId spellId, PropertyInt propertyInt, SpellCategory spellCategory)
@@ -631,6 +651,8 @@ partial class Player
             }
         }
 
+        OnDequipNoCompsForPortalSpellsItem(item);
+
         HandleGearAttributeRatings(item, SpellId.RatingStrength, PropertyInt.GearStrength, SpellCategory.GearRatingStrength);
         HandleGearAttributeRatings(item, SpellId.RatingEndurance, PropertyInt.GearEndurance, SpellCategory.GearRatingEndurance);
         HandleGearAttributeRatings(item, SpellId.RatingCoordination, PropertyInt.GearCoordination, SpellCategory.GearRatingCoordination);
@@ -639,6 +661,23 @@ partial class Player
         HandleGearAttributeRatings(item, SpellId.RatingSelf, PropertyInt.GearSelf, SpellCategory.GearRatingSelf);
 
         return true;
+    }
+
+    private void OnDequipNoCompsForPortalSpellsItem(WorldObject item)
+    {
+        if (item is {NoCompsRequiredForMagicSchool: null})
+        {
+            return;
+        }
+
+        Session.Player.SpellComponentsRequired = true;
+        Session.Player.EnqueueBroadcast(
+            new GameMessagePublicUpdatePropertyBool(
+                Session.Player,
+                PropertyBool.SpellComponentsRequired,
+                Session.Player.SpellComponentsRequired
+            )
+        );
     }
 
     /// <summary>

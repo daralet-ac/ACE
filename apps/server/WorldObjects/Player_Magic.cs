@@ -654,7 +654,15 @@ partial class Player
         // portal spells never fizzle
         if (spell.School == MagicSchool.PortalMagic)
         {
-            castingPreCheckStatus = CastingPreCheckStatus.Success;
+            castingPreCheckStatus = GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.PortalMagic, ItemCurMana: 0 } ? CastingPreCheckStatus.CastFailed : CastingPreCheckStatus.Success;
+        }
+
+        // casting non-portal spells with a NoCompsForPortalSpells caster will always fizzle
+        if (spell.School is not MagicSchool.WarMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.WarMagic}
+            || spell.School is not MagicSchool.LifeMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.LifeMagic}
+            || spell.School is not MagicSchool.PortalMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.PortalMagic})
+        {
+            castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
         }
 
         // build-in spells never fizzle
@@ -1193,6 +1201,47 @@ partial class Player
             default:
                 EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.Fizzle, 0.5f));
                 SendWeenieError(WeenieError.YourSpellFizzled);
+Console.WriteLine(caster?.NoCompsRequiredForMagicSchool);
+                switch (caster.NoCompsRequiredForMagicSchool)
+                {
+                    case (int)MagicSchool.WarMagic:
+                        if (spell.School is MagicSchool.LifeMagic or MagicSchool.PortalMagic)
+                        {
+                            SendMessage($"{caster.Name} can only cast War Magic spells.");
+                        }
+
+                        if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.WarMagic)
+                        {
+                            SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
+                        }
+
+                        break;
+                    case (int)MagicSchool.LifeMagic:
+                        if (spell.School is MagicSchool.WarMagic or MagicSchool.PortalMagic)
+                        {
+                            SendMessage($"{caster.Name} can only cast Life Magic spells.");
+                        }
+
+                        if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.LifeMagic)
+                        {
+                            SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
+                        }
+
+                        break;
+                    case (int)MagicSchool.PortalMagic:
+                        if (spell.School is MagicSchool.LifeMagic or MagicSchool.WarMagic)
+                        {
+                            SendMessage($"{caster.Name} can only cast Portal Magic spells.");
+                        }
+
+                        if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.PortalMagic)
+                        {
+                            SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
+                        }
+
+                        break;
+                }
+
                 break;
         }
 

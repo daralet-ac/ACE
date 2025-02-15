@@ -9018,4 +9018,20 @@ partial class WorldObject
             }
         }
     }
+
+    public int? NoCompsRequiredForMagicSchool
+    {
+        get => GetProperty(PropertyInt.NoCompsRequiredForMagicSchool);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.NoCompsRequiredForMagicSchool);
+            }
+            else
+            {
+                SetProperty(PropertyInt.NoCompsRequiredForMagicSchool, value.Value);
+            }
+        }
+    }
 }

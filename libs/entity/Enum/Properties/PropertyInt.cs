@@ -829,6 +829,7 @@ public enum PropertyInt : ushort
     AltCurrencyValue = 470,
     GearYellowFury = 471,
     GearBlueFury = 472,
+    NoCompsRequiredForMagicSchool = 473,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
