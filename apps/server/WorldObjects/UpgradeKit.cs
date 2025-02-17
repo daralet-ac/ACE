@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
@@ -261,8 +262,8 @@ public class UpgradeKit : Stackable
             var currentRequiredLevel = target.WieldDifficulty ?? 1;
             var newRequiredLevel = GetRequiredLevelFromPlayerTier((player));
 
-            var currentTier = LootGenerationFactory.GetTierFromRequiredLevel(currentRequiredLevel);
-            var newTier = LootGenerationFactory.GetTierFromRequiredLevel(newRequiredLevel);
+            var currentTier = LootGenerationFactory.GetTierFromRequiredLevel(currentRequiredLevel) - 1;
+            var newTier = LootGenerationFactory.GetTierFromRequiredLevel(newRequiredLevel) - 1;
 
             ScaleUpJewelryWardLevel(target, currentTier, newTier);
             ScaleUpJewelryRating(PropertyInt.GearMaxHealth, target, currentTier, newTier);
@@ -607,7 +608,8 @@ public class UpgradeKit : Stackable
 
         var jewelryBaseWardLevelPerTier = LootTables.JewelryBaseWardLeverPerTier;
 
-        var currentBaseLevelFromTier = jewelryBaseWardLevelPerTier[currentTier];
+        var necklaceMultiplier = target.ValidLocations is EquipMask.Jewelry ? 2.0f : 1.0f;
+        var currentBaseLevelFromTier = jewelryBaseWardLevelPerTier[currentTier] * necklaceMultiplier;
         var currentRange = jewelryBaseWardLevelPerTier[currentTier + 1] - jewelryBaseWardLevelPerTier[currentTier];
         var currentRoll = currentBaseStat - currentBaseLevelFromTier;
 
@@ -736,21 +738,8 @@ public class UpgradeKit : Stackable
     /// </summary>
     private static void ScaleUpSpecialRatings(WorldObject target, int newTier)
     {
-        var ratingList = new List<PropertyInt>();
+        var ratingList = (from id in GearRatingIds let ratingValue = target.GetProperty(id) where ratingValue != null select id).ToList();
         // var totalRatings = 0; TODO: To be used if jewel ratings get added to mutable quest item system
-
-        foreach (var id in GearRatingIds)
-        {
-            var ratingValue = target.GetProperty(id);
-
-            if (ratingValue == null)
-            {
-                continue;
-            }
-
-            ratingList.Add(id);
-            //totalRatings += ratingValue.Value;
-        }
 
         if (ratingList.Count == 0)
         {
