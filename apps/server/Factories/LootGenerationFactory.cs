@@ -1115,14 +1115,20 @@ public static partial class LootGenerationFactory
         }
 
         // Armor Base Stats
-        if (wo.ItemType is ItemType.Armor or ItemType.Clothing)
+        if (wo.ItemType is ItemType.Armor or ItemType.Clothing or ItemType.Jewelry)
         {
             if (wo.ArmorLevel != null)
             {
                 var baseStat = wo.ArmorLevel.Value;
-                var bonusRange = (baseStat * 1.1f) - baseStat;
+                var baseStatPerTier = baseStat;
+
+                if (tier > 0)
+                {
+                    baseStatPerTier /= tier;
+                }
+
                 var roll = GetDiminishingRoll(null, lootQuality);
-                var bonus = bonusRange * roll;
+                var bonus = baseStatPerTier * roll;
                 var final = (int)Math.Round(baseStat + bonus);
 
                 wo.SetProperty(PropertyInt.ArmorLevel, final);
@@ -1131,9 +1137,15 @@ public static partial class LootGenerationFactory
             if (wo.WardLevel != null)
             {
                 var baseStat = wo.WardLevel.Value;
-                var bonusRange = (baseStat * 1.1f) - baseStat;
+                var baseStatPerTier = baseStat;
+
+                if (tier > 0)
+                {
+                    baseStatPerTier /= tier;
+                }
+
                 var roll = GetDiminishingRoll(null, lootQuality);
-                var bonus = bonusRange * roll;
+                var bonus = baseStatPerTier * roll;
                 var final = (int)Math.Round(baseStat + bonus);
 
                 wo.SetProperty(PropertyInt.WardLevel, final);
@@ -2874,22 +2886,22 @@ public static partial class LootGenerationFactory
     {
         switch (requiredLevel)
         {
-            case < 10:
-                return 1;
-            case 20:
+            case 10:
                 return 2;
-            case 30:
+            case 20:
                 return 3;
-            case 40:
+            case 30:
                 return 4;
-            case 50:
+            case 40:
                 return 5;
-            case 75:
+            case 50:
                 return 6;
-            case 100:
+            case 75:
                 return 7;
-            default:
+            case 100:
                 return 8;
+            default:
+                return 1;
         }
     }
 

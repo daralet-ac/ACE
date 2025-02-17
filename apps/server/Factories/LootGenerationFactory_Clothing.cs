@@ -197,7 +197,7 @@ public static partial class LootGenerationFactory
             }
         }
 
-        AssignArmorLevel(wo, profile.Tier, armorType);
+        AssignArmorLevel(wo, profile);
 
         // Set Stamina/Mana Penalty
         var mod = GetArmorResourcePenalty(wo) * (wo.ArmorSlots ?? 1);
@@ -238,8 +238,10 @@ public static partial class LootGenerationFactory
     /// Used values given at https://asheron.fandom.com/wiki/Loot#Armor_Levels for setting the AL mod values
     /// so as to not exceed the values listed in that table
     /// </summary>
-    private static void AssignArmorLevel(WorldObject wo, int tier, LootTables.ArmorType armorType)
+    private static void AssignArmorLevel(WorldObject wo, TreasureDeath treasureDeath)
     {
+        var tier = treasureDeath.Tier;
+
         if (wo.ArmorType == null)
         {
             _log.Warning($"[LOOT] Missing PropertyInt.ArmorType on loot item {wo.WeenieClassId} - {wo.Name}");
@@ -323,12 +325,9 @@ public static partial class LootGenerationFactory
                 break;
         }
 
-        // Add some variance (+/- 10%)
-        var variance = 1.0f + ThreadSafeRandom.Next(-0.1f, 0.1f);
-
         // Final Calculation
-        var newArmorLevel = baseArmorLevel * (tier - 1) * variance;
-        var newWardLevel = baseWardLevel * (tier - 1) * armorSlots * variance;
+        var newArmorLevel = baseArmorLevel * (tier - 1) + GetDiminishingRoll(treasureDeath) * baseArmorLevel;
+        var newWardLevel = baseWardLevel * (tier - 1) * armorSlots + GetDiminishingRoll(treasureDeath) * baseWardLevel;
 
         // Assign levels
         wo.SetProperty(PropertyInt.ArmorLevel, (int)newArmorLevel);
@@ -453,7 +452,7 @@ public static partial class LootGenerationFactory
         // looks like society armor always had impen on it
         AssignMagic(wo, profile, roll, true, isMagical);
 
-        AssignArmorLevel(wo, profile.Tier, LootTables.ArmorType.SocietyArmor);
+        AssignArmorLevel(wo, profile);
 
         wo.LongDesc = GetLongDesc(wo);
 
