@@ -205,7 +205,7 @@ public static class SkillExtensions
             case Skill.Jump:
                 return "Jump";
             case Skill.Thievery:
-                return "Lockpick";
+                return "Thievery";
             case Skill.Run:
                 return "Run";
             case Skill.Awareness:
@@ -213,13 +213,13 @@ public static class SkillExtensions
             case Skill.ArmsAndArmorRepair:
                 return "Arms And Armor Repair";
             case Skill.Perception:
-                return "Assess Creature";
+                return "Perception";
             case Skill.Blacksmithing:
-                return "Weapon Tinkering";
+                return "Blacksmithing";
             case Skill.Tailoring:
-                return "Armor Tinkering";
+                return "Tailoring";
             case Skill.Spellcrafting:
-                return "Magic Item Tinkering";
+                return "Spellcrafting";
             case Skill.CreatureEnchantment:
                 return "Creature Enchantment";
             case Skill.LifeMagic:
@@ -231,7 +231,7 @@ public static class SkillExtensions
             case Skill.Loyalty:
                 return "Loyalty";
             case Skill.Woodworking:
-                return "Fletching";
+                return "Woodworking";
             case Skill.Alchemy:
                 return "Alchemy";
             case Skill.Cooking:
