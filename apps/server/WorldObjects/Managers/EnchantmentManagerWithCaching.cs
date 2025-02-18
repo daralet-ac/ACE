@@ -635,11 +635,11 @@ public class EnchantmentManagerWithCaching : EnchantmentManager
 
     private float? xpBonusCache;
 
-    public override float GetXPBonus()
+    public override float GetXpBonus()
     {
         if (xpBonusCache == null)
         {
-            xpBonusCache = base.GetXPBonus();
+            xpBonusCache = base.GetXpBonus();
         }
 
         return xpBonusCache.Value;

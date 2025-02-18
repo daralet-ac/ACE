@@ -6415,6 +6415,7 @@ public enum SpellId : uint
     RatingQuickness,
     RatingFocus,
     RatingSelf,
+    ExplorerInspiration,
 
     NumSpells = 8192,
 

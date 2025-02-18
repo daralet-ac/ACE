@@ -1072,7 +1072,7 @@ partial class Player
     /// </summary>
     public float GetXPAndLuminanceModifier(XpType xpType)
     {
-        var enchantmentBonus = EnchantmentManager.GetXPBonus();
+        var enchantmentBonus = EnchantmentManager.GetXpBonus();
 
         var augBonus = 0.0f;
         if (xpType == XpType.Kill && AugmentationBonusXp > 0)

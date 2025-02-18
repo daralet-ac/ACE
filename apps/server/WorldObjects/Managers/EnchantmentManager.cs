@@ -962,15 +962,18 @@ public class EnchantmentManager
     /// <summary>
     /// Returns the additive bonus from XP enchantments, such as Augmented Understanding
     /// </summary>
-    public virtual float GetXPBonus()
+    public virtual float GetXpBonus()
     {
-        var enchantments = GetEnchantments(SpellCategory.CampfireRested);
+        var activeXpEnchantments = new List<PropertiesEnchantmentRegistry>
+        {
+            GetHighestPowerEnchantment(GetEnchantments(SpellCategory.TrinketXPRaising)),
+            GetHighestPowerEnchantment(GetEnchantments(SpellCategory.CampfireRested)),
+            GetHighestPowerEnchantment(GetEnchantments(SpellCategory.ExplorerInspiration))
+        };
 
-        // TODO: temporary code to handle both additive and multiplicative mods
-        // should be additive in database, update when everything is in sync
         var modifier = 0.0f;
 
-        foreach (var enchantment in enchantments.OrderByDescending(i => i.PowerLevel).Take(1))
+        foreach (var enchantment in activeXpEnchantments.Where(enchantment => enchantment is not null))
         {
             if (enchantment.StatModType.HasFlag(EnchantmentTypeFlags.Multiplicative))
             {
@@ -981,7 +984,27 @@ public class EnchantmentManager
                 modifier += enchantment.StatModValue;
             }
         }
+
         return modifier;
+    }
+
+    private static PropertiesEnchantmentRegistry GetHighestPowerEnchantment(List<PropertiesEnchantmentRegistry> enchantmentList)
+    {
+        if (enchantmentList.Count is 0)
+        {
+            return null;
+        }
+
+        var highestPowerEnchantment = enchantmentList[0];
+        var power = 0u;
+
+        foreach (var activeEnchantment in enchantmentList.Where(enchantmentRegistry => enchantmentRegistry.PowerLevel > power))
+        {
+            highestPowerEnchantment = activeEnchantment;
+            power = activeEnchantment.PowerLevel;
+        }
+
+        return highestPowerEnchantment;
     }
 
     /// <summary>
