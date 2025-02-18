@@ -565,7 +565,6 @@ partial class WorldObject
 
         if (weapon.DamageMod != null)
         {
-            Console.WriteLine((float)weapon.DamageMod.Value);
             return (float)weapon.DamageMod.Value;
         }
 
