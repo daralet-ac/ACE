@@ -551,18 +551,24 @@ partial class WorldObject
     /// </summary>
     public static float GetMissileElementalDamageModifier(WorldObject weapon, DamageType damageType)
     {
-        if (weapon is MissileLauncher && weapon.W_DamageType != DamageType.Undef)
+        if (weapon is not MissileLauncher)
         {
-            var elementalDamageType = weapon.W_DamageType;
-
-            if (elementalDamageType != DamageType.Undef && elementalDamageType == damageType)
-            {
-                if (weapon.DamageMod != null)
-                {
-                    return (float)weapon.DamageMod.Value;
-                }
-            }
+            return 1.0f;
         }
+
+        var elementalDamageType = weapon.W_DamageType;
+
+        if (elementalDamageType is not DamageType.Undef && elementalDamageType != damageType)
+        {
+            return 1.0f;
+        }
+
+        if (weapon.DamageMod != null)
+        {
+            Console.WriteLine((float)weapon.DamageMod.Value);
+            return (float)weapon.DamageMod.Value;
+        }
+
         return 1.0f;
     }
 
