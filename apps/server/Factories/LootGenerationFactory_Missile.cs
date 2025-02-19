@@ -525,7 +525,7 @@ public static partial class LootGenerationFactory
 
         int[] avgQuickPerTier = { 45, 65, 93, 118, 140, 160, 180, 195 };
         var quick = (float)avgQuickPerTier[profile.Tier - 1];
-        var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0)) + (quick / 600);
+        var speedMod = 1.0f + (1 - (wo.WeaponTime.Value / 100.0)) + (quick / 600);
         var effectiveAttacksPerSecond = 1 / (baseAnimLength - reloadAnimLength + (reloadAnimLength / speedMod));
 
         // target weapon hit damage
@@ -555,7 +555,7 @@ public static partial class LootGenerationFactory
         //    $" BaseAnimLength: {baseAnimLength}\n" +
         //    $" WeaponTime: {wo.WeaponTime.Value}\n" +
         //    $" Quick: {quick}\n" +
-        //    $" SpeedMod: {speedMod} FullFormula: 0.8f + ({1 - (wo.WeaponTime.Value /100.0)}) + ({quick / 600})\n" +
+        //    $" SpeedMod: {speedMod} FullFormula: 1.0f + ({1 - (wo.WeaponTime.Value /100.0)}) + ({quick / 600})\n" +
         //    $" AttacksPerSecond: {effectiveAttacksPerSecond}\n" +
         //    $" TargetAvgHitDamage: {targetAvgHitDamage}\n" +
         //    $" AmmoMaxDamage: {ammoMaxDamage} AmmoAvgDamage: {ammoAverageDamage} WeaponVariance: {weaponVariance}\n\n" +
