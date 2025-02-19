@@ -683,23 +683,25 @@ partial class Creature
     /// Returns the animation speed for an attack,
     /// based on the current quickness and weapon speed
     /// </summary>
-    public float GetAnimSpeed(Creature target = null)
+    protected float GetAnimSpeed(Creature target = null)
     {
-        var animSpeed = 1.0f;
         var quickness = Quickness.Current * LevelScaling.GetPlayerAttributeScalar(this, target);
         var weaponSpeed = (float)GetWeaponSpeed(this);
 
-        var minAttackSpeed = 0.8f;
-        var maxAttackSpeed = 2.5f;
+        const float minAttackSpeed = 1.0f;
+        const float maxAttackSpeed = 2.5f;
         var quicknessMod = (quickness / 300.0) / 2.0;
         var weaponSpeedMod = (1 - (weaponSpeed / 100.0));
 
-        animSpeed = (float)Math.Clamp(0.8 + quicknessMod + weaponSpeedMod, minAttackSpeed, maxAttackSpeed);
+        var animSpeed = (float)Math.Clamp(1.0 + quicknessMod + weaponSpeedMod, minAttackSpeed, maxAttackSpeed);
 
-        //Console.WriteLine($"GetAnimSpeed() - {animSpeed}\n" +
-        //    $" -quicknessMod: {quicknessMod} quickness: {quickness}\n" +
-        //    $" -weaponSpeedMod: {weaponSpeedMod} weaponSpeed: {weaponSpeed}");
-
+        // if (Name is "")
+        // {
+        //     Console.WriteLine($"GetAnimSpeed() - {animSpeed}\n" +
+        //                       $" -quicknessMod: {quicknessMod} quickness: {quickness}\n" +
+        //                       $" -weaponSpeedMod: {weaponSpeedMod} weaponSpeed: {weaponSpeed}");
+        // }
+        
         return animSpeed;
     }
 
