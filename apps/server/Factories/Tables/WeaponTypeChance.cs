@@ -43,9 +43,10 @@ public static class WeaponTypeChance
 
     private static ChanceTable<TreasureWeaponType> MissileChances = new ChanceTable<TreasureWeaponType>()
     {
-        (TreasureWeaponType.Bow, 0.34f),
-        (TreasureWeaponType.Crossbow, 0.33f),
-        (TreasureWeaponType.Atlatl, 0.33f),
+        (TreasureWeaponType.Bow, 0.2f),
+        (TreasureWeaponType.Crossbow, 0.2f),
+        (TreasureWeaponType.Atlatl, 0.2f),
+        (TreasureWeaponType.Thrown, 0.4f)
     };
 
     private static ChanceTable<TreasureWeaponType> WarriorChances = new ChanceTable<TreasureWeaponType>(ChanceTableType.Weight)
@@ -54,7 +55,8 @@ public static class WeaponTypeChance
         (TreasureWeaponType.Mace, 1.0f),
         (TreasureWeaponType.Axe, 1.0f),
         (TreasureWeaponType.Spear, 1.0f),
-        (TreasureWeaponType.Thrown, 2.0f),
+        (TreasureWeaponType.TwoHandedWeapon, 2.0f),
+        (TreasureWeaponType.Thrown, 3.0f),
     };
 
     private static ChanceTable<TreasureWeaponType> RogueChances = new ChanceTable<TreasureWeaponType>(ChanceTableType.Weight)
