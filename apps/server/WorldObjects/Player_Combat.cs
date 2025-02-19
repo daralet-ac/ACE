@@ -128,7 +128,7 @@ partial class Player
         }
     }
 
-    public DamageEvent DamageTarget(Creature target, WorldObject damageSource)
+    public DamageEvent DamageTarget(Creature target, WorldObject damageSource, bool cleaveHits = false)
     {
         if (target.Health.Current <= 0)
         {
@@ -152,7 +152,7 @@ partial class Player
             return null;
         }
 
-        var damageEvent = DamageEvent.CalculateDamage(this, target, damageSource);
+        var damageEvent = DamageEvent.CalculateDamage(this, target, damageSource, null, null, cleaveHits);
 
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Aggression);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Shield, (int)SigilTrinketShieldEffect.Aggression);

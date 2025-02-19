@@ -36,6 +36,7 @@ public class DamageEvent
     private float _attributeMod;
     private float _baseDamage;
     private BaseDamageMod _baseDamageMod;
+    private bool _cleaveHits;
     private float _combatAbilityFuryDamageBonus;
     private float _combatAbilityMultishotDamagePenalty;
     private float _combatAbilityProvokeDamageBonus;
@@ -143,21 +144,22 @@ public class DamageEvent
         Creature defender,
         WorldObject damageSource,
         MotionCommand? attackMotion = null,
-        AttackHook attackHook = null
+        AttackHook attackHook = null,
+        bool cleaveHits = false
     )
     {
         var damageEvent = new DamageEvent { _attackMotion = attackMotion, _attackHook = attackHook };
 
         damageSource ??= attacker;
 
-        damageEvent.DoCalculateDamage(attacker, defender, damageSource);
+        damageEvent.DoCalculateDamage(attacker, defender, damageSource, cleaveHits);
 
         damageEvent.HandleLogging(attacker, defender);
 
         return damageEvent;
     }
 
-    private float DoCalculateDamage(Creature attacker, Creature defender, WorldObject damageSource)
+    private float DoCalculateDamage(Creature attacker, Creature defender, WorldObject damageSource, bool cleaveHits = false)
     {
         if (PropertyManager.GetBool("debug_level_scaling_system").Item && (attacker is Player || defender is Player))
         {
@@ -195,8 +197,9 @@ public class DamageEvent
         }
 
         var mitigation = GetMitigation(attacker, defender);
+        var cleaveMod = cleaveHits ? 0.5f : 1.0f;
 
-        Damage = _damageBeforeMitigation * mitigation;
+        Damage = _damageBeforeMitigation * mitigation * cleaveMod;
         _damageMitigated = _damageBeforeMitigation - Damage;
 
         PostDamageMitigationEffects(attacker, defender, damageSource);

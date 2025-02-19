@@ -1675,17 +1675,13 @@ public static partial class LootGenerationFactory
 
         // target dps per tier
         var targetBaseDps = GetWeaponBaseDps(wo.Tier ?? 1);
-        if (wo.CleaveTargets > 0)
-        {
-            targetBaseDps *= 0.6f;
-        }
 
         // animation speed
         var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
 
-        int[] avgQuickPerTier = { 45, 65, 93, 118, 140, 160, 180, 195 };
+        int[] avgQuickPerTier = [45, 65, 93, 118, 140, 160, 180, 195];
         var quick = (float)avgQuickPerTier[profile.Tier - 1];
-        var speedMod = 0.8f + (1 - (wo.WeaponTime.Value / 100.0)) + quick / 600;
+        var speedMod = 1.0f + (1 - (wo.WeaponTime.Value / 100.0)) + quick / 600;
         var effectiveAttacksPerSecond = 1 / (baseAnimLength / speedMod);
 
         if (wo.IsTwoHanded || wo.W_AttackType == AttackType.DoubleStrike)
@@ -1698,7 +1694,7 @@ public static partial class LootGenerationFactory
         }
         else if (wo.W_WeaponType == WeaponType.Thrown)
         {
-            var reloadLength = 0.9777778f;
+            const float reloadLength = 0.9777778f;
             effectiveAttacksPerSecond = 1 / (baseAnimLength - reloadLength + (reloadLength * speedMod));
         }
 
@@ -1710,7 +1706,7 @@ public static partial class LootGenerationFactory
         var averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
 
         // get low-end and high-end max damage range
-        var damageRangePerTier = 0.25;
+        const double damageRangePerTier = 0.25;
         var maximumBaseMaxDamage = (averageBaseMaxDamage * 2) / (1.0 + (1 - damageRangePerTier));
         var minimumBaseMaxDamage = maximumBaseMaxDamage * (1 - damageRangePerTier);
 
@@ -1740,10 +1736,6 @@ public static partial class LootGenerationFactory
 
         // max possible damage (for workmanship)
         targetBaseDps = GetWeaponBaseDps(8);
-        if (wo.CleaveTargets > 1)
-        {
-            targetBaseDps *= 0.6f;
-        }
 
         targetAverageHitDamage = targetBaseDps / effectiveAttacksPerSecond;
         averageBaseMaxDamage = targetAverageHitDamage / ((((1 - weaponVariance) + 1) / 2 * 0.9) + 0.2);
