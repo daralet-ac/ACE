@@ -2216,9 +2216,7 @@ public class EmoteManager
 
                 if (player != null)
                 {
-                    if (
-                        emote.ObjCellId.HasValue
-                        && emote.OriginX.HasValue
+                    if (emote.OriginX.HasValue
                         && emote.OriginY.HasValue
                         && emote.OriginZ.HasValue
                         && emote.AnglesX.HasValue
@@ -2227,40 +2225,62 @@ public class EmoteManager
                         && emote.AnglesW.HasValue
                     )
                     {
-                        if (emote.ObjCellId.Value > 0)
+                        switch (emote.ObjCellId)
                         {
-                            var destination = new Position(
-                                emote.ObjCellId.Value,
-                                emote.OriginX.Value,
-                                emote.OriginY.Value,
-                                emote.OriginZ.Value,
-                                emote.AnglesX.Value,
-                                emote.AnglesY.Value,
-                                emote.AnglesZ.Value,
-                                emote.AnglesW.Value
-                            );
+                            // if ObjCellId is null, teleport to position within current cell
+                            case null:
+                                var destination = new Position(
+                                    WorldObject.Location.Cell,
+                                    emote.OriginX.Value,
+                                    emote.OriginY.Value,
+                                    emote.OriginZ.Value,
+                                    emote.AnglesX.Value,
+                                    emote.AnglesY.Value,
+                                    emote.AnglesZ.Value,
+                                    emote.AnglesW.Value
+                                );
 
-                            WorldObject.AdjustDungeon(destination);
-                            WorldManager.ThreadSafeTeleport(player, destination);
-                        }
-                        else // position is relative to WorldObject's current location
-                        {
-                            var relativeDestination = new Position(WorldObject.Location);
-                            relativeDestination.Pos += new Vector3(
-                                emote.OriginX.Value,
-                                emote.OriginY.Value,
-                                emote.OriginZ.Value
-                            );
-                            relativeDestination.Rotation = new Quaternion(
-                                emote.AnglesX.Value,
-                                emote.AnglesY.Value,
-                                emote.AnglesZ.Value,
-                                emote.AnglesW.Value
-                            );
-                            relativeDestination.LandblockId = new LandblockId(relativeDestination.GetCell());
+                                WorldObject.AdjustDungeon(destination);
+                                WorldManager.ThreadSafeTeleport(player, destination);
+                                break;
+                            case > 0:
+                            {
+                                destination = new Position(
+                                    emote.ObjCellId.Value,
+                                    emote.OriginX.Value,
+                                    emote.OriginY.Value,
+                                    emote.OriginZ.Value,
+                                    emote.AnglesX.Value,
+                                    emote.AnglesY.Value,
+                                    emote.AnglesZ.Value,
+                                    emote.AnglesW.Value
+                                );
 
-                            WorldObject.AdjustDungeon(relativeDestination);
-                            WorldManager.ThreadSafeTeleport(player, relativeDestination);
+                                WorldObject.AdjustDungeon(destination);
+                                WorldManager.ThreadSafeTeleport(player, destination);
+                                break;
+                            }
+                            // position is relative to WorldObject's current location
+                            default:
+                            {
+                                var relativeDestination = new Position(WorldObject.Location);
+                                relativeDestination.Pos += new Vector3(
+                                    emote.OriginX.Value,
+                                    emote.OriginY.Value,
+                                    emote.OriginZ.Value
+                                );
+                                relativeDestination.Rotation = new Quaternion(
+                                    emote.AnglesX.Value,
+                                    emote.AnglesY.Value,
+                                    emote.AnglesZ.Value,
+                                    emote.AnglesW.Value
+                                );
+                                relativeDestination.LandblockId = new LandblockId(relativeDestination.GetCell());
+
+                                WorldObject.AdjustDungeon(relativeDestination);
+                                WorldManager.ThreadSafeTeleport(player, relativeDestination);
+                                break;
+                            }
                         }
                     }
                 }
