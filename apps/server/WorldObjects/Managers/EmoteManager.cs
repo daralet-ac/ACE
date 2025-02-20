@@ -2229,9 +2229,8 @@ public class EmoteManager
                         {
                             // if ObjCellId is null, teleport to position within current cell
                             case null:
-                                var currentCellId = WorldObject.Location.Cell;
                                 var destination = new Position(
-                                    currentCellId,
+                                    WorldObject.Location.Cell,
                                     emote.OriginX.Value,
                                     emote.OriginY.Value,
                                     emote.OriginZ.Value,
