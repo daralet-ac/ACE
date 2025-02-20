@@ -598,6 +598,8 @@ partial class Creature
         MonsterState = State.Return;
         AttackTarget = null;
 
+        _log.Information("Monster_Navigation.MoveToHome() - MonsterState set to State.Return for: {Name} ({WCID})", Name, WeenieClassId);
+
         var home = GetPosition(PositionType.Home);
 
         if (home is null)

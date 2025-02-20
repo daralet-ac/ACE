@@ -78,7 +78,6 @@ partial class Creature
 
         if (MonsterState == State.Return)
         {
-            _log.Information("Monster_Tick - MonsterState == State.Return for: {Name} ({WCID})", Name, WeenieClassId);
             Movement();
             return;
         }
