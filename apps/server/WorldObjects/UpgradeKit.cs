@@ -203,7 +203,9 @@ public class UpgradeKit : Stackable
 
                 ScaleUpDamage(target, weaponSubtype, currentTier, newTier);
                 ScaleUpDamageMod(target, weaponSubtype, currentTier, newTier);
-                ScaleUpElementalDamageMod(target, weaponSubtype, currentTier, newTier);
+                ScaleUpElementalAndRestoMod(target, weaponSubtype, currentTier, newTier);
+                ScaleUpElementalMod(target, weaponSubtype, currentTier, newTier);
+                ScaleUpRestorationMod(target, weaponSubtype, currentTier, newTier);
                 ScaleUpWeaponOffense(target, currentTier, newTier);
                 ScaleUpWeaponPhysicalDefense(target, currentTier, newTier);
                 ScaleUpWeaponMagicDefense(target, currentTier, newTier);
@@ -382,9 +384,9 @@ public class UpgradeKit : Stackable
         target.SetProperty(PropertyFloat.DamageMod, final);
     }
 
-    private static void ScaleUpElementalDamageMod(WorldObject target, LootTables.WeaponSubtype weaponSubtype, int currentTier, int newTier)
+    private static void ScaleUpElementalAndRestoMod(WorldObject target, LootTables.WeaponSubtype weaponSubtype, int currentTier, int newTier)
     {
-        if (target.ElementalDamageMod == null || target.WeaponRestorationSpellsMod == null)
+        if (target is not { ElementalDamageMod: not null, WeaponRestorationSpellsMod: not null })
         {
             return;
         }
@@ -414,6 +416,48 @@ public class UpgradeKit : Stackable
             target.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
             target.SetProperty(PropertyFloat.ElementalDamageMod, 1 + (final - 1) / 2);
         }
+    }
+
+    private static void ScaleUpElementalMod(WorldObject target, LootTables.WeaponSubtype weaponSubtype, int currentTier, int newTier)
+    {
+        if (target is not {WeaponRestorationSpellsMod: null, ElementalDamageMod: not null})
+        {
+            return;
+        }
+
+        var currentBaseStat = target.ElementalDamageMod.Value;
+        var currentTierMinimum = LootTables.GetMissileCasterSubtypeMinimumDamage(weaponSubtype, currentTier);
+        var currentRange = LootTables.GetMissileCasterSubtypeDamageRange(weaponSubtype, currentTier);
+        var currentRoll = currentBaseStat - currentTierMinimum;
+        var rollPercentile = (float)currentRoll / currentRange;
+
+        var newTierMinimum = LootTables.GetMissileCasterSubtypeMinimumDamage(weaponSubtype, newTier);
+        var newTierRange = LootTables.GetMissileCasterSubtypeDamageRange(weaponSubtype, newTier);
+        var amountAboveMinimum = newTierRange * rollPercentile;
+        var final = newTierMinimum + amountAboveMinimum;
+
+        target.SetProperty(PropertyFloat.ElementalDamageMod, final);
+    }
+
+    private static void ScaleUpRestorationMod(WorldObject target, LootTables.WeaponSubtype weaponSubtype, int currentTier, int newTier)
+    {
+        if (target is not {WeaponRestorationSpellsMod: not null, ElementalDamageMod: null})
+        {
+            return;
+        }
+
+        var currentBaseStat = target.WeaponRestorationSpellsMod.Value;
+        var currentTierMinimum = LootTables.GetMissileCasterSubtypeMinimumDamage(weaponSubtype, currentTier);
+        var currentRange = LootTables.GetMissileCasterSubtypeDamageRange(weaponSubtype, currentTier);
+        var currentRoll = currentBaseStat - currentTierMinimum;
+        var rollPercentile = (float)currentRoll / currentRange;
+
+        var newTierMinimum = LootTables.GetMissileCasterSubtypeMinimumDamage(weaponSubtype, newTier);
+        var newTierRange = LootTables.GetMissileCasterSubtypeDamageRange(weaponSubtype, newTier);
+        var amountAboveMinimum = newTierRange * rollPercentile;
+        var final = newTierMinimum + amountAboveMinimum;
+
+        target.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
     }
 
     private static void ScaleUpWeaponOffense(WorldObject target, int currentTier, int newTier)

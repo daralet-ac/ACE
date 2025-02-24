@@ -952,17 +952,6 @@ public static partial class LootGenerationFactory
                 wo.SetProperty(PropertyInt.Damage, final);
             }
 
-            //if (wo.ElementalDamageBonus != null)
-            //{
-            //    var baseStat = wo.ElementalDamageBonus.Value;
-            //    var bonusRange = (baseStat - 1) * maxBonus;
-            //    var roll = GetDiminishingRoll(null, lootQuality);
-            //    var bonus = bonusRange * roll;
-            //    var final = (int)Math.Round(baseStat + bonus);
-
-            //    wo.SetProperty(PropertyInt.ElementalDamageBonus, final);
-            //}
-
             if (wo.DamageMod != null)
             {
                 var baseStat = wo.DamageMod.Value;
@@ -977,16 +966,12 @@ public static partial class LootGenerationFactory
                 wo.SetProperty(PropertyFloat.DamageMod, final);
             }
 
-            if (wo.ElementalDamageMod != null && wo.WeaponRestorationSpellsMod != null)
+            if (wo is {ElementalDamageMod: not null, WeaponRestorationSpellsMod: not null})
             {
                 var magicSkill = wo.WieldSkillType2 == 34 ? Skill.WarMagic : Skill.LifeMagic;
 
-                var baseStat =
-                    magicSkill == Skill.WarMagic ? wo.ElementalDamageMod.Value : wo.WeaponRestorationSpellsMod.Value;
-                var bonusRange = LootTables.GetMissileCasterSubtypeDamageRange(
-                    (LootTables.WeaponSubtype)wo.WeaponSubtype,
-                    tier
-                );
+                var baseStat = magicSkill == Skill.WarMagic ? wo.ElementalDamageMod.Value : wo.WeaponRestorationSpellsMod.Value;
+                var bonusRange = LootTables.GetMissileCasterSubtypeDamageRange((LootTables.WeaponSubtype)wo.WeaponSubtype, tier);
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
@@ -1001,6 +986,26 @@ public static partial class LootGenerationFactory
                     wo.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
                     wo.SetProperty(PropertyFloat.ElementalDamageMod, 1 + (final - 1) / 2);
                 }
+            }
+            else if (wo is { WeaponRestorationSpellsMod: not null, ElementalDamageMod: null})
+            {
+                var baseStat = wo.WeaponRestorationSpellsMod.Value;
+                var bonusRange = LootTables.GetMissileCasterSubtypeDamageRange((LootTables.WeaponSubtype)wo.WeaponSubtype, tier);
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.WeaponRestorationSpellsMod, final);
+            }
+            else if (wo is { ElementalDamageMod: not null, WeaponRestorationSpellsMod: null})
+            {
+                var baseStat = wo.ElementalDamageMod.Value;
+                var bonusRange = LootTables.GetMissileCasterSubtypeDamageRange((LootTables.WeaponSubtype)wo.WeaponSubtype, tier);
+                var roll = GetDiminishingRoll(null, lootQuality);
+                var bonus = bonusRange * roll;
+                var final = baseStat + bonus;
+
+                wo.SetProperty(PropertyFloat.ElementalDamageMod, final);
             }
 
             if (wo.WeaponOffense != null)
