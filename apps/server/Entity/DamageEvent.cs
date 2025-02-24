@@ -36,7 +36,6 @@ public class DamageEvent
     private float _attributeMod;
     private float _baseDamage;
     private BaseDamageMod _baseDamageMod;
-    private bool _cleaveHits;
     private float _combatAbilityFuryDamageBonus;
     private float _combatAbilityMultishotDamagePenalty;
     private float _combatAbilityProvokeDamageBonus;
