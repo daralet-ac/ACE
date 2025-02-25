@@ -198,7 +198,9 @@ partial class Jewel : WorldObject
             if (
                 !player.ConfirmationManager.EnqueueSend(
                     new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                    $"Adding {source.Name} to {target.NameWithMaterial}, enhancing its properties."
+                    $"Adding {source.Name} to {target.NameWithMaterial}, enhancing its properties.\n\n" +
+                    $"Once socketed into an item, this jewel becomes permanently attuned to your character. Items with contained jewels become attuned and will remain so until all jewels are removed.\n\n" +
+                    $"Jewels may be unsocketed using an Intricate Carving Tool. There is no skill check or destruction chance.\n\n"
                 )
             )
             {

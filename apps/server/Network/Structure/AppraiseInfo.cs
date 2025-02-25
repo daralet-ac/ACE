@@ -783,49 +783,49 @@ public class AppraiseInfo
         SetStaminaReductionUseLongText(wo);
         SetNoCompsRequiredSchoolUseLongText(wo);
 
-        SetGearRatingText(PropertyInt.GearStrength, "Mighty Thews", "Grants a +(ONE) bonus to current Strength.");
-        SetGearRatingText(PropertyInt.GearEndurance, "Perseverance", "Grants a +(ONE) bonus to current Endurance.");
-        SetGearRatingText(PropertyInt.GearCoordination, "Dexterous Hand", "Grants a +(ONE) bonus to current Coordination.");
-        SetGearRatingText(PropertyInt.GearQuickness, "Swift-footed", "Grants a +(ONE) bonus to current Quickness.");
-        SetGearRatingText(PropertyInt.GearFocus, "Focused Mind", "Grants a +(ONE) bonus to current Focus.");
-        SetGearRatingText(PropertyInt.GearSelf, "Erudite Mind", "Grants a +(ONE) bonus to current Self.");
-        SetGearRatingText(PropertyInt.GearLifesteal, "Sanguine Thirst", "Grants a (ONE)% chance on hit to gain health. Amount healed is based on the amount of damage done.");
-        SetGearRatingText(PropertyInt.GearSelfHarm, "Blood Frenzy", $"Grants (ONE)% extra damage dealt to your opponent each time you attack, however you will take that much damage as well.");
-        SetGearRatingText(PropertyInt.GearThreatGain, "Provocation", $"Grants a (ONE)% bonus to threat generation.");
-        SetGearRatingText(PropertyInt.GearThreatReduction, "Clouded Vision", $"Grants a (ONE)% bonus to threat reduction.");
-        SetGearRatingText(PropertyInt.GearElementalWard, "Prismatic Ward", $"Grants (ONE)% protection against Flame, Frost, Lightning, and Acid damage types.");
-        SetGearRatingText(PropertyInt.GearPhysicalWard, "Black Bulwark", $"Grants (ONE)% protection against Piercing, Bludgeoning, and Slashing damage types.");
-        SetGearRatingText(PropertyInt.GearMagicFind, "Seeker", $"Grants a (ONE)% bonus to monster loot quality.");
-        SetGearRatingText(PropertyInt.GearBlock, "Stalwart Defense", $"Grants +(ONE)% chance to block attacks.");
-        SetGearRatingText(PropertyInt.GearItemManaUsage, "Thrifty Scholar", $"Grants a (ONE)% reduction to mana consumed by equipped items.", 5.0f);
-        SetGearRatingText(PropertyInt.GearThorns, "Swift Retribution", $"Deflect (ONE)% of an attacker's damage back at them when successfully blocked, so long as the opponent is within melee range.", 5.0f);
-        SetGearRatingText(PropertyInt.GearVitalsTransfer, "Tilted Scales", $"Grants a (ONE)% bonus to your Vitals Transfer spells, but an equivalent reduction in the effectiveness of your other Restoration spells.");
-        SetGearRatingText(PropertyInt.GearRedFury, "Red Fury", $"Grants increased damage as you lose health, up to a maximum bonus of (ONE)% at 25% health.");
-        SetGearRatingText(PropertyInt.GearYellowFury, "Yellow Fury", $"Grants increased physical damage as you lose stamina, up to a maximum bonus of (ONE)% at 25% stamina.");
-        SetGearRatingText(PropertyInt.GearBlueFury, "Blue Fury", $"Grants increased magical damage as you lose mana, up to a maximum bonus of (ONE)% at 25% mana.");
-        SetGearRatingText(PropertyInt.GearSelflessness, "Selfless Spirit", $"Grants a (ONE)% bonus to your restoration spells when cast on others, but an equivalent reduction in their effectiveness when cast on yourself.", 2.0f);
-        SetGearRatingText(PropertyInt.GearFamiliarity, "Familiar Foe", $"Grants an increased evade and resist chance versus the target you are attacking, the amount ramping from 0% to (ONE)% based on how often you have hit the target.", 2.0f);
-        SetGearRatingText(PropertyInt.GearBravado, "Bravado", $"Grants an increased physical hit chance, the amount ramping from a 0% to (ONE)% based on how often you have been recently physically attacked.");
-        SetGearRatingText(PropertyInt.GearHealthToStamina, "Masochist", $"Grants a (ONE)% chance to regain stamina after being hit. Amount regained is based on damage received.");
-        SetGearRatingText(PropertyInt.GearHealthToMana, "Austere Anchorite", $"Grants a (ONE)% chance to regain mana after being hit. Amount regained is based on damage received.");
-        SetGearRatingText(PropertyInt.GearExperienceGain, "Illuminated Mind", $"Grants a (ONE)% bonus to experience gain.", 0.5f);
-        SetGearRatingText(PropertyInt.GearManasteal, "Ophidian", $"Grants a (ONE)% chance on hit to gain mana. Amount gained is based on amount of damage done.");
-        SetGearRatingText(PropertyInt.GearBludgeon, "Skull-cracker", $"Grants bonus critical bludgeoning damage, the amount ramping from +0% to +(ONE)% based on how many times you have struck your target.", 2.0f);
-        SetGearRatingText(PropertyInt.GearPierce, "Precision Strikes", $"Grants piercing resistance penetration, the amount ramping from +0% to +(ONE)% based on how often you have hit your target.", 2.0f);
-        SetGearRatingText(PropertyInt.GearSlash, "Falcon's Gyre", $"Grants (ONE)% chance to cleave a second target on hit.", 0.5f);
-        SetGearRatingText(PropertyInt.GearFire, "Blazing Brand", $"Grants a (ONE)% bonus to Fire damage and a (TWO)% chance on hit to set the ground beneath your target ablaze, damaging nearby enemies.", 1.0f, 0.5f);
-        SetGearRatingText(PropertyInt.GearFrost, "Bone-chiller", $"Grants a (ONE)% bonus to Cold damage and a (TWO)% chance on hit to surround your target with chilling mist, damaging nearby enemies.", 1.0f, 0.5f);
-        SetGearRatingText(PropertyInt.GearAcid, "Devouring Mist", $"Grants a (ONE)% bonus to Acid damage, and a (TWO)% chance on hit to surround your target with acidic mist.", 1.0f, 0.5f);
-        SetGearRatingText(PropertyInt.GearLightning, "Astyrrian's Rage", $"Grants a (ONE)% bonus to Lightning damage, and a (TWO)% chance on hit to electrify the ground beneath your target, damaging nearby enemies.", 1.0f, 0.5f);
-        SetGearRatingText(PropertyInt.GearHealBubble, "Purified Soul", $"Grants a +(ONE)% bonus to your restoration spells, and a (TWO)% chance to create a sphere of healing energy on top of your target when casting a restoration spell.", 1.0f, 0.5f);
-        SetGearRatingText(PropertyInt.GearCompBurn, "Meticulous Magus", $"Grants a (ONE)% reduction to your chance to burn spell components.", 3.0f);
-        SetGearRatingText(PropertyInt.GearPyrealFind, "Prosperity", $"Grants a (ONE)% chance for monsters to drop an additional item on death.", 0.5f);
-        SetGearRatingText(PropertyInt.GearNullification, "Nullification", $"Grants magic absorb, the amount ramping from 0% to (ONE)%, based on how often you have recently have been hit with magic.", 2.0f);
-        SetGearRatingText(PropertyInt.GearWardPen, "Ruthless Discernment", $"Grants ward penetration, the amount ramping from +0% to +(ONE)%, based on how often you have recently hit your target.", 2.0f);
-        SetGearRatingText(PropertyInt.GearStamReduction, "Third Wind", $"Grants (ONE)% stamina cost reduction.");
-        SetGearRatingText(PropertyInt.GearHardenedDefense, "Hardened Fortification", $"Grants resistance to physical damage, the amount ramping from 0 to (ONE)%, based on how often you have recently have been hit.", 2.0f);
-        SetGearRatingText(PropertyInt.GearReprisal, "Vicious Reprisal", $"Grants (ONE)% chance to evade an incoming critical hit. Your next attack against that enemy will be a guaranteed critical strike.", 0.5f);
-        SetGearRatingText(PropertyInt.GearElementalist, "Elementalist", $"Grants a bonus to War Magic spells, the amount ramping from +0% to +(ONE)% based on how often you have recently hit your target.", 2.0f);
+        SetGearRatingText(PropertyInt.GearStrength, "Mighty Thews", "Grants +10 to current Strength, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
+        SetGearRatingText(PropertyInt.GearEndurance, "Perseverance", "Grants +10 to current Endurance, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
+        SetGearRatingText(PropertyInt.GearCoordination, "Dexterous Hand", "Grants +10 to current Coordination, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
+        SetGearRatingText(PropertyInt.GearQuickness, "Swift-footed", "Grants +10 to current Quickness, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
+        SetGearRatingText(PropertyInt.GearFocus, "Focused Mind", "Grants +10 to current Focus, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
+        SetGearRatingText(PropertyInt.GearSelf, "Erudite Mind", "Grants +10 to current Self, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
+        SetGearRatingText(PropertyInt.GearLifesteal, "Sanguine Thirst", "Grants a 10% chance on hit to gain health, plus an additional 0.5% per equipped rating ((ONE) total). Amount stolen is equal to 10% of damage dealt.", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearSelfHarm, "Blood Frenzy", $"Grants 10% increased damage with all attacks, plus an additional 0.5% per equipped rating ((ONE) total). However, you will occasionally deal the extra damage to yourself as well.", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearThreatGain, "Provocation", $"Grants 10% increased threat from your actions, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearThreatReduction, "Clouded Vision", $"Grants 10% reduced threat from your actions, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearElementalWard, "Prismatic Ward", $"Grants 10%% protection against Flame, Frost, Lightning, and Acid damage types, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearPhysicalWard, "Black Bulwark", $"Grants 10%% protection against Slashing, Bludgeoning, and Piercing damage types, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearMagicFind, "Seeker", $"Grants a 5% bonus to monster loot quality, plus an additional 0.25% per equipped rating ((ONE) total).", 0.25f, 1.0f, 5, 0, true);
+        SetGearRatingText(PropertyInt.GearBlock, "Stalwart Defense", $"Grants a 10% bonus to block attacks, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearItemManaUsage, "Thrifty Scholar", $"Grants a 20% cost reduction to mana consumed by equipped items, plus an additional 1% per equipped rating ((ONE) total).", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearThorns, "Swift Retribution", $"Deflect 10% of a blocked attack's damage back to a close-range attacker, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearVitalsTransfer, "Tilted Scales", $"Grants a 10% bonus to your Vitals Transfer spells, plus an additional 0.5% per equipped rating ((ONE) total). Receive an equivalent reduction in the effectiveness of your other Restoration spells.", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearRedFury, "Red Fury", $"Grants increased damage as you lose health, up to a maximum bonus of 20% at 0 health, plus an additional 1% per equipped rating ((ONE) total).", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearYellowFury, "Yellow Fury", $"Grants increased physical damage as you lose stamina, up to a maximum bonus of 20% at 0 stamina, plus an additional 1% per equipped rating ((ONE) total).", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearBlueFury, "Blue Fury", $"Grants increased magical damage as you lose mana, up to a maximum bonus of 20% at 0 mana, plus an additional 1% per equipped rating ((ONE) total).", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearSelflessness, "Selfless Spirit", $"Grants a 10% bonus to your restoration spells when cast on others, plus an additional 0.5% per equipped rating ((ONE) total). Receive an equivalent reduction in their effectiveness when cast on yourself.", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearFamiliarity, "Familiar Foe", $"Grants up to a 20% chance to evade/resist an attack from a target you are attacking, plus an additional 1% per equipped rating ((ONE) total). The chance builds up from 0%, based on how often you have hit the target.", 1.0f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearBravado, "Bravado", $"Grants up to a 20% bonus to hit chance against a target you are attacking, plus an additional 1% per equipped rating ((ONE) total). The chance builds up from 0%, based on how often you have hit the target.", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearHealthToStamina, "Masochist", $"Grants a 10% chance to regain the hit damage received from an attack as stamina, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearHealthToMana, "Austere Anchorite", $"Grants a 10% chance to regain the hit damage received from an attack as mana, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearExperienceGain, "Illuminated Mind", $"Grants a 5% bonus to experience gain, plus an additional 0.25% per equipped rating ((ONE) total).", 0.25f, 1.0f, 5, 0, true);
+        SetGearRatingText(PropertyInt.GearManasteal, "Ophidian", $"Grants a 10% chance on hit to steal mana from your target, plus an additional 0.5% per equipped rating ((ONE) total). Amount stolen is equal to 10% of damage dealt.", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearBludgeon, "Skull-cracker", $"Grants up to 20% bonus critical hit damage, plus an additional 1% per equipped rating ((ONE) total). The bonus builds up from 0%, based on how often you have hit the target.", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearPierce, "Precision Strikes", $"Grants up to 20% piercing resistance penetration, plus an additional 1% per equipped rating ((ONE) total). The bonus builds up from 0%, based on how often you have hit the target", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearSlash, "Falcon's Gyre", $"Grants a 10% chance to cleave an additional target, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearFire, "Blazing Brand", $"Grants a 10% bonus to Fire damage, plus an additional 0.5% per equipped rating ((ONE) total). Also grants a 2% chance on hit to set the ground beneath your target ablaze, plus an additional 0.1% per equipped rating ((TWO) total).", 0.5f, 0.1f, 10, 2, true);
+        SetGearRatingText(PropertyInt.GearFrost, "Bone-chiller", $"Grants a 10% bonus to Cold damage, plus an additional 0.5% per equipped rating ((ONE) total). Also grants a 2% chance on hit to surround your target with chilling mist, plus an additional 0.1% per equipped rating ((TWO) total).", 0.5f, 0.1f, 10, 2, true);
+        SetGearRatingText(PropertyInt.GearAcid, "Devouring Mist", $"Grants a 10% bonus to Acid damage, plus an additional 0.5% per equipped rating ((ONE) total). Also grants a 2% chance on hit to surround your target with acidic mist, plus an additional 0.1% per equipped rating ((TWO) total).", 0.5f, 0.1f, 10, 2, true);
+        SetGearRatingText(PropertyInt.GearLightning, "Astyrrian's Rage", $"Grants a 10% bonus to Lightning damage, plus an additional 0.5% per equipped rating ((ONE) total). Also grants a 2% chance on hit to electrify the ground beneath your target, plus an additional 0.1% per equipped rating ((TWO) total).", 0.5f, 0.1f, 10, 2, true);
+        SetGearRatingText(PropertyInt.GearHealBubble, "Purified Soul", $"Grants a 10% bonus to your restoration spells, plus an additional 0.5% per equipped rating ((ONE) total). Also grants a 2% chance to create a sphere of healing energy on top of your target when casting a restoration spell, plus an additional 0.1% per equipped rating ((ONE) total).", 0.5f, 0.1f, 10, 2, true);
+        SetGearRatingText(PropertyInt.GearCompBurn, "Meticulous Magus", $"Grants a 20% reduction to your chance to burn spell components, plus an additional 1% per equipped rating ((ONE) total).", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearPyrealFind, "Prosperity", $"Grants a 5% chance for a monster to drop an extra item, plus an additional 0.25% per equipped rating ((ONE) total).", 0.25f, 1.0f, 5, 0, true);
+        SetGearRatingText(PropertyInt.GearNullification, "Nullification", $"Grants up to 20% reduced magic damage taken, plus an additional 1% per equipped rating ((ONE) total). The amount builds up from 0%, based on how often you have been hit with a damaging spell.", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearWardPen, "Ruthless Discernment", $"Grants up to 20% ward penetration, plus an additional 1% per equipped rating ((ONE) total). The Amount builds up from 0%, based on how often you have hit your target.", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearStamReduction, "Third Wind", $"Grants up to 10% stamina cost reduction, plus an additional 0.5% per equipped rating ((ONE) total). The amount builds up from 0%, based on how often you have hit your target", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(PropertyInt.GearHardenedDefense, "Hardened Fortification", $"Grants up to 20% reduced physical damage taken, plus an additional 1% per equipped rating ((ONE) total). Th amount builds up from 0%, based on how often you have been hit with a damaging physical attack.", 1.0f, 10f, 20, 0, true);
+        SetGearRatingText(PropertyInt.GearReprisal, "Vicious Reprisal", $"Grants a 5% chance to evade an incoming critical hit, plus an additional 0.25% per equipped rating ((ONE) total). Your next attack after a the evade is a guaranteed critical.", 0.25f, 1.0f, 5, 0, true);
+        SetGearRatingText(PropertyInt.GearElementalist, "Elementalist", $"Grants up to a 20% damage bonus to war spells, plus an additional 1% per equipped rating ((ONE) total). The amount builds up from 0%, based on how often you have hit your target.", 1.0f, 1.0f, 20, 0, true);
 
         SetAdditionalPropertiesUseText();
 
@@ -1221,8 +1221,6 @@ public class AppraiseInfo
             if (wo.WeenieType == WeenieType.Jewel)
             {
                 _extraPropertiesText += Jewel.GetJewelDescription(jewelSocket1);
-                _extraPropertiesText +=
-                    $"Once socketed into an item, this jewel becomes permanently attuned to your character. Items with contained jewels become attuned and will remain so until all jewels are removed.\n\nJewels may be unsocketed using an Intricate Carving Tool. There is no skill check or destruction chance.";
             }
             if (wo.WeenieType != WeenieType.Jewel)
             {
@@ -1957,7 +1955,7 @@ public class AppraiseInfo
         }
     }
 
-    private void SetGearRatingText(PropertyInt propertyInt, string name, string description, float multiplierOne = 1.0f, float multiplierTwo = 1.0f)
+    private void SetGearRatingText(PropertyInt propertyInt, string name, string description, float multiplierOne = 1.0f, float multiplierTwo = 1.0f, int baseOne = 0, int baseTwo = 0, bool percent = false)
     {
         if (!PropertiesInt.TryGetValue(propertyInt, out var gearRating) || gearRating == 0)
         {
@@ -1970,8 +1968,9 @@ public class AppraiseInfo
 
         _hasAdditionalProperties = true;
 
-        var desc = description.Replace("(ONE)", $"{gearRating * multiplierOne}");
-        desc = desc.Replace("(TWO)", $"{gearRating * multiplierTwo}");
+        var percentSign = percent ? "%" : "";
+        var desc = description.Replace("(ONE)", $"{baseOne + gearRating * multiplierOne}{percentSign}");
+        desc = desc.Replace("(TWO)", $"{baseTwo + gearRating * multiplierTwo}{percentSign}");
         _additionalPropertiesLongDescriptionsText +=
             $"~ {name} {ratingRomanNumeral}: {desc}\n";
     }
