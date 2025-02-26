@@ -1158,25 +1158,29 @@ partial class WorldObject
 
     /// <summary>
     /// RATING - Nullification: Ramping boost spell defense.
-    /// Up to +2% boost effectiveness per rating (with max quest stamps).
+    /// Spell damage taken reduced by up to 20% + 1% per rating. (after quest stamp build up of 25% per spell hit received)
     /// (JEWEL - Amethyst)
     /// </summary>
     private static float CheckForRatingNullificationBoostDefenseBonus(Creature targetCreature)
     {
-        if (targetCreature is not Player tPlayer)
+        if (targetCreature is not Player targetPlayer)
         {
             return 1.0f;
         }
 
-        if (tPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) <= 0)
+        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) <= 0)
         {
             return 1.0f;
         }
 
-        var rampMod = (float)tPlayer.QuestManager.GetCurrentSolves($"{tPlayer.Name},Nullification") / 200; // up to 1.0f
-        var ratingMod = tPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) * 0.02f; // 0.02f per rating
+        const float baseMod = 0.2f;
+        const float bonusPerRating = 0.01f;
+        var rating = targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification);
+        var finalRating = baseMod + bonusPerRating * rating;
 
-        return 1.0f - (rampMod * ratingMod);
+        var rampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 100;
+
+        return 1.0f - rampMod * rating;
     }
 
     /// <summary>

@@ -210,7 +210,7 @@ partial class Jewel
     }
 
     /// <summary>
-    /// RATING - Nullification: Adds quest stamps for nullification rating.
+    /// RATING - Nullification: Adds quest stamps for nullification rating. (25% buildup per spell hit received)
     /// (JEWEL - Amethyst)
     /// </summary>
     private static void CheckForRatingNullificationStamps(Player targetPlayer)
@@ -222,15 +222,15 @@ partial class Jewel
 
         if (targetPlayer.QuestManager.HasQuest($"{targetPlayer.Name},Nullification"))
         {
-            if (targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") < 200)
+            if (targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") < 100)
             {
-                targetPlayer.QuestManager.Increment($"{targetPlayer.Name},Nullification", 50);
+                targetPlayer.QuestManager.Increment($"{targetPlayer.Name},Nullification", 25);
             }
         }
         else
         {
             targetPlayer.QuestManager.Stamp($"{targetPlayer.Name},Nullification");
-            targetPlayer.QuestManager.Increment($"{targetPlayer.Name},Nullification", 50);
+            targetPlayer.QuestManager.Increment($"{targetPlayer.Name},Nullification", 25);
         }
     }
 
