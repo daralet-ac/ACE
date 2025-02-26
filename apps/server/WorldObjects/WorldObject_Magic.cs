@@ -1201,7 +1201,7 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// RATING - Heal Bubble: +1% bonus per rating to restoration, chance of healing hotspot.
+    /// RATING - Heal Bubble: 10% + 0.5% per rating to restoration, chance of healing hotspot.
     /// (JEWEL - White Jade)
     /// </summary>
     private static float CheckForRatingHealBubbleHotspot(Spell spell, Creature targetCreature, WorldObject weapon, Player player)
@@ -1216,14 +1216,16 @@ partial class WorldObject
             return 1.0f;
         }
 
-        var ratingMod = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealBubble) * 0.01f;
-
         if (weapon is { Tier: not null })
         {
             Hotspot.TryGenHotspot(player, targetCreature, (int)weapon.Tier, spell.VitalDamageType);
         }
 
-        return 1.0f + ratingMod;
+        const float baseMod = 1.1f;
+        const float bonusPerRating = 0.005f;
+        var equippedRating = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealBubble);
+
+        return baseMod + equippedRating * bonusPerRating;
     }
 
     /// <summary>

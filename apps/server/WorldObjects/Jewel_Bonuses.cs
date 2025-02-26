@@ -126,57 +126,85 @@ partial class Jewel
     }
 
     /// <summary>
-    /// RATING - Lightning: Increases lightning damage by (rating)%.
+    /// RATING - Lightning Increased lightning damage by 10% + 0.5% per rating.
     /// (JEWEL - Jet)
     /// </summary>
     private static float CheckForRatingLightningDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning) > 0 && damageType == DamageType.Electric)
+        var equippedRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning);
+
+        if (equippedRating <= 0 || damageType != DamageType.Electric)
         {
-            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning) / 100;
+            return jewelElemental;
         }
+
+        const float baseRating = 0.1f;
+        const float bonusPerRating = 0.005f;
+
+        jewelElemental += baseRating + equippedRating * bonusPerRating;
 
         return jewelElemental;
     }
 
     /// <summary>
-    /// RATING - Cold: Increases cold damage by (rating)%.
+    /// RATING - Cold: Increased cold damage by 10% + 0.5% per rating.
     /// (JEWEL - Aquamarine)
     /// </summary>
     private static float CheckForRatingColdDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost) > 0 && damageType == DamageType.Cold)
+        var equippedRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost);
+
+        if (equippedRating <= 0 || damageType != DamageType.Cold)
         {
-            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost) / 100;
+            return jewelElemental;
         }
+
+        const float baseRating = 0.1f;
+        const float bonusPerRating = 0.005f;
+
+        jewelElemental += baseRating + equippedRating * bonusPerRating;
 
         return jewelElemental;
     }
 
     /// <summary>
-    /// RATING - Fire: Increases fire damage by (rating)%.
+    /// RATING - Fire: Increased fire damage by 10% + 0.5% per rating.
     /// (JEWEL - Red Garnet)
     /// </summary>
     private static float CheckForRatingFireDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire) > 0 && damageType == DamageType.Fire)
+        var equippedRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire);
+
+        if (equippedRating <= 0 || damageType != DamageType.Fire)
         {
-            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire) / 100;
+            return jewelElemental;
         }
+
+        const float baseRating = 0.1f;
+        const float bonusPerRating = 0.005f;
+
+        jewelElemental += baseRating + equippedRating * bonusPerRating;
 
         return jewelElemental;
     }
 
     /// <summary>
-    /// RATING - Acid: Increases acid damage by (rating)%.
+    /// RATING - Acid: Increased acid damage by 10% + 0.5% per rating.
     /// (JEWEL - Emerald)
     /// </summary>
     private static float CheckForRatingAcidDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid) > 0 && damageType == DamageType.Acid)
+        var equippedRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid);
+
+        if (equippedRating <= 0 || damageType != DamageType.Acid)
         {
-            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid) / 100;
+            return jewelElemental;
         }
+
+        const float baseRating = 0.1f;
+        const float bonusPerRating = 0.005f;
+
+        jewelElemental += baseRating + equippedRating * bonusPerRating;
 
         return jewelElemental;
     }
