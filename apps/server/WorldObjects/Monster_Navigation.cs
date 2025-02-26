@@ -593,6 +593,12 @@ partial class Creature
             return;
         }
 
+        if (WeenieClassId is 1020001)
+        {
+            _log.Error("Preventing MoveToHome() for {WCID}", WeenieClassId);
+            return;
+        }
+
         var prevAttackTarget = AttackTarget;
 
         MonsterState = State.Return;
