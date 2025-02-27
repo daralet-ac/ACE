@@ -723,6 +723,10 @@ public class SpellProjectile : WorldObject
 
         var specDefenseMod = CheckForMagicDefenseSpecDefenseMod(targetPlayer, sourceCreature);
 
+        var jewelRedFury = 1.0f + Jewel.GetJewelRedFury(sourcePlayer);
+        var jewelBlueFury = 1.0f + Jewel.GetJewelBlueFury(sourcePlayer);
+        var jewelSelfHarm = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearSelfHarm, 0.1f, 0.005f);
+
         var levelScalingMod = GetLevelScalingMod(sourceCreature, target, targetPlayer);
 
         // life magic projectiles: ie., martyr's hecatomb
@@ -766,6 +770,9 @@ public class SpellProjectile : WorldObject
                 * wardMod
                 * resistedMod
                 * specDefenseMod
+                * jewelRedFury
+                * jewelBlueFury
+                * jewelSelfHarm
                 * lethalityMod
                 * levelScalingMod;
         }
@@ -840,13 +847,11 @@ public class SpellProjectile : WorldObject
 
             var jewelElementalist = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearElementalist, 0.2f, 0.01f, "Elementalist");
             var jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
-            var jewelSelfHarm = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearSelfHarm, 0.1f, 0.005f);
-            var jewelRedFury = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearRedFury, 0.2f, 0.01f);
-            var jewelBlueFury = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBlueFury, 0.2f, 0.01f);
+
             var ratingDamageTypeWard = Spell.DamageType switch
             {
-                DamageType.Physical => Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearPhysicalWard, 0.1f, 0.005f),
-                DamageType.Elemental => Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearElementalWard, 0.1f, 0.005f),
+                DamageType.Physical => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearPhysicalWard, 0.1f, 0.005f),
+                DamageType.Elemental => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearElementalWard, 0.1f, 0.005f),
                 _ => 1.0f
             };
 

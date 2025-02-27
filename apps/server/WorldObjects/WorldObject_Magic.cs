@@ -1006,6 +1006,11 @@ partial class WorldObject
         }
         else // harm
         {
+            // increases
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelRedFury(player)));
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelBlueFury(player)));
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearSelfHarm, 0.1f, 0.005f)));
+
             // reductions
             tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification, 0.2f, 0.01f, "Nullification")));
 

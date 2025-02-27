@@ -900,8 +900,8 @@ public class DamageEvent
         ShieldMod = _defender.GetShieldMod(attacker, DamageType, Weapon);
 
         _ratingSelfHarm = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm, 0.1f, 0.005f);
-        _ratingRedFury = Jewel.GetJewelRedFury(playerAttacker);
-        _ratingYellowFury = Jewel.GetJewelYellowFury(playerAttacker);
+        _ratingRedFury = 1.0f + Jewel.GetJewelRedFury(playerAttacker);
+        _ratingYellowFury = 1.0f + Jewel.GetJewelYellowFury(playerAttacker);
         _ratingDamageTypeWard = DamageType switch
         {
             DamageType.Physical => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearPhysicalWard, 0.1f, 0.005f),

@@ -14,18 +14,33 @@ partial class Jewel
 {
     public static float GetJewelEffectMod(Player player, PropertyInt propertyInt, float baseMod, float bonusPerRating, string rampQuestString = "")
     {
+        if (player is null)
+        {
+            return 0.0f;
+        }
+
         var rating = player.GetEquippedAndActivatedItemRatingSum(propertyInt);
+
         if (rating <= 0)
         {
-            return 1.0f;
+            return 0.0f;
         }
 
         var rampPercentage = rampQuestString is "" ? 1.0f : 0.0f;
 
         if (player.QuestManager.HasQuest($"{player.Name},{rampQuestString}"))
         {
-            rampPercentage = (float)player.QuestManager.GetCurrentSolves($"{player.Name},{rampQuestString}") / 100;
+            rampPercentage = Math.Min((float)player.QuestManager.GetCurrentSolves($"{player.Name},{rampQuestString}") / 100, 1.0f);
         }
+
+        // Console.WriteLine($"\nJewel Mod:\n" +
+        //                   $" -Property: {propertyInt}\n" +
+        //                   $" -Rating: {rating}\n" +
+        //                   $" -baseMod: {baseMod}\n" +
+        //                   $" -bonusPerRating {bonusPerRating}\n" +
+        //                   $" -bonus: {bonusPerRating * rating}\n" +
+        //                   $" -rampPercentage: {rampPercentage * 100}%\n" +
+        //                   $" -TOTAL: {(baseMod + bonusPerRating * rating) * rampPercentage}");
 
         return (baseMod + bonusPerRating * rating) * rampPercentage;
     }
@@ -215,12 +230,12 @@ partial class Jewel
     }
 
     /// <summary>
-    /// RATING - Self Harm: 25% chance to damage self when dealing damage. (Also grants bonus damage from a different function)
+    /// RATING - Self Harm: 10% chance to damage self when dealing damage. (Also grants bonus damage from a different function)
     /// (JEWEL - Hematite)
     /// </summary>
     private static void CheckForRatingSelfHarm(Player playerAttacker, float damage)
     {
-        const float selfHarmChance = 0.25f;
+        const float selfHarmChance = 0.1f;
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) > selfHarmChance)
         {
@@ -228,12 +243,12 @@ partial class Jewel
         }
 
         var selfHarmMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm, 0.1f, 0.005f);
-        var selfHarmAmount = Convert.ToInt32(damage * selfHarmMod - damage);
+        var selfHarmAmount = Convert.ToInt32(damage * selfHarmMod);
 
         playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarmAmount);
         playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, (uint)selfHarmAmount);
 
-        var message = $"You deal {selfHarmAmount} damage to yourself in a blood frenzy!";
+        var message = $"In a blood frenzy, you deal {selfHarmAmount} damage to yourself!";
         playerAttacker.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.CombatEnemy));
 
         if (!playerAttacker.IsDead)
@@ -252,9 +267,9 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingManaOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        var chance = 1.0f - GetJewelEffectMod(playerAttacker, PropertyInt.GearManasteal, 0.1f, 0.005f);
+        var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearManasteal, 0.1f, 0.005f);
 
-        if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
+        if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
@@ -277,9 +292,9 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingLifeOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        var chance = 1.0f - GetJewelEffectMod(playerAttacker, PropertyInt.GearLifesteal, 0.1f, 0.005f);
+        var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearLifesteal, 0.1f, 0.005f);
 
-        if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
+        if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
@@ -302,9 +317,9 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToMana(Player playerDefender, Creature attacker, float damage)
     {
-        var chance = 1.0f - GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToMana, 0.1f, 0.005f);
+        var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToMana, 0.1f, 0.005f);
 
-        if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
+        if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
@@ -326,9 +341,9 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToStamina(Player playerDefender, Creature attacker, float damage)
     {
-        var chance = 1.0f - GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToStamina, 0.1f, 0.005f);
+        var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToStamina, 0.1f, 0.005f);
 
-        if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
+        if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
@@ -351,6 +366,16 @@ partial class Jewel
     /// </summary>
     public static float GetJewelRedFury(Player playerAttacker)
     {
+        if (playerAttacker is null)
+        {
+            return 0.0f;
+        }
+
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) <= 0)
+        {
+            return 0.0f;
+        }
+
         var percentHealthRemaining = (float)playerAttacker.Health.Current / playerAttacker.Health.MaxValue;
         var inverseHealthRemaining = Math.Min((1.0f - percentHealthRemaining), 1.0f);
         var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearRedFury, 0.2f, 0.01f);
@@ -364,6 +389,16 @@ partial class Jewel
     /// </summary>
     public static float GetJewelYellowFury(Player playerAttacker)
     {
+        if (playerAttacker is null)
+        {
+            return 0.0f;
+        }
+
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearYellowFury) <= 0)
+        {
+            return 0.0f;
+        }
+
         var percentStaminaRemaining = (float)playerAttacker.Stamina.Current / playerAttacker.Stamina.MaxValue;
         var inverseHealthRemaining = Math.Min((1.0f - percentStaminaRemaining), 1.0f);
         var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearYellowFury, 0.2f, 0.01f);
@@ -377,6 +412,16 @@ partial class Jewel
     /// </summary>
     public static float GetJewelBlueFury(Player playerAttacker)
     {
+        if (playerAttacker is null)
+        {
+            return 0.0f;
+        }
+
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlueFury) <= 0)
+        {
+            return 0.0f;
+        }
+
         var percentManaRemaining = (float)playerAttacker.Mana.Current / playerAttacker.Mana.MaxValue;
         var inverseHealthRemaining = Math.Min((1.0f - percentManaRemaining), 1.0f);
         var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearBlueFury, 0.2f, 0.01f);
