@@ -12,6 +12,24 @@ namespace ACE.Server.WorldObjects;
 
 partial class Jewel
 {
+    public static float GetJewelEffectMod(Player player, PropertyInt propertyInt, float baseMod, float bonusPerRating, string rampQuestString = "")
+    {
+        var rating = player.GetEquippedAndActivatedItemRatingSum(propertyInt);
+        if (rating <= 0)
+        {
+            return 1.0f;
+        }
+
+        var rampPercentage = rampQuestString is "" ? 1.0f : 0.0f;
+
+        if (player.QuestManager.HasQuest($"{player.Name},{rampQuestString}"))
+        {
+            rampPercentage = (float)player.QuestManager.GetCurrentSolves($"{player.Name},{rampQuestString}") / 100;
+        }
+
+        return (baseMod + bonusPerRating * rating) * rampPercentage;
+    }
+
     // Caster and Physical Overlapping Bonuses
     public static void HandlePlayerAttackerBonuses(Player playerAttacker, Creature defender, float damage, DamageType damageType)
     {
@@ -31,7 +49,7 @@ partial class Jewel
 
     public static void HandleMeleeAttackerRampingQuestStamps(Player playerAttacker, Creature defender, DamageType damageType)
     {
-        var scaledStamps = GetBaseMeleeScaledStamps(playerAttacker, defender);
+        var scaledStamps = GetMeleeScaledStamps(playerAttacker);
 
         AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearStamReduction, "StamReduction", scaledStamps, true);
         AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearFamiliarity, "Familiarity", scaledStamps);
@@ -55,7 +73,7 @@ partial class Jewel
 
     public static void HandleCasterAttackerRampingQuestStamps(Player sourcePlayer, Creature targetCreature, Spell spell, ProjectileSpellType projectileSpellTyper)
     {
-        var scaledStamps = GetBaseCasterScaledStamps(sourcePlayer, spell.Level, projectileSpellTyper);
+        var scaledStamps = GetCasterScaledStamps(spell.Level, projectileSpellTyper);
 
         AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearFamiliarity, "Familiarity", scaledStamps);
         AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearWardPen, "WardPen", scaledStamps);
@@ -77,108 +95,7 @@ partial class Jewel
         AddRatingQuestStamps(targetPlayer, sourceCreature, PropertyInt.GearNullification, "Nullification", 10, true);
     }
 
-    public static float HandleElementalBonuses(Player playerAttacker, DamageType damageType)
-    {
-        var jewelElemental = 1.0f;
-
-        if (playerAttacker == null)
-        {
-            return jewelElemental;
-        }
-
-        jewelElemental = CheckForRatingAcidDamageBonus(playerAttacker, damageType, jewelElemental);
-        jewelElemental = CheckForRatingFireDamageBonus(playerAttacker, damageType, jewelElemental);
-        jewelElemental = CheckForRatingColdDamageBonus(playerAttacker, damageType, jewelElemental);
-        jewelElemental = CheckForRatingLightningDamageBonus(playerAttacker, damageType, jewelElemental);
-
-        return jewelElemental;
-    }
-
-    /// <summary>
-    /// RATING - Lightning Increased lightning damage by 10% + 0.5% per rating.
-    /// (JEWEL - Jet)
-    /// </summary>
-    private static float CheckForRatingLightningDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
-    {
-        var equippedRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning);
-
-        if (equippedRating <= 0 || damageType != DamageType.Electric)
-        {
-            return jewelElemental;
-        }
-
-        const float baseRating = 0.1f;
-        const float bonusPerRating = 0.005f;
-
-        jewelElemental += baseRating + equippedRating * bonusPerRating;
-
-        return jewelElemental;
-    }
-
-    /// <summary>
-    /// RATING - Cold: Increased cold damage by 10% + 0.5% per rating.
-    /// (JEWEL - Aquamarine)
-    /// </summary>
-    private static float CheckForRatingColdDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
-    {
-        var equippedRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost);
-
-        if (equippedRating <= 0 || damageType != DamageType.Cold)
-        {
-            return jewelElemental;
-        }
-
-        const float baseRating = 0.1f;
-        const float bonusPerRating = 0.005f;
-
-        jewelElemental += baseRating + equippedRating * bonusPerRating;
-
-        return jewelElemental;
-    }
-
-    /// <summary>
-    /// RATING - Fire: Increased fire damage by 10% + 0.5% per rating.
-    /// (JEWEL - Red Garnet)
-    /// </summary>
-    private static float CheckForRatingFireDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
-    {
-        var equippedRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire);
-
-        if (equippedRating <= 0 || damageType != DamageType.Fire)
-        {
-            return jewelElemental;
-        }
-
-        const float baseRating = 0.1f;
-        const float bonusPerRating = 0.005f;
-
-        jewelElemental += baseRating + equippedRating * bonusPerRating;
-
-        return jewelElemental;
-    }
-
-    /// <summary>
-    /// RATING - Acid: Increased acid damage by 10% + 0.5% per rating.
-    /// (JEWEL - Emerald)
-    /// </summary>
-    private static float CheckForRatingAcidDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
-    {
-        var equippedRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid);
-
-        if (equippedRating <= 0 || damageType != DamageType.Acid)
-        {
-            return jewelElemental;
-        }
-
-        const float baseRating = 0.1f;
-        const float bonusPerRating = 0.005f;
-
-        jewelElemental += baseRating + equippedRating * bonusPerRating;
-
-        return jewelElemental;
-    }
-
-    private static int GetBaseMeleeScaledStamps(Player playerAttacker, Creature defender)
+    private static int GetMeleeScaledStamps(Player playerAttacker)
     {
         const int baseStamps = 10;
 
@@ -192,7 +109,7 @@ partial class Jewel
         return Convert.ToInt32(baseStamps * powerBarScalar * attacksPerSecondScalar);
     }
 
-    private static int GetBaseCasterScaledStamps(Player sourcePlayer, uint spellLevel, ProjectileSpellType projectileSpellType)
+    private static int GetCasterScaledStamps(uint spellLevel, ProjectileSpellType projectileSpellType)
     {
         const int baseStamps = 10;
 
@@ -229,6 +146,27 @@ partial class Jewel
             questTarget.QuestManager.Stamp($"{sourcePlayer.Name},{questString}");
             questTarget.QuestManager.Increment($"{sourcePlayer.Name},{questString}", amount);
         }
+    }
+
+    public static float HandleElementalBonuses(Player playerAttacker, DamageType damageType)
+    {
+        var jewelElemental = 1.0f;
+
+        if (playerAttacker == null)
+        {
+            return jewelElemental;
+        }
+
+        jewelElemental = damageType switch
+        {
+            DamageType.Acid => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearAcid, 0.1f, 0.005f),
+            DamageType.Fire => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearFire, 0.1f, 0.005f),
+            DamageType.Cold => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearFrost, 0.1f, 0.005f),
+            DamageType.Electric => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearLightning, 0.1f, 0.005f),
+            _ => jewelElemental
+        };
+
+        return jewelElemental;
     }
 
     /// <summary>
@@ -287,22 +225,26 @@ partial class Jewel
     }
 
     /// <summary>
-    /// RATING - Self Harm: Damage self when dealing damage. (Also grants bonus damage from a different function)
+    /// RATING - Self Harm: 25% chance to damage self when dealing damage. (Also grants bonus damage from a different function)
     /// (JEWEL - Hematite)
     /// </summary>
     private static void CheckForRatingSelfHarm(Player playerAttacker, float damage)
     {
-        // JEWEL - Hematite: Self-harm damage
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) <= 0)
+        const float selfHarmChance = 0.25f;
+
+        if (ThreadSafeRandom.Next(0.0f, 1.0f) > selfHarmChance)
         {
             return;
         }
 
-        var jewelSelfHarm = (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
-        var selfHarm = (int)(jewelSelfHarm * damage);
+        var selfHarmMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm, 0.1f, 0.005f);
+        var selfHarmAmount = Convert.ToInt32(damage * selfHarmMod - damage);
 
-        playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarm);
-        playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, (uint)selfHarm);
+        playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarmAmount);
+        playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, (uint)selfHarmAmount);
+
+        var message = $"You deal {selfHarmAmount} damage to yourself in a blood frenzy!";
+        playerAttacker.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.CombatEnemy));
 
         if (!playerAttacker.IsDead)
         {
@@ -320,14 +262,9 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingManaOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearManasteal) <= 0)
-        {
-            return;
-        }
+        var chance = 1.0f - GetJewelEffectMod(playerAttacker, PropertyInt.GearManasteal, 0.1f, 0.005f);
 
-        var chance = (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearManasteal) / 100;
-
-        if (playerAttacker == defender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
+        if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
         {
             return;
         }
@@ -350,14 +287,9 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingLifeOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLifesteal) <= 0)
-        {
-            return;
-        }
+        var chance = 1.0f - GetJewelEffectMod(playerAttacker, PropertyInt.GearLifesteal, 0.1f, 0.005f);
 
-        var chance = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLifesteal) * 0.01f;
-
-        if (playerAttacker == defender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
+        if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
         {
             return;
         }
@@ -380,24 +312,19 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToMana(Player playerDefender, Creature attacker, float damage)
     {
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToMana) <= 0)
+        var chance = 1.0f - GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToMana, 0.1f, 0.005f);
+
+        if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
         {
             return;
         }
 
-        var chance = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToMana) * 0.01f;
-
-        if (attacker == playerDefender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
-        {
-            return;
-        }
-
-        var manaAmount = (uint)Math.Round(damage / 4);
+        var manaAmount = Convert.ToUInt32(damage);
         playerDefender.UpdateVitalDelta(playerDefender.Mana, manaAmount);
         playerDefender.DamageHistory.OnHeal(manaAmount);
         playerDefender.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"Your Lapis of the Anchorite restores {manaAmount} points of Mana!",
+                $"Austere Anchorite restores {manaAmount} points of Mana!",
                 ChatMessageType.Broadcast
             )
         );
@@ -409,25 +336,20 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToStamina(Player playerDefender, Creature attacker, float damage)
     {
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToStamina) <= 0)
+        var chance = 1.0f - GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToMana, 0.1f, 0.005f);
+
+        if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
         {
             return;
         }
 
-        var chance = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToStamina) * 0.01f;
-
-        if (attacker == playerDefender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
-        {
-            return;
-        }
-
-        var staminaAmount = (uint)Math.Round(damage);
+        var staminaAmount = Convert.ToUInt32(damage);
 
         playerDefender.UpdateVitalDelta(playerDefender.Stamina, staminaAmount);
         playerDefender.DamageHistory.OnHeal(staminaAmount);
         playerDefender.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"Your Amber of the Masochist restores {staminaAmount} points of Stamina!",
+                $"Masochist restores {staminaAmount} points of Stamina!",
                 ChatMessageType.Broadcast
             )
         );
@@ -440,9 +362,10 @@ partial class Jewel
     public static float GetJewelRedFury(Player playerAttacker)
     {
         var percentHealthRemaining = (float)playerAttacker.Health.Current / playerAttacker.Health.MaxValue;
-        var mod = Math.Min(((1.0f - percentHealthRemaining) / 0.75f), 1.0f);
+        var inverseHealthRemaining = Math.Min((1.0f - percentHealthRemaining), 1.0f);
+        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearRedFury, 0.2f, 0.01f);
 
-        return mod * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) / 100);
+        return inverseHealthRemaining * ratingMod;
     }
 
     /// <summary>
@@ -452,9 +375,10 @@ partial class Jewel
     public static float GetJewelYellowFury(Player playerAttacker)
     {
         var percentStaminaRemaining = (float)playerAttacker.Stamina.Current / playerAttacker.Stamina.MaxValue;
-        var mod = Math.Min(((1.0f - percentStaminaRemaining) / 0.75f), 1.0f);
+        var inverseHealthRemaining = Math.Min((1.0f - percentStaminaRemaining), 1.0f);
+        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearYellowFury, 0.2f, 0.01f);
 
-        return mod * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearYellowFury) / 100);
+        return inverseHealthRemaining * ratingMod;
     }
 
     /// <summary>
@@ -464,9 +388,10 @@ partial class Jewel
     public static float GetJewelBlueFury(Player playerAttacker)
     {
         var percentManaRemaining = (float)playerAttacker.Mana.Current / playerAttacker.Mana.MaxValue;
-        var mod = Math.Min(((1.0f - percentManaRemaining) / 0.75f), 1.0f);
+        var inverseHealthRemaining = Math.Min((1.0f - percentManaRemaining), 1.0f);
+        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearBlueFury, 0.2f, 0.01f);
 
-        return mod * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlueFury) / 100);
+        return inverseHealthRemaining * ratingMod;
     }
 
     // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem workmanship
@@ -492,17 +417,23 @@ partial class Jewel
 
         var workmanship = originalWorkmanship - 1 < 1 ? 1 : originalWorkmanship - 1;
 
+        MaterialType material;
+        string name;
+        string equipmentType;
+        int baseRating;
+        float bonusPerQuality;
+        int baseRatingSecondary;
+        float bonusPerQualitySecondary;
+
         switch (convertedMaterialType)
         {
             //necklace
             case ACE.Entity.Enum.MaterialType.Sunstone:
-                var material = ACE.Entity.Enum.MaterialType.Sunstone;
-                var name = JewelEffectInfo[material].Item1;
-                var equipmentType = JewelEffectInfo[material].Item2;
-                var baseRating = JewelEffectInfo[material].Item3;
-                var bonusPerQuality = JewelEffectInfo[material].Item4;
-                var baseRatingSecondary = JewelEffectInfo[material].Item5;
-                var bonusPerQualitySecondary = JewelEffectInfo[material].Item6;
+                material = ACE.Entity.Enum.MaterialType.Sunstone;
+                name = JewelEffectInfo[material].Item1;
+                equipmentType = JewelEffectInfo[material].Item2;
+                baseRating = JewelEffectInfo[material].Item3;
+                bonusPerQuality = JewelEffectInfo[material].Item4;
                 description =
                     $"Socket this jewel in a {equipmentType} of workmanship {workmanship} or greater to grant a {baseRating}% bonus to experience for monster kills, plus an additional {bonusPerQuality}% per equipped {name} rating.\n\n" +
                     $"{JewelStatsDescription(baseRating, amount, bonusPerQuality, name)}\n\n";
@@ -995,7 +926,6 @@ partial class Jewel
             return description;
         }
 
-        var oneTenth = Math.Round((float)amount / 10, 2);
         var half = Math.Round((float)amount / 2, 1);
         var doubled = Math.Round((float)amount * 2, 1);
         var tripled = Math.Round((float)amount * 3, 1);
