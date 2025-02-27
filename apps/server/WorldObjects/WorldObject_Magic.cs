@@ -150,12 +150,11 @@ partial class WorldObject
         uint casterMagicSkill,
         uint targetMagicDefenseSkill,
         out PartialEvasion partialResist,
-        out float resistChance,
-        float chanceMod = 0.0f
+        out float resistChance
     )
     {
         // uses regular 0.03 factor, and not magic casting 0.07 factor
-        var chance = (1.0 - SkillCheck.GetSkillChance((int)casterMagicSkill, (int)targetMagicDefenseSkill)) + chanceMod;
+        var chance = (1.0 - SkillCheck.GetSkillChance((int)casterMagicSkill, (int)targetMagicDefenseSkill));
         resistChance = (float)chance;
         var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
 
@@ -278,20 +277,15 @@ partial class WorldObject
         }
 
         // Retrieve target's Magic Defense Skill
-        var difficulty = (uint)(
-            targetCreature.GetModdedMagicDefSkill()
-            * LevelScaling.GetPlayerDefenseSkillScalar(targetCreature, casterCreature)
-        );
-
-        var resistChanceMod = 0.0f;
+        var difficulty = (uint)(targetCreature.GetModdedMagicDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(targetCreature, casterCreature));
 
         var player = this as Player;
         var targetPlayer = target as Player;
 
-        resistChanceMod += CheckForCombatAbilityReflectMagicDefBonus(targetPlayer);
-        resistChanceMod += CheckForRatingFamiliaritySpellResistBonus(targetPlayer, casterCreature);
+        difficulty = Convert.ToUInt32(difficulty * (1.0f + CheckForCombatAbilityReflectMagicDefBonus(targetPlayer)));
+        difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, 0.2f, 0.01f, "Familiarity")));
 
-        var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, resistChanceMod);
+        var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance);
 
         partialResist = pResist;
 
@@ -386,30 +380,34 @@ partial class WorldObject
 
     /// <summary>
     /// RATING - Familiarity: Bonus resist chance for having attacked target creature.
-    /// Up to +1% spell resist chance per rating (with max quest stamps).
+    /// Up to +20% + 1% per rating (with max quest stamps).
     /// (JEWEL - Fire Opal)
     /// </summary>
     private static float CheckForRatingFamiliaritySpellResistBonus(Player targetPlayer, Creature casterCreature)
     {
         if (targetPlayer == null || casterCreature == null)
         {
-            return 0.0f;
+            return 1.0f;
         }
 
-        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) <= 0)
+        var rating = targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity);
+
+        if (rating <= 0)
         {
-            return 0.0f;
+            return 1.0f;
         }
 
         if (!casterCreature.QuestManager.HasQuest($"{targetPlayer.Name},Familiarity"))
         {
-            return 0.0f;
+            return 1.0f;
         }
 
-        var rampMod = (float)casterCreature.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Familiarity") / 500; // up to 1.0f
-        var ratingMod = targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) * 0.01f; // 0.01 per rating
+        var rampPercentage = Math.Clamp((float)casterCreature.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Familiarity") / 100, 0.0f, 1.0f);
 
-        return rampMod * ratingMod;
+        const float baseMod = 0.2f;
+        const float bonusPerRating = 0.01f;
+
+        return rampPercentage * (baseMod + bonusPerRating * rating);
     }
 
     /// <summary>
@@ -999,14 +997,23 @@ partial class WorldObject
 
         if (tryBoost > 0) // heal
         {
-            tryBoost = Convert.ToInt32(tryBoost * CheckForRatingSelflessnessBoostMod(targetCreature, player));
-            tryBoost = Convert.ToInt32(tryBoost * CheckForRatingHealBubbleHotspot(spell, targetCreature, weapon, player));
-            tryBoost = Convert.ToInt32(tryBoost * CheckForRatingVitalsTransferBoostPenalty(player));
+            // increases
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearSelflessness, 0.1f, 0.005f)));
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearHealBubble, 0.1f, 0.005f)));
+
+            // reductions
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearVitalsTransfer, 0.1f, 0.005f)));
         }
         else // harm
         {
-            tryBoost = Convert.ToInt32(tryBoost * CheckForRatingNullificationBoostDefenseBonus(targetCreature));
-            tryBoost = Convert.ToInt32(tryBoost * SkillFormula.CalcWardMod(targetCreature.GetWardLevel()));
+            // reductions
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification, 0.2f, 0.01f, "Nullification")));
+
+            // ward
+            var ignoreWardMod = 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearWardPen, 0.2f, 0.01f, "WardPen");
+            var wardMod = GetWardMod(player, targetCreature, ignoreWardMod);
+
+            tryBoost = Convert.ToInt32(tryBoost * wardMod);
         }
 
         ResetRatingElementalistQuestStamps(player);
@@ -1057,6 +1064,11 @@ partial class WorldObject
                     targetCreature.IncreaseTargetThreatLevel(player, boost);
                 }
                 break;
+        }
+
+        if (boost < 0)
+        {
+            HandlePostDamageRatingEffects(targetCreature, boost, player, targetPlayer, creature, spell, ProjectileSpellType.Undef);
         }
 
         if (player != null)
@@ -1144,6 +1156,21 @@ partial class WorldObject
         HandleBoostTransferDeath(creature, targetCreature);
     }
 
+    private static void HandlePostDamageRatingEffects(Creature target, float damage, Player sourcePlayer, Player targetPlayer, Creature sourceCreature, Spell spell, ProjectileSpellType projectileSpellType)
+    {
+        if (sourcePlayer != null)
+        {
+            Jewel.HandleCasterAttackerRampingQuestStamps(sourcePlayer, target, spell, projectileSpellType);
+            Jewel.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, spell.DamageType);
+        }
+
+        if (targetPlayer != null)
+        {
+            Jewel.HandleCasterDefenderRampingQuestStamps(targetPlayer, sourceCreature);
+            Jewel.HandlePlayerDefenderBonuses(targetPlayer, sourceCreature, damage);
+        }
+    }
+
     private static void ResetRatingElementalistQuestStamps(Player player)
     {
         // JEWEL - Elementalist Reset
@@ -1181,27 +1208,6 @@ partial class WorldObject
         var rampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 100;
 
         return 1.0f - rampMod * rating;
-    }
-
-    /// <summary>
-    /// RATING - Vitals Transfer: -2% penalty per rating to restoration spells
-    /// (JEWEL - Rose Quartz)
-    /// </summary>
-    private static float CheckForRatingVitalsTransferBoostPenalty(Player player)
-    {
-        if (player == null)
-        {
-            return 1.0f;
-        }
-
-        if (player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearVitalsTransfer) <= 0)
-        {
-            return 1.0f;
-        }
-
-        var ratingMod = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearVitalsTransfer) * 0.02f;
-
-        return 1.0f - ratingMod;
     }
 
     /// <summary>
@@ -1990,7 +1996,7 @@ partial class WorldObject
         Creature caster, Creature targetCreature, uint damage)
     {
         // JEWEL - Imperial Topaz - Bonus cleave chance
-        if (caster == null || targetCreature == null)
+        if (caster is not Player playerCaster || targetCreature == null)
         {
             return;
         }
@@ -2005,12 +2011,16 @@ partial class WorldObject
             return;
         }
 
-        if (caster.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) <= 0)
+        var rating = playerCaster.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash);
+
+        if (rating <= 0)
         {
             return;
         }
 
-        if (caster.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) <= ThreadSafeRandom.Next(1, 100))
+        var chance = Jewel.GetJewelEffectMod(playerCaster, PropertyInt.GearSlash, 0.1f, 0.005f);
+
+        if (ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
@@ -3765,5 +3775,21 @@ partial class WorldObject
         var mod = procSpellSkill / spell.Power;
 
         return Math.Clamp(mod, 0.5f, 2.0f);
+    }
+
+    private float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
+    {
+        var wardLevel = target.GetWardLevel();
+
+        if (caster is Player)
+        {
+            wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetMonsterArmorWardScalar(caster, target));
+        }
+        else if (target is Player)
+        {
+            wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetPlayerArmorWardScalar(target, caster));
+        }
+
+        return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod);
     }
 }

@@ -187,7 +187,7 @@ public partial class Spell : IEquatable<Spell>
 
             // component burn rate = spell base rate * component destruction modifier * skillMod?
             var burnRate = baseRate * spellComponent.CDM * skillMod * compBurnRating;
-            
+
             // TODO: curve?
             var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
             if (rng < burnRate)
@@ -204,15 +204,14 @@ public partial class Spell : IEquatable<Spell>
     /// </summary>
     private static float CheckForRatingCompBurn(Player player)
     {
-        // JEWEL - Malachite: Reduced comp burn chance
-        if (player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCompBurn) <= 0)
+        var rating = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCompBurn);
+
+        if (rating <= 0)
         {
             return 1.0f;
         }
 
-        var ratingMod = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearCompBurn) / 30;
-
-        return 1.0f - ratingMod;
+        return 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearCompBurn, 0.2f, 0.01f);
     }
 
     public void DebugComponents()

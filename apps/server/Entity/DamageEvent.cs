@@ -70,7 +70,7 @@ public class DamageEvent
     private KeyValuePair<CombatBodyPart, PropertiesBodyPart> _propertiesBodyPart;
     private Quadrant _quadrant;
     private float _ratingElementalDamageBonus;
-    private float _ratingElementalWard;
+    private float _ratingDamageTypeWard;
     private float _ratingRedFury;
     private float _ratingYellowFury;
     private float _ratingSelfHarm;
@@ -477,7 +477,7 @@ public class DamageEvent
         blockChance += GetSpecPhysicalDefenseBlockChanceBonus(playerDefender);
         blockChance += GetCombatAbilityParryBlockChanceBonus(playerDefender);
         blockChance += GetCombatAbilityPhalanxBlockChanceBonus(playerDefender);
-        blockChance += GetRatingBlockChanceBonus(defender);
+        blockChance *= 1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearBlock, 0.1f, 0.005f);
 
         if ((ThreadSafeRandom.Next(0f, 1f) > blockChance))
         {
@@ -786,7 +786,7 @@ public class DamageEvent
         _criticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, attacker, _attackSkill, defender);
         _criticalDamageMod += GetMaceSpecCriticalDamageBonus(playerAttacker);
         _criticalDamageMod += GetStaffSpecCriticalDamageBonus(playerAttacker);
-        _criticalDamageMod += GetRatingBludgeonCriticalDamageBonus(defender, playerAttacker);
+        _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBludgeon, 0.2f, 0.01f, "Bludgeon");
         _criticalDamageMod *= CriticalDamageBonusFromTrinket;
 
         CheckForRatingReprisalCriticalDefense(attacker, playerDefender);
@@ -886,19 +886,28 @@ public class DamageEvent
         );
 
         _resistanceMod = GetResistanceMod(defender, playerDefender);
-        _resistanceMod += GetRatingPierceResistanceBonus(defender, playerAttacker);
+
+        if (DamageType is DamageType.Pierce)
+        {
+            _resistanceMod += Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearPierce, 0.2f, 0.01f, "Pierce");
+        }
 
         _damageResistanceRatingMod = GetDamageResistRatingMod(defender, _pkBattle);
-        _damageResistanceRatingMod += GetRatingHardenedDefenseDamageResistanceBonus(playerDefender);
+        _damageResistanceRatingMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearHardenedDefense, 0.2f, 0.01f, "Hardened Defense");
 
         _specDefenseMod = GetSpecDefenseMod(attacker, playerDefender);
 
         ShieldMod = _defender.GetShieldMod(attacker, DamageType, Weapon);
 
-        _ratingElementalWard = GetRatingElementalWard(playerDefender);
-        _ratingSelfHarm = GetRatingSelfHarm(playerAttacker);
-        _ratingRedFury = GetRatingRedFury(playerAttacker);
-        _ratingYellowFury = GetRatingYellowFury(playerAttacker);
+        _ratingSelfHarm = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm, 0.1f, 0.005f);
+        _ratingRedFury = Jewel.GetJewelRedFury(playerAttacker);
+        _ratingYellowFury = Jewel.GetJewelYellowFury(playerAttacker);
+        _ratingDamageTypeWard = DamageType switch
+        {
+            DamageType.Physical => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearPhysicalWard, 0.1f, 0.005f),
+            DamageType.Elemental => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearElementalWard, 0.1f, 0.005f),
+            _ => 1.0f
+        };
 
         return _armorMod
                * ShieldMod
@@ -906,7 +915,7 @@ public class DamageEvent
                * _damageResistanceRatingMod
                * _evasionMod
                * _specDefenseMod
-               * _ratingElementalWard
+               * _ratingDamageTypeWard
                * _ratingSelfHarm
                * _ratingRedFury
                * _ratingYellowFury;
@@ -1005,7 +1014,7 @@ public class DamageEvent
 
     /// <summary>
     /// RATING - Pierce: Ramping Piercing Resistance Penetration.
-    /// Up to +2% penetration per rating (at max quest stamps).
+    /// Up to +20% + 1% per rating (at max quest stamps).
     /// (JEWEL - Black Garnet)
     /// </summary>
     private float GetRatingPierceResistanceBonus(Creature defender, Player playerAttacker)
@@ -1015,115 +1024,19 @@ public class DamageEvent
             return 0.0f;
         }
 
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) <= 0 || DamageType != DamageType.Pierce)
+        var rating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce);
+
+        if (rating <= 0 || DamageType != DamageType.Pierce)
         {
             return 0.0f;
         }
 
-        var rampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Pierce") / 500; // up to 1.0f;
-        var ratingMod = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) * 0.02f; // 0.02f per rating;
+        var rampPercentage = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Pierce") / 100;
 
-        return rampMod * ratingMod;
-    }
+        const float baseMod = 0.2f;
+        const float bonusPerRating = 0.01f;
 
-    /// <summary>
-    /// RATING - Physical Ward: Protection vs. Slash/Pierce/Bludgeon (JEWEL - Onyx:)
-    /// RATING - Elemental Ward: Protection vs. Acid/Fire/Cold/Electric (JEWEL - Zircon)
-    /// </summary>
-    private float GetRatingElementalWard(Player playerDefender)
-    {
-        if (playerDefender == null)
-        {
-            return 1.0f;
-        }
-
-        switch (DamageType)
-        {
-            case DamageType.Slash:
-            case DamageType.Pierce:
-            case DamageType.Bludgeon:
-            {
-                if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPhysicalWard) > 0)
-                {
-                    return (1 - ((float)playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPhysicalWard) / 100));
-                }
-
-                break;
-            }
-            case DamageType.Acid:
-            case DamageType.Fire:
-            case DamageType.Cold:
-            case DamageType.Electric:
-            {
-                if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalWard) > 0)
-                {
-                    return (1 - ((float)playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalWard) / 100));
-                }
-
-                break;
-            }
-            default:
-                return 1.0f;
-        }
-
-        return 1.0f;
-    }
-
-    /// <summary>
-    /// RATING - Red Fury: Bonus damage as health drops from 100% to 25%
-    /// (JEWEL - Ruby)
-    /// </summary>
-    private float GetRatingRedFury(Player playerAttacker)
-    {
-        if (playerAttacker == null)
-        {
-            return 1.0f;
-        }
-
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) > 0)
-        {
-            return 1.0f + Jewel.GetJewelRedFury(playerAttacker);
-        }
-
-        return 1.0f;
-    }
-
-    /// <summary>
-    /// RATING - Yellow Fury: Bonus damage as stamina drops from 100% to 25%
-    /// (JEWEL - ??)
-    /// </summary>
-    private float GetRatingYellowFury(Player playerAttacker)
-    {
-        if (playerAttacker == null)
-        {
-            return 1.0f;
-        }
-
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearYellowFury) > 0)
-        {
-            return 1.0f + Jewel.GetJewelYellowFury(playerAttacker);
-        }
-
-        return 1.0f;
-    }
-
-    /// <summary>
-    /// RATING - Self Harm: Deal bonus damage but take the same amount
-    /// (JEWEL - Hematite)
-    /// </summary>
-    private float GetRatingSelfHarm(Player playerAttacker)
-    {
-        if (playerAttacker == null)
-        {
-            return 1.0f;
-        }
-
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) > 0)
-        {
-            return (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) * 0.01f + 1.0f);
-        }
-
-        return 1.0f;
+        return rampPercentage * (baseMod + bonusPerRating * rating);
     }
 
     private void PostDamageMitigationEffects(Creature attacker, Creature defender, WorldObject damageSource)
@@ -1159,13 +1072,13 @@ public class DamageEvent
         if (playerAttacker != null)
         {
             Jewel.HandlePlayerAttackerBonuses(playerAttacker, defender, Damage, DamageType);
-            Jewel.HandleMeleeAttackerBonuses(playerAttacker, defender, DamageType);
+            Jewel.HandleMeleeAttackerRampingQuestStamps(playerAttacker, defender, DamageType);
         }
 
         if (playerDefender != null)
         {
             Jewel.HandlePlayerDefenderBonuses(playerDefender, attacker, Damage);
-            Jewel.HandleMeleeDefenderBonuses(playerDefender);
+            Jewel.HandleMeleeDefenderRampingQuestStamps(playerDefender);
         }
     }
 
@@ -1247,25 +1160,29 @@ public class DamageEvent
 
     /// <summary>
     /// RATING - Hardened Defense: Ramping Physical Damage Reduction.
-    /// Up to +2% physical damage reduction per rating (at max quest stamps).
+    /// Up to +20% + 1% per rating (at max quest stamps).
     /// (JEWEL - Diamond)
     /// </summary>
-    private float GetRatingHardenedDefenseDamageResistanceBonus(Player playerDefender)
+    private static float GetRatingHardenedDefenseDamageResistanceBonus(Player playerDefender)
     {
         if (playerDefender == null)
         {
             return 0.0f;
         }
 
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHardenedDefense) <= 0)
+        var rating = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHardenedDefense);
+
+        if (rating <= 0)
         {
             return 0.0f;
         }
 
-        var rampMod = (float)playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") / 200; // up to 1.0f
-        var ratingMod = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHardenedDefense) * 0.02f; // 0.02f per rating
+        var rampPercentage = (float)playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") / 100;
 
-        return rampMod * ratingMod;
+        const float baseMod = 0.2f;
+        const float bonusPerRating = 0.01f;
+
+        return rampPercentage * (baseMod + bonusPerRating * rating);
     }
 
     private float GetDamageResistRatingMod(Creature defender, bool pkBattle)
@@ -1298,12 +1215,16 @@ public class DamageEvent
             return;
         }
 
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) <= 0)
+        var rating = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal);
+
+        if (rating <= 0)
         {
             return;
         }
 
-        if ((playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) / 2) < ThreadSafeRandom.Next(0, 100))
+        var chance = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearReprisal, 0.05f, 0.0025f);
+
+        if (ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
@@ -1313,11 +1234,14 @@ public class DamageEvent
         Evaded = true;
         PartialEvasion = PartialEvasion.All;
         playerDefender.Reprisal = true;
+
+        var msg = $"Reprisal! You evade the attack by {attacker.Name}";
+        playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatEnemy));
     }
 
     /// <summary>
     /// RATING - Bludgeon: Ramping Bludgeon Crit Damage Bonus.
-    /// Up to +2% crit damage per rating (at max quest stamps).
+    /// Up to +20% + 1% per rating (at max quest stamps).
     /// (JEWEL - White Sapphire)
     /// </summary>
     private static float GetRatingBludgeonCriticalDamageBonus(Creature defender, Player playerAttacker)
@@ -1327,15 +1251,18 @@ public class DamageEvent
             return 0.0f;
         }
 
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) <= 0)
+        var rating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon);
+        if (rating <= 0)
         {
             return 0.0f;
         }
 
-        var rampMod = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bludgeon") / 500; // up to 1.0f
-        var ratingMod = (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) / 50; // 0.02f per rating
+        var rampPercentage = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bludgeon") / 100;
 
-        return rampMod * ratingMod;
+        const float baseMod = 0.2f;
+        const float bonusPerRating = 0.01f;
+
+        return rampPercentage * (baseMod + bonusPerRating * rating);
     }
 
     /// <summary>
@@ -1491,11 +1418,14 @@ public class DamageEvent
 
         var damage = GetNonCriticalDamageBeforeMitigation();
 
-        var thornsAmount = damage * playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThorns) / 20;
+        var thornsAmount = damage * Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearThorns, 0.1f, 0.005f);
 
         attacker.UpdateVitalDelta(attacker.Health, -(int)thornsAmount);
         attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)thornsAmount);
         playerDefender.ShieldReprisal = (int)thornsAmount;
+
+        var msg = $"You deflect {thornsAmount} damage back to the attacker!";
+        playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
 
         if (!attacker.IsDead)
         {
@@ -1573,16 +1503,15 @@ public class DamageEvent
 
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForAttackHeightMediumAttackSkillBonus(playerAttacker));
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForCombatAbilitySteadyShotAttackSkillBonus(playerAttacker));
-        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForRatingFamiliarityAttackSkillPenalty(attacker, playerDefender));
-        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForRatingBravadoAttackSkillBonus(playerAttacker));
+        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * (1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBravado, 0.2f, 0.01f, "Bravado")));
 
         _effectiveDefenseSkill = (uint)(defender.GetEffectiveDefenseSkill(CombatType) * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker)
         );
 
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * CheckForAttackHeightLowDefenseSkillBonus(playerDefender, playerAttacker));
+        _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * (1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearFamiliarity, 0.2f, 0.01f, "Familiarity")));
 
         var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, _effectiveDefenseSkill);
-
         evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, playerDefender);
 
         if (evadeChance < 0)
@@ -1611,64 +1540,6 @@ public class DamageEvent
         }
 
         return evadeChance;
-    }
-
-    /// <summary>
-    /// RATING - Bravado: Hit chance bonus for having been attacked frequently.
-    /// Up to +1% hit chance bonus per rating (with max quest stamps).
-    /// (JEWEL - Yellow Garnet)
-    /// </summary>
-    private float CheckForRatingBravadoAttackSkillBonus(Player playerAttacker)
-    {
-        if (playerAttacker == null)
-        {
-            return 1.0f;
-        }
-
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBravado) <= 0)
-        {
-            return 1.0f;
-        }
-
-        if (!playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Bravado"))
-        {
-            return 1.0f;
-        }
-
-        var rampMod = (float)playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bravado") / 1000; // up to 1.0f
-        var ratingMod = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBravado) * 0.01f; // 0.01f per rating
-
-        var bravadoBonus = 1f + rampMod * ratingMod;
-
-        return bravadoBonus;
-    }
-
-    /// <summary>
-    /// RATING - Familiarity: Evade chance bonus for having attacked target creature.
-    /// (JEWEL - Fire Opal)
-    /// </summary>
-    private float CheckForRatingFamiliarityAttackSkillPenalty(Creature attacker, Player playerDefender)
-    {
-        if (playerDefender == null || attacker == null)
-        {
-            return 1.0f;
-        }
-
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) <= 0)
-        {
-            return 1.0f;
-        }
-
-        if (!attacker.QuestManager.HasQuest($"{playerDefender.Name},Familiarity"))
-        {
-            return 1.0f;
-        }
-
-        var rampMod = (float)attacker.QuestManager.GetCurrentSolves($"{playerDefender.Name},Familiarity") / 500;
-
-        var familiarityPenalty = 1f - (rampMod * ((float)playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) / 100));
-
-        return familiarityPenalty;
     }
 
     /// <summary>
@@ -1894,20 +1765,6 @@ public class DamageEvent
     private float GetCombatAbilityPhalanxBlockChanceBonus(Player playerDefender)
     {
         return playerDefender?.LastPhalanxActivated > Time.GetUnixTime() - playerDefender?.PhalanxActivatedDuration ? 0.5f : 0.0f;
-    }
-
-    /// <summary>
-    /// RATING - GearBlock: Passively increases block chance by the rating amount (additively).
-    /// (JEWEL - Turquoise)
-    /// </summary>
-    private float GetRatingBlockChanceBonus(Creature defender)
-    {
-        if (defender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlock) > 0)
-        {
-            return defender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlock) * 0.01f;
-        }
-
-        return 0.0f;
     }
 
     public static float GetAmmoEffectMod(WorldObject weapon, Player player)

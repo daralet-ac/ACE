@@ -175,12 +175,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingProsperityFindStamps(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPyrealFind) <= 0)
-        {
-            return;
-        }
-
-        var pyrealFind = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPyrealFind);
+        var pyrealFind = GetJewelEffectMod(playerAttacker, PropertyInt.GearPyrealFind, 0.05f, 0.0025f);
 
         defender.QuestManager.Stamp($"{playerAttacker.Name}/Prosperity/{pyrealFind}/{damage}");
     }
@@ -191,12 +186,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingMagicFindStamps(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearMagicFind) <= 0)
-        {
-            return;
-        }
-
-        var magicFind = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearMagicFind);
+        var magicFind = GetJewelEffectMod(playerAttacker, PropertyInt.GearMagicFind, 0.05f, 0.0025f);
 
         defender.QuestManager.Stamp($"{playerAttacker.Name}/MagicFind/{magicFind}/{damage}");
     }
@@ -336,7 +326,7 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToStamina(Player playerDefender, Creature attacker, float damage)
     {
-        var chance = 1.0f - GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToMana, 0.1f, 0.005f);
+        var chance = 1.0f - GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToStamina, 0.1f, 0.005f);
 
         if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
         {
@@ -1060,7 +1050,6 @@ partial class Jewel
         { "Life Steal", PropertyInt.GearLifesteal },
         { "Blood Frenzy", PropertyInt.GearSelfHarm },
         { "Selflessness", PropertyInt.GearSelflessness },
-        { "Focused Assault", PropertyInt.GearFamiliarity },
         { "Bravado", PropertyInt.GearBravado },
         { "Health To Stamina", PropertyInt.GearHealthToStamina },
         { "Health To Mana", PropertyInt.GearHealthToMana },
