@@ -4,10 +4,9 @@ using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Network.GameMessages.Messages;
-using AttackType = ACE.Entity.Enum.AttackType;
 using DamageType = ACE.Entity.Enum.DamageType;
-using WeaponType = ACE.Entity.Enum.WeaponType;
 
 namespace ACE.Server.WorldObjects;
 
@@ -30,82 +29,52 @@ partial class Jewel
         CheckForRatingHealthToMana(playerDefender, attacker, damage);
     }
 
-    public static void HandleMeleeAttackerBonuses(Player playerAttacker, Creature defender, DamageType damageType)
+    public static void HandleMeleeAttackerRampingQuestStamps(Player playerAttacker, Creature defender, DamageType damageType)
     {
-        var scaledStamps = Math.Round(playerAttacker.ScaleWithPowerAccuracyBar(20f));
+        var scaledStamps = GetBaseMeleeScaledStamps(playerAttacker, defender);
 
-        scaledStamps += 20f;
+        AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearStamReduction, "StamReduction", scaledStamps, true);
+        AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearFamiliarity, "Familiarity", scaledStamps);
 
-        var numStrikes = playerAttacker.GetNumStrikes(playerAttacker.AttackType);
-        if (numStrikes == 2)
+        switch (damageType)
         {
-            if (playerAttacker.GetEquippedWeapon() is {W_WeaponType: WeaponType.TwoHanded})
-            {
-                scaledStamps /= 2f;
-            }
-            else
-            {
-                scaledStamps /= 1.5f;
-            }
-        }
-
-        if (
-            playerAttacker.AttackType == AttackType.OffhandPunch
-            || playerAttacker.AttackType == AttackType.Punch
-            || playerAttacker.AttackType == AttackType.Punches
-        )
-        {
-            scaledStamps /= 1.25f;
-        }
-
-        CheckForRatingStamReductionMeleeStamps(playerAttacker, scaledStamps);
-
-        var rampProperty = "";
-
-        rampProperty = CheckForRatingBludgeonMeleeStamps(playerAttacker, damageType, rampProperty);
-        rampProperty = CheckForRatingPierceMeleeStamps(playerAttacker, damageType, rampProperty);
-        rampProperty = CheckForRatingFamiliarityMeleeStamps(playerAttacker, rampProperty);
-
-        if (rampProperty == "")
-        {
-            return;
-        }
-
-        if (defender.QuestManager.HasQuest($"{playerAttacker.Name},{rampProperty}"))
-        {
-            if (defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},{rampProperty}") < 500)
-            {
-                defender.QuestManager.Increment($"{playerAttacker.Name},{rampProperty}", (int)scaledStamps);
-            }
-        }
-        else
-        {
-            defender.QuestManager.Stamp($"{playerAttacker.Name},{rampProperty}");
-
-            defender.QuestManager.Increment($"{playerAttacker.Name},{rampProperty}", (int)scaledStamps);
+            case DamageType.Bludgeon:
+                AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearBludgeon, "Bludgeon", scaledStamps);
+                break;
+            case DamageType.Pierce:
+                AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearPierce, "Pierce", scaledStamps);
+                break;
         }
     }
 
-    public static void HandleMeleeDefenderBonuses(Player playerDefender)
+    public static void HandleMeleeDefenderRampingQuestStamps(Player playerDefender)
     {
-        CheckForRatingHardenedDefenseMeleeStamps(playerDefender);
-        CheckForRatingBravadoMeleeStamps(playerDefender);
+        AddRatingQuestStamps(playerDefender, null, PropertyInt.GearHardenedDefense, "Hardened Defense", 10);
+        AddRatingQuestStamps(playerDefender, null, PropertyInt.GearBravado, "Bravado", 10);
     }
 
-    public static void HandleCasterAttackerBonuses(Player sourcePlayer, Creature targetCreature, DamageType damageType, uint spellLevel, int? spellTypeScaler)
+    public static void HandleCasterAttackerRampingQuestStamps(Player sourcePlayer, Creature targetCreature, Spell spell, ProjectileSpellType projectileSpellTyper)
     {
-        var baseStamps = GetBaseStampsFromPlayerAndSpellLevels(sourcePlayer, spellLevel, spellTypeScaler);
+        var scaledStamps = GetBaseCasterScaledStamps(sourcePlayer, spell.Level, projectileSpellTyper);
 
-        CheckForRatingBludgeonCasterStamps(sourcePlayer, targetCreature, damageType, baseStamps);
-        CheckForRatingPierceCasterStamps(sourcePlayer, targetCreature, damageType, baseStamps);
-        CheckForRatingFamiliarityCasterStamps(sourcePlayer, targetCreature, baseStamps);
-        CheckForRatingWardPenCasterStamps(sourcePlayer, targetCreature, baseStamps);
-        CheckForRatingElementalistCasterStamps(sourcePlayer, baseStamps);
+        AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearFamiliarity, "Familiarity", scaledStamps);
+        AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearWardPen, "WardPen", scaledStamps);
+        AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearElementalist, "Elementalist", scaledStamps, true);
+
+        switch (spell.DamageType)
+        {
+            case DamageType.Bludgeon:
+                AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearBludgeon, "Bludgeon", scaledStamps, true);
+                break;
+            case DamageType.Pierce:
+                AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearPierce, "Pierce", scaledStamps, true);
+                break;
+        }
     }
 
-    public static void HandleCasterDefenderBonuses(Player targetPlayer, Creature sourceCreature, ProjectileSpellType spellType)
+    public static void HandleCasterDefenderRampingQuestStamps(Player targetPlayer, Creature sourceCreature)
     {
-        CheckForRatingNullificationStamps(targetPlayer);
+        AddRatingQuestStamps(targetPlayer, sourceCreature, PropertyInt.GearNullification, "Nullification", 10, true);
     }
 
     public static float HandleElementalBonuses(Player playerAttacker, DamageType damageType)
@@ -209,382 +178,57 @@ partial class Jewel
         return jewelElemental;
     }
 
-    /// <summary>
-    /// RATING - Nullification: Adds quest stamps for nullification rating. (25% buildup per spell hit received)
-    /// (JEWEL - Amethyst)
-    /// </summary>
-    private static void CheckForRatingNullificationStamps(Player targetPlayer)
+    private static int GetBaseMeleeScaledStamps(Player playerAttacker, Creature defender)
     {
-        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) <= 0)
+        const int baseStamps = 10;
+
+        var powerBarScalar = playerAttacker.GetPowerAccuracyBar() * 2;
+
+        var equippedWeapon = playerAttacker.GetEquippedMeleeWeapon();
+        var weaponAnimationLength = WeaponAnimationLength.GetWeaponAnimLength(equippedWeapon);
+        var weaponTime = equippedWeapon.WeaponTime ?? 100;
+        var attacksPerSecondScalar = 1 / (weaponAnimationLength / (1.0f + (1 - (weaponTime / 100.0))));
+
+        return Convert.ToInt32(baseStamps * powerBarScalar * attacksPerSecondScalar);
+    }
+
+    private static int GetBaseCasterScaledStamps(Player sourcePlayer, uint spellLevel, ProjectileSpellType projectileSpellType)
+    {
+        const int baseStamps = 10;
+
+        var castAnimationLengthScalar = WeaponAnimationLength.GetSpellCastAnimationLength(projectileSpellType, spellLevel);
+
+        var spellTypeScalar = projectileSpellType switch
+        {
+            ProjectileSpellType.Blast or ProjectileSpellType.Volley => 0.33f,
+            ProjectileSpellType.Ring or ProjectileSpellType.Wall => 0.25f,
+            _ => 1.0f
+        };
+
+        return Convert.ToInt32(baseStamps * castAnimationLengthScalar * spellTypeScalar);
+    }
+
+    private static void AddRatingQuestStamps(Player sourcePlayer, Creature targetCreature, PropertyInt propertyInt, string questString, int amount, bool questManagerOfPlayer = false)
+    {
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(propertyInt) <= 0)
         {
             return;
         }
 
-        if (targetPlayer.QuestManager.HasQuest($"{targetPlayer.Name},Nullification"))
+        var questTarget = questManagerOfPlayer ? sourcePlayer : targetCreature;
+
+        if (questTarget.QuestManager.HasQuest($"{sourcePlayer.Name},{questString}"))
         {
-            if (targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") < 100)
+            if (questTarget.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},{questString}") < 100)
             {
-                targetPlayer.QuestManager.Increment($"{targetPlayer.Name},Nullification", 25);
+                questTarget.QuestManager.Increment($"{sourcePlayer.Name},{questString}", amount);
             }
         }
         else
         {
-            targetPlayer.QuestManager.Stamp($"{targetPlayer.Name},Nullification");
-            targetPlayer.QuestManager.Increment($"{targetPlayer.Name},Nullification", 25);
+            questTarget.QuestManager.Stamp($"{sourcePlayer.Name},{questString}");
+            questTarget.QuestManager.Increment($"{sourcePlayer.Name},{questString}", amount);
         }
-    }
-
-    private static int GetBaseStampsFromPlayerAndSpellLevels(Player sourcePlayer, uint spellLevel, int? spellTypeScaler)
-    {
-        var baseStamps = 50;
-        if (sourcePlayer is { Level: not null })
-        {
-            var playerLevelDivisor = (int)(sourcePlayer.Level / 10);
-
-            if (playerLevelDivisor > 7)
-            {
-                playerLevelDivisor = 7;
-            }
-
-            switch (spellLevel)
-            {
-                case 1:
-                {
-                    if (playerLevelDivisor >= 2)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 2:
-                {
-                    baseStamps = (int)(baseStamps * 1.5);
-
-                    if (playerLevelDivisor >= 3)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 3:
-                {
-                    baseStamps = (baseStamps * 2);
-
-                    if (playerLevelDivisor >= 4)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 4:
-                {
-                    baseStamps = (int)(baseStamps * 2.25);
-
-                    if (playerLevelDivisor >= 5)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 5:
-                {
-                    baseStamps = (int)(baseStamps * 2.5);
-
-                    if (playerLevelDivisor >= 6)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 6:
-                {
-                    baseStamps = (int)(baseStamps * 2.5);
-
-                    if (playerLevelDivisor >= 7)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        if (spellLevel == 7)
-        {
-            baseStamps = (int)(baseStamps * 2.5);
-        }
-
-        if (spellTypeScaler != null)
-        {
-            baseStamps /= (int)spellTypeScaler;
-        }
-
-        return baseStamps;
-    }
-
-    /// <summary>
-    /// RATING - Elementalist: Adds quest stamps for elementalist rating.
-    /// (JEWEL - Green Garnet)
-    /// </summary>
-    private static void CheckForRatingElementalistCasterStamps(Player sourcePlayer, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalist) <= 0)
-        {
-            return;
-        }
-
-        if (sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Elementalist"))
-        {
-            if (sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") < 500)
-            {
-                sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Elementalist", baseStamps);
-            }
-        }
-        else
-        {
-            sourcePlayer.QuestManager.Stamp($"{sourcePlayer.Name},Elementalist");
-            sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Elementalist", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Ward Penetration: Adds quest stamps for ward pen rating.
-    /// (JEWEL - Tourmaline)
-    /// </summary>
-    private static void CheckForRatingWardPenCasterStamps(Player sourcePlayer, Creature targetCreature, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearWardPen) <= 0)
-        {
-            return;
-        }
-
-        if (targetCreature.QuestManager.HasQuest($"{sourcePlayer.Name},WardPen"))
-        {
-            if (targetCreature.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") < 500)
-            {
-                targetCreature.QuestManager.Increment($"{sourcePlayer.Name},WardPen", baseStamps);
-            }
-        }
-        else
-        {
-            targetCreature.QuestManager.Stamp($"{sourcePlayer.Name},WardPen");
-            targetCreature.QuestManager.Increment($"{sourcePlayer.Name},WardPen", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Familiarity: Adds quest stamps for familiarity rating.
-    /// (JEWEL - Fire Opal)
-    /// </summary>
-    private static void CheckForRatingFamiliarityCasterStamps(Player sourcePlayer, Creature targetCreature, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) <= 0)
-        {
-            return;
-        }
-
-        if (targetCreature.QuestManager.HasQuest($"{sourcePlayer.Name},Familiarity"))
-        {
-            if (targetCreature.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Familiarity") < 500)
-            {
-                targetCreature.QuestManager.Increment($"{sourcePlayer.Name},Familiarity", baseStamps);
-            }
-        }
-        else
-        {
-            targetCreature.QuestManager.Stamp($"{sourcePlayer.Name},Familiarity");
-
-            targetCreature.QuestManager.Increment($"{sourcePlayer.Name},Familiarity", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Pierce: Adds quest stamps for pierce rating.
-    /// (JEWEL - Black Garnet)
-    /// </summary>
-    private static void CheckForRatingPierceCasterStamps(Player sourcePlayer, Creature targetCreature, DamageType damageType, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) <= 0)
-        {
-            return;
-        }
-
-        if (damageType != DamageType.Pierce)
-        {
-            return;
-        }
-
-        if (targetCreature.QuestManager.HasQuest($"{targetCreature.Name},Pierce"))
-        {
-            if (targetCreature.QuestManager.GetCurrentSolves($"{targetCreature.Name},Pierce") < 500)
-            {
-                targetCreature.QuestManager.Increment($"{targetCreature.Name},Pierce", baseStamps);
-            }
-        }
-        else
-        {
-            targetCreature.QuestManager.Stamp($"{targetCreature.Name},Pierce");
-            targetCreature.QuestManager.Increment($"{targetCreature.Name},Pierce", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Bludgeon: Adds quest stamps for bludgeon rating.
-    /// (JEWEL - White Sapphire)
-    /// </summary>
-    private static void CheckForRatingBludgeonCasterStamps(Player sourcePlayer, Creature targetCreature, DamageType damageType, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) <= 0)
-        {
-            return;
-        }
-
-        if (damageType != DamageType.Bludgeon)
-        {
-            return;
-        }
-
-        if (targetCreature.QuestManager.HasQuest($"{targetCreature.Name},Bludgeon"))
-        {
-            if (targetCreature.QuestManager.GetCurrentSolves($"{targetCreature.Name},Bludgeon") < 500)
-            {
-                targetCreature.QuestManager.Increment($"{targetCreature.Name},Bludgeon", baseStamps);
-            }
-        }
-        else
-        {
-            targetCreature.QuestManager.Stamp($"{targetCreature.Name},Bludgeon");
-            targetCreature.QuestManager.Increment($"{targetCreature.Name},Bludgeon", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Bravado: Adds quest stamps for bravado rating.
-    /// (JEWEL - Yellow Garnet)
-    /// </summary>
-    private static void CheckForRatingBravadoMeleeStamps(Player playerDefender)
-    {
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBravado) <= 0)
-        {
-            return;
-        }
-
-        if (playerDefender.QuestManager.HasQuest($"{playerDefender.Name},Bravado"))
-        {
-            if (playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Bravado") < 1000)
-            {
-                playerDefender.QuestManager.Increment($"{playerDefender.Name},Bravado", 100);
-            }
-        }
-        else
-        {
-            playerDefender.QuestManager.Stamp($"{playerDefender.Name},Bravado");
-            playerDefender.QuestManager.Increment($"{playerDefender.Name},Bravado", 100);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Hardened Defense: Adds quest stamps for hardened defense rating.
-    /// (JEWEL - Diamond)
-    /// </summary>
-    private static void CheckForRatingHardenedDefenseMeleeStamps(Player playerDefender)
-    {
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHardenedDefense) <= 0)
-        {
-            return;
-        }
-
-        if (playerDefender.QuestManager.HasQuest($"{playerDefender.Name},Hardened Defense"))
-        {
-            if (playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") < 200)
-            {
-                playerDefender.QuestManager.Increment($"{playerDefender.Name},Hardened Defense", 20);
-            }
-        }
-        else
-        {
-            playerDefender.QuestManager.Stamp($"{playerDefender.Name},Hardened Defense");
-            playerDefender.QuestManager.Increment($"{playerDefender.Name},Hardened Defense", 20);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Stamina Reduction: Adds quest stamps for Stamina Reduction rating.
-    /// (JEWEL - Citrine)
-    /// </summary>
-    private static void CheckForRatingStamReductionMeleeStamps(Player playerAttacker, double scaledStamps)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearStamReduction) <= 0)
-        {
-            return;
-        }
-
-        if (playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},StamReduction"))
-        {
-            if (playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},StamReduction") < 500)
-            {
-                playerAttacker.QuestManager.Increment($"{playerAttacker.Name},StamReduction", (int)scaledStamps);
-            }
-        }
-        else
-        {
-            playerAttacker.QuestManager.Stamp($"{playerAttacker.Name},StamReduction");
-            playerAttacker.QuestManager.Increment($"{playerAttacker.Name},StamReduction", (int)scaledStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Familiarity: Adds quest stamps for Familiarity rating.
-    /// (JEWEL - Fire Opal)
-    /// </summary>
-    private static string CheckForRatingFamiliarityMeleeStamps(Player playerAttacker, string rampProperty)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) > 0)
-        {
-            rampProperty = "Familiarity";
-        }
-
-        return rampProperty;
-    }
-
-    /// <summary>
-    /// RATING - Pierce: Adds quest stamps for Pierce rating.
-    /// (JEWEL - Black Garnet)
-    /// </summary>
-    private static string CheckForRatingPierceMeleeStamps(Player playerAttacker, DamageType damageType, string rampProperty)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) > 0)
-        {
-            if (damageType == DamageType.Pierce)
-            {
-                rampProperty = "Pierce";
-            }
-        }
-
-        return rampProperty;
-    }
-
-    /// <summary>
-    /// RATING - Bludgeon: Adds quest stamps for Bludgeon rating.
-    /// (JEWEL - White Sapphire)
-    /// </summary>
-    private static string CheckForRatingBludgeonMeleeStamps(Player playerAttacker, DamageType damageType, string rampProperty)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) > 0)
-        {
-            if (damageType == DamageType.Bludgeon)
-            {
-                rampProperty = "Bludgeon";
-            }
-        }
-
-        return rampProperty;
     }
 
     /// <summary>
