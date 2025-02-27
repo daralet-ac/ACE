@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using ACE.Entity.Enum;
+using ACE.Server.Entity;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Factories.Tables;
 
 public static class WeaponAnimationLength
 {
-    private static readonly Dictionary<AttackType, float> MeleeAnimLength = new Dictionary<AttackType, float>()
+    private static readonly Dictionary<AttackType, float> MeleeAnimLength = new()
     {
         { AttackType.DoubleSlash, 2.62f },
         { AttackType.DoubleStrike, 2.62f }, // use fastest, DoubleSlash
@@ -34,14 +35,36 @@ public static class WeaponAnimationLength
         { AttackType.Unarmed, 1.10f },
     };
 
-    private static readonly Dictionary<Skill, float> MissileAnimLength = new Dictionary<Skill, float>()
+    private static readonly Dictionary<Skill, float> MissileAnimLength = new()
     {
         { Skill.Bow, 1.057f },
         { Skill.Crossbow, 1.59f },
         { Skill.ThrownWeapon, 1.85f } // Atlatl
     };
 
-    public static float GetAnimLength(WorldObject weapon)
+    private static readonly Dictionary<uint, float> SpellBoltArcAnimLengthPerLevel = new()
+    {
+        { 1, 1.04f },
+        { 2, 1.58f },
+        { 3, 2.04f },
+        { 4, 2.48f },
+        { 5, 2.82f },
+        { 6, 2.88f },
+        { 7, 2.88f },
+    };
+
+    private static readonly Dictionary<uint, float> SpellBlastVolleyAnimLengthPerLevel = new()
+    {
+        { 1, 0.67f },
+        { 2, 1.21f },
+        { 3, 1.67f },
+        { 4, 2.11f },
+        { 5, 2.45f },
+        { 6, 2.51f },
+        { 7, 2.51f },
+    };
+
+    public static float GetWeaponAnimLength(WorldObject weapon)
     {
         if (weapon == null)
         {
@@ -54,21 +77,30 @@ public static class WeaponAnimationLength
         {
             return 1.85f;
         }
-        else if (!weapon.IsAmmoLauncher && weapon.WeaponSkill == Skill.ThrownWeapon)
+
+        return weapon.IsAmmoLauncher switch
         {
-            return 2.33f;
-        }
-        else if (!weapon.IsAmmoLauncher && MeleeAnimLength.TryGetValue(weapon.W_AttackType, out valueMod))
+            false when weapon.WeaponSkill == Skill.ThrownWeapon => 2.33f,
+            false when MeleeAnimLength.TryGetValue(weapon.W_AttackType, out valueMod) => valueMod,
+            true when MissileAnimLength.TryGetValue(weapon.WeaponSkill, out valueMod) => valueMod,
+            _ => 1.0f
+        };
+    }
+
+    public static float GetSpellCastAnimationLength(ProjectileSpellType projectileSpellType, uint spellLevel)
+    {
+        if (spellLevel is < 1 or > 7)
         {
-            return valueMod;
+            return 1.0f;
         }
-        else if (weapon.IsAmmoLauncher && MissileAnimLength.TryGetValue(weapon.WeaponSkill, out valueMod))
+
+        return projectileSpellType switch
         {
-            return valueMod;
-        }
-        else
-        {
-            return 1.0f; // default?
-        }
+            ProjectileSpellType.Bolt or ProjectileSpellType.Arc => SpellBoltArcAnimLengthPerLevel[spellLevel],
+            ProjectileSpellType.Blast or ProjectileSpellType.Volley => SpellBlastVolleyAnimLengthPerLevel[spellLevel],
+            ProjectileSpellType.Ring or ProjectileSpellType.Wall => 2.5f,
+            ProjectileSpellType.Streak => 1.04f,
+            _ => 1.0f
+        };
     }
 }
