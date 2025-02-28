@@ -1962,7 +1962,7 @@ public class AppraiseInfo
             return;
         }
 
-        var ratingRomanNumeral = ConvertIntToRomanNumeral(gearRating);
+        var ratingRomanNumeral = ToRoman(gearRating);
 
         _additionalPropertiesList.Add($"{name} {ratingRomanNumeral}");
 
@@ -1971,36 +1971,30 @@ public class AppraiseInfo
         var percentSign = percent ? "%" : "";
         var desc = description.Replace("(ONE)", $"{baseOne + gearRating * multiplierOne}{percentSign}");
         desc = desc.Replace("(TWO)", $"{baseTwo + gearRating * multiplierTwo}{percentSign}");
-        _additionalPropertiesLongDescriptionsText +=
-            $"~ {name} {ratingRomanNumeral}: {desc}\n";
+
+        _additionalPropertiesLongDescriptionsText += $"~ {name} {ratingRomanNumeral}: {desc}\n";
     }
 
-    private string ConvertIntToRomanNumeral(int number)
+    private static string ToRoman(int number)
     {
-        switch (number)
+        return number switch
         {
-            case 1: return "I";
-            case 2: return "II";
-            case 3: return "III";
-            case 4: return "IV";
-            case 5: return "V";
-            case 6: return "VI";
-            case 7: return "VII";
-            case 8: return "VII";
-            case 9: return "IX";
-            case 10: return "X";
-            case 11: return "XI";
-            case 12: return "XII";
-            case 13: return "XIII";
-            case 14: return "XIV";
-            case 15: return "XV";
-            case 16: return "XVI";
-            case 17: return "XVII";
-            case 18: return "XVIII";
-            case 19: return "XIX";
-            case 20: return "XX";
-            default: return number.ToString();
-        }
+            < 0 or > 3999 => throw new ArgumentOutOfRangeException(nameof(number), "insert value between 1 and 3999"),
+            < 1 => string.Empty,
+            >= 1000 => "M" + ToRoman(number - 1000),
+            >= 900 => "CM" + ToRoman(number - 900),
+            >= 500 => "D" + ToRoman(number - 500),
+            >= 400 => "CD" + ToRoman(number - 400),
+            >= 100 => "C" + ToRoman(number - 100),
+            >= 90 => "XC" + ToRoman(number - 90),
+            >= 50 => "L" + ToRoman(number - 50),
+            >= 40 => "XL" + ToRoman(number - 40),
+            >= 10 => "X" + ToRoman(number - 10),
+            >= 9 => "IX" + ToRoman(number - 9),
+            >= 5 => "V" + ToRoman(number - 5),
+            >= 4 => "IV" + ToRoman(number - 4),
+            >= 1 => "I" + ToRoman(number - 1)
+        };
     }
 
     private string GetProtectionLevelText(float protectionMod)
