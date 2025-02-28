@@ -252,7 +252,15 @@ public partial class RecipeManager
 
         var playerCurrentPlusLumAugSkilledCraft = playerSkill.Current + (uint)player.LumAugSkilledCraft;
 
-        var successChance = SkillCheck.GetSkillChance(playerCurrentPlusLumAugSkilledCraft, recipe.Difficulty);
+        var difficulty = recipe.Difficulty;
+
+        // Jewel Carving
+        if (recipe.Id is 10000 && target is {Workmanship: not null})
+        {
+            difficulty = Convert.ToUInt32(target.Workmanship * 20 - 20);
+        }
+
+        var successChance = SkillCheck.GetSkillChance(playerCurrentPlusLumAugSkilledCraft, difficulty);
 
         if (PropertyManager.GetBool("bypass_crafting_checks").Item)
         {
@@ -498,7 +506,7 @@ public partial class RecipeManager
             var skill = player.GetCreatureSkill((Skill)recipe.Skill);
             var skillType = (Skill)recipe.Skill;
 
-            player.TryAwardCraftingXp(player, skill, skillType, (int)recipe.Difficulty);
+            Player.TryAwardCraftingXp(player, skill, skillType, (int)recipe.Difficulty);
         }
     }
 
@@ -541,7 +549,8 @@ public partial class RecipeManager
         WorldObject source,
         WorldObject target,
         Recipe recipe,
-        uint dataId
+        uint dataId,
+        bool success
     )
     {
         // legacy method, unused by default
@@ -806,7 +815,7 @@ public partial class RecipeManager
                 break;
 
             case 0x39000002: // JewelCarving
-                Jewel.HandleJewelcarving(player, source, target);
+                Jewel.HandleJewelcarving(player, source, target, success);
                 break;
 
             case 0x39000003:
@@ -1636,7 +1645,7 @@ public partial class RecipeManager
 
         foreach (var mod in recipe.RecipeMod)
         {
-            if (mod.ExecutesOnSuccess != success)
+            if (mod.ExecutesOnSuccess != success && !ExecutesOnFailure(recipe))
             {
                 continue;
             }
@@ -1691,12 +1700,22 @@ public partial class RecipeManager
             // run mutation script, if applicable
             if (mod.DataId != 0)
             {
-                TryMutate(player, source, target, recipe, (uint)mod.DataId, modified);
+                TryMutate(player, source, target, recipe, (uint)mod.DataId, modified, success);
             }
         }
 
         return modified;
     }
+
+    private static bool ExecutesOnFailure(Recipe recipe)
+    {
+        return RecipesThatExecuteOnFailure.Contains(recipe.Id);
+    }
+
+    private static readonly List<uint> RecipesThatExecuteOnFailure =
+    [
+        10000 // Carve Jewel
+    ];
 
     private static void ModifyVital(Player player, PropertyAttribute2nd attribute2nd, int value)
     {
@@ -2188,12 +2207,13 @@ public partial class RecipeManager
         WorldObject target,
         Recipe recipe,
         uint dataId,
-        HashSet<uint> modified
+        HashSet<uint> modified,
+        bool success
     )
     {
         if (useMutateNative)
         {
-            return TryMutateNative(player, source, target, recipe, dataId);
+            return TryMutateNative(player, source, target, recipe, dataId, success);
         }
 
         var numTimesTinkered = target.NumTimesTinkered;

@@ -256,7 +256,7 @@ partial class Jewel : WorldObject
         player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
     }
 
-    public static void SocketJewel(Player player, WorldObject jewel, WorldObject target)
+    private static void SocketJewel(Player player, WorldObject jewel, WorldObject target)
     {
         if (jewel.JewelSocket1 != null && !jewel.JewelSocket1.StartsWith("Empty"))
         {
@@ -360,33 +360,40 @@ partial class Jewel : WorldObject
         return hasEmptySockets;
     }
 
-    public static void HandleJewelcarving(Player player, WorldObject source, WorldObject target)
+    public static void HandleJewelcarving(Player player, WorldObject source, WorldObject target, bool success)
     {
         var jewel = RecipeManager.CreateItem(player, 1053900, 1);
 
         jewel.IconId = target.IconId;
 
-        // calculate bonuses to the carving roll  TODO : 100 skill at level 20 gives you 0.5 quality mod. Need to determine what an appropriate skill is by level to set this correctly
-
-        var playerskill = player.GetCreatureSkill((Skill.Jewelcrafting));
-        var playerLevel = player.Level ?? 1;
-        var qualityMod = (double)playerskill.Current / (100 * (double)playerLevel / 10);
-
-        var random = new Random();
-
-        var randomDouble = random.NextDouble();
-        qualityMod += randomDouble;
-
-        ModifyCarvedJewel(player, target, jewel, qualityMod);
-
-        player.TryCreateInInventoryWithNetworking(jewel);
-
-        player.EnqueueBroadcast(new GameMessageUpdateObject(jewel));
+        ModifyCarvedJewel(player, target, jewel, success);
 
         player.TryConsumeFromInventoryWithNetworking(target, 1);
+
+        if (!success)
+        {
+
+            if (jewel is {JewelSocket1: null})
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("You botch your attempt to carve the gem and the jewel shatters.", ChatMessageType.Craft));
+                player.TryConsumeFromInventoryWithNetworking(jewel);
+                player.EnqueueBroadcast(new GameMessageUpdateObject(jewel));
+            }
+            else
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat("You botch your attempt to carve the gem and some quality is lost.", ChatMessageType.Craft));
+                player.TryCreateInInventoryWithNetworking(jewel);
+                player.EnqueueBroadcast(new GameMessageUpdateObject(jewel));
+            }
+        }
+        else
+        {
+            player.TryCreateInInventoryWithNetworking(jewel);
+            player.EnqueueBroadcast(new GameMessageUpdateObject(jewel));
+        }
     }
 
-    public static void ModifyCarvedJewel(Player player, WorldObject target, WorldObject jewel, double qualityMod)
+    private static void ModifyCarvedJewel(Player player, WorldObject target, WorldObject jewel, bool success)
     {
         var jewelProperty = "";
         var appendedName = "";
@@ -406,207 +413,207 @@ partial class Jewel : WorldObject
             case ACE.Entity.Enum.MaterialType.Agate:
                 jewelProperty = "Threat Enhancement";
                 appendedName = "of Provocation";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Amber:
                 jewelProperty = "Health To Stamina";
                 appendedName = "of the Masochist";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Amethyst:
                 jewelProperty = "Nullification";
                 appendedName = "of Nullification";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Aquamarine:
                 jewelProperty = "Frost";
                 appendedName = "of the Bone-Chiller";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Azurite:
                 jewelProperty = "Self";
                 appendedName = "of the Erudite Mind";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.BlackGarnet:
                 jewelProperty = "Pierce";
                 appendedName = "of Precision Strikes";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.BlackOpal:
                 jewelProperty = "Reprisal";
                 appendedName = "of Vicious Reprisal";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Bloodstone:
                 jewelProperty = "Life Steal";
                 appendedName = "of Sanguine Thirst";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Carnelian:
                 jewelProperty = "Strength";
                 appendedName = "of Mighty Thews";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Citrine:
                 jewelProperty = "Stamina Reduction";
                 appendedName = "of the Third Wind";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Diamond:
                 jewelProperty = "Hardened Defense";
                 appendedName = "of the Hardened Fortification";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Emerald:
                 jewelProperty = "Acid";
                 appendedName = "of the Devouring Mist";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.FireOpal:
                 jewelProperty = "Familiarity";
                 appendedName = "of the Familiar Foe";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.GreenGarnet:
                 jewelProperty = "Elementalist";
                 appendedName = "of the Elementalist";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.GreenJade:
                 jewelProperty = "Prosperity";
                 appendedName = "of Prosperity";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Hematite:
                 jewelProperty = "Blood Frenzy";
                 appendedName = "of Blood Frenzy";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.ImperialTopaz:
                 jewelProperty = "Slash";
                 appendedName = "of the Falcon's Gyre";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Jet:
                 jewelProperty = "Lightning";
                 appendedName = "of Astyrrian's Rage";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.LapisLazuli:
                 jewelProperty = "Health To Mana";
                 appendedName = "of the Austere Anchorite";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.LavenderJade:
                 jewelProperty = "Selflessness";
                 appendedName = "of the Selfless Spirit";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Malachite:
                 jewelProperty = "Components";
                 appendedName = "of the Meticulous Magus";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Moonstone:
                 jewelProperty = "Item Mana Usage";
                 appendedName = "of the Thrifty Scholar";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Onyx:
                 jewelProperty = "Physical Warding";
                 appendedName = "of the Black Bulwark";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Opal:
                 jewelProperty = "Manasteal";
                 appendedName = "of the Ophidian";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Peridot:
                 jewelProperty = "Quickness";
                 appendedName = "of the Swift-Footed";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.RedGarnet:
                 jewelProperty = "Fire";
                 appendedName = "of the Blazing Brand";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.RedJade:
                 jewelProperty = "Focus";
                 appendedName = "of the Focused Mind";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.RoseQuartz:
                 jewelProperty = "Vitals Transfer";
                 appendedName = "of the Tilted Scales";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Ruby:
                 jewelProperty = "Red Fury";
                 appendedName = "of Red Fury";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Sapphire:
                 jewelProperty = "Magic Find";
                 appendedName = "of the Seeker";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.SmokeyQuartz:
                 jewelProperty = "Threat Reduction";
                 appendedName = "of Clouded Vision";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Sunstone:
                 jewelProperty = "Experience Gain";
                 appendedName = "of the Illuminated Mind";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.TigerEye:
                 jewelProperty = "Coordination";
                 appendedName = "of the Dexterous Hand";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Tourmaline:
                 jewelProperty = "Ward Pen";
                 appendedName = "of Ruthless Discernment";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Turquoise:
                 jewelProperty = "Block Rating";
                 appendedName = "of Stalwart Defense";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteJade:
                 jewelProperty = "Heal";
                 appendedName = "of the Purified Soul";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteQuartz:
                 jewelProperty = "Shield Deflection";
                 appendedName = "of Swift Retribution";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteSapphire:
                 jewelProperty = "Bludgeon";
                 appendedName = "of the Skull-Cracker";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.YellowGarnet:
                 jewelProperty = "Bravado";
                 appendedName = "of Bravado";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.YellowTopaz:
                 jewelProperty = "Endurance";
                 appendedName = "of Perseverence";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             case ACE.Entity.Enum.MaterialType.Zircon:
                 jewelProperty = "Elemental Warding";
                 appendedName = "of the Prismatic Ward";
-                CalcJewelQuality(player, target, jewel, qualityMod, baseValue, jewelProperty, appendedName);
+                CalcJewelQuality(player, target, jewel, baseValue, jewelProperty, appendedName, success);
                 break;
             default:
                 // Default case handling
@@ -618,105 +625,53 @@ partial class Jewel : WorldObject
 
     // Jewel quality is based on workmanship with a possible range of -2 to +2 depending on carve quality, for a scale of 1-12.
     // certain properties will receive double this bonus in their particular calculations, others half etc. but all fundamentally on same scale
-    public static void CalcJewelQuality(
+    private static void CalcJewelQuality(
         Player player,
         WorldObject target,
         WorldObject jewel,
-        double qualityMod,
         int baseValue,
         string jewelProperty,
-        string appendedName
+        string appendedName,
+        bool success
     )
     {
-        var random = new Random();
-        var randomElement = random.NextDouble();
-
-        var modifiedBase = baseValue;
-
-        if (qualityMod >= 1)
+        if (target.Workmanship is null)
         {
-            if (randomElement >= 0.9)
-            {
-                modifiedBase += 2;
-            }
-
-            if (randomElement < 0.9 && qualityMod >= 0.5)
-            {
-                modifiedBase += 1;
-            }
-            else
-            {
-                modifiedBase += 0;
-            }
+            _log.Error("CalcJewelQuality() - Target workmanship is null for: {Target} ({Wcid})", target.Name, target.WeenieClassId);
+            return;
         }
 
-        if (qualityMod < 1 && qualityMod >= 0.5)
-        {
-            if (randomElement >= 0.75)
-            {
-                modifiedBase += 1;
-            }
+        var modifiedQuality = baseValue;
 
-            if (randomElement < 0.75 && qualityMod >= 0.25)
-            {
-                modifiedBase += 0;
-            }
-
-            if (randomElement < 0.25)
-            {
-                modifiedBase -= 1;
-            }
-        }
-
-        if (qualityMod < 0.5)
-        {
-            if (randomElement >= 0.75)
-            {
-                modifiedBase += 0;
-            }
-
-            if (randomElement < 0.75 && qualityMod >= 0.25)
-            {
-                modifiedBase -= 1;
-            }
-
-            if (randomElement < 0.25)
-            {
-                modifiedBase -= 2;
-            }
-        }
-
-        // Difficulty "Failure" Penalty - Rather than destroying jewels, we just lower their quality by 1 for each 20 points of skill below expected.
         var skill = player.GetCreatureSkill(Skill.Jewelcrafting);
-        var skillLevel = skill.Current;
-        if (target.Workmanship != null)
+        var difficulty = (int)(target.Workmanship * 20 - 20);
+
+        // Difficulty "Failure" Penalty - Rather than destroying jewels, we just lower their quality by 1 for each 10 points of skill below expected, plus 1.
+        if (!success)
         {
-            var difficulty = (uint)(target.Workmanship * 20);
-
-            if (skillLevel < difficulty - 20 && PropertyManager.GetBool("bypass_crafting_checks").Item == false)
+            if (PropertyManager.GetBool("bypass_crafting_checks").Item == false)
             {
-                var difference = difficulty - skillLevel;
-                var reductionPenalty = (int)difference / 20;
-                modifiedBase -= reductionPenalty;
+                var difference = Math.Max(difficulty - skill.Current, 0);
+                var reductionPenalty = (int)Math.Round((float)difference / 10) + 1;
+
+                modifiedQuality -= reductionPenalty;
             }
 
-            if (modifiedBase < 1)
-            {
-                modifiedBase = 1;
-            }
-
-            player.TryAwardCraftingXp(player, skill, Skill.Jewelcrafting, (int)difficulty, 1, 10.0f);
+            Player.TryAwardCraftingXp(player, skill, Skill.Jewelcrafting, (int)difficulty);
+        }
+        else
+        {
+            Player.TryAwardCraftingXp(player, skill, Skill.Jewelcrafting, (int)difficulty, 1, 3.0f);
         }
 
         // get quality name + write socket and jewel name
         // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem workmanship
 
-        if (JewelQuality.TryGetValue(modifiedBase, out var qualityName))
+        if (JewelQuality.TryGetValue(modifiedQuality, out var qualityName))
         {
             if (target.MaterialType != null && StringtoMaterialType.TryGetValue((MaterialType)target.MaterialType, out var materialType))
             {
-                jewel.JewelSocket1 =
-                    $"{qualityName}/{materialType}/{appendedName}/{jewelProperty}/{modifiedBase}/{target.Workmanship}";
+                jewel.JewelSocket1 = $"{qualityName}/{materialType}/{appendedName}/{jewelProperty}/{modifiedQuality}/{target.Workmanship}";
                 jewel.Name = $"{qualityName} {materialType} {appendedName}";
 
                 if (GemstoneIconMap.TryGetValue(materialType, out var gemIcon))
@@ -730,8 +685,6 @@ partial class Jewel : WorldObject
         {
             jewel.UiEffects = (UiEffects)uiEffect;
         }
-
-        return;
     }
 
     public static void HandleUnsocketing(Player player, WorldObject source, WorldObject target)
