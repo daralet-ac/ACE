@@ -203,7 +203,7 @@ public class EmoteManager
                     var skill = player.GetCreatureSkill(playerSkill);
                     var difficulty = emote.Amount ?? 0;
 
-                    player.TryAwardCraftingXp(player, skill, playerSkill, difficulty);
+                    Player.TryAwardCraftingXp(player, skill, playerSkill, difficulty);
                 }
                 break;
 
