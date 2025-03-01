@@ -69,14 +69,15 @@ partial class Jewel : WorldObject
         {
             var parts = source.JewelSocket1.Split('/');
 
-            if (int.TryParse(parts[5], out var workmanship))
+            if (int.TryParse(parts[4], out var quality))
             {
-                workmanship -= 1;
-                if (workmanship >= 1 && target.Workmanship < workmanship)
+                if (target.Workmanship < quality)
                 {
+                    var orGreater = quality < 10 ? " or greater" : "";
+
                     player.Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"The {source.Name} can only be used on an item with a workmanship of {workmanship} or greater.",
+                            $"The {source.Name} can only be socketed into an item with a workmanship of {quality}{orGreater}.",
                             ChatMessageType.Craft
                         )
                     );
