@@ -227,10 +227,7 @@ public static partial class LootGenerationFactory
 
         wo.LongDesc = GetLongDesc(wo);
 
-        if (wo.IsShield)
-        {
-            AssignJewelSlots(wo);
-        }
+        AssignJewelSlots(wo);
     }
 
     /// <summary>

@@ -2910,6 +2910,10 @@ public static partial class LootGenerationFactory
         }
     }
 
+    /// <summary>
+    /// Items have a chance to roll with sockets. Maximum number of sockets per item is equal to the number of
+    /// equipment slots the item uses. 10% chance to roll a socket for each potential socket slot.
+    /// </summary>
     private static void AssignJewelSlots(WorldObject wo)
     {
         if (wo.Tier < 2)
@@ -2917,13 +2921,31 @@ public static partial class LootGenerationFactory
             return;
         }
 
+        const float socketChance = 0.1f;
+
+        var maximumSockets = ItemSocketLimit(wo);
+
+        for (var i = 0; i < maximumSockets; i++)
+        {
+            if (ThreadSafeRandom.Next(0.0f, 1.0f) < socketChance)
+            {
+                wo.JewelSockets++;
+            }
+        }
+    }
+
+    public static int ItemSocketLimit(WorldObject wo)
+    {
+        var maximumSockets = wo.ArmorSlots ?? 1;
+        wo.SetProperty(PropertyInt.JewelSockets, 0);
+
+        // Two-handed weapons, missile launchers, and casters cannot be equipped with an off-hand, so can have 2 sockets.
         if (wo.IsTwoHanded || wo.WeenieType is WeenieType.MissileLauncher or WeenieType.Caster)
         {
-            wo.JewelSockets = 2;
-            return;
+            maximumSockets = 2;
         }
 
-        wo.JewelSockets = wo.ArmorSlots ?? 1;
+        return maximumSockets;
     }
 
     public static string GetTrophyQualityName(int trophyQuality)
