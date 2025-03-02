@@ -552,6 +552,8 @@ partial class Jewel : WorldObject
         var skill = player.GetCreatureSkill(Skill.Jewelcrafting);
         var difficulty = (int)(target.Workmanship * 20 - 20);
 
+        var jewelRelativeQuality = 1.0f;
+
         // Difficulty "Failure" Penalty - Rather than destroying jewels, we just lower their quality by 1 for each 10 points of skill below expected, plus 1.
         if (!success)
         {
@@ -561,6 +563,8 @@ partial class Jewel : WorldObject
                 var reductionPenalty = (int)Math.Round((float)difference / 10) + 1;
 
                 modifiedQuality -= reductionPenalty;
+
+                jewelRelativeQuality = (float)modifiedQuality / baseValue;
             }
 
             Player.TryAwardCraftingXp(player, skill, Skill.Jewelcrafting, (int)difficulty);
@@ -569,6 +573,8 @@ partial class Jewel : WorldObject
         {
             Player.TryAwardCraftingXp(player, skill, Skill.Jewelcrafting, (int)difficulty, 1, 3.0f);
         }
+
+        jewel.Value = Convert.ToInt32(target.Value * jewelRelativeQuality);
 
         jewel.JewelSocket1Effect = (int)jewelProperty;
         jewel.JewelSocket1Quality = modifiedQuality;
