@@ -276,6 +276,9 @@ public class UpgradeKit : Stackable
             ScaleUpJewelryRating(PropertyInt.GearDamage, target, currentTier, newTier);
             ScaleUpJewelryRating(PropertyInt.GearDamageResist, target, currentTier, newTier);
 
+            ScaleUpArmorSkillMod(PropertyFloat.ArmorDeceptionMod, target, currentTier, newTier);
+            ScaleUpArmorSkillMod(PropertyFloat.ArmorPerceptionMod, target, currentTier, newTier);
+
             ScaleUpSpecialRatings(target, newTier);
 
             // Level Requirement
@@ -790,21 +793,21 @@ public class UpgradeKit : Stackable
             return;
         }
 
-        int[] ratingValuesPerSlotPerTier = [4, 6, 8, 10, 12, 16, 18, 20];
-        var isItemTwoHanded = target.IsTwoHanded || target.WeenieType == WeenieType.MissileLauncher;
+        int[] averageRatingValuesPerTier = [1, 2, 3, 4, 5, 6, 8, 10];
 
-        var multiplier = isItemTwoHanded ? 2.0f : 1.0f;
-
-        var newRatingValue = Convert.ToInt32(ratingValuesPerSlotPerTier[newTier] * multiplier / ratingList.Count);
+        var currentTier = target.ItemType is ItemType.Jewelry or ItemType.Clothing ? LootGenerationFactory.GetTierFromRequiredLevel(target.WieldDifficulty ?? 1) : LootGenerationFactory.GetTierFromWieldDifficulty(target.WieldDifficulty ?? 50);
+        var multiplier = (float)averageRatingValuesPerTier[newTier] / averageRatingValuesPerTier[currentTier - 1];
 
         foreach (var itemRating in ratingList)
         {
-            target.SetProperty(itemRating, newRatingValue);
+            var currentRatingValue = target.GetProperty(itemRating) ?? 1;
+
+            target.SetProperty(itemRating, Convert.ToInt32(currentRatingValue * multiplier));
         }
     }
 
-    private static readonly PropertyInt[] GearRatingIds = new[]
-    {
+    private static readonly PropertyInt[] GearRatingIds =
+    [
         PropertyInt.GearAcid,
         PropertyInt.GearBlock,
         PropertyInt.GearBludgeon,
@@ -849,7 +852,7 @@ public class UpgradeKit : Stackable
         PropertyInt.GearVitalsTransfer,
         PropertyInt.GearWardPen,
         PropertyInt.GearYellowFury
-    };
+    ];
 
     private static int GetRequiredUpgradeKits(Player player, WorldObject target)
     {
