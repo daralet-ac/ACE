@@ -674,7 +674,7 @@ public class SpellProjectile : WorldObject
         var ignoreWardMod = Math.Min(wardRendingMod, wardPenMod);
 
         ignoreWardMod *= 1.0f - CheckForWarSpecWardPenBonus(sourcePlayer, weapon);
-        ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearWardPen, 0.2f, 0.01f, "WardPen");
+        ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearWardPen, "WardPen");
 
         var wardMod = GetWardMod(sourceCreature, target, ignoreWardMod);
 
@@ -684,7 +684,7 @@ public class SpellProjectile : WorldObject
         var isPVP = sourcePlayer != null && targetPlayer != null;
         var absorbMod = GetAbsorbMod(target, this);
 
-        absorbMod *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification, 0.2f, 0.01f, "Nullification");
+        absorbMod *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification, "Nullification");
 
         //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
         if (isPVP && (target.CombatMode == CombatMode.Melee || target.CombatMode == CombatMode.Missile))
@@ -725,7 +725,7 @@ public class SpellProjectile : WorldObject
 
         var jewelRedFury = 1.0f + Jewel.GetJewelRedFury(sourcePlayer);
         var jewelBlueFury = 1.0f + Jewel.GetJewelBlueFury(sourcePlayer);
-        var jewelSelfHarm = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearSelfHarm, 0.1f, 0.005f);
+        var jewelSelfHarm = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearSelfHarm);
 
         var levelScalingMod = GetLevelScalingMod(sourceCreature, target, targetPlayer);
 
@@ -814,7 +814,7 @@ public class SpellProjectile : WorldObject
                 critDamageBonus *= weaponCritDamageMod;
 
                 criticalDamageMod = 2.0f + weaponCritDamageMod;
-                criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBludgeon, 0.2f, 0.01f, "Bludgeon");
+                criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
             }
 
             baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
@@ -842,16 +842,16 @@ public class SpellProjectile : WorldObject
 
             if (Spell.DamageType is DamageType.Pierce)
             {
-                resistanceMod += Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearPierce, 0.2f, 0.01f, "Pierce");
+                resistanceMod += Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearPierce, "Pierce");
             }
 
-            var jewelElementalist = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearElementalist, 0.2f, 0.01f, "Elementalist");
+            var jewelElementalist = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearElementalist, "Elementalist");
             var jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
 
             var ratingDamageTypeWard = Spell.DamageType switch
             {
-                DamageType.Physical => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearPhysicalWard, 0.1f, 0.005f),
-                DamageType.Elemental => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearElementalWard, 0.1f, 0.005f),
+                DamageType.Physical => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearPhysicalWard),
+                DamageType.Elemental => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearElementalWard),
                 _ => 1.0f
             };
 
@@ -1223,7 +1223,7 @@ public class SpellProjectile : WorldObject
             return false;
         }
 
-        var chance = Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearReprisal, 0.05f, 0.0025f);
+        var chance = Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearReprisal);
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
@@ -1583,7 +1583,7 @@ public class SpellProjectile : WorldObject
                 plural = null;
             Strings.GetAttackVerb(Spell.DamageType, percent, ref verb, ref plural);
 
-            var elementalistRating = Math.Round(Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearElementalist, 0.2f, 0.01f, "Elementalist") * 100);
+            var elementalistRating = Math.Round(Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearElementalist, "Elementalist") * 100);
             var elementalistMsg = elementalistRating > 0.0f ? $"Elementalist {elementalistRating}%! " : "";
 
             var critMsg = critical ? "Critical hit! " : "";

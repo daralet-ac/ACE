@@ -346,9 +346,8 @@ partial class Jewel : WorldObject
 
     private static void ModifyCarvedJewel(Player player, WorldObject target, WorldObject jewel, bool success)
     {
-        string appendedName;
-
         var baseValue = 1;
+
         if (target.ItemWorkmanship is null)
         {
             _log.Error("ModifyCarvedJewel(Player {Player}, Target {Target}, Jewel {Jewel}) - Target workmanship is null. Defaulting to 1 workmanship.", player.Name, target.Name, jewel.Name);
@@ -357,6 +356,8 @@ partial class Jewel : WorldObject
         {
             baseValue = (int)target.ItemWorkmanship;
         }
+
+        string appendedName;
 
         switch (target.MaterialType)
         {
@@ -653,7 +654,7 @@ partial class Jewel : WorldObject
 
             var qualityString = JewelQuality[currentSocketQualityLevel.Value];
             var materialString = MaterialTypeToString[jewel.JewelMaterialType.Value];
-            var effectNameString = JewelEffectInfo[jewel.JewelMaterialType.Value].Item1;
+            var effectNameString = JewelEffectInfo[JewelMaterialToType[jewel.JewelMaterialType.Value]].Name;
             jewel.Name = $"{qualityString} {materialString} of the {effectNameString}";
 
             jewel.Attuned = AttunedStatus.Attuned;

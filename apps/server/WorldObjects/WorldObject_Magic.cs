@@ -283,7 +283,7 @@ partial class WorldObject
         var targetPlayer = target as Player;
 
         difficulty = Convert.ToUInt32(difficulty * (1.0f + CheckForCombatAbilityReflectMagicDefBonus(targetPlayer)));
-        difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, 0.2f, 0.01f, "Familiarity")));
+        difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, "Familiarity")));
 
         var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance);
 
@@ -998,24 +998,24 @@ partial class WorldObject
         if (tryBoost > 0) // heal
         {
             // increases
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearSelflessness, 0.1f, 0.005f)));
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearHealBubble, 0.1f, 0.005f)));
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearSelflessness)));
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearHealBubble)));
 
             // reductions
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearVitalsTransfer, 0.1f, 0.005f)));
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearVitalsTransfer)));
         }
         else // harm
         {
             // increases
             tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelRedFury(player)));
             tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelBlueFury(player)));
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearSelfHarm, 0.1f, 0.005f)));
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearSelfHarm)));
 
             // reductions
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification, 0.2f, 0.01f, "Nullification")));
+            tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification,"Nullification")));
 
             // ward
-            var ignoreWardMod = 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearWardPen, 0.2f, 0.01f, "WardPen");
+            var ignoreWardMod = 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearWardPen, "WardPen");
             var wardMod = GetWardMod(player, targetCreature, ignoreWardMod);
 
             tryBoost = Convert.ToInt32(tryBoost * wardMod);
@@ -2023,7 +2023,7 @@ partial class WorldObject
             return;
         }
 
-        var chance = Jewel.GetJewelEffectMod(playerCaster, PropertyInt.GearSlash, 0.1f, 0.005f);
+        var chance = Jewel.GetJewelEffectMod(playerCaster, PropertyInt.GearSlash);
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {

@@ -477,7 +477,7 @@ public class DamageEvent
         blockChance += GetSpecPhysicalDefenseBlockChanceBonus(playerDefender);
         blockChance += GetCombatAbilityParryBlockChanceBonus(playerDefender);
         blockChance += GetCombatAbilityPhalanxBlockChanceBonus(playerDefender);
-        blockChance *= 1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearBlock, 0.1f, 0.005f);
+        blockChance *= 1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearBlock);
 
         if ((ThreadSafeRandom.Next(0f, 1f) > blockChance))
         {
@@ -786,7 +786,7 @@ public class DamageEvent
         _criticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, attacker, _attackSkill, defender);
         _criticalDamageMod += GetMaceSpecCriticalDamageBonus(playerAttacker);
         _criticalDamageMod += GetStaffSpecCriticalDamageBonus(playerAttacker);
-        _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBludgeon, 0.2f, 0.01f, "Bludgeon");
+        _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBludgeon, "Bludgeon");
         _criticalDamageMod *= CriticalDamageBonusFromTrinket;
 
         CheckForRatingReprisalCriticalDefense(attacker, playerDefender);
@@ -889,23 +889,23 @@ public class DamageEvent
 
         if (DamageType is DamageType.Pierce)
         {
-            _resistanceMod += Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearPierce, 0.2f, 0.01f, "Pierce");
+            _resistanceMod += Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearPierce, "Pierce");
         }
 
         _damageResistanceRatingMod = GetDamageResistRatingMod(defender, _pkBattle);
-        _damageResistanceRatingMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearHardenedDefense, 0.2f, 0.01f, "Hardened Defense");
+        _damageResistanceRatingMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearHardenedDefense, "Hardened Defense");
 
         _specDefenseMod = GetSpecDefenseMod(attacker, playerDefender);
 
         ShieldMod = _defender.GetShieldMod(attacker, DamageType, Weapon);
 
-        _ratingSelfHarm = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm, 0.1f, 0.005f);
+        _ratingSelfHarm = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
         _ratingRedFury = 1.0f + Jewel.GetJewelRedFury(playerAttacker);
         _ratingYellowFury = 1.0f + Jewel.GetJewelYellowFury(playerAttacker);
         _ratingDamageTypeWard = DamageType switch
         {
-            DamageType.Physical => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearPhysicalWard, 0.1f, 0.005f),
-            DamageType.Elemental => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearElementalWard, 0.1f, 0.005f),
+            DamageType.Physical => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearPhysicalWard),
+            DamageType.Elemental => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearElementalWard),
             _ => 1.0f
         };
 
@@ -1222,7 +1222,7 @@ public class DamageEvent
             return;
         }
 
-        var chance = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearReprisal, 0.05f, 0.0025f);
+        var chance = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearReprisal);
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
@@ -1418,7 +1418,7 @@ public class DamageEvent
 
         var damage = GetNonCriticalDamageBeforeMitigation();
 
-        var thornsAmount = damage * Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearThorns, 0.1f, 0.005f);
+        var thornsAmount = damage * Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearThorns);
 
         attacker.UpdateVitalDelta(attacker.Health, -(int)thornsAmount);
         attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)thornsAmount);
@@ -1503,13 +1503,13 @@ public class DamageEvent
 
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForAttackHeightMediumAttackSkillBonus(playerAttacker));
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForCombatAbilitySteadyShotAttackSkillBonus(playerAttacker));
-        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * (1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBravado, 0.2f, 0.01f, "Bravado")));
+        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * (1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBravado, "Bravado")));
 
         _effectiveDefenseSkill = (uint)(defender.GetEffectiveDefenseSkill(CombatType) * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker)
         );
 
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * CheckForAttackHeightLowDefenseSkillBonus(playerDefender, playerAttacker));
-        _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * (1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearFamiliarity, 0.2f, 0.01f, "Familiarity")));
+        _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * (1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearFamiliarity, "Familiarity")));
 
         var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, _effectiveDefenseSkill);
         evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, playerDefender);

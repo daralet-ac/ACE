@@ -211,7 +211,7 @@ public partial class Spell : IEquatable<Spell>
             return 1.0f;
         }
 
-        return 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearCompBurn, 0.2f, 0.01f);
+        return 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearCompBurn);
     }
 
     public void DebugComponents()

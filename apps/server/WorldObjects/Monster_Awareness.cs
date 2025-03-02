@@ -233,8 +233,8 @@ partial class Creature
             }
         }
 
-        modifiedAmount *= 1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatGain, 0.1f, 0.005f);
-        modifiedAmount *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatReduction, 0.1f, 0.005f);
+        modifiedAmount *= 1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatGain);
+        modifiedAmount *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatReduction);
 
         amount = Convert.ToInt32(modifiedAmount);
         amount = amount < 2 ? 2 : amount;

@@ -466,32 +466,28 @@ public class Hotspot : WorldObject
             switch (damageType)
             {
                 case DamageType.Fire:
-                    var equipRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire);
-                    var chance = baseChance + bonusPerRating * equipRating;
+                    var chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearFire, "", true);
                     if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
                     {
                         wcid = (uint)flameHotspots[modifiedTier];
                     }
                     break;
                 case DamageType.Cold:
-                    equipRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost);
-                    chance = baseChance + bonusPerRating * equipRating;
+                    chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearFrost, "", true);
                     if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
                     {
                         wcid = (uint)frostHotspots[modifiedTier];
                     }
                     break;
                 case DamageType.Acid:
-                    equipRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid);
-                    chance = baseChance + bonusPerRating * equipRating;
+                    chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearAcid, "", true);
                     if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
                     {
                         wcid = (uint)acidHotspots[modifiedTier];
                     }
                     break;
                 case DamageType.Electric:
-                    equipRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning);
-                    chance = baseChance + bonusPerRating * equipRating;
+                    chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearLightning, "", true);
                     if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
                     {
                         wcid = (uint)lightningHotspots[modifiedTier];
@@ -500,8 +496,7 @@ public class Hotspot : WorldObject
                 case DamageType.Health:
                 case DamageType.Stamina:
                 case DamageType.Mana:
-                    equipRating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealBubble);
-                    chance = baseChance + bonusPerRating * equipRating;
+                    chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearHealBubble, "", true);
                     if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
                     {
                         wcid = (uint)healingHotspots[modifiedTier];

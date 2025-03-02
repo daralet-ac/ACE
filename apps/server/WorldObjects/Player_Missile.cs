@@ -478,7 +478,7 @@ partial class Player
             return 0;
         }
 
-        var chance = Jewel.GetJewelEffectMod(this, PropertyInt.GearSlash, 0.1f, 0.005f);
+        var chance = Jewel.GetJewelEffectMod(this, PropertyInt.GearSlash);
 
         return ThreadSafeRandom.Next(0.0f, 1.0f) < chance ? 1 : 0;
     }

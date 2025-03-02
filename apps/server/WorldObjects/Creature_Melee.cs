@@ -155,7 +155,7 @@ partial class Creature
         var player = this as Player;
 
         // JEWEL - Falcon's Gyre (Imperial Topaz) - Bonus cleave chance
-        var jewelCleaveChance = Jewel.GetJewelEffectMod(player, PropertyInt.GearSlash, 0.1f, 0.005f);
+        var jewelCleaveChance = Jewel.GetJewelEffectMod(player, PropertyInt.GearSlash);
         var jewelCleave = ThreadSafeRandom.Next(0.0f, 1.0f) < jewelCleaveChance;
 
         if (weapon is not {IsCleaving: true} && !jewelCleave)

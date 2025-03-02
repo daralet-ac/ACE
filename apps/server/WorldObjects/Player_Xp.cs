@@ -1083,7 +1083,7 @@ partial class Player
         // JEWEL - Sunstone: Bonus experience gain
         if (xpType == XpType.Kill && GetEquippedAndActivatedItemRatingSum(PropertyInt.GearExperienceGain) > 0)
         {
-            augBonus *= Jewel.GetJewelEffectMod(this, PropertyInt.GearExperienceGain, 0.05f, 0.0025f);
+            augBonus *= Jewel.GetJewelEffectMod(this, PropertyInt.GearExperienceGain);
         }
 
         var modifier = 1.0f + enchantmentBonus + augBonus;

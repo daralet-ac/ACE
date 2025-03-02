@@ -12,7 +12,7 @@ namespace ACE.Server.WorldObjects;
 
 partial class Jewel
 {
-    public static float GetJewelEffectMod(Player player, PropertyInt propertyInt, float baseMod, float bonusPerRating, string rampQuestString = "")
+    public static float GetJewelEffectMod(Player player, PropertyInt propertyInt, string rampQuestString = "", bool secondary = false)
     {
         if (player is null)
         {
@@ -26,6 +26,16 @@ partial class Jewel
             return 0.0f;
         }
 
+        var jewelEffectInfo = JewelEffectInfo[propertyInt];
+        var baseMod = (float)jewelEffectInfo.BasePrimary / 100;
+        var bonusPerRating = jewelEffectInfo.BonusSecondary / 100;
+
+        if (secondary)
+        {
+            baseMod = (float)jewelEffectInfo.BasePrimary / 100;
+            bonusPerRating = jewelEffectInfo.BonusSecondary / 100;
+        }
+
         var rampPercentage = rampQuestString is "" ? 1.0f : 0.0f;
 
         if (player.QuestManager.HasQuest($"{player.Name},{rampQuestString}"))
@@ -33,14 +43,14 @@ partial class Jewel
             rampPercentage = Math.Min((float)player.QuestManager.GetCurrentSolves($"{player.Name},{rampQuestString}") / 100, 1.0f);
         }
 
-        // Console.WriteLine($"\nJewel Mod:\n" +
-        //                   $" -Property: {propertyInt}\n" +
-        //                   $" -Rating: {rating}\n" +
-        //                   $" -baseMod: {baseMod}\n" +
-        //                   $" -bonusPerRating {bonusPerRating}\n" +
-        //                   $" -bonus: {bonusPerRating * rating}\n" +
-        //                   $" -rampPercentage: {rampPercentage * 100}%\n" +
-        //                   $" -TOTAL: {(baseMod + bonusPerRating * rating) * rampPercentage}");
+        Console.WriteLine($"\nJewel Mod:\n" +
+                          $" -Property: {propertyInt}\n" +
+                          $" -Rating: {rating}\n" +
+                          $" -baseMod: {baseMod}\n" +
+                          $" -bonusPerRating {bonusPerRating}\n" +
+                          $" -bonus: {bonusPerRating * rating}\n" +
+                          $" -rampPercentage: {rampPercentage * 100}%\n" +
+                          $" -TOTAL: {(baseMod + bonusPerRating * rating) * rampPercentage}");
 
         return (baseMod + bonusPerRating * rating) * rampPercentage;
     }
@@ -174,10 +184,10 @@ partial class Jewel
 
         jewelElemental = damageType switch
         {
-            DamageType.Acid => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearAcid, 0.1f, 0.005f),
-            DamageType.Fire => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearFire, 0.1f, 0.005f),
-            DamageType.Cold => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearFrost, 0.1f, 0.005f),
-            DamageType.Electric => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearLightning, 0.1f, 0.005f),
+            DamageType.Acid => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearAcid),
+            DamageType.Fire => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearFire),
+            DamageType.Cold => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearFrost),
+            DamageType.Electric => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearLightning),
             _ => jewelElemental
         };
 
@@ -190,7 +200,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingProsperityFindStamps(Player playerAttacker, Creature defender, float damage)
     {
-        var pyrealFind = GetJewelEffectMod(playerAttacker, PropertyInt.GearPyrealFind, 0.05f, 0.0025f);
+        var pyrealFind = GetJewelEffectMod(playerAttacker, PropertyInt.GearPyrealFind);
 
         defender.QuestManager.Stamp($"{playerAttacker.Name}/Prosperity/{pyrealFind}/{damage}");
     }
@@ -201,7 +211,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingMagicFindStamps(Player playerAttacker, Creature defender, float damage)
     {
-        var magicFind = GetJewelEffectMod(playerAttacker, PropertyInt.GearMagicFind, 0.05f, 0.0025f);
+        var magicFind = GetJewelEffectMod(playerAttacker, PropertyInt.GearMagicFind);
 
         defender.QuestManager.Stamp($"{playerAttacker.Name}/MagicFind/{magicFind}/{damage}");
     }
@@ -242,7 +252,7 @@ partial class Jewel
             return;
         }
 
-        var selfHarmMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm, 0.1f, 0.005f);
+        var selfHarmMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
         var selfHarmAmount = Convert.ToInt32(damage * selfHarmMod);
 
         playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarmAmount);
@@ -267,7 +277,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingManaOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearManasteal, 0.1f, 0.005f);
+        var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearManasteal);
 
         if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
@@ -292,7 +302,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingLifeOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearLifesteal, 0.1f, 0.005f);
+        var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearLifesteal);
 
         if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
@@ -317,7 +327,7 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToMana(Player playerDefender, Creature attacker, float damage)
     {
-        var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToMana, 0.1f, 0.005f);
+        var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToMana);
 
         if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
@@ -341,7 +351,7 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToStamina(Player playerDefender, Creature attacker, float damage)
     {
-        var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToStamina, 0.1f, 0.005f);
+        var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToStamina);
 
         if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
@@ -378,7 +388,7 @@ partial class Jewel
 
         var percentHealthRemaining = (float)playerAttacker.Health.Current / playerAttacker.Health.MaxValue;
         var inverseHealthRemaining = Math.Min((1.0f - percentHealthRemaining), 1.0f);
-        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearRedFury, 0.2f, 0.01f);
+        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearRedFury);
 
         return inverseHealthRemaining * ratingMod;
     }
@@ -401,7 +411,7 @@ partial class Jewel
 
         var percentStaminaRemaining = (float)playerAttacker.Stamina.Current / playerAttacker.Stamina.MaxValue;
         var inverseHealthRemaining = Math.Min((1.0f - percentStaminaRemaining), 1.0f);
-        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearYellowFury, 0.2f, 0.01f);
+        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearYellowFury);
 
         return inverseHealthRemaining * ratingMod;
     }
@@ -424,7 +434,7 @@ partial class Jewel
 
         var percentManaRemaining = (float)playerAttacker.Mana.Current / playerAttacker.Mana.MaxValue;
         var inverseHealthRemaining = Math.Min((1.0f - percentManaRemaining), 1.0f);
-        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearBlueFury, 0.2f, 0.01f);
+        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearBlueFury);
 
         return inverseHealthRemaining * ratingMod;
     }
@@ -432,291 +442,300 @@ partial class Jewel
     // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem workmanship
     public static string GetJewelDescription(WorldObject jewel)
     {
-        var description = "";
         var quality = jewel.JewelSocket1Quality ?? 1;
         var materialType = jewel.JewelMaterialType;
 
         if (materialType is null)
         {
-            return description;
+            return "";
         }
 
-        var name = JewelEffectInfo[materialType.Value].Item1;
-        var equipmentType = JewelEffectInfo[materialType.Value].Item2;
-        var baseRating = JewelEffectInfo[materialType.Value].Item3;
-        var bonusPerQuality = JewelEffectInfo[materialType.Value].Item4;
-        var baseRatingSecondary = JewelEffectInfo[materialType.Value].Item5;
-        var bonusPerQualitySecondary = JewelEffectInfo[materialType.Value].Item6;
+        var propertyInt = JewelMaterialToType[materialType.Value];
+
+        var name = JewelEffectInfo[propertyInt].Name;
+        var equipmentType = JewelEffectInfo[propertyInt].Slot;
+        var baseRating = JewelEffectInfo[propertyInt].BasePrimary;
+        var bonusPerQuality = JewelEffectInfo[propertyInt].BonusPrimary;
+        var baseRatingSecondary = JewelEffectInfo[propertyInt].BaseSecondary;
+        var bonusPerQualitySecondary = JewelEffectInfo[propertyInt].BonusSecondary;
+
+        var description = $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to gain {name}, while equipped.\n\n";
 
         switch (materialType)
         {
             //necklace
             case ACE.Entity.Enum.MaterialType.Sunstone:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% bonus to experience for monster kills, plus an additional {bonusPerQuality}% per equipped {name} rating.\n\n" +
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased experience from monster kills (+{bonusPerQuality}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Sapphire:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% bonus to loot quality for monster kills, plus an additional {bonusPerQuality}% per equipped {name} rating.\n\n" +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% bonus to loot quality from monster kills (+{bonusPerQuality}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.GreenJade:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% chance for a killed monster to drop an additional item, plus an additional {bonusPerQuality}% per equipped {name} rating.\n\n" +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to receive an extra item from monster kills (+{bonusPerQuality}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // ring right
             case ACE.Entity.Enum.MaterialType.Carnelian:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating} bonus to current Strength, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating} Strength (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the {equipmentType} can only be worn on the right finger.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Azurite:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating} bonus to current Self, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating} Self (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the {equipmentType} can only be worn on the right finger.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.TigerEye:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating} bonus to current Coordination, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating} Coordination (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the {equipmentType} can only be worn on the right finger.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // ring left
             case ACE.Entity.Enum.MaterialType.RedJade:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating} bonus to current Focus, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating} Focus (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the {equipmentType} can only be worn on the left finger.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.YellowTopaz:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating} bonus to current Endurance, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating} Endurance (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the {equipmentType} can only be worn on the left finger.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Peridot:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating} bonus to current Quickness, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating} Quickness (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the {equipmentType} can only be worn on the left finger.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // bracelet left
             case ACE.Entity.Enum.MaterialType.Agate:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating} addtional threat generated from your actions, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating} increased threat from your actions (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.SmokeyQuartz:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating} reduced threat generated from your actions, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating} reduced threat from your actions (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Amber:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% chance to gain hit damage taken as stamina, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to gain hit damage taken as stamina (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.LapisLazuli:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% chance to gain hit damage taken as mana, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to gain hit damage taken as mana (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Moonstone:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% reduction to mana consumed by equipped items, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced mana consumed by items (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Malachite:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% reduction to your chance to burn spell components, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced chance to burn spell components (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Citrine:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating}% stamina cost reduction, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced stamina costs (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // bracelet right
             case ACE.Entity.Enum.MaterialType.Amethyst:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating}% reduced magic damage taken, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% reduced magic damage taken (+{bonusPerQuality}% per equipped rating). " +
                     $"The amount builds up from 0%, based on how often you have recently been hit with a damaging spell. " +
                     $"Once socketed, the bracelet can only be worn on the right wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Diamond:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating}% reduced physical damage taken, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% reduced physical damage taken (+{bonusPerQuality}% per equipped rating). " +
                     $"The amount builds up from 0%, based on how often you have recently been hit with a damaging physical attack. " +
                     $"Once socketed, the bracelet can only be worn on the right wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Onyx:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating}% protection against Slashing, Bludgeoning, and Piercing damage types, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced damage taken from slashing, bludgeoning, and piercing damage types (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the right wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Zircon:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating}% protection against Flame, Frost, Lightning, and Acid damage types, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced damage taken from acid, fire, cold, and electric damage types (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the right wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // shield
             case ACE.Entity.Enum.MaterialType.Turquoise:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating}% increased block chance, plus an additional {bonusPerQuality}% per equipped {name} rating.\n\n" +
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased block chance (+{bonusPerQuality}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteQuartz:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to deflect {baseRating}% of a blocked attack's damage back to a close-range attacker, plus an additional {bonusPerQuality}% per equipped {name} rating.\n\n" +
+                description +=
+                    $"~ {name}: Deflect {baseRating}% damage from a blocked attack back to a close-range attacker (+{bonusPerQuality}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // weapon + shield
             case ACE.Entity.Enum.MaterialType.BlackOpal:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% chance to evade an incoming critical hit, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to evade a critical attack (+{bonusPerQuality}% per equipped rating).  " +
                     $"Your next attack after a the evade is a guaranteed critical.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.FireOpal:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant up to {baseRating}% increased evade and resist chance versus the target you are attacking, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased evade and resist chances, against the target you are attacking (+{bonusPerQuality}% per equipped rating). " +
                     $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.YellowGarnet:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant up to {baseRating}% increased physical hit chance, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased physical attack skill (+{bonusPerQuality}% per equipped rating). " +
                     $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Ruby:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant increased damage as you lose health, up to a maximum bonus of {baseRating}% at 0 health, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased damage as your health approaches 0 (+{bonusPerQuality}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // weapon only
             case ACE.Entity.Enum.MaterialType.Bloodstone:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% chance on hit to gain health, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance on hit to gain health (+{bonusPerQuality}% per equipped rating). " +
                     $"Amount stolen is equal to 10% of damage dealt.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Opal:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% chance on hit to gain mana, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance on hit to gain mana (+{bonusPerQuality}% per equipped rating). " +
                     $"Amount stolen is equal to 10% of damage dealt.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Hematite:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating}% increased damage with all attacks, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
-                    $"However, 25% of your attacks will deal the extra damage to yourself as well.\n\n" +
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased damage with all attacks (+{bonusPerQuality}% per equipped rating). " +
+                    $"However, 10% of your attacks will deal the extra damage to yourself as well.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.RoseQuartz:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating}% bonus to your Vitals Transfer spells, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
-                    $"Receive an equivalent reduction in the effectiveness of your other Restoration spells.\n\n" +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% bonus to your transfer spells (+{bonusPerQuality}% per equipped rating). " +
+                    $"Receive an equivalent reduction in the effectiveness of your other restoration spells.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.LavenderJade:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant {baseRating}% bonus to your restoration spells when cast on others, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% bonus to your restoration spells on others (+{bonusPerQuality}% per equipped rating). " +
                     $"Receive an equivalent reduction in the effectiveness when cast on yourself.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.GreenGarnet:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant up to {baseRating}% bonus damage to your War Magic Spells, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased war magic damage (+{bonusPerQuality}% per equipped rating). " +
                     $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Tourmaline:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant up to {baseRating}% ward penetration, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% ward cleaving (+{bonusPerQuality}% per equipped rating). " +
                     $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteJade:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% bonus to your restoration spells, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
-                    $"Also grants a {baseRatingSecondary}% chance to create a sphere of healing energy on top of your target when casting a restoration spell, plus an additional {bonusPerQualitySecondary}% per equipped rating.\n\n" +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% bonus to your restoration spells (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to create a sphere of healing energy on top of your target when casting a restoration spell (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Aquamarine:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% bonus to cold damage, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
-                    $"Also grants a {baseRatingSecondary}% chance to surround your target with chilling mist, plus an additional {bonusPerQualitySecondary}% per equipped rating.\n\n" +
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased cold damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to surround your target with chilling mist (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.BlackGarnet:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant up to {baseRating}% piercing resistance penetration, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating}% piercing resistance penetration (+{bonusPerQuality}% per equipped rating). " +
                     $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Emerald:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% bonus to acid damage, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
-                    $"Also grants a {baseRatingSecondary}% chance to surround your target with acidic mist, plus an additional {bonusPerQualitySecondary}% per equipped rating.\n\n" +
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased acid damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to surround your target with acidic mist (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.ImperialTopaz:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grants a {baseRating}% chance to cleave an additional target, plus an additional {bonusPerQuality}% per equipped {name} rating.\n\n" +
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to cleave an additional target (+{bonusPerQuality}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Jet:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% bonus to lightning damage, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
-                    $"Also grants a {baseRatingSecondary}% chance to electrify the ground beneath your target, plus an additional {bonusPerQualitySecondary}% per equipped rating.\n\n" +
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased electric damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to electrify the ground beneath your target (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.RedGarnet:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant a {baseRating}% bonus to fire damage, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
-                    $"Also grants a {baseRatingSecondary}% chance to set the ground beneath your target ablaze, plus an additional {bonusPerQualitySecondary}% per equipped rating.\n\n" +
-                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased fire damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to set the ground beneath your target ablaze (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name, bonusPerQualitySecondary)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteSapphire:
-                description =
-                    $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to grant up to {baseRating}% bonus critical bludgeoning damage, plus an additional {bonusPerQuality}% per equipped {name} rating. " +
+                description +=
+                    $"~ {name}: Gain {baseRating}% bludgeon critical damage (+{bonusPerQuality}% per equipped rating). " +
                     $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
         }
+
         return description;
     }
 
-    private static string JewelStatsDescription(int baseRating, int amount, float bonusPerQuality, string name)
+    private static string JewelStatsDescription(int baseRating, int amount, float bonusPerQuality, string name, float? bonusPerQualitySecondary = null)
     {
-        return $"Base Rating: {baseRating}\n" +
-               $"Quality: {amount} ({JewelQuality[amount]})\n" +
-               $"Quality Bonus: {bonusPerQuality * amount} ({bonusPerQuality} x {amount})\n" +
-               $"Total Rating: {baseRating + bonusPerQuality * amount}\n\n" +
-               $"Additional sources of {name} will only add the bonus rating.";
+        var secondaryBonus = bonusPerQualitySecondary != null
+            ? $"\nSecondary Bonus Rating: {bonusPerQualitySecondary * amount} ({bonusPerQualitySecondary} x Quality)"
+            : "";
+
+        return //$"Base Rating: {baseRating}\n" +
+            $"Quality: {amount} ({JewelQuality[amount]})\n" +
+            $"Bonus Rating: {bonusPerQuality * amount} ({bonusPerQuality} x Quality)" +
+            $"{secondaryBonus}" +
+        //$"Total Rating: {baseRating + bonusPerQuality * amount}\n\n" +
+        $"\n\nAdditional sources of {name} will only add the bonus rating.";
     }
 
     public static string GetSocketDescription(MaterialType materialType, int quality)
@@ -1204,61 +1223,66 @@ partial class Jewel
         { "Teak", ACE.Entity.Enum.MaterialType.Teak }
     };
 
-    public static Dictionary<MaterialType, (string, string, int, float, int, float)> JewelEffectInfo = new()
+    public static Dictionary<PropertyInt, (string Name, string Slot, int BasePrimary, float BonusPrimary, int BaseSecondary, float BonusSecondary)> JewelEffectInfo = new()
     {
         // neck
-        { ACE.Entity.Enum.MaterialType.Sunstone, ("Illuminated Mind", "ring", 5, 0.25f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Sapphire, ("Seeker", "ring", 5, 0.25f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.GreenJade, ("Prosperity", "ring", 5, 0.25f, 0, 0.0f) },
+        { PropertyInt.GearExperienceGain, ("Illuminated Mind", "ring", 5, 0.25f, 0, 0.0f) },
+        { PropertyInt.GearMagicFind, ("Seeker", "ring", 5, 0.25f, 0, 0.0f) },
+        { PropertyInt.GearPyrealFind, ("Prosperity", "ring", 5, 0.25f, 0, 0.0f) },
 
         // ring
-        { ACE.Entity.Enum.MaterialType.Carnelian, ("Mighty Thews", "ring", 10, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Azurite, ("Erudite Mind", "ring", 10, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.TigerEye, ("Dexterous Hand", "ring", 10, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.RedJade, ("Focused Mind", "ring", 10, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.YellowTopaz, ("Perserverence", "ring", 10, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Peridot, ("Swift-footed", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearStrength, ("Mighty Thews", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearSelf, ("Erudite Mind", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearCoordination, ("Dexterous Hand", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearFocus, ("Focused Mind", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearEndurance, ("Perserverence", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearQuickness, ("Swift-footed", "ring", 10, 1.0f, 0, 0.0f) },
 
         // bracelet
-        { ACE.Entity.Enum.MaterialType.Agate, ("Provocation", "bracelet", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Amber, ("Masochist", "bracelet", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Citrine, ("Third Wind", "bracelet", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.LapisLazuli, ("Austere Anchorite", "bracelet", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.SmokeyQuartz, ("Clouded Vision", "bracelet", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Malachite, ("Meticulous Magus", "bracelet", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Moonstone, ("Thrifty Scholar", "bracelet", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Onyx, ("Black Bulwark", "bracelet", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Diamond, ("Hardened Fortification", "bracelet", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Amethyst, ("Nullification", "bracelet", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Zircon, ("Prismatic Ward", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearThreatGain, ("Provocation", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearHealthToStamina, ("Masochist", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearStamReduction, ("Third Wind", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearHealthToMana, ("Austere Anchorite", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearThreatReduction, ("Clouded Vision", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearItemManaUsage, ("Meticulous Magus", "bracelet", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearCompBurn, ("Thrifty Scholar", "bracelet", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearPhysicalWard, ("Black Bulwark", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearHardenedDefense, ("Hardened Fortification", "bracelet", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearNullification, ("Nullification", "bracelet", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearElementalWard, ("Prismatic Ward", "bracelet", 10, 0.5f, 0, 0.0f) },
 
         // shield
-        { ACE.Entity.Enum.MaterialType.Turquoise, ("Stalwart Defense", "shield", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.WhiteQuartz, ("Swift Retrbution", "shield", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearBlock, ("Stalwart Defense", "shield", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearThorns, ("Swift Retrbution", "shield", 10, 0.5f, 0, 0.0f) },
 
         // weapon
-        { ACE.Entity.Enum.MaterialType.Jet, ("Astyrrian Rage", "weapon", 10, 0.5f, 2, 0.1f) },
-        { ACE.Entity.Enum.MaterialType.RedGarnet, ("Blazing Brand", "weapon", 10, 0.5f, 2, 0.1f) },
-        { ACE.Entity.Enum.MaterialType.Hematite, ("Blood Frenzy", "weapon", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Aquamarine, ("Bone-chiller", "weapon", 10, 0.5f, 2, 0.1f) },
-        { ACE.Entity.Enum.MaterialType.Emerald, ("Devouring Mist", "weapon", 10, 0.5f, 2, 0.1f) },
-        { ACE.Entity.Enum.MaterialType.ImperialTopaz, ("Falcon's Gyre", "weapon", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Opal, ("Ophidian", "weapon", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.BlackGarnet, ("Precision Strikes", "weapon", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.WhiteJade, ("Purified Soul", "weapon", 10, 0.5f, 2, 0.1f) },
-        { ACE.Entity.Enum.MaterialType.Bloodstone, ("Sanguine Thirst", "weapon", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.WhiteSapphire, ("Skull-cracker", "weapon", 10, 0.5f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.RoseQuartz, ("Tilted-scales", "weapon", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearLightning, ("Astyrrian Rage", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearFire, ("Blazing Brand", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearSelfHarm, ("Blood Frenzy", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearFrost, ("Bone-chiller", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearAcid, ("Devouring Mist", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearSlash, ("Falcon's Gyre", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearManasteal, ("Ophidian", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearPierce, ("Precision Strikes", "weapon", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearHealBubble, ("Purified Soul", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearLifesteal, ("Sanguine Thirst", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearBludgeon, ("Skull-cracker", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearVitalsTransfer, ("Tilted-scales", "weapon", 20, 1.0f, 0, 0.0f) },
 
         // weapon or shield
-        { ACE.Entity.Enum.MaterialType.YellowGarnet, ("Bravado", "weapon or shield", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.FireOpal, ("Familiar Foe", "weapon or shield", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Ruby, ("Red Fury", "weapon or shield", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.BlackOpal, ("Vicious Reprisal", "weapon or shield", 5, 0.25f, 0, 0.0f) },
+        { PropertyInt.GearBravado, ("Bravado", "weapon or shield", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearFamiliarity, ("Familiar Foe", "weapon or shield", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearRedFury, ("Red Fury", "weapon or shield", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearReprisal, ("Vicious Reprisal", "weapon or shield", 5, 0.25f, 0, 0.0f) },
 
         // wand
-        { ACE.Entity.Enum.MaterialType.GreenGarnet, ("Elementalist", "wand", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Tourmaline, ("Ruthless Discernment", "wand", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.LavenderJade, ("Selfless Spirit", "wand", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearElementalist, ("Elementalist", "wand", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearWardPen, ("Ruthless Discernment", "wand", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearSelflessness, ("Selfless Spirit", "wand", 10, 0.5f, 0, 0.0f) },
+
+        // other
+        { PropertyInt.GearBlueFury, ("Blue Fury", "", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearYellowFury, ("Yellow Fury", "", 20, 1.0f, 0, 0.0f) },
+
     };
 }
