@@ -460,9 +460,6 @@ public class Hotspot : WorldObject
             int[] lightningHotspots = [1053921, 1053922, 1053923, 1053924, 1053925];
             int[] healingHotspots = [1053928, 1053929, 1053930, 1053931, 1053932];
 
-            const float baseChance = 0.02f;
-            const float bonusPerRating = 0.001f;
-
             switch (damageType)
             {
                 case DamageType.Fire:
