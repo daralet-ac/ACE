@@ -72,9 +72,9 @@ partial class Jewel
         CheckForRatingHealthToMana(playerDefender, attacker, damage);
     }
 
-    public static void HandleMeleeAttackerRampingQuestStamps(Player playerAttacker, Creature defender, DamageType damageType)
+    public static void HandleMeleeMissileAttackerRampingQuestStamps(Player playerAttacker, Creature defender, DamageType damageType)
     {
-        var scaledStamps = GetMeleeScaledStamps(playerAttacker);
+        var scaledStamps = GetMeleeMissileScaledStamps(playerAttacker);
 
         AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearStamReduction, "StamReduction", scaledStamps, true);
         AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearFamiliarity, "Familiarity", scaledStamps);
@@ -90,7 +90,7 @@ partial class Jewel
         }
     }
 
-    public static void HandleMeleeDefenderRampingQuestStamps(Player playerDefender)
+    public static void HandleMeleeMissileDefenderRampingQuestStamps(Player playerDefender)
     {
         AddRatingQuestStamps(playerDefender, null, PropertyInt.GearHardenedDefense, "Hardened Defense", 10);
         AddRatingQuestStamps(playerDefender, null, PropertyInt.GearBravado, "Bravado", 10);
@@ -120,13 +120,16 @@ partial class Jewel
         AddRatingQuestStamps(targetPlayer, sourceCreature, PropertyInt.GearNullification, "Nullification", 10, true);
     }
 
-    private static int GetMeleeScaledStamps(Player playerAttacker)
+    private static int GetMeleeMissileScaledStamps(Player playerAttacker)
     {
         const int baseStamps = 10;
 
         var powerBarScalar = playerAttacker.GetPowerAccuracyBar() * 2;
 
-        var equippedWeapon = playerAttacker.GetEquippedMeleeWeapon();
+        var combatStance = playerAttacker.GetCombatStance();
+        var missileStance = combatStance is MotionStance.AtlatlCombat or MotionStance.BowCombat or MotionStance.CrossbowCombat;
+        var equippedWeapon = missileStance ? playerAttacker.GetEquippedMissileLauncher() : playerAttacker.GetEquippedMeleeWeapon();
+        
         var weaponAnimationLength = WeaponAnimationLength.GetWeaponAnimLength(equippedWeapon);
         var weaponTime = equippedWeapon.WeaponTime ?? 100;
         var attacksPerSecondScalar = 1 / (weaponAnimationLength / (1.0f + (1 - (weaponTime / 100.0))));

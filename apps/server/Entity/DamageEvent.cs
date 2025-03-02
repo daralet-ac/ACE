@@ -1072,13 +1072,13 @@ public class DamageEvent
         if (playerAttacker != null)
         {
             Jewel.HandlePlayerAttackerBonuses(playerAttacker, defender, Damage, DamageType);
-            Jewel.HandleMeleeAttackerRampingQuestStamps(playerAttacker, defender, DamageType);
+            Jewel.HandleMeleeMissileAttackerRampingQuestStamps(playerAttacker, defender, DamageType);
         }
 
         if (playerDefender != null)
         {
             Jewel.HandlePlayerDefenderBonuses(playerDefender, attacker, Damage);
-            Jewel.HandleMeleeDefenderRampingQuestStamps(playerDefender);
+            Jewel.HandleMeleeMissileDefenderRampingQuestStamps(playerDefender);
         }
     }
 
