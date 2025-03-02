@@ -126,10 +126,10 @@ partial class Jewel
 
         var powerBarScalar = playerAttacker.GetPowerAccuracyBar() * 2;
 
-        var combatStance = playerAttacker.GetCombatStance();
-        var missileStance = combatStance is MotionStance.AtlatlCombat or MotionStance.BowCombat or MotionStance.CrossbowCombat;
-        var equippedWeapon = missileStance ? playerAttacker.GetEquippedMissileLauncher() : playerAttacker.GetEquippedMeleeWeapon();
-        
+        var equippedWeapon = playerAttacker.GetCombatStance() is MotionStance.DualWieldCombat
+            ? playerAttacker.GetEquippedMeleeWeapon()
+            : playerAttacker.GetEquippedWeapon();
+
         var weaponAnimationLength = WeaponAnimationLength.GetWeaponAnimLength(equippedWeapon);
         var weaponTime = equippedWeapon.WeaponTime ?? 100;
         var attacksPerSecondScalar = 1 / (weaponAnimationLength / (1.0f + (1 - (weaponTime / 100.0))));
