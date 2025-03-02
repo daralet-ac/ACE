@@ -1677,7 +1677,7 @@ public static partial class LootGenerationFactory
         var targetBaseDps = GetWeaponBaseDps(wo.Tier ?? 1);
 
         // animation speed
-        var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
+        var baseAnimLength = WeaponAnimationLength.GetWeaponAnimLength(wo);
 
         int[] avgQuickPerTier = [45, 65, 93, 118, 140, 160, 180, 195];
         var quick = (float)avgQuickPerTier[profile.Tier - 1];

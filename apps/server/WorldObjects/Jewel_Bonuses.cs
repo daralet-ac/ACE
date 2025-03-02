@@ -4,15 +4,57 @@ using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Factories.Tables;
 using ACE.Server.Network.GameMessages.Messages;
-using AttackType = ACE.Entity.Enum.AttackType;
 using DamageType = ACE.Entity.Enum.DamageType;
-using WeaponType = ACE.Entity.Enum.WeaponType;
 
 namespace ACE.Server.WorldObjects;
 
 partial class Jewel
 {
+    public static float GetJewelEffectMod(Player player, PropertyInt propertyInt, string rampQuestString = "", bool secondary = false)
+    {
+        if (player is null)
+        {
+            return 0.0f;
+        }
+
+        var rating = player.GetEquippedAndActivatedItemRatingSum(propertyInt);
+
+        if (rating <= 0)
+        {
+            return 0.0f;
+        }
+
+        var jewelEffectInfo = JewelEffectInfo[propertyInt];
+        var baseMod = (float)jewelEffectInfo.BasePrimary / 100;
+        var bonusPerRating = jewelEffectInfo.BonusSecondary / 100;
+
+        if (secondary)
+        {
+            baseMod = (float)jewelEffectInfo.BasePrimary / 100;
+            bonusPerRating = jewelEffectInfo.BonusSecondary / 100;
+        }
+
+        var rampPercentage = rampQuestString is "" ? 1.0f : 0.0f;
+
+        if (player.QuestManager.HasQuest($"{player.Name},{rampQuestString}"))
+        {
+            rampPercentage = Math.Min((float)player.QuestManager.GetCurrentSolves($"{player.Name},{rampQuestString}") / 100, 1.0f);
+        }
+
+        // Console.WriteLine($"\nJewel Mod:\n" +
+        //                   $" -Property: {propertyInt}\n" +
+        //                   $" -Rating: {rating}\n" +
+        //                   $" -baseMod: {baseMod}\n" +
+        //                   $" -bonusPerRating {bonusPerRating}\n" +
+        //                   $" -bonus: {bonusPerRating * rating}\n" +
+        //                   $" -rampPercentage: {rampPercentage * 100}%\n" +
+        //                   $" -TOTAL: {(baseMod + bonusPerRating * rating) * rampPercentage}");
+
+        return (baseMod + bonusPerRating * rating) * rampPercentage;
+    }
+
     // Caster and Physical Overlapping Bonuses
     public static void HandlePlayerAttackerBonuses(Player playerAttacker, Creature defender, float damage, DamageType damageType)
     {
@@ -30,82 +72,108 @@ partial class Jewel
         CheckForRatingHealthToMana(playerDefender, attacker, damage);
     }
 
-    public static void HandleMeleeAttackerBonuses(Player playerAttacker, Creature defender, DamageType damageType)
+    public static void HandleMeleeMissileAttackerRampingQuestStamps(Player playerAttacker, Creature defender, DamageType damageType)
     {
-        var scaledStamps = Math.Round(playerAttacker.ScaleWithPowerAccuracyBar(20f));
+        var scaledStamps = GetMeleeMissileScaledStamps(playerAttacker);
 
-        scaledStamps += 20f;
+        AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearStamReduction, "StamReduction", scaledStamps, true);
+        AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearFamiliarity, "Familiarity", scaledStamps);
 
-        var numStrikes = playerAttacker.GetNumStrikes(playerAttacker.AttackType);
-        if (numStrikes == 2)
+        switch (damageType)
         {
-            if (playerAttacker.GetEquippedWeapon() is {W_WeaponType: WeaponType.TwoHanded})
-            {
-                scaledStamps /= 2f;
-            }
-            else
-            {
-                scaledStamps /= 1.5f;
-            }
+            case DamageType.Bludgeon:
+                AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearBludgeon, "Bludgeon", scaledStamps);
+                break;
+            case DamageType.Pierce:
+                AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearPierce, "Pierce", scaledStamps);
+                break;
         }
+    }
 
-        if (
-            playerAttacker.AttackType == AttackType.OffhandPunch
-            || playerAttacker.AttackType == AttackType.Punch
-            || playerAttacker.AttackType == AttackType.Punches
-        )
+    public static void HandleMeleeMissileDefenderRampingQuestStamps(Player playerDefender)
+    {
+        AddRatingQuestStamps(playerDefender, null, PropertyInt.GearHardenedDefense, "Hardened Defense", 10);
+        AddRatingQuestStamps(playerDefender, null, PropertyInt.GearBravado, "Bravado", 10);
+    }
+
+    public static void HandleCasterAttackerRampingQuestStamps(Player sourcePlayer, Creature targetCreature, Spell spell, ProjectileSpellType projectileSpellTyper)
+    {
+        var scaledStamps = GetCasterScaledStamps(spell.Level, projectileSpellTyper);
+
+        AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearFamiliarity, "Familiarity", scaledStamps);
+        AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearWardPen, "WardPen", scaledStamps);
+        AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearElementalist, "Elementalist", scaledStamps, true);
+
+        switch (spell.DamageType)
         {
-            scaledStamps /= 1.25f;
+            case DamageType.Bludgeon:
+                AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearBludgeon, "Bludgeon", scaledStamps, true);
+                break;
+            case DamageType.Pierce:
+                AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearPierce, "Pierce", scaledStamps, true);
+                break;
         }
+    }
 
-        CheckForRatingStamReductionMeleeStamps(playerAttacker, scaledStamps);
+    public static void HandleCasterDefenderRampingQuestStamps(Player targetPlayer, Creature sourceCreature)
+    {
+        AddRatingQuestStamps(targetPlayer, sourceCreature, PropertyInt.GearNullification, "Nullification", 10, true);
+    }
 
-        var rampProperty = "";
+    private static int GetMeleeMissileScaledStamps(Player playerAttacker)
+    {
+        const int baseStamps = 10;
 
-        rampProperty = CheckForRatingBludgeonMeleeStamps(playerAttacker, damageType, rampProperty);
-        rampProperty = CheckForRatingPierceMeleeStamps(playerAttacker, damageType, rampProperty);
-        rampProperty = CheckForRatingFamiliarityMeleeStamps(playerAttacker, rampProperty);
+        var powerBarScalar = playerAttacker.GetPowerAccuracyBar() * 2;
 
-        if (rampProperty == "")
+        var equippedWeapon = playerAttacker.GetCombatStance() is MotionStance.DualWieldCombat
+            ? playerAttacker.GetEquippedMeleeWeapon()
+            : playerAttacker.GetEquippedWeapon();
+
+        var weaponAnimationLength = WeaponAnimationLength.GetWeaponAnimLength(equippedWeapon);
+        var weaponTime = equippedWeapon.WeaponTime ?? 100;
+        var attacksPerSecondScalar = 1 / (weaponAnimationLength / (1.0f + (1 - (weaponTime / 100.0))));
+
+        return Convert.ToInt32(baseStamps * powerBarScalar * attacksPerSecondScalar);
+    }
+
+    private static int GetCasterScaledStamps(uint spellLevel, ProjectileSpellType projectileSpellType)
+    {
+        const int baseStamps = 10;
+
+        var castAnimationLengthScalar = WeaponAnimationLength.GetSpellCastAnimationLength(projectileSpellType, spellLevel);
+
+        var spellTypeScalar = projectileSpellType switch
+        {
+            ProjectileSpellType.Blast or ProjectileSpellType.Volley => 0.33f,
+            ProjectileSpellType.Ring or ProjectileSpellType.Wall => 0.25f,
+            _ => 1.0f
+        };
+
+        return Convert.ToInt32(baseStamps * castAnimationLengthScalar * spellTypeScalar);
+    }
+
+    private static void AddRatingQuestStamps(Player sourcePlayer, Creature targetCreature, PropertyInt propertyInt, string questString, int amount, bool questManagerOfPlayer = false)
+    {
+        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(propertyInt) <= 0)
         {
             return;
         }
 
-        if (defender.QuestManager.HasQuest($"{playerAttacker.Name},{rampProperty}"))
+        var questTarget = questManagerOfPlayer ? sourcePlayer : targetCreature;
+
+        if (questTarget.QuestManager.HasQuest($"{sourcePlayer.Name},{questString}"))
         {
-            if (defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},{rampProperty}") < 500)
+            if (questTarget.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},{questString}") < 100)
             {
-                defender.QuestManager.Increment($"{playerAttacker.Name},{rampProperty}", (int)scaledStamps);
+                questTarget.QuestManager.Increment($"{sourcePlayer.Name},{questString}", amount);
             }
         }
         else
         {
-            defender.QuestManager.Stamp($"{playerAttacker.Name},{rampProperty}");
-
-            defender.QuestManager.Increment($"{playerAttacker.Name},{rampProperty}", (int)scaledStamps);
+            questTarget.QuestManager.Stamp($"{sourcePlayer.Name},{questString}");
+            questTarget.QuestManager.Increment($"{sourcePlayer.Name},{questString}", amount);
         }
-    }
-
-    public static void HandleMeleeDefenderBonuses(Player playerDefender)
-    {
-        CheckForRatingHardenedDefenseMeleeStamps(playerDefender);
-        CheckForRatingBravadoMeleeStamps(playerDefender);
-    }
-
-    public static void HandleCasterAttackerBonuses(Player sourcePlayer, Creature targetCreature, DamageType damageType, uint spellLevel, int? spellTypeScaler)
-    {
-        var baseStamps = GetBaseStampsFromPlayerAndSpellLevels(sourcePlayer, spellLevel, spellTypeScaler);
-
-        CheckForRatingBludgeonCasterStamps(sourcePlayer, targetCreature, damageType, baseStamps);
-        CheckForRatingPierceCasterStamps(sourcePlayer, targetCreature, damageType, baseStamps);
-        CheckForRatingFamiliarityCasterStamps(sourcePlayer, targetCreature, baseStamps);
-        CheckForRatingWardPenCasterStamps(sourcePlayer, targetCreature, baseStamps);
-        CheckForRatingElementalistCasterStamps(sourcePlayer, baseStamps);
-    }
-
-    public static void HandleCasterDefenderBonuses(Player targetPlayer, Creature sourceCreature, ProjectileSpellType spellType)
-    {
-        CheckForRatingNullificationStamps(targetPlayer);
     }
 
     public static float HandleElementalBonuses(Player playerAttacker, DamageType damageType)
@@ -117,446 +185,16 @@ partial class Jewel
             return jewelElemental;
         }
 
-        jewelElemental = CheckForRatingAcidDamageBonus(playerAttacker, damageType, jewelElemental);
-        jewelElemental = CheckForRatingFireDamageBonus(playerAttacker, damageType, jewelElemental);
-        jewelElemental = CheckForRatingColdDamageBonus(playerAttacker, damageType, jewelElemental);
-        jewelElemental = CheckForRatingLightningDamageBonus(playerAttacker, damageType, jewelElemental);
+        jewelElemental = damageType switch
+        {
+            DamageType.Acid => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearAcid),
+            DamageType.Fire => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearFire),
+            DamageType.Cold => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearFrost),
+            DamageType.Electric => 1.0f + GetJewelEffectMod(playerAttacker, PropertyInt.GearLightning),
+            _ => jewelElemental
+        };
 
         return jewelElemental;
-    }
-
-    /// <summary>
-    /// RATING - Lightning: Increases lightning damage by (rating)%.
-    /// (JEWEL - Jet)
-    /// </summary>
-    private static float CheckForRatingLightningDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning) > 0 && damageType == DamageType.Electric)
-        {
-            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning) / 100;
-        }
-
-        return jewelElemental;
-    }
-
-    /// <summary>
-    /// RATING - Cold: Increases cold damage by (rating)%.
-    /// (JEWEL - Aquamarine)
-    /// </summary>
-    private static float CheckForRatingColdDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost) > 0 && damageType == DamageType.Cold)
-        {
-            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost) / 100;
-        }
-
-        return jewelElemental;
-    }
-
-    /// <summary>
-    /// RATING - Fire: Increases fire damage by (rating)%.
-    /// (JEWEL - Red Garnet)
-    /// </summary>
-    private static float CheckForRatingFireDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire) > 0 && damageType == DamageType.Fire)
-        {
-            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire) / 100;
-        }
-
-        return jewelElemental;
-    }
-
-    /// <summary>
-    /// RATING - Acid: Increases acid damage by (rating)%.
-    /// (JEWEL - Emerald)
-    /// </summary>
-    private static float CheckForRatingAcidDamageBonus(Player playerAttacker, DamageType damageType, float jewelElemental)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid) > 0 && damageType == DamageType.Acid)
-        {
-            jewelElemental += (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid) / 100;
-        }
-
-        return jewelElemental;
-    }
-
-    /// <summary>
-    /// RATING - Nullification: Adds quest stamps for nullification rating.
-    /// (JEWEL - Amethyst)
-    /// </summary>
-    private static void CheckForRatingNullificationStamps(Player targetPlayer)
-    {
-        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) <= 0)
-        {
-            return;
-        }
-
-        if (targetPlayer.QuestManager.HasQuest($"{targetPlayer.Name},Nullification"))
-        {
-            if (targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") < 200)
-            {
-                targetPlayer.QuestManager.Increment($"{targetPlayer.Name},Nullification", 50);
-            }
-        }
-        else
-        {
-            targetPlayer.QuestManager.Stamp($"{targetPlayer.Name},Nullification");
-            targetPlayer.QuestManager.Increment($"{targetPlayer.Name},Nullification", 50);
-        }
-    }
-
-    private static int GetBaseStampsFromPlayerAndSpellLevels(Player sourcePlayer, uint spellLevel, int? spellTypeScaler)
-    {
-        var baseStamps = 50;
-        if (sourcePlayer is { Level: not null })
-        {
-            var playerLevelDivisor = (int)(sourcePlayer.Level / 10);
-
-            if (playerLevelDivisor > 7)
-            {
-                playerLevelDivisor = 7;
-            }
-
-            switch (spellLevel)
-            {
-                case 1:
-                {
-                    if (playerLevelDivisor >= 2)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 2:
-                {
-                    baseStamps = (int)(baseStamps * 1.5);
-
-                    if (playerLevelDivisor >= 3)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 3:
-                {
-                    baseStamps = (baseStamps * 2);
-
-                    if (playerLevelDivisor >= 4)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 4:
-                {
-                    baseStamps = (int)(baseStamps * 2.25);
-
-                    if (playerLevelDivisor >= 5)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 5:
-                {
-                    baseStamps = (int)(baseStamps * 2.5);
-
-                    if (playerLevelDivisor >= 6)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-                case 6:
-                {
-                    baseStamps = (int)(baseStamps * 2.5);
-
-                    if (playerLevelDivisor >= 7)
-                    {
-                        baseStamps /= playerLevelDivisor;
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        if (spellLevel == 7)
-        {
-            baseStamps = (int)(baseStamps * 2.5);
-        }
-
-        if (spellTypeScaler != null)
-        {
-            baseStamps /= (int)spellTypeScaler;
-        }
-
-        return baseStamps;
-    }
-
-    /// <summary>
-    /// RATING - Elementalist: Adds quest stamps for elementalist rating.
-    /// (JEWEL - Green Garnet)
-    /// </summary>
-    private static void CheckForRatingElementalistCasterStamps(Player sourcePlayer, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalist) <= 0)
-        {
-            return;
-        }
-
-        if (sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Elementalist"))
-        {
-            if (sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") < 500)
-            {
-                sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Elementalist", baseStamps);
-            }
-        }
-        else
-        {
-            sourcePlayer.QuestManager.Stamp($"{sourcePlayer.Name},Elementalist");
-            sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Elementalist", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Ward Penetration: Adds quest stamps for ward pen rating.
-    /// (JEWEL - Tourmaline)
-    /// </summary>
-    private static void CheckForRatingWardPenCasterStamps(Player sourcePlayer, Creature targetCreature, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearWardPen) <= 0)
-        {
-            return;
-        }
-
-        if (targetCreature.QuestManager.HasQuest($"{sourcePlayer.Name},WardPen"))
-        {
-            if (targetCreature.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") < 500)
-            {
-                targetCreature.QuestManager.Increment($"{sourcePlayer.Name},WardPen", baseStamps);
-            }
-        }
-        else
-        {
-            targetCreature.QuestManager.Stamp($"{sourcePlayer.Name},WardPen");
-            targetCreature.QuestManager.Increment($"{sourcePlayer.Name},WardPen", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Familiarity: Adds quest stamps for familiarity rating.
-    /// (JEWEL - Fire Opal)
-    /// </summary>
-    private static void CheckForRatingFamiliarityCasterStamps(Player sourcePlayer, Creature targetCreature, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) <= 0)
-        {
-            return;
-        }
-
-        if (targetCreature.QuestManager.HasQuest($"{sourcePlayer.Name},Familiarity"))
-        {
-            if (targetCreature.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Familiarity") < 500)
-            {
-                targetCreature.QuestManager.Increment($"{sourcePlayer.Name},Familiarity", baseStamps);
-            }
-        }
-        else
-        {
-            targetCreature.QuestManager.Stamp($"{sourcePlayer.Name},Familiarity");
-
-            targetCreature.QuestManager.Increment($"{sourcePlayer.Name},Familiarity", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Pierce: Adds quest stamps for pierce rating.
-    /// (JEWEL - Black Garnet)
-    /// </summary>
-    private static void CheckForRatingPierceCasterStamps(Player sourcePlayer, Creature targetCreature, DamageType damageType, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) <= 0)
-        {
-            return;
-        }
-
-        if (damageType != DamageType.Pierce)
-        {
-            return;
-        }
-
-        if (targetCreature.QuestManager.HasQuest($"{targetCreature.Name},Pierce"))
-        {
-            if (targetCreature.QuestManager.GetCurrentSolves($"{targetCreature.Name},Pierce") < 500)
-            {
-                targetCreature.QuestManager.Increment($"{targetCreature.Name},Pierce", baseStamps);
-            }
-        }
-        else
-        {
-            targetCreature.QuestManager.Stamp($"{targetCreature.Name},Pierce");
-            targetCreature.QuestManager.Increment($"{targetCreature.Name},Pierce", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Bludgeon: Adds quest stamps for bludgeon rating.
-    /// (JEWEL - White Sapphire)
-    /// </summary>
-    private static void CheckForRatingBludgeonCasterStamps(Player sourcePlayer, Creature targetCreature, DamageType damageType, int baseStamps)
-    {
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) <= 0)
-        {
-            return;
-        }
-
-        if (damageType != DamageType.Bludgeon)
-        {
-            return;
-        }
-
-        if (targetCreature.QuestManager.HasQuest($"{targetCreature.Name},Bludgeon"))
-        {
-            if (targetCreature.QuestManager.GetCurrentSolves($"{targetCreature.Name},Bludgeon") < 500)
-            {
-                targetCreature.QuestManager.Increment($"{targetCreature.Name},Bludgeon", baseStamps);
-            }
-        }
-        else
-        {
-            targetCreature.QuestManager.Stamp($"{targetCreature.Name},Bludgeon");
-            targetCreature.QuestManager.Increment($"{targetCreature.Name},Bludgeon", baseStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Bravado: Adds quest stamps for bravado rating.
-    /// (JEWEL - Yellow Garnet)
-    /// </summary>
-    private static void CheckForRatingBravadoMeleeStamps(Player playerDefender)
-    {
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBravado) <= 0)
-        {
-            return;
-        }
-
-        if (playerDefender.QuestManager.HasQuest($"{playerDefender.Name},Bravado"))
-        {
-            if (playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Bravado") < 1000)
-            {
-                playerDefender.QuestManager.Increment($"{playerDefender.Name},Bravado", 100);
-            }
-        }
-        else
-        {
-            playerDefender.QuestManager.Stamp($"{playerDefender.Name},Bravado");
-            playerDefender.QuestManager.Increment($"{playerDefender.Name},Bravado", 100);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Hardened Defense: Adds quest stamps for hardened defense rating.
-    /// (JEWEL - Diamond)
-    /// </summary>
-    private static void CheckForRatingHardenedDefenseMeleeStamps(Player playerDefender)
-    {
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHardenedDefense) <= 0)
-        {
-            return;
-        }
-
-        if (playerDefender.QuestManager.HasQuest($"{playerDefender.Name},Hardened Defense"))
-        {
-            if (playerDefender.QuestManager.GetCurrentSolves($"{playerDefender.Name},Hardened Defense") < 200)
-            {
-                playerDefender.QuestManager.Increment($"{playerDefender.Name},Hardened Defense", 20);
-            }
-        }
-        else
-        {
-            playerDefender.QuestManager.Stamp($"{playerDefender.Name},Hardened Defense");
-            playerDefender.QuestManager.Increment($"{playerDefender.Name},Hardened Defense", 20);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Stamina Reduction: Adds quest stamps for Stamina Reduction rating.
-    /// (JEWEL - Citrine)
-    /// </summary>
-    private static void CheckForRatingStamReductionMeleeStamps(Player playerAttacker, double scaledStamps)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearStamReduction) <= 0)
-        {
-            return;
-        }
-
-        if (playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},StamReduction"))
-        {
-            if (playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},StamReduction") < 500)
-            {
-                playerAttacker.QuestManager.Increment($"{playerAttacker.Name},StamReduction", (int)scaledStamps);
-            }
-        }
-        else
-        {
-            playerAttacker.QuestManager.Stamp($"{playerAttacker.Name},StamReduction");
-            playerAttacker.QuestManager.Increment($"{playerAttacker.Name},StamReduction", (int)scaledStamps);
-        }
-    }
-
-    /// <summary>
-    /// RATING - Familiarity: Adds quest stamps for Familiarity rating.
-    /// (JEWEL - Fire Opal)
-    /// </summary>
-    private static string CheckForRatingFamiliarityMeleeStamps(Player playerAttacker, string rampProperty)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity) > 0)
-        {
-            rampProperty = "Familiarity";
-        }
-
-        return rampProperty;
-    }
-
-    /// <summary>
-    /// RATING - Pierce: Adds quest stamps for Pierce rating.
-    /// (JEWEL - Black Garnet)
-    /// </summary>
-    private static string CheckForRatingPierceMeleeStamps(Player playerAttacker, DamageType damageType, string rampProperty)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) > 0)
-        {
-            if (damageType == DamageType.Pierce)
-            {
-                rampProperty = "Pierce";
-            }
-        }
-
-        return rampProperty;
-    }
-
-    /// <summary>
-    /// RATING - Bludgeon: Adds quest stamps for Bludgeon rating.
-    /// (JEWEL - White Sapphire)
-    /// </summary>
-    private static string CheckForRatingBludgeonMeleeStamps(Player playerAttacker, DamageType damageType, string rampProperty)
-    {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) > 0)
-        {
-            if (damageType == DamageType.Bludgeon)
-            {
-                rampProperty = "Bludgeon";
-            }
-        }
-
-        return rampProperty;
     }
 
     /// <summary>
@@ -565,12 +203,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingProsperityFindStamps(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPyrealFind) <= 0)
-        {
-            return;
-        }
-
-        var pyrealFind = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPyrealFind);
+        var pyrealFind = GetJewelEffectMod(playerAttacker, PropertyInt.GearPyrealFind);
 
         defender.QuestManager.Stamp($"{playerAttacker.Name}/Prosperity/{pyrealFind}/{damage}");
     }
@@ -581,12 +214,7 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingMagicFindStamps(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearMagicFind) <= 0)
-        {
-            return;
-        }
-
-        var magicFind = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearMagicFind);
+        var magicFind = GetJewelEffectMod(playerAttacker, PropertyInt.GearMagicFind);
 
         defender.QuestManager.Stamp($"{playerAttacker.Name}/MagicFind/{magicFind}/{damage}");
     }
@@ -615,22 +243,26 @@ partial class Jewel
     }
 
     /// <summary>
-    /// RATING - Self Harm: Damage self when dealing damage. (Also grants bonus damage from a different function)
+    /// RATING - Self Harm: 10% chance to damage self when dealing damage. (Also grants bonus damage from a different function)
     /// (JEWEL - Hematite)
     /// </summary>
     private static void CheckForRatingSelfHarm(Player playerAttacker, float damage)
     {
-        // JEWEL - Hematite: Self-harm damage
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) <= 0)
+        const float selfHarmChance = 0.1f;
+
+        if (ThreadSafeRandom.Next(0.0f, 1.0f) > selfHarmChance)
         {
             return;
         }
 
-        var jewelSelfHarm = (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
-        var selfHarm = (int)(jewelSelfHarm * damage);
+        var selfHarmMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
+        var selfHarmAmount = Convert.ToInt32(damage * selfHarmMod);
 
-        playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarm);
-        playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, (uint)selfHarm);
+        playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarmAmount);
+        playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, (uint)selfHarmAmount);
+
+        var message = $"In a blood frenzy, you deal {selfHarmAmount} damage to yourself!";
+        playerAttacker.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.CombatEnemy));
 
         if (!playerAttacker.IsDead)
         {
@@ -648,14 +280,9 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingManaOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearManasteal) <= 0)
-        {
-            return;
-        }
+        var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearManasteal);
 
-        var chance = (float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearManasteal) / 100;
-
-        if (playerAttacker == defender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
+        if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
@@ -678,14 +305,9 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingLifeOnHit(Player playerAttacker, Creature defender, float damage)
     {
-        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLifesteal) <= 0)
-        {
-            return;
-        }
+        var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearLifesteal);
 
-        var chance = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLifesteal) * 0.01f;
-
-        if (playerAttacker == defender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
+        if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
@@ -708,24 +330,19 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToMana(Player playerDefender, Creature attacker, float damage)
     {
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToMana) <= 0)
+        var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToMana);
+
+        if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
 
-        var chance = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToMana) * 0.01f;
-
-        if (attacker == playerDefender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
-        {
-            return;
-        }
-
-        var manaAmount = (uint)Math.Round(damage / 4);
+        var manaAmount = Convert.ToUInt32(damage);
         playerDefender.UpdateVitalDelta(playerDefender.Mana, manaAmount);
         playerDefender.DamageHistory.OnHeal(manaAmount);
         playerDefender.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"Your Lapis of the Anchorite restores {manaAmount} points of Mana!",
+                $"Austere Anchorite restores {manaAmount} points of Mana!",
                 ChatMessageType.Broadcast
             )
         );
@@ -737,25 +354,20 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToStamina(Player playerDefender, Creature attacker, float damage)
     {
-        if (playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToStamina) <= 0)
+        var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToStamina);
+
+        if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return;
         }
 
-        var chance = playerDefender.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealthToStamina) * 0.01f;
-
-        if (attacker == playerDefender || !(chance >= ThreadSafeRandom.Next(0.0f, 1.0f)))
-        {
-            return;
-        }
-
-        var staminaAmount = (uint)Math.Round(damage);
+        var staminaAmount = Convert.ToUInt32(damage);
 
         playerDefender.UpdateVitalDelta(playerDefender.Stamina, staminaAmount);
         playerDefender.DamageHistory.OnHeal(staminaAmount);
         playerDefender.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"Your Amber of the Masochist restores {staminaAmount} points of Stamina!",
+                $"Masochist restores {staminaAmount} points of Stamina!",
                 ChatMessageType.Broadcast
             )
         );
@@ -767,10 +379,21 @@ partial class Jewel
     /// </summary>
     public static float GetJewelRedFury(Player playerAttacker)
     {
-        var percentHealthRemaining = (float)playerAttacker.Health.Current / playerAttacker.Health.MaxValue;
-        var mod = Math.Min(((1.0f - percentHealthRemaining) / 0.75f), 1.0f);
+        if (playerAttacker is null)
+        {
+            return 0.0f;
+        }
 
-        return mod * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) / 100);
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) <= 0)
+        {
+            return 0.0f;
+        }
+
+        var percentHealthRemaining = (float)playerAttacker.Health.Current / playerAttacker.Health.MaxValue;
+        var inverseHealthRemaining = Math.Min((1.0f - percentHealthRemaining), 1.0f);
+        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearRedFury);
+
+        return inverseHealthRemaining * ratingMod;
     }
 
     /// <summary>
@@ -779,10 +402,21 @@ partial class Jewel
     /// </summary>
     public static float GetJewelYellowFury(Player playerAttacker)
     {
-        var percentStaminaRemaining = (float)playerAttacker.Stamina.Current / playerAttacker.Stamina.MaxValue;
-        var mod = Math.Min(((1.0f - percentStaminaRemaining) / 0.75f), 1.0f);
+        if (playerAttacker is null)
+        {
+            return 0.0f;
+        }
 
-        return mod * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearYellowFury) / 100);
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearYellowFury) <= 0)
+        {
+            return 0.0f;
+        }
+
+        var percentStaminaRemaining = (float)playerAttacker.Stamina.Current / playerAttacker.Stamina.MaxValue;
+        var inverseHealthRemaining = Math.Min((1.0f - percentStaminaRemaining), 1.0f);
+        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearYellowFury);
+
+        return inverseHealthRemaining * ratingMod;
     }
 
     /// <summary>
@@ -791,343 +425,327 @@ partial class Jewel
     /// </summary>
     public static float GetJewelBlueFury(Player playerAttacker)
     {
-        var percentManaRemaining = (float)playerAttacker.Mana.Current / playerAttacker.Mana.MaxValue;
-        var mod = Math.Min(((1.0f - percentManaRemaining) / 0.75f), 1.0f);
+        if (playerAttacker is null)
+        {
+            return 0.0f;
+        }
 
-        return mod * ((float)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlueFury) / 100);
+        if (playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlueFury) <= 0)
+        {
+            return 0.0f;
+        }
+
+        var percentManaRemaining = (float)playerAttacker.Mana.Current / playerAttacker.Mana.MaxValue;
+        var inverseHealthRemaining = Math.Min((1.0f - percentManaRemaining), 1.0f);
+        var ratingMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearBlueFury);
+
+        return inverseHealthRemaining * ratingMod;
     }
 
     // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem workmanship
-    public static string GetJewelDescription(string jewelSocket1)
+    public static string GetJewelDescription(WorldObject jewel)
     {
-        var parts = jewelSocket1.Split('/');
+        var quality = jewel.JewelSocket1Quality ?? 1;
+        var materialType = jewel.JewelMaterialType;
 
-        var description = "";
-        if (!MaterialTypetoString.TryGetValue(parts[1], out var convertedMaterialType))
+        if (materialType is null)
         {
-            return description;
+            return "";
         }
 
-        if (!int.TryParse(parts[4], out var amount))
-        {
-            return description;
-        }
+        var propertyInt = JewelMaterialToType[materialType.Value];
 
-        var oneTenth = Math.Round((float)amount / 10, 2);
-        var half = Math.Round((float)amount / 2, 1);
-        var doubled = Math.Round((float)amount * 2.0f, 1);
-        var tripled = Math.Round((float)amount * 3.0f, 1);
+        var name = JewelEffectInfo[propertyInt].Name;
+        var equipmentType = JewelEffectInfo[propertyInt].Slot;
+        var baseRating = JewelEffectInfo[propertyInt].BasePrimary;
+        var bonusPerQuality = JewelEffectInfo[propertyInt].BonusPrimary;
+        var baseRatingSecondary = JewelEffectInfo[propertyInt].BaseSecondary;
+        var bonusPerQualitySecondary = JewelEffectInfo[propertyInt].BonusSecondary;
 
-        if (!int.TryParse(parts[5], out var originalWorkmanship))
-        {
-            return description;
-        }
+        var description = $"Socket this jewel in a {equipmentType} of workmanship {quality} or greater to gain {name}, while equipped.\n\n";
 
-        var workmanship = originalWorkmanship - 1 < 1 ? 1 : originalWorkmanship - 1;
-
-        switch (convertedMaterialType)
+        switch (materialType)
         {
             //necklace
             case ACE.Entity.Enum.MaterialType.Sunstone:
-                description =
-                    $"Socket this jewel in a necklace of workmanship {workmanship} or greater to grant a {half}% bonus to experience gain.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased experience from monster kills (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Sapphire:
-                description =
-                    $"Socket this jewel in a necklace of workmanship {workmanship} or greater to grant a {amount}% bonus to monster loot quality.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% bonus to loot quality from monster kills (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.GreenJade:
-                description =
-                    $"Socket this jewel in a necklace of workmanship {workmanship} or greater to grant a {half}% chance for monsters to drop an additional item on death.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to receive an extra item from monster kills (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // ring right
             case ACE.Entity.Enum.MaterialType.Carnelian:
-                description =
-                    $"Socket this jewel in a ring of workmanship {workmanship} or greater to grant a {amount} bonus to base Strength.\n\nOnce socketed, the ring can only be worn on the right finger.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating} Strength (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the {equipmentType} can only be worn on the right finger.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Azurite:
-                description =
-                    $"Socket this jewel in a ring of workmanship {workmanship} or greater to grant a {amount} bonus to base Self.\n\nOnce socketed, the ring can only be worn on the right finger.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating} Self (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the {equipmentType} can only be worn on the right finger.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.TigerEye:
-                description =
-                    $"Socket this jewel in a ring of workmanship {workmanship} or greater to grant a {amount} bonus to base Coordination.\n\nOnce socketed, the ring can only be worn on the right finger.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating} Coordination (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the {equipmentType} can only be worn on the right finger.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // ring left
             case ACE.Entity.Enum.MaterialType.RedJade:
-                description =
-                    $"Socket this jewel in a ring of workmanship {workmanship} or greater to grant a {amount} bonus to base Focus.\n\nOnce socketed, the ring can only be worn on the left finger.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating} Focus (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the {equipmentType} can only be worn on the left finger.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.YellowTopaz:
-                description =
-                    $"Socket this jewel in a ring of workmanship {workmanship} or greater to grant a {amount} bonus to base Endurance.\n\nOnce socketed, the ring can only be worn on the left finger.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating} Endurance (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the {equipmentType} can only be worn on the left finger.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Peridot:
-                description =
-                    $"Socket this jewel in a ring of workmanship {workmanship} or greater to grant a {amount} bonus to base Quickness.\n\nOnce socketed, the ring can only be worn on the left finger.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating} Quickness (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the {equipmentType} can only be worn on the left finger.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // bracelet left
             case ACE.Entity.Enum.MaterialType.Agate:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% bonus to threat generation.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating} increased threat from your actions (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.SmokeyQuartz:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% bonus to threat reduction.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating} reduced threat from your actions (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Amber:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% chance to regain stamina after being hit. Amount regained is based on damage received.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to gain hit damage taken as stamina (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.LapisLazuli:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% chance to regain mana after being hit. Amount regained is based on damage received.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to gain hit damage taken as mana (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Moonstone:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount * 5}% reduction to mana consumed by equipped items.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced mana consumed by items (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Malachite:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {tripled}% reduction to your chance to burn spell components.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced chance to burn spell components (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Citrine:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant a {amount}% stamina cost reduction.\n\nOnce socketed, the bracelet can only be worn on the left wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced stamina costs (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // bracelet right
             case ACE.Entity.Enum.MaterialType.Amethyst:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant magic absorb, the amount ramping from 0 to {doubled}% based on how often you have recently have been hit with magic.\n\nOnce socketed, the bracelet can only be worn on the right wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% reduced magic damage taken (+{bonusPerQuality}% per equipped rating). " +
+                    $"The amount builds up from 0%, based on how often you have recently been hit with a damaging spell. " +
+                    $"Once socketed, the bracelet can only be worn on the right wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Diamond:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant resistance to physical damage, the amount ramping from 0 to {doubled}% based on how often you have recently have been hit.\n\nOnce socketed, the bracelet can only be worn on the right wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% reduced physical damage taken (+{bonusPerQuality}% per equipped rating). " +
+                    $"The amount builds up from 0%, based on how often you have recently been hit with a damaging physical attack. " +
+                    $"Once socketed, the bracelet can only be worn on the right wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Onyx:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant {amount}% protection against Piercing, Bludgeoning and Slashing damage types.\n\nOnce socketed, the bracelet can only be worn on the right wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced damage taken from slashing, bludgeoning, and piercing damage types (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the bracelet can only be worn on the right wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Zircon:
-                description =
-                    $"Socket this jewel in a bracelet of workmanship {workmanship} or greater to grant {amount}% protection against Flame, Frost, Lightning, and Acid damage types.\n\nOnce socketed, the bracelet can only be worn on the right wrist.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% reduced damage taken from acid, fire, cold, and electric damage types (+{bonusPerQuality}% per equipped rating). " +
+                    $"Once socketed, the bracelet can only be worn on the right wrist.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // shield
             case ACE.Entity.Enum.MaterialType.Turquoise:
-                description =
-                    $"Socket this jewel in a shield of workmanship {workmanship} or greater to grant +{amount}% chance to block attacks.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased block chance (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteQuartz:
-                description =
-                    $"Socket this jewel in a shield of workmanship {workmanship} or greater to deflect {amount * 5}% of an attacker's damage back at them when successfully blocked, so long as the opponent is within melee range.\n\n";
+                description +=
+                    $"~ {name}: Deflect {baseRating}% damage from a blocked attack back to a close-range attacker (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // weapon + shield
             case ACE.Entity.Enum.MaterialType.BlackOpal:
-                description =
-                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant {half}% chance to evade an incoming critical hit. Your next attack against that enemy will be a guaranteed critical strike.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to evade a critical attack (+{bonusPerQuality}% per equipped rating).  " +
+                    $"Your next attack after a the evade is a guaranteed critical.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.FireOpal:
-                description =
-                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant an increased evade and resist chance versus the target you are attacking, the amount ramping from 0% to {amount}% based on how often you have hit the target.\n\n";
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased evade and resist chances, against the target you are attacking (+{bonusPerQuality}% per equipped rating). " +
+                    $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.YellowGarnet:
-                description =
-                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant an increased physical hit chance, the amount ramping from a 0% to {amount}% based on how often you have been recently physically attacked.\n\n";
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased physical attack skill (+{bonusPerQuality}% per equipped rating). " +
+                    $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Ruby:
-                description =
-                    $"Socket this jewel in a weapon or shield of workmanship {workmanship} or greater to grant increased damage as your health falls below 100%, up to a maximum bonus of {amount}% at 25% health.\n\n";
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased damage as your health approaches 0 (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
             // weapon only
             case ACE.Entity.Enum.MaterialType.Bloodstone:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {amount}% chance on hit to gain health. Amount gained is based on amount of damage done.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance on hit to gain health (+{bonusPerQuality}% per equipped rating). " +
+                    $"Amount stolen is equal to 10% of damage dealt.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Opal:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {amount}% chance on hit to gain mana. Amount gained is based on amount of damage done.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance on hit to gain mana (+{bonusPerQuality}% per equipped rating). " +
+                    $"Amount stolen is equal to 10% of damage dealt.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Hematite:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to deal {amount}% extra damage to your opponent each time you attack, however you will take that much damage as well.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased damage with all attacks (+{bonusPerQuality}% per equipped rating). " +
+                    $"However, 10% of your attacks will deal the extra damage to yourself as well.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.RoseQuartz:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to your Vitals Transfer spells, but an equivalent reduction in the effectiveness of your other Restoration spells.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% bonus to your transfer spells (+{bonusPerQuality}% per equipped rating). " +
+                    $"Receive an equivalent reduction in the effectiveness of your other restoration spells.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.LavenderJade:
-                description =
-                    $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant a {doubled}% bonus to your restoration spells when cast on others, but an equivalent reduction in their effectiveness when cast on yourself.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% bonus to your restoration spells on others (+{bonusPerQuality}% per equipped rating). " +
+                    $"Receive an equivalent reduction in the effectiveness when cast on yourself.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.GreenGarnet:
-                description =
-                    $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant a bonus to War Magic spells, the amount ramping from 0% to {doubled}% based on how often you have recently hit your target.\n\n";
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased war magic damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Tourmaline:
-                description =
-                    $"Socket this jewel in a wand of workmanship {workmanship} or greater to grant Ward penetration, the amount ramping from 0% to {doubled}% based on how often you have recently hit your target.\n\n";
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% ward cleaving (+{bonusPerQuality}% per equipped rating). " +
+                    $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteJade:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {amount}% bonus to your restoration spells, and a {half}% to create a sphere of healing energy on top of your target on casting a restoration spell.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% bonus to your restoration spells (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to create a sphere of healing energy on top of your target when casting a restoration spell (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Aquamarine:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to Frost damage, and a {half}% chance on hit to surround your target with chilling mist, damaging nearby enemies.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased cold damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to surround your target with chilling mist (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.BlackGarnet:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant it piercing resistance penetration, the amount ramping from +0% to +{doubled}% based on how often you have hit your target.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% piercing resistance penetration (+{bonusPerQuality}% per equipped rating). " +
+                    $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Emerald:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to Acid damage, and a {half}% chance on hit to surround your target with acidic mist, damaging nearby enemies.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased acid damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to surround your target with acidic mist (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.ImperialTopaz:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant {half}% chance to cleave a second target on hit.\n\n";
+                description +=
+                    $"~ {name}: Gain a {baseRating}% chance to cleave an additional target (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Jet:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to Lightning damage, and a {half}% chance on hit to electrify the ground beneath your target, damaging nearby enemies.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased electric damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to electrify the ground beneath your target (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.RedGarnet:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant a {amount}% bonus to Fire damage, and a {half}% chance on hit to set the ground beneath your target ablaze, damaging nearby enemies.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% increased fire damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"Also grants a {baseRatingSecondary}% chance to set the ground beneath your target ablaze (+{bonusPerQualitySecondary}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name, bonusPerQualitySecondary)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.WhiteSapphire:
-                description =
-                    $"Socket this jewel in a weapon of workmanship {workmanship} or greater to grant bonus critical bludgeoning damage, the amount ramping from +0% to +{doubled}% based on how many times you have struck your target.\n\n";
+                description +=
+                    $"~ {name}: Gain {baseRating}% bludgeon critical damage (+{bonusPerQuality}% per equipped rating). " +
+                    $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
         }
+
         return description;
     }
 
-    public static string GetSocketDescription(string jewelSocket1)
+    private static string JewelStatsDescription(int baseRating, int amount, float bonusPerQuality, string name, float? bonusPerQualitySecondary = null)
     {
-        var parts = jewelSocket1.Split('/');
+        var secondaryBonus = bonusPerQualitySecondary != null
+            ? $"\nSecondary Bonus Rating: {bonusPerQualitySecondary * amount} ({bonusPerQualitySecondary} x Quality)"
+            : "";
 
-        var description = "";
-        if (!MaterialTypetoString.TryGetValue(parts[1], out var convertedMaterialType))
-        {
-            return description;
-        }
+        return //$"Base Rating: {baseRating}\n" +
+            $"Quality: {amount} ({JewelQuality[amount]})\n" +
+            $"Bonus Rating: {bonusPerQuality * amount} ({bonusPerQuality} x Quality)" +
+            $"{secondaryBonus}" +
+        //$"Total Rating: {baseRating + bonusPerQuality * amount}\n\n" +
+        $"\n\nAdditional sources of {name} will only add the bonus rating.";
+    }
 
-        if (!int.TryParse(parts[4], out var amount))
-        {
-            return description;
-        }
+    public static string GetSocketDescription(MaterialType materialType, int quality)
+    {
+        var materialString = Jewel.MaterialTypeToString[materialType];
 
-        var oneTenth = Math.Round((float)amount / 10, 2);
-        var half = Math.Round((float)amount / 2, 1);
-        var doubled = Math.Round((float)amount * 2, 1);
-        var tripled = Math.Round((float)amount * 3, 1);
-
-        switch (convertedMaterialType)
-        {
-            // ring right
-            case ACE.Entity.Enum.MaterialType.Carnelian:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Azurite:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.TigerEye:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
-                break;
-
-            // ring left
-            case ACE.Entity.Enum.MaterialType.RedJade:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.YellowTopaz:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Peridot:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}  {parts[3]})\n";
-                break;
-
-            case ACE.Entity.Enum.MaterialType.Moonstone:
-                description = $"\n\t Socket:  {parts[1]} (-{amount * 5}% Item Mana Consumption)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Malachite:
-                description = $"\n\t Socket:  {parts[1]} (+{tripled}% Component Burn Reduction)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.GreenJade:
-                description = $"\n\t Socket:  {parts[1]} (+{half}% Prosperity)\n";
-                break;
-
-            // bracelet right
-            case ACE.Entity.Enum.MaterialType.Amethyst:
-                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping Magic Absorb)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Diamond:
-                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping Physical Damage Resistance)\n";
-                break;
-            // shield
-            case ACE.Entity.Enum.MaterialType.WhiteQuartz:
-                description = $"\n\t Socket:  {parts[1]} (+{amount * 5}% Shield Reprisal)\n";
-                break;
-            // weapon + shield
-            case ACE.Entity.Enum.MaterialType.BlackOpal:
-                description = $"\n\t Socket:  {parts[1]} (+{half}% Critical Reprisal)\n";
-                break;
-
-            // weapon only
-            case ACE.Entity.Enum.MaterialType.Bloodstone:
-                description = $"\n\t Socket:  {parts[1]} (+{half}% Life Steal)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Opal:
-                description = $"\n\t Socket:  {parts[1]} (+{half}% Mana Leech)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.RoseQuartz:
-                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Vitals Transfer)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.LavenderJade:
-                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Selflessness)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.GreenGarnet:
-                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping War Damage)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Tourmaline:
-                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping Ward Pen)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.WhiteJade:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}% Restoration)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Aquamarine:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}% Frost Damage)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.BlackGarnet:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}% Ramping Pierce Pen)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Emerald:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}% Acid Damage)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.ImperialTopaz:
-                description = $"\n\t Socket:  {parts[1]} (+{half}% Cleave Chance)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Jet:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}% Lightning Damage)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.RedGarnet:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}% Fire Damage)\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.WhiteSapphire:
-                description = $"\n\t Socket:  {parts[1]} (+{doubled}% Ramping Bludgeon Crit Damage)\n";
-                break;
-            default:
-                description = $"\n\t Socket:  {parts[1]} (+{amount}%  {parts[3]})\n";
-                break;
-        }
-        return description;
+        return $"\n\t Socket: {materialString} ({quality})\n";
     }
 
     private static readonly Dictionary<MaterialType, DamageType> MaterialDamage = new()
@@ -1160,7 +778,6 @@ partial class Jewel
         { "Life Steal", PropertyInt.GearLifesteal },
         { "Blood Frenzy", PropertyInt.GearSelfHarm },
         { "Selflessness", PropertyInt.GearSelflessness },
-        { "Focused Assault", PropertyInt.GearFamiliarity },
         { "Bravado", PropertyInt.GearBravado },
         { "Health To Stamina", PropertyInt.GearHealthToStamina },
         { "Health To Mana", PropertyInt.GearHealthToMana },
@@ -1189,7 +806,7 @@ partial class Jewel
         { "Elementalist", PropertyInt.GearElementalist }
     };
 
-    private static readonly Dictionary<int, string> JewelQuality = new()
+    public static readonly Dictionary<int, string> JewelQuality = new()
     {
         { 1, "Scuffed" },
         { 2, "Flawed" },
@@ -1310,52 +927,52 @@ partial class Jewel
         { ACE.Entity.Enum.MaterialType.Turquoise, 1 }
     };
 
-    private static readonly Dictionary<string, uint> GemstoneIconMap = new()
+    private static readonly Dictionary<MaterialType, uint> GemstoneIconMap = new()
     {
-        { "Agate", 0x06002CAD },
-        { "Amber", 0x06002CAE },
-        { "Amethyst", 0x06002CAF },
-        { "Aquamarine", 0x06002CB0 },
-        { "Azurite", 0x06002CB1 },
-        { "Black Garnet", 0x06002CB2 },
-        { "Black Opal", 0x06002CB3 },
-        { "Bloodstone", 0x06002CA7 },
-        { "Carnelian", 0x06002CA8 },
-        { "Citrine", 0x06002CA9 },
-        { "Diamond", 0x06002CAA },
-        { "Emerald", 0x06002CAB },
-        { "Fire Opal", 0x06002CAC },
-        { "Green Garnet", 0x06002CB4 },
-        { "Green Jade", 0x06002CB5 },
-        { "Hematite", 0x06002CB6 },
-        { "Imperial Topaz", 0x06002CB7 },
-        { "Jet", 0x06002CB8 },
-        { "Lapis Lazuli", 0x06002CB9 },
-        { "Lavender Jade", 0x06002CBA },
-        { "Malachite", 0x06002CBB },
-        { "Moonstone", 0x06002CBC },
-        { "Onyx", 0x06002CBD },
-        { "Opal", 0x06002CBE },
-        { "Peridot", 0x06002CBF },
-        { "Red Garnet", 0x06002CC0 },
-        { "Red Jade", 0x06002C98 },
-        { "Rose Quartz", 0x06002C99 },
-        { "Ruby", 0x06002C9A },
-        { "Sapphire", 0x06002C9B },
-        { "Smokey Quartz", 0x06002C9C },
-        { "Sunstone", 0x06002C9D },
-        { "Tiger Eye", 0x06002C9E },
-        { "Tourmaline", 0x06002C9F },
-        { "Turquoise", 0x06002CA0 },
-        { "White Jade", 0x06002CA1 },
-        { "White Quartz", 0x06002CA2 },
-        { "White Sapphire", 0x06002CA3 },
-        { "Yellow Garnet", 0x06002CA4 },
-        { "Yellow Topaz", 0x06002CA5 },
-        { "Zircon", 0x06002CA6 }
+        { ACE.Entity.Enum.MaterialType.Agate, 0x06002CAD },
+        {ACE.Entity.Enum.MaterialType.Amber, 0x06002CAE },
+        {ACE.Entity.Enum.MaterialType.Amethyst, 0x06002CAF },
+        {ACE.Entity.Enum.MaterialType.Aquamarine, 0x06002CB0 },
+        {ACE.Entity.Enum.MaterialType.Azurite, 0x06002CB1 },
+        {ACE.Entity.Enum.MaterialType.BlackGarnet, 0x06002CB2 },
+        {ACE.Entity.Enum.MaterialType.BlackOpal, 0x06002CB3 },
+        {ACE.Entity.Enum.MaterialType.Bloodstone, 0x06002CA7 },
+        {ACE.Entity.Enum.MaterialType.Carnelian, 0x06002CA8 },
+        {ACE.Entity.Enum.MaterialType.Citrine, 0x06002CA9 },
+        {ACE.Entity.Enum.MaterialType.Diamond, 0x06002CAA },
+        {ACE.Entity.Enum.MaterialType.Emerald, 0x06002CAB },
+        {ACE.Entity.Enum.MaterialType.FireOpal, 0x06002CAC },
+        {ACE.Entity.Enum.MaterialType.GreenGarnet, 0x06002CB4 },
+        {ACE.Entity.Enum.MaterialType.GreenJade, 0x06002CB5 },
+        {ACE.Entity.Enum.MaterialType.Hematite, 0x06002CB6 },
+        {ACE.Entity.Enum.MaterialType.ImperialTopaz, 0x06002CB7 },
+        {ACE.Entity.Enum.MaterialType.Jet, 0x06002CB8 },
+        {ACE.Entity.Enum.MaterialType.LapisLazuli, 0x06002CB9 },
+        {ACE.Entity.Enum.MaterialType.LavenderJade, 0x06002CBA },
+        {ACE.Entity.Enum.MaterialType.Malachite, 0x06002CBB },
+        {ACE.Entity.Enum.MaterialType.Moonstone, 0x06002CBC },
+        {ACE.Entity.Enum.MaterialType.Onyx, 0x06002CBD },
+        {ACE.Entity.Enum.MaterialType.Opal, 0x06002CBE },
+        {ACE.Entity.Enum.MaterialType.Peridot, 0x06002CBF },
+        {ACE.Entity.Enum.MaterialType.RedGarnet, 0x06002CC0 },
+        {ACE.Entity.Enum.MaterialType.RedJade, 0x06002C98 },
+        {ACE.Entity.Enum.MaterialType.RoseQuartz, 0x06002C99 },
+        {ACE.Entity.Enum.MaterialType.Ruby, 0x06002C9A },
+        {ACE.Entity.Enum.MaterialType.Sapphire, 0x06002C9B },
+        {ACE.Entity.Enum.MaterialType.SmokeyQuartz, 0x06002C9C },
+        {ACE.Entity.Enum.MaterialType.Sunstone, 0x06002C9D },
+        {ACE.Entity.Enum.MaterialType.TigerEye, 0x06002C9E },
+        {ACE.Entity.Enum.MaterialType.Tourmaline, 0x06002C9F },
+        {ACE.Entity.Enum.MaterialType.Turquoise, 0x06002CA0 },
+        {ACE.Entity.Enum.MaterialType.WhiteJade, 0x06002CA1 },
+        {ACE.Entity.Enum.MaterialType.WhiteQuartz, 0x06002CA2 },
+        {ACE.Entity.Enum.MaterialType.WhiteSapphire, 0x06002CA3 },
+        {ACE.Entity.Enum.MaterialType.YellowGarnet, 0x06002CA4 },
+        {ACE.Entity.Enum.MaterialType.YellowTopaz, 0x06002CA5 },
+        {ACE.Entity.Enum.MaterialType.Zircon, 0x06002CA6 }
     };
 
-    private static readonly Dictionary<MaterialType, string> StringtoMaterialType = new()
+    public static readonly Dictionary<MaterialType, string> MaterialTypeToString = new()
     {
         { ACE.Entity.Enum.MaterialType.Unknown, "Unknown" },
         { ACE.Entity.Enum.MaterialType.Ceramic, "Ceramic" },
@@ -1437,7 +1054,97 @@ partial class Jewel
         { ACE.Entity.Enum.MaterialType.Teak, "Teak" }
     };
 
-    private static readonly Dictionary<string, MaterialType> MaterialTypetoString = new()
+    public static readonly Dictionary<PropertyInt, MaterialType> JewelTypeToMaterial = new()
+    {
+        { PropertyInt.GearThreatGain, ACE.Entity.Enum.MaterialType.Agate },
+        { PropertyInt.GearHealthToStamina, ACE.Entity.Enum.MaterialType.Amber },
+        { PropertyInt.GearNullification, ACE.Entity.Enum.MaterialType.Amethyst },
+        { PropertyInt.GearFrost, ACE.Entity.Enum.MaterialType.Aquamarine },
+        { PropertyInt.GearSelf, ACE.Entity.Enum.MaterialType.Azurite },
+        { PropertyInt.GearPierce, ACE.Entity.Enum.MaterialType.BlackGarnet },
+        { PropertyInt.GearReprisal, ACE.Entity.Enum.MaterialType.BlackOpal },
+        { PropertyInt.GearLifesteal, ACE.Entity.Enum.MaterialType.Bloodstone },
+        { PropertyInt.GearStrength, ACE.Entity.Enum.MaterialType.Carnelian },
+        { PropertyInt.GearStamReduction, ACE.Entity.Enum.MaterialType.Citrine },
+        { PropertyInt.GearHardenedDefense, ACE.Entity.Enum.MaterialType.Diamond },
+        { PropertyInt.GearAcid, ACE.Entity.Enum.MaterialType.Emerald },
+        { PropertyInt.GearFamiliarity, ACE.Entity.Enum.MaterialType.FireOpal },
+        { PropertyInt.GearElementalist, ACE.Entity.Enum.MaterialType.GreenGarnet },
+        { PropertyInt.GearPyrealFind, ACE.Entity.Enum.MaterialType.GreenJade },
+        { PropertyInt.GearSelfHarm, ACE.Entity.Enum.MaterialType.Hematite },
+        { PropertyInt.GearSlash, ACE.Entity.Enum.MaterialType.ImperialTopaz },
+        { PropertyInt.GearLightning, ACE.Entity.Enum.MaterialType.Jet },
+        { PropertyInt.GearHealthToMana, ACE.Entity.Enum.MaterialType.LapisLazuli },
+        { PropertyInt.GearSelflessness, ACE.Entity.Enum.MaterialType.LavenderJade },
+        { PropertyInt.GearCompBurn, ACE.Entity.Enum.MaterialType.Malachite },
+        { PropertyInt.GearItemManaUsage, ACE.Entity.Enum.MaterialType.Moonstone },
+        { PropertyInt.GearPhysicalWard, ACE.Entity.Enum.MaterialType.Onyx },
+        { PropertyInt.GearManasteal, ACE.Entity.Enum.MaterialType.Opal },
+        { PropertyInt.GearQuickness, ACE.Entity.Enum.MaterialType.Peridot },
+        { PropertyInt.GearFire, ACE.Entity.Enum.MaterialType.RedGarnet },
+        { PropertyInt.GearFocus, ACE.Entity.Enum.MaterialType.RedJade },
+        { PropertyInt.GearVitalsTransfer, ACE.Entity.Enum.MaterialType.RoseQuartz },
+        { PropertyInt.GearRedFury, ACE.Entity.Enum.MaterialType.Ruby },
+        { PropertyInt.GearMagicFind, ACE.Entity.Enum.MaterialType.Sapphire },
+        { PropertyInt.GearThreatReduction, ACE.Entity.Enum.MaterialType.SmokeyQuartz },
+        { PropertyInt.GearExperienceGain, ACE.Entity.Enum.MaterialType.Sunstone },
+        { PropertyInt.GearCoordination, ACE.Entity.Enum.MaterialType.TigerEye },
+        { PropertyInt.GearWardPen, ACE.Entity.Enum.MaterialType.Tourmaline },
+        { PropertyInt.GearBlock, ACE.Entity.Enum.MaterialType.Turquoise },
+        { PropertyInt.GearHealBubble, ACE.Entity.Enum.MaterialType.WhiteJade },
+        { PropertyInt.GearThorns, ACE.Entity.Enum.MaterialType.WhiteQuartz },
+        { PropertyInt.GearBludgeon, ACE.Entity.Enum.MaterialType.WhiteSapphire },
+        { PropertyInt.GearBravado, ACE.Entity.Enum.MaterialType.YellowGarnet },
+        { PropertyInt.GearEndurance, ACE.Entity.Enum.MaterialType.YellowTopaz },
+        { PropertyInt.GearElementalWard, ACE.Entity.Enum.MaterialType.Zircon },
+    };
+
+    private static readonly Dictionary<MaterialType, PropertyInt> JewelMaterialToType = new()
+    {
+        { ACE.Entity.Enum.MaterialType.Agate, PropertyInt.GearThreatGain },
+        { ACE.Entity.Enum.MaterialType.Amber, PropertyInt.GearHealthToStamina },
+        { ACE.Entity.Enum.MaterialType.Amethyst, PropertyInt.GearNullification },
+        { ACE.Entity.Enum.MaterialType.Aquamarine, PropertyInt.GearFrost },
+        { ACE.Entity.Enum.MaterialType.Azurite, PropertyInt.GearSelf },
+        { ACE.Entity.Enum.MaterialType.BlackGarnet, PropertyInt.GearPierce },
+        { ACE.Entity.Enum.MaterialType.BlackOpal, PropertyInt.GearReprisal },
+        { ACE.Entity.Enum.MaterialType.Bloodstone, PropertyInt.GearSelfHarm },
+        { ACE.Entity.Enum.MaterialType.Carnelian, PropertyInt.GearStrength },
+        { ACE.Entity.Enum.MaterialType.Citrine, PropertyInt.GearStamReduction },
+        { ACE.Entity.Enum.MaterialType.Diamond, PropertyInt.GearHardenedDefense },
+        { ACE.Entity.Enum.MaterialType.Emerald, PropertyInt.GearAcid },
+        { ACE.Entity.Enum.MaterialType.FireOpal, PropertyInt.GearFamiliarity },
+        { ACE.Entity.Enum.MaterialType.GreenGarnet, PropertyInt.GearElementalist },
+        { ACE.Entity.Enum.MaterialType.GreenJade, PropertyInt.GearPyrealFind },
+        { ACE.Entity.Enum.MaterialType.Hematite, PropertyInt.GearSelfHarm },
+        { ACE.Entity.Enum.MaterialType.ImperialTopaz, PropertyInt.GearPierce },
+        { ACE.Entity.Enum.MaterialType.Jet, PropertyInt.GearLightning },
+        { ACE.Entity.Enum.MaterialType.LapisLazuli, PropertyInt.GearHealthToMana },
+        { ACE.Entity.Enum.MaterialType.LavenderJade, PropertyInt.GearSelflessness },
+        { ACE.Entity.Enum.MaterialType.Malachite, PropertyInt.GearCompBurn },
+        { ACE.Entity.Enum.MaterialType.Moonstone, PropertyInt.GearItemManaUsage },
+        { ACE.Entity.Enum.MaterialType.Onyx, PropertyInt.GearPhysicalWard },
+        { ACE.Entity.Enum.MaterialType.Opal, PropertyInt.GearManasteal },
+        { ACE.Entity.Enum.MaterialType.Peridot, PropertyInt.GearQuickness },
+        { ACE.Entity.Enum.MaterialType.RedGarnet, PropertyInt.GearFire },
+        { ACE.Entity.Enum.MaterialType.RedJade, PropertyInt.GearFocus },
+        { ACE.Entity.Enum.MaterialType.RoseQuartz, PropertyInt.GearVitalsTransfer },
+        { ACE.Entity.Enum.MaterialType.Ruby, PropertyInt.GearRedFury },
+        { ACE.Entity.Enum.MaterialType.Sapphire, PropertyInt.GearMagicFind },
+        { ACE.Entity.Enum.MaterialType.SmokeyQuartz, PropertyInt.GearThreatReduction },
+        { ACE.Entity.Enum.MaterialType.Sunstone, PropertyInt.GearExperienceGain },
+        { ACE.Entity.Enum.MaterialType.TigerEye, PropertyInt.GearCoordination },
+        { ACE.Entity.Enum.MaterialType.Tourmaline, PropertyInt.GearWardPen },
+        { ACE.Entity.Enum.MaterialType.Turquoise, PropertyInt.GearBlock },
+        { ACE.Entity.Enum.MaterialType.WhiteJade, PropertyInt.GearHealBubble },
+        { ACE.Entity.Enum.MaterialType.WhiteQuartz, PropertyInt.GearThorns },
+        { ACE.Entity.Enum.MaterialType.WhiteSapphire, PropertyInt.GearBludgeon },
+        { ACE.Entity.Enum.MaterialType.YellowGarnet, PropertyInt.GearBravado },
+        { ACE.Entity.Enum.MaterialType.YellowTopaz, PropertyInt.GearEndurance },
+        { ACE.Entity.Enum.MaterialType.Zircon, PropertyInt.GearElementalWard },
+    };
+
+    private static readonly Dictionary<string, MaterialType> StringToMaterialType = new()
     {
         { "Unknown", ACE.Entity.Enum.MaterialType.Unknown },
         { "Ceramic", ACE.Entity.Enum.MaterialType.Ceramic },
@@ -1517,5 +1224,68 @@ partial class Jewel
         { "Oak", ACE.Entity.Enum.MaterialType.Oak },
         { "Pine", ACE.Entity.Enum.MaterialType.Pine },
         { "Teak", ACE.Entity.Enum.MaterialType.Teak }
+    };
+
+    public static Dictionary<PropertyInt, (string Name, string Slot, int BasePrimary, float BonusPrimary, int BaseSecondary, float BonusSecondary)> JewelEffectInfo = new()
+    {
+        // neck
+        { PropertyInt.GearExperienceGain, ("Illuminated Mind", "ring", 5, 0.25f, 0, 0.0f) },
+        { PropertyInt.GearMagicFind, ("Seeker", "ring", 5, 0.25f, 0, 0.0f) },
+        { PropertyInt.GearPyrealFind, ("Prosperity", "ring", 5, 0.25f, 0, 0.0f) },
+
+        // ring
+        { PropertyInt.GearStrength, ("Mighty Thews", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearSelf, ("Erudite Mind", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearCoordination, ("Dexterous Hand", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearFocus, ("Focused Mind", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearEndurance, ("Perserverence", "ring", 10, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearQuickness, ("Swift-footed", "ring", 10, 1.0f, 0, 0.0f) },
+
+        // bracelet
+        { PropertyInt.GearThreatGain, ("Provocation", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearHealthToStamina, ("Masochist", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearStamReduction, ("Third Wind", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearHealthToMana, ("Austere Anchorite", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearThreatReduction, ("Clouded Vision", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearItemManaUsage, ("Meticulous Magus", "bracelet", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearCompBurn, ("Thrifty Scholar", "bracelet", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearPhysicalWard, ("Black Bulwark", "bracelet", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearHardenedDefense, ("Hardened Fortification", "bracelet", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearNullification, ("Nullification", "bracelet", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearElementalWard, ("Prismatic Ward", "bracelet", 10, 0.5f, 0, 0.0f) },
+
+        // shield
+        { PropertyInt.GearBlock, ("Stalwart Defense", "shield", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearThorns, ("Swift Retrbution", "shield", 10, 0.5f, 0, 0.0f) },
+
+        // weapon
+        { PropertyInt.GearLightning, ("Astyrrian Rage", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearFire, ("Blazing Brand", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearSelfHarm, ("Blood Frenzy", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearFrost, ("Bone-chiller", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearAcid, ("Devouring Mist", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearSlash, ("Falcon's Gyre", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearManasteal, ("Ophidian", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearPierce, ("Precision Strikes", "weapon", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearHealBubble, ("Purified Soul", "weapon", 10, 0.5f, 2, 0.1f) },
+        { PropertyInt.GearLifesteal, ("Sanguine Thirst", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearBludgeon, ("Skull-cracker", "weapon", 10, 0.5f, 0, 0.0f) },
+        { PropertyInt.GearVitalsTransfer, ("Tilted-scales", "weapon", 20, 1.0f, 0, 0.0f) },
+
+        // weapon or shield
+        { PropertyInt.GearBravado, ("Bravado", "weapon or shield", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearFamiliarity, ("Familiar Foe", "weapon or shield", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearRedFury, ("Red Fury", "weapon or shield", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearReprisal, ("Vicious Reprisal", "weapon or shield", 5, 0.25f, 0, 0.0f) },
+
+        // wand
+        { PropertyInt.GearElementalist, ("Elementalist", "wand", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearWardPen, ("Ruthless Discernment", "wand", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearSelflessness, ("Selfless Spirit", "wand", 10, 0.5f, 0, 0.0f) },
+
+        // other
+        { PropertyInt.GearBlueFury, ("Blue Fury", "", 20, 1.0f, 0, 0.0f) },
+        { PropertyInt.GearYellowFury, ("Yellow Fury", "", 20, 1.0f, 0, 0.0f) },
+
     };
 }

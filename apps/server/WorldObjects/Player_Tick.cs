@@ -789,7 +789,7 @@ partial class Player
                 burnRate *= GetNegativeRatingMod(LumAugItemManaUsage * 5);
             }
 
-            burnRate *= CheckForRatingItemManaUsage();
+            burnRate *= Jewel.GetJewelEffectMod(this, PropertyInt.GearItemManaUsage);
 
             item.ItemManaRateAccumulator += (float)(burnRate * CachedHeartbeatInterval);
 
@@ -818,23 +818,6 @@ partial class Player
                 HandleManaDepleted(item);
             }
         }
-    }
-
-    /// <summary>
-    /// RATING - Item Mana Usage
-    /// (JEWEL - Moonstone)
-    /// </summary>
-    private double CheckForRatingItemManaUsage()
-    {
-        if (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearItemManaUsage) <= 0)
-        {
-            return 1.0f;
-        }
-
-        var moonstoneRating = GetEquippedAndActivatedItemRatingSum(PropertyInt.GearItemManaUsage);
-        var moonstoneMod = 100f / (100 + moonstoneRating * 5);
-
-        return moonstoneMod;
     }
 
     private bool CheckLowMana(WorldObject item, double burnRate)

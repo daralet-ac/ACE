@@ -673,8 +673,8 @@ public class SpellProjectile : WorldObject
 
         var ignoreWardMod = Math.Min(wardRendingMod, wardPenMod);
 
-        ignoreWardMod -= CheckForRatingWardPenBonus(target, sourcePlayer);
-        ignoreWardMod -= CheckForWarSpecWardPenBonus(sourcePlayer, weapon);
+        ignoreWardMod *= 1.0f - CheckForWarSpecWardPenBonus(sourcePlayer, weapon);
+        ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearWardPen, "WardPen");
 
         var wardMod = GetWardMod(sourceCreature, target, ignoreWardMod);
 
@@ -684,7 +684,7 @@ public class SpellProjectile : WorldObject
         var isPVP = sourcePlayer != null && targetPlayer != null;
         var absorbMod = GetAbsorbMod(target, this);
 
-        absorbMod -= CheckForRatingNullificationAbsorbBonus(targetPlayer);
+        absorbMod *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification, "Nullification");
 
         //http://acpedia.org/wiki/Announcements_-_2014/01_-_Forces_of_Nature - Aegis is 72% effective in PvP
         if (isPVP && (target.CombatMode == CombatMode.Melee || target.CombatMode == CombatMode.Missile))
@@ -722,6 +722,10 @@ public class SpellProjectile : WorldObject
         }
 
         var specDefenseMod = CheckForMagicDefenseSpecDefenseMod(targetPlayer, sourceCreature);
+
+        var jewelRedFury = 1.0f + Jewel.GetJewelRedFury(sourcePlayer);
+        var jewelBlueFury = 1.0f + Jewel.GetJewelBlueFury(sourcePlayer);
+        var jewelSelfHarm = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearSelfHarm);
 
         var levelScalingMod = GetLevelScalingMod(sourceCreature, target, targetPlayer);
 
@@ -766,6 +770,9 @@ public class SpellProjectile : WorldObject
                 * wardMod
                 * resistedMod
                 * specDefenseMod
+                * jewelRedFury
+                * jewelBlueFury
+                * jewelSelfHarm
                 * lethalityMod
                 * levelScalingMod;
         }
@@ -807,7 +814,7 @@ public class SpellProjectile : WorldObject
                 critDamageBonus *= weaponCritDamageMod;
 
                 criticalDamageMod = 2.0f + weaponCritDamageMod;
-                criticalDamageMod *= CheckForRatingBludgeonCritDamageBonus(target, sourcePlayer);
+                criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
             }
 
             baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
@@ -833,16 +840,20 @@ public class SpellProjectile : WorldObject
                 resistanceMod *= (float)PropertyManager.GetDouble("void_pvp_modifier").Item;
             }
 
-            resistanceMod += CheckForRatingPierceResistancePenetrationBonus(target, sourcePlayer);
+            if (Spell.DamageType is DamageType.Pierce)
+            {
+                resistanceMod += Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearPierce, "Pierce");
+            }
 
-            var physicalWardProtection = CheckForRatingPhysicalWardProtectionBonus(targetPlayer);
-            var elementalWardProtection = CheckForRatingElementalWardProtectionBonus(targetPlayer);
-
-            var jewelElementalist = 1.0f + CheckForRatingElementalistDamageBonus(sourcePlayer);
+            var jewelElementalist = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearElementalist, "Elementalist");
             var jewelElemental = Jewel.HandleElementalBonuses(sourcePlayer, Spell.DamageType);
-            var jewelSelfHarm = 1.0f + CheckForRatingSelfHarmDamageBonus(sourcePlayer);
-            var jewelRedFury = 1.0f + CheckForRatingRedFuryDamageMod(sourcePlayer);
-            var jewelBlueFury = 1.0f + CheckForRatingBlueFuryDamageMod(sourcePlayer);
+
+            var ratingDamageTypeWard = Spell.DamageType switch
+            {
+                DamageType.Physical => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearPhysicalWard),
+                DamageType.Elemental => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearElementalWard),
+                _ => 1.0f
+            };
 
             var strikethroughMod = 1.0f / (Strikethrough + 1);
 
@@ -858,6 +869,7 @@ public class SpellProjectile : WorldObject
                 * jewelElemental
                 * jewelSelfHarm
                 * jewelRedFury
+                * jewelBlueFury
                 * strikethroughMod;
 
             finalDamage =
@@ -867,8 +879,7 @@ public class SpellProjectile : WorldObject
                 * resistanceMod
                 * resistedMod
                 * specDefenseMod
-                * physicalWardProtection
-                * elementalWardProtection
+                * ratingDamageTypeWard
                 * levelScalingMod;
 
             if (sourcePlayer != null)
@@ -1180,29 +1191,6 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// RATING - Nullification: Ramping magic damage reduction.
-    /// Up to +2% magic damage reduction per rating (at max quest stamps).
-    /// (JEWEL - Amethyst)
-    /// </summary>
-    private static float CheckForRatingNullificationAbsorbBonus(Player targetPlayer)
-    {
-        if (targetPlayer == null)
-        {
-            return 0.0f;
-        }
-
-        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) <= 0)
-        {
-            return 0.0f;
-        }
-
-        var rampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 200; // up to 1.0f
-        var ratingMod = targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearNullification) * 0.02f; // 0.02f per rating
-
-        return rampMod * ratingMod;
-    }
-
-    /// <summary>
     /// SPEC BONUS - War Magic (Orb): +10% ward penetration (additively).
     /// </summary>
     private static float CheckForWarSpecWardPenBonus(Player sourcePlayer, WorldObject weapon)
@@ -1225,50 +1213,19 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// RATING - Ward Penetration: Ramping ward penetration.
-    /// Up to +2% ward penetration per rating (at max quest stampts).
-    /// (JEWEL - Tourmaline)
-    /// </summary>
-    private static float CheckForRatingWardPenBonus(Creature target, Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearWardPen) <= 0)
-        {
-            return 0.0f;
-        }
-
-        var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},WardPen") / 500; // up to 1.0f
-        var ratingMod = sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearWardPen) * 0.02f; // 0.02f per rating
-
-        return rampMod * ratingMod;
-    }
-
-    /// <summary>
     /// RATING - Reprisal: Crit resist.
     /// (JEWEL - Black Opal)
     /// </summary>
     private bool CheckForRatingReprisalCritResist(bool criticalHit, ref bool resisted, Player targetPlayer, Creature sourceCreature)
     {
-        if (!criticalHit)
+        if (!criticalHit || targetPlayer is null || sourceCreature is null)
         {
             return false;
         }
 
-        if (targetPlayer == null || sourceCreature == null)
-        {
-            return false;
-        }
+        var chance = Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearReprisal);
 
-        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) <= 0)
-        {
-            return false;
-        }
-
-        if ((targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearReprisal) / 2) < ThreadSafeRandom.Next(0, 100))
+        if (ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
         {
             return false;
         }
@@ -1280,15 +1237,9 @@ public class SpellProjectile : WorldObject
         targetPlayer.Reprisal = true;
         _partialEvasion = PartialEvasion.All;
 
-        targetPlayer.SendChatMessage(
-            this,
-            $"Reprisal! You resist the spell cast by {sourceCreature.Name}.",
-            ChatMessageType.Magic
-        );
-
-        targetPlayer.Session.Network.EnqueueSend(
-            new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell)
-        );
+        var msg = $"Reprisal! You resist the spell cast by {sourceCreature.Name}";
+        targetPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Magic));
+        targetPlayer.Session.Network.EnqueueSend(new GameMessageSound(targetPlayer.Guid, Sound.ResistSpell));
 
         return true;
     }
@@ -1315,187 +1266,6 @@ public class SpellProjectile : WorldObject
         }
 
         sourcePlayer.QuestManager.Erase($"{target.Guid}/Reprisal");
-
-        return 1.0f;
-    }
-
-    /// <summary>
-    /// RATING - Red Fury: Bonus damage as health drops from 100% to 25%
-    /// (JEWEL - Ruby)
-    /// </summary>
-    private static float CheckForRatingRedFuryDamageMod(Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        return sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearRedFury) > 0 ? Jewel.GetJewelRedFury(sourcePlayer) : 0.0f;
-    }
-
-    /// <summary>
-    /// RATING - Blue Fury: Bonus damage as mana drops from 100% to 25%
-    /// (JEWEL - ??)
-    /// </summary>
-    private static float CheckForRatingBlueFuryDamageMod(Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        return sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBlueFury) > 0 ? Jewel.GetJewelBlueFury(sourcePlayer) : 0.0f;
-    }
-
-    /// <summary>
-    /// RATING - Self Harm: Deal bonus damage but take the same amount.
-    /// (JEWEL - Hematite)
-    /// </summary>
-    private static float CheckForRatingSelfHarmDamageBonus(Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) > 0)
-        {
-            return (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelfHarm) * 0.01f);
-        }
-
-        return 0.0f;
-    }
-
-    /// <summary>
-    /// RATING - Pierce: Ramping piercing resistance penetration.
-    /// Up to +2% penetration per rating (at max quest stamps).
-    /// (JEWEL - Black Garnet)
-    /// </summary>
-    private float CheckForRatingPierceResistancePenetrationBonus(Creature target, Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) <= 0)
-        {
-            return 0.0f;
-        }
-
-        if (Spell.DamageType != DamageType.Pierce)
-        {
-            return 0.0f;
-        }
-
-        var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Pierce") / 500; // up to 1.0f;
-        var ratingMod = sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce) * 0.02f; // 0.02f per rating;
-
-        return rampMod * ratingMod;
-    }
-
-    /// <summary>
-    /// RATING - Bludgeon: Ramping bludgeon crit damage.
-    /// Up to +2% crit damage per rating (at max quest stamps).
-    /// (JEWEL - White Sapphire)
-    /// </summary>
-    private float CheckForRatingBludgeonCritDamageBonus(Creature target, Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 1.0f;
-        }
-
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) <= 0)
-        {
-            return 1.0f;
-        }
-
-        if (Spell.DamageType != DamageType.Bludgeon)
-        {
-            return 1.0f;
-        }
-
-        var rampMod = (float)target.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Bludgeon") / 500; // up to 1.0f
-        var ratingMod = (float)sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon) * 0.02f; // 0.02f per rating
-
-        return rampMod * ratingMod + 1.0f;
-    }
-
-    /// <summary>
-    /// RATING - Elementalist: Ramping War magic damage.
-    /// Up to +2% war magic damage per rating (at max quest stamps).
-    /// (JEWEL - Green Garnet)
-    /// </summary>
-    private static float CheckForRatingElementalistDamageBonus(Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalist) <= 0)
-        {
-            return 0.0f;
-        }
-
-        var rampMod = (float)sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Elementalist") / 500; // up to 1.0f
-        var ratingMod = sourcePlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalist) * 0.02f; // 0.02f per rating
-
-        return rampMod * ratingMod;
-    }
-
-    /// <summary>
-    /// RATING - Elemental Ward: Protection vs Acid/Frost/Fire/Electric.
-    /// +1% acid/frost/fire/electric damage protection per rating.
-    /// (JEWEL - Zircon)
-    /// </summary>
-    private float CheckForRatingElementalWardProtectionBonus(Player targetPlayer)
-    {
-        if (targetPlayer == null)
-        {
-            return 1.0f;
-        }
-
-        if (Spell.DamageType != DamageType.Acid
-            && Spell.DamageType != DamageType.Fire
-            && Spell.DamageType != DamageType.Cold
-            && Spell.DamageType != DamageType.Electric)
-        {
-            return 1.0f;
-        }
-
-        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalWard) > 0)
-        {
-            return (1 - ((float)targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearElementalWard) / 100));
-        }
-
-        return 1.0f;
-    }
-
-    /// <summary>
-    /// RATING - Physical Ward: Protection vs Slash/Pierce/Bludge.
-    /// +1% slash/pierce/bludge damage protection per rating.
-    /// (JEWEL - Onyx)
-    /// </summary>
-    private float CheckForRatingPhysicalWardProtectionBonus(Player targetPlayer)
-    {
-        if (targetPlayer == null)
-        {
-            return 1.0f;
-        }
-
-        if (Spell.DamageType != DamageType.Slash
-            && Spell.DamageType != DamageType.Pierce
-            && Spell.DamageType != DamageType.Bludgeon)
-        {
-            return 1.0f;
-        }
-
-        if (targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPhysicalWard) > 0)
-        {
-            return (1 - ((float)targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPhysicalWard) / 100));
-        }
 
         return 1.0f;
     }
@@ -1775,8 +1545,6 @@ public class SpellProjectile : WorldObject
             target.IncreaseTargetThreatLevel(sourcePlayer, (int)(percentOfTargetMaxHealth * 1000));
         }
 
-        HandlePostDamageRatingEffects(target, damage, sourcePlayer, targetPlayer, sourceCreature); // (jewel effects)
-
         // show debug info
         if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
         {
@@ -1815,6 +1583,9 @@ public class SpellProjectile : WorldObject
                 plural = null;
             Strings.GetAttackVerb(Spell.DamageType, percent, ref verb, ref plural);
 
+            var elementalistRating = Math.Round(Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearElementalist, "Elementalist") * 100);
+            var elementalistMsg = elementalistRating > 0.0f ? $"Elementalist {elementalistRating}%! " : "";
+
             var critMsg = critical ? "Critical hit! " : "";
             var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
             var overpowerMsg = overpower ? "Overpower! " : "";
@@ -1834,7 +1605,7 @@ public class SpellProjectile : WorldObject
                     overloadMsg = "Overload Discharged! ";
                 }
 
-                var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
+                var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}{elementalistMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
                 // could these crit / sneak attack?
                 if (nonHealth)
@@ -1906,43 +1677,22 @@ public class SpellProjectile : WorldObject
             target.OnDeath(lastDamager, Spell.DamageType, critical);
             target.Die();
         }
+
+        HandlePostDamageRatingEffects(target, damage, sourcePlayer, targetPlayer, sourceCreature, Spell, SpellType); // (jewel effects)
     }
 
-    private void HandlePostDamageRatingEffects(Creature target, float damage, Player sourcePlayer, Player targetPlayer,
-        Creature sourceCreature)
+    private static void HandlePostDamageRatingEffects(Creature target, float damage, Player sourcePlayer, Player targetPlayer, Creature sourceCreature, Spell spell, ProjectileSpellType projectileSpellType)
     {
         if (sourcePlayer != null)
         {
-            var projectileScaler = 1;
-            if (SpellType == ProjectileSpellType.Streak)
-            {
-                projectileScaler = 5;
-            }
-
-            if (SpellType == ProjectileSpellType.Blast)
-            {
-                projectileScaler = 3;
-            }
-
-            if (
-                SpellType == ProjectileSpellType.Volley
-                || SpellType == ProjectileSpellType.Ring
-                || SpellType == ProjectileSpellType.Wall
-            )
-            {
-                projectileScaler = 6;
-            }
-
-            Jewel.HandleCasterAttackerBonuses(sourcePlayer, target, Spell.DamageType, Spell.Level, projectileScaler);
-            Jewel.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, Spell.DamageType);
+            Jewel.HandleCasterAttackerRampingQuestStamps(sourcePlayer, target, spell, projectileSpellType);
+            Jewel.HandlePlayerAttackerBonuses(sourcePlayer, target, damage, spell.DamageType);
         }
 
         if (targetPlayer != null)
         {
-            Jewel.HandleCasterDefenderBonuses(targetPlayer, sourceCreature, SpellType);
-
-            Jewel.CheckForRatingHealthToStamina(targetPlayer, target, damage);
-            Jewel.CheckForRatingHealthToMana(targetPlayer, target, damage);
+            Jewel.HandleCasterDefenderRampingQuestStamps(targetPlayer, sourceCreature);
+            Jewel.HandlePlayerDefenderBonuses(targetPlayer, sourceCreature, damage);
         }
     }
 

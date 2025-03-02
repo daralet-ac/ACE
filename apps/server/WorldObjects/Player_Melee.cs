@@ -362,21 +362,8 @@ partial class Player
         }
 
         // JEWEL - Citrine: Stamina cost reduction
-        if (this is Player)
-        {
-            if (this.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearStamReduction) > 0)
-            {
-                if (this.QuestManager.HasQuest($"{this.Name},StamReduction"))
-                {
-                    var jewelRampMod = (float)this.QuestManager.GetCurrentSolves($"{this.Name},StamReduction") / 500;
-                    var stamReductionMod =
-                        1f
-                        - (jewelRampMod * (float)this.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearStamReduction) / 100);
-                    var modifiedStamCost = (float)staminaCost * stamReductionMod;
-                    staminaCost = (int)modifiedStamCost;
-                }
-            }
-        }
+        var stamReductionMod = 1.0f - Jewel.GetJewelEffectMod(this, PropertyInt.GearStamReduction, "StamReduction");
+        staminaCost = Convert.ToInt32(staminaCost * stamReductionMod);
 
         UpdateVitalDelta(Stamina, -staminaCost);
 

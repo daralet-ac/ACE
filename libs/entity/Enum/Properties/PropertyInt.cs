@@ -830,6 +830,27 @@ public enum PropertyInt : ushort
     GearYellowFury = 471,
     GearBlueFury = 472,
     NoCompsRequiredForMagicSchool = 473,
+    JewelSocket1Effect = 474,
+    JewelSocket1Quality = 475,
+    JewelSocket2Effect = 476,
+    JewelSocket2Quality = 477,
+    JewelSocket3Effect = 478,
+    JewelSocket3Quality = 479,
+    JewelSocket4Effect = 480,
+    JewelSocket4Quality = 481,
+    JewelSocket5Effect = 482,
+    JewelSocket5Quality = 483,
+    JewelSocket6Effect = 484,
+    JewelSocket6Quality = 485,
+    JewelSocket7Effect = 486,
+    JewelSocket7Quality = 487,
+    JewelSocket8Effect = 488,
+    JewelSocket8Quality = 489,
+    JewelSocket9Effect = 490,
+    JewelSocket9Quality = 491,
+    JewelSocket10Effect = 492,
+    JewelSocket10Quality = 493,
+    JewelMaterialType = 494,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
@@ -1061,6 +1082,9 @@ public static class PropertyIntExtensions
 
             case PropertyInt.HookGroup:
                 return System.Enum.GetName(typeof(HookGroupType), value);
+
+            case PropertyInt.JewelMaterialType:
+                return System.Enum.GetName(typeof(MaterialType), value);
 
             //case PropertyInt.TypeOfAlteration:
             //    return System.Enum.GetName(typeof(SkillAlterationType), value);

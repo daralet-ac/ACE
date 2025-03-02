@@ -480,7 +480,7 @@ partial class Player
         return salvageBag;
     }
 
-    public void TryAwardCraftingXp(
+    public static void TryAwardCraftingXp(
         Player player,
         CreatureSkill creatureSkill,
         Skill skill,
@@ -490,34 +490,34 @@ partial class Player
     )
     {
         // check to ensure appropriately difficult craft before granting (is player skill no more than 50 points above relative difficulty)
-        if (creatureSkill.Current - difficulty < 50)
+        if (creatureSkill.Current - difficulty >= 50)
         {
-            // Awarded xp scales based on level of current skill progress (from 50% of current rank awarded per craft, down to 1% at 200 skill).
-            var progressPercentage = Math.Max(0, 1 - (creatureSkill.Current / 200));
-            var progressMod = 0.01f + 0.49f * progressPercentage;
+            return;
+        }
 
-            // Awarded xp received a bonus or penalty for relative difficulty of the craft (-100% to +100%).
-            var relativeDifficulty = difficulty - creatureSkill.Current;
-            var difficultyMod = 1 + Math.Clamp(relativeDifficulty, -50, 50) / 50;
+        // Awarded xp scales based on level of current skill progress (from 50% of current rank awarded per craft, down to 1% at 200 skill).
+        var progressPercentage = Math.Min((float)creatureSkill.Current / 200, 1.0f);
+        var progressMod = 0.5f * (Math.Max(1.0f - progressPercentage, 0.01f));
 
-            var xP = (player.GetXPBetweenSkillLevels(
-                creatureSkill.AdvancementClass,
-                creatureSkill.Ranks,
-                creatureSkill.Ranks + 1) ?? 0
+        // Awarded xp received a bonus or penalty for relative difficulty of the craft (-100% to +100%).
+        var relativeDifficulty = difficulty - creatureSkill.Current;
+        var difficultyMod = 1 + Math.Clamp(relativeDifficulty, -50.0f, 50.0f) / 50.0f;
+
+        var xP = (player.GetXPBetweenSkillLevels(creatureSkill.AdvancementClass, creatureSkill.Ranks, creatureSkill.Ranks + 1) ?? 0);
+        var totalXp = (uint)(xP * progressMod * difficultyMod * armorSlots * bonusMod);
+
+        player.NoContribSkillXp(player, skill, totalXp, false);
+
+        if (PropertyManager.GetBool("debug_crafting_system").Item)
+        {
+            Console.WriteLine(
+                $"\nAttempt {creatureSkill.Skill} craft:\n" +
+                $" Skill: {creatureSkill.Current}, RecipeDiff: {difficulty}\n" +
+                $" ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n" +
+                $" CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n" +
+                $" BonusMod: {bonusMod}\n" +
+                $" ToLevelXp: {xP}, TotalXpAward: {totalXp}"
             );
-            var totalXp = (uint)(xP * progressMod * difficultyMod * armorSlots * bonusMod);
-
-            player.NoContribSkillXp(player, skill, totalXp, false);
-
-            if (PropertyManager.GetBool("debug_crafting_system").Item)
-            {
-                Console.WriteLine(
-                    $"Skill: {creatureSkill.Current}, RecipeDiff: {difficulty}\n"
-                        + $"ProgressPercent: {progressPercentage}, ProgressMod: {progressMod}\n"
-                        + $"CraftDiff: {relativeDifficulty}, DiffMod: {difficultyMod}\n"
-                        + $"ToLevelXp: {xP}, TotalXpAward: {totalXp}"
-                );
-            }
         }
     }
 }

@@ -118,8 +118,6 @@ public enum PropertyString : ushort
 
     [ServerOnly]
     VendorBroadcastAppend = 9009,
-    JewelSocket1 = 9010,
-    JewelSocket2 = 9011,
     CacheLog = 9012,
     AllegianceLog = 9013,
     CorpseLog = 9014,

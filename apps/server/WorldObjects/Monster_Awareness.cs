@@ -190,6 +190,8 @@ partial class Creature
 
     public void IncreaseTargetThreatLevel(Creature targetCreature, int amount)
     {
+        var modifiedAmount = Convert.ToSingle(amount);
+
         if (targetCreature is Player player)
         {
             if (SkipThreatFromNextAttackTargets != null && SkipThreatFromNextAttackTargets.Contains(player))
@@ -201,49 +203,40 @@ partial class Creature
             if (DoubleThreatFromNextAttackTargets != null && DoubleThreatFromNextAttackTargets.Contains(player))
             {
                 DoubleThreatFromNextAttackTargets.Remove(player);
-                amount *= 2;
+                modifiedAmount *= 2.0f;
             }
         }
 
         ThreatLevel.TryAdd(targetCreature, ThreatMinimum);
 
-        // check for modifiers
-        var modifier = 1.0f;
-
         var targetPlayer = targetCreature as Player;
 
         if (targetPlayer != null && targetPlayer.LastFocusedTaunt > Time.GetUnixTime() - FocusedTauntDuration)
         {
-            modifier = 2.0f;
+            modifiedAmount *= 2.0f;
         }
 
         if (targetPlayer != null && targetPlayer.LastFeignWeakness > Time.GetUnixTime() - FeignWeaknessDuration)
         {
-            modifier = 0.5f;
+            modifiedAmount *= 0.5f;
         }
 
         if (targetPlayer is { EquippedCombatAbility: CombatAbility.Provoke })
         {
             if (targetPlayer.LastProvokeActivated > Time.GetUnixTime() - targetPlayer.ProvokeActivatedDuration)
             {
-                modifier += 0.5f;
+                modifiedAmount *= 0.5f;
             }
             else
             {
-                modifier += 0.2f;
+                modifiedAmount *= 0.2f;
             }
         }
 
-        modifier += CheckForRatingThreatGainBonus(targetPlayer);
+        modifiedAmount *= 1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatGain);
+        modifiedAmount *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatReduction);
 
-        modifier -= CheckForRatingThreatReduction(targetPlayer);
-
-        if (modifier <= 0.1f)
-        {
-            modifier = 0.1f;
-        }
-
-        amount = (int)(amount * modifier);
+        amount = Convert.ToInt32(modifiedAmount);
         amount = amount < 2 ? 2 : amount;
 
         ThreatLevel[targetCreature] += amount;

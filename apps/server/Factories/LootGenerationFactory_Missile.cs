@@ -507,7 +507,7 @@ public static partial class LootGenerationFactory
         var targetBaseDps = GetWeaponBaseDps(wo.Tier.Value);
 
         // animation speed
-        var baseAnimLength = WeaponAnimationLength.GetAnimLength(wo);
+        var baseAnimLength = WeaponAnimationLength.GetWeaponAnimLength(wo);
         float reloadAnimLength;
 
         if (wo.WeaponSkill == Skill.Bow)

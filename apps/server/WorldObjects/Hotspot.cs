@@ -454,57 +454,52 @@ public class Hotspot : WorldObject
             var modifiedTier = (int)tier - 1;
             modifiedTier = modifiedTier > 4 ? 4 : modifiedTier;
 
-            int[] flameHotspots = { 1053902, 1053903, 1053904, 1053905, 1053906 };
-            int[] frostHotspots = { 1053909, 1053910, 1053911, 1053912, 1053913 };
-            int[] acidHotspots = { 1053915, 1053916, 1053917, 1053918, 1053919 };
-            int[] lightningHotspots = { 1053921, 1053922, 1053923, 1053924, 1053925 };
-            int[] healingHotspots = { 1053928, 1053929, 1053930, 1053931, 1053932 };
+            int[] flameHotspots = [1053902, 1053903, 1053904, 1053905, 1053906];
+            int[] frostHotspots = [1053909, 1053910, 1053911, 1053912, 1053913];
+            int[] acidHotspots = [1053915, 1053916, 1053917, 1053918, 1053919];
+            int[] lightningHotspots = [1053921, 1053922, 1053923, 1053924, 1053925];
+            int[] healingHotspots = [1053928, 1053929, 1053930, 1053931, 1053932];
 
-            if (
-                damageType == DamageType.Fire
-                && ((double)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFire) / 200)
-                > ThreadSafeRandom.Next(0f, 1f)
-            )
+            switch (damageType)
             {
-                wcid = (uint)flameHotspots[modifiedTier];
-            }
+                case DamageType.Fire:
+                    var chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearFire, "", true);
+                    if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
+                    {
+                        wcid = (uint)flameHotspots[modifiedTier];
+                    }
+                    break;
+                case DamageType.Cold:
+                    chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearFrost, "", true);
+                    if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
+                    {
+                        wcid = (uint)frostHotspots[modifiedTier];
+                    }
+                    break;
+                case DamageType.Acid:
+                    chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearAcid, "", true);
+                    if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
+                    {
+                        wcid = (uint)acidHotspots[modifiedTier];
+                    }
+                    break;
+                case DamageType.Electric:
+                    chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearLightning, "", true);
+                    if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
+                    {
+                        wcid = (uint)lightningHotspots[modifiedTier];
+                    }
+                    break;
+                case DamageType.Health:
+                case DamageType.Stamina:
+                case DamageType.Mana:
+                    chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearHealBubble, "", true);
+                    if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
+                    {
+                        wcid = (uint)healingHotspots[modifiedTier];
+                    }
 
-            if (
-                damageType == DamageType.Cold
-                && ((double)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrost) / 200)
-                > ThreadSafeRandom.Next(0f, 1f)
-            )
-            {
-                wcid = (uint)frostHotspots[modifiedTier];
-            }
-
-            if (
-                damageType == DamageType.Acid
-                && ((double)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearAcid) / 200)
-                > ThreadSafeRandom.Next(0f, 1f)
-            )
-            {
-                wcid = (uint)acidHotspots[modifiedTier];
-            }
-
-            if (
-                damageType == DamageType.Electric
-                && ((double)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearLightning) / 200)
-                > ThreadSafeRandom.Next(0f, 1f)
-            )
-            {
-                wcid = (uint)lightningHotspots[modifiedTier];
-            }
-
-            if (damageType == DamageType.Health || damageType == DamageType.Stamina || damageType == DamageType.Mana)
-            {
-                if (
-                    (double)playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealBubble) / 200
-                    > ThreadSafeRandom.Next(0f, 1f)
-                )
-                {
-                    wcid = (uint)healingHotspots[modifiedTier];
-                }
+                    break;
             }
         }
 
@@ -514,19 +509,23 @@ public class Hotspot : WorldObject
         }
     }
 
-    public static bool? CreateHotspot(Player playerAttacker, Creature defender, uint wcid)
+    private static void CreateHotspot(Player playerAttacker, Creature defender, uint wcid)
     {
         var wo = WorldObjectFactory.CreateNewWorldObject(wcid);
 
-        var hotspot = wo as Hotspot;
+        if (wo is not Hotspot hotspot)
+        {
+            return;
+        }
 
         var success = hotspot.Initialize(playerAttacker, defender, hotspot);
 
         var activator = WorldObjectFactory.CreateNewWorldObject(1053933);
 
-        activator.Location = new Position(defender.Location);
-
-        activator.Location.LandblockId = new LandblockId(defender.Location.GetCell());
+        activator.Location = new Position(defender.Location)
+        {
+            LandblockId = new LandblockId(defender.Location.GetCell())
+        };
 
         activator.Location.PositionZ += 0.05f;
 
@@ -536,24 +535,23 @@ public class Hotspot : WorldObject
         {
             wo.Destroy();
         }
-
-        return success;
     }
 
-    public virtual bool? Initialize(Player player, Creature defender, Hotspot hotspot)
+    protected virtual bool? Initialize(Player player, Creature defender, Hotspot hotspot)
     {
         Name = player.Name + "'s " + Name;
 
         HotspotOwner = player.Guid.Full;
         P_HotspotOwner = player;
 
-        hotspot.Location = new Position(defender.Location);
-
-        hotspot.Location.LandblockId = new LandblockId(defender.Location.GetCell());
+        hotspot.Location = new Position(defender.Location)
+        {
+            LandblockId = new LandblockId(defender.Location.GetCell())
+        };
 
         hotspot.Location.PositionZ += 0.05f;
 
-        var success = hotspot.EnterWorld();
+        hotspot.EnterWorld();
 
         return true;
     }

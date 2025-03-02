@@ -478,7 +478,9 @@ partial class Player
             return 0;
         }
 
-        return GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) >= ThreadSafeRandom.Next(0, 100) ? 1 : 0;
+        var chance = Jewel.GetJewelEffectMod(this, PropertyInt.GearSlash);
+
+        return ThreadSafeRandom.Next(0.0f, 1.0f) < chance ? 1 : 0;
     }
 
     // TODO: the damage pipeline currently uses the creature ammo instead of the projectile

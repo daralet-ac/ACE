@@ -894,7 +894,7 @@ public class QuestManager
 
             if (questName.Contains(","))
             {
-                Decrement(questName, 25);
+                Decrement(questName, 10);
             }
         }
     }
