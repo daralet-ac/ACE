@@ -43,14 +43,14 @@ partial class Jewel
             rampPercentage = Math.Min((float)player.QuestManager.GetCurrentSolves($"{player.Name},{rampQuestString}") / 100, 1.0f);
         }
 
-        Console.WriteLine($"\nJewel Mod:\n" +
-                          $" -Property: {propertyInt}\n" +
-                          $" -Rating: {rating}\n" +
-                          $" -baseMod: {baseMod}\n" +
-                          $" -bonusPerRating {bonusPerRating}\n" +
-                          $" -bonus: {bonusPerRating * rating}\n" +
-                          $" -rampPercentage: {rampPercentage * 100}%\n" +
-                          $" -TOTAL: {(baseMod + bonusPerRating * rating) * rampPercentage}");
+        // Console.WriteLine($"\nJewel Mod:\n" +
+        //                   $" -Property: {propertyInt}\n" +
+        //                   $" -Rating: {rating}\n" +
+        //                   $" -baseMod: {baseMod}\n" +
+        //                   $" -bonusPerRating {bonusPerRating}\n" +
+        //                   $" -bonus: {bonusPerRating * rating}\n" +
+        //                   $" -rampPercentage: {rampPercentage * 100}%\n" +
+        //                   $" -TOTAL: {(baseMod + bonusPerRating * rating) * rampPercentage}");
 
         return (baseMod + bonusPerRating * rating) * rampPercentage;
     }
