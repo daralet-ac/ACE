@@ -1419,7 +1419,7 @@ partial class WorldObject
     {
         var name = stackSize != null && stackSize != 1 ? GetPluralName() : Name;
 
-        if (MaterialType == null)
+        if (MaterialType == null || WeenieClassId is 1053900)
         {
             return name;
         }
@@ -7405,37 +7405,6 @@ partial class WorldObject
         }
     }
 
-    public string JewelSocket1
-    {
-        get => GetProperty(PropertyString.JewelSocket1);
-        set
-        {
-            if (value == null)
-            {
-                RemoveProperty(PropertyString.JewelSocket1);
-            }
-            else
-            {
-                SetProperty(PropertyString.JewelSocket1, value);
-            }
-        }
-    }
-
-    public string JewelSocket2
-    {
-        get => GetProperty(PropertyString.JewelSocket2);
-        set
-        {
-            if (value == null)
-            {
-                RemoveProperty(PropertyString.JewelSocket2);
-            }
-            else
-            {
-                SetProperty(PropertyString.JewelSocket2, value);
-            }
-        }
-    }
     public int? JewelSockets
     {
         get => GetProperty(PropertyInt.JewelSockets);
@@ -7448,6 +7417,342 @@ partial class WorldObject
             else
             {
                 SetProperty(PropertyInt.JewelSockets, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket1Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket1Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket1Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket1Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket1Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket1Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket1Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket1Quality, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket2Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket2Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket2Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket2Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket2Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket2Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket2Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket2Quality, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket3Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket3Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket3Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket3Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket3Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket3Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket3Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket3Quality, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket4Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket4Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket4Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket4Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket4Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket4Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket4Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket4Quality, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket5Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket5Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket5Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket5Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket5Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket5Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket5Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket5Quality, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket6Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket6Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket6Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket6Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket6Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket6Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket6Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket6Quality, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket7Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket7Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket7Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket7Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket7Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket7Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket7Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket7Quality, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket8Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket8Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket8Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket8Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket8Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket8Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket8Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket8Quality, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket9Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket9Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket9Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket9Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket9Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket9Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket9Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket9Quality, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket10Effect
+    {
+        get => GetProperty(PropertyInt.JewelSocket10Effect);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket10Effect);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket10Effect, value.Value);
+            }
+        }
+    }
+
+    public int? JewelSocket10Quality
+    {
+        get => GetProperty(PropertyInt.JewelSocket10Quality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelSocket10Quality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelSocket10Quality, value.Value);
+            }
+        }
+    }
+
+    public MaterialType? JewelMaterialType
+    {
+        get => (MaterialType?)GetProperty(PropertyInt.JewelMaterialType) ?? 0;
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelMaterialType);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelMaterialType, (int)value.Value);
             }
         }
     }

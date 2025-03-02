@@ -5,6 +5,7 @@ using ACE.Common;
 using ACE.Common.Extensions;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Factories;
 
 namespace ACE.Server.WorldObjects;
@@ -213,5 +214,27 @@ partial class WorldObject
     public virtual void OnUnWield(Creature creature)
     {
         EmoteManager.OnUnwield(creature);
+    }
+
+    public static int GetJewelRating(WorldObject worldObject, PropertyInt propertyInt)
+    {
+        var total = 0;
+
+        for (var i = 0; i < (worldObject.JewelSockets ?? 0); i++)
+        {
+            if (Jewel.JewelSocketEffectIntId[i] != propertyInt)
+            {
+                continue;
+            }
+
+            var jewelSocketQualityIntId = worldObject.GetProperty(Jewel.JewelSocketEffectIntId[i] + 1);
+
+            if (jewelSocketQualityIntId is not null)
+            {
+                total += jewelSocketQualityIntId.Value;
+            }
+        }
+
+        return total;
     }
 }

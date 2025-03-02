@@ -2910,93 +2910,20 @@ public static partial class LootGenerationFactory
         }
     }
 
-    public static void AssignJewelSlots(WorldObject wo)
+    private static void AssignJewelSlots(WorldObject wo)
     {
-        if (wo.Tier >= 2)
+        if (wo.Tier < 2)
         {
-            wo.JewelSockets = 1;
-            wo.JewelSocket1 = "Empty";
-
-            if (wo.DefaultCombatStyle != null)
-            {
-                if (
-                    (int)wo.DefaultCombatStyle == 8
-                    || (int)wo.DefaultCombatStyle == 16
-                    || (int)wo.DefaultCombatStyle == 32
-                    || (int)wo.DefaultCombatStyle == 512
-                    || (int)wo.DefaultCombatStyle == 1024
-                )
-                {
-                    wo.JewelSockets = 2;
-                    wo.JewelSocket2 = "Empty";
-                }
-            }
+            return;
         }
-        return;
 
-        /*  // Determine the number of jewel slots based on ArmorSlots
-          int maxJewelSlots = 1;
-          wo.JewelSockets = 0;
+        if (wo.IsTwoHanded || wo.WeenieType is WeenieType.MissileLauncher or WeenieType.Caster)
+        {
+            wo.JewelSockets = 2;
+            return;
+        }
 
-          // account for multiple slots
-          if (wo.ArmorSlots != null)
-              maxJewelSlots = (int)wo.ArmorSlots;
-
-          // two-slots for missile, casters, 2h
-          if (wo.DefaultCombatStyle != null)
-          {
-              if ((int)wo.DefaultCombatStyle == 8 || (int)wo.DefaultCombatStyle == 16 || (int)wo.DefaultCombatStyle == 32 || (int)wo.DefaultCombatStyle == 512 || (int)wo.DefaultCombatStyle == 1024)
-                  maxJewelSlots = 2;
-
-          }
-
-          for (int i = 0; i < maxJewelSlots; i++)
-          {
-              double chance = rand.NextDouble();
-              double baseChance = 0.1;
-              double modifiedChance = baseChance + (double)wo.Tier / 10;
-
-              // Check if the random chance allows assigning a socket
-              if (chance < modifiedChance)
-              {
-                  wo.JewelSockets++;
-              }
-
-          }
-
-
-          for (int i = 0; i <= wo.JewelSockets; i++)
-          {
-              switch (i)
-              {
-                  case 1:
-                      wo.JewelSocket1 = "Empty";
-                      break;
-                  case 2:
-                      wo.JewelSocket2 = "Empty";
-                      break;
-                  case 3:
-                      wo.JewelSocket3 = "Empty";
-                      break;
-                  case 4:
-                      wo.JewelSocket4 = "Empty";
-                      break;
-                  case 5:
-                      wo.JewelSocket5 = "Empty";
-                      break;
-                  case 6:
-                      wo.JewelSocket6 = "Empty";
-                      break;
-                  case 7:
-                      wo.JewelSocket7 = "Empty";
-                      break;
-                  case 8:
-                      wo.JewelSocket8 = "Empty";
-                      break;
-                  default:
-                      break;
-              }
-          } */
+        wo.JewelSockets = wo.ArmorSlots ?? 1;
     }
 
     public static string GetTrophyQualityName(int trophyQuality)
