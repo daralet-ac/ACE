@@ -333,12 +333,13 @@ partial class Player
             }
         }
 
-        if (subsequent)
-        {
-            // client shows hourglass, until attack done is received
-            // retail only did this for subsequent attacks w/ repeat attacks on
-            Session.Network.EnqueueSend(new GameEventCombatCommenceAttack(Session));
-        }
+        // Disabled to allow use of items/abilities during attack animations
+        // if (subsequent)
+        // {
+        //     // client shows hourglass, until attack done is received
+        //     // retail only did this for subsequent attacks w/ repeat attacks on
+        //     Session.Network.EnqueueSend(new GameEventCombatCommenceAttack(Session));
+        // }
 
         var weapon = GetEquippedMeleeWeapon();
         var attackType = GetWeaponAttackType(weapon);
