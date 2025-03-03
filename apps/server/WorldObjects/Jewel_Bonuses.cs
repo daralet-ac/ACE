@@ -131,7 +131,7 @@ partial class Jewel
             : playerAttacker.GetEquippedWeapon();
 
         var weaponAnimationLength = WeaponAnimationLength.GetWeaponAnimLength(equippedWeapon);
-        var weaponTime = equippedWeapon.WeaponTime ?? 100;
+        var weaponTime = equippedWeapon is null ? 100 : equippedWeapon.WeaponTime ?? 100;
         var attacksPerSecondScalar = 1 / (weaponAnimationLength / (1.0f + (1 - (weaponTime / 100.0))));
 
         return Convert.ToInt32(baseStamps * powerBarScalar * attacksPerSecondScalar);

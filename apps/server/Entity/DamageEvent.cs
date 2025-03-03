@@ -820,6 +820,26 @@ public class DamageEvent
 
     private float GetNonCriticalDamageBeforeMitigation()
     {
+        // if (_playerAttacker is not null)
+        // {
+        //     Console.WriteLine($"Before Mitigaion\n" +
+        //                       $" -Base Damage{_baseDamage}\n" +
+        //                       $" -Power: {_powerMod}\n" +
+        //                       $" -Slayer: {_slayerMod}\n" +
+        //                       $" -DamageRating: {_damageRatingMod}\n" +
+        //                       $" -Reckless: {_recklessnessMod}\n" +
+        //                       $" -SneakAttack: {SneakAttackMod}\n" +
+        //                       $" -AttackHeight: {_attackHeightDamageBonus}\n" +
+        //                       $" -ElementalDamageRating: {_ratingElementalDamageBonus}\n" +
+        //                       $" -DualWield: {_dualWieldDamageBonus}\n" +
+        //                       $" -TwoHand: {_twohandedCombatDamageBonus}\n" +
+        //                       $" -MultiShot: {_combatAbilityMultishotDamagePenalty}\n" +
+        //                       $" -Provoke: {_combatAbilityProvokeDamageBonus}\n" +
+        //                       $" -Fury: {_combatAbilityFuryDamageBonus}\n" +
+        //                       $" -SteadyShot: {_combatAbilitySteadyShotDamageBonus}\n" +
+        //                       $" -LevelScaling: {_levelScalingMod}");
+        // }
+
         return _baseDamage
                * _attributeMod
                * _powerMod
@@ -899,7 +919,7 @@ public class DamageEvent
 
         ShieldMod = _defender.GetShieldMod(attacker, DamageType, Weapon);
 
-        _ratingSelfHarm = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
+        _ratingSelfHarm = 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
         _ratingRedFury = 1.0f + Jewel.GetJewelRedFury(playerAttacker);
         _ratingYellowFury = 1.0f + Jewel.GetJewelYellowFury(playerAttacker);
         _ratingDamageTypeWard = DamageType switch
@@ -908,6 +928,12 @@ public class DamageEvent
             DamageType.Elemental => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearElementalWard),
             _ => 1.0f
         };
+
+        // if (playerAttacker is not null)
+        // {
+        //     Console.WriteLine(
+        //         $"{_armorMod} {ShieldMod} {_resistanceMod} {_damageResistanceRatingMod} {_evasionMod} {_specDefenseMod} {_ratingDamageTypeWard} {_ratingSelfHarm} {_ratingRedFury} {_ratingYellowFury}");
+        // }
 
         return _armorMod
                * ShieldMod
