@@ -2920,10 +2920,10 @@ public static partial class LootGenerationFactory
         {
             return;
         }
-
         const float socketChance = 0.1f;
 
         var maximumSockets = ItemSocketLimit(wo);
+        wo.JewelSockets = 0;
 
         for (var i = 0; i < maximumSockets; i++)
         {
@@ -2937,7 +2937,6 @@ public static partial class LootGenerationFactory
     public static int ItemSocketLimit(WorldObject wo)
     {
         var maximumSockets = wo.ArmorSlots ?? 1;
-
 
         // Two-handed weapons, missile launchers, and casters cannot be equipped with an off-hand, so can have 2 sockets.
         if (wo.IsTwoHanded

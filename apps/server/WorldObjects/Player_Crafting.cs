@@ -212,7 +212,27 @@ partial class Player
                         TryCreateInInventoryWithNetworking(wo);
                     }
                 }
+
+                // generate Bezel Fragments if the salvaged item has sockets
+                var jewelSockets = item.JewelSockets ?? 0;
+
+                if (jewelSockets > 0)
+                {
+                    var wo = WorldObjectFactory.CreateNewWorldObject(1053975);
+                    wo.StackSize = jewelSockets;
+
+                    TryCreateInInventoryWithNetworking(wo);
+
+                    var bezelFragmentsString = jewelSockets > 1 ? "Bezel Fragments" : "Bezel Fragment";
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"You obtain {jewelSockets} {bezelFragmentsString}.",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                }
             }
+
             // can any salvagable items be stacked?
             TryConsumeFromInventoryWithNetworking(item);
 
