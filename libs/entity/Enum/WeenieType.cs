@@ -85,4 +85,5 @@ public enum WeenieType : uint
     CombatFocusAlterationGem,
     UpgradeKit,
     SpellPurge,
+    BezelTool
 }

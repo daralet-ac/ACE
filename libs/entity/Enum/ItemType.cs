@@ -43,31 +43,11 @@ public enum ItemType : uint
     Vestements = Armor | Clothing,
     Weapon = MeleeWeapon | MissileWeapon,
     WeaponOrCaster = MeleeWeapon | MissileWeapon | Caster,
-    Item =
-        MeleeWeapon
-        | Armor
-        | Clothing
-        | Jewelry
-        | Food
-        | Money
-        | Misc
-        | MissileWeapon
-        | Container
-        | Gem
-        | SpellComponents
-        | Writable
-        | Key
-        | Caster
-        | Portal
-        | PromissoryNote
-        | ManaStone
-        | MagicWieldable,
+    Item = MeleeWeapon | Armor | Clothing | Jewelry | Food | Money | Misc | MissileWeapon | Container | Gem | SpellComponents | Writable | Key | Caster | Portal | PromissoryNote | ManaStone | MagicWieldable,
     RedirectableItemEnchantmentTarget = MeleeWeapon | Armor | Clothing | MissileWeapon | Caster,
-    ItemEnchantableTarget =
-        MeleeWeapon | Armor | Clothing | Jewelry | Misc | MissileWeapon | Container | Gem | Caster | ManaStone,
+    ItemEnchantableTarget = MeleeWeapon | Armor | Clothing | Jewelry | Misc | MissileWeapon | Container | Gem | Caster | ManaStone,
 
-    VendorShopKeep =
-        Misc | Container | Useless | Writable | Key | PromissoryNote | CraftFletchingIntermediate | TinkeringMaterial,
+    VendorShopKeep = Misc | Container | Useless | Writable | Key | PromissoryNote | CraftFletchingIntermediate | TinkeringMaterial,
     VendorGrocer = Misc | Food | Container | Writable | Key | PromissoryNote | CraftCookingBase,
     VendorBowyer = Misc | MissileWeapon | Container | PromissoryNote | CraftFletchingBase,
     VendorArchmage = Misc | SpellComponents | Writable | Caster | PromissoryNote | ManaStone | CraftAlchemyBase,

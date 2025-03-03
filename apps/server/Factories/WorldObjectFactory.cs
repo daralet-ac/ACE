@@ -161,6 +161,8 @@ public static class WorldObjectFactory
                 return new CombatFocusAlterationGem(weenie, guid);
             case WeenieType.UpgradeKit:
                 return new UpgradeKit(weenie, guid);
+            case WeenieType.BezelTool:
+                return new BezelTool(weenie, guid);
             default:
                 return new GenericObject(weenie, guid);
         }
@@ -298,6 +300,8 @@ public static class WorldObjectFactory
                 return new CombatFocusAlterationGem(biota);
             case WeenieType.UpgradeKit:
                 return new UpgradeKit(biota);
+            case WeenieType.BezelTool:
+                return new BezelTool(biota);
             default:
                 return new GenericObject(biota);
         }

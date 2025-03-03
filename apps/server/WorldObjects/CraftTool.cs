@@ -46,6 +46,12 @@ public class CraftTool : Stackable
             return;
         }
 
+        if (BezelTool.IsBezelTool(this))
+        {
+            BezelTool.UseObjectOnTarget(player, this, target);
+            return;
+        }
+
         // fallback on recipe manager
         base.HandleActionUseOnTarget(player, target);
     }

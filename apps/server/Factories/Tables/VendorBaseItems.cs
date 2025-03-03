@@ -205,15 +205,17 @@ public static class VendorBaseItems
         (5, true, HeritageSho, 1055057, 0, 0.0, -1), // Large Component Pouch
         (6, true, HeritageSho, 1055057, 0, 0.0, -1), // Large Component Pouch
         (7, true, HeritageSho, 1055057, 0, 0.0, -1), // Large Component Pouch
-        // Pearls
+        // Other
         (0, false, HeritageAny, 1054000, 0, 0.0, -1), // Pearl of Spell Transference
-        (0, false, HeritageAny, 1054005, 0, 0.0, -1) // Pearl of Spell Purging
+        (0, false, HeritageAny, 1054005, 0, 0.0, -1), // Pearl of Spell Purging
+        (0, false, HeritageAny, 1053979, 0, 0.0, -1), // Bezel (spellcrafting)
     ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
     public static readonly List<(int, bool, int, uint, int, double, int)> ArmorerItems =
     [
-        (0, false, HeritageAny, 1054004, 0, 0.0, -1) // Upgrade Kit
+        (0, false, HeritageAny, 1054004, 0, 0.0, -1), // Upgrade Kit
+        (0, false, HeritageAny, 1053976, 0, 0.0, -1), // Bezel (blacksmithing)
     ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -222,7 +224,8 @@ public static class VendorBaseItems
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
     public static readonly List<(int, bool, int, uint, int, double, int)> BlacksmithItems =
     [
-        (0, false, HeritageAny, 1054004, 0, 0.0, -1) // Upgrade Kit
+        (0, false, HeritageAny, 1054004, 0, 0.0, -1), // Upgrade Kit
+        (0, false, HeritageAny, 1053976, 0, 0.0, -1), // Bezel (blacksmithing)
     ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -522,7 +525,9 @@ public static class VendorBaseItems
         (4, false, HeritageSho, 1055027, 0, 0.0, -1), // large quiver
         (5, false, HeritageSho, 1055027, 0, 0.0, -1), // large quiver
         (6, false, HeritageSho, 1055027, 0, 0.0, -1), // large quiver
-        (7, false, HeritageSho, 1055027, 0, 0.0, -1) // large quiver
+        (7, false, HeritageSho, 1055027, 0, 0.0, -1), // large quiver
+        //other
+        (0, false, HeritageAny, 1053978, 0, 0.0, -1) // Bezel (woodworking)
     ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
@@ -561,7 +566,11 @@ public static class VendorBaseItems
     public static readonly List<(int, bool, int, uint, int, double, int)> IvoryTraderItems = [];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
-    public static readonly List<(int, bool, int, uint, int, double, int)> JewelerItems = [];
+    public static readonly List<(int, bool, int, uint, int, double, int)> JewelerItems =
+    [
+        (0, false, HeritageAny, 1053980, 0, 0.0, -1), // Bezel (jewelcrafting)
+        (0, false, HeritageAny, 1053975, 0, 0.0, -1), // Bezel Fragment
+    ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
     public static readonly List<(int, bool, int, uint, int, double, int)> LeatherTraderItems = [];
@@ -634,12 +643,14 @@ public static class VendorBaseItems
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
     public static readonly List<(int, bool, int, uint, int, double, int)> TailorItems =
     [
-        (0, false, HeritageAny, 1054004, 0, 0.0, -1) // Upgrade Kit
+        (0, false, HeritageAny, 1054004, 0, 0.0, -1), // Upgrade Kit
+        (0, false, HeritageAny, 1053977, 0, 0.0, -1) // Bezel (tailoring)
     ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
     public static readonly List<(int, bool, int, uint, int, double, int)> WeaponsmithItems =
     [
-        (0, false, HeritageAny, 1054004, 0, 0.0, -1) // Upgrade Kit
+        (0, false, HeritageAny, 1054004, 0, 0.0, -1), // Upgrade Kit
+        (0, false, HeritageAny, 1053976, 0, 0.0, -1) // Bezel (blacksmithing)
     ];
 }
