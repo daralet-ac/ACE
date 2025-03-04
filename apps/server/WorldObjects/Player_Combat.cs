@@ -160,6 +160,8 @@ partial class Player
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Thievery, (int)SigilTrinketThieveryEffect.Treachery, damageEvent.IsCritical);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Deception, (int)SigilTrinketDeceptionEffect.Avoidance);
 
+        CheckForMagicBlade(target);
+
         target.OnAttackReceived(
             this,
             (damageSource == null || damageSource.ProjectileSource == null) ? CombatType.Melee : CombatType.Missile,
@@ -395,6 +397,17 @@ partial class Player
         }
 
         return damageEvent;
+    }
+
+    private void CheckForMagicBlade(Creature target)
+    {
+        if (MagicBladeStoredSpell is null)
+        {
+            return;
+        }
+
+        TryCastSpell(MagicBladeStoredSpell, target);
+        MagicBladeStoredSpell = null;
     }
 
     /// <summary>

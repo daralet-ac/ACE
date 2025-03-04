@@ -29,5 +29,8 @@ public enum CombatAbility
     ActivatedCombatAbilities,
     ManaBarrier,
     PowerScaler,
-    EvasiveStance
+    EvasiveStance,
+    MagicBladeBolt,
+    MagicBladeBlast,
+    MagicBladeVolley
 }

@@ -6473,6 +6473,7 @@ public enum SpellId : uint
     HealingPotion = 0x8000 | 10059,
     StaminaPotion = 0x8000 | 10060,
     ManaPotion = 0x8000 | 10061,
+    MagicBlade = 0x8000 | 10062,
 }
 
 public static class SpellExtensions

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
@@ -508,6 +509,147 @@ partial class Player
                 CheckForSigilTrinketOnCastEffects(target, magicYieldSpell, false, Skill.Perception, (int)SigilTrinketPerceptionEffect.Exposure);
             }
         }
+    }
+
+    public Spell MagicBladeStoredSpell = null;
+    public double TimeSinceMagicBladeActivated = 0;
+
+    public void TryUseMagicBlade(WorldObject ability)
+    {
+        if (ability.CombatAbilityId is null)
+        {
+            _log.Error("{Ability} is missing a CombatAbilityId", ability.Name);
+            return;
+        }
+
+        var equippedFocus = GetEquippedCombatFocus();
+        if (equippedFocus is not { CombatFocusType: (int)CombatFocusType.Spellsword })
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} can only be used while a Spellsword Focus is equipped.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
+
+        var equippedMeleeWeapon = GetEquippedMeleeWeapon();
+        if (equippedMeleeWeapon is null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} can only be used while a melee weapon is equipped.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return;
+        }
+
+        var weaponDamageType = equippedMeleeWeapon.W_DamageType;
+        if (weaponDamageType is DamageType.SlashPierce)
+        {
+            weaponDamageType = SlashThrustToggle ? DamageType.Pierce : DamageType.Slash;
+        }
+
+        var baseSpell = (CombatAbility)ability.CombatAbilityId switch
+        {
+            CombatAbility.MagicBladeBolt => GetLevelOneBoltOfDamageType(weaponDamageType),
+            CombatAbility.MagicBladeBlast => GetLevelOneBlastOfDamageType(weaponDamageType),
+            CombatAbility.MagicBladeVolley => GetLevelOneVolleyOfDamageType(weaponDamageType),
+            _ => null
+        };
+
+        if (baseSpell is null)
+        {
+            return;
+        }
+
+        var warSkill = GetModdedWarMagicSkill();
+        var roll = Convert.ToInt32(ThreadSafeRandom.Next(warSkill * 0.5f, warSkill));
+        int[] diff = [50, 100, 200, 300, 350, 400, 450];
+        var closest = diff.MinBy(x => Math.Abs(x - roll));
+        var level = Array.IndexOf(diff, closest);
+
+        var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
+
+        MagicBladeStoredSpell = new Spell(finalSpellId);
+
+        var manaCost = (int)MagicBladeStoredSpell.BaseMana * 2;
+        if (Mana.Current < manaCost)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        UpdateVitalDelta(Mana, -manaCost);
+
+        var particalIntensity = Math.Clamp((level - 1) * (1.0f / 6.0f), 0.0f, 1.0f);
+        var playScript = GetPlayScriptColor(weaponDamageType);
+
+        PlayParticleEffect(playScript, Guid, particalIntensity);
+    }
+
+    private PlayScript GetPlayScriptColor(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => PlayScript.EnchantUpOrange,
+            DamageType.Pierce => PlayScript.EnchantUpYellow,
+            DamageType.Bludgeon => PlayScript.EnchantUpWhite,
+            DamageType.Cold => PlayScript.EnchantUpBlue,
+            DamageType.Fire => PlayScript.EnchantUpRed,
+            DamageType.Acid => PlayScript.EnchantUpGreen,
+            DamageType.Electric => PlayScript.EnchantUpPurple,
+            _ => PlayScript.EnchantUpGrey
+        };
+    }
+
+    private Spell GetLevelOneBoltOfDamageType(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.WhirlingBlade1),
+            DamageType.Pierce => new Spell(SpellId.ForceBolt1),
+            DamageType.Bludgeon => new Spell(SpellId.ShockWave1),
+            DamageType.Cold => new Spell(SpellId.FrostBolt1),
+            DamageType.Fire => new Spell(SpellId.FlameBolt1),
+            DamageType.Acid => new Spell(SpellId.AcidStream1),
+            DamageType.Electric => new Spell(SpellId.LightningBolt1),
+            _ => null
+        };
+    }
+
+    private Spell GetLevelOneBlastOfDamageType(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeBlast1),
+            DamageType.Pierce => new Spell(SpellId.ForceBlast1),
+            DamageType.Bludgeon => new Spell(SpellId.ShockBlast1),
+            DamageType.Cold => new Spell(SpellId.FrostBlast1),
+            DamageType.Fire => new Spell(SpellId.FlameBlast1),
+            DamageType.Acid => new Spell(SpellId.AcidBlast1),
+            DamageType.Electric => new Spell(SpellId.LightningBlast1),
+            _ => null
+        };
+    }
+
+    private Spell GetLevelOneVolleyOfDamageType(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeVolley1),
+            DamageType.Pierce => new Spell(SpellId.ForceVolley1),
+            DamageType.Bludgeon => new Spell(SpellId.BludgeoningVolley1),
+            DamageType.Cold => new Spell(SpellId.FrostVolley1),
+            DamageType.Fire => new Spell(SpellId.FlameVolley1),
+            DamageType.Acid => new Spell(SpellId.AcidVolley1),
+            DamageType.Electric => new Spell(SpellId.LightningVolley1),
+            _ => null
+        };
     }
 
     public void TryUseActivated(WorldObject ability)

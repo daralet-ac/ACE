@@ -291,6 +291,9 @@ public class Gem : Stackable
                 case CombatAbility.ExposeMagicalWeakness:
                     player.TryUseExposeMagicalWeakness(this);
                     break;
+                case CombatAbility.MagicBladeBolt:
+                    player.TryUseMagicBlade(this);
+                    break;
                 case CombatAbility.ActivatedCombatAbilities:
                     player.TryUseActivated(this);
                     break;
