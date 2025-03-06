@@ -362,10 +362,6 @@ partial class Player
             staminaCost = (int)(staminaCost * recklessMod);
         }
 
-        // JEWEL - Citrine: Stamina cost reduction
-        var stamReductionMod = 1.0f - Jewel.GetJewelEffectMod(this, PropertyInt.GearStamReduction, "StamReduction");
-        staminaCost = Convert.ToInt32(staminaCost * stamReductionMod);
-
         UpdateVitalDelta(Stamina, -staminaCost);
 
         var combatAbility = CombatAbility.None;

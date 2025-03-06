@@ -655,7 +655,7 @@ public class UpgradeKit : Stackable
 
         var jewelryBaseWardLevelPerTier = LootTables.JewelryBaseWardLeverPerTier;
 
-        var necklaceMultiplier = target.ValidLocations is EquipMask.Jewelry ? 2.0f : 1.0f;
+        var necklaceMultiplier = target.ValidLocations is EquipMask.NeckWear ? 2.0f : 1.0f;
         var currentBaseLevelFromTier = jewelryBaseWardLevelPerTier[currentTier] * necklaceMultiplier;
         var currentRange = jewelryBaseWardLevelPerTier[currentTier + 1] - jewelryBaseWardLevelPerTier[currentTier];
         var currentRoll = currentBaseStat - currentBaseLevelFromTier;
@@ -843,7 +843,7 @@ public class UpgradeKit : Stackable
         PropertyInt.GearSelflessness,
         PropertyInt.GearSelfHarm,
         PropertyInt.GearSlash,
-        PropertyInt.GearStamReduction,
+        PropertyInt.GearStaminasteal,
         PropertyInt.GearStrength,
         PropertyInt.GearThorns,
         PropertyInt.GearThreatGain,

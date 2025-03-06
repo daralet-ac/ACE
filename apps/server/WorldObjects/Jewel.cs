@@ -62,114 +62,76 @@ partial class Jewel : WorldObject
             return;
         }
 
-        if (source.JewelSocket1Effect is not null && source.JewelSocket1Quality is not null)
+        if (source.JewelMaterialType is null || source.JewelQuality is null)
         {
-            if (target.Workmanship < source.JewelSocket1Quality)
-            {
-                var orGreater = source.JewelSocket1Quality < 10 ? " or greater" : "";
+            return;
+        }
 
+        if (target.Workmanship < source.JewelQuality)
+        {
+            var orGreater = source.JewelQuality < 10 ? " or greater" : "";
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"The {source.Name} can only be socketed into an item with a workmanship of {source.JewelQuality}{orGreater}.",
+                    ChatMessageType.Craft
+                )
+            );
+            player.SendUseDoneEvent();
+            return;
+        }
+
+        // wield restrictions
+        var ratingTypes = JewelMaterialToType[source.JewelMaterialType.Value];
+        var materialWieldRestrictionMain = RatingToEquipLocations[ratingTypes.PrimaryRating];
+        var materialWieldRestrictionAlt = RatingToEquipLocations[ratingTypes.AlternateRating];
+
+        if ((target.ValidLocations & materialWieldRestrictionMain) != target.ValidLocations && (target.ValidLocations & materialWieldRestrictionAlt) != target.ValidLocations)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"The {source.Name} can never be slotted into the {target.Name}.",
+                    ChatMessageType.Craft
+                )
+            );
+            player.SendUseDoneEvent();
+            return;
+        }
+
+        // check for rending damage type matches
+        if (MaterialDamage.TryGetValue(source.JewelMaterialType.Value, out var damageType))
+        {
+            if (target.ValidLocations is EquipMask.Weapon
+                && target.W_DamageType != damageType
+                && target.W_DamageType != DamageType.SlashPierce)
+            {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"The {source.Name} can only be socketed into an item with a workmanship of {source.JewelSocket1Quality}{orGreater}.",
+                        $"The {source.Name} can never be slotted into a weapon of that damage type.",
                         ChatMessageType.Craft
                     )
                 );
                 player.SendUseDoneEvent();
                 return;
             }
-
-            // check for weapon use only
-            if (source is {JewelMaterialType: not null})
-            {
-                var materialWieldRestriction = JewelValidLocations[source.JewelMaterialType];
-                switch (materialWieldRestriction)
-                {
-                    case 1 when target.ValidLocations != EquipMask.MeleeWeapon
-                                && target.ValidLocations != EquipMask.MissileWeapon
-                                && target.ValidLocations != EquipMask.Held
-                                && target.ValidLocations != EquipMask.TwoHanded:
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"The {source.Name} can never be slotted into the {target.Name}.",
-                                ChatMessageType.Craft
-                            )
-                        );
-                        player.SendUseDoneEvent();
-                        return;
-                    // shield only
-                    case 2 when target.ValidLocations != EquipMask.Shield:
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"The {source.Name} can never be slotted into the {target.Name}.",
-                                ChatMessageType.Craft
-                            )
-                        );
-                        player.SendUseDoneEvent();
-                        return;
-                    case 3 when target.ValidLocations != EquipMask.MeleeWeapon
-                                && target.ValidLocations != EquipMask.MissileWeapon
-                                && target.ValidLocations != EquipMask.Held
-                                && target.ValidLocations != EquipMask.TwoHanded
-                                && target.ValidLocations != EquipMask.Shield:
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"The {source.Name} can never be slotted into the {target.Name}.",
-                                ChatMessageType.Craft
-                            )
-                        );
-                        player.SendUseDoneEvent();
-                        return;
-                }
-
-                // otherwise check the dictionary
-                if (materialWieldRestriction != 1 && materialWieldRestriction != 2 && materialWieldRestriction != 3)
-                {
-                    if (target.ValidLocations != null && materialWieldRestriction != (int)target.ValidLocations)
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"The {source.Name} cannot be slotted into the {target.Name}.",
-                                ChatMessageType.Craft
-                            )
-                        );
-                        player.SendUseDoneEvent();
-                        return;
-                    }
-                }
-
-                // check for rending damage type matches
-                if (MaterialDamage.TryGetValue(source.JewelMaterialType.Value, out var damageType))
-                {
-                    if (target.W_DamageType != damageType && target.W_DamageType != DamageType.SlashPierce)
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"The {source.Name} can never be slotted into a weapon of that damage type.",
-                                ChatMessageType.Craft
-                            )
-                        );
-                        player.SendUseDoneEvent();
-                        return;
-                    }
-                }
-
-                if (
-                    target.W_DamageType == DamageType.SlashPierce
-                    && source.JewelMaterialType.Value != ACE.Entity.Enum.MaterialType.BlackGarnet
-                    && source.JewelMaterialType.Value != ACE.Entity.Enum.MaterialType.ImperialTopaz
-                )
-                {
-                    player.Session.Network.EnqueueSend(
-                        new GameMessageSystemChat(
-                            $"The {source.Name} can never be slotted into a weapon of that damage type.",
-                            ChatMessageType.Craft
-                        )
-                    );
-                    player.SendUseDoneEvent();
-                    return;
-                }
-            }
         }
+
+        if (target.ValidLocations is EquipMask.Weapon
+            && target.W_DamageType == DamageType.SlashPierce
+            && source.JewelMaterialType.Value != ACE.Entity.Enum.MaterialType.BlackGarnet
+            && source.JewelMaterialType.Value != ACE.Entity.Enum.MaterialType.ImperialTopaz
+        )
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"The {source.Name} can never be slotted into a weapon of that damage type.",
+                    ChatMessageType.Craft
+                )
+            );
+            player.SendUseDoneEvent();
+            return;
+        }
+
 
         if (!confirmed)
         {
@@ -236,23 +198,27 @@ partial class Jewel : WorldObject
 
     private static void SocketJewel(WorldObject jewel, WorldObject target)
     {
-        if (jewel.JewelSocket1Effect is null || jewel.JewelSocket1Quality is null || jewel.JewelMaterialType is null)
+        if (jewel.JewelMaterialType is null || jewel.JewelQuality is null)
         {
             return;
         }
 
         for (var i = 0; i < target.JewelSockets; i++)
         {
-            if (target.GetProperty(JewelSocketEffectIntId[i]) is not null)
+            if (target.GetProperty(SocketedJewelDetails[i].JewelSocketMaterialIntId) is not null)
             {
                 continue;
             }
 
-            target.SetProperty(JewelSocketEffectIntId[i], jewel.JewelSocket1Effect.Value);
-            target.SetProperty(JewelSocketEffectIntId[i] + 1, jewel.JewelSocket1Quality.Value);
+            target.SetProperty(SocketedJewelDetails[i].JewelSocketMaterialIntId, (int)jewel.JewelMaterialType.Value);
+            target.SetProperty(SocketedJewelDetails[i].JewelSocketQualityIntId, jewel.JewelQuality.Value);
 
-            var currentTotalRating = target.GetProperty(JewelMaterialToType[jewel.JewelMaterialType.Value]) ?? 0;
-            target.SetProperty(JewelMaterialToType[jewel.JewelMaterialType.Value], currentTotalRating + jewel.JewelSocket1Quality.Value);
+            var jewelAltEquipMask = RatingToEquipLocations[JewelMaterialToType[jewel.JewelMaterialType.Value].AlternateRating];
+
+            if ((jewelAltEquipMask & target.ValidLocations) == target.ValidLocations)
+            {
+                target.SetProperty(SocketedJewelDetails[i].JewelSocketAlternateEffect, true);
+            }
 
             // if a ring or bracelet, change valid locations to left or right only
             if (target.ValidLocations != null && (int)target.ValidLocations == 786432)
@@ -302,7 +268,7 @@ partial class Jewel : WorldObject
     {
         for (var i = 0; i < (target.JewelSockets ?? 0); i++)
         {
-            if (target.GetProperty(JewelSocketEffectIntId[i]) is null)
+            if (target.GetProperty(SocketedJewelDetails[i].JewelSocketMaterialIntId) is null)
             {
                 return true;
             }
@@ -357,175 +323,15 @@ partial class Jewel : WorldObject
             baseValue = (int)target.ItemWorkmanship;
         }
 
-        string appendedName;
-
-        switch (target.MaterialType)
+        if (target.MaterialType is null)
         {
-            case ACE.Entity.Enum.MaterialType.Agate:
-                appendedName = "of Provocation";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearThreatGain, ACE.Entity.Enum.MaterialType.Agate, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Amber:
-                appendedName = "of the Masochist";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearHealthToStamina, ACE.Entity.Enum.MaterialType.Amber, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Amethyst:
-                appendedName = "of Nullification";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearNullification, ACE.Entity.Enum.MaterialType.Amethyst, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Aquamarine:
-                appendedName = "of the Bone-Chiller";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearFrost, ACE.Entity.Enum.MaterialType.Aquamarine, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Azurite:
-                appendedName = "of the Erudite Mind";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearSelf, ACE.Entity.Enum.MaterialType.Azurite, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.BlackGarnet:
-                appendedName = "of Precision Strikes";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearPierce, ACE.Entity.Enum.MaterialType.BlackGarnet, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.BlackOpal:
-                appendedName = "of Vicious Reprisal";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearReprisal, ACE.Entity.Enum.MaterialType.BlackOpal, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Bloodstone:
-                appendedName = "of Sanguine Thirst";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearLifesteal, ACE.Entity.Enum.MaterialType.Bloodstone, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Carnelian:
-                appendedName = "of Mighty Thews";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearStrength, ACE.Entity.Enum.MaterialType.Carnelian, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Citrine:
-                appendedName = "of the Third Wind";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearStamReduction, ACE.Entity.Enum.MaterialType.Citrine, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Diamond:
-                appendedName = "of the Hardened Fortification";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearHardenedDefense, ACE.Entity.Enum.MaterialType.Diamond, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Emerald:
-                appendedName = "of the Devouring Mist";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearAcid, ACE.Entity.Enum.MaterialType.Emerald, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.FireOpal:
-                appendedName = "of the Familiar Foe";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearFamiliarity, ACE.Entity.Enum.MaterialType.FireOpal, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.GreenGarnet:
-                appendedName = "of the Elementalist";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearElementalist, ACE.Entity.Enum.MaterialType.GreenGarnet, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.GreenJade:
-                appendedName = "of Prosperity";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearPyrealFind, ACE.Entity.Enum.MaterialType.GreenJade, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Hematite:
-                appendedName = "of Blood Frenzy";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearSelfHarm, ACE.Entity.Enum.MaterialType.Hematite, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.ImperialTopaz:
-                appendedName = "of the Falcon's Gyre";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearSlash, ACE.Entity.Enum.MaterialType.ImperialTopaz, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Jet:
-                appendedName = "of Astyrrian's Rage";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearLightning, ACE.Entity.Enum.MaterialType.Jet, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.LapisLazuli:
-                appendedName = "of the Austere Anchorite";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearHealthToMana, ACE.Entity.Enum.MaterialType.LapisLazuli, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.LavenderJade:
-                appendedName = "of the Selfless Spirit";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearSelflessness, ACE.Entity.Enum.MaterialType.LavenderJade, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Malachite:
-                appendedName = "of the Meticulous Magus";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearCompBurn, ACE.Entity.Enum.MaterialType.Malachite, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Moonstone:
-                appendedName = "of the Thrifty Scholar";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearItemManaUsage, ACE.Entity.Enum.MaterialType.Moonstone, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Onyx:
-                appendedName = "of the Black Bulwark";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearPhysicalWard, ACE.Entity.Enum.MaterialType.Onyx, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Opal:
-                appendedName = "of the Ophidian";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearManasteal, ACE.Entity.Enum.MaterialType.Opal, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Peridot:
-                appendedName = "of the Swift-Footed";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearQuickness, ACE.Entity.Enum.MaterialType.Peridot, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.RedGarnet:
-                appendedName = "of the Blazing Brand";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearFire, ACE.Entity.Enum.MaterialType.RedGarnet, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.RedJade:
-                appendedName = "of the Focused Mind";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearFocus, ACE.Entity.Enum.MaterialType.RedJade, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.RoseQuartz:
-                appendedName = "of the Tilted Scales";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearVitalsTransfer, ACE.Entity.Enum.MaterialType.RoseQuartz, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Ruby:
-                appendedName = "of Red Fury";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearRedFury, ACE.Entity.Enum.MaterialType.Ruby, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Sapphire:
-                appendedName = "of the Seeker";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearMagicFind, ACE.Entity.Enum.MaterialType.Sapphire, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.SmokeyQuartz:
-                appendedName = "of Clouded Vision";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearThreatReduction, ACE.Entity.Enum.MaterialType.SmokeyQuartz, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Sunstone:
-                appendedName = "of the Illuminated Mind";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearExperienceGain, ACE.Entity.Enum.MaterialType.Sunstone, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.TigerEye:
-                appendedName = "of the Dexterous Hand";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearCoordination, ACE.Entity.Enum.MaterialType.TigerEye, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Tourmaline:
-                appendedName = "of Ruthless Discernment";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearWardPen, ACE.Entity.Enum.MaterialType.Tourmaline, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Turquoise:
-                appendedName = "of Stalwart Defense";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearBlock, ACE.Entity.Enum.MaterialType.Turquoise, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.WhiteJade:
-                appendedName = "of the Purified Soul";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearHealBubble, ACE.Entity.Enum.MaterialType.WhiteJade, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.WhiteQuartz:
-                appendedName = "of Swift Retribution";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearThorns, ACE.Entity.Enum.MaterialType.WhiteQuartz, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.WhiteSapphire:
-                appendedName = "of the Skull-Cracker";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearBludgeon, ACE.Entity.Enum.MaterialType.WhiteSapphire, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.YellowGarnet:
-                appendedName = "of Bravado";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearBravado, ACE.Entity.Enum.MaterialType.YellowGarnet, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.YellowTopaz:
-                appendedName = "of Perseverence";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearEndurance, ACE.Entity.Enum.MaterialType.YellowTopaz, appendedName, success);
-                break;
-            case ACE.Entity.Enum.MaterialType.Zircon:
-                appendedName = "of the Prismatic Ward";
-                CalcJewelQuality(player, target, jewel, baseValue, PropertyInt.GearElementalWard, ACE.Entity.Enum.MaterialType.Zircon, appendedName, success);
-                break;
+            _log.Error("ModifyCarvedJewel(Player {Player}, Target {Target}, Jewel {Jewel}) - Target material type is null. Defaulting to 1 workmanship.", player.Name, target.Name, jewel.Name);
+            return;
         }
+
+        var materialType = target.MaterialType.Value;
+
+        CalcJewelQuality(player, target, jewel, baseValue, materialType, success);
     }
 
     // Jewel quality is based on workmanship with a possible range of -2 to +2 depending on carve quality, for a scale of 1-12.
@@ -535,9 +341,7 @@ partial class Jewel : WorldObject
         WorldObject target,
         WorldObject jewel,
         int baseValue,
-        PropertyInt jewelProperty,
         MaterialType materialType,
-        string appendedName,
         bool success
     )
     {
@@ -575,14 +379,13 @@ partial class Jewel : WorldObject
         }
 
         jewel.Value = Convert.ToInt32(target.Value * jewelRelativeQuality);
-
-        jewel.JewelSocket1Effect = (int)jewelProperty;
-        jewel.JewelSocket1Quality = modifiedQuality;
+        jewel.JewelQuality = modifiedQuality;
         jewel.JewelMaterialType = materialType;
 
         if (JewelQuality.TryGetValue(modifiedQuality, out var qualityName))
         {
-            jewel.Name = $"{qualityName} {MaterialTypeToString[materialType]} {appendedName}";
+            jewel.Name = $"{qualityName} {MaterialTypeToString[materialType]}";
+            jewel.IconOverlayId = (uint)(100690995 + jewel.JewelQuality);
         }
 
         if (GemstoneIconMap.TryGetValue(materialType, out var gemIcon))
@@ -633,10 +436,10 @@ partial class Jewel : WorldObject
         // cycle through slots, emptying out ones that aren't already (
         for (var i = 0; i < (target.JewelSockets ?? 0); i++)
         {
-            var currentSocketEffectTypeId = target.GetProperty(JewelSocketEffectIntId[i]);
-            var currentSocketQualityLevel = target.GetProperty(JewelSocketEffectIntId[i] + 1);
+            var currentSocketMaterialTypeId = target.GetProperty(SocketedJewelDetails[i].JewelSocketMaterialIntId);
+            var currentSocketQualityLevel = target.GetProperty(SocketedJewelDetails[i].JewelSocketQualityIntId);
 
-            if (currentSocketEffectTypeId is null or < 1 || currentSocketQualityLevel is null or < 1)
+            if (currentSocketMaterialTypeId is null or < 1 || currentSocketQualityLevel is null or < 1)
             {
                 continue;
             }
@@ -644,7 +447,7 @@ partial class Jewel : WorldObject
             // create jewel for inventory
             var jewel = WorldObjectFactory.CreateNewWorldObject(1053900);
 
-            jewel.JewelMaterialType = JewelTypeToMaterial[(PropertyInt)currentSocketEffectTypeId];
+            jewel.JewelMaterialType = (MaterialType)currentSocketMaterialTypeId;
 
             if (jewel is { JewelMaterialType: null })
             {
@@ -652,16 +455,14 @@ partial class Jewel : WorldObject
                 return;
             }
 
-            jewel.JewelSocket1Effect = currentSocketEffectTypeId;
-            jewel.JewelSocket1Quality = currentSocketQualityLevel;
-
+            jewel.JewelQuality = currentSocketQualityLevel;
             jewel.UiEffects = (UiEffects)JewelUiEffect[jewel.JewelMaterialType.Value];
             jewel.IconId = GemstoneIconMap[jewel.JewelMaterialType.Value];
+            jewel.IconOverlayId = (uint)(100690995 + jewel.JewelQuality);
 
             var qualityString = JewelQuality[currentSocketQualityLevel.Value];
             var materialString = MaterialTypeToString[jewel.JewelMaterialType.Value];
-            var effectNameString = JewelEffectInfo[JewelMaterialToType[jewel.JewelMaterialType.Value]].Name;
-            jewel.Name = $"{qualityString} {materialString} of the {effectNameString}";
+            jewel.Name = $"{qualityString} {materialString}";
 
             jewel.Attuned = AttunedStatus.Attuned;
             jewel.Bonded = BondedStatus.Bonded;
@@ -669,11 +470,9 @@ partial class Jewel : WorldObject
             player.TryCreateInInventoryWithNetworking(jewel);
 
             // remove jewel properties from target
-            target.RemoveProperty(JewelSocketEffectIntId[i]);
-            target.RemoveProperty(JewelSocketEffectIntId[i] + 1);
-
-            var currentTotalRating = target.GetProperty(JewelMaterialToType[jewel.JewelMaterialType.Value]) ?? 0;
-            target.SetProperty(JewelMaterialToType[jewel.JewelMaterialType.Value], currentTotalRating - jewel.JewelSocket1Quality.Value);
+            target.RemoveProperty(SocketedJewelDetails[i].JewelSocketMaterialIntId);
+            target.RemoveProperty(SocketedJewelDetails[i].JewelSocketQualityIntId);
+            target.RemoveProperty(SocketedJewelDetails[i].JewelSocketAlternateEffect);
         }
 
         target.Attuned = null;
@@ -685,52 +484,52 @@ partial class Jewel : WorldObject
     {
         var number = 0;
 
-        if (target.JewelSocket1Effect is not null)
+        if (target.JewelSocket1Material is not null)
         {
             number++;
         }
 
-        if (target.JewelSocket2Effect is not null)
+        if (target.JewelSocket2Material is not null)
         {
             number++;
         }
 
-        if (target.JewelSocket3Effect is not null)
+        if (target.JewelSocket3Material is not null)
         {
             number++;
         }
 
-        if (target.JewelSocket4Effect is not null)
+        if (target.JewelSocket4Material is not null)
         {
             number++;
         }
 
-        if (target.JewelSocket5Effect is not null)
+        if (target.JewelSocket5Material is not null)
         {
             number++;
         }
 
-        if (target.JewelSocket6Effect is not null)
+        if (target.JewelSocket6Material is not null)
         {
             number++;
         }
 
-        if (target.JewelSocket7Effect is not null)
+        if (target.JewelSocket7Material is not null)
         {
             number++;
         }
 
-        if (target.JewelSocket8Effect is not null)
+        if (target.JewelSocket8Material is not null)
         {
             number++;
         }
 
-        if (target.JewelSocket9Effect is not null)
+        if (target.JewelSocket9Material is not null)
         {
             number++;
         }
 
-        if (target.JewelSocket10Effect is not null)
+        if (target.JewelSocket10Material is not null)
         {
             number++;
         }
@@ -738,17 +537,17 @@ partial class Jewel : WorldObject
         return number;
     }
 
-    public static readonly List<PropertyInt> JewelSocketEffectIntId =
+    public static readonly List<(PropertyInt JewelSocketMaterialIntId, PropertyInt JewelSocketQualityIntId, PropertyBool JewelSocketAlternateEffect)> SocketedJewelDetails =
     [
-        PropertyInt.JewelSocket1Effect,
-        PropertyInt.JewelSocket2Effect,
-        PropertyInt.JewelSocket3Effect,
-        PropertyInt.JewelSocket4Effect,
-        PropertyInt.JewelSocket5Effect,
-        PropertyInt.JewelSocket6Effect,
-        PropertyInt.JewelSocket7Effect,
-        PropertyInt.JewelSocket8Effect,
-        PropertyInt.JewelSocket9Effect,
-        PropertyInt.JewelSocket10Effect
+        (PropertyInt.JewelSocket1Material, PropertyInt.JewelSocket1Quality, PropertyBool.JewelSocket1AlternateEffect),
+        (PropertyInt.JewelSocket2Material, PropertyInt.JewelSocket2Quality, PropertyBool.JewelSocket2AlternateEffect),
+        (PropertyInt.JewelSocket3Material, PropertyInt.JewelSocket3Quality, PropertyBool.JewelSocket3AlternateEffect),
+        (PropertyInt.JewelSocket4Material, PropertyInt.JewelSocket4Quality, PropertyBool.JewelSocket4AlternateEffect),
+        (PropertyInt.JewelSocket5Material, PropertyInt.JewelSocket5Quality, PropertyBool.JewelSocket5AlternateEffect),
+        (PropertyInt.JewelSocket6Material, PropertyInt.JewelSocket6Quality, PropertyBool.JewelSocket6AlternateEffect),
+        (PropertyInt.JewelSocket7Material, PropertyInt.JewelSocket7Quality, PropertyBool.JewelSocket7AlternateEffect),
+        (PropertyInt.JewelSocket8Material, PropertyInt.JewelSocket8Quality, PropertyBool.JewelSocket8AlternateEffect),
+        (PropertyInt.JewelSocket9Material, PropertyInt.JewelSocket9Quality, PropertyBool.JewelSocket9AlternateEffect),
+        (PropertyInt.JewelSocket10Material, PropertyInt.JewelSocket10Quality, PropertyBool.JewelSocket10AlternateEffect),
     ];
 }

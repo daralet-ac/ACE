@@ -222,17 +222,26 @@ partial class WorldObject
 
         for (var i = 0; i < (worldObject.JewelSockets ?? 0); i++)
         {
-            if (Jewel.JewelSocketEffectIntId[i] != propertyInt)
+            var jewelMaterial = worldObject.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketMaterialIntId);
+            var jewelQuality = worldObject.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketQualityIntId);
+            var jewelAlternate = worldObject.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketAlternateEffect);
+
+            if (jewelMaterial is null || jewelQuality is null || jewelAlternate is null)
             {
                 continue;
             }
 
-            var jewelSocketQualityIntId = worldObject.GetProperty(Jewel.JewelSocketEffectIntId[i] + 1);
-
-            if (jewelSocketQualityIntId is not null)
+            if (jewelAlternate is not true && Jewel.JewelMaterialToType[(MaterialType)jewelMaterial].PrimaryRating != propertyInt)
             {
-                total += jewelSocketQualityIntId.Value;
+                continue;
             }
+
+            if (jewelAlternate is true && Jewel.JewelMaterialToType[(MaterialType)jewelMaterial].AlternateRating != propertyInt)
+            {
+                continue;
+            }
+
+            total += (int)jewelQuality;
         }
 
         return total;

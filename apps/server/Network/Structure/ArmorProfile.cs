@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Network.Structure;
@@ -36,20 +37,25 @@ public class ArmorProfile
     /// Calculates the effective RL for a piece of armor or clothing
     /// against a particular damage type
     /// </summary>
-    public float GetArmorMod(WorldObject armor, DamageType damageType)
+    private static float GetArmorMod(WorldObject armor, DamageType damageType)
     {
         var type = armor.EnchantmentManager.GetImpenBaneKey(damageType);
         var baseResistance = armor.GetProperty(type) ?? 1.0f;
 
-        if (armor == null)
-        {
-            return (float)baseResistance;
-        }
-
         // banes/lures
-        var resistanceMod = armor != null ? armor.EnchantmentManager.GetArmorModVsType(damageType) : 0.0f;
-
+        var resistanceMod = armor.EnchantmentManager.GetArmorModVsType(damageType);
         var effectiveRL = (float)(baseResistance + resistanceMod);
+
+        if (effectiveRL < 1.0f)
+        {
+            var jewelBaneRating = GetJewelBaneRating(armor, damageType);
+            effectiveRL += jewelBaneRating;
+
+            if (effectiveRL > 1.0f)
+            {
+                effectiveRL = 1.0f;
+            }
+        }
 
         // resistance clamp
         // TODO: this would be a good place to test with client values
@@ -58,6 +64,26 @@ public class ArmorProfile
         effectiveRL = Math.Clamp(effectiveRL, -2.0f, 2.0f);
 
         return effectiveRL;
+    }
+
+    public static float GetJewelBaneRating(WorldObject armor, DamageType damageType)
+    {
+        if (armor.Wielder is not Player player)
+        {
+            return 0.0f;
+        }
+
+        return damageType switch
+        {
+            DamageType.Slash => Jewel.GetJewelEffectMod(player, PropertyInt.GearSlashBane, "", false, true),
+            DamageType.Pierce => Jewel.GetJewelEffectMod(player, PropertyInt.GearPierceBane, "", false, true),
+            DamageType.Bludgeon => Jewel.GetJewelEffectMod(player, PropertyInt.GearBludgeonBane, "", false, true),
+            DamageType.Cold => Jewel.GetJewelEffectMod(player, PropertyInt.GearFrostBane, "", false, true),
+            DamageType.Fire => Jewel.GetJewelEffectMod(player, PropertyInt.GearFireBane, "", false, true),
+            DamageType.Acid => Jewel.GetJewelEffectMod(player, PropertyInt.GearAcidBane, "", false, true),
+            DamageType.Electric => Jewel.GetJewelEffectMod(player, PropertyInt.GearLightningBane, "", false, true),
+            _ => 0.0f
+        };
     }
 }
 

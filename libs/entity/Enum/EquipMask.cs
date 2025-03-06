@@ -40,37 +40,17 @@ public enum EquipMask : uint
     SigilOne = 0x10000000,
     SigilTwo = 0x20000000,
     SigilThree = 0x40000000,
-    Clothing =
-        0x80000000
-        | HeadWear
-        | ChestWear
-        | AbdomenWear
-        | UpperArmWear
-        | LowerArmWear
-        | HandWear
-        | UpperLegWear
-        | LowerLegWear
-        | FootWear,
-    Armor = ChestArmor | AbdomenArmor | UpperArmArmor | LowerArmArmor | UpperLegArmor | LowerLegArmor | FootWear,
-    ArmorExclusive = ChestArmor | AbdomenArmor | UpperArmArmor | LowerArmArmor | UpperLegArmor | LowerLegArmor,
+    Clothing = 0x80000000 | HeadWear | ChestWear | AbdomenWear | UpperArmWear | LowerArmWear | HandWear | UpperLegWear | LowerLegWear | FootWear,
+    Armor = ChestArmor | AbdomenArmor | UpperArmArmor | LowerArmArmor | UpperLegArmor | LowerLegArmor | FootWear | HandWear | HeadWear,
+    Weapon = MeleeWeapon | MissileWeapon | TwoHanded,
+    WeaponAndArmor = Weapon | Armor,
+    WeaponAndShield = MeleeWeapon | MissileWeapon | TwoHanded | Shield,
     Extremity = HeadWear | HandWear | FootWear,
-    Jewelry =
-        NeckWear
-        | WristWearLeft
-        | WristWearRight
-        | FingerWearLeft
-        | FingerWearRight
-        | TrinketOne
-        | Cloak
-        | SigilOne
-        | SigilTwo
-        | SigilThree,
+    Jewelry = NeckWear | WristWearLeft | WristWearRight | FingerWearLeft | FingerWearRight,
     WristWear = WristWearLeft | WristWearRight,
     FingerWear = FingerWearLeft | FingerWearRight,
+    WristAndArmor = WristWearLeft | WristWearRight | Armor,
     Sigil = SigilOne | SigilTwo | SigilThree,
-    ReadySlot = Held | TwoHanded | TrinketOne | Cloak | SigilOne | SigilTwo,
-    Weapon = SigilTwo | TrinketOne | Held,
-    WeaponReadySlot = SigilOne | SigilTwo | TrinketOne | Held,
     Selectable = MeleeWeapon | Shield | MissileWeapon | Held | TwoHanded,
     SelectablePlusAmmo = Selectable | MissileAmmo,
     All = 0x7FFFFFFF,
