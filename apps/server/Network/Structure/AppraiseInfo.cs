@@ -789,7 +789,6 @@ public class AppraiseInfo
         SetGearRatingText(wo, PropertyInt.GearQuickness, "Swift-footed", "Grants +10 to current Quickness, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
         SetGearRatingText(wo, PropertyInt.GearFocus, "Focused Mind", "Grants +10 to current Focus, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
         SetGearRatingText(wo, PropertyInt.GearSelf, "Erudite Mind", "Grants +10 to current Self, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
-        SetGearRatingText(wo, PropertyInt.GearLifesteal, "Sanguine Thirst", "Grants a 10% chance on hit to gain health, plus an additional 0.5% per equipped rating ((ONE) total). Amount stolen is equal to 10% of damage dealt.", 0.5f, 1.0f, 10, 0, true);
         SetGearRatingText(wo, PropertyInt.GearSelfHarm, "Blood Frenzy", $"Grants 10% increased damage with all attacks, plus an additional 0.5% per equipped rating ((ONE) total). However, you will occasionally deal the extra damage to yourself as well.", 0.5f, 1.0f, 10, 0, true);
         SetGearRatingText(wo, PropertyInt.GearThreatGain, "Provocation", $"Grants 10% increased threat from your actions, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
         SetGearRatingText(wo, PropertyInt.GearThreatReduction, "Clouded Vision", $"Grants 10% reduced threat from your actions, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
@@ -809,6 +808,8 @@ public class AppraiseInfo
         SetGearRatingText(wo, PropertyInt.GearHealthToStamina, "Masochist", $"Grants a 10% chance to regain the hit damage received from an attack as stamina, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
         SetGearRatingText(wo, PropertyInt.GearHealthToMana, "Austere Anchorite", $"Grants a 10% chance to regain the hit damage received from an attack as mana, plus an additional 0.5% per equipped rating ((ONE) total).", 0.5f, 1.0f, 10, 0, true);
         SetGearRatingText(wo, PropertyInt.GearExperienceGain, "Illuminated Mind", $"Grants a 5% bonus to experience gain, plus an additional 0.25% per equipped rating ((ONE) total).", 0.25f, 1.0f, 5, 0, true);
+        SetGearRatingText(wo, PropertyInt.GearLifesteal, "Sanguine Thirst", "Grants a 10% chance on hit to gain health, plus an additional 0.5% per equipped rating ((ONE) total). Amount stolen is equal to 10% of damage dealt.", 0.5f, 1.0f, 10, 0, true);
+        SetGearRatingText(wo, PropertyInt.GearStaminasteal, "Vigor Siphon", $"Grants a 10% chance on hit to gain stamina, plus an additional 0.5% per equipped rating ((ONE) total). Amount stolen is equal to 10% of damage dealt.", 0.5f, 1.0f, 10, 0, true);
         SetGearRatingText(wo, PropertyInt.GearManasteal, "Ophidian", $"Grants a 10% chance on hit to steal mana from your target, plus an additional 0.5% per equipped rating ((ONE) total). Amount stolen is equal to 10% of damage dealt.", 0.5f, 1.0f, 10, 0, true);
         SetGearRatingText(wo, PropertyInt.GearBludgeon, "Skull-cracker", $"Grants up to 20% bonus critical hit damage, plus an additional 1% per equipped rating ((ONE) total). The bonus builds up from 0%, based on how often you have hit the target.", 1.0f, 1.0f, 20, 0, true);
         SetGearRatingText(wo, PropertyInt.GearPierce, "Precision Strikes", $"Grants up to 20% piercing resistance penetration, plus an additional 1% per equipped rating ((ONE) total). The bonus builds up from 0%, based on how often you have hit the target", 1.0f, 1.0f, 20, 0, true);
@@ -822,10 +823,18 @@ public class AppraiseInfo
         SetGearRatingText(wo, PropertyInt.GearPyrealFind, "Prosperity", $"Grants a 5% chance for a monster to drop an extra item, plus an additional 0.25% per equipped rating ((ONE) total).", 0.25f, 1.0f, 5, 0, true);
         SetGearRatingText(wo, PropertyInt.GearNullification, "Nullification", $"Grants up to 20% reduced magic damage taken, plus an additional 1% per equipped rating ((ONE) total). The amount builds up from 0%, based on how often you have been hit with a damaging spell.", 1.0f, 1.0f, 20, 0, true);
         SetGearRatingText(wo, PropertyInt.GearWardPen, "Ruthless Discernment", $"Grants up to 20% ward penetration, plus an additional 1% per equipped rating ((ONE) total). The Amount builds up from 0%, based on how often you have hit your target.", 1.0f, 1.0f, 20, 0, true);
-        SetGearRatingText(wo, PropertyInt.GearStamReduction, "Third Wind", $"Grants up to 10% stamina cost reduction, plus an additional 0.5% per equipped rating ((ONE) total). The amount builds up from 0%, based on how often you have hit your target.", 0.5f, 1.0f, 10, 0, true);
         SetGearRatingText(wo, PropertyInt.GearHardenedDefense, "Hardened Fortification", $"Grants up to 20% reduced physical damage taken, plus an additional 1% per equipped rating ((ONE) total). Th amount builds up from 0%, based on how often you have been hit with a damaging physical attack.", 1.0f, 10f, 20, 0, true);
         SetGearRatingText(wo, PropertyInt.GearReprisal, "Vicious Reprisal", $"Grants a 5% chance to evade an incoming critical hit, plus an additional 0.25% per equipped rating ((ONE) total). Your next attack after a the evade is a guaranteed critical.", 0.25f, 1.0f, 5, 0, true);
         SetGearRatingText(wo, PropertyInt.GearElementalist, "Elementalist", $"Grants up to a 20% damage bonus to war spells, plus an additional 1% per equipped rating ((ONE) total). The amount builds up from 0%, based on how often you have hit your target.", 1.0f, 1.0f, 20, 0, true);
+        SetGearRatingText(wo, PropertyInt.GearToughness, "Toughness", $"Grants +20 physical defense, plus an additional 1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 20);
+        SetGearRatingText(wo, PropertyInt.GearResistance, "Resistance", $"Grants +20 magic defense, plus an additional 1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 20);
+        SetGearRatingText(wo, PropertyInt.GearSlashBane, "Swordsman's Bane", $"Grants +0.2 slashing protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearBludgeonBane, "Tusker's Bane", $"Grants +0.2 bludgeoning protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearPierceBane, "Archer's Bane", $"Grants +0.2 piercing protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearAcidBane, "Olthoi's Bane", $"Grants +0.2 acid protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearFireBane, "Inferno's Bane", $"Grants +0.2 fire protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearFrostBane, "Gelidite's Bane", $"Grants +0.2 cold protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearLightningBane, "Astyrrian's Bane", $"Grants +0.2 electric protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total) The protection level cannot be increased beyond 1.0 (average), from this effect..", 0.01f, 1.0f, 0.2f);
 
         SetAdditionalPropertiesUseText();
 
@@ -1222,18 +1231,16 @@ public class AppraiseInfo
         {
             for (var i = 0; i < (wo.JewelSockets ?? 0); i++)
             {
-                var currentSocketEffectTypeId = wo.GetProperty(Jewel.JewelSocketEffectIntId[i]);
-                var currentSocketQualityLevel = wo.GetProperty(Jewel.JewelSocketEffectIntId[i] + 1);
+                var currentSocketMaterialTypeId = wo.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketMaterialIntId);
+                var currentSocketQualityLevel = wo.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketQualityIntId);
 
-                if (currentSocketEffectTypeId is null or < 1 || currentSocketQualityLevel is null or < 1)
+                if (currentSocketMaterialTypeId is null or < 1 || currentSocketQualityLevel is null or < 1)
                 {
                     _extraPropertiesText += "\n\t  Empty Jewel Socket\n";
                     continue;
                 }
 
-                var materialType = Jewel.JewelTypeToMaterial[(PropertyInt)currentSocketEffectTypeId];
-
-                _extraPropertiesText += Jewel.GetSocketDescription(materialType, currentSocketQualityLevel.Value);
+                _extraPropertiesText += Jewel.GetSocketDescription((MaterialType)currentSocketMaterialTypeId, currentSocketQualityLevel.Value);
             }
         }
     }
@@ -1938,7 +1945,7 @@ public class AppraiseInfo
         }
     }
 
-    private void SetGearRatingText(WorldObject worldObject, PropertyInt propertyInt, string name, string description, float multiplierOne = 1.0f, float multiplierTwo = 1.0f, int baseOne = 0, int baseTwo = 0, bool percent = false)
+    private void SetGearRatingText(WorldObject worldObject, PropertyInt propertyInt, string name, string description, float multiplierOne = 1.0f, float multiplierTwo = 1.0f, float baseOne = 0, float baseTwo = 0, bool percent = false)
     {
         var itemGearRating = worldObject.GetProperty(propertyInt) ?? 0;
         var jewelGearRating = WorldObject.GetJewelRating(worldObject, propertyInt);
@@ -1962,8 +1969,11 @@ public class AppraiseInfo
         }
 
         var percentSign = percent ? "%" : "";
-        var desc = description.Replace("(ONE)", $"{baseOne + ratingFromAllEquippedItems * multiplierOne}{percentSign}");
-        desc = desc.Replace("(TWO)", $"{baseTwo + ratingFromAllEquippedItems * multiplierTwo}{percentSign}");
+        var amountOne = Math.Round(baseOne + ratingFromAllEquippedItems * multiplierOne, 2);
+        var amountTwo = Math.Round(baseTwo + ratingFromAllEquippedItems * multiplierTwo, 2);
+;
+        var desc = description.Replace("(ONE)", $"{amountOne}{percentSign}");
+        desc = desc.Replace("(TWO)", $"{amountTwo}{percentSign}");
 
         _additionalPropertiesLongDescriptionsText += $"~ {name}: {desc}\n";
     }

@@ -7421,18 +7421,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket1Effect
+    public MaterialType? JewelSocket1Material
     {
-        get => GetProperty(PropertyInt.JewelSocket1Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket1Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket1Effect);
+                RemoveProperty(PropertyInt.JewelSocket1Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket1Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket1Material, (int)value.Value);
             }
         }
     }
@@ -7453,18 +7453,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket2Effect
+    public MaterialType? JewelSocket2Material
     {
-        get => GetProperty(PropertyInt.JewelSocket2Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket2Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket2Effect);
+                RemoveProperty(PropertyInt.JewelSocket2Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket2Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket2Material, (int)value.Value);
             }
         }
     }
@@ -7485,18 +7485,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket3Effect
+    public MaterialType? JewelSocket3Material
     {
-        get => GetProperty(PropertyInt.JewelSocket3Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket3Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket3Effect);
+                RemoveProperty(PropertyInt.JewelSocket3Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket3Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket3Material, (int)value.Value);
             }
         }
     }
@@ -7517,18 +7517,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket4Effect
+    public MaterialType? JewelSocket4Material
     {
-        get => GetProperty(PropertyInt.JewelSocket4Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket4Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket4Effect);
+                RemoveProperty(PropertyInt.JewelSocket4Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket4Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket4Material, (int)value.Value);
             }
         }
     }
@@ -7549,18 +7549,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket5Effect
+    public MaterialType? JewelSocket5Material
     {
-        get => GetProperty(PropertyInt.JewelSocket5Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket5Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket5Effect);
+                RemoveProperty(PropertyInt.JewelSocket5Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket5Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket5Material, (int)value.Value);
             }
         }
     }
@@ -7581,18 +7581,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket6Effect
+    public MaterialType? JewelSocket6Material
     {
-        get => GetProperty(PropertyInt.JewelSocket6Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket6Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket6Effect);
+                RemoveProperty(PropertyInt.JewelSocket6Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket6Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket6Material, (int)value.Value);
             }
         }
     }
@@ -7613,18 +7613,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket7Effect
+    public MaterialType? JewelSocket7Material
     {
-        get => GetProperty(PropertyInt.JewelSocket7Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket7Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket7Effect);
+                RemoveProperty(PropertyInt.JewelSocket7Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket7Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket7Material, (int)value.Value);
             }
         }
     }
@@ -7645,18 +7645,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket8Effect
+    public MaterialType? JewelSocket8Material
     {
-        get => GetProperty(PropertyInt.JewelSocket8Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket8Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket8Effect);
+                RemoveProperty(PropertyInt.JewelSocket8Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket8Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket8Material, (int)value.Value);
             }
         }
     }
@@ -7677,18 +7677,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket9Effect
+    public MaterialType? JewelSocket9Material
     {
-        get => GetProperty(PropertyInt.JewelSocket9Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket9Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket9Effect);
+                RemoveProperty(PropertyInt.JewelSocket9Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket9Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket9Material, (int)value.Value);
             }
         }
     }
@@ -7709,18 +7709,18 @@ partial class WorldObject
         }
     }
 
-    public int? JewelSocket10Effect
+    public MaterialType? JewelSocket10Material
     {
-        get => GetProperty(PropertyInt.JewelSocket10Effect);
+        get => (MaterialType?)GetProperty(PropertyInt.JewelSocket10Material);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.JewelSocket10Effect);
+                RemoveProperty(PropertyInt.JewelSocket10Material);
             }
             else
             {
-                SetProperty(PropertyInt.JewelSocket10Effect, value.Value);
+                SetProperty(PropertyInt.JewelSocket10Material, (int)value.Value);
             }
         }
     }
@@ -7753,6 +7753,22 @@ partial class WorldObject
             else
             {
                 SetProperty(PropertyInt.JewelMaterialType, (int)value.Value);
+            }
+        }
+    }
+
+    public int? JewelQuality
+    {
+        get => GetProperty(PropertyInt.JewelQuality);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.JewelQuality);
+            }
+            else
+            {
+                SetProperty(PropertyInt.JewelQuality, value.Value);
             }
         }
     }
@@ -8429,18 +8445,18 @@ partial class WorldObject
         }
     }
 
-    public int? GearStamReduction
+    public int? GearStaminasteal
     {
-        get => GetProperty(PropertyInt.GearStamReduction);
+        get => GetProperty(PropertyInt.GearStaminasteal);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.GearStamReduction);
+                RemoveProperty(PropertyInt.GearStaminasteal);
             }
             else
             {
-                SetProperty(PropertyInt.GearStamReduction, value.Value);
+                SetProperty(PropertyInt.GearStaminasteal, value.Value);
             }
         }
     }
@@ -8492,6 +8508,151 @@ partial class WorldObject
             }
         }
     }
+
+    public int? GearToughness
+    {
+        get => GetProperty(PropertyInt.GearToughness);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearToughness);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearToughness, value.Value);
+            }
+        }
+    }
+
+    public int? GearResistance
+    {
+        get => GetProperty(PropertyInt.GearResistance);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearResistance);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearResistance, value.Value);
+            }
+        }
+    }
+
+    public int? GearSlashBane
+    {
+        get => GetProperty(PropertyInt.GearSlashBane);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearSlashBane);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearSlashBane, value.Value);
+            }
+        }
+    }
+
+    public int? GearBludgeonBane
+    {
+        get => GetProperty(PropertyInt.GearBludgeonBane);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearBludgeonBane);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearBludgeonBane, value.Value);
+            }
+        }
+    }
+
+    public int? GearPierceBane
+    {
+        get => GetProperty(PropertyInt.GearPierceBane);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearPierceBane);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearPierceBane, value.Value);
+            }
+        }
+    }
+
+    public int? GearAcidBane
+    {
+        get => GetProperty(PropertyInt.GearAcidBane);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearAcidBane);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearAcidBane, value.Value);
+            }
+        }
+    }
+
+    public int? GearFireBane
+    {
+        get => GetProperty(PropertyInt.GearFireBane);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearFireBane);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearFireBane, value.Value);
+            }
+        }
+    }
+
+    public int? GearFrostBane
+    {
+        get => GetProperty(PropertyInt.GearFrostBane);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearFrostBane);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearFrostBane, value.Value);
+            }
+        }
+    }
+
+    public int? GearLightningBane
+    {
+        get => GetProperty(PropertyInt.GearLightningBane);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.GearLightningBane);
+            }
+            else
+            {
+                SetProperty(PropertyInt.GearLightningBane, value.Value);
+            }
+        }
+    }
+
     public int? BaseArmor
     {
         get => GetProperty(PropertyInt.BaseArmor);
