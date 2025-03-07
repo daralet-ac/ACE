@@ -68,7 +68,7 @@ partial class Jewel : WorldObject
         }
 
         // legacy support
-        if (source.JewelSocket1 is not null)
+        if (source.JewelSocket1 is not null and not "empty")
         {
             var jewelString = source.JewelSocket1.Split('/');
 
