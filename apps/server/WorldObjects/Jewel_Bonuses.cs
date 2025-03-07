@@ -850,6 +850,20 @@ partial class Jewel
         { 10, "Flawless" }
     };
 
+    public new static readonly Dictionary<string, int> JewelQualityStringToValue = new()
+    {
+        { "Scuffed", 1 },
+        { "Flawed" , 2 },
+        { "Mediocre" , 3 },
+        { "Fine", 4  },
+        { "Admirable", 5  },
+        { "Superior", 6  },
+        { "Excellent", 7  },
+        { "Magnificent", 8  },
+        { "Peerless", 9  },
+        { "Flawless", 10  }
+    };
+
     private static readonly Dictionary<MaterialType?, int> JewelUiEffect = new()
     {
         { ACE.Entity.Enum.MaterialType.Diamond, 512 },
@@ -1031,6 +1045,88 @@ partial class Jewel
         { ACE.Entity.Enum.MaterialType.Teak, "Teak" }
     };
 
+    public static readonly Dictionary<string, MaterialType> StringToMaterialType = new()
+    {
+        { "Unknown", ACE.Entity.Enum.MaterialType.Unknown },
+        { "Ceramic", ACE.Entity.Enum.MaterialType.Ceramic },
+        { "Porcelain", ACE.Entity.Enum.MaterialType.Porcelain },
+        { "Cloth", ACE.Entity.Enum.MaterialType.Cloth },
+        { "Linen", ACE.Entity.Enum.MaterialType.Linen },
+        { "Satin", ACE.Entity.Enum.MaterialType.Satin },
+        { "Silk", ACE.Entity.Enum.MaterialType.Silk },
+        { "Velvet", ACE.Entity.Enum.MaterialType.Velvet },
+        { "Wool", ACE.Entity.Enum.MaterialType.Wool },
+        { "Gem", ACE.Entity.Enum.MaterialType.Gem },
+        { "Agate", ACE.Entity.Enum.MaterialType.Agate },
+        { "Amber", ACE.Entity.Enum.MaterialType.Amber },
+        { "Amethyst", ACE.Entity.Enum.MaterialType.Amethyst },
+        { "Aquamarine", ACE.Entity.Enum.MaterialType.Aquamarine },
+        { "Azurite", ACE.Entity.Enum.MaterialType.Azurite },
+        { "Black Garnet", ACE.Entity.Enum.MaterialType.BlackGarnet },
+        { "Black Opal", ACE.Entity.Enum.MaterialType.BlackOpal },
+        { "Bloodstone", ACE.Entity.Enum.MaterialType.Bloodstone },
+        { "Carnelian", ACE.Entity.Enum.MaterialType.Carnelian },
+        { "Citrine", ACE.Entity.Enum.MaterialType.Citrine },
+        { "Diamond", ACE.Entity.Enum.MaterialType.Diamond },
+        { "Emerald", ACE.Entity.Enum.MaterialType.Emerald },
+        { "Fire Opal", ACE.Entity.Enum.MaterialType.FireOpal },
+        { "Green Garnet", ACE.Entity.Enum.MaterialType.GreenGarnet },
+        { "Green Jade", ACE.Entity.Enum.MaterialType.GreenJade },
+        { "Hematite", ACE.Entity.Enum.MaterialType.Hematite },
+        { "Imperial Topaz", ACE.Entity.Enum.MaterialType.ImperialTopaz },
+        { "Jet", ACE.Entity.Enum.MaterialType.Jet },
+        { "Lapis Lazuli", ACE.Entity.Enum.MaterialType.LapisLazuli },
+        { "Lavender Jade", ACE.Entity.Enum.MaterialType.LavenderJade },
+        { "Malachite", ACE.Entity.Enum.MaterialType.Malachite },
+        { "Moonstone", ACE.Entity.Enum.MaterialType.Moonstone },
+        { "Onyx", ACE.Entity.Enum.MaterialType.Onyx },
+        { "Opal", ACE.Entity.Enum.MaterialType.Opal },
+        { "Peridot", ACE.Entity.Enum.MaterialType.Peridot },
+        { "Red Garnet", ACE.Entity.Enum.MaterialType.RedGarnet },
+        { "Red Jade", ACE.Entity.Enum.MaterialType.RedJade },
+        { "Rose Quartz", ACE.Entity.Enum.MaterialType.RoseQuartz },
+        { "Ruby", ACE.Entity.Enum.MaterialType.Ruby },
+        { "Sapphire", ACE.Entity.Enum.MaterialType.Sapphire },
+        { "Smokey Quartz", ACE.Entity.Enum.MaterialType.SmokeyQuartz },
+        { "Sunstone", ACE.Entity.Enum.MaterialType.Sunstone },
+        { "Tiger Eye", ACE.Entity.Enum.MaterialType.TigerEye },
+        { "Tourmaline", ACE.Entity.Enum.MaterialType.Tourmaline },
+        { "Turquoise", ACE.Entity.Enum.MaterialType.Turquoise },
+        { "White Jade", ACE.Entity.Enum.MaterialType.WhiteJade },
+        { "White Quartz", ACE.Entity.Enum.MaterialType.WhiteQuartz },
+        { "White Sapphire", ACE.Entity.Enum.MaterialType.WhiteSapphire },
+        { "Yellow Garnet", ACE.Entity.Enum.MaterialType.YellowGarnet },
+        { "Yellow Topaz", ACE.Entity.Enum.MaterialType.YellowTopaz },
+        { "Zircon", ACE.Entity.Enum.MaterialType.Zircon },
+        { "Ivory", ACE.Entity.Enum.MaterialType.Ivory },
+        { "Leather", ACE.Entity.Enum.MaterialType.Leather },
+        { "Armoredillo Hide", ACE.Entity.Enum.MaterialType.ArmoredilloHide },
+        { "Gromnie Hide", ACE.Entity.Enum.MaterialType.GromnieHide },
+        { "Reed Shark Hide", ACE.Entity.Enum.MaterialType.ReedSharkHide },
+        { "Metal", ACE.Entity.Enum.MaterialType.Metal },
+        { "Brass", ACE.Entity.Enum.MaterialType.Brass },
+        { "Bronze", ACE.Entity.Enum.MaterialType.Bronze },
+        { "Copper", ACE.Entity.Enum.MaterialType.Copper },
+        { "Gold", ACE.Entity.Enum.MaterialType.Gold },
+        { "Iron", ACE.Entity.Enum.MaterialType.Iron },
+        { "Pyreal", ACE.Entity.Enum.MaterialType.Pyreal },
+        { "Silver", ACE.Entity.Enum.MaterialType.Silver },
+        { "Steel", ACE.Entity.Enum.MaterialType.Steel },
+        { "Stone", ACE.Entity.Enum.MaterialType.Stone },
+        { "Alabaster", ACE.Entity.Enum.MaterialType.Alabaster },
+        { "Granite", ACE.Entity.Enum.MaterialType.Granite },
+        { "Marble", ACE.Entity.Enum.MaterialType.Marble },
+        { "Obsidian", ACE.Entity.Enum.MaterialType.Obsidian },
+        { "Sandstone", ACE.Entity.Enum.MaterialType.Sandstone },
+        { "Serpentine", ACE.Entity.Enum.MaterialType.Serpentine },
+        { "Wood", ACE.Entity.Enum.MaterialType.Wood },
+        { "Ebony", ACE.Entity.Enum.MaterialType.Ebony },
+        { "Mahogany", ACE.Entity.Enum.MaterialType.Mahogany },
+        { "Oak", ACE.Entity.Enum.MaterialType.Oak },
+        { "Pine", ACE.Entity.Enum.MaterialType.Pine },
+        { "Teak", ACE.Entity.Enum.MaterialType.Teak }
+    };
+
     public static readonly Dictionary<PropertyInt, MaterialType> JewelTypeToMaterial = new()
     {
         { PropertyInt.GearThreatGain, ACE.Entity.Enum.MaterialType.Agate },
@@ -1098,7 +1194,7 @@ partial class Jewel
         { ACE.Entity.Enum.MaterialType.Azurite, (PropertyInt.GearSelf, (PropertyInt.Undef)) },
         { ACE.Entity.Enum.MaterialType.BlackGarnet, (PropertyInt.GearPierce, (PropertyInt.GearPierceBane)) },
         { ACE.Entity.Enum.MaterialType.BlackOpal, (PropertyInt.GearReprisal, (PropertyInt.Undef)) },
-        { ACE.Entity.Enum.MaterialType.Bloodstone, (PropertyInt.GearSelfHarm, (PropertyInt.Undef)) },
+        { ACE.Entity.Enum.MaterialType.Bloodstone, (PropertyInt.GearLifesteal, (PropertyInt.Undef)) },
         { ACE.Entity.Enum.MaterialType.Carnelian, (PropertyInt.GearStrength, (PropertyInt.Undef)) },
         { ACE.Entity.Enum.MaterialType.Citrine, (PropertyInt.GearStaminasteal, (PropertyInt.Undef)) },
         { ACE.Entity.Enum.MaterialType.Diamond, (PropertyInt.GearHardenedDefense, (PropertyInt.GearToughness)) },
@@ -1196,6 +1292,8 @@ partial class Jewel
         { PropertyInt.GearFireBane, EquipMask.Armor },
         { PropertyInt.GearFrostBane, EquipMask.Armor },
         { PropertyInt.GearLightningBane, EquipMask.Armor },
+        // undef
+        {PropertyInt.Undef, EquipMask.None}
     };
 
     public static readonly Dictionary<MaterialType?, EquipMask> MaterialValidLocations = new()
