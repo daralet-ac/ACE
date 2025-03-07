@@ -11,6 +11,7 @@ using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.Enum;
+using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Network.Structure;
@@ -487,6 +488,7 @@ public class AppraiseInfo
         if (wo is { ItemType: ItemType.Misc, TrophyQuality: not null })
         {
             wo.ItemType = ItemType.Useless;
+            examiner.Session.Network.EnqueueSend(new GameMessageUpdateObject(wo));
         }
 
         if (!Success)
