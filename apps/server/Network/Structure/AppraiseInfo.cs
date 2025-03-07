@@ -483,6 +483,12 @@ public class AppraiseInfo
             }
         }
 
+        // convert legacy trophies
+        if (wo is { ItemType: ItemType.Misc, TrophyQuality: not null })
+        {
+            wo.ItemType = ItemType.Useless;
+        }
+
         if (!Success)
         {
             // todo: what specifically to keep/what to clear
