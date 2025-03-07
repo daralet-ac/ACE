@@ -62,9 +62,25 @@ partial class Jewel : WorldObject
             return;
         }
 
-        if (source.JewelMaterialType is null || source.JewelQuality is null)
+        if ((source.JewelMaterialType is null || source.JewelQuality is null) && source.JewelSocket1 is null)
         {
             return;
+        }
+
+        // legacy support
+        if (source.JewelSocket1 is not null)
+        {
+            var jewelString = source.JewelSocket1.Split('/');
+
+            if (StringToMaterialType.TryGetValue(jewelString[1], out var jewelMaterial))
+            {
+                source.JewelMaterialType = jewelMaterial;
+            }
+
+            if (JewelQualityStringToValue.TryGetValue(jewelString[0], out var jewelQuality))
+            {
+                source.JewelQuality = jewelQuality;
+            }
         }
 
         if (target.Workmanship < source.JewelQuality)
@@ -101,8 +117,7 @@ partial class Jewel : WorldObject
         // check for rending damage type matches
         if (MaterialDamage.TryGetValue(source.JewelMaterialType.Value, out var damageType))
         {
-            if (target.ValidLocations is EquipMask.Weapon
-                && target.W_DamageType != damageType
+            if (target.W_DamageType != damageType
                 && target.W_DamageType != DamageType.SlashPierce)
             {
                 player.Session.Network.EnqueueSend(
@@ -218,6 +233,10 @@ partial class Jewel : WorldObject
             if ((jewelAltEquipMask & target.ValidLocations) == target.ValidLocations)
             {
                 target.SetProperty(SocketedJewelDetails[i].JewelSocketAlternateEffect, true);
+            }
+            else
+            {
+                target.SetProperty(SocketedJewelDetails[i].JewelSocketAlternateEffect, false);
             }
 
             // if a ring or bracelet, change valid locations to left or right only
@@ -436,6 +455,20 @@ partial class Jewel : WorldObject
         // cycle through slots, emptying out ones that aren't already (
         for (var i = 0; i < (target.JewelSockets ?? 0); i++)
         {
+            if (i == 0 && target.JewelSocket1 is not null)
+            {
+                LegacyUnsocket(player, target, target.JewelSocket1);
+                target.JewelSocket1 = null;
+                continue;
+            }
+
+            if (i == 1 && target.JewelSocket2 is not null)
+            {
+                LegacyUnsocket(player, target, target.JewelSocket2);
+                target.JewelSocket2 = null;
+                continue;
+            }
+
             var currentSocketMaterialTypeId = target.GetProperty(SocketedJewelDetails[i].JewelSocketMaterialIntId);
             var currentSocketQualityLevel = target.GetProperty(SocketedJewelDetails[i].JewelSocketQualityIntId);
 
@@ -458,7 +491,7 @@ partial class Jewel : WorldObject
             jewel.JewelQuality = currentSocketQualityLevel;
             jewel.UiEffects = (UiEffects)JewelUiEffect[jewel.JewelMaterialType.Value];
             jewel.IconId = GemstoneIconMap[jewel.JewelMaterialType.Value];
-            jewel.IconOverlayId = (uint)(100690995 + jewel.JewelQuality);
+            jewel.IconOverlayId = (uint)(100690995 + jewel.JewelQuality); // TODO: add work 10 overlay icon
 
             var qualityString = JewelQuality[currentSocketQualityLevel.Value];
             var materialString = MaterialTypeToString[jewel.JewelMaterialType.Value];
@@ -478,6 +511,47 @@ partial class Jewel : WorldObject
         target.Attuned = null;
         target.Bonded = null;
         player.EnqueueBroadcast(new GameMessageUpdateObject(target));
+    }
+
+    private static void LegacyUnsocket(Player player, WorldObject target, string jewelSocketString)
+    {
+        if (jewelSocketString.StartsWith("Empty"))
+        {
+            return;
+        }
+
+        var jewel = WorldObjectFactory.CreateNewWorldObject(1053900);
+
+        // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem
+        var socketArray = jewelSocketString.Split('/');
+
+        if (StringToMaterialType.TryGetValue(socketArray[1], out var convertedMaterialType))
+        {
+            if (JewelUiEffect.TryGetValue(convertedMaterialType, out var uiEffect))
+            {
+                jewel.UiEffects = (UiEffects)uiEffect;
+            }
+
+            if (GemstoneIconMap.TryGetValue(convertedMaterialType, out var gemstoneIcon))
+            {
+                jewel.IconId = gemstoneIcon;
+            }
+        }
+
+        if (JewelQualityStringToValue.TryGetValue(socketArray[0], out var qualityLevel))
+        {
+            jewel.JewelQuality = qualityLevel;
+        }
+
+        jewel.JewelMaterialType = convertedMaterialType;
+        jewel.Name = $"{socketArray[0]} {socketArray[1]}";
+
+        jewel.Attuned = AttunedStatus.Attuned;
+        jewel.Bonded = BondedStatus.Bonded;
+
+        player.TryCreateInInventoryWithNetworking(jewel);
+
+        target.JewelSocket1Material = null;
     }
 
     private static int GetNumberOfSocketedJewels(WorldObject target)

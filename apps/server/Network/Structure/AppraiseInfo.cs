@@ -1234,6 +1234,38 @@ public class AppraiseInfo
                 var currentSocketMaterialTypeId = wo.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketMaterialIntId);
                 var currentSocketQualityLevel = wo.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketQualityIntId);
 
+                if (i == 0 && wo.JewelSocket1 is not "Empty" and not null)
+                {
+                    // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem
+                    var jewelString = wo.JewelSocket1.Split('/');
+
+                    if (Jewel.StringToMaterialType.TryGetValue(jewelString[1], out var materialType))
+                    {
+                        currentSocketMaterialTypeId = (int)materialType;
+                    }
+
+                    if (Jewel.JewelQualityStringToValue.TryGetValue(jewelString[0], out var qualityLevel))
+                    {
+                        currentSocketQualityLevel = qualityLevel;
+                    }
+                }
+
+                if (i == 1 && wo.JewelSocket2 is not "Empty" and not null)
+                {
+                    // 0 - prepended quality, 1 - gemstone type, 2 - appended name, 3 - property type, 4 - amount of property, 5 - original gem
+                    var jewelString = wo.JewelSocket2.Split('/');
+
+                    if (Jewel.StringToMaterialType.TryGetValue(jewelString[1], out var materialType))
+                    {
+                        currentSocketMaterialTypeId = (int)materialType;
+                    }
+
+                    if (Jewel.JewelQualityStringToValue.TryGetValue(jewelString[0], out var qualityLevel))
+                    {
+                        currentSocketQualityLevel = qualityLevel;
+                    }
+                }
+
                 if (currentSocketMaterialTypeId is null or < 1 || currentSocketQualityLevel is null or < 1)
                 {
                     _extraPropertiesText += "\n\t  Empty Jewel Socket\n";
@@ -1945,7 +1977,7 @@ public class AppraiseInfo
         }
     }
 
-    private void SetGearRatingText(WorldObject worldObject, PropertyInt propertyInt, string name, string description, float multiplierOne = 1.0f, float multiplierTwo = 1.0f, float baseOne = 0, float baseTwo = 0, bool percent = false)
+    private void SetGearRatingText(WorldObject worldObject, PropertyInt propertyInt, string name, string description, float multiplierOne = 1.0f, float multiplierTwo = 1.0f, float baseOne = 0.0f, float baseTwo = 0.0f, bool percent = false)
     {
         var itemGearRating = worldObject.GetProperty(propertyInt) ?? 0;
         var jewelGearRating = WorldObject.GetJewelRating(worldObject, propertyInt);

@@ -7404,6 +7404,37 @@ partial class WorldObject
             }
         }
     }
+    public string JewelSocket1
+    {
+        get => GetProperty(PropertyString.LegacyJewelSocketString1);
+        set
+        {
+            if (value == null)
+            {
+                RemoveProperty(PropertyString.LegacyJewelSocketString1);
+            }
+            else
+            {
+                SetProperty(PropertyString.LegacyJewelSocketString1, value);
+            }
+        }
+    }
+
+    public string JewelSocket2
+    {
+        get => GetProperty(PropertyString.LegacyJewelSocketString2);
+        set
+        {
+            if (value == null)
+            {
+                RemoveProperty(PropertyString.LegacyJewelSocketString2);
+            }
+            else
+            {
+                SetProperty(PropertyString.LegacyJewelSocketString2, value);
+            }
+        }
+    }
 
     public int? JewelSockets
     {
