@@ -573,6 +573,11 @@ partial class Creature
             return;
         }
 
+        if (WeenieClassId is 1020001)
+        {
+            return;
+        }
+
         LastAttackTime = Time.GetUnixTime();
 
         SetMaxVitals();

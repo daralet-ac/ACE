@@ -572,7 +572,7 @@ partial class Creature
 
         var homeDistSq = Vector3.DistanceSquared(globalHomePos, globalPos);
 
-        if (homeDistSq > HomeRadiusSq)
+        if (homeDistSq > HomeRadiusSq && WeenieClassId is not 1020001)
         {
             SetMaxVitals();
 
@@ -604,7 +604,7 @@ partial class Creature
         MonsterState = State.Return;
         AttackTarget = null;
 
-        _log.Information("Monster_Navigation.MoveToHome() - MonsterState set to State.Return for: {Name} ({WCID})", Name, WeenieClassId);
+        //_log.Information("Monster_Navigation.MoveToHome() - MonsterState set to State.Return for: {Name} ({WCID})", Name, WeenieClassId);
 
         var home = GetPosition(PositionType.Home);
 
