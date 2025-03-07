@@ -161,6 +161,11 @@ partial class Jewel
 
     private static void AddRatingQuestStamps(Player sourcePlayer, Creature targetCreature, PropertyInt propertyInt, string questString, int amount, bool questManagerOfPlayer = false)
     {
+        if (sourcePlayer is null || targetCreature is null)
+        {
+            return;
+        }
+
         if (sourcePlayer.GetEquippedAndActivatedItemRatingSum(propertyInt) <= 0)
         {
             return;
