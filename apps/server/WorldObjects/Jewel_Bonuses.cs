@@ -479,6 +479,26 @@ partial class Jewel
         var quality = jewel.JewelQuality ?? 1;
         var materialType = jewel.JewelMaterialType;
 
+        // legacy support
+        if (jewel.JewelSocket1 is not null and not "Empty")
+        {
+            var jewelString = jewel.JewelSocket1.Split('/');
+
+            if (StringToMaterialType.TryGetValue(jewelString[1], out var jewelMaterial))
+            {
+                materialType = jewelMaterial;
+                jewel.JewelMaterialType = jewelMaterial;
+            }
+
+            if (JewelQualityStringToValue.TryGetValue(jewelString[0], out var jewelQuality))
+            {
+                quality = jewelQuality;
+                jewel.JewelQuality = jewelQuality;
+            }
+
+            jewel.JewelSocket1 = null;
+        }
+
         if (materialType is null)
         {
             return "";
