@@ -298,7 +298,7 @@ partial class Jewel
             return;
         }
 
-        var restoreAmount = (uint)Math.Round(damage);
+        var restoreAmount = (uint)Math.Round(damage * 0.1f);
 
         playerAttacker.UpdateVitalDelta(playerAttacker.Mana, restoreAmount);
         playerAttacker.DamageHistory.OnHeal(restoreAmount);
@@ -323,7 +323,7 @@ partial class Jewel
             return;
         }
 
-        var restoreAmount = (uint)Math.Round(damage);
+        var restoreAmount = (uint)Math.Round(damage * 0.1f);
 
         playerAttacker.UpdateVitalDelta(playerAttacker.Stamina, restoreAmount);
         playerAttacker.DamageHistory.OnHeal(restoreAmount);
@@ -348,7 +348,7 @@ partial class Jewel
             return;
         }
 
-        var healAmount = (uint)Math.Round(damage);
+        var healAmount = (uint)Math.Round(damage * 0.1f);
 
         playerAttacker.UpdateVitalDelta(playerAttacker.Health, healAmount);
         playerAttacker.DamageHistory.OnHeal(healAmount);
