@@ -259,6 +259,10 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingSelfHarm(Player playerAttacker, float damage)
     {
+        var selfHarmMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
+
+        
+
         const float selfHarmChance = 0.1f;
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) > selfHarmChance)
@@ -266,7 +270,6 @@ partial class Jewel
             return;
         }
 
-        var selfHarmMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
         var selfHarmAmount = Convert.ToInt32(damage * selfHarmMod);
 
         playerAttacker.UpdateVitalDelta(playerAttacker.Health, -selfHarmAmount);
