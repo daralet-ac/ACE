@@ -204,6 +204,7 @@ public class EnchantmentManagerWithCaching : EnchantmentManager
         varianceModCache = null;
         armorModCache = null;
         armorModVsTypeModCache.Clear();
+        wardModCache = null;
         ratingCache.Clear();
         netherDotDamageRatingCache = null;
         xpBonusCache = null;
@@ -570,6 +571,23 @@ public class EnchantmentManagerWithCaching : EnchantmentManager
         armorModCache = base.GetArmorMod();
 
         return armorModCache.Value;
+    }
+
+    private float? wardModCache;
+
+    /// <summary>
+    /// Returns the multiplicative armor level modifier, ie. Succumb
+    /// </summary>
+    public override float GetWardMultiplicativeMod()
+    {
+        // if (wardModCache.HasValue)
+        // {
+        //     return wardModCache.Value;
+        // }
+
+        wardModCache = base.GetWardMultiplicativeMod();
+
+        return wardModCache.Value;
     }
 
     private readonly Dictionary<DamageType, float> armorModVsTypeModCache = new Dictionary<DamageType, float>();

@@ -760,18 +760,17 @@ partial class WorldObject
             //Console.WriteLine("enchantment target player: " + target.Name);
             var targetPlayer = target as Player;
 
-            var targetPlayerWard = targetPlayer.GetWardLevel();
+            var wardBuffDebuffMod = EnchantmentManager.GetWardMultiplicativeMod();
+
+            var targetPlayerWard = targetPlayer.GetWardLevel() * wardBuffDebuffMod;
 
             if (addResult.Enchantment.StatModValue < 0 && targetPlayerWard > 0)
             {
                 //Console.WriteLine($"StatModValue Before: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue}\n" +
                 //    $" -Target Ward Level: {targetPlayer.GetWardLevel()}");
 
-                targetPlayerWard = (int)(
-                    targetPlayerWard * LevelScaling.GetPlayerArmorWardScalar(player, caster as Creature)
-                );
-
-                var wardMod = SkillFormula.CalcWardMod((float)targetPlayerWard / 10);
+                var ignoreWardMod = 1.0f;
+                var wardMod = GetWardMod(caster as Creature, targetPlayer, ignoreWardMod) / 10;
 
                 addResult.Enchantment.StatModValue *= wardMod;
                 addResult.Enchantment.Duration *= wardMod;
@@ -3784,7 +3783,9 @@ partial class WorldObject
 
     private float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
     {
-        var wardLevel = target.GetWardLevel();
+        var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
+
+        var wardLevel = target.GetWardLevel() * wardBuffDebuffMod;
 
         if (caster is Player)
         {

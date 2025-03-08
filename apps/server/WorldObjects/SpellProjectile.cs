@@ -1310,7 +1310,9 @@ public class SpellProjectile : WorldObject
 
     private float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
     {
-        var wardLevel = target.GetWardLevel();
+        var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
+
+        var wardLevel = target.GetWardLevel() * wardBuffDebuffMod;
 
         if (caster is Player)
         {

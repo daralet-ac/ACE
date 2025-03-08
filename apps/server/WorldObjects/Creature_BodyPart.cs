@@ -47,11 +47,6 @@ public class Creature_BodyPart
         return SkillFormula.CalcArmorMod(effectiveArmorVsType);
     }
 
-    public float GetWardMod()
-    {
-        return 1.0f;
-    }
-
     public float GetEffectiveArmorVsType(
         DamageType damageType,
         List<WorldObject> armorLayers,
@@ -76,9 +71,9 @@ public class Creature_BodyPart
         // additive enchantments:
         // imperil / armor
         var enchantmentMod = ignoreMagicResist ? 0 : EnchantmentManager.GetBodyArmorMod();
+        var enchantmentMultiplicativeMod = ignoreMagicResist ? 0 : EnchantmentManager.GetBodyArmorMultiplicativeMod();
 
-        var effectiveAL = armorVsType + enchantmentMod;
-
+        var effectiveAL = (armorVsType + enchantmentMod) * enchantmentMultiplicativeMod;
         // handle monsters w/ multiple layers of armor
         foreach (var armorLayer in armorLayers)
         {
