@@ -97,6 +97,11 @@ partial class Jewel : WorldObject
             return;
         }
 
+        if (source.JewelMaterialType is null)
+        {
+            return;
+        }
+
         // wield restrictions
         var ratingTypes = JewelMaterialToType[source.JewelMaterialType.Value];
         var materialWieldRestrictionMain = RatingToEquipLocations[ratingTypes.PrimaryRating];
@@ -117,7 +122,9 @@ partial class Jewel : WorldObject
         // check for rending damage type matches
         if (MaterialDamage.TryGetValue(source.JewelMaterialType.Value, out var damageType))
         {
-            if (target.W_DamageType != damageType
+            if ((int)target.W_DamageType > 0
+                && target.ValidLocations != EquipMask.HandWear
+                && target.W_DamageType != damageType
                 && target.W_DamageType != DamageType.SlashPierce)
             {
                 player.Session.Network.EnqueueSend(
