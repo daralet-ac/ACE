@@ -1299,9 +1299,9 @@ partial class Jewel
         { PropertyInt.GearYellowFury, EquipMask.WeaponAndShield },
         { PropertyInt.GearBlueFury, EquipMask.WeaponAndShield },
         // wand
-        { PropertyInt.GearElementalist, EquipMask.Weapon },
-        { PropertyInt.GearSelflessness, EquipMask.Weapon },
-        { PropertyInt.GearWardPen, EquipMask.Weapon },
+        { PropertyInt.GearElementalist, EquipMask.Held },
+        { PropertyInt.GearSelflessness, EquipMask.Held },
+        { PropertyInt.GearWardPen, EquipMask.Held },
         // shield
         { PropertyInt.GearBlock, EquipMask.Shield },
         { PropertyInt.GearThorns, EquipMask.Shield },
@@ -1323,15 +1323,16 @@ partial class Jewel
 
     public static readonly Dictionary<MaterialType?, EquipMask> MaterialValidLocations = new()
     {
-        // weapon only
-        { ACE.Entity.Enum.MaterialType.Tourmaline, EquipMask.Weapon },
+        // wand only
+        { ACE.Entity.Enum.MaterialType.Tourmaline, EquipMask.Held },
+        { ACE.Entity.Enum.MaterialType.GreenGarnet, EquipMask.Held },
+        { ACE.Entity.Enum.MaterialType.LavenderJade, EquipMask.Held },
+        // any weapon
         { ACE.Entity.Enum.MaterialType.Opal, EquipMask.Weapon },
         { ACE.Entity.Enum.MaterialType.RoseQuartz, EquipMask.Weapon },
         { ACE.Entity.Enum.MaterialType.Hematite, EquipMask.Weapon },
         { ACE.Entity.Enum.MaterialType.Bloodstone, EquipMask.Weapon },
         { ACE.Entity.Enum.MaterialType.WhiteJade, EquipMask.Weapon },
-        { ACE.Entity.Enum.MaterialType.GreenGarnet, EquipMask.Weapon },
-        { ACE.Entity.Enum.MaterialType.LavenderJade, EquipMask.Weapon },
         // weapon or armor
         { ACE.Entity.Enum.MaterialType.ImperialTopaz, EquipMask.WeaponAndArmor },
         { ACE.Entity.Enum.MaterialType.BlackGarnet,EquipMask.WeaponAndArmor },
