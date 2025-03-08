@@ -491,6 +491,13 @@ public class AppraiseInfo
             examiner.Session.Network.EnqueueSend(new GameMessageUpdateObject(wo));
         }
 
+        // fix broken jewel ratings
+        if (wo is { ItemWorkmanship: not null})
+        {
+            RemoveJewelRatings(wo);
+        }
+
+
         if (!Success)
         {
             // todo: what specifically to keep/what to clear
@@ -511,6 +518,74 @@ public class AppraiseInfo
 
         BuildFlags();
     }
+
+    private void RemoveJewelRatings(WorldObject wo)
+    {
+        foreach (var rating in JewelRatingIntIds)
+        {
+            if (wo.GetProperty(rating) > 0)
+            {
+                wo.SetProperty(rating, 0);
+            }
+        }
+    }
+
+    private readonly List<PropertyInt> JewelRatingIntIds =
+    [
+        PropertyInt.GearStrength,
+        PropertyInt.GearEndurance,
+        PropertyInt.GearCoordination,
+        PropertyInt.GearQuickness,
+        PropertyInt.GearFocus,
+        PropertyInt.GearSelf,
+        PropertyInt.GearLifesteal,
+        PropertyInt.GearSelfHarm,
+        PropertyInt.GearThreatGain,
+        PropertyInt.GearThreatReduction,
+        PropertyInt.GearElementalWard,
+        PropertyInt.GearPhysicalWard,
+        PropertyInt.GearMagicFind,
+        PropertyInt.GearBlock,
+        PropertyInt.GearItemManaUsage,
+        PropertyInt.GearThorns,
+        PropertyInt.GearVitalsTransfer,
+        PropertyInt.GearRedFury,
+        PropertyInt.GearSelflessness,
+        PropertyInt.GearVipersStrike,
+        PropertyInt.GearFamiliarity,
+        PropertyInt.GearBravado,
+        PropertyInt.GearHealthToStamina,
+        PropertyInt.GearHealthToMana,
+        PropertyInt.GearExperienceGain,
+        PropertyInt.GearManasteal,
+        PropertyInt.GearBludgeon,
+        PropertyInt.GearPierce,
+        PropertyInt.GearSlash,
+        PropertyInt.GearFire,
+        PropertyInt.GearFrost,
+        PropertyInt.GearAcid,
+        PropertyInt.GearLightning,
+        PropertyInt.GearHealBubble,
+        PropertyInt.GearCompBurn,
+        PropertyInt.GearPyrealFind,
+        PropertyInt.GearNullification,
+        PropertyInt.GearWardPen,
+        PropertyInt.GearStaminasteal,
+        PropertyInt.GearHardenedDefense,
+        PropertyInt.GearReprisal,
+        PropertyInt.GearElementalist,
+        PropertyInt.GearYellowFury,
+        PropertyInt.GearBlueFury,
+        PropertyInt.GearToughness,
+        PropertyInt.GearResistance,
+        PropertyInt.GearSlashBane,
+        PropertyInt.GearBludgeonBane,
+        PropertyInt.GearPierceBane,
+        PropertyInt.GearAcidBane,
+        PropertyInt.GearFireBane,
+        PropertyInt.GearFrostBane,
+        PropertyInt.GearLightningBane
+    ];
 
     private void BuildProperties(WorldObject wo)
     {
