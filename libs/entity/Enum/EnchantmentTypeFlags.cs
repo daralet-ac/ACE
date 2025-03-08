@@ -29,4 +29,9 @@ public enum EnchantmentTypeFlags
     Cooldown = 0x1000000,
     Beneficial = 0x2000000,
     StatTypes = 0x00000FF,
+
+    // helpers
+    Succumb = Int | SingleStat | Multiplicative,
+    Imperil = BodyArmorValue | MultipleStat | Multiplicative
+
 }
