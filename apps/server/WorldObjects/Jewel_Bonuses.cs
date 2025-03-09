@@ -261,7 +261,15 @@ partial class Jewel
     {
         var selfHarmMod = GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
 
-        
+        if (selfHarmMod <= 0)
+        {
+            return;
+        }
+
+        if (damage is <= 0 or > uint.MaxValue)
+        {
+            return;
+        }
 
         const float selfHarmChance = 0.1f;
 
@@ -294,6 +302,11 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingManaOnHit(Player playerAttacker, Creature defender, float damage)
     {
+        if (damage is <= 0 or > uint.MaxValue)
+        {
+            return;
+        }
+
         var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearManasteal);
 
         if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
@@ -319,6 +332,11 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingStaminaOnHit(Player playerAttacker, Creature defender, float damage)
     {
+        if (damage is <= 0 or > uint.MaxValue)
+        {
+            return;
+        }
+
         var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearStaminasteal);
 
         if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
@@ -344,6 +362,11 @@ partial class Jewel
     /// </summary>
     private static void CheckForRatingLifeOnHit(Player playerAttacker, Creature defender, float damage)
     {
+        if (damage is <= 0 or > uint.MaxValue)
+        {
+            return;
+        }
+
         var chance = GetJewelEffectMod(playerAttacker, PropertyInt.GearLifesteal);
 
         if (playerAttacker == defender || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
@@ -369,6 +392,11 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToMana(Player playerDefender, Creature attacker, float damage)
     {
+        if (damage is <= 0 or > uint.MaxValue)
+        {
+            return;
+        }
+
         var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToMana, "", false, true);
 
         if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
@@ -393,6 +421,11 @@ partial class Jewel
     /// </summary>
     public static void CheckForRatingHealthToStamina(Player playerDefender, Creature attacker, float damage)
     {
+        if (damage is <= 0 or > uint.MaxValue)
+        {
+            return;
+        }
+
         var chance = GetJewelEffectMod(playerDefender, PropertyInt.GearHealthToStamina, "", false, true);
 
         if (playerDefender == attacker || ThreadSafeRandom.Next(0.0f, 1.0f) > chance)
