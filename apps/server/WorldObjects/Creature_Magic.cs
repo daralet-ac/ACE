@@ -158,6 +158,11 @@ partial class Creature
             }
         }
 
+        if (caster is Player { EvasiveStanceActivated: true })
+        {
+            caster.UpdateVitalDelta(caster.Stamina, manaCost);
+        }
+
         return Math.Max(manaCost, 1);
     }
 

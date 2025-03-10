@@ -1402,18 +1402,46 @@ partial class Player
         var baseCost = StaminaTable.GetStaminaCost(weaponTier, attackAnimLength, powerAccuracyLevel, weightClassPenalty);
 
         var staminaCostReductionMod = GetStaminaReductionMod(weapon);
-        var evasiveStancePenaltyMod = EvasiveStanceActivated ? 1.25f : 1.0f;
+        var evasiveStancePenaltyMod = GetEvasiveStanceStaminaPenalty();
 
         baseCost *= staminaCostReductionMod * evasiveStancePenaltyMod;
 
         var staminaCost = Math.Max(baseCost, 1);
 
-        if (EvasiveStanceActivated && staminaCost < 2)
+        return (int)Math.Round(staminaCost);
+    }
+
+    private float GetEvasiveStanceStaminaPenalty()
+    {
+        if (EvasiveStanceActivated is not true)
         {
-            staminaCost = 2;
+            return 1.0f;
         }
 
-        return (int)Math.Round(staminaCost);
+        var skillRun = GetCreatureSkill(Skill.Run);
+        var skillJump = GetCreatureSkill(Skill.Jump);
+
+        var currentSkillRun = (float)skillRun.Current;
+        var currentSkillJump = (float)skillJump.Current;
+
+        if (Level is null)
+        {
+            return 1.0f;
+        }
+
+        // to account for the combat run debuff, if run is not spec we use half the expected skill
+        var expectedRunSkill = skillRun.AdvancementClass is SkillAdvancementClass.Specialized? (float)(Level * 5) : (float)(Level * 2.5);
+        var expectedJumpSkill = (float)(Level * 5);
+
+        var baseRunMod = skillRun.AdvancementClass is SkillAdvancementClass.Specialized ? 1.25f : 1.5f;
+        var baseJumpMod = skillJump.AdvancementClass is SkillAdvancementClass.Specialized ? 1.25f : 1.5f;
+
+        var skillModifierRun = Math.Max(expectedRunSkill / currentSkillRun, baseRunMod);
+        var skillModifierJump = Math.Max(expectedJumpSkill / currentSkillJump, baseJumpMod);
+
+        // Use whichever skill prevents more stamina loss
+        return Math.Min(skillModifierRun, skillModifierJump);
+
     }
 
     private float GetStaminaReductionMod(WorldObject weapon)

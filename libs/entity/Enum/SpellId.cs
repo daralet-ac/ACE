@@ -6466,7 +6466,7 @@ public enum SpellId : uint
     Vanish = 0x8000 | 10052, // 60 second cooldown
     ExposeWeakness = 0x8000 | 10053, // 15 second cooldown
     ActivatedCombatAbilities = 0x8000 | 10054, // 120 second shared cooldown
-    ManaBarrier = 0x8000 | 10055, // 60 second cooldown, triggered only on breaking/deactivation of shield
+    ManaBarrier = 0x8000 | 10055, // 10 second cooldown
     HealingFood = 0x8000 | 10056,
     StaminaFood = 0x8000 | 10057,
     ManaFood = 0x8000 | 10058,
@@ -6474,6 +6474,7 @@ public enum SpellId : uint
     StaminaPotion = 0x8000 | 10060,
     ManaPotion = 0x8000 | 10061,
     MagicBlade = 0x8000 | 10062,
+    EvasiveStance = 0x8000 | 10063, // 10 second cooldown
 }
 
 public static class SpellExtensions
