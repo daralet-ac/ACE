@@ -160,8 +160,8 @@ partial class WorldObject
 
         if (player != null)
         {
-            // No Cooldown for Mana Barrier
-            if (this.WeenieClassId != 1051110)
+            // Handle Ability cooldowns separately
+            if (this.CombatAbilityId is null)
             {
                 player.EnchantmentManager.StartCooldown(this);
             }

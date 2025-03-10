@@ -384,6 +384,21 @@ partial class Player
         var staminaCost = GetAttackStamina((float)LastAttackAnimationLength, weapon);
         UpdateVitalDelta(Stamina, -staminaCost);
 
+        if (Stamina.Current < 1 && EvasiveStanceActivated)
+        {
+            EvasiveStanceActivated = false;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Your fall out of your evasive stance!!", ChatMessageType.Broadcast)
+            );
+
+            var evasiveStanceItem = GetInventoryItemsOfWCID(1051114);
+            if (evasiveStanceItem.Count > 0)
+            {
+                EnchantmentManager.StartCooldown(evasiveStanceItem[0]);
+            }
+        }
+
         var combatAbility = CombatAbility.None;
         var combatFocus = GetEquippedCombatFocus();
         if (combatFocus != null)

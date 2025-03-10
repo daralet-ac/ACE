@@ -290,6 +290,7 @@ public class DamageEvent
     private void SetEvaded(Creature attacker, Creature defender)
     {
         var playerAttacker = attacker as Player;
+        var playerDefender = defender as Player;
 
         Evaded = false;
         _evasionMod = 1.0f;
@@ -313,6 +314,16 @@ public class DamageEvent
 
         // Roll combat hit chance
         var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+        if (playerDefender is { EvasiveStanceActivated: true })
+        {
+            var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (luckyRoll < attackRoll)
+            {
+                attackRoll = luckyRoll;
+            }
+        }
+
         if (attackRoll > GetEvadeChance(attacker, defender))
         {
             return;
@@ -322,18 +333,22 @@ public class DamageEvent
         const float fullEvadeChance = 1.0f / 3.0f;
         const float partialEvadeChance = fullEvadeChance * 2;
 
-        var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
+        var partialEvadeRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-        switch (roll)
+        if (playerDefender is { EvasiveStanceActivated: true })
+        {
+            var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (luckyRoll < partialEvadeRoll)
+            {
+                partialEvadeRoll = luckyRoll;
+            }
+        }
+
+        switch (partialEvadeRoll)
         {
             case < fullEvadeChance:
                 PartialEvasion = PartialEvasion.All;
                 Evaded = true;
-                break;
-            case < partialEvadeChance when _defenderCombatAbility == CombatAbility.Provoke:
-                _evasionMod = 0.25f;
-                PartialEvasion = PartialEvasion.Some; // glancing blow w/ Provoke bonus
-                Evaded = false;
                 break;
             case < partialEvadeChance:
                 _evasionMod = 0.5f;
@@ -347,7 +362,7 @@ public class DamageEvent
                 break;
         }
 
-        if (defender is Player playerDefender && PartialEvasion == PartialEvasion.Some)
+        if (playerDefender is not null && PartialEvasion == PartialEvasion.Some)
         {
             playerDefender.CheckForSigilTrinketOnAttackEffects(playerAttacker, this, Skill.PhysicalDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion);
         }

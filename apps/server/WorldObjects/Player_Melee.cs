@@ -7,6 +7,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
+using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics.Animation;
 
 namespace ACE.Server.WorldObjects;
@@ -367,6 +368,21 @@ partial class Player
         staminaCost = Convert.ToInt32(staminaCost * stamReductionMod);
 
         UpdateVitalDelta(Stamina, -staminaCost);
+
+        if (Stamina.Current < 1 && EvasiveStanceActivated)
+        {
+            EvasiveStanceActivated = false;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Your fall out of your evasive stance!!", ChatMessageType.Broadcast)
+            );
+
+            var evasiveStanceItem = GetInventoryItemsOfWCID(1051114);
+            if (evasiveStanceItem.Count > 0)
+            {
+                EnchantmentManager.StartCooldown(evasiveStanceItem[0]);
+            }
+        }
 
         var combatAbility = CombatAbility.None;
         var combatFocus = GetEquippedCombatFocus();

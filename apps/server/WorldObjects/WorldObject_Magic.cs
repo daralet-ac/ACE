@@ -150,28 +150,48 @@ partial class WorldObject
         uint casterMagicSkill,
         uint targetMagicDefenseSkill,
         out PartialEvasion partialResist,
-        out float resistChance
+        out float resistChance,
+        Player targetPlayer
     )
     {
         // uses regular 0.03 factor, and not magic casting 0.07 factor
         var chance = (1.0 - SkillCheck.GetSkillChance((int)casterMagicSkill, (int)targetMagicDefenseSkill));
         resistChance = (float)chance;
-        var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-        if (rng < chance)
+        var resistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+        if (targetPlayer is { EvasiveStanceActivated: true })
         {
-            var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-            // resist all = 25%, resist some = 50%, no resist = 25%
-            const float resistAllChance = 0.25f;
-            const float resistSome = 0.75f;
-
-            switch (roll)
+            var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (luckyRoll < resistRoll)
             {
-                case < resistAllChance:
+                resistRoll = luckyRoll;
+            }
+        }
+
+        if (resistRoll < chance)
+        {
+            var partialResistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+            if (targetPlayer is { EvasiveStanceActivated: true })
+            {
+                var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+                if (luckyRoll < partialResistRoll)
+                {
+                    partialResistRoll = luckyRoll;
+                }
+            }
+
+            // Roll resist type (33% for each resist type)
+            const float fullResistChance = 1.0f / 3.0f;
+            const float partialResistChance = fullResistChance * 2;
+
+            switch (partialResistRoll)
+            {
+                case < fullResistChance:
                     partialResist = PartialEvasion.All;
                     return true;
-                case < resistSome:
+                case < partialResistChance:
                     partialResist = PartialEvasion.Some;
                     return false;
             }
@@ -285,7 +305,7 @@ partial class WorldObject
         difficulty = Convert.ToUInt32(difficulty * (1.0f + CheckForCombatAbilityReflectMagicDefBonus(targetPlayer)));
         difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, "Familiarity")));
 
-        var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance);
+        var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, targetPlayer);
 
         partialResist = pResist;
 

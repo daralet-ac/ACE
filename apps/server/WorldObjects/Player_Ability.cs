@@ -5,7 +5,9 @@ using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 using Spell = ACE.Server.Entity.Spell;
 using Time = ACE.Common.Time;
 
@@ -33,6 +35,8 @@ partial class Player
     public bool OverloadDumped = false;
     public bool RecklessActivated = false;
     public bool RecklessDumped = false;
+    public bool ManaBarrierActivated = false;
+    public bool EvasiveStanceActivated = false;
 
     public double MultishotActivatedDuration = 10;
     public double PhalanxActivatedDuration = 10;
@@ -47,6 +51,9 @@ partial class Player
     public double OverloadActivatedDuration = 10;
     public double EnchantedWeaponActivatedDuration = 10;
     public double RecklessActivatedDuration = 10;
+
+    public Spell MagicBladeStoredSpell = null;
+    public double TimeSinceMagicBladeActivated = 0;
 
     public CombatAbility EquippedCombatAbility
     {
@@ -511,15 +518,20 @@ partial class Player
         }
     }
 
-    public Spell MagicBladeStoredSpell = null;
-    public double TimeSinceMagicBladeActivated = 0;
-
-    public void TryUseMagicBlade(WorldObject ability)
+    public bool TryUseMagicBlade(WorldObject ability)
     {
+        var gemAbility = ability as Gem;
+
         if (ability.CombatAbilityId is null)
         {
             _log.Error("{Ability} is missing a CombatAbilityId", ability.Name);
-            return;
+
+            if (gemAbility != null)
+            {
+                gemAbility.CombatAbilitySuccess = false;
+            }
+
+            return false;
         }
 
         var equippedFocus = GetEquippedCombatFocus();
@@ -531,7 +543,7 @@ partial class Player
                     ChatMessageType.Broadcast
                 )
             );
-            return;
+            return false;
         }
 
         var equippedMeleeWeapon = GetEquippedMeleeWeapon();
@@ -543,7 +555,7 @@ partial class Player
                     ChatMessageType.Broadcast
                 )
             );
-            return;
+            return false;
         }
 
         var weaponDamageType = equippedMeleeWeapon.W_DamageType;
@@ -562,7 +574,7 @@ partial class Player
 
         if (baseSpell is null)
         {
-            return;
+            return false;
         }
 
         var warSkill = GetModdedWarMagicSkill();
@@ -581,7 +593,7 @@ partial class Player
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
             );
-            return;
+            return false;
         }
 
         UpdateVitalDelta(Mana, -manaCost);
@@ -590,6 +602,8 @@ partial class Player
         var playScript = GetPlayScriptColor(weaponDamageType);
 
         PlayParticleEffect(playScript, Guid, particalIntensity);
+
+        return true;
     }
 
     private PlayScript GetPlayScriptColor(DamageType weaponDamageType)
@@ -652,9 +666,166 @@ partial class Player
         };
     }
 
-    public void TryUseActivated(WorldObject ability)
+    public bool TryUseManaBarrier()
     {
-        switch (EquippedCombatAbility)
+        if (!VerifyCombatFocus(CombatAbility.ManaBarrier))
+        {
+            return false;
+        }
+
+        if (!ManaBarrierActivated)
+        {
+            ManaBarrierActivated = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You draw on your stored mana to form an enchanted shield around yourself!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.ShieldUpBlue, Guid);
+        }
+        else
+        {
+            ManaBarrierActivated = false;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
+            );
+            PlayParticleEffect(PlayScript.DispelLife, Guid);
+        }
+
+        return true;
+    }
+
+    public bool TryUseEvasiveStance()
+    {
+        if (!VerifyCombatFocus(CombatAbility.EvasiveStance))
+        {
+            return false;
+        }
+
+        if (!EvasiveStanceActivated)
+        {
+            EvasiveStanceActivated = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You move into an evasive stance!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.ShieldUpYellow, Guid);
+        }
+        else
+        {
+            EvasiveStanceActivated = false;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
+            );
+            PlayParticleEffect(PlayScript.DispelLife, Guid);
+        }
+
+        return true;
+    }
+
+    public void TryUseShroud()
+    {
+        if (EnchantmentManager.HasSpell(5379))
+        {
+            if (IsBusy)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You cannot dispel the Shroud while performing other actions.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+
+            if (Teleporting)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You cannot dispel the Shroud while teleporting.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+
+            if (LastSuccessCast_Time > Time.GetUnixTime() - 5.0)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You cannot dispel the Shroud if you have recently cast a spell.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+            if (CurrentLandblock != null && CurrentLandblock.IsDungeon)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You cannot dispel the Shroud while inside a dungeon.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+
+            if (Fellowship != null)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You must leave your Fellowship before you can dispel the Shroud.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+
+            var enchantment = EnchantmentManager.GetEnchantment(5379);
+            if (enchantment != null)
+            {
+                EnchantmentManager.Dispel(enchantment);
+                HandleSpellHooks(new Spell(5379));
+                PlayParticleEffect(PlayScript.DispelCreature, Guid);
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You dispel the Shroud, and your innate strength returns.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+            }
+        }
+        else
+        {
+            var spell = new Spell(5379);
+            var addResult = EnchantmentManager.Add(spell, null, null, true);
+            Session.Network.EnqueueSend(
+                new GameEventMagicUpdateEnchantment(
+                    Session,
+                    new Enchantment(this, addResult.Enchantment)
+                )
+            );
+            HandleSpellHooks(spell);
+            PlayParticleEffect(PlayScript.SkillDownVoid, Guid);
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You activate the crystal, shrouding yourself and reducing your innate power.",
+                    ChatMessageType.Broadcast
+                )
+            );
+        }
+    }
+
+    public void TryUseActivated(CombatAbility ability)
+    {
+        switch (ability)
         {
             case CombatAbility.Provoke:
                 LastProvokeActivated = Time.GetUnixTime();
@@ -809,6 +980,44 @@ partial class Player
                 );
                 break;
         }
+    }
+
+    private bool VerifyCombatFocus(CombatAbility combatAbility)
+    {
+        switch (combatAbility)
+        {
+            case CombatAbility.ManaBarrier:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Sorcerer
+                        or (int)CombatFocusType.Vagabond
+                        or (int)CombatFocusType.Spellsword})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Mana Barrier can only be used with a Sorcerer Focus, Vagabond Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;case CombatAbility.EvasiveStance:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Blademaster
+                        or (int)CombatFocusType.Archer
+                        or (int)CombatFocusType.Vagabond})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Mana Barrier can only be used with a Sorcerer Focus, Vagabond Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+        }
+
+        return true;
     }
 
     public static int HandleRecklessStamps(Player playerAttacker)

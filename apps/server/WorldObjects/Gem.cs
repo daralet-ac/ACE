@@ -8,7 +8,6 @@ using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects;
 
@@ -207,6 +206,8 @@ public class Gem : Stackable
             );
         }
 
+        var startCooldown = false;
+
         if (CombatAbilityId > 0)
         {
             switch ((CombatAbility)CombatAbilityId)
@@ -292,157 +293,23 @@ public class Gem : Stackable
                     player.TryUseExposeMagicalWeakness(this);
                     break;
                 case CombatAbility.MagicBladeBolt:
-                    player.TryUseMagicBlade(this);
-                    break;
-                case CombatAbility.ActivatedCombatAbilities:
-                    player.TryUseActivated(this);
+                    startCooldown = player.TryUseMagicBlade(this);
                     break;
                 case CombatAbility.ManaBarrier:
-                    if (player.EvasiveStanceToggle)
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat($"You cannot use Mana Barrier while Evasive Stance is active.", ChatMessageType.Broadcast)
-                        );
-                        break;
-                    }
-
-                    if (player.ToggleManaBarrierSetting())
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"You draw on your stored mana to form an enchanted shield around yourself!",
-                                ChatMessageType.Broadcast
-                            )
-                        );
-                        player.PlayParticleEffect(PlayScript.ShieldUpBlue, player.Guid);
-                    }
-                    else
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
-                        );
-                        player.PlayParticleEffect(PlayScript.DispelLife, player.Guid);
-                    }
+                    player.TryUseManaBarrier();
                     break;
                 case CombatAbility.EvasiveStance:
-                    if (player.ManaBarrierToggle)
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat($"You cannot use Evasive Stance while Mana Barrier is active.", ChatMessageType.Broadcast)
-                        );
-                        break;
-                    }
-
-                    if (player.ToggleEvasiveStanceSetting())
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"You move into an evasive stance!",
-                                ChatMessageType.Broadcast
-                            )
-                        );
-                        player.PlayParticleEffect(PlayScript.ShieldUpYellow, player.Guid);
-                    }
-                    else
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
-                        );
-                        player.PlayParticleEffect(PlayScript.DispelLife, player.Guid);
-                    }
+                    player.TryUseEvasiveStance();
                     break;
-                case CombatAbility.PowerScaler:
-                    if (player.EnchantmentManager.HasSpell(5379))
-                    {
-                        if (player.IsBusy)
-                        {
-                            player.Session.Network.EnqueueSend(
-                                new GameMessageSystemChat(
-                                    $"You cannot dispel the Shroud while performing other actions.",
-                                    ChatMessageType.Broadcast
-                                )
-                            );
-                            return;
-                        }
-
-                        if (player.Teleporting)
-                        {
-                            player.Session.Network.EnqueueSend(
-                                new GameMessageSystemChat(
-                                    $"You cannot dispel the Shroud while teleporting.",
-                                    ChatMessageType.Broadcast
-                                )
-                            );
-                            return;
-                        }
-
-                        if (player.LastSuccessCast_Time > Time.GetUnixTime() - 5.0)
-                        {
-                            player.Session.Network.EnqueueSend(
-                                new GameMessageSystemChat(
-                                    $"You cannot dispel the Shroud if you have recently cast a spell.",
-                                    ChatMessageType.Broadcast
-                                )
-                            );
-                            return;
-                        }
-                        if (player.CurrentLandblock != null && player.CurrentLandblock.IsDungeon)
-                        {
-                            player.Session.Network.EnqueueSend(
-                                new GameMessageSystemChat(
-                                    $"You cannot dispel the Shroud while inside a dungeon.",
-                                    ChatMessageType.Broadcast
-                                )
-                            );
-                            return;
-                        }
-
-                        if (player.Fellowship != null)
-                        {
-                            player.Session.Network.EnqueueSend(
-                                new GameMessageSystemChat(
-                                    $"You must leave your Fellowship before you can dispel the Shroud.",
-                                    ChatMessageType.Broadcast
-                                )
-                            );
-                            return;
-                        }
-
-                        var enchantment = player.EnchantmentManager.GetEnchantment(5379);
-                        if (enchantment != null)
-                        {
-                            player.EnchantmentManager.Dispel(enchantment);
-                            player.HandleSpellHooks(new Spell(5379));
-                            player.PlayParticleEffect(PlayScript.DispelCreature, player.Guid);
-                            player.Session.Network.EnqueueSend(
-                                new GameMessageSystemChat(
-                                    $"You dispel the Shroud, and your innate strength returns.",
-                                    ChatMessageType.Broadcast
-                                )
-                            );
-                        }
-                    }
-                    else
-                    {
-                        var spell = new Spell(5379);
-                        var addResult = player.EnchantmentManager.Add(spell, null, null, true);
-                        player.Session.Network.EnqueueSend(
-                            new GameEventMagicUpdateEnchantment(
-                                player.Session,
-                                new Enchantment(player, addResult.Enchantment)
-                            )
-                        );
-                        player.HandleSpellHooks(spell);
-                        player.PlayParticleEffect(PlayScript.SkillDownVoid, player.Guid);
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"You activate the crystal, shrouding yourself and reducing your innate power.",
-                                ChatMessageType.Broadcast
-                            )
-                        );
-                    }
+                case CombatAbility.Shroud:
+                    player.TryUseShroud();
                     break;
             }
+        }
+
+        if (startCooldown)
+        {
+            player.EnchantmentManager.StartCooldown(this);
         }
 
         if (UseCreateItem > 0)
@@ -607,6 +474,8 @@ public class Gem : Stackable
         }
     }
 
+    public bool CombatAbilitySuccess;
+
     public override void OnActivate(WorldObject activator)
     {
         if (ItemUseable == Usable.Contained && activator is Player player)
@@ -626,6 +495,20 @@ public class Gem : Stackable
                         );
                         player.EnchantmentManager.StartCooldown(this);
                         return;
+                    }
+                }
+                else
+                {
+                    if (CombatAbilitySuccess)
+                    {
+                        if (player.IsBusy || player.Teleporting || player.suicideInProgress)
+                        {
+                            player.Session.Network.EnqueueSend(
+                                new GameEventWeenieError(player.Session, WeenieError.YoureTooBusy)
+                            );
+                            player.EnchantmentManager.StartCooldown(this);
+                            return;
+                        }
                     }
                 }
 

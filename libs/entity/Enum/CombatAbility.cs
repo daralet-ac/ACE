@@ -28,7 +28,7 @@ public enum CombatAbility
     Multishot,
     ActivatedCombatAbilities,
     ManaBarrier,
-    PowerScaler,
+    Shroud,
     EvasiveStance,
     MagicBladeBolt,
     MagicBladeBlast,
