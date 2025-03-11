@@ -222,7 +222,7 @@ partial class Creature
             modifiedAmount *= 1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatGain);
             modifiedAmount *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatReduction);
         }
-        
+
         ThreatLevel.TryAdd(targetCreature, ThreatMinimum);
 
         amount = Convert.ToInt32(modifiedAmount);
