@@ -676,7 +676,7 @@ partial class Creature
         return ratingAmount;
     }
 
-    private static int GetRatingFromSocketedJewels(PropertyInt rating, WorldObject item)
+    protected static int GetRatingFromSocketedJewels(PropertyInt rating, WorldObject item)
     {
         var jewelRating = 0;
 
