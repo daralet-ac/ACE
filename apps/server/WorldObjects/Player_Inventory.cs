@@ -442,7 +442,7 @@ partial class Player
             return;
         }
 
-        var totalRating = GetEquippedAndActivatedItemRatingSum(propertyInt);
+        var totalRating = 10 + GetEquippedAndActivatedItemRatingSum(propertyInt);
 
         if (totalRating > 0 && EnchantmentManager.GetEnchantment((uint)spellId) is null)
         {
