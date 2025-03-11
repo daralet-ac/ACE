@@ -15,43 +15,49 @@ namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
-    public double LastFocusedTaunt = 0;
-    public double LastFeignWeakness = 0;
+    // Warrior
     public double LastProvokeActivated = 0;
+    public double ProvokeActivatedDuration = 10;
     public double LastPhalanxActivated = 0;
-    public double LastRecklessActivated = 0;
+    public double PhalanxActivatedDuration = 10;
     public double LastParryActivated = 0;
-    public double LastBackstabActivated = 0;
-    public double LastSteadyShotActivated = 0;
-    public double LastMultishotActivated = 0;
-    public double LastSmokescreenActivated = 0;
-    public double LastIronFistActivated = 0;
-    public double LastOverloadActivated = 0;
-    public double LastBatteryActivated = 0;
-    public double LastReflectActivated = 0;
-    public double LastEnchantedWeaponActivated = 0;
+    public double ParryActivatedDuration = 10;
+    public double LastFocusedTaunt = 0;
 
-    public bool OverloadActivated = false;
-    public bool OverloadDumped = false;
+    // Blademaster
+    public double LastRecklessActivated = 0;
+    public double RecklessActivatedDuration = 10;
     public bool RecklessActivated = false;
     public bool RecklessDumped = false;
-    public bool ManaBarrierActivated = false;
+
+    // Archer
+    public double LastSteadyShotActivated = 0;
+    public double SteadyShotActivatedDuration = 10;
+    public double LastMultishotActivated = 0;
+    public double MultishotActivatedDuration = 10;
     public bool EvasiveStanceActivated = false;
 
-    public double MultishotActivatedDuration = 10;
-    public double PhalanxActivatedDuration = 10;
-    public double ParryActivatedDuration = 10;
-    public double SteadyShotActivatedDuration = 10;
-    public double SmokescreenActivatedDuration = 10;
+    // Vagabond
+    public double LastFeignWeakness = 0;
+    public double LastBackstabActivated = 0;
     public double BackstabActivatedDuration = 10;
-    public double IronFistActivatedDuration = 10;
-    public double ProvokeActivatedDuration = 10;
-    public double ReflectActivatedDuration = 10;
-    public double BatteryActivatedDuration = 10;
-    public double OverloadActivatedDuration = 10;
-    public double EnchantedWeaponActivatedDuration = 10;
-    public double RecklessActivatedDuration = 10;
+    public double LastSmokescreenActivated = 0;
+    public double SmokescreenActivatedDuration = 10;
 
+    // Sorcerer
+    public double LastOverloadActivated = 0;
+    public double OverloadActivatedDuration = 10;
+    public double LastBatteryActivated = 0;
+    public double BatteryActivatedDuration = 10;
+    public bool OverloadActivated = false;
+    public bool OverloadDumped = false;
+    public bool ManaBarrierActivated = false;
+
+    // Spellsword
+    public double LastReflectActivated = 0;
+    public double ReflectActivatedDuration = 10;
+    public double LastEnchantedWeaponActivated = 0;
+    public double EnchantedWeaponActivatedDuration = 10;
     public Spell MagicBladeStoredSpell = null;
     public double TimeSinceMagicBladeActivated = 0;
 
@@ -60,15 +66,14 @@ partial class Player
         get
         {
             var combatFocus = GetEquippedCombatFocus();
-            if (combatFocus != null)
-            {
-                var combatAbility = combatFocus.GetCombatAbility();
-                return combatAbility;
-            }
-            else
+            if (combatFocus == null)
             {
                 return CombatAbility.None;
             }
+
+            var combatAbility = combatFocus.GetCombatAbility();
+            return combatAbility;
+
         }
     }
 
@@ -911,16 +916,6 @@ partial class Player
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
                         $"For the next ten seconds, you shroud yourself in darkness, increasing your chance to evade by an additional 30%!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.IronFist:
-                LastIronFistActivated = Time.GetUnixTime();
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"For the next ten seconds, you focus your strikes on your enemy's most vital points, increasing your critical chance by an additional 15%!",
                         ChatMessageType.Broadcast
                     )
                 );
