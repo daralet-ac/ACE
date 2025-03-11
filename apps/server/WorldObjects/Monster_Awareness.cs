@@ -200,7 +200,7 @@ partial class Creature
                 modifiedAmount *= 2.0f;
             }
 
-            if (targetPlayer.LastFeignWeakness > Time.GetUnixTime() - FeignWeaknessDuration)
+            if (targetPlayer.SmokescreenIsActive)
             {
                 modifiedAmount *= 0.5f;
             }

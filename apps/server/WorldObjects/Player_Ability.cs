@@ -19,47 +19,64 @@ partial class Player
     public bool ProvokeIsActive => LastProvokeActivated > Time.GetUnixTime() - ProvokeActivatedDuration;
     private double LastProvokeActivated;
     private double ProvokeActivatedDuration = 10;
-    public double LastPhalanxActivated;
-    public double PhalanxActivatedDuration = 10;
-    public double LastParryActivated;
-    public double ParryActivatedDuration = 10;
+
+    public bool PhalanxIsActive => LastPhalanxActivated > Time.GetUnixTime() - PhalanxActivatedDuration;
+    private double LastPhalanxActivated;
+    private double PhalanxActivatedDuration = 10;
+
+    public bool ParryIsActive => LastParryActivated > Time.GetUnixTime() - ParryActivatedDuration;
+    private double LastParryActivated;
+    private double ParryActivatedDuration = 10;
 
     // Blademaster
-    public double LastRecklessActivated;
-    public double RecklessActivatedDuration = 10;
-    public bool RecklessActivated;
-    public bool RecklessDumped = false;
+    public bool FuryIsActive => LastFuryActivated > Time.GetUnixTime() - FuryActivatedDuration;
+    private double LastFuryActivated;
+    private double FuryActivatedDuration = 10;
+    public bool FuryActivated;
+    public bool FuryDumped = false;
 
     // Archer
-    public double LastSteadyShotActivated;
-    public double SteadyShotActivatedDuration = 10;
-    public double LastMultishotActivated;
-    public double MultishotActivatedDuration = 10;
-    public bool EvasiveStanceActivated;
+    public bool SteadyShotIsActive => LastSteadyShotActivated > Time.GetUnixTime() - SteadyShotActivatedDuration;
+    private double LastSteadyShotActivated;
+    private double SteadyShotActivatedDuration = 10;
+
+    public bool MultiShotIsActive => LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration;
+    private double LastMultishotActivated;
+    private double MultishotActivatedDuration = 10;
+
+    public bool EvasiveStanceIsActive;
 
     // Vagabond
-    public double LastFeignWeakness = 0;
-    public double LastBackstabActivated;
-    public double BackstabActivatedDuration = 10;
-    public double LastSmokescreenActivated;
-    public double SmokescreenActivatedDuration = 10;
+    public bool BackstabIsActive => LastBackstabActivated > Time.GetUnixTime() - BackstabActivatedDuration;
+    private double LastBackstabActivated;
+    private double BackstabActivatedDuration = 10;
+
+    public bool SmokescreenIsActive => LastSmokescreenActivated > Time.GetUnixTime() - SmokescreenActivatedDuration;
+    private double LastSmokescreenActivated;
+    private double SmokescreenActivatedDuration = 10;
 
     // Sorcerer
-    public double LastOverloadActivated;
-    public double OverloadActivatedDuration = 10;
-    public double LastBatteryActivated;
-    public double BatteryActivatedDuration = 10;
+    public bool OverloadIsActive => LastOverloadActivated > Time.GetUnixTime() - OverloadActivatedDuration;
+    private double LastOverloadActivated;
+    private double OverloadActivatedDuration = 10;
     public bool OverloadActivated;
     public bool OverloadDumped = false;
-    public bool ManaBarrierActivated;
+
+    public bool BatteryIsActive => LastBatteryActivated > Time.GetUnixTime() - BatteryActivatedDuration;
+    private double LastBatteryActivated;
+    private double BatteryActivatedDuration = 10;
+
+    public bool ManaBarrierIsActive;
 
     // Spellsword
-    public double LastReflectActivated;
-    public double ReflectActivatedDuration = 10;
-    public double LastEnchantedWeaponActivated;
-    public double EnchantedWeaponActivatedDuration = 10;
-    public Spell MagicBladeStoredSpell;
-    public double TimeSinceMagicBladeActivated = 0;
+    public bool ReflectIsActive => LastReflectActivated > Time.GetUnixTime() - ReflectActivatedDuration;
+    private double LastReflectActivated;
+    private double ReflectActivatedDuration = 10;
+
+    public bool EnchantedWeaponIsActive => LastEnchantedWeaponActivated > Time.GetUnixTime() - EnchantedWeaponActivatedDuration;
+    private double LastEnchantedWeaponActivated;
+    private double EnchantedWeaponActivatedDuration = 10;
+    public Spell EnchantedWeaponStoredSpell;
 
     public CombatAbility EquippedCombatAbility
     {
@@ -567,9 +584,9 @@ partial class Player
 
         var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
 
-        MagicBladeStoredSpell = new Spell(finalSpellId);
+        EnchantedWeaponStoredSpell = new Spell(finalSpellId);
 
-        var manaCost = (int)MagicBladeStoredSpell.BaseMana * 2;
+        var manaCost = (int)EnchantedWeaponStoredSpell.BaseMana * 2;
         if (Mana.Current < manaCost)
         {
             Session.Network.EnqueueSend(
@@ -655,9 +672,9 @@ partial class Player
             return false;
         }
 
-        if (!ManaBarrierActivated)
+        if (!ManaBarrierIsActive)
         {
-            ManaBarrierActivated = true;
+            ManaBarrierIsActive = true;
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
@@ -669,7 +686,7 @@ partial class Player
         }
         else
         {
-            ManaBarrierActivated = false;
+            ManaBarrierIsActive = false;
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
@@ -687,9 +704,9 @@ partial class Player
             return false;
         }
 
-        if (!EvasiveStanceActivated)
+        if (!EvasiveStanceIsActive)
         {
-            EvasiveStanceActivated = true;
+            EvasiveStanceIsActive = true;
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
@@ -701,7 +718,7 @@ partial class Player
         }
         else
         {
-            EvasiveStanceActivated = false;
+            EvasiveStanceIsActive = false;
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
@@ -832,8 +849,8 @@ partial class Player
                 break;
 
             case CombatAbility.Fury:
-                RecklessActivated = true;
-                LastRecklessActivated = Time.GetUnixTime();
+                FuryActivated = true;
+                LastFuryActivated = Time.GetUnixTime();
                 PlayParticleEffect(PlayScript.EnchantUpRed, this.Guid);
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(

@@ -369,9 +369,9 @@ partial class Player
 
         UpdateVitalDelta(Stamina, -staminaCost);
 
-        if (Stamina.Current < 1 && EvasiveStanceActivated)
+        if (Stamina.Current < 1 && EvasiveStanceIsActive)
         {
-            EvasiveStanceActivated = false;
+            EvasiveStanceIsActive = false;
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat($"Your fall out of your evasive stance!!", ChatMessageType.Broadcast)

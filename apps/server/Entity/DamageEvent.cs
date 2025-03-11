@@ -315,7 +315,7 @@ public class DamageEvent
         // Roll combat hit chance
         var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-        if (playerDefender is { EvasiveStanceActivated: true })
+        if (playerDefender is { EvasiveStanceIsActive: true })
         {
             var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
             if (luckyRoll < attackRoll)
@@ -335,7 +335,7 @@ public class DamageEvent
 
         var partialEvadeRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-        if (playerDefender is { EvasiveStanceActivated: true })
+        if (playerDefender is { EvasiveStanceIsActive: true })
         {
             var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
             if (luckyRoll < partialEvadeRoll)
@@ -386,11 +386,7 @@ public class DamageEvent
             return false;
         }
 
-        if (
-            attackerCombatAbility != CombatAbility.Fury
-            || !playerAttacker.RecklessActivated
-            || !(playerAttacker.LastRecklessActivated > Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration)
-        )
+        if (!playerAttacker.FuryActivated)
         {
             return false;
         }
@@ -409,11 +405,7 @@ public class DamageEvent
             return false;
         }
 
-        if (
-            attackerCombatAbility != CombatAbility.SteadyShot
-            || playerAttacker.GetEquippedMissileLauncher() == null
-            || !(playerAttacker.LastSteadyShotActivated > Time.GetUnixTime() - playerAttacker.SteadyShotActivatedDuration)
-        )
+        if (!playerAttacker.SteadyShotIsActive)
         {
             return false;
         }
@@ -435,10 +427,7 @@ public class DamageEvent
             return false;
         }
 
-        if (
-            playerAttacker.EquippedCombatAbility != CombatAbility.Backstab
-            || !(playerAttacker.LastBackstabActivated > Time.GetUnixTime() - playerAttacker.BackstabActivatedDuration)
-        )
+        if (!playerAttacker.BackstabIsActive)
         {
             return false;
         }
@@ -477,13 +466,10 @@ public class DamageEvent
         effectiveAngle += GetSpecShieldEffectiveAngleBonus(playerDefender);
 
         // check for frontal radius prior to allowing a block unless PhalanxActivated
-        var phalanxIsNotActive = playerDefender is not { EquippedCombatAbility: CombatAbility.Phalanx }
-                            || playerDefender.LastPhalanxActivated <
-                            Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration;
 
         var blockableAngle = Math.Abs(defender.GetAngle(attacker)) < effectiveAngle / 2.0f;
 
-        if (phalanxIsNotActive && !blockableAngle)
+        if (playerDefender is { PhalanxIsActive: false } && !blockableAngle)
         {
             Blocked = false;
             return;
@@ -662,33 +648,24 @@ public class DamageEvent
         var recklessStacks = Player.HandleRecklessStamps(playerAttacker);
 
         // If Reckless is not activated and last Reckless duration is over, recklessMod += stacks / 2000
-        if (
-            !playerAttacker.RecklessActivated
-            && playerAttacker.LastRecklessActivated < Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration
-        )
+        if (!playerAttacker.FuryIsActive)
         {
             recklessMod += recklessStacks / 2000f;
         }
 
         // If Reckless is activated and Reckless duration is over, set Activated to false and erase quest stamps
-        if (
-            playerAttacker.RecklessActivated
-            && playerAttacker.LastRecklessActivated < Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration
-        )
+        if (playerAttacker.FuryIsActive)
         {
-            playerAttacker.RecklessActivated = false;
-            playerAttacker.RecklessDumped = false;
+            playerAttacker.FuryActivated = false;
+            playerAttacker.FuryDumped = false;
             playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
         }
 
         // If Reckless is activated and duration is not over, set Activated to false, erase quest stamps, and recklessMod += stacks / 1000
-        if (
-            playerAttacker.RecklessActivated
-            && playerAttacker.LastRecklessActivated > Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration
-        )
+        if (playerAttacker.FuryIsActive)
         {
-            playerAttacker.RecklessActivated = false;
-            playerAttacker.RecklessDumped = true;
+            playerAttacker.FuryActivated = false;
+            playerAttacker.FuryDumped = true;
             playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
 
             recklessMod += recklessStacks / 1000f;
@@ -704,11 +681,7 @@ public class DamageEvent
             return 1.0f;
         }
 
-        if (
-            _attackerCombatAbility is not CombatAbility.SteadyShot
-            || playerAttacker.GetEquippedMissileLauncher() == null
-            || !(playerAttacker.LastSteadyShotActivated > Time.GetUnixTime() - playerAttacker.SteadyShotActivatedDuration)
-        )
+        if (!playerAttacker.SteadyShotIsActive)
         {
             return 1.0f;
         }
@@ -1474,11 +1447,7 @@ public class DamageEvent
             return;
         }
 
-        if (
-            _defenderCombatAbility != CombatAbility.Parry
-            || !(playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration)
-            || !(attacker.GetDistance(playerDefender) < 3)
-        )
+        if (!playerDefender.ParryIsActive)
         {
             return;
         }
@@ -1558,11 +1527,7 @@ public class DamageEvent
         {
             evadeChance += 0.1f;
 
-            if (
-                playerDefender != null
-                && playerDefender.LastSmokescreenActivated
-                > Time.GetUnixTime() - playerDefender.SmokescreenActivatedDuration
-            )
+            if (!playerDefender.SmokescreenIsActive)
             {
                 evadeChance += 0.3f;
             }
@@ -1780,7 +1745,7 @@ public class DamageEvent
 
         blockChance = 0.2f;
 
-        if (playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration)
+        if (playerDefender.ParryIsActive)
         {
             blockChance += 0.15f;
         }
@@ -1793,7 +1758,7 @@ public class DamageEvent
     /// </summary>
     private float GetCombatAbilityPhalanxBlockChanceBonus(Player playerDefender)
     {
-        return playerDefender?.LastPhalanxActivated > Time.GetUnixTime() - playerDefender?.PhalanxActivatedDuration ? 0.5f : 0.0f;
+        return playerDefender is {PhalanxIsActive: true} ? 0.5f : 0.0f;
     }
 
     public static float GetAmmoEffectMod(WorldObject weapon, Player player)

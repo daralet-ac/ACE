@@ -291,9 +291,9 @@ partial class Player
 
                             recklessMsg = $"{recklessPercent} Fury! ";
 
-                            if (this.RecklessDumped == true)
+                            if (this.FuryDumped == true)
                             {
-                                this.RecklessDumped = false;
+                                this.FuryDumped = false;
                                 recklessMsg = $"Furious Blow! ";
                             }
                         }
@@ -388,13 +388,13 @@ partial class Player
 
     private void CheckForMagicBlade(Creature target)
     {
-        if (MagicBladeStoredSpell is null)
+        if (EnchantedWeaponStoredSpell is null)
         {
             return;
         }
 
-        TryCastSpell(MagicBladeStoredSpell, target);
-        MagicBladeStoredSpell = null;
+        TryCastSpell(EnchantedWeaponStoredSpell, target);
+        EnchantedWeaponStoredSpell = null;
     }
 
     /// <summary>
@@ -1017,7 +1017,7 @@ partial class Player
 
         uint damageTaken;
 
-        if (ManaBarrierActivated)
+        if (ManaBarrierIsActive)
         {
             damageTaken = CombatAbilityManaBarrier(this, amount, source, damageType);
         }
@@ -1217,7 +1217,7 @@ partial class Player
         // if not enough mana, barrier falls and player takes remainder of damage as health
         else
         {
-            player.ManaBarrierActivated = false;
+            player.ManaBarrierIsActive = false;
 
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Broadcast)
@@ -1400,7 +1400,7 @@ partial class Player
 
     private float GetEvasiveStanceStaminaPenalty()
     {
-        if (EvasiveStanceActivated is not true)
+        if (EvasiveStanceIsActive is not true)
         {
             return 1.0f;
         }

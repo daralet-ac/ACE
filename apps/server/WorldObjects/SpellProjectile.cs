@@ -1018,9 +1018,7 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        if (sourcePlayer.EquippedCombatAbility != CombatAbility.EnchantedWeapon
-            || !(sourcePlayer.LastEnchantedWeaponActivated
-                 > Time.GetUnixTime() - sourcePlayer.EnchantedWeaponActivatedDuration))
+        if (!sourcePlayer.EnchantedWeaponIsActive)
         {
             return 0.0f;
         }
@@ -1043,8 +1041,7 @@ public class SpellProjectile : WorldObject
             return 0.0f;
         }
 
-        if (sourcePlayer.EquippedCombatAbility != CombatAbility.Battery
-            || !(sourcePlayer.LastBatteryActivated < Time.GetUnixTime() - sourcePlayer.BatteryActivatedDuration))
+        if (!sourcePlayer.BatteryIsActive)
         {
             return 0.0f;
         }
@@ -1091,7 +1088,7 @@ public class SpellProjectile : WorldObject
                 return overloadMod;
             }
             case true
-            when sourcePlayer.LastOverloadActivated > Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration:
+            when sourcePlayer.OverloadIsActive:
             {
                 sourcePlayer.OverloadActivated = false;
                 sourcePlayer.OverloadDumped = true;
@@ -1105,7 +1102,7 @@ public class SpellProjectile : WorldObject
             }
         }
 
-        if (!sourcePlayer.OverloadActivated || !(sourcePlayer.LastOverloadActivated < Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration))
+        if (!sourcePlayer.OverloadIsActive)
         {
             return 0.0f;
         }

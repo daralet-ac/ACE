@@ -1431,10 +1431,7 @@ partial class WorldObject
                 // Battery - 20% mana cost reduction minimum, increasing with lower mana or 0 cost during Battery Activated
                 else if (combatAbility == CombatAbility.Battery)
                 {
-                    if (
-                        playerAttacker.LastBatteryActivated
-                        > Time.GetUnixTime() - playerAttacker.BatteryActivatedDuration
-                    )
+                    if (playerAttacker.BatteryIsActive)
                     {
                         baseCost = 0;
                     }

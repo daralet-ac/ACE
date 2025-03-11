@@ -83,9 +83,7 @@ partial class Creature
         else if (combatAbility == CombatAbility.Battery)
         {
             if (
-                this is Player player
-                && player.LastBatteryActivated > Time.GetUnixTime() - player.BatteryActivatedDuration
-            )
+                this is Player { BatteryIsActive: true })
             {
                 baseCost = 0;
             }
@@ -158,7 +156,7 @@ partial class Creature
             }
         }
 
-        if (caster is Player { EvasiveStanceActivated: true })
+        if (caster is Player { EvasiveStanceIsActive: true })
         {
             caster.UpdateVitalDelta(caster.Stamina, manaCost);
         }

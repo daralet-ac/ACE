@@ -23,7 +23,6 @@ using ACE.Server.Network.Structure;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Extensions;
 using ACE.Server.WorldObjects.Managers;
-using Time = ACE.Common.Time;
 
 namespace ACE.Server.WorldObjects;
 
@@ -160,7 +159,7 @@ partial class WorldObject
 
         var resistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-        if (targetPlayer is { EvasiveStanceActivated: true })
+        if (targetPlayer is { EvasiveStanceIsActive: true })
         {
             var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
             if (luckyRoll < resistRoll)
@@ -173,7 +172,7 @@ partial class WorldObject
         {
             var partialResistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-            if (targetPlayer is { EvasiveStanceActivated: true })
+            if (targetPlayer is { EvasiveStanceIsActive: true })
             {
                 var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
                 if (luckyRoll < partialResistRoll)
@@ -329,7 +328,7 @@ partial class WorldObject
             if (
                 player.EquippedCombatAbility == CombatAbility.Overload
                 && player.OverloadActivated
-                && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration
+                && player.OverloadIsActive
             )
             {
                 resisted = false;
@@ -449,7 +448,7 @@ partial class WorldObject
 
         mod = 0.25f;
 
-        if (targetPlayer.LastReflectActivated > Time.GetUnixTime() - targetPlayer.ReflectActivatedDuration)
+        if (targetPlayer.ReflectIsActive)
         {
             mod = 0.5f;
         }
@@ -1294,7 +1293,7 @@ partial class WorldObject
     /// </summary>
     private static int CheckForCombatAbilityEnchantBoostBonus(CombatAbility combatAbility, Player player, int tryBoost)
     {
-        if (combatAbility != CombatAbility.EnchantedWeapon || !(player.LastEnchantedWeaponActivated > Time.GetUnixTime() - player.EnchantedWeaponActivatedDuration))
+        if (!player.EnchantedWeaponIsActive)
         {
             return tryBoost;
         }
@@ -1312,7 +1311,7 @@ partial class WorldObject
     /// </summary>
     private static int CheckForCombatAbilityBatteryBoostPenalty(CombatAbility combatAbility, Player player, int tryBoost)
     {
-        if (combatAbility != CombatAbility.Battery || !(player.LastBatteryActivated < Time.GetUnixTime() - player.BatteryActivatedDuration))
+        if (!player.BatteryIsActive)
         {
             return tryBoost;
         }
@@ -1355,7 +1354,7 @@ partial class WorldObject
             }
         }
 
-        if (player.OverloadActivated && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration)
+        if (player.OverloadIsActive)
         {
             player.OverloadActivated = false;
             player.OverloadDumped = true;
@@ -1372,7 +1371,7 @@ partial class WorldObject
             }
         }
 
-        if (!player.OverloadActivated || !(player.LastOverloadActivated < Time.GetUnixTime() - player.OverloadActivatedDuration))
+        if (!player.OverloadIsActive)
         {
             return true;
         }
@@ -1772,7 +1771,7 @@ partial class WorldObject
     private static uint CheckForCombatAbilityEnchantVitalTransferBonus(Player player, uint srcVitalChange,
         ref uint destVitalChange)
     {
-        if (player.EquippedCombatAbility != CombatAbility.EnchantedWeapon || !(player.LastEnchantedWeaponActivated > Time.GetUnixTime() - player.EnchantedWeaponActivatedDuration))
+        if (!player.EnchantedWeaponIsActive)
         {
             return srcVitalChange;
         }
@@ -1793,7 +1792,7 @@ partial class WorldObject
     /// </summary>
     private static uint CheckForCombatAbilityBatteryVitalTransferPenalty(CombatAbility combatAbility, Player player, uint srcVitalChange, ref uint destVitalChange)
     {
-        if (combatAbility != CombatAbility.Battery || !(player.LastBatteryActivated < Time.GetUnixTime() - player.BatteryActivatedDuration))
+        if (!player.BatteryIsActive)
         {
             return srcVitalChange;
         }
@@ -1837,9 +1836,7 @@ partial class WorldObject
             }
         }
 
-        if (
-            player.OverloadActivated && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration
-        )
+        if (player.OverloadIsActive)
         {
             player.OverloadActivated = false;
             player.OverloadDumped = true;
@@ -1854,7 +1851,7 @@ partial class WorldObject
             }
         }
 
-        if (player.OverloadActivated != true || !(player.LastOverloadActivated < Time.GetUnixTime() - player.OverloadActivatedDuration))
+        if (!player.OverloadIsActive)
         {
             return true;
         }
