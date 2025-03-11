@@ -177,18 +177,6 @@ partial class Player
 
             var threat = percentDamageDealt * 1000;
 
-            if (EquippedCombatAbility == CombatAbility.Provoke)
-            {
-                if (LastProvokeActivated > Time.GetUnixTime() - ProvokeActivatedDuration)
-                {
-                    threat *= 1.5f;
-                }
-                else
-                {
-                    threat *= 1.2f;
-                }
-            }
-
             target.IncreaseTargetThreatLevel(this, (int)threat);
 
             LastAttackedCreature = target;
@@ -197,7 +185,6 @@ partial class Player
 
         var crit = damageEvent.IsCritical;
         var critMessage = crit == true ? "Critical Hit! " : "";
-
 
         if (damageEvent.HasDamage)
         {

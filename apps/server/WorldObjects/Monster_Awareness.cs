@@ -192,49 +192,38 @@ partial class Creature
     {
         var modifiedAmount = Convert.ToSingle(amount);
 
-        if (targetCreature is Player player)
+        if (targetCreature is Player targetPlayer)
         {
-            if (SkipThreatFromNextAttackTargets != null && SkipThreatFromNextAttackTargets.Contains(player))
+            // abilities
+            if (targetPlayer.ProvokeIsActive && targetPlayer.GetPowerAccuracyBar() >= 0.5)
             {
-                SkipThreatFromNextAttackTargets.Remove(player);
-                return;
-            }
-
-            if (DoubleThreatFromNextAttackTargets != null && DoubleThreatFromNextAttackTargets.Contains(player))
-            {
-                DoubleThreatFromNextAttackTargets.Remove(player);
                 modifiedAmount *= 2.0f;
             }
-        }
 
-        ThreatLevel.TryAdd(targetCreature, ThreatMinimum);
-
-        var targetPlayer = targetCreature as Player;
-
-        if (targetPlayer != null && targetPlayer.LastFocusedTaunt > Time.GetUnixTime() - FocusedTauntDuration)
-        {
-            modifiedAmount *= 2.0f;
-        }
-
-        if (targetPlayer != null && targetPlayer.LastFeignWeakness > Time.GetUnixTime() - FeignWeaknessDuration)
-        {
-            modifiedAmount *= 0.5f;
-        }
-
-        if (targetPlayer is { EquippedCombatAbility: CombatAbility.Provoke })
-        {
-            if (targetPlayer.LastProvokeActivated > Time.GetUnixTime() - targetPlayer.ProvokeActivatedDuration)
+            if (targetPlayer.LastFeignWeakness > Time.GetUnixTime() - FeignWeaknessDuration)
             {
                 modifiedAmount *= 0.5f;
             }
-            else
-            {
-                modifiedAmount *= 0.2f;
-            }
-        }
 
-        modifiedAmount *= 1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatGain);
-        modifiedAmount *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatReduction);
+            // sigils
+            if (SkipThreatFromNextAttackTargets != null && SkipThreatFromNextAttackTargets.Contains(targetPlayer))
+            {
+                SkipThreatFromNextAttackTargets.Remove(targetPlayer);
+                return;
+            }
+
+            if (DoubleThreatFromNextAttackTargets != null && DoubleThreatFromNextAttackTargets.Contains(targetPlayer))
+            {
+                DoubleThreatFromNextAttackTargets.Remove(targetPlayer);
+                modifiedAmount *= 2.0f;
+            }
+
+            // jewels
+            modifiedAmount *= 1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatGain);
+            modifiedAmount *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatReduction);
+        }
+        
+        ThreatLevel.TryAdd(targetCreature, ThreatMinimum);
 
         amount = Convert.ToInt32(modifiedAmount);
         amount = amount < 2 ? 2 : amount;

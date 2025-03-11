@@ -274,11 +274,8 @@ public class Gem : Stackable
                     }
 
                     break;
-                case CombatAbility.FocusedTaunt:
-                    player.TryUseFocusedTaunt(this);
-                    break;
-                case CombatAbility.AreaTaunt:
-                    player.TryUseAreaTaunt(this);
+                case CombatAbility.Provoke:
+                    startCooldown = player.TryUseProvoke(this);
                     break;
                 case CombatAbility.FeignInjury:
                     player.TryUseFeignInjury(this);

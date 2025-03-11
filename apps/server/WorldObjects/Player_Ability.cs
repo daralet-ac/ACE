@@ -16,49 +16,49 @@ namespace ACE.Server.WorldObjects;
 partial class Player
 {
     // Warrior
-    public double LastProvokeActivated = 0;
-    public double ProvokeActivatedDuration = 10;
-    public double LastPhalanxActivated = 0;
+    public bool ProvokeIsActive => LastProvokeActivated > Time.GetUnixTime() - ProvokeActivatedDuration;
+    private double LastProvokeActivated;
+    private double ProvokeActivatedDuration = 10;
+    public double LastPhalanxActivated;
     public double PhalanxActivatedDuration = 10;
-    public double LastParryActivated = 0;
+    public double LastParryActivated;
     public double ParryActivatedDuration = 10;
-    public double LastFocusedTaunt = 0;
 
     // Blademaster
-    public double LastRecklessActivated = 0;
+    public double LastRecklessActivated;
     public double RecklessActivatedDuration = 10;
-    public bool RecklessActivated = false;
+    public bool RecklessActivated;
     public bool RecklessDumped = false;
 
     // Archer
-    public double LastSteadyShotActivated = 0;
+    public double LastSteadyShotActivated;
     public double SteadyShotActivatedDuration = 10;
-    public double LastMultishotActivated = 0;
+    public double LastMultishotActivated;
     public double MultishotActivatedDuration = 10;
-    public bool EvasiveStanceActivated = false;
+    public bool EvasiveStanceActivated;
 
     // Vagabond
     public double LastFeignWeakness = 0;
-    public double LastBackstabActivated = 0;
+    public double LastBackstabActivated;
     public double BackstabActivatedDuration = 10;
-    public double LastSmokescreenActivated = 0;
+    public double LastSmokescreenActivated;
     public double SmokescreenActivatedDuration = 10;
 
     // Sorcerer
-    public double LastOverloadActivated = 0;
+    public double LastOverloadActivated;
     public double OverloadActivatedDuration = 10;
-    public double LastBatteryActivated = 0;
+    public double LastBatteryActivated;
     public double BatteryActivatedDuration = 10;
-    public bool OverloadActivated = false;
+    public bool OverloadActivated;
     public bool OverloadDumped = false;
-    public bool ManaBarrierActivated = false;
+    public bool ManaBarrierActivated;
 
     // Spellsword
-    public double LastReflectActivated = 0;
+    public double LastReflectActivated;
     public double ReflectActivatedDuration = 10;
-    public double LastEnchantedWeaponActivated = 0;
+    public double LastEnchantedWeaponActivated;
     public double EnchantedWeaponActivatedDuration = 10;
-    public Spell MagicBladeStoredSpell = null;
+    public Spell MagicBladeStoredSpell;
     public double TimeSinceMagicBladeActivated = 0;
 
     public CombatAbility EquippedCombatAbility
@@ -77,46 +77,22 @@ partial class Player
         }
     }
 
-    public void TryUseFocusedTaunt(WorldObject ability)
+    public bool TryUseProvoke(WorldObject ability)
     {
-        var target = LastAttackedCreature;
-
-        var skillCheck = SkillCheck.GetSkillChance(
-            Strength.Current * 2,
-            target.GetCreatureSkill(Skill.Perception).Current
-        );
-
-        if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
+        if (!VerifyCombatFocus(CombatAbility.Provoke))
         {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"{target.Name} can see right through you. Your taunt failed.",
-                    ChatMessageType.Broadcast
-                )
-            );
-            return;
+            return false;
         }
 
-        var targetTier = target.Tier ?? 1;
-        var staminaCost = -10 * Math.Clamp(targetTier, 1, 7);
-        UpdateVitalDelta(Stamina, staminaCost);
-
-        target.IncreaseTargetThreatLevel(this, 100);
-        LastFocusedTaunt = Time.GetUnixTime();
+        LastProvokeActivated = Time.GetUnixTime();
 
         Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"You successfully taunt {target.Name}, increasingly your threat level substantially. ({staminaCost} stamina)",
+                $"Give them cause for provocation! For the next ten seconds, your attacks with at least 50% power generate double threat!.",
                 ChatMessageType.Broadcast
             )
         );
 
-        PlayParticleEffect(PlayScript.VisionUpWhite, Guid);
-        target.PlayParticleEffect(PlayScript.VisionDownBlack, target.Guid);
-    }
-
-    public void TryUseAreaTaunt(WorldObject ability)
-    {
         var nearbyMonsters = GetNearbyMonsters(10);
 
         foreach (var target in nearbyMonsters)
@@ -137,23 +113,24 @@ partial class Player
                 continue;
             }
 
-            var targetTier = target.Tier ?? 1;
-            var staminaCost = -2 * Math.Clamp(targetTier, 1, 7);
-            UpdateVitalDelta(Stamina, staminaCost);
+            var areaThreatBonus = Convert.ToInt32((float)(Level ?? 1) / (target.Level ?? 1) * 100);
 
-            target.IncreaseTargetThreatLevel(this, 100);
-            LastFocusedTaunt = Time.GetUnixTime();
+            target.IncreaseTargetThreatLevel(this, areaThreatBonus); // this amount is doubled from the Provoke threat bonus
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You successfully taunt {target.Name}, increasingly your threat level substantially. ({staminaCost} stamina)",
+                    $"You successfully provoke {target.Name}, increasingly your threat level substantially.",
                     ChatMessageType.Broadcast
                 )
             );
 
             PlayParticleEffect(PlayScript.VisionUpWhite, Guid);
             target.PlayParticleEffect(PlayScript.VisionDownBlack, target.Guid);
+
+
         }
+
+        return true;
     }
 
     public void TryUseFeignInjury(WorldObject ability)
@@ -183,7 +160,7 @@ partial class Player
             UpdateVitalDelta(Stamina, staminaCost);
 
             target.IncreaseTargetThreatLevel(this, -100);
-            LastFocusedTaunt = Time.GetUnixTime();
+            LastProvokeActivated = Time.GetUnixTime();
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
@@ -981,6 +958,18 @@ partial class Player
     {
         switch (combatAbility)
         {
+            case CombatAbility.Provoke:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Warrior})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Provoke can only be used with a Warrior Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
             case CombatAbility.ManaBarrier:
                 if (GetEquippedCombatFocus() is not {CombatFocusType:
                         (int)CombatFocusType.Sorcerer
@@ -995,7 +984,8 @@ partial class Player
                     );
                     return false;
                 }
-                break;case CombatAbility.EvasiveStance:
+                break;
+            case CombatAbility.EvasiveStance:
                 if (GetEquippedCombatFocus() is not {CombatFocusType:
                         (int)CombatFocusType.Blademaster
                         or (int)CombatFocusType.Archer

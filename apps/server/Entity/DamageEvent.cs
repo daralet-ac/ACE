@@ -38,7 +38,7 @@ public class DamageEvent
     private BaseDamageMod _baseDamageMod;
     private float _combatAbilityFuryDamageBonus;
     private float _combatAbilityMultishotDamagePenalty;
-    private float _combatAbilityProvokeDamageBonus;
+    private float _combatAbilityProvokeDamageReduction;
     private Creature_BodyPart _creaturePart;
     private float _criticalChance;
     private float _criticalDamageMod;
@@ -564,7 +564,6 @@ public class DamageEvent
         _dualWieldDamageBonus = GetDualWieldDamageBonus(playerAttacker);
         _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(playerAttacker);
         _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
-        _combatAbilityProvokeDamageBonus = GetCombatAbilityProvokeDamageBonus(playerAttacker);
         _combatAbilityFuryDamageBonus = GetCombatAbilityRecklessDamageBonus(attacker, defender, playerAttacker);
         _combatAbilitySteadyShotDamageBonus = GetCombatAbilitySteadyShotDamageBonus(attacker, defender, playerAttacker);
         _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
@@ -616,6 +615,14 @@ public class DamageEvent
         return playerAttacker is { EquippedCombatAbility: CombatAbility.Multishot } ? 0.75f : 1.0f;
     }
 
+    /// <summary>
+    /// COMBAT ABILITY - Provoke: Damage taken reduced by 15%.
+    /// </summary>
+    private float GetCombatAbilityProvokeDamageReduction(Player playerDefender)
+    {
+        return playerDefender is { ProvokeIsActive: true } ? 0.85f : 1.0f;
+    }
+
     private void PostDamageMitigationEffects()
     {
         if (_attacker.IsMonster)
@@ -627,26 +634,6 @@ public class DamageEvent
         {
             Damage *= 1.0f;
         }
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Provoke: Damage increased by 20%.
-    /// </summary>
-    private static float GetCombatAbilityProvokeDamageBonus(Player playerAttacker)
-    {
-        if (playerAttacker == null)
-        {
-            return 1.0f;
-        }
-
-        if (playerAttacker.EquippedCombatAbility != CombatAbility.Provoke)
-        {
-            return 1.0f;
-        }
-
-        return playerAttacker.LastProvokeActivated > Time.GetUnixTime() - playerAttacker.ProvokeActivatedDuration
-            ? 1.2f
-            : 1.0f;
     }
 
     /// <summary>
@@ -825,7 +812,6 @@ public class DamageEvent
                * _dualWieldDamageBonus
                * _twohandedCombatDamageBonus
                * _combatAbilityMultishotDamagePenalty
-               * _combatAbilityProvokeDamageBonus
                * _combatAbilityFuryDamageBonus
                * _combatAbilitySteadyShotDamageBonus
                * SneakAttackMod
@@ -867,7 +853,6 @@ public class DamageEvent
                * _dualWieldDamageBonus
                * _twohandedCombatDamageBonus
                * _combatAbilityMultishotDamagePenalty
-               * _combatAbilityProvokeDamageBonus
                * _combatAbilityFuryDamageBonus
                * _combatAbilitySteadyShotDamageBonus
                * _ammoEffectMod
@@ -934,6 +919,8 @@ public class DamageEvent
 
         ShieldMod = _defender.GetShieldMod(attacker, DamageType, Weapon);
 
+        _combatAbilityProvokeDamageReduction = GetCombatAbilityProvokeDamageReduction(playerDefender);
+
         _ratingSelfHarm = 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
         _ratingRedFury = 1.0f + Jewel.GetJewelRedFury(playerAttacker);
         _ratingYellowFury = 1.0f + Jewel.GetJewelYellowFury(playerAttacker);
@@ -956,6 +943,7 @@ public class DamageEvent
                * _damageResistanceRatingMod
                * _evasionMod
                * _specDefenseMod
+               * _combatAbilityProvokeDamageReduction
                * _ratingDamageTypeWard
                * _ratingSelfHarm
                * _ratingRedFury

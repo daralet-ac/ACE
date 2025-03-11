@@ -6460,7 +6460,7 @@ public enum SpellId : uint
 
     HealingKitCooldown = 0x8000 | 10003, // varies
 
-    FocusedTaunt = 0x8000 | 10050, // 15 second cooldown
+    Provoke = 0x8000 | 10050, // 15 second cooldown
     AreaTaunt = 0x8000 | 10050, // 15 second cooldown
     FeignWeakness = 0x8000 | 10051, // 15 second cooldown
     Vanish = 0x8000 | 10052, // 60 second cooldown
