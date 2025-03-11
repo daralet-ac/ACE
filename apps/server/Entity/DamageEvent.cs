@@ -1509,7 +1509,7 @@ public class DamageEvent
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * CheckForAttackHeightLowDefenseSkillBonus(playerDefender, playerAttacker));
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * (1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearFamiliarity, "Familiarity")));
 
-        var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, _effectiveDefenseSkill);
+        var evadeChance = SkillCheck.GetSkillChance(_effectiveDefenseSkill, EffectiveAttackSkill);
         evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, playerDefender);
 
         if (evadeChance < 0)
@@ -1520,20 +1520,21 @@ public class DamageEvent
         return (float)Math.Min(evadeChance, 1.0f);
     }
 
-    private double CheckForCombatAbilitySmokescreenEvadeChanceBonus(double evadeChance, Player playerDefender)
+    /// <summary>
+    /// COMBAT Ability - Smokescreen: 10% increased chance to evade attacks
+    /// </summary>
+    private static double CheckForCombatAbilitySmokescreenEvadeChanceBonus(double evadeChance, Player playerDefender)
     {
-        // COMBAT FOCUS - Smokescreen (+10% chance to evade, +40% on Activated)
-        if (_defenderCombatAbility == CombatAbility.Smokescreen)
+        if (playerDefender is not { SmokescreenIsActive: true })
         {
-            evadeChance += 0.1f;
-
-            if (!playerDefender.SmokescreenIsActive)
-            {
-                evadeChance += 0.3f;
-            }
+            return evadeChance;
         }
 
-        return evadeChance;
+        var remainingChance = 1.0f - evadeChance;
+        var bonus = remainingChance * 0.1f;
+
+        return evadeChance + bonus;
+
     }
 
     /// <summary>

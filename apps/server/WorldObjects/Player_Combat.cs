@@ -1380,18 +1380,35 @@ partial class Player
     /// </summary>
     private int GetAttackStamina(float attackAnimLength, WorldObject weapon)
     {
-        // When stamina drops to 0, your melee and missile defenses also drop to 0 and you will be incapable of attacking.
-        // In addition, you will suffer a 50% penalty to your weapon skill. This applies to players and creatures.
-
         var weaponTier = Math.Max(GetMainHandWeaponTier(), GetOffHandWeaponTier());
         var powerAccuracyLevel = GetEquippedMissileWeapon() != null ? AccuracyLevel : PowerLevel;
         var weightClassPenalty = (float)(1 + GetArmorResourcePenalty() ?? 0);
         var baseCost = StaminaTable.GetStaminaCost(weaponTier, attackAnimLength, powerAccuracyLevel, weightClassPenalty);
 
         var staminaCostReductionMod = GetStaminaReductionMod(weapon);
-        var evasiveStancePenaltyMod = GetEvasiveStanceStaminaPenalty();
 
-        baseCost *= staminaCostReductionMod * evasiveStancePenaltyMod;
+        // ability penalty mods are additive with each other
+        var evasiveStancePenaltyMod = GetEvasiveStanceStaminaPenalty();
+        var phalanxPenaltyMod = PhalanxIsActive ? 0.25f : 0.0f;
+        var provokePenaltyMod = ProvokeIsActive ? 0.25f : 0.0f;
+        var parryPenaltyMod = ParryIsActive ? 0.25f : 0.0f;
+        var furyPenaltyMod = FuryIsActive ? 0.25f : 0.0f;
+        var multiShotPenaltyMod = MultiShotIsActive ? 0.25f : 0.0f;
+        var steadyShotPenaltyMod = SteadyShotIsActive ? 0.25f : 0.0f;
+        var smokescreenPenaltyMod = SmokescreenIsActive ? 0.25f : 0.0f;
+        var backstabPenaltyMod = BackstabIsActive ? 0.25f : 0.0f;
+        var abilityPenaltyMod = 1.0f
+                                + evasiveStancePenaltyMod
+                                + phalanxPenaltyMod
+                                + provokePenaltyMod
+                                + parryPenaltyMod
+                                + furyPenaltyMod
+                                + multiShotPenaltyMod
+                                + steadyShotPenaltyMod
+                                + smokescreenPenaltyMod
+                                + backstabPenaltyMod;
+
+        baseCost *= staminaCostReductionMod * abilityPenaltyMod;
 
         var staminaCost = Math.Max(baseCost, 1);
 
@@ -1402,7 +1419,7 @@ partial class Player
     {
         if (EvasiveStanceIsActive is not true)
         {
-            return 1.0f;
+            return 0.0f;
         }
 
         var skillRun = GetCreatureSkill(Skill.Run);
@@ -1413,15 +1430,15 @@ partial class Player
 
         if (Level is null)
         {
-            return 1.0f;
+            return 0.0f;
         }
 
         // to account for the combat run debuff, if run is not spec we use half the expected skill
         var expectedRunSkill = skillRun.AdvancementClass is SkillAdvancementClass.Specialized? (float)(Level * 5) : (float)(Level * 2.5);
         var expectedJumpSkill = (float)(Level * 5);
 
-        var baseRunMod = skillRun.AdvancementClass is SkillAdvancementClass.Specialized ? 1.25f : 1.5f;
-        var baseJumpMod = skillJump.AdvancementClass is SkillAdvancementClass.Specialized ? 1.25f : 1.5f;
+        var baseRunMod = skillRun.AdvancementClass is SkillAdvancementClass.Specialized ? 0.25f : 0.5f;
+        var baseJumpMod = skillJump.AdvancementClass is SkillAdvancementClass.Specialized ? 0.25f : 0.5f;
 
         var skillModifierRun = Math.Max(expectedRunSkill / currentSkillRun, baseRunMod);
         var skillModifierJump = Math.Max(expectedJumpSkill / currentSkillJump, baseJumpMod);

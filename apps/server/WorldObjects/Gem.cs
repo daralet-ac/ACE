@@ -277,8 +277,8 @@ public class Gem : Stackable
                 case CombatAbility.Provoke:
                     startCooldown = player.TryUseProvoke(this);
                     break;
-                case CombatAbility.FeignInjury:
-                    player.TryUseFeignInjury(this);
+                case CombatAbility.Smokescreen:
+                    startCooldown = player.TryUseSmokescreen(this);
                     break;
                 case CombatAbility.Vanish:
                     player.TryUseVanish(this);

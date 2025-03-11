@@ -100,7 +100,6 @@ partial class Player
         {
             return false;
         }
-
         LastProvokeActivated = Time.GetUnixTime();
 
         Session.Network.EnqueueSend(
@@ -143,15 +142,18 @@ partial class Player
 
             PlayParticleEffect(PlayScript.VisionUpWhite, Guid);
             target.PlayParticleEffect(PlayScript.VisionDownBlack, target.Guid);
-
-
         }
 
         return true;
     }
 
-    public void TryUseFeignInjury(WorldObject ability)
+    public bool TryUseSmokescreen(WorldObject ability)
     {
+        if (!VerifyCombatFocus(CombatAbility.Smokescreen))
+        {
+            return false;
+        }
+
         var nearbyMonsters = GetNearbyMonsters(15);
 
         foreach (var target in nearbyMonsters)
@@ -165,23 +167,19 @@ partial class Player
             {
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"{target.Name} can see right through you. Your feign weakness failed.",
+                        $"{target.Name} can see right through you. Your attempt at reducing threat failed.",
                         ChatMessageType.Broadcast
                     )
                 );
                 continue;
             }
 
-            var targetTier = target.Tier ?? 1;
-            var staminaCost = -2 * Math.Clamp(targetTier, 1, 7);
-            UpdateVitalDelta(Stamina, staminaCost);
-
             target.IncreaseTargetThreatLevel(this, -100);
-            LastProvokeActivated = Time.GetUnixTime();
+            LastSmokescreenActivated = Time.GetUnixTime();
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You successfully feign a weakness, reducing your threat level substantially with all nearby enemies. ({staminaCost} stamina)",
+                    $"You successfully reduce your threat level towards {target.Name}.",
                     ChatMessageType.Broadcast
                 )
             );
@@ -189,6 +187,8 @@ partial class Player
             PlayParticleEffect(PlayScript.VisionUpWhite, Guid);
             target.PlayParticleEffect(PlayScript.VisionDownBlack, target.Guid);
         }
+
+        return true;
     }
 
     public double LastVanishActivated = 0;
@@ -1011,6 +1011,21 @@ partial class Player
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             $"Mana Barrier can only be used with a Sorcerer Focus, Vagabond Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Smokescreen:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Vagabond
+                        or (int)CombatFocusType.Archer
+                        or (int)CombatFocusType.Sorcerer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Smokescreen can only be used with a Vagabond Focus, Archer Focus, or Spellsword Focus",
                             ChatMessageType.Broadcast
                         )
                     );

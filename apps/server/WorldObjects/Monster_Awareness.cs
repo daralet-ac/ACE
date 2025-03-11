@@ -182,9 +182,6 @@ partial class Creature
     public Dictionary<Creature, float> PositiveThreat;
     public Dictionary<Creature, float> NegativeThreat;
 
-    private double FocusedTauntDuration = 10;
-    private double FeignWeaknessDuration = 10;
-
     public List<Player> SkipThreatFromNextAttackTargets = [];
     public List<Player> DoubleThreatFromNextAttackTargets = [];
 
@@ -200,7 +197,7 @@ partial class Creature
                 modifiedAmount *= 2.0f;
             }
 
-            if (targetPlayer.SmokescreenIsActive)
+            if (targetPlayer.SmokescreenIsActive && targetPlayer.GetPowerAccuracyBar() >= 0.5)
             {
                 modifiedAmount *= 0.5f;
             }
@@ -236,34 +233,6 @@ partial class Creature
         {
             Console.WriteLine($"{Name} threat increased towards {targetCreature.Name} by +{amount}");
         }
-    }
-
-    /// <summary>
-    /// RATING - Threat Reduction: Reduce threat gain
-    /// (JEWEL - Smokey Quartz)
-    /// </summary>
-    private float CheckForRatingThreatReduction(Player targetPlayer)
-    {
-        if (targetPlayer != null && targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatReduction) > 0)
-        {
-            return (float)(targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatReduction)) / 10;
-        }
-
-        return 0.0f;
-    }
-
-    /// <summary>
-    /// RATING - Threat Gain: Increase threat gain
-    /// (JEWEL - Agate)
-    /// </summary>
-    private float CheckForRatingThreatGainBonus(Player targetPlayer)
-    {
-        if (targetPlayer != null && targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatGain) > 0)
-        {
-            return (float)(targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatGain)) / 10;
-        }
-
-        return 0.0f;
     }
 
     /// <summary>
