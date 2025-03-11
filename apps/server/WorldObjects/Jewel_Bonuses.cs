@@ -1327,13 +1327,14 @@ partial class Jewel
         { PropertyInt.GearHealBubble, EquipMask.Weapon },
         { PropertyInt.GearBludgeon, EquipMask.Weapon },
         { PropertyInt.GearStaminasteal, EquipMask.Weapon },
+        { PropertyInt.GearRedFury, EquipMask.Weapon },
         // weapon or shield
         { PropertyInt.GearBravado, EquipMask.WeaponAndShield },
         { PropertyInt.GearReprisal, EquipMask.WeaponAndShield },
         { PropertyInt.GearFamiliarity, EquipMask.WeaponAndShield },
-        { PropertyInt.GearRedFury, EquipMask.WeaponAndShield },
-        { PropertyInt.GearYellowFury, EquipMask.WeaponAndShield },
-        { PropertyInt.GearBlueFury, EquipMask.WeaponAndShield },
+        // weapon/shield or armor
+        { PropertyInt.GearYellowFury, EquipMask.WeaponAndArmor },
+        { PropertyInt.GearBlueFury, EquipMask.WeaponAndArmor },
         // wand
         { PropertyInt.GearElementalist, EquipMask.Held },
         { PropertyInt.GearSelflessness, EquipMask.Held },
@@ -1458,6 +1459,7 @@ partial class Jewel
         { ACE.Entity.Enum.MaterialType.Opal, (PropertyInt.GearManasteal, "Ophidian", "weapon", 10, 0.5f, 0, 0.0f) },
         { ACE.Entity.Enum.MaterialType.WhiteJade, (PropertyInt.GearHealBubble, "Purified Soul", "weapon", 10, 0.5f, 2, 0.1f) },
         { ACE.Entity.Enum.MaterialType.RoseQuartz, (PropertyInt.GearVitalsTransfer, "Tilted-scales", "weapon", 20, 1.0f, 0, 0.0f) },
+        { ACE.Entity.Enum.MaterialType.Ruby, (PropertyInt.GearRedFury, "Red Fury", "weapon", 20, 1.0f, 0, 0.0f) },
 
         // weapon (or armor)
         { ACE.Entity.Enum.MaterialType.Jet, (PropertyInt.GearLightning, "Astyrrian Rage", "weapon", 10, 0.5f, 2, 0.1f) },
@@ -1467,14 +1469,13 @@ partial class Jewel
         { ACE.Entity.Enum.MaterialType.ImperialTopaz, (PropertyInt.GearSlash, "Falcon's Gyre", "weapon", 10, 0.5f, 0, 0.0f) },
         { ACE.Entity.Enum.MaterialType.BlackGarnet, (PropertyInt.GearPierce, "Precision Strikes", "weapon", 20, 1.0f, 0, 0.0f) },
         { ACE.Entity.Enum.MaterialType.WhiteSapphire, (PropertyInt.GearBludgeon, "Skull-cracker", "weapon", 10, 0.5f, 0, 0.0f) },
+        { ACE.Entity.Enum.MaterialType.LapisLazuli, (PropertyInt.GearBlueFury, "Blue Fury", "weapon", 20, 1.0f, 0, 0.0f) },
+        { ACE.Entity.Enum.MaterialType.Amber, (PropertyInt.GearYellowFury, "Yellow Fury", "weapon", 20, 1.0f, 0, 0.0f) },
 
         // weapon or shield
         { ACE.Entity.Enum.MaterialType.YellowGarnet, (PropertyInt.GearBravado, "Bravado", "weapon or shield", 20, 1.0f, 0, 0.0f) },
         { ACE.Entity.Enum.MaterialType.FireOpal, (PropertyInt.GearFamiliarity, "Familiar Foe", "weapon or shield", 20, 1.0f, 0, 0.0f) },
         { ACE.Entity.Enum.MaterialType.BlackOpal, (PropertyInt.GearReprisal, "Vicious Reprisal", "weapon or shield", 5, 0.25f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Ruby, (PropertyInt.GearRedFury, "Red Fury", "weapon or shield", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.LapisLazuli, (PropertyInt.GearBlueFury, "Blue Fury", "", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Amber, (PropertyInt.GearYellowFury, "Yellow Fury", "", 20, 1.0f, 0, 0.0f) },
 
         // wand
         { ACE.Entity.Enum.MaterialType.GreenGarnet, (PropertyInt.GearElementalist, "Elementalist", "wand", 20, 1.0f, 0, 0.0f) },
