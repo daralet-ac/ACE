@@ -655,18 +655,6 @@ partial class Jewel
                     $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
-            case ACE.Entity.Enum.MaterialType.Amber:
-                description +=
-                    $"~ {name}: Gain a {baseRating}% chance to gain hit damage taken as stamina (+{bonusPerQuality}% per equipped rating). " +
-                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
-                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.LapisLazuli:
-                description +=
-                    $"~ {name}: Gain a {baseRating}% chance to gain hit damage taken as mana (+{bonusPerQuality}% per equipped rating). " +
-                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
-                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
-                break;
             case ACE.Entity.Enum.MaterialType.Moonstone:
                 description +=
                     $"~ {name}: Gain {baseRating}% reduced mana consumed by items (+{bonusPerQuality}% per equipped rating). " +
@@ -676,12 +664,6 @@ partial class Jewel
             case ACE.Entity.Enum.MaterialType.Malachite:
                 description +=
                     $"~ {name}: Gain {baseRating}% reduced chance to burn spell components (+{bonusPerQuality}% per equipped rating). " +
-                    $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
-                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
-                break;
-            case ACE.Entity.Enum.MaterialType.Citrine:
-                description +=
-                    $"~ {name}: Gain {baseRating}% reduced stamina costs (+{bonusPerQuality}% per equipped rating). " +
                     $"Once socketed, the bracelet can only be worn on the left wrist.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
@@ -749,9 +731,23 @@ partial class Jewel
                     $"The amount builds up from 0%, based on how often you have recently hit the target.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
+
+            // weapon or armor
             case ACE.Entity.Enum.MaterialType.Ruby:
                 description +=
                     $"~ {name}: Gain up to {baseRating}% increased damage as your health approaches 0 (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
+                break;
+            case ACE.Entity.Enum.MaterialType.Amber:
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased damage as your stamina approaches 0 (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"~ {nameAlternate}: Gain a {baseRatingAlternate}% chance after taking damage to gain the same amount as stamina (+{bonusPerQualityAlternate} per equipped rating).\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
+                break;
+            case ACE.Entity.Enum.MaterialType.LapisLazuli:
+                description +=
+                    $"~ {name}: Gain up to {baseRating}% increased damage as your mana approaches 0 (+{bonusPerQuality}% per equipped rating).\n\n" +
+                    $"~ {nameAlternate}: Gain a {baseRatingAlternate}% chance after taking damage to gain the same amount as mana (+{bonusPerQualityAlternate} per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
 
@@ -759,6 +755,12 @@ partial class Jewel
             case ACE.Entity.Enum.MaterialType.Bloodstone:
                 description +=
                     $"~ {name}: Gain a {baseRating}% chance on hit to gain health (+{bonusPerQuality}% per equipped rating). " +
+                    $"Amount stolen is equal to 10% of damage dealt.\n\n" +
+                    $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
+                break;
+            case ACE.Entity.Enum.MaterialType.Citrine:
+                description +=
+                    $"~ {name}: Gain {baseRating}% chance on hit to gain stamina (+{bonusPerQuality}% per equipped rating). " +
                     $"Amount stolen is equal to 10% of damage dealt.\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name)}\n\n";
                 break;
