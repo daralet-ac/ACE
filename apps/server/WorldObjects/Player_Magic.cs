@@ -1201,45 +1201,48 @@ partial class Player
             default:
                 EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.Fizzle, 0.5f));
                 SendWeenieError(WeenieError.YourSpellFizzled);
-Console.WriteLine(caster?.NoCompsRequiredForMagicSchool);
-                switch (caster.NoCompsRequiredForMagicSchool)
+
+                if (caster is not null)
                 {
-                    case (int)MagicSchool.WarMagic:
-                        if (spell.School is MagicSchool.LifeMagic or MagicSchool.PortalMagic)
-                        {
-                            SendMessage($"{caster.Name} can only cast War Magic spells.");
-                        }
+                    switch (caster.NoCompsRequiredForMagicSchool)
+                    {
+                        case (int)MagicSchool.WarMagic:
+                            if (spell.School is MagicSchool.LifeMagic or MagicSchool.PortalMagic)
+                            {
+                                SendMessage($"{caster.Name} can only cast War Magic spells.");
+                            }
 
-                        if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.WarMagic)
-                        {
-                            SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
-                        }
+                            if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.WarMagic)
+                            {
+                                SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
+                            }
 
-                        break;
-                    case (int)MagicSchool.LifeMagic:
-                        if (spell.School is MagicSchool.WarMagic or MagicSchool.PortalMagic)
-                        {
-                            SendMessage($"{caster.Name} can only cast Life Magic spells.");
-                        }
+                            break;
+                        case (int)MagicSchool.LifeMagic:
+                            if (spell.School is MagicSchool.WarMagic or MagicSchool.PortalMagic)
+                            {
+                                SendMessage($"{caster.Name} can only cast Life Magic spells.");
+                            }
 
-                        if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.LifeMagic)
-                        {
-                            SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
-                        }
+                            if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.LifeMagic)
+                            {
+                                SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
+                            }
 
-                        break;
-                    case (int)MagicSchool.PortalMagic:
-                        if (spell.School is MagicSchool.LifeMagic or MagicSchool.WarMagic)
-                        {
-                            SendMessage($"{caster.Name} can only cast Portal Magic spells.");
-                        }
+                            break;
+                        case (int)MagicSchool.PortalMagic:
+                            if (spell.School is MagicSchool.LifeMagic or MagicSchool.WarMagic)
+                            {
+                                SendMessage($"{caster.Name} can only cast Portal Magic spells.");
+                            }
 
-                        if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.PortalMagic)
-                        {
-                            SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
-                        }
+                            if (caster is { ItemCurMana: 0 } && spell.School is MagicSchool.PortalMagic)
+                            {
+                                SendMessage($"{caster.Name} cannot cast spells while it is out of mana.");
+                            }
 
-                        break;
+                            break;
+                    }
                 }
 
                 break;
