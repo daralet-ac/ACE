@@ -42,7 +42,8 @@ partial class WorldObject
         bool isWeaponSpell = false,
         bool fromProc = false,
         bool tryResist = true,
-        bool showMsg = true
+        bool showMsg = true,
+        int? weaponSpellcraft = null
     )
     {
         // TODO: look into further normalizing this / caster / weapon
@@ -71,12 +72,12 @@ partial class WorldObject
 
             foreach (var fellow in fellows.Values)
             {
-                TryCastSpell_Inner(spell, fellow, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg);
+                TryCastSpell_Inner(spell, fellow, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg, weaponSpellcraft);
             }
         }
         else
         {
-            TryCastSpell_Inner(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg);
+            TryCastSpell_Inner(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg, weaponSpellcraft);
         }
     }
 
@@ -88,7 +89,8 @@ partial class WorldObject
         bool isWeaponSpell = false,
         bool fromProc = false,
         bool tryResist = true,
-        bool showMsg = true
+        bool showMsg = true,
+        int? weaponSpellcraft = null
     )
     {
         // verify before resist, still consumes source item
@@ -98,13 +100,13 @@ partial class WorldObject
         }
 
         // perform resistance check, if applicable
-        if (tryResist && TryResistSpell(target, spell, out _, itemCaster))
+        if (tryResist && TryResistSpell(target, spell, out _, itemCaster, false, weaponSpellcraft))
         {
             return;
         }
 
         // if not resisted, cast spell
-        HandleCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, false, showMsg);
+        HandleCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, false, showMsg, false, weaponSpellcraft);
     }
 
     /// <summary>
@@ -209,7 +211,8 @@ partial class WorldObject
         Spell spell,
         out PartialEvasion partialResist,
         WorldObject itemCaster = null,
-        bool projectileHit = false
+        bool projectileHit = false,
+        int? weaponSpellcraft = null
     )
     {
         partialResist = PartialEvasion.None;
@@ -261,6 +264,12 @@ partial class WorldObject
 
             // Retrieve caster's secondary attribute mod (1% per 20 attributes)
             var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
+
+            // if enchanted blade spell, average caster's skill with the weapon's spellcraft
+            if (weaponSpellcraft is not null)
+            {
+                magicSkill = (uint)((magicSkill + weaponSpellcraft) * 0.5);
+            }
 
             magicSkill = (uint)(magicSkill * secondaryAttributeMod * LevelScaling.GetPlayerAttackSkillScalar(casterCreature, target as Creature));
         }
@@ -542,7 +551,8 @@ partial class WorldObject
         bool fromProc = false,
         bool equip = false,
         bool showMsg = true,
-        bool sigilTrinketSpell = false
+        bool sigilTrinketSpell = false,
+        int? weaponSpellcraft = null
     )
     {
         _isSigilTrinketSpell = sigilTrinketSpell;
@@ -637,7 +647,7 @@ partial class WorldObject
             case SpellType.LifeProjectile:
             case SpellType.EnchantmentProjectile:
 
-                HandleCastSpell_Projectile(spell, targetCreature, itemCaster, weapon, isWeaponSpell, fromProc);
+                HandleCastSpell_Projectile(spell, targetCreature, itemCaster, weapon, isWeaponSpell, fromProc, weaponSpellcraft);
                 break;
 
             case SpellType.PortalLink:
@@ -1897,7 +1907,8 @@ partial class WorldObject
         WorldObject itemCaster,
         WorldObject weapon,
         bool isWeaponSpell,
-        bool fromProc
+        bool fromProc,
+        int? weaponSpellcraft = null
     )
     {
         uint damage = 0;
@@ -1943,7 +1954,7 @@ partial class WorldObject
 
         if (projectileSpellType != ProjectileSpellType.Blast)
         {
-            CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage);
+            CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage, false, weaponSpellcraft);
         }
 
         var targetCreature = target as Creature;
@@ -2753,7 +2764,8 @@ partial class WorldObject
         bool isWeaponSpell = false,
         bool fromProc = false,
         uint lifeProjectileDamage = 0,
-        bool castAtTarget = false
+        bool castAtTarget = false,
+        int? weaponSpellcraft = null
     )
     {
         if (spell.NumProjectiles == 0)
@@ -2790,7 +2802,8 @@ partial class WorldObject
             velocity,
             lifeProjectileDamage,
             castAtTarget,
-            fireAllProjectilesFromCenter
+            fireAllProjectilesFromCenter,
+            weaponSpellcraft
         );
     }
 
@@ -3122,7 +3135,8 @@ partial class WorldObject
         Vector3 velocity,
         uint lifeProjectileDamage = 0,
         bool castAtTarget = false,
-        bool fireAllProjectilesFromCenter = false
+        bool fireAllProjectilesFromCenter = false,
+        int? weaponSpellcraft = null
     )
     {
         var useGravity = spellType == ProjectileSpellType.Arc;
@@ -3199,6 +3213,8 @@ partial class WorldObject
             sp.SpawnPos = new Position(sp.Location);
 
             sp.LifeProjectileDamage = lifeProjectileDamage;
+
+            sp.WeaponSpellcraft = weaponSpellcraft;
 
             if (!LandblockManager.AddObject(sp))
             {

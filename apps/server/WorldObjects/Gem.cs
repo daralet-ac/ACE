@@ -289,8 +289,13 @@ public class Gem : Stackable
                 case CombatAbility.ExposeMagicalWeakness:
                     player.TryUseExposeMagicalWeakness(this);
                     break;
-                case CombatAbility.MagicBladeBolt:
-                    startCooldown = player.TryUseMagicBlade(this);
+                case CombatAbility.EnchantedBladeArc:
+                case CombatAbility.EnchantedBladeBlast:
+                case CombatAbility.EnchantedBladeVolley:
+                case CombatAbility.EnchantedBladeDrainLife:
+                case CombatAbility.EnchantedBladeDrainStamina:
+                case CombatAbility.EnchantedBladeDrainMana:
+                    startCooldown = player.TryUseEnchantedBlade(this);
                     break;
                 case CombatAbility.ManaBarrier:
                     player.TryUseManaBarrier();

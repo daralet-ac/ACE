@@ -517,7 +517,7 @@ partial class Player
         }
     }
 
-    public bool TryUseMagicBlade(WorldObject ability)
+    public bool TryUseEnchantedBlade(WorldObject ability)
     {
         var gemAbility = ability as Gem;
 
@@ -557,6 +557,36 @@ partial class Player
             return false;
         }
 
+        if ((CombatAbility)ability.CombatAbilityId
+            is CombatAbility.EnchantedBladeArc
+            or CombatAbility.EnchantedBladeVolley
+            or CombatAbility.EnchantedBladeBlast
+            && GetCreatureSkill(Skill.WarMagic).AdvancementClass < SkillAdvancementClass.Trained)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} requires trained war magic.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        if ((CombatAbility)ability.CombatAbilityId
+            is CombatAbility.EnchantedBladeDrainLife
+            or CombatAbility.EnchantedBladeDrainStamina
+            or CombatAbility.EnchantedBladeDrainMana
+            && GetCreatureSkill(Skill.LifeMagic).AdvancementClass < SkillAdvancementClass.Trained)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} requires trained life magic.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
         var weaponDamageType = equippedMeleeWeapon.W_DamageType;
         if (weaponDamageType is DamageType.SlashPierce)
         {
@@ -565,9 +595,12 @@ partial class Player
 
         var baseSpell = (CombatAbility)ability.CombatAbilityId switch
         {
-            CombatAbility.MagicBladeBolt => GetLevelOneBoltOfDamageType(weaponDamageType),
-            CombatAbility.MagicBladeBlast => GetLevelOneBlastOfDamageType(weaponDamageType),
-            CombatAbility.MagicBladeVolley => GetLevelOneVolleyOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeArc => GetLevelOneArcOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeBlast => GetLevelOneBlastOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeVolley => GetLevelOneVolleyOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeDrainLife => new Spell(SpellId.DrainHealth1),
+            CombatAbility.EnchantedBladeDrainStamina => new Spell(SpellId.DrainStamina1),
+            CombatAbility.EnchantedBladeDrainMana => new Spell(SpellId.DrainMana1),
             _ => null
         };
 
@@ -598,9 +631,9 @@ partial class Player
         UpdateVitalDelta(Mana, -manaCost);
 
         var particalIntensity = Math.Clamp((level - 1) * (1.0f / 6.0f), 0.0f, 1.0f);
-        var playScript = GetPlayScriptColor(weaponDamageType);
+        //var playScript = GetPlayScriptColor(weaponDamageType);
 
-        PlayParticleEffect(playScript, Guid, particalIntensity);
+        PlayParticleEffect(PlayScript.EnchantUpPurple, Guid, particalIntensity);
 
         return true;
     }
@@ -620,17 +653,17 @@ partial class Player
         };
     }
 
-    private Spell GetLevelOneBoltOfDamageType(DamageType weaponDamageType)
+    private Spell GetLevelOneArcOfDamageType(DamageType weaponDamageType)
     {
         return weaponDamageType switch
         {
-            DamageType.Slash => new Spell(SpellId.WhirlingBlade1),
-            DamageType.Pierce => new Spell(SpellId.ForceBolt1),
-            DamageType.Bludgeon => new Spell(SpellId.ShockWave1),
-            DamageType.Cold => new Spell(SpellId.FrostBolt1),
-            DamageType.Fire => new Spell(SpellId.FlameBolt1),
-            DamageType.Acid => new Spell(SpellId.AcidStream1),
-            DamageType.Electric => new Spell(SpellId.LightningBolt1),
+            DamageType.Slash => new Spell(SpellId.BladeArc1),
+            DamageType.Pierce => new Spell(SpellId.ForceArc1),
+            DamageType.Bludgeon => new Spell(SpellId.ShockArc1),
+            DamageType.Cold => new Spell(SpellId.FrostArc1),
+            DamageType.Fire => new Spell(SpellId.FlameArc1),
+            DamageType.Acid => new Spell(SpellId.AcidArc1),
+            DamageType.Electric => new Spell(SpellId.LightningArc1),
             _ => null
         };
     }

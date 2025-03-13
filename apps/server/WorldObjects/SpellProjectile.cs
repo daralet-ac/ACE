@@ -35,6 +35,8 @@ public class SpellProjectile : WorldObject
 
     private readonly List<uint> _strikethroughTargets = [];
 
+    public int? WeaponSpellcraft;
+
     public SpellProjectileInfo Info { get; set; }
 
     /// <summary>
@@ -593,7 +595,7 @@ public class SpellProjectile : WorldObject
 
         var resistSource = IsWeaponSpell ? weapon : source;
 
-        resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true);
+        resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true, WeaponSpellcraft);
 
         CheckForCombatAbilityReflectSpell(resisted, targetPlayer, sourceCreature);
 

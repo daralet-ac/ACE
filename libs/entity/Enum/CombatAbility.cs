@@ -30,7 +30,10 @@ public enum CombatAbility
     ManaBarrier,
     Shroud,
     EvasiveStance,
-    MagicBladeBolt,
-    MagicBladeBlast,
-    MagicBladeVolley
+    EnchantedBladeArc,
+    EnchantedBladeBlast,
+    EnchantedBladeVolley,
+    EnchantedBladeDrainLife,
+    EnchantedBladeDrainStamina,
+    EnchantedBladeDrainMana
 }
