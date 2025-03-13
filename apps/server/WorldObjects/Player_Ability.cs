@@ -606,6 +606,7 @@ partial class Player
 
         if (baseSpell is null)
         {
+            _log.Error("TryUseEnchantedBlade() - baseSpell is null");
             return false;
         }
 
@@ -613,6 +614,7 @@ partial class Player
 
         if (weaponSpellcraft is null)
         {
+            _log.Error("TryUseEnchantedBlade() - {Weapon} does not have spellcraft", equippedMeleeWeapon.Name);
             return false;
         }
 
