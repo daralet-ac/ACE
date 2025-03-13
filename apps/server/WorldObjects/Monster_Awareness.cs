@@ -297,10 +297,7 @@ partial class Creature
                 visibleTargets.Remove(untargetablePlayer);
             }
 
-            if (
-                untargetablePlayer is Player vanishedPlayer
-                && Time.GetUnixTime() < vanishedPlayer.LastVanishActivated + 5
-            )
+            if (untargetablePlayer is Player { VanishIsActive: true })
             {
                 visibleTargets.Remove(untargetablePlayer);
 

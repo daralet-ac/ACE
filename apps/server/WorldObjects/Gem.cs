@@ -266,7 +266,7 @@ public class Gem : Stackable
                     startCooldown = player.TryUseSmokescreen(this);
                     break;
                 case CombatAbility.Vanish:
-                    player.TryUseVanish(this);
+                    startCooldown = player.TryUseVanish(this);
                     break;
                 case CombatAbility.ExposePhysicalWeakness:
                     player.TryUseExposePhysicalWeakness(this);

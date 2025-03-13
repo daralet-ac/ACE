@@ -192,15 +192,13 @@ partial class Creature
     /// </summary>
     private void MagicAttack()
     {
-        var target = AttackTarget as Creature;
-
-        if (target == null || !target.IsAlive)
+        if (AttackTarget is not Creature { IsAlive: true } target)
         {
             FindNextTarget(false);
             return;
         }
 
-        if (target != null && target is Player player && Time.GetUnixTime() < player.LastVanishActivated + 5)
+        if (target is Player { VanishIsActive: true } player)
         {
             FindNextTarget(false, player);
             return;

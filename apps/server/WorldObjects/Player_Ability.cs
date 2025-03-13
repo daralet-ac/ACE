@@ -47,6 +47,10 @@ partial class Player
     public bool EvasiveStanceIsActive;
 
     // Vagabond
+    public bool VanishIsActive => LastVanishActivated > Time.GetUnixTime() - VanishActivatedDuration;
+    private double LastVanishActivated;
+    private double VanishActivatedDuration = 5;
+
     public bool BackstabIsActive => LastBackstabActivated > Time.GetUnixTime() - BackstabActivatedDuration;
     private double LastBackstabActivated;
     private double BackstabActivatedDuration = 10;
@@ -191,19 +195,29 @@ partial class Player
         return true;
     }
 
-    public double LastVanishActivated = 0;
-
-    public void TryUseVanish(WorldObject ability)
+    public bool TryUseVanish(WorldObject ability)
     {
         if (IsStealthed)
         {
-            return;
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You cannot use Vanish while stealth.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
         }
 
         var thieverySkill = GetCreatureSkill(Skill.Thievery); // Thievery
         if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
         {
-            return;
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Vanish requires trained Thievery.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
         }
 
         // the smoke is enough to fool monsters from far away?
@@ -214,7 +228,7 @@ partial class Player
         {
             // generous bonus to skill check to start
             var skillCheck = SkillCheck.GetSkillChance(
-                GetModdedThieverySkill() + 50,
+                GetModdedThieverySkill() + 100,
                 target.GetCreatureSkill(Skill.Perception).Current
             );
 
@@ -234,6 +248,7 @@ partial class Player
             var staminaCost = -2 * Math.Clamp(targetTier, 1, 7);
             UpdateVitalDelta(Stamina, staminaCost);
         }
+
         if (success)
         {
             var smoke = WorldObjectFactory.CreateNewWorldObject(1051113);
@@ -243,6 +258,8 @@ partial class Player
             this.LastVanishActivated = Time.GetUnixTime();
             this.BeginStealth();
         }
+
+        return true;
     }
 
     public void TryUseExposePhysicalWeakness(WorldObject ability)
