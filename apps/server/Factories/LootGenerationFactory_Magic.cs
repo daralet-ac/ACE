@@ -43,10 +43,10 @@ public static partial class LootGenerationFactory
             }
         }
 
-        if (RollProcSpell(wo, profile, roll))
-        {
-            numSpells++;
-        }
+        // if (RollProcSpell(wo, profile, roll))
+        // {
+        //     numSpells++;
+        // }
 
         if (numSpells == 0 && wo.SpellDID == null && wo.ProcSpell == null)
         {
@@ -54,7 +54,7 @@ public static partial class LootGenerationFactory
             wo.ItemManaCost = null;
             wo.ItemMaxMana = null;
             wo.ItemCurMana = null;
-            wo.ItemSpellcraft = null;
+            //wo.ItemSpellcraft = null;
             wo.ItemDifficulty = null;
         }
         else
