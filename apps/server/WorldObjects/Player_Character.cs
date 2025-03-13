@@ -141,15 +141,6 @@ partial class Player
         return newSetting;
     }
 
-    public bool ToggleDeceiveSetting()
-    {
-        var newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed2);
-        SetCharacterOptions2(CharacterOptions2.NotUsed2, newSetting);
-
-        CachedAttemptToDeceive = newSetting;
-        return newSetting;
-    }
-
     public bool ToggleSlashThrustSetting()
     {
         var newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed3);
