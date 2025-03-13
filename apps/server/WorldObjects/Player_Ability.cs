@@ -609,8 +609,16 @@ partial class Player
             return false;
         }
 
+        var weaponSpellcraft = equippedMeleeWeapon.ItemSpellcraft;
+
+        if (weaponSpellcraft is null)
+        {
+            return false;
+        }
+
         var warSkill = GetModdedWarMagicSkill();
-        var roll = Convert.ToInt32(ThreadSafeRandom.Next(warSkill * 0.5f, warSkill));
+        var averagedMagicSkill = (uint)((warSkill + weaponSpellcraft) * 0.5);
+        var roll = Convert.ToInt32(ThreadSafeRandom.Next(averagedMagicSkill * 0.5f, warSkill));
         int[] diff = [50, 100, 200, 300, 350, 400, 450];
         var closest = diff.MinBy(x => Math.Abs(x - roll));
         var level = Array.IndexOf(diff, closest);
