@@ -514,9 +514,7 @@ public class DamageEvent
 
     private void SetBaseDamage(Creature attacker, Creature defender, WorldObject damageSource)
     {
-        var playerAttacker = attacker as Player;
-
-        if (playerAttacker != null)
+        if (attacker is Player playerAttacker)
         {
             GetBaseDamage(playerAttacker);
         }
@@ -797,6 +795,12 @@ public class DamageEvent
         if (_pkBattle)
         {
             _damageRatingMod = Creature.AdditiveCombine(_damageRatingMod, _pkDamageMod);
+        }
+
+        if (_baseDamageMod is null)
+        {
+            _log.Error("GetCriticalDamageBeforeMitigation({Attacker}, {Defender}) - _baseDamageMod is null", attacker.Name, defender.Name);
+            return 0;
         }
 
         var baseDamage = playerAttacker != null ? _baseDamageMod.MaxDamage : _baseDamageMod.MedianDamage;
