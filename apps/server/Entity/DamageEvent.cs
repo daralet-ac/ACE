@@ -177,13 +177,18 @@ public class DamageEvent
         SetInvulnerable(defender);
         SetEvaded(attacker, defender);
         SetBlocked(attacker, defender);
+        SetParry(attacker, defender);
 
-        if (_invulnerable || Evaded || Blocked)
+        if (_invulnerable || Evaded || Blocked || Parried)
         {
             if (Blocked)
             {
-                CheckForParryRiposte(attacker, defender, damageSource);
                 CheckForRatingThorns(attacker, defender, damageSource);
+            }
+
+            if (Parried)
+            {
+                CheckForParryRiposte(attacker, defender);
             }
 
             return 0.0f;
@@ -502,6 +507,48 @@ public class DamageEvent
         Blocked = true;
     }
 
+    /// <summary>
+    /// </summary>
+    private void SetParry(Creature attacker, Creature defender)
+    {
+        Parried = false;
+
+        var playerDefender = defender as Player;
+
+        if (defender.CombatMode is CombatMode.NonCombat)
+        {
+            return;
+        }
+
+        var equippedMainHand = defender.GetEquippedWeapon();
+        var equippedOffHand = defender.GetEquippedOffHand();
+
+        if (equippedMainHand is { IsTwoHanded: not true } && equippedOffHand is null)
+        {
+            return;
+        }
+
+        const float effectiveAngle = 180.0f;
+        var parryAngle = Math.Abs(defender.GetAngle(attacker)) < effectiveAngle / 2.0f;
+
+        if (!parryAngle)
+        {
+            return;
+        }
+
+        // base parry chance is 5%, 25% with Parry ability activated
+        const float minParryChance = 0.05f;
+        var parryActivatedBonus = playerDefender is { ParryIsActive: true } ? 0.2f : 0.0f;
+        var parryChance = minParryChance + parryActivatedBonus;
+
+        if ((ThreadSafeRandom.Next(0f, 1f) > parryChance))
+        {
+            return;
+        }
+
+        Parried = true;
+    }
+
     private double GetBlockChanceShieldLevelBonus(Creature defender, int shieldLevel)
     {
         var effectiveShieldLevel = (uint)defender.GetSkillModifiedShieldLevel(shieldLevel);
@@ -558,12 +605,12 @@ public class DamageEvent
         }
     }
 
-    private void SetDamageModifiers(Creature attacker, Creature defender)
+    private void SetDamageModifiers(Creature attacker, Creature defender, float? powerMod = null)
     {
         var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
-        _powerMod = attacker.GetPowerMod(Weapon);
+        _powerMod = powerMod ?? attacker.GetPowerMod(Weapon);
         _attributeMod = attacker.GetAttributeMod(Weapon, false, defender);
         _slayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
         _damageRatingMod = Creature.GetPositiveRatingMod(attacker.GetDamageRating());
@@ -1458,11 +1505,9 @@ public class DamageEvent
         attacker.Die();
     }
 
-    private void CheckForParryRiposte(Creature attacker, Creature defender, WorldObject damageSource)
+    private void CheckForParryRiposte(Creature attacker, Creature defender)
     {
-        var playerDefender = defender as Player;
-
-        if (!Blocked || playerDefender == null)
+        if (!Parried || defender is not Player playerDefender || !(attacker.GetDistance(playerDefender) < 10))
         {
             return;
         }
@@ -1472,10 +1517,41 @@ public class DamageEvent
             return;
         }
 
-        if (playerDefender.TwoHandedCombat || playerDefender.IsDualWieldAttack)
+        if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack)
         {
-            playerDefender.DamageTarget(attacker, damageSource);
+            return;
         }
+
+        if (defender.LastAttackedCreature != attacker)
+        {
+            playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat($"You parried {attacker.Name}!", ChatMessageType.CombatEnemy));
+            return;
+        }
+
+        SetBaseDamage(defender, attacker, defender.GetEquippedWeapon());
+        SetDamageModifiers(defender, attacker);
+
+        var damage = GetNonCriticalDamageBeforeMitigation();
+
+        if (damage is < int.MinValue or > int.MaxValue)
+        {
+            _log.Error("CheckForParryRiposte({Attacker}, {Defender}) - damage could not be converted to Int.", attacker.Name, defender.Name);
+            return;
+        }
+
+        attacker.UpdateVitalDelta(attacker.Health, -Convert.ToInt32(damage));
+        attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)damage);
+
+        var msg = $"You parried {attacker.Name}'s attack and followed up with a quick riposte, dealing {Convert.ToInt32(damage)} damage!";
+        playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
+
+        if (!attacker.IsDead)
+        {
+            return;
+        }
+
+        attacker.OnDeath(attacker.DamageHistory.LastDamager, DamageType.Health);
+        attacker.Die();
     }
 
     private bool IsAttackFromStealth()

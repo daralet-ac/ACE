@@ -137,6 +137,11 @@ partial class Creature
 
                     if (damageEvent.HasDamage)
                     {
+                        if (damageEvent.Blocked || damageEvent.Parried)
+                        {
+                            return;
+                        }
+
                         if (targetPlayer != null)
                         {
                             // this is a player taking damage

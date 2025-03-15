@@ -192,6 +192,25 @@ partial class Player
         return true;
     }
 
+    public bool TryUseParry(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Parry))
+        {
+            return false;
+        }
+
+        if (ParryIsActive)
+        {
+            return true;
+        }
+
+        LastParryActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.EnchantUpRed, Guid);
+
+        return true;
+    }
+
     public bool TryUseSmokescreen(WorldObject ability)
     {
         if (!VerifyCombatFocus(CombatAbility.Smokescreen))
@@ -932,12 +951,42 @@ partial class Player
     {
         switch (combatAbility)
         {
-            case CombatAbility.Provoke:
+            case CombatAbility.Phalanx:
                 if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Warrior})
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             $"Provoke can only be used with a Warrior Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Provoke:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Warrior
+                        or (int)CombatFocusType.Spellsword
+                        or (int)CombatFocusType.Blademaster})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Provoke can only be used with a Warrior Focus, Blademaster Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Parry:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Warrior
+                        or (int)CombatFocusType.Spellsword
+                        or (int)CombatFocusType.Blademaster})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Parry can only be used with a Warrior Focus, Blademaster Focus, or Spellsword Focus",
                             ChatMessageType.Broadcast
                         )
                     );

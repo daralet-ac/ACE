@@ -265,6 +265,9 @@ public class Gem : Stackable
                 case CombatAbility.Provoke:
                     startCooldown = player.TryUseProvoke(this);
                     break;
+                case CombatAbility.Parry:
+                    startCooldown = player.TryUseParry(this);
+                    break;
                 case CombatAbility.Smokescreen:
                     startCooldown = player.TryUseSmokescreen(this);
                     break;

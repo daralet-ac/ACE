@@ -188,6 +188,11 @@ partial class Player
 
         if (damageEvent.HasDamage)
         {
+            if (damageEvent.Blocked || damageEvent.Parried)
+            {
+                return null;
+            }
+
             OnDamageTarget(target, damageEvent.CombatType, damageEvent.IsCritical);
 
             if (targetPlayer != null)

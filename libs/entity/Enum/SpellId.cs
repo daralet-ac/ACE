@@ -6474,6 +6474,7 @@ public enum SpellId : uint
     ManaPotion = 0x8000 | 10061,
     MagicBlade = 0x8000 | 10062,
     EvasiveStance = 0x8000 | 10063, // 10 second cooldown
+    Parry = 0x8000 | 10063, // 20 second cooldown
 }
 
 public static class SpellExtensions
