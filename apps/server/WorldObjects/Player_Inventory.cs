@@ -1497,7 +1497,7 @@ partial class Player
                                         && container.WeenieType == WeenieType.Storage
                                     )
                                     {
-                                        foreach (var wo in itemAsContainer.Inventory.Values)
+                                        foreach (var wo in itemAsContainer.Inventory.Values.ToList())
                                         {
                                             wo.SaveBiotaToDatabase();
                                         }
@@ -1519,7 +1519,7 @@ partial class Player
                                         }
 
                                         // when removing a pack from storage chest, we need to save all the items inside
-                                        foreach (var wo in itemAsContainer.Inventory.Values)
+                                        foreach (var wo in itemAsContainer.Inventory.Values.ToList())
                                         {
                                             wo.SaveBiotaToDatabase();
                                         }

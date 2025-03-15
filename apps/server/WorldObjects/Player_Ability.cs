@@ -20,9 +20,7 @@ partial class Player
     private double LastProvokeActivated;
     private double ProvokeActivatedDuration = 10;
 
-    public bool PhalanxIsActive => LastPhalanxActivated > Time.GetUnixTime() - PhalanxActivatedDuration;
-    private double LastPhalanxActivated;
-    private double PhalanxActivatedDuration = 10;
+    public bool PhalanxIsActive;
 
     public bool ParryIsActive => LastParryActivated > Time.GetUnixTime() - ParryActivatedDuration;
     private double LastParryActivated;
@@ -96,6 +94,49 @@ partial class Player
             return combatAbility;
 
         }
+    }
+
+    public bool TryUsePhalanx(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Phalanx))
+        {
+            return false;
+        }
+
+        if (GetEquippedShield() is null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Phalanx requires an equipped shield.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        if (!PhalanxIsActive)
+        {
+            PhalanxIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You raise your shield into a defensive stance!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.ShieldUpGrey, Guid);
+        }
+        else
+        {
+            PhalanxIsActive = false;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You lower your shield.", ChatMessageType.Broadcast)
+            );
+            PlayParticleEffect(PlayScript.DispelLife, Guid);
+        }
+
+        return true;
     }
 
     public bool TryUseProvoke(WorldObject ability)
@@ -197,6 +238,11 @@ partial class Player
 
     public bool TryUseVanish(WorldObject ability)
     {
+        if (!VerifyCombatFocus(CombatAbility.Vanish))
+        {
+            return false;
+        }
+
         if (IsStealthed)
         {
             Session.Network.EnqueueSend(
@@ -879,155 +925,6 @@ partial class Player
                     ChatMessageType.Broadcast
                 )
             );
-        }
-    }
-
-    public void TryUseActivated(CombatAbility ability)
-    {
-        switch (ability)
-        {
-            case CombatAbility.Provoke:
-                LastProvokeActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.SkillUpRed, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"Give them cause for provocation! For the next ten seconds, your damage is increased by an additional 20% and your threat generation by an additional 50%.",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Phalanx:
-                LastPhalanxActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.ShieldUpGrey, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"Raise your shield! For the next ten seconds, your chance to block is increased, and applies to attacks from any angle.",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Fury:
-                FuryActivated = true;
-                LastFuryActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantUpRed, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You pour your rage into a mighty blow! The first attack you make within the next ten seconds will have increased damage and exhaust all of your Fury!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Parry:
-                LastParryActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.SkillUpYellow, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"En garde! For the next ten seconds, you will riposte any attack you parry, damaging your foe!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Backstab:
-                LastBackstabActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantDownGrey, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You set aside what little mercy you possess. For the next ten seconds, your attacks from behind are utterly ruthless, and cannot be evaded!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.SteadyShot:
-                LastSteadyShotActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.VisionUpWhite, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"For the next ten seconds, you summon all your powers of concentration, firing missiles of spectacular accuracy and damage!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Multishot:
-                LastMultishotActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantUpYellow, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"For the next ten seconds, you nock a third arrow, quarrel or dart, hitting an additional target!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Smokescreen:
-                LastSmokescreenActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.SkillDownBlack, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"For the next ten seconds, you shroud yourself in darkness, increasing your chance to evade by an additional 30%!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Overload:
-                OverloadActivated = true;
-                LastOverloadActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantUpBlue, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You channel your accumulated energies! The first spell you cast within the next ten seconds will have increased potency and discharge all of your Overload!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Battery:
-                LastBatteryActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.RegenUpBlue, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You summon an untapped reserve of willpower! For the next ten seconds, your spells are free to cast and suffer no effectiveness penalty!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Reflect:
-                LastReflectActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.SkillUpBlue, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You harden your resolve to repel malign sorceries! For the next ten seconds, your chance to resist spells is increased by an additional 30%!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.EnchantedWeapon:
-                LastEnchantedWeaponActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantUpPurple, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You touch a rune carved into your weapon! For the next ten seconds, your proc spells are 25% more effective!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            default:
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You must equip an upgraded Combat Focus to activate an ability!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
         }
     }
 

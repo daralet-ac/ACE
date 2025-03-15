@@ -259,6 +259,9 @@ public class Gem : Stackable
                     }
 
                     break;
+                case CombatAbility.Phalanx:
+                    startCooldown = player.TryUsePhalanx(this);
+                    break;
                 case CombatAbility.Provoke:
                     startCooldown = player.TryUseProvoke(this);
                     break;

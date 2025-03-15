@@ -89,6 +89,7 @@ public class DamageEvent
         (Weapon?.IgnoreMagicResist ?? false) || (_attacker?.IgnoreMagicResist ?? false); // ignores life armor / prots
 
     public bool Blocked { get; private set; }
+    public bool Parried { get; private set; }
     public float CriticalDamageBonusFromTrinket { get; set; }
     public bool CriticalOverridedByTrinket { get; set; }
     public bool Evaded { get; set; }
@@ -440,53 +441,72 @@ public class DamageEvent
 
     /// <summary>
     /// Checks attack angle and if defender has Spec Shield and/or Phalanx is active. If a block is possible,
-    /// check for and combine bonuses from Spec Physical Defense, Parry Ability, Phalanx Ability, and Block Rating.
+    /// check for and combine bonuses from Spec Physical Defense, Phalanx Ability, and Block Rating.
     /// Roll and set Blocked accordingly.
     /// <list type="bullet">
-    /// <item>Shield Spec Bonus: +45 degrees to effective block angle.</item>
-    /// <item>Physical Defense Spec Bonus: Up to +10% block chance.</item>
-    /// <item>Parry Ability: Passive 20% to block chance. Additional +15% when activated.</item>
-    /// <item>Phalanx Ability: +50% to block chance.</item>
-    /// <item>Gear Block Rating: +X% block chance, equal to rating amount.</item>
+    /// <item>Spec Bonus - Shield: Effective block angle is 270 degress instead of 180.</item>
+    /// <item>Spec Bonus - Phys Def: Up to +50% increased block chance.</item>
+    /// <item>Gear Block Rating: +X% increased block chance, equal to 10% + 0.5% per rating.</item>
+    /// <item>Phalanx Ability: Effective block angle is 360 degrees and all glancing blows become blocks.</item>
     /// </list>
     /// </summary>
     private void SetBlocked(Creature attacker, Creature defender)
     {
+        Blocked = false;
+
         var playerDefender = defender as Player;
 
         if (defender.CombatMode is CombatMode.NonCombat)
         {
-            Blocked = false;
             return;
         }
 
-        var blockChance = 0.0f;
-        var effectiveAngle = 180.0f;
+        var equippedShield = defender.GetEquippedShield();
+        if (equippedShield is null)
+        {
+            return;
+        }
 
+        if (playerDefender is { PhalanxIsActive: true } && PartialEvasion is PartialEvasion.Some)
+        {
+            Blocked = true;
+            return;
+        }
+
+        var effectiveAngle = 180.0f;
         effectiveAngle += GetSpecShieldEffectiveAngleBonus(playerDefender);
 
-        // check for frontal radius prior to allowing a block unless PhalanxActivated
-
-        var blockableAngle = Math.Abs(defender.GetAngle(attacker)) < effectiveAngle / 2.0f;
+        var blockableAngle = Math.Abs(defender.GetAngle(attacker)) < effectiveAngle / 2.0f || playerDefender is {PhalanxIsActive: true};
 
         if (playerDefender is { PhalanxIsActive: false } && !blockableAngle)
         {
-            Blocked = false;
             return;
         }
 
-        blockChance += GetSpecPhysicalDefenseBlockChanceBonus(playerDefender);
-        blockChance += GetCombatAbilityParryBlockChanceBonus(playerDefender);
-        blockChance += GetCombatAbilityPhalanxBlockChanceBonus(playerDefender);
-        blockChance *= 1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearBlock);
+        // base block chance ranges from 5 to 10% based on effective shield level vs effective attack skill
+        const float minBlockChance = 0.05f;
+        var blockChanceShieldBonus = GetBlockChanceShieldLevelBonus(defender, (int)defender.GetSkillModifiedShieldLevel((equippedShield.ArmorLevel ?? 1)));
+        var baseBlockChance = minBlockChance * blockChanceShieldBonus;
+
+        // other bonuses are additive then multiplied against base block chance
+        var specPhysicalDefenseBlockChanceBonus = GetSpecPhysicalDefenseBlockChanceBonus();
+        var jewelBlockChanceBonus = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearBlock);
+
+        var blockChance = baseBlockChance * (1.0f + specPhysicalDefenseBlockChanceBonus + jewelBlockChanceBonus);
 
         if ((ThreadSafeRandom.Next(0f, 1f) > blockChance))
         {
-            Blocked = false;
             return;
         }
 
         Blocked = true;
+    }
+
+    private double GetBlockChanceShieldLevelBonus(Creature defender, int shieldLevel)
+    {
+        var effectiveShieldLevel = (uint)defender.GetSkillModifiedShieldLevel(shieldLevel);
+
+        return 1.0 + SkillCheck.GetSkillChance(effectiveShieldLevel, EffectiveAttackSkill);
     }
 
     private float GetDamageBeforeMitigation(Creature attacker, Creature defender, WorldObject damageSource)
@@ -1704,21 +1724,14 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// SPEC BONUS - Physical Defense: Increase shield block chance up to 10% (additively).
-    /// Based on defender 'shield level' and attacker 'attack skill'.
+    /// SPEC BONUS - Physical Defense: Increase shield block chance up to 50% (multiplicatively).
+    /// Based on defender 'defense skill' and attacker 'attack skill'.
     /// </summary>
-    private float GetSpecPhysicalDefenseBlockChanceBonus(Player playerDefender)
+    private float GetSpecPhysicalDefenseBlockChanceBonus()
     {
-        if (playerDefender?.GetEquippedShield() == null || !IsSkillSpecialized(playerDefender, Skill.PhysicalDefense))
-        {
-            return 0.0f;
-        }
+        var blockChanceMod = SkillCheck.GetSkillChance(_effectiveDefenseSkill, EffectiveAttackSkill);
 
-        var shieldArmorLevel = playerDefender.GetEquippedShield().ArmorLevel ?? 0;
-
-        var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
-
-        return 0.1f * (float)blockChanceMod;
+        return 0.5f * (float)blockChanceMod;
     }
 
     /// <summary>
@@ -1752,14 +1765,6 @@ public class DamageEvent
         }
 
         return blockChance;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Phalanx: When activated, increases block chance by 50% (additively).
-    /// </summary>
-    private float GetCombatAbilityPhalanxBlockChanceBonus(Player playerDefender)
-    {
-        return playerDefender is {PhalanxIsActive: true} ? 0.5f : 0.0f;
     }
 
     public static float GetAmmoEffectMod(WorldObject weapon, Player player)
