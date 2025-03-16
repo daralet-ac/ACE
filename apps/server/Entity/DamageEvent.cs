@@ -309,11 +309,10 @@ public class DamageEvent
 
         // Check for guaranteed hits
         var isOverpower = CheckForOverpower(attacker, defender);
-        var isSteadyShotNoEvade = CheckForCombatAbilitySteadyShotNoEvade(playerAttacker, _attackerCombatAbility);
         var isFuryNoEvade = CheckForCombatAbilityEnrageNoEvade(playerAttacker, _attackerCombatAbility);
         var isBackstabNoEvade = CheckForCombatAbilityBackstabNoEvade(playerAttacker);
 
-        if (isOverpower || isSteadyShotNoEvade || isFuryNoEvade || isBackstabNoEvade || attacker == defender)
+        if (isOverpower || isFuryNoEvade || isBackstabNoEvade || attacker == defender)
         {
             return;
         }
@@ -388,25 +387,6 @@ public class DamageEvent
     private bool CheckForCombatAbilityEnrageNoEvade(Player playerAttacker, CombatAbility attackerCombatAbility)
     {
         if (playerAttacker is not {FuryEnrageIsActive: true})
-        {
-            return false;
-        }
-
-        Evaded = false;
-        PartialEvasion = PartialEvasion.None;
-        _evasionMod = 1f;
-
-        return true;
-    }
-
-    private bool CheckForCombatAbilitySteadyShotNoEvade(Player playerAttacker, CombatAbility attackerCombatAbility)
-    {
-        if (playerAttacker == null)
-        {
-            return false;
-        }
-
-        if (!playerAttacker.SteadyShotIsActive)
         {
             return false;
         }
@@ -613,7 +593,7 @@ public class DamageEvent
         _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(playerAttacker);
         _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
         _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(playerAttacker, playerDefender);
-        _combatAbilitySteadyShotDamageBonus = GetCombatAbilitySteadyShotDamageBonus(attacker, defender, playerAttacker);
+        _combatAbilitySteadyShotDamageBonus = GetCombatAbilitySteadyShotDamageBonus(playerAttacker);
         _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
         SneakAttackMod = attacker.GetSneakAttackMod(defender);
         _attackHeightDamageBonus += GetHighAttackHeightBonus(playerAttacker);
@@ -711,19 +691,24 @@ public class DamageEvent
         return recklessMod;
     }
 
-    private float GetCombatAbilitySteadyShotDamageBonus(Creature attacker, Creature defender, Player playerAttacker)
+    /// <summary>
+    /// COMBAT ABILITY - Steady Shot: +25% damage with missile weapons.
+    /// </summary>
+    /// <param name="playerAttacker"></param>
+    /// <returns></returns>
+    private float GetCombatAbilitySteadyShotDamageBonus(Player playerAttacker)
     {
-        if (playerAttacker == null)
+        if (playerAttacker?.GetEquippedMissileWeapon() is null)
         {
             return 1.0f;
         }
 
-        if (!playerAttacker.SteadyShotIsActive)
+        if (playerAttacker.GetPowerAccuracyBar() < 0.5f)
         {
             return 1.0f;
         }
 
-        return 1.25f;
+        return playerAttacker is {SteadyShotIsActive: true} ? 1.25f : 1.0f;
     }
 
     /// <summary>
@@ -1580,16 +1565,21 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Steady Shot: Increased attack skill by 20%.
+    /// COMBAT ABILITY - Steady Shot: Increased attack skill with missile attacks by 20%.
     /// </summary>
     private float CheckForCombatAbilitySteadyShotAttackSkillBonus(Player playerAttacker)
     {
-        if (playerAttacker == null)
+        if (playerAttacker?.GetEquippedMissileWeapon() is null)
         {
             return 1.0f;
         }
 
-        return _attackerCombatAbility == CombatAbility.SteadyShot ? 1.2f : 1.0f;
+        if (playerAttacker.GetPowerAccuracyBar() < 0.5f)
+        {
+            return 1.0f;
+        }
+
+        return playerAttacker is {SteadyShotIsActive: true} ? 1.25f : 1.0f;
     }
 
     /// <summary>

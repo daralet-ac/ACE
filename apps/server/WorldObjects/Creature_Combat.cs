@@ -701,7 +701,12 @@ partial class Creature
         //                       $" -quicknessMod: {quicknessMod} quickness: {quickness}\n" +
         //                       $" -weaponSpeedMod: {weaponSpeedMod} weaponSpeed: {weaponSpeed}");
         // }
-        
+
+        if (this as Player is { SteadyShotIsActive: true })
+        {
+            animSpeed *= 0.75f;
+        }
+
         return animSpeed;
     }
 

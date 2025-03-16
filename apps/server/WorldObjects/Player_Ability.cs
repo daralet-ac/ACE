@@ -289,6 +289,25 @@ partial class Player
         return true;
     }
 
+    public bool TryUseSteadyShot(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.SteadyShot))
+        {
+            return false;
+        }
+
+        if (SteadyShotIsActive)
+        {
+            return false;
+        }
+
+        LastSteadyShotActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.SkillUpYellow, Guid);
+
+        return true;
+    }
+
     public bool TryUseSmokescreen(WorldObject ability)
     {
         if (!VerifyCombatFocus(CombatAbility.Smokescreen))
@@ -1092,6 +1111,21 @@ partial class Player
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             $"Multishot can only be used with an Archer Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.SteadyShot:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Archer
+                        or (int)CombatFocusType.Blademaster
+                        or (int)CombatFocusType.Vagabond})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Steady Shot can only be used with an Archer Focus, Blademaster Focus, or Vagabond Focus",
                             ChatMessageType.Broadcast
                         )
                     );
