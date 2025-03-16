@@ -126,16 +126,16 @@ partial class Player
                 )
             );
             PlayParticleEffect(PlayScript.ShieldUpGrey, Guid);
-        }
-        else
-        {
-            PhalanxIsActive = false;
 
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You lower your shield.", ChatMessageType.Broadcast)
-            );
-            PlayParticleEffect(PlayScript.DispelLife, Guid);
+            return false;
         }
+
+        PhalanxIsActive = false;
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You lower your shield.", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.DispelLife, Guid);
 
         return true;
     }
@@ -867,16 +867,16 @@ partial class Player
                 )
             );
             PlayParticleEffect(PlayScript.ShieldUpBlue, Guid);
-        }
-        else
-        {
-            ManaBarrierIsActive = false;
 
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
-            );
-            PlayParticleEffect(PlayScript.DispelLife, Guid);
+            return false;
         }
+
+        ManaBarrierIsActive = false;
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.DispelLife, Guid);
 
         return true;
     }
@@ -899,16 +899,16 @@ partial class Player
                 )
             );
             PlayParticleEffect(PlayScript.ShieldUpYellow, Guid);
-        }
-        else
-        {
-            EvasiveStanceIsActive = false;
 
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
-            );
-            PlayParticleEffect(PlayScript.DispelLife, Guid);
+            return false;
         }
+
+        EvasiveStanceIsActive = false;
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.DispelLife, Guid);
 
         return true;
     }

@@ -1399,7 +1399,7 @@ partial class Player
         var phalanxPenaltyMod = PhalanxIsActive ? 0.25f : 0.0f;
         var provokePenaltyMod = ProvokeIsActive ? 0.25f : 0.0f;
         var parryPenaltyMod = ParryIsActive ? 0.25f : 0.0f;
-        var furyPenaltyMod = FuryEnrageIsActive || FuryStanceIsActive ? 0.25f : 0.0f;
+        var furyPenaltyMod = FuryEnrageIsActive ? 0.25f : 0.0f;
         var multiShotPenaltyMod = MultiShotIsActive ? 0.25f : 0.0f;
         var steadyShotPenaltyMod = SteadyShotIsActive ? 0.25f : 0.0f;
         var smokescreenPenaltyMod = SmokescreenIsActive ? 0.25f : 0.0f;
