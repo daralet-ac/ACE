@@ -209,12 +209,12 @@ partial class Player
         // point of no return beyond this point -- cannot be cancelled
         actionChain.AddAction(this, () => Attacking = true);
 
-        if (subsequent)
-        {
-            // client shows hourglass, until attack done is received
-            // retail only did this for subsequent attacks w/ repeat attacks on
-            Session.Network.EnqueueSend(new GameEventCombatCommenceAttack(Session));
-        }
+        // if (subsequent)
+        // {
+        //     // client shows hourglass, until attack done is received
+        //     // retail only did this for subsequent attacks w/ repeat attacks on
+        //     Session.Network.EnqueueSend(new GameEventCombatCommenceAttack(Session));
+        // }
 
         var projectileSpeed = GetProjectileSpeed();
 
