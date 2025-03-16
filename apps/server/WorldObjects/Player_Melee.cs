@@ -356,13 +356,6 @@ partial class Player
         // TODO: ensure enough stamina for attack
         var staminaCost = GetAttackStamina((float)LastAttackAnimationLength, weapon);
 
-        if (EquippedCombatAbility == CombatAbility.Fury && QuestManager.HasQuest($"{this.Name},Reckless"))
-        {
-            var recklessStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless");
-            float recklessMod = 1 + (recklessStacks / 1000);
-            staminaCost = (int)(staminaCost * recklessMod);
-        }
-
         // JEWEL - Citrine: Stamina cost reduction
         var stamReductionMod = 1.0f - Jewel.GetJewelEffectMod(this, PropertyInt.GearStamReduction, "StamReduction");
         staminaCost = Convert.ToInt32(staminaCost * stamReductionMod);

@@ -27,11 +27,12 @@ partial class Player
     private double ParryActivatedDuration = 10;
 
     // Blademaster
-    public bool FuryIsActive => LastFuryActivated > Time.GetUnixTime() - FuryActivatedDuration;
-    private double LastFuryActivated;
-    private double FuryActivatedDuration = 10;
-    public bool FuryActivated;
-    public bool FuryDumped = false;
+    public bool FuryEnrageIsActive => LastFuryEnrageActivated > Time.GetUnixTime() - FuryEnrageActivatedDuration;
+    private double LastFuryEnrageActivated;
+    private double FuryEnrageActivatedDuration = 10;
+    public bool FuryStanceIsActive;
+    public float FuryMeter;
+    public float EnrageLevel;
 
     // Archer
     public bool SteadyShotIsActive => LastSteadyShotActivated > Time.GetUnixTime() - SteadyShotActivatedDuration;
@@ -201,12 +202,70 @@ partial class Player
 
         if (ParryIsActive)
         {
-            return true;
+            return false;
         }
 
         LastParryActivated = Time.GetUnixTime();
 
         PlayParticleEffect(PlayScript.EnchantUpRed, Guid);
+
+        return true;
+    }
+
+    public bool TryUseFury(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Fury))
+        {
+            return false;
+        }
+
+        if (!FuryStanceIsActive && !FuryEnrageIsActive)
+        {
+            FuryStanceIsActive = true;
+            FuryMeter = 0.0f;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You channel your inner fury!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.SkillUpOrange, Guid);
+
+            return false;
+        }
+
+        if (FuryEnrageIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Fury while Enraged.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (FuryStanceIsActive && FuryMeter < 0.5f)
+        {
+            FuryStanceIsActive = false;
+            FuryMeter = 0.0f;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You calm down and release rage.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.SkillDownOrange, Guid);
+
+            return true;
+        }
+
+        FuryStanceIsActive = false;
+        EnrageLevel = FuryMeter;
+        FuryMeter = 0.0f;
+        LastFuryEnrageActivated = Time.GetUnixTime();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You unleash your rage ({Math.Round(EnrageLevel * 100)}%)!", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.EnchantUpOrange, Guid);
 
         return true;
     }
@@ -987,6 +1046,21 @@ partial class Player
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             $"Parry can only be used with a Warrior Focus, Blademaster Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Fury:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Blademaster
+                        or (int)CombatFocusType.Warrior
+                        or (int)CombatFocusType.Archer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Fury can only be used with a Blademaster Focus, Warrior Focus, or Archer Focus",
                             ChatMessageType.Broadcast
                         )
                     );

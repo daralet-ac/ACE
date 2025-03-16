@@ -310,7 +310,7 @@ public class DamageEvent
         // Check for guaranteed hits
         var isOverpower = CheckForOverpower(attacker, defender);
         var isSteadyShotNoEvade = CheckForCombatAbilitySteadyShotNoEvade(playerAttacker, _attackerCombatAbility);
-        var isFuryNoEvade = CheckForCombatAbilityFuryNoEvade(playerAttacker, _attackerCombatAbility);
+        var isFuryNoEvade = CheckForCombatAbilityEnrageNoEvade(playerAttacker, _attackerCombatAbility);
         var isBackstabNoEvade = CheckForCombatAbilityBackstabNoEvade(playerAttacker);
 
         if (isOverpower || isSteadyShotNoEvade || isFuryNoEvade || isBackstabNoEvade || attacker == defender)
@@ -385,14 +385,9 @@ public class DamageEvent
         return _overpower;
     }
 
-    private bool CheckForCombatAbilityFuryNoEvade(Player playerAttacker, CombatAbility attackerCombatAbility)
+    private bool CheckForCombatAbilityEnrageNoEvade(Player playerAttacker, CombatAbility attackerCombatAbility)
     {
-        if (playerAttacker == null)
-        {
-            return false;
-        }
-
-        if (!playerAttacker.FuryActivated)
+        if (playerAttacker is not {FuryEnrageIsActive: true})
         {
             return false;
         }
@@ -617,7 +612,7 @@ public class DamageEvent
         _dualWieldDamageBonus = GetDualWieldDamageBonus(playerAttacker);
         _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(playerAttacker);
         _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
-        _combatAbilityFuryDamageBonus = GetCombatAbilityRecklessDamageBonus(attacker, defender, playerAttacker);
+        _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(playerAttacker, playerDefender);
         _combatAbilitySteadyShotDamageBonus = GetCombatAbilitySteadyShotDamageBonus(attacker, defender, playerAttacker);
         _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
         SneakAttackMod = attacker.GetSneakAttackMod(defender);
@@ -690,52 +685,27 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Fury: Damage increased by up to 25%.
+    /// COMBAT ABILITY - Fury (Stance): Damage increased by 10% and damage taken increased by 10%. Dealing damage and
+    /// taking damage builds up a Fury meter. Fury meter decreases over time.
+    /// COMBAT ABILITY - Fury (Enrage): Damage increased by Fury build up amount (%) for 10 seconds.
     /// </summary>
-    private float GetCombatAbilityRecklessDamageBonus(Creature attacker, Creature defender, Player playerAttacker)
+    private static float GetCombatAbilityFuryDamageBonus(Player playerAttacker, Player playerDefender)
     {
         var recklessMod = 1.0f;
 
-        if (playerAttacker == null)
+        if (playerAttacker is {FuryStanceIsActive: true})
         {
-            return recklessMod;
+            recklessMod += 0.1f;
         }
 
-        if (playerAttacker.EquippedCombatAbility != CombatAbility.Fury || defender == playerAttacker)
+        if (playerDefender is { FuryStanceIsActive: true } or { FuryEnrageIsActive: true })
         {
-            return recklessMod;
+            recklessMod += 0.1f;
         }
 
-        if (CombatType != CombatType.Melee && !(attacker.GetDistance(defender) < 3))
+        if (playerAttacker is {FuryEnrageIsActive: true})
         {
-            return recklessMod;
-        }
-
-        // 500 stacks is max, out of 2000 for a max of 25%
-        var recklessStacks = Player.HandleRecklessStamps(playerAttacker);
-
-        // If Reckless is not activated and last Reckless duration is over, recklessMod += stacks / 2000
-        if (!playerAttacker.FuryIsActive)
-        {
-            recklessMod += recklessStacks / 2000f;
-        }
-
-        // If Reckless is activated and Reckless duration is over, set Activated to false and erase quest stamps
-        if (playerAttacker.FuryIsActive)
-        {
-            playerAttacker.FuryActivated = false;
-            playerAttacker.FuryDumped = false;
-            playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
-        }
-
-        // If Reckless is activated and duration is not over, set Activated to false, erase quest stamps, and recklessMod += stacks / 1000
-        if (playerAttacker.FuryIsActive)
-        {
-            playerAttacker.FuryActivated = false;
-            playerAttacker.FuryDumped = true;
-            playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
-
-            recklessMod += recklessStacks / 1000f;
+            recklessMod += playerAttacker.EnrageLevel;
         }
 
         return recklessMod;
@@ -1110,11 +1080,11 @@ public class DamageEvent
 
     private void PostDamageMitigationEffects(Creature attacker, Creature defender, WorldObject damageSource)
     {
-        var playerAttack = attacker as Player;
+        var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
-        CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttack, playerDefender);
-        CheckForCombatAbilityFuryRecklessSelfDamage(playerAttack);
+        CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttacker, playerDefender);
+        CheckForCombatAbilityFuryBuildUp(playerAttacker, playerDefender);
 
         if (_attacker.IsMonster)
         {
@@ -1152,58 +1122,34 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Fury Self-damage chance with reckless attacks.
-    /// Max Fury stacks = 500. Become "Reckless" at 250 stacks. Self-damage chance grows as player gets closer
-    /// to 500 stacks. Max chance = 10%. When Self-damage occurs, attacker takes damage equal to
-    /// 50% of the damage done to the enemy on this attack, or 10% of player max health, whichever is smaller.
+    /// COMBAT ABILITY - Fury (build-up).
     /// </summary>
-    private void CheckForCombatAbilityFuryRecklessSelfDamage(Player playerAttacker)
+    private void CheckForCombatAbilityFuryBuildUp(Player playerAttacker, Player playerDefender)
     {
-        if (playerAttacker == null || playerAttacker.EquippedCombatAbility != CombatAbility.Fury)
+        if (playerDefender is { FuryStanceIsActive: true })
         {
-            return;
+            var furyGained = Damage / playerDefender.Health.MaxValue / 10;
+            playerDefender.FuryMeter += furyGained;
+
+            if (playerDefender.FuryMeter > 1.0f)
+            {
+                playerDefender.FuryMeter = 1.0f;
+            }
         }
 
-        const int recklessThreshold = 250;
-        var stacks = playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless");
-
-        if (stacks <= recklessThreshold)
+        if (playerAttacker is { FuryStanceIsActive: true } && playerAttacker.GetPowerAccuracyBar() >= 0.5f)
         {
-            return;
+            var equippedWeapon = playerAttacker.GetEquippedWeapon();
+            var animSpeedMod = WeaponAnimationLength.GetWeaponAnimLength(equippedWeapon);
+            var furyGained = playerAttacker.GetPowerAccuracyBar() / 10 * animSpeedMod;
+
+            playerAttacker.FuryMeter += furyGained;
+
+            if (playerAttacker.FuryMeter > 1.0f)
+            {
+                playerAttacker.FuryMeter = 1.0f;
+            }
         }
-
-        var recklessChance = 0.1f * (stacks - recklessThreshold) / recklessThreshold;
-
-        if (!(recklessChance > ThreadSafeRandom.Next(0f, 1f)))
-        {
-            return;
-        }
-
-        var damageDealt = (uint)(Damage / 2);
-        var percentHealth = playerAttacker.Health.MaxValue / 10;
-        var damage = Math.Min(damageDealt, percentHealth);
-
-        playerAttacker.UpdateVitalDelta(playerAttacker.Health, -(int)damage);
-        playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, damage);
-
-        playerAttacker.Session.Network.EnqueueSend(
-            new GameMessageSystemChat(
-                $"In your rage, you injure yourself, suffering {damage} points of damage!",
-                ChatMessageType.CombatSelf
-            )
-        );
-
-        playerAttacker.PlayParticleEffect(PlayScript.SplatterMidLeftFront, playerAttacker.Guid);
-
-        if (!playerAttacker.IsDead)
-        {
-            return;
-        }
-
-        var lastDamager = new DamageHistoryInfo(playerAttacker);
-
-        playerAttacker.OnDeath(lastDamager, DamageType.Health);
-        playerAttacker.Die();
     }
 
     /// <summary>

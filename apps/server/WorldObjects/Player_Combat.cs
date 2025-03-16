@@ -267,8 +267,8 @@ partial class Player
 
             if (!SquelchManager.Squelches.Contains(this, ChatMessageType.CombatSelf))
             {
-                var recklessMsg = "";
-                var recklessPercent = 0;
+                var furyMsg = "";
+                var furyPercent = 0;
                 var critMsg = damageEvent.IsCritical ? "Critical Hit! " : "";
                 var sneakMsg = damageEvent.SneakAttackMod > 1.0f ? "Sneak Attack! " : "";
 
@@ -277,31 +277,24 @@ partial class Player
                     single = null;
                 Strings.GetAttackVerb(damageEvent.DamageType, percent, ref verb, ref single);
 
-                if (this != target)
+                if (this != target && FuryEnrageIsActive || FuryStanceIsActive)
                 {
-                    if (this.EquippedCombatAbility == CombatAbility.Fury)
+                    furyPercent = (int)(FuryMeter * 100);
+                    if (furyPercent > 100)
                     {
-                        if (this.GetEquippedMeleeWeapon() != null || this.GetDistance(target) < 3)
-                        {
-                            recklessPercent = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless") / 5;
-                            if (recklessPercent > 100)
-                            {
-                                recklessPercent = 100;
-                            }
+                        furyPercent = 100;
+                    }
 
-                            if (recklessPercent < 0)
-                            {
-                                recklessPercent = 0;
-                            }
+                    if (furyPercent < 0)
+                    {
+                        furyPercent = 0;
+                    }
 
-                            recklessMsg = $"{recklessPercent} Fury! ";
+                    furyMsg = $"{furyPercent}% Rage! ";
 
-                            if (this.FuryDumped == true)
-                            {
-                                this.FuryDumped = false;
-                                recklessMsg = $"Furious Blow! ";
-                            }
-                        }
+                    if (this.FuryEnrageIsActive)
+                    {
+                        furyMsg = $"Enrage! ";
                     }
                 }
 
@@ -309,16 +302,16 @@ partial class Player
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"{recklessMsg}{sneakMsg}Glancing Blow! You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.",
+                            $"{furyMsg}{sneakMsg}Glancing Blow! You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.",
                             ChatMessageType.CombatSelf
                         )
                     );
                 }
-                else if (this != target && recklessMsg != "")
+                else if (this != target && furyMsg != "")
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"{recklessMsg}{critMsg}{sneakMsg}You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.",
+                            $"{furyMsg}{critMsg}{sneakMsg}You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.",
                             ChatMessageType.CombatSelf
                         )
                     );
@@ -1406,7 +1399,7 @@ partial class Player
         var phalanxPenaltyMod = PhalanxIsActive ? 0.25f : 0.0f;
         var provokePenaltyMod = ProvokeIsActive ? 0.25f : 0.0f;
         var parryPenaltyMod = ParryIsActive ? 0.25f : 0.0f;
-        var furyPenaltyMod = FuryIsActive ? 0.25f : 0.0f;
+        var furyPenaltyMod = FuryEnrageIsActive || FuryStanceIsActive ? 0.25f : 0.0f;
         var multiShotPenaltyMod = MultiShotIsActive ? 0.25f : 0.0f;
         var steadyShotPenaltyMod = SteadyShotIsActive ? 0.25f : 0.0f;
         var smokescreenPenaltyMod = SmokescreenIsActive ? 0.25f : 0.0f;
