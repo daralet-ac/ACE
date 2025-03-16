@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
@@ -1182,8 +1183,13 @@ partial class Creature
 
     private double GetNewBaseDamage(int tier, float statWeight, double lethality)
     {
-        // target enemy damage per second
+        // target enemy damage per second. If enemy uses nearby player scaling, use highest tier enemy damage.
         var weightedEnemyDamage = (enemyDamage[tier] + (enemyDamage[tier + 1] - enemyDamage[tier]) * statWeight);
+        if (UseNearbyPlayerScaling is true)
+        {
+            weightedEnemyDamage = enemyDamage.Max();
+        }
+
         var weightedPlayerHealth = (
             avgPlayerHealth[tier] + (avgPlayerHealth[tier + 1] - avgPlayerHealth[tier]) * statWeight
         );
