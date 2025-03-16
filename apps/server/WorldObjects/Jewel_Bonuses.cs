@@ -1426,9 +1426,9 @@ partial class Jewel
         float BonusSecondary)> JewelEffectInfoMain = new()
     {
         // neck
-        { ACE.Entity.Enum.MaterialType.Sunstone, (PropertyInt.GearExperienceGain, "Illuminated Mind", "ring", 5, 0.25f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.Sapphire, (PropertyInt.GearMagicFind, "Seeker", "ring", 5, 0.25f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.GreenJade, (PropertyInt.GearPyrealFind, "Prosperity", "ring", 5, 0.25f, 0, 0.0f) },
+        { ACE.Entity.Enum.MaterialType.Sunstone, (PropertyInt.GearExperienceGain, "Illuminated Mind", "necklace", 5, 0.25f, 0, 0.0f) },
+        { ACE.Entity.Enum.MaterialType.Sapphire, (PropertyInt.GearMagicFind, "Seeker", "necklace", 5, 0.25f, 0, 0.0f) },
+        { ACE.Entity.Enum.MaterialType.GreenJade, (PropertyInt.GearPyrealFind, "Prosperity", "necklace", 5, 0.25f, 0, 0.0f) },
 
         // ring
         { ACE.Entity.Enum.MaterialType.Carnelian, (PropertyInt.GearStrength, "Mighty Thews", "ring", 10, 1.0f, 0, 0.0f) },
