@@ -271,20 +271,9 @@ partial class Player
                 // Check for missile cleaves
                 var numCleaves = 0;
 
-                if (
-                    EquippedCombatAbility == CombatAbility.Multishot
-                    && LastMultishotActivated < Time.GetUnixTime() - MultishotActivatedDuration
-                )
+                if (MultiShotIsActive && GetPowerAccuracyBar() >= 0.5f)
                 {
                     numCleaves = 1;
-                }
-
-                if (
-                    EquippedCombatAbility == CombatAbility.Multishot
-                    && LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration
-                )
-                {
-                    numCleaves = 2;
                 }
 
                 numCleaves += CheckForRatingSlashCleaveBonus(ammo);

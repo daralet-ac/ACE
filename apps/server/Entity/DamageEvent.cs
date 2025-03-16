@@ -660,7 +660,7 @@ public class DamageEvent
     /// </summary>
     private float GetCombatAbilityMultishotDamagePenalty(Player playerAttacker)
     {
-        return playerAttacker is { EquippedCombatAbility: CombatAbility.Multishot } ? 0.75f : 1.0f;
+        return playerAttacker is { MultiShotIsActive: true } ? 0.75f : 1.0f;
     }
 
     /// <summary>

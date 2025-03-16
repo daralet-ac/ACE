@@ -270,6 +270,25 @@ partial class Player
         return true;
     }
 
+    public bool TryUseMultishot(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Multishot))
+        {
+            return false;
+        }
+
+        if (MultiShotIsActive)
+        {
+            return false;
+        }
+
+        LastMultishotActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.EnchantUpYellow, Guid);
+
+        return true;
+    }
+
     public bool TryUseSmokescreen(WorldObject ability)
     {
         if (!VerifyCombatFocus(CombatAbility.Smokescreen))
@@ -1061,6 +1080,18 @@ partial class Player
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             $"Fury can only be used with a Blademaster Focus, Warrior Focus, or Archer Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Multishot:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Archer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Multishot can only be used with an Archer Focus",
                             ChatMessageType.Broadcast
                         )
                     );

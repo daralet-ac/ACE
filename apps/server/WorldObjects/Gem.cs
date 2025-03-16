@@ -271,6 +271,9 @@ public class Gem : Stackable
                 case CombatAbility.Fury:
                     startCooldown = player.TryUseFury(this);
                     break;
+                case CombatAbility.Multishot:
+                    startCooldown = player.TryUseMultishot(this);
+                    break;
                 case CombatAbility.Smokescreen:
                     startCooldown = player.TryUseSmokescreen(this);
                     break;
