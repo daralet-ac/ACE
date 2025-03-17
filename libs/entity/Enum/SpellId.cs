@@ -6479,6 +6479,7 @@ public enum SpellId : uint
     Phalanx = 0x8000 | 10066, // 20 second cooldown
     Multishot = 0x8000 | 10067, // 20 second cooldown
     Steadyshot = 0x8000 | 10068, // 20 second cooldown
+    Backstab = 0x8000 | 10069, // 20 second cooldown
 }
 
 public static class SpellExtensions

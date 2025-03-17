@@ -308,6 +308,25 @@ partial class Player
         return true;
     }
 
+    public bool TryUseBackstab(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Backstab))
+        {
+            return false;
+        }
+
+        if (BackstabIsActive)
+        {
+            return false;
+        }
+
+        LastBackstabActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.EnchantUpGreen, Guid);
+
+        return true;
+    }
+
     public bool TryUseSmokescreen(WorldObject ability)
     {
         if (!VerifyCombatFocus(CombatAbility.Smokescreen))
@@ -1171,6 +1190,21 @@ partial class Player
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             $"Smokescreen can only be used with a Vagabond Focus, Archer Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Backstab:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Vagabond
+                        or (int)CombatFocusType.Archer
+                        or (int)CombatFocusType.Sorcerer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Assassinate can only be used with a Vagabond Focus, Archer Focus, or Spellsword Focus",
                             ChatMessageType.Broadcast
                         )
                     );

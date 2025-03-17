@@ -98,7 +98,31 @@ partial class Creature
             }
         }
 
-        var manaCostMultiplier = PropertyManager.GetDouble("mana_cost_multiplier").Item;
+        var abilityPenaltyMod = 0.0f;
+
+        if (this is Player playerCaster)
+        {
+            var phalanxPenaltyMod = playerCaster.PhalanxIsActive ? 0.25f : 0.0f;
+            var provokePenaltyMod = playerCaster.ProvokeIsActive ? 0.25f : 0.0f;
+            var parryPenaltyMod = playerCaster.ParryIsActive ? 0.25f : 0.0f;
+            var furyPenaltyMod = playerCaster.FuryEnrageIsActive ? 0.25f : 0.0f;
+            var multiShotPenaltyMod = playerCaster.MultiShotIsActive ? 0.25f : 0.0f;
+            var steadyShotPenaltyMod = playerCaster.SteadyShotIsActive ? 0.25f : 0.0f;
+            var smokescreenPenaltyMod = playerCaster.SmokescreenIsActive ? 0.25f : 0.0f;
+            var backstabPenaltyMod = playerCaster.BackstabIsActive ? 0.25f : 0.0f;
+
+            abilityPenaltyMod = 1.0f
+                                + phalanxPenaltyMod
+                                + provokePenaltyMod
+                                + parryPenaltyMod
+                                + furyPenaltyMod
+                                + multiShotPenaltyMod
+                                + steadyShotPenaltyMod
+                                + smokescreenPenaltyMod
+                                + backstabPenaltyMod;
+        }
+
+        var manaCostMultiplier = PropertyManager.GetDouble("mana_cost_multiplier").Item + abilityPenaltyMod;
 
         // Mana Conversion
         var manaConversion = caster.GetCreatureSkill(Skill.ManaConversion);
