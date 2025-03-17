@@ -403,12 +403,7 @@ public class DamageEvent
     /// </summary>
     private bool CheckForCombatAbilityBackstabNoEvade(Player playerAttacker)
     {
-        if (playerAttacker == null)
-        {
-            return false;
-        }
-
-        if (!playerAttacker.BackstabIsActive)
+        if (playerAttacker is not {BackstabIsActive: true, IsStealthed: true})
         {
             return false;
         }
@@ -751,7 +746,7 @@ public class DamageEvent
             return 1.0f;
         }
 
-        if (CheckForPlayerStealthGuaranteedCritical(playerAttacker, playerDefender) || CheckForRatingReprisal(playerAttacker))
+        if (CheckForPlayerStealthBackstabGuaranteedCritical(playerAttacker) || CheckForRatingReprisal(playerAttacker))
         {
             return 1.0f;
         }
@@ -854,24 +849,9 @@ public class DamageEvent
                * _levelScalingMod;
     }
 
-    private bool CheckForPlayerStealthGuaranteedCritical(Creature playerAttacker, Creature playerDefender)
+    private bool CheckForPlayerStealthBackstabGuaranteedCritical(Player playerAttacker)
     {
-        if (playerAttacker == null)
-        {
-            return false;
-        }
-
-        if (!IsAttackFromStealth())
-        {
-            return false;
-        }
-
-        if (playerDefender == null)
-        {
-            SneakAttackMod = 3.0f;
-        }
-
-        return true;
+        return playerAttacker is {BackstabIsActive: true, IsStealthed: true};
     }
 
     /// <summary>

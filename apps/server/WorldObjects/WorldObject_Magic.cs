@@ -439,30 +439,11 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Reflect: Gain 20% increased magic defense while attempting to resist a spell
+    /// COMBAT ABILITY - Reflect: Gain 50% increased magic defense while attempting to resist a spell
     /// </summary>
     private static float CheckForCombatAbilityReflectMagicDefBonus(Player targetPlayer)
     {
-        var mod = 0.0f;
-
-        if (targetPlayer == null)
-        {
-            return mod;
-        }
-
-        if (targetPlayer.EquippedCombatAbility != CombatAbility.Reflect)
-        {
-            return mod;
-        }
-
-        mod = 0.25f;
-
-        if (targetPlayer.ReflectIsActive)
-        {
-            mod = 0.5f;
-        }
-
-        return mod;
+        return targetPlayer is { ReflectIsActive: true } ? 0.5f : 0.0f;
     }
 
     /// <summary>

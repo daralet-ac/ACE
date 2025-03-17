@@ -6480,6 +6480,7 @@ public enum SpellId : uint
     Multishot = 0x8000 | 10067, // 20 second cooldown
     Steadyshot = 0x8000 | 10068, // 20 second cooldown
     Backstab = 0x8000 | 10069, // 20 second cooldown
+    Reflect = 0x8000 | 1070, // 20 second cooldown
 }
 
 public static class SpellExtensions

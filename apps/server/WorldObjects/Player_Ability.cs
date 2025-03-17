@@ -906,6 +906,25 @@ partial class Player
         };
     }
 
+    public bool TryUseReflect(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Reflect))
+        {
+            return false;
+        }
+
+        if (ReflectIsActive)
+        {
+            return false;
+        }
+
+        LastReflectActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.SkillUpPurple, Guid);
+
+        return true;
+    }
+
     public bool TryUseManaBarrier()
     {
         if (!VerifyCombatFocus(CombatAbility.ManaBarrier))
@@ -1204,7 +1223,39 @@ partial class Player
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Assassinate can only be used with a Vagabond Focus, Archer Focus, or Spellsword Focus",
+                            $"Backstab can only be used with a Vagabond Focus, Archer Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.EnchantedBladeArc:
+            case CombatAbility.EnchantedBladeBlast:
+            case CombatAbility.EnchantedBladeVolley:
+            case CombatAbility.EnchantedBladeDrainLife:
+            case CombatAbility.EnchantedBladeDrainStamina:
+            case CombatAbility.EnchantedBladeDrainMana:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Spellsword})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Enchanted Blade can only be used with a Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Reflect:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Spellsword
+                        or (int)CombatFocusType.Sorcerer
+                        or (int)CombatFocusType.Warrior})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Reflect can only be used with a Spellsword Focus, Sorcerer Focus, or Warrior Focus",
                             ChatMessageType.Broadcast
                         )
                     );

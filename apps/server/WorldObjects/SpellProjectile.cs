@@ -597,7 +597,7 @@ public class SpellProjectile : WorldObject
 
         resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true, WeaponSpellcraft);
 
-        CheckForCombatAbilityReflectSpell(resisted, targetPlayer, sourceCreature);
+        CheckForCombatAbilityReflectSpell(partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, sourceCreature);
 
         var resistedMod = 1.0f;
         _partialEvasion = partialEvasion;
@@ -1152,7 +1152,7 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Reflect: Reflect resist spells back to the caster.
+    /// COMBAT ABILITY - Reflect: Reflect resisted spells back to the caster.
     /// </summary>
     private void CheckForCombatAbilityReflectSpell(bool resisted, Player targetPlayer, Creature sourceCreature)
     {
@@ -1161,7 +1161,7 @@ public class SpellProjectile : WorldObject
             return;
         }
 
-        if (targetPlayer.EquippedCombatAbility == CombatAbility.Reflect)
+        if (targetPlayer.ReflectIsActive)
         {
             targetPlayer.TryCastSpell(Spell, sourceCreature, null, null, false, false, false);
         }

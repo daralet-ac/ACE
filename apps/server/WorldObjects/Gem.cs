@@ -300,6 +300,9 @@ public class Gem : Stackable
                 case CombatAbility.EnchantedBladeDrainMana:
                     startCooldown = player.TryUseEnchantedBlade(this);
                     break;
+                case CombatAbility.Reflect:
+                    startCooldown = player.TryUseReflect(this);
+                    break;
                 case CombatAbility.ManaBarrier:
                     startCooldown = player.TryUseManaBarrier();
                     break;

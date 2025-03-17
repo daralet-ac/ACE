@@ -1072,11 +1072,15 @@ partial class Creature
 
         var multiplier = 1.25f;
 
-        // COMBAT ABILITY - Backstab: Sneak attack damage increased to 50%. If target has full hp, increased to 100%.
+        // COMBAT ABILITY - Backstab: Sneak attack damage increased to 50% if nearby.
         if (this as Player is { BackstabIsActive: true })
         {
             var targetIsNearby = GetDistance(creatureTarget) < 10;
-            multiplier = creatureTarget.Health.Current >= creatureTarget.Health.MaxValue && targetIsNearby ? 2.0f : 1.5f;
+
+            if (targetIsNearby)
+            {
+                multiplier = 1.5f;
+            }
         }
 
         if (behind)
@@ -1090,8 +1094,6 @@ partial class Creature
             {
                 return 1.0f;
             }
-
-            Console.WriteLine(multiplier);
 
             return multiplier;
         }
