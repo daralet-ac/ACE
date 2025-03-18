@@ -904,5 +904,15 @@ partial class Player
                 FuryMeter = 0.0f;
             }
         }
+
+        if (OverloadMeter > 0.0f)
+        {
+            OverloadMeter -= 0.1f;
+
+            if (OverloadMeter < 0.0f)
+            {
+                OverloadMeter = 0.0f;
+            }
+        }
     }
 }

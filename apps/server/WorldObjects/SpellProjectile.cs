@@ -419,6 +419,11 @@ public class SpellProjectile : WorldObject
             ref resisted
         );
 
+        if (player is { OverloadStanceIsActive: true })
+        {
+            player.IncreaseOverloadMeter(Spell);
+        }
+
         if (targetPlayer != null && damage != null)
         {
             SigilTrinketSpellDamageReduction = 1.0f;
@@ -712,10 +717,9 @@ public class SpellProjectile : WorldObject
         // Possible 2x + damage bonus for the slayer property
         var slayerMod = GetWeaponCreatureSlayerModifier(weapon, sourceCreature, target);
 
-        var combatAbilityDamageMod = 1.0f;
-        combatAbilityDamageMod += CheckForCombatAbilityOverloadDamageMod(sourcePlayer);
-        combatAbilityDamageMod -= CheckForCombatAbilityBatteryDamagePenalty(sourcePlayer);
-        combatAbilityDamageMod += CheckForCombatAbilityEnchantedWeaponDamageBonus(sourcePlayer);
+        var overloadDamageMod = CheckForCombatAbilityOverloadDamageMod(sourcePlayer);
+        var batteryDamageMod = 1.0f;
+            //CheckForCombatAbilityBatteryDamagePenalty(sourcePlayer); // TODO battery
 
         var lethalityMod = 1.0f;
         if (sourceCreature is not null)
@@ -734,7 +738,7 @@ public class SpellProjectile : WorldObject
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
         {
-            lifeMagicDamage = LifeProjectileDamage * Spell.DamageRatio * combatAbilityDamageMod;
+            lifeMagicDamage = LifeProjectileDamage * Spell.DamageRatio * overloadDamageMod * batteryDamageMod;
 
             // could life magic projectiles crit?
             // if so, did they use the same 1.5x formula as war magic, instead of 2.0x?
@@ -866,7 +870,8 @@ public class SpellProjectile : WorldObject
                 * attributeMod
                 * elementalDamageMod
                 * slayerMod
-                * combatAbilityDamageMod
+                * overloadDamageMod
+                * batteryDamageMod
                 * jewelElementalist
                 * jewelElemental
                 * jewelSelfHarm
@@ -1011,29 +1016,6 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Enchant: +25% increased damage with spells while a melee/missile weapon is equipped.
-    /// </summary>
-    private static float CheckForCombatAbilityEnchantedWeaponDamageBonus(Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        if (!sourcePlayer.EnchantedWeaponIsActive)
-        {
-            return 0.0f;
-        }
-
-        if (sourcePlayer.GetEquippedMeleeWeapon() != null || sourcePlayer.GetEquippedMissileLauncher() != null || sourcePlayer.GetEquippedMissileWeapon() != null)
-        {
-            return 0.25f;
-        }
-
-        return 0.0f;
-    }
-
-    /// <summary>
     /// COMBAT ABILITY - Battery: Up to 25% damage penalty, if current mana drops below 75%. (-25% at 0 mana)
     /// </summary>
     private static float CheckForCombatAbilityBatteryDamagePenalty(Player sourcePlayer)
@@ -1070,51 +1052,12 @@ public class SpellProjectile : WorldObject
     /// </summary>
     private static float CheckForCombatAbilityOverloadDamageMod(Player sourcePlayer)
     {
-        if (sourcePlayer == null)
+        return sourcePlayer switch
         {
-            return 0.0f;
-        }
-
-        if (sourcePlayer.EquippedCombatAbility != CombatAbility.Overload || !sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload"))
-        {
-            return 0.0f;
-        }
-
-        switch (sourcePlayer.OverloadActivated)
-        {
-            case false:
-            {
-                var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-                var overloadMod = (float)overloadStacks / 2000;
-
-                return overloadMod;
-            }
-            case true
-            when sourcePlayer.OverloadIsActive:
-            {
-                sourcePlayer.OverloadActivated = false;
-                sourcePlayer.OverloadDumped = true;
-
-                var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-                var overloadMod = (float)overloadStacks / 1000;
-
-                sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
-
-                return overloadMod;
-            }
-        }
-
-        if (!sourcePlayer.OverloadIsActive)
-        {
-            return 0.0f;
-        }
-
-        // reset if player didn't cast overload discharge within ten sec
-        sourcePlayer.OverloadActivated = false;
-        sourcePlayer.OverloadDumped = false;
-        sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
-
-        return 0.0f;
+            { OverloadDischargeIsActive: true } => 1.0f + sourcePlayer.DischargeLevel,
+            { OverloadStanceIsActive: true } => 1.0f + sourcePlayer.OverloadMeter * 0.25f,
+            _ => 1.0f
+        };
     }
 
     /// <summary>
@@ -1534,8 +1477,6 @@ public class SpellProjectile : WorldObject
             target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
         }
 
-        var overloadPercent = HandleCombatAbilityOverloadStamps(sourcePlayer, sourceCreature, out var overload);
-
         // add threat to damaged targets
         if (target.IsMonster && sourcePlayer != null)
         {
@@ -1587,7 +1528,20 @@ public class SpellProjectile : WorldObject
             var critMsg = critical ? "Critical hit! " : "";
             var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
             var overpowerMsg = overpower ? "Overpower! " : "";
-            var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
+
+            var overloadMsg = "";
+
+            if (sourcePlayer is {OverloadStanceIsActive: true})
+            {
+                var overloadPercent = Math.Round(sourcePlayer.OverloadMeter * 100);
+                overloadMsg = $"{overloadPercent}% Overload! ";
+            }
+
+            if (sourcePlayer is { OverloadDischargeIsActive: true })
+            {
+                overloadMsg = "Discharge! ";
+            }
+
             var resistSome = _partialEvasion == PartialEvasion.Some ? "Partial resist! " : "";
             var strikeThrough = Strikethrough > 0 ? "Strikethrough! " : "";
 
@@ -1597,10 +1551,9 @@ public class SpellProjectile : WorldObject
             {
                 var critProt = critDefended ? " Your critical hit was avoided with their augmentation!" : "";
 
-                if (sourcePlayer.OverloadDumped)
+                if (sourcePlayer is {OverloadDischargeIsActive: true})
                 {
-                    sourcePlayer.OverloadDumped = false;
-                    overloadMsg = "Overload Discharged! ";
+                    overloadMsg = "Discharge! ";
                 }
 
                 var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}{elementalistMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
@@ -1692,54 +1645,6 @@ public class SpellProjectile : WorldObject
             Jewel.HandleCasterDefenderRampingQuestStamps(targetPlayer, sourceCreature);
             Jewel.HandlePlayerDefenderBonuses(targetPlayer, sourceCreature, damage);
         }
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Overload: Handle overload stamps.
-    /// </summary>
-    private int HandleCombatAbilityOverloadStamps(Player sourcePlayer, Creature sourceCreature, out bool overload)
-    {
-        // Overload Stamps + Messages
-        var overloadPercent = 0;
-        overload = false;
-
-        if (sourcePlayer == null)
-        {
-            return overloadPercent;
-        }
-
-        var combatAbility = CombatAbility.None;
-        var combatFocus = sourceCreature.GetEquippedCombatFocus();
-        if (combatFocus != null)
-        {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
-
-        if (combatAbility != CombatAbility.Overload)
-        {
-            return overloadPercent;
-        }
-
-        overload = true;
-        var projectileScaler = 1;
-        switch (SpellType)
-        {
-            case ProjectileSpellType.Streak:
-                projectileScaler = 5;
-                break;
-            case ProjectileSpellType.Blast:
-                projectileScaler = 3;
-                break;
-            case ProjectileSpellType.Volley:
-            case ProjectileSpellType.Ring:
-            case ProjectileSpellType.Wall:
-                projectileScaler = 6;
-                break;
-        }
-
-        overloadPercent = Player.HandleOverloadStamps(sourcePlayer, projectileScaler, Spell.Level);
-
-        return overloadPercent;
     }
 
     /// <summary>

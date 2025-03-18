@@ -286,6 +286,12 @@ public class Gem : Stackable
                 case CombatAbility.Backstab:
                     startCooldown = player.TryUseBackstab(this);
                     break;
+                case CombatAbility.Overload:
+                    startCooldown = player.TryUseOverload(this);
+                    break;
+                case CombatAbility.Battery:
+                    startCooldown = player.TryUseBattery(this);
+                    break;
                 case CombatAbility.ExposePhysicalWeakness:
                     player.TryUseExposePhysicalWeakness(this);
                     break;

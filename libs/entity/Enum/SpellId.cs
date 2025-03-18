@@ -6484,6 +6484,8 @@ public enum SpellId : uint
     Aegis = 0x8000 | 1071, // 20 second cooldown
     WeaponMaster = 0x8000 | 1072, // 20 second cooldown
     Surestrike = 0x8000 | 1073, // 20 second cooldown
+    Battery = 0x8000 | 1074, // 20 second cooldown
+    Overload = 0x8000 | 1075, // 20 second cooldown
 }
 
 public static class SpellExtensions

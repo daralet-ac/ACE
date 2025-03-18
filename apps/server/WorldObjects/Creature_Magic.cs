@@ -59,31 +59,19 @@ partial class Creature
             baseCost += spell.ManaMod * (uint)numFellows;
         }
 
-        // Check Overload and Battery Focuses
-        var combatAbility = CombatAbility.None;
-        var combatFocus = GetEquippedCombatFocus();
-        if (combatFocus != null)
+        var playerCaster = caster as Player;
+
+        // Overload - Increased cost up to 100% with Overload stacks
+        if (playerCaster is {OverloadStanceIsActive: true})
         {
-            combatAbility = combatFocus.GetCombatAbility();
+            var manaCostPenalty = (1.0f + playerCaster.OverloadMeter);
+            baseCost = (uint)(baseCost * manaCostPenalty);
         }
 
-        // Overload - Increased cost up to 50%+ with Overload stacks
-        if (combatAbility == CombatAbility.Overload && this.QuestManager.HasQuest($"{this.Name},Overload"))
-        {
-            if (spell.Flags.HasFlag(SpellFlags.FastCast))
-            {
-                baseCost = 5 * spell.Level;
-            }
-
-            var overloadStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Overload");
-            float overloadMod = 1 + (overloadStacks / 1000);
-            baseCost = (uint)(baseCost * overloadMod);
-        }
         // Battery - 20% mana cost reduction minimum, increasing with lower mana or 0 cost during Battery Activated
-        else if (combatAbility == CombatAbility.Battery)
+        else if (playerCaster is {BatteryIsActive: true})
         {
-            if (
-                this is Player { BatteryIsActive: true })
+            if (this is Player { BatteryIsActive: true })
             {
                 baseCost = 0;
             }
@@ -100,7 +88,7 @@ partial class Creature
 
         var abilityPenaltyMod = 0.0f;
 
-        if (this is Player playerCaster)
+        if (playerCaster is not null)
         {
             var phalanxPenaltyMod = playerCaster.PhalanxIsActive ? 0.25f : 0.0f;
             var provokePenaltyMod = playerCaster.ProvokeIsActive ? 0.25f : 0.0f;

@@ -59,11 +59,12 @@ partial class Player
     private double SmokescreenActivatedDuration = 10;
 
     // Sorcerer
-    public bool OverloadIsActive => LastOverloadActivated > Time.GetUnixTime() - OverloadActivatedDuration;
-    private double LastOverloadActivated;
-    private double OverloadActivatedDuration = 10;
-    public bool OverloadActivated;
-    public bool OverloadDumped = false;
+    public bool OverloadDischargeIsActive => LastOverloadDischargeActivated > Time.GetUnixTime() - OverloadDischargeActivatedDuration;
+    private double LastOverloadDischargeActivated;
+    private double OverloadDischargeActivatedDuration = 10;
+    public bool OverloadStanceIsActive;
+    public float OverloadMeter = 0.0f;
+    public float DischargeLevel;
 
     public bool BatteryIsActive => LastBatteryActivated > Time.GetUnixTime() - BatteryActivatedDuration;
     private double LastBatteryActivated;
@@ -443,6 +444,83 @@ partial class Player
             this.LastVanishActivated = Time.GetUnixTime();
             this.BeginStealth();
         }
+
+        return true;
+    }
+
+    public bool TryUseOverload(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Overload))
+        {
+            return false;
+        }
+
+        if (!OverloadStanceIsActive && !OverloadDischargeIsActive)
+        {
+            OverloadStanceIsActive = true;
+            OverloadMeter = 0.0f;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You begin to infuse your spells with extra mana!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.SkillUpBlue, Guid);
+
+            return false;
+        }
+
+        if (OverloadDischargeIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Overload while discharging.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (OverloadStanceIsActive && OverloadMeter < 0.5f)
+        {
+            OverloadStanceIsActive = false;
+            OverloadMeter = 0.0f;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You defuse your overloaded mana.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.SkillDownBlue, Guid);
+
+            return true;
+        }
+
+        OverloadStanceIsActive = false;
+        DischargeLevel = OverloadMeter;
+        OverloadMeter = 0.0f;
+        LastOverloadDischargeActivated = Time.GetUnixTime();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You unleash your overloaded mana ({Math.Round(DischargeLevel * 100)}%)!", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.EnchantUpBlue, Guid);
+
+        return true;
+    }
+
+    public bool TryUseBattery(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Battery))
+        {
+            return false;
+        }
+
+        if (BatteryIsActive)
+        {
+            return false;
+        }
+
+        LastBatteryActivated = Time.GetUnixTime();
+
+        //PlayParticleEffect(PlayScript.EnchantUpGreen, Guid);
 
         return true;
     }
@@ -1320,6 +1398,33 @@ partial class Player
                     return false;
                 }
                 break;
+            case CombatAbility.Overload:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Sorcerer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Overload can only be used with a Sorcerer Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Battery:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Sorcerer
+                        or (int)CombatFocusType.Vagabond
+                        or (int)CombatFocusType.Spellsword})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Battery can only be used with a Sorcerer Focus, Vagabond Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
             case CombatAbility.EnchantedBladeArc:
             case CombatAbility.EnchantedBladeBlast:
             case CombatAbility.EnchantedBladeVolley:
@@ -1372,168 +1477,14 @@ partial class Player
         return true;
     }
 
-    public static int HandleRecklessStamps(Player playerAttacker)
+    public void IncreaseOverloadMeter(Spell spell)
     {
-        var scaledStamps = Math.Round(playerAttacker.ScaleWithPowerAccuracyBar(20f));
+        var animationLength = WeaponAnimationLength.GetSpellCastAnimationLength(ProjectileSpellType.Arc, spell.Level);
 
-        scaledStamps += 20f;
-
-        var numStrikes = playerAttacker.GetNumStrikes(playerAttacker.AttackType);
-        if (numStrikes == 2)
+        OverloadMeter += 0.05f * animationLength;
+        if (OverloadMeter > 1.0f)
         {
-            if (playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded)
-            {
-                scaledStamps /= 2f;
-            }
-            else
-            {
-                scaledStamps /= 1.5f;
-            }
+            OverloadMeter = 1.0f;
         }
-
-        if (
-            playerAttacker.AttackType == AttackType.OffhandPunch
-            || playerAttacker.AttackType == AttackType.Punch
-            || playerAttacker.AttackType == AttackType.Punches
-        )
-        {
-            scaledStamps /= 1.25f;
-        }
-
-        if (!playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Reckless"))
-        {
-            playerAttacker.QuestManager.Stamp($"{playerAttacker.Name},Reckless");
-            playerAttacker.QuestManager.Increment($"{playerAttacker.Name},Reckless", (int)scaledStamps);
-        }
-        else if (playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless") < 500)
-        {
-            playerAttacker.QuestManager.Increment($"{playerAttacker.Name},Reckless", (int)scaledStamps);
-        }
-
-        var stacks = playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless");
-
-        return stacks;
-    }
-
-    public static int HandleOverloadStamps(Player sourcePlayer, int? spellTypeScaler, uint spellLevel)
-    {
-        var baseStamps = 50;
-        var playerLevel = (int)(sourcePlayer.Level / 10);
-
-        if (playerLevel > 7)
-        {
-            playerLevel = 7;
-        }
-
-        if (spellLevel == 1)
-        {
-            if (playerLevel > 2)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 2)
-        {
-            baseStamps = (int)(baseStamps * 1.5);
-
-            if (playerLevel > 3)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 3)
-        {
-            baseStamps = (int)(baseStamps * 2);
-
-            if (playerLevel > 4)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 4)
-        {
-            baseStamps = (int)(baseStamps * 2.25);
-
-            if (playerLevel > 5)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 5)
-        {
-            baseStamps = (int)(baseStamps * 2.5);
-
-            if (playerLevel > 6)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 6)
-        {
-            baseStamps = (int)(baseStamps * 2.5);
-
-            if (playerLevel > 7)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 7)
-        {
-            baseStamps = (int)(baseStamps * 2.5);
-        }
-
-        if (spellTypeScaler != null)
-        {
-            baseStamps = baseStamps / (int)spellTypeScaler;
-        }
-
-        if (!sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload"))
-        {
-            sourcePlayer.QuestManager.Stamp($"{sourcePlayer.Name},Overload");
-            sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Overload", (int)baseStamps);
-        }
-        else if (sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload") < 500)
-        {
-            sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Overload", (int)baseStamps);
-        }
-
-        var stacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-        if (stacks > 250)
-        {
-            var overloadChance = 0.075f * (stacks - 250) / 250;
-            if (overloadChance > ThreadSafeRandom.Next(0f, 1f))
-            {
-                var damage = sourcePlayer.Health.MaxValue / 10;
-                sourcePlayer.UpdateVitalDelta(sourcePlayer.Health, -(int)damage);
-                sourcePlayer.Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"Overloaded! You lose control of the energies flowing through you, suffering {damage} points of damage!",
-                        ChatMessageType.Magic
-                    )
-                );
-                sourcePlayer.PlayParticleEffect(PlayScript.Fizzle, sourcePlayer.Guid);
-                sourcePlayer.DamageHistory.Add(sourcePlayer, DamageType.Health, (uint)-damage);
-                if (sourcePlayer.IsDead)
-                {
-                    var lastDamager = sourcePlayer.DamageHistory.LastDamager;
-                    sourcePlayer.OnDeath(lastDamager, DamageType.Health, false);
-                    sourcePlayer.Die();
-                }
-            }
-        }
-
-        // Max Stacks = 500, so a percentage is stacks / 5
-        var overloadPercent = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload") / 5;
-        if (overloadPercent > 100)
-        {
-            overloadPercent = 100;
-        }
-
-        if (overloadPercent < 0)
-        {
-            overloadPercent = 0;
-        }
-
-        return overloadPercent;
     }
 }
