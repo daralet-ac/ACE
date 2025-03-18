@@ -35,5 +35,8 @@ public enum CombatAbility
     EnchantedBladeVolley,
     EnchantedBladeDrainLife,
     EnchantedBladeDrainStamina,
-    EnchantedBladeDrainMana
+    EnchantedBladeDrainMana,
+    Aegis,
+    WeaponMaster,
+    Surestrike
 }

@@ -76,6 +76,10 @@ partial class Player
     private double LastReflectActivated;
     private double ReflectActivatedDuration = 10;
 
+    public bool AegisIsActive => LastAegisActivated > Time.GetUnixTime() - AegisActivatedDuration;
+    private double LastAegisActivated;
+    private double AegisActivatedDuration = 10;
+
     public bool EnchantedWeaponIsActive => LastEnchantedWeaponActivated > Time.GetUnixTime() - EnchantedWeaponActivatedDuration;
     private double LastEnchantedWeaponActivated;
     private double EnchantedWeaponActivatedDuration = 10;
@@ -443,6 +447,366 @@ partial class Player
         return true;
     }
 
+    public bool TryUseEnchantedBlade(WorldObject ability)
+    {
+        var gemAbility = ability as Gem;
+
+        if (ability.CombatAbilityId is null)
+        {
+            _log.Error("{Ability} is missing a CombatAbilityId", ability.Name);
+
+            if (gemAbility != null)
+            {
+                gemAbility.CombatAbilitySuccess = false;
+            }
+
+            return false;
+        }
+
+        var equippedFocus = GetEquippedCombatFocus();
+        if (equippedFocus is not { CombatFocusType: (int)CombatFocusType.Spellsword })
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} can only be used while a Spellsword Focus is equipped.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        var equippedMeleeWeapon = GetEquippedMeleeWeapon();
+        if (equippedMeleeWeapon is null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} can only be used while a melee weapon is equipped.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        if ((CombatAbility)ability.CombatAbilityId
+            is CombatAbility.EnchantedBladeArc
+            or CombatAbility.EnchantedBladeVolley
+            or CombatAbility.EnchantedBladeBlast
+            && GetCreatureSkill(Skill.WarMagic).AdvancementClass < SkillAdvancementClass.Trained)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} requires trained war magic.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        if ((CombatAbility)ability.CombatAbilityId
+            is CombatAbility.EnchantedBladeDrainLife
+            or CombatAbility.EnchantedBladeDrainStamina
+            or CombatAbility.EnchantedBladeDrainMana
+            && GetCreatureSkill(Skill.LifeMagic).AdvancementClass < SkillAdvancementClass.Trained)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} requires trained life magic.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        var weaponDamageType = equippedMeleeWeapon.W_DamageType;
+        if (weaponDamageType is DamageType.SlashPierce)
+        {
+            weaponDamageType = SlashThrustToggle ? DamageType.Pierce : DamageType.Slash;
+        }
+
+        var baseSpell = (CombatAbility)ability.CombatAbilityId switch
+        {
+            CombatAbility.EnchantedBladeArc => GetLevelOneArcOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeBlast => GetLevelOneBlastOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeVolley => GetLevelOneVolleyOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeDrainLife => new Spell(SpellId.DrainHealth1),
+            CombatAbility.EnchantedBladeDrainStamina => new Spell(SpellId.DrainStamina1),
+            CombatAbility.EnchantedBladeDrainMana => new Spell(SpellId.DrainMana1),
+            _ => null
+        };
+
+        if (baseSpell is null)
+        {
+            _log.Error("TryUseEnchantedBlade() - baseSpell is null");
+            return false;
+        }
+
+        var weaponSpellcraft = equippedMeleeWeapon.ItemSpellcraft;
+
+        if (weaponSpellcraft is null)
+        {
+            _log.Error("TryUseEnchantedBlade() - {Weapon} does not have spellcraft", equippedMeleeWeapon.Name);
+            return false;
+        }
+
+        var magicSkill = baseSpell.School is MagicSchool.WarMagic ? GetModdedWarMagicSkill() : GetModdedLifeMagicSkill();
+        var averagedMagicSkill = (uint)((magicSkill + weaponSpellcraft) * 0.5);
+        var highestMagicSkill = Math.Max(averagedMagicSkill, (int)weaponSpellcraft);
+
+        var roll = Convert.ToInt32(ThreadSafeRandom.Next(highestMagicSkill * 0.5f, magicSkill));
+        int[] diff = [50, 100, 200, 300, 350, 400, 450];
+        var closest = diff.MinBy(x => Math.Abs(x - roll));
+        var level = Array.IndexOf(diff, closest);
+
+        var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
+
+        EnchantedWeaponStoredSpell = new Spell(finalSpellId);
+
+        var manaCost = (int)EnchantedWeaponStoredSpell.BaseMana * 2;
+        if (Mana.Current < manaCost)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        UpdateVitalDelta(Mana, -manaCost);
+
+        var particalIntensity = Math.Clamp((level - 1) * (1.0f / 6.0f), 0.0f, 1.0f);
+        //var playScript = GetPlayScriptColor(weaponDamageType);
+
+        PlayParticleEffect(PlayScript.EnchantUpPurple, Guid, particalIntensity);
+
+        return true;
+    }
+
+    private PlayScript GetPlayScriptColor(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => PlayScript.EnchantUpOrange,
+            DamageType.Pierce => PlayScript.EnchantUpYellow,
+            DamageType.Bludgeon => PlayScript.EnchantUpWhite,
+            DamageType.Cold => PlayScript.EnchantUpBlue,
+            DamageType.Fire => PlayScript.EnchantUpRed,
+            DamageType.Acid => PlayScript.EnchantUpGreen,
+            DamageType.Electric => PlayScript.EnchantUpPurple,
+            _ => PlayScript.EnchantUpGrey
+        };
+    }
+
+    private Spell GetLevelOneArcOfDamageType(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeArc1),
+            DamageType.Pierce => new Spell(SpellId.ForceArc1),
+            DamageType.Bludgeon => new Spell(SpellId.ShockArc1),
+            DamageType.Cold => new Spell(SpellId.FrostArc1),
+            DamageType.Fire => new Spell(SpellId.FlameArc1),
+            DamageType.Acid => new Spell(SpellId.AcidArc1),
+            DamageType.Electric => new Spell(SpellId.LightningArc1),
+            _ => null
+        };
+    }
+
+    private Spell GetLevelOneBlastOfDamageType(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeBlast1),
+            DamageType.Pierce => new Spell(SpellId.ForceBlast1),
+            DamageType.Bludgeon => new Spell(SpellId.ShockBlast1),
+            DamageType.Cold => new Spell(SpellId.FrostBlast1),
+            DamageType.Fire => new Spell(SpellId.FlameBlast1),
+            DamageType.Acid => new Spell(SpellId.AcidBlast1),
+            DamageType.Electric => new Spell(SpellId.LightningBlast1),
+            _ => null
+        };
+    }
+
+    private Spell GetLevelOneVolleyOfDamageType(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeVolley1),
+            DamageType.Pierce => new Spell(SpellId.ForceVolley1),
+            DamageType.Bludgeon => new Spell(SpellId.BludgeoningVolley1),
+            DamageType.Cold => new Spell(SpellId.FrostVolley1),
+            DamageType.Fire => new Spell(SpellId.FlameVolley1),
+            DamageType.Acid => new Spell(SpellId.AcidVolley1),
+            DamageType.Electric => new Spell(SpellId.LightningVolley1),
+            _ => null
+        };
+    }
+
+    public bool TryUseReflect(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Reflect))
+        {
+            return false;
+        }
+
+        if (ReflectIsActive)
+        {
+            return false;
+        }
+
+        LastReflectActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.SkillUpPurple, Guid);
+
+        return true;
+    }
+
+    public bool TryUseAegis(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Aegis))
+        {
+            return false;
+        }
+
+        if (AegisIsActive)
+        {
+            return false;
+        }
+
+        var baseSpell = LastHitReceivedDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeProtectionSelf1),
+            DamageType.Pierce => new Spell(SpellId.PiercingProtectionSelf1),
+            DamageType.Bludgeon => new Spell(SpellId.BludgeonProtectionSelf1),
+            DamageType.Cold => new Spell(SpellId.ColdProtectionSelf1),
+            DamageType.Fire => new Spell(SpellId.FireProtectionSelf1),
+            DamageType.Acid => new Spell(SpellId.AcidProtectionSelf1),
+            DamageType.Electric => new Spell(SpellId.LightningProtectionSelf1),
+            _ => null
+        };
+
+        if (baseSpell is null)
+        {
+            _log.Error("TryUseAegis() - baseSpell is null");
+            return false;
+        }
+
+        var equippedWeapon = GetEquippedWeapon();
+        if (equippedWeapon is null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Aegis can only be used while a weapon is equipped.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        var weaponSpellcraft = equippedWeapon.ItemSpellcraft;
+        if (weaponSpellcraft is null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Aegis can only be used if with a weapon that has spellcraft.",
+                    ChatMessageType.Broadcast
+                )
+            );
+
+            _log.Error("TryUseAegis() - {Weapon} does not have spellcraft", equippedWeapon.Name);
+            return false;
+        }
+
+        var lifeSkill = GetModdedLifeMagicSkill();
+        var averagedMagicSkill = (uint)((lifeSkill + weaponSpellcraft) * 0.5);
+        var highestMagicSkill = Math.Max(averagedMagicSkill, (int)weaponSpellcraft);
+
+        var roll = Convert.ToInt32(ThreadSafeRandom.Next(highestMagicSkill * 0.5f, lifeSkill));
+        int[] diff = [50, 100, 200, 300, 350, 400, 450];
+        var closest = diff.MinBy(x => Math.Abs(x - roll));
+        var level = Array.IndexOf(diff, closest);
+
+        var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
+
+        var manaCost = (int)(new Spell(finalSpellId).BaseMana * 2);
+        if (Mana.Current < manaCost)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        UpdateVitalDelta(Mana, -manaCost);
+        TryCastSpell(new Spell(finalSpellId), this);
+
+        LastAegisActivated = Time.GetUnixTime();
+
+        return true;
+    }
+
+    public bool TryUseManaBarrier()
+    {
+        if (!VerifyCombatFocus(CombatAbility.ManaBarrier))
+        {
+            return false;
+        }
+
+        if (!ManaBarrierIsActive)
+        {
+            ManaBarrierIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You draw on your stored mana to form an enchanted shield around yourself!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.ShieldUpBlue, Guid);
+
+            return false;
+        }
+
+        ManaBarrierIsActive = false;
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.DispelLife, Guid);
+
+        return true;
+    }
+
+    public bool TryUseEvasiveStance()
+    {
+        if (!VerifyCombatFocus(CombatAbility.EvasiveStance))
+        {
+            return false;
+        }
+
+        if (!EvasiveStanceIsActive)
+        {
+            EvasiveStanceIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You move into an evasive stance!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.ShieldUpYellow, Guid);
+
+            return false;
+        }
+
+        EvasiveStanceIsActive = false;
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.DispelLife, Guid);
+
+        return true;
+    }
+
     public void TryUseExposePhysicalWeakness(WorldObject ability)
     {
         var target = LastAttackedCreature;
@@ -715,280 +1079,6 @@ partial class Player
         }
     }
 
-    public bool TryUseEnchantedBlade(WorldObject ability)
-    {
-        var gemAbility = ability as Gem;
-
-        if (ability.CombatAbilityId is null)
-        {
-            _log.Error("{Ability} is missing a CombatAbilityId", ability.Name);
-
-            if (gemAbility != null)
-            {
-                gemAbility.CombatAbilitySuccess = false;
-            }
-
-            return false;
-        }
-
-        var equippedFocus = GetEquippedCombatFocus();
-        if (equippedFocus is not { CombatFocusType: (int)CombatFocusType.Spellsword })
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"{ability.Name} can only be used while a Spellsword Focus is equipped.",
-                    ChatMessageType.Broadcast
-                )
-            );
-            return false;
-        }
-
-        var equippedMeleeWeapon = GetEquippedMeleeWeapon();
-        if (equippedMeleeWeapon is null)
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"{ability.Name} can only be used while a melee weapon is equipped.",
-                    ChatMessageType.Broadcast
-                )
-            );
-            return false;
-        }
-
-        if ((CombatAbility)ability.CombatAbilityId
-            is CombatAbility.EnchantedBladeArc
-            or CombatAbility.EnchantedBladeVolley
-            or CombatAbility.EnchantedBladeBlast
-            && GetCreatureSkill(Skill.WarMagic).AdvancementClass < SkillAdvancementClass.Trained)
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"{ability.Name} requires trained war magic.",
-                    ChatMessageType.Broadcast
-                )
-            );
-            return false;
-        }
-
-        if ((CombatAbility)ability.CombatAbilityId
-            is CombatAbility.EnchantedBladeDrainLife
-            or CombatAbility.EnchantedBladeDrainStamina
-            or CombatAbility.EnchantedBladeDrainMana
-            && GetCreatureSkill(Skill.LifeMagic).AdvancementClass < SkillAdvancementClass.Trained)
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"{ability.Name} requires trained life magic.",
-                    ChatMessageType.Broadcast
-                )
-            );
-            return false;
-        }
-
-        var weaponDamageType = equippedMeleeWeapon.W_DamageType;
-        if (weaponDamageType is DamageType.SlashPierce)
-        {
-            weaponDamageType = SlashThrustToggle ? DamageType.Pierce : DamageType.Slash;
-        }
-
-        var baseSpell = (CombatAbility)ability.CombatAbilityId switch
-        {
-            CombatAbility.EnchantedBladeArc => GetLevelOneArcOfDamageType(weaponDamageType),
-            CombatAbility.EnchantedBladeBlast => GetLevelOneBlastOfDamageType(weaponDamageType),
-            CombatAbility.EnchantedBladeVolley => GetLevelOneVolleyOfDamageType(weaponDamageType),
-            CombatAbility.EnchantedBladeDrainLife => new Spell(SpellId.DrainHealth1),
-            CombatAbility.EnchantedBladeDrainStamina => new Spell(SpellId.DrainStamina1),
-            CombatAbility.EnchantedBladeDrainMana => new Spell(SpellId.DrainMana1),
-            _ => null
-        };
-
-        if (baseSpell is null)
-        {
-            _log.Error("TryUseEnchantedBlade() - baseSpell is null");
-            return false;
-        }
-
-        var weaponSpellcraft = equippedMeleeWeapon.ItemSpellcraft;
-
-        if (weaponSpellcraft is null)
-        {
-            _log.Error("TryUseEnchantedBlade() - {Weapon} does not have spellcraft", equippedMeleeWeapon.Name);
-            return false;
-        }
-
-        var warSkill = GetModdedWarMagicSkill();
-        var averagedMagicSkill = (uint)((warSkill + weaponSpellcraft) * 0.5);
-        var roll = Convert.ToInt32(ThreadSafeRandom.Next(averagedMagicSkill * 0.5f, warSkill));
-        int[] diff = [50, 100, 200, 300, 350, 400, 450];
-        var closest = diff.MinBy(x => Math.Abs(x - roll));
-        var level = Array.IndexOf(diff, closest);
-
-        var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
-
-        EnchantedWeaponStoredSpell = new Spell(finalSpellId);
-
-        var manaCost = (int)EnchantedWeaponStoredSpell.BaseMana * 2;
-        if (Mana.Current < manaCost)
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
-            );
-            return false;
-        }
-
-        UpdateVitalDelta(Mana, -manaCost);
-
-        var particalIntensity = Math.Clamp((level - 1) * (1.0f / 6.0f), 0.0f, 1.0f);
-        //var playScript = GetPlayScriptColor(weaponDamageType);
-
-        PlayParticleEffect(PlayScript.EnchantUpPurple, Guid, particalIntensity);
-
-        return true;
-    }
-
-    private PlayScript GetPlayScriptColor(DamageType weaponDamageType)
-    {
-        return weaponDamageType switch
-        {
-            DamageType.Slash => PlayScript.EnchantUpOrange,
-            DamageType.Pierce => PlayScript.EnchantUpYellow,
-            DamageType.Bludgeon => PlayScript.EnchantUpWhite,
-            DamageType.Cold => PlayScript.EnchantUpBlue,
-            DamageType.Fire => PlayScript.EnchantUpRed,
-            DamageType.Acid => PlayScript.EnchantUpGreen,
-            DamageType.Electric => PlayScript.EnchantUpPurple,
-            _ => PlayScript.EnchantUpGrey
-        };
-    }
-
-    private Spell GetLevelOneArcOfDamageType(DamageType weaponDamageType)
-    {
-        return weaponDamageType switch
-        {
-            DamageType.Slash => new Spell(SpellId.BladeArc1),
-            DamageType.Pierce => new Spell(SpellId.ForceArc1),
-            DamageType.Bludgeon => new Spell(SpellId.ShockArc1),
-            DamageType.Cold => new Spell(SpellId.FrostArc1),
-            DamageType.Fire => new Spell(SpellId.FlameArc1),
-            DamageType.Acid => new Spell(SpellId.AcidArc1),
-            DamageType.Electric => new Spell(SpellId.LightningArc1),
-            _ => null
-        };
-    }
-
-    private Spell GetLevelOneBlastOfDamageType(DamageType weaponDamageType)
-    {
-        return weaponDamageType switch
-        {
-            DamageType.Slash => new Spell(SpellId.BladeBlast1),
-            DamageType.Pierce => new Spell(SpellId.ForceBlast1),
-            DamageType.Bludgeon => new Spell(SpellId.ShockBlast1),
-            DamageType.Cold => new Spell(SpellId.FrostBlast1),
-            DamageType.Fire => new Spell(SpellId.FlameBlast1),
-            DamageType.Acid => new Spell(SpellId.AcidBlast1),
-            DamageType.Electric => new Spell(SpellId.LightningBlast1),
-            _ => null
-        };
-    }
-
-    private Spell GetLevelOneVolleyOfDamageType(DamageType weaponDamageType)
-    {
-        return weaponDamageType switch
-        {
-            DamageType.Slash => new Spell(SpellId.BladeVolley1),
-            DamageType.Pierce => new Spell(SpellId.ForceVolley1),
-            DamageType.Bludgeon => new Spell(SpellId.BludgeoningVolley1),
-            DamageType.Cold => new Spell(SpellId.FrostVolley1),
-            DamageType.Fire => new Spell(SpellId.FlameVolley1),
-            DamageType.Acid => new Spell(SpellId.AcidVolley1),
-            DamageType.Electric => new Spell(SpellId.LightningVolley1),
-            _ => null
-        };
-    }
-
-    public bool TryUseReflect(Gem gem)
-    {
-        if (!VerifyCombatFocus(CombatAbility.Reflect))
-        {
-            return false;
-        }
-
-        if (ReflectIsActive)
-        {
-            return false;
-        }
-
-        LastReflectActivated = Time.GetUnixTime();
-
-        PlayParticleEffect(PlayScript.SkillUpPurple, Guid);
-
-        return true;
-    }
-
-    public bool TryUseManaBarrier()
-    {
-        if (!VerifyCombatFocus(CombatAbility.ManaBarrier))
-        {
-            return false;
-        }
-
-        if (!ManaBarrierIsActive)
-        {
-            ManaBarrierIsActive = true;
-
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"You draw on your stored mana to form an enchanted shield around yourself!",
-                    ChatMessageType.Broadcast
-                )
-            );
-            PlayParticleEffect(PlayScript.ShieldUpBlue, Guid);
-
-            return false;
-        }
-
-        ManaBarrierIsActive = false;
-
-        Session.Network.EnqueueSend(
-            new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
-        );
-        PlayParticleEffect(PlayScript.DispelLife, Guid);
-
-        return true;
-    }
-
-    public bool TryUseEvasiveStance()
-    {
-        if (!VerifyCombatFocus(CombatAbility.EvasiveStance))
-        {
-            return false;
-        }
-
-        if (!EvasiveStanceIsActive)
-        {
-            EvasiveStanceIsActive = true;
-
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"You move into an evasive stance!",
-                    ChatMessageType.Broadcast
-                )
-            );
-            PlayParticleEffect(PlayScript.ShieldUpYellow, Guid);
-
-            return false;
-        }
-
-        EvasiveStanceIsActive = false;
-
-        Session.Network.EnqueueSend(
-            new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
-        );
-        PlayParticleEffect(PlayScript.DispelLife, Guid);
-
-        return true;
-    }
-
     public void TryUseShroud()
     {
         if (EnchantmentManager.HasSpell(5379))
@@ -1241,6 +1331,21 @@ partial class Player
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             $"Enchanted Blade can only be used with a Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Aegis:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Spellsword
+                        or (int)CombatFocusType.Sorcerer
+                        or (int)CombatFocusType.Warrior})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Aegis can only be used with a Spellsword Focus, Sorcerer Focus, or Warrior Focus",
                             ChatMessageType.Broadcast
                         )
                     );

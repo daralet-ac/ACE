@@ -35,6 +35,8 @@ partial class Player
 
     public DateTime NextRefillTime;
 
+    private DamageType LastHitReceivedDamageType;
+
     public double LastPkAttackTimestamp
     {
         get => GetProperty(PropertyFloat.LastPkAttackTimestamp) ?? 0;
@@ -1055,6 +1057,8 @@ partial class Player
             Die();
             return (int)damageTaken;
         }
+
+        LastHitReceivedDamageType = damageType;
 
         if (!BodyParts.Indices.TryGetValue(bodyPart, out var iDamageLocation))
         {

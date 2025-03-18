@@ -303,6 +303,9 @@ public class Gem : Stackable
                 case CombatAbility.Reflect:
                     startCooldown = player.TryUseReflect(this);
                     break;
+                case CombatAbility.Aegis:
+                    startCooldown = player.TryUseAegis(this);
+                    break;
                 case CombatAbility.ManaBarrier:
                     startCooldown = player.TryUseManaBarrier();
                     break;

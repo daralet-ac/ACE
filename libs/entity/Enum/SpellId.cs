@@ -6481,6 +6481,9 @@ public enum SpellId : uint
     Steadyshot = 0x8000 | 10068, // 20 second cooldown
     Backstab = 0x8000 | 10069, // 20 second cooldown
     Reflect = 0x8000 | 1070, // 20 second cooldown
+    Aegis = 0x8000 | 1071, // 20 second cooldown
+    WeaponMaster = 0x8000 | 1072, // 20 second cooldown
+    Surestrike = 0x8000 | 1073, // 20 second cooldown
 }
 
 public static class SpellExtensions
