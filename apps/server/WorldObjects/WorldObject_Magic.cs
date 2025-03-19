@@ -294,7 +294,6 @@ partial class WorldObject
                         : wielder.GetModdedLifeMagicSkill();
 
                 spellcraft = CheckForArcaneLoreSpecSpellcraftBonus(wielder, spellcraft);
-                spellcraft = Convert.ToUInt32(spellcraft * CheckForCombatAbilityEnchantSpellcraftBonus(wielder));
 
                 magicSkill = (uint)((spellcraft + casterMagicSkill) * 0.5);
             }
@@ -434,21 +433,6 @@ partial class WorldObject
     private static float CheckForCombatAbilityReflectMagicDefBonus(Player targetPlayer)
     {
         return targetPlayer is { ReflectIsActive: true } ? 0.5f : 0.0f;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Enchant:Effective spellcraft increased by 25%
-    /// </summary>
-    private static float CheckForCombatAbilityEnchantSpellcraftBonus(Creature wielder)
-    {
-        var combatAbility = CombatAbility.None;
-        var combatFocus = wielder.GetEquippedCombatFocus();
-        if (combatFocus != null)
-        {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
-
-        return combatAbility == CombatAbility.EnchantedWeapon ? 1.25f : 1.0f;
     }
 
     /// <summary>

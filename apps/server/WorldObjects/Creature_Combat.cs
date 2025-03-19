@@ -905,8 +905,7 @@ partial class Creature
 
         if (weapon == null || ((weapon.IgnoreShield ?? 0) == 0 && !weapon.IsTwoHanded))
         {
-            var combatAbilityTrinket = GetEquippedTrinket();
-            if (combatAbilityTrinket != null && combatAbilityTrinket.CombatAbilityId == (int)CombatAbility.Phalanx)
+            if (this is Player {PhalanxIsActive: true})
             {
                 bypassShieldAngleCheck = true;
             }
@@ -1366,19 +1365,6 @@ partial class Creature
 
         var avoidChance =
             1.0f - SkillCheck.GetSkillChance(attackerEffectivePerceptionSkill, targetEffecitveDeceptionSkill);
-
-        var combatAbility = CombatAbility.None;
-        var combatFocus = GetEquippedCombatFocus();
-        if (combatFocus != null)
-        {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
-
-        // COMBAT ABILITY - Iron Fist: 20% increased chance to expose enemy weaknesses
-        if (combatAbility == CombatAbility.IronFist)
-        {
-            avoidChance -= 0.2f;
-        }
 
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (avoidChance > roll)

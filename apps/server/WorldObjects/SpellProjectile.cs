@@ -1246,9 +1246,7 @@ public class SpellProjectile : WorldObject
     /// </summary>
     private static float GetShieldMod(Creature target, WorldObject shield, WorldObject source)
     {
-        var bypassShieldAngleCheck = CheckForCombatAbilityPhalanxBypassSpellAngle(target);
-
-        if (!bypassShieldAngleCheck)
+        if (target is Player {PhalanxIsActive: true})
         {
             // is spell projectile in front of creature target,
             // within shield effectiveness area?
@@ -1291,16 +1289,6 @@ public class SpellProjectile : WorldObject
 
         var shieldMod = Math.Min(1.0f, 1.0f - reduction);
         return shieldMod;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Phalanx: Apply shield ward damage reduction to spells from behind player.
-    /// </summary>
-    private static bool CheckForCombatAbilityPhalanxBypassSpellAngle(Creature target)
-    {
-        var combatAbilityTrinket = target.GetEquippedTrinket();
-
-        return combatAbilityTrinket is { CombatAbilityId: (int)CombatAbility.Phalanx };
     }
 
     /// <summary>

@@ -1300,24 +1300,6 @@ partial class WorldObject
             return;
         }
 
-        // COMBAT ABILITY - Enchanted: Full power attack has 100% proc chance
-        if (playerAttacker != null)
-        {
-            var combatAbility = CombatAbility.None;
-            var combatFocus = playerAttacker.GetEquippedCombatFocus();
-            if (combatFocus != null)
-            {
-                combatAbility = combatFocus.GetCombatAbility();
-            }
-
-            var fullPower = playerAttacker.PowerLevel == 1 || playerAttacker.AccuracyLevel == 1;
-
-            if (combatAbility == CombatAbility.EnchantedWeapon && fullPower)
-            {
-                chance = 1.0f;
-            }
-        }
-
         if (creatureAttacker != null)
         {
             if (NextProcAttemptTime > currentTime)
