@@ -61,29 +61,23 @@ partial class Creature
 
         var playerCaster = caster as Player;
 
-        // Overload - Increased cost up to 100% with Overload stacks
+        // Overload - Increased cost up to 100% with Overload Charged stacks
         if (playerCaster is {OverloadStanceIsActive: true})
         {
-            var manaCostPenalty = (1.0f + playerCaster.OverloadMeter);
+            var manaCostPenalty = (1.0f + playerCaster.ManaChargeMeter);
             baseCost = (uint)(baseCost * manaCostPenalty);
         }
 
-        // Battery - 20% mana cost reduction minimum, increasing with lower mana or 0 cost during Battery Activated
-        else if (playerCaster is {BatteryIsActive: true})
+        // Battery - Reduced cost up to 50% with battery Charged stacks, up to 100% if Discharging
+        else if (playerCaster is {BatteryStanceIsActive: true})
         {
-            if (this is Player { BatteryIsActive: true })
-            {
-                baseCost = 0;
-            }
-            else
-            {
-                var maxMana = (float)Mana.MaxValue;
-                var currentMana = (float)Mana.Current == 0 ? 1 : (float)Mana.Current;
-
-                var manaMod = 1 - (maxMana - currentMana) / maxMana;
-                var batteryMod = manaMod > 0.8f ? 0.8f : manaMod;
-                baseCost = (uint)(baseCost * batteryMod);
-            }
+            var manaCostReduction = (1.0f - playerCaster.ManaChargeMeter * 0.5f);
+            baseCost = (uint)(baseCost * manaCostReduction);
+        }
+        else if (playerCaster is {BatteryDischargeIsActive: true})
+        {
+            var manaCostReduction = (1.0f - playerCaster.DischargeLevel);
+            baseCost = (uint)(baseCost * manaCostReduction);
         }
 
         var abilityPenaltyMod = 0.0f;

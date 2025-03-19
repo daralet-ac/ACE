@@ -275,7 +275,7 @@ partial class WorldObject
 
             if (player is {OverloadDischargeIsActive: true})
             {
-                magicSkill *= (uint)(player.OverloadMeter + 1.0f);
+                magicSkill *= (uint)(player.ManaChargeMeter + 1.0f);
             }
 
             magicSkill = (uint)(magicSkill * secondaryAttributeMod * LevelScaling.GetPlayerAttackSkillScalar(casterCreature, target as Creature));
@@ -976,9 +976,9 @@ partial class WorldObject
         }
 
         var overloadMod = CheckForCombatAbilityOverloadDamageBonus(player);
-        //var batterMod = CheckForCombatAbilityBatteryBoostPenalty(combatAbility, player, tryBoost); // TODO battery
+        var batterMod = CheckForCombatAbilityBatteryDamagePenalty(player);
 
-        tryBoost = (int)(tryBoost * overloadMod);
+        tryBoost = (int)(tryBoost * overloadMod * batterMod);
 
         string srcVital;
 
@@ -1050,9 +1050,9 @@ partial class WorldObject
                     targetCreature.DamageHistory.OnHeal((uint)boost);
                     GenerateSupportSpellThreat(spell, targetCreature, boost);
 
-                    if (player is { OverloadStanceIsActive: true } && boost > 0)
+                    if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true} && boost > 0)
                     {
-                        player.IncreaseOverloadMeter(spell);
+                        player.IncreaseChargedMeter(spell);
                     }
                 }
                 else if (creature is { IsMonster: false } && targetCreature.IsMonster)
@@ -1060,9 +1060,9 @@ partial class WorldObject
                     targetCreature.DamageHistory.Add(this, DamageType.Health, (uint)-boost);
                     targetCreature.IncreaseTargetThreatLevel(player, boost);
 
-                    if (player is { OverloadStanceIsActive: true } && boost < 0)
+                    if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true} && boost < 0)
                     {
-                        player.IncreaseOverloadMeter(spell);
+                        player.IncreaseChargedMeter(spell);
                     }
                 }
                 break;
@@ -1077,30 +1077,32 @@ partial class WorldObject
         {
             string casterMessage;
 
-            var overloadPercent = Math.Round(player.OverloadMeter * 100);
-            var overloadMsg = player is {OverloadStanceIsActive: true} ? $"{overloadPercent}% Overload! " : "";
+            var chargedPercent = Math.Round(player.ManaChargeMeter * 100);
+            var chargedMsg = player is {OverloadStanceIsActive: true} or {BatteryStanceIsActive: true} ? $"{chargedPercent}% Charged! " : "";
 
-            if (player is {OverloadDischargeIsActive: true})
+            chargedMsg = player switch
             {
-                overloadMsg = "Discharge! ";
-            }
+                { OverloadDischargeIsActive: true } => "Overload Discharge! ",
+                { BatteryDischargeIsActive: true } => "Battery Discharge! ",
+                _ => chargedMsg
+            };
 
             if (player != targetCreature)
             {
                 if (spell.IsBeneficial)
                 {
-                    casterMessage = $"{overloadMsg}{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
+                    casterMessage = $"{chargedMsg}{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
                 }
                 else
                 {
-                    casterMessage = $"{overloadMsg}{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
+                    casterMessage = $"{chargedMsg}{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
                 }
             }
             else
             {
                 var verb = spell.IsBeneficial ? "restore" : "drain";
 
-                casterMessage = $"{overloadMsg}{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
+                casterMessage = $"{chargedMsg}{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
             }
 
             if (showMsg)
@@ -1269,40 +1271,24 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Battery: Reduced Effectiveness below 75% mana, down to 50%, but not when Activated is up
-    /// </summary>
-    private static int CheckForCombatAbilityBatteryBoostPenalty(CombatAbility combatAbility, Player player, int tryBoost)
-    {
-        if (!player.BatteryIsActive)
-        {
-            return tryBoost;
-        }
-
-        var maxMana = (float)player.Mana.MaxValue;
-        var currentMana = (float)player.Mana.Current == 0 ? 1 : (float)player.Mana.Current;
-
-        if ((currentMana / maxMana) < 0.75)
-        {
-            var newMax = maxMana * 0.75;
-            var batteryMod = 1f - 0.25f * ((newMax - currentMana) / newMax);
-
-            tryBoost = (int)(tryBoost * batteryMod);
-        }
-
-        return tryBoost;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Overload: Increased effectiveness up to 25%+ with Overload stacks
+    /// COMBAT ABILITY - Overload: Increased effectiveness up to 20% with Overload Charged stacks
     /// </summary>
     private static float CheckForCombatAbilityOverloadDamageBonus(Player player)
     {
         return player switch
         {
             { OverloadDischargeIsActive: true } => 1.0f + player.DischargeLevel,
-            { OverloadStanceIsActive: true } => 1.0f + player.OverloadMeter * 0.25f,
+            { OverloadStanceIsActive: true } => 1.0f + player.ManaChargeMeter * 0.2f,
             _ => 1.0f
         };
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Battery: Reduced effectiveness up to 10% with Battery Charged stacks
+    /// </summary>
+    private static float CheckForCombatAbilityBatteryDamagePenalty(Player player)
+    {
+        return player is { BatteryStanceIsActive: true } ? 1.0f - player.ManaChargeMeter * 0.1f : 1.0f;
     }
 
     /// <summary>
@@ -1509,9 +1495,9 @@ partial class WorldObject
             if (player != null)
             {
                 var overloadMod = CheckForCombatAbilityOverloadDamageBonus(player);
-                //destVitalChange = CheckForCombatAbilityBatteryVitalTransferPenalty(combatAbility, player, srcVitalChange, ref destVitalChange); // TODO Battery
+                var batterMod = CheckForCombatAbilityBatteryDamagePenalty(player);
 
-                destVitalChange = (uint)(destVitalChange * overloadMod);
+                destVitalChange = (uint)(destVitalChange * overloadMod * batterMod);
             }
 
             // Attribute Mod
@@ -1592,22 +1578,24 @@ partial class WorldObject
 
             string sourceMsg = null, targetMsg = null;
 
-            var overloadMsg = "";
+            var chargedMsg = "";
 
-            if (player is {OverloadStanceIsActive: true})
+            if (player is {OverloadStanceIsActive: true} or {BatteryStanceIsActive: true})
             {
-                var overloadPercent = Math.Round(player.OverloadMeter * 100);
-                overloadMsg = $"{overloadPercent}% Overload! ";
+                var chargedPercent = Math.Round(player.ManaChargeMeter * 100);
+                chargedMsg = $"{chargedPercent}% Charged! ";
             }
 
-            if (player is { OverloadDischargeIsActive: true })
+            chargedMsg = player switch
             {
-                overloadMsg = "Discharge! ";
-            }
+                { OverloadDischargeIsActive: true } => "Overload Discharge! ",
+                { BatteryDischargeIsActive: true } => "Battery Discharge! ",
+                _ => chargedMsg
+            };
 
             if (playerSource != null && playerDestination != null && transferSource.Guid == destination.Guid)
             {
-                sourceMsg = $"{overloadMsg}You cast {spell.Name} on yourself and lose {srcVitalChange} points of {srcVital} and also gain {destVitalChange} points of {destVital}";
+                sourceMsg = $"{chargedMsg}You cast {spell.Name} on yourself and lose {srcVitalChange} points of {srcVital} and also gain {destVitalChange} points of {destVital}";
             }
             else
             {
@@ -1615,11 +1603,11 @@ partial class WorldObject
                 {
                     if (transferSource == this)
                     {
-                        sourceMsg = $"{overloadMsg}You lose {srcVitalChange} points of {srcVital} due to casting {spell.Name} on {targetCreature.Name}";
+                        sourceMsg = $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to casting {spell.Name} on {targetCreature.Name}";
                     }
                     else
                     {
-                        targetMsg = $"{overloadMsg}You lose {srcVitalChange} points of {srcVital} due to {caster.Name} casting {spell.Name} on you";
+                        targetMsg = $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to {caster.Name} casting {spell.Name} on you";
                     }
 
                     if (destination != null)
@@ -1632,11 +1620,11 @@ partial class WorldObject
                 {
                     if (destination == this)
                     {
-                        sourceMsg = $"{overloadMsg}You gain {destVitalChange} points of {destVital} due to casting {spell.Name} on {targetCreature.Name}";
+                        sourceMsg = $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to casting {spell.Name} on {targetCreature.Name}";
                     }
                     else
                     {
-                        targetMsg = $"{overloadMsg}You gain {destVitalChange} points of {destVital} due to {caster.Name} casting {spell.Name} on you";
+                        targetMsg = $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to {caster.Name} casting {spell.Name} on you";
                     }
                 }
             }
@@ -1683,7 +1671,7 @@ partial class WorldObject
     /// </summary>
     private static uint CheckForCombatAbilityBatteryVitalTransferPenalty(CombatAbility combatAbility, Player player, uint srcVitalChange, ref uint destVitalChange)
     {
-        if (!player.BatteryIsActive)
+        if (!player.BatteryDischargeIsActive)
         {
             return srcVitalChange;
         }
@@ -1775,9 +1763,9 @@ partial class WorldObject
                 return;
             }
 
-            if (caster is Player { OverloadStanceIsActive: true } playerCaster)
+            if (caster is Player playerCaster and ({ OverloadStanceIsActive: true } or {BatteryStanceIsActive: true}))
             {
-                playerCaster.IncreaseOverloadMeter(spell);
+                playerCaster.IncreaseChargedMeter(spell);
             }
         }
 

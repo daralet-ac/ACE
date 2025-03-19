@@ -905,13 +905,13 @@ partial class Player
             }
         }
 
-        if (OverloadMeter > 0.0f)
+        if (ManaChargeMeter > 0.0f)
         {
-            OverloadMeter -= 0.1f;
+            ManaChargeMeter -= 0.1f;
 
-            if (OverloadMeter < 0.0f)
+            if (ManaChargeMeter < 0.0f)
             {
-                OverloadMeter = 0.0f;
+                ManaChargeMeter = 0.0f;
             }
         }
     }

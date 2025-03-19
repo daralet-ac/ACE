@@ -1408,44 +1408,14 @@ partial class WorldObject
             {
                 var baseCost = spell.BaseMana;
 
-                // Check Overload and Battery Focuses
-                var combatAbility = CombatAbility.None;
-                var combatFocus = playerAttacker.GetEquippedCombatFocus();
-                if (combatFocus != null)
+                baseCost = playerAttacker switch
                 {
-                    combatAbility = combatFocus.GetCombatAbility();
-                }
-
-                // Overload - Increased cost up to 50%+ with Overload stacks
-                if (
-                    combatAbility == CombatAbility.Overload
-                    && playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Overload")
-                )
-                {
-                    var overloadStacks = playerAttacker.QuestManager.GetCurrentSolves(
-                        $"{playerAttacker.Name},Overload"
-                    );
-                    float overloadMod = 1 + (overloadStacks / 1000);
-                    baseCost = (uint)(baseCost * overloadMod);
-                }
-                // Battery - 20% mana cost reduction minimum, increasing with lower mana or 0 cost during Battery Activated
-                else if (combatAbility == CombatAbility.Battery)
-                {
-                    if (playerAttacker.BatteryIsActive)
-                    {
-                        baseCost = 0;
-                    }
-                    else
-                    {
-                        var maxMana = (float)playerAttacker.Mana.MaxValue;
-                        var currentMana =
-                            (float)playerAttacker.Mana.Current == 0 ? 1 : (float)playerAttacker.Mana.Current;
-
-                        var manaMod = ((maxMana - currentMana) / maxMana);
-                        var batteryMod = manaMod > 0.8f ? 0.8f : manaMod;
-                        baseCost = (uint)(baseCost * batteryMod);
-                    }
-                }
+                    { OverloadDischargeIsActive: true } => Convert.ToUInt32(baseCost * (1.0f + playerAttacker.DischargeLevel)),
+                    { OverloadStanceIsActive: true } => Convert.ToUInt32(baseCost * (1.0f + playerAttacker.ManaChargeMeter)),
+                    { BatteryDischargeIsActive: true } => Convert.ToUInt32(baseCost * (1.0f - playerAttacker.DischargeLevel)),
+                    { BatteryStanceIsActive: true } => Convert.ToUInt32(baseCost * (1.0f - playerAttacker.ManaChargeMeter * 0.5f)),
+                    _ => baseCost
+                };
 
                 var scarabReduction = spell.School == MagicSchool.LifeMagic
                     ? playerAttacker.GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic,

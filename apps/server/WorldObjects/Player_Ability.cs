@@ -63,12 +63,13 @@ partial class Player
     private double LastOverloadDischargeActivated;
     private double OverloadDischargeActivatedDuration = 10;
     public bool OverloadStanceIsActive;
-    public float OverloadMeter = 0.0f;
+    public float ManaChargeMeter = 0.0f;
     public float DischargeLevel;
 
-    public bool BatteryIsActive => LastBatteryActivated > Time.GetUnixTime() - BatteryActivatedDuration;
-    private double LastBatteryActivated;
-    private double BatteryActivatedDuration = 10;
+    public bool BatteryDischargeIsActive => LastBatteryDischargeActivated > Time.GetUnixTime() - BatteryDischargeActivatedDuration;
+    private double LastBatteryDischargeActivated;
+    private double BatteryDischargeActivatedDuration = 10;
+    public bool BatteryStanceIsActive;
 
     public bool ManaBarrierIsActive;
 
@@ -455,17 +456,30 @@ partial class Player
             return false;
         }
 
-        if (!OverloadStanceIsActive && !OverloadDischargeIsActive)
+        if (!OverloadStanceIsActive && !OverloadDischargeIsActive && !BatteryDischargeIsActive)
         {
+            if (BatteryStanceIsActive)
+            {
+                BatteryStanceIsActive = false;
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"Battery is disabled.", ChatMessageType.Broadcast)
+                );
+            }
+            else
+            {
+                ManaChargeMeter = 0.0f;
+            }
+
             OverloadStanceIsActive = true;
-            OverloadMeter = 0.0f;
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You begin to infuse your spells with extra mana!",
+                    $"You begin to infuse your spells with extra mana, producing charge!",
                     ChatMessageType.Broadcast
                 )
             );
+
             PlayParticleEffect(PlayScript.SkillUpBlue, Guid);
 
             return false;
@@ -479,13 +493,13 @@ partial class Player
             return false;
         }
 
-        if (OverloadStanceIsActive && OverloadMeter < 0.5f)
+        if (OverloadStanceIsActive && ManaChargeMeter < 0.5f)
         {
             OverloadStanceIsActive = false;
-            OverloadMeter = 0.0f;
+            ManaChargeMeter = 0.0f;
 
             Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You defuse your overloaded mana.", ChatMessageType.Broadcast)
+                new GameMessageSystemChat($"You release your charged mana to no effect.", ChatMessageType.Broadcast)
             );
 
             PlayParticleEffect(PlayScript.SkillDownBlue, Guid);
@@ -494,12 +508,12 @@ partial class Player
         }
 
         OverloadStanceIsActive = false;
-        DischargeLevel = OverloadMeter;
-        OverloadMeter = 0.0f;
+        DischargeLevel = ManaChargeMeter;
+        ManaChargeMeter = 0.0f;
         LastOverloadDischargeActivated = Time.GetUnixTime();
 
         Session.Network.EnqueueSend(
-            new GameMessageSystemChat($"You unleash your overloaded mana ({Math.Round(DischargeLevel * 100)}%)!", ChatMessageType.Broadcast)
+            new GameMessageSystemChat($"You unleash your charged mana, increasing the effectiveness of your spells by {Math.Round(DischargeLevel * 100)}%!", ChatMessageType.Broadcast)
         );
         PlayParticleEffect(PlayScript.EnchantUpBlue, Guid);
 
@@ -513,14 +527,68 @@ partial class Player
             return false;
         }
 
-        if (BatteryIsActive)
+        if (!BatteryStanceIsActive && !BatteryDischargeIsActive && !OverloadDischargeIsActive)
         {
+            if (OverloadStanceIsActive)
+            {
+                OverloadStanceIsActive = false;
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"Overload is disabled.", ChatMessageType.Broadcast)
+                );
+
+                PlayParticleEffect(PlayScript.SkillDownBlue, Guid);
+            }
+            else
+            {
+                ManaChargeMeter = 0.0f;
+            }
+
+            BatteryStanceIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You begin to siphon mana from your spells, producing charge!",
+                    ChatMessageType.Broadcast
+                )
+            );
+
+            PlayParticleEffect(PlayScript.SkillUpBlue, Guid);
+
             return false;
         }
 
-        LastBatteryActivated = Time.GetUnixTime();
+        if (OverloadDischargeIsActive || BatteryDischargeIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Battery while discharging.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
 
-        //PlayParticleEffect(PlayScript.EnchantUpGreen, Guid);
+        if (BatteryStanceIsActive && ManaChargeMeter < 0.5f)
+        {
+            BatteryStanceIsActive = false;
+            ManaChargeMeter = 0.0f;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You release your charged mana to no effect.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.SkillDownBlue, Guid);
+
+            return true;
+        }
+
+        BatteryStanceIsActive = false;
+        DischargeLevel = ManaChargeMeter;
+        ManaChargeMeter = 0.0f;
+        LastBatteryDischargeActivated = Time.GetUnixTime();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You unleash your charged mana, reducing the cost of your spells by {Math.Round(DischargeLevel * 100)}%!", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.EnchantUpBlue, Guid);
 
         return true;
     }
@@ -1477,14 +1545,14 @@ partial class Player
         return true;
     }
 
-    public void IncreaseOverloadMeter(Spell spell)
+    public void IncreaseChargedMeter(Spell spell)
     {
         var animationLength = WeaponAnimationLength.GetSpellCastAnimationLength(ProjectileSpellType.Arc, spell.Level);
 
-        OverloadMeter += 0.05f * animationLength;
-        if (OverloadMeter > 1.0f)
+        ManaChargeMeter += 0.05f * animationLength;
+        if (ManaChargeMeter > 1.0f)
         {
-            OverloadMeter = 1.0f;
+            ManaChargeMeter = 1.0f;
         }
     }
 }

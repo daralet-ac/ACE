@@ -1338,7 +1338,7 @@ partial class Player
 
         if ((OverloadStanceIsActive || OverloadDischargeIsActive) && spell is not null)
         {
-            var meter = OverloadStanceIsActive ? OverloadMeter : DischargeLevel;
+            var meter = OverloadStanceIsActive ? ManaChargeMeter : DischargeLevel;
             var chance = meter * 0.5f;
 
             if (ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
@@ -1349,7 +1349,7 @@ partial class Player
 
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"Overload! The unstable mana in your spell burns you for {selfDamage} damage to you.",
+                        $"Overload! The unstable mana in your spell burns you for {selfDamage} damage!",
                         ChatMessageType.CombatEnemy
                     )
                 );

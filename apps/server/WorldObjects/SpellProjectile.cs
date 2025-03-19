@@ -419,9 +419,9 @@ public class SpellProjectile : WorldObject
             ref resisted
         );
 
-        if (player is { OverloadStanceIsActive: true })
+        if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true})
         {
-            player.IncreaseOverloadMeter(Spell);
+            player.IncreaseChargedMeter(Spell);
         }
 
         if (targetPlayer != null && damage != null)
@@ -718,8 +718,7 @@ public class SpellProjectile : WorldObject
         var slayerMod = GetWeaponCreatureSlayerModifier(weapon, sourceCreature, target);
 
         var overloadDamageMod = CheckForCombatAbilityOverloadDamageMod(sourcePlayer);
-        var batteryDamageMod = 1.0f;
-            //CheckForCombatAbilityBatteryDamagePenalty(sourcePlayer); // TODO battery
+        var batteryDamageMod = CheckForCombatAbilityBatteryDamageMod(sourcePlayer);
 
         var lethalityMod = 1.0f;
         if (sourceCreature is not null)
@@ -1016,48 +1015,24 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Battery: Up to 25% damage penalty, if current mana drops below 75%. (-25% at 0 mana)
-    /// </summary>
-    private static float CheckForCombatAbilityBatteryDamagePenalty(Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        if (!sourcePlayer.BatteryIsActive)
-        {
-            return 0.0f;
-        }
-
-        var maxMana = (float)sourcePlayer.Mana.MaxValue;
-        var currentMana = (float)sourcePlayer.Mana.Current == 0 ? 1 : (float)sourcePlayer.Mana.Current;
-
-        // If current mana is over 75% full, no penalty
-        if ((currentMana / maxMana) > 0.75)
-        {
-            return 0.0f;
-        }
-
-        // Else, Up to 25% reduced damage depending on how low current mana is.
-        var newMax = maxMana * 0.75;
-        var manaMod = 0.25f * ((newMax - currentMana) / newMax);
-
-        return (float)manaMod;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Overload: Increased effectiveness up to 25%+ with Overload stacks, double bonus +
-    /// erase stacks on activated ability.
+    /// COMBAT ABILITY - Overload: Increased effectiveness up to 20% with Overload Charged stacks, by up to 100% with Overload Discharge
     /// </summary>
     private static float CheckForCombatAbilityOverloadDamageMod(Player sourcePlayer)
     {
         return sourcePlayer switch
         {
             { OverloadDischargeIsActive: true } => 1.0f + sourcePlayer.DischargeLevel,
-            { OverloadStanceIsActive: true } => 1.0f + sourcePlayer.OverloadMeter * 0.25f,
+            { OverloadStanceIsActive: true } => 1.0f + sourcePlayer.ManaChargeMeter * 0.2f,
             _ => 1.0f
         };
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Battery: Reduced effectiveness up to 10% with Battery Charged stacks
+    /// </summary>
+    private static float CheckForCombatAbilityBatteryDamageMod(Player sourcePlayer)
+    {
+        return sourcePlayer is { BatteryStanceIsActive: true } ? 1.0f - sourcePlayer.ManaChargeMeter * 0.1f : 1.0f;
     }
 
     /// <summary>
@@ -1529,18 +1504,7 @@ public class SpellProjectile : WorldObject
             var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
             var overpowerMsg = overpower ? "Overpower! " : "";
 
-            var overloadMsg = "";
-
-            if (sourcePlayer is {OverloadStanceIsActive: true})
-            {
-                var overloadPercent = Math.Round(sourcePlayer.OverloadMeter * 100);
-                overloadMsg = $"{overloadPercent}% Overload! ";
-            }
-
-            if (sourcePlayer is { OverloadDischargeIsActive: true })
-            {
-                overloadMsg = "Discharge! ";
-            }
+            var chargedMsg = "";
 
             var resistSome = _partialEvasion == PartialEvasion.Some ? "Partial resist! " : "";
             var strikeThrough = Strikethrough > 0 ? "Strikethrough! " : "";
@@ -1551,12 +1515,20 @@ public class SpellProjectile : WorldObject
             {
                 var critProt = critDefended ? " Your critical hit was avoided with their augmentation!" : "";
 
-                if (sourcePlayer is {OverloadDischargeIsActive: true})
+                if (sourcePlayer is {OverloadStanceIsActive: true} or {BatteryStanceIsActive: true})
                 {
-                    overloadMsg = "Discharge! ";
+                    var chargedPercent = Math.Round(sourcePlayer.ManaChargeMeter * 100);
+                    chargedMsg = $"{chargedPercent}% Charged! ";
                 }
 
-                var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}{elementalistMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
+                chargedMsg = sourcePlayer switch
+                {
+                    { OverloadDischargeIsActive: true } => "Overload Discharge! ",
+                    { BatteryDischargeIsActive: true } => "Battery Discharge! ",
+                    _ => chargedMsg
+                };
+
+                var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{chargedMsg}{sneakMsg}{elementalistMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
                 // could these crit / sneak attack?
                 if (nonHealth)
