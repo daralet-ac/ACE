@@ -626,8 +626,7 @@ partial class Creature
                 }
 
                 // COMBAT ABILITY - Smokescreen (+50% to chanceToDeceive value, additively)
-                var playerCombatAbility = GetPlayerCombatAbility(player);
-                if (playerCombatAbility == CombatAbility.Smokescreen)
+                if (player is {SmokescreenIsActive: true})
                 {
                     chanceToDeceive += 0.5f;
                 }
