@@ -173,6 +173,7 @@ public class DamageEvent
 
         SetCombatSources(attacker, defender, damageSource);
         SetCombatAbilities(attacker, defender);
+        CheckForOnAttackEffects(cleaveHits);
 
         SetInvulnerable(defender);
         SetEvaded(attacker, defender);
@@ -212,6 +213,59 @@ public class DamageEvent
         //DpsLogging();
 
         return Damage;
+    }
+
+    private void CheckForOnAttackEffects(bool cleaveHits = false)
+    {
+        if (cleaveHits)
+        {
+            return;
+        }
+
+        if (Weapon is not null && _playerAttacker is { RelentlessStanceIsActive: true })
+        {
+            var powerBarTime = _playerAttacker.GetPowerAccuracyBar();
+            if (powerBarTime <= 0.5)
+            {
+                var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(Weapon);
+
+                if (Weapon is { IsTwoHanded: true })
+                {
+                    weaponAnimTime *= 0.5f;
+                }
+
+                _playerAttacker.AdrenalineMeter += weaponAnimTime / 20 + powerBarTime / 10;
+
+                if (_playerAttacker.AdrenalineMeter > 1.0f)
+                {
+                    _playerAttacker.AdrenalineMeter = 1.0f;
+                }
+            }
+        }
+
+        if (Weapon is not null && _playerAttacker is { FuryStanceIsActive: true })
+        {
+            var powerBarTime = _playerAttacker.GetPowerAccuracyBar();
+            if (powerBarTime >= 0.5)
+            {
+                var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(Weapon);
+
+                if (Weapon is { IsTwoHanded: true })
+                {
+                    weaponAnimTime *= 0.5f;
+                }
+
+                var powerBarMod = powerBarTime * 20 * powerBarTime;
+                var weaponTimeMod = weaponAnimTime / 100;
+
+                _playerAttacker.AdrenalineMeter += weaponTimeMod * powerBarMod;
+
+                if (_playerAttacker.AdrenalineMeter > 1.0f)
+                {
+                    _playerAttacker.AdrenalineMeter = 1.0f;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -660,9 +714,9 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Fury (Stance): Damage increased by 10% and damage taken increased by 10%. Dealing damage and
-    /// taking damage builds up a Fury meter. Fury meter decreases over time.
-    /// COMBAT ABILITY - Fury (Enrage): Damage increased by Fury build up amount (%) for 10 seconds.
+    /// COMBAT ABILITY - Fury (Stance): Damage dealt and taken is increased by up to 25%. Attacking and
+    /// taking damage builds up a Adrenaline meter. Adrenaline meter decreases over time.
+    /// COMBAT ABILITY - Fury (Enrage): Damage increased by Adrenaline build up amount (%) for 10 seconds.
     /// </summary>
     private static float GetCombatAbilityFuryDamageBonus(Player playerAttacker, Player playerDefender)
     {
@@ -670,12 +724,12 @@ public class DamageEvent
 
         if (playerAttacker is {FuryStanceIsActive: true})
         {
-            recklessMod += 0.1f;
+            recklessMod += 0.25f * playerAttacker.AdrenalineMeter;
         }
 
         if (playerDefender is { FuryStanceIsActive: true } or { FuryEnrageIsActive: true })
         {
-            recklessMod += 0.1f;
+            recklessMod += 0.25f * playerDefender.AdrenalineMeter;
         }
 
         if (playerAttacker is {FuryEnrageIsActive: true})
@@ -1049,7 +1103,7 @@ public class DamageEvent
         var playerDefender = defender as Player;
 
         CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttacker, playerDefender);
-        CheckForCombatAbilityFuryBuildUp(playerAttacker, playerDefender);
+        CheckForCombatAbilityFuryBuildUpWhenDamaged(playerDefender);
 
         if (_attacker.IsMonster)
         {
@@ -1089,30 +1143,16 @@ public class DamageEvent
     /// <summary>
     /// COMBAT ABILITY - Fury (build-up).
     /// </summary>
-    private void CheckForCombatAbilityFuryBuildUp(Player playerAttacker, Player playerDefender)
+    private void CheckForCombatAbilityFuryBuildUpWhenDamaged(Player playerDefender)
     {
         if (playerDefender is { FuryStanceIsActive: true })
         {
             var furyGained = Damage / playerDefender.Health.MaxValue / 10;
-            playerDefender.FuryMeter += furyGained;
+            playerDefender.AdrenalineMeter += furyGained;
 
-            if (playerDefender.FuryMeter > 1.0f)
+            if (playerDefender.AdrenalineMeter > 1.0f)
             {
-                playerDefender.FuryMeter = 1.0f;
-            }
-        }
-
-        if (playerAttacker is { FuryStanceIsActive: true } && playerAttacker.GetPowerAccuracyBar() >= 0.5f)
-        {
-            var equippedWeapon = playerAttacker.GetEquippedWeapon();
-            var animSpeedMod = WeaponAnimationLength.GetWeaponAnimLength(equippedWeapon);
-            var furyGained = playerAttacker.GetPowerAccuracyBar() / 10 * animSpeedMod;
-
-            playerAttacker.FuryMeter += furyGained;
-
-            if (playerAttacker.FuryMeter > 1.0f)
-            {
-                playerAttacker.FuryMeter = 1.0f;
+                playerDefender.AdrenalineMeter = 1.0f;
             }
         }
     }

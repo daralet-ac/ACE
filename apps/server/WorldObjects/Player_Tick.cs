@@ -895,13 +895,13 @@ partial class Player
     /// </summary>
     private void HandleBuildUpEffects()
     {
-        if (FuryMeter > 0.0f)
+        if (AdrenalineMeter > 0.0f)
         {
-            FuryMeter -= 0.1f;
+            AdrenalineMeter -= 0.1f;
 
-            if (FuryMeter < 0.0f)
+            if (AdrenalineMeter < 0.0f)
             {
-                FuryMeter = 0.0f;
+                AdrenalineMeter = 0.0f;
             }
         }
 

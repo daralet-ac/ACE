@@ -27,11 +27,21 @@ partial class Player
     private double ParryActivatedDuration = 10;
 
     // Blademaster
+    public bool WeaponMasterIsActive => LastWeaponMasterActivated > Time.GetUnixTime() - WeaponMasterActivatedDuration;
+    private double LastWeaponMasterActivated;
+    private double WeaponMasterActivatedDuration = 10;
+
+    public float AdrenalineMeter;
+    public bool RelentlessTenacityIsActive => LastRelentlessActivated > Time.GetUnixTime() - RelentlessActivatedDuration;
+    private double LastRelentlessActivated;
+    private double RelentlessActivatedDuration = 10;
+    public bool RelentlessStanceIsActive;
+    public float TenacityLevel;
+
     public bool FuryEnrageIsActive => LastFuryEnrageActivated > Time.GetUnixTime() - FuryEnrageActivatedDuration;
     private double LastFuryEnrageActivated;
     private double FuryEnrageActivatedDuration = 10;
     public bool FuryStanceIsActive;
-    public float FuryMeter;
     public float EnrageLevel;
 
     // Archer
@@ -218,6 +228,25 @@ partial class Player
         return true;
     }
 
+    public bool TryUseWeaponMaster(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.WeaponMaster))
+        {
+            return false;
+        }
+
+        if (WeaponMasterIsActive)
+        {
+            return false;
+        }
+
+        LastWeaponMasterActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.SkillUpOrange, Guid);
+
+        return true;
+    }
+
     public bool TryUseFury(Gem gem)
     {
         if (!VerifyCombatFocus(CombatAbility.Fury))
@@ -227,16 +256,35 @@ partial class Player
 
         if (!FuryStanceIsActive && !FuryEnrageIsActive)
         {
+            if (RelentlessStanceIsActive)
+            {
+                var relentlessItem = GetInventoryItemsOfWCID(1051127);
+                if (relentlessItem.Count > 0)
+                {
+                    EnchantmentManager.StartCooldown(relentlessItem[0]);
+                }
+
+                RelentlessStanceIsActive = false;
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"Relentless is disabled.", ChatMessageType.Broadcast)
+                );
+            }
+            else
+            {
+                AdrenalineMeter = 0.0f;
+            }
+
             FuryStanceIsActive = true;
-            FuryMeter = 0.0f;
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You channel your inner fury!",
+                    $"You channel your inner fury, producing adrenaline each time you attack!",
                     ChatMessageType.Broadcast
                 )
             );
-            PlayParticleEffect(PlayScript.SkillUpOrange, Guid);
+
+            PlayParticleEffect(PlayScript.SkillUpOrange, Guid, AdrenalineMeter);
 
             return false;
         }
@@ -249,29 +297,126 @@ partial class Player
             return false;
         }
 
-        if (FuryStanceIsActive && FuryMeter < 0.5f)
+        if (RelentlessTenacityIsActive)
         {
-            FuryStanceIsActive = false;
-            FuryMeter = 0.0f;
-
             Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You calm down and release rage.", ChatMessageType.Broadcast)
+                new GameMessageSystemChat($"You cannot activate Fury while Tenacious.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (FuryStanceIsActive && AdrenalineMeter < 0.5f)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You calm down and your release adrenaline without effect.", ChatMessageType.Broadcast)
             );
 
-            PlayParticleEffect(PlayScript.SkillDownOrange, Guid);
+            PlayParticleEffect(PlayScript.SkillDownOrange, Guid, AdrenalineMeter);
+
+            FuryStanceIsActive = false;
+            AdrenalineMeter = 0.0f;
 
             return true;
         }
 
         FuryStanceIsActive = false;
-        EnrageLevel = FuryMeter;
-        FuryMeter = 0.0f;
+        EnrageLevel = AdrenalineMeter;
+        AdrenalineMeter = 0.0f;
         LastFuryEnrageActivated = Time.GetUnixTime();
 
         Session.Network.EnqueueSend(
-            new GameMessageSystemChat($"You unleash your rage ({Math.Round(EnrageLevel * 100)}%)!", ChatMessageType.Broadcast)
+            new GameMessageSystemChat($"You Enrage, converting your adrenaline into pure fury! ({Math.Round(EnrageLevel * 100)}%)", ChatMessageType.Broadcast)
         );
-        PlayParticleEffect(PlayScript.EnchantUpOrange, Guid);
+        PlayParticleEffect(PlayScript.EnchantUpOrange, Guid, EnrageLevel);
+
+        return true;
+    }
+
+    public bool TryUseRelentless(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Relentless))
+        {
+            return false;
+        }
+
+        if (!RelentlessStanceIsActive && !RelentlessTenacityIsActive && !FuryEnrageIsActive)
+        {
+            if (FuryStanceIsActive)
+            {
+                var furyItem = GetInventoryItemsOfWCID(1051135);
+                if (furyItem.Count > 0)
+                {
+                    EnchantmentManager.StartCooldown(furyItem[0]);
+                }
+
+                FuryStanceIsActive = false;
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"Fury is disabled.", ChatMessageType.Broadcast)
+                );
+
+                PlayParticleEffect(PlayScript.SkillDownOrange, Guid);
+            }
+            else
+            {
+                AdrenalineMeter = 0.0f;
+            }
+
+            RelentlessStanceIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You enter a state of relentless assault, producing adrenaline each time you attack!",
+                    ChatMessageType.Broadcast
+                )
+            );
+
+            PlayParticleEffect(PlayScript.RegenUpYellow, Guid, AdrenalineMeter);
+
+            return false;
+        }
+
+        if (FuryEnrageIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Relentless while Enraged.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (RelentlessTenacityIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Relentless while Tenacious.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (RelentlessStanceIsActive && AdrenalineMeter < 0.5f)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You release your adrenaline to no effect.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.RegenDownYellow, Guid, AdrenalineMeter);
+
+            RelentlessStanceIsActive = false;
+            AdrenalineMeter = 0.0f;
+
+            return true;
+        }
+
+        RelentlessStanceIsActive = false;
+        TenacityLevel = AdrenalineMeter;
+
+        AdrenalineMeter = 0.0f;
+        LastRelentlessActivated = Time.GetUnixTime();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You convert your adrenaline into Tenacity, reducing the cost of your attacks! ({Math.Round(TenacityLevel * 100)}%)", ChatMessageType.Broadcast)
+        );
+
+        PlayParticleEffect(PlayScript.EnchantUpOrange, Guid, TenacityLevel);
 
         return true;
     }
@@ -460,6 +605,12 @@ partial class Player
         {
             if (BatteryStanceIsActive)
             {
+                var batteryItem = GetInventoryItemsOfWCID(1051132);
+                if (batteryItem.Count > 0)
+                {
+                    EnchantmentManager.StartCooldown(batteryItem[0]);
+                }
+
                 BatteryStanceIsActive = false;
 
                 Session.Network.EnqueueSend(
@@ -531,6 +682,12 @@ partial class Player
         {
             if (OverloadStanceIsActive)
             {
+                var overloadItem = GetInventoryItemsOfWCID(1051133);
+                if (overloadItem.Count > 0)
+                {
+                    EnchantmentManager.StartCooldown(overloadItem[0]);
+                }
+
                 OverloadStanceIsActive = false;
 
                 Session.Network.EnqueueSend(
@@ -1364,6 +1521,18 @@ partial class Player
                     return false;
                 }
                 break;
+            case CombatAbility.WeaponMaster:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Blademaster})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Weapon Master can only be used with a Blademaster Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
             case CombatAbility.Fury:
                 if (GetEquippedCombatFocus() is not {CombatFocusType:
                         (int)CombatFocusType.Blademaster
@@ -1373,6 +1542,21 @@ partial class Player
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
                             $"Fury can only be used with a Blademaster Focus, Warrior Focus, or Archer Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Relentless:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Blademaster
+                        or (int)CombatFocusType.Warrior
+                        or (int)CombatFocusType.Archer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Relentless can only be used with a Blademaster Focus, Warrior Focus, or Archer Focus",
                             ChatMessageType.Broadcast
                         )
                     );

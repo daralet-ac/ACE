@@ -12,12 +12,12 @@ public enum CombatAbility
     Backstab,
     SteadyShot,
     Smokescreen,
-    IronFist,
+    Relentless,
     Overload,
     Battery,
     Reflect,
     EnchantedWeapon,
-    Deceive,
+    WeaponMaster,
     SlashThrustToggle,
     FocusedTaunt,
     AreaTaunt,
@@ -37,6 +37,4 @@ public enum CombatAbility
     EnchantedBladeDrainStamina,
     EnchantedBladeDrainMana,
     Aegis,
-    WeaponMaster,
-    Surestrike
 }

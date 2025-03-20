@@ -279,25 +279,29 @@ partial class Player
                     single = null;
                 Strings.GetAttackVerb(damageEvent.DamageType, percent, ref verb, ref single);
 
-                if (this != target && FuryEnrageIsActive || FuryStanceIsActive)
+                if (this != target && RelentlessStanceIsActive || FuryStanceIsActive)
                 {
-                    furyPercent = (int)(FuryMeter * 100);
-                    if (furyPercent > 100)
+                    furyPercent = (int)(AdrenalineMeter * 100);
+
+                    if (RelentlessStanceIsActive)
                     {
-                        furyPercent = 100;
+                        furyMsg = $"{furyPercent}% Relentless Adrenaline! ";
                     }
 
-                    if (furyPercent < 0)
+                    if (FuryStanceIsActive)
                     {
-                        furyPercent = 0;
+                        furyMsg = $"{furyPercent}% Furious Adrenaline! ";
                     }
+                }
 
-                    furyMsg = $"{furyPercent}% Rage! ";
+                if (FuryEnrageIsActive)
+                {
+                    furyMsg = $"Enrage! ";
+                }
 
-                    if (this.FuryEnrageIsActive)
-                    {
-                        furyMsg = $"Enrage! ";
-                    }
+                if (RelentlessTenacityIsActive)
+                {
+                    furyMsg = $"Tenacity! ";
                 }
 
                 if (this != target && damageEvent.PartialEvasion == PartialEvasion.Some)
@@ -1464,12 +1468,9 @@ partial class Player
         var staminaCostReductionMod = 1.0f;
 
         // Sword/UA implicit rolled bonuses
-        if (weapon != null)
+        if (weapon?.StaminaCostReductionMod != null)
         {
-            if (weapon.StaminaCostReductionMod != null)
-            {
-                staminaCostReductionMod -= (float)weapon.StaminaCostReductionMod;
-            }
+            staminaCostReductionMod *= (1.0f - (float)weapon.StaminaCostReductionMod);
         }
 
         // SPEC BONUS - UA: Stamina costs for melee attacks reduced by 10%
@@ -1478,7 +1479,7 @@ partial class Player
             && GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized
         )
         {
-            staminaCostReductionMod -= 0.1f;
+            staminaCostReductionMod *= 0.9f;
         }
 
         // SPEC BONUS - Martial Weapons (Sword): Stamina costs for melee attacks reduced by 10%
@@ -1487,7 +1488,12 @@ partial class Player
             && GetCreatureSkill(Skill.MartialWeapons).AdvancementClass == SkillAdvancementClass.Specialized
         )
         {
-            staminaCostReductionMod -= 0.1f;
+            staminaCostReductionMod *= 0.9f;
+        }
+
+        if (RelentlessTenacityIsActive && TenacityLevel > 0.0f)
+        {
+            staminaCostReductionMod *= (1.0f - TenacityLevel);
         }
 
         return staminaCostReductionMod;

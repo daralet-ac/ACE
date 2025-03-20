@@ -153,6 +153,8 @@ partial class Creature
 
         var vitalTypeBaseMod = vital == Health ? 0.1f : 0.2f;
 
+        var relentlessStaminaMod = 1.0f;
+
         var vitalTypeArmorMod = 1.0;
         if (vital == Health)
         {
@@ -166,13 +168,18 @@ partial class Creature
         else if (vital == Stamina)
         {
             vitalTypeArmorMod = GetArmorStaminaRegenMod() + 1;
+
+            if (this is Player { RelentlessStanceIsActive: true } relentlessPlayer)
+            {
+                relentlessStaminaMod *= 1 + relentlessPlayer.AdrenalineMeter;
+            }
         }
         else if (vital == Mana)
         {
             vitalTypeArmorMod = GetArmorManaRegenMod() + 1;
         }
 
-        currentTick = diminishedMaxVital * vitalTypeBaseMod * vitalTypeArmorMod * stanceMod * enchantmentMod * augMod;
+        currentTick = diminishedMaxVital * vitalTypeBaseMod * vitalTypeArmorMod * stanceMod * enchantmentMod * augMod * relentlessStaminaMod;
 
         // add in partially accumulated / rounded vitals from previous tick(s)
         var totalTick = currentTick + vital.PartialRegen;

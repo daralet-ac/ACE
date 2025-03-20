@@ -212,6 +212,82 @@ public class Gem : Stackable
         {
             switch ((CombatAbility)CombatAbilityId)
             {
+                // Warrior
+                case CombatAbility.Phalanx:
+                    startCooldown = player.TryUsePhalanx(this);
+                    break;
+                case CombatAbility.Provoke:
+                    startCooldown = player.TryUseProvoke(this);
+                    break;
+                case CombatAbility.Parry:
+                    startCooldown = player.TryUseParry(this);
+                    break;
+                // Blademaster
+                case CombatAbility.WeaponMaster:
+                    startCooldown = player.TryUseWeaponMaster(this);
+                    break;
+                case CombatAbility.Fury:
+                    startCooldown = player.TryUseFury(this);
+                    break;
+                case CombatAbility.Relentless:
+                    startCooldown = player.TryUseRelentless(this);
+                    break;
+                // Archer
+                case CombatAbility.Multishot:
+                    startCooldown = player.TryUseMultishot(this);
+                    break;
+                case CombatAbility.SteadyShot:
+                    startCooldown = player.TryUseSteadyShot(this);
+                    break;
+                case CombatAbility.EvasiveStance:
+                    startCooldown = player.TryUseEvasiveStance();
+                    break;
+                // Vagabond
+                case CombatAbility.Vanish:
+                    startCooldown = player.TryUseVanish(this);
+                    break;
+                case CombatAbility.Smokescreen:
+                    startCooldown = player.TryUseSmokescreen(this);
+                    break;
+                case CombatAbility.Backstab:
+                    startCooldown = player.TryUseBackstab(this);
+                    break;
+                // Sorcerer
+                case CombatAbility.Overload:
+                    startCooldown = player.TryUseOverload(this);
+                    break;
+                case CombatAbility.Battery:
+                    startCooldown = player.TryUseBattery(this);
+                    break;
+                case CombatAbility.ManaBarrier:
+                    startCooldown = player.TryUseManaBarrier();
+                    break;
+                // Spellsword
+                case CombatAbility.EnchantedBladeArc:
+                case CombatAbility.EnchantedBladeBlast:
+                case CombatAbility.EnchantedBladeVolley:
+                case CombatAbility.EnchantedBladeDrainLife:
+                case CombatAbility.EnchantedBladeDrainStamina:
+                case CombatAbility.EnchantedBladeDrainMana:
+                    startCooldown = player.TryUseEnchantedBlade(this);
+                    break;
+                case CombatAbility.Reflect:
+                    startCooldown = player.TryUseReflect(this);
+                    break;
+                case CombatAbility.Aegis:
+                    startCooldown = player.TryUseAegis(this);
+                    break;
+                // Perception
+                case CombatAbility.ExposePhysicalWeakness:
+                    player.TryUseExposePhysicalWeakness(this);
+                    break;
+                case CombatAbility.ExposeMagicalWeakness:
+                    player.TryUseExposeMagicalWeakness(this);
+                    break;
+                // Other
+                case CombatAbility.Shroud:
+                    player.TryUseShroud();
+                    break;
                 case CombatAbility.PerceiveThreats:
                     if (player.TogglePerceiveThreatsSetting())
                     {
@@ -231,7 +307,6 @@ public class Gem : Stackable
                             )
                         );
                     }
-
                     break;
                 case CombatAbility.Stealth:
                     if (!player.IsStealthed)
@@ -242,7 +317,6 @@ public class Gem : Stackable
                     {
                         player.EndStealth();
                     }
-
                     break;
                 case CombatAbility.SlashThrustToggle:
                     if (player.ToggleSlashThrustSetting())
@@ -257,69 +331,6 @@ public class Gem : Stackable
                             new GameMessageSystemChat($"You switch to slashing attacks.", ChatMessageType.Broadcast)
                         );
                     }
-
-                    break;
-                case CombatAbility.Phalanx:
-                    startCooldown = player.TryUsePhalanx(this);
-                    break;
-                case CombatAbility.Provoke:
-                    startCooldown = player.TryUseProvoke(this);
-                    break;
-                case CombatAbility.Parry:
-                    startCooldown = player.TryUseParry(this);
-                    break;
-                case CombatAbility.Fury:
-                    startCooldown = player.TryUseFury(this);
-                    break;
-                case CombatAbility.Multishot:
-                    startCooldown = player.TryUseMultishot(this);
-                    break;
-                case CombatAbility.SteadyShot:
-                    startCooldown = player.TryUseSteadyShot(this);
-                    break;
-                case CombatAbility.Vanish:
-                    startCooldown = player.TryUseVanish(this);
-                    break;
-                case CombatAbility.Smokescreen:
-                    startCooldown = player.TryUseSmokescreen(this);
-                    break;
-                case CombatAbility.Backstab:
-                    startCooldown = player.TryUseBackstab(this);
-                    break;
-                case CombatAbility.Overload:
-                    startCooldown = player.TryUseOverload(this);
-                    break;
-                case CombatAbility.Battery:
-                    startCooldown = player.TryUseBattery(this);
-                    break;
-                case CombatAbility.ExposePhysicalWeakness:
-                    player.TryUseExposePhysicalWeakness(this);
-                    break;
-                case CombatAbility.ExposeMagicalWeakness:
-                    player.TryUseExposeMagicalWeakness(this);
-                    break;
-                case CombatAbility.EnchantedBladeArc:
-                case CombatAbility.EnchantedBladeBlast:
-                case CombatAbility.EnchantedBladeVolley:
-                case CombatAbility.EnchantedBladeDrainLife:
-                case CombatAbility.EnchantedBladeDrainStamina:
-                case CombatAbility.EnchantedBladeDrainMana:
-                    startCooldown = player.TryUseEnchantedBlade(this);
-                    break;
-                case CombatAbility.Reflect:
-                    startCooldown = player.TryUseReflect(this);
-                    break;
-                case CombatAbility.Aegis:
-                    startCooldown = player.TryUseAegis(this);
-                    break;
-                case CombatAbility.ManaBarrier:
-                    startCooldown = player.TryUseManaBarrier();
-                    break;
-                case CombatAbility.EvasiveStance:
-                    startCooldown = player.TryUseEvasiveStance();
-                    break;
-                case CombatAbility.Shroud:
-                    player.TryUseShroud();
                     break;
             }
         }
