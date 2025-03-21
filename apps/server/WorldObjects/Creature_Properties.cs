@@ -332,7 +332,7 @@ partial class Creature
 
     public virtual float GetNaturalResistance(DamageType damageType)
     {
-        if (damageType is DamageType.Bleed)
+        if (damageType is DamageType.Bleed && ResistBleed is null)
         {
             var level = Level ?? 1;
             return (float)Math.Pow(0.99f, level);
