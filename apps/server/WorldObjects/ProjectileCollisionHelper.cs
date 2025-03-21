@@ -38,6 +38,22 @@ public static class ProjectileCollisionHelper
         {
             if (sourcePlayer != null)
             {
+                // damage an additional nearby enemy if Weapon Master and a puncturing TW is used
+                if (sourcePlayer is {WeaponMasterIsActive: true} && sourcePlayer.GetPowerAccuracyBar() >= 0.5)
+                {
+                    var weapon = sourcePlayer.GetEquippedWeapon();
+
+                    if (weapon.Name.Contains("Javelin") || weapon.Name.Contains("Dart"))
+                    {
+                        var nearbyTargets = targetCreature.GetNearbyMonsters(3);
+
+                        if (nearbyTargets.Count > 0)
+                        {
+                            sourcePlayer.DamageTarget(nearbyTargets[0], worldObject);
+                        }
+                    }
+                }
+
                 // player damage monster or player
                 damageEvent = sourcePlayer.DamageTarget(targetCreature, worldObject);
 

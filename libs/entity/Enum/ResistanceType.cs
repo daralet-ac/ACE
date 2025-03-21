@@ -16,5 +16,6 @@ public enum ResistanceType
     StaminaDrain,
     StaminaBoost,
     ManaDrain,
-    ManaBoost
+    ManaBoost,
+    Bleed
 }

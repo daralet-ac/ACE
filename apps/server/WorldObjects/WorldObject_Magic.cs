@@ -3256,7 +3256,7 @@ partial class WorldObject
             damageRatingMod = Creature.GetPositiveRatingMod(damageRating);
         }
 
-        if (spell.Category == SpellCategory.DFBleedDamage)
+        if (spell.Category is SpellCategory.DFBleedDamage)
         {
             // retail pcaps have modifiers in the range of 1.1x - 1.7x
             return enchantment_statModVal * damageRatingMod;
@@ -3266,6 +3266,7 @@ partial class WorldObject
             spell.Category != SpellCategory.NetherDamageOverTimeRaising
             && spell.Category != SpellCategory.NetherDamageOverTimeRaising2
             && spell.Category != SpellCategory.NetherDamageOverTimeRaising3
+            && spell.Category != SpellCategory.BleedDamage
         )
         {
             _log.Error(

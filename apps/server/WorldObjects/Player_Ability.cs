@@ -27,9 +27,12 @@ partial class Player
     private double ParryActivatedDuration = 10;
 
     // Blademaster
+    public bool WeaponMasterSingleUseIsActive;
+
     public bool WeaponMasterIsActive => LastWeaponMasterActivated > Time.GetUnixTime() - WeaponMasterActivatedDuration;
     private double LastWeaponMasterActivated;
     private double WeaponMasterActivatedDuration = 10;
+
 
     public float AdrenalineMeter;
     public bool RelentlessTenacityIsActive => LastRelentlessActivated > Time.GetUnixTime() - RelentlessActivatedDuration;
@@ -240,9 +243,10 @@ partial class Player
             return false;
         }
 
+        WeaponMasterSingleUseIsActive = true;
         LastWeaponMasterActivated = Time.GetUnixTime();
 
-        PlayParticleEffect(PlayScript.SkillUpOrange, Guid);
+        PlayParticleEffect(PlayScript.EnchantUpOrange, Guid);
 
         return true;
     }

@@ -1104,6 +1104,7 @@ public class DamageEvent
 
         CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttacker, playerDefender);
         CheckForCombatAbilityFuryBuildUpWhenDamaged(playerDefender);
+        CheckForWeaponMasterEffects(playerAttacker, defender);
 
         if (_attacker.IsMonster)
         {
@@ -1114,6 +1115,179 @@ public class DamageEvent
         {
             Damage *= 1.0f;
         }
+    }
+
+    private void CheckForWeaponMasterEffects(Player playerAttacker, Creature defender)
+    {
+
+        if (playerAttacker is not { WeaponMasterSingleUseIsActive: true } || Weapon is null)
+        {
+            return;
+        }
+
+        var powerLevel = playerAttacker.GetPowerAccuracyBar();
+
+        if (powerLevel < 0.5)
+        {
+            return;
+        }
+
+        var weaponTier = Math.Clamp((Weapon.Tier ?? 1) - 1, 1, 7);
+
+        switch (Weapon.WeaponSkill)
+        {
+            case Skill.Axe:
+            case Skill.Dagger:
+
+                WeaponMasterBleed(playerAttacker, defender, weaponTier, powerLevel);
+
+                break;
+            case Skill.Mace:
+            case Skill.Staff:
+
+                WeaponMasterDaze(playerAttacker, defender, weaponTier, powerLevel);
+
+                break;
+            case Skill.UnarmedCombat:
+
+                WeaponMasterOffBalance(playerAttacker, defender, weaponTier, powerLevel);
+
+                break;
+            case Skill.ThrownWeapon:
+
+                if (Weapon.Name.Contains("Dagger") || Weapon.Name.Contains("Axe"))
+                {
+                    WeaponMasterBleed(playerAttacker, defender, weaponTier, powerLevel);
+                }
+                else if (Weapon.Name.Contains("Club"))
+                {
+                    WeaponMasterDaze(playerAttacker, defender, weaponTier, powerLevel);
+                }
+                else if (Weapon.Name.Contains("Shouken"))
+                {
+                    WeaponMasterOffBalance(playerAttacker, defender, weaponTier, powerLevel);
+                }
+
+                break;
+            // case Skill.Sword:
+            //     Console.WriteLine("Sword");
+            //     break;
+            // case Skill.Spear:
+            //     Console.WriteLine("Spear");
+            //     break;
+        }
+    }
+
+    private void WeaponMasterOffBalance(Player playerAttacker, Creature defender, int weaponTier, float powerLevel)
+    {
+        float tierMod;
+        tierMod = weaponTier switch
+        {
+            1 => 1.0f,
+            2 => 3.0f,
+            3 => 4.0f,
+            4 => 5.0f,
+            5 => 6.0f,
+            6 => 8.0f,
+            7 => 10.0f,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var defenseDebuffSpell = new Spell(SpellId.Unbalanced);
+
+        if (defenseDebuffSpell.NotFound)
+        {
+            return;
+        }
+
+        defenseDebuffSpell.SpellStatModVal *= powerLevel * tierMod;
+
+        defender.EnchantmentManager.Add(defenseDebuffSpell, playerAttacker, Weapon);
+
+        defender.EnqueueBroadcast(new GameMessageScript(defender.Guid, PlayScript.DirtyFightingDefenseDebuff));
+
+        playerAttacker.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"You put {defender.Name} off-balance, reducing their defense skill!",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        playerAttacker.WeaponMasterSingleUseIsActive = false;
+    }
+
+    private void WeaponMasterDaze(Player playerAttacker, Creature defender, int weaponTier, float powerLevel)
+    {
+        float tierMod;
+        tierMod = weaponTier switch
+        {
+            1 => 1.0f,
+            2 => 3.0f,
+            3 => 4.0f,
+            4 => 5.0f,
+            5 => 6.0f,
+            6 => 8.0f,
+            7 => 10.0f,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var attackDebuffSpell = new Spell(SpellId.Dazed);
+
+        if (attackDebuffSpell.NotFound)
+        {
+            return;
+        }
+
+        attackDebuffSpell.SpellStatModVal *= powerLevel * tierMod;
+
+        defender.EnchantmentManager.Add(attackDebuffSpell, playerAttacker, Weapon);
+
+        defender.EnqueueBroadcast(new GameMessageScript(defender.Guid, PlayScript.DirtyFightingAttackDebuff));
+
+        playerAttacker.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"You daze {defender.Name}, reducing their attack skill!",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        playerAttacker.WeaponMasterSingleUseIsActive = false;
+    }
+
+    private void WeaponMasterBleed(Player playerAttacker, Creature defender, int weaponTier, float powerLevel)
+    {
+        var tierMod = weaponTier switch
+        {
+            1 => 1.0f,
+            2 => 3.0f,
+            3 => 7.0f,
+            4 => 10.0f,
+            5 => 16.0f,
+            6 => 24.0f,
+            7 => 32.0f,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var spell = new Spell(SpellId.Bleed);
+
+        if (spell.NotFound)
+        {
+            return;
+        }
+
+        spell.SpellStatModVal *= powerLevel * tierMod;
+
+        defender.EnchantmentManager.Add(spell, playerAttacker, Weapon);
+        defender.EnqueueBroadcast(new GameMessageScript(defender.Guid, PlayScript.DirtyFightingDamageOverTime));
+
+        playerAttacker.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"You cause {defender.Name} to bleed!",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        playerAttacker.WeaponMasterSingleUseIsActive = false;
     }
 
     /// <summary>

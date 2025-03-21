@@ -158,7 +158,9 @@ partial class Creature
         var jewelCleaveChance = Jewel.GetJewelEffectMod(player, PropertyInt.GearSlash);
         var jewelCleave = ThreadSafeRandom.Next(0.0f, 1.0f) < jewelCleaveChance;
 
-        if (weapon is not {IsCleaving: true} && !jewelCleave)
+        var puncturingWeapon = this is Player { WeaponMasterIsActive: true } && weapon is { WeaponSkill: Skill.Spear };
+
+        if (weapon is not {IsCleaving: true} && !jewelCleave && !puncturingWeapon)
         {
             return null;
         }
@@ -176,6 +178,12 @@ partial class Creature
             totalCleaves += 1;
             jewelCleave = false;
         }
+
+        if (puncturingWeapon)
+        {
+            totalCleaves += 1;
+        }
+
         if (weapon.IsCleaving)
         {
             totalCleaves += weapon.CleaveTargets;
@@ -184,6 +192,7 @@ partial class Creature
         if (
             totalCleaves > 0
             && GetCreatureSkill(Skill.TwoHandedCombat).AdvancementClass == SkillAdvancementClass.Specialized
+            && GetEquippedMeleeWeapon() is {WeaponSkill: Skill.Sword} or {WeaponSkill: Skill.Mace} or {WeaponSkill: Skill.Axe}
         )
         {
             totalCleaves += ThreadSafeRandom.Next(0, 1);
@@ -225,15 +234,19 @@ partial class Creature
             }
 
             // no objects in cleave range
+            var cleaveDistance = puncturingWeapon ? 3 : CleaveCylRange;
             var cylDist = GetCylinderDistance(creature);
-            if (cylDist > CleaveCylRange)
+Console.WriteLine();
+            if (cylDist > cleaveDistance)
             {
                 return cleaveTargets;
             }
 
             // only cleave in front of attacker
+            var cleaveAngle = puncturingWeapon ? 90 : CleaveAngle;
             var angle = GetAngle(creature);
-            if (Math.Abs(angle) > CleaveAngle / 2.0f)
+
+            if (Math.Abs(angle) > cleaveAngle / 2.0f)
             {
                 continue;
             }

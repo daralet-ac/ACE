@@ -273,7 +273,7 @@ partial class Player
 
                 if (MultiShotIsActive && GetPowerAccuracyBar() >= 0.5f)
                 {
-                    numCleaves = 1;
+                    numCleaves += 1;
                 }
 
                 numCleaves += CheckForRatingSlashCleaveBonus(ammo);

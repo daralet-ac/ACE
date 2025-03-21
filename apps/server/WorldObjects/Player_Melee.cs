@@ -418,9 +418,11 @@ partial class Player
                     }
 
                     if (
-                        damageEvent != null && (weapon is { IsCleaving: true }
-                                                || (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) > 0)
-                                                && damageEvent.DamageType == DamageType.Slash)
+                        damageEvent != null
+                        && (weapon is { IsCleaving: true }
+                        || (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) > 0)
+                            && damageEvent.DamageType == DamageType.Slash)
+                        || (WeaponMasterIsActive && GetEquippedMeleeWeapon() is {WeaponSkill: Skill.Spear})
                     )
                     {
                         var cleave = GetCleaveTarget(creature, weapon);
@@ -507,6 +509,11 @@ partial class Player
         var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
         var animSpeedMod = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster dual-wield swing animation
 
+        if (WeaponMasterIsActive && GetEquippedMeleeWeapon() is { WeaponSkill: Skill.Sword } && GetPowerAccuracyBar() >= 0.5)
+        {
+            animSpeedMod += 0.25f;
+        }
+
         var animSpeed = baseSpeed * animSpeedMod;
 
         var swingAnimation = GetSwingAnimation();
@@ -554,6 +561,7 @@ partial class Player
     /// </summary>
     public MotionCommand GetSwingAnimation()
     {
+
         if (IsDualWieldAttack)
         {
             DualWieldAlternate = !DualWieldAlternate;
@@ -570,10 +578,17 @@ partial class Player
 
         if (weapon != null)
         {
-            AttackType = weapon.GetAttackType(CurrentMotionState.Stance, SlashThrustToggle, offhand);
-            if (weapon.IsThrustSlash)
+            if (WeaponMasterSingleUseIsActive && weapon is { WeaponSkill: Skill.UnarmedCombat })
             {
-                subdivision = 0.66f;
+                AttackType = AttackType.Kick;
+            }
+            else
+            {
+                AttackType = weapon.GetAttackType(CurrentMotionState.Stance, SlashThrustToggle, offhand);
+                if (weapon.IsThrustSlash)
+                {
+                    subdivision = 0.66f;
+                }
             }
         }
         else

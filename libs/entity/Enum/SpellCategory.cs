@@ -776,4 +776,7 @@ public enum SpellCategory : uint
     GearRatingFocus = 778,
     GearRatingSelf = 779,
     ExplorerInspiration = 780,
+    BleedDamage = 781,
+    Dazed = 782,
+    Unbalanced = 783
 }

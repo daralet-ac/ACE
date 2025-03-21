@@ -6416,6 +6416,9 @@ public enum SpellId : uint
     RatingFocus,
     RatingSelf,
     ExplorerInspiration,
+    Bleed,
+    Dazed,
+    Unbalanced,
 
     NumSpells = 8192,
 

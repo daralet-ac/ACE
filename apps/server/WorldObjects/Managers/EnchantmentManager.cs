@@ -871,6 +871,8 @@ public class EnchantmentManager
                 return PropertyFloat.ResistElectric;
             case DamageType.Nether:
                 return PropertyFloat.ResistNether;
+            case DamageType.Bleed:
+                return PropertyFloat.ResistBleed;
         }
         return 0;
     }
@@ -1558,6 +1560,7 @@ public class EnchantmentManager
     public void HeartBeat_DamageOverTime(List<PropertiesEnchantmentRegistry> enchantments)
     {
         var dots = new List<PropertiesEnchantmentRegistry>();
+        var bleedDots = new List<PropertiesEnchantmentRegistry>();
         var netherDots = new List<PropertiesEnchantmentRegistry>();
         var aetheriaDots = new List<PropertiesEnchantmentRegistry>();
         var heals = new List<PropertiesEnchantmentRegistry>();
@@ -1570,6 +1573,10 @@ public class EnchantmentManager
                 if (enchantment.SpellCategory == SpellCategory.AetheriaProcDamageOverTimeRaising)
                 {
                     aetheriaDots.Add(enchantment);
+                }
+                else if (enchantment.SpellCategory == SpellCategory.BleedDamage)
+                {
+                    bleedDots.Add(enchantment);
                 }
                 else
                 {
@@ -1590,6 +1597,11 @@ public class EnchantmentManager
         if (dots.Count > 0)
         {
             ApplyDamageTick(dots, DamageType.Undef);
+        }
+
+        if (bleedDots.Count > 0)
+        {
+            ApplyDamageTick(bleedDots, DamageType.Bleed);
         }
 
         if (netherDots.Count > 0)
