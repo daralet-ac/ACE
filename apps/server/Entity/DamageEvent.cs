@@ -39,6 +39,7 @@ public class DamageEvent
     private float _combatAbilityFuryDamageBonus;
     private float _combatAbilityMultishotDamagePenalty;
     private float _combatAbilityProvokeDamageReduction;
+    private float _combatAbilityRelentlessDamagePenalty;
     private Creature_BodyPart _creaturePart;
     private float _criticalChance;
     private float _criticalDamageMod;
@@ -642,6 +643,7 @@ public class DamageEvent
         _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(playerAttacker);
         _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
         _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(playerAttacker, playerDefender);
+        _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(playerAttacker);
         _combatAbilitySteadyShotDamageBonus = GetCombatAbilitySteadyShotDamageBonus(playerAttacker);
         _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
         SneakAttackMod = attacker.GetSneakAttackMod(defender);
@@ -738,6 +740,19 @@ public class DamageEvent
         }
 
         return recklessMod;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Relentless (Stance): Up to -10% damage, based on relentless adrenaline stacks.
+    /// </summary>
+    private static float GetCombatAbilityRelentlessDamagePenalty(Player playerAttacker)
+    {
+        if (playerAttacker is not { RelentlessStanceIsActive: true })
+        {
+            return 1.0f;
+        }
+
+        return 1.0f - 0.1f * playerAttacker.AdrenalineMeter;
     }
 
     /// <summary>
