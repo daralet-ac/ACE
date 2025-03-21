@@ -279,10 +279,10 @@ public class Gem : Stackable
                     break;
                 // Perception
                 case CombatAbility.ExposePhysicalWeakness:
-                    player.TryUseExposePhysicalWeakness(this);
+                    startCooldown = player.TryUseExposePhysicalWeakness(this);
                     break;
                 case CombatAbility.ExposeMagicalWeakness:
-                    player.TryUseExposeMagicalWeakness(this);
+                    startCooldown = player.TryUseExposeMagicalWeakness(this);
                     break;
                 // Other
                 case CombatAbility.Shroud:

@@ -1114,13 +1114,13 @@ partial class Player
         return true;
     }
 
-    public void TryUseExposePhysicalWeakness(WorldObject ability)
+    public bool TryUseExposePhysicalWeakness(WorldObject ability)
     {
         var target = LastAttackedCreature;
 
         if (this == target || target.IsDead)
         {
-            return;
+            return false;
         }
 
         var targetAsPlayer = target as Player;
@@ -1154,7 +1154,7 @@ partial class Player
                     )
                 );
             }
-            return;
+            return false;
         }
 
         Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.Perception), targetDeceptionSkill);
@@ -1164,7 +1164,7 @@ partial class Player
 
         if (vulnerabilitySpellLevels.Count == 0 || imperilSpellLevels.Count == 0)
         {
-            return;
+            return false;
         }
 
         var overRoll = roll - avoidChance;
@@ -1247,16 +1247,18 @@ partial class Player
         {
             CheckForSigilTrinketOnCastEffects(target, vulnerabilitySpell, false, Skill.Perception, (int)SigilTrinketPerceptionEffect.Exposure);
         }
+
+        return true;
     }
 
-    public void TryUseExposeMagicalWeakness(WorldObject ability)
+    public bool TryUseExposeMagicalWeakness(WorldObject ability)
     {
         {
             var target = LastAttackedCreature;
 
             if (this == target || target.IsDead)
             {
-                return;
+                return false;
             }
 
             var targetAsPlayer = target as Player;
@@ -1290,7 +1292,7 @@ partial class Player
                         )
                     );
                 }
-                return;
+                return false;
             }
 
             Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.Perception), targetDeceptionSkill);
@@ -1300,7 +1302,7 @@ partial class Player
 
             if (magicYieldSpellLevels.Count == 0 || succumbSpellLevels.Count == 0)
             {
-                return;
+                return false;
             }
 
             var overRoll = roll - avoidChance;
@@ -1384,6 +1386,8 @@ partial class Player
                 CheckForSigilTrinketOnCastEffects(target, magicYieldSpell, false, Skill.Perception, (int)SigilTrinketPerceptionEffect.Exposure);
             }
         }
+
+        return true;
     }
 
     public void TryUseShroud()
