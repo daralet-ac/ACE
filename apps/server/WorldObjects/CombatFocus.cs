@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Entity;
@@ -103,6 +104,70 @@ public class CombatFocus : WorldObject
             else
             {
                 SetProperty(PropertyInt.CombatFocusSkillSpellAdded, value.Value);
+            }
+        }
+    }
+
+    public int? CombatFocusSkill2SpellRemoved
+    {
+        get => GetProperty(PropertyInt.CombatFocusSkill2SpellRemoved);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.CombatFocusSkill2SpellRemoved);
+            }
+            else
+            {
+                SetProperty(PropertyInt.CombatFocusSkill2SpellRemoved, value.Value);
+            }
+        }
+    }
+
+    public int? CombatFocusSkill2SpellAdded
+    {
+        get => GetProperty(PropertyInt.CombatFocusSkill2SpellAdded);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.CombatFocusSkill2SpellAdded);
+            }
+            else
+            {
+                SetProperty(PropertyInt.CombatFocusSkill2SpellAdded, value.Value);
+            }
+        }
+    }
+
+    public int? CombatFocusNumSkillsRemoved
+    {
+        get => GetProperty(PropertyInt.CombatFocusNumSkillsRemoved);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.CombatFocusNumSkillsRemoved);
+            }
+            else
+            {
+                SetProperty(PropertyInt.CombatFocusNumSkillsRemoved, value.Value);
+            }
+        }
+    }
+
+    public int? CombatFocusNumSkillsAdded
+    {
+        get => GetProperty(PropertyInt.CombatFocusNumSkillsAdded);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.CombatFocusNumSkillsAdded);
+            }
+            else
+            {
+                SetProperty(PropertyInt.CombatFocusNumSkillsAdded, value.Value);
             }
         }
     }
@@ -255,6 +320,19 @@ public class CombatFocus : WorldObject
         {
             CurrentSpells.Remove((SpellId)CombatFocusSkillSpellRemoved);
         }
+
+        if (CombatFocusSkill2SpellAdded != null)
+        {
+            CurrentSpells.Add((SpellId)CombatFocusSkill2SpellAdded);
+        }
+
+        if (CombatFocusSkill2SpellRemoved != null)
+        {
+            CurrentSpells.Remove((SpellId)CombatFocusSkill2SpellRemoved);
+        }
+
+        CombatFocusNumSkillsAdded = 0;
+        CombatFocusNumSkillsRemoved = 0;
 
         UpdateDescriptionText();
     }
@@ -415,15 +493,44 @@ public class CombatFocus : WorldObject
             CurrentSpells.Remove(spellId);
         }
 
-        // track removed spell
         if (isAttribute)
         {
-            CombatFocusAttributeSpellRemoved = (int)spellId;
+            if (IsBaseSpell(spellId))
+            {
+                CombatFocusAttributeSpellRemoved = (int)spellId;
+            }
+            else
+            {
+                CombatFocusAttributeSpellAdded = null;
+            }
         }
         else
         {
-            CombatFocusSkillSpellRemoved = (int)spellId;
+            if (IsBaseSpell(spellId))
+            {
+                if (CombatFocusSkillSpellRemoved == null)
+                {
+                    CombatFocusSkillSpellRemoved = (int)spellId;
+                    CombatFocusNumSkillsRemoved++;
+                }
+                else
+                {
+                    CombatFocusSkill2SpellRemoved = (int)spellId;
+                    CombatFocusNumSkillsRemoved++;
+                }
+            }
+            else if (CombatFocusNumSkillsAdded < 1)
+            {
+                CombatFocusSkillSpellAdded = null;
+                CombatFocusNumSkillsAdded--;
+            }
+            else
+            {
+                CombatFocusSkill2SpellAdded = null;
+                CombatFocusNumSkillsAdded--;
+            }
         }
+        
 
         player.Session.Network.EnqueueSend(
             new GameMessageSystemChat($"You remove the {spellName} from {Name}.", ChatMessageType.Craft)
@@ -438,12 +545,42 @@ public class CombatFocus : WorldObject
 
         if (isAttribute)
         {
-            CombatFocusAttributeSpellAdded = (int)spellId;
+            if (IsBaseSpell(spellId))
+            {
+                CombatFocusAttributeSpellRemoved = null;
+            }
+            else
+            {
+                CombatFocusAttributeSpellAdded = (int)spellId;
+            }
         }
         else
         {
-            CombatFocusSkillSpellAdded = (int)spellId;
+            if (IsBaseSpell(spellId))
+            {
+                if (CombatFocusSkill2SpellRemoved != null)
+                {
+                    CombatFocusSkill2SpellRemoved = null;
+                    CombatFocusNumSkillsRemoved--;
+                }
+                else
+                {
+                    CombatFocusSkillSpellRemoved = null;
+                    CombatFocusNumSkillsRemoved--;
+                }
+            }
+            else if (CombatFocusNumSkillsAdded < 1)
+            {
+                CombatFocusSkillSpellAdded = (int)spellId;
+                CombatFocusNumSkillsAdded++;
+            }
+            else
+            {
+                CombatFocusSkill2SpellAdded = (int)spellId;
+                CombatFocusNumSkillsAdded++;              
+            }
         }
+        
 
         var spellName = GetSpellName(spellId);
 
@@ -532,6 +669,27 @@ public class CombatFocus : WorldObject
         if (attributeSpellIds.Contains(spellId))
         {
             return true;
+        }
+
+        return false;
+    }
+
+    public bool IsBaseSpell(SpellId spellId)
+    {
+        switch (CombatFocusType)
+        {
+            case 1:
+                return WarriorSpells.Contains(spellId);
+            case 2:
+                return BlademasterSpells.Contains(spellId);
+            case 3:
+                return ArcherSpells.Contains(spellId);
+            case 4:
+                return VagabondSpells.Contains(spellId);
+            case 5:
+                return SorcererSpells.Contains(spellId);
+            case 6:
+                return SpellswordSpells.Contains(spellId);
         }
 
         return false;

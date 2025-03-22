@@ -59,48 +59,52 @@ partial class Creature
             baseCost += spell.ManaMod * (uint)numFellows;
         }
 
-        // Check Overload and Battery Focuses
-        var combatAbility = CombatAbility.None;
-        var combatFocus = GetEquippedCombatFocus();
-        if (combatFocus != null)
+        var playerCaster = caster as Player;
+
+        // Overload - Increased cost up to 100% with Overload Charged stacks
+        if (playerCaster is {OverloadStanceIsActive: true})
         {
-            combatAbility = combatFocus.GetCombatAbility();
+            var manaCostPenalty = (1.0f + playerCaster.ManaChargeMeter);
+            baseCost = (uint)(baseCost * manaCostPenalty);
         }
 
-        // Overload - Increased cost up to 50%+ with Overload stacks
-        if (combatAbility == CombatAbility.Overload && this.QuestManager.HasQuest($"{this.Name},Overload"))
+        // Battery - Reduced cost up to 50% with battery Charged stacks, up to 100% if Discharging
+        else if (playerCaster is {BatteryStanceIsActive: true})
         {
-            if (spell.Flags.HasFlag(SpellFlags.FastCast))
-            {
-                baseCost = 5 * spell.Level;
-            }
-
-            var overloadStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Overload");
-            float overloadMod = 1 + (overloadStacks / 1000);
-            baseCost = (uint)(baseCost * overloadMod);
+            var manaCostReduction = (1.0f - playerCaster.ManaChargeMeter * 0.5f);
+            baseCost = (uint)(baseCost * manaCostReduction);
         }
-        // Battery - 20% mana cost reduction minimum, increasing with lower mana or 0 cost during Battery Activated
-        else if (combatAbility == CombatAbility.Battery)
+        else if (playerCaster is {BatteryDischargeIsActive: true})
         {
-            if (
-                this is Player player
-                && player.LastBatteryActivated > Time.GetUnixTime() - player.BatteryActivatedDuration
-            )
-            {
-                baseCost = 0;
-            }
-            else
-            {
-                var maxMana = (float)Mana.MaxValue;
-                var currentMana = (float)Mana.Current == 0 ? 1 : (float)Mana.Current;
-
-                var manaMod = 1 - (maxMana - currentMana) / maxMana;
-                var batteryMod = manaMod > 0.8f ? 0.8f : manaMod;
-                baseCost = (uint)(baseCost * batteryMod);
-            }
+            var manaCostReduction = (1.0f - playerCaster.DischargeLevel);
+            baseCost = (uint)(baseCost * manaCostReduction);
         }
 
-        var manaCostMultiplier = PropertyManager.GetDouble("mana_cost_multiplier").Item;
+        var abilityPenaltyMod = 0.0f;
+
+        if (playerCaster is not null)
+        {
+            var phalanxPenaltyMod = playerCaster.PhalanxIsActive ? 0.25f : 0.0f;
+            var provokePenaltyMod = playerCaster.ProvokeIsActive ? 0.25f : 0.0f;
+            var parryPenaltyMod = playerCaster.ParryIsActive ? 0.25f : 0.0f;
+            var furyPenaltyMod = playerCaster.FuryEnrageIsActive ? 0.25f : 0.0f;
+            var multiShotPenaltyMod = playerCaster.MultiShotIsActive ? 0.25f : 0.0f;
+            var steadyShotPenaltyMod = playerCaster.SteadyShotIsActive ? 0.25f : 0.0f;
+            var smokescreenPenaltyMod = playerCaster.SmokescreenIsActive ? 0.25f : 0.0f;
+            var backstabPenaltyMod = playerCaster.BackstabIsActive ? 0.25f : 0.0f;
+
+            abilityPenaltyMod = 1.0f
+                                + phalanxPenaltyMod
+                                + provokePenaltyMod
+                                + parryPenaltyMod
+                                + furyPenaltyMod
+                                + multiShotPenaltyMod
+                                + steadyShotPenaltyMod
+                                + smokescreenPenaltyMod
+                                + backstabPenaltyMod;
+        }
+
+        var manaCostMultiplier = PropertyManager.GetDouble("mana_cost_multiplier").Item + abilityPenaltyMod;
 
         // Mana Conversion
         var manaConversion = caster.GetCreatureSkill(Skill.ManaConversion);
@@ -156,6 +160,11 @@ partial class Creature
                 caster.UpdateVitalDelta(caster.Health, conversionAmount);
                 caster.UpdateVitalDelta(caster.Stamina, conversionAmount);
             }
+        }
+
+        if (caster is Player { EvasiveStanceIsActive: true })
+        {
+            caster.UpdateVitalDelta(caster.Stamina, manaCost);
         }
 
         return Math.Max(manaCost, 1);

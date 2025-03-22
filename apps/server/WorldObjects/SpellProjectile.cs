@@ -35,6 +35,8 @@ public class SpellProjectile : WorldObject
 
     private readonly List<uint> _strikethroughTargets = [];
 
+    public int? WeaponSpellcraft;
+
     public SpellProjectileInfo Info { get; set; }
 
     /// <summary>
@@ -417,6 +419,11 @@ public class SpellProjectile : WorldObject
             ref resisted
         );
 
+        if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true})
+        {
+            player.IncreaseChargedMeter(Spell);
+        }
+
         if (targetPlayer != null && damage != null)
         {
             SigilTrinketSpellDamageReduction = 1.0f;
@@ -593,9 +600,9 @@ public class SpellProjectile : WorldObject
 
         var resistSource = IsWeaponSpell ? weapon : source;
 
-        resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true);
+        resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true, WeaponSpellcraft);
 
-        CheckForCombatAbilityReflectSpell(resisted, targetPlayer, sourceCreature);
+        CheckForCombatAbilityReflectSpell(partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, sourceCreature);
 
         var resistedMod = 1.0f;
         _partialEvasion = partialEvasion;
@@ -710,10 +717,8 @@ public class SpellProjectile : WorldObject
         // Possible 2x + damage bonus for the slayer property
         var slayerMod = GetWeaponCreatureSlayerModifier(weapon, sourceCreature, target);
 
-        var combatAbilityDamageMod = 1.0f;
-        combatAbilityDamageMod += CheckForCombatAbilityOverloadDamageMod(sourcePlayer);
-        combatAbilityDamageMod -= CheckForCombatAbilityBatteryDamagePenalty(sourcePlayer);
-        combatAbilityDamageMod += CheckForCombatAbilityEnchantedWeaponDamageBonus(sourcePlayer);
+        var overloadDamageMod = CheckForCombatAbilityOverloadDamageMod(sourcePlayer);
+        var batteryDamageMod = CheckForCombatAbilityBatteryDamageMod(sourcePlayer);
 
         var lethalityMod = 1.0f;
         if (sourceCreature is not null)
@@ -732,7 +737,7 @@ public class SpellProjectile : WorldObject
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
         {
-            lifeMagicDamage = LifeProjectileDamage * Spell.DamageRatio * combatAbilityDamageMod;
+            lifeMagicDamage = LifeProjectileDamage * Spell.DamageRatio * overloadDamageMod * batteryDamageMod;
 
             // could life magic projectiles crit?
             // if so, did they use the same 1.5x formula as war magic, instead of 2.0x?
@@ -864,7 +869,8 @@ public class SpellProjectile : WorldObject
                 * attributeMod
                 * elementalDamageMod
                 * slayerMod
-                * combatAbilityDamageMod
+                * overloadDamageMod
+                * batteryDamageMod
                 * jewelElementalist
                 * jewelElemental
                 * jewelSelfHarm
@@ -1009,113 +1015,24 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Enchant: +25% increased damage with spells while a melee/missile weapon is equipped.
-    /// </summary>
-    private static float CheckForCombatAbilityEnchantedWeaponDamageBonus(Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        if (sourcePlayer.EquippedCombatAbility != CombatAbility.EnchantedWeapon
-            || !(sourcePlayer.LastEnchantedWeaponActivated
-                 > Time.GetUnixTime() - sourcePlayer.EnchantedWeaponActivatedDuration))
-        {
-            return 0.0f;
-        }
-
-        if (sourcePlayer.GetEquippedMeleeWeapon() != null || sourcePlayer.GetEquippedMissileLauncher() != null || sourcePlayer.GetEquippedMissileWeapon() != null)
-        {
-            return 0.25f;
-        }
-
-        return 0.0f;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Battery: Up to 25% damage penalty, if current mana drops below 75%. (-25% at 0 mana)
-    /// </summary>
-    private static float CheckForCombatAbilityBatteryDamagePenalty(Player sourcePlayer)
-    {
-        if (sourcePlayer == null)
-        {
-            return 0.0f;
-        }
-
-        if (sourcePlayer.EquippedCombatAbility != CombatAbility.Battery
-            || !(sourcePlayer.LastBatteryActivated < Time.GetUnixTime() - sourcePlayer.BatteryActivatedDuration))
-        {
-            return 0.0f;
-        }
-
-        var maxMana = (float)sourcePlayer.Mana.MaxValue;
-        var currentMana = (float)sourcePlayer.Mana.Current == 0 ? 1 : (float)sourcePlayer.Mana.Current;
-
-        // If current mana is over 75% full, no penalty
-        if ((currentMana / maxMana) > 0.75)
-        {
-            return 0.0f;
-        }
-
-        // Else, Up to 25% reduced damage depending on how low current mana is.
-        var newMax = maxMana * 0.75;
-        var manaMod = 0.25f * ((newMax - currentMana) / newMax);
-
-        return (float)manaMod;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Overload: Increased effectiveness up to 25%+ with Overload stacks, double bonus +
-    /// erase stacks on activated ability.
+    /// COMBAT ABILITY - Overload: Increased effectiveness up to 20% with Overload Charged stacks, by up to 100% with Overload Discharge
     /// </summary>
     private static float CheckForCombatAbilityOverloadDamageMod(Player sourcePlayer)
     {
-        if (sourcePlayer == null)
+        return sourcePlayer switch
         {
-            return 0.0f;
-        }
+            { OverloadDischargeIsActive: true } => 1.0f + sourcePlayer.DischargeLevel,
+            { OverloadStanceIsActive: true } => 1.0f + sourcePlayer.ManaChargeMeter * 0.2f,
+            _ => 1.0f
+        };
+    }
 
-        if (sourcePlayer.EquippedCombatAbility != CombatAbility.Overload || !sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload"))
-        {
-            return 0.0f;
-        }
-
-        switch (sourcePlayer.OverloadActivated)
-        {
-            case false:
-            {
-                var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-                var overloadMod = (float)overloadStacks / 2000;
-
-                return overloadMod;
-            }
-            case true
-            when sourcePlayer.LastOverloadActivated > Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration:
-            {
-                sourcePlayer.OverloadActivated = false;
-                sourcePlayer.OverloadDumped = true;
-
-                var overloadStacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-                var overloadMod = (float)overloadStacks / 1000;
-
-                sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
-
-                return overloadMod;
-            }
-        }
-
-        if (!sourcePlayer.OverloadActivated || !(sourcePlayer.LastOverloadActivated < Time.GetUnixTime() - sourcePlayer.OverloadActivatedDuration))
-        {
-            return 0.0f;
-        }
-
-        // reset if player didn't cast overload discharge within ten sec
-        sourcePlayer.OverloadActivated = false;
-        sourcePlayer.OverloadDumped = false;
-        sourcePlayer.QuestManager.Erase($"{sourcePlayer.Name},Overload");
-
-        return 0.0f;
+    /// <summary>
+    /// COMBAT ABILITY - Battery: Reduced effectiveness up to 10% with Battery Charged stacks
+    /// </summary>
+    private static float CheckForCombatAbilityBatteryDamageMod(Player sourcePlayer)
+    {
+        return sourcePlayer is { BatteryStanceIsActive: true } ? 1.0f - sourcePlayer.ManaChargeMeter * 0.1f : 1.0f;
     }
 
     /// <summary>
@@ -1153,7 +1070,7 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Reflect: Reflect resist spells back to the caster.
+    /// COMBAT ABILITY - Reflect: Reflect resisted spells back to the caster.
     /// </summary>
     private void CheckForCombatAbilityReflectSpell(bool resisted, Player targetPlayer, Creature sourceCreature)
     {
@@ -1162,7 +1079,7 @@ public class SpellProjectile : WorldObject
             return;
         }
 
-        if (targetPlayer.EquippedCombatAbility == CombatAbility.Reflect)
+        if (targetPlayer.ReflectIsActive)
         {
             targetPlayer.TryCastSpell(Spell, sourceCreature, null, null, false, false, false);
         }
@@ -1331,9 +1248,7 @@ public class SpellProjectile : WorldObject
     /// </summary>
     private static float GetShieldMod(Creature target, WorldObject shield, WorldObject source)
     {
-        var bypassShieldAngleCheck = CheckForCombatAbilityPhalanxBypassSpellAngle(target);
-
-        if (!bypassShieldAngleCheck)
+        if (target is Player {PhalanxIsActive: true})
         {
             // is spell projectile in front of creature target,
             // within shield effectiveness area?
@@ -1376,16 +1291,6 @@ public class SpellProjectile : WorldObject
 
         var shieldMod = Math.Min(1.0f, 1.0f - reduction);
         return shieldMod;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Phalanx: Apply shield ward damage reduction to spells from behind player.
-    /// </summary>
-    private static bool CheckForCombatAbilityPhalanxBypassSpellAngle(Creature target)
-    {
-        var combatAbilityTrinket = target.GetEquippedTrinket();
-
-        return combatAbilityTrinket is { CombatAbilityId: (int)CombatAbility.Phalanx };
     }
 
     /// <summary>
@@ -1531,14 +1436,11 @@ public class SpellProjectile : WorldObject
 
             amount = Convert.ToUInt32(damage);
 
-            amount = CheckForCombatAbilityManaBarrier(target, damage, targetPlayer, amount);
-            amount = CheckForCombatAbilityEvasiveStance(target, damage, targetPlayer, amount);
+            amount = Player.CombatAbilityManaBarrier(targetPlayer, amount, targetPlayer, Spell.DamageType);
 
             target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
             target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
         }
-
-        var overloadPercent = HandleCombatAbilityOverloadStamps(sourcePlayer, sourceCreature, out var overload);
 
         // add threat to damaged targets
         if (target.IsMonster && sourcePlayer != null)
@@ -1591,7 +1493,9 @@ public class SpellProjectile : WorldObject
             var critMsg = critical ? "Critical hit! " : "";
             var sneakMsg = sneakAttackMod > 1.0f ? "Sneak Attack! " : "";
             var overpowerMsg = overpower ? "Overpower! " : "";
-            var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
+
+            var chargedMsg = "";
+
             var resistSome = _partialEvasion == PartialEvasion.Some ? "Partial resist! " : "";
             var strikeThrough = Strikethrough > 0 ? "Strikethrough! " : "";
 
@@ -1601,13 +1505,20 @@ public class SpellProjectile : WorldObject
             {
                 var critProt = critDefended ? " Your critical hit was avoided with their augmentation!" : "";
 
-                if (sourcePlayer.OverloadDumped)
+                if (sourcePlayer is {OverloadStanceIsActive: true} or {BatteryStanceIsActive: true})
                 {
-                    sourcePlayer.OverloadDumped = false;
-                    overloadMsg = "Overload Discharged! ";
+                    var chargedPercent = Math.Round(sourcePlayer.ManaChargeMeter * 100);
+                    chargedMsg = $"{chargedPercent}% Charged! ";
                 }
 
-                var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{overloadMsg}{sneakMsg}{elementalistMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
+                chargedMsg = sourcePlayer switch
+                {
+                    { OverloadDischargeIsActive: true } => "Overload Discharge! ",
+                    { BatteryDischargeIsActive: true } => "Battery Discharge! ",
+                    _ => chargedMsg
+                };
+
+                var attackerMsg = $"{resistSome}{strikeThrough}{critMsg}{overpowerMsg}{chargedMsg}{sneakMsg}{elementalistMsg}You {verb} {target.Name} for {amount} points with {Spell.Name}.{critProt}";
 
                 // could these crit / sneak attack?
                 if (nonHealth)
@@ -1696,199 +1607,6 @@ public class SpellProjectile : WorldObject
             Jewel.HandleCasterDefenderRampingQuestStamps(targetPlayer, sourceCreature);
             Jewel.HandlePlayerDefenderBonuses(targetPlayer, sourceCreature, damage);
         }
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Overload: Handle overload stamps.
-    /// </summary>
-    private int HandleCombatAbilityOverloadStamps(Player sourcePlayer, Creature sourceCreature, out bool overload)
-    {
-        // Overload Stamps + Messages
-        var overloadPercent = 0;
-        overload = false;
-
-        if (sourcePlayer == null)
-        {
-            return overloadPercent;
-        }
-
-        var combatAbility = CombatAbility.None;
-        var combatFocus = sourceCreature.GetEquippedCombatFocus();
-        if (combatFocus != null)
-        {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
-
-        if (combatAbility != CombatAbility.Overload)
-        {
-            return overloadPercent;
-        }
-
-        overload = true;
-        var projectileScaler = 1;
-        switch (SpellType)
-        {
-            case ProjectileSpellType.Streak:
-                projectileScaler = 5;
-                break;
-            case ProjectileSpellType.Blast:
-                projectileScaler = 3;
-                break;
-            case ProjectileSpellType.Volley:
-            case ProjectileSpellType.Ring:
-            case ProjectileSpellType.Wall:
-                projectileScaler = 6;
-                break;
-        }
-
-        overloadPercent = Player.HandleOverloadStamps(sourcePlayer, projectileScaler, Spell.Level);
-
-        return overloadPercent;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Mana Barrier: Some damage taken from mana instead of health.
-    /// </summary>
-    private uint CheckForCombatAbilityManaBarrier(Creature target, float damage, Player targetPlayer, uint amount)
-    {
-        if (targetPlayer is not { ManaBarrierToggle: true })
-        {
-            return amount;
-        }
-
-        if (targetPlayer.Level == null || !targetPlayer.ManaBarrierToggle)
-        {
-            return amount;
-        }
-
-        var skill = targetPlayer.GetCreatureSkill(Skill.ManaConversion);
-
-        var expectedSkill = (float)(targetPlayer.Level * 5);
-        var currentSkill = (float)skill.Current;
-
-        // Create a scaling mod. If expected skill is much higher than currentSkill, you will be multiplying the amount
-        // of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
-        // Capped at 1.0f so high skill gets the proper ratio of health-to-mana, but no better than that.
-
-        var skillModifier = Math.Max(expectedSkill / currentSkill, 1.0f);
-
-        var manaDamage = (damage * 0.25) * 3 * skillModifier;
-        if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-        {
-            manaDamage = (damage * 0.25) * 1.5 * skillModifier;
-        }
-
-        if (targetPlayer.Mana.Current >= manaDamage)
-        {
-            amount = (uint)(damage * 0.75);
-
-            targetPlayer.PlayParticleEffect(PlayScript.RestrictionEffectBlue, targetPlayer.Guid);
-            targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-Math.Round(manaDamage));
-        }
-        // if not enough mana, barrier falls and player takes remainder of damage as health
-        else
-        {
-            targetPlayer.ToggleManaBarrierSetting();
-            targetPlayer.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
-            );
-
-            var manaBarrier = targetPlayer.GetInventoryItemsOfWCID(1051110); // Mana Barrier
-            if (manaBarrier[0] is not null)
-            {
-                targetPlayer.EnchantmentManager.StartCooldown(manaBarrier[0]);
-            }
-
-            targetPlayer.PlayParticleEffect(PlayScript.HealthDownBlue, targetPlayer.Guid);
-
-            // find mana damage overage and reconvert to HP damage
-            var manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 1.5;
-
-            if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-            {
-                manaRemainder = (manaDamage - targetPlayer.Mana.Current) / skillModifier / 3;
-            }
-
-            amount = (uint)((damage * 0.75) + manaRemainder);
-
-            targetPlayer.UpdateVitalDelta(targetPlayer.Mana, (int)-(targetPlayer.Mana.Current - 1));
-        }
-
-        return amount;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Mana Barrier: Some damage taken from mana instead of health.
-    /// </summary>
-    private uint CheckForCombatAbilityEvasiveStance(Creature target, float damage, Player targetPlayer, uint amount)
-    {
-        if (targetPlayer is not { EvasiveStanceToggle: true })
-        {
-            return amount;
-        }
-
-        if (targetPlayer.Level == null || !targetPlayer.EvasiveStanceToggle)
-        {
-            return amount;
-        }
-
-        var runSkill = targetPlayer.GetCreatureSkill(Skill.Run);
-        var jumpSkill = targetPlayer.GetCreatureSkill(Skill.Jump);
-
-        var expectedSkill = (float)(targetPlayer.Level * 5);
-        var currentSkill = runSkill.Current > jumpSkill.Current ? (float)runSkill.Current : (float)jumpSkill.Current;
-
-        var skillSpecialized = runSkill.AdvancementClass == SkillAdvancementClass.Specialized || jumpSkill.AdvancementClass == SkillAdvancementClass.Specialized;
-
-        // Create a scaling mod. If expected skill is much higher than currentSkill, you will be multiplying the amount
-        // of stamina damage singificantly, so low skill players will not get much benefit before bubble bursts.
-        // Capped at 1.0f so high skill gets the proper ratio of health-to-stamina, but no better than that.
-
-        var skillModifier = Math.Max(expectedSkill / currentSkill, 1.0f);
-
-        var staminaDamage = (damage * 0.25) * 3 * skillModifier;
-        if (skillSpecialized)
-        {
-            staminaDamage = (damage * 0.25) * 1.5 * skillModifier;
-        }
-
-        if (targetPlayer.Stamina.Current >= staminaDamage)
-        {
-            amount = (uint)(damage * 0.75);
-
-            targetPlayer.PlayParticleEffect(PlayScript.RestrictionEffectGold, targetPlayer.Guid);
-            targetPlayer.UpdateVitalDelta(targetPlayer.Stamina, (int)-Math.Round(staminaDamage));
-        }
-        // if not enough mana, barrier falls and player takes remainder of damage as health
-        else
-        {
-            targetPlayer.ToggleEvasiveStanceSetting();
-            targetPlayer.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You run out of stamina and are fall out of your Evasive Stance!", ChatMessageType.Magic)
-            );
-
-            var evasiveStance = targetPlayer.GetInventoryItemsOfWCID(1051114); // Evasive Stance
-            if (evasiveStance[0] is not null)
-            {
-                targetPlayer.EnchantmentManager.StartCooldown(evasiveStance[0]);
-            }
-
-            targetPlayer.PlayParticleEffect(PlayScript.HealthDownYellow, targetPlayer.Guid);
-
-            // find stamina damage overage and reconvert to HP damage
-            var staminaRemainder = (staminaDamage - targetPlayer.Stamina.Current) / skillModifier / 1.5;
-
-            if (skillSpecialized)
-            {
-                staminaRemainder = (staminaDamage - targetPlayer.Stamina.Current) / skillModifier / 3;
-            }
-
-            amount = (uint)((damage * 0.75) + staminaRemainder);
-
-            targetPlayer.UpdateVitalDelta(targetPlayer.Stamina, (int)-(targetPlayer.Stamina.Current - 1));
-        }
-
-        return amount;
     }
 
     /// <summary>

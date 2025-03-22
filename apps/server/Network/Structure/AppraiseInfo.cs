@@ -945,6 +945,8 @@ public class AppraiseInfo
         SetArmorWeightClassUseText(wo);
         SetArmorResourcePenaltyUseText(wo);
 
+        SetWeaponSpellcraftText(wo);
+
         SetJewelryManaConUseText(wo);
 
         var playerWielder = wo as Player;
@@ -994,6 +996,21 @@ public class AppraiseInfo
                 PropertiesString[PropertyString.LongDesc] = _additionalPropertiesLongDescriptionsText;
             }
         }
+    }
+
+    private void SetWeaponSpellcraftText(WorldObject wo)
+    {
+        if (wo.ItemCurMana is not null)
+        {
+            return;
+        }
+
+        if (PropertiesInt.TryGetValue(PropertyInt.ItemSpellcraft, out var itemSpellcraft))
+        {
+            _extraPropertiesText += $"\nSpellcraft: {itemSpellcraft}.";
+            PropertiesString[PropertyString.Use] = _extraPropertiesText;
+        }
+
     }
 
     private void SetTrophyQualityLevelText(WorldObject wo)

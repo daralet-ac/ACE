@@ -701,7 +701,12 @@ partial class Creature
         //                       $" -quicknessMod: {quicknessMod} quickness: {quickness}\n" +
         //                       $" -weaponSpeedMod: {weaponSpeedMod} weaponSpeed: {weaponSpeed}");
         // }
-        
+
+        if (this as Player is { SteadyShotIsActive: true })
+        {
+            animSpeed *= 0.75f;
+        }
+
         return animSpeed;
     }
 
@@ -900,8 +905,7 @@ partial class Creature
 
         if (weapon == null || ((weapon.IgnoreShield ?? 0) == 0 && !weapon.IsTwoHanded))
         {
-            var combatAbilityTrinket = GetEquippedTrinket();
-            if (combatAbilityTrinket != null && combatAbilityTrinket.CombatAbilityId == (int)CombatAbility.Phalanx)
+            if (this is Player {PhalanxIsActive: true})
             {
                 bypassShieldAngleCheck = true;
             }
@@ -1008,22 +1012,32 @@ partial class Creature
         //return recklessnessMod;
     }
 
+    /// <summary>
+    /// Deal 25% increased damage when attacking an enemy from behind (180 degress).
+    /// <list type="bullet">
+    /// <item>Spec - Perception: Up to 50% chance to avoid sneak attack.</item>
+    /// <item>Spec - Deception: Up to 50% chance to sneak attack from the front.</item>
+    /// <item>Spec - Thievery: Increased angle to land sneak attacks to up to 270 degrees.</item>
+    /// <item>Ability - Backstab: Increased sneak attack damage to 50%, to 100% if target has full health.</item>
+    /// </list>
+    /// </summary>
     public float GetSneakAttackMod(WorldObject target)
     {
         // ensure creature target
-        var creatureTarget = target as Creature;
-        if (creatureTarget == null)
+        if (target is not Creature creatureTarget)
         {
             return 1.0f;
         }
 
-        // SPEC BONUS - Perception: Reduced chance to receive sneak attacks
-        var attackerThievery = creatureTarget.GetCreatureSkill(Skill.Thievery);
+        // SPEC BONUS - Perception: Up to 50% chance to avoid sneak attacks
+        var attackerThievery = GetCreatureSkill(Skill.Thievery);
         var targetPerception = creatureTarget.GetCreatureSkill(Skill.Perception); // Perception
+
         if (targetPerception.AdvancementClass == SkillAdvancementClass.Specialized)
         {
-            var skillCheck = SkillCheck.GetSkillChance(targetPerception.Current, attackerThievery.Current);
-            if (skillCheck > ThreadSafeRandom.Next(0.0f, 1.0f))
+            var skillCheck = SkillCheck.GetSkillChance(creatureTarget.GetModdedPerceptionSkill(), GetModdedThieverySkill());
+
+            if (Math.Min(skillCheck, 0.5f) > ThreadSafeRandom.Next(0.0f, 1.0f))
             {
                 return 1.0f;
             }
@@ -1032,62 +1046,58 @@ partial class Creature
         var angle = creatureTarget.GetAngle(this);
         var behind = Math.Abs(angle) > 90.0f;
 
-        // SPEC BONUS - Thievery: Increase sneak attack angle
-        var thievery = GetCreatureSkill(Skill.Thievery); // Thievery
-        if (thievery.AdvancementClass < SkillAdvancementClass.Specialized)
+        // SPEC BONUS - Thievery: Increase sneak attack angle to up to 270 degrees.
+        if (attackerThievery.AdvancementClass == SkillAdvancementClass.Specialized)
         {
-            behind = Math.Abs(angle) > 45.0f;
+            var skillCheck = SkillCheck.GetSkillChance(GetModdedThieverySkill(), creatureTarget.GetModdedPerceptionSkill());
+            var bonusAngle = 45.0f * skillCheck;
+
+            behind = Math.Abs(angle) > (90.0f - bonusAngle);
+        }
+
+        // SPEC BONUS - Deception: Up to 50% chance to sneak attack from the front.
+        var deception = GetCreatureSkill(Skill.Deception);
+        if (deception.AdvancementClass == SkillAdvancementClass.Specialized)
+        {
+            var attackSkill = GetCreatureSkill(GetCurrentAttackSkill());
+            var skillChance = GetModdedDeceptionSkill() / attackSkill.Current;
+            var chance = skillChance > 1f ? 0.5f : skillChance * 0.5f;
+
+            if (chance >= ThreadSafeRandom.Next(0f, 1f))
+            {
+                behind = true;
+            }
+        }
+
+        var multiplier = 1.25f;
+
+        // COMBAT ABILITY - Backstab: Sneak attack damage increased to 50% if nearby.
+        if (this as Player is { BackstabIsActive: true })
+        {
+            var targetIsNearby = GetDistance(creatureTarget) < 10;
+
+            if (targetIsNearby)
+            {
+                multiplier = 1.5f;
+            }
         }
 
         if (behind)
         {
-            var targetPlayer = target as Player;
-
-            if (targetPlayer != null)
+            if (target is not Player targetPlayer)
             {
-                if (
-                    targetPlayer.EquippedCombatAbility == CombatAbility.Phalanx
-                    && targetPlayer.GetEquippedShield() != null
-                )
-                {
-                    return 1.0f;
-                }
+                return multiplier;
             }
 
-            return 1.2f; // 20% bonus
-        }
-        else
-        {
-            // SPEC BONUS - Deception: Up to 50% chance to sneak attack from the front. Both chance and damage bonus scaled for skill.
-            var deception = GetCreatureSkill(Skill.Deception);
-            if (deception.AdvancementClass == SkillAdvancementClass.Specialized)
-            {
-                var attackSkill = GetCreatureSkill(GetCurrentAttackSkill());
-                var skillChance = (float)deception.Current / (float)attackSkill.Current;
-                var chance = skillChance > 1f ? 0.5f : skillChance * 0.5f;
-
-                if (chance >= ThreadSafeRandom.Next(0f, 1f))
-                {
-                    if (deception.Current < attackSkill.Current)
-                    {
-                        var bonusPenalty = (float)deception.Current / (float)attackSkill.Current;
-                        return 1.2f * bonusPenalty;
-                    }
-                    else
-                    {
-                        return 1.2f;
-                    }
-                }
-                else
-                {
-                    return 1.0f;
-                }
-            }
-            else
+            if (targetPlayer is {PhalanxIsActive: true} && targetPlayer.GetEquippedShield() != null)
             {
                 return 1.0f;
             }
+
+            return multiplier;
         }
+
+        return 1.0f;
     }
 
     public void FightDirty(WorldObject target, WorldObject weapon)
@@ -1355,19 +1365,6 @@ partial class Creature
 
         var avoidChance =
             1.0f - SkillCheck.GetSkillChance(attackerEffectivePerceptionSkill, targetEffecitveDeceptionSkill);
-
-        var combatAbility = CombatAbility.None;
-        var combatFocus = GetEquippedCombatFocus();
-        if (combatFocus != null)
-        {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
-
-        // COMBAT ABILITY - Iron Fist: 20% increased chance to expose enemy weaknesses
-        if (combatAbility == CombatAbility.IronFist)
-        {
-            avoidChance -= 0.2f;
-        }
 
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (avoidChance > roll)

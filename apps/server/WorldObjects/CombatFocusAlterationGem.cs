@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -102,6 +103,7 @@ public class CombatFocusAlterationGem : WorldObject
 
         var spellId = (SpellId)source.ItemSpellId;
         var spellMatch = combatFocus.GetCurrentSpellList().Contains(spellId) ? true : false;
+        var isBaseSpell = combatFocus.IsBaseSpell(spellId);
         var isAttribute = IsAttribute(spellId);
 
         if (isAttribute)
@@ -121,18 +123,18 @@ public class CombatFocusAlterationGem : WorldObject
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"You have already added an attribute spell once to {combatFocus.Name}.",
+                        $"You must remove an attribute spell from {combatFocus.Name} before a new attribute spell can be added.",
                         ChatMessageType.Craft
                     )
                 );
                 player.SendUseDoneEvent();
                 return;
             }
-            if (spellMatch && combatFocus.CombatFocusAttributeSpellRemoved != null)
+            if (spellMatch && combatFocus.CombatFocusAttributeSpellRemoved != null && isBaseSpell)
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"You have already removed an attribute spell once from {combatFocus.Name}.",
+                        $"You cannot remove both of the original attribute spells from {combatFocus.Name}.",
                         ChatMessageType.Craft
                     )
                 );
@@ -143,33 +145,23 @@ public class CombatFocusAlterationGem : WorldObject
 
         if (!isAttribute)
         {
-            if (!spellMatch && combatFocus.CombatFocusSkillSpellRemoved == null)
+            if (spellMatch && combatFocus.CombatFocusNumSkillsRemoved == 2 && isBaseSpell)
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You can only remove two of the original skill spells from {combatFocus.Name}.",
+                        ChatMessageType.Craft
+                    )
+                );
+                player.SendUseDoneEvent();
+                return;
+            }
+            Console.WriteLine($"{combatFocus.CombatFocusNumSkillsRemoved} {combatFocus.CombatFocusNumSkillsAdded}");
+            if (!spellMatch && combatFocus.CombatFocusNumSkillsRemoved == combatFocus.CombatFocusNumSkillsAdded)
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
                         $"You must remove a skill spell from {combatFocus.Name} before a new skill spell can be added.",
-                        ChatMessageType.Craft
-                    )
-                );
-                player.SendUseDoneEvent();
-                return;
-            }
-            if (!spellMatch && combatFocus.CombatFocusSkillSpellAdded != null)
-            {
-                player.Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You have already added a skill spell once to {combatFocus.Name}.",
-                        ChatMessageType.Craft
-                    )
-                );
-                player.SendUseDoneEvent();
-                return;
-            }
-            if (spellMatch && combatFocus.CombatFocusSkillSpellRemoved != null)
-            {
-                player.Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You have already removed a skill spell once from {combatFocus.Name}.",
                         ChatMessageType.Craft
                     )
                 );

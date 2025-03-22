@@ -6416,6 +6416,9 @@ public enum SpellId : uint
     RatingFocus,
     RatingSelf,
     ExplorerInspiration,
+    Bleed,
+    Dazed,
+    Unbalanced,
 
     NumSpells = 8192,
 
@@ -6460,19 +6463,32 @@ public enum SpellId : uint
 
     HealingKitCooldown = 0x8000 | 10003, // varies
 
-    FocusedTaunt = 0x8000 | 10050, // 15 second cooldown
-    AreaTaunt = 0x8000 | 10050, // 15 second cooldown
-    FeignWeakness = 0x8000 | 10051, // 15 second cooldown
+    Provoke = 0x8000 | 10050, // 20 second cooldown
+    Smokescreen = 0x8000 | 10051, // 20 second cooldown
     Vanish = 0x8000 | 10052, // 60 second cooldown
     ExposeWeakness = 0x8000 | 10053, // 15 second cooldown
     ActivatedCombatAbilities = 0x8000 | 10054, // 120 second shared cooldown
-    ManaBarrier = 0x8000 | 10055, // 60 second cooldown, triggered only on breaking/deactivation of shield
+    ManaBarrier = 0x8000 | 10055, // 10 second cooldown
     HealingFood = 0x8000 | 10056,
     StaminaFood = 0x8000 | 10057,
     ManaFood = 0x8000 | 10058,
     HealingPotion = 0x8000 | 10059,
     StaminaPotion = 0x8000 | 10060,
     ManaPotion = 0x8000 | 10061,
+    MagicBlade = 0x8000 | 10062,
+    EvasiveStance = 0x8000 | 10063, // 10 second cooldown
+    Parry = 0x8000 | 10064, // 20 second cooldown
+    Fury = 0x8000 | 10065, // 20 second cooldown
+    Phalanx = 0x8000 | 10066, // 20 second cooldown
+    Multishot = 0x8000 | 10067, // 20 second cooldown
+    Steadyshot = 0x8000 | 10068, // 20 second cooldown
+    Backstab = 0x8000 | 10069, // 20 second cooldown
+    Reflect = 0x8000 | 1070, // 20 second cooldown
+    Aegis = 0x8000 | 1071, // 20 second cooldown
+    WeaponMaster = 0x8000 | 1072, // 20 second cooldown
+    Surestrike = 0x8000 | 1073, // 20 second cooldown
+    Battery = 0x8000 | 1074, // 20 second cooldown
+    Overload = 0x8000 | 1075, // 20 second cooldown
 }
 
 public static class SpellExtensions

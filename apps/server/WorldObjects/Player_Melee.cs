@@ -7,6 +7,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
+using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Physics.Animation;
 
 namespace ACE.Server.WorldObjects;
@@ -355,26 +356,25 @@ partial class Player
         // TODO: ensure enough stamina for attack
         var staminaCost = GetAttackStamina((float)LastAttackAnimationLength, weapon);
 
-        if (EquippedCombatAbility == CombatAbility.Fury && QuestManager.HasQuest($"{this.Name},Reckless"))
-        {
-            var recklessStacks = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless");
-            float recklessMod = 1 + (recklessStacks / 1000);
-            staminaCost = (int)(staminaCost * recklessMod);
-        }
+        // JEWEL - Citrine: Stamina cost reduction
+        var stamReductionMod = 1.0f - Jewel.GetJewelEffectMod(this, PropertyInt.GearStamReduction, "StamReduction");
+        staminaCost = Convert.ToInt32(staminaCost * stamReductionMod);
 
         UpdateVitalDelta(Stamina, -staminaCost);
 
-        var combatAbility = CombatAbility.None;
-        var combatFocus = GetEquippedCombatFocus();
-        if (combatFocus != null)
+        if (Stamina.Current < 1 && EvasiveStanceIsActive)
         {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
+            EvasiveStanceIsActive = false;
 
-        // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
-        if (combatAbility == CombatAbility.EnchantedWeapon)
-        {
-            UpdateVitalDelta(Mana, -staminaCost);
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Your fall out of your evasive stance!!", ChatMessageType.Broadcast)
+            );
+
+            var evasiveStanceItem = GetInventoryItemsOfWCID(1051114);
+            if (evasiveStanceItem.Count > 0)
+            {
+                EnchantmentManager.StartCooldown(evasiveStanceItem[0]);
+            }
         }
 
         if (numStrikes != attackFrames.Count)
@@ -418,9 +418,11 @@ partial class Player
                     }
 
                     if (
-                        damageEvent != null && (weapon is { IsCleaving: true }
-                                                || (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) > 0)
-                                                && damageEvent.DamageType == DamageType.Slash)
+                        damageEvent != null
+                        && (weapon is { IsCleaving: true }
+                        || (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) > 0)
+                            && damageEvent.DamageType == DamageType.Slash)
+                        || (WeaponMasterIsActive && GetEquippedMeleeWeapon() is {WeaponSkill: Skill.Spear})
                     )
                     {
                         var cleave = GetCleaveTarget(creature, weapon);
@@ -507,6 +509,11 @@ partial class Player
         var isDualWieldSpec = GetCreatureSkill(Skill.DualWield).AdvancementClass == SkillAdvancementClass.Specialized;
         var animSpeedMod = (IsDualWieldAttack && isDualWieldSpec) ? 1.25f : 1.0f; // Dual Wield Spec Bonus: +25% faster dual-wield swing animation
 
+        if (WeaponMasterIsActive && GetEquippedMeleeWeapon() is { WeaponSkill: Skill.Sword } && GetPowerAccuracyBar() >= 0.5)
+        {
+            animSpeedMod += 0.25f;
+        }
+
         var animSpeed = baseSpeed * animSpeedMod;
 
         var swingAnimation = GetSwingAnimation();
@@ -554,6 +561,7 @@ partial class Player
     /// </summary>
     public MotionCommand GetSwingAnimation()
     {
+
         if (IsDualWieldAttack)
         {
             DualWieldAlternate = !DualWieldAlternate;
@@ -570,10 +578,17 @@ partial class Player
 
         if (weapon != null)
         {
-            AttackType = weapon.GetAttackType(CurrentMotionState.Stance, SlashThrustToggle, offhand);
-            if (weapon.IsThrustSlash)
+            if (WeaponMasterSingleUseIsActive && weapon is { WeaponSkill: Skill.UnarmedCombat })
             {
-                subdivision = 0.66f;
+                AttackType = AttackType.Kick;
+            }
+            else
+            {
+                AttackType = weapon.GetAttackType(CurrentMotionState.Stance, SlashThrustToggle, offhand);
+                if (weapon.IsThrustSlash)
+                {
+                    subdivision = 0.66f;
+                }
             }
         }
         else

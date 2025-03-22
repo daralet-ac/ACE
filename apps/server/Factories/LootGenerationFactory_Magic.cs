@@ -54,7 +54,7 @@ public static partial class LootGenerationFactory
             wo.ItemManaCost = null;
             wo.ItemMaxMana = null;
             wo.ItemCurMana = null;
-            wo.ItemSpellcraft = null;
+            //wo.ItemSpellcraft = null;
             wo.ItemDifficulty = null;
         }
         else
@@ -76,7 +76,7 @@ public static partial class LootGenerationFactory
                 wo.ItemMaxMana = RollItemMaxMana(profile.Tier, numSpells);
                 wo.ItemCurMana = wo.ItemMaxMana;
 
-                wo.ItemSpellcraft = RollSpellcraft(wo);
+               //wo.ItemSpellcraft = RollSpellcraft(wo);
                 wo.ItemDifficulty = RollItemDifficulty(wo, numEpics, numLegendaries);
             }
             else
@@ -98,7 +98,7 @@ public static partial class LootGenerationFactory
                 wo.ItemMaxMana = RollItemMaxMana_New(wo.Tier ?? 1, wo.ArmorSlots ?? 1);
                 wo.ItemCurMana = wo.ItemMaxMana;
 
-                wo.ItemSpellcraft = RollSpellcraft(wo, roll, profile);
+                //wo.ItemSpellcraft = RollSpellcraft(wo, roll, profile);
                 if (wo.ItemSpellcraft == 0)
                 {
                     wo.ItemSpellcraft = null;
@@ -799,34 +799,36 @@ public static partial class LootGenerationFactory
 
     // old method / based on item type
 
-    public static int RollSpellcraft(WorldObject wo)
+    public static int RollSpellcraft(WorldObject wo, TreasureDeath td = null)
     {
-        var maxSpellPower = GetMaxSpellPower(wo);
+        //var maxSpellPower = GetMaxSpellPower(wo);
+        var maxSpellPower = GetTierSpellPower(wo);
 
-        (float min, float max) range = (1.0f, 1.0f);
+        var lootQualityMod = wo.LootQualityMod ?? 0.0f;
+        var bonusRoll = 100 * GetDiminishingRoll(td, (float)lootQualityMod);
 
-        switch (wo.ItemType)
-        {
-            case ItemType.Armor:
-            case ItemType.Clothing:
-            case ItemType.Jewelry:
-
-            case ItemType.MeleeWeapon:
-            case ItemType.MissileWeapon:
-            case ItemType.Caster:
-
-                range = (0.9f, 1.1f);
-                break;
-        }
-
-        var rng = ThreadSafeRandom.Next(range.min, range.max);
-
-        var spellcraft = (int)Math.Ceiling(maxSpellPower * rng);
+        var spellcraft = (int)Math.Ceiling(maxSpellPower + bonusRoll);
 
         // retail was capped at 370
         spellcraft = Math.Min(spellcraft, 500);
 
         return spellcraft;
+    }
+
+    private static double GetTierSpellPower(WorldObject wo)
+    {
+        return wo.Tier switch
+        {
+            1 => 50,
+            2 => 100,
+            3 => 150,
+            4 => 200,
+            5 => 250,
+            6 => 300,
+            7 => 350,
+            8 => 400,
+            _ => 1
+        };
     }
 
     // new method / based on treasure roll

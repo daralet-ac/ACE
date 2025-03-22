@@ -233,6 +233,22 @@ partial class Creature
         }
     }
 
+    public double? ResistBleed
+    {
+        get => GetProperty(PropertyFloat.ResistBleed);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyFloat.ResistBleed);
+            }
+            else
+            {
+                SetProperty(PropertyFloat.ResistBleed, value.Value);
+            }
+        }
+    }
+
     public bool NonProjectileMagicImmune
     {
         get => GetProperty(PropertyBool.NonProjectileMagicImmune) ?? false;
@@ -316,7 +332,12 @@ partial class Creature
 
     public virtual float GetNaturalResistance(DamageType damageType)
     {
-        // overridden for players
+        if (damageType is DamageType.Bleed && ResistBleed is null)
+        {
+            var level = Level ?? 1;
+            return (float)Math.Pow(0.99f, level);
+        }
+
         return 1.0f;
     }
 
@@ -357,11 +378,9 @@ partial class Creature
             case ResistanceType.Slash:
                 return (ResistSlash ?? 1.0) * GetResistanceMod(DamageType.Slash, attacker, weapon, weaponResistanceMod);
             case ResistanceType.Pierce:
-                return (ResistPierce ?? 1.0)
-                    * GetResistanceMod(DamageType.Pierce, attacker, weapon, weaponResistanceMod);
+                return (ResistPierce ?? 1.0) * GetResistanceMod(DamageType.Pierce, attacker, weapon, weaponResistanceMod);
             case ResistanceType.Bludgeon:
-                return (ResistBludgeon ?? 1.0)
-                    * GetResistanceMod(DamageType.Bludgeon, attacker, weapon, weaponResistanceMod);
+                return (ResistBludgeon ?? 1.0) * GetResistanceMod(DamageType.Bludgeon, attacker, weapon, weaponResistanceMod);
             case ResistanceType.Fire:
                 return (ResistFire ?? 1.0) * GetResistanceMod(DamageType.Fire, attacker, weapon, weaponResistanceMod);
             case ResistanceType.Cold:
@@ -369,11 +388,9 @@ partial class Creature
             case ResistanceType.Acid:
                 return (ResistAcid ?? 1.0) * GetResistanceMod(DamageType.Acid, attacker, weapon, weaponResistanceMod);
             case ResistanceType.Electric:
-                return (ResistElectric ?? 1.0)
-                    * GetResistanceMod(DamageType.Electric, attacker, weapon, weaponResistanceMod);
+                return (ResistElectric ?? 1.0) * GetResistanceMod(DamageType.Electric, attacker, weapon, weaponResistanceMod);
             case ResistanceType.Nether:
-                return (ResistNether ?? 1.0)
-                    * GetResistanceMod(DamageType.Nether, attacker, weapon, weaponResistanceMod);
+                return (ResistNether ?? 1.0) * GetResistanceMod(DamageType.Nether, attacker, weapon, weaponResistanceMod);
             case ResistanceType.HealthBoost:
                 return (ResistHealthBoost ?? 1.0) * GetHealingRatingMod();
             case ResistanceType.HealthDrain:
@@ -386,6 +403,8 @@ partial class Creature
                 return (ResistManaBoost ?? 1.0) * GetHealingRatingMod();
             case ResistanceType.ManaDrain:
                 return (ResistManaDrain ?? 1.0) * GetNaturalResistance(DamageType.Mana);
+            case ResistanceType.Bleed:
+                return (ResistBleed ?? 1.0) * GetResistanceMod(DamageType.Bleed, attacker, weapon, weaponResistanceMod);
             default:
                 return 1.0;
         }

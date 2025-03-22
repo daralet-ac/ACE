@@ -182,9 +182,6 @@ partial class Creature
     public Dictionary<Creature, float> PositiveThreat;
     public Dictionary<Creature, float> NegativeThreat;
 
-    private double FocusedTauntDuration = 10;
-    private double FeignWeaknessDuration = 10;
-
     public List<Player> SkipThreatFromNextAttackTargets = [];
     public List<Player> DoubleThreatFromNextAttackTargets = [];
 
@@ -192,49 +189,38 @@ partial class Creature
     {
         var modifiedAmount = Convert.ToSingle(amount);
 
-        if (targetCreature is Player player)
+        if (targetCreature is Player targetPlayer)
         {
-            if (SkipThreatFromNextAttackTargets != null && SkipThreatFromNextAttackTargets.Contains(player))
+            // abilities
+            if (targetPlayer.ProvokeIsActive && targetPlayer.GetPowerAccuracyBar() >= 0.5)
             {
-                SkipThreatFromNextAttackTargets.Remove(player);
-                return;
-            }
-
-            if (DoubleThreatFromNextAttackTargets != null && DoubleThreatFromNextAttackTargets.Contains(player))
-            {
-                DoubleThreatFromNextAttackTargets.Remove(player);
                 modifiedAmount *= 2.0f;
             }
-        }
 
-        ThreatLevel.TryAdd(targetCreature, ThreatMinimum);
-
-        var targetPlayer = targetCreature as Player;
-
-        if (targetPlayer != null && targetPlayer.LastFocusedTaunt > Time.GetUnixTime() - FocusedTauntDuration)
-        {
-            modifiedAmount *= 2.0f;
-        }
-
-        if (targetPlayer != null && targetPlayer.LastFeignWeakness > Time.GetUnixTime() - FeignWeaknessDuration)
-        {
-            modifiedAmount *= 0.5f;
-        }
-
-        if (targetPlayer is { EquippedCombatAbility: CombatAbility.Provoke })
-        {
-            if (targetPlayer.LastProvokeActivated > Time.GetUnixTime() - targetPlayer.ProvokeActivatedDuration)
+            if (targetPlayer.SmokescreenIsActive && targetPlayer.GetPowerAccuracyBar() >= 0.5)
             {
                 modifiedAmount *= 0.5f;
             }
-            else
+
+            // sigils
+            if (SkipThreatFromNextAttackTargets != null && SkipThreatFromNextAttackTargets.Contains(targetPlayer))
             {
-                modifiedAmount *= 0.2f;
+                SkipThreatFromNextAttackTargets.Remove(targetPlayer);
+                return;
             }
+
+            if (DoubleThreatFromNextAttackTargets != null && DoubleThreatFromNextAttackTargets.Contains(targetPlayer))
+            {
+                DoubleThreatFromNextAttackTargets.Remove(targetPlayer);
+                modifiedAmount *= 2.0f;
+            }
+
+            // jewels
+            modifiedAmount *= 1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatGain);
+            modifiedAmount *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatReduction);
         }
 
-        modifiedAmount *= 1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatGain);
-        modifiedAmount *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearThreatReduction);
+        ThreatLevel.TryAdd(targetCreature, ThreatMinimum);
 
         amount = Convert.ToInt32(modifiedAmount);
         amount = amount < 2 ? 2 : amount;
@@ -247,34 +233,6 @@ partial class Creature
         {
             Console.WriteLine($"{Name} threat increased towards {targetCreature.Name} by +{amount}");
         }
-    }
-
-    /// <summary>
-    /// RATING - Threat Reduction: Reduce threat gain
-    /// (JEWEL - Smokey Quartz)
-    /// </summary>
-    private float CheckForRatingThreatReduction(Player targetPlayer)
-    {
-        if (targetPlayer != null && targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatReduction) > 0)
-        {
-            return (float)(targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatReduction)) / 10;
-        }
-
-        return 0.0f;
-    }
-
-    /// <summary>
-    /// RATING - Threat Gain: Increase threat gain
-    /// (JEWEL - Agate)
-    /// </summary>
-    private float CheckForRatingThreatGainBonus(Player targetPlayer)
-    {
-        if (targetPlayer != null && targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatGain) > 0)
-        {
-            return (float)(targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearThreatGain)) / 10;
-        }
-
-        return 0.0f;
     }
 
     /// <summary>
@@ -339,10 +297,7 @@ partial class Creature
                 visibleTargets.Remove(untargetablePlayer);
             }
 
-            if (
-                untargetablePlayer is Player vanishedPlayer
-                && Time.GetUnixTime() < vanishedPlayer.LastVanishActivated + 5
-            )
+            if (untargetablePlayer is Player { VanishIsActive: true })
             {
                 visibleTargets.Remove(untargetablePlayer);
 
@@ -671,8 +626,7 @@ partial class Creature
                 }
 
                 // COMBAT ABILITY - Smokescreen (+50% to chanceToDeceive value, additively)
-                var playerCombatAbility = GetPlayerCombatAbility(player);
-                if (playerCombatAbility == CombatAbility.Smokescreen)
+                if (player is {SmokescreenIsActive: true})
                 {
                     chanceToDeceive += 0.5f;
                 }

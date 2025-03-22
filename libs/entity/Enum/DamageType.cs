@@ -19,6 +19,7 @@ public enum DamageType
     Stamina = 0x100,
     Mana = 0x200,
     Nether = 0x400,
+    Bleed = 0x800,
     Base = 0x10000000,
 
     // helpers
@@ -57,6 +58,8 @@ public static class DamageTypeExtensions
                 return "Mana";
             case DamageType.Nether:
                 return "Nether";
+            case DamageType.Bleed:
+                return "Bleed";
             case DamageType.Base:
                 return "Base";
             default:

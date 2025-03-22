@@ -38,7 +38,8 @@ public class DamageEvent
     private BaseDamageMod _baseDamageMod;
     private float _combatAbilityFuryDamageBonus;
     private float _combatAbilityMultishotDamagePenalty;
-    private float _combatAbilityProvokeDamageBonus;
+    private float _combatAbilityProvokeDamageReduction;
+    private float _combatAbilityRelentlessDamagePenalty;
     private Creature_BodyPart _creaturePart;
     private float _criticalChance;
     private float _criticalDamageMod;
@@ -89,6 +90,7 @@ public class DamageEvent
         (Weapon?.IgnoreMagicResist ?? false) || (_attacker?.IgnoreMagicResist ?? false); // ignores life armor / prots
 
     public bool Blocked { get; private set; }
+    public bool Parried { get; private set; }
     public float CriticalDamageBonusFromTrinket { get; set; }
     public bool CriticalOverridedByTrinket { get; set; }
     public bool Evaded { get; set; }
@@ -172,17 +174,23 @@ public class DamageEvent
 
         SetCombatSources(attacker, defender, damageSource);
         SetCombatAbilities(attacker, defender);
+        CheckForOnAttackEffects(cleaveHits);
 
         SetInvulnerable(defender);
         SetEvaded(attacker, defender);
         SetBlocked(attacker, defender);
+        SetParry(attacker, defender);
 
-        if (_invulnerable || Evaded || Blocked)
+        if (_invulnerable || Evaded || Blocked || Parried)
         {
             if (Blocked)
             {
-                CheckForParryRiposte(attacker, defender, damageSource);
                 CheckForRatingThorns(attacker, defender, damageSource);
+            }
+
+            if (Parried)
+            {
+                CheckForParryRiposte(attacker, defender);
             }
 
             return 0.0f;
@@ -206,6 +214,59 @@ public class DamageEvent
         //DpsLogging();
 
         return Damage;
+    }
+
+    private void CheckForOnAttackEffects(bool cleaveHits = false)
+    {
+        if (cleaveHits)
+        {
+            return;
+        }
+
+        if (Weapon is not null && _playerAttacker is { RelentlessStanceIsActive: true })
+        {
+            var powerBarTime = _playerAttacker.GetPowerAccuracyBar();
+            if (powerBarTime <= 0.5)
+            {
+                var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(Weapon);
+
+                if (Weapon is { IsTwoHanded: true })
+                {
+                    weaponAnimTime *= 0.5f;
+                }
+
+                _playerAttacker.AdrenalineMeter += weaponAnimTime / 20 + powerBarTime / 10;
+
+                if (_playerAttacker.AdrenalineMeter > 1.0f)
+                {
+                    _playerAttacker.AdrenalineMeter = 1.0f;
+                }
+            }
+        }
+
+        if (Weapon is not null && _playerAttacker is { FuryStanceIsActive: true })
+        {
+            var powerBarTime = _playerAttacker.GetPowerAccuracyBar();
+            if (powerBarTime >= 0.5)
+            {
+                var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(Weapon);
+
+                if (Weapon is { IsTwoHanded: true })
+                {
+                    weaponAnimTime *= 0.5f;
+                }
+
+                var powerBarMod = powerBarTime * 20 * powerBarTime;
+                var weaponTimeMod = weaponAnimTime / 100;
+
+                _playerAttacker.AdrenalineMeter += weaponTimeMod * powerBarMod;
+
+                if (_playerAttacker.AdrenalineMeter > 1.0f)
+                {
+                    _playerAttacker.AdrenalineMeter = 1.0f;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -290,6 +351,7 @@ public class DamageEvent
     private void SetEvaded(Creature attacker, Creature defender)
     {
         var playerAttacker = attacker as Player;
+        var playerDefender = defender as Player;
 
         Evaded = false;
         _evasionMod = 1.0f;
@@ -302,17 +364,26 @@ public class DamageEvent
 
         // Check for guaranteed hits
         var isOverpower = CheckForOverpower(attacker, defender);
-        var isSteadyShotNoEvade = CheckForCombatAbilitySteadyShotNoEvade(playerAttacker, _attackerCombatAbility);
-        var isFuryNoEvade = CheckForCombatAbilityFuryNoEvade(playerAttacker, _attackerCombatAbility);
+        var isFuryNoEvade = CheckForCombatAbilityEnrageNoEvade(playerAttacker, _attackerCombatAbility);
         var isBackstabNoEvade = CheckForCombatAbilityBackstabNoEvade(playerAttacker);
 
-        if (isOverpower || isSteadyShotNoEvade || isFuryNoEvade || isBackstabNoEvade || attacker == defender)
+        if (isOverpower || isFuryNoEvade || isBackstabNoEvade || attacker == defender)
         {
             return;
         }
 
         // Roll combat hit chance
         var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+        if (playerDefender is { EvasiveStanceIsActive: true })
+        {
+            var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (luckyRoll < attackRoll)
+            {
+                attackRoll = luckyRoll;
+            }
+        }
+
         if (attackRoll > GetEvadeChance(attacker, defender))
         {
             return;
@@ -322,18 +393,22 @@ public class DamageEvent
         const float fullEvadeChance = 1.0f / 3.0f;
         const float partialEvadeChance = fullEvadeChance * 2;
 
-        var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
+        var partialEvadeRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-        switch (roll)
+        if (playerDefender is { EvasiveStanceIsActive: true })
+        {
+            var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (luckyRoll < partialEvadeRoll)
+            {
+                partialEvadeRoll = luckyRoll;
+            }
+        }
+
+        switch (partialEvadeRoll)
         {
             case < fullEvadeChance:
                 PartialEvasion = PartialEvasion.All;
                 Evaded = true;
-                break;
-            case < partialEvadeChance when _defenderCombatAbility == CombatAbility.Provoke:
-                _evasionMod = 0.25f;
-                PartialEvasion = PartialEvasion.Some; // glancing blow w/ Provoke bonus
-                Evaded = false;
                 break;
             case < partialEvadeChance:
                 _evasionMod = 0.5f;
@@ -347,7 +422,7 @@ public class DamageEvent
                 break;
         }
 
-        if (defender is Player playerDefender && PartialEvasion == PartialEvasion.Some)
+        if (playerDefender is not null && PartialEvasion == PartialEvasion.Some)
         {
             playerDefender.CheckForSigilTrinketOnAttackEffects(playerAttacker, this, Skill.PhysicalDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion);
         }
@@ -364,41 +439,9 @@ public class DamageEvent
         return _overpower;
     }
 
-    private bool CheckForCombatAbilityFuryNoEvade(Player playerAttacker, CombatAbility attackerCombatAbility)
+    private bool CheckForCombatAbilityEnrageNoEvade(Player playerAttacker, CombatAbility attackerCombatAbility)
     {
-        if (playerAttacker == null)
-        {
-            return false;
-        }
-
-        if (
-            attackerCombatAbility != CombatAbility.Fury
-            || !playerAttacker.RecklessActivated
-            || !(playerAttacker.LastRecklessActivated > Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration)
-        )
-        {
-            return false;
-        }
-
-        Evaded = false;
-        PartialEvasion = PartialEvasion.None;
-        _evasionMod = 1f;
-
-        return true;
-    }
-
-    private bool CheckForCombatAbilitySteadyShotNoEvade(Player playerAttacker, CombatAbility attackerCombatAbility)
-    {
-        if (playerAttacker == null)
-        {
-            return false;
-        }
-
-        if (
-            attackerCombatAbility != CombatAbility.SteadyShot
-            || playerAttacker.GetEquippedMissileLauncher() == null
-            || !(playerAttacker.LastSteadyShotActivated > Time.GetUnixTime() - playerAttacker.SteadyShotActivatedDuration)
-        )
+        if (playerAttacker is not {FuryEnrageIsActive: true})
         {
             return false;
         }
@@ -415,15 +458,7 @@ public class DamageEvent
     /// </summary>
     private bool CheckForCombatAbilityBackstabNoEvade(Player playerAttacker)
     {
-        if (playerAttacker == null)
-        {
-            return false;
-        }
-
-        if (
-            playerAttacker.EquippedCombatAbility != CombatAbility.Backstab
-            || !(playerAttacker.LastBackstabActivated > Time.GetUnixTime() - playerAttacker.BackstabActivatedDuration)
-        )
+        if (playerAttacker is not {BackstabIsActive: true, IsStealthed: true})
         {
             return false;
         }
@@ -436,56 +471,120 @@ public class DamageEvent
 
     /// <summary>
     /// Checks attack angle and if defender has Spec Shield and/or Phalanx is active. If a block is possible,
-    /// check for and combine bonuses from Spec Physical Defense, Parry Ability, Phalanx Ability, and Block Rating.
+    /// check for and combine bonuses from Spec Physical Defense, Phalanx Ability, and Block Rating.
     /// Roll and set Blocked accordingly.
     /// <list type="bullet">
-    /// <item>Shield Spec Bonus: +45 degrees to effective block angle.</item>
-    /// <item>Physical Defense Spec Bonus: Up to +10% block chance.</item>
-    /// <item>Parry Ability: Passive 20% to block chance. Additional +15% when activated.</item>
-    /// <item>Phalanx Ability: +50% to block chance.</item>
-    /// <item>Gear Block Rating: +X% block chance, equal to rating amount.</item>
+    /// <item>Spec Bonus - Shield: Effective block angle is 270 degress instead of 180.</item>
+    /// <item>Spec Bonus - Phys Def: Up to +50% increased block chance.</item>
+    /// <item>Gear Block Rating: +X% increased block chance, equal to 10% + 0.5% per rating.</item>
+    /// <item>Phalanx Ability: Effective block angle is 360 degrees and all glancing blows become blocks.</item>
     /// </list>
     /// </summary>
     private void SetBlocked(Creature attacker, Creature defender)
     {
+        Blocked = false;
+
         var playerDefender = defender as Player;
 
         if (defender.CombatMode is CombatMode.NonCombat)
         {
-            Blocked = false;
             return;
         }
 
-        var blockChance = 0.0f;
-        var effectiveAngle = 180.0f;
+        var equippedShield = defender.GetEquippedShield();
+        if (equippedShield is null)
+        {
+            return;
+        }
 
+        if (playerDefender is { PhalanxIsActive: true } && PartialEvasion is PartialEvasion.Some)
+        {
+            Blocked = true;
+            return;
+        }
+
+        var effectiveAngle = 180.0f;
         effectiveAngle += GetSpecShieldEffectiveAngleBonus(playerDefender);
 
-        // check for frontal radius prior to allowing a block unless PhalanxActivated
-        var phalanxIsNotActive = playerDefender is not { EquippedCombatAbility: CombatAbility.Phalanx }
-                            || playerDefender.LastPhalanxActivated <
-                            Time.GetUnixTime() - playerDefender.PhalanxActivatedDuration;
+        var blockableAngle = Math.Abs(defender.GetAngle(attacker)) < effectiveAngle / 2.0f || playerDefender is {PhalanxIsActive: true};
 
-        var blockableAngle = Math.Abs(defender.GetAngle(attacker)) < effectiveAngle / 2.0f;
-
-        if (phalanxIsNotActive && !blockableAngle)
+        if (playerDefender is { PhalanxIsActive: false } && !blockableAngle)
         {
-            Blocked = false;
             return;
         }
 
-        blockChance += GetSpecPhysicalDefenseBlockChanceBonus(playerDefender);
-        blockChance += GetCombatAbilityParryBlockChanceBonus(playerDefender);
-        blockChance += GetCombatAbilityPhalanxBlockChanceBonus(playerDefender);
-        blockChance *= 1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearBlock);
+        // base block chance ranges from 5 to 10% based on effective shield level vs effective attack skill
+        const float minBlockChance = 0.05f;
+        var blockChanceShieldBonus = GetBlockChanceShieldLevelBonus(defender, (int)defender.GetSkillModifiedShieldLevel((equippedShield.ArmorLevel ?? 1)));
+        var baseBlockChance = minBlockChance * blockChanceShieldBonus;
+
+        // other bonuses are additive then multiplied against base block chance
+        var specPhysicalDefenseBlockChanceBonus = GetSpecPhysicalDefenseBlockChanceBonus();
+        var jewelBlockChanceBonus = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearBlock);
+
+        var blockChance = baseBlockChance * (1.0f + specPhysicalDefenseBlockChanceBonus + jewelBlockChanceBonus);
 
         if ((ThreadSafeRandom.Next(0f, 1f) > blockChance))
         {
-            Blocked = false;
             return;
         }
 
         Blocked = true;
+    }
+
+    /// <summary>
+    /// </summary>
+    private void SetParry(Creature attacker, Creature defender)
+    {
+        Parried = false;
+
+        var playerDefender = defender as Player;
+
+        if (defender.CombatMode is CombatMode.NonCombat)
+        {
+            return;
+        }
+
+        var equippedMainHand = defender.GetEquippedWeapon();
+        var equippedOffHand = defender.GetEquippedOffHand();
+
+        if (equippedMainHand is { IsTwoHanded: not true } && equippedOffHand is null)
+        {
+            return;
+        }
+
+        const float effectiveAngle = 180.0f;
+        var parryAngle = Math.Abs(defender.GetAngle(attacker)) < effectiveAngle / 2.0f;
+
+        if (!parryAngle)
+        {
+            return;
+        }
+
+        var parrySkillUsed = equippedMainHand is { IsTwoHanded: true }
+            ? defender.GetModdedTwohandedCombatSkill()
+            : defender.GetModdedDualWieldSkill();
+
+        var parryMod = SkillCheck.GetSkillChance(parrySkillUsed, EffectiveAttackSkill);
+
+        // parry chance is 10% * parryMod skillcheck
+        var baseParryChance = 0.1f * parryMod;
+        var parryActivatedBonus = playerDefender is { ParryIsActive: true } ? 0.25f : 0.0f;
+        var parryChance = baseParryChance + parryActivatedBonus;
+
+        if ((ThreadSafeRandom.Next(0f, 1f) > parryChance))
+        {
+            return;
+        }
+
+        Parried = true;
+    }
+
+    private double GetBlockChanceShieldLevelBonus(Creature defender, int shieldLevel)
+    {
+        var effectiveShieldLevel = (uint)defender.GetSkillModifiedShieldLevel(shieldLevel);
+
+        return 1.0 + SkillCheck.GetSkillChance(effectiveShieldLevel, EffectiveAttackSkill);
     }
 
     private float GetDamageBeforeMitigation(Creature attacker, Creature defender, WorldObject damageSource)
@@ -535,21 +634,21 @@ public class DamageEvent
         }
     }
 
-    private void SetDamageModifiers(Creature attacker, Creature defender)
+    private void SetDamageModifiers(Creature attacker, Creature defender, float? powerMod = null)
     {
         var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
-        _powerMod = attacker.GetPowerMod(Weapon);
+        _powerMod = powerMod ?? attacker.GetPowerMod(Weapon);
         _attributeMod = attacker.GetAttributeMod(Weapon, false, defender);
         _slayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
         _damageRatingMod = Creature.GetPositiveRatingMod(attacker.GetDamageRating());
         _dualWieldDamageBonus = GetDualWieldDamageBonus(playerAttacker);
         _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(playerAttacker);
         _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
-        _combatAbilityProvokeDamageBonus = GetCombatAbilityProvokeDamageBonus(playerAttacker);
-        _combatAbilityFuryDamageBonus = GetCombatAbilityRecklessDamageBonus(attacker, defender, playerAttacker);
-        _combatAbilitySteadyShotDamageBonus = GetCombatAbilitySteadyShotDamageBonus(attacker, defender, playerAttacker);
+        _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(playerAttacker, playerDefender);
+        _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(playerAttacker);
+        _combatAbilitySteadyShotDamageBonus = GetCombatAbilitySteadyShotDamageBonus(playerAttacker);
         _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
         SneakAttackMod = attacker.GetSneakAttackMod(defender);
         _attackHeightDamageBonus += GetHighAttackHeightBonus(playerAttacker);
@@ -596,7 +695,15 @@ public class DamageEvent
     /// </summary>
     private float GetCombatAbilityMultishotDamagePenalty(Player playerAttacker)
     {
-        return playerAttacker is { EquippedCombatAbility: CombatAbility.Multishot } ? 0.75f : 1.0f;
+        return playerAttacker is { MultiShotIsActive: true } ? 0.75f : 1.0f;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Provoke: Damage taken reduced by 15%.
+    /// </summary>
+    private float GetCombatAbilityProvokeDamageReduction(Player playerDefender)
+    {
+        return playerDefender is { ProvokeIsActive: true } ? 0.85f : 1.0f;
     }
 
     private void PostDamageMitigationEffects()
@@ -613,103 +720,63 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Provoke: Damage increased by 20%.
+    /// COMBAT ABILITY - Fury (Stance): Damage dealt and taken is increased by up to 25%. Attacking and
+    /// taking damage builds up a Adrenaline meter. Adrenaline meter decreases over time.
+    /// COMBAT ABILITY - Fury (Enrage): Damage increased by Adrenaline build up amount (%) for 10 seconds.
     /// </summary>
-    private static float GetCombatAbilityProvokeDamageBonus(Player playerAttacker)
-    {
-        if (playerAttacker == null)
-        {
-            return 1.0f;
-        }
-
-        if (playerAttacker.EquippedCombatAbility != CombatAbility.Provoke)
-        {
-            return 1.0f;
-        }
-
-        return playerAttacker.LastProvokeActivated > Time.GetUnixTime() - playerAttacker.ProvokeActivatedDuration
-            ? 1.2f
-            : 1.0f;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Fury: Damage increased by up to 25%.
-    /// </summary>
-    private float GetCombatAbilityRecklessDamageBonus(Creature attacker, Creature defender, Player playerAttacker)
+    private static float GetCombatAbilityFuryDamageBonus(Player playerAttacker, Player playerDefender)
     {
         var recklessMod = 1.0f;
 
-        if (playerAttacker == null)
+        if (playerAttacker is {FuryStanceIsActive: true})
         {
-            return recklessMod;
+            recklessMod += 0.25f * playerAttacker.AdrenalineMeter;
         }
 
-        if (playerAttacker.EquippedCombatAbility != CombatAbility.Fury || defender == playerAttacker)
+        if (playerDefender is { FuryStanceIsActive: true } or { FuryEnrageIsActive: true })
         {
-            return recklessMod;
+            recklessMod += 0.25f * playerDefender.AdrenalineMeter;
         }
 
-        if (CombatType != CombatType.Melee && !(attacker.GetDistance(defender) < 3))
+        if (playerAttacker is {FuryEnrageIsActive: true})
         {
-            return recklessMod;
-        }
-
-        // 500 stacks is max, out of 2000 for a max of 25%
-        var recklessStacks = Player.HandleRecklessStamps(playerAttacker);
-
-        // If Reckless is not activated and last Reckless duration is over, recklessMod += stacks / 2000
-        if (
-            !playerAttacker.RecklessActivated
-            && playerAttacker.LastRecklessActivated < Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration
-        )
-        {
-            recklessMod += recklessStacks / 2000f;
-        }
-
-        // If Reckless is activated and Reckless duration is over, set Activated to false and erase quest stamps
-        if (
-            playerAttacker.RecklessActivated
-            && playerAttacker.LastRecklessActivated < Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration
-        )
-        {
-            playerAttacker.RecklessActivated = false;
-            playerAttacker.RecklessDumped = false;
-            playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
-        }
-
-        // If Reckless is activated and duration is not over, set Activated to false, erase quest stamps, and recklessMod += stacks / 1000
-        if (
-            playerAttacker.RecklessActivated
-            && playerAttacker.LastRecklessActivated > Time.GetUnixTime() - playerAttacker.RecklessActivatedDuration
-        )
-        {
-            playerAttacker.RecklessActivated = false;
-            playerAttacker.RecklessDumped = true;
-            playerAttacker.QuestManager.Erase($"{playerAttacker.Name},Reckless");
-
-            recklessMod += recklessStacks / 1000f;
+            recklessMod += playerAttacker.EnrageLevel;
         }
 
         return recklessMod;
     }
 
-    private float GetCombatAbilitySteadyShotDamageBonus(Creature attacker, Creature defender, Player playerAttacker)
+    /// <summary>
+    /// COMBAT ABILITY - Relentless (Stance): Up to -10% damage, based on relentless adrenaline stacks.
+    /// </summary>
+    private static float GetCombatAbilityRelentlessDamagePenalty(Player playerAttacker)
     {
-        if (playerAttacker == null)
+        if (playerAttacker is not { RelentlessStanceIsActive: true })
         {
             return 1.0f;
         }
 
-        if (
-            _attackerCombatAbility is not CombatAbility.SteadyShot
-            || playerAttacker.GetEquippedMissileLauncher() == null
-            || !(playerAttacker.LastSteadyShotActivated > Time.GetUnixTime() - playerAttacker.SteadyShotActivatedDuration)
-        )
+        return 1.0f - 0.1f * playerAttacker.AdrenalineMeter;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Steady Shot: +25% damage with missile weapons.
+    /// </summary>
+    /// <param name="playerAttacker"></param>
+    /// <returns></returns>
+    private float GetCombatAbilitySteadyShotDamageBonus(Player playerAttacker)
+    {
+        if (playerAttacker?.GetEquippedMissileWeapon() is null)
         {
             return 1.0f;
         }
 
-        return 1.25f;
+        if (playerAttacker.GetPowerAccuracyBar() < 0.5f)
+        {
+            return 1.0f;
+        }
+
+        return playerAttacker is {SteadyShotIsActive: true} ? 1.25f : 1.0f;
     }
 
     /// <summary>
@@ -752,7 +819,7 @@ public class DamageEvent
             return 1.0f;
         }
 
-        if (CheckForPlayerStealthGuaranteedCritical(playerAttacker, playerDefender) || CheckForRatingReprisal(playerAttacker))
+        if (CheckForPlayerStealthBackstabGuaranteedCritical(playerAttacker) || CheckForRatingReprisal(playerAttacker))
         {
             return 1.0f;
         }
@@ -814,7 +881,6 @@ public class DamageEvent
                * _dualWieldDamageBonus
                * _twohandedCombatDamageBonus
                * _combatAbilityMultishotDamagePenalty
-               * _combatAbilityProvokeDamageBonus
                * _combatAbilityFuryDamageBonus
                * _combatAbilitySteadyShotDamageBonus
                * SneakAttackMod
@@ -856,31 +922,15 @@ public class DamageEvent
                * _dualWieldDamageBonus
                * _twohandedCombatDamageBonus
                * _combatAbilityMultishotDamagePenalty
-               * _combatAbilityProvokeDamageBonus
                * _combatAbilityFuryDamageBonus
                * _combatAbilitySteadyShotDamageBonus
                * _ammoEffectMod
                * _levelScalingMod;
     }
 
-    private bool CheckForPlayerStealthGuaranteedCritical(Creature playerAttacker, Creature playerDefender)
+    private bool CheckForPlayerStealthBackstabGuaranteedCritical(Player playerAttacker)
     {
-        if (playerAttacker == null)
-        {
-            return false;
-        }
-
-        if (!IsAttackFromStealth())
-        {
-            return false;
-        }
-
-        if (playerDefender == null)
-        {
-            SneakAttackMod = 3.0f;
-        }
-
-        return true;
+        return playerAttacker is {BackstabIsActive: true, IsStealthed: true};
     }
 
     /// <summary>
@@ -923,6 +973,8 @@ public class DamageEvent
 
         ShieldMod = _defender.GetShieldMod(attacker, DamageType, Weapon);
 
+        _combatAbilityProvokeDamageReduction = GetCombatAbilityProvokeDamageReduction(playerDefender);
+
         _ratingSelfHarm = 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
         _ratingRedFury = 1.0f + Jewel.GetJewelRedFury(playerAttacker);
         _ratingYellowFury = 1.0f + Jewel.GetJewelYellowFury(playerAttacker);
@@ -945,6 +997,7 @@ public class DamageEvent
                * _damageResistanceRatingMod
                * _evasionMod
                * _specDefenseMod
+               * _combatAbilityProvokeDamageReduction
                * _ratingDamageTypeWard
                * _ratingSelfHarm
                * _ratingRedFury
@@ -1071,11 +1124,12 @@ public class DamageEvent
 
     private void PostDamageMitigationEffects(Creature attacker, Creature defender, WorldObject damageSource)
     {
-        var playerAttack = attacker as Player;
+        var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
-        CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttack, playerDefender);
-        CheckForCombatAbilityFuryRecklessSelfDamage(playerAttack);
+        CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttacker, playerDefender);
+        CheckForCombatAbilityFuryBuildUpWhenDamaged(playerDefender);
+        CheckForWeaponMasterEffects(playerAttacker, defender);
 
         if (_attacker.IsMonster)
         {
@@ -1086,6 +1140,179 @@ public class DamageEvent
         {
             Damage *= 1.0f;
         }
+    }
+
+    private void CheckForWeaponMasterEffects(Player playerAttacker, Creature defender)
+    {
+
+        if (playerAttacker is not { WeaponMasterSingleUseIsActive: true } || Weapon is null)
+        {
+            return;
+        }
+
+        var powerLevel = playerAttacker.GetPowerAccuracyBar();
+
+        if (powerLevel < 0.5)
+        {
+            return;
+        }
+
+        var weaponTier = Math.Clamp((Weapon.Tier ?? 1) - 1, 1, 7);
+
+        switch (Weapon.WeaponSkill)
+        {
+            case Skill.Axe:
+            case Skill.Dagger:
+
+                WeaponMasterBleed(playerAttacker, defender, weaponTier, powerLevel);
+
+                break;
+            case Skill.Mace:
+            case Skill.Staff:
+
+                WeaponMasterDaze(playerAttacker, defender, weaponTier, powerLevel);
+
+                break;
+            case Skill.UnarmedCombat:
+
+                WeaponMasterOffBalance(playerAttacker, defender, weaponTier, powerLevel);
+
+                break;
+            case Skill.ThrownWeapon:
+
+                if (Weapon.Name.Contains("Dagger") || Weapon.Name.Contains("Axe"))
+                {
+                    WeaponMasterBleed(playerAttacker, defender, weaponTier, powerLevel);
+                }
+                else if (Weapon.Name.Contains("Club"))
+                {
+                    WeaponMasterDaze(playerAttacker, defender, weaponTier, powerLevel);
+                }
+                else if (Weapon.Name.Contains("Shouken"))
+                {
+                    WeaponMasterOffBalance(playerAttacker, defender, weaponTier, powerLevel);
+                }
+
+                break;
+            // case Skill.Sword:
+            //     Console.WriteLine("Sword");
+            //     break;
+            // case Skill.Spear:
+            //     Console.WriteLine("Spear");
+            //     break;
+        }
+    }
+
+    private void WeaponMasterOffBalance(Player playerAttacker, Creature defender, int weaponTier, float powerLevel)
+    {
+        float tierMod;
+        tierMod = weaponTier switch
+        {
+            1 => 1.0f,
+            2 => 3.0f,
+            3 => 4.0f,
+            4 => 5.0f,
+            5 => 6.0f,
+            6 => 8.0f,
+            7 => 10.0f,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var defenseDebuffSpell = new Spell(SpellId.Unbalanced);
+
+        if (defenseDebuffSpell.NotFound)
+        {
+            return;
+        }
+
+        defenseDebuffSpell.SpellStatModVal *= powerLevel * tierMod;
+
+        defender.EnchantmentManager.Add(defenseDebuffSpell, playerAttacker, Weapon);
+
+        defender.EnqueueBroadcast(new GameMessageScript(defender.Guid, PlayScript.DirtyFightingDefenseDebuff));
+
+        playerAttacker.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"You put {defender.Name} off-balance, reducing their defense skill!",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        playerAttacker.WeaponMasterSingleUseIsActive = false;
+    }
+
+    private void WeaponMasterDaze(Player playerAttacker, Creature defender, int weaponTier, float powerLevel)
+    {
+        float tierMod;
+        tierMod = weaponTier switch
+        {
+            1 => 1.0f,
+            2 => 3.0f,
+            3 => 4.0f,
+            4 => 5.0f,
+            5 => 6.0f,
+            6 => 8.0f,
+            7 => 10.0f,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var attackDebuffSpell = new Spell(SpellId.Dazed);
+
+        if (attackDebuffSpell.NotFound)
+        {
+            return;
+        }
+
+        attackDebuffSpell.SpellStatModVal *= powerLevel * tierMod;
+
+        defender.EnchantmentManager.Add(attackDebuffSpell, playerAttacker, Weapon);
+
+        defender.EnqueueBroadcast(new GameMessageScript(defender.Guid, PlayScript.DirtyFightingAttackDebuff));
+
+        playerAttacker.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"You daze {defender.Name}, reducing their attack skill!",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        playerAttacker.WeaponMasterSingleUseIsActive = false;
+    }
+
+    private void WeaponMasterBleed(Player playerAttacker, Creature defender, int weaponTier, float powerLevel)
+    {
+        var tierMod = weaponTier switch
+        {
+            1 => 1.0f,
+            2 => 3.0f,
+            3 => 7.0f,
+            4 => 10.0f,
+            5 => 16.0f,
+            6 => 24.0f,
+            7 => 32.0f,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var spell = new Spell(SpellId.Bleed);
+
+        if (spell.NotFound)
+        {
+            return;
+        }
+
+        spell.SpellStatModVal *= powerLevel * tierMod;
+
+        defender.EnchantmentManager.Add(spell, playerAttacker, Weapon);
+        defender.EnqueueBroadcast(new GameMessageScript(defender.Guid, PlayScript.DirtyFightingDamageOverTime));
+
+        playerAttacker.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"You cause {defender.Name} to bleed!",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        playerAttacker.WeaponMasterSingleUseIsActive = false;
     }
 
     /// <summary>
@@ -1113,58 +1340,20 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Fury Self-damage chance with reckless attacks.
-    /// Max Fury stacks = 500. Become "Reckless" at 250 stacks. Self-damage chance grows as player gets closer
-    /// to 500 stacks. Max chance = 10%. When Self-damage occurs, attacker takes damage equal to
-    /// 50% of the damage done to the enemy on this attack, or 10% of player max health, whichever is smaller.
+    /// COMBAT ABILITY - Fury (build-up).
     /// </summary>
-    private void CheckForCombatAbilityFuryRecklessSelfDamage(Player playerAttacker)
+    private void CheckForCombatAbilityFuryBuildUpWhenDamaged(Player playerDefender)
     {
-        if (playerAttacker == null || playerAttacker.EquippedCombatAbility != CombatAbility.Fury)
+        if (playerDefender is { FuryStanceIsActive: true })
         {
-            return;
+            var furyGained = Damage / playerDefender.Health.MaxValue / 10;
+            playerDefender.AdrenalineMeter += furyGained;
+
+            if (playerDefender.AdrenalineMeter > 1.0f)
+            {
+                playerDefender.AdrenalineMeter = 1.0f;
+            }
         }
-
-        const int recklessThreshold = 250;
-        var stacks = playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless");
-
-        if (stacks <= recklessThreshold)
-        {
-            return;
-        }
-
-        var recklessChance = 0.1f * (stacks - recklessThreshold) / recklessThreshold;
-
-        if (!(recklessChance > ThreadSafeRandom.Next(0f, 1f)))
-        {
-            return;
-        }
-
-        var damageDealt = (uint)(Damage / 2);
-        var percentHealth = playerAttacker.Health.MaxValue / 10;
-        var damage = Math.Min(damageDealt, percentHealth);
-
-        playerAttacker.UpdateVitalDelta(playerAttacker.Health, -(int)damage);
-        playerAttacker.DamageHistory.Add(playerAttacker, DamageType.Health, damage);
-
-        playerAttacker.Session.Network.EnqueueSend(
-            new GameMessageSystemChat(
-                $"In your rage, you injure yourself, suffering {damage} points of damage!",
-                ChatMessageType.CombatSelf
-            )
-        );
-
-        playerAttacker.PlayParticleEffect(PlayScript.SplatterMidLeftFront, playerAttacker.Guid);
-
-        if (!playerAttacker.IsDead)
-        {
-            return;
-        }
-
-        var lastDamager = new DamageHistoryInfo(playerAttacker);
-
-        playerAttacker.OnDeath(lastDamager, DamageType.Health);
-        playerAttacker.Die();
     }
 
     /// <summary>
@@ -1466,28 +1655,53 @@ public class DamageEvent
         attacker.Die();
     }
 
-    private void CheckForParryRiposte(Creature attacker, Creature defender, WorldObject damageSource)
+    private void CheckForParryRiposte(Creature attacker, Creature defender)
     {
-        var playerDefender = defender as Player;
-
-        if (!Blocked || playerDefender == null)
+        if (!Parried || defender is not Player playerDefender || !(attacker.GetDistance(playerDefender) < 10))
         {
             return;
         }
 
-        if (
-            _defenderCombatAbility != CombatAbility.Parry
-            || !(playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration)
-            || !(attacker.GetDistance(playerDefender) < 3)
-        )
+        if (!playerDefender.ParryIsActive)
         {
             return;
         }
 
-        if (playerDefender.TwoHandedCombat || playerDefender.IsDualWieldAttack)
+        if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack)
         {
-            playerDefender.DamageTarget(attacker, damageSource);
+            return;
         }
+
+        if (defender.LastAttackedCreature != attacker)
+        {
+            playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat($"You parried {attacker.Name}!", ChatMessageType.CombatEnemy));
+            return;
+        }
+
+        SetBaseDamage(defender, attacker, defender.GetEquippedWeapon());
+        SetDamageModifiers(defender, attacker);
+
+        var damage = GetNonCriticalDamageBeforeMitigation();
+
+        if (damage is < int.MinValue or > int.MaxValue)
+        {
+            _log.Error("CheckForParryRiposte({Attacker}, {Defender}) - damage could not be converted to Int.", attacker.Name, defender.Name);
+            return;
+        }
+
+        attacker.UpdateVitalDelta(attacker.Health, -Convert.ToInt32(damage));
+        attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)damage);
+
+        var msg = $"You parried {attacker.Name}'s attack and followed up with a quick riposte, dealing {Convert.ToInt32(damage)} damage!";
+        playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
+
+        if (!attacker.IsDead)
+        {
+            return;
+        }
+
+        attacker.OnDeath(attacker.DamageHistory.LastDamager, DamageType.Health);
+        attacker.Die();
     }
 
     private bool IsAttackFromStealth()
@@ -1541,7 +1755,7 @@ public class DamageEvent
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * CheckForAttackHeightLowDefenseSkillBonus(playerDefender, playerAttacker));
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * (1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearFamiliarity, "Familiarity")));
 
-        var evadeChance = 1.0f - SkillCheck.GetSkillChance(EffectiveAttackSkill, _effectiveDefenseSkill);
+        var evadeChance = SkillCheck.GetSkillChance(_effectiveDefenseSkill, EffectiveAttackSkill);
         evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, playerDefender);
 
         if (evadeChance < 0)
@@ -1552,37 +1766,39 @@ public class DamageEvent
         return (float)Math.Min(evadeChance, 1.0f);
     }
 
-    private double CheckForCombatAbilitySmokescreenEvadeChanceBonus(double evadeChance, Player playerDefender)
+    /// <summary>
+    /// COMBAT Ability - Smokescreen: 10% increased chance to evade attacks
+    /// </summary>
+    private static double CheckForCombatAbilitySmokescreenEvadeChanceBonus(double evadeChance, Player playerDefender)
     {
-        // COMBAT FOCUS - Smokescreen (+10% chance to evade, +40% on Activated)
-        if (_defenderCombatAbility == CombatAbility.Smokescreen)
+        if (playerDefender is not { SmokescreenIsActive: true })
         {
-            evadeChance += 0.1f;
-
-            if (
-                playerDefender != null
-                && playerDefender.LastSmokescreenActivated
-                > Time.GetUnixTime() - playerDefender.SmokescreenActivatedDuration
-            )
-            {
-                evadeChance += 0.3f;
-            }
+            return evadeChance;
         }
 
-        return evadeChance;
+        var remainingChance = 1.0f - evadeChance;
+        var bonus = remainingChance * 0.1f;
+
+        return evadeChance + bonus;
+
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Steady Shot: Increased attack skill by 20%.
+    /// COMBAT ABILITY - Steady Shot: Increased attack skill with missile attacks by 20%.
     /// </summary>
     private float CheckForCombatAbilitySteadyShotAttackSkillBonus(Player playerAttacker)
     {
-        if (playerAttacker == null)
+        if (playerAttacker?.GetEquippedMissileWeapon() is null)
         {
             return 1.0f;
         }
 
-        return _attackerCombatAbility == CombatAbility.SteadyShot ? 1.2f : 1.0f;
+        if (playerAttacker.GetPowerAccuracyBar() < 0.5f)
+        {
+            return 1.0f;
+        }
+
+        return playerAttacker is {SteadyShotIsActive: true} ? 1.25f : 1.0f;
     }
 
     /// <summary>
@@ -1739,21 +1955,14 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// SPEC BONUS - Physical Defense: Increase shield block chance up to 10% (additively).
-    /// Based on defender 'shield level' and attacker 'attack skill'.
+    /// SPEC BONUS - Physical Defense: Increase shield block chance up to 50% (multiplicatively).
+    /// Based on defender 'defense skill' and attacker 'attack skill'.
     /// </summary>
-    private float GetSpecPhysicalDefenseBlockChanceBonus(Player playerDefender)
+    private float GetSpecPhysicalDefenseBlockChanceBonus()
     {
-        if (playerDefender?.GetEquippedShield() == null || !IsSkillSpecialized(playerDefender, Skill.PhysicalDefense))
-        {
-            return 0.0f;
-        }
+        var blockChanceMod = SkillCheck.GetSkillChance(_effectiveDefenseSkill, EffectiveAttackSkill);
 
-        var shieldArmorLevel = playerDefender.GetEquippedShield().ArmorLevel ?? 0;
-
-        var blockChanceMod = SkillCheck.GetSkillChance((uint)shieldArmorLevel, EffectiveAttackSkill);
-
-        return 0.1f * (float)blockChanceMod;
+        return 0.5f * (float)blockChanceMod;
     }
 
     /// <summary>
@@ -1781,20 +1990,12 @@ public class DamageEvent
 
         blockChance = 0.2f;
 
-        if (playerDefender.LastParryActivated > Time.GetUnixTime() - playerDefender.ParryActivatedDuration)
+        if (playerDefender.ParryIsActive)
         {
             blockChance += 0.15f;
         }
 
         return blockChance;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Phalanx: When activated, increases block chance by 50% (additively).
-    /// </summary>
-    private float GetCombatAbilityPhalanxBlockChanceBonus(Player playerDefender)
-    {
-        return playerDefender?.LastPhalanxActivated > Time.GetUnixTime() - playerDefender?.PhalanxActivatedDuration ? 0.5f : 0.0f;
     }
 
     public static float GetAmmoEffectMod(WorldObject weapon, Player player)

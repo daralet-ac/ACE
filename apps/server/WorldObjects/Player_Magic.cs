@@ -970,7 +970,7 @@ partial class Player
             if (target == null)
             {
                 SendWeenieError(WeenieError.TargetNotAcquired);
-                FinishCast();
+                FinishCast(spell);
                 return;
             }
 
@@ -1008,14 +1008,14 @@ partial class Player
             // verify spell range
             if (!VerifySpellRange(target, targetCategory, spell, casterItem, magicSkill))
             {
-                FinishCast();
+                FinishCast(spell);
                 return;
             }
         }
 
         if (IsDead)
         {
-            FinishCast();
+            FinishCast(spell);
             return;
         }
 
@@ -1152,7 +1152,7 @@ partial class Player
 
             if (finishCast)
             {
-                FinishCast();
+                FinishCast(spell);
             }
 
             return;
@@ -1262,11 +1262,11 @@ partial class Player
 
         if (finishCast)
         {
-            FinishCast();
+            FinishCast(spell);
         }
     }
 
-    public void FinishCast()
+    public void FinishCast(Spell spell = null)
     {
         var hasWindupGestures = MagicState.CastSpellParams?.HasWindupGestures ?? true;
         var castGesture = MagicState.CastGesture;
@@ -1337,6 +1337,26 @@ partial class Player
                 }
             );
             actionChain.EnqueueChain();
+        }
+
+        if ((OverloadStanceIsActive || OverloadDischargeIsActive) && spell is not null)
+        {
+            var meter = OverloadStanceIsActive ? ManaChargeMeter : DischargeLevel;
+            var chance = meter * 0.5f;
+
+            if (ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
+            {
+                var selfDamage = Convert.ToInt32(0.1f * meter * spell.BaseMana);
+
+                UpdateVitalDelta(Health, -selfDamage);
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Overload! The unstable mana in your spell burns you for {selfDamage} damage!",
+                        ChatMessageType.CombatEnemy
+                    )
+                );
+            }
         }
     }
 

@@ -136,6 +136,8 @@ partial class Player
 
         HandleTargetVitals();
 
+        HandleBuildUpEffects();
+
         LifestoneProtectionTick();
 
         PK_DeathTick();
@@ -884,6 +886,33 @@ partial class Player
         if (MagicState.IsCasting)
         {
             HandleMotionDone_Magic(motionID, success);
+        }
+    }
+
+    /// <summary>
+    /// Called on Player heartbeat
+    /// Decrement any build up effects that decrease over time
+    /// </summary>
+    private void HandleBuildUpEffects()
+    {
+        if (AdrenalineMeter > 0.0f)
+        {
+            AdrenalineMeter -= 0.1f;
+
+            if (AdrenalineMeter < 0.0f)
+            {
+                AdrenalineMeter = 0.0f;
+            }
+        }
+
+        if (ManaChargeMeter > 0.0f)
+        {
+            ManaChargeMeter -= 0.1f;
+
+            if (ManaChargeMeter < 0.0f)
+            {
+                ManaChargeMeter = 0.0f;
+            }
         }
     }
 }

@@ -209,12 +209,12 @@ partial class Player
         // point of no return beyond this point -- cannot be cancelled
         actionChain.AddAction(this, () => Attacking = true);
 
-        if (subsequent)
-        {
-            // client shows hourglass, until attack done is received
-            // retail only did this for subsequent attacks w/ repeat attacks on
-            Session.Network.EnqueueSend(new GameEventCombatCommenceAttack(Session));
-        }
+        // if (subsequent)
+        // {
+        //     // client shows hourglass, until attack done is received
+        //     // retail only did this for subsequent attacks w/ repeat attacks on
+        //     Session.Network.EnqueueSend(new GameEventCombatCommenceAttack(Session));
+        // }
 
         var projectileSpeed = GetProjectileSpeed();
 
@@ -271,20 +271,9 @@ partial class Player
                 // Check for missile cleaves
                 var numCleaves = 0;
 
-                if (
-                    EquippedCombatAbility == CombatAbility.Multishot
-                    && LastMultishotActivated < Time.GetUnixTime() - MultishotActivatedDuration
-                )
+                if (MultiShotIsActive && GetPowerAccuracyBar() >= 0.5f)
                 {
-                    numCleaves = 1;
-                }
-
-                if (
-                    EquippedCombatAbility == CombatAbility.Multishot
-                    && LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration
-                )
-                {
-                    numCleaves = 2;
+                    numCleaves += 1;
                 }
 
                 numCleaves += CheckForRatingSlashCleaveBonus(ammo);
@@ -384,17 +373,19 @@ partial class Player
         var staminaCost = GetAttackStamina((float)LastAttackAnimationLength, weapon);
         UpdateVitalDelta(Stamina, -staminaCost);
 
-        var combatAbility = CombatAbility.None;
-        var combatFocus = GetEquippedCombatFocus();
-        if (combatFocus != null)
+        if (Stamina.Current < 1 && EvasiveStanceIsActive)
         {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
+            EvasiveStanceIsActive = false;
 
-        // COMBAT ABILITY - Enchant: All weapon attacks also consume mana
-        if (combatAbility == CombatAbility.EnchantedWeapon)
-        {
-            UpdateVitalDelta(Mana, -staminaCost);
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Your fall out of your evasive stance!!", ChatMessageType.Broadcast)
+            );
+
+            var evasiveStanceItem = GetInventoryItemsOfWCID(1051114);
+            if (evasiveStanceItem.Count > 0)
+            {
+                EnchantmentManager.StartCooldown(evasiveStanceItem[0]);
+            }
         }
 
         actionChain.AddAction(

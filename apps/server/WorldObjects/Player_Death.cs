@@ -120,14 +120,14 @@ partial class Player
             );
         }
 
-        if (ManaBarrierToggle)
+        if (ManaBarrierIsActive)
         {
-            ToggleManaBarrierSetting();
+            ManaBarrierIsActive = false;
         }
 
-        if (EvasiveStanceToggle)
+        if (EvasiveStanceIsActive)
         {
-            ToggleEvasiveStanceSetting();
+            EvasiveStanceIsActive = false;
         }
 
         return deathMessage;

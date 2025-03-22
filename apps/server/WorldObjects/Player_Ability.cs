@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 using Spell = ACE.Server.Entity.Spell;
 using Time = ACE.Common.Time;
 
@@ -12,98 +15,165 @@ namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
-    public double LastFocusedTaunt = 0;
-    public double LastFeignWeakness = 0;
-    public double LastProvokeActivated = 0;
-    public double LastPhalanxActivated = 0;
-    public double LastRecklessActivated = 0;
-    public double LastParryActivated = 0;
-    public double LastBackstabActivated = 0;
-    public double LastSteadyShotActivated = 0;
-    public double LastMultishotActivated = 0;
-    public double LastSmokescreenActivated = 0;
-    public double LastIronFistActivated = 0;
-    public double LastOverloadActivated = 0;
-    public double LastBatteryActivated = 0;
-    public double LastReflectActivated = 0;
-    public double LastEnchantedWeaponActivated = 0;
+    // Warrior
+    public bool ProvokeIsActive => LastProvokeActivated > Time.GetUnixTime() - ProvokeActivatedDuration;
+    private double LastProvokeActivated;
+    private double ProvokeActivatedDuration = 10;
 
-    public bool OverloadActivated = false;
-    public bool OverloadDumped = false;
-    public bool RecklessActivated = false;
-    public bool RecklessDumped = false;
+    public bool PhalanxIsActive;
 
-    public double MultishotActivatedDuration = 10;
-    public double PhalanxActivatedDuration = 10;
-    public double ParryActivatedDuration = 10;
-    public double SteadyShotActivatedDuration = 10;
-    public double SmokescreenActivatedDuration = 10;
-    public double BackstabActivatedDuration = 10;
-    public double IronFistActivatedDuration = 10;
-    public double ProvokeActivatedDuration = 10;
-    public double ReflectActivatedDuration = 10;
-    public double BatteryActivatedDuration = 10;
-    public double OverloadActivatedDuration = 10;
-    public double EnchantedWeaponActivatedDuration = 10;
-    public double RecklessActivatedDuration = 10;
+    public bool ParryIsActive => LastParryActivated > Time.GetUnixTime() - ParryActivatedDuration;
+    private double LastParryActivated;
+    private double ParryActivatedDuration = 10;
+
+    // Blademaster
+    public bool WeaponMasterSingleUseIsActive;
+
+    public bool WeaponMasterIsActive => LastWeaponMasterActivated > Time.GetUnixTime() - WeaponMasterActivatedDuration;
+    private double LastWeaponMasterActivated;
+    private double WeaponMasterActivatedDuration = 10;
+
+
+    public float AdrenalineMeter;
+    public bool RelentlessTenacityIsActive => LastRelentlessActivated > Time.GetUnixTime() - RelentlessActivatedDuration;
+    private double LastRelentlessActivated;
+    private double RelentlessActivatedDuration = 10;
+    public bool RelentlessStanceIsActive;
+    public float TenacityLevel;
+
+    public bool FuryEnrageIsActive => LastFuryEnrageActivated > Time.GetUnixTime() - FuryEnrageActivatedDuration;
+    private double LastFuryEnrageActivated;
+    private double FuryEnrageActivatedDuration = 10;
+    public bool FuryStanceIsActive;
+    public float EnrageLevel;
+
+    // Archer
+    public bool SteadyShotIsActive => LastSteadyShotActivated > Time.GetUnixTime() - SteadyShotActivatedDuration;
+    private double LastSteadyShotActivated;
+    private double SteadyShotActivatedDuration = 10;
+
+    public bool MultiShotIsActive => LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration;
+    private double LastMultishotActivated;
+    private double MultishotActivatedDuration = 10;
+
+    public bool EvasiveStanceIsActive;
+
+    // Vagabond
+    public bool VanishIsActive => LastVanishActivated > Time.GetUnixTime() - VanishActivatedDuration;
+    private double LastVanishActivated;
+    private double VanishActivatedDuration = 5;
+
+    public bool BackstabIsActive => LastBackstabActivated > Time.GetUnixTime() - BackstabActivatedDuration;
+    private double LastBackstabActivated;
+    private double BackstabActivatedDuration = 10;
+
+    public bool SmokescreenIsActive => LastSmokescreenActivated > Time.GetUnixTime() - SmokescreenActivatedDuration;
+    private double LastSmokescreenActivated;
+    private double SmokescreenActivatedDuration = 10;
+
+    // Sorcerer
+    public bool OverloadDischargeIsActive => LastOverloadDischargeActivated > Time.GetUnixTime() - OverloadDischargeActivatedDuration;
+    private double LastOverloadDischargeActivated;
+    private double OverloadDischargeActivatedDuration = 10;
+    public bool OverloadStanceIsActive;
+    public float ManaChargeMeter = 0.0f;
+    public float DischargeLevel;
+
+    public bool BatteryDischargeIsActive => LastBatteryDischargeActivated > Time.GetUnixTime() - BatteryDischargeActivatedDuration;
+    private double LastBatteryDischargeActivated;
+    private double BatteryDischargeActivatedDuration = 10;
+    public bool BatteryStanceIsActive;
+
+    public bool ManaBarrierIsActive;
+
+    // Spellsword
+    public bool ReflectIsActive => LastReflectActivated > Time.GetUnixTime() - ReflectActivatedDuration;
+    private double LastReflectActivated;
+    private double ReflectActivatedDuration = 10;
+
+    public bool AegisIsActive => LastAegisActivated > Time.GetUnixTime() - AegisActivatedDuration;
+    private double LastAegisActivated;
+    private double AegisActivatedDuration = 10;
+
+    public bool EnchantedWeaponIsActive => LastEnchantedWeaponActivated > Time.GetUnixTime() - EnchantedWeaponActivatedDuration;
+    private double LastEnchantedWeaponActivated;
+    private double EnchantedWeaponActivatedDuration = 10;
+    public Spell EnchantedWeaponStoredSpell;
 
     public CombatAbility EquippedCombatAbility
     {
         get
         {
             var combatFocus = GetEquippedCombatFocus();
-            if (combatFocus != null)
-            {
-                var combatAbility = combatFocus.GetCombatAbility();
-                return combatAbility;
-            }
-            else
+            if (combatFocus == null)
             {
                 return CombatAbility.None;
             }
+
+            var combatAbility = combatFocus.GetCombatAbility();
+            return combatAbility;
+
         }
     }
 
-    public void TryUseFocusedTaunt(WorldObject ability)
+    public bool TryUsePhalanx(Gem gem)
     {
-        var target = LastAttackedCreature;
+        if (!VerifyCombatFocus(CombatAbility.Phalanx))
+        {
+            return false;
+        }
 
-        var skillCheck = SkillCheck.GetSkillChance(
-            Strength.Current * 2,
-            target.GetCreatureSkill(Skill.Perception).Current
-        );
-
-        if (ThreadSafeRandom.Next(0.0f, 1.0f) > skillCheck)
+        if (GetEquippedShield() is null)
         {
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"{target.Name} can see right through you. Your taunt failed.",
+                    $"Phalanx requires an equipped shield.",
                     ChatMessageType.Broadcast
                 )
             );
-            return;
+            return false;
         }
 
-        var targetTier = target.Tier ?? 1;
-        var staminaCost = -10 * Math.Clamp(targetTier, 1, 7);
-        UpdateVitalDelta(Stamina, staminaCost);
+        if (!PhalanxIsActive)
+        {
+            PhalanxIsActive = true;
 
-        target.IncreaseTargetThreatLevel(this, 100);
-        LastFocusedTaunt = Time.GetUnixTime();
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You raise your shield into a defensive stance!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.ShieldUpGrey, Guid);
+
+            return false;
+        }
+
+        PhalanxIsActive = false;
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You lower your shield.", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.DispelLife, Guid);
+
+        return true;
+    }
+
+    public bool TryUseProvoke(WorldObject ability)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Provoke))
+        {
+            return false;
+        }
+        LastProvokeActivated = Time.GetUnixTime();
 
         Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"You successfully taunt {target.Name}, increasingly your threat level substantially. ({staminaCost} stamina)",
+                $"Give them cause for provocation! For the next ten seconds, your attacks with at least 50% power generate double threat!.",
                 ChatMessageType.Broadcast
             )
         );
 
-        PlayParticleEffect(PlayScript.VisionUpWhite, Guid);
-        target.PlayParticleEffect(PlayScript.VisionDownBlack, target.Guid);
-    }
-
-    public void TryUseAreaTaunt(WorldObject ability)
-    {
         var nearbyMonsters = GetNearbyMonsters(10);
 
         foreach (var target in nearbyMonsters)
@@ -124,16 +194,13 @@ partial class Player
                 continue;
             }
 
-            var targetTier = target.Tier ?? 1;
-            var staminaCost = -2 * Math.Clamp(targetTier, 1, 7);
-            UpdateVitalDelta(Stamina, staminaCost);
+            var areaThreatBonus = Convert.ToInt32((float)(Level ?? 1) / (target.Level ?? 1) * 100);
 
-            target.IncreaseTargetThreatLevel(this, 100);
-            LastFocusedTaunt = Time.GetUnixTime();
+            target.IncreaseTargetThreatLevel(this, areaThreatBonus); // this amount is doubled from the Provoke threat bonus
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You successfully taunt {target.Name}, increasingly your threat level substantially. ({staminaCost} stamina)",
+                    $"You successfully provoke {target.Name}, increasingly your threat level substantially.",
                     ChatMessageType.Broadcast
                 )
             );
@@ -141,10 +208,287 @@ partial class Player
             PlayParticleEffect(PlayScript.VisionUpWhite, Guid);
             target.PlayParticleEffect(PlayScript.VisionDownBlack, target.Guid);
         }
+
+        return true;
     }
 
-    public void TryUseFeignInjury(WorldObject ability)
+    public bool TryUseParry(Gem gem)
     {
+        if (!VerifyCombatFocus(CombatAbility.Parry))
+        {
+            return false;
+        }
+
+        if (ParryIsActive)
+        {
+            return false;
+        }
+
+        LastParryActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.EnchantUpRed, Guid);
+
+        return true;
+    }
+
+    public bool TryUseWeaponMaster(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.WeaponMaster))
+        {
+            return false;
+        }
+
+        if (WeaponMasterIsActive)
+        {
+            return false;
+        }
+
+        WeaponMasterSingleUseIsActive = true;
+        LastWeaponMasterActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.EnchantUpOrange, Guid);
+
+        return true;
+    }
+
+    public bool TryUseFury(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Fury))
+        {
+            return false;
+        }
+
+        if (!FuryStanceIsActive && !FuryEnrageIsActive)
+        {
+            if (RelentlessStanceIsActive)
+            {
+                var relentlessItem = GetInventoryItemsOfWCID(1051127);
+                if (relentlessItem.Count > 0)
+                {
+                    EnchantmentManager.StartCooldown(relentlessItem[0]);
+                }
+
+                RelentlessStanceIsActive = false;
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"Relentless is disabled.", ChatMessageType.Broadcast)
+                );
+            }
+            else
+            {
+                AdrenalineMeter = 0.0f;
+            }
+
+            FuryStanceIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You channel your inner fury, producing adrenaline each time you attack!",
+                    ChatMessageType.Broadcast
+                )
+            );
+
+            PlayParticleEffect(PlayScript.SkillUpOrange, Guid, AdrenalineMeter);
+
+            return false;
+        }
+
+        if (FuryEnrageIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Fury while Enraged.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (RelentlessTenacityIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Fury while Tenacious.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (FuryStanceIsActive && AdrenalineMeter < 0.5f)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You calm down and your release adrenaline without effect.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.SkillDownOrange, Guid, AdrenalineMeter);
+
+            FuryStanceIsActive = false;
+            AdrenalineMeter = 0.0f;
+
+            return true;
+        }
+
+        FuryStanceIsActive = false;
+        EnrageLevel = AdrenalineMeter;
+        AdrenalineMeter = 0.0f;
+        LastFuryEnrageActivated = Time.GetUnixTime();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You Enrage, converting your adrenaline into pure fury! ({Math.Round(EnrageLevel * 100)}%)", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.EnchantUpOrange, Guid, EnrageLevel);
+
+        return true;
+    }
+
+    public bool TryUseRelentless(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Relentless))
+        {
+            return false;
+        }
+
+        if (!RelentlessStanceIsActive && !RelentlessTenacityIsActive && !FuryEnrageIsActive)
+        {
+            if (FuryStanceIsActive)
+            {
+                var furyItem = GetInventoryItemsOfWCID(1051135);
+                if (furyItem.Count > 0)
+                {
+                    EnchantmentManager.StartCooldown(furyItem[0]);
+                }
+
+                FuryStanceIsActive = false;
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"Fury is disabled.", ChatMessageType.Broadcast)
+                );
+
+                PlayParticleEffect(PlayScript.SkillDownOrange, Guid);
+            }
+            else
+            {
+                AdrenalineMeter = 0.0f;
+            }
+
+            RelentlessStanceIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You enter a state of relentless assault, producing adrenaline each time you attack!",
+                    ChatMessageType.Broadcast
+                )
+            );
+
+            PlayParticleEffect(PlayScript.RegenUpYellow, Guid, AdrenalineMeter);
+
+            return false;
+        }
+
+        if (FuryEnrageIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Relentless while Enraged.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (RelentlessTenacityIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Relentless while Tenacious.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (RelentlessStanceIsActive && AdrenalineMeter < 0.5f)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You release your adrenaline to no effect.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.RegenDownYellow, Guid, AdrenalineMeter);
+
+            RelentlessStanceIsActive = false;
+            AdrenalineMeter = 0.0f;
+
+            return true;
+        }
+
+        RelentlessStanceIsActive = false;
+        TenacityLevel = AdrenalineMeter;
+
+        AdrenalineMeter = 0.0f;
+        LastRelentlessActivated = Time.GetUnixTime();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You convert your adrenaline into Tenacity, reducing the cost of your attacks! ({Math.Round(TenacityLevel * 100)}%)", ChatMessageType.Broadcast)
+        );
+
+        PlayParticleEffect(PlayScript.EnchantUpOrange, Guid, TenacityLevel);
+
+        return true;
+    }
+
+    public bool TryUseMultishot(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Multishot))
+        {
+            return false;
+        }
+
+        if (MultiShotIsActive)
+        {
+            return false;
+        }
+
+        LastMultishotActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.EnchantUpYellow, Guid);
+
+        return true;
+    }
+
+    public bool TryUseSteadyShot(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.SteadyShot))
+        {
+            return false;
+        }
+
+        if (SteadyShotIsActive)
+        {
+            return false;
+        }
+
+        LastSteadyShotActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.SkillUpYellow, Guid);
+
+        return true;
+    }
+
+    public bool TryUseBackstab(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Backstab))
+        {
+            return false;
+        }
+
+        if (BackstabIsActive)
+        {
+            return false;
+        }
+
+        LastBackstabActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.EnchantUpGreen, Guid);
+
+        return true;
+    }
+
+    public bool TryUseSmokescreen(WorldObject ability)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Smokescreen))
+        {
+            return false;
+        }
+
         var nearbyMonsters = GetNearbyMonsters(15);
 
         foreach (var target in nearbyMonsters)
@@ -158,23 +502,19 @@ partial class Player
             {
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"{target.Name} can see right through you. Your feign weakness failed.",
+                        $"{target.Name} can see right through you. Your attempt at reducing threat failed.",
                         ChatMessageType.Broadcast
                     )
                 );
                 continue;
             }
 
-            var targetTier = target.Tier ?? 1;
-            var staminaCost = -2 * Math.Clamp(targetTier, 1, 7);
-            UpdateVitalDelta(Stamina, staminaCost);
-
             target.IncreaseTargetThreatLevel(this, -100);
-            LastFocusedTaunt = Time.GetUnixTime();
+            LastSmokescreenActivated = Time.GetUnixTime();
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You successfully feign a weakness, reducing your threat level substantially with all nearby enemies. ({staminaCost} stamina)",
+                    $"You successfully reduce your threat level towards {target.Name}.",
                     ChatMessageType.Broadcast
                 )
             );
@@ -182,21 +522,38 @@ partial class Player
             PlayParticleEffect(PlayScript.VisionUpWhite, Guid);
             target.PlayParticleEffect(PlayScript.VisionDownBlack, target.Guid);
         }
+
+        return true;
     }
 
-    public double LastVanishActivated = 0;
-
-    public void TryUseVanish(WorldObject ability)
+    public bool TryUseVanish(WorldObject ability)
     {
+        if (!VerifyCombatFocus(CombatAbility.Vanish))
+        {
+            return false;
+        }
+
         if (IsStealthed)
         {
-            return;
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You cannot use Vanish while stealth.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
         }
 
         var thieverySkill = GetCreatureSkill(Skill.Thievery); // Thievery
         if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
         {
-            return;
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Vanish requires trained Thievery.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
         }
 
         // the smoke is enough to fool monsters from far away?
@@ -207,7 +564,7 @@ partial class Player
         {
             // generous bonus to skill check to start
             var skillCheck = SkillCheck.GetSkillChance(
-                GetModdedThieverySkill() + 50,
+                GetModdedThieverySkill() + 100,
                 target.GetCreatureSkill(Skill.Perception).Current
             );
 
@@ -227,6 +584,7 @@ partial class Player
             var staminaCost = -2 * Math.Clamp(targetTier, 1, 7);
             UpdateVitalDelta(Stamina, staminaCost);
         }
+
         if (success)
         {
             var smoke = WorldObjectFactory.CreateNewWorldObject(1051113);
@@ -236,15 +594,533 @@ partial class Player
             this.LastVanishActivated = Time.GetUnixTime();
             this.BeginStealth();
         }
+
+        return true;
     }
 
-    public void TryUseExposePhysicalWeakness(WorldObject ability)
+    public bool TryUseOverload(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Overload))
+        {
+            return false;
+        }
+
+        if (!OverloadStanceIsActive && !OverloadDischargeIsActive && !BatteryDischargeIsActive)
+        {
+            if (BatteryStanceIsActive)
+            {
+                var batteryItem = GetInventoryItemsOfWCID(1051132);
+                if (batteryItem.Count > 0)
+                {
+                    EnchantmentManager.StartCooldown(batteryItem[0]);
+                }
+
+                BatteryStanceIsActive = false;
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"Battery is disabled.", ChatMessageType.Broadcast)
+                );
+            }
+            else
+            {
+                ManaChargeMeter = 0.0f;
+            }
+
+            OverloadStanceIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You begin to infuse your spells with extra mana, producing charge!",
+                    ChatMessageType.Broadcast
+                )
+            );
+
+            PlayParticleEffect(PlayScript.SkillUpBlue, Guid);
+
+            return false;
+        }
+
+        if (OverloadDischargeIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Overload while discharging.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (OverloadStanceIsActive && ManaChargeMeter < 0.5f)
+        {
+            OverloadStanceIsActive = false;
+            ManaChargeMeter = 0.0f;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You release your charged mana to no effect.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.SkillDownBlue, Guid);
+
+            return true;
+        }
+
+        OverloadStanceIsActive = false;
+        DischargeLevel = ManaChargeMeter;
+        ManaChargeMeter = 0.0f;
+        LastOverloadDischargeActivated = Time.GetUnixTime();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You unleash your charged mana, increasing the effectiveness of your spells by {Math.Round(DischargeLevel * 100)}%!", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.EnchantUpBlue, Guid);
+
+        return true;
+    }
+
+    public bool TryUseBattery(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Battery))
+        {
+            return false;
+        }
+
+        if (!BatteryStanceIsActive && !BatteryDischargeIsActive && !OverloadDischargeIsActive)
+        {
+            if (OverloadStanceIsActive)
+            {
+                var overloadItem = GetInventoryItemsOfWCID(1051133);
+                if (overloadItem.Count > 0)
+                {
+                    EnchantmentManager.StartCooldown(overloadItem[0]);
+                }
+
+                OverloadStanceIsActive = false;
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"Overload is disabled.", ChatMessageType.Broadcast)
+                );
+
+                PlayParticleEffect(PlayScript.SkillDownBlue, Guid);
+            }
+            else
+            {
+                ManaChargeMeter = 0.0f;
+            }
+
+            BatteryStanceIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You begin to siphon mana from your spells, producing charge!",
+                    ChatMessageType.Broadcast
+                )
+            );
+
+            PlayParticleEffect(PlayScript.SkillUpBlue, Guid);
+
+            return false;
+        }
+
+        if (OverloadDischargeIsActive || BatteryDischargeIsActive)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You cannot activate Battery while discharging.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        if (BatteryStanceIsActive && ManaChargeMeter < 0.5f)
+        {
+            BatteryStanceIsActive = false;
+            ManaChargeMeter = 0.0f;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You release your charged mana to no effect.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.SkillDownBlue, Guid);
+
+            return true;
+        }
+
+        BatteryStanceIsActive = false;
+        DischargeLevel = ManaChargeMeter;
+        ManaChargeMeter = 0.0f;
+        LastBatteryDischargeActivated = Time.GetUnixTime();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You unleash your charged mana, reducing the cost of your spells by {Math.Round(DischargeLevel * 100)}%!", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.EnchantUpBlue, Guid);
+
+        return true;
+    }
+
+    public bool TryUseEnchantedBlade(WorldObject ability)
+    {
+        var gemAbility = ability as Gem;
+
+        if (ability.CombatAbilityId is null)
+        {
+            _log.Error("{Ability} is missing a CombatAbilityId", ability.Name);
+
+            if (gemAbility != null)
+            {
+                gemAbility.CombatAbilitySuccess = false;
+            }
+
+            return false;
+        }
+
+        var equippedFocus = GetEquippedCombatFocus();
+        if (equippedFocus is not { CombatFocusType: (int)CombatFocusType.Spellsword })
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} can only be used while a Spellsword Focus is equipped.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        var equippedMeleeWeapon = GetEquippedMeleeWeapon();
+        if (equippedMeleeWeapon is null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} can only be used while a melee weapon is equipped.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        if ((CombatAbility)ability.CombatAbilityId
+            is CombatAbility.EnchantedBladeArc
+            or CombatAbility.EnchantedBladeVolley
+            or CombatAbility.EnchantedBladeBlast
+            && GetCreatureSkill(Skill.WarMagic).AdvancementClass < SkillAdvancementClass.Trained)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} requires trained war magic.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        if ((CombatAbility)ability.CombatAbilityId
+            is CombatAbility.EnchantedBladeDrainLife
+            or CombatAbility.EnchantedBladeDrainStamina
+            or CombatAbility.EnchantedBladeDrainMana
+            && GetCreatureSkill(Skill.LifeMagic).AdvancementClass < SkillAdvancementClass.Trained)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} requires trained life magic.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        var weaponDamageType = equippedMeleeWeapon.W_DamageType;
+        if (weaponDamageType is DamageType.SlashPierce)
+        {
+            weaponDamageType = SlashThrustToggle ? DamageType.Pierce : DamageType.Slash;
+        }
+
+        var baseSpell = (CombatAbility)ability.CombatAbilityId switch
+        {
+            CombatAbility.EnchantedBladeArc => GetLevelOneArcOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeBlast => GetLevelOneBlastOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeVolley => GetLevelOneVolleyOfDamageType(weaponDamageType),
+            CombatAbility.EnchantedBladeDrainLife => new Spell(SpellId.DrainHealth1),
+            CombatAbility.EnchantedBladeDrainStamina => new Spell(SpellId.DrainStamina1),
+            CombatAbility.EnchantedBladeDrainMana => new Spell(SpellId.DrainMana1),
+            _ => null
+        };
+
+        if (baseSpell is null)
+        {
+            _log.Error("TryUseEnchantedBlade() - baseSpell is null");
+            return false;
+        }
+
+        var weaponSpellcraft = equippedMeleeWeapon.ItemSpellcraft;
+
+        if (weaponSpellcraft is null)
+        {
+            _log.Error("TryUseEnchantedBlade() - {Weapon} does not have spellcraft", equippedMeleeWeapon.Name);
+            return false;
+        }
+
+        var magicSkill = baseSpell.School is MagicSchool.WarMagic ? GetModdedWarMagicSkill() : GetModdedLifeMagicSkill();
+        var averagedMagicSkill = (uint)((magicSkill + weaponSpellcraft) * 0.5);
+        var highestMagicSkill = Math.Max(averagedMagicSkill, (int)weaponSpellcraft);
+
+        var roll = Convert.ToInt32(ThreadSafeRandom.Next(highestMagicSkill * 0.5f, magicSkill));
+        int[] diff = [50, 100, 200, 300, 350, 400, 450];
+        var closest = diff.MinBy(x => Math.Abs(x - roll));
+        var level = Array.IndexOf(diff, closest);
+
+        var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
+
+        EnchantedWeaponStoredSpell = new Spell(finalSpellId);
+
+        var manaCost = (int)EnchantedWeaponStoredSpell.BaseMana * 2;
+        if (Mana.Current < manaCost)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        UpdateVitalDelta(Mana, -manaCost);
+
+        var particalIntensity = Math.Clamp((level - 1) * (1.0f / 6.0f), 0.0f, 1.0f);
+        //var playScript = GetPlayScriptColor(weaponDamageType);
+
+        PlayParticleEffect(PlayScript.EnchantUpPurple, Guid, particalIntensity);
+
+        return true;
+    }
+
+    private PlayScript GetPlayScriptColor(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => PlayScript.EnchantUpOrange,
+            DamageType.Pierce => PlayScript.EnchantUpYellow,
+            DamageType.Bludgeon => PlayScript.EnchantUpWhite,
+            DamageType.Cold => PlayScript.EnchantUpBlue,
+            DamageType.Fire => PlayScript.EnchantUpRed,
+            DamageType.Acid => PlayScript.EnchantUpGreen,
+            DamageType.Electric => PlayScript.EnchantUpPurple,
+            _ => PlayScript.EnchantUpGrey
+        };
+    }
+
+    private Spell GetLevelOneArcOfDamageType(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeArc1),
+            DamageType.Pierce => new Spell(SpellId.ForceArc1),
+            DamageType.Bludgeon => new Spell(SpellId.ShockArc1),
+            DamageType.Cold => new Spell(SpellId.FrostArc1),
+            DamageType.Fire => new Spell(SpellId.FlameArc1),
+            DamageType.Acid => new Spell(SpellId.AcidArc1),
+            DamageType.Electric => new Spell(SpellId.LightningArc1),
+            _ => null
+        };
+    }
+
+    private Spell GetLevelOneBlastOfDamageType(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeBlast1),
+            DamageType.Pierce => new Spell(SpellId.ForceBlast1),
+            DamageType.Bludgeon => new Spell(SpellId.ShockBlast1),
+            DamageType.Cold => new Spell(SpellId.FrostBlast1),
+            DamageType.Fire => new Spell(SpellId.FlameBlast1),
+            DamageType.Acid => new Spell(SpellId.AcidBlast1),
+            DamageType.Electric => new Spell(SpellId.LightningBlast1),
+            _ => null
+        };
+    }
+
+    private Spell GetLevelOneVolleyOfDamageType(DamageType weaponDamageType)
+    {
+        return weaponDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeVolley1),
+            DamageType.Pierce => new Spell(SpellId.ForceVolley1),
+            DamageType.Bludgeon => new Spell(SpellId.BludgeoningVolley1),
+            DamageType.Cold => new Spell(SpellId.FrostVolley1),
+            DamageType.Fire => new Spell(SpellId.FlameVolley1),
+            DamageType.Acid => new Spell(SpellId.AcidVolley1),
+            DamageType.Electric => new Spell(SpellId.LightningVolley1),
+            _ => null
+        };
+    }
+
+    public bool TryUseReflect(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Reflect))
+        {
+            return false;
+        }
+
+        if (ReflectIsActive)
+        {
+            return false;
+        }
+
+        LastReflectActivated = Time.GetUnixTime();
+
+        PlayParticleEffect(PlayScript.SkillUpPurple, Guid);
+
+        return true;
+    }
+
+    public bool TryUseAegis(Gem gem)
+    {
+        if (!VerifyCombatFocus(CombatAbility.Aegis))
+        {
+            return false;
+        }
+
+        if (AegisIsActive)
+        {
+            return false;
+        }
+
+        var baseSpell = LastHitReceivedDamageType switch
+        {
+            DamageType.Slash => new Spell(SpellId.BladeProtectionSelf1),
+            DamageType.Pierce => new Spell(SpellId.PiercingProtectionSelf1),
+            DamageType.Bludgeon => new Spell(SpellId.BludgeonProtectionSelf1),
+            DamageType.Cold => new Spell(SpellId.ColdProtectionSelf1),
+            DamageType.Fire => new Spell(SpellId.FireProtectionSelf1),
+            DamageType.Acid => new Spell(SpellId.AcidProtectionSelf1),
+            DamageType.Electric => new Spell(SpellId.LightningProtectionSelf1),
+            _ => null
+        };
+
+        if (baseSpell is null)
+        {
+            _log.Error("TryUseAegis() - baseSpell is null");
+            return false;
+        }
+
+        var equippedWeapon = GetEquippedWeapon();
+        if (equippedWeapon is null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Aegis can only be used while a weapon is equipped.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        var weaponSpellcraft = equippedWeapon.ItemSpellcraft;
+        if (weaponSpellcraft is null)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"Aegis can only be used if with a weapon that has spellcraft.",
+                    ChatMessageType.Broadcast
+                )
+            );
+
+            _log.Error("TryUseAegis() - {Weapon} does not have spellcraft", equippedWeapon.Name);
+            return false;
+        }
+
+        var lifeSkill = GetModdedLifeMagicSkill();
+        var averagedMagicSkill = (uint)((lifeSkill + weaponSpellcraft) * 0.5);
+        var highestMagicSkill = Math.Max(averagedMagicSkill, (int)weaponSpellcraft);
+
+        var roll = Convert.ToInt32(ThreadSafeRandom.Next(highestMagicSkill * 0.5f, lifeSkill));
+        int[] diff = [50, 100, 200, 300, 350, 400, 450];
+        var closest = diff.MinBy(x => Math.Abs(x - roll));
+        var level = Array.IndexOf(diff, closest);
+
+        var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
+
+        var manaCost = (int)(new Spell(finalSpellId).BaseMana * 2);
+        if (Mana.Current < manaCost)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
+            );
+            return false;
+        }
+
+        UpdateVitalDelta(Mana, -manaCost);
+        TryCastSpell(new Spell(finalSpellId), this);
+
+        LastAegisActivated = Time.GetUnixTime();
+
+        return true;
+    }
+
+    public bool TryUseManaBarrier()
+    {
+        if (!VerifyCombatFocus(CombatAbility.ManaBarrier))
+        {
+            return false;
+        }
+
+        if (!ManaBarrierIsActive)
+        {
+            ManaBarrierIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You draw on your stored mana to form an enchanted shield around yourself!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.ShieldUpBlue, Guid);
+
+            return false;
+        }
+
+        ManaBarrierIsActive = false;
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.DispelLife, Guid);
+
+        return true;
+    }
+
+    public bool TryUseEvasiveStance()
+    {
+        if (!VerifyCombatFocus(CombatAbility.EvasiveStance))
+        {
+            return false;
+        }
+
+        if (!EvasiveStanceIsActive)
+        {
+            EvasiveStanceIsActive = true;
+
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You move into an evasive stance!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            PlayParticleEffect(PlayScript.ShieldUpYellow, Guid);
+
+            return false;
+        }
+
+        EvasiveStanceIsActive = false;
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
+        );
+        PlayParticleEffect(PlayScript.DispelLife, Guid);
+
+        return true;
+    }
+
+    public bool TryUseExposePhysicalWeakness(WorldObject ability)
     {
         var target = LastAttackedCreature;
 
         if (this == target || target.IsDead)
         {
-            return;
+            return false;
         }
 
         var targetAsPlayer = target as Player;
@@ -278,7 +1154,7 @@ partial class Player
                     )
                 );
             }
-            return;
+            return false;
         }
 
         Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.Perception), targetDeceptionSkill);
@@ -288,7 +1164,7 @@ partial class Player
 
         if (vulnerabilitySpellLevels.Count == 0 || imperilSpellLevels.Count == 0)
         {
-            return;
+            return false;
         }
 
         var overRoll = roll - avoidChance;
@@ -371,16 +1247,18 @@ partial class Player
         {
             CheckForSigilTrinketOnCastEffects(target, vulnerabilitySpell, false, Skill.Perception, (int)SigilTrinketPerceptionEffect.Exposure);
         }
+
+        return true;
     }
 
-    public void TryUseExposeMagicalWeakness(WorldObject ability)
+    public bool TryUseExposeMagicalWeakness(WorldObject ability)
     {
         {
             var target = LastAttackedCreature;
 
             if (this == target || target.IsDead)
             {
-                return;
+                return false;
             }
 
             var targetAsPlayer = target as Player;
@@ -414,7 +1292,7 @@ partial class Player
                         )
                     );
                 }
-                return;
+                return false;
             }
 
             Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.Perception), targetDeceptionSkill);
@@ -424,7 +1302,7 @@ partial class Player
 
             if (magicYieldSpellLevels.Count == 0 || succumbSpellLevels.Count == 0)
             {
-                return;
+                return false;
             }
 
             var overRoll = roll - avoidChance;
@@ -508,329 +1386,365 @@ partial class Player
                 CheckForSigilTrinketOnCastEffects(target, magicYieldSpell, false, Skill.Perception, (int)SigilTrinketPerceptionEffect.Exposure);
             }
         }
+
+        return true;
     }
 
-    public void TryUseActivated(WorldObject ability)
+    public void TryUseShroud()
     {
-        switch (EquippedCombatAbility)
+        if (EnchantmentManager.HasSpell(5379))
         {
-            case CombatAbility.Provoke:
-                LastProvokeActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.SkillUpRed, this.Guid);
+            if (IsBusy)
+            {
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"Give them cause for provocation! For the next ten seconds, your damage is increased by an additional 20% and your threat generation by an additional 50%.",
+                        $"You cannot dispel the Shroud while performing other actions.",
                         ChatMessageType.Broadcast
                     )
                 );
-                break;
+                return;
+            }
 
+            if (Teleporting)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You cannot dispel the Shroud while teleporting.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+
+            if (LastSuccessCast_Time > Time.GetUnixTime() - 5.0)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You cannot dispel the Shroud if you have recently cast a spell.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+            if (CurrentLandblock != null && CurrentLandblock.IsDungeon)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You cannot dispel the Shroud while inside a dungeon.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+
+            if (Fellowship != null)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You must leave your Fellowship before you can dispel the Shroud.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
+
+            var enchantment = EnchantmentManager.GetEnchantment(5379);
+            if (enchantment != null)
+            {
+                EnchantmentManager.Dispel(enchantment);
+                HandleSpellHooks(new Spell(5379));
+                PlayParticleEffect(PlayScript.DispelCreature, Guid);
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You dispel the Shroud, and your innate strength returns.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+            }
+        }
+        else
+        {
+            var spell = new Spell(5379);
+            var addResult = EnchantmentManager.Add(spell, null, null, true);
+            Session.Network.EnqueueSend(
+                new GameEventMagicUpdateEnchantment(
+                    Session,
+                    new Enchantment(this, addResult.Enchantment)
+                )
+            );
+            HandleSpellHooks(spell);
+            PlayParticleEffect(PlayScript.SkillDownVoid, Guid);
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You activate the crystal, shrouding yourself and reducing your innate power.",
+                    ChatMessageType.Broadcast
+                )
+            );
+        }
+    }
+
+    private bool VerifyCombatFocus(CombatAbility combatAbility)
+    {
+        switch (combatAbility)
+        {
             case CombatAbility.Phalanx:
-                LastPhalanxActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.ShieldUpGrey, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"Raise your shield! For the next ten seconds, your chance to block is increased, and applies to attacks from any angle.",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Fury:
-                RecklessActivated = true;
-                LastRecklessActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantUpRed, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You pour your rage into a mighty blow! The first attack you make within the next ten seconds will have increased damage and exhaust all of your Fury!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Parry:
-                LastParryActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.SkillUpYellow, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"En garde! For the next ten seconds, you will riposte any attack you parry, damaging your foe!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Backstab:
-                LastBackstabActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantDownGrey, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You set aside what little mercy you possess. For the next ten seconds, your attacks from behind are utterly ruthless, and cannot be evaded!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.SteadyShot:
-                LastSteadyShotActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.VisionUpWhite, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"For the next ten seconds, you summon all your powers of concentration, firing missiles of spectacular accuracy and damage!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Multishot:
-                LastMultishotActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantUpYellow, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"For the next ten seconds, you nock a third arrow, quarrel or dart, hitting an additional target!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Smokescreen:
-                LastSmokescreenActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.SkillDownBlack, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"For the next ten seconds, you shroud yourself in darkness, increasing your chance to evade by an additional 30%!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.IronFist:
-                LastIronFistActivated = Time.GetUnixTime();
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"For the next ten seconds, you focus your strikes on your enemy's most vital points, increasing your critical chance by an additional 15%!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Overload:
-                OverloadActivated = true;
-                LastOverloadActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantUpBlue, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You channel your accumulated energies! The first spell you cast within the next ten seconds will have increased potency and discharge all of your Overload!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Battery:
-                LastBatteryActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.RegenUpBlue, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You summon an untapped reserve of willpower! For the next ten seconds, your spells are free to cast and suffer no effectiveness penalty!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.Reflect:
-                LastReflectActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.SkillUpBlue, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You harden your resolve to repel malign sorceries! For the next ten seconds, your chance to resist spells is increased by an additional 30%!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            case CombatAbility.EnchantedWeapon:
-                LastEnchantedWeaponActivated = Time.GetUnixTime();
-                PlayParticleEffect(PlayScript.EnchantUpPurple, this.Guid);
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You touch a rune carved into your weapon! For the next ten seconds, your proc spells are 25% more effective!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-
-            default:
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"You must equip an upgraded Combat Focus to activate an ability!",
-                        ChatMessageType.Broadcast
-                    )
-                );
-                break;
-        }
-    }
-
-    public static int HandleRecklessStamps(Player playerAttacker)
-    {
-        var scaledStamps = Math.Round(playerAttacker.ScaleWithPowerAccuracyBar(20f));
-
-        scaledStamps += 20f;
-
-        var numStrikes = playerAttacker.GetNumStrikes(playerAttacker.AttackType);
-        if (numStrikes == 2)
-        {
-            if (playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded)
-            {
-                scaledStamps /= 2f;
-            }
-            else
-            {
-                scaledStamps /= 1.5f;
-            }
-        }
-
-        if (
-            playerAttacker.AttackType == AttackType.OffhandPunch
-            || playerAttacker.AttackType == AttackType.Punch
-            || playerAttacker.AttackType == AttackType.Punches
-        )
-        {
-            scaledStamps /= 1.25f;
-        }
-
-        if (!playerAttacker.QuestManager.HasQuest($"{playerAttacker.Name},Reckless"))
-        {
-            playerAttacker.QuestManager.Stamp($"{playerAttacker.Name},Reckless");
-            playerAttacker.QuestManager.Increment($"{playerAttacker.Name},Reckless", (int)scaledStamps);
-        }
-        else if (playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless") < 500)
-        {
-            playerAttacker.QuestManager.Increment($"{playerAttacker.Name},Reckless", (int)scaledStamps);
-        }
-
-        var stacks = playerAttacker.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Reckless");
-
-        return stacks;
-    }
-
-    public static int HandleOverloadStamps(Player sourcePlayer, int? spellTypeScaler, uint spellLevel)
-    {
-        var baseStamps = 50;
-        var playerLevel = (int)(sourcePlayer.Level / 10);
-
-        if (playerLevel > 7)
-        {
-            playerLevel = 7;
-        }
-
-        if (spellLevel == 1)
-        {
-            if (playerLevel > 2)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 2)
-        {
-            baseStamps = (int)(baseStamps * 1.5);
-
-            if (playerLevel > 3)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 3)
-        {
-            baseStamps = (int)(baseStamps * 2);
-
-            if (playerLevel > 4)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 4)
-        {
-            baseStamps = (int)(baseStamps * 2.25);
-
-            if (playerLevel > 5)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 5)
-        {
-            baseStamps = (int)(baseStamps * 2.5);
-
-            if (playerLevel > 6)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 6)
-        {
-            baseStamps = (int)(baseStamps * 2.5);
-
-            if (playerLevel > 7)
-            {
-                baseStamps /= playerLevel;
-            }
-        }
-        if (spellLevel == 7)
-        {
-            baseStamps = (int)(baseStamps * 2.5);
-        }
-
-        if (spellTypeScaler != null)
-        {
-            baseStamps = baseStamps / (int)spellTypeScaler;
-        }
-
-        if (!sourcePlayer.QuestManager.HasQuest($"{sourcePlayer.Name},Overload"))
-        {
-            sourcePlayer.QuestManager.Stamp($"{sourcePlayer.Name},Overload");
-            sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Overload", (int)baseStamps);
-        }
-        else if (sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload") < 500)
-        {
-            sourcePlayer.QuestManager.Increment($"{sourcePlayer.Name},Overload", (int)baseStamps);
-        }
-
-        var stacks = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload");
-        if (stacks > 250)
-        {
-            var overloadChance = 0.075f * (stacks - 250) / 250;
-            if (overloadChance > ThreadSafeRandom.Next(0f, 1f))
-            {
-                var damage = sourcePlayer.Health.MaxValue / 10;
-                sourcePlayer.UpdateVitalDelta(sourcePlayer.Health, -(int)damage);
-                sourcePlayer.Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"Overloaded! You lose control of the energies flowing through you, suffering {damage} points of damage!",
-                        ChatMessageType.Magic
-                    )
-                );
-                sourcePlayer.PlayParticleEffect(PlayScript.Fizzle, sourcePlayer.Guid);
-                sourcePlayer.DamageHistory.Add(sourcePlayer, DamageType.Health, (uint)-damage);
-                if (sourcePlayer.IsDead)
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Warrior})
                 {
-                    var lastDamager = sourcePlayer.DamageHistory.LastDamager;
-                    sourcePlayer.OnDeath(lastDamager, DamageType.Health, false);
-                    sourcePlayer.Die();
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Provoke can only be used with a Warrior Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
                 }
-            }
+                break;
+            case CombatAbility.Provoke:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Warrior
+                        or (int)CombatFocusType.Spellsword
+                        or (int)CombatFocusType.Blademaster})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Provoke can only be used with a Warrior Focus, Blademaster Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Parry:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Warrior
+                        or (int)CombatFocusType.Spellsword
+                        or (int)CombatFocusType.Blademaster})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Parry can only be used with a Warrior Focus, Blademaster Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.WeaponMaster:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Blademaster})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Weapon Master can only be used with a Blademaster Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Fury:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Blademaster
+                        or (int)CombatFocusType.Warrior
+                        or (int)CombatFocusType.Archer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Fury can only be used with a Blademaster Focus, Warrior Focus, or Archer Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Relentless:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Blademaster
+                        or (int)CombatFocusType.Warrior
+                        or (int)CombatFocusType.Archer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Relentless can only be used with a Blademaster Focus, Warrior Focus, or Archer Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Multishot:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Archer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Multishot can only be used with an Archer Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.SteadyShot:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Archer
+                        or (int)CombatFocusType.Blademaster
+                        or (int)CombatFocusType.Vagabond})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Steady Shot can only be used with an Archer Focus, Blademaster Focus, or Vagabond Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.ManaBarrier:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Sorcerer
+                        or (int)CombatFocusType.Vagabond
+                        or (int)CombatFocusType.Spellsword})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Mana Barrier can only be used with a Sorcerer Focus, Vagabond Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.EvasiveStance:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Blademaster
+                        or (int)CombatFocusType.Archer
+                        or (int)CombatFocusType.Vagabond})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Mana Barrier can only be used with a Sorcerer Focus, Vagabond Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Smokescreen:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Vagabond
+                        or (int)CombatFocusType.Archer
+                        or (int)CombatFocusType.Sorcerer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Smokescreen can only be used with a Vagabond Focus, Archer Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Backstab:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Vagabond
+                        or (int)CombatFocusType.Archer
+                        or (int)CombatFocusType.Sorcerer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Backstab can only be used with a Vagabond Focus, Archer Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Overload:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Sorcerer})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Overload can only be used with a Sorcerer Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Battery:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Sorcerer
+                        or (int)CombatFocusType.Vagabond
+                        or (int)CombatFocusType.Spellsword})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Battery can only be used with a Sorcerer Focus, Vagabond Focus, or Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.EnchantedBladeArc:
+            case CombatAbility.EnchantedBladeBlast:
+            case CombatAbility.EnchantedBladeVolley:
+            case CombatAbility.EnchantedBladeDrainLife:
+            case CombatAbility.EnchantedBladeDrainStamina:
+            case CombatAbility.EnchantedBladeDrainMana:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Spellsword})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Enchanted Blade can only be used with a Spellsword Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Aegis:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Spellsword
+                        or (int)CombatFocusType.Sorcerer
+                        or (int)CombatFocusType.Warrior})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Aegis can only be used with a Spellsword Focus, Sorcerer Focus, or Warrior Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Reflect:
+                if (GetEquippedCombatFocus() is not {CombatFocusType:
+                        (int)CombatFocusType.Spellsword
+                        or (int)CombatFocusType.Sorcerer
+                        or (int)CombatFocusType.Warrior})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Reflect can only be used with a Spellsword Focus, Sorcerer Focus, or Warrior Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
         }
 
-        // Max Stacks = 500, so a percentage is stacks / 5
-        var overloadPercent = sourcePlayer.QuestManager.GetCurrentSolves($"{sourcePlayer.Name},Overload") / 5;
-        if (overloadPercent > 100)
+        return true;
+    }
+
+    public void IncreaseChargedMeter(Spell spell)
+    {
+        var animationLength = WeaponAnimationLength.GetSpellCastAnimationLength(ProjectileSpellType.Arc, spell.Level);
+
+        ManaChargeMeter += 0.05f * animationLength;
+        if (ManaChargeMeter > 1.0f)
         {
-            overloadPercent = 100;
+            ManaChargeMeter = 1.0f;
         }
-
-        if (overloadPercent < 0)
-        {
-            overloadPercent = 0;
-        }
-
-        return overloadPercent;
     }
 }

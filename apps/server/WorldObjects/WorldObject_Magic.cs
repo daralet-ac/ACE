@@ -23,7 +23,6 @@ using ACE.Server.Network.Structure;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Extensions;
 using ACE.Server.WorldObjects.Managers;
-using Time = ACE.Common.Time;
 
 namespace ACE.Server.WorldObjects;
 
@@ -43,7 +42,8 @@ partial class WorldObject
         bool isWeaponSpell = false,
         bool fromProc = false,
         bool tryResist = true,
-        bool showMsg = true
+        bool showMsg = true,
+        int? weaponSpellcraft = null
     )
     {
         // TODO: look into further normalizing this / caster / weapon
@@ -72,12 +72,12 @@ partial class WorldObject
 
             foreach (var fellow in fellows.Values)
             {
-                TryCastSpell_Inner(spell, fellow, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg);
+                TryCastSpell_Inner(spell, fellow, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg, weaponSpellcraft);
             }
         }
         else
         {
-            TryCastSpell_Inner(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg);
+            TryCastSpell_Inner(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg, weaponSpellcraft);
         }
     }
 
@@ -89,7 +89,8 @@ partial class WorldObject
         bool isWeaponSpell = false,
         bool fromProc = false,
         bool tryResist = true,
-        bool showMsg = true
+        bool showMsg = true,
+        int? weaponSpellcraft = null
     )
     {
         // verify before resist, still consumes source item
@@ -99,13 +100,13 @@ partial class WorldObject
         }
 
         // perform resistance check, if applicable
-        if (tryResist && TryResistSpell(target, spell, out _, itemCaster))
+        if (tryResist && TryResistSpell(target, spell, out _, itemCaster, false, weaponSpellcraft))
         {
             return;
         }
 
         // if not resisted, cast spell
-        HandleCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, false, showMsg);
+        HandleCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, false, showMsg, false, weaponSpellcraft);
     }
 
     /// <summary>
@@ -150,28 +151,48 @@ partial class WorldObject
         uint casterMagicSkill,
         uint targetMagicDefenseSkill,
         out PartialEvasion partialResist,
-        out float resistChance
+        out float resistChance,
+        Player targetPlayer
     )
     {
         // uses regular 0.03 factor, and not magic casting 0.07 factor
         var chance = (1.0 - SkillCheck.GetSkillChance((int)casterMagicSkill, (int)targetMagicDefenseSkill));
         resistChance = (float)chance;
-        var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-        if (rng < chance)
+        var resistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+        if (targetPlayer is { EvasiveStanceIsActive: true })
         {
-            var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-            // resist all = 25%, resist some = 50%, no resist = 25%
-            const float resistAllChance = 0.25f;
-            const float resistSome = 0.75f;
-
-            switch (roll)
+            var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+            if (luckyRoll < resistRoll)
             {
-                case < resistAllChance:
+                resistRoll = luckyRoll;
+            }
+        }
+
+        if (resistRoll < chance)
+        {
+            var partialResistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+
+            if (targetPlayer is { EvasiveStanceIsActive: true })
+            {
+                var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
+                if (luckyRoll < partialResistRoll)
+                {
+                    partialResistRoll = luckyRoll;
+                }
+            }
+
+            // Roll resist type (33% for each resist type)
+            const float fullResistChance = 1.0f / 3.0f;
+            const float partialResistChance = fullResistChance * 2;
+
+            switch (partialResistRoll)
+            {
+                case < fullResistChance:
                     partialResist = PartialEvasion.All;
                     return true;
-                case < resistSome:
+                case < partialResistChance:
                     partialResist = PartialEvasion.Some;
                     return false;
             }
@@ -190,7 +211,8 @@ partial class WorldObject
         Spell spell,
         out PartialEvasion partialResist,
         WorldObject itemCaster = null,
-        bool projectileHit = false
+        bool projectileHit = false,
+        int? weaponSpellcraft = null
     )
     {
         partialResist = PartialEvasion.None;
@@ -226,6 +248,8 @@ partial class WorldObject
         var caster = itemCaster ?? this;
 
         var casterCreature = caster as Creature;
+        var player = this as Player;
+        var targetPlayer = target as Player;
 
         if (casterCreature != null)
         {
@@ -243,6 +267,17 @@ partial class WorldObject
             // Retrieve caster's secondary attribute mod (1% per 20 attributes)
             var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
 
+            // if enchanted blade spell, average caster's skill with the weapon's spellcraft
+            if (weaponSpellcraft is not null)
+            {
+                magicSkill = (uint)((magicSkill + weaponSpellcraft) * 0.5);
+            }
+
+            if (player is {OverloadDischargeIsActive: true})
+            {
+                magicSkill *= (uint)(player.ManaChargeMeter + 1.0f);
+            }
+
             magicSkill = (uint)(magicSkill * secondaryAttributeMod * LevelScaling.GetPlayerAttackSkillScalar(casterCreature, target as Creature));
         }
         else if (caster.ItemSpellcraft != null)
@@ -259,7 +294,6 @@ partial class WorldObject
                         : wielder.GetModdedLifeMagicSkill();
 
                 spellcraft = CheckForArcaneLoreSpecSpellcraftBonus(wielder, spellcraft);
-                spellcraft = Convert.ToUInt32(spellcraft * CheckForCombatAbilityEnchantSpellcraftBonus(wielder));
 
                 magicSkill = (uint)((spellcraft + casterMagicSkill) * 0.5);
             }
@@ -279,13 +313,10 @@ partial class WorldObject
         // Retrieve target's Magic Defense Skill
         var difficulty = (uint)(targetCreature.GetModdedMagicDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(targetCreature, casterCreature));
 
-        var player = this as Player;
-        var targetPlayer = target as Player;
-
         difficulty = Convert.ToUInt32(difficulty * (1.0f + CheckForCombatAbilityReflectMagicDefBonus(targetPlayer)));
         difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, "Familiarity")));
 
-        var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance);
+        var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, targetPlayer);
 
         partialResist = pResist;
 
@@ -300,20 +331,6 @@ partial class WorldObject
             {
                 targetPlayer.HandleLifestoneProtection();
                 resisted = true;
-            }
-        }
-
-        // Overload Discharge is unresistable
-        if (player != null)
-        {
-            if (
-                player.EquippedCombatAbility == CombatAbility.Overload
-                && player.OverloadActivated
-                && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration
-            )
-            {
-                resisted = false;
-                partialResist = PartialEvasion.None;
             }
         }
 
@@ -411,45 +428,11 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Reflect: Gain 20% increased magic defense while attempting to resist a spell
+    /// COMBAT ABILITY - Reflect: Gain 50% increased magic defense while attempting to resist a spell
     /// </summary>
     private static float CheckForCombatAbilityReflectMagicDefBonus(Player targetPlayer)
     {
-        var mod = 0.0f;
-
-        if (targetPlayer == null)
-        {
-            return mod;
-        }
-
-        if (targetPlayer.EquippedCombatAbility != CombatAbility.Reflect)
-        {
-            return mod;
-        }
-
-        mod = 0.25f;
-
-        if (targetPlayer.LastReflectActivated > Time.GetUnixTime() - targetPlayer.ReflectActivatedDuration)
-        {
-            mod = 0.5f;
-        }
-
-        return mod;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Enchant:Effective spellcraft increased by 25%
-    /// </summary>
-    private static float CheckForCombatAbilityEnchantSpellcraftBonus(Creature wielder)
-    {
-        var combatAbility = CombatAbility.None;
-        var combatFocus = wielder.GetEquippedCombatFocus();
-        if (combatFocus != null)
-        {
-            combatAbility = combatFocus.GetCombatAbility();
-        }
-
-        return combatAbility == CombatAbility.EnchantedWeapon ? 1.25f : 1.0f;
+        return targetPlayer is { ReflectIsActive: true } ? 0.5f : 0.0f;
     }
 
     /// <summary>
@@ -523,7 +506,8 @@ partial class WorldObject
         bool fromProc = false,
         bool equip = false,
         bool showMsg = true,
-        bool sigilTrinketSpell = false
+        bool sigilTrinketSpell = false,
+        int? weaponSpellcraft = null
     )
     {
         _isSigilTrinketSpell = sigilTrinketSpell;
@@ -618,7 +602,7 @@ partial class WorldObject
             case SpellType.LifeProjectile:
             case SpellType.EnchantmentProjectile:
 
-                HandleCastSpell_Projectile(spell, targetCreature, itemCaster, weapon, isWeaponSpell, fromProc);
+                HandleCastSpell_Projectile(spell, targetCreature, itemCaster, weapon, isWeaponSpell, fromProc, weaponSpellcraft);
                 break;
 
             case SpellType.PortalLink:
@@ -974,23 +958,10 @@ partial class WorldObject
             }
         }
 
-        var overload = false;
-        var overloadPercent = 0;
+        var overloadMod = CheckForCombatAbilityOverloadDamageBonus(player);
+        var batterMod = CheckForCombatAbilityBatteryDamagePenalty(player);
 
-        if (player != null)
-        {
-            var combatAbility = CombatAbility.None;
-            var combatFocus = player.GetEquippedCombatFocus();
-            if (combatFocus != null)
-            {
-                combatAbility = combatFocus.GetCombatAbility();
-            }
-
-            overload = CheckForCombatAbilityOverloadBoostBonus(spell, combatAbility, player, ref overloadPercent, ref tryBoost);
-
-            tryBoost = CheckForCombatAbilityBatteryBoostPenalty(combatAbility, player, tryBoost);
-            tryBoost = CheckForCombatAbilityEnchantBoostBonus(combatAbility, player, tryBoost);
-        }
+        tryBoost = (int)(tryBoost * overloadMod * batterMod);
 
         string srcVital;
 
@@ -1061,11 +1032,21 @@ partial class WorldObject
                 {
                     targetCreature.DamageHistory.OnHeal((uint)boost);
                     GenerateSupportSpellThreat(spell, targetCreature, boost);
+
+                    if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true} && boost > 0)
+                    {
+                        player.IncreaseChargedMeter(spell);
+                    }
                 }
                 else if (creature is { IsMonster: false } && targetCreature.IsMonster)
                 {
                     targetCreature.DamageHistory.Add(this, DamageType.Health, (uint)-boost);
                     targetCreature.IncreaseTargetThreatLevel(player, boost);
+
+                    if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true} && boost < 0)
+                    {
+                        player.IncreaseChargedMeter(spell);
+                    }
                 }
                 break;
         }
@@ -1078,29 +1059,33 @@ partial class WorldObject
         if (player != null)
         {
             string casterMessage;
-            var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
-            if (player.OverloadDumped == true)
+
+            var chargedPercent = Math.Round(player.ManaChargeMeter * 100);
+            var chargedMsg = player is {OverloadStanceIsActive: true} or {BatteryStanceIsActive: true} ? $"{chargedPercent}% Charged! " : "";
+
+            chargedMsg = player switch
             {
-                player.OverloadDumped = false;
-                overloadMsg = "Overload Discharged! ";
-            }
+                { OverloadDischargeIsActive: true } => "Overload Discharge! ",
+                { BatteryDischargeIsActive: true } => "Battery Discharge! ",
+                _ => chargedMsg
+            };
 
             if (player != targetCreature)
             {
                 if (spell.IsBeneficial)
                 {
-                    casterMessage = $"{overloadMsg}{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
+                    casterMessage = $"{chargedMsg}{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
                 }
                 else
                 {
-                    casterMessage = $"{overloadMsg}{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
+                    casterMessage = $"{chargedMsg}{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
                 }
             }
             else
             {
                 var verb = spell.IsBeneficial ? "restore" : "drain";
 
-                casterMessage = $"{overloadMsg}{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
+                casterMessage = $"{chargedMsg}{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
             }
 
             if (showMsg)
@@ -1269,102 +1254,24 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Enchant: Increased effectiveness of spell by 25%, while melee/missile weapon equipped.
+    /// COMBAT ABILITY - Overload: Increased effectiveness up to 20% with Overload Charged stacks
     /// </summary>
-    private static int CheckForCombatAbilityEnchantBoostBonus(CombatAbility combatAbility, Player player, int tryBoost)
+    private static float CheckForCombatAbilityOverloadDamageBonus(Player player)
     {
-        if (combatAbility != CombatAbility.EnchantedWeapon || !(player.LastEnchantedWeaponActivated > Time.GetUnixTime() - player.EnchantedWeaponActivatedDuration))
+        return player switch
         {
-            return tryBoost;
-        }
-
-        if (player.GetEquippedMeleeWeapon() != null || player.GetEquippedMissileLauncher() != null || player.GetEquippedMissileWeapon() != null)
-        {
-            tryBoost = (int)(tryBoost * 1.25f);
-        }
-
-        return tryBoost;
+            { OverloadDischargeIsActive: true } => 1.0f + player.DischargeLevel,
+            { OverloadStanceIsActive: true } => 1.0f + player.ManaChargeMeter * 0.2f,
+            _ => 1.0f
+        };
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Battery: Reduced Effectiveness below 75% mana, down to 50%, but not when Activated is up
+    /// COMBAT ABILITY - Battery: Reduced effectiveness up to 10% with Battery Charged stacks
     /// </summary>
-    private static int CheckForCombatAbilityBatteryBoostPenalty(CombatAbility combatAbility, Player player, int tryBoost)
+    private static float CheckForCombatAbilityBatteryDamagePenalty(Player player)
     {
-        if (combatAbility != CombatAbility.Battery || !(player.LastBatteryActivated < Time.GetUnixTime() - player.BatteryActivatedDuration))
-        {
-            return tryBoost;
-        }
-
-        var maxMana = (float)player.Mana.MaxValue;
-        var currentMana = (float)player.Mana.Current == 0 ? 1 : (float)player.Mana.Current;
-
-        if ((currentMana / maxMana) < 0.75)
-        {
-            var newMax = maxMana * 0.75;
-            var batteryMod = 1f - 0.25f * ((newMax - currentMana) / newMax);
-
-            tryBoost = (int)(tryBoost * batteryMod);
-        }
-
-        return tryBoost;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Overload: Increased effectiveness up to 25%+ with Overload stacks
-    /// </summary>
-    private static bool CheckForCombatAbilityOverloadBoostBonus(Spell spell, CombatAbility combatAbility,
-        Player player, ref int overloadPercent, ref int tryBoost)
-    {
-        if (combatAbility != CombatAbility.Overload)
-        {
-            return false;
-        }
-
-        if (player.OverloadActivated == false)
-        {
-            overloadPercent = Player.HandleOverloadStamps(player, null, spell.Level);
-
-            if (player.QuestManager.HasQuest($"{player.Name},Overload"))
-            {
-                var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
-                var overloadMod = 1 + (float)overloadStacks / 2000;
-
-                tryBoost = (int)(tryBoost * overloadMod);
-            }
-        }
-
-        if (player.OverloadActivated && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration)
-        {
-            player.OverloadActivated = false;
-            player.OverloadDumped = true;
-
-            if (player.QuestManager.HasQuest($"{player.Name},Overload"))
-            {
-                var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
-                var overloadMod = 1 + (float)overloadStacks / 1000;
-
-                player.QuestManager.Erase($"{player.Name},Overload");
-
-                tryBoost = (int)(tryBoost * overloadMod);
-
-            }
-        }
-
-        if (!player.OverloadActivated || !(player.LastOverloadActivated < Time.GetUnixTime() - player.OverloadActivatedDuration))
-        {
-            return true;
-        }
-
-        player.OverloadActivated = false;
-        player.OverloadDumped = false;
-
-        if (player.QuestManager.HasQuest($"{player.Name},Overload"))
-        {
-            player.QuestManager.Erase($"{player.Name},Overload");
-        }
-
-        return true;
+        return player is { BatteryStanceIsActive: true } ? 1.0f - player.ManaChargeMeter * 0.1f : 1.0f;
     }
 
     /// <summary>
@@ -1559,9 +1466,6 @@ partial class WorldObject
 
             string srcVital = null, destVital;
 
-            var overload = false;
-            var overloadPercent = 0;
-
             // Restoration Spell Mod
             if (weapon is { WeaponRestorationSpellsMod: > 1 })
             {
@@ -1573,17 +1477,10 @@ partial class WorldObject
             // COMBAT ABILITIES: Spell Effectiveness Mods
             if (player != null)
             {
-                var combatAbility = CombatAbility.None;
-                var combatFocus = player.GetEquippedCombatFocus();
-                if (combatFocus != null)
-                {
-                    combatAbility = combatFocus.GetCombatAbility();
-                }
+                var overloadMod = CheckForCombatAbilityOverloadDamageBonus(player);
+                var batterMod = CheckForCombatAbilityBatteryDamagePenalty(player);
 
-                overload = CheckForCombatAbilityOverloadVitalTransferBonus(spell, combatAbility, false, player, ref overloadPercent, ref srcVitalChange, ref destVitalChange);
-
-                destVitalChange = CheckForCombatAbilityBatteryVitalTransferPenalty(combatAbility, player, srcVitalChange, ref destVitalChange);
-                destVitalChange = CheckForCombatAbilityEnchantVitalTransferBonus(player, srcVitalChange, ref destVitalChange);
+                destVitalChange = (uint)(destVitalChange * overloadMod * batterMod);
             }
 
             // Attribute Mod
@@ -1662,19 +1559,26 @@ partial class WorldObject
             var playerSource = transferSource as Player;
             var playerDestination = destination as Player;
 
-            string sourceMsg = null,
-                targetMsg = null;
+            string sourceMsg = null, targetMsg = null;
 
-            var overloadMsg = overload ? $"{overloadPercent}% Overload! " : "";
-            if (player is { OverloadDumped: true })
+            var chargedMsg = "";
+
+            if (player is {OverloadStanceIsActive: true} or {BatteryStanceIsActive: true})
             {
-                player.OverloadDumped = false;
-                overloadMsg = "Overload Discharged! ";
+                var chargedPercent = Math.Round(player.ManaChargeMeter * 100);
+                chargedMsg = $"{chargedPercent}% Charged! ";
             }
+
+            chargedMsg = player switch
+            {
+                { OverloadDischargeIsActive: true } => "Overload Discharge! ",
+                { BatteryDischargeIsActive: true } => "Battery Discharge! ",
+                _ => chargedMsg
+            };
 
             if (playerSource != null && playerDestination != null && transferSource.Guid == destination.Guid)
             {
-                sourceMsg = $"{overloadMsg}You cast {spell.Name} on yourself and lose {srcVitalChange} points of {srcVital} and also gain {destVitalChange} points of {destVital}";
+                sourceMsg = $"{chargedMsg}You cast {spell.Name} on yourself and lose {srcVitalChange} points of {srcVital} and also gain {destVitalChange} points of {destVital}";
             }
             else
             {
@@ -1682,11 +1586,11 @@ partial class WorldObject
                 {
                     if (transferSource == this)
                     {
-                        sourceMsg = $"{overloadMsg}You lose {srcVitalChange} points of {srcVital} due to casting {spell.Name} on {targetCreature.Name}";
+                        sourceMsg = $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to casting {spell.Name} on {targetCreature.Name}";
                     }
                     else
                     {
-                        targetMsg = $"{overloadMsg}You lose {srcVitalChange} points of {srcVital} due to {caster.Name} casting {spell.Name} on you";
+                        targetMsg = $"{chargedMsg}You lose {srcVitalChange} points of {srcVital} due to {caster.Name} casting {spell.Name} on you";
                     }
 
                     if (destination != null)
@@ -1699,11 +1603,11 @@ partial class WorldObject
                 {
                     if (destination == this)
                     {
-                        sourceMsg = $"{overloadMsg}You gain {destVitalChange} points of {destVital} due to casting {spell.Name} on {targetCreature.Name}";
+                        sourceMsg = $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to casting {spell.Name} on {targetCreature.Name}";
                     }
                     else
                     {
-                        targetMsg = $"{overloadMsg}You gain {destVitalChange} points of {destVital} due to {caster.Name} casting {spell.Name} on you";
+                        targetMsg = $"{chargedMsg}You gain {destVitalChange} points of {destVital} due to {caster.Name} casting {spell.Name} on you";
                     }
                 }
             }
@@ -1746,33 +1650,11 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Enchant: 25% increase to vital transfer effectiveness if melee/missile weapon is equipped.
-    /// </summary>
-    private static uint CheckForCombatAbilityEnchantVitalTransferBonus(Player player, uint srcVitalChange,
-        ref uint destVitalChange)
-    {
-        if (player.EquippedCombatAbility != CombatAbility.EnchantedWeapon || !(player.LastEnchantedWeaponActivated > Time.GetUnixTime() - player.EnchantedWeaponActivatedDuration))
-        {
-            return srcVitalChange;
-        }
-
-        if (player.GetEquippedMeleeWeapon() == null && player.GetEquippedMissileLauncher() == null && player.GetEquippedMissileWeapon() == null)
-        {
-            return srcVitalChange;
-        }
-
-        srcVitalChange = (uint)(srcVitalChange * 1.25);
-        destVitalChange = (uint)(destVitalChange * 1.25);
-
-        return srcVitalChange;
-    }
-
-    /// <summary>
     /// COMBAT ABILITY - Battery: Decrease vital transfer effectiveness.
     /// </summary>
     private static uint CheckForCombatAbilityBatteryVitalTransferPenalty(CombatAbility combatAbility, Player player, uint srcVitalChange, ref uint destVitalChange)
     {
-        if (combatAbility != CombatAbility.Battery || !(player.LastBatteryActivated < Time.GetUnixTime() - player.BatteryActivatedDuration))
+        if (!player.BatteryDischargeIsActive)
         {
             return srcVitalChange;
         }
@@ -1790,63 +1672,6 @@ partial class WorldObject
         }
 
         return srcVitalChange;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Overload: Increased vital transfer effectiveness
-    /// </summary>
-    private static bool CheckForCombatAbilityOverloadVitalTransferBonus(Spell spell, CombatAbility combatAbility,
-        bool overload, Player player, ref int overloadPercent, ref uint srcVitalChange, ref uint destVitalChange)
-    {
-        if (combatAbility != CombatAbility.Overload)
-        {
-            return overload;
-        }
-
-        if (player.OverloadActivated == false)
-        {
-            overloadPercent = Player.HandleOverloadStamps(player, null, spell.Level);
-
-            if (player.QuestManager.HasQuest($"{player.Name},Overload"))
-            {
-                var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
-                var overloadMod = 1 + (float)overloadStacks / 2000;
-                srcVitalChange = (uint)(srcVitalChange * overloadMod);
-                destVitalChange = (uint)(destVitalChange * overloadMod);
-            }
-        }
-
-        if (
-            player.OverloadActivated && player.LastOverloadActivated > Time.GetUnixTime() - player.OverloadActivatedDuration
-        )
-        {
-            player.OverloadActivated = false;
-            player.OverloadDumped = true;
-
-            if (player.QuestManager.HasQuest($"{player.Name},Overload"))
-            {
-                var overloadStacks = player.QuestManager.GetCurrentSolves($"{player.Name},Overload");
-                var overloadMod = 1 + (float)overloadStacks / 1000;
-                srcVitalChange = (uint)(srcVitalChange * overloadMod);
-                destVitalChange = (uint)(destVitalChange * overloadMod);
-                player.QuestManager.Erase($"{player.Name},Overload");
-            }
-        }
-
-        if (player.OverloadActivated != true || !(player.LastOverloadActivated < Time.GetUnixTime() - player.OverloadActivatedDuration))
-        {
-            return true;
-        }
-
-        player.OverloadActivated = false;
-        player.OverloadDumped = false;
-
-        if (player.QuestManager.HasQuest($"{player.Name},Overload"))
-        {
-            player.QuestManager.Erase($"{player.Name},Overload");
-        }
-
-        return true;
     }
 
     /// <summary>
@@ -1879,7 +1704,8 @@ partial class WorldObject
         WorldObject itemCaster,
         WorldObject weapon,
         bool isWeaponSpell,
-        bool fromProc
+        bool fromProc,
+        int? weaponSpellcraft = null
     )
     {
         uint damage = 0;
@@ -1919,13 +1745,18 @@ partial class WorldObject
                 _log.Warning("Unknown DamageType for LifeProjectile {SpellName} - {SpellId}", spell.Name, spell.Id);
                 return;
             }
+
+            if (caster is Player playerCaster and ({ OverloadStanceIsActive: true } or {BatteryStanceIsActive: true}))
+            {
+                playerCaster.IncreaseChargedMeter(spell);
+            }
         }
 
         var projectileSpellType = SpellProjectile.GetProjectileSpellType(spell.Id);
 
         if (projectileSpellType != ProjectileSpellType.Blast)
         {
-            CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage);
+            CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage, false, weaponSpellcraft);
         }
 
         var targetCreature = target as Creature;
@@ -2735,7 +2566,8 @@ partial class WorldObject
         bool isWeaponSpell = false,
         bool fromProc = false,
         uint lifeProjectileDamage = 0,
-        bool castAtTarget = false
+        bool castAtTarget = false,
+        int? weaponSpellcraft = null
     )
     {
         if (spell.NumProjectiles == 0)
@@ -2772,7 +2604,8 @@ partial class WorldObject
             velocity,
             lifeProjectileDamage,
             castAtTarget,
-            fireAllProjectilesFromCenter
+            fireAllProjectilesFromCenter,
+            weaponSpellcraft
         );
     }
 
@@ -3104,7 +2937,8 @@ partial class WorldObject
         Vector3 velocity,
         uint lifeProjectileDamage = 0,
         bool castAtTarget = false,
-        bool fireAllProjectilesFromCenter = false
+        bool fireAllProjectilesFromCenter = false,
+        int? weaponSpellcraft = null
     )
     {
         var useGravity = spellType == ProjectileSpellType.Arc;
@@ -3181,6 +3015,8 @@ partial class WorldObject
             sp.SpawnPos = new Position(sp.Location);
 
             sp.LifeProjectileDamage = lifeProjectileDamage;
+
+            sp.WeaponSpellcraft = weaponSpellcraft;
 
             if (!LandblockManager.AddObject(sp))
             {
@@ -3419,7 +3255,7 @@ partial class WorldObject
             damageRatingMod = Creature.GetPositiveRatingMod(damageRating);
         }
 
-        if (spell.Category == SpellCategory.DFBleedDamage)
+        if (spell.Category is SpellCategory.DFBleedDamage)
         {
             // retail pcaps have modifiers in the range of 1.1x - 1.7x
             return enchantment_statModVal * damageRatingMod;
@@ -3429,6 +3265,7 @@ partial class WorldObject
             spell.Category != SpellCategory.NetherDamageOverTimeRaising
             && spell.Category != SpellCategory.NetherDamageOverTimeRaising2
             && spell.Category != SpellCategory.NetherDamageOverTimeRaising3
+            && spell.Category != SpellCategory.BleedDamage
         )
         {
             _log.Error(

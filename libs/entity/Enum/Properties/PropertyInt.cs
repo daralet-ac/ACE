@@ -861,6 +861,10 @@ public enum PropertyInt : ushort
     GearFireBane = 502,
     GearFrostBane = 503,
     GearLightningBane = 504,
+    CombatFocusSkill2SpellRemoved = 505,
+    CombatFocusSkill2SpellAdded = 506,
+    CombatFocusNumSkillsRemoved = 507,
+    CombatFocusNumSkillsAdded = 508,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,

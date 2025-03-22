@@ -141,39 +141,12 @@ partial class Player
         return newSetting;
     }
 
-    public bool ToggleDeceiveSetting()
-    {
-        var newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed2);
-        SetCharacterOptions2(CharacterOptions2.NotUsed2, newSetting);
-
-        CachedAttemptToDeceive = newSetting;
-        return newSetting;
-    }
-
     public bool ToggleSlashThrustSetting()
     {
         var newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed3);
         SetCharacterOptions2(CharacterOptions2.NotUsed3, newSetting);
 
         CachedSlashThrustToggle = newSetting;
-        return newSetting;
-    }
-
-    public bool ToggleManaBarrierSetting()
-    {
-        var newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed4);
-        SetCharacterOptions2(CharacterOptions2.NotUsed4, newSetting);
-
-        CachedManaBarrierToggle = newSetting;
-        return newSetting;
-    }
-
-    public bool ToggleEvasiveStanceSetting()
-    {
-        var newSetting = !GetCharacterOptions2(CharacterOptions2.NotUsed5);
-        SetCharacterOptions2(CharacterOptions2.NotUsed5, newSetting);
-
-        CachedEvasiveStanceToggle = newSetting;
         return newSetting;
     }
 

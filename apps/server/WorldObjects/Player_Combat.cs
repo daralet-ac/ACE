@@ -35,6 +35,8 @@ partial class Player
 
     public DateTime NextRefillTime;
 
+    private DamageType LastHitReceivedDamageType;
+
     public double LastPkAttackTimestamp
     {
         get => GetProperty(PropertyFloat.LastPkAttackTimestamp) ?? 0;
@@ -160,6 +162,8 @@ partial class Player
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Thievery, (int)SigilTrinketThieveryEffect.Treachery, damageEvent.IsCritical);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Deception, (int)SigilTrinketDeceptionEffect.Avoidance);
 
+        CheckForEnchantedBlade(target);
+
         target.OnAttackReceived(
             this,
             (damageSource == null || damageSource.ProjectileSource == null) ? CombatType.Melee : CombatType.Missile,
@@ -175,18 +179,6 @@ partial class Player
 
             var threat = percentDamageDealt * 1000;
 
-            if (EquippedCombatAbility == CombatAbility.Provoke)
-            {
-                if (LastProvokeActivated > Time.GetUnixTime() - ProvokeActivatedDuration)
-                {
-                    threat *= 1.5f;
-                }
-                else
-                {
-                    threat *= 1.2f;
-                }
-            }
-
             target.IncreaseTargetThreatLevel(this, (int)threat);
 
             LastAttackedCreature = target;
@@ -196,9 +188,13 @@ partial class Player
         var crit = damageEvent.IsCritical;
         var critMessage = crit == true ? "Critical Hit! " : "";
 
-
         if (damageEvent.HasDamage)
         {
+            if (damageEvent.Blocked || damageEvent.Parried)
+            {
+                return null;
+            }
+
             OnDamageTarget(target, damageEvent.CombatType, damageEvent.IsCritical);
 
             if (targetPlayer != null)
@@ -273,8 +269,8 @@ partial class Player
 
             if (!SquelchManager.Squelches.Contains(this, ChatMessageType.CombatSelf))
             {
-                var recklessMsg = "";
-                var recklessPercent = 0;
+                var furyMsg = "";
+                var furyPercent = 0;
                 var critMsg = damageEvent.IsCritical ? "Critical Hit! " : "";
                 var sneakMsg = damageEvent.SneakAttackMod > 1.0f ? "Sneak Attack! " : "";
 
@@ -283,48 +279,45 @@ partial class Player
                     single = null;
                 Strings.GetAttackVerb(damageEvent.DamageType, percent, ref verb, ref single);
 
-                if (this != target)
+                if (this != target && RelentlessStanceIsActive || FuryStanceIsActive)
                 {
-                    if (this.EquippedCombatAbility == CombatAbility.Fury)
+                    furyPercent = (int)(AdrenalineMeter * 100);
+
+                    if (RelentlessStanceIsActive)
                     {
-                        if (this.GetEquippedMeleeWeapon() != null || this.GetDistance(target) < 3)
-                        {
-                            recklessPercent = this.QuestManager.GetCurrentSolves($"{this.Name},Reckless") / 5;
-                            if (recklessPercent > 100)
-                            {
-                                recklessPercent = 100;
-                            }
-
-                            if (recklessPercent < 0)
-                            {
-                                recklessPercent = 0;
-                            }
-
-                            recklessMsg = $"{recklessPercent} Fury! ";
-
-                            if (this.RecklessDumped == true)
-                            {
-                                this.RecklessDumped = false;
-                                recklessMsg = $"Furious Blow! ";
-                            }
-                        }
+                        furyMsg = $"{furyPercent}% Relentless Adrenaline! ";
                     }
+
+                    if (FuryStanceIsActive)
+                    {
+                        furyMsg = $"{furyPercent}% Furious Adrenaline! ";
+                    }
+                }
+
+                if (FuryEnrageIsActive)
+                {
+                    furyMsg = $"Enrage! ";
+                }
+
+                if (RelentlessTenacityIsActive)
+                {
+                    furyMsg = $"Tenacity! ";
                 }
 
                 if (this != target && damageEvent.PartialEvasion == PartialEvasion.Some)
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"{recklessMsg}{sneakMsg}Glancing Blow! You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.",
+                            $"{furyMsg}{sneakMsg}Glancing Blow! You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.",
                             ChatMessageType.CombatSelf
                         )
                     );
                 }
-                else if (this != target && recklessMsg != "")
+                else if (this != target && furyMsg != "")
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"{recklessMsg}{critMsg}{sneakMsg}You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.",
+                            $"{furyMsg}{critMsg}{sneakMsg}You {verb} {target.Name} for {intDamage} {pointsText} of {damageTypeText} damage.",
                             ChatMessageType.CombatSelf
                         )
                     );
@@ -395,6 +388,26 @@ partial class Player
         }
 
         return damageEvent;
+    }
+
+    private void CheckForEnchantedBlade(Creature target)
+    {
+        if (EnchantedWeaponStoredSpell is null)
+        {
+            return;
+        }
+
+        var weapon = GetEquippedMeleeWeapon();
+
+        if (weapon is null)
+        {
+            return;
+        }
+
+        var spellCraft = weapon.ItemSpellcraft ?? 1;
+
+        TryCastSpell(EnchantedWeaponStoredSpell, target, null, weapon, false, false, true, true, spellCraft);
+        EnchantedWeaponStoredSpell = null;
     }
 
     /// <summary>
@@ -1015,21 +1028,17 @@ partial class Player
             percent = (float)amount / Health.MaxValue;
         }
 
-        uint damageTaken = 0;
+        uint damageTaken;
 
-        if (!ManaBarrierToggle && !EvasiveStanceToggle)
+        if (ManaBarrierIsActive)
+        {
+            damageTaken = CombatAbilityManaBarrier(this, amount, source, damageType);
+        }
+        else
         {
             // update health
             damageTaken = (uint)-UpdateVitalDelta(Health, (int)-amount);
             DamageHistory.Add(source, damageType, damageTaken);
-        }
-        else if (ManaBarrierToggle)
-        {
-            damageTaken = CombatAbilityManaBarrier(amount, source, damageType);
-        }
-        else if (EvasiveStanceToggle)
-        {
-            damageTaken = CombatAbilityEvasiveStance(amount, source, damageType);
         }
 
         // update stamina
@@ -1052,6 +1061,8 @@ partial class Player
             Die();
             return (int)damageTaken;
         }
+
+        LastHitReceivedDamageType = damageType;
 
         if (!BodyParts.Indices.TryGetValue(bodyPart, out var iDamageLocation))
         {
@@ -1178,138 +1189,70 @@ partial class Player
         return (int)damageTaken;
     }
 
-    private uint CombatAbilityManaBarrier(uint amount, WorldObject source, DamageType damageType)
+    public static uint CombatAbilityManaBarrier(Player player, uint amount, WorldObject source, DamageType damageType)
     {
-        var finalAmount = amount;
-
-        var skill = GetCreatureSkill(Skill.ManaConversion);
-
-        if (Level != null)
+        if (player is null || source is null)
         {
-            var expectedSkill = (float)(Level * 5);
-            var currentSkill = (float)skill.Current;
-
-            // create a scaling mod. if expected skill is much higher than currentSkill, you will be multiplying the amount of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
-            // capped at 1f so high skill gets the proper ratio of health-to-mana, but no better than that.
-
-            var skillModifier = Math.Max(expectedSkill / currentSkill, 1.0f);
-
-            // 25% of damage taken as mana, x3 for trained
-            var manaDamage = (amount * 0.25) * 3 * skillModifier;
-            if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-            {
-                manaDamage = (amount * 0.25) * 1.5 * skillModifier;
-            }
-
-            if (Mana.Current >= manaDamage)
-            {
-                finalAmount = (uint)(amount * 0.75f);
-                PlayParticleEffect(PlayScript.RestrictionEffectBlue, Guid);
-                UpdateVitalDelta(Mana, (int)-Math.Round(manaDamage));
-                UpdateVitalDelta(Health, (int)-finalAmount);
-                DamageHistory.Add(source, damageType, (uint)-finalAmount);
-            }
-            // if not enough mana, barrier falls and player takes remainder of damage as health
-            else
-            {
-                ToggleManaBarrierSetting();
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Magic)
-                );
-
-                EnchantmentManager.StartCooldown(source);
-
-                PlayParticleEffect(PlayScript.HealthDownBlue, Guid);
-
-                // find mana damage overage and reconvert to HP damage
-                var manaRemainder = (manaDamage - Mana.Current) / skillModifier / 1.5;
-                if (skill.AdvancementClass == SkillAdvancementClass.Specialized)
-                {
-                    manaRemainder = (manaDamage - Mana.Current) / skillModifier / 3;
-                }
-
-                finalAmount = (uint)((amount * 0.75) + manaRemainder);
-                UpdateVitalDelta(Mana, (int)-(Mana.Current - 1));
-                UpdateVitalDelta(Health, (int)-(finalAmount));
-                DamageHistory.Add(source, damageType, (uint)-finalAmount);
-            }
+            return amount;
         }
 
-        return finalAmount;
-    }
-
-    private uint CombatAbilityEvasiveStance(uint amount, WorldObject source, DamageType damageType)
-    {
         var finalAmount = amount;
 
-        var skillRun = GetCreatureSkill(Skill.Run);
-        var skillJump = GetCreatureSkill(Skill.Jump);
+        var skill = player.GetCreatureSkill(Skill.ManaConversion);
 
-        var currentSkillRun = (float)skillRun.Current;
-        var currentSkillJump = (float)skillJump.Current;
-
-        if (Level != null)
+        if (player.Level == null)
         {
-            var expectedSkill = (float)(Level * 5);
+            return finalAmount;
+        }
 
-            var skillModifierRun = Math.Max(expectedSkill / currentSkillRun, 1.0f);
-            var skillModifierJump = Math.Max(expectedSkill / currentSkillJump, 1.0f);
+        const double manaBarrierDamageReduction = 0.25;
 
-            var staminaDamageRun = (amount * 0.25) * 3 * skillModifierRun;
-            if (skillRun.AdvancementClass == SkillAdvancementClass.Specialized)
+        var expectedSkill = (float)(player.Level * 5);
+        var currentSkill = (float)skill.Current;
+
+        // Create a scaling mod. if expected skill is much higher than currentSkill, you will be multiplying the amount
+        // of mana damage singificantly, so low skill players will not get much benefit before bubble bursts.
+        // Capped at 1f so high skill gets the proper ratio of health-to-mana, but no better than that.
+
+        var skillPenalty = Math.Max(expectedSkill / currentSkill, 1.0f);
+
+        // 25% of damage taken as mana instead, x2 for trained, x1.5 for specialized
+        var specMod = skill.AdvancementClass == SkillAdvancementClass.Specialized ? 1.5 : 2;
+
+        var manaDamage = (amount * manaBarrierDamageReduction) * specMod * skillPenalty;
+
+        if (player.Mana.Current >= manaDamage)
+        {
+            finalAmount = (uint)(amount * (1 - manaBarrierDamageReduction));
+            player.PlayParticleEffect(PlayScript.RestrictionEffectBlue, player.Guid);
+            player.UpdateVitalDelta(player.Mana, (int)-Math.Round(manaDamage));
+            player.UpdateVitalDelta(player.Health, (int)-finalAmount);
+            player.DamageHistory.Add(source, damageType, (uint)-finalAmount);
+        }
+        // if not enough mana, barrier falls and player takes remainder of damage as health
+        else
+        {
+            player.ManaBarrierIsActive = false;
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"Your mana barrier fails and collapses!", ChatMessageType.Broadcast)
+            );
+
+            var manaBarrierItem = player.GetInventoryItemsOfWCID(1051110);
+            if (manaBarrierItem.Count > 0)
             {
-                staminaDamageRun = (amount * 0.25) * 1.5 * skillModifierRun;
+                player.EnchantmentManager.StartCooldown(manaBarrierItem[0]);
             }
 
-            var staminaDamageJump = (amount * 0.25) * 3 * skillModifierJump;
-            if (skillJump.AdvancementClass == SkillAdvancementClass.Specialized)
-            {
-                staminaDamageJump = (amount * 0.25) * 1.5 * skillModifierJump;
-            }
+            player.PlayParticleEffect(PlayScript.HealthDownBlue, player.Guid);
 
-            // Use whichever skill prevents more stamina loss
-            var staminaDamage = Math.Min(staminaDamageRun, staminaDamageJump);
+            // find mana damage overage and reconvert to HP damage
+            var manaRemainder = (manaDamage - player.Mana.Current) / skillPenalty / specMod;
 
-            if (Stamina.Current >= staminaDamage)
-            {
-                finalAmount = (uint)(amount * 0.75);
-
-                PlayParticleEffect(PlayScript.RestrictionEffectGold, Guid, 0.1f);
-                UpdateVitalDelta(Stamina, (int)-Math.Round(staminaDamage));
-                UpdateVitalDelta(Health, (int)-Math.Round((float)finalAmount));
-                DamageHistory.Add(source, damageType, finalAmount);
-            }
-            // if not enough stamina, evasive stance falls and player takes remainder of damage as health
-            else
-            {
-                ToggleEvasiveStanceSetting();
-                Session.Network.EnqueueSend(new GameMessageSystemChat(
-                    $"You lose concentration and drop out of Evasive Stance!", ChatMessageType.Combat));
-
-                EnchantmentManager.StartCooldown(source);
-
-                PlayParticleEffect(PlayScript.HealthDownYellow, Guid);
-
-                // find stamina damage overage and reconvert to HP damage
-                var staminaRemainderRun = (staminaDamage - Stamina.Current) / skillModifierRun / 1.5;
-                if (skillRun.AdvancementClass == SkillAdvancementClass.Specialized)
-                {
-                    staminaRemainderRun = (staminaDamage - Stamina.Current) / skillModifierRun / 3;
-                }
-
-                var staminaRemainderJump = (staminaDamage - Stamina.Current) / skillModifierRun / 1.5;
-                if (skillJump.AdvancementClass == SkillAdvancementClass.Specialized)
-                {
-                    staminaRemainderJump = (staminaDamage - Stamina.Current) / skillModifierRun / 3;
-                }
-
-                var staminaRemainder = Math.Min(staminaRemainderRun, staminaRemainderJump);
-                finalAmount = (uint)((amount * 0.75) + staminaRemainder);
-
-                UpdateVitalDelta(Stamina, (int)-(Stamina.Current - 1));
-                UpdateVitalDelta(Health, (int)-(finalAmount));
-                DamageHistory.Add(source, damageType, finalAmount);
-            }
+            finalAmount = (uint)((amount * (1 - manaBarrierDamageReduction)) + manaRemainder);
+            player.UpdateVitalDelta(player.Mana, (int)-(player.Mana.Current - 1));
+            player.UpdateVitalDelta(player.Health, (int)-(finalAmount));
+            player.DamageHistory.Add(source, damageType, (uint)-finalAmount);
         }
 
         return finalAmount;
@@ -1452,9 +1395,6 @@ partial class Player
     /// </summary>
     private int GetAttackStamina(float attackAnimLength, WorldObject weapon)
     {
-        // When stamina drops to 0, your melee and missile defenses also drop to 0 and you will be incapable of attacking.
-        // In addition, you will suffer a 50% penalty to your weapon skill. This applies to players and creatures.
-
         var weaponTier = Math.Max(GetMainHandWeaponTier(), GetOffHandWeaponTier());
         var powerAccuracyLevel = GetEquippedMissileWeapon() != null ? AccuracyLevel : PowerLevel;
         var weightClassPenalty = (float)(1 + GetArmorResourcePenalty() ?? 0);
@@ -1462,11 +1402,65 @@ partial class Player
 
         var staminaCostReductionMod = GetStaminaReductionMod(weapon);
 
-        baseCost *= staminaCostReductionMod;
+        // ability penalty mods are additive with each other
+        var evasiveStancePenaltyMod = GetEvasiveStanceStaminaPenalty();
+        var phalanxPenaltyMod = PhalanxIsActive ? 0.25f : 0.0f;
+        var provokePenaltyMod = ProvokeIsActive ? 0.25f : 0.0f;
+        var parryPenaltyMod = ParryIsActive ? 0.25f : 0.0f;
+        var furyPenaltyMod = FuryEnrageIsActive ? 0.25f : 0.0f;
+        var multiShotPenaltyMod = MultiShotIsActive ? 0.25f : 0.0f;
+        var steadyShotPenaltyMod = SteadyShotIsActive ? 0.25f : 0.0f;
+        var smokescreenPenaltyMod = SmokescreenIsActive ? 0.25f : 0.0f;
+        var backstabPenaltyMod = BackstabIsActive ? 0.25f : 0.0f;
+        var abilityPenaltyMod = 1.0f
+                                + evasiveStancePenaltyMod
+                                + phalanxPenaltyMod
+                                + provokePenaltyMod
+                                + parryPenaltyMod
+                                + furyPenaltyMod
+                                + multiShotPenaltyMod
+                                + steadyShotPenaltyMod
+                                + smokescreenPenaltyMod
+                                + backstabPenaltyMod;
+
+        baseCost *= staminaCostReductionMod * abilityPenaltyMod;
 
         var staminaCost = Math.Max(baseCost, 1);
 
         return (int)Math.Round(staminaCost);
+    }
+
+    private float GetEvasiveStanceStaminaPenalty()
+    {
+        if (EvasiveStanceIsActive is not true)
+        {
+            return 0.0f;
+        }
+
+        var skillRun = GetCreatureSkill(Skill.Run);
+        var skillJump = GetCreatureSkill(Skill.Jump);
+
+        var currentSkillRun = (float)skillRun.Current;
+        var currentSkillJump = (float)skillJump.Current;
+
+        if (Level is null)
+        {
+            return 0.0f;
+        }
+
+        // to account for the combat run debuff, if run is not spec we use half the expected skill
+        var expectedRunSkill = skillRun.AdvancementClass is SkillAdvancementClass.Specialized? (float)(Level * 5) : (float)(Level * 2.5);
+        var expectedJumpSkill = (float)(Level * 5);
+
+        var baseRunMod = skillRun.AdvancementClass is SkillAdvancementClass.Specialized ? 0.25f : 0.5f;
+        var baseJumpMod = skillJump.AdvancementClass is SkillAdvancementClass.Specialized ? 0.25f : 0.5f;
+
+        var skillModifierRun = Math.Max(expectedRunSkill / currentSkillRun, baseRunMod);
+        var skillModifierJump = Math.Max(expectedJumpSkill / currentSkillJump, baseJumpMod);
+
+        // Use whichever skill prevents more stamina loss
+        return Math.Min(skillModifierRun, skillModifierJump);
+
     }
 
     private float GetStaminaReductionMod(WorldObject weapon)
@@ -1474,12 +1468,9 @@ partial class Player
         var staminaCostReductionMod = 1.0f;
 
         // Sword/UA implicit rolled bonuses
-        if (weapon != null)
+        if (weapon?.StaminaCostReductionMod != null)
         {
-            if (weapon.StaminaCostReductionMod != null)
-            {
-                staminaCostReductionMod -= (float)weapon.StaminaCostReductionMod;
-            }
+            staminaCostReductionMod *= (1.0f - (float)weapon.StaminaCostReductionMod);
         }
 
         // SPEC BONUS - UA: Stamina costs for melee attacks reduced by 10%
@@ -1488,7 +1479,7 @@ partial class Player
             && GetCreatureSkill(Skill.UnarmedCombat).AdvancementClass == SkillAdvancementClass.Specialized
         )
         {
-            staminaCostReductionMod -= 0.1f;
+            staminaCostReductionMod *= 0.9f;
         }
 
         // SPEC BONUS - Martial Weapons (Sword): Stamina costs for melee attacks reduced by 10%
@@ -1497,7 +1488,12 @@ partial class Player
             && GetCreatureSkill(Skill.MartialWeapons).AdvancementClass == SkillAdvancementClass.Specialized
         )
         {
-            staminaCostReductionMod -= 0.1f;
+            staminaCostReductionMod *= 0.9f;
+        }
+
+        if (RelentlessTenacityIsActive && TenacityLevel > 0.0f)
+        {
+            staminaCostReductionMod *= (1.0f - TenacityLevel);
         }
 
         return staminaCostReductionMod;

@@ -53,17 +53,16 @@ partial class Creature
     /// <returns>The length in seconds for the attack animation</returns>
     public float MeleeAttack()
     {
-        var target = AttackTarget as Creature;
         var targetPlayer = AttackTarget as Player;
         var targetPet = AttackTarget as CombatPet;
         var combatPet = this as CombatPet;
 
-        if (target == null || !target.IsAlive)
+        if (AttackTarget is not Creature { IsAlive: true } target)
         {
             FindNextTarget(false);
             return 0.0f;
         }
-        if (targetPlayer != null && Time.GetUnixTime() < targetPlayer.LastVanishActivated + 5)
+        if (targetPlayer is {VanishIsActive: true})
         {
             FindNextTarget(false, targetPlayer);
             return 0.0f;
@@ -139,6 +138,11 @@ partial class Creature
 
                     if (damageEvent.HasDamage)
                     {
+                        if (damageEvent.Blocked || damageEvent.Parried)
+                        {
+                            return;
+                        }
+
                         if (targetPlayer != null)
                         {
                             // this is a player taking damage

@@ -610,7 +610,8 @@ public partial class Creature : Container
             if (creature is null
                 || !creature.IsMonster
                 || GetDistance(creature) > distance
-                || creature.WeenieClassId is 1020001)
+                || creature.WeenieClassId is 1020001
+                || creature.Visibility)
             {
                 continue;
             }

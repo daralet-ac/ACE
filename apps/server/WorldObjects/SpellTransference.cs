@@ -648,7 +648,11 @@ public class SpellTransference : Stackable
                         }
 
                         target.ItemDifficulty = CalculateArcaneLore(target);
-                        target.ItemSpellcraft = LootGenerationFactory.RollSpellcraft(target);
+
+                        if (target.ItemSpellcraft is null)
+                        {
+                            target.ItemSpellcraft = LootGenerationFactory.RollSpellcraft(target);
+                        }
 
                         if (!target.UiEffects.HasValue)
                         {

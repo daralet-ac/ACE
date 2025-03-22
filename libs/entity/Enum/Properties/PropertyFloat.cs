@@ -237,6 +237,7 @@ public enum PropertyFloat : ushort
     NearbyPlayerDefenseScalingPerExtraPlayer = 196,
     SigilTrinketStaminaReserved = 197,
     SigilTrinketHealthReserved = 198,
+    ResistBleed = 199,
 
     [ServerOnly]
     PCAPRecordedWorkmanship = 8004,
