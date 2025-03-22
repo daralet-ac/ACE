@@ -355,8 +355,8 @@ public class BezelTool : WorldObject
             player,
             () =>
             {
-                player.SendUseDoneEvent();
-                player.IsBusy = false;
+                // player.SendUseDoneEvent();
+                 player.IsBusy = false;
             }
         );
 

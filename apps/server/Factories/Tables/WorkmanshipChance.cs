@@ -8,19 +8,19 @@ public static class WorkmanshipChance
 {
     private static ChanceTable<int> T1_Chances = [(1, 1.0f)];
 
-    private static ChanceTable<int> T2_Chances = [(1, 0.7f), (2, 0.29f), (3, 0.009f), (4, 0.001f)];
+    private static ChanceTable<int> T2_Chances = [(1, 0.9f), (2, 0.1f)];
 
-    private static ChanceTable<int> T3_Chances = [(1, 0.6f), (2, 0.3f), (3, 0.09f), (4, 0.009f), (5, 0.001f)];
+    private static ChanceTable<int> T3_Chances = [(1, 0.4f), (2, 0.5f), (3, 0.1f)];
 
-    private static ChanceTable<int> T4_Chances = [(2, 0.6f), (3, 0.3f), (4, 0.09f), (5, 0.009f), (6, 0.001f)];
+    private static ChanceTable<int> T4_Chances = [(2, 0.4f), (3, 0.5f), (4, 0.1f)];
 
-    private static ChanceTable<int> T5_Chances = [(3, 0.6f), (4, 0.3f), (5, 0.09f), (6, 0.009f), (7, 0.001f)];
+    private static ChanceTable<int> T5_Chances = [(3, 0.4f), (4, 0.5f), (5, 0.1f)];
 
-    private static ChanceTable<int> T6_Chances = [(4, 0.6f), (5, 0.3f), (6, 0.09f), (7, 0.009f), (8, 0.001f)];
+    private static ChanceTable<int> T6_Chances = [(4, 0.4f), (5, 0.59f), (6, 0.009f), (7, 0.001f)];
 
-    private static ChanceTable<int> T7_Chances = [(5, 0.6f), (6, 0.3f), (7, 0.09f), (8, 0.009f), (9, 0.001f)];
+    private static ChanceTable<int> T7_Chances = [(5, 0.4f), (6, 0.59f), (7, 0.009f), (8, 0.001f)];
 
-    private static ChanceTable<int> T8_Chances = [(6, 0.6f), (7, 0.3f), (8, 0.09f), (9, 0.009f), (10, 0.001f)];
+    private static ChanceTable<int> T8_Chances = [(6, 0.4f), (7, 0.5f), (8, 0.09f), (9, 0.009f), (10, 0.001f)];
 
     private static readonly List<ChanceTable<int>> workmanshipChances =
     [
@@ -47,15 +47,7 @@ public static class WorkmanshipChance
 
         var workmanshipChance = workmanshipChances[tier - 1];
 
-        var baseWorkmanship = workmanshipChance.Roll(qualityMod, true);
-
-        var cantripBonus = 0;
-        if (cantripLevel > 0)
-        {
-            cantripBonus = Math.Clamp(cantripLevel - 2, 1, 10);
-        }
-
-        return baseWorkmanship + cantripBonus;
+        return workmanshipChance.Roll(qualityMod, true);
     }
 
     /// <summary>

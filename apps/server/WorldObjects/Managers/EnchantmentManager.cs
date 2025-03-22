@@ -1133,12 +1133,12 @@ public class EnchantmentManager
         var enchantments = GetEnchantments_TopLayer(EnchantmentTypeFlags.Multiplicative, (uint)statModKey);
 
         var modifier = 1.0f;
-        foreach (var enchantment in enchantments.Where(e => (e.StatModType & EnchantmentTypeFlags.Skill) == 0))
+        foreach (var enchantment in enchantments)
         {
-            modifier *= (int)enchantment.StatModValue;
+            modifier *= enchantment.StatModValue;
         }
 
-        return (int)modifier;
+        return modifier;
     }
 
     /// <summary>
@@ -1164,6 +1164,28 @@ public class EnchantmentManager
     public virtual int GetBodyArmorMod()
     {
         return GetModifier(EnchantmentTypeFlags.BodyArmorValue);
+    }
+
+    public float GetBodyArmorMultiplicativeMod()
+    {
+        return GetBodyArmorMultiplicativeMod(EnchantmentTypeFlags.BodyArmorValue);
+    }
+
+    /// <summary>
+    /// Returns the product of the modifiers for a StatModKey
+    /// </summary>
+    public float GetBodyArmorMultiplicativeMod(EnchantmentTypeFlags type)
+    {
+        var enchantments = GetEnchantments_TopLayer(type);
+
+        // multiplicative
+        var modifier = 1.0f;
+        foreach (var enchantment in enchantments)
+        {
+            modifier *= enchantment.StatModValue;
+        }
+
+        return modifier;
     }
 
     /// <summary>
@@ -1390,6 +1412,14 @@ public class EnchantmentManager
     public virtual int GetArmorMod()
     {
         return GetAdditiveMod(PropertyInt.ArmorLevel);
+    }
+
+    /// <summary>
+    /// Returns the multiplicative ward level modifier, ie. Succumb (Expose Magical Weakness)
+    /// </summary>
+    public virtual float GetWardMultiplicativeMod()
+    {
+        return GetMultiplicativeMod(PropertyInt.WardLevel);
     }
 
     /// <summary>

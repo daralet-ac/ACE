@@ -395,10 +395,19 @@ partial class Creature
             && (wo.GearPyrealFind ?? 0) == 0
             && (wo.GearNullification ?? 0) == 0
             && (wo.GearWardPen ?? 0) == 0
-            && (wo.GearStamReduction ?? 0) == 0
+            && (wo.GearStaminasteal ?? 0) == 0
             && (wo.GearHardenedDefense ?? 0) == 0
             && (wo.GearReprisal ?? 0) == 0
             && (wo.GearElementalist ?? 0) == 0
+            && (wo.GearToughness ?? 0) == 0
+            && (wo.GearResistance ?? 0) == 0
+            && (wo.GearSlashBane ?? 0) == 0
+            && (wo.GearBludgeonBane ?? 0) == 0
+            && (wo.GearPierceBane ?? 0) == 0
+            && (wo.GearAcidBane ?? 0) == 0
+            && (wo.GearFireBane ?? 0) == 0
+            && (wo.GearFrostBane ?? 0) == 0
+            && (wo.GearLightningBane ?? 0) == 0
         )
         {
             return;
@@ -461,10 +470,19 @@ partial class Creature
                 { PropertyInt.GearPyrealFind, 0 },
                 { PropertyInt.GearNullification, 0 },
                 { PropertyInt.GearWardPen, 0 },
-                { PropertyInt.GearStamReduction, 0 },
+                { PropertyInt.GearStaminasteal, 0 },
                 { PropertyInt.GearHardenedDefense, 0 },
                 { PropertyInt.GearReprisal, 0 },
-                { PropertyInt.GearElementalist, 0 }
+                { PropertyInt.GearElementalist, 0 },
+                { PropertyInt.GearToughness, 0 },
+                { PropertyInt.GearResistance, 0 },
+                { PropertyInt.GearSlashBane, 0 },
+                { PropertyInt.GearBludgeonBane, 0 },
+                { PropertyInt.GearPierceBane, 0 },
+                { PropertyInt.GearAcidBane, 0 },
+                { PropertyInt.GearFireBane, 0 },
+                { PropertyInt.GearFrostBane, 0 },
+                { PropertyInt.GearLightningBane, 0 }
             };
         }
 
@@ -519,10 +537,19 @@ partial class Creature
         equippedItemsRatingCache[PropertyInt.GearPyrealFind] += (wo.GearPyrealFind ?? 0);
         equippedItemsRatingCache[PropertyInt.GearNullification] += (wo.GearNullification ?? 0);
         equippedItemsRatingCache[PropertyInt.GearWardPen] += (wo.GearWardPen ?? 0);
-        equippedItemsRatingCache[PropertyInt.GearStamReduction] += (wo.GearStamReduction ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearStaminasteal] += (wo.GearStaminasteal ?? 0);
         equippedItemsRatingCache[PropertyInt.GearHardenedDefense] += (wo.GearHardenedDefense ?? 0);
         equippedItemsRatingCache[PropertyInt.GearReprisal] += (wo.GearReprisal ?? 0);
         equippedItemsRatingCache[PropertyInt.GearElementalist] += (wo.GearElementalist ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearToughness] -= (wo.GearToughness ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearResistance] -= (wo.GearResistance ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearSlashBane] -= (wo.GearSlashBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearBludgeonBane] -= (wo.GearBludgeonBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearPierceBane] -= (wo.GearPierceBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearAcidBane] -= (wo.GearAcidBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearFireBane] -= (wo.GearFireBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearFrostBane] -= (wo.GearFrostBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearLightningBane] -= (wo.GearLightningBane ?? 0);
     }
 
     private void RemoveItemFromEquippedItemsRatingCache(WorldObject wo)
@@ -583,10 +610,18 @@ partial class Creature
         equippedItemsRatingCache[PropertyInt.GearPyrealFind] -= (wo.GearPyrealFind ?? 0);
         equippedItemsRatingCache[PropertyInt.GearNullification] -= (wo.GearNullification ?? 0);
         equippedItemsRatingCache[PropertyInt.GearWardPen] -= (wo.GearWardPen ?? 0);
-        equippedItemsRatingCache[PropertyInt.GearStamReduction] -= (wo.GearStamReduction ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearStaminasteal] -= (wo.GearStaminasteal ?? 0);
         equippedItemsRatingCache[PropertyInt.GearHardenedDefense] -= (wo.GearHardenedDefense ?? 0);
         equippedItemsRatingCache[PropertyInt.GearReprisal] -= (wo.GearReprisal ?? 0);
-        equippedItemsRatingCache[PropertyInt.GearElementalist] -= (wo.GearElementalist ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearToughness] -= (wo.GearToughness ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearResistance] -= (wo.GearResistance ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearSlashBane] -= (wo.GearSlashBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearBludgeonBane] -= (wo.GearBludgeonBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearPierceBane] -= (wo.GearPierceBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearAcidBane] -= (wo.GearAcidBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearFireBane] -= (wo.GearFireBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearFrostBane] -= (wo.GearFrostBane ?? 0);
+        equippedItemsRatingCache[PropertyInt.GearLightningBane] -= (wo.GearLightningBane ?? 0);
     }
 
     public int GetEquippedItemsRatingSum(PropertyInt rating)
@@ -607,6 +642,13 @@ partial class Creature
 
     public int GetEquippedAndActivatedItemRatingSum(PropertyInt rating)
     {
+        if (this is not Player)
+        {
+            return 0;
+        }
+
+        //Console.WriteLine("\nGetEquippedAndActivatedItemRatingSum()");
+
         var ratingAmount = 0;
 
         foreach (var item in EquippedObjects.Values)
@@ -625,9 +667,69 @@ partial class Creature
                     ratingAmount += property.Value.Value;
                 }
             }
+
+            ratingAmount += GetRatingFromSocketedJewels(rating, item);
+
         }
 
+        //Console.WriteLine($"Total Rating ({rating}): {ratingAmount}");
         return ratingAmount;
+    }
+
+    protected static int GetRatingFromSocketedJewels(PropertyInt rating, WorldObject item)
+    {
+        var jewelRating = 0;
+
+        for (var i = 0; i < (item.JewelSockets ?? 0); i++)
+        {
+            var jewelMaterialType = item.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketMaterialIntId);
+            var jewelQuality = item.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketQualityIntId);
+            var itemLocation = item.ValidLocations;
+
+            if (jewelMaterialType is null || jewelQuality is null || itemLocation is null)
+            {
+                continue;
+            }
+
+            if (!Jewel.JewelTypeToMaterial.TryGetValue(rating, out var materialType) || materialType != (MaterialType)jewelMaterialType)
+            {
+                continue;
+            }
+
+            jewelRating += GetRatingFromJewel(rating, (EquipMask)itemLocation, (MaterialType)jewelMaterialType, (int)jewelQuality);
+        }
+
+        //Console.WriteLine($" -Rating ({rating}) from item ({item.Name}): {jewelRating}");
+        return jewelRating;
+    }
+
+    private static int GetRatingFromJewel(PropertyInt rating, EquipMask equipMask, MaterialType jewelMaterialType, int jewelQuality)
+    {
+        // Check if the rating's material type matches the jewel's material type
+        if (!Jewel.JewelTypeToMaterial.TryGetValue(rating, out var value) && value != jewelMaterialType)
+        {
+            return 0;
+        }
+
+        // Check if the item's equip location can be used with the jewel's equip mask
+        if ((Jewel.MaterialValidLocations[jewelMaterialType] & equipMask) != equipMask)
+        {
+            return 0;
+        }
+
+        // If the item is an armor, check if the rating's type matches the jewel's alternate rating type
+        if ((EquipMask.Armor & equipMask) == equipMask && Jewel.JewelMaterialToType[jewelMaterialType].AlternateRating != rating)
+        {
+            return 0;
+        }
+
+        // If item is not an armor, check if the rating's type matches the jewels primary rating
+        if ((EquipMask.Armor & equipMask) != equipMask && Jewel.JewelMaterialToType[jewelMaterialType].PrimaryRating != rating)
+        {
+            return 0;
+        }
+
+        return jewelQuality;
     }
 
     public int GetEquippedItemsWardSum(PropertyInt wardLevel)

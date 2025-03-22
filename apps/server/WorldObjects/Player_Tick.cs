@@ -791,7 +791,7 @@ partial class Player
                 burnRate *= GetNegativeRatingMod(LumAugItemManaUsage * 5);
             }
 
-            burnRate *= Jewel.GetJewelEffectMod(this, PropertyInt.GearItemManaUsage);
+            burnRate *= 1.0f - Jewel.GetJewelEffectMod(this, PropertyInt.GearItemManaUsage);
 
             item.ItemManaRateAccumulator += (float)(burnRate * CachedHeartbeatInterval);
 

@@ -263,7 +263,6 @@ public class CorePlating
             //case EquipMask.LowerLegWear | EquipMask.FootWear:
             //    slotName = " Boot ";
             //    break;
-            case EquipMask.Armor:
             case EquipMask.HeadWear | EquipMask.Armor:
                 slotName = " Body ";
                 break;

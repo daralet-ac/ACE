@@ -456,35 +456,24 @@ partial class Player
             {
                 EnchantmentManager.Dispel(enchantment);
             }
+
+            return;
         }
 
-        foreach (var enchantment in allEnchantments)
         {
-            enchantment.StatModValue = totalRating;
-            enchantment.Duration = -1;
-            Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, enchantment)));
+            foreach (var enchantment in allEnchantments)
+            {
+                enchantment.StatModValue = 10 + totalRating;
+                enchantment.Duration = -1;
+                Session.Network.EnqueueSend(
+                    new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, enchantment)));
+            }
         }
     }
 
     private bool ItemDoesNotHaveGearRating(WorldObject item, PropertyInt propertyInt)
     {
-        switch (propertyInt)
-        {
-            case PropertyInt.GearStrength:
-                return item.GearStrength is null or 0;
-            case PropertyInt.GearEndurance:
-                return item.GearEndurance is null or 0;
-            case PropertyInt.GearCoordination:
-                return item.GearCoordination is null or 0;
-            case PropertyInt.GearQuickness:
-                return item.GearQuickness is null or 0;
-            case PropertyInt.GearFocus:
-                return item.GearFocus is null or 0;
-            case PropertyInt.GearSelf:
-                return item.GearSelf is null or 0;
-            default:
-                return false;
-        }
+        return GetRatingFromSocketedJewels(propertyInt, item) == 0;
     }
 
     public bool TryActivateSpells(WorldObject item)

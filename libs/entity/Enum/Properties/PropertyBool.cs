@@ -238,6 +238,17 @@ public enum PropertyBool : ushort
     SilentCombat = 158,
     ReturnHomeWhenStuck = 159,
     ResetFromHotspot = 160,
+    JewelAlternateEffect = 161,
+    JewelSocket1AlternateEffect = 162,
+    JewelSocket2AlternateEffect = 163,
+    JewelSocket3AlternateEffect = 164,
+    JewelSocket4AlternateEffect = 165,
+    JewelSocket5AlternateEffect = 166,
+    JewelSocket6AlternateEffect = 167,
+    JewelSocket7AlternateEffect = 168,
+    JewelSocket8AlternateEffect = 169,
+    JewelSocket9AlternateEffect = 170,
+    JewelSocket10AlternateEffect = 171,
 
     /* custom */
     [ServerOnly]

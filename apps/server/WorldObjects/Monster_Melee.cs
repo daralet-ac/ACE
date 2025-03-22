@@ -12,6 +12,7 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
+using ACE.Server.Network.Structure;
 using ACE.Server.Physics.Animation;
 
 namespace ACE.Server.WorldObjects;
@@ -700,6 +701,17 @@ partial class Creature
         if (ignoreMagicArmor)
         {
             armorBane = IgnoreMagicArmorScaled(armorBane);
+        }
+
+        if (resistance < 1.0f)
+        {
+            var jewelBaneRating = ArmorProfile.GetJewelBaneRating(armor, damageType);
+            resistance += jewelBaneRating;
+
+            if (resistance > 1.0f)
+            {
+                resistance = 1.0f;
+            }
         }
 
         // Console.WriteLine("Bane: " + armorBane);

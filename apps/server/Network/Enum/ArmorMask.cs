@@ -1,8 +1,11 @@
+using System;
 using ACE.Entity.Enum;
+using ACE.Server.Network.Structure;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Network.Enum;
 
+[Flags]
 public enum ArmorMask
 {
     ArmorLevel = 0x1,
@@ -35,37 +38,44 @@ public static class ArmorMaskHelper
             highlightMask |= ArmorMask.ArmorLevel;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Slash) != 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Slash) != 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Slash) > 0)
         {
             highlightMask |= ArmorMask.SlashingProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Pierce) != 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Pierce) != 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Pierce) > 0)
         {
             highlightMask |= ArmorMask.PiercingProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Bludgeon) != 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Bludgeon) != 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Bludgeon) > 0)
         {
             highlightMask |= ArmorMask.BludgeoningProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Cold) != 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Cold) != 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Cold) > 0)
         {
             highlightMask |= ArmorMask.ColdProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Fire) != 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Fire) != 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Fire) > 0)
         {
             highlightMask |= ArmorMask.FireProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Acid) != 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Acid) != 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Acid) > 0)
         {
             highlightMask |= ArmorMask.AcidProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Electric) != 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Electric) != 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Electric) > 0)
         {
             highlightMask |= ArmorMask.LightningProtection;
         }
@@ -90,37 +100,44 @@ public static class ArmorMaskHelper
             colorMask |= ArmorMask.ArmorLevel;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Slash) > 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Slash) > 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Slash) > 0)
         {
             colorMask |= ArmorMask.SlashingProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Pierce) > 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Pierce) > 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Pierce) > 0)
         {
             colorMask |= ArmorMask.PiercingProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Bludgeon) > 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Bludgeon) > 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Bludgeon) > 0)
         {
             colorMask |= ArmorMask.BludgeoningProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Cold) > 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Cold) > 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Cold) > 0)
         {
             colorMask |= ArmorMask.ColdProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Fire) > 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Fire) > 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Fire) > 0)
         {
             colorMask |= ArmorMask.FireProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Acid) > 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Acid) > 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Acid) > 0)
         {
             colorMask |= ArmorMask.AcidProtection;
         }
 
-        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Electric) > 0)
+        if (armor.EnchantmentManager.GetArmorModVsType(DamageType.Electric) > 0
+            || ArmorProfile.GetJewelBaneRating(armor, DamageType.Electric) > 0)
         {
             colorMask |= ArmorMask.LightningProtection;
         }
