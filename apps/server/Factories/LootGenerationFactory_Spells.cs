@@ -47,9 +47,9 @@ public partial class LootGenerationFactory
 
     public static bool RollProcSpell(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
     {
-        // 25% chance for a melee/missile weapon item to have a Proc Spell
+        // 10% chance for a melee/missile weapon item to have a Proc Spell
         var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
-        if (rng > 0.25f || (!roll.IsMeleeWeapon && !roll.IsMissileWeapon))
+        if (rng > 0.1f || (!roll.IsMeleeWeapon && !roll.IsMissileWeapon))
         {
             return false;
         }
@@ -58,11 +58,7 @@ public partial class LootGenerationFactory
 
         if (itemProc != SpellId.Undef)
         {
-            var procRate = 0.1f + (0.2f * GetDiminishingRoll(profile)); // 10% to 20% base proc rate
-            if (wo.IsTwoHanded)
-            {
-                procRate *= 1.5f; // Two-handed weapons have 15% to 30% proc rate
-            }
+            var procRate = 0.025f + (0.025f * GetDiminishingRoll(profile));
 
             var spell = new Server.Entity.Spell(itemProc);
             wo.ProcSpellRate = procRate;
