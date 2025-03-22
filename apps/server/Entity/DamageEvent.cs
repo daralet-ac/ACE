@@ -561,10 +561,16 @@ public class DamageEvent
             return;
         }
 
-        // base parry chance is 5%, 25% with Parry ability activated
-        const float minParryChance = 0.05f;
-        var parryActivatedBonus = playerDefender is { ParryIsActive: true } ? 0.2f : 0.0f;
-        var parryChance = minParryChance + parryActivatedBonus;
+        var parrySkillUsed = equippedMainHand is { IsTwoHanded: true }
+            ? defender.GetModdedTwohandedCombatSkill()
+            : defender.GetModdedDualWieldSkill();
+
+        var parryMod = SkillCheck.GetSkillChance(parrySkillUsed, EffectiveAttackSkill);
+
+        // parry chance is 10% * parryMod skillcheck
+        var baseParryChance = 0.1f * parryMod;
+        var parryActivatedBonus = playerDefender is { ParryIsActive: true } ? 0.25f : 0.0f;
+        var parryChance = baseParryChance + parryActivatedBonus;
 
         if ((ThreadSafeRandom.Next(0f, 1f) > parryChance))
         {
