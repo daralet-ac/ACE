@@ -356,10 +356,6 @@ partial class Player
         // TODO: ensure enough stamina for attack
         var staminaCost = GetAttackStamina((float)LastAttackAnimationLength, weapon);
 
-        // JEWEL - Citrine: Stamina cost reduction
-        var stamReductionMod = 1.0f - Jewel.GetJewelEffectMod(this, PropertyInt.GearStamReduction, "StamReduction");
-        staminaCost = Convert.ToInt32(staminaCost * stamReductionMod);
-
         UpdateVitalDelta(Stamina, -staminaCost);
 
         if (Stamina.Current < 1 && EvasiveStanceIsActive)
