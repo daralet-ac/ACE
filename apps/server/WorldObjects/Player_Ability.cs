@@ -851,8 +851,7 @@ partial class Player
 
         if (weaponSpellcraft is null)
         {
-            _log.Error("TryUseEnchantedBlade() - {Weapon} does not have spellcraft", equippedMeleeWeapon.Name);
-            return false;
+            weaponSpellcraft = 50;
         }
 
         var magicSkill = baseSpell.School is MagicSchool.WarMagic ? GetModdedWarMagicSkill() : GetModdedLifeMagicSkill();
