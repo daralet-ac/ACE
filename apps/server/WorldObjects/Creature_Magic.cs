@@ -93,8 +93,7 @@ partial class Creature
             var smokescreenPenaltyMod = playerCaster.SmokescreenIsActive ? 0.25f : 0.0f;
             var backstabPenaltyMod = playerCaster.BackstabIsActive ? 0.25f : 0.0f;
 
-            abilityPenaltyMod = 1.0f
-                                + phalanxPenaltyMod
+            abilityPenaltyMod = phalanxPenaltyMod
                                 + provokePenaltyMod
                                 + parryPenaltyMod
                                 + furyPenaltyMod
