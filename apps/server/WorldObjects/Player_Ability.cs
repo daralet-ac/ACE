@@ -271,6 +271,7 @@ partial class Player
                 }
 
                 RelentlessStanceIsActive = false;
+                AdrenalineMeter *= 0.5f;
 
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat($"Relentless is disabled.", ChatMessageType.Broadcast)
@@ -356,6 +357,7 @@ partial class Player
                 }
 
                 FuryStanceIsActive = false;
+                AdrenalineMeter *= 0.5f;
 
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat($"Fury is disabled.", ChatMessageType.Broadcast)
@@ -618,6 +620,7 @@ partial class Player
                 }
 
                 BatteryStanceIsActive = false;
+                ManaChargeMeter *= 0.5f;
 
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat($"Battery is disabled.", ChatMessageType.Broadcast)
@@ -695,6 +698,7 @@ partial class Player
                 }
 
                 OverloadStanceIsActive = false;
+                ManaChargeMeter *= 0.5f;
 
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat($"Overload is disabled.", ChatMessageType.Broadcast)
