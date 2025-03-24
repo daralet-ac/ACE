@@ -382,6 +382,8 @@ partial class Player
         // handle self-procs
         TryProcEquippedItems(this, this, true, weapon);
 
+        CheckForFurySelfDamage(staminaCost);
+
         var prevTime = 0.0f;
         var targetProc = false;
 
@@ -418,7 +420,7 @@ partial class Player
                         && (weapon is { IsCleaving: true }
                         || (GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSlash) > 0)
                             && damageEvent.DamageType == DamageType.Slash)
-                        || (WeaponMasterIsActive && GetEquippedMeleeWeapon() is {WeaponSkill: Skill.Spear})
+                        || (WeaponMasterIsActive && GetEquippedMeleeWeapon() is { WeaponSkill: Skill.Spear })
                     )
                     {
                         var cleave = GetCleaveTarget(creature, weapon);
@@ -490,6 +492,29 @@ partial class Player
         if (UnderLifestoneProtection)
         {
             LifestoneProtectionDispel();
+        }
+    }
+
+    private void CheckForFurySelfDamage(int staminaCost)
+    {
+        if (FuryStanceIsActive || FuryEnrageIsActive)
+        {
+            var meter = FuryStanceIsActive ? AdrenalineMeter : EnrageLevel;
+            var chance = meter * 0.5f;
+
+            if (ThreadSafeRandom.Next(0.0f, 1.0f) < chance)
+            {
+                var selfDamage = Math.Max(Convert.ToInt32(0.1f * meter * staminaCost), 1);
+
+                UpdateVitalDelta(Health, -selfDamage);
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Fury! You recklessly injure yourself for {selfDamage} damage!",
+                        ChatMessageType.CombatEnemy
+                    )
+                );
+            }
         }
     }
 

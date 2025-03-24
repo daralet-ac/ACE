@@ -388,6 +388,8 @@ partial class Player
             }
         }
 
+        CheckForFurySelfDamage(staminaCost);
+
         actionChain.AddAction(
             this,
             () =>

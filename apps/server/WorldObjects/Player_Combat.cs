@@ -162,8 +162,6 @@ partial class Player
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Thievery, (int)SigilTrinketThieveryEffect.Treachery, damageEvent.IsCritical);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Deception, (int)SigilTrinketDeceptionEffect.Avoidance);
 
-        CheckForEnchantedBlade(target);
-
         target.OnAttackReceived(
             this,
             (damageSource == null || damageSource.ProjectileSource == null) ? CombatType.Melee : CombatType.Missile,
