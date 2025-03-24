@@ -897,7 +897,7 @@ partial class Player
     {
         if (AdrenalineMeter > 0.0f)
         {
-            AdrenalineMeter -= 0.1f;
+            AdrenalineMeter -= 0.05f;
 
             if (AdrenalineMeter < 0.0f)
             {
@@ -907,7 +907,7 @@ partial class Player
 
         if (ManaChargeMeter > 0.0f)
         {
-            ManaChargeMeter -= 0.1f;
+            ManaChargeMeter -= 0.05f;
 
             if (ManaChargeMeter < 0.0f)
             {
