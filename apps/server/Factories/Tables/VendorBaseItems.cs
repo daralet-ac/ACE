@@ -555,11 +555,23 @@ public static class VendorBaseItems
         (4, false, HeritageAny, 1053969, 0, 0.0, -1), // mana tincture
         //{ (5, ??, 0, 0.0, -1) },     // mana elixir?
         (0, false, HeritageAny, 628, 0, 0.0, -1), // Crude Healing Kit
-        (2, false, HeritageAny, 629, 0, 0.0, -1), // Adept Healing Kit
-        (3, false, HeritageAny, 630, 0, 0.0, -1), // Gifted Healing Kit
+        (2, false, HeritageAny, 629, 0, 0.0, -1), // Plain Healing Kit
+        (3, false, HeritageAny, 630, 0, 0.0, -1), // Good Healing Kit
         (4, false, HeritageAny, 631, 0, 0.0, -1), // Excellent Healing Kit
         (5, false, HeritageAny, 632, 0, 0.0, -1), // Peerless Healing Kit
-        (6, false, HeritageAny, 9229, 0, 0.0, -1) // Treated Healing Kit
+        (6, false, HeritageAny, 9229, 0, 0.0, -1), // Treated Healing Kit
+        (0, false, HeritageAny, 1054510, 0, 0.0, -1), // Crude Stamina Kit
+        (2, false, HeritageAny, 1054511, 0, 0.0, -1), // Plain Stamina Kit
+        (3, false, HeritageAny, 1054512, 0, 0.0, -1), // Good Stamina Kit
+        (4, false, HeritageAny, 1054513, 0, 0.0, -1), // Excellent Stamina Kit
+        (5, false, HeritageAny, 1054514, 0, 0.0, -1), // Peerless Stamina Kit
+        (6, false, HeritageAny, 1054515, 0, 0.0, -1), // Treated Stamina Kit
+        (0, false, HeritageAny, 1054520, 0, 0.0, -1), // Crude Mana Kit
+        (2, false, HeritageAny, 1054521, 0, 0.0, -1), // Plain Mana Kit
+        (3, false, HeritageAny, 1054522, 0, 0.0, -1), // Good Mana Kit
+        (4, false, HeritageAny, 1054523, 0, 0.0, -1), // Excellent Mana Kit
+        (5, false, HeritageAny, 1054524, 0, 0.0, -1), // Peerless Mana Kit
+        (6, false, HeritageAny, 1054525, 0, 0.0, -1) // Treated Mana Kit
     ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
