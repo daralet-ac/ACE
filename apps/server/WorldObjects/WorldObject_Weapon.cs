@@ -1285,46 +1285,6 @@ partial class WorldObject
             return; // Target is already dead, abort!
         }
 
-        //Console.WriteLine($"TryProcItem: {Name}");
-
-        var currentTime = Time.GetUnixTime();
-
-        // roll for a chance of casting spell
-        var chance = ProcSpellRate ?? 0.0f;
-
-        var creatureAttacker = attacker as Creature;
-        var playerAttacker = attacker as Player;
-
-        if (playerAttacker != null && playerAttacker.GetCreatureSkill(Skill.ArcaneLore).Current < ItemDifficulty)
-        {
-            return;
-        }
-
-        if (creatureAttacker != null)
-        {
-            if (NextProcAttemptTime > currentTime)
-            {
-                return;
-            }
-
-            if (playerAttacker != null)
-            {
-                chance += playerAttacker.ScaleWithPowerAccuracyBar((float)chance); // up to double chance to proc
-            }
-        }
-
-        // special handling for aetheria
-        if (Aetheria.IsAetheria(WeenieClassId) && creatureAttacker != null)
-        {
-            chance = Aetheria.CalcProcRate(this, creatureAttacker);
-        }
-
-        var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
-        if (rng >= chance)
-        {
-            return;
-        }
-
         if (ProcSpell == null)
         {
             _log.Error("TryProcItem() - ProcSpell = null for {Weapon}", this);
@@ -1350,6 +1310,47 @@ partial class WorldObject
                     );
                 }
             }
+            return;
+        }
+
+        //Console.WriteLine($"TryProcItem: {Name}");
+
+        var currentTime = Time.GetUnixTime();
+
+        // roll for a chance of casting spell
+        var chance = ProcSpellRate ?? 0.0f;
+
+        var creatureAttacker = attacker as Creature;
+        var playerAttacker = attacker as Player;
+
+        if (playerAttacker != null && playerAttacker.GetCreatureSkill(Skill.ArcaneLore).Current < ItemDifficulty)
+        {
+            return;
+        }
+
+        if (creatureAttacker != null)
+        {
+            if (NextProcAttemptTime > currentTime)
+            {
+                return;
+            }
+
+            if (playerAttacker != null)
+            {
+                chance *= playerAttacker.ScaleWithPowerAccuracyBar((float)chance);
+                chance *= GetMagicSkillProcChanceMod(playerAttacker, spell);
+            }
+        }
+
+        // special handling for aetheria
+        if (Aetheria.IsAetheria(WeenieClassId) && creatureAttacker != null)
+        {
+            chance = Aetheria.CalcProcRate(this, creatureAttacker);
+        }
+
+        var rng = ThreadSafeRandom.Next(0.0f, 1.0f);
+        if (rng >= chance)
+        {
             return;
         }
 
@@ -1436,6 +1437,18 @@ partial class WorldObject
 
             attacker.TryCastSpell(spell, target, itemCaster, itemCaster, true, true);
         }
+    }
+
+    /// <summary>
+    /// Up to double proc chance based on player effective magic skill and spell difficulty
+    /// </summary>
+    private static double GetMagicSkillProcChanceMod(Player playerAttacker, Spell spell)
+    {
+        var school = spell.School;
+        var difficulty = spell.Power;
+        var magicSkill = school == MagicSchool.WarMagic ? playerAttacker.GetModdedWarMagicSkill() : playerAttacker.GetModdedLifeMagicSkill();
+
+        return 1.0 + SkillCheck.GetMagicSkillChance((int)magicSkill, (int)difficulty);
     }
 
     private bool? isMasterable;

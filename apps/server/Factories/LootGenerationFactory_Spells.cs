@@ -58,7 +58,8 @@ public partial class LootGenerationFactory
 
         if (itemProc != SpellId.Undef)
         {
-            var procRate = 0.025f + (0.025f * GetDiminishingRoll(profile));
+            var animLength = WeaponAnimationLength.GetWeaponAnimLength(wo) / 100;
+            var procRate = animLength + (animLength * GetDiminishingRoll(profile));
 
             var spell = new Server.Entity.Spell(itemProc);
             wo.ProcSpellRate = procRate;
@@ -76,14 +77,14 @@ public partial class LootGenerationFactory
         wo.WieldDifficulty3 = 2;
 
         var warSpell = ThreadSafeRandom.Next(0, 1) == 0 ? true : false;
-        if (warSpell)
-        {
-            wo.WieldSkillType3 = (int)Skill.WarMagic;
-        }
-        else
-        {
-            wo.WieldSkillType3 = (int)Skill.LifeMagic;
-        }
+        //if (warSpell)
+        //{
+        //    wo.WieldSkillType3 = (int)Skill.WarMagic;
+        //}
+        //else
+        //{
+        //    wo.WieldSkillType3 = (int)Skill.LifeMagic;
+        //}
 
         if (roll.IsMeleeWeapon)
         {

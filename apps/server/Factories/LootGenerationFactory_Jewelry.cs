@@ -130,7 +130,7 @@ public static partial class LootGenerationFactory
             var finalAmount = ratingRoll + minRating;
             var ratingPercentile = finalAmount / 14.0;
 
-            var type = ThreadSafeRandom.Next(1, 2); // disabled case 3 until finished development
+            var type = ThreadSafeRandom.Next(1, 2);
             switch (type)
             {
                 case 1:
@@ -138,22 +138,6 @@ public static partial class LootGenerationFactory
                     break;
                 case 2:
                     wo.GearMaxHealth = (int)finalAmount * 2;
-                    break;
-                case 3:
-                    if (!isMagical)
-                    {
-                        //Console.WriteLine(wo.NameWithMaterial);
-                        // Apply Spell
-                        var element = ThreadSafeRandom.Next(1, 7);
-                        var spellType = tier < 4 ? 1 : ThreadSafeRandom.Next(1, 4);
-                        //wo.ProcSpell = (uint)GetSpellDID(tier, element, spellType);
-                        wo.UiEffects = GetUiEffects(element);
-                        //wo.ProcSpellRate = (GetSpellProcChance(tier, spellType) / 2) * rollPercentile + (GetSpellProcChance(tier, spellType) / 2);
-                        wo.ItemDifficulty = GetSpellProcDifficulty(tier);
-                        wo.LongDesc =
-                            "This item cannot contain additional spells.\n\n(This item's ability is still in development)\n\n"
-                            + wo.LongDesc;
-                    }
                     break;
             }
             totalRollPercentile += ratingPercentile;
@@ -173,7 +157,7 @@ public static partial class LootGenerationFactory
             var finalAmount = ratingRoll + minRating;
             var ratingPercentile = finalAmount / 7.0;
 
-            var type = ThreadSafeRandom.Next(1, 2); // disabled case 3 until finished development
+            var type = ThreadSafeRandom.Next(1, 2);
             switch (type)
             {
                 case 1:
@@ -181,22 +165,6 @@ public static partial class LootGenerationFactory
                     break;
                 case 2:
                     wo.GearCritDamageResist = (int)finalAmount;
-                    break;
-                case 3:
-                    if (!isMagical)
-                    {
-                        //Console.WriteLine(wo.NameWithMaterial);
-                        // Apply Spell Proc DID and Proc Rate
-                        var element = ThreadSafeRandom.Next(1, 7);
-                        var spellType = tier < 4 ? 1 : ThreadSafeRandom.Next(1, 4);
-                        wo.ProcSpell = (uint)GetSpellDID(tier, element, spellType);
-                        wo.UiEffects = GetUiEffects(element);
-                        wo.ProcSpellRate =
-                            (GetSpellProcChance(tier, spellType) / 2) * rollPercentile
-                            + (GetSpellProcChance(tier, spellType) / 2);
-                        wo.ItemDifficulty = GetSpellProcDifficulty(tier);
-                        wo.LongDesc = "This item cannot contain additional spells.\n\n" + wo.LongDesc;
-                    }
                     break;
             }
             totalRollPercentile += ratingPercentile;
@@ -216,7 +184,7 @@ public static partial class LootGenerationFactory
             var finalAmount = ratingRoll + minRating;
             var ratingPercentile = finalAmount / 7.0;
 
-            var type = ThreadSafeRandom.Next(1, 2); // disabled case 3 until finished development
+            var type = ThreadSafeRandom.Next(1, 2);
             switch (type)
             {
                 case 1:
@@ -224,22 +192,6 @@ public static partial class LootGenerationFactory
                     break;
                 case 2:
                     wo.GearDamageResist = (int)finalAmount;
-                    break;
-                case 3:
-                    if (!isMagical)
-                    {
-                        //Console.WriteLine(wo.NameWithMaterial);
-                        // Apply Spell Proc DID and Proc Rate
-                        var element = ThreadSafeRandom.Next(1, 7);
-                        var spellType = tier < 4 ? 1 : ThreadSafeRandom.Next(1, 4);
-                        //wo.ProcSpell = (uint)GetSpellDID(tier, element, spellType, out var uiEffects);
-                        wo.UiEffects = GetUiEffects(element);
-                        //wo.ProcSpellRate = (GetSpellProcChance(tier, spellType) / 2) * rollPercentile + (GetSpellProcChance(tier, spellType) / 2);
-                        wo.ItemDifficulty = GetSpellProcDifficulty(tier);
-                        wo.LongDesc =
-                            "This item cannot contain additional spells.\n\n(This item's ability is still in development)\n\n"
-                            + wo.LongDesc;
-                    }
                     break;
             }
             totalRollPercentile += ratingPercentile;
@@ -683,26 +635,6 @@ public static partial class LootGenerationFactory
                 break;
         }
         return SpellId.Undef;
-    }
-
-    private static float GetSpellProcChance(int tier, int spellType)
-    {
-        float[,] procChances =
-        {
-            { 0.025f, 0.05f, 0.06f, 0.07f, 0.08f, 0.09f, 0.1f, 0.1f }, // Bolts
-            { 0.025f, 0.05f, 0.09f, 0.0175f, 0.21f, 0.25f, 0.3f, 0.3f }, // Streaks
-            { 0.025f, 0.05f, 0.06f, 0.07f, 0.08f, 0.09f, 0.1f, 0.1f }, // Volleys
-            { 0.025f, 0.05f, 0.06f, 0.07f, 0.08f, 0.09f, 0.1f, 0.1f }, // Blasts
-        };
-
-        return procChances[spellType - 1, tier - 1];
-    }
-
-    private static int GetSpellProcDifficulty(int tier)
-    {
-        int[] diff = { 50, 100, 200, 300, 350, 400, 450, 475 };
-
-        return diff[tier - 1];
     }
 
     private static int GetJewelryWorkmanship(WorldObject wo, double gearRatingPercentile)

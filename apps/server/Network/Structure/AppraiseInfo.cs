@@ -1682,6 +1682,11 @@ public class AppraiseInfo
             return;
         }
 
+        if (wo.ProcSpell is null)
+        {
+            return;
+        }
+
         var wielder = (Creature)wo.Wielder;
 
         _extraPropertiesText += $"Cast on strike chance: {Math.Round(procSpellRate * 100, 1)}%\n";
