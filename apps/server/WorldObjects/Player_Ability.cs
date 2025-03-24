@@ -1153,7 +1153,7 @@ partial class Player
                     )
                 );
             }
-            return false;
+            return true;
         }
 
         Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.Perception), targetDeceptionSkill);
@@ -1291,7 +1291,7 @@ partial class Player
                         )
                     );
                 }
-                return false;
+                return true;
             }
 
             Proficiency.OnSuccessUse(this, GetCreatureSkill(Skill.Perception), targetDeceptionSkill);
