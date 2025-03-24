@@ -241,7 +241,8 @@ public class SpellTransference : Stackable
                 if (
                     !player.ConfirmationManager.EnqueueSend(
                         new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                        $"Extract {chosenSpell.Name} from {target.NameWithMaterial}, destroying it {consumed} in the process?\n\nIf this item contains more than one spell, selecting 'No' will cycle through the remaining spells.\n\n"
+                        $"Extract {chosenSpell.Name} from {target.NameWithMaterial}, destroying it {consumed} in the process?" +
+                        $"\n\nIf this item contains more than one spell, selecting 'No' will cycle through the remaining spells.\n\n"
                     )
                 )
                 {
@@ -322,7 +323,10 @@ public class SpellTransference : Stackable
                         pearl.Tier = target.Tier;
                         var wieldReq = LootGenerationFactory.GetWieldDifficultyPerTier(pearl.Tier ?? 1);
                         pearl.LongDesc =
-                            $"This pearl contains the spell {spell.Name}.\n\nIt may only be applied to {itemType} with a Wield Requirement of {wieldReq} or greater.\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character.\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
+                            $"This pearl contains the spell {spell.Name}." +
+                            $"\n\nIt may only be applied to {itemType} with a Wield Requirement of {wieldReq} or greater." +
+                            $"\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character." +
+                            $"\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
                         pearl.TinkerLog = $"{target.ItemType}";
                         pearl.UiEffects = ACE.Entity.Enum.UiEffects.BoostMana;
 
@@ -597,21 +601,24 @@ public class SpellTransference : Stackable
 
                         if (isProc)
                         {
-                            target.ProcSpellRate = 0.15f;
+                            var animLength = WeaponAnimationLength.GetWeaponAnimLength(target) / 100;
+                            var procRate = animLength + (animLength * LootGenerationFactory.GetDiminishingRoll());
+
+                            target.ProcSpellRate = procRate;
                             target.ProcSpell = (uint)spellToAddId;
                             target.ProcSpellSelfTargeted = spellToAdd.IsSelfTargeted;
-                            target.WieldRequirements2 = WieldRequirement.Training;
-                            target.WieldDifficulty2 = 2;
+                            //target.WieldRequirements2 = WieldRequirement.Training;
+                            //target.WieldDifficulty2 = 2;
 
-                            if (spellToAdd.School == MagicSchool.LifeMagic)
-                            {
-                                target.WieldSkillType2 = 33;
-                            }
+                            //if (spellToAdd.School == MagicSchool.LifeMagic)
+                            //{
+                            //    target.WieldSkillType2 = 33;
+                            //}
 
-                            if (spellToAdd.School == MagicSchool.WarMagic)
-                            {
-                                target.WieldSkillType2 = 34;
-                            }
+                            //if (spellToAdd.School == MagicSchool.WarMagic)
+                            //{
+                            //    target.WieldSkillType2 = 34;
+                            //}
                         }
                         else
                         {
