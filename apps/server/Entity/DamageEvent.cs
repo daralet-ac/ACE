@@ -1130,6 +1130,7 @@ public class DamageEvent
         CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttacker, playerDefender);
         CheckForCombatAbilityFuryBuildUpWhenDamaged(playerDefender);
         CheckForWeaponMasterEffects(playerAttacker, defender);
+        CheckForEnchantedBlade(playerAttacker, defender, _attackHeight);
 
         if (_attacker.IsMonster)
         {
@@ -1201,6 +1202,42 @@ public class DamageEvent
             //     Console.WriteLine("Spear");
             //     break;
         }
+    }
+
+    private void CheckForEnchantedBlade(Player player, Creature target, AttackHeight attackHeight)
+    {
+        if (player is null)
+        {
+            return;
+        }
+
+        var spell = attackHeight switch
+        {
+            AttackHeight.High => player.EnchantedBladeHighStoredSpell,
+            AttackHeight.Medium => player.EnchantedBladeMedStoredSpell,
+            AttackHeight.Low => player.EnchantedBladeLowStoredSpell,
+            _ => null
+        };
+
+        if (spell is null)
+        {
+            return;
+        }
+
+        var weapon = player.GetEquippedMeleeWeapon();
+
+        if (weapon is null)
+        {
+            return;
+        }
+
+        var spellCraft = weapon.ItemSpellcraft ?? 1;
+
+        player.TryCastSpell(spell, target, null, weapon, false, false, true, true, spellCraft);
+
+        player.EnchantedBladeHighStoredSpell = null;
+        player.EnchantedBladeMedStoredSpell = null;
+        player.EnchantedBladeLowStoredSpell = null;
     }
 
     private void WeaponMasterOffBalance(Player playerAttacker, Creature defender, int weaponTier, float powerLevel)

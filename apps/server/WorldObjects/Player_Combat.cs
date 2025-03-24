@@ -162,8 +162,6 @@ partial class Player
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Thievery, (int)SigilTrinketThieveryEffect.Treachery, damageEvent.IsCritical);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Deception, (int)SigilTrinketDeceptionEffect.Avoidance);
 
-        CheckForEnchantedBlade(target);
-
         target.OnAttackReceived(
             this,
             (damageSource == null || damageSource.ProjectileSource == null) ? CombatType.Melee : CombatType.Missile,
@@ -388,26 +386,6 @@ partial class Player
         }
 
         return damageEvent;
-    }
-
-    private void CheckForEnchantedBlade(Creature target)
-    {
-        if (EnchantedWeaponStoredSpell is null)
-        {
-            return;
-        }
-
-        var weapon = GetEquippedMeleeWeapon();
-
-        if (weapon is null)
-        {
-            return;
-        }
-
-        var spellCraft = weapon.ItemSpellcraft ?? 1;
-
-        TryCastSpell(EnchantedWeaponStoredSpell, target, null, weapon, false, false, true, true, spellCraft);
-        EnchantedWeaponStoredSpell = null;
     }
 
     /// <summary>

@@ -98,7 +98,9 @@ partial class Player
     public bool EnchantedWeaponIsActive => LastEnchantedWeaponActivated > Time.GetUnixTime() - EnchantedWeaponActivatedDuration;
     private double LastEnchantedWeaponActivated;
     private double EnchantedWeaponActivatedDuration = 10;
-    public Spell EnchantedWeaponStoredSpell;
+    public Spell EnchantedBladeHighStoredSpell;
+    public Spell EnchantedBladeMedStoredSpell;
+    public Spell EnchantedBladeLowStoredSpell;
 
     public CombatAbility EquippedCombatAbility
     {
@@ -756,29 +758,8 @@ partial class Player
 
     public bool TryUseEnchantedBlade(WorldObject ability)
     {
-        var gemAbility = ability as Gem;
-
-        if (ability.CombatAbilityId is null)
+        if (!VerifyCombatFocus(CombatAbility.EnchantedBlade))
         {
-            _log.Error("{Ability} is missing a CombatAbilityId", ability.Name);
-
-            if (gemAbility != null)
-            {
-                gemAbility.CombatAbilitySuccess = false;
-            }
-
-            return false;
-        }
-
-        var equippedFocus = GetEquippedCombatFocus();
-        if (equippedFocus is not { CombatFocusType: (int)CombatFocusType.Spellsword })
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"{ability.Name} can only be used while a Spellsword Focus is equipped.",
-                    ChatMessageType.Broadcast
-                )
-            );
             return false;
         }
 
@@ -794,30 +775,38 @@ partial class Player
             return false;
         }
 
-        if ((CombatAbility)ability.CombatAbilityId
-            is CombatAbility.EnchantedBladeArc
-            or CombatAbility.EnchantedBladeVolley
-            or CombatAbility.EnchantedBladeBlast
-            && GetCreatureSkill(Skill.WarMagic).AdvancementClass < SkillAdvancementClass.Trained)
+        if (!equippedMeleeWeapon.ProcSpell.HasValue)
         {
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"{ability.Name} requires trained war magic.",
+                    $"Equipped melee weapon must have a Cast-on-strike spell to use Enchanted Blade.",
                     ChatMessageType.Broadcast
                 )
             );
             return false;
         }
 
-        if ((CombatAbility)ability.CombatAbilityId
-            is CombatAbility.EnchantedBladeDrainLife
-            or CombatAbility.EnchantedBladeDrainStamina
-            or CombatAbility.EnchantedBladeDrainMana
+        var weaponProcSpell = new Spell(equippedMeleeWeapon.ProcSpell.Value);
+        var magicSchool = weaponProcSpell.School;
+
+        if (magicSchool is MagicSchool.WarMagic
+            && GetCreatureSkill(Skill.WarMagic).AdvancementClass < SkillAdvancementClass.Trained)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ability.Name} with this weapon requires trained war magic.",
+                    ChatMessageType.Broadcast
+                )
+            );
+            return false;
+        }
+
+        if (magicSchool is MagicSchool.LifeMagic
             && GetCreatureSkill(Skill.LifeMagic).AdvancementClass < SkillAdvancementClass.Trained)
         {
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"{ability.Name} requires trained life magic.",
+                    $"{ability.Name} with this weapon requires trained life magic.",
                     ChatMessageType.Broadcast
                 )
             );
@@ -830,18 +819,19 @@ partial class Player
             weaponDamageType = SlashThrustToggle ? DamageType.Pierce : DamageType.Slash;
         }
 
-        var baseSpell = (CombatAbility)ability.CombatAbilityId switch
-        {
-            CombatAbility.EnchantedBladeArc => GetLevelOneArcOfDamageType(weaponDamageType),
-            CombatAbility.EnchantedBladeBlast => GetLevelOneBlastOfDamageType(weaponDamageType),
-            CombatAbility.EnchantedBladeVolley => GetLevelOneVolleyOfDamageType(weaponDamageType),
-            CombatAbility.EnchantedBladeDrainLife => new Spell(SpellId.DrainHealth1),
-            CombatAbility.EnchantedBladeDrainStamina => new Spell(SpellId.DrainStamina1),
-            CombatAbility.EnchantedBladeDrainMana => new Spell(SpellId.DrainMana1),
-            _ => null
-        };
+        var baseSpellHighAttack = magicSchool is MagicSchool.WarMagic
+            ? GetLevelOneBlastOfDamageType(weaponDamageType)
+            : new Spell(SpellId.DrainHealth1);
 
-        if (baseSpell is null)
+        var baseSpellMedAttack = magicSchool is MagicSchool.WarMagic
+            ? GetLevelOneArcOfDamageType(weaponDamageType)
+            : new Spell(SpellId.DrainStamina1);
+
+        var baseSpellLowAttack = magicSchool is MagicSchool.WarMagic
+            ? GetLevelOneVolleyOfDamageType(weaponDamageType)
+            : new Spell(SpellId.DrainMana1);
+
+        if (baseSpellHighAttack is null || baseSpellMedAttack is null || baseSpellLowAttack is null)
         {
             _log.Error("TryUseEnchantedBlade() - baseSpell is null");
             return false;
@@ -854,7 +844,7 @@ partial class Player
             weaponSpellcraft = 50;
         }
 
-        var magicSkill = baseSpell.School is MagicSchool.WarMagic ? GetModdedWarMagicSkill() : GetModdedLifeMagicSkill();
+        var magicSkill = magicSchool is MagicSchool.WarMagic ? GetModdedWarMagicSkill() : GetModdedLifeMagicSkill();
         var averagedMagicSkill = (uint)((magicSkill + weaponSpellcraft) * 0.5);
         var highestMagicSkill = Math.Max(averagedMagicSkill, (int)weaponSpellcraft);
 
@@ -863,11 +853,15 @@ partial class Player
         var closest = diff.MinBy(x => Math.Abs(x - roll));
         var level = Array.IndexOf(diff, closest);
 
-        var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
+        var finalHighSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpellHighAttack.Id, level + 1);
+        var finalMedSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpellMedAttack.Id, level + 1);
+        var finalLowSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpellLowAttack.Id, level + 1);
 
-        EnchantedWeaponStoredSpell = new Spell(finalSpellId);
+        EnchantedBladeHighStoredSpell = new Spell(finalHighSpellId);
+        EnchantedBladeMedStoredSpell = new Spell(finalMedSpellId);
+        EnchantedBladeLowStoredSpell = new Spell(finalLowSpellId);
 
-        var manaCost = (int)EnchantedWeaponStoredSpell.BaseMana * 2;
+        var manaCost = (int)EnchantedBladeHighStoredSpell.BaseMana * 2;
         if (Mana.Current < manaCost)
         {
             Session.Network.EnqueueSend(
@@ -1684,12 +1678,7 @@ partial class Player
                     return false;
                 }
                 break;
-            case CombatAbility.EnchantedBladeArc:
-            case CombatAbility.EnchantedBladeBlast:
-            case CombatAbility.EnchantedBladeVolley:
-            case CombatAbility.EnchantedBladeDrainLife:
-            case CombatAbility.EnchantedBladeDrainStamina:
-            case CombatAbility.EnchantedBladeDrainMana:
+            case CombatAbility.EnchantedBlade:
                 if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Spellsword})
                 {
                     Session.Network.EnqueueSend(
