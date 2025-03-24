@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ACE.Common;
 using ACE.DatLoader.Entity.AnimationHooks;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
