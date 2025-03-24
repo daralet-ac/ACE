@@ -364,6 +364,149 @@ public class CombatFocus : WorldObject
 
         var particalEffect = GetFocusParticleEffect();
         player.PlayParticleEffect(particalEffect, player.Guid);
+
+        TriggerCooldownsOfUsableAbilities(player, (CombatFocusType)combatFocusType);
+    }
+
+    private void TriggerCooldownsOfUsableAbilities(Player player, CombatFocusType combatFocusType)
+    {
+        var phalanx = player.GetInventoryItemsOfWCID(1051123);
+        var provoke = player.GetInventoryItemsOfWCID(1051118);
+        var parry = player.GetInventoryItemsOfWCID(1051124);
+
+        var weaponMaster = player.GetInventoryItemsOfWCID(1051125);
+        var fury = player.GetInventoryItemsOfWCID(1051135);
+        var relentless = player.GetInventoryItemsOfWCID(1051127);
+
+        var multishot = player.GetInventoryItemsOfWCID(1051131);
+        var steadyShot = player.GetInventoryItemsOfWCID(1051130);
+        var evasiveStance = player.GetInventoryItemsOfWCID(1051114);
+
+        var vanish = player.GetInventoryItemsOfWCID(1051112);
+        var backstab = player.GetInventoryItemsOfWCID(1051132);
+        var smokescreen = player.GetInventoryItemsOfWCID(1051119);
+
+        var overload = player.GetInventoryItemsOfWCID(1051133);
+        var battery = player.GetInventoryItemsOfWCID(1051134);
+        var manaBarrier = player.GetInventoryItemsOfWCID(1051110);
+
+        var enchantedBlade = player.GetInventoryItemsOfWCID(1051115);
+        var reflect = player.GetInventoryItemsOfWCID(1051129);
+        var aegis = player.GetInventoryItemsOfWCID(1051128);
+
+        // class-locked abilities
+        switch (combatFocusType)
+        {
+            case WorldObjects.CombatFocusType.Warrior:
+                if (phalanx.Count > 0)
+                {
+                    player.EnchantmentManager.StartCooldown(phalanx[0]);
+                }
+                break;
+            case WorldObjects.CombatFocusType.Blademaster:
+                if (weaponMaster.Count > 0)
+                {
+                    player.EnchantmentManager.StartCooldown(weaponMaster[0]);
+                }
+                break;
+            case WorldObjects.CombatFocusType.Archer:
+                if (multishot.Count > 0)
+                {
+                    player.EnchantmentManager.StartCooldown(multishot[0]);
+                }
+                break;
+            case WorldObjects.CombatFocusType.Vagabond:
+                if (vanish.Count > 0)
+                {
+                    player.EnchantmentManager.StartCooldown(vanish[0]);
+                }
+                break;
+            case WorldObjects.CombatFocusType.Sorcerer:
+                if (overload.Count > 0)
+                {
+                    player.EnchantmentManager.StartCooldown(overload[0]);
+                }
+                break;
+            case WorldObjects.CombatFocusType.Spellsword:
+                if (enchantedBlade.Count > 0)
+                {
+                    player.EnchantmentManager.StartCooldown(enchantedBlade[0]);
+                }
+                break;
+        }
+
+        // class-shared abilities
+        if (combatFocusType is WorldObjects.CombatFocusType.Warrior or WorldObjects.CombatFocusType.Blademaster or WorldObjects.CombatFocusType.Spellsword)
+        {
+            if (provoke.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(provoke[0]);
+            }
+            if (parry.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(parry[0]);
+            }
+        }
+
+        if (combatFocusType is WorldObjects.CombatFocusType.Blademaster or WorldObjects.CombatFocusType.Archer or WorldObjects.CombatFocusType.Warrior)
+        {
+            if (fury.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(fury[0]);
+            }
+            if (relentless.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(relentless[0]);
+            }
+        }
+
+        if (combatFocusType is WorldObjects.CombatFocusType.Archer or WorldObjects.CombatFocusType.Blademaster or WorldObjects.CombatFocusType.Vagabond)
+        {
+            if (steadyShot.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(steadyShot[0]);
+            }
+            if (evasiveStance.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(evasiveStance[0]);
+            }
+        }
+
+        if (combatFocusType is WorldObjects.CombatFocusType.Vagabond or WorldObjects.CombatFocusType.Archer or WorldObjects.CombatFocusType.Sorcerer)
+        {
+            if (backstab.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(backstab[0]);
+            }
+            if (smokescreen.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(smokescreen[0]);
+            }
+        }
+
+        if (combatFocusType is WorldObjects.CombatFocusType.Sorcerer or WorldObjects.CombatFocusType.Vagabond or WorldObjects.CombatFocusType.Spellsword)
+        {
+            if (battery.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(battery[0]);
+            }
+            if (manaBarrier.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(manaBarrier[0]);
+            }
+        }
+
+        if (combatFocusType is WorldObjects.CombatFocusType.Spellsword or WorldObjects.CombatFocusType.Warrior or WorldObjects.CombatFocusType.Sorcerer)
+        {
+            if (reflect.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(reflect[0]);
+            }
+            if (aegis.Count > 0)
+            {
+                player.EnchantmentManager.StartCooldown(aegis[0]);
+            }
+        }
     }
 
     public void OnDequip(Player player, bool onLevelUp = false, int? startingLevel = null)
