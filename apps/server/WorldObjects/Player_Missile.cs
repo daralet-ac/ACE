@@ -271,14 +271,24 @@ partial class Player
                 // Check for missile cleaves
                 var numCleaves = 0;
 
-                if (MultiShotIsActive && GetPowerAccuracyBar() >= 0.5f)
-                {
-                    numCleaves += 1;
-                }
-
                 numCleaves += CheckForRatingSlashCleaveBonus(ammo);
 
                 var cleaveTargets = creature.GetNearbyMonsters(10);
+
+                if (MultiShotIsActive && GetPowerAccuracyBar() >= 0.5f && cleaveTargets.Count > 1)
+                {
+                    if (cleaveTargets.Count > 2)
+                    {
+                        MultishotNumTargets = 3;
+                        numCleaves += 2;
+                    }
+                    else
+                    {
+                        MultishotNumTargets = 2;
+                        numCleaves += 1;
+                    }
+                }
+
                 var cleaveCount = 0;
 
                 foreach (var cleave in cleaveTargets)

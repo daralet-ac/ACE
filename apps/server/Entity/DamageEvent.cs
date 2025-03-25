@@ -225,47 +225,12 @@ public class DamageEvent
 
         if (Weapon is not null && _playerAttacker is { RelentlessStanceIsActive: true })
         {
-            var powerBarTime = _playerAttacker.GetPowerAccuracyBar();
-            if (powerBarTime <= 0.5)
-            {
-                var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(Weapon);
-
-                if (Weapon is { IsTwoHanded: true })
-                {
-                    weaponAnimTime *= 0.5f;
-                }
-
-                _playerAttacker.AdrenalineMeter += weaponAnimTime / 20 + powerBarTime / 10;
-
-                if (_playerAttacker.AdrenalineMeter > 1.0f)
-                {
-                    _playerAttacker.AdrenalineMeter = 1.0f;
-                }
-            }
+            _playerAttacker.IncreaseRelentlessAdrenalineMeter(Weapon);
         }
 
         if (Weapon is not null && _playerAttacker is { FuryStanceIsActive: true })
         {
-            var powerBarTime = _playerAttacker.GetPowerAccuracyBar();
-            if (powerBarTime >= 0.5)
-            {
-                var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(Weapon);
-
-                if (Weapon is { IsTwoHanded: true })
-                {
-                    weaponAnimTime *= 0.5f;
-                }
-
-                var powerBarMod = powerBarTime * 20 * powerBarTime;
-                var weaponTimeMod = weaponAnimTime / 100;
-
-                _playerAttacker.AdrenalineMeter += weaponTimeMod * powerBarMod;
-
-                if (_playerAttacker.AdrenalineMeter > 1.0f)
-                {
-                    _playerAttacker.AdrenalineMeter = 1.0f;
-                }
-            }
+            _playerAttacker.IncreaseFuryAdrenalineMeter(Weapon);
         }
     }
 
@@ -691,11 +656,21 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Multishot: Damage reduced by 25%.
+    /// COMBAT ABILITY - Multishot: Damage reduced by 25% if 2 targets, by 33% if 3 targets.
     /// </summary>
     private float GetCombatAbilityMultishotDamagePenalty(Player playerAttacker)
     {
-        return playerAttacker is { MultiShotIsActive: true } ? 0.75f : 1.0f;
+        if (playerAttacker is not { MultiShotIsActive: true})
+        {
+            return 1.0f;
+        }
+
+        return playerAttacker.MultishotNumTargets switch
+        {
+            3 => 0.67f,
+            2 => 0.75f,
+            _ => 1.0f,
+        };
     }
 
     /// <summary>

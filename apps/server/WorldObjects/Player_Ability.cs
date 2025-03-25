@@ -55,6 +55,7 @@ partial class Player
     public bool MultiShotIsActive => LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration;
     private double LastMultishotActivated;
     private double MultishotActivatedDuration = 10;
+    public int MultishotNumTargets = 1;
 
     public bool EvasiveStanceIsActive;
 
@@ -1733,10 +1734,67 @@ partial class Player
     {
         var animationLength = WeaponAnimationLength.GetSpellCastAnimationLength(ProjectileSpellType.Arc, spell.Level);
 
-        ManaChargeMeter += 0.05f * animationLength;
+        ManaChargeMeter += 0.1f * animationLength;
         if (ManaChargeMeter > 1.0f)
         {
             ManaChargeMeter = 1.0f;
+        }
+    }
+
+    public void IncreaseRelentlessAdrenalineMeter(WorldObject weapon)
+    {
+        var powerBarTime = GetPowerAccuracyBar();
+
+        if (powerBarTime <= 0.5)
+        {
+            var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(weapon);
+           
+            if (weapon is { IsTwoHanded: true } or { W_AttackType: AttackType.DoubleStrike })
+            {
+                weaponAnimTime *= 0.5f;
+            }
+
+            if (weapon is { W_AttackType: AttackType.TripleStrike })
+            {
+                weaponAnimTime *= 0.33f;
+            }
+
+            AdrenalineMeter += weaponAnimTime * 0.05f;
+
+            if (AdrenalineMeter > 1.0f)
+            {
+                AdrenalineMeter = 1.0f;
+            }
+        }
+    }
+
+    public void IncreaseFuryAdrenalineMeter(WorldObject weapon)
+    {
+        var powerBarTime = GetPowerAccuracyBar();
+
+        if (powerBarTime >= 0.5)
+        {
+            var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(weapon);
+
+            if (weapon is { IsTwoHanded: true } or { W_AttackType: AttackType.DoubleStrike })
+            {
+                weaponAnimTime *= 0.5f;
+            }
+
+            if (weapon is { W_AttackType: AttackType.TripleStrike})
+            {
+                weaponAnimTime *= 0.33f;
+            }
+
+            var powerBarMod = powerBarTime * 20 * powerBarTime;
+            var weaponTimeMod = weaponAnimTime / 100;
+
+            AdrenalineMeter += weaponTimeMod * powerBarMod;
+
+            if (AdrenalineMeter > 1.0f)
+            {
+                AdrenalineMeter = 1.0f;
+            }
         }
     }
 }
