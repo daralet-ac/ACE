@@ -1060,7 +1060,7 @@ partial class Creature
         if (deception.AdvancementClass == SkillAdvancementClass.Specialized)
         {
             var attackSkill = GetCreatureSkill(GetCurrentAttackSkill());
-            var skillChance = GetModdedDeceptionSkill() / attackSkill.Current;
+            var skillChance = (float)GetModdedDeceptionSkill() / attackSkill.Current;
             var chance = skillChance > 1f ? 0.5f : skillChance * 0.5f;
 
             if (chance >= ThreadSafeRandom.Next(0f, 1f))
