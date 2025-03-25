@@ -53,10 +53,10 @@ partial class Player
             return;
         }
 
-        if ((sourceItem.CombatAbilityId ?? 0) != (int)CombatAbility.Stealth)
-        {
-            EndStealth();
-        }
+        //if (sourceItem is not { CombatAbilityId: (int)CombatAbility.Backstab})
+        //{
+        //    EndStealth();
+        //}
 
         // Resolve the guid to an object that is either in our possession or on the Landblock
         var target = FindObject(
@@ -228,10 +228,10 @@ partial class Player
 
         if (item != null)
         {
-            if ((item.CombatAbilityId ?? 0) != (int)CombatAbility.Stealth && item.WeenieType != WeenieType.Corpse)
-            {
-                EndStealth();
-            }
+            //if ((item.CombatAbilityId ?? 0) != (int)CombatAbility.Stealth && item.WeenieType != WeenieType.Corpse)
+            //{
+            //    EndStealth();
+            //}
 
             if (IsTrading && item.IsBeingTradedOrContainsItemBeingTraded(ItemsInTradeWindow))
             {

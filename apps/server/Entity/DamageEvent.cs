@@ -458,7 +458,7 @@ public class DamageEvent
     /// </summary>
     private bool CheckForCombatAbilityBackstabNoEvade(Player playerAttacker)
     {
-        if (playerAttacker is not {BackstabIsActive: true, IsStealthed: true})
+        if (playerAttacker is not {BackstabIsActive: true} && !IsAttackFromStealth())
         {
             return false;
         }
@@ -930,7 +930,7 @@ public class DamageEvent
 
     private bool CheckForPlayerStealthBackstabGuaranteedCritical(Player playerAttacker)
     {
-        return playerAttacker is {BackstabIsActive: true, IsStealthed: true};
+        return playerAttacker is {BackstabIsActive: true} && IsAttackFromStealth();
     }
 
     /// <summary>
