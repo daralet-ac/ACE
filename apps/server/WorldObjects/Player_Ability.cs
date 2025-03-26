@@ -1011,7 +1011,7 @@ partial class Player
         {
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"Aegis can only be used if with a weapon that has spellcraft.",
+                    $"Aegis can only be used with a weapon that has spellcraft.",
                     ChatMessageType.Broadcast
                 )
             );
