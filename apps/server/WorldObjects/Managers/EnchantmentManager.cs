@@ -1697,9 +1697,7 @@ public class EnchantmentManager
 
         if (creature is Player player)
         {
-            player.SendMessage(
-                $"You receive {healAmount} points of periodic healing.", ChatMessageType.Broadcast
-            );
+            player.SendMessage($"You receive {healAmount} points of periodic healing.", ChatMessageType.Broadcast);
         }
     }
 
@@ -1730,10 +1728,7 @@ public class EnchantmentManager
 
         if (creature is Player player)
         {
-            player.SendMessage(
-                $"You receive {healAmount} points of periodic stamina.",
-                PropertyManager.GetBool("aetheria_heal_color").Item ? ChatMessageType.Broadcast : ChatMessageType.Combat
-            );
+            player.SendMessage($"You receive {healAmount} points of periodic stamina.", ChatMessageType.Broadcast);
         }
     }
 
@@ -1764,10 +1759,7 @@ public class EnchantmentManager
 
         if (creature is Player player)
         {
-            player.SendMessage(
-                $"You receive {healAmount} points of periodic mana.",
-                PropertyManager.GetBool("aetheria_heal_color").Item ? ChatMessageType.Broadcast : ChatMessageType.Combat
-            );
+            player.SendMessage($"You receive {healAmount} points of periodic mana.", ChatMessageType.Broadcast);
         }
     }
 

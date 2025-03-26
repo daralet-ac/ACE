@@ -778,5 +778,8 @@ public enum SpellCategory : uint
     ExplorerInspiration = 780,
     BleedDamage = 781,
     Dazed = 782,
-    Unbalanced = 783
+    Unbalanced = 783,
+    HealKitRegen = 784,
+    StaminaKitRegen = 785,
+    ManaKitRegen = 786
 }

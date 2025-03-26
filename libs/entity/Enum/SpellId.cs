@@ -6419,6 +6419,9 @@ public enum SpellId : uint
     Bleed,
     Dazed,
     Unbalanced,
+    HealKitRegen,
+    StaminaKitRegen,
+    ManaKitRegen,
 
     NumSpells = 8192,
 
