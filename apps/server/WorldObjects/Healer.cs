@@ -279,9 +279,9 @@ public class Healer : WorldObject
         {
             var spell = BoosterEnum switch
             {
-                PropertyAttribute2nd.Health => new Spell(5208), // TODO: Add new health kit spell
-                //PropertyAttribute2nd.Stamina => new Spell(??), // TODO: Add stamina kit spell
-                //PropertyAttribute2nd.Mana => new Spell(??), // TODO Add mana kit spell
+                PropertyAttribute2nd.Health => new Spell(6413),
+                PropertyAttribute2nd.Stamina => new Spell(6414),
+                PropertyAttribute2nd.Mana => new Spell(6415),
                 _ => null
             };
 
