@@ -826,15 +826,31 @@ partial class Player
 
         var baseSpellHighAttack = magicSchool is MagicSchool.WarMagic
             ? GetLevelOneBlastOfDamageType(weaponDamageType)
-            : new Spell(SpellId.DrainHealth1);
+            : new Spell(SpellId.HealSelf1);
 
         var baseSpellMedAttack = magicSchool is MagicSchool.WarMagic
-            ? GetLevelOneArcOfDamageType(weaponDamageType)
-            : new Spell(SpellId.DrainStamina1);
+            ? GetLevelOneBoltOfDamageType(weaponDamageType)
+            : new Spell(SpellId.RevitalizeSelf1);
 
         var baseSpellLowAttack = magicSchool is MagicSchool.WarMagic
             ? GetLevelOneVolleyOfDamageType(weaponDamageType)
-            : new Spell(SpellId.DrainMana1);
+            : new Spell(SpellId.ManaBoostSelf1);
+
+        if (true) // TODO: If player has upgraded Enchanted Blade to use advanced spells, prevent this block from running
+        {
+            if (magicSchool is MagicSchool.WarMagic)
+            {
+                baseSpellHighAttack = GetLevelOneBoltOfDamageType(weaponDamageType);
+                baseSpellMedAttack = GetLevelOneBoltOfDamageType(weaponDamageType);
+                baseSpellLowAttack = GetLevelOneBoltOfDamageType(weaponDamageType);
+            }
+            else
+            {
+                baseSpellHighAttack = new Spell(SpellId.HealSelf1);
+                baseSpellMedAttack = new Spell(SpellId.HealSelf1);
+                baseSpellLowAttack = new Spell(SpellId.HealSelf1);
+            }
+        }
 
         if (baseSpellHighAttack is null || baseSpellMedAttack is null || baseSpellLowAttack is null)
         {
@@ -900,17 +916,17 @@ partial class Player
         };
     }
 
-    private Spell GetLevelOneArcOfDamageType(DamageType weaponDamageType)
+    private Spell GetLevelOneBoltOfDamageType(DamageType weaponDamageType)
     {
         return weaponDamageType switch
         {
-            DamageType.Slash => new Spell(SpellId.BladeArc1),
-            DamageType.Pierce => new Spell(SpellId.ForceArc1),
-            DamageType.Bludgeon => new Spell(SpellId.ShockArc1),
-            DamageType.Cold => new Spell(SpellId.FrostArc1),
-            DamageType.Fire => new Spell(SpellId.FlameArc1),
-            DamageType.Acid => new Spell(SpellId.AcidArc1),
-            DamageType.Electric => new Spell(SpellId.LightningArc1),
+            DamageType.Slash => new Spell(SpellId.WhirlingBlade1),
+            DamageType.Pierce => new Spell(SpellId.ForceBolt1),
+            DamageType.Bludgeon => new Spell(SpellId.ShockWave1),
+            DamageType.Cold => new Spell(SpellId.FrostBolt1),
+            DamageType.Fire => new Spell(SpellId.FlameBolt1),
+            DamageType.Acid => new Spell(SpellId.AcidStream1),
+            DamageType.Electric => new Spell(SpellId.LightningBolt1),
             _ => null
         };
     }
