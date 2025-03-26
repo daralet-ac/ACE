@@ -865,6 +865,8 @@ public enum PropertyInt : ushort
     CombatFocusSkill2SpellAdded = 506,
     CombatFocusNumSkillsRemoved = 507,
     CombatFocusNumSkillsAdded = 508,
+    StaminaOverTime = 509,
+    ManaOverTime = 510,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,

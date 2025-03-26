@@ -277,9 +277,22 @@ public class Healer : WorldObject
         // heal-over-time if kit had uses remaining
         if (canHealOverTime)
         {
+            var spell = BoosterEnum switch
+            {
+                PropertyAttribute2nd.Health => new Spell(5208), // TODO: Add new health kit spell
+                //PropertyAttribute2nd.Stamina => new Spell(??), // TODO: Add stamina kit spell
+                //PropertyAttribute2nd.Mana => new Spell(??), // TODO Add mana kit spell
+                _ => null
+            };
+
+            if (spell is null)
+            {
+                _log.Error("DoHealing(Player {Player}, Target {Target}) - spell is null", healer.Name, target.Name);
+                return;
+            }
+
             var healingSkillCurrent = healer.GetCreatureSkill(Skill.Healing).Current;
 
-            var spell = new Spell(5208); // healing kit regeneration (surge of regen)
             spell.SpellStatModVal *= (float)HealkitMod.Value * (healingSkillCurrent * 0.01f);
 
             healer.TryCastSpell_Inner(spell, target);

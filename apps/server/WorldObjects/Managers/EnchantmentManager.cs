@@ -1570,7 +1570,7 @@ public class EnchantmentManager
             SpellSet.SetSpells
         );
 
-        HeartBeat_DamageOverTime(topLayerEnchantments);
+        HeartBeat_DamageOverTime(topLayerEnchantments); // and Heal-over-time
 
         var expired = WorldObject.Biota.PropertiesEnchantmentRegistry.HeartBeatEnchantmentsAndReturnExpired(
             heartbeatInterval,
@@ -1594,6 +1594,8 @@ public class EnchantmentManager
         var netherDots = new List<PropertiesEnchantmentRegistry>();
         var aetheriaDots = new List<PropertiesEnchantmentRegistry>();
         var heals = new List<PropertiesEnchantmentRegistry>();
+        var staminaHots = new List<PropertiesEnchantmentRegistry>();
+        var manaHots = new List<PropertiesEnchantmentRegistry>();
 
         foreach (var enchantment in enchantments)
         {
@@ -1620,6 +1622,14 @@ public class EnchantmentManager
             else if (enchantment.StatModKey == (int)PropertyInt.HealOverTime)
             {
                 heals.Add(enchantment);
+            }
+            else if (enchantment.StatModKey == (int)PropertyInt.StaminaOverTime)
+            {
+                staminaHots.Add(enchantment);
+            }
+            else if (enchantment.StatModKey == (int)PropertyInt.ManaOverTime)
+            {
+                manaHots.Add(enchantment);
             }
         }
 
@@ -1648,6 +1658,14 @@ public class EnchantmentManager
         if (heals.Count > 0)
         {
             ApplyHealingTick(heals);
+        }
+        if (staminaHots.Count > 0)
+        {
+            ApplyStaminaHealingTick(heals);
+        }
+        if (manaHots.Count > 0)
+        {
+            ApplyManaHealingTick(heals);
         }
     }
 
@@ -1680,7 +1698,74 @@ public class EnchantmentManager
         if (creature is Player player)
         {
             player.SendMessage(
-                $"You receive {healAmount} points of periodic healing.",
+                $"You receive {healAmount} points of periodic healing.", ChatMessageType.Broadcast
+            );
+        }
+    }
+
+    public void ApplyStaminaHealingTick(List<PropertiesEnchantmentRegistry> enchantments)
+    {
+        var creature = WorldObject as Creature;
+        if (creature == null || creature.IsDead)
+        {
+            return;
+        }
+
+        // get the total tick amount
+        var tickAmountTotal = 0.0f;
+        foreach (var enchantment in enchantments)
+        {
+            //var totalAmount = enchantment.StatModValue;
+            //var totalTicks = GetNumTicks(enchantment);
+            var tickAmount = enchantment.StatModValue;
+
+            tickAmountTotal += tickAmount;
+        }
+
+        // apply healing ratings?
+        tickAmountTotal *= creature.GetHealingRatingMod();
+
+        // do healing
+        var healAmount = creature.UpdateVitalDelta(creature.Stamina, (int)Math.Round(tickAmountTotal));
+
+        if (creature is Player player)
+        {
+            player.SendMessage(
+                $"You receive {healAmount} points of periodic stamina.",
+                PropertyManager.GetBool("aetheria_heal_color").Item ? ChatMessageType.Broadcast : ChatMessageType.Combat
+            );
+        }
+    }
+
+    public void ApplyManaHealingTick(List<PropertiesEnchantmentRegistry> enchantments)
+    {
+        var creature = WorldObject as Creature;
+        if (creature == null || creature.IsDead)
+        {
+            return;
+        }
+
+        // get the total tick amount
+        var tickAmountTotal = 0.0f;
+        foreach (var enchantment in enchantments)
+        {
+            //var totalAmount = enchantment.StatModValue;
+            //var totalTicks = GetNumTicks(enchantment);
+            var tickAmount = enchantment.StatModValue;
+
+            tickAmountTotal += tickAmount;
+        }
+
+        // apply healing ratings?
+        tickAmountTotal *= creature.GetHealingRatingMod();
+
+        // do healing
+        var healAmount = creature.UpdateVitalDelta(creature.Mana, (int)Math.Round(tickAmountTotal));
+
+        if (creature is Player player)
+        {
+            player.SendMessage(
+                $"You receive {healAmount} points of periodic mana.",
                 PropertyManager.GetBool("aetheria_heal_color").Item ? ChatMessageType.Broadcast : ChatMessageType.Combat
             );
         }
