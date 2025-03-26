@@ -214,6 +214,7 @@ public static partial class LootGenerationFactory
 
         // spells
         AssignMagic(wo, profile, roll, false, isMagical);
+        wo.ItemSpellcraft = RollSpellcraft(wo, profile);
 
         // item value
         //if (wo.HasMutateFilter(MutateFilter.Value))   // fixme: data
