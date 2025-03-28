@@ -330,7 +330,7 @@ public class DamageEvent
         // Check for guaranteed hits
         var isOverpower = CheckForOverpower(attacker, defender);
         var isFuryNoEvade = CheckForCombatAbilityEnrageNoEvade(playerAttacker, _attackerCombatAbility);
-        var isBackstabNoEvade = CheckForCombatAbilityBackstabNoEvade(playerAttacker);
+        var isBackstabNoEvade = CheckForCombatAbilityBackstabStealthNoEvade(playerAttacker, defender);
 
         if (isOverpower || isFuryNoEvade || isBackstabNoEvade || attacker == defender)
         {
@@ -419,19 +419,19 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// Attack cannot be evaded if Backstab ability activated when attacking from behind
+    /// Attack cannot be evaded if Backstab ability activated when attacking from behind and stealthed
     /// </summary>
-    private bool CheckForCombatAbilityBackstabNoEvade(Player playerAttacker)
+    private bool CheckForCombatAbilityBackstabStealthNoEvade(Player playerAttacker, Creature creatureTarget)
     {
-        if (playerAttacker is not {BackstabIsActive: true} && !IsAttackFromStealth())
+        if (playerAttacker is {BackstabIsActive: true, IsAttackFromStealth: true} && playerAttacker.IsBehindTargetCreature(creatureTarget))
         {
-            return false;
+            Evaded = false;
+            PartialEvasion = PartialEvasion.None;
+
+            return true;
         }
 
-        Evaded = false;
-        PartialEvasion = PartialEvasion.None;
-
-        return true;
+        return false;
     }
 
     /// <summary>
@@ -794,13 +794,13 @@ public class DamageEvent
             return 1.0f;
         }
 
-        if (CheckForPlayerStealthBackstabGuaranteedCritical(playerAttacker) || CheckForRatingReprisal(playerAttacker))
+        if (CheckForStealthBackstabAutoCrit(playerAttacker, defender) || CheckForRatingReprisal(playerAttacker))
         {
+            playerAttacker.IsAttackFromStealth = false;
             return 1.0f;
         }
 
         var criticalChance = WorldObject.GetWeaponCriticalChance(Weapon, attacker, _attackSkill, defender);
-        criticalChance += GetPlayerBackstabCriticalChanceBonus();
         criticalChance += GetPlayerSpecSkillCriticalChanceBonus();
 
         return criticalChance;
@@ -903,17 +903,13 @@ public class DamageEvent
                * _levelScalingMod;
     }
 
-    private bool CheckForPlayerStealthBackstabGuaranteedCritical(Player playerAttacker)
-    {
-        return playerAttacker is {BackstabIsActive: true} && IsAttackFromStealth();
-    }
 
     /// <summary>
-    /// COMBAT ABILITY - Backstab: +20% crit chance from behind
+    /// Guaranteed critical hit when using Backstab while attacking from behind and stealthed
     /// </summary>
-    private float GetPlayerBackstabCriticalChanceBonus()
+    private bool CheckForStealthBackstabAutoCrit(Player playerAttacker, Creature creatureTarget)
     {
-        return SneakAttackMod > 1.0f ? 0.2f : 0.0f;
+        return playerAttacker is { BackstabIsActive: true, IsAttackFromStealth: true } && playerAttacker.IsBehindTargetCreature(creatureTarget);
     }
 
     private float GetMitigation(Creature attacker, Creature defender)

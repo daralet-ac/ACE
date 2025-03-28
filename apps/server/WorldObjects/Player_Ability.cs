@@ -1404,6 +1404,32 @@ partial class Player
         return true;
     }
 
+    public void TryUseStealth()
+    {
+        if (!IsStealthed)
+        {
+            var mostRecentAttackEventTime = LastAttackTime > LastAttackReceivedTime ? LastAttackTime : LastAttackReceivedTime;
+
+            if (Time.GetUnixTime() - mostRecentAttackEventTime < 10.0)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"You cannot use Stealth if you have attacked, or received an attack, within the last 10 seconds.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+
+                return;
+            }
+
+            BeginStealth();
+        }
+        else
+        {
+            EndStealth();
+        }
+    }
+
     public void TryUseShroud()
     {
         if (EnchantmentManager.HasSpell(5379))

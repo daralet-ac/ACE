@@ -632,6 +632,7 @@ public class SpellProjectile : WorldObject
         var criticalChance = GetWeaponMagicCritFrequency(weapon, sourceCreature, attackSkill, target);
         criticalChance += CheckForWarSpecCriticalChanceBonus(sourcePlayer, weapon);
         criticalChance = CheckForRatingReprisalAutoCrit(target, sourcePlayer, criticalChance);
+        criticalChance = CheckForStealthBackstabAutoCrit(target, sourcePlayer, criticalChance);
 
         if (ThreadSafeRandom.Next(0.0f, 1.0f) < criticalChance)
         {
@@ -1185,6 +1186,25 @@ public class SpellProjectile : WorldObject
         sourcePlayer.QuestManager.Erase($"{target.Guid}/Reprisal");
 
         return 1.0f;
+    }
+
+    /// <summary>
+    /// Backstab: Auto-crit from stealth.
+    /// </summary>
+    private static float CheckForStealthBackstabAutoCrit(Creature target, Player sourcePlayer, float criticalChance)
+    {
+        if (target is null || criticalChance == 1.0f)
+        {
+            return criticalChance;
+        }
+
+        if (sourcePlayer is { IsAttackFromStealth: true, BackstabIsActive: true} && sourcePlayer.IsBehindTargetCreature(target))
+        {
+            sourcePlayer.IsAttackFromStealth = false;
+            return 1.0f;
+        }
+
+        return criticalChance;
     }
 
     private float GetAbsorbMod(Creature target, WorldObject source)

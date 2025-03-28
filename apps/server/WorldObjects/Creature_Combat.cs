@@ -760,6 +760,11 @@ partial class Creature
             playerAttacker.LastAttackTime = Time.GetUnixTime();
         }
 
+        if (this is Player player)
+        {
+            player.LastAttackReceivedTime = Time.GetUnixTime();
+        }
+
         numRecentAttacksReceived++;
     }
 
@@ -1067,6 +1072,11 @@ partial class Creature
             {
                 behind = true;
             }
+        }
+
+        if (this as Player is { IsAttackFromStealth: true})
+        {
+            behind = true;
         }
 
         var multiplier = 1.25f;
