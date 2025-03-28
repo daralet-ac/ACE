@@ -304,14 +304,7 @@ public class Gem : Stackable
                     }
                     break;
                 case CombatAbility.Stealth:
-                    if (!player.IsStealthed)
-                    {
-                        player.BeginStealth();
-                    }
-                    else
-                    {
-                        player.EndStealth();
-                    }
+                    player.TryUseStealth();
                     break;
                 case CombatAbility.SlashThrustToggle:
                     if (player.ToggleSlashThrustSetting())

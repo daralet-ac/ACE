@@ -324,15 +324,7 @@ partial class Player
 
         if (IsStealthed)
         {
-            var angle = Math.Abs(creature.GetAngle(this));
-            if (angle < 90 || creature.CombatMode != CombatMode.NonCombat)
-            {
-                EndStealth();
-            }
-            else
-            {
-                EndStealth(null, true);
-            }
+            EndStealth(null, true);
         }
 
         // Disabled to allow use of items/abilities during attack animations

@@ -268,6 +268,11 @@ partial class Player
                 var projectile = LaunchProjectile(launcher, ammo, target, origin, orientation, velocity);
                 UpdateAmmoAfterLaunch(ammo);
 
+                if (IsStealthed)
+                {
+                    EndStealth(null, true);
+                }
+
                 // Check for missile cleaves
                 var numCleaves = 0;
 

@@ -33,6 +33,8 @@ partial class Player
     public bool Attacking;
     public bool AttackCancelled;
 
+    public double LastAttackReceivedTime;
+
     public DateTime NextRefillTime;
 
     private DamageType LastHitReceivedDamageType;
@@ -2276,5 +2278,22 @@ partial class Player
         var finalDamageMod = 1 + damageMod * 0.01f;
 
         return finalDamageMod;
+    }
+
+    public bool IsBehindTargetCreature(Creature targetCreature)
+    {
+        if (targetCreature is null)
+        {
+            return false;
+        }
+
+        var angle = Math.Abs(targetCreature.GetAngle(this));
+
+        if (angle > 90)
+        {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -884,8 +884,6 @@ partial class Player
     {
         //Console.WriteLine("DoCastSpell");
 
-        EndStealth();
-
         if (!MagicState.IsCasting)
         {
             return;
@@ -1162,6 +1160,11 @@ partial class Player
         if (pk_error != null)
         {
             castingPreCheckStatus = CastingPreCheckStatus.InvalidPKStatus;
+        }
+
+        if (IsStealthed)
+        {
+            EndStealth(null, true);
         }
 
         switch (castingPreCheckStatus)
