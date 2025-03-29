@@ -3,7 +3,6 @@ using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
-using ACE.Server.Factories;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 
@@ -1067,21 +1066,6 @@ partial class WorldObject
 
         var creatureMod = IgnoreWard ?? 0.0f;
         var weaponMod = weapon.IgnoreWard ?? 0.0f;
-
-        var player = weapon.Wielder as Player;
-
-        // SPEC BONUS - War Magic (Orb): +10% ward penetration (additively)
-        if (player != null)
-        {
-            if (
-                weapon.WeaponSkill == Skill.WarMagic
-                && player.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized
-                && LootGenerationFactory.GetCasterSubType(weapon) == 0
-            )
-            {
-                creatureMod -= 0.1f;
-            }
-        }
 
         var finalMod = 1.0f - (float)Math.Max(creatureMod, weaponMod);
         //Console.WriteLine($"FinalMod = {finalMod}");

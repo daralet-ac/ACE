@@ -987,7 +987,7 @@ public class DamageEvent
         var armorRendingMod = GetArmorRendingMod(defender, playerAttacker);
         var armorCleavingMod = attacker.GetArmorCleavingMod(Weapon);
 
-        return Math.Min(armorRendingMod, armorCleavingMod);
+        return armorCleavingMod - (1.0f - armorRendingMod);
     }
 
     private float GetArmorRendingMod(Creature defender, Player playerAttacker)

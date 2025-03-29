@@ -754,6 +754,19 @@ partial class WorldObject
                 //    $" -Target Ward Level: {targetPlayer.GetWardLevel()}");
 
                 var ignoreWardMod = 1.0f;
+
+                if (player != null)
+                {
+                    ignoreWardMod = player.GetIgnoreWardMod(weapon);
+                    
+                    if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
+                    {
+                        ignoreWardMod -= GetWardRendingMod(player.GetCreatureSkill(Skill.LifeMagic));
+                    }
+
+                    ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearWardPen, "WardPen");
+                }
+
                 var wardMod = GetWardMod(caster as Creature, targetPlayer, ignoreWardMod) / 10;
 
                 addResult.Enchantment.StatModValue *= wardMod;
