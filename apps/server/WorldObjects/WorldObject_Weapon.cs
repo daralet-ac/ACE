@@ -903,11 +903,11 @@ partial class WorldObject
     }
 
     // -- ARMOR REND IMBUE --
-    // Grants Ignore 20% enemy armor, plus up to an additional 20% based on skill level
+    // Grants Ignore 1% enemy armor, plus up to an additional 10% based on skill level
     // Bonus amount caps 500 skill level
 
-    public static float MinArmorRendingMod = 0.2f;
-    public static float MaxArmorRendingMod = 0.4f;
+    public static float MinArmorRendingMod = 0.1f;
+    public static float MaxArmorRendingMod = 0.2f;
 
     public static float GetArmorRendingMod(CreatureSkill skill, Creature wielder, Creature target = null)
     {
@@ -1005,8 +1005,8 @@ partial class WorldObject
     // Grants Ignore 20% enemy ward, plus up to an additional 20% based on skill level
     // Bonus amount caps 500 skill level
 
-    public static float MinWardRendingMod = 0.2f;
-    public static float MaxWardRendingMod = 0.4f;
+    public static float MinWardRendingMod = 0.1f;
+    public static float MaxWardRendingMod = 0.2f;
 
     public static float GetWardRendingMod(CreatureSkill skill)
     {

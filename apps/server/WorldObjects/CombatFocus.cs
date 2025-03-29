@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Entity;
@@ -673,7 +672,7 @@ public class CombatFocus : WorldObject
                 CombatFocusNumSkillsAdded--;
             }
         }
-        
+
 
         player.Session.Network.EnqueueSend(
             new GameMessageSystemChat($"You remove the {spellName} from {Name}.", ChatMessageType.Craft)
@@ -720,10 +719,10 @@ public class CombatFocus : WorldObject
             else
             {
                 CombatFocusSkill2SpellAdded = (int)spellId;
-                CombatFocusNumSkillsAdded++;              
+                CombatFocusNumSkillsAdded++;
             }
         }
-        
+
 
         var spellName = GetSpellName(spellId);
 
