@@ -667,19 +667,17 @@ public class SpellProjectile : WorldObject
         }
 
         // ward mod, rend, and penetration
-        var wardRendingMod = 1.0f;
-        if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
-        {
-            wardRendingMod = 1.0f - GetWardRendingMod(attackSkill);
-        }
+        var ignoreWardMod = 1.0f;
 
-        var wardPenMod = 0.0f;
         if (sourcePlayer != null)
         {
-            wardPenMod = sourcePlayer.GetIgnoreWardMod(weapon);
+            ignoreWardMod = sourcePlayer.GetIgnoreWardMod(weapon);
         }
 
-        var ignoreWardMod = Math.Min(wardRendingMod, wardPenMod);
+        if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
+        {
+            ignoreWardMod -= GetWardRendingMod(attackSkill);
+        }
 
         ignoreWardMod *= 1.0f - CheckForWarSpecWardPenBonus(sourcePlayer, weapon);
         ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearWardPen, "WardPen");

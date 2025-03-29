@@ -3,7 +3,6 @@ using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
-using ACE.Server.Factories;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 
@@ -903,11 +902,11 @@ partial class WorldObject
     }
 
     // -- ARMOR REND IMBUE --
-    // Grants Ignore 20% enemy armor, plus up to an additional 20% based on skill level
+    // Grants Ignore 1% enemy armor, plus up to an additional 10% based on skill level
     // Bonus amount caps 500 skill level
 
-    public static float MinArmorRendingMod = 0.2f;
-    public static float MaxArmorRendingMod = 0.4f;
+    public static float MinArmorRendingMod = 0.1f;
+    public static float MaxArmorRendingMod = 0.2f;
 
     public static float GetArmorRendingMod(CreatureSkill skill, Creature wielder, Creature target = null)
     {
@@ -1005,8 +1004,8 @@ partial class WorldObject
     // Grants Ignore 20% enemy ward, plus up to an additional 20% based on skill level
     // Bonus amount caps 500 skill level
 
-    public static float MinWardRendingMod = 0.2f;
-    public static float MaxWardRendingMod = 0.4f;
+    public static float MinWardRendingMod = 0.1f;
+    public static float MaxWardRendingMod = 0.2f;
 
     public static float GetWardRendingMod(CreatureSkill skill)
     {
@@ -1067,21 +1066,6 @@ partial class WorldObject
 
         var creatureMod = IgnoreWard ?? 0.0f;
         var weaponMod = weapon.IgnoreWard ?? 0.0f;
-
-        var player = weapon.Wielder as Player;
-
-        // SPEC BONUS - War Magic (Orb): +10% ward penetration (additively)
-        if (player != null)
-        {
-            if (
-                weapon.WeaponSkill == Skill.WarMagic
-                && player.GetCreatureSkill(Skill.WarMagic).AdvancementClass == SkillAdvancementClass.Specialized
-                && LootGenerationFactory.GetCasterSubType(weapon) == 0
-            )
-            {
-                creatureMod -= 0.1f;
-            }
-        }
 
         var finalMod = 1.0f - (float)Math.Max(creatureMod, weaponMod);
         //Console.WriteLine($"FinalMod = {finalMod}");

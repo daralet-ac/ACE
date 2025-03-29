@@ -490,6 +490,8 @@ public static partial class LootGenerationFactory
         var wardCleavingMod = 0.1f * GetDiminishingRoll(treasureDeath);
         wardCleavingMod += minMod[tier];
 
+        wardCleavingMod = 1.0f - wardCleavingMod;
+
         wo.SetProperty(PropertyFloat.IgnoreWard, wardCleavingMod);
 
         var maxMod = 0.2f;
@@ -507,6 +509,8 @@ public static partial class LootGenerationFactory
         var tier = Math.Clamp(treasureDeath.Tier - 1, 0, minMod.Length);
         var armorCleavingMod = 0.1f * GetDiminishingRoll(treasureDeath);
         armorCleavingMod += minMod[tier];
+
+        armorCleavingMod = 1.0f - armorCleavingMod;
 
         wo.SetProperty(PropertyFloat.IgnoreArmor, armorCleavingMod);
 

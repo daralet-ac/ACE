@@ -1856,7 +1856,7 @@ public class AppraiseInfo
             return;
         }
 
-        var ratingAmount = Math.Round((ignoreArmor * 100), 0);
+        var ratingAmount = 100.0f - Math.Round((ignoreArmor * 100), 0);
 
         var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
         var rangeMinAtTier = Math.Round(LootTables.BonusIgnoreArmorPerTier[itemTier - 1] * 100, 0);
@@ -1864,7 +1864,7 @@ public class AppraiseInfo
         _hasExtraPropertiesText = true;
 
         _additionalPropertiesLongDescriptionsText +=
-            $"~ Armor Cleaving: Increases armor ignored by +{ratingAmount}%, additively " +
+            $"~ Armor Cleaving: Increases armor ignored by {ratingAmount}%, additively. " +
             $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%)\n";
     }
 
@@ -1896,8 +1896,8 @@ public class AppraiseInfo
         _hasExtraPropertiesText = true;
 
         _additionalPropertiesLongDescriptionsText +=
-            $"~ Armor Rending: Increases armor ignored by +{amountFormatted}%, additively. " +
-            $"Value is based on wielder attack skill (20% to 40%).\n";
+            $"~ Armor Rending: Increases armor ignored by {amountFormatted}%, additively. " +
+            $"Value is based on wielder attack skill (10% to 20%).\n";
     }
 
     private void SetResistanceCleavingUseLongText(WorldObject wo)
@@ -1979,7 +1979,7 @@ public class AppraiseInfo
         {
             _additionalPropertiesList.Add("Ward Cleaving");
 
-            var ratingAmount = Math.Round((ignoreWard * 100), 0);
+            var ratingAmount = 100.0f - Math.Round((ignoreWard * 100), 0);
 
             var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
             var rangeMinAtTier = Math.Round(LootTables.BonusIgnoreWardPerTier[itemTier - 1] * 100, 0);
@@ -1987,7 +1987,7 @@ public class AppraiseInfo
             _hasExtraPropertiesText = true;
 
             _additionalPropertiesLongDescriptionsText +=
-                $"~ Ward Cleaving: Increases ward ignored by +{ratingAmount}%, additively. " +
+                $"~ Ward Cleaving: Increases ward ignored by {ratingAmount}%, additively. " +
                 $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%).\n";
         }
     }
@@ -2022,7 +2022,7 @@ public class AppraiseInfo
 
         _additionalPropertiesLongDescriptionsText +=
             $"~ Ward Rending: Increases ward ignored by +{amountFormatted}%, additively. " +
-            $"Value is based on wielder attack skill (20% to 40%).\n";
+            $"Value is based on wielder attack skill (10% to 20%).\n";
     }
 
     private void SetNoCompsRequiredSchoolUseLongText(WorldObject wo)
