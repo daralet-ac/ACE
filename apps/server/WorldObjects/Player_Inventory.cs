@@ -1522,12 +1522,9 @@ partial class Player
                                     item.SaveBiotaToDatabase();
 
                                     // when removing an item from a storage chest, we need to check to see if it's in the inventory of any other storage instances and remove if so
-                                    foreach (var bank in Storage.BankChests)
+                                    foreach (var bank in Storage.BankChests.ToList())
                                     {
-                                        if (bank.Inventory.Keys.Contains(item.Guid))
-                                        {
-                                            bank.Inventory.Remove(item.Guid);
-                                        }
+                                        bank.Inventory.Remove(item.Guid);
                                     }
 
                                     if (questSolve)

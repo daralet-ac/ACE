@@ -108,7 +108,7 @@ public class Storage : Container
             // check for GUID in any other banks and remove from inventory if so.
             foreach (var worldObject in worldObjects)
             {
-                foreach (var bank in BankChests)
+                foreach (var bank in BankChests.ToList())
                 {
                     bank.Inventory.Remove(worldObject.Guid);
                 }
