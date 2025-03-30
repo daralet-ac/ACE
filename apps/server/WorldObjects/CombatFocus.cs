@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Entity;
@@ -526,11 +527,7 @@ public class CombatFocus : WorldObject
 
     private void ActivateSpells(Player player, List<SpellId> spellIds)
     {
-        var spellLevel = player.GetPlayerTier(player.Level) - 1;
-        if (spellLevel < 1)
-        {
-            return;
-        }
+        var spellLevel = Math.Clamp(player.GetPlayerTier(player.Level) - 1, 1, 7);
 
         foreach (var spellId in spellIds)
         {
@@ -552,15 +549,12 @@ public class CombatFocus : WorldObject
 
     private void DeactivateSpells(Player player, List<SpellId> spellIds, bool onLevelUp, int? startingLevel = null)
     {
-        var spellLevel = player.GetPlayerTier(player.Level) - 1;
-        if (spellLevel < 1)
-        {
-            return;
-        }
+        var spellLevel = Math.Clamp(player.GetPlayerTier(player.Level) - 1, 1, 7);
 
         if (onLevelUp)
         {
-            var startingSpellLevel = player.GetPlayerTier(startingLevel) - 1;
+            var startingSpellLevel = Math.Clamp(player.GetPlayerTier(startingLevel) - 1, 1, 7);
+            
             foreach (var spellId in spellIds)
             {
                 var leveledSpell = SpellLevelProgression.GetSpellAtLevel(spellId, startingSpellLevel);
