@@ -2395,10 +2395,12 @@ partial class Player
             var shield = GetEquippedShield();
             if (shield != null)
             {
-                // prevent thrown weapons from ever being equipped with non-buckler shields
+                // prevent thrown weapons from ever being equipped with non-buckler shields. TODO: reference a shield type rather than WCIDs
                 if (shield.WeenieClassId is not (uint)Factories.Enum.WeenieClassName.buckler
                     and not (uint)Factories.Enum.WeenieClassName.shieldkitesmall
-                    and not (uint)Factories.Enum.WeenieClassName.shieldroundsmall)
+                    and not (uint)Factories.Enum.WeenieClassName.shieldroundsmall
+                    and not 1050992 // academy small shield
+                    and not 1050993) // academy buckler
                 {
                     Session.Network.EnqueueSend(
                         new GameEventCommunicationTransientString(
