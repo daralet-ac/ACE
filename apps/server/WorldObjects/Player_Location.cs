@@ -250,6 +250,15 @@ partial class Player
     {
         //Console.WriteLine($"{Name}.HandleActionRecallAllegianceHometown()");
 
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"The /ah command is not available on this server.",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        return;
+
         if (IsOlthoiPlayer)
         {
             Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.OlthoiCanOnlyRecallToLifestone));
