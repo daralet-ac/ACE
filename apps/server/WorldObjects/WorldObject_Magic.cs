@@ -758,7 +758,7 @@ partial class WorldObject
                 if (player != null)
                 {
                     ignoreWardMod = player.GetIgnoreWardMod(weapon);
-                    
+
                     if (weapon != null && weapon.HasImbuedEffect(ImbuedEffectType.WardRending))
                     {
                         ignoreWardMod -= GetWardRendingMod(player.GetCreatureSkill(Skill.LifeMagic));
@@ -3279,6 +3279,9 @@ partial class WorldObject
             && spell.Category != SpellCategory.NetherDamageOverTimeRaising2
             && spell.Category != SpellCategory.NetherDamageOverTimeRaising3
             && spell.Category != SpellCategory.BleedDamage
+            && spell.Category != SpellCategory.HealKitRegen
+            && spell.Category != SpellCategory.StaminaKitRegen
+            && spell.Category != SpellCategory.ManaKitRegen
         )
         {
             _log.Error(
