@@ -223,6 +223,12 @@ partial class Player
                     new GameMessageSystemChat($"{target.Name} blocked your attack!", ChatMessageType.CombatEnemy)
                 );
             }
+            else if (this != target && damageEvent.Parried)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat($"{target.Name} parried your attack!", ChatMessageType.CombatEnemy)
+                );
+            }
             else if (!SquelchManager.Squelches.Contains(target, ChatMessageType.CombatSelf))
             {
                 Session.Network.EnqueueSend(new GameEventEvasionAttackerNotification(Session, target.Name));

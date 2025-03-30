@@ -25,7 +25,6 @@ public class DamageEvent
     private List<WorldObject> _armor;
     private float _armorMod;
     private Creature _attacker;
-    private CombatAbility _attackerCombatAbility;
     private AttackHeight _attackHeight;
     private float _attackHeightDamageBonus;
     private AttackHook _attackHook;
@@ -37,15 +36,15 @@ public class DamageEvent
     private float _baseDamage;
     private BaseDamageMod _baseDamageMod;
     private float _combatAbilityFuryDamageBonus;
+    private float _combatAbilityRelentlessDamagePenalty;
     private float _combatAbilityMultishotDamagePenalty;
     private float _combatAbilityProvokeDamageReduction;
-    private float _combatAbilityRelentlessDamagePenalty;
     private Creature_BodyPart _creaturePart;
     private float _criticalChance;
     private float _criticalDamageMod;
     private float _criticalDamageRating;
     private float _criticalDamageResistanceRatingMod;
-    private bool _criticalDefended;
+    private bool _criticalDefendedFromAug;
     private float _damageBeforeMitigation;
     private float _damageMitigated;
     private float _damageRatingMod;
@@ -53,7 +52,6 @@ public class DamageEvent
     private float _damageResistanceRatingMod;
     private WorldObject _damageSource;
     private Creature _defender;
-    private CombatAbility _defenderCombatAbility;
     private float _dualWieldDamageBonus;
     private uint _effectiveDefenseSkill;
     private float _evasionMod;
@@ -116,7 +114,7 @@ public class DamageEvent
         {
             var attackConditions = new AttackConditions();
 
-            if (_criticalDefended)
+            if (_criticalDefendedFromAug)
             {
                 attackConditions |= AttackConditions.CriticalProtectionAugmentation;
             }
@@ -173,7 +171,6 @@ public class DamageEvent
         }
 
         SetCombatSources(attacker, defender, damageSource);
-        SetCombatAbilities(attacker, defender);
         CheckForOnAttackEffects(cleaveHits);
 
         SetInvulnerable(defender);
@@ -267,24 +264,6 @@ public class DamageEvent
         _attackHeight = attacker.AttackHeight ?? AttackHeight.Medium;
     }
 
-    private void SetCombatAbilities(Creature attacker, Creature defender)
-    {
-        _attackerCombatAbility = CombatAbility.None;
-        _defenderCombatAbility = CombatAbility.None;
-
-        var attackerCombatFocus = attacker?.GetEquippedCombatFocus();
-        if (attackerCombatFocus != null)
-        {
-            _attackerCombatAbility = attackerCombatFocus.GetCombatAbility();
-        }
-
-        var defenderCombatFocus = defender?.GetEquippedCombatFocus();
-        if (defenderCombatFocus != null)
-        {
-            _defenderCombatAbility = defenderCombatFocus.GetCombatAbility();
-        }
-    }
-
     private void SetInvulnerable(Creature defender)
     {
         var playerDefender = defender as Player;
@@ -329,7 +308,7 @@ public class DamageEvent
 
         // Check for guaranteed hits
         var isOverpower = CheckForOverpower(attacker, defender);
-        var isFuryNoEvade = CheckForCombatAbilityEnrageNoEvade(playerAttacker, _attackerCombatAbility);
+        var isFuryNoEvade = CheckForCombatAbilityEnrageNoEvade(playerAttacker);
         var isBackstabNoEvade = CheckForCombatAbilityBackstabStealthNoEvade(playerAttacker, defender);
 
         if (isOverpower || isFuryNoEvade || isBackstabNoEvade || attacker == defender)
@@ -404,7 +383,7 @@ public class DamageEvent
         return _overpower;
     }
 
-    private bool CheckForCombatAbilityEnrageNoEvade(Player playerAttacker, CombatAbility attackerCombatAbility)
+    private bool CheckForCombatAbilityEnrageNoEvade(Player playerAttacker)
     {
         if (playerAttacker is not {FuryEnrageIsActive: true})
         {
@@ -558,10 +537,9 @@ public class DamageEvent
         SetDamageModifiers(attacker, defender);
 
         _criticalChance = GetCriticalChance(attacker, defender);
-        _criticalDefended = GetCriticalDefended(attacker, defender);
 
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
-        if (roll > _criticalChance || _criticalDefended)
+        if (roll > _criticalChance || GetCriticalDefendedFromAug(attacker, defender) || CheckForSpecPerceptionCriticalDefense(defender as Player))
         {
             _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might);
             _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Shield, (int)SigilTrinketShieldEffect.Might);
@@ -806,13 +784,14 @@ public class DamageEvent
         return criticalChance;
     }
 
-    private bool GetCriticalDefended(Creature attacker, Creature defender)
+    private bool GetCriticalDefendedFromAug(Creature attacker, Creature defender)
     {
         var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
-        return CheckForAugmentationCriticalDefense(playerDefender, playerAttacker)
-               || CheckForSpecPerceptionCriticalDefense(playerDefender);
+        _criticalDefendedFromAug = CheckForAugmentationCriticalDefense(playerDefender, playerAttacker);
+
+        return _criticalDefendedFromAug;
     }
 
     private float GetCriticalDamageBeforeMitigation(Creature attacker, Creature defender)
@@ -857,6 +836,7 @@ public class DamageEvent
                * _twohandedCombatDamageBonus
                * _combatAbilityMultishotDamagePenalty
                * _combatAbilityFuryDamageBonus
+               * _combatAbilityRelentlessDamagePenalty
                * _combatAbilitySteadyShotDamageBonus
                * SneakAttackMod
                * _attackHeightDamageBonus
@@ -898,6 +878,7 @@ public class DamageEvent
                * _twohandedCombatDamageBonus
                * _combatAbilityMultishotDamagePenalty
                * _combatAbilityFuryDamageBonus
+               * _combatAbilityRelentlessDamagePenalty
                * _combatAbilitySteadyShotDamageBonus
                * _ammoEffectMod
                * _levelScalingMod;
@@ -1545,7 +1526,7 @@ public class DamageEvent
         playerDefender.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
                 $"Your perception skill allowed you to prevent a critical strike!",
-                ChatMessageType.CombatEnemy
+                ChatMessageType.Broadcast
             )
         );
 
@@ -2255,9 +2236,9 @@ public class DamageEvent
         info += $"CriticalChance: {_criticalChance}\n";
         info += $"CriticalHit: {IsCritical}\n";
 
-        if (_criticalDefended)
+        if (_criticalDefendedFromAug)
         {
-            info += $"CriticalDefended: {_criticalDefended}\n";
+            info += $"CriticalDefended: {_criticalDefendedFromAug}\n";
         }
 
         if (_criticalDamageMod != 0.0f && _criticalDamageMod != 1.0f)
