@@ -1454,7 +1454,10 @@ public class SpellProjectile : WorldObject
 
             amount = Convert.ToUInt32(damage);
 
-            amount = Player.CombatAbilityManaBarrier(targetPlayer, amount, targetPlayer, Spell.DamageType);
+            if (targetPlayer is {ManaBarrierIsActive: true})
+            {
+                amount = Player.CombatAbilityManaBarrier(targetPlayer, amount, targetPlayer, Spell.DamageType);
+            }
 
             target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
             target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
