@@ -1661,11 +1661,11 @@ public class EnchantmentManager
         }
         if (staminaHots.Count > 0)
         {
-            ApplyStaminaHealingTick(heals);
+            ApplyStaminaHealingTick(staminaHots);
         }
         if (manaHots.Count > 0)
         {
-            ApplyManaHealingTick(heals);
+            ApplyManaHealingTick(manaHots);
         }
     }
 
