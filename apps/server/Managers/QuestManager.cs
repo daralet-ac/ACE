@@ -223,7 +223,7 @@ public class QuestManager
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
 
-                SendTownAttunementProgressMessage(player, quest);
+                SendTownQuestProgressMessage(player, quest);
 
                 if (!quest.QuestName.Contains(","))
                 {
@@ -260,6 +260,8 @@ public class QuestManager
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
 
+                SendTownQuestProgressMessage(player, quest);
+
                 if (!quest.QuestName.Contains(","))
                 {
                     _log.Information("{Player} completed quest: {Quest}", player.Name, quest.QuestName);
@@ -268,9 +270,9 @@ public class QuestManager
         }
     }
 
-    private void SendTownAttunementProgressMessage(Player player, CharacterPropertiesQuestRegistry quest)
+    private void SendTownQuestProgressMessage(Player player, CharacterPropertiesQuestRegistry quest)
     {
-        if (player is null || !AttunementProgressQuestNames.Contains(quest.QuestName))
+        if (player is null || !QuestProgressQuestNames.Contains(quest.QuestName))
         {
             return;
         }
@@ -280,7 +282,7 @@ public class QuestManager
             return;
         }
 
-        var townName = quest.QuestName.Replace("Attuned", "");
+        var townName = quest.QuestName.Replace("Quest", "");
 
         townName = townName switch
         {
@@ -291,51 +293,51 @@ public class QuestManager
             _ => townName
         };
 
-        var amount = quest.NumTimesCompleted switch
+        var level = quest.NumTimesCompleted switch
         {
-            1 => "slightly",
-            2 => "moderately",
-            3 => "greatly",
+            1 => "slight",
+            2 => "moderate",
+            3 => "significant",
             _ => ""
         };
 
         player.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"Your portal resilience for the region of {townName} has improved {amount}.",
+                $"Tempered by the portal energies of {townName}, a {level} resilience has taken shape within you.",
                 ChatMessageType.Broadcast
             )
         );
     }
 
-    private readonly List<string> AttunementProgressQuestNames =
+    private readonly List<string> QuestProgressQuestNames =
     [
-        "AttunedAlArqas",
-        "AttunedAlJalima",
-        "AttunedArwic",
-        "AttunedBaishi",
-        "AttunedCragstone",
-        "AttunedDryreach",
-        "AttunedEastham",
-        "AttunedGlendenwood",
-        "AttunedHebianTo",
-        "AttunedKara",
-        "AttunedKhayyaban",
-        "AttunedLin",
-        "AttunedLytelthorpe",
-        "AttunedMayoi",
-        "AttunedNanto",
-        "AttunedPlateau",
-        "AttunedQalabar",
-        "AttunedRithwic",
-        "AttunedSamsur",
-        "AttunedSawato",
-        "AttunedStonehold",
-        "AttunedTouTou",
-        "AttunedTufa",
-        "AttunedUziz",
-        "AttunedXarabydun",
-        "AttunedYanshi",
-        "AttunedZaikhal"
+        "QuestAlArqas",
+        "QuestAlJalima",
+        "QuestArwic",
+        "QuestBaishi",
+        "QuestCragstone",
+        "QuestDryreach",
+        "QuestEastham",
+        "QuestGlendenwood",
+        "QuestHebianTo",
+        "QuestKara",
+        "QuestKhayyaban",
+        "QuestLin",
+        "QuestLytelthorpe",
+        "QuestMayoi",
+        "QuestNanto",
+        "QuestPlateau",
+        "QuestQalabar",
+        "QuestRithwic",
+        "QuestSamsur",
+        "QuestSawato",
+        "QuestStonehold",
+        "QuestTouTou",
+        "QuestTufa",
+        "QuestUziz",
+        "QuestXarabydun",
+        "QuestYanshi",
+        "QuestZaikhal"
     ];
 
     /// <summary>
