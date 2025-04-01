@@ -223,6 +223,8 @@ public class QuestManager
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
 
+                SendTownAttunementProgressMessage(player, quest);
+
                 if (!quest.QuestName.Contains(","))
                 {
                     _log.Information("{Player} completed quest: {Quest}", player.Name, quest.QuestName);
@@ -265,6 +267,76 @@ public class QuestManager
             }
         }
     }
+
+    private void SendTownAttunementProgressMessage(Player player, CharacterPropertiesQuestRegistry quest)
+    {
+        if (player is null || !AttunementProgressQuestNames.Contains(quest.QuestName))
+        {
+            return;
+        }
+
+        if (quest.NumTimesCompleted > 3)
+        {
+            return;
+        }
+
+        var townName = quest.QuestName.Replace("Attuned", "");
+
+        townName = townName switch
+        {
+            "AlArqas" => "Al-Arqas",
+            "AlJalima" => "Al-Jalima",
+            "HebianTo" => "Hebian-To",
+            "TouTou" => "Tou-Tou",
+            _ => townName
+        };
+
+        var amount = quest.NumTimesCompleted switch
+        {
+            1 => "slightly",
+            2 => "moderately",
+            3 => "greatly",
+            _ => ""
+        };
+
+        player.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"Your portal resilience for the region of {townName} has improved {amount}.",
+                ChatMessageType.Broadcast
+            )
+        );
+    }
+
+    private readonly List<string> AttunementProgressQuestNames =
+    [
+        "AttunedAlArqas",
+        "AttunedAlJalima",
+        "AttunedArwic",
+        "AttunedBaishi",
+        "AttunedCragstone",
+        "AttunedDryreach",
+        "AttunedEastham",
+        "AttunedGlendenwood",
+        "AttunedHebianTo",
+        "AttunedKara",
+        "AttunedKhayyaban",
+        "AttunedLin",
+        "AttunedLytelthorpe",
+        "AttunedMayoi",
+        "AttunedNanto",
+        "AttunedPlateau",
+        "AttunedQalabar",
+        "AttunedRithwic",
+        "AttunedSamsur",
+        "AttunedSawato",
+        "AttunedStonehold",
+        "AttunedTouTou",
+        "AttunedTufa",
+        "AttunedUziz",
+        "AttunedXarabydun",
+        "AttunedYanshi",
+        "AttunedZaikhal"
+    ];
 
     /// <summary>
     /// Initialize a quest completion with the provided number to the player's registry
