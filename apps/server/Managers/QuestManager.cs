@@ -223,6 +223,8 @@ public class QuestManager
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
 
+                SendTownQuestProgressMessage(player, quest);
+
                 if (!quest.QuestName.Contains(","))
                 {
                     _log.Information("{Player} completed quest: {Quest}", player.Name, quest.QuestName);
@@ -258,6 +260,8 @@ public class QuestManager
 
                 player.ContractManager.NotifyOfQuestUpdate(quest.QuestName);
 
+                SendTownQuestProgressMessage(player, quest);
+
                 if (!quest.QuestName.Contains(","))
                 {
                     _log.Information("{Player} completed quest: {Quest}", player.Name, quest.QuestName);
@@ -265,6 +269,76 @@ public class QuestManager
             }
         }
     }
+
+    private void SendTownQuestProgressMessage(Player player, CharacterPropertiesQuestRegistry quest)
+    {
+        if (player is null || !QuestProgressQuestNames.Contains(quest.QuestName))
+        {
+            return;
+        }
+
+        if (quest.NumTimesCompleted > 3)
+        {
+            return;
+        }
+
+        var townName = quest.QuestName.Replace("Quest", "");
+
+        townName = townName switch
+        {
+            "AlArqas" => "Al-Arqas",
+            "AlJalima" => "Al-Jalima",
+            "HebianTo" => "Hebian-To",
+            "TouTou" => "Tou-Tou",
+            _ => townName
+        };
+
+        var level = quest.NumTimesCompleted switch
+        {
+            1 => "slight",
+            2 => "moderate",
+            3 => "significant",
+            _ => ""
+        };
+
+        player.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"Tempered by the portal energies of {townName}, a {level} resilience has taken shape within you.",
+                ChatMessageType.Broadcast
+            )
+        );
+    }
+
+    private readonly List<string> QuestProgressQuestNames =
+    [
+        "QuestAlArqas",
+        "QuestAlJalima",
+        "QuestArwic",
+        "QuestBaishi",
+        "QuestCragstone",
+        "QuestDryreach",
+        "QuestEastham",
+        "QuestGlendenwood",
+        "QuestHebianTo",
+        "QuestKara",
+        "QuestKhayyaban",
+        "QuestLin",
+        "QuestLytelthorpe",
+        "QuestMayoi",
+        "QuestNanto",
+        "QuestPlateau",
+        "QuestQalabar",
+        "QuestRithwic",
+        "QuestSamsur",
+        "QuestSawato",
+        "QuestStonehold",
+        "QuestTouTou",
+        "QuestTufa",
+        "QuestUziz",
+        "QuestXarabydun",
+        "QuestYanshi",
+        "QuestZaikhal"
+    ];
 
     /// <summary>
     /// Initialize a quest completion with the provided number to the player's registry
