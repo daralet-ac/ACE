@@ -123,7 +123,7 @@ partial class Jewel : WorldObject
         if (MaterialDamage.TryGetValue(source.JewelMaterialType.Value, out var damageType))
         {
             if ((int)target.W_DamageType > 0
-                && target.ValidLocations != EquipMask.HandWear
+                && target.ValidLocations is not EquipMask.HandWear and not EquipMask.FootWear
                 && target.W_DamageType != damageType
                 && target.W_DamageType != DamageType.SlashPierce)
             {
