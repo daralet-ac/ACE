@@ -1323,6 +1323,7 @@ partial class WorldObject
             {
                 chance *= playerAttacker.ScaleWithPowerAccuracyBar((float)chance);
                 chance *= GetMagicSkillProcChanceMod(playerAttacker, spell);
+                chance *= GetSpecMagicSkillProcChanceMod(playerAttacker, spell);
             }
         }
 
@@ -1433,6 +1434,19 @@ partial class WorldObject
         var magicSkill = school == MagicSchool.WarMagic ? playerAttacker.GetModdedWarMagicSkill() : playerAttacker.GetModdedLifeMagicSkill();
 
         return 1.0 + SkillCheck.GetMagicSkillChance((int)magicSkill, (int)difficulty);
+    }
+
+    /// <summary>
+    /// Up to double proc chance based on player effective magic skill and spell difficulty
+    /// </summary>
+    private static double GetSpecMagicSkillProcChanceMod(Player playerAttacker, Spell spell)
+    {
+        var school = spell.School;
+        var magicSkill = school == MagicSchool.WarMagic
+            ? playerAttacker.GetCreatureSkill(Skill.WarMagic)
+            : playerAttacker.GetCreatureSkill(Skill.LifeMagic);
+
+        return magicSkill.AdvancementClass == SkillAdvancementClass.Specialized ? 2.0 : 1.0;
     }
 
     private bool? isMasterable;
