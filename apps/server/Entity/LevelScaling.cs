@@ -43,10 +43,10 @@ public static class LevelScaling
     private static readonly int[] AvgPlayerBoostPerTier = [10, 15, 20, 25, 30, 35, 40, 40];
 
     private static readonly int[] AvgMonsterArmorWardPerTier = [20, 45, 68, 101, 152, 228, 342, 513];
-    private static readonly int[] AvgMonsterHealthPerTier = [50, 150, 350, 500, 800, 1200, 1600, 2000];
+    private static readonly int[] AvgMonsterHealthPerTier = [40, 100, 200, 300, 400, 500, 1000, 2000];
 
-    private static readonly float[] AvgTimeToKillMonster = [4.1f, 13.9f, 15.0f, 17.5f, 17.6f, 20.8f, 24.6f, 27.1f];
-    private static readonly float[] AvgEnemyDpsPerTier = [ 1.0f, 1.5f, 2.0f, 2.5f, 3.0f, 3.5f, 4.0f, 4.5f, 5.0f ];
+    private static readonly float[] AvgTimeToKillMonster = [9.0f, 10.7f, 12.9f, 16.1f, 17.2f, 17.4f, 24.6f, 44.1f];
+    private static readonly float[] AvgEnemyDpsPerTier = [ 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 7.5f, 10.0f, 15.0f ];
 
     public static float GetMonsterDamageDealtHealthScalar(Creature player, Creature monster)
     {
