@@ -7,7 +7,7 @@ public enum CombatAbility
     Stealth,
     Phalanx,
     Provoke,
-    Parry,
+    Riposte,
     Fury,
     Backstab,
     SteadyShot,

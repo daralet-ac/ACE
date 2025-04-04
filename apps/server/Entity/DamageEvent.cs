@@ -106,7 +106,7 @@ public class DamageEvent
     public WorldObject DefenderWeapon { get; private set; }
     public WorldObject Offhand { get; private set; }
 
-    public bool HasDamage => !Evaded && !Blocked && !LifestoneProtection;
+    public bool HasDamage => !Evaded && !Blocked && !Parried && !LifestoneProtection;
 
     public AttackConditions AttackConditions
     {
@@ -183,11 +183,6 @@ public class DamageEvent
             if (Blocked)
             {
                 CheckForRatingThorns(attacker, defender, damageSource);
-            }
-
-            if (Parried)
-            {
-                CheckForParryRiposte(attacker, defender);
             }
 
             return 0.0f;
@@ -467,6 +462,8 @@ public class DamageEvent
         var jewelBlockChanceBonus = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearBlock);
 
         var blockChance = baseBlockChance * (1.0f + specPhysicalDefenseBlockChanceBonus + jewelBlockChanceBonus);
+        var parryActivatedBonus = playerDefender is { RiposteIsActive: true } ? 0.25f : 0.0f;
+        blockChance += parryActivatedBonus;
 
         if ((ThreadSafeRandom.Next(0f, 1f) > blockChance))
         {
@@ -492,7 +489,7 @@ public class DamageEvent
         var equippedMainHand = defender.GetEquippedWeapon();
         var equippedOffHand = defender.GetEquippedOffHand();
 
-        if (equippedMainHand is { IsTwoHanded: not true } && equippedOffHand is null)
+        if (equippedMainHand is { IsTwoHanded: not true } && equippedOffHand is not {ItemType: ItemType.MeleeWeapon})
         {
             return;
         }
@@ -509,11 +506,11 @@ public class DamageEvent
             ? defender.GetModdedTwohandedCombatSkill()
             : defender.GetModdedDualWieldSkill();
 
-        var parryMod = SkillCheck.GetSkillChance(parrySkillUsed, EffectiveAttackSkill);
+        var parryMod = SkillCheck.GetSkillChance((uint)(parrySkillUsed * 1.5), EffectiveAttackSkill);
 
         // parry chance is 10% * parryMod skillcheck
         var baseParryChance = 0.1f * parryMod;
-        var parryActivatedBonus = playerDefender is { ParryIsActive: true } ? 0.25f : 0.0f;
+        var parryActivatedBonus = playerDefender is { RiposteIsActive: true } ? 0.25f : 0.0f;
         var parryChance = baseParryChance + parryActivatedBonus;
 
         if ((ThreadSafeRandom.Next(0f, 1f) > parryChance))
@@ -586,8 +583,8 @@ public class DamageEvent
         _attributeMod = attacker.GetAttributeMod(Weapon, false, defender);
         _slayerMod = WorldObject.GetWeaponCreatureSlayerModifier(Weapon, attacker, defender);
         _damageRatingMod = Creature.GetPositiveRatingMod(attacker.GetDamageRating());
-        _dualWieldDamageBonus = GetDualWieldDamageBonus(playerAttacker);
-        _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(playerAttacker);
+        _dualWieldDamageBonus = GetDualWieldDamageBonus(playerAttacker, defender);
+        _twohandedCombatDamageBonus = GetTwohandedCombatDamageBonus(playerAttacker, defender);
         _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
         _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(playerAttacker, playerDefender);
         _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(playerAttacker);
@@ -611,26 +608,43 @@ public class DamageEvent
     /// <summary>
     /// Dual Wield Damage Mod
     /// </summary>
-    private float GetDualWieldDamageBonus(Player playerAttacker)
+    private float GetDualWieldDamageBonus(Player playerAttacker, Creature defender)
     {
-        return playerAttacker is { IsDualWieldAttack: true, DualWieldAlternate: false }
-            ? playerAttacker.GetDualWieldDamageMod()
-            : 1.0f;
+        if (playerAttacker is not {IsDualWieldAttack: true} || defender is null)
+        {
+            return 1.0f;
+        }
+
+        var moddedDualWieldCombatSkill = (uint)(playerAttacker.GetModdedDualWieldSkill() * 1.5f);
+        var defenderPhysicalDefense = defender.GetModdedPhysicalDefSkill();
+
+        var damageMod = 0.5f * SkillCheck.GetSkillChance(moddedDualWieldCombatSkill, defenderPhysicalDefense);
+
+        var finalDamageMod = 1.0f + (float)damageMod;
+
+        return finalDamageMod;
     }
 
     /// <summary>
     /// Two-handed Combat Damage Mod
     /// </summary>
-    private static float GetTwohandedCombatDamageBonus(Player playerAttacker)
+    private static float GetTwohandedCombatDamageBonus(Player playerAttacker, Creature defender)
     {
-        if (playerAttacker?.GetEquippedWeapon() == null)
+        if (playerAttacker?.GetEquippedWeapon() is null
+            || playerAttacker.GetEquippedWeapon().W_WeaponType is not WeaponType.TwoHanded
+            || defender is null)
         {
             return 1.0f;
         }
 
-        return playerAttacker.GetEquippedWeapon().W_WeaponType == WeaponType.TwoHanded
-            ? playerAttacker.GetTwoHandedCombatDamageMod()
-            : 1.0f;
+        var moddedTwohandedCombatSkill = (uint)(playerAttacker.GetModdedTwohandedCombatSkill() * 1.5f);
+        var defenderPhysicalDefense = defender.GetModdedPhysicalDefSkill();
+
+        var damageMod = 0.5f * SkillCheck.GetSkillChance(moddedTwohandedCombatSkill, defenderPhysicalDefense);
+
+        var finalDamageMod = 1.0f + (float)damageMod;
+
+        return finalDamageMod;
     }
 
     /// <summary>
@@ -1621,6 +1635,7 @@ public class DamageEvent
             return;
         }
 
+        SetCombatSources(attacker, defender, defender.GetEquippedWeapon());
         SetBaseDamage(attacker, defender, damageSource);
         SetDamageModifiers(attacker, defender);
 
@@ -1644,44 +1659,44 @@ public class DamageEvent
         attacker.Die();
     }
 
-    private void CheckForParryRiposte(Creature attacker, Creature defender)
+    public void CheckForRiposte(Creature attacker, Creature defender)
     {
-        if (!Parried || defender is not Player playerDefender || !(attacker.GetDistance(playerDefender) < 10))
+        if ((!Parried && !Blocked) || defender is not Player playerDefender || !(attacker.GetDistance(playerDefender) < 10))
         {
             return;
         }
 
-        if (!playerDefender.ParryIsActive)
+        if (!playerDefender.RiposteIsActive)
         {
             return;
         }
 
-        if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack)
+        if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack && playerDefender.GetEquippedShield() is null)
         {
             return;
         }
 
-        if (defender.LastAttackedCreature != attacker)
-        {
-            playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat($"You parried {attacker.Name}!", ChatMessageType.CombatEnemy));
-            return;
-        }
-
+        SetCombatSources(attacker, defender, defender.GetEquippedWeapon());
         SetBaseDamage(defender, attacker, defender.GetEquippedWeapon());
         SetDamageModifiers(defender, attacker);
 
-        var damage = GetNonCriticalDamageBeforeMitigation();
+        var baseDamage = GetNonCriticalDamageBeforeMitigation();
+        var mitigation = GetMitigation(attacker, defender);
+
+        var damage = baseDamage * mitigation;
 
         if (damage is < int.MinValue or > int.MaxValue)
         {
-            _log.Error("CheckForParryRiposte({Attacker}, {Defender}) - damage could not be converted to Int.", attacker.Name, defender.Name);
+            _log.Error("CheckForRiposte({Attacker}, {Defender}) - damage could not be converted to Int.", attacker.Name, defender.Name);
             return;
         }
 
         attacker.UpdateVitalDelta(attacker.Health, -Convert.ToInt32(damage));
         attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)damage);
 
-        var msg = $"You parried {attacker.Name}'s attack and followed up with a quick riposte, dealing {Convert.ToInt32(damage)} damage!";
+        var parryType = Parried ? "parry" : "block";
+
+        var msg = $"You follow up your {parryType} with a quick riposte, dealing {Convert.ToInt32(damage)} {_damageSource.W_DamageType} damage!";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
 
         if (!attacker.IsDead)
@@ -1952,39 +1967,6 @@ public class DamageEvent
         var blockChanceMod = SkillCheck.GetSkillChance(_effectiveDefenseSkill, EffectiveAttackSkill);
 
         return 0.5f * (float)blockChanceMod;
-    }
-
-    /// <summary>
-    /// COMBAT ABILITY - Parry: Passively increases Block Chance by 20% (additively) while using a two-handed weapon or dual-wielding.
-    /// Increased to 35% when Parry skill is activated.
-    /// </summary>
-    private float GetCombatAbilityParryBlockChanceBonus(Player playerDefender)
-    {
-        if (playerDefender == null)
-        {
-            return 0.0f;
-        }
-
-        var blockChance = 0.0f;
-
-        if (playerDefender is not { EquippedCombatAbility: CombatAbility.Parry })
-        {
-            return blockChance;
-        }
-
-        if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack)
-        {
-            return blockChance;
-        }
-
-        blockChance = 0.2f;
-
-        if (playerDefender.ParryIsActive)
-        {
-            blockChance += 0.15f;
-        }
-
-        return blockChance;
     }
 
     public static float GetAmmoEffectMod(WorldObject weapon, Player player)

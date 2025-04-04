@@ -189,7 +189,11 @@ partial class Creature
                     }
                     else if (damageEvent.Blocked)
                     {
-                        target.OnBlock(this, CombatType.Melee);
+                        target.OnBlock(this, CombatType.Melee, damageEvent);
+                    }
+                    else if (damageEvent.Parried)
+                    {
+                        target.OnParry(this, CombatType.Melee, damageEvent);
                     }
                     else
                     {
