@@ -607,7 +607,7 @@ partial class Player
     /// <summary>
     /// Called when player successfully blocks an attack
     /// </summary>
-    public override void OnBlock(WorldObject attacker, CombatType attackType)
+    public override void OnBlock(WorldObject attacker, CombatType attackType, DamageEvent damageEvent)
     {
         var creatureAttacker = attacker as Creature;
 
@@ -621,57 +621,7 @@ partial class Player
             return;
         }
 
-        var defenseSkill = GetCreatureSkill(Skill.Shield);
-
-        if (CombatMode != CombatMode.NonCombat)
-        {
-            if (defenseSkill.AdvancementClass >= SkillAdvancementClass.Trained)
-            {
-                var enduranceBase = (int)Endurance.Base;
-
-                // TODO: find exact formula / where it caps out at 75%
-
-                // more literal / linear formula
-                //var noStaminaUseChance = (enduranceBase - 50) / 320.0f;
-
-                // gdle curve-based formula, caps at 300 instead of 290
-                var noStaminaUseChance =
-                    (enduranceBase * enduranceBase * 0.000005f) + (enduranceBase * 0.00124f) - 0.07f;
-
-                noStaminaUseChance = Math.Clamp(noStaminaUseChance, 0.0f, 0.75f);
-
-                //Console.WriteLine($"NoStaminaUseChance: {noStaminaUseChance}");
-
-                if (noStaminaUseChance <= ThreadSafeRandom.Next(0.0f, 1.0f))
-                {
-                    UpdateVitalDelta(Stamina, -1);
-                }
-            }
-            else
-            {
-                UpdateVitalDelta(Stamina, -1);
-            }
-        }
-        else
-        {
-            // if the player is in non-combat mode, no stamina is consumed on evade
-            // reference: https://youtu.be/uFoQVgmSggo?t=145
-            // from the dm guide, page 147: "if you are not in Combat mode, you lose no Stamina when an attack is thrown at you"
-
-            //UpdateVitalDelta(Stamina, -1);
-        }
-
-        // if no shield, combat log readout changed to "parried"
-
-        if (GetEquippedShield() == null)
-        {
-            if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
-            {
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat($"You parried {attacker.Name}'s attack!", ChatMessageType.CombatEnemy)
-                );
-            }
-        }
+        UpdateVitalDelta(Stamina, -1);
 
         if (GetEquippedShield() != null)
         {
@@ -696,14 +646,36 @@ partial class Player
             }
         }
 
-        if (creatureAttacker == null)
+        damageEvent.CheckForRiposte(creatureAttacker, this);
+    }
+
+    /// <summary>
+    /// Called when player successfully parries an attack
+    /// </summary>
+    public override void OnParry(WorldObject attacker, CombatType attackType, DamageEvent damageEvent)
+    {
+        var creatureAttacker = attacker as Creature;
+
+        if (creatureAttacker != null)
+        {
+            SetCurrentAttacker(creatureAttacker);
+        }
+
+        if (UnderLifestoneProtection)
         {
             return;
         }
 
-        var difficulty = creatureAttacker.GetCreatureSkill(creatureAttacker.GetCurrentWeaponSkill()).Current;
-        // attackMod?
-        Proficiency.OnSuccessUse(this, defenseSkill, difficulty);
+        UpdateVitalDelta(Stamina, -1);
+
+        if (!SquelchManager.Squelches.Contains(attacker, ChatMessageType.CombatEnemy))
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You parried {attacker.Name}'s attack!", ChatMessageType.CombatEnemy)
+            );
+        }
+
+        damageEvent.CheckForRiposte(creatureAttacker, this);
     }
 
     public BaseDamageMod GetBaseDamageMod(WorldObject damageSource)
@@ -1395,7 +1367,7 @@ partial class Player
         var evasiveStancePenaltyMod = GetEvasiveStanceStaminaPenalty();
         var phalanxPenaltyMod = PhalanxIsActive ? 0.25f : 0.0f;
         var provokePenaltyMod = ProvokeIsActive ? 0.25f : 0.0f;
-        var parryPenaltyMod = ParryIsActive ? 0.25f : 0.0f;
+        var ripostePenaltyMod = RiposteIsActive ? 0.25f : 0.0f;
         var furyPenaltyMod = FuryEnrageIsActive ? 0.25f : 0.0f;
         var multiShotPenaltyMod = MultiShotIsActive ? 0.25f : 0.0f;
         var steadyShotPenaltyMod = SteadyShotIsActive ? 0.25f : 0.0f;
@@ -1405,7 +1377,7 @@ partial class Player
                                 + evasiveStancePenaltyMod
                                 + phalanxPenaltyMod
                                 + provokePenaltyMod
-                                + parryPenaltyMod
+                                + ripostePenaltyMod
                                 + furyPenaltyMod
                                 + multiShotPenaltyMod
                                 + steadyShotPenaltyMod
@@ -2264,26 +2236,6 @@ partial class Player
         }
 
         return playerCombatAbility;
-    }
-
-    public float GetDualWieldDamageMod()
-    {
-        var moddedDualWieldSkill = GetModdedDualWieldSkill();
-
-        var damageMod = 1.1f + (moddedDualWieldSkill * 0.001f); // 10% + 1% per 10 points of dual wield skill
-
-        return damageMod;
-    }
-
-    public float GetTwoHandedCombatDamageMod()
-    {
-        var moddedTwohandedCombatSkill = GetModdedTwohandedCombatSkill();
-
-        var damageMod = 5 + (moddedTwohandedCombatSkill * 0.05f); // 5% + 1% per 20 points of dual wield skill
-
-        var finalDamageMod = 1 + damageMod * 0.01f;
-
-        return finalDamageMod;
     }
 
     public bool IsBehindTargetCreature(Creature targetCreature)

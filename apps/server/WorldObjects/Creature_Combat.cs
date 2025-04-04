@@ -721,7 +721,15 @@ partial class Creature
     /// <summary>
     /// Called when a creature blocks an attack
     /// </summary>
-    public virtual void OnBlock(WorldObject attacker, CombatType attackType)
+    public virtual void OnBlock(WorldObject attacker, CombatType attackType, DamageEvent damageEvent)
+    {
+        // empty base for non-player creatures?
+    }
+
+    /// <summary>
+    /// Called when a creature parries an attack
+    /// </summary>
+    public virtual void OnParry(WorldObject attacker, CombatType attackType, DamageEvent damageEvent)
     {
         // empty base for non-player creatures?
     }

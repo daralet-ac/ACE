@@ -6478,9 +6478,9 @@ public enum SpellId : uint
     HealingPotion = 0x8000 | 10059,
     StaminaPotion = 0x8000 | 10060,
     ManaPotion = 0x8000 | 10061,
-    MagicBlade = 0x8000 | 10062,
+    EnchantedBlade = 0x8000 | 10062,
     EvasiveStance = 0x8000 | 10063, // 10 second cooldown
-    Parry = 0x8000 | 10064, // 20 second cooldown
+    Riposte = 0x8000 | 10064, // 20 second cooldown
     Fury = 0x8000 | 10065, // 20 second cooldown
     Phalanx = 0x8000 | 10066, // 20 second cooldown
     Multishot = 0x8000 | 10067, // 20 second cooldown
@@ -6489,7 +6489,7 @@ public enum SpellId : uint
     Reflect = 0x8000 | 1070, // 20 second cooldown
     Aegis = 0x8000 | 1071, // 20 second cooldown
     WeaponMaster = 0x8000 | 1072, // 20 second cooldown
-    Surestrike = 0x8000 | 1073, // 20 second cooldown
+    Relentless = 0x8000 | 1073, // 20 second cooldown
     Battery = 0x8000 | 1074, // 20 second cooldown
     Overload = 0x8000 | 1075, // 20 second cooldown
 }

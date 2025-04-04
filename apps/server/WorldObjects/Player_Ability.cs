@@ -22,9 +22,9 @@ partial class Player
 
     public bool PhalanxIsActive;
 
-    public bool ParryIsActive => LastParryActivated > Time.GetUnixTime() - ParryActivatedDuration;
-    private double LastParryActivated;
-    private double ParryActivatedDuration = 10;
+    public bool RiposteIsActive => LastRiposteActivated > Time.GetUnixTime() - RiposteActivatedDuration;
+    private double LastRiposteActivated;
+    private double RiposteActivatedDuration = 10;
 
     // Blademaster
     public bool WeaponMasterSingleUseIsActive;
@@ -215,19 +215,19 @@ partial class Player
         return true;
     }
 
-    public bool TryUseParry(Gem gem)
+    public bool TryUseRiposte(Gem gem)
     {
-        if (!VerifyCombatFocus(CombatAbility.Parry))
+        if (!VerifyCombatFocus(CombatAbility.Riposte))
         {
             return false;
         }
 
-        if (ParryIsActive)
+        if (RiposteIsActive)
         {
             return false;
         }
 
-        LastParryActivated = Time.GetUnixTime();
+        LastRiposteActivated = Time.GetUnixTime();
 
         PlayParticleEffect(PlayScript.EnchantUpRed, Guid);
 
@@ -1554,7 +1554,7 @@ partial class Player
                     return false;
                 }
                 break;
-            case CombatAbility.Parry:
+            case CombatAbility.Riposte:
                 if (GetEquippedCombatFocus() is not {CombatFocusType:
                         (int)CombatFocusType.Warrior
                         or (int)CombatFocusType.Spellsword
@@ -1562,7 +1562,7 @@ partial class Player
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Parry can only be used with a Warrior Focus, Blademaster Focus, or Spellsword Focus",
+                            $"Riposte can only be used with a Warrior Focus, Blademaster Focus, or Spellsword Focus",
                             ChatMessageType.Broadcast
                         )
                     );
@@ -1790,7 +1790,7 @@ partial class Player
         if (powerBarTime <= 0.5)
         {
             var weaponAnimTime = WeaponAnimationLength.GetWeaponAnimLength(weapon);
-           
+
             if (weapon is { IsTwoHanded: true } or { W_AttackType: AttackType.DoubleStrike })
             {
                 weaponAnimTime *= 0.5f;

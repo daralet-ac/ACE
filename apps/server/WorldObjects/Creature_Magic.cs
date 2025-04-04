@@ -86,7 +86,7 @@ partial class Creature
         {
             var phalanxPenaltyMod = playerCaster.PhalanxIsActive ? 0.25f : 0.0f;
             var provokePenaltyMod = playerCaster.ProvokeIsActive ? 0.25f : 0.0f;
-            var parryPenaltyMod = playerCaster.ParryIsActive ? 0.25f : 0.0f;
+            var ripostePenaltyMod = playerCaster.RiposteIsActive ? 0.25f : 0.0f;
             var furyPenaltyMod = playerCaster.FuryEnrageIsActive ? 0.25f : 0.0f;
             var multiShotPenaltyMod = playerCaster.MultiShotIsActive ? 0.25f : 0.0f;
             var steadyShotPenaltyMod = playerCaster.SteadyShotIsActive ? 0.25f : 0.0f;
@@ -95,7 +95,7 @@ partial class Creature
 
             abilityPenaltyMod = phalanxPenaltyMod
                                 + provokePenaltyMod
-                                + parryPenaltyMod
+                                + ripostePenaltyMod
                                 + furyPenaltyMod
                                 + multiShotPenaltyMod
                                 + steadyShotPenaltyMod

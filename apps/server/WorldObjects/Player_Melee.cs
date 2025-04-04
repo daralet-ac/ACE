@@ -154,7 +154,7 @@ partial class Player
 
         // reset PrevMotionCommand / DualWieldAlternate each time button is clicked
         PrevMotionCommand = MotionCommand.Invalid;
-        DualWieldAlternate = false;
+        //DualWieldAlternate = false;
 
         var attackSequence = ++AttackSequence;
 
