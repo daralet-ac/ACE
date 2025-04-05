@@ -523,6 +523,7 @@ public class CombatFocus : WorldObject
         }
 
         DeactivateSpells(player, CurrentSpells, onLevelUp, startingLevel);
+        DisableActiveAbilities(player);
     }
 
     private void ActivateSpells(Player player, List<SpellId> spellIds)
@@ -554,7 +555,7 @@ public class CombatFocus : WorldObject
         if (onLevelUp)
         {
             var startingSpellLevel = Math.Clamp(player.GetPlayerTier(startingLevel) - 1, 1, 7);
-            
+
             foreach (var spellId in spellIds)
             {
                 var leveledSpell = SpellLevelProgression.GetSpellAtLevel(spellId, startingSpellLevel);
@@ -587,6 +588,91 @@ public class CombatFocus : WorldObject
                 player.EnchantmentManager.Dispel(enchantment);
                 player.HandleSpellHooks(spell);
             }
+        }
+    }
+
+    private void DisableActiveAbilities(Player player)
+    {
+        if (player is {FuryStanceIsActive: true})
+        {
+            player.FuryStanceIsActive = false;
+
+            player.AdrenalineMeter = 0.0f;
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You calm down and your release adrenaline without effect.", ChatMessageType.Craft)
+            );
+        }
+
+        if (player is { RelentlessStanceIsActive: true })
+        {
+            player.RelentlessStanceIsActive = false;
+
+            player.AdrenalineMeter = 0.0f;
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You calm down and your release adrenaline without effect.", ChatMessageType.Craft)
+            );
+        }
+
+
+        if (player is { OverloadStanceIsActive: true })
+        {
+            player.OverloadStanceIsActive = false;
+
+            player.ManaChargeMeter = 0.0f;
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You release your charged mana to no effect.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.SkillDownBlue, Guid);
+        }
+
+
+        if (player is { BatteryStanceIsActive: true })
+        {
+            player.BatteryStanceIsActive = false;
+
+            player.ManaChargeMeter = 0.0f;
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You release your charged mana to no effect.", ChatMessageType.Broadcast)
+            );
+
+            PlayParticleEffect(PlayScript.SkillDownBlue, Guid);
+        }
+
+
+        if (player is { EvasiveStanceIsActive: true })
+        {
+            player.EvasiveStanceIsActive = false;
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You move out of your evasive stance.", ChatMessageType.Broadcast)
+            );
+            PlayParticleEffect(PlayScript.DispelLife, Guid);
+        }
+
+
+        if (player is { ManaBarrierIsActive: true })
+        {
+            player.ManaBarrierIsActive = false;
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You dispel your mana barrier.", ChatMessageType.Broadcast)
+            );
+            PlayParticleEffect(PlayScript.DispelLife, Guid);
+        }
+
+
+        if (player is { PhalanxIsActive: true })
+        {
+            player.PhalanxIsActive = false;
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat($"You lower your shield.", ChatMessageType.Broadcast)
+            );
         }
     }
 
