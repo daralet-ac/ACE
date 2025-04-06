@@ -134,31 +134,27 @@ partial class Creature
         return Convert.ToUInt32(manaCost * manaCostMultiplier);
     }
 
-    public static uint GetManaCost(Creature caster, uint difficulty, uint manaCost, uint manaConv)
+    private static uint GetManaCost(Creature caster, uint difficulty, uint manaCost, uint manaConv)
     {
         if (manaConv == 0 || manaCost <= 1)
         {
             return manaCost;
         }
 
-        var successChance = SkillCheck.GetSkillChance(manaConv, difficulty);
-        var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
+        const float maxManaReduction = 0.5f;
 
-        if (roll < successChance)
+        var manaConMod = SkillCheck.GetSkillChance(manaConv, difficulty);
+        var reductionRoll = maxManaReduction * ThreadSafeRandom.Next(0.0f, (float)manaConMod);
+        var savedMana = (uint)Math.Round(manaCost * reductionRoll);
+
+        manaCost -= savedMana;
+
+        if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized
+            && manaCost <= caster.Mana.Current)
         {
-            var maxManaReduction = 0.5f;
-            var reductionRoll = maxManaReduction * ThreadSafeRandom.Next(0.0f, (float)successChance);
-            var savedMana = (uint)Math.Round(manaCost * reductionRoll);
-
-            manaCost = manaCost - savedMana;
-
-            if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized
-                && manaCost <= caster.Mana.Current)
-            {
-                var conversionAmount = (int)Math.Round(savedMana * 0.5f);
-                caster.UpdateVitalDelta(caster.Health, conversionAmount);
-                caster.UpdateVitalDelta(caster.Stamina, conversionAmount);
-            }
+            var conversionAmount = (int)Math.Round(savedMana * 0.5f);
+            caster.UpdateVitalDelta(caster.Health, conversionAmount);
+            caster.UpdateVitalDelta(caster.Stamina, conversionAmount);
         }
 
         if (caster is Player { EvasiveStanceIsActive: true })
