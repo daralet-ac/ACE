@@ -1484,6 +1484,22 @@ public abstract partial class WorldObject : IActor
         }
     }
 
+    public double? ArchetypeSpellDamageMultiplier
+    {
+        get => GetProperty(PropertyFloat.ArchetypeSpellDamageMultiplier);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyFloat.ArchetypeSpellDamageMultiplier);
+            }
+            else
+            {
+                SetProperty(PropertyFloat.ArchetypeSpellDamageMultiplier, value.Value);
+            }
+        }
+    }
+
     public double? BossKillXpMonsterMax
     {
         get => GetProperty(PropertyFloat.BossKillXpMonsterMax);

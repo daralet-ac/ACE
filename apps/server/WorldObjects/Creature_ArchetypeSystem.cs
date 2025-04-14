@@ -28,7 +28,7 @@ partial class Creature
     private static readonly int[] avgPlayerHealth = { 25, 45, 95, 125, 155, 185, 215, 245, 320 };
     private static readonly float[] avgPlayerArmorReduction = { 0.75f, 0.57f, 0.40f, 0.31f, 0.25f, 0.21f, 0.18f, 0.16f, 0.1f };
     private static readonly float[] avgPlayerLifeProtReduction = { 1.0f, 0.9f, 0.9f, 0.85f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
-    private static readonly int[] avgPlayerMeleeDefense = { 10, 75, 150, 175, 200, 225, 275, 350, 500 };
+    private static readonly int[] avgPlayerPhysicalMagicDefense = { 10, 75, 150, 175, 200, 225, 275, 350, 500 };
 
     private void SetSkills(
         int tier,
@@ -373,6 +373,9 @@ partial class Creature
             {
                 MutateWeaponForArchetype(GetEquippedWeapon(), Damage.Value);
             }
+
+            // Set Spell Damage Multiplier
+            ArchetypeSpellDamageMultiplier = GetArchetypeSpellDamageMultiplier(tier, statWeight, lethality);
 
             // Set Body Parts
             if (Weenie != null)
@@ -1191,7 +1194,7 @@ partial class Creature
 
         // player melee def
         var weightedPlayerMeleeDef =
-            avgPlayerMeleeDefense[tier] + (avgPlayerMeleeDefense[tier + 1] - avgPlayerMeleeDefense[tier]) * statWeight;
+            avgPlayerPhysicalMagicDefense[tier] + (avgPlayerPhysicalMagicDefense[tier + 1] - avgPlayerPhysicalMagicDefense[tier]) * statWeight;
         var enemyAttackSkill = Skills[Skill.MartialWeapons].Current;
 
         // player evade
@@ -1239,5 +1242,82 @@ partial class Creature
         }
 
         return baseAvgDamage;
+    }
+
+    private double GetArchetypeSpellDamageMultiplier(int tier, float statWeight, double lethality)
+    {
+        // target enemy damage per second
+        var weightedEnemyDamage = (enemyDamage[tier] + (enemyDamage[tier + 1] - enemyDamage[tier]) * statWeight);
+        var weightedPlayerHealth = (avgPlayerHealth[tier] + (avgPlayerHealth[tier + 1] - avgPlayerHealth[tier]) * statWeight);
+        var targetEnemyDamage = weightedEnemyDamage / 100 * weightedPlayerHealth;
+
+        // player magic def
+        var weightedPlayerMagicDef = avgPlayerPhysicalMagicDefense[tier] + (avgPlayerPhysicalMagicDefense[tier + 1] - avgPlayerPhysicalMagicDefense[tier]) * statWeight;
+        var enemyMagicSkill = Skills[Skill.WarMagic].Current > Skills[Skill.LifeMagic].Current ? Skills[Skill.WarMagic].Current : Skills[Skill.LifeMagic].Current;
+
+        // player evade
+        var playerResistChance = 1 - SkillCheck.GetSkillChance((int)enemyMagicSkill, (int)weightedPlayerMagicDef);
+        var playerResistDamageReduction = 1 - (playerResistChance * 0.67f);
+
+        // player armor
+        var weightedPlayerWardReduction =
+            avgPlayerArmorReduction[tier]
+            + (avgPlayerArmorReduction[tier + 1] - avgPlayerArmorReduction[tier]) * statWeight;
+
+        //player life protection
+        var playerLifeProtReduction = avgPlayerLifeProtReduction[tier];
+
+        // enemy cast speed
+        var enemyAvgAttackSpeed = 1 / (WeaponAnimationLength.GetSpellCastAnimationLength(Server.Entity.ProjectileSpellType.Blast, 1) + (AiUseMagicDelay ?? 1.0));
+
+        // enemy attribute mod
+        var self = (int)Self.Base;
+        var enemyAttributeMod = SkillFormula.GetAttributeMod(self, Skill.WarMagic);
+
+        // final base damage
+        var baseAvgDamage =
+            targetEnemyDamage
+            / weightedPlayerWardReduction
+            / playerLifeProtReduction
+            / playerResistDamageReduction
+            / enemyAvgAttackSpeed
+            / enemyAttributeMod
+            * lethality;
+
+        // base spell damage
+        var baseSpellDamage = GetAvgSpellDamageAtTier(tier);
+
+
+        if (DebugArchetypeSystem)
+        {
+            Console.WriteLine(
+                $"\nDamage Calc for {Name} ({WeenieClassId})\n "
+                    + $" BaseAvgDamage: {Math.Round(baseAvgDamage, 1)} = \n"
+                    + $"  targetEnemyDamage ({Math.Round(targetEnemyDamage, 1)}) - weightedEnemyDamage ({Math.Round(weightedEnemyDamage, 1)}% per second), weightedPlayerHealth ({Math.Round(weightedPlayerHealth, 1)}) \n"
+                    + $"  / armorReduction ({weightedPlayerWardReduction})\n"
+                    + $"  / protReduction ({playerLifeProtReduction})  \n"
+                    + $"  / evadeReduction ({Math.Round(playerResistDamageReduction, 2)}) - weightedPlayerMeleeDef ({weightedPlayerMagicDef}), enemyAttackSkill ({enemyMagicSkill}), playerEvadeChance ({Math.Round(playerResistChance, 2)})  \n"
+                    + $"  / enemyAttacksPerSecond ({Math.Round(enemyAvgAttackSpeed, 2)})  \n"
+                    + $"  / enemyAttributeMod ({enemyAttributeMod})\n" +
+                      $"  = BaseAvgDamage ({baseAvgDamage}) / AvgSpellDamage ({baseSpellDamage}) = SpellDamageMod ({baseAvgDamage / baseSpellDamage})"
+            );
+        }
+
+        return baseAvgDamage / baseSpellDamage;
+    }
+
+    private int GetAvgSpellDamageAtTier(int tier)
+    {
+        return tier switch
+        {
+            1 => 9,
+            2 => 18,
+            3 => 27,
+            4 => 36,
+            5 => 45,
+            6 => 54,
+            7 => 160,
+            _ => 0
+        };
     }
 }

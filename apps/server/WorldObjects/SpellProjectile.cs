@@ -861,6 +861,8 @@ public class SpellProjectile : WorldObject
 
             var strikethroughMod = 1.0f / (Strikethrough + 1);
 
+            var archetypeSpellDamageMod = (float)(sourceCreature.ArchetypeSpellDamageMultiplier ?? 1.0);
+
             // ----- FINAL CALCULATION ------------
             var damageBeforeMitigation =
                 baseDamage
@@ -875,7 +877,8 @@ public class SpellProjectile : WorldObject
                 * jewelSelfHarm
                 * jewelRedFury
                 * jewelBlueFury
-                * strikethroughMod;
+                * strikethroughMod
+                * archetypeSpellDamageMod;
 
             finalDamage =
                 damageBeforeMitigation
@@ -889,17 +892,27 @@ public class SpellProjectile : WorldObject
 
             if (sourcePlayer != null)
             {
-                //Console.WriteLine($"\n{sourcePlayer.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
+                //Console.WriteLine($"\n{sourceCreature.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
                 //    $" -baseDamage: {baseDamage}\n" +
                 //    $" -critMultiplier: {criticalDamageMod}\n" +
                 //    $" -attributeMod: {attributeMod}\n" +
                 //    $" -elementalDamageMod: {elementalDamageMod}\n" +
                 //    $" -slayerMod: {slayerMod}\n" +
+                //    $" -overload: {overloadDamageMod}\n" +
+                //    $" -batteryMod: {batteryDamageMod}\n" +
+                //    $" -jewelElementalist: {jewelElementalist}\n" +
+                //    $" -jewelElemental: {jewelElemental}\n" +
+                //    $" -jewelSelfHarm: {jewelSelfHarm}\n" +
+                //    $" -jewelRedFury: {jewelRedFury}\n" +
+                //    $" -jewelBlueFury: {jewelBlueFury}\n" +
+                //    $" -strikethrough: {strikethroughMod}\n" +
+                //    $" -archetypeSpellDamageMod: {archetypeSpellDamageMod}\n" +
                 //    $" -absorbMod: {absorbMod}\n" +
                 //    $" -wardMod: {wardMod}\n" +
                 //    $" -resistanceMod: {resistanceMod}\n" +
                 //    $" -resistedMod: {resistedMod}\n" +
                 //    $" -specDefMod: {specDefenseMod}\n" +
+                //    $" -ratingDamageTypeWard: {ratingDamageTypeWard}\n" +
                 //    $" -FinalBeforeRatings: {finalDamage}");
             }
         }
