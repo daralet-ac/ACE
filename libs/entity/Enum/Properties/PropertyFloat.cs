@@ -238,6 +238,7 @@ public enum PropertyFloat : ushort
     SigilTrinketStaminaReserved = 197,
     SigilTrinketHealthReserved = 198,
     ResistBleed = 199,
+    ArchetypeSpellDamageMultiplier = 200,
 
     [ServerOnly]
     PCAPRecordedWorkmanship = 8004,

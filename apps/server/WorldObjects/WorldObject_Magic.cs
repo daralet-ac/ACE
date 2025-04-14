@@ -1010,6 +1010,9 @@ partial class WorldObject
         {
             var lethalityMod = Convert.ToSingle(creature.ArchetypeLethality ?? 1.0f);
             tryBoost = Convert.ToInt32(tryBoost * lethalityMod);
+
+            var archetypeSpellDamageMod = (float)(creature.ArchetypeSpellDamageMultiplier ?? 1.0);
+            tryBoost = Convert.ToInt32(tryBoost * archetypeSpellDamageMod);
         }
 
         // Attribute Mod
@@ -1501,6 +1504,13 @@ partial class WorldObject
             {
                 var attributeMod = player.GetAttributeMod(weapon, true, targetCreature);
                 destVitalChange = Convert.ToUInt32(destVitalChange * attributeMod);
+            }
+
+            // Archetype Mod
+            if (creature is not null)
+            {
+                var archetypeSpellDamageMod = (float)(creature.ArchetypeSpellDamageMultiplier ?? 1.0);
+                destVitalChange = Convert.ToUInt32(destVitalChange * archetypeSpellDamageMod);
             }
 
             // LEVEL SCALING - Reduce Drain effectiveness vs. monsters, and increase vs. player
