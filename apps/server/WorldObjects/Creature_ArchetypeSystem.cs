@@ -1303,6 +1303,22 @@ partial class Creature
             );
         }
 
+        if (baseAvgDamage / baseSpellDamage is float.PositiveInfinity or float.NegativeInfinity)
+        {
+            _log.Error("{Name}.GetArchetypeSpellDamageMultiplier(tier ({Tier}), statWeight ({StatWeight}), lethality ({Lethality})) - Value is infinity.",
+                Name, tier, statWeight, lethality);
+
+            return 1.0f;
+        }
+
+        if (baseAvgDamage / baseSpellDamage < 0)
+        {
+            _log.Error("{Name}.GetArchetypeSpellDamageMultiplier(tier ({Tier}), statWeight ({StatWeight}), lethality ({Lethality})) - Value is negative.",
+                Name, tier, statWeight, lethality);
+
+            return 1.0f;
+        }
+
         return baseAvgDamage / baseSpellDamage;
     }
 

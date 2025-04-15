@@ -431,7 +431,7 @@ public class SpellProjectile : WorldObject
             targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, Spell, (int)damage, Skill.MagicDefense,
                 (int)SigilTrinketMagicDefenseEffect.Absorption);
 
-            if (!damage.HasValue || damage < 0 || damage != Math.Floor(damage.Value) || damage > uint.MaxValue)
+            if (!damage.HasValue || damage < 0 || damage > uint.MaxValue)
             {
                 _log.Error("OnCollideObject({Target}) - damage ({Damage}) could not be converted to uint.", target.Name, damage);
             }
