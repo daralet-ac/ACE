@@ -427,8 +427,15 @@ public class SpellProjectile : WorldObject
         if (targetPlayer != null && damage != null)
         {
             SigilTrinketSpellDamageReduction = 1.0f;
+
             targetPlayer.CheckForSigilTrinketOnSpellHitReceivedEffects(this, Spell, (int)damage, Skill.MagicDefense,
                 (int)SigilTrinketMagicDefenseEffect.Absorption);
+
+            if (!damage.HasValue || damage < 0 || damage != Math.Floor(damage.Value) || damage > uint.MaxValue)
+            {
+                _log.Error("OnCollideObject({Target}) - damage ({Damage}) could not be converted to uint.", target.Name, damage);
+            }
+
             damage = Convert.ToUInt32(damage * SigilTrinketSpellDamageReduction);
         }
 
