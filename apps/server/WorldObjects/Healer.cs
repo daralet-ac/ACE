@@ -154,7 +154,7 @@ public class Healer : WorldObject
         //    CooldownDuration *= 0.5f;
         //}
 
-        //NextHealKitUseTime = currentTime + CooldownDuration.Value;
+        NextHealKitUseTime = currentTime + CooldownDuration.Value;
         StartCooldown(healer);
 
         DoHealMotion(healer, targetPlayer, true);
