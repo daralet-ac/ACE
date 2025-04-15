@@ -435,8 +435,10 @@ public class SpellProjectile : WorldObject
             {
                 _log.Error("OnCollideObject({Target}) - damage ({Damage}) could not be converted to uint.", target.Name, damage);
             }
-
-            damage = Convert.ToUInt32(damage * SigilTrinketSpellDamageReduction);
+            else
+            {
+                damage = Convert.ToUInt32(damage * SigilTrinketSpellDamageReduction);
+            }
         }
 
         creatureTarget.OnAttackReceived(sourceCreature, CombatType.Magic, critical, resisted, (int)Spell.Level);
