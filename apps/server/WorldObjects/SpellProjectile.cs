@@ -714,11 +714,6 @@ public class SpellProjectile : WorldObject
             Player.UpdatePKTimers(sourcePlayer, targetPlayer);
         }
 
-        var attributeMod = 1f;
-        if (sourcePlayer != null)
-        {
-            attributeMod = sourcePlayer.GetAttributeMod(weapon, true, target);
-        }
 
         var elementalDamageMod = GetCasterElementalDamageModifier(weapon, sourceCreature, target, Spell.DamageType);
 
@@ -728,9 +723,12 @@ public class SpellProjectile : WorldObject
         var overloadDamageMod = CheckForCombatAbilityOverloadDamageMod(sourcePlayer);
         var batteryDamageMod = CheckForCombatAbilityBatteryDamageMod(sourcePlayer);
 
+        var attributeMod = 1.0f;
         var lethalityMod = 1.0f;
+
         if (sourceCreature is not null)
         {
+            attributeMod = sourceCreature.GetAttributeMod(weapon, true, target);
             lethalityMod = Convert.ToSingle(sourceCreature.ArchetypeLethality ?? 1.0f);
         }
 
