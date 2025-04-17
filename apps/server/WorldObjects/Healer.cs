@@ -137,7 +137,9 @@ public class Healer : WorldObject
 
         var currentTime = Time.GetUnixTime();
 
-        if (NextHealKitUseTime > currentTime)
+        if ((BoosterEnum is PropertyAttribute2nd.Health && healer.NextHealthKitUseTime > currentTime)
+            || (BoosterEnum is PropertyAttribute2nd.Stamina && healer.NextStaminaKitUseTime > currentTime)
+            || (BoosterEnum is PropertyAttribute2nd.Mana && healer.NextManaKitUseTime > currentTime))
         {
             healer.Session.Network.EnqueueSend(
                 new GameEventCommunicationTransientString(healer.Session, $"{target.Name} is still on cooldown.")
@@ -146,16 +148,31 @@ public class Healer : WorldObject
             return;
         }
 
-        //CooldownDuration = 15.0f;
+        CooldownDuration = 10.0f;
 
-        //// SPEC BONUS - Healing: Cooldown reduced by 50%
-        //if (healer.GetCreatureSkill(Skill.Healing).AdvancementClass == SkillAdvancementClass.Specialized)
-        //{
-        //    CooldownDuration *= 0.5f;
-        //}
+        // SPEC BONUS - Healing: Cooldown reduced by 2 seconds
+        if (healer.GetCreatureSkill(Skill.Healing).AdvancementClass == SkillAdvancementClass.Specialized)
+        {
+            CooldownDuration = 8.0f;
+        }
 
-        NextHealKitUseTime = currentTime + CooldownDuration.Value;
-        StartCooldown(healer);
+        switch (BoosterEnum)
+        {
+            case PropertyAttribute2nd.Health:
+                healer.NextHealthKitUseTime = currentTime + CooldownDuration.Value;
+                StartCooldown(healer);
+                break;
+            case PropertyAttribute2nd.Stamina:
+                healer.NextStaminaKitUseTime = currentTime + CooldownDuration.Value;
+                StartCooldown(healer);
+                break;
+            case PropertyAttribute2nd.Mana:
+                healer.NextManaKitUseTime = currentTime + CooldownDuration.Value;
+                StartCooldown(healer);
+                break;
+            default:
+                return;
+        }
 
         DoHealMotion(healer, targetPlayer, true);
     }
