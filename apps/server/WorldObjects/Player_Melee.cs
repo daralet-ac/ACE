@@ -592,7 +592,7 @@ partial class Player
 
         if (weapon != null)
         {
-            if (WeaponMasterSingleUseIsActive && weapon is { WeaponSkill: Skill.UnarmedCombat })
+            if (!IsDualWieldAttack && WeaponMasterSingleUseIsActive && weapon is { WeaponSkill: Skill.UnarmedCombat })
             {
                 AttackType = AttackType.Kick;
             }
