@@ -1013,12 +1013,8 @@ partial class WorldObject
 
             var archetypeSpellDamageMod = (float)(creature.ArchetypeSpellDamageMultiplier ?? 1.0);
             tryBoost = Convert.ToInt32(tryBoost * archetypeSpellDamageMod);
-        }
 
-        // Attribute Mod
-        if (player is not null)
-        {
-            var attributeMod = player.GetAttributeMod(weapon, true, targetCreature);
+            var attributeMod = creature.GetAttributeMod(weapon, true, targetCreature);
             tryBoost = Convert.ToInt32(tryBoost * attributeMod);
         }
 
