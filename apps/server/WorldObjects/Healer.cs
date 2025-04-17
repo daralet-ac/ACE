@@ -45,7 +45,7 @@ public class Healer : WorldObject
     private void SetEphemeralValues()
     {
         ObjectDescriptionFlags |= ObjectDescriptionFlag.Healer;
-        CooldownDuration = 15;
+        CooldownDuration = 10;
     }
 
     public override void HandleActionUseOnTarget(Player healer, WorldObject target)
