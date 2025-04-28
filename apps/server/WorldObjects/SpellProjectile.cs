@@ -868,7 +868,12 @@ public class SpellProjectile : WorldObject
 
             var strikethroughMod = 1.0f / (Strikethrough + 1);
 
-            var archetypeSpellDamageMod = (float)(sourceCreature.ArchetypeSpellDamageMultiplier ?? 1.0);
+            var archetypeSpellDamageMod = 1.0f;
+
+            if (sourceCreature is not null)
+            {
+                archetypeSpellDamageMod = (float)(sourceCreature.ArchetypeSpellDamageMultiplier ?? 1.0);
+            }
 
             // ----- FINAL CALCULATION ------------
             var damageBeforeMitigation =
