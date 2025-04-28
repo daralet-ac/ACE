@@ -1208,7 +1208,7 @@ partial class WorldObject
 
         var rampMod = (float)targetPlayer.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Nullification") / 100;
 
-        return 1.0f - rampMod * rating;
+        return 1.0f - rampMod * finalRating;
     }
 
     /// <summary>
