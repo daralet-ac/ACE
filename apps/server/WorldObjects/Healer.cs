@@ -22,8 +22,6 @@ public class Healer : WorldObject
         set => Structure = value;
     }
 
-    private double NextHealKitUseTime = 0;
-
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
@@ -125,35 +123,46 @@ public class Healer : WorldObject
             return;
         }
 
-        /*if (!healer.Equals(targetPlayer))
-        {
-            // perform moveto
-            healer.CreateMoveToChain(target, (success) => DoHealMotion(healer, targetPlayer, success));
-        }
-        else
-            DoHealMotion(healer, targetPlayer, true);*/
-
-        // MoveTo is now handled in base Player_Use
-
         var currentTime = Time.GetUnixTime();
 
-        if ((BoosterEnum is PropertyAttribute2nd.Health && healer.NextHealthKitUseTime > currentTime)
-            || (BoosterEnum is PropertyAttribute2nd.Stamina && healer.NextStaminaKitUseTime > currentTime)
-            || (BoosterEnum is PropertyAttribute2nd.Mana && healer.NextManaKitUseTime > currentTime))
+        var remainingCooldown = BoosterEnum switch
+        {
+            PropertyAttribute2nd.Health when healer.NextHealthKitUseTime > currentTime => Math.Round(
+                healer.NextHealthKitUseTime - currentTime, 1),
+            PropertyAttribute2nd.Stamina when healer.NextStaminaKitUseTime > currentTime => Math.Round(
+                healer.NextStaminaKitUseTime - currentTime, 1),
+            PropertyAttribute2nd.Mana when healer.NextManaKitUseTime > currentTime => Math.Round(
+                healer.NextManaKitUseTime - currentTime, 1),
+            _ => 0.0
+        };
+
+        if (remainingCooldown > 0)
         {
             healer.Session.Network.EnqueueSend(
-                new GameEventCommunicationTransientString(healer.Session, $"{target.Name} is still on cooldown.")
+                new GameEventCommunicationTransientString(
+                    healer.Session, $"{Name} is still on cooldown for {remainingCooldown} seconds.")
             );
+
+            // healer.Session.Network.EnqueueSend(
+            //     new GameMessageSystemChat(
+            //         $"{Name} is still on cooldown for {remainingCooldown} seconds.", ChatMessageType.System)
+            // );
+
             healer.SendUseDoneEvent();
             return;
         }
 
-        CooldownDuration = 10.0f;
-
-        // SPEC BONUS - Healing: Cooldown reduced by 2 seconds
-        if (healer.GetCreatureSkill(Skill.Healing).AdvancementClass == SkillAdvancementClass.Specialized)
+        if (!CooldownDuration.HasValue)
         {
-            CooldownDuration = 8.0f;
+            _log.Error("{HealingKit} is missing a cooldown duration value.", Name);
+            return;
+        }
+
+        var cooldownDuration = CooldownDuration.Value;
+
+        if (healer.GetCreatureSkill(Skill.Healing).AdvancementClass is SkillAdvancementClass.Specialized)
+        {
+            CooldownDuration = 5.0f;
         }
 
         switch (BoosterEnum)
@@ -173,6 +182,8 @@ public class Healer : WorldObject
             default:
                 return;
         }
+
+        CooldownDuration = cooldownDuration;
 
         DoHealMotion(healer, targetPlayer, true);
     }
@@ -310,7 +321,7 @@ public class Healer : WorldObject
 
             var healingSkillCurrent = healer.GetCreatureSkill(Skill.Healing).Current;
 
-            spell.SpellStatModVal *= (float)HealkitMod.Value * (healingSkillCurrent * 0.01f);
+            spell.SpellStatModVal *= (float)(HealkitMod ?? 1.0) * (healingSkillCurrent * 0.05f);
 
             healer.TryCastSpell_Inner(spell, target);
         }
@@ -373,18 +384,20 @@ public class Healer : WorldObject
     {
         // factors: healing skill, healing kit bonus, stamina, critical chance
         var healingSkill = healer.GetCreatureSkill(Skill.Healing).Current;
-        var healBase = healingSkill * (float)HealkitMod.Value;
 
         // todo: determine applicable range from pcaps
-        var healMin = healBase * 0.2f; // ??
-        var healMax = healBase * 0.4f;
+        var healMin = healingSkill * 0.5f;
+        var healMax = healingSkill * 1.0f;
         var healAmount = ThreadSafeRandom.Next(healMin, healMax);
+
+        var healKitMod = (float)(HealkitMod ?? 1.0);
+        healAmount *= healKitMod;
 
         // chance for critical healing
         // SPEC BONUS - Healing: double crit chance
-        var critChance =
-            healer.GetCreatureSkill(Skill.Healing).AdvancementClass == SkillAdvancementClass.Specialized ? 0.2f : 0.1f;
+        var critChance = healer.GetCreatureSkill(Skill.Healing).AdvancementClass == SkillAdvancementClass.Specialized ? 0.2f : 0.1f;
         criticalHeal = ThreadSafeRandom.Next(0.0f, 1.0f) < critChance;
+
         if (criticalHeal)
         {
             healAmount *= 2;
@@ -416,7 +429,7 @@ public class Healer : WorldObject
         return (uint)Math.Round(healAmount);
     }
 
-    public void StartCooldown(Player player)
+    private void StartCooldown(Player player)
     {
         player.EnchantmentManager.StartCooldown(this);
     }
