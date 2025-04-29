@@ -2782,9 +2782,11 @@ public static partial class LootGenerationFactory
             lootQualityMod = treasureDeath.LootQualityMod > 0 ? treasureDeath.LootQualityMod : 0;
         }
 
-        var roll = ThreadSafeRandom.Next(lootQualityMod, 1.0f);
+        var minimumRoll = (float)(1 - Math.Exp(-1 * lootQualityMod));
 
-        return (float)Math.Pow(roll, 2);
+        var roll = (float)ThreadSafeRandom.Next(minimumRoll, 1.0f);
+
+        return roll;
     }
 
     private static int GetMaxValueOfTier(int tier)
