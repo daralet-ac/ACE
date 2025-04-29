@@ -673,7 +673,10 @@ public class GeneratorProfile
                 deathTreasure.Tier = (int)tier;
             }
 
-            // TODO Get LootQualityMod from Chest (just like Tier above)
+            if (Generator.LootQualityMod.HasValue)
+            {
+                deathTreasure.LootQualityMod = (float)Generator.LootQualityMod;
+            }
 
             // _log.Debug("{GeneratorName}.TreasureGenerator(): found death treasure {BiotaWcid}", Generator.Name, Biota.WeenieClassId);
             var generatedLoot = LootGenerationFactory.CreateRandomLootObjects(deathTreasure);
