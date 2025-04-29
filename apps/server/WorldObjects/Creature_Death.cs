@@ -93,6 +93,11 @@ partial class Creature
             HandleShroudRewards();
         }
 
+        if (BossKillXpReward is true)
+        {
+            OnDeath_HandleTownAttunement(lastDamager);
+        }
+
         return GetDeathMessage(lastDamager, damageType, criticalHit);
     }
 
@@ -1324,5 +1329,70 @@ partial class Creature
         }
 
         return 1.0f;
+    }
+
+    private void OnDeath_HandleTownAttunement(DamageHistoryInfo lastDamager)
+    {
+        if (!lastDamager.IsPlayer)
+        {
+            return;
+        }
+
+        var player = lastDamager.Player;
+
+        HandleTownAttunementStamp(player);
+
+        if (player.Fellowship is null)
+        {
+            return;
+        }
+
+        foreach (var fellow in player.Fellowship.GetFellowshipMembers())
+        {
+            if (fellow.Value != player)
+            {
+                HandleTownAttunementStamp(fellow.Value);
+            }
+        }
+    }
+
+    private void HandleTownAttunementStamp(Player player)
+    {
+        var nearestTown = Town.GetNearestTown(this);
+        var simplifiedTownName = Town.GetSimplifiedTownString(nearestTown);
+
+        var playerTownStamps = player.QuestManager.GetCurrentSolves($"Quest{simplifiedTownName}");
+        var playerArrivedAtTownStamps = player.QuestManager.GetCurrentSolves($"Arrived{simplifiedTownName}");
+        var playerArrivedAtTown = playerArrivedAtTownStamps >= 1;
+
+        if (playerTownStamps >= 1 && !playerArrivedAtTown)
+        {
+            return;
+        }
+
+        var townTier = Town.GetTownTier(nearestTown);
+        var creatureTier = GetCreatureTier();
+
+        if (creatureTier < townTier)
+        {
+            return;
+        }
+
+        player.QuestManager.Stamp($"Quest{nearestTown}");
+    }
+
+    private uint GetCreatureTier()
+    {
+        return Level switch
+        {
+            < 10 => 0,
+            < 20 => 1,
+            < 30 => 2,
+            < 40 => 3,
+            < 50 => 4,
+            < 75 => 5,
+            < 100 => 6,
+            _ => 7
+        };
     }
 }
