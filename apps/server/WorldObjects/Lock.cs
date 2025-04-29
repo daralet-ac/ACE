@@ -250,8 +250,7 @@ public class UnlockerHelper
                                             if (lootQualityBonusCheck > ThreadSafeRandom.Next(0f, 1f))
                                             {
                                                 var baseLootQualityMod = chest.LootQualityMod;
-                                                var difference = 1 - (baseLootQualityMod ?? 0);
-                                                var bonus = difference * 0.25f;
+                                                const float bonus = 0.25f;
 
                                                 if (chest.LootQualityMod != null)
                                                 {
