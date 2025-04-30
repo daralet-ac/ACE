@@ -1405,12 +1405,14 @@ partial class Creature
     {
         if (this is Player)
         {
-            QuestManager.Stamp($"KilledBy{lastDamager.Name}");
+            var creatureName = lastDamager.Name.Replace(" ", "");
+            QuestManager.Stamp($"KilledBy{creatureName}");
         }
 
         if (lastDamager.IsPlayer)
         {
-            lastDamager.Player.QuestManager.Stamp($"Killed{Name}");
+            var creatureName = Name.Replace(" ", "");
+            lastDamager.Player.QuestManager.Stamp($"Killed{creatureName}");
         }
     }
 }
