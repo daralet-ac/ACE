@@ -1403,14 +1403,16 @@ partial class Creature
 
     private void OnDeath_HandleKillTracking(DamageHistoryInfo lastDamager)
     {
-        if (this is Player)
+        if (this is Player && lastDamager.Name is not null)
         {
-            QuestManager.Stamp($"KilledBy{lastDamager.Name}");
+            var creatureName = lastDamager.Name.Replace(" ", "");
+            QuestManager.Stamp($"KilledBy{creatureName}");
         }
 
-        if (lastDamager.IsPlayer)
+        if (lastDamager.IsPlayer && Name is not null)
         {
-            lastDamager.Player.QuestManager.Stamp($"Killed{Name}");
+            var creatureName = Name.Replace(" ", "");
+            lastDamager.Player.QuestManager.Stamp($"Killed{creatureName}");
         }
     }
 }
