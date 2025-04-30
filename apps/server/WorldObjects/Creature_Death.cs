@@ -98,6 +98,11 @@ partial class Creature
             OnDeath_HandleTownAttunement(lastDamager);
         }
 
+        if (this is Player || lastDamager.IsPlayer)
+        {
+            OnDeath_HandleKillTracking(lastDamager);
+        }
+
         return GetDeathMessage(lastDamager, damageType, criticalHit);
     }
 
@@ -1394,5 +1399,18 @@ partial class Creature
             < 100 => 6,
             _ => 7
         };
+    }
+
+    private void OnDeath_HandleKillTracking(DamageHistoryInfo lastDamager)
+    {
+        if (this is Player)
+        {
+            QuestManager.Stamp($"KilledBy{lastDamager.Name}");
+        }
+
+        if (lastDamager.IsPlayer)
+        {
+            lastDamager.Player.QuestManager.Stamp($"Killed{Name}");
+        }
     }
 }
