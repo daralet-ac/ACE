@@ -43,7 +43,7 @@ public class Healer : WorldObject
     private void SetEphemeralValues()
     {
         ObjectDescriptionFlags |= ObjectDescriptionFlag.Healer;
-        CooldownDuration = 10;
+        CooldownDuration = 12;
     }
 
     public override void HandleActionUseOnTarget(Player healer, WorldObject target)
@@ -162,7 +162,7 @@ public class Healer : WorldObject
 
         if (healer.GetCreatureSkill(Skill.Healing).AdvancementClass is SkillAdvancementClass.Specialized)
         {
-            CooldownDuration = 5.0f;
+            CooldownDuration = 8.0f;
         }
 
         switch (BoosterEnum)
