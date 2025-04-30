@@ -1656,8 +1656,11 @@ public class EmoteManager
 
                     newPos.LandblockId = new LandblockId(PositionExtensions.GetCell(newPos));
 
+                    var walkRunThreshold = emote.Amount;
+                    var runSpeed = emote.Shade ?? creature.GetRunRate();
+
                     // TODO: handle delay for this?
-                    creature.MoveTo(newPos, creature.GetRunRate(), true, null, emote.Extent);
+                    creature.MoveTo(newPos, runSpeed, true, walkRunThreshold, emote.Extent);
                 }
                 break;
 
