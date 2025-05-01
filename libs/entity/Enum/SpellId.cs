@@ -6465,8 +6465,6 @@ public enum SpellId : uint
     SigilTrinketRedCooldown = 0x8000 | 10002, // varies
 
     HealingKitCooldown = 0x8000 | 10003, // varies
-    StaminaKitCooldown = 0x8000 | 10004, // varies
-    ManaKitCooldown = 0x8000 | 10005, // varies
 
     Provoke = 0x8000 | 10050, // 20 second cooldown
     Smokescreen = 0x8000 | 10051, // 20 second cooldown

@@ -125,16 +125,7 @@ public class Healer : WorldObject
 
         var currentTime = Time.GetUnixTime();
 
-        var remainingCooldown = BoosterEnum switch
-        {
-            PropertyAttribute2nd.Health when healer.NextHealthKitUseTime > currentTime => Math.Round(
-                healer.NextHealthKitUseTime - currentTime, 1),
-            PropertyAttribute2nd.Stamina when healer.NextStaminaKitUseTime > currentTime => Math.Round(
-                healer.NextStaminaKitUseTime - currentTime, 1),
-            PropertyAttribute2nd.Mana when healer.NextManaKitUseTime > currentTime => Math.Round(
-                healer.NextManaKitUseTime - currentTime, 1),
-            _ => 0.0
-        };
+        var remainingCooldown = healer.NextHealingKitUseTime > currentTime ? Math.Round(healer.NextHealingKitUseTime - currentTime, 1) : 0;
 
         if (remainingCooldown > 0)
         {
@@ -165,23 +156,8 @@ public class Healer : WorldObject
             CooldownDuration = 8.0f;
         }
 
-        switch (BoosterEnum)
-        {
-            case PropertyAttribute2nd.Health:
-                healer.NextHealthKitUseTime = currentTime + CooldownDuration.Value;
-                StartCooldown(healer);
-                break;
-            case PropertyAttribute2nd.Stamina:
-                healer.NextStaminaKitUseTime = currentTime + CooldownDuration.Value;
-                StartCooldown(healer);
-                break;
-            case PropertyAttribute2nd.Mana:
-                healer.NextManaKitUseTime = currentTime + CooldownDuration.Value;
-                StartCooldown(healer);
-                break;
-            default:
-                return;
-        }
+        healer.NextHealingKitUseTime = currentTime + CooldownDuration.Value;
+        StartCooldown(healer);
 
         CooldownDuration = cooldownDuration;
 
@@ -320,8 +296,10 @@ public class Healer : WorldObject
             }
 
             var healingSkillCurrent = healer.GetCreatureSkill(Skill.Healing).Current;
+            var healingSkillMod = healingSkillCurrent * 0.05f;
+            var healkitMod = (float)(HealkitMod ?? 1.0) * 0.5f;
 
-            spell.SpellStatModVal *= (float)(HealkitMod ?? 1.0) * (healingSkillCurrent * 0.05f);
+            spell.SpellStatModVal *= healkitMod * healingSkillMod;
 
             healer.TryCastSpell_Inner(spell, target);
         }
