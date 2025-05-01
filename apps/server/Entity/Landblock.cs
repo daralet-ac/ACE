@@ -267,6 +267,27 @@ public class Landblock : IActor
                 PhysicsLandblock.SortObjects();
             })
         );
+
+        switch (Id.Landblock)
+        {
+            case 48543:
+                var banks = shardObjects.Count(shardObject => shardObject.WeenieClassId is 1010100);
+
+                _log.Information("Cragstone - Objects: {Objects}, ShardObjects: {ShardObjects} (banks = {Banks}), FactoryObjects: {FactoryObjects}",
+                    objects.Count, shardObjects.Count, banks, factoryObjects.Count);
+                break;
+            case 59214:
+                banks = shardObjects.Count(shardObject => shardObject.WeenieClassId is 1010100);
+
+                _log.Information("Hebian-To - Objects: {Objects}, ShardObjects: {ShardObjects} (banks = {Banks}), FactoryObjects: {FactoryObjects}",
+                    objects.Count, shardObjects.Count, banks, factoryObjects.Count);
+                break;
+            case 32912:
+                banks = shardObjects.Count(shardObject => shardObject.WeenieClassId is 1010100);
+                _log.Information("Zaikhal - Objects: {Objects}, ShardObjects: {ShardObjects} (banks = {Banks}), FactoryObjects: {FactoryObjects}",
+                    objects.Count, shardObjects.Count, banks, factoryObjects.Count);
+                break;
+        }
     }
 
     /// <summary>
