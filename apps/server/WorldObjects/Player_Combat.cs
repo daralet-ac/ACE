@@ -35,9 +35,7 @@ partial class Player
 
     public double LastAttackReceivedTime;
 
-    public double NextHealthKitUseTime;
-    public double NextStaminaKitUseTime;
-    public double NextManaKitUseTime;
+    public double NextHealingKitUseTime;
 
     public DateTime NextRefillTime;
 
