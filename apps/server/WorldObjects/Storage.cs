@@ -230,7 +230,7 @@ public class Storage : Container
 
         Translucency = 0f;
 
-        SaveBiotaToDatabase();
+        SaveBiotaToDatabase(false);
 
         _bankUser?.Session.Network.EnqueueSend(
             new GameEventTell(this, "Please return with more items.", _bankUser, ChatMessageType.Tell)
@@ -262,7 +262,7 @@ public class Storage : Container
     {
         if (Inventory.Count > 0)
         {
-            SaveBiotaToDatabase();
+            SaveBiotaToDatabase(false);
         }
     }
 
@@ -271,6 +271,6 @@ public class Storage : Container
     /// </summary>
     protected override void OnRemoveItem(WorldObject removedItem)
     {
-        SaveBiotaToDatabase();
+        SaveBiotaToDatabase(false);
     }
 }
