@@ -98,7 +98,7 @@ partial class Creature
             OnDeath_HandleTownAttunement(lastDamager);
         }
 
-        if (this is Player || lastDamager.IsPlayer)
+        if (this is Player || lastDamager is {IsPlayer: true})
         {
             OnDeath_HandleKillTracking(lastDamager);
         }
