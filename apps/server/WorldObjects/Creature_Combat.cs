@@ -903,7 +903,7 @@ partial class Creature
         }
 
         // we cant block our own attacks
-        if (attacker == this)
+        if (attacker is not Creature creatureAttacker || creatureAttacker == this)
         {
             return 1.0f;
         }
@@ -936,7 +936,7 @@ partial class Creature
                 effectiveAngle = 225.0f;
             }
 
-            var angle = GetAngle(attacker);
+            var angle = GetAngle(creatureAttacker);
             if (Math.Abs(angle) > effectiveAngle / 2.0f)
             {
                 return 1.0f;
@@ -948,13 +948,13 @@ partial class Creature
 
         // shield AL item enchantment additives:
         // impenetrability, brittlemail
-        var ignoreMagicArmor = (weapon?.IgnoreMagicArmor ?? false) || (attacker?.IgnoreMagicArmor ?? false);
+        var ignoreMagicArmor = (weapon?.IgnoreMagicArmor ?? false) || (creatureAttacker?.IgnoreMagicArmor ?? false);
 
         var modSL = shield.EnchantmentManager.GetArmorMod();
 
         if (ignoreMagicArmor)
         {
-            modSL = attacker is Player ? (int)Math.Round(IgnoreMagicArmorScaled(modSL)) : 0;
+            modSL = creatureAttacker is Player ? (int)Math.Round(IgnoreMagicArmorScaled(modSL)) : 0;
         }
 
         var effectiveSL = baseSL + modSL;
@@ -968,7 +968,7 @@ partial class Creature
 
         if (ignoreMagicArmor)
         {
-            modRL = attacker is Player ? IgnoreMagicArmorScaled(modRL) : 0.0f;
+            modRL = creatureAttacker is Player ? IgnoreMagicArmorScaled(modRL) : 0.0f;
         }
 
         var effectiveRL = (float)(baseRL + modRL);
@@ -976,26 +976,19 @@ partial class Creature
         // resistance clamp
         effectiveRL = Math.Clamp(effectiveRL, -2.0f, 2.0f);
 
-        // handle negative SL
-        //if (effectiveSL < 0 && effectiveRL != 0)
-        //effectiveRL = 1.0f / effectiveRL;
+        var levelScalingMod = LevelScaling.GetPlayerArmorWardScalar(this, creatureAttacker);
+        var ignoreShieldMod = creatureAttacker.GetIgnoreShieldMod(weapon);
+        var effectiveLevel = effectiveSL * effectiveRL * ignoreShieldMod * levelScalingMod;
 
-        var effectiveLevel = effectiveSL;
+        var attackerSkill = weapon is null
+            ? creatureAttacker.GetCreatureSkill(Skill.UnarmedCombat)
+            : creatureAttacker.GetCreatureSkill(weapon.WeaponSkill);
 
-        effectiveLevel = effectiveLevel * LevelScaling.GetPlayerArmorWardScalar(this, attacker as Creature);
+        var attackerTier = GetCreatureTier();
 
-        effectiveLevel *= effectiveRL;
+        var shieldMod = SkillFormula.CalcShieldMod(effectiveLevel, attackerSkill.Current, attackerTier, Level ?? 1);
 
-        var ignoreShieldMod = attacker.GetIgnoreShieldMod(weapon);
-        //Console.WriteLine($"IgnoreShieldMod: {ignoreShieldMod}");
-
-        var pkBattle = player != null && attacker is Player;
-
-        effectiveLevel *= ignoreShieldMod;
-
-        // SL is multiplied by existing AL
-        var shieldMod = SkillFormula.CalcShieldMod(effectiveLevel);
-        //Console.WriteLine("ShieldMod: " + shieldMod);
+        //Console.WriteLine($"{Name} - ShieldMod: " + shieldMod);
         return shieldMod;
     }
 
