@@ -243,7 +243,7 @@ public class Hotspot : WorldObject
 
     private void Activate()
     {
-        if (Creatures == null)
+        if (Creatures == null || CurrentLandblock == null)
         {
             return;
         }
