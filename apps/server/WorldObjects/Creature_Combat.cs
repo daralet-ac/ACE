@@ -984,9 +984,9 @@ partial class Creature
             ? creatureAttacker.GetCreatureSkill(Skill.UnarmedCombat)
             : creatureAttacker.GetCreatureSkill(weapon.WeaponSkill);
 
-        var attackerTier = GetCreatureTier();
+        var attackerTier = creatureAttacker.GetCreatureTier();
 
-        var shieldMod = SkillFormula.CalcShieldMod(effectiveLevel, attackerSkill.Current, attackerTier, Level ?? 1);
+        var shieldMod = SkillFormula.CalcShieldMod(effectiveLevel, attackerSkill.Current, attackerTier, creatureAttacker.Level ?? 1);
 
         //Console.WriteLine($"{Name} - ShieldMod: " + shieldMod);
         return shieldMod;

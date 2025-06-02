@@ -91,7 +91,7 @@ public class SkillFormula
 
     private static double GetTargetAttackSkill(uint attackerSkill, uint attackerTier, int level)
     {
-        var scalar = new double[8];
+        var scalar = new double[9];
         for (var i = 0; i < scalar.Length; i++)
         {
             scalar[i] = (double)avgShieldLevelPerTier[i] / avgEnemyAttackSkillPerTier[i];
