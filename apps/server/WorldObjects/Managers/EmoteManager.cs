@@ -3114,6 +3114,11 @@ public class EmoteManager
 
         result = result.Replace("%onws", olthoiNorthCampWestSupplyPercentile);
 
+        var fragmentStabilityPhaseOneLevel = PropertyManager.GetLong("fragment_stability_phase_one").Item;
+        var fragmentStabilityPhaseOnePercentile = $"{Math.Round(fragmentStabilityPhaseOneLevel / 150.0f, 1)}";
+
+        result = result.Replace("%fspo", fragmentStabilityPhaseOnePercentile);
+
         return result;
     }
 
