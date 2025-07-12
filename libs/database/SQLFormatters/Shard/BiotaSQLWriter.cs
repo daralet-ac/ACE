@@ -811,7 +811,7 @@ public class BiotaSQLWriter : SQLWriter
                 + ", `stat_Mod_Type`"
                 + ", `stat_Mod_Key`"
                 + ", `stat_Mod_Value`"
-                + ", `spell_Set_Id`)"
+                + ", `spell_Set_Id`"
                 + ", `spell_stacks`)"
         );
 
