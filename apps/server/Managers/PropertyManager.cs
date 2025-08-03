@@ -833,7 +833,8 @@ public static class DefaultPropertyManager
         ("landblock_minimum_spawn_density", new Property<long>(8, "Set minimum spawn density for outdoor landblocks. Requires the 'increase_minimum_encounter_spawn_density' to be enabled.")),
         ("olthoi_north_camp_south_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Southern Camp.")),
         ("olthoi_north_camp_west_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Western Camp.")),
-        ("olthoi_north_camp_north_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Northern Camp."))
+        ("olthoi_north_camp_north_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Northern Camp.")),
+        ("fragment_stability_phase_one", new Property<long>(0, "Phase One resonance stability tracker (0–15000 max)"))
     );
 
     public static readonly ReadOnlyDictionary<string, Property<double>> DefaultDoubleProperties = DictOf(
