@@ -1835,4 +1835,20 @@ public abstract partial class WorldObject : IActor
             }
         }
     }
+
+    public bool NoRotCorpse
+    {
+        get => GetProperty(PropertyBool.NoRotCorpse) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.NoRotCorpse);
+            }
+            else
+            {
+                SetProperty(PropertyBool.NoRotCorpse, true);
+            }
+        }
+    }
 }
