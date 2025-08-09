@@ -940,6 +940,11 @@ partial class Creature
             }
         }
 
+        if (NoRotCorpse)
+        {
+            corpse.TimeToRot = -1.0;
+        }
+
         corpse.RemoveProperty(PropertyInt.Value);
 
         //if (CanGenerateRare && killer != null)

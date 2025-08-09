@@ -249,6 +249,7 @@ public enum PropertyBool : ushort
     JewelSocket8AlternateEffect = 169,
     JewelSocket9AlternateEffect = 170,
     JewelSocket10AlternateEffect = 171,
+    NoRotCorpse = 172,
 
     /* custom */
     [ServerOnly]
