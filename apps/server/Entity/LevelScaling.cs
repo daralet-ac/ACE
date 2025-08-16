@@ -150,40 +150,6 @@ public static class LevelScaling
         return (float)statAtPlayerLevel / statAtMonsterLevel;
     }
 
-    public static float GetMonsterDamageDealtDpsPerTierScalar(Creature player, Creature monster)
-    {
-        if (!CanScalePlayer(player, monster))
-        {
-            return 1.0f;
-        }
-
-        if (player.Level == null)
-        {
-            _log.Error("LevelScaling.GetMonsterDamageDealtHealthScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
-            return 1.0f;
-        }
-
-        if (monster.Level == null)
-        {
-            _log.Error("LevelScaling.GetMonsterDamageDealtHealthScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
-            return 1.0f;
-        }
-
-
-        var statAtPlayerLevel = GetMonsterDpsPerTierAtLevel(player.Level.Value);
-        var statAtMonsterLevel = GetMonsterDpsPerTierAtLevel(monster.Level.Value);
-
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
-        {
-            Console.WriteLine(
-                $"\nGetMonsterDamageDealtHealthScalar(Player {player.Name}, Monster {monster.Name})"
-                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtPlayerLevel / statAtMonsterLevel}"
-            );
-        }
-
-        return (float)statAtMonsterLevel / statAtPlayerLevel;
-    }
-
     public static float GetMonsterArmorWardScalar(Creature player, Creature monster)
     {
         if (!CanScalePlayer(player, monster))
