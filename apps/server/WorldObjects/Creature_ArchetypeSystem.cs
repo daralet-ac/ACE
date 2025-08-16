@@ -1185,9 +1185,9 @@ partial class Creature
     {
         // target enemy damage per second. If enemy uses nearby player scaling, use highest tier enemy damage.
         var weightedEnemyDamage = (enemyDamage[tier] + (enemyDamage[tier + 1] - enemyDamage[tier]) * statWeight);
-        if (UseNearbyPlayerScaling is true)
+        if (UseNearbyPlayerScaling is true && weightedEnemyDamage < 5.0f)
         {
-            weightedEnemyDamage = enemyDamage.Max();
+            weightedEnemyDamage = 5.0f; // level 50 enemy dps
         }
 
         var weightedPlayerHealth = (
