@@ -180,6 +180,9 @@ public class Landblock : IActor
     public Dictionary<string, double> CapstonePlayers = new();
     public double CapstoneUptime = 0;
 
+    public double LandblockLootQualityMod = 0.0;
+    public double LandblockLethalityMod = 0.0;
+
     public List<uint> PlayerAccountIds = new List<uint>();
 
     public Landblock(LandblockId id)
@@ -1232,6 +1235,11 @@ public class Landblock : IActor
             }
         }
 
+        if (wo is Creature { ArchetypeLethality: not null } creature)
+        {
+            creature.SetLethalityModFromDungeonMod();
+        }
+
         return true;
     }
 
@@ -1513,6 +1521,7 @@ public class Landblock : IActor
 
         // clear capstone fellowships
         CapstoneFellowship = null;
+        LandblockLethalityMod = 0.0;
 
         ProcessPendingWorldObjectAdditionsAndRemovals();
 
@@ -1855,6 +1864,8 @@ public class Landblock : IActor
             landblock.CapstoneFellowship = fellowship;
             fellowship.CapstoneDungeon = landblockId;
 
+            landblock.SetLandblockMods(fellowship);
+
             CapstoneTeleport(player, landblock);
             return;
         }
@@ -1868,6 +1879,65 @@ public class Landblock : IActor
 
         WorldManager.ThreadSafeTeleport(player, player.Sanctuary);
     }
+
+    private void SetLandblockMods(Fellowship fellowship)
+    {
+        LandblockLootQualityMod = 0.0;
+
+        var playerLeaderGuid = fellowship.FellowshipLeaderGuid;
+
+        if (!fellowship.GetFellowshipMembers().TryGetValue(playerLeaderGuid, out var playerLeader))
+        {
+            return;
+        }
+
+        var leaderLandblockModSpells = playerLeader.EnchantmentManager.GetEnchantments(SpellCategory.DungeonEnemyDamage);
+
+        if (leaderLandblockModSpells.Count == 0)
+        {
+            return;
+        }
+
+        var distinctLandblockMoSpellsActive = leaderLandblockModSpells.Distinct();
+
+        var highestValue = 0.0;
+
+        foreach (var landblockModSpell in distinctLandblockMoSpellsActive)
+        {
+            LandblockModSettings.TryGetValue(landblockModSpell.SpellId, out var value);
+
+            if (value.LethalityBonus <= highestValue)
+            {
+                continue;
+            }
+
+            LandblockLethalityMod = value.LethalityBonus;
+            LandblockLootQualityMod = value.LootQualityBonus;
+
+            highestValue = value.LethalityBonus;
+
+            playerLeader.EnchantmentManager.Dispel(landblockModSpell);
+        }
+
+        foreach (var fellowshipMember in playerLeader.Fellowship.GetFellowshipMembers())
+        {
+            fellowshipMember.Value.EnqueueBroadcast(new GameMessageSystemChat(
+                $"Dungeon instance activated by '{playerLeader.Name}' with the following effects:\n" +
+                $" -Lethality: +{LandblockLethalityMod * 100}%\n" +
+                $" -Loot Quality Bonus: +{LandblockLootQualityMod * 100}%",
+                ChatMessageType.Broadcast
+            ));
+        }
+    }
+
+    private static readonly Dictionary<int, (double LethalityBonus, double LootQualityBonus)> LandblockModSettings = new()
+    {
+        {6416, (1.0, 0.05)},
+        {6417, (2.0, 0.1)},
+        {6418, (3.0, 0.15)},
+        {6419, (4.0, 0.2)},
+        {6420, (5.0, 0.25)},
+    };
 
     public static void CapstoneTeleport(Player player, Landblock landblock)
     {

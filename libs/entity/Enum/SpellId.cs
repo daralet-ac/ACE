@@ -6422,6 +6422,11 @@ public enum SpellId : uint
     HealKitRegen,
     StaminaKitRegen,
     ManaKitRegen,
+    DungeonEnemyDamage1,
+    DungeonEnemyDamage2,
+    DungeonEnemyDamage3,
+    DungeonEnemyDamage4,
+    DungeonEnemyDamage5,
 
     NumSpells = 8192,
 

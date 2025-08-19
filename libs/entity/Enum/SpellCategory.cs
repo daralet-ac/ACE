@@ -779,7 +779,10 @@ public enum SpellCategory : uint
     BleedDamage = 781,
     Dazed = 782,
     Unbalanced = 783,
-    HealKitRegen = 784,
-    StaminaKitRegen = 785,
-    ManaKitRegen = 786
+    ArcaneRestoration = 784,
+    UnnaturalPersistence = 785,
+    HealKitRegen = 786,
+    StaminaKitRegen = 787,
+    ManaKitRegen = 788,
+    DungeonEnemyDamage = 789
 }
