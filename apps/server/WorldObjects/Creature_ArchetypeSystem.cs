@@ -1399,4 +1399,31 @@ partial class Creature
 
         //Console.WriteLine($"{Name}: BaseLethality = {archetypeLethality}, LbLethality = {CurrentLandblock.LandblockLethalityMod}, Adjustment = {adjustment}, Total: {adjustment + archetypeLethality}");
     }
+
+    public void SetHealthFromDungeonMod()
+    {
+        if (CurrentLandblock is null)
+        {
+            return;
+        }
+
+        if (!CurrentLandblock.ActiveLandblockMods["Titans"].Active)
+        {
+            return;
+        }
+
+        if (MonsterRank < 4)
+        {
+            return;
+        }
+
+        ArchetypeToughness *= 2;
+
+    SetVitals(_tier,
+            _statWeight,
+            ArchetypeToughness ?? 1.0,
+            ArchetypePhysicality ?? 1.0,
+            ArchetypeDexterity ?? 1.0,
+            ArchetypeMagic ?? 1.0);
+    }
 }

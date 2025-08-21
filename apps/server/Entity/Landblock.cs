@@ -1253,9 +1253,10 @@ public class Landblock : IActor
             }
         }
 
-        if (wo is Creature { ArchetypeLethality: not null } creature)
+        if (wo is Creature creature and not Player)
         {
             creature.SetLethalityModFromDungeonMod();
+            creature.SetHealthFromDungeonMod();
         }
 
         return true;
