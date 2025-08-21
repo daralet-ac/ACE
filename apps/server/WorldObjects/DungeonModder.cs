@@ -1,4 +1,5 @@
-﻿using ACE.Entity;
+﻿using System.Linq;
+using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
@@ -46,14 +47,13 @@ public class DungeonModder : Stackable
             return;
         }
 
-        if (SpellDID == null)
+        if (player.IsBusy || player.Teleporting || player.suicideInProgress)
         {
-            if (player.IsBusy || player.Teleporting || player.suicideInProgress)
-            {
-                player.SendWeenieError(WeenieError.YoureTooBusy);
-                return;
-            }
+            player.SendWeenieError(WeenieError.YoureTooBusy);
+            return;
         }
+
+
         if (player.IsJumping)
         {
             player.SendWeenieError(WeenieError.YouCantDoThatWhileInTheAir);
@@ -73,10 +73,30 @@ public class DungeonModder : Stackable
             return;
         }
 
+        if (SpellDID is null)
+        {
+            _log.Error("DungeonModder.ActOnUse - SpellDID is null for {Item}", this.Name);
+            return;
+        }
+
+        if (player.EnchantmentManager.GetEnchantment(SpellDID.Value) is not null)
+        {
+            player.SendTransientError($"This effect is already active.");
+            return;
+        }
+
+        var spell = new Spell(SpellDID.Value);
+        var matchingEnchantments = player.EnchantmentManager.GetEnchantments(spell.Category);
+        var replacementString = "";
+        if (matchingEnchantments.Count is not 0)
+        {
+            replacementString =
+                $"\n\nThis will overwrite '{new Spell(matchingEnchantments.First().SpellId).Name}' with '{spell.Name}'.";
+        }
+
         if (!confirmed)
         {
-            var msg = $"Are you sure you want to use {Name}?\n\n" +
-                      $"Using this may replace another active dungeon mod effect.\n\n" +
+            var msg = $"Are you sure you want to use {Name}?{replacementString}\n\n" +
                       $"Once active, disbanding your fellow or passing leader to another player will disable the effect.";
             var confirm = new Confirmation_Custom(player.Guid, () => ActOnUse(activator, true));
             if (!player.ConfirmationManager.EnqueueSend(confirm, msg))
@@ -121,23 +141,14 @@ public class DungeonModder : Stackable
         {
             var spell = new Spell((uint)SpellDID);
 
-            // should be 'You cast', instead of 'Item cast'
-            // omitting the item caster here, so player is also used for enchantment registry caster,
-            // which could prevent some scenarios with spamming enchantments from multiple gem sources to protect against dispels
+            var matchingEnchantments = player.EnchantmentManager.GetEnchantments(spell.Category);
 
-            // TODO: figure this out better
-            if (spell.MetaSpellType == SpellType.PortalSummon)
+            if (matchingEnchantments.Count is not 0)
             {
-                TryCastSpell(spell, player, this, tryResist: false);
+                player.EnchantmentManager.Dispel(matchingEnchantments.First());
             }
-            else if (spell.IsImpenBaneType || spell.IsItemRedirectableType)
-            {
-                player.TryCastItemEnchantment_WithRedirects(spell, player, this);
-            }
-            else
-            {
-                player.TryCastSpell(spell, player, this, tryResist: false);
-            }
+
+            player.TryCastSpell(spell, player, this, tryResist: false);
         }
 
         if (UseSound > 0)

@@ -134,6 +134,7 @@ public class Landblock : IActor
     /// collision detection and physics simulation
     /// </summary>
     public LandblockMesh LandblockMesh { get; private set; }
+
     public List<ModelMesh> LandObjects { get; private set; }
     public List<ModelMesh> Buildings { get; private set; }
     public List<ModelMesh> WeenieMeshes { get; private set; }
@@ -216,6 +217,7 @@ public class Landblock : IActor
             SpawnEncounters();
         });
 
+        SetActiveMods();
         //LoadMeshes(objects);
     }
 
@@ -276,18 +278,21 @@ public class Landblock : IActor
             case 48543:
                 var banks = shardObjects.Count(shardObject => shardObject.WeenieClassId is 1010100);
 
-                _log.Information("Cragstone - Objects: {Objects}, ShardObjects: {ShardObjects} (banks = {Banks}), FactoryObjects: {FactoryObjects}",
+                _log.Information(
+                    "Cragstone - Objects: {Objects}, ShardObjects: {ShardObjects} (banks = {Banks}), FactoryObjects: {FactoryObjects}",
                     objects.Count, shardObjects.Count, banks, factoryObjects.Count);
                 break;
             case 59214:
                 banks = shardObjects.Count(shardObject => shardObject.WeenieClassId is 1010100);
 
-                _log.Information("Hebian-To - Objects: {Objects}, ShardObjects: {ShardObjects} (banks = {Banks}), FactoryObjects: {FactoryObjects}",
+                _log.Information(
+                    "Hebian-To - Objects: {Objects}, ShardObjects: {ShardObjects} (banks = {Banks}), FactoryObjects: {FactoryObjects}",
                     objects.Count, shardObjects.Count, banks, factoryObjects.Count);
                 break;
             case 32912:
                 banks = shardObjects.Count(shardObject => shardObject.WeenieClassId is 1010100);
-                _log.Information("Zaikhal - Objects: {Objects}, ShardObjects: {ShardObjects} (banks = {Banks}), FactoryObjects: {FactoryObjects}",
+                _log.Information(
+                    "Zaikhal - Objects: {Objects}, ShardObjects: {ShardObjects} (banks = {Banks}), FactoryObjects: {FactoryObjects}",
                     objects.Count, shardObjects.Count, banks, factoryObjects.Count);
                 break;
         }
@@ -357,7 +362,8 @@ public class Landblock : IActor
         // get the encounter spawns for this landblock
         var encounters = DatabaseManager.World.GetCachedEncountersByLandblock(Id.Landblock, out var wasCached);
 
-        var generatedEncounterIdList = new List<uint>(); // used only when "increase_minimum_encounter_spawn_density" is enabled
+        var generatedEncounterIdList =
+            new List<uint>(); // used only when "increase_minimum_encounter_spawn_density" is enabled
 
         if (PropertyManager.GetBool("increase_minimum_encounter_spawn_density").Item && !wasCached)
         {
@@ -627,6 +633,7 @@ public class Landblock : IActor
                     break;
                 }
             }
+
             ServerPerformanceMonitor.AddToCumulativeEvent(
                 ServerPerformanceMonitor.CumulativeEventHistoryType.Landblock_Tick_Monster_Tick,
                 stopwatch.Elapsed.TotalSeconds
@@ -651,6 +658,7 @@ public class Landblock : IActor
                 break;
             }
         }
+
         ServerPerformanceMonitor.AddToCumulativeEvent(
             ServerPerformanceMonitor.CumulativeEventHistoryType.Landblock_Tick_GeneratorUpdate,
             stopwatch.Elapsed.TotalSeconds
@@ -668,13 +676,15 @@ public class Landblock : IActor
             {
                 sortedGeneratorsByNextRegeneration.RemoveFirst();
                 first.GeneratorRegeneration(currentUnixTime);
-                InsertWorldObjectIntoSortedGeneratorRegenerationList(first); // Generators can have regenerations at different intervals
+                InsertWorldObjectIntoSortedGeneratorRegenerationList(
+                    first); // Generators can have regenerations at different intervals
             }
             else
             {
                 break;
             }
         }
+
         ServerPerformanceMonitor.AddToCumulativeEvent(
             ServerPerformanceMonitor.CumulativeEventHistoryType.Landblock_Tick_GeneratorRegeneration,
             stopwatch.Elapsed.TotalSeconds
@@ -719,6 +729,7 @@ public class Landblock : IActor
                     }
                 }
             }
+
             if (!Permaload && HasNoKeepAliveObjects)
             {
                 if (lastActiveTime + dormantInterval < thisHeartBeat)
@@ -735,6 +746,7 @@ public class Landblock : IActor
 
                     IsDormant = true;
                 }
+
                 if (lastActiveTime + UnloadInterval < thisHeartBeat)
                 {
                     LandblockManager.AddToDestructionQueue(this);
@@ -746,6 +758,7 @@ public class Landblock : IActor
 
             timeDormant = lastHeartBeat - lastActiveTime;
         }
+
         ServerPerformanceMonitor.AddToCumulativeEvent(
             ServerPerformanceMonitor.CumulativeEventHistoryType.Landblock_Tick_Heartbeat,
             stopwatch.Elapsed.TotalSeconds
@@ -760,6 +773,7 @@ public class Landblock : IActor
             SaveDB();
             lastDatabaseSave = DateTime.UtcNow;
         }
+
         ServerPerformanceMonitor.AddToCumulativeEvent(
             ServerPerformanceMonitor.CumulativeEventHistoryType.Landblock_Tick_Database_Save,
             stopwatch.Elapsed.TotalSeconds
@@ -809,13 +823,15 @@ public class Landblock : IActor
             {
                 sortedWorldObjectsByNextHeartbeat.RemoveFirst();
                 first.Heartbeat(currentUnixTime);
-                InsertWorldObjectIntoSortedHeartbeatList(first); // WorldObjects can have heartbeats at different intervals
+                InsertWorldObjectIntoSortedHeartbeatList(
+                    first); // WorldObjects can have heartbeats at different intervals
             }
             else
             {
                 break;
             }
         }
+
         ServerPerformanceMonitor.AddToCumulativeEvent(
             ServerPerformanceMonitor.CumulativeEventHistoryType.Landblock_Tick_WorldObject_Heartbeat,
             stopwatch.Elapsed.TotalSeconds
@@ -1158,9 +1174,11 @@ public class Landblock : IActor
                         wo.Generator.Guid,
                         wo.Generator.Name
                     );
-                    wo.NotifyOfEvent(RegenerationType.PickUp); // Notify generator the generated object is effectively destroyed, use Pickup to catch both cases.
+                    wo.NotifyOfEvent(RegenerationType
+                        .PickUp); // Notify generator the generated object is effectively destroyed, use Pickup to catch both cases.
                 }
-                else if (wo.IsGenerator) // Some generators will fail random spawns if they're circumference spans over water or cliff edges
+                else if
+                    (wo.IsGenerator) // Some generators will fail random spawns if they're circumference spans over water or cliff edges
                 {
                     _log.Debug(
                         "AddWorldObjectInternal: couldn't spawn generator 0x{WorldObjectGuid}:{WorldObjectName} [{WorldObjectWeenieClassId} - {WorldObjectWeenieType}] at {WorldObjectLocation}",
@@ -1465,6 +1483,7 @@ public class Landblock : IActor
                 }
             }
         }
+
         return null;
     }
 
@@ -1652,6 +1671,7 @@ public class Landblock : IActor
                     continue;
                 }
             }
+
             player.Session.Network.EnqueueSend(msgs);
         }
 
@@ -1702,6 +1722,7 @@ public class Landblock : IActor
                     return isDungeon.Value;
                 }
             }
+
             isDungeon =
                 LandblockInfo != null
                 && LandblockInfo.NumCells > 0
@@ -1891,8 +1912,13 @@ public class Landblock : IActor
             return;
         }
 
-        var leaderLandblockModSpells = playerLeader.EnchantmentManager.GetEnchantments(SpellCategory.DungeonEnemyDamage);
+        var leaderLandblockModSpells = new List<PropertiesEnchantmentRegistry>();
 
+        foreach (var landblockMod in ActiveLandblockMods)
+        {
+            leaderLandblockModSpells.Add(playerLeader.EnchantmentManager.GetEnchantment((uint)landblockMod.Value.SpellId));
+        }
+Console.WriteLine($"LeaderLandblockModSpells: {leaderLandblockModSpells.Count}");
         if (leaderLandblockModSpells.Count == 0)
         {
             return;
@@ -1900,21 +1926,25 @@ public class Landblock : IActor
 
         var distinctLandblockMoSpellsActive = leaderLandblockModSpells.Distinct();
 
-        var highestValue = 0.0;
-
         foreach (var landblockModSpell in distinctLandblockMoSpellsActive)
         {
-            LandblockModSettings.TryGetValue(landblockModSpell.SpellId, out var value);
-
-            if (value.LethalityBonus <= highestValue)
+            if (landblockModSpell is null)
             {
                 continue;
             }
 
-            LandblockLethalityMod = value.LethalityBonus;
-            LandblockLootQualityMod = value.LootQualityBonus;
+            LandblockModsSpellToName.TryGetValue(landblockModSpell.SpellId, out var value);
 
-            highestValue = value.LethalityBonus;
+            if (value is null)
+            {
+                continue;
+            }
+            var modInfo = ActiveLandblockMods[value];
+            modInfo.Active = true;
+
+            ActiveLandblockMods[value] = modInfo;
+
+            LandblockLootQualityMod += ActiveLandblockMods[value].LootQualityBonus;
 
             playerLeader.EnchantmentManager.Dispel(landblockModSpell);
         }
@@ -1922,21 +1952,75 @@ public class Landblock : IActor
         foreach (var fellowshipMember in playerLeader.Fellowship.GetFellowshipMembers())
         {
             fellowshipMember.Value.EnqueueBroadcast(new GameMessageSystemChat(
-                $"Dungeon instance activated by '{playerLeader.Name}' with the following effects:\n" +
-                $" -Lethality: +{LandblockLethalityMod * 100}%\n" +
-                $" -Loot Quality Bonus: +{LandblockLootQualityMod * 100}%",
+                $"Dungeon instance activated by '{playerLeader.Name}' with the following effects:",
+                ChatMessageType.Broadcast
+            ));
+
+            foreach (var activeLandblockMod in ActiveLandblockMods)
+            {
+                if (!activeLandblockMod.Value.Active)
+                {
+                    continue;
+                }
+
+                fellowshipMember.Value.EnqueueBroadcast(new GameMessageSystemChat(
+                    $" -{activeLandblockMod.Key}",
+                    ChatMessageType.Broadcast
+                ));
+            }
+
+            fellowshipMember.Value.EnqueueBroadcast(new GameMessageSystemChat(
+                $" -Total Loot Quality Bonus: +{Math.Round(LandblockLootQualityMod * 100)}%",
                 ChatMessageType.Broadcast
             ));
         }
     }
 
-    private static readonly Dictionary<int, (double LethalityBonus, double LootQualityBonus)> LandblockModSettings = new()
+    public Dictionary<string, (bool Active, int SpellId, double LootQualityBonus)> ActiveLandblockMods { get; private set; }
+
+    private void SetActiveMods()
     {
-        {6416, (1.0, 0.05)},
-        {6417, (2.0, 0.1)},
-        {6418, (3.0, 0.15)},
-        {6419, (4.0, 0.2)},
-        {6420, (5.0, 0.25)},
+        ActiveLandblockMods = new Dictionary<string, (bool Active, int SpellId, double LootQualityBonus)>
+        {
+            { "Lethality 50%", (false, 6416, 0.05) },
+            { "Lethality 100%", (false, 6417, 0.1) },
+            { "Lethality 150%", (false, 6418, 0.15) },
+            { "Lethality 200%", (false, 6419, 0.2) },
+            { "Lethality 250%", (false, 6420, 0.25) },
+            { "Lethality 300%", (false, 6421, 0.3) },
+            { "Lethality 350%", (false, 6422, 0.35) },
+            { "Lethality 400%", (false, 6423, 0.4) },
+            { "Lethality 450%", (false, 6424, 0.45) },
+            { "Lethality 500%", (false, 6425, 0.5) },
+            { "Titans", (false, 6426, 0.05) },
+            { "Drained", (false, 6427, 0.05) },
+            { "Explosive", (false, 6428, 0.05) },
+            { "Skilled", (false, 6429, 0.05) },
+            { "Fester", (false, 6430, 0.05) },
+            { "Enraged", (false, 6431, 0.05) },
+            { "Inspired", (false, 6432, 0.05) },
+        };
+    }
+
+    private static readonly Dictionary<int, string> LandblockModsSpellToName = new()
+    {
+        {6416, "Lethality 50%"},
+        {6417, "Lethality 100%"},
+        {6418, "Lethality 150%"},
+        {6419, "Lethality 200%"},
+        {6420, "Lethality 250%"},
+        {6421, "Lethality 300%"},
+        {6422, "Lethality 350%"},
+        {6423, "Lethality 400%"},
+        {6424, "Lethality 450%"},
+        {6425, "Lethality 500%"},
+        {6426, "Titans"},
+        {6427, "Drained"},
+        {6428, "Explosive"},
+        {6429, "Skilled"},
+        {6430, "Fester"},
+        {6431, "Enraged"},
+        {6432, "Inspired"},
     };
 
     public static void CapstoneTeleport(Player player, Landblock landblock)

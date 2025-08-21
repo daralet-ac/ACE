@@ -6427,6 +6427,18 @@ public enum SpellId : uint
     DungeonEnemyDamage3,
     DungeonEnemyDamage4,
     DungeonEnemyDamage5,
+    DungeonEnemyDamage6,
+    DungeonEnemyDamage7,
+    DungeonEnemyDamage8,
+    DungeonEnemyDamage9,
+    DungeonEnemyDamage10,
+    DungeonTitans,
+    DungeonDrained,
+    DungeonExplosive,
+    DungeonSkilled,
+    DungeonFester,
+    DungeonEnraged,
+    DungeonInspired,
 
     NumSpells = 8192,
 
