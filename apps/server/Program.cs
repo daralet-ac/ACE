@@ -259,7 +259,54 @@ partial class Program
 
         _log.Information("Starting PropertyManager...");
         PropertyManager.Initialize();
+        // ...
 
+        try
+        {
+            var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+            var json   = Path.Combine(exeDir, "recipe_to_emote_wcid_whitelist.json");
+            var txt    = Path.Combine(exeDir, "recipe_to_emote_wcid_whitelist.txt");
+
+            string? valueFromFile = null;
+
+            if (File.Exists(json))
+            {
+                using var doc = JsonDocument.Parse(File.ReadAllText(json), ConfigManager.SerializerOptions);
+                if (doc.RootElement.TryGetProperty("recipe_tool_use_emote_whitelist", out var arr) &&
+                    arr.ValueKind == JsonValueKind.Array)
+                {
+                    var ids = arr.EnumerateArray()
+                                .Where(e => e.ValueKind == JsonValueKind.Number)
+                                .Select(e => e.GetInt32())
+                                .Where(v => v > 0)
+                                .Distinct();
+                    var s = string.Join(",", ids);
+                    if (!string.IsNullOrWhiteSpace(s)) valueFromFile = s;
+                }
+            }
+
+            if (valueFromFile == null && File.Exists(txt))
+            {
+                var ids = File.ReadAllText(txt)
+                            .Split(new[] { ',', ';', '\n', '\r', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(s => int.TryParse(s, out var v) ? v : -1)
+                            .Where(v => v > 0)
+                            .Distinct();
+                var s = string.Join(",", ids);
+                if (!string.IsNullOrWhiteSpace(s)) valueFromFile = s;
+            }
+
+            if (!string.IsNullOrWhiteSpace(valueFromFile))
+            {
+                PropertyManager.ModifyString("recipe_tool_use_emote_whitelist", valueFromFile);
+                PropertyManager.ResyncVariables(); // persist now
+                Serilog.Log.Information("tool-use-emote whitelist loaded: {Value}", valueFromFile);
+            }
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Warning(ex, "Failed to load tool-use-emote whitelist file.");
+        }
         _log.Information("Initializing GuidManager...");
         GuidManager.Initialize();
 

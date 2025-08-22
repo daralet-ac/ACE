@@ -508,6 +508,30 @@ public partial class RecipeManager
 
             Player.TryAwardCraftingXp(player, skill, skillType, (int)recipe.Difficulty);
         }
+        // Fire the tool's Use emote only for whitelisted WCIDs, and only on success
+        if (success)
+        {
+            try
+            {
+                var cfg = PropertyManager.GetString("recipe_tool_use_emote_whitelist").Item ?? "";
+
+                if (!string.IsNullOrWhiteSpace(cfg))
+                {
+                    var allowed = new HashSet<int>(
+                        cfg.Split(new[] { ',', ';', ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => int.TryParse(s, out var v) ? v : -1)
+                        .Where(v => v > 0)
+                    );
+
+                    if (allowed.Contains(source.WeenieClassId))
+                        source.EmoteManager?.OnUse(player); // fires EmoteCategory.Use on the tool
+                }
+            }
+            catch
+            {
+                // intentionally ignore any parse / emote exceptions
+            }
+        }
     }
 
     /// <summary>
