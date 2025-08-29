@@ -1,9 +1,11 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using ACE.Common;
@@ -16,6 +18,7 @@ using ACE.Server.Mods;
 using ACE.Server.Network.Managers;
 using Microsoft.Extensions.Configuration;
 using Serilog;
+
 
 namespace ACE.Server;
 
@@ -265,13 +268,13 @@ partial class Program
         {
             var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
             var json   = Path.Combine(exeDir, "recipe_to_emote_wcid_whitelist.json");
-            var txt    = Path.Combine(exeDir, "recipe_to_emote_wcid_whitelist.txt");
+            
 
             string? valueFromFile = null;
 
             if (File.Exists(json))
             {
-                using var doc = JsonDocument.Parse(File.ReadAllText(json), ConfigManager.SerializerOptions);
+                using var doc = JsonDocument.Parse(File.ReadAllText(json)); // <-- removed SerializerOptions
                 if (doc.RootElement.TryGetProperty("recipe_tool_use_emote_whitelist", out var arr) &&
                     arr.ValueKind == JsonValueKind.Array)
                 {
@@ -280,21 +283,16 @@ partial class Program
                                 .Select(e => e.GetInt32())
                                 .Where(v => v > 0)
                                 .Distinct();
+
                     var s = string.Join(",", ids);
-                    if (!string.IsNullOrWhiteSpace(s)) valueFromFile = s;
+                    if (!string.IsNullOrWhiteSpace(s))
+                    {
+                        valueFromFile = s; // <-- added braces
+                    }
                 }
             }
 
-            if (valueFromFile == null && File.Exists(txt))
-            {
-                var ids = File.ReadAllText(txt)
-                            .Split(new[] { ',', ';', '\n', '\r', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                            .Select(s => int.TryParse(s, out var v) ? v : -1)
-                            .Where(v => v > 0)
-                            .Distinct();
-                var s = string.Join(",", ids);
-                if (!string.IsNullOrWhiteSpace(s)) valueFromFile = s;
-            }
+
 
             if (!string.IsNullOrWhiteSpace(valueFromFile))
             {
@@ -307,6 +305,8 @@ partial class Program
         {
             Serilog.Log.Warning(ex, "Failed to load tool-use-emote whitelist file.");
         }
+
+        
         _log.Information("Initializing GuidManager...");
         GuidManager.Initialize();
 

@@ -2762,6 +2762,13 @@ public class EmoteManager
         if (emoteSet == null)
         {
             Nested--;
+            
+            if (Nested == 0)
+            {
+                IsBusy = false; // 2025-08-29: reset busy state when no emote set
+            }
+
+
             return;
         }
 
