@@ -1257,6 +1257,7 @@ public class Landblock : IActor
         {
             creature.SetLethalityModFromDungeonMod();
             creature.SetHealthFromDungeonMod();
+            creature.SetSkillsFromDungeonMod();
         }
 
         return true;
@@ -1919,7 +1920,7 @@ public class Landblock : IActor
         {
             leaderLandblockModSpells.Add(playerLeader.EnchantmentManager.GetEnchantment((uint)landblockMod.Value.SpellId));
         }
-Console.WriteLine($"LeaderLandblockModSpells: {leaderLandblockModSpells.Count}");
+
         if (leaderLandblockModSpells.Count == 0)
         {
             return;

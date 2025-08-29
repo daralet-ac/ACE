@@ -1361,6 +1361,11 @@ partial class Creature
             return;
         }
 
+        if (UseArchetypeSystem is not true)
+        {
+            return;
+        }
+
         var archetypeLethality = ArchetypeLethality ?? 1.0;
 
         var landblockLethalityMod = true switch
@@ -1407,6 +1412,11 @@ partial class Creature
             return;
         }
 
+        if (UseArchetypeSystem is not true)
+        {
+            return;
+        }
+
         if (!CurrentLandblock.ActiveLandblockMods["Titans"].Active)
         {
             return;
@@ -1425,5 +1435,26 @@ partial class Creature
             ArchetypePhysicality ?? 1.0,
             ArchetypeDexterity ?? 1.0,
             ArchetypeMagic ?? 1.0);
+    }
+
+    public void SetSkillsFromDungeonMod()
+    {
+        if (CurrentLandblock is null)
+        {
+            return;
+        }
+
+        if (!CurrentLandblock.ActiveLandblockMods["Skilled"].Active)
+        {
+            return;
+        }
+
+        SetSkills(_tier,
+            _statWeight,
+            ArchetypeToughness ?? 1.0,
+            ArchetypePhysicality ?? 1.0,
+            ArchetypeDexterity ?? 1.0,
+            ArchetypeMagic ?? 1.0,
+            ArchetypeIntelligence ?? 1.0);
     }
 }
