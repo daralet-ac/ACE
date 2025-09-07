@@ -41,6 +41,7 @@ partial class Creature
         double dexterity,
         double magic,
         double intelligence,
+        double multiplier
     )
     {
         if (DebugArchetypeSystem)
@@ -55,6 +56,8 @@ partial class Creature
             // Martial Weapons Skill
             {
                 var newSkill = GetNewMeleeAttackSkill(tier, statWeight, physicality, dexterity);
+
+                newSkill = ApplyMultiplier(multiplier, newSkill);
 
                 var skillType = Skill.MartialWeapons;
 
@@ -71,6 +74,8 @@ partial class Creature
             {
                 var newSkill = GetNewUnarmedCombatSkill(tier, statWeight, physicality, dexterity);
 
+                newSkill = ApplyMultiplier(multiplier, newSkill);
+
                 var skillType = Skill.UnarmedCombat;
 
                 var propertiesSkill = new PropertiesSkill()
@@ -85,6 +90,8 @@ partial class Creature
             // Dagger Skill
             {
                 var newSkill = GetNewDaggerSkill(tier, statWeight, physicality, dexterity);
+
+                newSkill = ApplyMultiplier(multiplier, newSkill);
 
                 var skillType = Skill.Dagger;
 
@@ -101,6 +108,8 @@ partial class Creature
             {
                 var newSkill = GetNewStaffSkill(tier, statWeight, physicality, dexterity);
 
+                newSkill = ApplyMultiplier(multiplier, newSkill);
+
                 var skillType = Skill.Staff;
 
                 var propertiesSkill = new PropertiesSkill()
@@ -115,6 +124,8 @@ partial class Creature
             // Missile Attack Skill
             {
                 var newSkill = GetNewMissileAttackSkill(tier, statWeight, dexterity);
+
+                newSkill = ApplyMultiplier(multiplier, newSkill);
 
                 var skillType = Skill.Bow;
 
@@ -131,6 +142,8 @@ partial class Creature
             {
                 var newSkill = GetNewMissileAttackSkill(tier, statWeight, dexterity);
 
+                newSkill = ApplyMultiplier(multiplier, newSkill);
+
                 var skillType = Skill.ThrownWeapon;
 
                 var propertiesSkill = new PropertiesSkill()
@@ -145,6 +158,8 @@ partial class Creature
             // War Magic Skill
             {
                 var newSkill = GetNewWarMagicSkill(tier, statWeight, magic);
+
+                newSkill = ApplyMultiplier(multiplier, newSkill);
 
                 var skillType = Skill.WarMagic;
 
@@ -161,6 +176,8 @@ partial class Creature
             {
                 var newSkill = GetNewLifeMagicSkill(tier, statWeight, magic);
 
+                newSkill = ApplyMultiplier(multiplier, newSkill);
+
                 var skillType = Skill.LifeMagic;
 
                 var propertiesSkill = new PropertiesSkill()
@@ -175,6 +192,8 @@ partial class Creature
             // Physical Defense
             {
                 var newSkill = GetNewPhysicalDefenseSkill(tier, statWeight, physicality, dexterity);
+
+                newSkill = ApplyMultiplier(multiplier, newSkill);
 
                 var skillType = Skill.PhysicalDefense;
 
@@ -202,6 +221,8 @@ partial class Creature
             {
                 var newSkill = GetNewMagicDefenseSkill(tier, statWeight, magic);
 
+                newSkill = ApplyMultiplier(multiplier, newSkill);
+
                 var skillType = Skill.MagicDefense;
 
                 var propertiesSkill = new PropertiesSkill()
@@ -216,6 +237,8 @@ partial class Creature
             // Perception
             {
                 var newSkill = GetNewPerceptionSkill(tier, statWeight, intelligence);
+
+                newSkill = ApplyMultiplier(multiplier, newSkill);
 
                 var skillType = Skill.Perception;
 
@@ -232,6 +255,8 @@ partial class Creature
             {
                 var newSkill = GetNewDeceptionSkill(tier, statWeight, intelligence);
 
+                newSkill = ApplyMultiplier(multiplier, newSkill);
+
                 var skillType = Skill.Deception;
 
                 var propertiesSkill = new PropertiesSkill()
@@ -247,6 +272,8 @@ partial class Creature
             {
                 var newSkill = GetNewRunSkill(tier, statWeight, dexterity);
 
+                newSkill = ApplyMultiplier(multiplier, newSkill);
+
                 var skillType = Skill.Run;
 
                 var propertiesSkill = new PropertiesSkill()
@@ -258,6 +285,20 @@ partial class Creature
                 Skills[Skill.Run] = new CreatureSkill(this, skillType, propertiesSkill);
             }
         }
+    }
+
+    private static uint ApplyMultiplier(double multiplier, uint newSkill)
+    {
+        var multipliedSkill = newSkill * multiplier;
+
+        multipliedSkill = multipliedSkill switch
+        {
+            < uint.MinValue => uint.MinValue,
+            > uint.MaxValue => uint.MaxValue,
+            _ => Convert.ToUInt32(multipliedSkill)
+        };
+
+        return (uint)multipliedSkill;
     }
 
     private void SetVitals(
@@ -492,6 +533,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Strength.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -531,6 +574,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Coordination.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -570,6 +615,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Coordination.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -609,6 +656,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Coordination.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -648,6 +697,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Coordination.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -687,6 +738,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Strength.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -726,6 +779,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Self.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -765,6 +820,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Self.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -804,6 +861,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Coordination.StartingValue -= (uint)(attributeAdjustment / 2);
+            Quickness.StartingValue -= (uint)(attributeAdjustment / 2);
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -843,6 +903,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Focus.StartingValue -= (uint)(attributeAdjustment / 2);
+            Self.StartingValue -= (uint)(attributeAdjustment / 2);
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -883,6 +946,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Focus.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -923,6 +988,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Focus.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -962,6 +1029,8 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
+
+            Quickness.StartingValue -= (uint)attributeAdjustment;
         }
 
         var newSkill = tweakedSkill - (uint)skillFromAttributes;
@@ -1393,7 +1462,8 @@ partial class Creature
             ArchetypePhysicality ?? 1.0,
             ArchetypeDexterity ?? 1.0,
             ArchetypeMagic ?? 1.0,
-            ArchetypeIntelligence ?? 1.0);
+            ArchetypeIntelligence ?? 1.0,
+            1.0);
 
         SetDamageArmorWard(_tier,
             _statWeight,
@@ -1444,6 +1514,11 @@ partial class Creature
             return;
         }
 
+        if (UseArchetypeSystem is not true)
+        {
+            return;
+        }
+
         if (!CurrentLandblock.LandblockMods["Skilled"].Active)
         {
             return;
@@ -1455,6 +1530,7 @@ partial class Creature
             ArchetypePhysicality ?? 1.0,
             ArchetypeDexterity ?? 1.0,
             ArchetypeMagic ?? 1.0,
-            ArchetypeIntelligence ?? 1.0);
+            ArchetypeIntelligence ?? 1.0,
+            1.1);
     }
 }
