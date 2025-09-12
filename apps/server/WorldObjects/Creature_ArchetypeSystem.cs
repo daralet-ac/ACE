@@ -533,11 +533,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Strength.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -574,11 +572,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Coordination.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -615,11 +611,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Coordination.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -656,11 +650,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Coordination.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -697,11 +689,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Coordination.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -738,11 +728,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Strength.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -779,11 +767,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Self.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -820,11 +806,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Self.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -861,12 +845,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Coordination.StartingValue -= (uint)(attributeAdjustment / 2);
-            Quickness.StartingValue -= (uint)(attributeAdjustment / 2);
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -903,12 +884,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Focus.StartingValue -= (uint)(attributeAdjustment / 2);
-            Self.StartingValue -= (uint)(attributeAdjustment / 2);
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -946,11 +924,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Focus.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -988,11 +964,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Focus.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - (uint)skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -1015,13 +989,12 @@ partial class Creature
         var multiplier = dexterity;
         var tweakedSkill = (uint)(target * multiplier);
 
-        var divisor = 1;
-        var skillFromAttributes = Quickness.Base / divisor;
+        var skillFromAttributes = Quickness.Base;
 
         if (skillFromAttributes > tweakedSkill)
         {
             var diff = (int)tweakedSkill - skillFromAttributes;
-            var attributeAdjustment = diff * divisor;
+            var attributeAdjustment = diff;
             _log.Warning(
                 "Creature.SetSkills() - Archetype system is attempting to set the base Run skill to {TweakedSkill} for {Name} ({WeenieClassId}) (defaulting to 1). Quickness attribute should be lowered by {AttributeAdjustment}.",
                 diff,
@@ -1029,11 +1002,9 @@ partial class Creature
                 WeenieClassId,
                 attributeAdjustment
             );
-
-            Quickness.StartingValue -= (uint)attributeAdjustment;
         }
 
-        var newSkill = tweakedSkill - (uint)skillFromAttributes;
+        var newSkill = tweakedSkill < skillFromAttributes ? 0 : tweakedSkill - skillFromAttributes;
 
         if (DebugArchetypeSystem)
         {
@@ -1146,13 +1117,12 @@ partial class Creature
         var multiplier = (physicality + dexterity) / 2;
         var tweakedVital = (uint)(target * multiplier);
 
-        var divisor = 1;
-        var vitalFromAttributes = Endurance.Base / divisor;
+        var vitalFromAttributes = Endurance.Base;
 
         if (vitalFromAttributes > tweakedVital)
         {
             var diff = (int)tweakedVital - vitalFromAttributes;
-            var attributeAdjustment = diff * divisor;
+            var attributeAdjustment = diff;
             _log.Warning(
                 "Creature.SetSkills() - Archetype system is attempting to set the base Stamina skill to {TweakedSkill} for {Name} ({WeenieClassId}) (defaulting to 1). Endurance attribute should be lowered by {AttributeAdjustment}.",
                 diff,
@@ -1205,13 +1175,12 @@ partial class Creature
         var multiplier = magic;
         var tweakedVital = (uint)(target * multiplier);
 
-        var divisor = 1;
-        var vitalFromAttributes = Self.Base / divisor;
+        var vitalFromAttributes = Self.Base;
 
         if (vitalFromAttributes > tweakedVital)
         {
             var diff = (int)tweakedVital - vitalFromAttributes;
-            var attributeAdjustment = diff * divisor;
+            var attributeAdjustment = diff;
             _log.Warning(
                 "Creature.SetSkills() - Archetype system is attempting to set the base Mana skill to {TweakedSkill} for {Name} ({WeenieClassId}) (defaulting to 1). Self attribute should be lowered by {AttributeAdjustment}.",
                 diff,
