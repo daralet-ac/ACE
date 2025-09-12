@@ -523,13 +523,7 @@ public partial class RecipeManager
                         .Where(v => v > 0)
                     );
 
-                    var isAllowed = allowed.Contains((int)source.WeenieClassId);
-                    var emMgrNull = source.EmoteManager == null;
-
-                    _log.Information("[RIMS] success={Success} srcWcid={Wcid} allowed={Allowed} emMgrNull={Null}",
-                        success, source.WeenieClassId, isAllowed, emMgrNull);
-
-                    if (isAllowed)
+                    if (allowed.Contains(source.WeenieClassId))
                         source.EmoteManager?.OnUse(player); // fires EmoteCategory.Use on the tool
                 }
             }
@@ -538,7 +532,6 @@ public partial class RecipeManager
                 // intentionally ignore any parse / emote exceptions
             }
         }
-
     }
 
     /// <summary>
@@ -1479,52 +1472,18 @@ public partial class RecipeManager
         {
             var message = success ? recipe.SuccessMessage : recipe.FailMessage;
 
-            // Suppress blank craft message only for whitelisted tools
-            var suppress = false;
-            try
-            {
-                var cfg = PropertyManager.GetString("recipe_tool_use_emote_whitelist").Item ?? "";
-                if (!string.IsNullOrWhiteSpace(cfg))
-                {
-                    var allowed = new HashSet<int>(
-                        cfg.Split(new[] { ',', ';', ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(s => int.TryParse(s, out var v) ? v : -1)
-                        .Where(v => v > 0)
-                    );
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Craft));
 
-                    if (allowed.Contains((int)source.WeenieClassId) && string.IsNullOrWhiteSpace(message))
-                        suppress = true;
-                }
-            }
-            catch
-            {
-                // ignore parse errors
-            }
-
-            if (!suppress)
-            {
-                player.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Craft));
-                _log.Debug(
-                    "[CRAFTING] {PlayerName} used {SourceNameWithMaterial} on {TargetNameWithMaterial} {Success}. {DestroySource}{DestroyTarget}| {Message}",
-                    player.Name,
-                    source.NameWithMaterial,
-                    target.NameWithMaterial,
-                    success ? "successfully" : "unsuccessfully",
-                    destroySource ? $"| {source.NameWithMaterial} was destroyed " : "",
-                    destroyTarget ? $"| {target.NameWithMaterial} was destroyed " : "",
-                    message
-                );
-            }
-            else
-            {
-                _log.Debug(
-                    "[CRAFTING] {PlayerName} used {SourceNameWithMaterial} on {TargetNameWithMaterial} {Success}. (message suppressed for whitelisted tool)",
-                    player.Name,
-                    source.NameWithMaterial,
-                    target.NameWithMaterial,
-                    success ? "successfully" : "unsuccessfully"
-                );
-            }
+            _log.Debug(
+                "[CRAFTING] {PlayerName} used {SourceNameWithMaterial} on {TargetNameWithMaterial} {Success}. {DestroySource}{DestroyTarget}| {Message}",
+                player.Name,
+                source.NameWithMaterial,
+                target.NameWithMaterial,
+                success ? "successfully" : "unsuccessfully",
+                destroySource ? $"| {source.NameWithMaterial} was destroyed " : "",
+                destroyTarget ? $"| {target.NameWithMaterial} was destroyed " : "",
+                message
+            );
         }
         else
         {
@@ -1533,7 +1492,6 @@ public partial class RecipeManager
 
         return modified;
     }
-
 
     public static void BroadcastTinkering(
         Player player,
