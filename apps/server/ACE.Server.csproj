@@ -297,6 +297,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
+
   </ItemGroup>
   <ItemGroup>
     <!-- Copy your local dev config into the output as Config.js when building Debug -->
