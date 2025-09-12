@@ -3,9 +3,8 @@ using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameMessages.Messages;
-using PlayScriptEnum = ACE.Entity.Enum.PlayScript;
-namespace ACE.Server.Commands.DeveloperCommands;
 
+namespace ACE.Server.Commands.DeveloperCommands;
 
 public class PlayScript
 {
@@ -14,17 +13,17 @@ public class PlayScript
     {
         var wo = CommandHandlerHelper.GetLastAppraisedObject(session);
         if (wo == null)
-        { 
-        return;
+        {
+            return;
         }
-        if (!Enum.TryParse<PlayScriptEnum>(parameters[0], true, out var pscript))
+
+        if (!Enum.TryParse(typeof(PlayScript), parameters[0], true, out var pscript))
         {
             session.Network.EnqueueSend(
                 new GameMessageSystemChat($"Couldn't find PlayScript.{parameters[0]}", ChatMessageType.Broadcast)
             );
             return;
         }
-
-        wo.EnqueueBroadcast(new GameMessageScript(wo.Guid, pscript));
+        wo.EnqueueBroadcast(new GameMessageScript(wo.Guid, (ACE.Entity.Enum.PlayScript)pscript));
     }
 }
