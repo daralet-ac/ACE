@@ -2872,11 +2872,6 @@ public class EmoteManager
                 if (nextDelay > 0)
                 {
                     var delayChain = new ActionChain();
-Add a comment
-
-Cancel
-
-Comment
                     delayChain.AddDelaySeconds(nextDelay);
                     delayChain.AddAction(WorldObject, ReleaseBusyState); // [2025-08-29 20:14:59 UTC] final cleanup after delay
                     delayChain.EnqueueChain();
