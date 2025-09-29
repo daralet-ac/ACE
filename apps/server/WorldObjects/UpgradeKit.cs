@@ -749,20 +749,20 @@ public class UpgradeKit : Stackable
         {
             spellsToRemove.Add(spellId);
 
-            var minimumLevelSpellId = SpellLevelProgression.GetLevel1SpellId((SpellId)spellId);
+            var minimumLevelSpellId = SpellLevelProgression.GetLevel1SpellId((SpellId)spellId, true);
 
             switch (newTier)
             {
                 case 3:
                 case 4:
-                    spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, 2, true));
+                    spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, 2, true, true));
                     break;
                 case 5:
                 case 6:
-                    spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, 3, true));
+                    spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, 3, true, true));
                     break;
                 case 7:
-                    spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, 4, true));
+                    spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, 4, true, true));
                     break;
             }
         }
