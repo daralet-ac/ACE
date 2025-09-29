@@ -2594,32 +2594,55 @@ public class EmoteManager
 
                 break;
 
+            // -----------------------------------------------------------------------------
+            // EmoteType.InqServerPropertyLong  (content author guide)
+            //
+            // Add an emote_action on the triggering emote (e.g., Use=7 or ReceiveLocalSignal=37):
+            //   type        = 10016 (InqServerPropertyLong)
+            //   message     = <PROPERTY_KEY>               // exact shard key name
+            //   min / max   = optional inclusive bounds    // NULL = unbounded on that side
+            //   test_String = optional NOQ key             // ONLY if you want the NOQ branch
+            //
+            // Then add target emotes on the same object with quest = <PROPERTY_KEY>:
+            //   21 (TestSuccess): fires when value ∈ [min..max]  → put StartEvent, etc.
+            //   22 (TestFailure): fires when value ∉ [min..max]  → put StopEvent, etc.
+            //   23 (TestNoQuality): fires only if test_String is set AND HasValidTestNoQuality
+            // -----------------------------------------------------------------------------
             case EmoteType.InqServerPropertyLong:
-
-                var inqPropertyString = emote.Message;
-
-                if (inqPropertyString != null)
+            {
+                var key = emote.Message;
+                if (key != null)
                 {
-                    var propertyValue = PropertyManager.GetLong(inqPropertyString).Item;
+                    // Get the shard property (long)
+                    var propertyValue = PropertyManager.GetLong(key).Item;
 
-                    if (HasValidTestNoQuality(emote.Message))
+                    // Optional NOQ path (explicit opt-in via test_String)
+                    if (!string.IsNullOrWhiteSpace(emote.TestString) &&
+                        HasValidTestNoQuality(emote.TestString))
                     {
-                        ExecuteEmoteSet(EmoteCategory.TestNoQuality, emote.Message, targetObject, true);
+                        ExecuteEmoteSet(EmoteCategory.TestNoQuality, emote.TestString!, targetObject, true);
                     }
                     else
                     {
-                        success = propertyValue >= (emote.Min ?? int.MinValue) && propertyValue <= (emote.Max ?? int.MaxValue);
+                        // Range path (default) – use long sentinels; assign to OUTER 'success'
+                        var lowerBound = emote.Min.HasValue ? (long)emote.Min.Value : long.MinValue;
+                        var upperBound = emote.Max.HasValue ? (long)emote.Max.Value : long.MaxValue;
 
+                        success = (propertyValue >= lowerBound) && (propertyValue <= upperBound);
+
+                        // quest filter = key (content must set quest on 21/22 to <PROPERTY_KEY>)
                         ExecuteEmoteSet(
                             success ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
-                            emote.Message,
+                            key,
                             targetObject,
                             true
                         );
                     }
                 }
-
                 break;
+            }
+
+
 
             default:
                 _log.Debug(
