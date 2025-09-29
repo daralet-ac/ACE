@@ -617,11 +617,15 @@ public class UpgradeKit : Stackable
         }
 
         var currentLevel = target.WardLevel.Value;
+        var armorSlots = target.ArmorSlots ?? 1;
+        var wardPerSlot = currentLevel / armorSlots;
+
         var currentTierMinimum = armorStyleBaseWardLevel * Math.Clamp(currentTier, 1, 7);
-        var rolledAmount = currentLevel - currentTierMinimum;
+        var rolledAmount = wardPerSlot - currentTierMinimum;
 
         var newTierMinimum = armorStyleBaseWardLevel * Math.Clamp(newTier, 1, 7);
-        var final = newTierMinimum + rolledAmount;
+
+        var final = (newTierMinimum + rolledAmount) * armorSlots;
 
         target.SetProperty(PropertyInt.WardLevel, final);
     }
