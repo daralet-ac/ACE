@@ -250,6 +250,13 @@ public static class TreasureProfile_Item
         (TreasureItemType_Orig.SigilTrinketCaster, 0.34f)
     };
 
+    // Gems Only Profile
+    private static ChanceTable<TreasureItemType_Orig> itemProfileGemsOnly21 =
+        new ChanceTable<TreasureItemType_Orig>()
+    {
+        (TreasureItemType_Orig.Gem, 1.0f),
+    };
+
     /// <summary>
     /// TreasureDeath.ItemTreasureTypeSelectionChances indexes into these profiles
     /// </summary>
@@ -276,7 +283,8 @@ public static class TreasureProfile_Item
         itemProfile17,
         itemProfile18,
         itemProfile19,
-        itemProfile20
+        itemProfile20,
+        itemProfileGemsOnly21,
     };
 
     /// <summary>
