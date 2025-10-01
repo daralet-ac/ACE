@@ -418,6 +418,28 @@ public class EmoteManager
                 }
                 break;
 
+            case EmoteType.CheckEnchantments: // Example Use: (@parent_id, 0, 10019, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5379, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+            {
+                // guardrails
+                if (targetObject is Creature target &&
+                    target.EnchantmentManager != null &&
+                    emote.SpellId.HasValue &&
+                    emote.SpellId.Value > 0)
+                {
+                    var active = target.EnchantmentManager.GetEnchantment((uint)emote.SpellId.Value);
+
+                    // branch only. no messages to player
+                    ExecuteEmoteSet(
+                        active != null ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
+                        emote.Message,
+                        targetObject,
+                        true);
+                }
+                break;
+            }
+
+
+
             case EmoteType.CloseMe:
 
                 // animation delay?
