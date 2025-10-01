@@ -2786,6 +2786,8 @@ public static partial class LootGenerationFactory
 
         var roll = (float)ThreadSafeRandom.Next(minimumRoll, 1.0f);
 
+        roll *= roll;
+
         //Console.WriteLine($"GetDiminishingRoll - LQ: {lootQualityMod}, minRoll: {minimumRoll}, roll: {roll}");
 
         return roll;
