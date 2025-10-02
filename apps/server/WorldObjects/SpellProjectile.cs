@@ -902,6 +902,18 @@ public class SpellProjectile : WorldObject
                 * ratingDamageTypeWard
                 * levelScalingMod;
 
+            // balance testing. TODO: update base spells damage and ward levels once ideal balance is found
+            if (sourcePlayer is not null)
+            {
+                var playerSpellDamageMultiplier = (float)PropertyManager.GetDouble("player_spell_damage_multipler").Item;
+                finalDamage *= playerSpellDamageMultiplier;
+            }
+            else
+            {
+                var monsterSpellDamageMultiplier = (float)PropertyManager.GetDouble("mnonster_spell_damage_multipler").Item;
+                finalDamage *= monsterSpellDamageMultiplier;
+            }
+
             if (sourcePlayer != null)
             {
                 //Console.WriteLine($"\n{sourceCreature.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
