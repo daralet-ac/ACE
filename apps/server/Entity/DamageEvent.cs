@@ -1681,18 +1681,20 @@ public class DamageEvent
 
         var damage = baseDamage * mitigation;
 
-        if (damage is < int.MinValue or > int.MaxValue)
+        if (damage is float.NaN or < int.MinValue or > int.MaxValue)
         {
-            _log.Error("CheckForRiposte({Attacker}, {Defender}) - damage could not be converted to Int.", attacker.Name, defender.Name);
+            _log.Error("CheckForRiposte({Attacker}, {Defender}) - damage ({Damage}) could not be converted to Int.", attacker.Name, defender.Name, damage);
             return;
         }
 
-        attacker.UpdateVitalDelta(attacker.Health, -Convert.ToInt32(damage));
-        attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)damage);
+        var intDamage = (int)damage;
+
+        attacker.UpdateVitalDelta(attacker.Health, -intDamage);
+        attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)intDamage);
 
         var parryType = Parried ? "parry" : "block";
 
-        var msg = $"You follow up your {parryType} with a quick riposte, dealing {Convert.ToInt32(damage)} {_damageSource.W_DamageType} damage!";
+        var msg = $"You follow up your {parryType} with a quick riposte, dealing {intDamage} {_damageSource.W_DamageType} damage!";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
 
         if (!attacker.IsDead)
