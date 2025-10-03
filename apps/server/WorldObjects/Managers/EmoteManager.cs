@@ -287,6 +287,9 @@ public class EmoteManager
                 if (WorldObject != null)
                 {
                     var spell = new Spell((uint)emote.SpellId);
+                    var damageMultiplier = emote.Percent ?? 1.0;
+                    var tryResist = emote.Message != "noresist";
+
                     if (spell.NotFound)
                     {
                         _log.Error(
@@ -309,7 +312,16 @@ public class EmoteManager
                         creature,
                         () =>
                         {
-                            creature.TryCastSpell_WithRedirects(spell, spellTarget, creature);
+                            creature.TryCastSpell_WithRedirects(
+                                spell,
+                                spellTarget,
+                                creature,
+                                null,
+                                false,
+                                false,
+                                tryResist,
+                                damageMultiplier);
+
                             creature.PostCastMotion();
                         }
                     );
@@ -322,6 +334,8 @@ public class EmoteManager
                 if (WorldObject != null)
                 {
                     var spell = new Spell((uint)emote.SpellId);
+                    var damageMultiplier = emote.Percent ?? 1.0;
+                    var tryResist = emote.Message != "noresist";
 
                     if (!spell.NotFound)
                     {
@@ -336,12 +350,22 @@ public class EmoteManager
                                 null,
                                 false,
                                 false,
-                                false
+                                tryResist,
+                                damageMultiplier
                             );
                         }
                         else
                         {
-                            WorldObject.TryCastSpell_WithRedirects(spell, spellTarget, WorldObject);
+                            WorldObject.TryCastSpell_WithRedirects(
+                                spell,
+                                spellTarget,
+                                WorldObject,
+                                null,
+                                false,
+                                false,
+                                false,
+                                damageMultiplier
+                            );
                         }
                     }
                 }
