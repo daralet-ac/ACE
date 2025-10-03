@@ -421,6 +421,11 @@ partial class Creature
                 MutateWeaponForArchetype(GetEquippedWeapon(), Damage.Value);
             }
 
+            if (GetEquippedOffHand() is not null && Damage is not null)
+            {
+                MutateWeaponForArchetype(GetEquippedOffHand(), Damage.Value);
+            }
+
             // Set Spell Damage Multiplier
             ArchetypeSpellDamageMultiplier = GetArchetypeSpellDamageMultiplier(tier, statWeight, lethality);
 
