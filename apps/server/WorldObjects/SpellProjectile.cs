@@ -53,6 +53,11 @@ public class SpellProjectile : WorldObject
     public int DebugVelocity;
 
     /// <summary>
+    /// Assigned from emote CastSpellInstant/CastSpell (emote.Percent)
+    /// </summary>
+    public double DamageMultiplier = 1.0;
+
+    /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
     public SpellProjectile(Weenie weenie, ObjectGuid guid)
@@ -740,6 +745,8 @@ public class SpellProjectile : WorldObject
 
         var levelScalingMod = GetLevelScalingMod(sourceCreature, target, targetPlayer);
 
+        var damageMultiplier = (float)DamageMultiplier;
+
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
         {
@@ -785,7 +792,8 @@ public class SpellProjectile : WorldObject
                 * jewelBlueFury
                 * jewelSelfHarm
                 * lethalityMod
-                * levelScalingMod;
+                * levelScalingMod
+                * damageMultiplier;
         }
         // war/void magic projectiles
         else
@@ -900,7 +908,8 @@ public class SpellProjectile : WorldObject
                 * resistedMod
                 * specDefenseMod
                 * ratingDamageTypeWard
-                * levelScalingMod;
+                * levelScalingMod
+                * damageMultiplier;
 
             // balance testing. TODO: update base spells damage and ward levels once ideal balance is found
             if (sourcePlayer is not null)

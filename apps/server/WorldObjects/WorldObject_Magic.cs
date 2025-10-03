@@ -43,7 +43,8 @@ partial class WorldObject
         bool fromProc = false,
         bool tryResist = true,
         bool showMsg = true,
-        int? weaponSpellcraft = null
+        int? weaponSpellcraft = null,
+        double damageMultiplier = 1.0
     )
     {
         // TODO: look into further normalizing this / caster / weapon
@@ -72,12 +73,12 @@ partial class WorldObject
 
             foreach (var fellow in fellows.Values)
             {
-                TryCastSpell_Inner(spell, fellow, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg, weaponSpellcraft);
+                TryCastSpell_Inner(spell, fellow, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg, weaponSpellcraft, damageMultiplier);
             }
         }
         else
         {
-            TryCastSpell_Inner(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg, weaponSpellcraft);
+            TryCastSpell_Inner(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, showMsg, weaponSpellcraft, damageMultiplier);
         }
     }
 
@@ -90,7 +91,8 @@ partial class WorldObject
         bool fromProc = false,
         bool tryResist = true,
         bool showMsg = true,
-        int? weaponSpellcraft = null
+        int? weaponSpellcraft = null,
+        double damageMultiplier = 1.0
     )
     {
         // verify before resist, still consumes source item
@@ -106,7 +108,7 @@ partial class WorldObject
         }
 
         // if not resisted, cast spell
-        HandleCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, false, showMsg, false, weaponSpellcraft);
+        HandleCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, false, showMsg, false, weaponSpellcraft, damageMultiplier);
     }
 
     /// <summary>
@@ -119,7 +121,8 @@ partial class WorldObject
         WorldObject weapon = null,
         bool isWeaponSpell = false,
         bool fromProc = false,
-        bool tryResist = true
+        bool tryResist = true,
+        double damageMultiplier = 1.0
     )
     {
         if (target is Creature creatureTarget)
@@ -130,14 +133,14 @@ partial class WorldObject
             {
                 foreach (var itemTarget in targets)
                 {
-                    TryCastSpell(spell, itemTarget, itemCaster, weapon, isWeaponSpell, fromProc, tryResist);
+                    TryCastSpell(spell, itemTarget, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, true, null, damageMultiplier);
                 }
 
                 return targets.Count > 0;
             }
         }
 
-        TryCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist);
+        TryCastSpell(spell, target, itemCaster, weapon, isWeaponSpell, fromProc, tryResist, true, null, damageMultiplier);
 
         return true;
     }
@@ -507,7 +510,8 @@ partial class WorldObject
         bool equip = false,
         bool showMsg = true,
         bool sigilTrinketSpell = false,
-        int? weaponSpellcraft = null
+        int? weaponSpellcraft = null,
+        double damageMultiplier = 1.0
     )
     {
         _isSigilTrinketSpell = sigilTrinketSpell;
@@ -602,7 +606,7 @@ partial class WorldObject
             case SpellType.LifeProjectile:
             case SpellType.EnchantmentProjectile:
 
-                HandleCastSpell_Projectile(spell, targetCreature, itemCaster, weapon, isWeaponSpell, fromProc, weaponSpellcraft);
+                HandleCastSpell_Projectile(spell, targetCreature, itemCaster, weapon, isWeaponSpell, fromProc, weaponSpellcraft, damageMultiplier);
                 break;
 
             case SpellType.PortalLink:
@@ -1724,7 +1728,8 @@ partial class WorldObject
         WorldObject weapon,
         bool isWeaponSpell,
         bool fromProc,
-        int? weaponSpellcraft = null
+        int? weaponSpellcraft = null,
+        double damageMultiplier = 1.0
     )
     {
         uint damage = 0;
@@ -1775,14 +1780,17 @@ partial class WorldObject
 
         if (projectileSpellType != ProjectileSpellType.Blast)
         {
-            CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage, false, weaponSpellcraft);
+            CreateSpellProjectiles(spell, target, weapon, isWeaponSpell, fromProc, damage, false, weaponSpellcraft, damageMultiplier);
         }
 
         var targetCreature = target as Creature;
 
-        if (this is Player player && targetCreature != null && projectileSpellType == ProjectileSpellType.Blast)
+        if (targetCreature != null && projectileSpellType == ProjectileSpellType.Blast)
         {
-            var nearbyTargets = targetCreature.GetNearbyMonsters(10);
+            List<Creature> nearbyTargets;
+            const int blastRadius = 10;
+            nearbyTargets = this is Player ? targetCreature.GetNearbyMonsters(blastRadius) : targetCreature.GetNearbyPlayers(blastRadius);
+
             var blastTargets = new List<Creature> { targetCreature };
 
             if (nearbyTargets != null)
@@ -1800,7 +1808,7 @@ partial class WorldObject
                         continue;
                     }
 
-                    var angle = player.GetAngle(nearbyTarget);
+                    var angle = targetCreature.GetAngle(nearbyTarget);
                     if (Math.Abs(angle) > Creature.CleaveAngle / 4.0f)
                     {
                         continue;
@@ -1823,7 +1831,7 @@ partial class WorldObject
 
             foreach (var blastTarget in blastTargets)
             {
-                CreateSpellProjectiles(spell, blastTarget, weapon, isWeaponSpell, fromProc, damage);
+                CreateSpellProjectiles(spell, blastTarget, weapon, isWeaponSpell, fromProc, damage, false, weaponSpellcraft, damageMultiplier);
             }
         }
 
@@ -2586,7 +2594,8 @@ partial class WorldObject
         bool fromProc = false,
         uint lifeProjectileDamage = 0,
         bool castAtTarget = false,
-        int? weaponSpellcraft = null
+        int? weaponSpellcraft = null,
+        double damageMultiplier = 1.0
     )
     {
         if (spell.NumProjectiles == 0)
@@ -2624,7 +2633,8 @@ partial class WorldObject
             lifeProjectileDamage,
             castAtTarget,
             fireAllProjectilesFromCenter,
-            weaponSpellcraft
+            weaponSpellcraft,
+            damageMultiplier
         );
     }
 
@@ -2957,7 +2967,8 @@ partial class WorldObject
         uint lifeProjectileDamage = 0,
         bool castAtTarget = false,
         bool fireAllProjectilesFromCenter = false,
-        int? weaponSpellcraft = null
+        int? weaponSpellcraft = null,
+        double damageMultiplier = 1.0
     )
     {
         var useGravity = spellType == ProjectileSpellType.Arc;
@@ -3036,6 +3047,8 @@ partial class WorldObject
             sp.LifeProjectileDamage = lifeProjectileDamage;
 
             sp.WeaponSpellcraft = weaponSpellcraft;
+
+            sp.DamageMultiplier = damageMultiplier;
 
             if (!LandblockManager.AddObject(sp))
             {
