@@ -276,79 +276,8 @@ public class EmoteManager
 
                 if (player != null)
                 {
-                    var reward = true;
-
-                    if (WorldObject.CacheLog != null)
-                    {
-                        var accountIds = WorldObject.CacheLog.Split('/');
-
-                        foreach (var accountId in accountIds)
-                        {
-                            if (uint.TryParse(accountId, out var account))
-                            {
-                                if (account == player.Account.AccountId)
-                                {
-                                    reward = false;
-                                }
-                            }
-                        }
-                        if (reward == false)
-                        {
-                            player.Session.Network.EnqueueSend(
-                                new GameMessageSystemChat(
-                                    $"You have already received a reward from this cache.",
-                                    ChatMessageType.Broadcast
-                                )
-                            );
-                            ExecuteEmoteSet(
-                                reward ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
-                                emote.Message,
-                                targetObject,
-                                true
-                            );
-                            break;
-                        }
-                    }
-                    if (player.GetFreeInventorySlots() < 5)
-                    {
-                        reward = false;
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"You must have at least 5 free inventory slots in your main pack to receive a reward.",
-                                ChatMessageType.Broadcast
-                            )
-                        );
-                        ExecuteEmoteSet(
-                            reward ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
-                            emote.Message,
-                            targetObject,
-                            true
-                        );
-                        break;
-                    }
-
                     AwardCapstoneItems(player, emote.Amount ?? 2);
                     AwardCapstoneTradeNotes(player, emote.Amount ?? 2);
-
-                    if (WorldObject.CacheLog == null)
-                    {
-                        WorldObject.CacheLog = $"{player.Account.AccountId}/";
-                    }
-                    else
-                    {
-                        WorldObject.CacheLog += $"{player.Account.AccountId}/";
-                    }
-
-                    player.QuestManager.Stamp(emote.Message);
-
-                    player.SaveBiotaToDatabase();
-
-                    ExecuteEmoteSet(
-                        reward ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
-                        emote.Message,
-                        targetObject,
-                        true
-                    );
                 }
 
                 break;
@@ -3390,16 +3319,18 @@ public class EmoteManager
     /// <summary>
     /// Trade note awards for completing a capstone dungeon.<br /><br />
     /// Type Odds: 40% = I, 30% = V, 20% = X, 9% = L, 1% = C<br />
-    /// Higher level players have improved luck, up to level 50.<br />
+    /// Capstone Completions and Dungeon Mods raise the minimum roll.<br />
     /// </summary>
     private void AwardCapstoneTradeNotes(Player player, int amount)
     {
-        var characterLevel = Math.Min(player.Level ?? 1, 50);
+        var capstoneModifier = GetCapstoneModifier(player.CurrentLandblock);
+        var capstonesCompleted = GetCapstonesCompleted(player);
+        var minimumRoll = (capstonesCompleted * 2) + (capstoneModifier * 100);
 
         for (var i = 0; i < amount; i++)
         {
             var tradeNote = 2621u; // I note
-            switch (ThreadSafeRandom.Next(characterLevel, 100))
+            switch (ThreadSafeRandom.Next((int)minimumRoll, 100))
             {
                 case <= 40:
                     break;
@@ -3424,7 +3355,7 @@ public class EmoteManager
     /// <summary>
     /// Item awards for completing a capstone dungeon.<br /><br />
     /// Amount Odds:  40% = 1, 30% = 2, 20% = 3, 9% = 4, 1% = 5<br />
-    /// Higher level players have improved luck, up to level 50.<br />
+    /// Capstone Completions and Dungeon Mods raise the minimum roll.<br />
     /// </summary>
     private void AwardCapstoneItems(Player player, int numRewards)
     {
@@ -3438,12 +3369,12 @@ public class EmoteManager
             (1054004,2)  // Upgrade Kit
         };
 
-        //numRewards *= GetCapstoneModifier(); // TODO: allow this to scale up when a fellowship has difficulty modifiers set
-
-        var characterLevel = Math.Min(player.Level ?? 1, 50);
+        var capstoneModifier = GetCapstoneModifier(player.CurrentLandblock);
+        var capstonesCompleted = GetCapstonesCompleted(player);
+        var minimumRoll = (capstonesCompleted * 2) + (capstoneModifier * 100);
 
         var amount = 1;
-        switch (ThreadSafeRandom.Next(characterLevel, 100))
+        switch (ThreadSafeRandom.Next((int)minimumRoll, 100))
         {
             case <= 40:
                 break;
@@ -3472,4 +3403,44 @@ public class EmoteManager
             player.GiveFromEmote(WorldObject, randomItem.Item1, amountToGive);
         }
     }
+
+    private static double GetCapstoneModifier(Landblock landblock)
+    {
+        return landblock?.LandblockLootQualityMod ?? 1.0;
+    }
+
+    private int GetCapstonesCompleted(Player player)
+    {
+        var capstonesCompleted = 0;
+        var questManager = player.QuestManager;
+
+        foreach (var capstoneCompletionQuest in CapstoneCompletionQuests)
+        {
+            if (questManager.HasQuest(capstoneCompletionQuest))
+            {
+                capstonesCompleted++;
+            }
+        }
+
+        return capstonesCompleted;
+    }
+
+    private List<string> CapstoneCompletionQuests =
+    [
+        "EmpyreanGarrisonCompleted",
+        "FolthidCellarCompleted",
+        "GlendenWoodDungeonCompleted",
+        "GredalineConsulateCompleted",
+        "GreenMireGraveCompleted",
+        "GrievousVaultCompleted",
+        "HallsOfTheHelmCompleted",
+        "LugianMinesCompleted",
+        "MageAcademyCompleted",
+        "ManseOfPanderlouCompleted",
+        "MinesOfColierCompleted",
+        "MinesOfDespairCompleted",
+        "MountainFortressCompleted",
+        "SandShallowCompleted",
+        "SmugglersHideawayCompleted"
+    ];
 }
