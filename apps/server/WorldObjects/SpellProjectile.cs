@@ -1500,9 +1500,11 @@ public class SpellProjectile : WorldObject
             {
                 amount = Player.CombatAbilityManaBarrier(targetPlayer, amount, targetPlayer, Spell.DamageType);
             }
-
-            target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
-            target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+            else
+            {
+                target.UpdateVitalDelta(target.Health, (int)-Math.Round(damage));
+                target.DamageHistory.Add(ProjectileSource, Spell.DamageType, amount);
+            }
         }
 
         // add threat to damaged targets
