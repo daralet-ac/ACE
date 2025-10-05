@@ -264,16 +264,17 @@ partial class Program
         PropertyManager.Initialize();
         // ...
 
-        try
+                try
         {
             var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
             var json   = Path.Combine(exeDir, "recipe_to_emote_wcid_whitelist.json");
+            var txt    = Path.Combine(exeDir, "recipe_to_emote_wcid_whitelist.txt");
 
-            string? valueFromFile = null; // 2025-08-29: legacy .txt support removed
+            string? valueFromFile = null;
 
             if (File.Exists(json))
             {
-                using var doc = JsonDocument.Parse(File.ReadAllText(json), ConfigManager.SerializerOptions);
+                using var doc = JsonDocument.Parse(File.ReadAllText(json));
                 if (doc.RootElement.TryGetProperty("recipe_tool_use_emote_whitelist", out var arr) &&
                     arr.ValueKind == JsonValueKind.Array)
                 {
@@ -282,8 +283,27 @@ partial class Program
                                 .Select(e => e.GetInt32())
                                 .Where(v => v > 0)
                                 .Distinct();
+
                     var s = string.Join(",", ids);
-                    if (!string.IsNullOrWhiteSpace(s)) valueFromFile = s;
+                    if (!string.IsNullOrWhiteSpace(s))
+                    {
+                        valueFromFile = s;
+                    }
+                }
+            }
+
+            if (valueFromFile == null && File.Exists(txt))
+            {
+                var ids = File.ReadAllText(txt)
+                            .Split(new[] { ',', ';', '\n', '\r', '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(s => int.TryParse(s, out var v) ? v : -1)
+                            .Where(v => v > 0)
+                            .Distinct();
+
+                var s = string.Join(",", ids);
+                if (!string.IsNullOrWhiteSpace(s))
+                {
+                    valueFromFile = s;
                 }
             }
 
