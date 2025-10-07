@@ -3385,12 +3385,24 @@ public class EmoteManager
     {
         var itemPool = new List<(uint,int)>
         {
-            (1054000,2), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
             (1054005,10), // Pearl of Spell Purging
+            (1054005,10), // Pearl of Spell Purging
+            (1054005,10), // Pearl of Spell Purging
+            (1054005,10), // Pearl of Spell Purging
+            (1054005,10), // Pearl of Spell Purging
+            (1054004,1),  // Upgrade Kit
+            (1054004,1),  // Upgrade Kit
+            (1054004,1),  // Upgrade Kit
+            (1054004,1),  // Upgrade Kit
+            (1054004,1),  // Upgrade Kit
             (1054002,1), // Sanguine Crystal
             (1054003,1), // Scourging Stone
-            (1053972,1), // Tailoring Kit
-            (1054004,2)  // Upgrade Kit
+            (1053972,1) // Tailoring Kit
         };
 
         var capstoneModifier = GetCapstoneModifier(player.CurrentLandblock);
@@ -3423,6 +3435,12 @@ public class EmoteManager
             var randomItem = itemPool[randomIndex];
 
             var amountToGive = amount * randomItem.Item2;
+
+            // max 1 amount for Sanguine/Scouring/Tailor
+            if (randomItem.Item1 is 1054002 or 1054003 or 1054972)
+            {
+                amountToGive = 1;
+            }
 
             player.GiveFromEmote(WorldObject, randomItem.Item1, amountToGive);
         }
