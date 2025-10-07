@@ -66,7 +66,7 @@ public class Hotspot : WorldObject
             return;
         }
 
-        if (AffectsOnlyAis && creature is {ResetFromHotspot: true})
+        if (WeenieClassId is 1034300 && AffectsOnlyAis && creature is {ResetFromHotspot: true})
         {
             if (Time.GetUnixTime() < creature.LastHotspotVitalResetTime + 5.0)
             {
