@@ -589,7 +589,7 @@ partial class WorldObject
             case SpellType.Boost:
             case SpellType.FellowBoost:
 
-                HandleCastSpell_Boost(spell, targetCreature, fromProc, showMsg, weapon);
+                HandleCastSpell_Boost(spell, targetCreature, fromProc, showMsg, weapon, damageMultiplier);
                 break;
 
             case SpellType.Transfer:
@@ -882,7 +882,8 @@ partial class WorldObject
         Creature targetCreature,
         bool fromProc,
         bool showMsg = true,
-        WorldObject weapon = null
+        WorldObject weapon = null,
+        double damageMultiplier = 1.0
     )
     {
         var player = this as Player;
@@ -978,8 +979,8 @@ partial class WorldObject
         var overloadMod = CheckForCombatAbilityOverloadDamageBonus(player);
         var batterMod = CheckForCombatAbilityBatteryDamagePenalty(player);
 
-        tryBoost = (int)(tryBoost * overloadMod * batterMod);
-
+        tryBoost = (int)(tryBoost * overloadMod * batterMod * damageMultiplier);
+Console.WriteLine($"{spell.Name} {damageMultiplier} {tryBoost}");
         string srcVital;
 
         if (tryBoost > 0) // heal
@@ -1134,7 +1135,7 @@ partial class WorldObject
             }
         }
 
-        if (targetCreature != this && targetCreature.IsAlive && spell.VitalDamageType == DamageType.Health &&
+        if (targetCreature.IsAlive && spell.VitalDamageType == DamageType.Health &&
             boost < 0)
         {
             // handle cloak spell proc

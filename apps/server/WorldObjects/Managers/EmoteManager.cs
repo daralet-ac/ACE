@@ -341,32 +341,16 @@ public class EmoteManager
                     {
                         var spellTarget = GetSpellTarget(spell, targetObject);
 
-                        if (emote.Message != null && emote.Message == "noresist")
-                        {
-                            WorldObject.TryCastSpell_WithRedirects(
-                                spell,
-                                spellTarget,
-                                WorldObject,
-                                null,
-                                false,
-                                false,
-                                tryResist,
-                                damageMultiplier
-                            );
-                        }
-                        else
-                        {
-                            WorldObject.TryCastSpell_WithRedirects(
-                                spell,
-                                spellTarget,
-                                WorldObject,
-                                null,
-                                false,
-                                false,
-                                false,
-                                damageMultiplier
-                            );
-                        }
+                        WorldObject.TryCastSpell_WithRedirects(
+                            spell,
+                            spellTarget,
+                            WorldObject,
+                            null,
+                            false,
+                            false,
+                            tryResist,
+                            damageMultiplier
+                        );
                     }
                 }
                 break;
