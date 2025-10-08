@@ -102,7 +102,9 @@ partial class WorldObject
         }
 
         // perform resistance check, if applicable
-        if (tryResist && TryResistSpell(target, spell, out _, itemCaster, false, weaponSpellcraft))
+        var weaponAttackMod = weapon?.WeaponOffense;
+
+        if (tryResist && TryResistSpell(target, spell, out _, itemCaster, false, weaponSpellcraft, weaponAttackMod))
         {
             return;
         }
@@ -215,7 +217,8 @@ partial class WorldObject
         out PartialEvasion partialResist,
         WorldObject itemCaster = null,
         bool projectileHit = false,
-        int? weaponSpellcraft = null
+        int? weaponSpellcraft = null,
+        double? weaponAttackMod = null
     )
     {
         partialResist = PartialEvasion.None;
@@ -274,6 +277,11 @@ partial class WorldObject
             if (weaponSpellcraft is not null)
             {
                 magicSkill = (uint)((magicSkill + weaponSpellcraft) * 0.5);
+            }
+
+            if (weaponAttackMod is not null)
+            {
+                magicSkill = (uint)(magicSkill * weaponAttackMod);
             }
 
             if (player is {OverloadDischargeIsActive: true})
@@ -979,8 +987,14 @@ partial class WorldObject
         var overloadMod = CheckForCombatAbilityOverloadDamageBonus(player);
         var batterMod = CheckForCombatAbilityBatteryDamagePenalty(player);
 
-        tryBoost = (int)(tryBoost * overloadMod * batterMod * damageMultiplier);
-Console.WriteLine($"{spell.Name} {damageMultiplier} {tryBoost}");
+        var spellcraftMod = 1.0f;
+        if (fromProc && weapon?.ItemSpellcraft != null)
+        {
+            spellcraftMod = (weapon.ItemSpellcraft ?? 1) * 0.01f;
+        }
+
+        tryBoost = (int)(tryBoost * overloadMod * batterMod * damageMultiplier * spellcraftMod);
+
         string srcVital;
 
         if (tryBoost > 0) // heal

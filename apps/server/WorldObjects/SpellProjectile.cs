@@ -614,7 +614,13 @@ public class SpellProjectile : WorldObject
 
         var resistSource = IsWeaponSpell ? weapon : source;
 
-        resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true, WeaponSpellcraft);
+        var weaponAttackMod = 1.0;
+        if (sourcePlayer is not null)
+        {
+            weaponAttackMod = sourcePlayer.GetEquippedWeapon().WeaponOffense ?? 1.0;
+        }
+
+        resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true, WeaponSpellcraft, weaponAttackMod);
 
         CheckForCombatAbilityReflectSpell(partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, sourceCreature);
 
@@ -747,6 +753,12 @@ public class SpellProjectile : WorldObject
 
         var damageMultiplier = (float)DamageMultiplier;
 
+        var spellcraftMod = 1.0f;
+        if (FromProc && weapon?.ItemSpellcraft != null)
+        {
+            spellcraftMod = (weapon.ItemSpellcraft ?? 1) * 0.01f;
+        }
+
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
         {
@@ -793,7 +805,8 @@ public class SpellProjectile : WorldObject
                 * jewelSelfHarm
                 * lethalityMod
                 * levelScalingMod
-                * damageMultiplier;
+                * damageMultiplier
+                * spellcraftMod;
         }
         // war/void magic projectiles
         else
@@ -909,7 +922,8 @@ public class SpellProjectile : WorldObject
                 * specDefenseMod
                 * ratingDamageTypeWard
                 * levelScalingMod
-                * damageMultiplier;
+                * damageMultiplier
+                * spellcraftMod;
 
             // balance testing. TODO: update base spells damage and ward levels once ideal balance is found
             if (sourcePlayer is not null)

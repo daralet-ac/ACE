@@ -1195,7 +1195,7 @@ public class DamageEvent
 
         var spellCraft = weapon.ItemSpellcraft ?? 1;
 
-        player.TryCastSpell(spell, target, null, weapon, false, false, true, true, spellCraft);
+        player.TryCastSpell(spell, target, null, weapon, false, true, true, true, spellCraft);
 
         player.EnchantedBladeHighStoredSpell = null;
         player.EnchantedBladeMedStoredSpell = null;
