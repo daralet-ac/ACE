@@ -1100,7 +1100,7 @@ partial class Creature
     private double GetNewHealthRegenLevel(int tier, float statWeight, double toughness, double physicality)
     {
         var target = enemyHealthRegen[tier] + (enemyHealthRegen[tier + 1] - enemyHealthRegen[tier]) * statWeight;
-        var multiplier = toughness;
+        var multiplier = 1.0 + (toughness * 0.1);
         var newVital = (target * multiplier);
 
         if (DebugArchetypeSystem)
