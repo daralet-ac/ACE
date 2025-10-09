@@ -573,14 +573,13 @@ public static partial class LootGenerationFactory
 
         var baseMod = wo.GetProperty(prop) ?? 0;
 
-        // Let's roll a value between -0.75 and 0.5, with lower chances of rolling a higher value. We will add this value to the base ArmorMod.
-        // If base ArmorMod is 1, the final mod will range from 0.25 (poor) to 1.5 (above average).
-        var roll = ThreadSafeRandom.Next(-1.25f, 1.0f);
-        roll *= Math.Abs(roll);
-        roll *= 0.5f;
-        roll = Math.Max(roll, -0.75f);
+        // Target range for base armor of 1.0 is: 0.75 to 1.25. Much harder to hit high rolls.
+        // Loot Quality Mod contributes.
+        var roll = ThreadSafeRandom.Next(0.0f, 0.5f);
+        roll *= GetDiminishingRoll(profile, profile.LootQualityMod);
+        roll -= 0.25;
 
-        var newMod = (double)baseMod + roll;
+        var newMod = baseMod + roll;
 
         wo.SetProperty(prop, newMod);
 
