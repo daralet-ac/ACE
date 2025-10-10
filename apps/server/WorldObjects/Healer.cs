@@ -296,10 +296,12 @@ public class Healer : WorldObject
             }
 
             var healingSkillCurrent = healer.GetCreatureSkill(Skill.Healing).Current;
-            var healingSkillMod = healingSkillCurrent * 0.02f;
-            var healkitMod = (float)(HealkitMod ?? 1.0);
+            var normalized = 1 - Math.Exp(-0.001 * healingSkillCurrent);
+            var healingSkillMod = 0.1 + (10.0 - 0.1) * normalized;
 
-            spell.SpellStatModVal *= healkitMod * healingSkillMod;
+            var healkitMod = (HealkitMod ?? 1.0);
+
+            spell.SpellStatModVal = (float)healkitMod * (float)healingSkillMod;
 
             healer.TryCastSpell_Inner(spell, target);
         }
@@ -342,11 +344,12 @@ public class Healer : WorldObject
     {
         // factors: healing skill, healing kit bonus, stamina, critical chance
         var healingSkill = healer.GetCreatureSkill(Skill.Healing).Current;
+        var normalized = 1 - Math.Exp(-0.001 * healingSkill);
+        var healingSkillMod = 0.1 + (10.0 - 0.1) * normalized;
 
-        // todo: determine applicable range from pcaps
-        var healMin = healingSkill * 0.25f;
-        var healMax = healingSkill * 0.5f;
-        var healAmount = ThreadSafeRandom.Next(healMin, healMax);
+        var healMin = 50 * healingSkillMod * 0.5f;
+        var healMax = 50 * healingSkillMod;
+        var healAmount = ThreadSafeRandom.Next((float)healMin, (float)healMax);
 
         var healKitMod = (float)(HealkitMod ?? 1.0);
         healAmount *= healKitMod;
