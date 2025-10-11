@@ -573,11 +573,28 @@ public static partial class LootGenerationFactory
 
         var baseMod = wo.GetProperty(prop) ?? 0;
 
-        // Target range for base armor of 1.0 is: 0.75 to 1.25. Much harder to hit high rolls.
+        // Target range for armor that has 1.0 base protection: 0.4 to 1.6. Rare chance for -0.05 or +0.05.
         // Loot Quality Mod contributes.
-        var roll = ThreadSafeRandom.Next(0.0f, 0.5f);
-        roll *= GetDiminishingRoll(profile, profile.LootQualityMod);
-        roll -= 0.25;
+        var minimumRoll = 0.0f;
+        if (profile is not null)
+        {
+            minimumRoll = (float)(1 - Math.Exp(-1 * profile.LootQualityMod));
+        }
+
+        var roll = ThreadSafeRandom.Next(minimumRoll, 1.2f);
+        roll -= 0.6;
+
+        // rare chance for outliers
+        var outlierRoll = ThreadSafeRandom.Next(1, 10);
+        switch (outlierRoll)
+        {
+            case 1:
+                roll -= 0.05;
+                break;
+            case 10:
+                roll += 0.05;
+                break;
+        }
 
         var newMod = baseMod + roll;
 
