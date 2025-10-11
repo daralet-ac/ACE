@@ -588,7 +588,7 @@ public class UpgradeKit : Stackable
             return;
         }
 
-        var armorStyleBaseWardLevel = 10;
+        var armorStyleBaseWardLevel = 7;
 
         if (target.ArmorStyle != null)
         {
@@ -598,10 +598,10 @@ public class UpgradeKit : Stackable
                     => 10,
                 ACE.Entity.Enum.ArmorStyle.TowerShield
                     => 8,
-                ACE.Entity.Enum.ArmorStyle.Amuli or ACE.Entity.Enum.ArmorStyle.Chiran
-                    or ACE.Entity.Enum.ArmorStyle.OlthoiAmuli or ACE.Entity.Enum.ArmorStyle.LargeShield
+                ACE.Entity.Enum.ArmorStyle.LargeShield
                     => 7,
-                ACE.Entity.Enum.ArmorStyle.StandardShield
+                ACE.Entity.Enum.ArmorStyle.Amuli or ACE.Entity.Enum.ArmorStyle.Chiran
+                    or ACE.Entity.Enum.ArmorStyle.OlthoiAmuli or ACE.Entity.Enum.ArmorStyle.StandardShield
                     => 6,
                 ACE.Entity.Enum.ArmorStyle.Buckler or ACE.Entity.Enum.ArmorStyle.SmallShield
                     => 5,
