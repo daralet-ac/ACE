@@ -1127,7 +1127,7 @@ public class DamageEvent
             case Skill.Axe:
             case Skill.Dagger:
 
-                WeaponMasterBleed(playerAttacker, defender, weaponTier, powerLevel);
+                WeaponMasterBleed(playerAttacker, defender, Weapon, powerLevel);
 
                 break;
             case Skill.Mace:
@@ -1145,7 +1145,7 @@ public class DamageEvent
 
                 if (Weapon.Name.Contains("Dagger") || Weapon.Name.Contains("Axe"))
                 {
-                    WeaponMasterBleed(playerAttacker, defender, weaponTier, powerLevel);
+                    WeaponMasterBleed(playerAttacker, defender, Weapon, powerLevel);
                 }
                 else if (Weapon.Name.Contains("Club"))
                 {
@@ -1278,19 +1278,68 @@ public class DamageEvent
         playerAttacker.WeaponMasterSingleUseIsActive = false;
     }
 
-    private void WeaponMasterBleed(Player playerAttacker, Creature defender, int weaponTier, float powerLevel)
+    /// <summary>
+    /// Triggers a bleed damage DoT on the target.
+    /// Base damage of Bleed spell is 500. Damage is reduced depending on weapon damage roll
+    /// and power bar level setting.
+    /// </summary>
+    private void WeaponMasterBleed(Player playerAttacker, Creature defender, WorldObject weapon, float powerLevel)
     {
-        var tierMod = weaponTier switch
+        if (weapon.Damage is null)
         {
-            1 => 1.0f,
-            2 => 3.0f,
-            3 => 7.0f,
-            4 => 10.0f,
-            5 => 16.0f,
-            6 => 24.0f,
-            7 => 32.0f,
+            return;
+        }
+
+        // todo: Add weapon subtypes to all lootgen weapons for higher accuracy
+        // var weaponSubtype = weapon.WeaponSubtype.Value;
+        // var weaponSubtypeMinDamage = weaponSubtype switch
+        // {
+        //     (int)LootTables.WeaponSubtype.AxeLarge => 5,
+        //     (int)LootTables.WeaponSubtype.AxeMedium => 5,
+        //     (int)LootTables.WeaponSubtype.AxeSmall => 4,
+        //     (int)LootTables.WeaponSubtype.DaggerLarge => 5,
+        //     (int)LootTables.WeaponSubtype.DaggerSmall => 4,
+        //     (int)LootTables.WeaponSubtype.ThrownAxe => 11,
+        //     (int)LootTables.WeaponSubtype.ThrownDagger => 10,
+        //     (int)LootTables.WeaponSubtype.TwohandAxe => 5,
+        //     _ => throw new ArgumentOutOfRangeException()
+        // };
+        // var weaponSubtypeMaxDamage = weaponSubtype switch
+        // {
+        //     (int)LootTables.WeaponSubtype.AxeLarge => 132,
+        //     (int)LootTables.WeaponSubtype.AxeMedium => 120,
+        //     (int)LootTables.WeaponSubtype.AxeSmall => 110,
+        //     (int)LootTables.WeaponSubtype.DaggerLarge => 95,
+        //     (int)LootTables.WeaponSubtype.DaggerSmall => 71,
+        //     (int)LootTables.WeaponSubtype.ThrownAxe => 296,
+        //     (int)LootTables.WeaponSubtype.ThrownDagger => 278,
+        //     (int)LootTables.WeaponSubtype.TwohandAxe => 107,
+        //     _ => throw new ArgumentOutOfRangeException()
+        // };
+
+        var weaponType = weapon.WeaponSkill;
+
+        var weaponTypeMinDamage = weaponType switch
+        {
+            Skill.Axe => 9,
+            Skill.Dagger => 4,
+            Skill.ThrownWeapon => 10,
+            Skill.TwoHandedCombat => 5,
             _ => throw new ArgumentOutOfRangeException()
         };
+
+        var weaponTypeMaxDamage = weaponType switch
+        {
+            Skill.Axe => 132,
+            Skill.Dagger => 95,
+            Skill.ThrownWeapon => 296,
+            Skill.TwoHandedCombat => 107,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        var damageRange = weaponTypeMaxDamage - weaponTypeMinDamage;
+        var weaponDamageRoll = weapon.Damage.Value - weaponTypeMinDamage;
+        var weaponDamageRollPercentile = (float)weaponDamageRoll / damageRange;
 
         var spell = new Spell(SpellId.Bleed);
 
@@ -1299,7 +1348,7 @@ public class DamageEvent
             return;
         }
 
-        spell.SpellStatModVal *= powerLevel * tierMod;
+        spell.SpellStatModVal = powerLevel * weaponDamageRollPercentile;
 
         defender.EnchantmentManager.Add(spell, playerAttacker, Weapon);
         defender.EnqueueBroadcast(new GameMessageScript(defender.Guid, PlayScript.DirtyFightingDamageOverTime));
