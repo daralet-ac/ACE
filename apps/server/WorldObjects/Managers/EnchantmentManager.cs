@@ -1844,13 +1844,14 @@ public class EnchantmentManager
             }
 
             var dotResistRatingMod = Creature.GetNegativeRatingMod(creature.GetDotResistanceRating()); // should this be here, or somewhere else?
-            // should this affect NetherDotDamageRating?
 
-            //Console.WriteLine("DR: " + Creature.ModToRating(damageRatingMod));
-            //Console.WriteLine("DRR: " + Creature.NegativeModToRating(damageResistRatingMod));
-            //Console.WriteLine("NRR: " + Creature.NegativeModToRating(netherResistRatingMod));
+            var bleedResistance = 1.0f;
+            if (enchantment.SpellId is 6410)
+            {
+                bleedResistance = (float)(creature.ResistBleed ?? (1 / (creature.ArchetypePhysicality ?? 1)));
+            }
 
-            tickAmount *= resistanceMod * damageResistRatingMod * dotResistRatingMod;
+            tickAmount *= resistanceMod * damageResistRatingMod * dotResistRatingMod * bleedResistance;
 
             // make sure the target's current health is not exceeded
             if (tickAmountTotal + tickAmount >= creature.Health.Current)
