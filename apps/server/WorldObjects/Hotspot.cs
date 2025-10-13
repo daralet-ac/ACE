@@ -512,7 +512,6 @@ public class Hotspot : WorldObject
                     chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearHealBubble, "", true);
                     if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
                     {
-                        Console.WriteLine(modifiedTier);
                         wcid = (uint)healingHotspots[modifiedTier];
                     }
 

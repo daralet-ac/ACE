@@ -1594,7 +1594,7 @@ partial class WorldObject
 
                     break;
             }
-Console.WriteLine($"{transferSource.Name} {srcVitalChange} {destVitalChange}");
+
             if (transferSource != player && srcVitalChange > 0)
             {
                 HandlePostDamageRatingEffects(transferSource, srcVitalChange, player, targetPlayer, creature, spell, ProjectileSpellType.Undef);
