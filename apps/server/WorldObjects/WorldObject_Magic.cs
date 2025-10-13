@@ -1086,6 +1086,10 @@ partial class WorldObject
         {
             HandlePostDamageRatingEffects(targetCreature, boost, player, targetPlayer, creature, spell, ProjectileSpellType.Undef);
         }
+        else if (boost > 0)
+        {
+            HandlePostHealRatingEffects(player, targetPlayer);
+        }
 
         if (player != null)
         {
@@ -1188,6 +1192,14 @@ partial class WorldObject
         {
             Jewel.HandleCasterDefenderRampingQuestStamps(targetPlayer, sourceCreature);
             Jewel.HandlePlayerDefenderBonuses(targetPlayer, sourceCreature, damage);
+        }
+    }
+
+    private static void HandlePostHealRatingEffects(Player sourcePlayer, Player targetPlayer)
+    {
+        if (sourcePlayer != null && targetPlayer != null)
+        {
+             Jewel.HandlePlayerHealerBonuses(sourcePlayer, targetPlayer);
         }
     }
 
@@ -1581,6 +1593,15 @@ partial class WorldObject
                     //destPlayer.Fellowship.OnVitalUpdate(destPlayer);
 
                     break;
+            }
+
+            if (transferSource != player && srcVitalChange > 0)
+            {
+                HandlePostDamageRatingEffects(transferSource, srcVitalChange, player, targetPlayer, creature, spell, ProjectileSpellType.Undef);
+            }
+            else if (targetPlayer == player && destVitalChange >= 0)
+            {
+                HandlePostHealRatingEffects(player, targetPlayer);
             }
 
             // You gain 52 points of health due to casting Drain Health Other I on Olthoi Warrior
