@@ -67,7 +67,7 @@ public class Hotspot : WorldObject
         }
 
         const int homesickHotspotId = 1034300;
-        
+
         if (WeenieClassId is homesickHotspotId && AffectsOnlyAis && creature is {ResetFromHotspot: true})
         {
             if (Time.GetUnixTime() < creature.LastHotspotVitalResetTime + 5.0)
@@ -512,6 +512,7 @@ public class Hotspot : WorldObject
                     chance = Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearHealBubble, "", true);
                     if (chance > ThreadSafeRandom.Next(0.0f, 1.0f))
                     {
+                        Console.WriteLine(modifiedTier);
                         wcid = (uint)healingHotspots[modifiedTier];
                     }
 
