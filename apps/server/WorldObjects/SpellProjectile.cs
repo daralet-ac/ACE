@@ -622,7 +622,15 @@ public class SpellProjectile : WorldObject
 
         resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true, WeaponSpellcraft, weaponAttackMod);
 
-        CheckForCombatAbilityReflectSpell(partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, sourceCreature);
+        if (targetPlayer is { ReflectIsActive: true, ReflectFirstSpell: true })
+        {
+            CheckForCombatAbilityReflectSpell(true, targetPlayer, sourceCreature);
+            targetPlayer.ReflectFirstSpell = false;
+        }
+        else
+        {
+            CheckForCombatAbilityReflectSpell(partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, sourceCreature);
+        }
 
         var resistedMod = 1.0f;
         _partialEvasion = partialEvasion;
