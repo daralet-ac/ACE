@@ -355,6 +355,15 @@ public class DamageEvent
                 Evaded = false;
                 break;
             default:
+                // If playerDefender has Phalanx active, 50% chance to convert a full hit into a partial hit.
+                if (playerDefender is { PhalanxIsActive: true } && ThreadSafeRandom.Next(0.1f, 1.0f) > 0.5f)
+                {
+                    _evasionMod = 0.5f;
+                    PartialEvasion = PartialEvasion.Some;
+                    Evaded = false;
+                    break;
+                }
+
                 _evasionMod = 1.0f;
                 PartialEvasion = PartialEvasion.None;
                 Evaded = false;
@@ -436,12 +445,6 @@ public class DamageEvent
             return;
         }
 
-        if (playerDefender is { PhalanxIsActive: true } && PartialEvasion is PartialEvasion.Some)
-        {
-            Blocked = true;
-            return;
-        }
-
         var effectiveAngle = 180.0f;
         effectiveAngle += GetSpecShieldEffectiveAngleBonus(playerDefender);
 
@@ -452,18 +455,34 @@ public class DamageEvent
             return;
         }
 
-        // base block chance ranges from 5 to 10% based on effective shield level vs effective attack skill
+        // If playerDefender has Phalanx active, 50% chance to convert partial hits into blocks/parries.
+        if (playerDefender is { PhalanxIsActive: true }
+            && PartialEvasion == PartialEvasion.Some
+            && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.5f)
+        {
+            Blocked = true;
+            return;
+        }
+
+        // base block/parry chance is 5%
+        // Blocks (shields) can have up to +5% additional base chance, depending on Shield Level vs Attacker Skill
+        // Parry base chance is always 5%
         const float minBlockChance = 0.05f;
+
         var blockChanceShieldBonus = GetBlockChanceShieldLevelBonus(defender, (int)defender.GetSkillModifiedShieldLevel((equippedShield.ArmorLevel ?? 1)));
         var baseBlockChance = minBlockChance * blockChanceShieldBonus;
 
         // other bonuses are additive then multiplied against base block chance
+        // Spec Phys Def = up to 50%, Jewels = 10% + ratings, Riposte = 100%
         var specPhysicalDefenseBlockChanceBonus = GetSpecPhysicalDefenseBlockChanceBonus();
         var jewelBlockChanceBonus = Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearBlock);
+        var riposteBlockChanceBonus = 0.0f;
+        if (playerDefender is { RiposteIsActive: true })
+        {
+            riposteBlockChanceBonus = 1.0f;
+        }
 
-        var blockChance = baseBlockChance * (1.0f + specPhysicalDefenseBlockChanceBonus + jewelBlockChanceBonus);
-        var parryActivatedBonus = playerDefender is { RiposteIsActive: true } ? 0.25f : 0.0f;
-        blockChance += parryActivatedBonus;
+        var blockChance = baseBlockChance * (1.0f + specPhysicalDefenseBlockChanceBonus + jewelBlockChanceBonus + riposteBlockChanceBonus);
 
         if ((ThreadSafeRandom.Next(0f, 1f) > blockChance))
         {
