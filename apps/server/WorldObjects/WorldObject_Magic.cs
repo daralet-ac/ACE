@@ -1000,7 +1000,15 @@ partial class WorldObject
             spellcraftMod = (weapon.ItemSpellcraft ?? 1) * 0.01f;
         }
 
-        tryBoost = (int)(tryBoost * overloadMod * batterMod * damageMultiplier * spellcraftMod);
+        // for traps and creatures that don't have a lethality mod,
+        // make sure they receive multipliers from landblock mods
+        var landblockScalingMod = 1.0f;
+        if (ArchetypeLethality is null && CurrentLandblock is not null)
+        {
+            landblockScalingMod *= (1.0f + (float)CurrentLandblock.GetLandblockLethalityMod());
+        }
+
+        tryBoost = (int)(tryBoost * overloadMod * batterMod * damageMultiplier * spellcraftMod * landblockScalingMod);
 
         string srcVital;
 
@@ -1554,6 +1562,13 @@ partial class WorldObject
 
                 srcVitalChange = (uint)(srcVitalChange * levelScalingMod);
                 destVitalChange = (uint)(destVitalChange * levelScalingMod);
+            }
+
+            // for traps and creatures that don't have a lethality mod,
+            // make sure they receive multipliers from landblock mods
+            if (ArchetypeLethality is null && CurrentLandblock is not null)
+            {
+                destVitalChange *= (uint)(1.0f + (float)CurrentLandblock.GetLandblockLethalityMod());
             }
 
             // Apply the change in vitals to the source
