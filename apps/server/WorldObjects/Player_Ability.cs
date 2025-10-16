@@ -89,6 +89,7 @@ partial class Player
 
     // Spellsword
     public bool ReflectIsActive => LastReflectActivated > Time.GetUnixTime() - ReflectActivatedDuration;
+    public bool ReflectFirstSpell = false;
     private double LastReflectActivated;
     private double ReflectActivatedDuration = 10;
 
@@ -974,6 +975,11 @@ partial class Player
         }
 
         LastReflectActivated = Time.GetUnixTime();
+
+        if (GetCreatureSkill(Skill.MagicDefense).AdvancementClass is SkillAdvancementClass.Specialized)
+        {
+            ReflectFirstSpell = true;
+        }
 
         PlayParticleEffect(PlayScript.SkillUpPurple, Guid);
 
