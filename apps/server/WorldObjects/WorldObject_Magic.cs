@@ -203,6 +203,13 @@ partial class WorldObject
             }
         }
 
+        // If playerDefender has Phalanx active, 50% chance to convert a full hit into a partial hit.
+        if (targetPlayer is { PhalanxIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.5f)
+        {
+            partialResist = PartialEvasion.Some;
+            return false;
+        }
+
         partialResist = PartialEvasion.None;
         return false;
     }
