@@ -1128,41 +1128,52 @@ public static partial class LootGenerationFactory
             case (int)ArmorStyle.Amuli:
             case (int)ArmorStyle.Chiran:
             case (int)ArmorStyle.OlthoiAmuli:
-                return 0.02f;
+                mod = 0.02f;
+                break;
             case (int)ArmorStyle.StuddedLeather:
             case (int)ArmorStyle.Koujia:
             case (int)ArmorStyle.OlthoiKoujia:
-                return 0.02f;
+                mod = 0.02f;
+                break;
             case (int)ArmorStyle.Chainmail:
             case (int)ArmorStyle.Scalemail:
             case (int)ArmorStyle.Nariyid:
-                return 0.03f;
+                mod = 0.03f;
+                break;
             case (int)ArmorStyle.Platemail:
             case (int)ArmorStyle.Celdon:
             case (int)ArmorStyle.OlthoiCeldon:
-                return 0.04f;
+                mod = 0.04f;
+                break;
             case (int)ArmorStyle.Covenant:
             case (int)ArmorStyle.OlthoiArmor:
-                return 0.05f;
+                mod = 0.05f;
+                break;
         }
 
         switch ((int)wo.WeenieClassId)
         {
             case 44: // Buckler
-                return 0.05f;
+                mod = 0.05f;
+                break;
             case 1050111: // Small Kite Shield
             case 1050112: // Small Round Shield
-                 return 0.05f;
+                mod = 0.05f;
+                break;
             case 91: // Kite Shield
             case 93: // Round Shield
-                return 0.1f;
+                mod = 0.1f;
+                break;
             case 92: // Large Kite Shield
             case 94: // Large Round Shield
-                return 0.15f;
+                mod = 0.15f;
+                break;
             case 95: // Tower Shield
-                return 0.2f;
+                mod = 0.2f;
+                break;
             case 21158: // Covenant Shield
-                return 0.25f;
+                mod = 0.25f;
+                break;
         }
 
         return mod;
