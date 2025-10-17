@@ -326,7 +326,7 @@ public class DamageEvent
         if (attackRoll > GetEvadeChance(attacker, defender))
         {
             // If playerDefender has Phalanx active, 50% chance to convert a full hit into a partial hit.
-            if (playerDefender is { PhalanxIsActive: true } && ThreadSafeRandom.Next(0.1f, 1.0f) > 0.5f)
+            if (playerDefender is { PhalanxIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.5f)
             {
                 _evasionMod = 0.5f;
                 PartialEvasion = PartialEvasion.Some;
