@@ -1928,6 +1928,8 @@ public class Landblock : IActor
             }
 
             LandblockLootQualityMod = previousLandblockLootQuality;
+
+            return;
         }
         else
         {
