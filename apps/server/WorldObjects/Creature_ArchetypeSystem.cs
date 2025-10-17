@@ -23,7 +23,7 @@ partial class Creature
     private static readonly int[] enemyAssessDeception = { 10, 50, 100, 150, 200, 250, 300, 350, 400 };
     private static readonly int[] enemyRun = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
 
-    private static readonly float[] enemyDamage = { 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 7.5f, 10.0f, 15.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
+    private static readonly float[] enemyDamage = { 1.0f, 2.0f, 4.0f, 5.0f, 6.0f, 7.0f, 7.5f, 8.0f, 10.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
 
     private static readonly int[] avgPlayerHealth = { 25, 60, 120, 150, 180, 210, 250, 300, 350 };
     private static readonly float[] avgPlayerArmorReduction = { 0.75f, 0.57f, 0.40f, 0.31f, 0.25f, 0.21f, 0.18f, 0.16f, 0.1f };
@@ -1238,7 +1238,7 @@ partial class Creature
         var weightedEnemyDamage = (enemyDamage[tier] + (enemyDamage[tier + 1] - enemyDamage[tier]) * statWeight);
         if (UseNearbyPlayerScaling is true && weightedEnemyDamage < 5.0f)
         {
-            weightedEnemyDamage = 5.0f; // level 50 enemy dps
+            weightedEnemyDamage = 7.0f; // level 50 enemy dps
         }
 
         var weightedPlayerHealth = (
