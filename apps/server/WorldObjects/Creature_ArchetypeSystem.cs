@@ -12,9 +12,9 @@ partial class Creature
     private static bool DebugArchetypeSystem = false;
 
     // Stat ranges by tier
-    private static readonly int[] enemyHealth = { 10, 50, 100, 200, 400, 600, 750, 1000, 2000 };
+    private static readonly int[] enemyHealth = { 10, 50, 100, 200, 400, 600, 800, 1000, 2000 };
     private static readonly int[] enemyStaminaMana = { 20, 100, 150, 225, 325, 450, 650, 950, 1250 };
-    private static readonly int[] enemyHealthRegen = { 1, 2, 5, 10, 20, 30, 37, 50, 100 };
+    private static readonly int[] enemyHealthRegen = { 1, 2, 5, 10, 20, 30, 40, 50, 100 };
     private static readonly int[] enemyStaminaManaRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
 
     private static readonly int[] enemyArmorWard = { 10, 20, 45, 68, 101, 152, 228, 342, 513 };
