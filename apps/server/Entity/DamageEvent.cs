@@ -534,10 +534,14 @@ public class DamageEvent
 
         var parryMod = SkillCheck.GetSkillChance((uint)(parrySkillUsed * 1.5), EffectiveAttackSkill);
 
-        // parry chance is 10% * parryMod skillcheck
-        var baseParryChance = 0.1f * parryMod;
-        var parryActivatedBonus = playerDefender is { RiposteIsActive: true } ? 0.25f : 0.0f;
-        var parryChance = baseParryChance + parryActivatedBonus;
+        // parry chance is up to 10%, based on Two-hand or Dual-wield skill levels vs Attack Skill
+        var maxBaseParryChance = 0.1f * parryMod;
+
+        // other bonuses are additive then multiplied against base parry chance
+        // Spec Phys Def = up to 50%, Riposte = 100%
+        var specPhysicalDefenseParryChanceBonus = GetSpecPhysicalDefenseBlockChanceBonus();
+        var riposteActivatedBonus = playerDefender is { RiposteIsActive: true } ? 1.0f : 0.0f;
+        var parryChance = maxBaseParryChance * (1.0 + specPhysicalDefenseParryChanceBonus + riposteActivatedBonus);
 
         if ((ThreadSafeRandom.Next(0f, 1f) > parryChance))
         {
@@ -1706,6 +1710,11 @@ public class DamageEvent
             return;
         }
 
+        if (damageSource is null)
+        {
+            return;
+        }
+
         SetCombatSources(attacker, defender, defender.GetEquippedWeapon());
         SetBaseDamage(attacker, defender, damageSource);
         SetDamageModifiers(attacker, defender);
@@ -1743,6 +1752,11 @@ public class DamageEvent
         }
 
         if (!playerDefender.TwoHandedCombat && !playerDefender.IsDualWieldAttack && playerDefender.GetEquippedShield() is null)
+        {
+            return;
+        }
+
+        if (defender.GetEquippedWeapon() is null)
         {
             return;
         }
@@ -2032,7 +2046,7 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// SPEC BONUS - Physical Defense: Increase shield block chance up to 50% (multiplicatively).
+    /// SPEC BONUS - Physical Defense: Increase block/parry chance up to 50% (multiplicatively).
     /// Based on defender 'defense skill' and attacker 'attack skill'.
     /// </summary>
     private float GetSpecPhysicalDefenseBlockChanceBonus()
