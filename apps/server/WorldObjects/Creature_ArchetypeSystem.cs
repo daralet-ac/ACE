@@ -25,7 +25,7 @@ partial class Creature
 
     private static readonly float[] enemyDamage = { 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 7.5f, 10.0f, 15.0f }; // percentage of player health to be taken per second after all stats (of player and enemy) are considered
 
-    private static readonly int[] avgPlayerHealth = { 25, 45, 95, 125, 155, 185, 215, 245, 320 };
+    private static readonly int[] avgPlayerHealth = { 25, 60, 120, 150, 180, 210, 250, 300, 350 };
     private static readonly float[] avgPlayerArmorReduction = { 0.75f, 0.57f, 0.40f, 0.31f, 0.25f, 0.21f, 0.18f, 0.16f, 0.1f };
     private static readonly float[] avgPlayerLifeProtReduction = { 1.0f, 0.9f, 0.9f, 0.85f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
     private static readonly int[] avgPlayerPhysicalMagicDefense = { 10, 75, 150, 175, 200, 225, 275, 350, 500 };

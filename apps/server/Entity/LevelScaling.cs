@@ -31,7 +31,7 @@ public static class LevelScaling
 
     private static readonly ILogger _log = Log.ForContext(typeof(LevelScaling));
 
-    private static readonly int[] AvgPlayerHealthPerTier = [50, 100, 130, 160, 190, 220, 250, 350];
+    private static readonly int[] AvgPlayerHealthPerTier = [25, 60, 120, 150, 180, 210, 250, 300, 350];
     private static readonly int[] AvgPlayerArmorWardPerTier = [50, 100, 200, 300, 400, 500, 600, 700];
     private static readonly int[] AvgPlayerAttributePerTier = [125, 175, 200, 215, 230, 250, 270, 290];
     private static readonly int[] AvgPlayerAttackSkillPerTier = [75, 150, 175, 200, 225, 275, 350, 500];
