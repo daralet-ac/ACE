@@ -2061,12 +2061,12 @@ public class EmoteManager
 
                     questTarget.QuestManager.Stamp(emote.Message);
 
-                    if (CapstoneCompletionQuests.Contains(emote.Message) && creature is not null)
+                    if (CapstoneCompletionQuests.Contains(emote.Message))
                     {
-                        var capstoneDifficulty = Math.Round(creature.CurrentLandblock.LandblockLootQualityMod * 100);
+                        var capstoneDifficulty = Math.Round(questTarget.CurrentLandblock.LandblockLootQualityMod * 100);
                         var fellowshipSize = 1;
 
-                        if (creature is Player { Fellowship: not null } playerInFellowship)
+                        if (questTarget is Player { Fellowship: not null } playerInFellowship)
                         {
                             fellowshipSize = playerInFellowship.Fellowship.TotalMembers;
                         }
