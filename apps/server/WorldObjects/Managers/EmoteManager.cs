@@ -2060,6 +2060,13 @@ public class EmoteManager
                     }
 
                     questTarget.QuestManager.Stamp(emote.Message);
+
+                    if (CapstoneCompletionQuests.Contains(emote.Message) && creature is not null)
+                    {
+                        var capstoneDifficulty = Math.Round(creature.CurrentLandblock.LandblockLootQualityMod * 100);
+
+                        questTarget.QuestManager.Stamp(emote.Message+capstoneDifficulty+"%");
+                    }
                 }
                 break;
 
