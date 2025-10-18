@@ -754,11 +754,14 @@ public class UpgradeKit : Stackable
 
         foreach (var spellId in spellBook.Keys)
         {
-            spellsToRemove.Add(spellId);
-
             var minimumLevelSpellId = SpellLevelProgression.GetLevel1SpellId((SpellId)spellId, true);
-
             var spellProgressionList = SpellLevelProgression.GetSpellLevels((SpellId)spellId);
+
+            if (spellProgressionList is null)
+            {
+                continue;
+            }
+
             var isCantrip = spellProgressionList.Count < 5;
             var spellLevel = 0;
 
@@ -781,13 +784,13 @@ public class UpgradeKit : Stackable
                     break;
             }
 
+            spellsToRemove.Add(spellId);
             spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, spellLevel, true, true));
 
         }
 
         if (spellsToAdd.Count == 0)
         {
-            _log.Error("ScaleUpSpells() - spellsToAdd.Count == 0 for {Target}", target);
             return;
         }
 
