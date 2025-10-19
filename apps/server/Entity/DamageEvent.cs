@@ -1761,12 +1761,12 @@ public class DamageEvent
             return;
         }
 
-        SetCombatSources(attacker, defender, defender.GetEquippedWeapon());
+        SetCombatSources(defender, attacker, defender.GetEquippedWeapon());
         SetBaseDamage(defender, attacker, defender.GetEquippedWeapon());
         SetDamageModifiers(defender, attacker);
 
         var baseDamage = GetNonCriticalDamageBeforeMitigation();
-        var mitigation = GetMitigation(attacker, defender);
+        var mitigation = GetMitigation(defender, attacker);
 
         var damage = baseDamage * mitigation;
 
@@ -1783,7 +1783,7 @@ public class DamageEvent
 
         var parryType = Parried ? "parry" : "block";
 
-        var msg = $"You follow up your {parryType} with a quick riposte, dealing {intDamage} {_damageSource.W_DamageType} damage!";
+        var msg = $"You follow up your {parryType} with a quick riposte, dealing {intDamage} {_damageSource.W_DamageType} damage to {attacker.Name}!";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
 
         if (!attacker.IsDead)
