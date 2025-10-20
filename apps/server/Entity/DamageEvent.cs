@@ -1765,6 +1765,7 @@ public class DamageEvent
         SetBaseDamage(defender, attacker, defender.GetEquippedWeapon());
         SetDamageModifiers(defender, attacker);
 
+        _powerMod = 1.0f;
         var baseDamage = GetNonCriticalDamageBeforeMitigation();
         var mitigation = GetMitigation(defender, attacker);
 
