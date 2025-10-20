@@ -281,7 +281,7 @@ partial class WorldObject
             var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
 
             // if enchanted blade spell, average caster's skill with the weapon's spellcraft
-            if (weaponSpellcraft is not null)
+            if (weaponSpellcraft > magicSkill)
             {
                 magicSkill = (uint)((magicSkill + weaponSpellcraft) * 0.5);
             }
@@ -313,7 +313,10 @@ partial class WorldObject
 
                 spellcraft = CheckForArcaneLoreSpecSpellcraftBonus(wielder, spellcraft);
 
-                magicSkill = (uint)((spellcraft + casterMagicSkill) * 0.5);
+                if (spellcraft > magicSkill)
+                {
+                    magicSkill = (uint)((spellcraft + casterMagicSkill) * 0.5);
+                }
             }
         }
         else if (caster.Wielder is Creature wielder)
