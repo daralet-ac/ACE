@@ -2068,7 +2068,7 @@ public class EmoteManager
 
                         if (questTarget is Player { Fellowship: not null } playerInFellowship)
                         {
-                            fellowshipSize = playerInFellowship.Fellowship.TotalMembers;
+                            fellowshipSize = playerInFellowship.Fellowship.GetFellowshipMembers().Count;
                         }
 
                         questTarget.QuestManager.Stamp(emote.Message+"_size:"+fellowshipSize+"_diff:"+capstoneDifficulty+"%");
