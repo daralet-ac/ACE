@@ -1,4 +1,5 @@
 using System;
+using ACE.Common.Extensions;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
@@ -1270,23 +1271,24 @@ partial class Creature
 
         var enemyAvgAttackSpeed = 1 / (creatureAnimLength / animSpeed + ((PowerupTime ?? 1.0) / 2));
 
-        switch (weapon)
+        if (weapon is not null
+            && (weapon.W_AttackType.HasFlag(AttackType.TripleStrike)
+                || weapon.W_AttackType.HasFlag(AttackType.TripleSlash)
+                || weapon.W_AttackType.HasFlag(AttackType.TripleThrust)
+                || weapon.W_AttackType.HasFlag(AttackType.OffhandTripleSlash)
+                || weapon.W_AttackType.HasFlag(AttackType.OffhandTripleThrust)))
         {
-            case {IsTwoHanded: true}:
-            case {W_AttackType: AttackType.DoubleStrike}:
-            case {W_AttackType: AttackType.DoubleSlash}:
-            case {W_AttackType: AttackType.DoubleThrust}:
-            case {W_AttackType: AttackType.OffhandDoubleSlash}:
-            case {W_AttackType: AttackType.OffhandDoubleThrust}:
-                enemyAvgAttackSpeed *= 2.0f;
-                break;
-            case { W_AttackType: AttackType.TripleStrike }:
-            case { W_AttackType: AttackType.TripleSlash }:
-            case { W_AttackType: AttackType.TripleThrust }:
-            case { W_AttackType: AttackType.OffhandTripleSlash }:
-            case { W_AttackType: AttackType.OffhandTripleThrust }:
-                enemyAvgAttackSpeed *= 3.0f;
-                break;
+            enemyAvgAttackSpeed *= 3.0f;
+        }
+        else if (weapon is not null
+                && (weapon.IsTwoHanded
+                    || weapon.W_AttackType.HasFlag(AttackType.DoubleStrike)
+                    || weapon.W_AttackType.HasFlag(AttackType.DoubleSlash)
+                    || weapon.W_AttackType.HasFlag(AttackType.DoubleThrust)
+                    || weapon.W_AttackType.HasFlag(AttackType.OffhandDoubleSlash)
+                    || weapon.W_AttackType.HasFlag(AttackType.OffhandDoubleThrust)))
+        {
+            enemyAvgAttackSpeed *= 2.0f;
         }
 
         // enemy attribute mod
