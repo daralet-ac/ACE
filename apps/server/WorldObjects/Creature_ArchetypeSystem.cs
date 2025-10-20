@@ -1264,8 +1264,30 @@ partial class Creature
         var playerLifeProtReduction = avgPlayerLifeProtReduction[tier];
 
         // enemy attack speed
-        var enemyAvgAttackSpeed =
-            1 / (MonsterAverageAnimationLength.GetValueMod(CreatureType) / GetAnimSpeed() + ((PowerupTime ?? 1.0) / 2));
+        var animSpeed = GetAnimSpeed();
+        var weapon = GetEquippedWeapon();
+        var creatureAnimLength = MonsterAverageAnimationLength.GetValueMod(CreatureType);
+
+        var enemyAvgAttackSpeed = 1 / (creatureAnimLength / animSpeed + ((PowerupTime ?? 1.0) / 2));
+
+        switch (weapon)
+        {
+            case {IsTwoHanded: true}:
+            case {W_AttackType: AttackType.DoubleStrike}:
+            case {W_AttackType: AttackType.DoubleSlash}:
+            case {W_AttackType: AttackType.DoubleThrust}:
+            case {W_AttackType: AttackType.OffhandDoubleSlash}:
+            case {W_AttackType: AttackType.OffhandDoubleThrust}:
+                enemyAvgAttackSpeed *= 2.0f;
+                break;
+            case { W_AttackType: AttackType.TripleStrike }:
+            case { W_AttackType: AttackType.TripleSlash }:
+            case { W_AttackType: AttackType.TripleThrust }:
+            case { W_AttackType: AttackType.OffhandTripleSlash }:
+            case { W_AttackType: AttackType.OffhandTripleThrust }:
+                enemyAvgAttackSpeed *= 3.0f;
+                break;
+        }
 
         // enemy attribute mod
         var strength = (int)Strength.Base;
