@@ -1266,7 +1266,7 @@ partial class Creature
         // enemy attack speed
         var animSpeed = GetAnimSpeed();
         var weapon = GetEquippedWeapon();
-        var creatureAnimLength = MonsterAverageAnimationLength.GetValueMod(CreatureType);
+        var creatureAnimLength = weapon is null ? MonsterAverageAnimationLength.GetValueMod(CreatureType) : 1.0f;
 
         var enemyAvgAttackSpeed = 1 / (creatureAnimLength / animSpeed + ((PowerupTime ?? 1.0) / 2));
 
