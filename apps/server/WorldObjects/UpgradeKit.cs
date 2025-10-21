@@ -588,7 +588,7 @@ public class UpgradeKit : Stackable
             return;
         }
 
-        var armorStyleBaseWardLevel = 10;
+        var armorStyleBaseWardLevel = 7;
 
         if (target.ArmorStyle != null)
         {
@@ -598,10 +598,10 @@ public class UpgradeKit : Stackable
                     => 10,
                 ACE.Entity.Enum.ArmorStyle.TowerShield
                     => 8,
-                ACE.Entity.Enum.ArmorStyle.Amuli or ACE.Entity.Enum.ArmorStyle.Chiran
-                    or ACE.Entity.Enum.ArmorStyle.OlthoiAmuli or ACE.Entity.Enum.ArmorStyle.LargeShield
+                ACE.Entity.Enum.ArmorStyle.LargeShield
                     => 7,
-                ACE.Entity.Enum.ArmorStyle.StandardShield
+                ACE.Entity.Enum.ArmorStyle.Amuli or ACE.Entity.Enum.ArmorStyle.Chiran
+                    or ACE.Entity.Enum.ArmorStyle.OlthoiAmuli or ACE.Entity.Enum.ArmorStyle.StandardShield
                     => 6,
                 ACE.Entity.Enum.ArmorStyle.Buckler or ACE.Entity.Enum.ArmorStyle.SmallShield
                     => 5,
@@ -754,11 +754,14 @@ public class UpgradeKit : Stackable
 
         foreach (var spellId in spellBook.Keys)
         {
-            spellsToRemove.Add(spellId);
-
             var minimumLevelSpellId = SpellLevelProgression.GetLevel1SpellId((SpellId)spellId, true);
-
             var spellProgressionList = SpellLevelProgression.GetSpellLevels((SpellId)spellId);
+
+            if (spellProgressionList is null)
+            {
+                continue;
+            }
+
             var isCantrip = spellProgressionList.Count < 5;
             var spellLevel = 0;
 
@@ -781,13 +784,13 @@ public class UpgradeKit : Stackable
                     break;
             }
 
+            spellsToRemove.Add(spellId);
             spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, spellLevel, true, true));
 
         }
 
         if (spellsToAdd.Count == 0)
         {
-            _log.Error("ScaleUpSpells() - spellsToAdd.Count == 0 for {Target}", target);
             return;
         }
 

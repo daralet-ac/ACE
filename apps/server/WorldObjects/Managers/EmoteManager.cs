@@ -287,6 +287,9 @@ public class EmoteManager
                 if (WorldObject != null)
                 {
                     var spell = new Spell((uint)emote.SpellId);
+                    var damageMultiplier = emote.Percent ?? 1.0;
+                    var tryResist = emote.Message != "noresist";
+
                     if (spell.NotFound)
                     {
                         _log.Error(
@@ -309,7 +312,16 @@ public class EmoteManager
                         creature,
                         () =>
                         {
-                            creature.TryCastSpell_WithRedirects(spell, spellTarget, creature);
+                            creature.TryCastSpell_WithRedirects(
+                                spell,
+                                spellTarget,
+                                creature,
+                                null,
+                                false,
+                                false,
+                                tryResist,
+                                damageMultiplier);
+
                             creature.PostCastMotion();
                         }
                     );
@@ -322,27 +334,23 @@ public class EmoteManager
                 if (WorldObject != null)
                 {
                     var spell = new Spell((uint)emote.SpellId);
+                    var damageMultiplier = emote.Percent ?? 1.0;
+                    var tryResist = emote.Message != "noresist";
 
                     if (!spell.NotFound)
                     {
                         var spellTarget = GetSpellTarget(spell, targetObject);
 
-                        if (emote.Message != null && emote.Message == "noresist")
-                        {
-                            WorldObject.TryCastSpell_WithRedirects(
-                                spell,
-                                spellTarget,
-                                WorldObject,
-                                null,
-                                false,
-                                false,
-                                false
-                            );
-                        }
-                        else
-                        {
-                            WorldObject.TryCastSpell_WithRedirects(spell, spellTarget, WorldObject);
-                        }
+                        WorldObject.TryCastSpell_WithRedirects(
+                            spell,
+                            spellTarget,
+                            WorldObject,
+                            null,
+                            false,
+                            false,
+                            tryResist,
+                            damageMultiplier
+                        );
                     }
                 }
                 break;
@@ -2074,6 +2082,19 @@ public class EmoteManager
                     }
 
                     questTarget.QuestManager.Stamp(emote.Message);
+
+                    if (CapstoneCompletionQuests.Contains(emote.Message))
+                    {
+                        var capstoneDifficulty = Math.Round(questTarget.CurrentLandblock.LandblockLootQualityMod * 100);
+                        var fellowshipSize = 1;
+
+                        if (questTarget is Player { Fellowship: not null } playerInFellowship)
+                        {
+                            fellowshipSize = playerInFellowship.Fellowship.GetFellowshipMembers().Count;
+                        }
+
+                        questTarget.QuestManager.Stamp(emote.Message+"_size:"+fellowshipSize+"_diff:"+capstoneDifficulty+"%");
+                    }
                 }
                 break;
 
@@ -3383,12 +3404,24 @@ public class EmoteManager
     {
         var itemPool = new List<(uint,int)>
         {
-            (1054000,2), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
+            (1054000,1), // Pearl of Transference
             (1054005,10), // Pearl of Spell Purging
+            (1054005,10), // Pearl of Spell Purging
+            (1054005,10), // Pearl of Spell Purging
+            (1054005,10), // Pearl of Spell Purging
+            (1054005,10), // Pearl of Spell Purging
+            (1054004,1),  // Upgrade Kit
+            (1054004,1),  // Upgrade Kit
+            (1054004,1),  // Upgrade Kit
+            (1054004,1),  // Upgrade Kit
+            (1054004,1),  // Upgrade Kit
             (1054002,1), // Sanguine Crystal
             (1054003,1), // Scourging Stone
-            (1053972,1), // Tailoring Kit
-            (1054004,2)  // Upgrade Kit
+            (1053972,1) // Tailoring Kit
         };
 
         var capstoneModifier = GetCapstoneModifier(player.CurrentLandblock);
@@ -3421,6 +3454,12 @@ public class EmoteManager
             var randomItem = itemPool[randomIndex];
 
             var amountToGive = amount * randomItem.Item2;
+
+            // max 1 amount for Sanguine/Scouring/Tailor
+            if (randomItem.Item1 is 1054002 or 1054003 or 1054972)
+            {
+                amountToGive = 1;
+            }
 
             player.GiveFromEmote(WorldObject, randomItem.Item1, amountToGive);
         }
