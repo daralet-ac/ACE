@@ -1045,9 +1045,6 @@ partial class WorldObject
 
         if (creature is not null)
         {
-            var lethalityMod = Convert.ToSingle(creature.ArchetypeLethality ?? 1.0f);
-            tryBoost = Convert.ToInt32(tryBoost * lethalityMod);
-
             var archetypeSpellDamageMod = (float)(creature.ArchetypeSpellDamageMultiplier ?? 1.0);
             tryBoost = Convert.ToInt32(tryBoost * archetypeSpellDamageMod);
 
