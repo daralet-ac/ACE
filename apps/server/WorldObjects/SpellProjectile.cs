@@ -743,12 +743,10 @@ public class SpellProjectile : WorldObject
         var batteryDamageMod = CheckForCombatAbilityBatteryDamageMod(sourcePlayer);
 
         var attributeMod = 1.0f;
-        var lethalityMod = 1.0f;
 
         if (sourceCreature is not null)
         {
             attributeMod = sourceCreature.GetAttributeMod(weapon, true, target);
-            lethalityMod = Convert.ToSingle(sourceCreature.ArchetypeLethality ?? 1.0f);
         }
 
         var specDefenseMod = CheckForMagicDefenseSpecDefenseMod(targetPlayer, sourceCreature);
@@ -824,7 +822,6 @@ public class SpellProjectile : WorldObject
                 * jewelRedFury
                 * jewelBlueFury
                 * jewelSelfHarm
-                * lethalityMod
                 * levelScalingMod
                 * damageMultiplier
                 * spellcraftMod
