@@ -1102,4 +1102,39 @@ public class QuestManager
         "StamReduction"
 
     ];
+
+    public static int GetCapstonesCompleted(Player player)
+    {
+        var capstonesCompleted = 0;
+        var questManager = player.QuestManager;
+
+        foreach (var capstoneCompletionQuest in CapstoneCompletionQuests)
+        {
+            if (questManager.HasQuest(capstoneCompletionQuest))
+            {
+                capstonesCompleted++;
+            }
+        }
+
+        return capstonesCompleted;
+    }
+
+    public static List<string> CapstoneCompletionQuests =
+    [
+        "EmpyreanGarrisonCompleted",
+        "FolthidCellarCompleted",
+        "GlendenWoodDungeonCompleted",
+        "GredalineConsulateCompleted",
+        "GreenMireGraveCompleted",
+        "GrievousVaultCompleted",
+        "HallsOfTheHelmCompleted",
+        "LugianMinesCompleted",
+        "MageAcademyCompleted",
+        "ManseOfPanderlouCompleted",
+        "MinesOfColierCompleted",
+        "MinesOfDespairCompleted",
+        "MountainFortressCompleted",
+        "SandShallowCompleted",
+        "SmugglersHideawayCompleted"
+    ];
 }
