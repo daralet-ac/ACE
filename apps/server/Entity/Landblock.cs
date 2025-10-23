@@ -2014,7 +2014,7 @@ public class Landblock : IActor
             var diminishedRoll = (float)(1 - Math.Exp(-1 * totalBonus / 100));
 
             fellowPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat(
-                $" -Total Loot Quality Bonus: +{totalBonus}% ({Math.Round(diminishedRoll * 100)}%)",
+                $" -Total Loot Quality Bonus: +{totalBonus}%",
                 ChatMessageType.Broadcast
             ));
         }

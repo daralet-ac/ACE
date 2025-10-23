@@ -2782,20 +2782,13 @@ public static partial class LootGenerationFactory
             lootQualityMod = treasureDeath.LootQualityMod > 0 ? treasureDeath.LootQualityMod : 0;
         }
 
-        var diminishedRoll = (float)(1 - Math.Exp(-1 * lootQualityMod));
+        var diminishedLootQuality = (float)(1 - Math.Exp(-1 * lootQualityMod));
 
-        var roll = (float)ThreadSafeRandom.Next(diminishedRoll, 1.0f);
+        var roll = (float)ThreadSafeRandom.Next(diminishedLootQuality, 1.0f);
 
-        if (roll < 0.5f)
-        {
-            roll *= 0.5f;
-        }
-        else
-        {
-            roll *= roll;
-        }
+        //Console.WriteLine($"GetDiminishingRoll - LQ: {lootQualityMod}, diminishedLootQuality: {diminishedLootQuality}, roll: {roll}, final: {roll * roll}");
 
-        //Console.WriteLine($"GetDiminishingRoll - LQ: {lootQualityMod}, minRoll: {minimumRoll}, roll: {roll}");
+        roll *= roll;
 
         return roll;
     }

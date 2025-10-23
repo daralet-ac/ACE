@@ -223,7 +223,7 @@ public partial class Chest : Container, Lock
 
             Tier = player.GetPlayerTier(player.Level ?? 1);
 
-            Reset(ResetTimestamp);
+            Reset(ResetTimestamp, player);
 
             Open(player);
 
@@ -287,7 +287,7 @@ public partial class Chest : Container, Lock
         }
     }
 
-    public void Reset(double? resetTimestamp)
+    public void Reset(double? resetTimestamp, Player playerOpener = null)
     {
         if (resetTimestamp != ResetTimestamp)
         {
@@ -326,8 +326,8 @@ public partial class Chest : Container, Lock
             CurrentlyPoweringUp = true;
             if (InitCreate > 0)
             {
-                Generator_Generate(Tier, player);
-                
+                Generator_Generate(Tier, player ?? playerOpener);
+
             }
         }
 

@@ -12,7 +12,6 @@ using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Physics.Common;
 using ACE.Server.WorldObjects;
-using ACE.Server.WorldObjects.Managers;
 using Serilog;
 using Quaternion = System.Numerics.Quaternion;
 

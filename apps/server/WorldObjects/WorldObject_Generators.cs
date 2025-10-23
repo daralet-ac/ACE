@@ -569,7 +569,7 @@ partial class WorldObject
                 || (!string.IsNullOrEmpty(GeneratorEvent) && RegenerationInterval == 0)
             )
             {
-                Generator_Generate(Tier);      
+                Generator_Generate(Tier);
             }
 
             if (InitCreate == 0)
@@ -828,8 +828,8 @@ partial class WorldObject
 
         foreach (var profile in GeneratorProfiles)
         {
-            profile.Spawn_HeartBeat(tier);
             profile.Player = player;
+            profile.Spawn_HeartBeat(tier);
         }
     }
 
