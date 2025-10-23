@@ -2061,7 +2061,7 @@ public class EmoteManager
 
                     questTarget.QuestManager.Stamp(emote.Message);
 
-                    if (CapstoneCompletionQuests.Contains(emote.Message))
+                    if (QuestManager.CapstoneCompletionQuests.Contains(emote.Message))
                     {
                         var capstoneDifficulty = Math.Round(questTarget.CurrentLandblock.LandblockLootQualityMod * 100);
                         var fellowshipSize = 1;
@@ -3345,7 +3345,7 @@ public class EmoteManager
     private void AwardCapstoneTradeNotes(Player player, int amount)
     {
         var capstoneModifier = GetCapstoneModifier(player.CurrentLandblock);
-        var capstonesCompleted = GetCapstonesCompleted(player);
+        var capstonesCompleted = QuestManager.GetCapstonesCompleted(player);
         var minimumRoll = (capstonesCompleted * 2) + (capstoneModifier * 100);
 
         for (var i = 0; i < amount; i++)
@@ -3403,7 +3403,7 @@ public class EmoteManager
         };
 
         var capstoneModifier = GetCapstoneModifier(player.CurrentLandblock);
-        var capstonesCompleted = GetCapstonesCompleted(player);
+        var capstonesCompleted = QuestManager.GetCapstonesCompleted(player);
         var minimumRoll = (capstonesCompleted * 2) + (capstoneModifier * 100);
 
         var amount = 1;
@@ -3447,39 +3447,4 @@ public class EmoteManager
     {
         return landblock?.LandblockLootQualityMod ?? 1.0;
     }
-
-    private int GetCapstonesCompleted(Player player)
-    {
-        var capstonesCompleted = 0;
-        var questManager = player.QuestManager;
-
-        foreach (var capstoneCompletionQuest in CapstoneCompletionQuests)
-        {
-            if (questManager.HasQuest(capstoneCompletionQuest))
-            {
-                capstonesCompleted++;
-            }
-        }
-
-        return capstonesCompleted;
-    }
-
-    private List<string> CapstoneCompletionQuests =
-    [
-        "EmpyreanGarrisonCompleted",
-        "FolthidCellarCompleted",
-        "GlendenWoodDungeonCompleted",
-        "GredalineConsulateCompleted",
-        "GreenMireGraveCompleted",
-        "GrievousVaultCompleted",
-        "HallsOfTheHelmCompleted",
-        "LugianMinesCompleted",
-        "MageAcademyCompleted",
-        "ManseOfPanderlouCompleted",
-        "MinesOfColierCompleted",
-        "MinesOfDespairCompleted",
-        "MountainFortressCompleted",
-        "SandShallowCompleted",
-        "SmugglersHideawayCompleted"
-    ];
 }

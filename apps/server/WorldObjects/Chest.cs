@@ -326,15 +326,8 @@ public partial class Chest : Container, Lock
             CurrentlyPoweringUp = true;
             if (InitCreate > 0)
             {
-                //Console.WriteLine(Tier);
-                if (Tier != null)
-                {
-                    Generator_Generate(Tier);
-                }
-                else
-                {
-                    Generator_Generate();
-                }
+                Generator_Generate(Tier, player);
+                
             }
         }
 
