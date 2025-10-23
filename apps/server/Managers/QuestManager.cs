@@ -304,9 +304,14 @@ public class QuestManager
         player.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
                 $"Tempered by the portal energies of {townName}, a {level} resilience has taken shape within you.",
-                ChatMessageType.Broadcast
+                ChatMessageType.System
             )
         );
+
+        if (quest.NumTimesCompleted == 3)
+        {
+            player.PlayParticleEffect(PlayScript.PortalStorm, player.Guid);
+        }
     }
 
     private readonly List<string> QuestProgressQuestNames =
