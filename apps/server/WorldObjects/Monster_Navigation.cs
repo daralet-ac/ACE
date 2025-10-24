@@ -276,6 +276,12 @@ partial class Creature
     /// </summary>
     public void Movement()
     {
+        if (PhysicsObj is null)
+        {
+            _log.Error("PhysicsObj is null for: {Monster}", Name);
+            return;
+        }
+
         //if (!IsRanged)
         UpdatePosition();
 
