@@ -387,7 +387,7 @@ public static class LevelScaling
     // --- Private Get At-Level Helpers ---
     private static int GetPlayerHealthAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight, 1.0f);
+        GetRangeAndStatWeight(level, out var range, out var statweight, 0.75f);
 
         var stat =
             (AvgPlayerHealthPerTier[range + 1] - AvgPlayerHealthPerTier[range]) * statweight
@@ -420,7 +420,7 @@ public static class LevelScaling
 
     private static int GetPlayerAttackSkillAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight, 1.0f);
+        GetRangeAndStatWeight(level, out var range, out var statweight, 0.75f);
 
         var stat =
             (AvgPlayerAttackSkillPerTier[range + 1] - AvgPlayerAttackSkillPerTier[range]) * statweight
@@ -431,7 +431,7 @@ public static class LevelScaling
 
     private static int GetPlayerDefenseSkillAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight, 1.0f);
+        GetRangeAndStatWeight(level, out var range, out var statweight, 0.75f);
 
         var stat =
             (AvgPlayerDefenseSkillPerTier[range + 1] - AvgPlayerDefenseSkillPerTier[range]) * statweight
