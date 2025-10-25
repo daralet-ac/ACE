@@ -440,11 +440,11 @@ partial class Player
         var addStructure = 1;
 
         var bonus = (int)Math.Floor((salvageItem.Workmanship ?? 1) * 0.5);
-        if (bonus % 2 == 1 && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.5f)
+        if ((int)(salvageItem.Workmanship ?? 1) % 2 == 1 && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.5f)
         {
             bonus += 1;
         }
-
+        
         addStructure += bonus;
 
         message = salvageResults.GetMessage(
