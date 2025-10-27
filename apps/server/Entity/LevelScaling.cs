@@ -31,8 +31,8 @@ public static class LevelScaling
     private static readonly int[] AvgPlayerHealthPerTier = [25, 60, 120, 150, 180, 210, 250, 300, 350];
     private static readonly int[] AvgPlayerArmorWardPerTier = [50, 100, 200, 300, 400, 500, 600, 700, 800];
     private static readonly int[] AvgPlayerAttributePerTier = [125, 175, 200, 215, 230, 250, 270, 290, 300];
-    private static readonly int[] AvgPlayerAttackSkillPerTier = [75, 150, 175, 200, 225, 275, 350, 500, 700];
-    private static readonly int[] AvgPlayerDefenseSkillPerTier = [75, 150, 175, 200, 225, 275, 350, 500, 700];
+    private static readonly int[] AvgPlayerAttackSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
+    private static readonly int[] AvgPlayerDefenseSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
     private static readonly float[] AvgPlayerResistancePerTier = [1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f];
     private static readonly int[] AvgPlayerBoostPerTier = [10, 15, 20, 25, 30, 35, 40, 40, 40];
 
@@ -108,42 +108,6 @@ public static class LevelScaling
         }
 
         return (float)statAtMonsterLevel / statAtPlayerLevel;
-    }
-
-    public static float GetMonsterDamageTakenTtkScalar(Creature player, Creature monster)
-    {
-        return 1.0f; // TODO: reassess if this is needed
-
-        if (!CanScalePlayer(player, monster))
-        {
-            return 1.0f;
-        }
-
-        if (player.Level == null)
-        {
-            _log.Error("LevelScaling.GetMonsterDamageTakenTtkScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
-            return 1.0f;
-        }
-
-        if (monster.Level == null)
-        {
-            _log.Error("LevelScaling.GetMonsterDamageTakenTtkScalar() - Monster ({Monster}) level is null. Scaling set to x1.0.", monster.Name);
-            return 1.0f;
-        }
-
-
-        var statAtPlayerLevel = GetTtkMonsterAtLevel(player.Level.Value);
-        var statAtMonsterLevel = GetTtkMonsterAtLevel(monster.Level.Value);
-
-        if (PropertyManager.GetBool("debug_level_scaling_system").Item)
-        {
-            Console.WriteLine(
-                $"\nGetMonsterDamageTakenTtkScalar(Player {player.Name}, Monster {monster.Name})"
-                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtMonsterLevel / statAtPlayerLevel}"
-            );
-        }
-
-        return (float)statAtPlayerLevel / statAtMonsterLevel;
     }
 
     public static float GetMonsterArmorWardScalar(Creature player, Creature monster)

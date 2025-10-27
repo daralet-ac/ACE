@@ -1041,11 +1041,7 @@ public class SpellProjectile : WorldObject
             ? LevelScaling.GetMonsterDamageDealtHealthScalar(playerDefender, attacker)
             : LevelScaling.GetMonsterDamageTakenHealthScalar(attacker, defender);
 
-        var timeToKillMonsterScalingMod = playerDefender != null
-            ? 1.0f
-            : LevelScaling.GetMonsterDamageTakenTtkScalar(attacker, defender);
-
-        return monsterHealthScalingMod * timeToKillMonsterScalingMod;
+        return monsterHealthScalingMod;
     }
 
     /// <summary>
@@ -1320,9 +1316,7 @@ public class SpellProjectile : WorldObject
 
     private float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
     {
-        var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
-
-        var wardLevel = target.GetWardLevel() * wardBuffDebuffMod;
+        var wardLevel = target.GetWardLevel();
 
         if (caster is Player)
         {
@@ -1333,7 +1327,9 @@ public class SpellProjectile : WorldObject
             wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetPlayerArmorWardScalar(target, caster));
         }
 
-        return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod);
+        var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
+
+        return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
     }
 
     /// <summary>

@@ -3713,9 +3713,7 @@ partial class WorldObject
 
     private float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
     {
-        var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
-
-        var wardLevel = target.GetWardLevel() * wardBuffDebuffMod;
+        var wardLevel = target.GetWardLevel();
 
         if (caster is Player)
         {
@@ -3726,6 +3724,8 @@ partial class WorldObject
             wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetPlayerArmorWardScalar(target, caster));
         }
 
-        return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod);
+        var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
+
+        return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
     }
 }
