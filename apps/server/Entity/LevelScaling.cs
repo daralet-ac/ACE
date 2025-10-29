@@ -428,7 +428,7 @@ public static class LevelScaling
 
     private static int GetMonsterHealthAtLevel(int level)
     {
-        GetRangeAndStatWeight(level, out var range, out var statweight, 1.0f);
+        GetRangeAndStatWeight(level, out var range, out var statweight, 0.5f);
 
         var stat =
             (AvgMonsterHealthPerTier[range + 1] - AvgMonsterHealthPerTier[range]) * statweight
