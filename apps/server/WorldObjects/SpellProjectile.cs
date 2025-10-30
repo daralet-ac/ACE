@@ -832,44 +832,17 @@ public class SpellProjectile : WorldObject
         {
             if (criticalHit)
             {
-                // Original:
-                // http://acpedia.org/wiki/Announcements_-_2002/08_-_Atonement#Letter_to_the_Players
-
-                // Critical Strikes: In addition to the skill-based damage bonus, each projectile spell has a 2% chance of causing a critical hit on the target and doing increased damage.
-                // A magical critical hit is similar in some respects to melee critical hits (although the damage calculation is handled differently).
-                // While a melee critical hit automatically does twice the maximum damage of the weapon, a magical critical hit will do an additional half the minimum damage of the spell.
-                // For instance, a magical critical hit from a level 7 spell, which does 110-180 points of damage, would add an additional 55 points of damage to the spell.
-
-                // Later updated for PvE only:
-
-                // http://acpedia.org/wiki/Announcements_-_2004/07_-_Treaties_in_Stone#Letter_to_the_Players
-
-                // Currently when a War Magic spell scores a critical hit, it adds a multiple of the base damage of the spell to a normal damage roll.
-                // Starting in July, War Magic critical hits will instead add a multiple of the maximum damage of the spell.
-                // No more crits that do less damage than non-crits!
-
-                if (isPVP) // PvP: 50% of the MIN damage added to normal damage roll
-                {
-                    critDamageBonus = Spell.MinDamage * 0.5f;
-                }
-                else // PvE: 50% of the MAX damage added to normal damage roll
-                {
-                    critDamageBonus = Spell.MaxDamage * 0.5f;
-                }
-
-                // verify: CriticalMultiplier only applied to the additional crit damage,
-                // whereas CD/CDR applied to the total damage (base damage + additional crit damage)
                 weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
                 weaponCritDamageMod += CheckForWarMagicSpecCriticalDamageBonus(sourcePlayer, weapon);
 
-                critDamageBonus *= weaponCritDamageMod;
+                var jewelBludgeCritDamageMod = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
 
-                criticalDamageMod = 2.0f + weaponCritDamageMod;
-                criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
+                criticalDamageMod = (2.0f + weaponCritDamageMod) * jewelBludgeCritDamageMod;
             }
 
             baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
 
+            // monster spell crits are based on mediam damage instead of max
             if (criticalHit && sourceCreature is not Player)
             {
                 baseDamage = Spell.MedianDamage;
@@ -930,7 +903,10 @@ public class SpellProjectile : WorldObject
                 * jewelRedFury
                 * jewelBlueFury
                 * strikethroughMod
-                * archetypeSpellDamageMod;
+                * archetypeSpellDamageMod
+                * levelScalingMod
+                * damageMultiplier
+                * spellcraftMod;
 
             finalDamage =
                 damageBeforeMitigation
@@ -939,10 +915,7 @@ public class SpellProjectile : WorldObject
                 * resistanceMod
                 * resistedMod
                 * specDefenseMod
-                * ratingDamageTypeWard
-                * levelScalingMod
-                * damageMultiplier
-                * spellcraftMod;
+                * ratingDamageTypeWard;
 
             // balance testing. TODO: update base spells damage and ward levels once ideal balance is found
             if (sourcePlayer is not null)
@@ -956,31 +929,34 @@ public class SpellProjectile : WorldObject
                 finalDamage *= monsterSpellDamageMultiplier;
             }
 
-            if (sourcePlayer != null)
-            {
-                //Console.WriteLine($"\n{sourceCreature.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
-                //    $" -baseDamage: {baseDamage}\n" +
-                //    $" -critMultiplier: {criticalDamageMod}\n" +
-                //    $" -attributeMod: {attributeMod}\n" +
-                //    $" -elementalDamageMod: {elementalDamageMod}\n" +
-                //    $" -slayerMod: {slayerMod}\n" +
-                //    $" -overload: {overloadDamageMod}\n" +
-                //    $" -batteryMod: {batteryDamageMod}\n" +
-                //    $" -jewelElementalist: {jewelElementalist}\n" +
-                //    $" -jewelElemental: {jewelElemental}\n" +
-                //    $" -jewelSelfHarm: {jewelSelfHarm}\n" +
-                //    $" -jewelRedFury: {jewelRedFury}\n" +
-                //    $" -jewelBlueFury: {jewelBlueFury}\n" +
-                //    $" -strikethrough: {strikethroughMod}\n" +
-                //    $" -archetypeSpellDamageMod: {archetypeSpellDamageMod}\n" +
-                //    $" -absorbMod: {absorbMod}\n" +
-                //    $" -wardMod: {wardMod}\n" +
-                //    $" -resistanceMod: {resistanceMod}\n" +
-                //    $" -resistedMod: {resistedMod}\n" +
-                //    $" -specDefMod: {specDefenseMod}\n" +
-                //    $" -ratingDamageTypeWard: {ratingDamageTypeWard}\n" +
-                //    $" -FinalBeforeRatings: {finalDamage}");
-            }
+            // if (sourcePlayer is not null)
+            // {
+            //     Console.WriteLine($"\n{sourceCreature.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
+            //         $" -baseDamage: {baseDamage}\n" +
+            //         $" -critMultiplier: {criticalDamageMod}\n" +
+            //         $" -attributeMod: {attributeMod}\n" +
+            //         $" -elementalDamageMod: {elementalDamageMod}\n" +
+            //         $" -slayerMod: {slayerMod}\n" +
+            //         $" -overload: {overloadDamageMod}\n" +
+            //         $" -batteryMod: {batteryDamageMod}\n" +
+            //         $" -jewelElementalist: {jewelElementalist}\n" +
+            //         $" -jewelElemental: {jewelElemental}\n" +
+            //         $" -jewelSelfHarm: {jewelSelfHarm}\n" +
+            //         $" -jewelRedFury: {jewelRedFury}\n" +
+            //         $" -jewelBlueFury: {jewelBlueFury}\n" +
+            //         $" -strikethrough: {strikethroughMod}\n" +
+            //         $" -archetypeSpellDamageMod: {archetypeSpellDamageMod}\n" +
+            //         $" -levelscaling: {levelScalingMod}\n" +
+            //         $" -damageMultiplier: {damageMultiplier}\n" +
+            //         $" -spellcraftMod: {spellcraftMod}\n" +
+            //         $" -absorbMod: {absorbMod}\n" +
+            //         $" -wardMod: {wardMod}\n" +
+            //         $" -resistanceMod: {resistanceMod}\n" +
+            //         $" -resistedMod: {resistedMod}\n" +
+            //         $" -specDefMod: {specDefenseMod}\n" +
+            //         $" -ratingDamageTypeWard: {ratingDamageTypeWard}\n" +
+            //         $" -FinalBeforeRatings: {finalDamage}");
+            // }
         }
 
         // show debug info
