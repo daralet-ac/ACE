@@ -523,7 +523,11 @@ public class CombatFocus : WorldObject
         }
 
         DeactivateSpells(player, CurrentSpells, onLevelUp, startingLevel);
-        DisableActiveAbilities(player);
+
+        if (!onLevelUp)
+        {
+            DisableActiveAbilities(player);
+        }
     }
 
     private void ActivateSpells(Player player, List<SpellId> spellIds)
