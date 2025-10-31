@@ -1711,6 +1711,11 @@ public class DamageEvent
             return;
         }
 
+        if (defender.GetEquippedWeapon() is null)
+        {
+            return;
+        }
+
         SetCombatSources(attacker, defender, defender.GetEquippedWeapon());
         SetBaseDamage(attacker, defender, damageSource);
         SetDamageModifiers(attacker, defender);
