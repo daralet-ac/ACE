@@ -1728,7 +1728,7 @@ public class DamageEvent
         attacker.DamageHistory.Add(playerDefender, DamageType.Health, (uint)thornsAmount);
         playerDefender.ShieldReprisal = (int)thornsAmount;
 
-        var msg = $"You deflect {thornsAmount} damage back to the attacker!";
+        var msg = $"You deflect {(int)thornsAmount} damage back to the attacker!";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatSelf));
 
         if (!attacker.IsDead)
