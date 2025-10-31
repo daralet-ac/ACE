@@ -777,13 +777,13 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// ATTACK HEIGHT BONUS - High: (10% increased damage, 15% if weapon is specialized)
+    /// ATTACK HEIGHT BONUS - High: (10% increased damage, 20% if weapon is specialized)
     /// </summary>
     private float GetHighAttackHeightBonus(Player playerAttacker)
     {
         if (playerAttacker is { AttackHeight: AttackHeight.High })
         {
-            return WeaponIsSpecialized(playerAttacker) ? 1.15f : 1.10f;
+            return WeaponIsSpecialized(playerAttacker) ? 1.2f : 1.10f;
         }
 
         return 1.0f;
@@ -1895,27 +1895,27 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// ATTACK HEIGHT BONUS: Low (+10% physical defense skill, +15% if weapon specialized)
+    /// ATTACK HEIGHT BONUS: Low (+10% physical defense skill, +20% if weapon specialized)
     /// </summary>
     /// <returns></returns>
     private float CheckForAttackHeightLowDefenseSkillBonus(Player playerDefender, Player playerAttacker)
     {
         if (playerDefender is { AttackHeight: AttackHeight.Low })
         {
-            return WeaponIsSpecialized(playerAttacker) ? 1.15f : 1.1f;
+            return WeaponIsSpecialized(playerAttacker) ? 1.2f : 1.1f;
         }
 
         return 1.0f;
     }
 
     /// <summary>
-    /// ATTACK HEIGHT BONUS: Medium (+10% attack skill, +15% if weapon specialized)
+    /// ATTACK HEIGHT BONUS: Medium (+10% attack skill, +20% if weapon specialized)
     /// </summary>
     private float CheckForAttackHeightMediumAttackSkillBonus(Player playerAttacker)
     {
         if (playerAttacker is { AttackHeight: AttackHeight.Medium })
         {
-            return WeaponIsSpecialized(playerAttacker) ? 1.15f : 1.1f;
+            return WeaponIsSpecialized(playerAttacker) ? 1.2f : 1.1f;
         }
 
         return 1.0f;
