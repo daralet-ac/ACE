@@ -601,7 +601,7 @@ partial class Creature
 
         if (WeenieClassId is 1020001)
         {
-            _log.Error("Preventing MoveToHome() for {WCID}", WeenieClassId);
+            _log.Warning("Preventing MoveToHome() for {WCID}", WeenieClassId);
             return;
         }
 
