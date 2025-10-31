@@ -396,7 +396,7 @@ public class EnchantmentManager
             && newEntry.CasterObjectId == enchantmentRegistry.CasterObjectId
         )
         {
-            _log.Error("EnchantmentManager.StartCooldown({Item}) - Attempting to add duplicate cooldown enchantment ({SpellId}) to registry. Aborting.", item.Name, newEntry.SpellId);
+            _log.Warning("EnchantmentManager.StartCooldown({Item}) - Attempting to add duplicate cooldown enchantment ({SpellId}) to registry. Aborting.", item.Name, newEntry.SpellId);
             return false;
         }
 
