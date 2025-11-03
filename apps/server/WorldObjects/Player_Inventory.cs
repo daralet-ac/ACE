@@ -2400,11 +2400,7 @@ partial class Player
             if (mainHandWeapon != null && mainHandWeapon.WeaponSkill == Skill.ThrownWeapon)
             {
                 // prevent non-small shields from ever being equipped with thrown weapons
-                if (item.WeenieClassId is not (uint)Factories.Enum.WeenieClassName.shieldkitesmall
-                    and not (uint)Factories.Enum.WeenieClassName.shieldroundsmall
-                    and not (uint)Factories.Enum.WeenieClassName.buckler
-                    and not 1050992  // academy small shield
-                    and not 1050993) // academy buckler
+                if (item is not {ArmorStyle: (int)ACE.Entity.Enum.ArmorStyle.Buckler} and not {ArmorStyle: (int)ACE.Entity.Enum.ArmorStyle.SmallShield})
                 {
                     Session.Network.EnqueueSend(
                         new GameEventCommunicationTransientString(
