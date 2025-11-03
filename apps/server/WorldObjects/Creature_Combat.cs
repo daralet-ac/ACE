@@ -1035,7 +1035,7 @@ partial class Creature
             return 1.0f;
         }
 
-        // SPEC BONUS - Perception: Up to 50% chance to avoid sneak attacks
+        // SPEC BONUS - Perception: Up to 25% chance to avoid sneak attacks
         var attackerThievery = GetCreatureSkill(Skill.Thievery);
         var targetPerception = creatureTarget.GetCreatureSkill(Skill.Perception); // Perception
 
@@ -1043,7 +1043,7 @@ partial class Creature
         {
             var skillCheck = SkillCheck.GetSkillChance(creatureTarget.GetModdedPerceptionSkill(), GetModdedThieverySkill());
 
-            if (Math.Min(skillCheck, 0.5f) > ThreadSafeRandom.Next(0.0f, 1.0f))
+            if (Math.Min(skillCheck, 0.25f) > ThreadSafeRandom.Next(0.0f, 1.0f))
             {
                 return 1.0f;
             }
