@@ -1045,9 +1045,6 @@ partial class WorldObject
 
         if (creature is not null)
         {
-            var lethalityMod = Convert.ToSingle(creature.ArchetypeLethality ?? 1.0f);
-            tryBoost = Convert.ToInt32(tryBoost * lethalityMod);
-
             var archetypeSpellDamageMod = (float)(creature.ArchetypeSpellDamageMultiplier ?? 1.0);
             tryBoost = Convert.ToInt32(tryBoost * archetypeSpellDamageMod);
 
@@ -3716,9 +3713,7 @@ partial class WorldObject
 
     private float GetWardMod(Creature caster, Creature target, float ignoreWardMod)
     {
-        var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
-
-        var wardLevel = target.GetWardLevel() * wardBuffDebuffMod;
+        var wardLevel = target.GetWardLevel();
 
         if (caster is Player)
         {
@@ -3729,6 +3724,8 @@ partial class WorldObject
             wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetPlayerArmorWardScalar(target, caster));
         }
 
-        return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod);
+        var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
+
+        return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
     }
 }

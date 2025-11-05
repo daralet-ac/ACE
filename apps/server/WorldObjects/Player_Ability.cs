@@ -1538,7 +1538,7 @@ partial class Player
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Provoke can only be used with a Warrior Focus",
+                            $"Phalanx can only be used with a Warrior Focus",
                             ChatMessageType.Broadcast
                         )
                     );
@@ -1667,7 +1667,19 @@ partial class Player
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Mana Barrier can only be used with a Sorcerer Focus, Vagabond Focus, or Spellsword Focus",
+                            $"Evasive Stance can only be used with a Blademaster Focus, Archer Focus, or Vagabond Focus",
+                            ChatMessageType.Broadcast
+                        )
+                    );
+                    return false;
+                }
+                break;
+            case CombatAbility.Vanish:
+                if (GetEquippedCombatFocus() is not {CombatFocusType: (int)CombatFocusType.Vagabond})
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"Vanish can only be used with a Vagabond Focus.",
                             ChatMessageType.Broadcast
                         )
                     );

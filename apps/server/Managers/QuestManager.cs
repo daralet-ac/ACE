@@ -304,9 +304,14 @@ public class QuestManager
         player.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
                 $"Tempered by the portal energies of {townName}, a {level} resilience has taken shape within you.",
-                ChatMessageType.Broadcast
+                ChatMessageType.System
             )
         );
+
+        if (quest.NumTimesCompleted == 3)
+        {
+            player.PlayParticleEffect(PlayScript.PortalStorm, player.Guid);
+        }
     }
 
     private readonly List<string> QuestProgressQuestNames =
@@ -1096,5 +1101,40 @@ public class QuestManager
         "Hardened Defense",
         "StamReduction"
 
+    ];
+
+    public static int GetCapstonesCompleted(Player player)
+    {
+        var capstonesCompleted = 0;
+        var questManager = player.QuestManager;
+
+        foreach (var capstoneCompletionQuest in CapstoneCompletionQuests)
+        {
+            if (questManager.HasQuest(capstoneCompletionQuest))
+            {
+                capstonesCompleted++;
+            }
+        }
+
+        return capstonesCompleted;
+    }
+
+    public static List<string> CapstoneCompletionQuests =
+    [
+        "EmpyreanGarrisonCompleted",
+        "FolthidCellarCompleted",
+        "GlendenWoodDungeonCompleted",
+        "GredalineConsulateCompleted",
+        "GreenMireGraveCompleted",
+        "GrievousVaultCompleted",
+        "HallsOfTheHelmCompleted",
+        "LugianMinesCompleted",
+        "MageAcademyCompleted",
+        "ManseOfPanderlouCompleted",
+        "MinesOfColierCompleted",
+        "MinesOfDespairCompleted",
+        "MountainFortressCompleted",
+        "SandShallowCompleted",
+        "SmugglersHideawayCompleted"
     ];
 }

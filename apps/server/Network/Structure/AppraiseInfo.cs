@@ -919,7 +919,7 @@ public class AppraiseInfo
         SetGearRatingText(wo, PropertyInt.GearFrostBane, "Gelidite's Bane", $"Grants +0.2 cold protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
         SetGearRatingText(wo, PropertyInt.GearLightningBane, "Astyrrian's Bane", $"Grants +0.2 electric protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total) The protection level cannot be increased beyond 1.0 (average), from this effect..", 0.01f, 1.0f, 0.2f);
 
-        SetAdditionalPropertiesUseText();
+        SetAdditionalPropertiesUseText(wo);
 
         // Spell proc rate ('Use' text)
         SetSpellProcRateUseText(wo);
@@ -1694,7 +1694,7 @@ public class AppraiseInfo
         _hasExtraPropertiesText = true;
     }
 
-    private void SetAdditionalPropertiesUseText()
+    private void SetAdditionalPropertiesUseText(WorldObject wo)
     {
         if (!_hasAdditionalProperties)
         {
@@ -1712,9 +1712,9 @@ public class AppraiseInfo
         additionaPropertiesString = additionaPropertiesString.TrimEnd();
         additionaPropertiesString = additionaPropertiesString.TrimEnd(',');
 
-        _extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n(This item's properties will not activate if it is out of mana)\n\n";
+        var oomText = wo.Workmanship != null ? "" : "This item's properties will not activate if it is out of mana";
 
-        //_extraPropertiesText += "(This item's properties will not activate if it is out of mana)\n\n";
+        _extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n\n{oomText}\n\n";
 
         _hasExtraPropertiesText = true;
     }
@@ -1856,7 +1856,7 @@ public class AppraiseInfo
             return;
         }
 
-        var ratingAmount = Math.Round((ignoreArmor * 100), 0);
+        var ratingAmount = 100 - Math.Round((ignoreArmor * 100), 0);
 
         var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
         var rangeMinAtTier = Math.Round(LootTables.BonusIgnoreArmorPerTier[itemTier - 1] * 100, 0);
