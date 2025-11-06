@@ -288,8 +288,13 @@ public class QuestManager
         {
             "AlArqas" => "Al-Arqas",
             "AlJalima" => "Al-Jalima",
+            "AyanBaqur" => "Ayan Baqur",
             "HebianTo" => "Hebian-To",
+            "FortTethana" => "Fort Tethana",
+            "PlateauVillage" => "Plateau Village",
+            "Qalabar" => "Qalaba'r",
             "TouTou" => "Tou-Tou",
+            "WaiJhou" => "Wai Jhou",
             _ => townName
         };
 
