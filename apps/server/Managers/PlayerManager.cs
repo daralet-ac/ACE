@@ -653,7 +653,10 @@ public static class PlayerManager
             player.Session.Network.EnqueueSend(msg);
         }
 
-        _ = SendChat("", rawMessage, channel);
+        if (rawMessage != "")
+        {
+            _ = SendChat("", rawMessage, channel);
+        }
     }
 
     private static async Task SendChat(string sender, string message, string channel)
@@ -944,7 +947,7 @@ public static class PlayerManager
 
                     var msg =
                         $"This world has been changed to a Player Killer world. All players will become Player Killers in {PropertyManager.GetDouble("pk_respite_timer").Item} seconds.";
-                    BroadcastToAll(new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast));
+                    BroadcastToAll(new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast), msg, "System");
                     LogBroadcastChat(Channel.AllBroadcast, null, msg);
                 }
                 else
@@ -962,7 +965,7 @@ public static class PlayerManager
 
                     var msg =
                         "This world has been changed to a Non Player Killer world. All players are now Non-Player Killers.";
-                    BroadcastToAll(new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast));
+                    BroadcastToAll(new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast), msg, "System");
                     LogBroadcastChat(Channel.AllBroadcast, null, msg);
                 }
                 break;
@@ -987,7 +990,7 @@ public static class PlayerManager
 
                     var msg =
                         $"This world has been changed to a Player Killer Lite world. All players will become Player Killer Lites in {PropertyManager.GetDouble("pk_respite_timer").Item} seconds.";
-                    BroadcastToAll(new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast));
+                    BroadcastToAll(new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast), msg, "System");
                     LogBroadcastChat(Channel.AllBroadcast, null, msg);
                 }
                 else
@@ -1005,7 +1008,7 @@ public static class PlayerManager
 
                     var msg =
                         "This world has been changed to a Non Player Killer world. All players are now Non-Player Killers.";
-                    BroadcastToAll(new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast));
+                    BroadcastToAll(new GameMessageSystemChat(msg, ChatMessageType.WorldBroadcast), msg, "System");
                     LogBroadcastChat(Channel.AllBroadcast, null, msg);
                 }
                 break;
