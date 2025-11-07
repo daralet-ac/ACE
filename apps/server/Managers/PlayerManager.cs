@@ -15,6 +15,7 @@ using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Handlers;
 using ACE.Server.WorldObjects;
 using Serilog;
 using Biota = ACE.Entity.Models.Biota;
@@ -645,12 +646,19 @@ public static class PlayerManager
     /// <summary>
     /// Broadcasts GameMessage to all online sessions.
     /// </summary>
-    public static void BroadcastToAll(GameMessage msg)
+    public static void BroadcastToAll(GameMessage msg, string rawMessage = "", string channel = "System")
     {
         foreach (var player in GetAllOnline())
         {
             player.Session.Network.EnqueueSend(msg);
         }
+
+        _ = SendChat("", rawMessage, channel);
+    }
+
+    private static async Task SendChat(string sender, string message, string channel)
+    {
+        await TurbineChatHandler.SendWebhookedChat(sender, message, ConfigManager.Config.Server.Network.DiscordCgWebhookUrl, channel);
     }
 
     public static void BroadcastToAuditChannel(Player issuer, string message)
