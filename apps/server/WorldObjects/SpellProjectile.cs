@@ -615,7 +615,7 @@ public class SpellProjectile : WorldObject
         var resistSource = IsWeaponSpell ? weapon : source;
 
         var weaponAttackMod = 1.0;
-        if (sourcePlayer is not null)
+        if (sourcePlayer?.GetEquippedWeapon() != null)
         {
             weaponAttackMod = sourcePlayer.GetEquippedWeapon().WeaponOffense ?? 1.0;
         }
