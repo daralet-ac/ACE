@@ -1388,7 +1388,7 @@ partial class Creature
             return;
         }
 
-        player.QuestManager.Stamp($"Quest{nearestTown}");
+        player.QuestManager.Stamp($"Quest{simplifiedTownName}");
     }
 
     private uint GetCreatureTier()

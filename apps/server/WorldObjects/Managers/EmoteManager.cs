@@ -2425,7 +2425,7 @@ public class EmoteManager
 
                 message = Replace(text, WorldObject, targetObject, emoteSet.Quest);
 
-                PlayerManager.BroadcastToAll(new GameMessageSystemChat(message, ChatMessageType.WorldBroadcast));
+                PlayerManager.BroadcastToAll(new GameMessageSystemChat(message, ChatMessageType.WorldBroadcast), message, "World");
 
                 PlayerManager.LogBroadcastChat(Channel.AllBroadcast, WorldObject, message);
 
