@@ -833,42 +833,42 @@ public static partial class LootGenerationFactory
         switch (wo.W_DamageType)
         {
             case DamageType.Undef:
-                wo.IconId = 0x06008900;
+                wo.IconId = 0x06008950;
                 wo.PaletteTemplate = 0;
                 wo.UiEffects = UiEffects.BoostHealth;
                 break;
             case DamageType.Slash:
-                wo.IconId = 0x06008901;
+                wo.IconId = 0x06008951;
                 wo.PaletteTemplate = 4;
                 wo.UiEffects = (UiEffects)0x0400;
                 break;
             case DamageType.Pierce:
-                wo.IconId = 0x06008902;
+                wo.IconId = 0x06008952;
                 wo.PaletteTemplate = 21;
                 wo.UiEffects = (UiEffects)0x0800;
                 break;
             case DamageType.Bludgeon:
-                wo.IconId = 0x06008903;
+                wo.IconId = 0x06008953;
                 wo.PaletteTemplate = 61;
                 wo.UiEffects = (UiEffects)0x0200;
                 break;
             case DamageType.Acid:
-                wo.IconId = 0x06008904;
+                wo.IconId = 0x06008954;
                 wo.PaletteTemplate = 8;
                 wo.UiEffects = (UiEffects)0x0100;
                 break;
             case DamageType.Fire:
-                wo.IconId = 0x06008905;
+                wo.IconId = 0x06008955;
                 wo.PaletteTemplate = 14;
                 wo.UiEffects = (UiEffects)0x0020;
                 break;
             case DamageType.Cold:
-                wo.IconId = 0x06008906;
+                wo.IconId = 0x06008956;
                 wo.PaletteTemplate = 2;
                 wo.UiEffects = (UiEffects)0x0080;
                 break;
             case DamageType.Electric:
-                wo.IconId = 0x06008907;
+                wo.IconId = 0x06008957;
                 wo.PaletteTemplate = 82;
                 wo.UiEffects = (UiEffects)0x0040;
                 break;
