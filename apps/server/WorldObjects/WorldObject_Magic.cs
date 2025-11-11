@@ -30,6 +30,7 @@ partial class WorldObject
 {
     public float SigilTrinketSpellDamageReduction;
     private bool _isSigilTrinketSpell = false;
+    private PartialEvasion _partialEvasion;
 
     /// <summary>
     /// Instantly casts a spell for a WorldObject (ie. spell traps)
@@ -229,6 +230,7 @@ partial class WorldObject
     )
     {
         partialResist = PartialEvasion.None;
+        _partialEvasion = partialResist;
 
         // fix hermetic void?
         if (!spell.IsResistable && spell.Category != SpellCategory.ManaConversionModLowering || spell.IsSelfTargeted)
@@ -340,6 +342,7 @@ partial class WorldObject
         var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, targetPlayer);
 
         partialResist = pResist;
+        _partialEvasion = pResist;
 
         if (targetPlayer != null)
         {
@@ -930,6 +933,19 @@ partial class WorldObject
             weaponRestorationMod = weapon.WeaponRestorationSpellsMod;
         }
 
+        // Resist
+        if (targetPlayer is { ReflectIsActive: true, ReflectFirstSpell: true })
+        {
+            CheckForCombatAbilityReflectSpell(true, targetPlayer, this as Creature, spell);
+            targetPlayer.ReflectFirstSpell = false;
+        }
+        else
+        {
+            CheckForCombatAbilityReflectSpell(_partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, this as Creature, spell);
+        }
+
+        var resistedMod = GetResistedMod(_partialEvasion);
+
         var selfTargetProcSpellMod = SelfTargetSpellProcMod(fromProc, spell, weapon, player);
 
         var tryBoost = (int)(
@@ -1011,7 +1027,7 @@ partial class WorldObject
             landblockScalingMod *= (1.0f + (float)CurrentLandblock.GetLandblockLethalityMod());
         }
 
-        tryBoost = (int)(tryBoost * overloadMod * batterMod * damageMultiplier * spellcraftMod * landblockScalingMod);
+        tryBoost = (int)(tryBoost * overloadMod * batterMod * damageMultiplier * spellcraftMod * landblockScalingMod * resistedMod);
 
         string srcVital;
 
@@ -1106,6 +1122,8 @@ partial class WorldObject
             HandlePostHealRatingEffects(player, targetPlayer);
         }
 
+        var partialResist = _partialEvasion == PartialEvasion.Some ? "Partial Resist! " : "";
+
         if (player != null)
         {
             string casterMessage;
@@ -1124,18 +1142,18 @@ partial class WorldObject
             {
                 if (spell.IsBeneficial)
                 {
-                    casterMessage = $"{chargedMsg}{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
+                    casterMessage = $"{partialResist}{chargedMsg}{critMessage}With {spell.Name} you restore {boost} points of {srcVital} to {targetCreature.Name}.";
                 }
                 else
                 {
-                    casterMessage = $"{chargedMsg}{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
+                    casterMessage = $"{partialResist}{chargedMsg}{critMessage}With {spell.Name} you drain {Math.Abs(boost)} points of {srcVital} from {targetCreature.Name}.";
                 }
             }
             else
             {
                 var verb = spell.IsBeneficial ? "restore" : "drain";
 
-                casterMessage = $"{chargedMsg}{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
+                casterMessage = $"{partialResist}{chargedMsg}{critMessage}You cast {spell.Name} and {verb} {Math.Abs(boost)} points of your {srcVital}.";
             }
 
             if (showMsg)
@@ -1150,11 +1168,11 @@ partial class WorldObject
 
             if (spell.IsBeneficial)
             {
-                targetMessage = $"{critMessage}{Name} casts {spell.Name} and restores {boost} points of your {srcVital}.";
+                targetMessage = $"{partialResist}{critMessage}{Name} casts {spell.Name} and restores {boost} points of your {srcVital}.";
             }
             else
             {
-                targetMessage = $"{critMessage}{Name} casts {spell.Name} and drains {Math.Abs(boost)} points of your {srcVital}.";
+                targetMessage = $"{partialResist}{critMessage}{Name} casts {spell.Name} and drains {Math.Abs(boost)} points of your {srcVital}.";
 
                 if (creature != null)
                 {
@@ -1193,6 +1211,39 @@ partial class WorldObject
         }
 
         HandleBoostTransferDeath(creature, targetCreature);
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Reflect: Reflect resisted spells back to the caster.
+    /// </summary>
+    private void CheckForCombatAbilityReflectSpell(bool resisted, Player targetPlayer, Creature sourceCreature, Spell spell)
+    {
+        if (!resisted || targetPlayer == null || sourceCreature == null)
+        {
+            return;
+        }
+
+        if (targetPlayer.ReflectIsActive)
+        {
+            targetPlayer.TryCastSpell(spell, sourceCreature, null, null, false, false, false);
+        }
+    }
+
+    /// <summary>
+    /// If resist succeeded, determine if resist was partial or full.
+    /// </summary>
+    private float GetResistedMod(PartialEvasion partialEvasion)
+    {
+        switch (partialEvasion)
+        {
+            case PartialEvasion.None:
+                return 1.0f;
+            case PartialEvasion.Some:
+                return 0.5f;
+            case PartialEvasion.All:
+            default:
+                return 0.0f;
+        }
     }
 
     private static void HandlePostDamageRatingEffects(Creature target, float damage, Player sourcePlayer, Player targetPlayer, Creature sourceCreature, Spell spell, ProjectileSpellType projectileSpellType)
