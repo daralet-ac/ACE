@@ -1785,8 +1785,7 @@ public static partial class LootGenerationFactory
         return gemResult.MaterialType;
     }
 
-    public const float WeaponBulk = 0.50f;
-    public const float ArmorBulk = 0.25f;
+    public const float Bulk = 0.50f;
 
     private static bool MutateBurden(WorldObject wo, TreasureDeath treasureDeath, bool isWeapon)
     {
@@ -1796,21 +1795,10 @@ public static partial class LootGenerationFactory
             return false;
         }
 
-        var qualityInterval = QualityChance.RollInterval(treasureDeath);
-
-        // only continue if the initial roll to modify the quality succeeded
-        if (qualityInterval == 0.0f)
-        {
-            return false;
-        }
-
         // only continue if initial roll succeeded?
-        var bulk = isWeapon ? WeaponBulk : ArmorBulk;
-        bulk *= (float)(wo.BulkMod ?? 1.0f);
-
+        var bulk = Bulk * (float)(wo.BulkMod ?? 1.0f) * GetDiminishingRoll(treasureDeath, (float)(wo.LootQualityMod ?? 0.0f));
         var maxBurdenMod = 1.0f - bulk;
-
-        var burdenMod = 1.0f - (qualityInterval * maxBurdenMod);
+        var burdenMod = 1.0f - (maxBurdenMod);
 
         // modify burden
         var prevBurden = wo.EncumbranceVal.Value;
