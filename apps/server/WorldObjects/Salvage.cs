@@ -58,6 +58,12 @@ public class Salvage : WorldObject
 
         if (target is { WeenieType: WeenieType.Salvage })
         {
+            if (source.Guid == target.Guid)
+            {
+                player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+                return;
+            }
+
             if (source.MaterialType != target.MaterialType)
             {
                 player.Session.Network.EnqueueSend(
