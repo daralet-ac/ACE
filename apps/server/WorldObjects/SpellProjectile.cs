@@ -635,16 +635,9 @@ public class SpellProjectile : WorldObject
         var resistedMod = 1.0f;
         _partialEvasion = partialEvasion;
 
-        if (!overpower && sourcePlayer != null)
+        if (!overpower)
         {
             if (GetResistedMod(out resistedMod))
-            {
-                return null;
-            }
-        }
-        else
-        {
-            if (resisted && !overpower)
             {
                 return null;
             }
