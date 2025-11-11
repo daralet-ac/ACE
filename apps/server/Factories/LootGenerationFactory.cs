@@ -1797,8 +1797,7 @@ public static partial class LootGenerationFactory
 
         // only continue if initial roll succeeded?
         var bulk = Bulk * (float)(wo.BulkMod ?? 1.0f) * GetDiminishingRoll(treasureDeath, (float)(wo.LootQualityMod ?? 0.0f));
-        var maxBurdenMod = 1.0f - bulk;
-        var burdenMod = 1.0f - (maxBurdenMod);
+        var burdenMod = 1.0f - bulk;;
 
         // modify burden
         var prevBurden = wo.EncumbranceVal.Value;
@@ -1809,7 +1808,7 @@ public static partial class LootGenerationFactory
             wo.EncumbranceVal = 1;
         }
 
-        //Console.WriteLine($"Modified burden from {prevBurden} to {wo.EncumbranceVal} for {wo.Name} ({wo.WeenieClassId})");
+        //Console.WriteLine($"Modified burden from {prevBurden} to {wo.EncumbranceVal} for {wo.Name} ({wo.WeenieClassId}. BurdenMod: {burdenMod})");
 
         return true;
     }
