@@ -1592,7 +1592,7 @@ public class Landblock : IActor
         else
         {
             _log.Information("[BANKING] ReloadObject({WO}) - Remove", wo.Name);
-            RemoveWorldObjectInternal(wo.Guid);
+            RemoveWorldObjectInternal(wo.Guid, true);
         }
 
         _log.Information("[BANKING] ReloadObject({WO}) - ProcessPendingWorldObjectAdditionsAndRemovals", wo.Name);
