@@ -1357,7 +1357,7 @@ partial class Creature
         var playerLifeProtReduction = avgPlayerLifeProtReduction[tier];
 
         // enemy cast speed
-        var enemyAvgAttackSpeed = 1 / (WeaponAnimationLength.GetSpellCastAnimationLength(Server.Entity.ProjectileSpellType.Blast, 1) + (AiUseMagicDelay ?? 1.0));
+        var enemyAvgAttackSpeed = 1 / (WeaponAnimationLength.GetSpellCastAnimationLength(Server.Entity.ProjectileSpellType.Blast, 1) + 1.0); // 1.0 on the end for the default AiUseMagicDelay
 
         // enemy attribute mod
         var self = (int)Self.Base;

@@ -1138,7 +1138,7 @@ partial class Player
     {
         var target = LastAttackedCreature;
 
-        if (this == target || target is { IsDead: true })
+        if (target is null || this == target || target is { IsDead: true })
         {
             return false;
         }
@@ -1276,7 +1276,7 @@ partial class Player
         {
             var target = LastAttackedCreature;
 
-            if (this == target || target is {IsDead: true })
+            if (target is null || this == target || target is {IsDead: true })
             {
                 return false;
             }

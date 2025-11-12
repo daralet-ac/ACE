@@ -5,7 +5,6 @@ using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
-using ACE.Server.Entity;
 using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
@@ -168,10 +167,7 @@ public static partial class LootGenerationFactory
         wo.GemType = RollGemType(profile.Tier);
 
         // burden
-        if (wo.HasMutateFilter(MutateFilter.EncumbranceVal)) // fixme: data
-        {
-            MutateBurden(wo, profile, false);
-        }
+        MutateBurden(wo, profile, false);
 
         // weight class
         var armorWeightClass = GetArmorWeightClass(wo.WeenieClassId);
@@ -454,10 +450,8 @@ public static partial class LootGenerationFactory
         wo.LongDesc = GetLongDesc(wo);
 
         // try mutate burden, if MutateFilter exists
-        if (wo.HasMutateFilter(MutateFilter.EncumbranceVal))
-        {
-            MutateBurden(wo, profile, false);
-        }
+        MutateBurden(wo, profile, false);
+
     }
 
     private static WorldObject CreateCloak(TreasureDeath profile, bool mutate = true)
