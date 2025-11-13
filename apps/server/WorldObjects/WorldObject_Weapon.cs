@@ -487,7 +487,7 @@ partial class WorldObject
             critDamageMod = Math.Max(critDamageMod, cripplingBlowMod);
         }
 
-        return critDamageMod - 1.0f;
+        return critDamageMod;
     }
 
     /// <summary>
