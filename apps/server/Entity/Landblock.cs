@@ -1580,29 +1580,23 @@ public class Landblock : IActor
 
     public void ReloadObject(WorldObject wo)
     {
-        _log.Information("[BANKING] ReloadObject({WO}) - Start of ReloadObject", wo.Name);
         ProcessPendingWorldObjectAdditionsAndRemovals();
         SaveDB();
 
         if (!wo.BiotaOriginatedFromOrHasBeenSavedToDatabase())
         {
-            _log.Information("[BANKING] ReloadObject({WO}) - Destroy", wo.Name);
             wo.Destroy(false);
         }
         else
         {
-            _log.Information("[BANKING] ReloadObject({WO}) - Remove", wo.Name);
             RemoveWorldObjectInternal(wo.Guid, true);
         }
 
-        _log.Information("[BANKING] ReloadObject({WO}) - ProcessPendingWorldObjectAdditionsAndRemovals", wo.Name);
         ProcessPendingWorldObjectAdditionsAndRemovals();
         actionQueue.Clear();
 
-        _log.Information("[BANKING] ReloadObject({WO}) - ClearCachedInstancesByLandblock", wo.Name);
         DatabaseManager.World.ClearCachedInstancesByLandblock(Id.Landblock);
 
-        _log.Information("[BANKING] ReloadObject({WO}) - Task.Run", wo.Name);
         Task.Run(() =>
         {
             CreateWorldObjects();
