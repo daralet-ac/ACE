@@ -874,8 +874,11 @@ public class DamageEvent
                * _combatAbilityFuryDamageBonus
                * _combatAbilityRelentlessDamagePenalty
                * _combatAbilitySteadyShotDamageBonus
+               * _ratingElementalDamageBonus
+               * _recklessnessMod
                * SneakAttackMod
                * _attackHeightDamageBonus
+               * _ammoEffectMod
                * _levelScalingMod;
     }
 
@@ -885,6 +888,7 @@ public class DamageEvent
         // {
         //     Console.WriteLine($"Before Mitigaion\n" +
         //                       $" -Base Damage{_baseDamage}\n" +
+        //                       $" -Attribute: {_attributeMod}\n" +
         //                       $" -Power: {_powerMod}\n" +
         //                       $" -Slayer: {_slayerMod}\n" +
         //                       $" -DamageRating: {_damageRatingMod}\n" +
@@ -895,10 +899,26 @@ public class DamageEvent
         //                       $" -DualWield: {_dualWieldDamageBonus}\n" +
         //                       $" -TwoHand: {_twohandedCombatDamageBonus}\n" +
         //                       $" -MultiShot: {_combatAbilityMultishotDamagePenalty}\n" +
-        //                       $" -Provoke: {_combatAbilityProvokeDamageBonus}\n" +
         //                       $" -Fury: {_combatAbilityFuryDamageBonus}\n" +
         //                       $" -SteadyShot: {_combatAbilitySteadyShotDamageBonus}\n" +
-        //                       $" -LevelScaling: {_levelScalingMod}");
+        //                       $" -LevelScaling: {_levelScalingMod}\n" +
+        //                       $" -TOTAL: {_baseDamage
+        //                                   * _attributeMod
+        //                                   * _powerMod
+        //                                   * _slayerMod
+        //                                   * _damageRatingMod
+        //                                   * _recklessnessMod
+        //                                   * SneakAttackMod
+        //                                   * _attackHeightDamageBonus
+        //                                   * _ratingElementalDamageBonus
+        //                                   * _dualWieldDamageBonus
+        //                                   * _twohandedCombatDamageBonus
+        //                                   * _combatAbilityMultishotDamagePenalty
+        //                                   * _combatAbilityFuryDamageBonus
+        //                                   * _combatAbilityRelentlessDamagePenalty
+        //                                   * _combatAbilitySteadyShotDamageBonus
+        //                                   * _ammoEffectMod
+        //                                   * _levelScalingMod}");
         // }
 
         return _baseDamage
