@@ -2780,7 +2780,7 @@ public static partial class LootGenerationFactory
         return roll;
     }
 
-    private static int GetMaxWardOfTier(int tier)
+    private static int GetBaseWardOfTier(int tier)
     {
         switch (tier)
         {
@@ -2799,6 +2799,8 @@ public static partial class LootGenerationFactory
                 return 50;
             case 8:
                 return 75;
+            case 9:
+                return 100;
             default:
                 return 7;
         }
