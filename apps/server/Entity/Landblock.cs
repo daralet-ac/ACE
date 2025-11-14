@@ -1589,7 +1589,7 @@ public class Landblock : IActor
         }
         else
         {
-            RemoveWorldObjectInternal(wo.Guid);
+            RemoveWorldObjectInternal(wo.Guid, true);
         }
 
         ProcessPendingWorldObjectAdditionsAndRemovals();

@@ -1272,7 +1272,7 @@ partial class Creature
         var weapon = GetEquippedWeapon();
         var creatureAnimLength = MonsterAverageAnimationLength.GetValueMod(CreatureType);
 
-        var enemyAvgAttackSpeed = 1 / (creatureAnimLength / animSpeed + ((PowerupTime ?? 1.0) / 2));
+        var enemyAvgAttackSpeed = 1 / (creatureAnimLength / animSpeed + (0.5f)); // 0.5f being average powerup time
 
         if (weapon is not null
             && (weapon.W_AttackType.HasFlag(AttackType.TripleStrike)
