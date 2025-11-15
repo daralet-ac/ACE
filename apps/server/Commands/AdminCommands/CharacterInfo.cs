@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
@@ -58,7 +57,7 @@ public class CharacterInfo
             if (skill.Value.AdvancementClass is SkillAdvancementClass.Trained)
             {
                 trainedSkills.Add(skill.Key, skill.Value);
-            }    
+            }
         }
 
         if (specializedSkills.Count > 0)
