@@ -26,7 +26,7 @@ partial class Player
     /// <summary>
     /// Returns all inventory, side slot items, items in side containers, and all wielded items.
     /// </summary>
-    public List<WorldObject> GetAllPossessions()
+    public List<WorldObject> GetAllPossessions(bool onlyMainPack = false)
     {
         var results = new List<WorldObject>();
 
@@ -36,8 +36,19 @@ partial class Player
         {
             if (item is Container container)
             {
+                if (onlyMainPack)
+                {
+                    results.Remove(item);
+                    continue;
+                }
+
                 results.AddRange(container.Inventory.Values);
             }
+        }
+
+        if (onlyMainPack)
+        {
+            return results;
         }
 
         results.AddRange(EquippedObjects.Values);
