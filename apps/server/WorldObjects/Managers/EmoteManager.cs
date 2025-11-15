@@ -3346,16 +3346,16 @@ public class EmoteManager
     {
         var capstoneModifier = GetCapstoneModifier(player.CurrentLandblock);
         var capstonesCompleted = QuestManager.GetCapstonesCompleted(player);
-        var minimumRoll = (capstonesCompleted * 2) + (capstoneModifier * 100);
+        var minimumRoll = (capstonesCompleted * 5) + (capstoneModifier * 100);
 
         for (var i = 0; i < amount; i++)
         {
             var tradeNote = 2621u; // I note
             switch (ThreadSafeRandom.Next((int)minimumRoll, 100))
             {
-                case <= 40:
+                case <= 25:
                     break;
-                case <= 70:
+                case <= 50:
                     tradeNote = 2622u; // V note
                     break;
                 case <= 90:
