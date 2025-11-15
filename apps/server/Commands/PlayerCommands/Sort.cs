@@ -3,13 +3,12 @@ using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network;
-using ACE.Server.Network.GameMessages.Messages;
 
 namespace ACE.Server.Commands.PlayerCommands;
 
 public class Sort
 {
-    // pop
+    // sort
     [CommandHandler("sort", AccessLevel.Player, CommandHandlerFlag.RequiresWorld, 0, "Show player main pack by WeenieType>ItemType>Name.", "")]
     public static void HandleSort(Session session, params string[] parameters)
     {
@@ -32,14 +31,17 @@ public class Sort
 
         foreach (var item in sortedPack)
         {
-            actionChain.AddAction(player,
-                () => {
-                    player.MoveItemToFirstContainerSlot(item);
-                    player.EnqueueBroadcast(new GameMessageUpdateObject(item));
-                }
-            );
+            if (item is null || item.Container is null)
+            {
+                continue;
+            }
 
             actionChain.AddDelaySeconds(0.03);
+            actionChain.AddAction(player,
+                () => {
+                    player.HandleActionPutItemInContainer(item.Guid.Full, item.Container.Guid.Full);
+                }
+            );
         }
 
         actionChain.EnqueueChain();
