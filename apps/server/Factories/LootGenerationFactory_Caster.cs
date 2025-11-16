@@ -7,6 +7,7 @@ using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.WorldObjects;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace ACE.Server.Factories;
 
@@ -60,114 +61,48 @@ public static partial class LootGenerationFactory
         TreasureRoll roll = null
     )
     {
-        if (wieldDifficulty != null)
-        {
-            // previous method
-
-            var wieldRequirement = WieldRequirement.RawSkill;
-            var wieldSkillType = Skill.None;
-
-            double elementalDamageMod = 0;
-
-            if (wieldDifficulty == 0)
-            {
-                if (profile.Tier > 6)
-                {
-                    wieldRequirement = WieldRequirement.Level;
-                    wieldSkillType = Skill.Axe; // Set by examples from PCAP data
-
-                    wieldDifficulty = profile.Tier switch
-                    {
-                        7 => 150, // In this instance, used for indicating player level, rather than skill level
-                        _ => 180, // In this instance, used for indicating player level, rather than skill level
-                    };
-                }
-            }
-            else
-            {
-                elementalDamageMod = RollElementalDamageMod(wieldDifficulty.Value, profile);
-
-                if (wo.W_DamageType == DamageType.Nether)
-                {
-                    wieldSkillType = Skill.VoidMagic;
-                }
-                else
-                {
-                    wieldSkillType = Skill.WarMagic;
-                }
-            }
-
-            // ManaConversionMod
-            var manaConversionMod = RollManaConversionMod(profile.Tier);
-            if (manaConversionMod > 0.0f)
-            {
-                wo.ManaConversionMod = manaConversionMod;
-            }
-
-            // ElementalDamageMod
-            if (elementalDamageMod > 1.0f)
-            {
-                wo.ElementalDamageMod = elementalDamageMod;
-            }
-
-            // WieldRequirements
-            if (wieldDifficulty > 0 || wieldRequirement == WieldRequirement.Level)
-            {
-                wo.WieldRequirements = wieldRequirement;
-                wo.WieldSkillType = (int)wieldSkillType;
-                wo.WieldDifficulty = wieldDifficulty;
-            }
-            else
-            {
-                wo.WieldRequirements = WieldRequirement.Invalid;
-                wo.WieldSkillType = null;
-                wo.WieldDifficulty = null;
-            }
-
-            // WeaponDefense
-            wo.WeaponPhysicalDefense = RollWeaponDefense(wieldDifficulty.Value, profile);
-        }
-
         wo.Tier = GetTierValue(profile);
 
-        // Add element/material to low tier orb/wand/scepter/staff
-        if (
-            wo.WeenieClassId == 2366
-            || wo.WeenieClassId == 2547
-            || wo.WeenieClassId == 2548
-            || wo.WeenieClassId == 2472
-        )
+        // Life/War
+        if (ThreadSafeRandom.Next(0, 1) == 0)
         {
-            RollCasterElement(profile, wo);
+            wo.WieldSkillType2 = (int)Skill.LifeMagic;
+            wo.WeaponSkill = Skill.LifeMagic;
+            wo.W_DamageType = DamageType.Nether;
+            wo.UiEffects = UiEffects.Nether;
+        }
+        else
+        {
+            wo.WieldSkillType2 = (int)Skill.WarMagic;
+            wo.WeaponSkill = Skill.WarMagic;
+
+            // Add element/material to low tier orb/wand/scepter/staff
+            if (
+                wo.WeenieClassId == 2366
+                || wo.WeenieClassId == 2547
+                || wo.WeenieClassId == 2548
+                || wo.WeenieClassId == 2472
+            )
+            {
+                RollCasterElement(profile, wo);
+            }
         }
 
+        // Material
         var materialType = GetMaterialType(wo, profile.Tier);
         if (materialType > 0)
         {
             wo.MaterialType = materialType;
         }
 
-        // item color
+        // Item color
         if (wo.WeenieClassId == 2548)
         {
             MutateScepterColor(wo);
         }
-        //else if (wo.WeenieClassId >= 1050100)
-        //    MutateOrbColor();
         else
         {
             MutateColor(wo);
-        }
-
-        if (ThreadSafeRandom.Next(0, 1) == 0)
-        {
-            wo.WieldSkillType2 = (int)Skill.LifeMagic;
-            wo.WeaponSkill = Skill.LifeMagic;
-        }
-        else
-        {
-            wo.WieldSkillType2 = (int)Skill.WarMagic;
-            wo.WeaponSkill = Skill.WarMagic;
         }
 
         // Wield Reqs
@@ -894,14 +829,14 @@ public static partial class LootGenerationFactory
                 damageRoll = minDamageMod + diminishedDamageModRoll;
 
                 wo.ElementalDamageMod = damageRoll;
-                wo.WeaponRestorationSpellsMod = damageRoll / 2 + 0.5f;
+                wo.WeaponRestorationSpellsMod = wo.ElementalDamageMod / 10 + 0.5f;
             }
             else
             {
                 damageRoll = minDamageMod + diminishedDamageModRoll;
 
-                wo.WeaponRestorationSpellsMod = minDamageMod + diminishedDamageModRoll;
                 wo.ElementalDamageMod = damageRoll / 2 + 0.5f;
+                wo.WeaponRestorationSpellsMod = wo.ElementalDamageMod / 2 + 0.5f;
             }
 
             var maxPossibleDamage = GetCasterMaxDamageMod()[7];
