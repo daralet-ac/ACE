@@ -1791,7 +1791,7 @@ public class AppraiseInfo
         _hasExtraPropertiesText = true;
 
         _additionalPropertiesLongDescriptionsText +=
-            $"~ Crippling Blow: Increases critical damage by +{amountFormatted}%, additively. " +
+            $"~ Critical Strike: Increases critical damage by +{amountFormatted}%, additively. " +
             $"Value is based on wielder attack skill (5% to 10%).\n";
     }
 
