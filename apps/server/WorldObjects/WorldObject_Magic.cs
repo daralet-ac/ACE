@@ -1218,7 +1218,7 @@ partial class WorldObject
     /// </summary>
     private void CheckForCombatAbilityReflectSpell(bool resisted, Player targetPlayer, Creature sourceCreature, Spell spell)
     {
-        if (!resisted || targetPlayer == null || sourceCreature == null || targetPlayer == sourceCreature)
+        if (!resisted || targetPlayer == null || sourceCreature == null || targetPlayer == sourceCreature || spell.IsBeneficial)
         {
             return;
         }
