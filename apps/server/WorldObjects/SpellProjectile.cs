@@ -1079,7 +1079,7 @@ public class SpellProjectile : WorldObject
     /// </summary>
     private static bool CheckForPerceptionSpecCriticalDefense(Player targetPlayer, CreatureSkill attackSkill)
     {
-        if (targetPlayer == null)
+        if (targetPlayer == null || attackSkill == null)
         {
             return false;
         }
