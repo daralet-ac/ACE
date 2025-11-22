@@ -282,10 +282,14 @@ partial class WorldObject
             // Retrieve caster's secondary attribute mod (1% per 20 attributes)
             var secondaryAttributeMod = casterCreature.Focus.Current * 0.0005 + 1;
 
-            // if enchanted blade spell, average caster's skill with the weapon's spellcraft
-            if (weaponSpellcraft > magicSkill)
+            // if proc spell or enchanted blade spell
+            if (weaponSpellcraft is not null)
             {
-                magicSkill = (uint)((magicSkill + weaponSpellcraft) * 0.5);
+                weaponSpellcraft += (int)CheckForArcaneLoreSpecSpellcraftBonus(casterCreature);
+
+                var spellcraftBonus = (uint)(weaponSpellcraft * 0.1);
+
+                magicSkill += spellcraftBonus;
             }
 
             if (weaponAttackMod is not null)
@@ -313,12 +317,11 @@ partial class WorldObject
                         ? wielder.GetModdedWarMagicSkill()
                         : wielder.GetModdedLifeMagicSkill();
 
-                spellcraft = CheckForArcaneLoreSpecSpellcraftBonus(wielder, spellcraft);
+                spellcraft += CheckForArcaneLoreSpecSpellcraftBonus(wielder);
 
-                if (spellcraft > magicSkill)
-                {
-                    magicSkill = (uint)((spellcraft + casterMagicSkill) * 0.5);
-                }
+                var spellcraftBonus = (uint)(spellcraft * 0.1);
+
+                magicSkill = casterMagicSkill + spellcraftBonus;
             }
         }
         else if (caster.Wielder is Creature wielder)
@@ -460,18 +463,23 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// SPEC BONUS - Arcane Lore: Spellcraft averaged with Arcane Lore
+    /// SPEC BONUS - Arcane Lore: 50% of skill is added to Spellcraft
     /// </summary>
-    private static uint CheckForArcaneLoreSpecSpellcraftBonus(Creature wielder, uint spellcraft)
+    public static uint CheckForArcaneLoreSpecSpellcraftBonus(Creature wielder)
     {
+        if (wielder == null)
+        {
+            return 0;
+        }
+
         var arcaneLore = wielder.GetCreatureSkill(Skill.ArcaneLore);
 
         if (arcaneLore.AdvancementClass == SkillAdvancementClass.Specialized)
         {
-            spellcraft = (uint)Math.Max((spellcraft + arcaneLore.Current) * 0.5f, spellcraft);
+            return (uint)(arcaneLore.Current * 0.5);
         }
 
-        return spellcraft;
+        return 0;
     }
 
     private static void ShowResistInfo(
@@ -1016,7 +1024,8 @@ partial class WorldObject
         var spellcraftMod = 1.0f;
         if (fromProc && weapon?.ItemSpellcraft != null)
         {
-            spellcraftMod = (weapon.ItemSpellcraft ?? 1) * 0.01f;
+            var spellcraft = weapon.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(player);
+            spellcraftMod += spellcraft * 0.01f;
         }
 
         // for traps and creatures that don't have a lethality mod,
@@ -3743,20 +3752,14 @@ partial class WorldObject
             return 1.0f;
         }
 
-        var spellcraft = (uint)(weapon.ItemSpellcraft ?? 1);
-        var arcaneLore = player.GetCreatureSkill(Skill.ArcaneLore);
-
-        if (arcaneLore.AdvancementClass == SkillAdvancementClass.Specialized)
-        {
-            spellcraft = (uint)Math.Max((spellcraft + arcaneLore.Current) * 0.5f, spellcraft);
-        }
+        var spellcraft = (uint)(weapon.ItemSpellcraft ?? 1) + CheckForArcaneLoreSpecSpellcraftBonus(player);
 
         var playerSpellSkill =
             spell.School == MagicSchool.WarMagic
                 ? player.GetModdedWarMagicSkill()
                 : player.GetModdedLifeMagicSkill();
-        var procSpellSkill = (playerSpellSkill + spellcraft) * 0.5f;
 
+        var procSpellSkill = (int)(playerSpellSkill + spellcraft * 0.1);
         var mod = procSpellSkill / spell.Power;
 
         return Math.Clamp(mod, 0.5f, 2.0f);

@@ -859,18 +859,13 @@ partial class Player
             return false;
         }
 
-        var weaponSpellcraft = equippedMeleeWeapon.ItemSpellcraft;
-
-        if (weaponSpellcraft is null)
-        {
-            weaponSpellcraft = 50;
-        }
+        var weaponSpellcraft = equippedMeleeWeapon.ItemSpellcraft ?? 50;
+        weaponSpellcraft += (int)CheckForArcaneLoreSpecSpellcraftBonus(this);
 
         var magicSkill = magicSchool is MagicSchool.WarMagic ? GetModdedWarMagicSkill() : GetModdedLifeMagicSkill();
-        var averagedMagicSkill = (uint)((magicSkill + weaponSpellcraft) * 0.5);
-        var highestMagicSkill = Math.Max(averagedMagicSkill, (int)weaponSpellcraft);
+        magicSkill += (uint)(weaponSpellcraft * 0.1);
 
-        var roll = Convert.ToInt32(ThreadSafeRandom.Next(highestMagicSkill * 0.5f, magicSkill));
+        var roll = Convert.ToInt32(ThreadSafeRandom.Next(magicSkill * 0.5f, magicSkill));
         int[] diff = [50, 100, 200, 300, 350, 400, 450];
         var closest = diff.MinBy(x => Math.Abs(x - roll));
         var level = Array.IndexOf(diff, closest);
