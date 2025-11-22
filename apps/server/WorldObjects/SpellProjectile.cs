@@ -787,7 +787,7 @@ public class SpellProjectile : WorldObject
                 // whereas CD/CDR applied to the total damage (base damage + additional crit damage)
                 weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
 
-                criticalDamageMod = 2.0f + weaponCritDamageMod;
+                criticalDamageMod = 1.0f + weaponCritDamageMod;
             }
 
             weaponResistanceMod = GetWeaponResistanceModifier(
@@ -833,7 +833,7 @@ public class SpellProjectile : WorldObject
 
                 var jewelBludgeCritDamageMod = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
 
-                criticalDamageMod = (2.0f + weaponCritDamageMod) * jewelBludgeCritDamageMod;
+                criticalDamageMod = (1.0f + weaponCritDamageMod) * jewelBludgeCritDamageMod;
             }
 
             baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
