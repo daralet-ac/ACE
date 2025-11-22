@@ -1416,7 +1416,8 @@ partial class Player
 
         if (isWeaponSpell && caster.ItemSpellcraft != null)
         {
-            magicSkill = (uint)caster.ItemSpellcraft;
+            var spellcraft = caster.ItemSpellcraft.Value + CheckForArcaneLoreSpecSpellcraftBonus(this);
+            magicSkill += (uint)(spellcraft * 0.1);
         }
 
         // SPEC BONUS - War/Life Magic: verify advanced spell
