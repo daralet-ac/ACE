@@ -604,7 +604,7 @@ partial class Player
             // use init + ranks, same as acclient DetermineSpellRange -> InqSkillLevel
             // this is much lower than base, and omits things like attribute formula + base augs + enlightenment
             var playerSkill = GetCreatureSkill(spell.School);
-            magicSkill = playerSkill.InitLevel + playerSkill.Ranks;
+            magicSkill = playerSkill.Current;
         }
 
         var maxRange = Math.Min(spell.BaseRangeConstant + magicSkill * spell.BaseRangeMod, MaxRadarRange_Outdoors);
@@ -1182,6 +1182,15 @@ partial class Player
                     {
                         // Fellowship spells do not affect the caster
                         if (fellow == this)
+                        {
+                            continue;
+                        }
+
+                        // Fellowship spells only affect targets in range
+                        var magicSkill = GetCreatureSkill(spell.School).Current;
+                        var maxRange = Math.Min(spell.BaseRangeConstant + magicSkill * spell.BaseRangeMod, MaxRadarRange_Outdoors);
+                        
+                        if (GetDistance(fellow) > maxRange)
                         {
                             continue;
                         }
