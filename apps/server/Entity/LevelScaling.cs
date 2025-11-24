@@ -34,7 +34,7 @@ public static class LevelScaling
     private static readonly int[] AvgPlayerAttackSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
     private static readonly int[] AvgPlayerDefenseSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
     private static readonly float[] AvgPlayerResistancePerTier = [1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f];
-    private static readonly int[] AvgPlayerBoostPerTier = [10, 15, 20, 25, 30, 35, 40, 40, 40];
+    private static readonly float[] AvgPlayerBoostPerTier = [5.0f, 7.5f, 12.5f, 17.5f, 22.5f, 27.5f, 32.5f, 37.5f, 42.5f];
 
     private static readonly int[] AvgMonsterArmorWardPerTier = [20, 45, 68, 101, 152, 228, 342, 513, 600];
     private static readonly int[] AvgMonsterHealthPerTier = [10, 75, 150, 250, 400, 600, 800, 1000, 2000 ];
@@ -415,7 +415,7 @@ public static class LevelScaling
         return stat;
     }
 
-    private static int GetPlayerBoostAtLevel(int level)
+    private static float GetPlayerBoostAtLevel(int level)
     {
         GetRangeAndStatWeight(level, out var range, out var statweight, 0.0f);
 
@@ -423,7 +423,7 @@ public static class LevelScaling
             (AvgPlayerBoostPerTier[range + 1] - AvgPlayerBoostPerTier[range]) * statweight
             + AvgPlayerBoostPerTier[range];
 
-        return (int)stat;
+        return stat;
     }
 
     private static int GetMonsterHealthAtLevel(int level)
