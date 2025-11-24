@@ -7,7 +7,6 @@ using ACE.Server.Factories.Entity;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.WorldObjects;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace ACE.Server.Factories;
 
@@ -824,19 +823,17 @@ public static partial class LootGenerationFactory
             var minDamageMod = GetCasterMinDamageMod()[tier];
             var diminishedDamageModRoll = (maxDamageMod - minDamageMod) * GetDiminishingRoll(profile);
 
+            damageRoll = minDamageMod + diminishedDamageModRoll;
+
             if (wo.WieldSkillType2 == (int)Skill.WarMagic)
             {
-                damageRoll = minDamageMod + diminishedDamageModRoll;
-
                 wo.ElementalDamageMod = damageRoll;
-                wo.WeaponRestorationSpellsMod = wo.ElementalDamageMod / 10 + 0.5f;
+                wo.WeaponRestorationSpellsMod = (damageRoll - 1.0) * 0.25 + 1.0; // 25% of damage roll
             }
             else
             {
-                damageRoll = minDamageMod + diminishedDamageModRoll;
-
-                wo.ElementalDamageMod = damageRoll / 2 + 0.5f;
-                wo.WeaponRestorationSpellsMod = wo.ElementalDamageMod / 2 + 0.5f;
+                wo.ElementalDamageMod = (damageRoll - 1.0) * 0.5 + 1.0; // 50% of damage roll
+                wo.WeaponRestorationSpellsMod = wo.ElementalDamageMod; // 50% of damage roll
             }
 
             var maxPossibleDamage = GetCasterMaxDamageMod()[7];
