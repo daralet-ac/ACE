@@ -752,10 +752,13 @@ public class SpellProjectile : WorldObject
 
         var damageMultiplier = (float)DamageMultiplier;
 
+        // proc spells & enchanted blade receive 1% of spellcraft as a damage multipler (300 spellcraft = x3 damage)
         var spellcraftMod = 1.0f;
         if (FromProc && weapon?.ItemSpellcraft != null)
         {
-            spellcraftMod = (weapon.ItemSpellcraft ?? 1) * 0.01f;
+            var spellcraft = weapon.ItemSpellcraft.Value + (int)CheckForArcaneLoreSpecSpellcraftBonus(sourceCreature);
+
+            spellcraftMod = spellcraft * 0.01f;
         }
 
         // for traps and creatures that don't have a lethality mod,
@@ -784,7 +787,7 @@ public class SpellProjectile : WorldObject
                 // whereas CD/CDR applied to the total damage (base damage + additional crit damage)
                 weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
 
-                criticalDamageMod = 2.0f + weaponCritDamageMod;
+                criticalDamageMod = 1.0f + weaponCritDamageMod;
             }
 
             weaponResistanceMod = GetWeaponResistanceModifier(
@@ -830,7 +833,7 @@ public class SpellProjectile : WorldObject
 
                 var jewelBludgeCritDamageMod = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
 
-                criticalDamageMod = (2.0f + weaponCritDamageMod) * jewelBludgeCritDamageMod;
+                criticalDamageMod = (1.0f + weaponCritDamageMod) * jewelBludgeCritDamageMod;
             }
 
             baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
@@ -1079,7 +1082,7 @@ public class SpellProjectile : WorldObject
     /// </summary>
     private static bool CheckForPerceptionSpecCriticalDefense(Player targetPlayer, CreatureSkill attackSkill)
     {
-        if (targetPlayer == null)
+        if (targetPlayer == null || attackSkill == null)
         {
             return false;
         }
