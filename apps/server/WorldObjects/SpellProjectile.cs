@@ -777,51 +777,13 @@ public class SpellProjectile : WorldObject
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
         {
-            lifeMagicDamage = LifeProjectileDamage * Spell.DamageRatio * overloadDamageMod * batteryDamageMod;
+            baseDamage = (int)(LifeProjectileDamage * Spell.DamageRatio * overloadDamageMod * batteryDamageMod);
 
-            // could life magic projectiles crit?
-            // if so, did they use the same 1.5x formula as war magic, instead of 2.0x?
             if (criticalHit)
             {
-                // verify: CriticalMultiplier only applied to the additional crit damage,
-                // whereas CD/CDR applied to the total damage (base damage + additional crit damage)
                 weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
-
                 criticalDamageMod = 1.0f + weaponCritDamageMod;
             }
-
-            weaponResistanceMod = GetWeaponResistanceModifier(
-                weapon,
-                sourceCreature,
-                attackSkill,
-                Spell.DamageType,
-                target
-            );
-
-            // if attacker/weapon has IgnoreMagicResist directly, do not transfer to spell projectile
-            // only pass if SpellProjectile has it directly, such as 2637 - Invoking Aun Tanua
-
-            resistanceMod = (float)
-                Math.Max(0.0f, target.GetResistanceMod(resistanceType, this, null, weaponResistanceMod));
-
-            finalDamage =
-                lifeMagicDamage
-                * criticalDamageMod
-                * elementalDamageMod
-                * slayerMod
-                * attributeMod
-                * resistanceMod
-                * absorbMod
-                * wardMod
-                * resistedMod
-                * specDefenseMod
-                * jewelRedFury
-                * jewelBlueFury
-                * jewelSelfHarm
-                * levelScalingMod
-                * damageMultiplier
-                * spellcraftMod
-                * landblockScalingMod;
         }
         // war/void magic projectiles
         else
@@ -831,20 +793,22 @@ public class SpellProjectile : WorldObject
                 weaponCritDamageMod = GetWeaponCritDamageMod(weapon, sourceCreature, attackSkill, target);
                 weaponCritDamageMod += CheckForWarMagicSpecCriticalDamageBonus(sourcePlayer, weapon);
 
-                var jewelBludgeCritDamageMod = 1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
+                var jewelBludgeCritDamageMod =
+                    1.0f + Jewel.GetJewelEffectMod(sourcePlayer, PropertyInt.GearBludgeon, "Bludgeon");
 
                 criticalDamageMod = (1.0f + weaponCritDamageMod) * jewelBludgeCritDamageMod;
             }
 
             baseDamage = ThreadSafeRandom.Next(Spell.MinDamage, Spell.MaxDamage);
 
-            // monster spell crits are based on mediam damage instead of max
+            // monster spell crits are based on median damage instead of max
             if (criticalHit && sourceCreature is not Player)
             {
                 baseDamage = Spell.MedianDamage;
             }
+        }
 
-            weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType, target);
+        weaponResistanceMod = GetWeaponResistanceModifier(weapon, sourceCreature, attackSkill, Spell.DamageType, target);
 
             // if attacker/weapon has IgnoreMagicResist directly, do not transfer to spell projectile
             // only pass if SpellProjectile has it directly, such as 2637 - Invoking Aun Tanua
@@ -902,7 +866,8 @@ public class SpellProjectile : WorldObject
                 * archetypeSpellDamageMod
                 * levelScalingMod
                 * damageMultiplier
-                * spellcraftMod;
+                * spellcraftMod
+                * landblockScalingMod;
 
             finalDamage =
                 damageBeforeMitigation
@@ -953,7 +918,7 @@ public class SpellProjectile : WorldObject
             //         $" -ratingDamageTypeWard: {ratingDamageTypeWard}\n" +
             //         $" -FinalBeforeRatings: {finalDamage}");
             // }
-        }
+
 
         // show debug info
         if (sourceCreature != null && sourceCreature.DebugDamage.HasFlag(Creature.DebugDamageType.Attacker))
