@@ -707,7 +707,7 @@ partial class WorldObject
             return;
         }
 
-        if (spell.IsSelfTargeted || spell.Id == 5206) // Surge of Protection
+        if (!spell.IsFellowshipSpell && (spell.IsSelfTargeted || spell.Id == 5206)) // Surge of Protection
         {
             target = caster;
         }
@@ -1048,6 +1048,12 @@ partial class WorldObject
 
             // reductions
             tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearVitalsTransfer)));
+
+            // Recent Void Spell Cast Mod - Lower all healing spell effects for 10 seconds.
+            if (player is not null && player.LastVoidSpellCastTime + player.LastVoidSpellCastPenaltyLength > Time.GetUnixTime())
+            {
+                tryBoost = Convert.ToInt32(tryBoost * 0.5f);
+            }
         }
         else // harm
         {
@@ -1613,6 +1619,12 @@ partial class WorldObject
             {
                 var archetypeSpellDamageMod = (float)(creature.ArchetypeSpellDamageMultiplier ?? 1.0);
                 destVitalChange = Convert.ToUInt32(destVitalChange * archetypeSpellDamageMod);
+            }
+
+            // Recent Void Spell Cast Mod - Lower all healing spell effects for 10 seconds.
+            if (player is not null && player.LastVoidSpellCastTime + player.LastVoidSpellCastPenaltyLength > Time.GetUnixTime())
+            {
+                destVitalChange = (uint)(destVitalChange * 0.5f);
             }
 
             // LEVEL SCALING - Reduce Drain effectiveness vs. monsters, and increase vs. player
