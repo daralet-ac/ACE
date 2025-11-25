@@ -365,7 +365,7 @@ public static class ScrollSpells
         //startIdx += AddSpells(itemSpells, startIdx);
         startIdx += AddSpells(lifeSpells, startIdx);
         startIdx += AddSpells(warSpells, startIdx);
-        //startIdx += AddSpells(voidSpells, startIdx);
+        startIdx += AddSpells(voidSpells, startIdx);
 
         if (startIdx != NumSpells)
         {
