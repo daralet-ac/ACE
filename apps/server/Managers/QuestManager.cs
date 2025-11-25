@@ -277,7 +277,7 @@ public class QuestManager
             return;
         }
 
-        if (quest.NumTimesCompleted > 3)
+        if (quest.NumTimesCompleted > 5)
         {
             return;
         }
@@ -301,8 +301,10 @@ public class QuestManager
         var level = quest.NumTimesCompleted switch
         {
             1 => "slight",
-            2 => "moderate",
-            3 => "significant",
+            2 => "minor",
+            3 => "moderate",
+            4 => "major",
+            5 => "significant",
             _ => ""
         };
 
@@ -313,8 +315,14 @@ public class QuestManager
             )
         );
 
-        if (quest.NumTimesCompleted == 3)
-        {
+    if (quest.NumTimesCompleted == 5)
+    {
+        player.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"A final shift runs through you as the portal energy of {townName} stabilizes and stops pressing against you.",
+                ChatMessageType.System
+            )
+        );
             player.PlayParticleEffect(PlayScript.PortalStorm, player.Guid);
         }
     }
