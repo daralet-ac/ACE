@@ -40,6 +40,9 @@ partial class Player
     public double LastSuccessCast_Time;
     public MagicSchool LastSuccessCast_School;
 
+    public double LastVoidSpellCastPenaltyLength = 10.0;
+    public double LastVoidSpellCastTime;
+
     public bool DebugSpell { get; set; }
 
     public string DebugDamageBuffer { get; set; }
@@ -1189,7 +1192,7 @@ partial class Player
                         // Fellowship spells only affect targets in range
                         var magicSkill = GetCreatureSkill(spell.School).Current;
                         var maxRange = Math.Min(spell.BaseRangeConstant + magicSkill * spell.BaseRangeMod, MaxRadarRange_Outdoors);
-                        
+
                         if (GetDistance(fellow) > maxRange)
                         {
                             continue;
@@ -1414,7 +1417,7 @@ partial class Player
         {
             magicSkill = GetModdedWarMagicSkill();
         }
-        else if (spell.School == MagicSchool.LifeMagic)
+        else if (spell.School is MagicSchool.LifeMagic or MagicSchool.VoidMagic)
         {
             magicSkill = GetModdedLifeMagicSkill();
         }
@@ -1493,6 +1496,11 @@ partial class Player
 
         LastSuccessCast_School = spell.School;
         LastSuccessCast_Time = Time.GetUnixTime();
+
+        if (spell.School == MagicSchool.VoidMagic)
+        {
+            LastVoidSpellCastTime = Time.GetUnixTime();
+        }
 
         var caster = GetEquippedWand();
 
