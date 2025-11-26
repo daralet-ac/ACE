@@ -271,6 +271,11 @@ partial class WorldObject
             // Retrieve caster's skill level in the Magic School
             var magicSchool = spell.School;
 
+            if (magicSchool is MagicSchool.VoidMagic)
+            {
+                magicSchool = MagicSchool.LifeMagic;
+            }
+
             // Retrieve the casters Magic mods from worn armor
             if (magicSchool is MagicSchool.WarMagic or MagicSchool.LifeMagic)
             {
