@@ -662,7 +662,7 @@ partial class Player
 
         // casting non-portal spells with a NoCompsForPortalSpells caster will always fizzle
         if (spell.School is not MagicSchool.WarMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.WarMagic}
-            || spell.School is not MagicSchool.LifeMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.LifeMagic}
+            || spell.School is not MagicSchool.LifeMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.LifeMagic }
             || spell.School is not MagicSchool.PortalMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.PortalMagic})
         {
             castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
@@ -2013,7 +2013,7 @@ partial class Player
             return false;
         }
         else if (
-            spell.School == MagicSchool.LifeMagic
+            (spell.School == MagicSchool.LifeMagic || spell.School == MagicSchool.VoidMagic)
             && GetCreatureSkill(Skill.LifeMagic).AdvancementClass != SkillAdvancementClass.Specialized
         )
         {
@@ -2071,6 +2071,11 @@ partial class Player
             SpellCategory.PiercingRing,
             SpellCategory.SlashingRing,
             // Life
+            SpellCategory.NetherDamageRatingLowering,
+            SpellCategory.NetherDamageHealingReductionRaising,
+            SpellCategory.NetherDamageOverTimeRaising,
+            SpellCategory.NetherDamageOverTimeRaising2,
+            SpellCategory.NetherDamageOverTimeRaising3,
         };
 
         SpellId[] advancedSpellIds =
