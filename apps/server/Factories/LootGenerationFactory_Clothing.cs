@@ -211,6 +211,8 @@ public static partial class LootGenerationFactory
             TryMutateArmorSkillMod(wo, profile, roll, out totalSkillModPercentile);
 
             MutateArmorModVsType(wo, profile);
+
+            NormalizeProtectionLevels(wo);
         }
 
         // workmanship
@@ -595,6 +597,34 @@ public static partial class LootGenerationFactory
         wo.SetProperty(prop, newMod);
 
         return true;
+    }
+
+    private static void NormalizeProtectionLevels(WorldObject wo)
+    {
+        if (wo.ArmorLevel is null)
+        {
+            return; 
+        }
+
+        var protectionLevelSum =
+            wo.ArmorModVsSlash
+            + wo.ArmorModVsPierce
+            + wo.ArmorModVsBludgeon
+            + wo.ArmorModVsAcid
+            + wo.ArmorModVsFire
+            + wo.ArmorModVsCold
+            + wo.ArmorModVsElectric;
+
+        var scalar = protectionLevelSum / 7.0;
+
+        wo.ArmorLevel = (int)(wo.ArmorLevel.Value * scalar);
+        wo.ArmorModVsSlash /= scalar;
+        wo.ArmorModVsPierce /= scalar;
+        wo.ArmorModVsBludgeon /= scalar;
+        wo.ArmorModVsAcid /= scalar;
+        wo.ArmorModVsFire /= scalar;
+        wo.ArmorModVsCold /= scalar;
+        wo.ArmorModVsElectric /= scalar;
     }
 
     private static bool TryMutateGearRating(
