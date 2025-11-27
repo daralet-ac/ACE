@@ -326,6 +326,7 @@ public class QuestManager
         "QuestArwic",
         "QuestBaishi",
         "QuestCragstone",
+        "QuestDereth",
         "QuestDryreach",
         "QuestEastham",
         "QuestGlendenWood",
