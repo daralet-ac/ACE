@@ -319,7 +319,7 @@ public class QuestManager
     {
         player.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"A final shift runs through you as the portal energy of {townName} stabilizes and stops pressing against you.",
+                $"As your body steadies under the portal energy of {townName}, a final swirl rises and breaks around you.",
                 ChatMessageType.System
             )
         );
