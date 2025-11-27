@@ -505,12 +505,17 @@ partial class WorldObject
         DamageType damageType
     )
     {
-        if (wielder == null || !(weapon is Caster) || weapon.W_DamageType != damageType)
+        if (wielder == null || !(weapon is Caster))
         {
             return 1.0f;
         }
 
         var elementalDamageMod = weapon.ElementalDamageMod ?? 1.0f;
+
+        if (damageType is DamageType.Health && weapon.WeaponRestorationSpellsMod is not null)
+        {
+            elementalDamageMod = weapon.WeaponRestorationSpellsMod.Value;
+        }
 
         // multiplicative to base multiplier
         var wielderEnchantments = wielder.EnchantmentManager.GetElementalDamageMod();

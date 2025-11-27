@@ -50,10 +50,24 @@ partial class Creature
         }
         else if ((spell.Flags & SpellFlags.FellowshipSpell) != 0)
         {
-            var numFellows = 1;
-            if (this is Player player && player.Fellowship != null)
+            var numFellows = 0;
+            if (this is Player { Fellowship: not null } player)
             {
-                numFellows = player.Fellowship.FellowshipMembers.Count;
+                var magicSkill = GetCreatureSkill(spell.School).Current;
+                var maxRange = Math.Min(spell.BaseRangeConstant + magicSkill * spell.BaseRangeMod, Player.MaxRadarRange_Outdoors);
+
+                foreach (var fellowshipMember in player.Fellowship.GetFellowshipMembers().Values)
+                {
+                    if (fellowshipMember == this)
+                    {
+                        continue;
+                    }
+
+                    if (GetDistance(fellowshipMember) < maxRange)
+                    {
+                        numFellows++;
+                    }
+                }
             }
 
             baseCost += spell.ManaMod * (uint)numFellows;
