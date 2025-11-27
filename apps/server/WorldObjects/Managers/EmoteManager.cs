@@ -1249,17 +1249,18 @@ public class EmoteManager
                 if (player != null)
                 {
                     var emoteMessage = emote.TestString;
+                    var questName = Replace(emote.Message, WorldObject, targetObject, emoteSet.Quest);
 
                     if (WorldObject is Creature { RefusalItem.Item1: not null } creatureObject)
                     {
                         emoteMessage = emoteMessage.Replace("(TrophyName)", creatureObject.RefusalItem.Item1.Name);
                         emoteMessage = emoteMessage.Replace("(TrophyValue)", creatureObject.RefusalItem.Item1.Value.ToString());
                     }
-
+                    var confirmationText = Replace(emoteMessage, WorldObject, targetObject, emoteSet.Quest);
                     if (
                         !player.ConfirmationManager.EnqueueSend(
-                            new Confirmation_YesNo(WorldObject.Guid, player.Guid, emote.Message),
-                            Replace(emoteMessage, WorldObject, targetObject, emoteSet.Quest)
+                            new Confirmation_YesNo(WorldObject.Guid, player.Guid, questName),
+                            confirmationText
                         )
                     )
                     {
@@ -1662,7 +1663,8 @@ public class EmoteManager
 
                 if (player != null)
                 {
-                    player.Session.Network.EnqueueSend(new GameEventPopupString(player.Session, emote.Message));
+                    var popupMessage = Replace(emote.Message, WorldObject, targetObject, emoteSet.Quest);
+                    player.Session.Network.EnqueueSend(new GameEventPopupString(player.Session, popupMessage));
                 }
 
                 break;
