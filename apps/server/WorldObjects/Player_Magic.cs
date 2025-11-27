@@ -40,6 +40,9 @@ partial class Player
     public double LastSuccessCast_Time;
     public MagicSchool LastSuccessCast_School;
 
+    public double LastVoidSpellCastPenaltyLength = 10.0;
+    public double LastVoidSpellCastTime;
+
     public bool DebugSpell { get; set; }
 
     public string DebugDamageBuffer { get; set; }
@@ -604,7 +607,7 @@ partial class Player
             // use init + ranks, same as acclient DetermineSpellRange -> InqSkillLevel
             // this is much lower than base, and omits things like attribute formula + base augs + enlightenment
             var playerSkill = GetCreatureSkill(spell.School);
-            magicSkill = playerSkill.InitLevel + playerSkill.Ranks;
+            magicSkill = playerSkill.Current;
         }
 
         var maxRange = Math.Min(spell.BaseRangeConstant + magicSkill * spell.BaseRangeMod, MaxRadarRange_Outdoors);
@@ -659,7 +662,7 @@ partial class Player
 
         // casting non-portal spells with a NoCompsForPortalSpells caster will always fizzle
         if (spell.School is not MagicSchool.WarMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.WarMagic}
-            || spell.School is not MagicSchool.LifeMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.LifeMagic}
+            || spell.School is not MagicSchool.LifeMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.LifeMagic }
             || spell.School is not MagicSchool.PortalMagic && GetEquippedWand() is { NoCompsRequiredForMagicSchool: (int)MagicSchool.PortalMagic})
         {
             castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
@@ -1186,6 +1189,15 @@ partial class Player
                             continue;
                         }
 
+                        // Fellowship spells only affect targets in range
+                        var magicSkill = GetCreatureSkill(spell.School).Current;
+                        var maxRange = Math.Min(spell.BaseRangeConstant + magicSkill * spell.BaseRangeMod, MaxRadarRange_Outdoors);
+
+                        if (GetDistance(fellow) > maxRange)
+                        {
+                            continue;
+                        }
+
                         CreatePlayerSpell(fellow, spell, isWeaponSpell);
                     }
                 }
@@ -1405,7 +1417,7 @@ partial class Player
         {
             magicSkill = GetModdedWarMagicSkill();
         }
-        else if (spell.School == MagicSchool.LifeMagic)
+        else if (spell.School is MagicSchool.LifeMagic or MagicSchool.VoidMagic)
         {
             magicSkill = GetModdedLifeMagicSkill();
         }
@@ -1484,6 +1496,11 @@ partial class Player
 
         LastSuccessCast_School = spell.School;
         LastSuccessCast_Time = Time.GetUnixTime();
+
+        if (spell.School == MagicSchool.VoidMagic)
+        {
+            LastVoidSpellCastTime = Time.GetUnixTime();
+        }
 
         var caster = GetEquippedWand();
 
@@ -1996,7 +2013,7 @@ partial class Player
             return false;
         }
         else if (
-            spell.School == MagicSchool.LifeMagic
+            (spell.School == MagicSchool.LifeMagic || spell.School == MagicSchool.VoidMagic)
             && GetCreatureSkill(Skill.LifeMagic).AdvancementClass != SkillAdvancementClass.Specialized
         )
         {
@@ -2054,6 +2071,11 @@ partial class Player
             SpellCategory.PiercingRing,
             SpellCategory.SlashingRing,
             // Life
+            SpellCategory.NetherDamageRatingLowering,
+            SpellCategory.NetherDamageHealingReductionRaising,
+            SpellCategory.NetherDamageOverTimeRaising,
+            SpellCategory.NetherDamageOverTimeRaising2,
+            SpellCategory.NetherDamageOverTimeRaising3,
         };
 
         SpellId[] advancedSpellIds =
