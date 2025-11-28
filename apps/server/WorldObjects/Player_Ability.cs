@@ -1033,7 +1033,6 @@ partial class Player
                 )
             );
 
-            _log.Error("TryUseAegis() - {Weapon} does not have spellcraft", equippedWeapon.Name);
             return false;
         }
 
