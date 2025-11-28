@@ -325,11 +325,30 @@ public class DamageEvent
 
         if (attackRoll > GetEvadeChance(attacker, defender))
         {
-            // If playerDefender has Phalanx active, 50% chance to convert a full hit into a partial hit.
-            if (playerDefender is { PhalanxIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.5f)
+            // If playerDefender has Phalanx active, 25-50% chance to convert a full hit into a partial hit, depending on shield size.
+            if (playerDefender is { PhalanxIsActive: true } && (playerAttacker.GetEquippedShield() is not null || playerAttacker.GetEquippedWeapon() is { IsTwoHanded: true}))
             {
-                _evasionMod = 0.5f;
-                PartialEvasion = PartialEvasion.Some;
+                var phalanxChance = 0.25;
+
+                if (playerDefender.GetEquippedShield() is not null)
+                {
+                    phalanxChance = playerDefender.GetEquippedShield().ArmorStyle switch
+                    {
+                        (int)ArmorStyle.CovenantShield => 0.5f,
+                        (int)ArmorStyle.TowerShield => 0.45f,
+                        (int)ArmorStyle.LargeShield => 0.4f,
+                        (int)ArmorStyle.StandardShield => 0.35f,
+                        (int)ArmorStyle.SmallShield => 0.3f,
+                        (int)ArmorStyle.Buckler => 0.3f,
+                        _ => 0.25f
+                    };
+                }
+
+                if (ThreadSafeRandom.Next(0.0f, 1.0f) < phalanxChance)
+                {
+                    _evasionMod = 0.5f;
+                    PartialEvasion = PartialEvasion.Some;
+                }
             }
 
             return;
@@ -363,12 +382,31 @@ public class DamageEvent
                 break;
             default:
                 // If playerDefender has Phalanx active, 50% chance to convert a full hit into a partial hit.
-                if (playerDefender is { PhalanxIsActive: true } && ThreadSafeRandom.Next(0.1f, 1.0f) > 0.5f)
+                if (playerDefender is { PhalanxIsActive: true } && (playerDefender.GetEquippedShield() is not null || playerDefender.GetEquippedWeapon() is { IsTwoHanded: true}))
                 {
-                    _evasionMod = 0.5f;
-                    PartialEvasion = PartialEvasion.Some;
-                    Evaded = false;
-                    break;
+                    var phalanxChance = 0.25;
+
+                    if (playerDefender.GetEquippedShield() is not null)
+                    {
+                        phalanxChance = playerDefender.GetEquippedShield().ArmorStyle switch
+                        {
+                            (int)ArmorStyle.CovenantShield => 0.5f,
+                            (int)ArmorStyle.TowerShield => 0.45f,
+                            (int)ArmorStyle.LargeShield => 0.4f,
+                            (int)ArmorStyle.StandardShield => 0.35f,
+                            (int)ArmorStyle.SmallShield => 0.3f,
+                            (int)ArmorStyle.Buckler => 0.3f,
+                            _ => 0.25f
+                        };
+                    }
+
+                    if (ThreadSafeRandom.Next(0.0f, 1.0f) < phalanxChance)
+                    {
+                        _evasionMod = 0.5f;
+                        PartialEvasion = PartialEvasion.Some;
+                        Evaded = false;
+                        break;
+                    }
                 }
 
                 _evasionMod = 1.0f;

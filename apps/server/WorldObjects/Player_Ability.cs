@@ -127,11 +127,11 @@ partial class Player
             return false;
         }
 
-        if (GetEquippedShield() is null)
+        if (GetEquippedShield() is null && GetEquippedWeapon() is not { IsTwoHanded: true})
         {
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"Phalanx requires an equipped shield.",
+                    $"Phalanx requires an equipped shield or two-handed weapon.",
                     ChatMessageType.Broadcast
                 )
             );
@@ -144,7 +144,7 @@ partial class Player
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You raise your shield into a defensive stance!",
+                    $"You move into a defensive stance!",
                     ChatMessageType.Broadcast
                 )
             );
@@ -156,7 +156,7 @@ partial class Player
         PhalanxIsActive = false;
 
         Session.Network.EnqueueSend(
-            new GameMessageSystemChat($"You lower your shield.", ChatMessageType.Broadcast)
+            new GameMessageSystemChat($"You lower your guard.", ChatMessageType.Broadcast)
         );
         PlayParticleEffect(PlayScript.DispelLife, Guid);
 
