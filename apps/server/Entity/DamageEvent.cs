@@ -682,6 +682,8 @@ public class DamageEvent
     /// </summary>
     private float GetCombatAbilityMultishotDamagePenalty(Player playerAttacker)
     {
+        return 1.0f; // TODO: Decide if this damage penalty is needed
+
         if (playerAttacker is not { MultiShotIsActive: true})
         {
             return 1.0f;
