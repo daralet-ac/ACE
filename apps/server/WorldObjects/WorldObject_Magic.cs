@@ -1067,6 +1067,9 @@ partial class WorldObject
             tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelBlueFury(player)));
             tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearSelfHarm)));
 
+            var attributeMod = creature.GetAttributeMod(weapon, true, targetCreature);
+            tryBoost = Convert.ToInt32(tryBoost * attributeMod);
+
             // reductions
             tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification,"Nullification")));
 
@@ -1083,9 +1086,6 @@ partial class WorldObject
         {
             var archetypeSpellDamageMod = (float)(creature.ArchetypeSpellDamageMultiplier ?? 1.0);
             tryBoost = Convert.ToInt32(tryBoost * archetypeSpellDamageMod);
-
-            var attributeMod = creature.GetAttributeMod(weapon, true, targetCreature);
-            tryBoost = Convert.ToInt32(tryBoost * attributeMod);
         }
 
         // LEVEL SCALING - Reduces harms against enemies, and restoration for players
@@ -1610,13 +1610,6 @@ partial class WorldObject
                 var batterMod = CheckForCombatAbilityBatteryDamagePenalty(player);
 
                 destVitalChange = (uint)(destVitalChange * overloadMod * batterMod);
-            }
-
-            // Attribute Mod
-            if (player is not null)
-            {
-                var attributeMod = player.GetAttributeMod(weapon, true, targetCreature);
-                destVitalChange = Convert.ToUInt32(destVitalChange * attributeMod);
             }
 
             // Archetype Mod
