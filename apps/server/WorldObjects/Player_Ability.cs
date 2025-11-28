@@ -1037,18 +1037,25 @@ partial class Player
             return false;
         }
 
-        var lifeSkill = GetModdedLifeMagicSkill();
-        var averagedMagicSkill = (uint)((lifeSkill + weaponSpellcraft) * 0.5);
-        var highestMagicSkill = Math.Max(averagedMagicSkill, (int)weaponSpellcraft);
-
-        var roll = Convert.ToInt32(ThreadSafeRandom.Next(highestMagicSkill * 0.5f, lifeSkill));
+        var roll = Convert.ToInt32(ThreadSafeRandom.Next(weaponSpellcraft.Value * 0.5f, weaponSpellcraft.Value));
         int[] diff = [50, 100, 200, 300, 350, 400, 450];
         var closest = diff.MinBy(x => Math.Abs(x - roll));
         var level = Array.IndexOf(diff, closest);
 
         var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
 
-        var manaCost = (int)(new Spell(finalSpellId).BaseMana * 2);
+        // mana cost can be reduced by mana conversion skill
+        var manaCost = (int)(new Spell(finalSpellId).BaseMana);
+
+        const float maxManaReduction = 0.5f;
+        var manaConv = (int)GetCreatureSkill(Skill.ManaConversion).Current;
+        var manaConModCeiling = SkillCheck.GetSkillChance(manaConv, closest);
+        var manaConModFloor = manaConModCeiling * 0.5;
+        var reductionRoll = maxManaReduction * ThreadSafeRandom.Next((float)manaConModFloor, (float)manaConModCeiling);
+        var savedMana = (int)Math.Round(manaCost * reductionRoll);
+
+        manaCost -= savedMana;
+
         if (Mana.Current < manaCost)
         {
             Session.Network.EnqueueSend(
