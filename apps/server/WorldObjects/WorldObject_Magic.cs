@@ -204,11 +204,30 @@ partial class WorldObject
             }
         }
 
-        // If playerDefender has Phalanx active, 50% chance to convert a full hit into a partial hit.
-        if (targetPlayer is { PhalanxIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.5f)
+        // If playerDefender has Phalanx active, 25-50% chance to convert a full hit into a partial hit, depending on shield size.
+        if (targetPlayer is { PhalanxIsActive: true } && (targetPlayer.GetEquippedShield() is not null || targetPlayer.GetEquippedWeapon() is { IsTwoHanded: true}))
         {
-            partialResist = PartialEvasion.Some;
-            return false;
+            var phalanxChance = 0.25;
+
+            if (targetPlayer.GetEquippedShield() is not null)
+            {
+                phalanxChance = targetPlayer.GetEquippedShield().ArmorStyle switch
+                {
+                    (int)ACE.Entity.Enum.ArmorStyle.CovenantShield => 0.5f,
+                    (int)ACE.Entity.Enum.ArmorStyle.TowerShield => 0.45f,
+                    (int)ACE.Entity.Enum.ArmorStyle.LargeShield => 0.4f,
+                    (int)ACE.Entity.Enum.ArmorStyle.StandardShield => 0.35f,
+                    (int)ACE.Entity.Enum.ArmorStyle.SmallShield => 0.3f,
+                    (int)ACE.Entity.Enum.ArmorStyle.Buckler => 0.3f,
+                    _ => 0.25f
+                };
+            }
+
+            if (ThreadSafeRandom.Next(0.0f, 1.0f) < phalanxChance)
+            {
+                partialResist = PartialEvasion.Some;
+                return false;
+            }
         }
 
         partialResist = PartialEvasion.None;
