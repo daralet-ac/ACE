@@ -1372,7 +1372,7 @@ partial class Player
         var ripostePenaltyMod = RiposteIsActive ? 0.25f : 0.0f;
         var furyPenaltyMod = FuryEnrageIsActive ? 0.25f : 0.0f;
         var multiShotPenaltyMod = MultiShotIsActive ? 0.25f : 0.0f;
-        var steadyShotPenaltyMod = SteadyShotIsActive ? 0.25f : 0.0f;
+        var steadyStrikePenaltyMod = SteadyStrikeIsActive ? 0.25f : 0.0f;
         var smokescreenPenaltyMod = SmokescreenIsActive ? 0.25f : 0.0f;
         var backstabPenaltyMod = BackstabIsActive ? 0.25f : 0.0f;
         var abilityPenaltyMod = 1.0f
@@ -1382,7 +1382,7 @@ partial class Player
                                 + ripostePenaltyMod
                                 + furyPenaltyMod
                                 + multiShotPenaltyMod
-                                + steadyShotPenaltyMod
+                                + steadyStrikePenaltyMod
                                 + smokescreenPenaltyMod
                                 + backstabPenaltyMod;
 
