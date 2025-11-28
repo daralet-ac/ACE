@@ -1044,27 +1044,6 @@ partial class Player
 
         var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
 
-        // mana cost can be reduced by mana conversion skill
-        var manaCost = (int)(new Spell(finalSpellId).BaseMana);
-
-        const float maxManaReduction = 0.5f;
-        var manaConv = (int)GetCreatureSkill(Skill.ManaConversion).Current;
-        var manaConModCeiling = SkillCheck.GetSkillChance(manaConv, closest);
-        var manaConModFloor = manaConModCeiling * 0.5;
-        var reductionRoll = maxManaReduction * ThreadSafeRandom.Next((float)manaConModFloor, (float)manaConModCeiling);
-        var savedMana = (int)Math.Round(manaCost * reductionRoll);
-
-        manaCost -= savedMana;
-
-        if (Mana.Current < manaCost)
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
-            );
-            return false;
-        }
-
-        UpdateVitalDelta(Mana, -manaCost);
         TryCastSpell(new Spell(finalSpellId), this);
 
         LastAegisActivated = Time.GetUnixTime();
