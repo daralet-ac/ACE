@@ -48,9 +48,9 @@ partial class Player
     public float EnrageLevel;
 
     // Archer
-    public bool SteadyShotIsActive => LastSteadyShotActivated > Time.GetUnixTime() - SteadyShotActivatedDuration;
-    private double LastSteadyShotActivated;
-    private double SteadyShotActivatedDuration = 10;
+    public bool SteadyStrikeIsActive => LastSteadyStrikeActivated > Time.GetUnixTime() - SteadyStrikeActivatedDuration;
+    private double LastSteadyStrikeActivated;
+    private double SteadyStrikeActivatedDuration = 10;
 
     public bool MultiShotIsActive => LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration;
     private double LastMultishotActivated;
@@ -450,19 +450,19 @@ partial class Player
         return true;
     }
 
-    public bool TryUseSteadyShot(Gem gem)
+    public bool TryUseSteadyStrike(Gem gem)
     {
-        if (!VerifyCombatFocus(CombatAbility.SteadyShot))
+        if (!VerifyCombatFocus(CombatAbility.SteadyStrike))
         {
             return false;
         }
 
-        if (SteadyShotIsActive)
+        if (SteadyStrikeIsActive)
         {
             return false;
         }
 
-        LastSteadyShotActivated = Time.GetUnixTime();
+        LastSteadyStrikeActivated = Time.GetUnixTime();
 
         PlayParticleEffect(PlayScript.SkillUpYellow, Guid);
 
@@ -1624,7 +1624,7 @@ partial class Player
                     return false;
                 }
                 break;
-            case CombatAbility.SteadyShot:
+            case CombatAbility.SteadyStrike:
                 if (GetEquippedCombatFocus() is not {CombatFocusType:
                         (int)CombatFocusType.Archer
                         or (int)CombatFocusType.Blademaster
@@ -1632,7 +1632,7 @@ partial class Player
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Steady Shot can only be used with an Archer Focus, Blademaster Focus, or Vagabond Focus",
+                            $"Steady Strike can only be used with an Archer Focus, Blademaster Focus, or Vagabond Focus",
                             ChatMessageType.Broadcast
                         )
                     );

@@ -103,7 +103,7 @@ partial class Creature
             var ripostePenaltyMod = playerCaster.RiposteIsActive ? 0.25f : 0.0f;
             var furyPenaltyMod = playerCaster.FuryEnrageIsActive ? 0.25f : 0.0f;
             var multiShotPenaltyMod = playerCaster.MultiShotIsActive ? 0.25f : 0.0f;
-            var steadyShotPenaltyMod = playerCaster.SteadyShotIsActive ? 0.25f : 0.0f;
+            var steadyStrikePenaltyMod = playerCaster.SteadyStrikeIsActive ? 0.25f : 0.0f;
             var smokescreenPenaltyMod = playerCaster.SmokescreenIsActive ? 0.25f : 0.0f;
             var backstabPenaltyMod = playerCaster.BackstabIsActive ? 0.25f : 0.0f;
 
@@ -112,7 +112,7 @@ partial class Creature
                                 + ripostePenaltyMod
                                 + furyPenaltyMod
                                 + multiShotPenaltyMod
-                                + steadyShotPenaltyMod
+                                + steadyStrikePenaltyMod
                                 + smokescreenPenaltyMod
                                 + backstabPenaltyMod;
         }
