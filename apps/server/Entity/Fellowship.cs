@@ -341,6 +341,12 @@ public class Fellowship
 
     private void CheckForFellowRequiredLandblock(Player player)
     {
+        if (player.CurrentLandblock is null)
+        {
+            _log.Error("CheckForFellowRequiredLandblock({Player}) - CurrentLandblock is null", player.Name);
+            return;
+        }
+
         if (player.CurrentLandblock.IsFellowshipRequired())
         {
             player.Session.Network.EnqueueSend(

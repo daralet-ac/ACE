@@ -318,7 +318,7 @@ partial class Player
                     var angle = GetAngle(cleave);
                     var angleWrong = Math.Abs(angle) > CleaveAngle / 2.0f;
 
-                    if (angleWrong)
+                    if (angleWrong && !MultiShotIsActive) // Multishot can hit targets behind you (if within the 10 range limit)
                     {
                         continue;
                     }

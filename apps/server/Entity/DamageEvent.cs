@@ -77,7 +77,7 @@ public class DamageEvent
     private float _resistanceMod;
     private float _slayerMod;
     private float _specDefenseMod;
-    private float _combatAbilitySteadyShotDamageBonus;
+    private float _combatAbilitySteadyStrikeDamageBonus;
     private float _twohandedCombatDamageBonus;
     private float _weaponResistanceMod;
 
@@ -283,7 +283,7 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// Checks for Overpower, Steady Shot, Fury, and Backstab auto-hits.
+    /// Checks for Overpower, Steady Strike, Fury, and Backstab auto-hits.
     /// If evade succeeded, determine if evade was full, partial, or none.
     /// Equal chance for each evasion type to occur.
     /// </summary>
@@ -325,11 +325,30 @@ public class DamageEvent
 
         if (attackRoll > GetEvadeChance(attacker, defender))
         {
-            // If playerDefender has Phalanx active, 50% chance to convert a full hit into a partial hit.
-            if (playerDefender is { PhalanxIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.5f)
+            // If playerDefender has Phalanx active, 25-50% chance to convert a full hit into a partial hit, depending on shield size.
+            if (playerDefender is { PhalanxIsActive: true } && (playerAttacker.GetEquippedShield() is not null || playerAttacker.GetEquippedWeapon() is { IsTwoHanded: true}))
             {
-                _evasionMod = 0.5f;
-                PartialEvasion = PartialEvasion.Some;
+                var phalanxChance = 0.25;
+
+                if (playerDefender.GetEquippedShield() is not null)
+                {
+                    phalanxChance = playerDefender.GetEquippedShield().ArmorStyle switch
+                    {
+                        (int)ArmorStyle.CovenantShield => 0.5f,
+                        (int)ArmorStyle.TowerShield => 0.45f,
+                        (int)ArmorStyle.LargeShield => 0.4f,
+                        (int)ArmorStyle.StandardShield => 0.35f,
+                        (int)ArmorStyle.SmallShield => 0.3f,
+                        (int)ArmorStyle.Buckler => 0.3f,
+                        _ => 0.25f
+                    };
+                }
+
+                if (ThreadSafeRandom.Next(0.0f, 1.0f) < phalanxChance)
+                {
+                    _evasionMod = 0.5f;
+                    PartialEvasion = PartialEvasion.Some;
+                }
             }
 
             return;
@@ -363,12 +382,31 @@ public class DamageEvent
                 break;
             default:
                 // If playerDefender has Phalanx active, 50% chance to convert a full hit into a partial hit.
-                if (playerDefender is { PhalanxIsActive: true } && ThreadSafeRandom.Next(0.1f, 1.0f) > 0.5f)
+                if (playerDefender is { PhalanxIsActive: true } && (playerDefender.GetEquippedShield() is not null || playerDefender.GetEquippedWeapon() is { IsTwoHanded: true}))
                 {
-                    _evasionMod = 0.5f;
-                    PartialEvasion = PartialEvasion.Some;
-                    Evaded = false;
-                    break;
+                    var phalanxChance = 0.25;
+
+                    if (playerDefender.GetEquippedShield() is not null)
+                    {
+                        phalanxChance = playerDefender.GetEquippedShield().ArmorStyle switch
+                        {
+                            (int)ArmorStyle.CovenantShield => 0.5f,
+                            (int)ArmorStyle.TowerShield => 0.45f,
+                            (int)ArmorStyle.LargeShield => 0.4f,
+                            (int)ArmorStyle.StandardShield => 0.35f,
+                            (int)ArmorStyle.SmallShield => 0.3f,
+                            (int)ArmorStyle.Buckler => 0.3f,
+                            _ => 0.25f
+                        };
+                    }
+
+                    if (ThreadSafeRandom.Next(0.0f, 1.0f) < phalanxChance)
+                    {
+                        _evasionMod = 0.5f;
+                        PartialEvasion = PartialEvasion.Some;
+                        Evaded = false;
+                        break;
+                    }
                 }
 
                 _evasionMod = 1.0f;
@@ -618,7 +656,7 @@ public class DamageEvent
         _combatAbilityMultishotDamagePenalty = GetCombatAbilityMultishotDamagePenalty(playerAttacker);
         _combatAbilityFuryDamageBonus = GetCombatAbilityFuryDamageBonus(playerAttacker, playerDefender);
         _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(playerAttacker);
-        _combatAbilitySteadyShotDamageBonus = GetCombatAbilitySteadyShotDamageBonus(playerAttacker);
+        _combatAbilitySteadyStrikeDamageBonus = GetCombatAbilitySteadySrikeDamageBonus(playerAttacker);
         _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
         SneakAttackMod = attacker.GetSneakAttackMod(defender);
         _attackHeightDamageBonus += GetHighAttackHeightBonus(playerAttacker);
@@ -682,6 +720,8 @@ public class DamageEvent
     /// </summary>
     private float GetCombatAbilityMultishotDamagePenalty(Player playerAttacker)
     {
+        return 1.0f; // TODO: Decide if this damage penalty is needed
+
         if (playerAttacker is not { MultiShotIsActive: true})
         {
             return 1.0f;
@@ -757,13 +797,13 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Steady Shot: +25% damage with missile weapons.
+    /// COMBAT ABILITY - Steady Strike: +25% damage with melee/missile weapons.
     /// </summary>
     /// <param name="playerAttacker"></param>
     /// <returns></returns>
-    private float GetCombatAbilitySteadyShotDamageBonus(Player playerAttacker)
+    private float GetCombatAbilitySteadySrikeDamageBonus(Player playerAttacker)
     {
-        if (playerAttacker?.GetEquippedMissileWeapon() is null)
+        if (playerAttacker?.GetEquippedWeapon() is null)
         {
             return 1.0f;
         }
@@ -773,7 +813,7 @@ public class DamageEvent
             return 1.0f;
         }
 
-        return playerAttacker is {SteadyShotIsActive: true} ? 1.25f : 1.0f;
+        return playerAttacker is {SteadyStrikeIsActive: true} ? 1.25f : 1.0f;
     }
 
     /// <summary>
@@ -873,7 +913,7 @@ public class DamageEvent
                * _combatAbilityMultishotDamagePenalty
                * _combatAbilityFuryDamageBonus
                * _combatAbilityRelentlessDamagePenalty
-               * _combatAbilitySteadyShotDamageBonus
+               * _combatAbilitySteadyStrikeDamageBonus
                * _ratingElementalDamageBonus
                * _recklessnessMod
                * SneakAttackMod
@@ -900,7 +940,7 @@ public class DamageEvent
         //                       $" -TwoHand: {_twohandedCombatDamageBonus}\n" +
         //                       $" -MultiShot: {_combatAbilityMultishotDamagePenalty}\n" +
         //                       $" -Fury: {_combatAbilityFuryDamageBonus}\n" +
-        //                       $" -SteadyShot: {_combatAbilitySteadyShotDamageBonus}\n" +
+        //                       $" -SteadyStrike: {_combatAbilitySteadyStrikeDamageBonus}\n" +
         //                       $" -LevelScaling: {_levelScalingMod}\n" +
         //                       $" -TOTAL: {_baseDamage
         //                                   * _attributeMod
@@ -916,7 +956,7 @@ public class DamageEvent
         //                                   * _combatAbilityMultishotDamagePenalty
         //                                   * _combatAbilityFuryDamageBonus
         //                                   * _combatAbilityRelentlessDamagePenalty
-        //                                   * _combatAbilitySteadyShotDamageBonus
+        //                                   * _combatAbilitySteadyStrikeDamageBonus
         //                                   * _ammoEffectMod
         //                                   * _levelScalingMod}");
         // }
@@ -935,7 +975,7 @@ public class DamageEvent
                * _combatAbilityMultishotDamagePenalty
                * _combatAbilityFuryDamageBonus
                * _combatAbilityRelentlessDamagePenalty
-               * _combatAbilitySteadyShotDamageBonus
+               * _combatAbilitySteadyStrikeDamageBonus
                * _ammoEffectMod
                * _levelScalingMod;
     }
@@ -1859,7 +1899,7 @@ public class DamageEvent
         EffectiveAttackSkill = (uint)(attacker.GetEffectiveAttackSkill() * LevelScaling.GetPlayerAttackSkillScalar(playerAttacker, defender));
 
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForAttackHeightMediumAttackSkillBonus(playerAttacker));
-        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForCombatAbilitySteadyShotAttackSkillBonus(playerAttacker));
+        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForCombatAbilitySteadyStrikeAttackSkillBonus(playerAttacker));
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * (1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBravado, "Bravado")));
 
         _effectiveDefenseSkill = (uint)(defender.GetEffectiveDefenseSkill(CombatType) * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker)
@@ -1897,11 +1937,11 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Steady Shot: Increased attack skill with missile attacks by 20%.
+    /// COMBAT ABILITY - Steady Strike: Increased attack skill with melee/missile attacks by 25%.
     /// </summary>
-    private float CheckForCombatAbilitySteadyShotAttackSkillBonus(Player playerAttacker)
+    private float CheckForCombatAbilitySteadyStrikeAttackSkillBonus(Player playerAttacker)
     {
-        if (playerAttacker?.GetEquippedMissileWeapon() is null)
+        if (playerAttacker?.GetEquippedWeapon() is null)
         {
             return 1.0f;
         }
@@ -1911,7 +1951,7 @@ public class DamageEvent
             return 1.0f;
         }
 
-        return playerAttacker is {SteadyShotIsActive: true} ? 1.25f : 1.0f;
+        return playerAttacker is {SteadyStrikeIsActive: true} ? 1.25f : 1.0f;
     }
 
     /// <summary>
@@ -2193,7 +2233,7 @@ public class DamageEvent
             * _damageRatingMod
             * _dualWieldDamageBonus
             * _twohandedCombatDamageBonus
-            * _combatAbilitySteadyShotDamageBonus;
+            * _combatAbilitySteadyStrikeDamageBonus;
         var averageDpsBeforeMitigation = averageDamageBeforeMitigation / timeSinceLastAttack;
 
         var averageDamageAfterMitigation =
@@ -2212,7 +2252,7 @@ public class DamageEvent
             + $"AverageDamageNonCrit: {avgNonCritHit}, AverageDamageCrit: {critHit}, AverageDamageHit: {averageDamage}\n"
             + $"DPS Base: {baseDps}\n\n"
             + $"-- Before Mitigation --\n"
-            + $"PowerMod: {_powerMod}, AttributeMod: {_attributeMod}, SlayerMod: {_slayerMod}, DamageRatingMod: {_damageRatingMod}, DualWieldMod: {_dualWieldDamageBonus}, TwoHandMod: {_twohandedCombatDamageBonus}, SteadyShotMod: {_combatAbilitySteadyShotDamageBonus}\n"
+            + $"PowerMod: {_powerMod}, AttributeMod: {_attributeMod}, SlayerMod: {_slayerMod}, DamageRatingMod: {_damageRatingMod}, DualWieldMod: {_dualWieldDamageBonus}, TwoHandMod: {_twohandedCombatDamageBonus}, SteadyStrikeMod: {_combatAbilitySteadyStrikeDamageBonus}\n"
             + $"AverageDamage Before Mitigation: {averageDamageBeforeMitigation}\n"
             + $"DPS Before Mitigation: {averageDpsBeforeMitigation}\n\n"
             + $"-- After Mitigation --\n"
