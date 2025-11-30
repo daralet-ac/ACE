@@ -379,7 +379,7 @@ public class CombatFocus : WorldObject
         var relentless = player.GetInventoryItemsOfWCID(1051127);
 
         var multishot = player.GetInventoryItemsOfWCID(1051131);
-        var steadyShot = player.GetInventoryItemsOfWCID(1051130);
+        var steadyStrike = player.GetInventoryItemsOfWCID(1051130);
         var evasiveStance = player.GetInventoryItemsOfWCID(1051114);
 
         var vanish = player.GetInventoryItemsOfWCID(1051112);
@@ -462,9 +462,9 @@ public class CombatFocus : WorldObject
 
         if (combatFocusType is WorldObjects.CombatFocusType.Archer or WorldObjects.CombatFocusType.Blademaster or WorldObjects.CombatFocusType.Vagabond)
         {
-            if (steadyShot.Count > 0)
+            if (steadyStrike.Count > 0)
             {
-                player.EnchantmentManager.StartCooldown(steadyShot[0]);
+                player.EnchantmentManager.StartCooldown(steadyStrike[0]);
             }
             if (evasiveStance.Count > 0)
             {
@@ -957,7 +957,7 @@ public class CombatFocus : WorldObject
                         "With this focus equipped, your chance to deal a critical hit is increased by 20% while performing sneak attacks. Normal hits deal 20% less damage.\n\n"
                         + "Activated Combat Ability: For the next 10 seconds, your attacks from behind cannot be evaded\n\n";
                     break;
-                case CombatAbility.SteadyShot:
+                case CombatAbility.SteadyStrike:
                     description +=
                         "With this focus equipped, the accuracy of your missile weapon attacks is increased by 20%.\n\n"
                         + "Activated Combat Ability: For the next 10 seconds, your arrows cannot be dodged and deal an additional 25% damage.\n\n";

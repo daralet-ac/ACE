@@ -48,9 +48,9 @@ partial class Player
     public float EnrageLevel;
 
     // Archer
-    public bool SteadyShotIsActive => LastSteadyShotActivated > Time.GetUnixTime() - SteadyShotActivatedDuration;
-    private double LastSteadyShotActivated;
-    private double SteadyShotActivatedDuration = 10;
+    public bool SteadyStrikeIsActive => LastSteadyStrikeActivated > Time.GetUnixTime() - SteadyStrikeActivatedDuration;
+    private double LastSteadyStrikeActivated;
+    private double SteadyStrikeActivatedDuration = 10;
 
     public bool MultiShotIsActive => LastMultishotActivated > Time.GetUnixTime() - MultishotActivatedDuration;
     private double LastMultishotActivated;
@@ -127,11 +127,11 @@ partial class Player
             return false;
         }
 
-        if (GetEquippedShield() is null)
+        if (GetEquippedShield() is null && GetEquippedWeapon() is not { IsTwoHanded: true})
         {
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"Phalanx requires an equipped shield.",
+                    $"Phalanx requires an equipped shield or two-handed weapon.",
                     ChatMessageType.Broadcast
                 )
             );
@@ -144,7 +144,7 @@ partial class Player
 
             Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You raise your shield into a defensive stance!",
+                    $"You move into a defensive stance!",
                     ChatMessageType.Broadcast
                 )
             );
@@ -156,7 +156,7 @@ partial class Player
         PhalanxIsActive = false;
 
         Session.Network.EnqueueSend(
-            new GameMessageSystemChat($"You lower your shield.", ChatMessageType.Broadcast)
+            new GameMessageSystemChat($"You lower your guard.", ChatMessageType.Broadcast)
         );
         PlayParticleEffect(PlayScript.DispelLife, Guid);
 
@@ -450,19 +450,19 @@ partial class Player
         return true;
     }
 
-    public bool TryUseSteadyShot(Gem gem)
+    public bool TryUseSteadyStrike(Gem gem)
     {
-        if (!VerifyCombatFocus(CombatAbility.SteadyShot))
+        if (!VerifyCombatFocus(CombatAbility.SteadyStrike))
         {
             return false;
         }
 
-        if (SteadyShotIsActive)
+        if (SteadyStrikeIsActive)
         {
             return false;
         }
 
-        LastSteadyShotActivated = Time.GetUnixTime();
+        LastSteadyStrikeActivated = Time.GetUnixTime();
 
         PlayParticleEffect(PlayScript.SkillUpYellow, Guid);
 
@@ -1033,31 +1033,16 @@ partial class Player
                 )
             );
 
-            _log.Error("TryUseAegis() - {Weapon} does not have spellcraft", equippedWeapon.Name);
             return false;
         }
 
-        var lifeSkill = GetModdedLifeMagicSkill();
-        var averagedMagicSkill = (uint)((lifeSkill + weaponSpellcraft) * 0.5);
-        var highestMagicSkill = Math.Max(averagedMagicSkill, (int)weaponSpellcraft);
-
-        var roll = Convert.ToInt32(ThreadSafeRandom.Next(highestMagicSkill * 0.5f, lifeSkill));
+        var roll = Convert.ToInt32(ThreadSafeRandom.Next(weaponSpellcraft.Value * 0.5f, weaponSpellcraft.Value));
         int[] diff = [50, 100, 200, 300, 350, 400, 450];
         var closest = diff.MinBy(x => Math.Abs(x - roll));
         var level = Array.IndexOf(diff, closest);
 
         var finalSpellId = SpellLevelProgression.GetSpellAtLevel((SpellId)baseSpell.Id, level + 1);
 
-        var manaCost = (int)(new Spell(finalSpellId).BaseMana * 2);
-        if (Mana.Current < manaCost)
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You do not have enough mana.", ChatMessageType.Broadcast)
-            );
-            return false;
-        }
-
-        UpdateVitalDelta(Mana, -manaCost);
         TryCastSpell(new Spell(finalSpellId), this);
 
         LastAegisActivated = Time.GetUnixTime();
@@ -1433,7 +1418,7 @@ partial class Player
 
     public void TryUseShroud()
     {
-        if (EnchantmentManager.HasSpell(5379))
+        if (EnchantmentManager.HasSpell((int)SpellId.Shrouded))
         {
             if (IsBusy)
             {
@@ -1489,11 +1474,11 @@ partial class Player
                 return;
             }
 
-            var enchantment = EnchantmentManager.GetEnchantment(5379);
+            var enchantment = EnchantmentManager.GetEnchantment((int)SpellId.Shrouded);
             if (enchantment != null)
             {
                 EnchantmentManager.Dispel(enchantment);
-                HandleSpellHooks(new Spell(5379));
+                HandleSpellHooks(new Spell((int)SpellId.Shrouded));
                 PlayParticleEffect(PlayScript.DispelCreature, Guid);
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
@@ -1505,7 +1490,7 @@ partial class Player
         }
         else
         {
-            var spell = new Spell(5379);
+            var spell = new Spell((int)SpellId.Shrouded);
             var addResult = EnchantmentManager.Add(spell, null, null, true);
             Session.Network.EnqueueSend(
                 new GameEventMagicUpdateEnchantment(
@@ -1624,7 +1609,7 @@ partial class Player
                     return false;
                 }
                 break;
-            case CombatAbility.SteadyShot:
+            case CombatAbility.SteadyStrike:
                 if (GetEquippedCombatFocus() is not {CombatFocusType:
                         (int)CombatFocusType.Archer
                         or (int)CombatFocusType.Blademaster
@@ -1632,7 +1617,7 @@ partial class Player
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Steady Shot can only be used with an Archer Focus, Blademaster Focus, or Vagabond Focus",
+                            $"Steady Strike can only be used with an Archer Focus, Blademaster Focus, or Vagabond Focus",
                             ChatMessageType.Broadcast
                         )
                     );
