@@ -1418,7 +1418,7 @@ partial class Player
 
     public void TryUseShroud()
     {
-        if (EnchantmentManager.HasSpell(5379))
+        if (EnchantmentManager.HasSpell((int)SpellId.Shrouded))
         {
             if (IsBusy)
             {
