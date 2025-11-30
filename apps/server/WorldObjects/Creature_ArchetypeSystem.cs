@@ -322,6 +322,7 @@ partial class Creature
                 var newVital = GetNewHealthLevel(tier, statWeight, toughness, physicality);
 
                 Vitals[PropertyAttribute2nd.MaxHealth].StartingValue = newVital;
+                Health.Current = Health.MaxValue;
             }
         }
 
@@ -342,6 +343,7 @@ partial class Creature
                 var newVital = GetNewStaminaLevel(tier, statWeight, physicality, dexterity);
 
                 Vitals[PropertyAttribute2nd.MaxStamina].StartingValue = newVital;
+                Stamina.Current = Stamina.MaxValue;
             }
         }
 
@@ -362,6 +364,7 @@ partial class Creature
                 var newVital = GetNewManaLevel(tier, statWeight, magic);
 
                 Vitals[PropertyAttribute2nd.MaxMana].StartingValue = newVital;
+                Mana.Current = Mana.MaxValue;
             }
         }
 
