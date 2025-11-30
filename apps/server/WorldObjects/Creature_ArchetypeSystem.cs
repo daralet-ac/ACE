@@ -18,8 +18,8 @@ partial class Creature
     private static readonly int[] enemyStaminaManaRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
 
     private static readonly int[] enemyArmorWard = { 10, 20, 45, 68, 101, 152, 228, 342, 513 };
-    private static readonly int[] enemyAttack = { 10, 50, 90, 120, 150, 180, 225, 300, 500 };
-    private static readonly int[] enemyDefense = { 10, 50, 90, 120, 150, 180, 225, 300, 500 };
+    private static readonly int[] enemyAttack = { 10, 60, 100, 150, 175, 200, 250, 350, 500 };
+    private static readonly int[] enemyDefense = { 10, 60, 100, 150, 175, 200, 250, 350, 500 };
     private static readonly int[] enemyAssessDeception = { 10, 40, 80, 120, 160, 200, 250, 300, 400 };
     private static readonly int[] enemyRun = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
 
@@ -322,6 +322,7 @@ partial class Creature
                 var newVital = GetNewHealthLevel(tier, statWeight, toughness, physicality);
 
                 Vitals[PropertyAttribute2nd.MaxHealth].StartingValue = newVital;
+                Vitals[PropertyAttribute2nd.MaxHealth].Current = newVital;
             }
         }
 
@@ -342,6 +343,7 @@ partial class Creature
                 var newVital = GetNewStaminaLevel(tier, statWeight, physicality, dexterity);
 
                 Vitals[PropertyAttribute2nd.MaxStamina].StartingValue = newVital;
+                Vitals[PropertyAttribute2nd.MaxStamina].Current = newVital;
             }
         }
 
@@ -362,6 +364,7 @@ partial class Creature
                 var newVital = GetNewManaLevel(tier, statWeight, magic);
 
                 Vitals[PropertyAttribute2nd.MaxMana].StartingValue = newVital;
+                Vitals[PropertyAttribute2nd.MaxMana].Current = newVital;
             }
         }
 
