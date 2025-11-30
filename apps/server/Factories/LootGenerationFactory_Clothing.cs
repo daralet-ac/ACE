@@ -601,7 +601,14 @@ public static partial class LootGenerationFactory
 
     private static void NormalizeProtectionLevels(WorldObject wo)
     {
-        if (wo.ArmorLevel is null)
+        if (wo.ArmorLevel is null ||
+            wo.ArmorModVsAcid is null ||
+            wo.ArmorModVsBludgeon is null ||
+            wo.ArmorModVsCold is null ||
+            wo.ArmorModVsElectric is null ||
+            wo.ArmorModVsFire is null ||
+            wo.ArmorModVsPierce is null ||
+            wo.ArmorModVsSlash is null)
         {
             return; 
         }
