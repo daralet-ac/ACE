@@ -610,6 +610,7 @@ public static partial class LootGenerationFactory
             wo.ArmorModVsPierce is null ||
             wo.ArmorModVsSlash is null)
         {
+            _log.Error("LootGeneration_Clothing.NormalizeProtectionLevels({WorldObject}) - Armor or Protection Level is null", wo.Name);
             return; 
         }
 
