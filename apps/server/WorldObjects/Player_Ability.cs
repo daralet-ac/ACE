@@ -1474,11 +1474,11 @@ partial class Player
                 return;
             }
 
-            var enchantment = EnchantmentManager.GetEnchantment(5379);
+            var enchantment = EnchantmentManager.GetEnchantment((int)SpellId.Shrouded);
             if (enchantment != null)
             {
                 EnchantmentManager.Dispel(enchantment);
-                HandleSpellHooks(new Spell(5379));
+                HandleSpellHooks(new Spell((int)SpellId.Shrouded));
                 PlayParticleEffect(PlayScript.DispelCreature, Guid);
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
@@ -1490,7 +1490,7 @@ partial class Player
         }
         else
         {
-            var spell = new Spell(5379);
+            var spell = new Spell((int)SpellId.Shrouded);
             var addResult = EnchantmentManager.Add(spell, null, null, true);
             Session.Network.EnqueueSend(
                 new GameEventMagicUpdateEnchantment(
