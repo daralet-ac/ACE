@@ -46,7 +46,7 @@ public class CharacterInfo
             // Support multi-word character names by joining parameters.
             var playerName = string.Join(" ", parameters).Trim();
 
-            var player = PlayerManager.GetOnlinePlayer(playerName);
+            player = PlayerManager.GetOnlinePlayer(playerName);
 
             if (player == null)
             {
