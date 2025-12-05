@@ -1497,9 +1497,10 @@ partial class Player
         LastSuccessCast_School = spell.School;
         LastSuccessCast_Time = Time.GetUnixTime();
 
-        if (spell.School == MagicSchool.VoidMagic)
+        if (spell.School == MagicSchool.VoidMagic && spell.Id != (uint)SpellId.VoidRestorationPenalty)
         {
             LastVoidSpellCastTime = Time.GetUnixTime();
+            CreatePlayerSpell(this, new Spell((int)SpellId.VoidRestorationPenalty), false);
         }
 
         var caster = GetEquippedWand();
