@@ -6442,6 +6442,7 @@ public enum SpellId : uint
     RatingPhysicalDefense,
     RatingMagicDefense,
     Shrouded,
+    VoidRestorationPenalty,
 
     NumSpells = 8192,
 
