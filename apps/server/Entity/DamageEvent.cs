@@ -326,7 +326,7 @@ public class DamageEvent
         if (attackRoll > GetEvadeChance(attacker, defender))
         {
             // If playerDefender has Phalanx active, 25-50% chance to convert a full hit into a partial hit, depending on shield size.
-            if (playerDefender is { PhalanxIsActive: true } && (playerAttacker.GetEquippedShield() is not null || playerAttacker.GetEquippedWeapon() is { IsTwoHanded: true}))
+            if (playerDefender is { PhalanxIsActive: true } && (playerDefender.GetEquippedShield() is not null || playerDefender.GetEquippedWeapon() is { IsTwoHanded: true}))
             {
                 var phalanxChance = 0.25;
 
