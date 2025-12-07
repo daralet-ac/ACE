@@ -704,7 +704,7 @@ partial class Creature
 
         if (this as Player is { SteadyStrikeIsActive: true })
         {
-            animSpeed *= 0.75f;
+            animSpeed *= 0.9f;
         }
 
         return animSpeed;
