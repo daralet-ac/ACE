@@ -2742,7 +2742,88 @@ public class EmoteManager
 
         IsBusy = true;
 
-        var emote = emoteSet.PropertiesEmoteAction.ElementAt(emoteIdx);
+        // Ensure the action collection is present and the requested index is valid.
+        // Protect against ArgumentOutOfRangeException observed in production.
+        if (emoteSet.PropertiesEmoteAction == null)
+        {
+            _log.Error(
+                "Enqueue - emoteSet.PropertiesEmoteAction is null. Aborting. WorldObject=0x{Guid} {Name} ({WeenieClassId}), EmoteSet={Category}:{Quest}",
+                WorldObject.Guid,
+                WorldObject.Name,
+                WorldObject.WeenieClassId,
+                emoteSet.Category,
+                emoteSet.Quest
+            );
+
+            Nested--;
+
+            if (Nested == 0)
+            {
+                IsBusy = false;
+            }
+
+            return;
+        }
+
+        // Try to obtain an IList for O(1) Count and index access; fall back to materializing the sequence.
+        var actionsList = emoteSet.PropertiesEmoteAction as IList<PropertiesEmoteAction> ?? emoteSet.PropertiesEmoteAction.ToList();
+
+        if (actionsList.Count == 0)
+        {
+            _log.Warning(
+                "Enqueue - emoteSet.PropertiesEmoteAction is empty. Nothing to enqueue. WorldObject=0x{Guid} {Name} ({WeenieClassId}), EmoteSet={Category}:{Quest}",
+                WorldObject.Guid,
+                WorldObject.Name,
+                WorldObject.WeenieClassId,
+                emoteSet.Category,
+                emoteSet.Quest
+            );
+
+            Nested--;
+
+            if (Nested == 0)
+            {
+                IsBusy = false;
+            }
+
+            return;
+        }
+
+        if (emoteIdx < 0 || emoteIdx >= actionsList.Count)
+        {
+            _log.Error(
+                "Enqueue - emoteIdx out of range. Requested {RequestedIndex} but valid range is 0..{MaxIndex}. Aborting to prevent crash. WorldObject=0x{Guid} {Name} ({WeenieClassId}), EmoteSet={Category}:{Quest}",
+                emoteIdx,
+                actionsList.Count - 1,
+                WorldObject.Guid,
+                WorldObject.Name,
+                WorldObject.WeenieClassId,
+                emoteSet.Category,
+                emoteSet.Quest
+            );
+
+            // include a minimal diagnostic snippet
+            try
+            {
+                var actionSummaries = string.Join(", ", actionsList.Select(a => ((EmoteType)a.Type).ToString() + (string.IsNullOrEmpty(a.Message) ? "" : $":{a.Message}")));
+                _log.Debug("Enqueue - emote actions: {Actions}", actionSummaries);
+            }
+            catch
+            {
+                // ignore diagnostics failures
+            }
+
+            Nested--;
+
+            if (Nested == 0)
+            {
+                IsBusy = false;
+            }
+
+            return;
+        }
+
+        var emote = actionsList[emoteIdx];
 
         if (
             Nested > 75
