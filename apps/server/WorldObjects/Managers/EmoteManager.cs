@@ -369,6 +369,57 @@ public class EmoteManager
 
                 break;
 
+            case EmoteType.CreateSigilTrinket:
+
+                if (player != null && WorldObject != null)
+                {
+                    // Prefer explicit PropertyInt values on the source WorldObject when present,
+                    // otherwise fall back to emote fields or defaults.
+                    var trinketTier = WorldObject.GetProperty(PropertyInt.Tier) ?? emote.WealthRating ?? 2;
+
+                    // emote.Stat (optional) -> SigilTrinketType
+                    var trinketType = emote.Stat.HasValue ? (SigilTrinketType)emote.Stat.Value : SigilTrinketType.Scarab;
+
+                    // Prefer PropertyInt-backed values when available (works for SigilTrinket or any weenie with those properties, e.g. gems)
+                    var forcedEffectId = WorldObject.GetProperty(PropertyInt.SigilTrinketEffectId) ?? null;
+                    var forcedWieldSkillRng = WorldObject.GetProperty(PropertyInt.SigilTrinketSkill)
+                                                ?? (emote.Shade.HasValue ? (int?)Convert.ToInt32(Math.Round(emote.Shade.Value)) : null);
+
+                    // allow emote to override created WCID, otherwise use source object's weenie class id as fallback
+                    var forcedWcid = emote.WeenieClassId ?? null;
+
+                    var profile = new ACE.Server.Factories.Entity.TreasureDeathExtended
+                    {
+                        Tier = trinketTier,
+                        LootQualityMod = 0,
+                        ItemChance = 100,
+                        ItemMinAmount = 1,
+                        ItemMaxAmount = 1,
+                        MagicItemChance = 100,
+                        MagicItemMinAmount = 1,
+                        MagicItemMaxAmount = 1,
+                        MundaneItemChance = 100,
+                        MundaneItemMinAmount = 1,
+                        MundaneItemMaxAmount = 1,
+                        UnknownChances = 21
+                    };
+
+                    var trinket = LootGenerationFactory.CreateSigilTrinket(
+                        profile,
+                        trinketType,
+                        true,
+                        forcedEffectId,
+                        forcedWieldSkillRng,
+                        forcedWcid
+                    );
+
+                    if (trinket != null)
+                    {
+                        player.TryCreateForGive(WorldObject, trinket);
+                    }
+                }
+                break;
+
             case EmoteType.CreateTreasure:
 
                 if (player != null)

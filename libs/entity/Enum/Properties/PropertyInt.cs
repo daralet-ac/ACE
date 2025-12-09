@@ -756,7 +756,7 @@ public enum PropertyInt : ushort
     SigilTrinketColor = 401,
 
     [ServerOnly]
-    SigilTrinketSchool = 402,
+    SigilTrinketSkill = 402,
 
     [ServerOnly]
     SigilTrinketEffectId = 403,

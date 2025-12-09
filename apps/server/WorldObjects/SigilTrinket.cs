@@ -265,16 +265,16 @@ public class SigilTrinket : WorldObject
 
     public int? SigilTrinketSkill
     {
-        get => GetProperty(PropertyInt.SigilTrinketSchool);
+        get => GetProperty(PropertyInt.SigilTrinketSkill);
         set
         {
             if (!value.HasValue)
             {
-                RemoveProperty(PropertyInt.SigilTrinketSchool);
+                RemoveProperty(PropertyInt.SigilTrinketSkill);
             }
             else
             {
-                SetProperty(PropertyInt.SigilTrinketSchool, value.Value);
+                SetProperty(PropertyInt.SigilTrinketSkill, value.Value);
             }
         }
     }

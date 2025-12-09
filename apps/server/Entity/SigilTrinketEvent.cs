@@ -315,7 +315,7 @@ public class SigilTrinketEvent
     /// </summary>
     private void CastSigilTrinketSpell(SigilTrinket sigilTrinket, bool useProgression = true)
     {
-        SpellId castSpellLevel1Id;
+        var castSpellLevel1IdsToCast = new List<SpellId>();
 
         switch ((sigilTrinket.WieldSkillType, sigilTrinket.SigilTrinketEffectId))
         {
@@ -324,22 +324,22 @@ public class SigilTrinketEvent
                 {
                     case SpellCategory.HealthRaising:
                     case SpellCategory.HealingRaising:
-                        castSpellLevel1Id = SpellId.RegenerationOther1;
+                        castSpellLevel1IdsToCast.Add(SpellId.RegenerationOther1);
                         break;
                     case SpellCategory.StaminaRaising:
-                        castSpellLevel1Id = SpellId.RejuvenationOther1;
+                        castSpellLevel1IdsToCast.Add(SpellId.RejuvenationOther1);
                         break;
                     case SpellCategory.ManaRaising:
-                        castSpellLevel1Id = SpellId.ManaRenewalOther1;
+                        castSpellLevel1IdsToCast.Add(SpellId.ManaRenewalOther1);
                         break;
                     case SpellCategory.HealthLowering:
-                        castSpellLevel1Id = SpellId.FesterOther1;
+                        castSpellLevel1IdsToCast.Add(SpellId.FesterOther1);
                         break;
                     case SpellCategory.StaminaLowering:
-                        castSpellLevel1Id = SpellId.ExhaustionOther1;
+                        castSpellLevel1IdsToCast.Add(SpellId.ExhaustionOther1);
                         break;
                     case SpellCategory.ManaLowering:
-                        castSpellLevel1Id = SpellId.ManaDepletionOther1;
+                        castSpellLevel1IdsToCast.Add(SpellId.ManaDepletionOther1);
                         break;
                     default:
                         return;
@@ -350,25 +350,113 @@ public class SigilTrinketEvent
                 {
                     case SpellCategory.HealthRaising:
                     case SpellCategory.HealingRaising:
-                        castSpellLevel1Id = SpellId.DefenderOther1;
+                        castSpellLevel1IdsToCast.Add(SpellId.DefenderOther1);
                         break;
                     case SpellCategory.StaminaRaising:
-                        castSpellLevel1Id = SpellId.BloodDrinkerOther1;
+                        castSpellLevel1IdsToCast.Add(SpellId.BloodDrinkerOther1);
                         break;
                     case SpellCategory.ManaRaising:
-                        castSpellLevel1Id = SpellId.SpiritDrinkerOther1;
+                        castSpellLevel1IdsToCast.Add(SpellId.SpiritDrinkerOther1);
                         break;
-                    //case SpellCategory.HealthLowering: castSpellLevel1Id = SpellId.FesterOther1; break;
-                    //case SpellCategory.StaminaLowering: castSpellLevel1Id = SpellId.ExhaustionOther1; break;
-                    //case SpellCategory.ManaLowering: castSpellLevel1Id = SpellId.ManaDepletionOther1; break;
                     default:
                         return;
                 }
                 break;
+            case ((int)Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastProt):
+            {
+                if (Target is not Creature targetCreature)
+                {
+                    return;
+                }
+
+                var recentDamageTakenTypes = targetCreature.RecentDamageTypesTaken;
+
+                if (recentDamageTakenTypes.Count == 0)
+                {
+                    return;
+                }
+
+                foreach (var damageTakenType in recentDamageTakenTypes)
+                {
+                    switch (damageTakenType)
+                    {
+                        case DamageType.Slash:
+                            castSpellLevel1IdsToCast.Add(SpellId.BladeProtectionOther1);
+                            break;
+                        case DamageType.Pierce:
+                            castSpellLevel1IdsToCast.Add(SpellId.PiercingProtectionOther1);
+                            break;
+                        case DamageType.Bludgeon:
+                            castSpellLevel1IdsToCast.Add(SpellId.BludgeonProtectionOther1);
+                            break;
+                        case DamageType.Acid:
+                            castSpellLevel1IdsToCast.Add(SpellId.AcidProtectionOther1);
+                            break;
+                        case DamageType.Fire:
+                            castSpellLevel1IdsToCast.Add(SpellId.FireProtectionOther1);
+                            break;
+                        case DamageType.Cold:
+                            castSpellLevel1IdsToCast.Add(SpellId.ColdProtectionOther1);
+                            break;
+                        case DamageType.Electric:
+                            castSpellLevel1IdsToCast.Add(SpellId.LightningProtectionOther1);
+                            break;
+                        default:
+                            continue;
+                    }
+                }
+            }
+                break;
+
+            case ((int)Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastVuln):
+            {
+                if (Target is not Creature targetCreature)
+                {
+                    return;
+                }
+
+                var targetWeakestResistances = targetCreature.WeakestResistances;
+
+                if (targetWeakestResistances.Count == 0)
+                {
+                    return;
+                }
+
+                foreach (var elementalWeakness in targetWeakestResistances)
+                {
+                    switch (elementalWeakness)
+                    {
+                        case DamageType.Slash:
+                            castSpellLevel1IdsToCast.Add(SpellId.BladeVulnerabilityOther1);
+                            break;
+                        case DamageType.Pierce:
+                            castSpellLevel1IdsToCast.Add(SpellId.PiercingVulnerabilityOther1);
+                            break;
+                        case DamageType.Bludgeon:
+                            castSpellLevel1IdsToCast.Add(SpellId.BludgeonVulnerabilityOther1);
+                            break;
+                        case DamageType.Acid:
+                            castSpellLevel1IdsToCast.Add(SpellId.AcidVulnerabilityOther1);
+                            break;
+                        case DamageType.Fire:
+                            castSpellLevel1IdsToCast.Add(SpellId.FireVulnerabilityOther1);
+                            break;
+                        case DamageType.Cold:
+                            castSpellLevel1IdsToCast.Add(SpellId.ColdVulnerabilityOther1);
+                            break;
+                        case DamageType.Electric:
+                            castSpellLevel1IdsToCast.Add(SpellId.LightningVulnerabilityOther1);
+                            break;
+                        default:
+                            continue;
+                    }
+                }
+            }
+                break;
             default:
             {
-                castSpellLevel1Id = (SpellId)(sigilTrinket.SigilTrinketCastSpellId ?? 0);
-                if (castSpellLevel1Id == SpellId.Undef)
+                castSpellLevel1IdsToCast.Add((SpellId)(sigilTrinket.SigilTrinketCastSpellId ?? 0));
+                if (castSpellLevel1IdsToCast.Count == 0)
                 {
                     return;
                 }
@@ -376,35 +464,38 @@ public class SigilTrinketEvent
             }
         }
 
-        SpellId castSpellId;
-        if (useProgression && sigilTrinket.SpellLevel != null)
+        foreach (var castSpellLevel1Id in castSpellLevel1IdsToCast)
         {
-            castSpellId = SpellLevelProgression.GetSpellAtLevel(castSpellLevel1Id, (int)sigilTrinket.SpellLevel, true);
-            if (castSpellId == SpellId.Undef)
+            SpellId castSpellId;
+            if (useProgression && sigilTrinket.SpellLevel != null)
             {
-                return;
-            }
-        }
-        else
-        {
-            castSpellId = castSpellLevel1Id;
-        }
-
-        // Create Sigil Trinket Spell with different delays depending on the effect type
-        switch ((sigilTrinket.WieldSkillType, sigilTrinket.SigilTrinketEffectId))
-        {
-            case ((int)Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate):
-                CreateSigilTrinketSpell(sigilTrinket, castSpellId, 1.0);
-                break;
-            case ((int)Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabDetonate):
-                if (sigilTrinket.CreatureToCastSpellFrom != null)
+                castSpellId = SpellLevelProgression.GetSpellAtLevel(castSpellLevel1Id, (int)sigilTrinket.SpellLevel, true);
+                if (castSpellId == SpellId.Undef)
                 {
-                    CreateSigilTrinketSpell(sigilTrinket, castSpellId, 0.0);
+                    return;
                 }
-                break;
-            default:
-                CreateSigilTrinketSpell(sigilTrinket, castSpellId, 0.5);
-                break;
+            }
+            else
+            {
+                castSpellId = castSpellLevel1Id;
+            }
+
+            // Create Sigil Trinket Spell with different delays depending on the effect type
+            switch ((sigilTrinket.WieldSkillType, sigilTrinket.SigilTrinketEffectId))
+            {
+                case ((int)Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate):
+                    CreateSigilTrinketSpell(sigilTrinket, castSpellId, 1.0);
+                    break;
+                case ((int)Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabDetonate):
+                    if (sigilTrinket.CreatureToCastSpellFrom != null)
+                    {
+                        CreateSigilTrinketSpell(sigilTrinket, castSpellId, 0.0);
+                    }
+                    break;
+                default:
+                    CreateSigilTrinketSpell(sigilTrinket, castSpellId, 0.5);
+                    break;
+            }
         }
     }
 

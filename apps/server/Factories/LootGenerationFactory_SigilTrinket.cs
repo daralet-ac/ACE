@@ -103,18 +103,6 @@ public static partial class LootGenerationFactory
         },
     ];
 
-    private static readonly Dictionary<string, uint> VulnProtIconOverlayIds = new()
-    {
-        { "black", 100689523 }, // black
-        { "white", 100689533 }, // white
-        { "purple", 100689536 }, // purple
-        { "blue", 100689535 }, // blue
-        { "green", 100689531 }, // green
-        { "yellow", 100689537 }, // yellow
-        { "orange", 100689532 }, // orange
-        { "red", 100689534 } // red
-    };
-
     private static readonly Dictionary<string, int> PaletteTemplateColors = new()
     {
         { "black", 2 }, // black (lead)
@@ -128,54 +116,6 @@ public static partial class LootGenerationFactory
         { "orange", 19 }, // orange (copper)
         { "red", 14 }, // red
         { "iron", 82 } // iron (pinkPurple)
-    };
-
-    private static readonly Dictionary<string, uint> VulnSpellIds = new()
-    {
-        { "black", 25 }, // black
-        { "white", 1048 }, // white
-        { "purple", 1084 }, // purple
-        { "blue", 1060 }, // blue
-        { "green", 521 }, // green
-        { "yellow", 1151 }, // yellow
-        { "orange", 1127 }, // orange
-        { "red", 21 } // red
-    };
-
-    private static readonly Dictionary<string, string> VulnSpellNames = new()
-    {
-        { "black", "Imperil Other" }, // black
-        { "white", "Bludgeoning Vulnerability Other" }, // white
-        { "purple", "Lightning Vulnerability Other" }, // purple
-        { "blue", "Cold Vulnerability Other" }, // blue
-        { "green", "Acid Vulnerability Other" }, // green
-        { "yellow", "Piercing Vulnerability Other" }, // yellow
-        { "orange", "Slashing Vulnerability Other" }, // orange
-        { "red", "Fire Vulnerability Other" } // red
-    };
-
-    private static readonly Dictionary<string, uint> ProtSpellIds = new()
-    {
-        { "black", 23 }, // black
-        { "white", 1024 }, // white
-        { "purple", 1072 }, // purple
-        { "blue", 1036 }, // blue
-        { "green", 509 }, // green
-        { "yellow", 1139 }, // yellow
-        { "orange", 1115 }, // orange
-        { "red", 19 } // red
-    };
-
-    private static readonly Dictionary<string, string> ProtSpellNames = new()
-    {
-        { "black", "Armor Other" }, // black
-        { "white", "Bludgeoning Protection Other" }, // white
-        { "purple", "Lightning Protection Other" }, // purple
-        { "blue", "Cold Protection Other" }, // blue
-        { "green", "Acid Protection Other" }, // green
-        { "yellow", "Piercing Protection Other" }, // yellow
-        { "orange", "Slashing Protection Other" }, // orange
-        { "red", "Fire Protection Other" } // red
     };
 
     private static readonly Dictionary<string, string> DuplicationElementString = new()
@@ -206,21 +146,34 @@ public static partial class LootGenerationFactory
         { "war", 100689495 },
     };
 
-    private static WorldObject CreateSigilTrinket(TreasureDeath profile, SigilTrinketType sigilTrinketType,  bool mutate = true)
+    private static readonly Dictionary<int, uint> TierIconIds = new()
+    {
+        {1, 100690996 },
+        {2, 100690997 },
+        {3, 100690998 },
+        {4, 100690999 },
+        {5, 100691000 },
+        {6, 100691001 },
+        {7, 100691002 },
+    };
+
+    public static WorldObject CreateSigilTrinket(TreasureDeath profile, SigilTrinketType sigilTrinketType, bool mutate = true, int? effectId = null, int? wieldSkillRng = null, uint? wcidOverride = null)
     {
         var wcid = SigilTrinketWcids.Roll(profile.Tier, sigilTrinketType);
 
-        var wo = WorldObjectFactory.CreateNewWorldObject((uint)wcid);
+        var actualWcid = wcidOverride ?? (uint)wcid;
+
+        var wo = WorldObjectFactory.CreateNewWorldObject(actualWcid);
 
         if (mutate)
         {
-            MutateSigilTrinket(wo, profile);
+            MutateSigilTrinket(wo, profile, effectId, wieldSkillRng);
         }
 
         return wo;
     }
 
-    private static void MutateSigilTrinket(WorldObject wo, TreasureDeath profile)
+    private static void MutateSigilTrinket(WorldObject wo, TreasureDeath profile, int? effectId = null, int? forcedWieldSkillRng = null)
     {
         if (wo is not SigilTrinket sigilTrinket)
         {
@@ -235,12 +188,15 @@ public static partial class LootGenerationFactory
         sigilTrinket.ItemMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
         sigilTrinket.ItemBaseXp = GetBaseLevelCost(profile);
         sigilTrinket.ItemTotalXp = 0;
+        sigilTrinket.IconOverlayId = TierIconIds[Math.Clamp(profile.Tier - 1, 1, 7)];
 
         sigilTrinket.SigilTrinketHealthReserved = 0;
         sigilTrinket.SigilTrinketStaminaReserved = 0;
         sigilTrinket.SigilTrinketManaReserved = 0;
 
-        var wieldSkillRng = ThreadSafeRandom.Next(0, 1);
+        // allow emote to override the wield skill rng (0 or 1). If not provided, use a random 0/1.
+        var wieldSkillRng = forcedWieldSkillRng ?? ThreadSafeRandom.Next(0, 1);
+
         switch (sigilTrinket.SigilTrinketType)
         {
             case (int)SigilTrinketType.Compass:
@@ -249,13 +205,27 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.Shield)
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxShieldEffectId);
+                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxShieldEffectId)
+                    {
+                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                    }
+                    else
+                    {
+                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxShieldEffectId);
+                    }
 
                     SetShieldCompassStats(profile, sigilTrinket);
                 }
                 else
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxTwohandedCombatEffectId);
+                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxTwohandedCombatEffectId)
+                    {
+                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                    }
+                    else
+                    {
+                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxTwohandedCombatEffectId);
+                    }
 
                     SetTwohandedCombatCompassStats(profile, sigilTrinket);
                 }
@@ -267,13 +237,27 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.DualWield)
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxDualWieldEffectId);
+                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxDualWieldEffectId)
+                    {
+                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                    }
+                    else
+                    {
+                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxDualWieldEffectId);
+                    }
 
                     SetDualWieldPuzzleBoxStats(profile, sigilTrinket);
                 }
                 else
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxThieveryEffectId);
+                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxThieveryEffectId)
+                    {
+                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                    }
+                    else
+                    {
+                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxThieveryEffectId);
+                    }
 
                     SetThieveryPuzzleBoxStats(profile, sigilTrinket);
                 }
@@ -285,13 +269,28 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.LifeMagic)
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxLifeMagicEffectId);
+                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxLifeMagicEffectId)
+                    {
+                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                    }
+                    else
+                    {
+                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxLifeMagicEffectId);
+                    }
 
+                    // pass optional forced color index into scarab stat setter
                     SetLifeMagicScarabStats(profile, sigilTrinket);
                 }
                 else
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxWarMagicEffectId);
+                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxWarMagicEffectId)
+                    {
+                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                    }
+                    else
+                    {
+                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxWarMagicEffectId);
+                    }
 
                     SetWarMagicScarabStats(profile, sigilTrinket);
                 }
@@ -299,14 +298,28 @@ public static partial class LootGenerationFactory
             case (int)SigilTrinketType.PocketWatch:
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile);
                 sigilTrinket.WieldSkillType = (int)Skill.PhysicalDefense;
-                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPhysicalDefenseEffectId);
+                if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxPhysicalDefenseEffectId)
+                {
+                    sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                }
+                else
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPhysicalDefenseEffectId);
+                }
 
                 SetPhysicalDefensePocketWatchStats(profile, sigilTrinket);
                 break;
             case (int)SigilTrinketType.Top:
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile);
                 sigilTrinket.WieldSkillType = (int)Skill.MagicDefense;
-                sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxMagicDefenseEffectId);
+                if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxMagicDefenseEffectId)
+                {
+                    sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                }
+                else
+                {
+                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxMagicDefenseEffectId);
+                }
 
                 SetMagicDefenseTopStats(profile, sigilTrinket);
                 break;
@@ -317,13 +330,27 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.Perception)
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPerceptionEffectId);
+                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxPerceptionEffectId)
+                    {
+                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                    }
+                    else
+                    {
+                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPerceptionEffectId);
+                    }
 
                     SetPerceptionGogglesStats(profile, sigilTrinket);
                 }
                 else
                 {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxDeceptionEffectId);
+                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxDeceptionEffectId)
+                    {
+                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
+                    }
+                    else
+                    {
+                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxDeceptionEffectId);
+                    }
 
                     SetDeceptionGogglesStats(profile, sigilTrinket);
                 }
@@ -333,32 +360,17 @@ public static partial class LootGenerationFactory
 
     private static void SetLifeMagicScarabStats(TreasureDeath profile, SigilTrinket sigilTrinket)
     {
-        var element = ThreadSafeRandom.Next(0, 7);
-        var color = element switch
-        {
-            1 => "white",
-            2 => "purple",
-            3 => "blue",
-            4 => "green",
-            5 => "yellow",
-            6 => "orange",
-            7 => "red",
-            _ => "black"
-        };
-
         switch (sigilTrinket.SigilTrinketEffectId)
         {
             case (int)SigilTrinketLifeMagicEffect.ScarabCastProt:
             {
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["white"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["white"];
-                sigilTrinket.IconOverlayId = VulnProtIconOverlayIds[color];
 
                 sigilTrinket.Name += " of Protection";
-                sigilTrinket.SigilTrinketCastSpellId = ProtSpellIds[color];
                 sigilTrinket.Use =
                     $"Whenever the wielder casts a Heal, Revitalize, or Mana Boost spell, "
-                    + $"there is a chance the target will also gain {ProtSpellNames[color]}.\n\n"
+                    + $"there is a chance the target will also gain elemental protection against each type of damage they took within the last 10 seconds.\n\n"
                     + $"The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
                 break;
             }
@@ -366,13 +378,11 @@ public static partial class LootGenerationFactory
             {
                 sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
                 sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["black"];
-                sigilTrinket.IconOverlayId = VulnProtIconOverlayIds[color];
 
                 sigilTrinket.Name += " of Vulnerability";
-                sigilTrinket.SigilTrinketCastSpellId = VulnSpellIds[color];
                 sigilTrinket.Use =
                     $"Whenever the wielder casts a Harm, Enfeeble, or Mana Drain spell, "
-                    + $"there is a chance the target will also be inflicted with {VulnSpellNames[color]}.\n\n"
+                    + $"there is a chance the target will also be inflicted with an elemental vulnerability, based on their greatest weakness.\n\n"
                     + $"The level of the debuff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
                 break;
             }
