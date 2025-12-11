@@ -157,6 +157,279 @@ public static partial class LootGenerationFactory
         {7, 100691002 },
     };
 
+    // --- Refactor: Centralize effect -> stat mapping for each sigil category ---
+    private sealed record SigilStatConfig(
+        string PaletteKey,
+        string IconColorKey,
+        string NameSuffix,
+        Func<TreasureDeath, SigilTrinket, string> UseBuilder = null,
+        bool SetIntensity = false,
+        bool SetReduction = false,
+        bool SetManaReservedZero = false,
+        double CooldownDelta = 0.0,
+        bool ZeroTriggerChance = false
+    );
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> LifeMagicScarabMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketLifeMagicEffect.ScarabCastProt,
+            new SigilStatConfig(
+                "white",
+                "white",
+                " of Protection",
+                (profile, trinket) =>
+                    "Whenever the wielder casts a Heal, Revitalize, or Mana Boost spell, " +
+                    "there is a chance the target will also gain elemental protection against each type of damage they took within the last 10 seconds.\n\n" +
+                    "The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value."
+            )
+        },
+        {
+            (int)SigilTrinketLifeMagicEffect.ScarabCastVuln,
+            new SigilStatConfig(
+                "black",
+                "black",
+                " of Vulnerability",
+                (profile, trinket) =>
+                    "Whenever the wielder casts a Harm, Enfeeble, or Mana Drain spell, " +
+                    "there is a chance the target will also be inflicted with an elemental vulnerability, based on their greatest weakness.\n\n" +
+                    "The level of the debuff is equal to the level of the casted spell, but cannot surpass the Max Level value."
+            )
+        },
+        {
+            (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate,
+            new SigilStatConfig(
+                "green",
+                "green",
+                " of Growth",
+                (profile, trinket) =>
+                    "Whenever the wielder casts a Heal or Harm spell, there is a chance the target will also be affected by Regeneration or Fester, respectively.\n\n" +
+                    "Whenever the wielder casts a Revitalize or Enfeeble spell, there is a chance the target will also be affected by Rejuvenation or Exhaustion, respectively.\n\n" +
+                    "Whenever the wielder casts a Mana Boost or Mana Drain spell, there is a chance the target will also be affected by Mana Renewal or Mana Depletion.\n\n" +
+                    "The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value."
+            )
+        },
+        {
+            (int)SigilTrinketLifeMagicEffect.ScarabCastItemBuff,
+            new SigilStatConfig(
+                "purple",
+                "purple",
+                " of Artifice",
+                (profile, trinket) =>
+                    "Whenever the wielder casts a Heal spell, there is a chance the target will also be affected by Defender Other.\n\n" +
+                    "Whenever the wielder casts a Revitalize spell, there is a chance the target will also be affected by Blood Drinker.\n\n" +
+                    "Whenever the wielder casts a Mana Boost spell, there is a chance the target will also be affected by Spirit Drinker.\n\n" +
+                    "The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value."
+            )
+        },
+        {
+            (int)SigilTrinketLifeMagicEffect.ScarabIntensity,
+            new SigilStatConfig("red", "red", " of Intensity",
+                (profile, trinket) =>
+                    "Whenever the wielder casts any spell, there is a chance the spell will " +
+                    "gain intensity. Intensity increases damage and restoration amounts.\n\n" +
+                    "Only affects spells that are less than or equal to the Max level value.",
+                SetIntensity: true
+            )
+        },
+        {
+            (int)SigilTrinketLifeMagicEffect.ScarabShield,
+            new SigilStatConfig(
+                "gray",
+                "gray",
+                " of Shielding",
+                (profile, trinket) =>
+                    "Whenever the wielder casts any spell, there is a chance they will " +
+                    "gain a protective buff, increasing damage reduction rating by 25 for 12 seconds.\n\n" +
+                    "Only affects spells that are less than or equal to the Max level value."
+            )
+        },
+        {
+            (int)SigilTrinketLifeMagicEffect.ScarabManaReduction,
+            new SigilStatConfig("blue", "blue", " of Reduction",
+                (profile, trinket) =>
+                    "Whenever the wielder casts any spell, there is a chance that the cost of the spell will be reduced.\n\n" +
+                    "Only affects spells that are less than or equal to the Max level value.",
+                SetReduction: true, SetManaReservedZero: true, CooldownDelta: -5.0
+            )
+        }
+    };
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> WarMagicScarabMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketWarMagicEffect.ScarabIntensity,
+            new SigilStatConfig("red", "red", " of Intensity",
+                (profile, trinket) =>
+                    "Whenever the wielder casts any spell, there is a chance the spell will " +
+                    "gain intensity. Intensity increases damage and restoration amounts.\n\n" +
+                    "Only affects spells that are less than or equal to the Max level value.",
+                SetIntensity: true)
+        },
+        {
+            (int)SigilTrinketWarMagicEffect.ScarabShield,
+            new SigilStatConfig("gray", "gray", " of Shielding",
+                (profile, trinket) =>
+                    "Whenever the wielder casts any spell, there is a chance they will " +
+                    "gain a protective buff, increasing damage reduction rating by 25 for 12 seconds.\n\n" +
+                    "Only affects spells that are less than or equal to the Max level value.")
+        },
+        {
+            (int)SigilTrinketWarMagicEffect.ScarabManaReduction,
+            new SigilStatConfig("blue", "blue", " of Reduction",
+                (profile, trinket) =>
+                    "Whenever the wielder casts any spell, there is a chance that the cost of the spell will be reduced.\n\n" +
+                    "Only affects spells that are less than or equal to the Max level value.",
+                SetReduction: true, SetManaReservedZero: true, CooldownDelta: -5.0)
+        },
+        {
+            (int)SigilTrinketWarMagicEffect.ScarabDuplicate,
+            new SigilStatConfig("olive", "olive", " of Duplication",
+                (profile, trinket) =>
+                    "Whenever the wielder casts a War spell, there is a chance that the spell will be duplicated and cast against the same target.\n\n" +
+                    "Only affects spells that are less than or equal to the Max level value.")
+        },
+        {
+            (int)SigilTrinketWarMagicEffect.ScarabDetonate,
+            new SigilStatConfig("yellow", "yellow", " of Detonation",
+                (profile, trinket) =>
+                    "Whenever the wielder damages a creature with a War spell, there is a chance that the spell will detonate on impact, causing an explosion of the same element.\n\n" +
+                    "Only affects spells that are less than or equal to the Max level value.")
+        },
+        {
+            (int)SigilTrinketWarMagicEffect.ScarabCrit,
+            new SigilStatConfig("orange", "orange", " of Crushing",
+                (profile, trinket) =>
+                    "Whenever the wielder damages a creature with a War spell, there is a chance that the spell will detonate on impact, causing an explosion of the same element.\n\n" +
+                    "Only affects spells that are less than or equal to the Max level value.",
+                SetIntensity: false, SetReduction: false, SetManaReservedZero: false, CooldownDelta: 0.0, ZeroTriggerChance: true)
+        }
+    };
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> ShieldCompassMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketShieldEffect.Might,
+            new SigilStatConfig("red", "red", " of Might",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder attacks with more than 50% power, there is a chance that a normal hit will be converted into a critical hit.\n\nCan only occur while using a shield, with a wield requirement of up to {wieldReq}.";
+                })
+        },
+        {
+            (int)SigilTrinketShieldEffect.Aggression,
+            new SigilStatConfig("olive", "olive", " of Aggression",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder attacks with more than 50% power, they have a chance to generate double threat towards that enemy.\n\nCan only occur while using a shield, with a wield requirement of up to {wieldReq}.";
+                })
+        }
+    };
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> TwohandedCompassMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketTwohandedCombatEffect.Might,
+            new SigilStatConfig("red", "red", " of Might",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder attacks with more than 50% power, there is a chance that a normal hit will be converted into a critical hit.\n\nCan only occur while using a two-handed weapon, with a wield requirement of up to {wieldReq}.";
+                })
+        },
+        {
+            (int)SigilTrinketTwohandedCombatEffect.Aggression,
+            new SigilStatConfig("olive", "olive", " of Aggression",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder attacks with more than 50% power, they have a chance to generate increased threat towards that enemy.\n\nCan only occur while using a two-handed weapon, with a wield requirement of up to {wieldReq}.";
+                })
+        }
+    };
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> DualWieldPuzzleBoxMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketDualWieldEffect.Assailment,
+            new SigilStatConfig("red", "red", " of Assailment",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder performs an critical hit on an enemy, they have a chance to gain a 50% critical damage buff, additively, for 10 seconds.\n\nCan only occur while dual-wielding, with a wield requirement of up to {wieldReq}.";
+                })
+        }
+    };
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> ThieveryPuzzleBoxMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketThieveryEffect.Treachery,
+            new SigilStatConfig("green", "green", " of Treachery",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder performs a sneak attack critical hit on an enemy, they have a chance to deal double critical damage.\n\nCan only occur while performing sneak attacks, using a weapon with a wield requirement of up to {wieldReq}.";
+                })
+        }
+    };
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> PocketWatchMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketPhysicalDefenseEffect.Evasion,
+            new SigilStatConfig("yellow", "yellow", " of Evasion",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder receives a glancing blow, it has a chance to become a full evade.\n\nCan only occur while wielding a weapon with a wield requirement of up to {wieldReq}.";
+                })
+        }
+    };
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> TopMagicMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketMagicDefenseEffect.Absorption,
+            new SigilStatConfig("purple", "purple", " of Absorption",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder is damaged by a spell, they have a chance to prevent half of the damage and convert it into mana gained.\n\nCan only occur while wielding a weapon with a wield requirement of up to {wieldReq}.";
+                })
+        }
+    };
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> PerceptionGogglesMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketPerceptionEffect.Exposure,
+            new SigilStatConfig("red", "red", " of Exposure",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder successfully uses the Expose Weakness ability, they have a chance to gain a 25% damage boost for 10 seconds.\n\nCan only occur while wielding a weapon with a wield requirement of up to {wieldReq}.";
+                })
+        }
+    };
+
+    private static readonly IReadOnlyDictionary<int, SigilStatConfig> DeceptionGogglesMap = new Dictionary<int, SigilStatConfig>
+    {
+        {
+            (int)SigilTrinketDeceptionEffect.Avoidance,
+            new SigilStatConfig("black", "black", " of Avoidance",
+                (profile, trinket) =>
+                {
+                    var wieldReq = GetWieldDifficultyPerTier((trinket.SigilTrinketMaxTier ?? 1) + 1);
+                    return $"Whenever the wielder performs an attack with more than 50% power, they have a chance for the attack to generate no threat towards the target.\n\nCan only occur while using a weapon, with a wield requirement of up to {wieldReq}.";
+                })
+        }
+    };
+
+    // --- Creation and mutation logic remains, but Set* methods now use maps above ---
+
     public static WorldObject CreateSigilTrinket(TreasureDeath profile, SigilTrinketType sigilTrinketType, bool mutate = true, int? effectId = null, int? wieldSkillRng = null, uint? wcidOverride = null)
     {
         var wcid = SigilTrinketWcids.Roll(profile.Tier, sigilTrinketType);
@@ -205,29 +478,19 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.Shield)
                 {
-                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxShieldEffectId)
-                    {
-                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                    }
-                    else
-                    {
-                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxShieldEffectId);
-                    }
+                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxShieldEffectId
+                        ? effectId.Value
+                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxShieldEffectId);
 
-                    SetShieldCompassStats(profile, sigilTrinket);
+                    ApplyConfigMap(profile, sigilTrinket, ShieldCompassMap);
                 }
                 else
                 {
-                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxTwohandedCombatEffectId)
-                    {
-                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                    }
-                    else
-                    {
-                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxTwohandedCombatEffectId);
-                    }
+                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxTwohandedCombatEffectId
+                        ? effectId.Value
+                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxTwohandedCombatEffectId);
 
-                    SetTwohandedCombatCompassStats(profile, sigilTrinket);
+                    ApplyConfigMap(profile, sigilTrinket, TwohandedCompassMap);
                 }
                 break;
             case (int)SigilTrinketType.PuzzleBox:
@@ -237,29 +500,19 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.DualWield)
                 {
-                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxDualWieldEffectId)
-                    {
-                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                    }
-                    else
-                    {
-                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxDualWieldEffectId);
-                    }
+                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxDualWieldEffectId
+                        ? effectId.Value
+                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxDualWieldEffectId);
 
-                    SetDualWieldPuzzleBoxStats(profile, sigilTrinket);
+                    ApplyConfigMap(profile, sigilTrinket, DualWieldPuzzleBoxMap);
                 }
                 else
                 {
-                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxThieveryEffectId)
-                    {
-                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                    }
-                    else
-                    {
-                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxThieveryEffectId);
-                    }
+                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxThieveryEffectId
+                        ? effectId.Value
+                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxThieveryEffectId);
 
-                    SetThieveryPuzzleBoxStats(profile, sigilTrinket);
+                    ApplyConfigMap(profile, sigilTrinket, ThieveryPuzzleBoxMap);
                 }
                 break;
             case (int)SigilTrinketType.Scarab:
@@ -269,59 +522,38 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.LifeMagic)
                 {
-                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxLifeMagicEffectId)
-                    {
-                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                    }
-                    else
-                    {
-                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxLifeMagicEffectId);
-                    }
+                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxLifeMagicEffectId
+                        ? effectId.Value
+                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxLifeMagicEffectId);
 
-                    // pass optional forced color index into scarab stat setter
-                    SetLifeMagicScarabStats(profile, sigilTrinket);
+                    ApplyConfigMap(profile, sigilTrinket, LifeMagicScarabMap);
                 }
                 else
                 {
-                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxWarMagicEffectId)
-                    {
-                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                    }
-                    else
-                    {
-                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxWarMagicEffectId);
-                    }
+                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxWarMagicEffectId
+                        ? effectId.Value
+                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxWarMagicEffectId);
 
-                    SetWarMagicScarabStats(profile, sigilTrinket);
+                    ApplyConfigMap(profile, sigilTrinket, WarMagicScarabMap);
                 }
                 break;
             case (int)SigilTrinketType.PocketWatch:
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile);
                 sigilTrinket.WieldSkillType = (int)Skill.PhysicalDefense;
-                if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxPhysicalDefenseEffectId)
-                {
-                    sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                }
-                else
-                {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPhysicalDefenseEffectId);
-                }
+                sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxPhysicalDefenseEffectId
+                    ? effectId.Value
+                    : ThreadSafeRandom.Next(0, SigilTrinket.MaxPhysicalDefenseEffectId);
 
-                SetPhysicalDefensePocketWatchStats(profile, sigilTrinket);
+                ApplyConfigMap(profile, sigilTrinket, PocketWatchMap);
                 break;
             case (int)SigilTrinketType.Top:
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile);
                 sigilTrinket.WieldSkillType = (int)Skill.MagicDefense;
-                if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxMagicDefenseEffectId)
-                {
-                    sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                }
-                else
-                {
-                    sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxMagicDefenseEffectId);
-                }
+                sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxMagicDefenseEffectId
+                    ? effectId.Value
+                    : ThreadSafeRandom.Next(0, SigilTrinket.MaxMagicDefenseEffectId);
 
-                SetMagicDefenseTopStats(profile, sigilTrinket);
+                ApplyConfigMap(profile, sigilTrinket, TopMagicMap);
                 break;
             case (int)SigilTrinketType.Goggles:
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile, true);
@@ -330,532 +562,87 @@ public static partial class LootGenerationFactory
 
                 if (sigilTrinket.WieldSkillType == (int)Skill.Perception)
                 {
-                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxPerceptionEffectId)
-                    {
-                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                    }
-                    else
-                    {
-                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxPerceptionEffectId);
-                    }
+                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxPerceptionEffectId
+                        ? effectId.Value
+                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxPerceptionEffectId);
 
-                    SetPerceptionGogglesStats(profile, sigilTrinket);
+                    ApplyConfigMap(profile, sigilTrinket, PerceptionGogglesMap);
                 }
                 else
                 {
-                    if (effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxDeceptionEffectId)
-                    {
-                        sigilTrinket.SigilTrinketEffectId = effectId.Value;
-                    }
-                    else
-                    {
-                        sigilTrinket.SigilTrinketEffectId = ThreadSafeRandom.Next(0, SigilTrinket.MaxDeceptionEffectId);
-                    }
+                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxDeceptionEffectId
+                        ? effectId.Value
+                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxDeceptionEffectId);
 
-                    SetDeceptionGogglesStats(profile, sigilTrinket);
+                    ApplyConfigMap(profile, sigilTrinket, DeceptionGogglesMap);
                 }
                 break;
         }
     }
 
-    private static void SetLifeMagicScarabStats(TreasureDeath profile, SigilTrinket sigilTrinket)
+    private static void ApplyConfigMap(TreasureDeath profile, SigilTrinket sigilTrinket, IReadOnlyDictionary<int, SigilStatConfig> map)
     {
-        switch (sigilTrinket.SigilTrinketEffectId)
+        if (!sigilTrinket.SigilTrinketEffectId.HasValue)
         {
-            case (int)SigilTrinketLifeMagicEffect.ScarabCastProt:
+            return;
+        }
+
+        var effectId = sigilTrinket.SigilTrinketEffectId.Value;
+        if (!map.TryGetValue(effectId, out var cfg))
+        {
+            return;
+        }
+
+        // Palette / Icon
+        if (cfg.PaletteKey is not null && PaletteTemplateColors.TryGetValue(cfg.PaletteKey, out var palette))
+        {
+            sigilTrinket.PaletteTemplate = palette;
+        }
+
+        if (cfg.IconColorKey is not null)
+        {
+            var typeIndex = Math.Clamp(sigilTrinket.SigilTrinketType ?? 0, 0, IconColorIds.Count - 1);
+            var iconMap = IconColorIds[typeIndex];
+            if (iconMap.TryGetValue(cfg.IconColorKey, out var iconId))
             {
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["white"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["white"];
-
-                sigilTrinket.Name += " of Protection";
-                sigilTrinket.Use =
-                    $"Whenever the wielder casts a Heal, Revitalize, or Mana Boost spell, "
-                    + $"there is a chance the target will also gain elemental protection against each type of damage they took within the last 10 seconds.\n\n"
-                    + $"The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
-                break;
+                sigilTrinket.IconId = iconId;
             }
-            case (int)SigilTrinketLifeMagicEffect.ScarabCastVuln:
-            {
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["black"];
-
-                sigilTrinket.Name += " of Vulnerability";
-                sigilTrinket.Use =
-                    $"Whenever the wielder casts a Harm, Enfeeble, or Mana Drain spell, "
-                    + $"there is a chance the target will also be inflicted with an elemental vulnerability, based on their greatest weakness.\n\n"
-                    + $"The level of the debuff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
-                break;
-            }
-            case (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["green"];
-
-                sigilTrinket.Name += " of Growth";
-                sigilTrinket.Use =
-                    "Whenever the wielder casts a Heal or Harm spell, there is a chance the target will also be affected by Regeneration or Fester, respectively.\n\n"
-                    + "Whenever the wielder casts a Revitalize or Enfeeble spell, there is a chance the target will also be affected by Rejuvenation or Exhaustion, respectively.\n\n"
-                    + "Whenever the wielder casts a Mana Boost or Mana Drain spell, there is a chance the target will also be affected by Mana Renewal or Mana Depletion.\n\n"
-                    + "The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
-                break;
-            case (int)SigilTrinketLifeMagicEffect.ScarabCastItemBuff:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["purple"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["purple"];
-
-                sigilTrinket.Name += " of Artifice";
-                sigilTrinket.Use =
-                    "Whenever the wielder casts a Heal spell, there is a chance the target will also be affected by Defender Other.\n\n"
-                    + "Whenever the wielder casts a Revitalize spell, there is a chance the target will also be affected by Blood Drinker.\n\n"
-                    + "Whenever the wielder casts a Mana Boost spell, there is a chance the target will also be affected by Spirit Drinker.\n\n"
-                    + "The level of the buff is equal to the level of the casted spell, but cannot surpass the Max Level value.";
-                break;
-            case (int)SigilTrinketLifeMagicEffect.ScarabIntensity:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["red"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of Intensity";
-                sigilTrinket.Use =
-                    $"Whenever the wielder casts any spell, there is a chance the spell will "
-                    + $"gain bonus intensity.\n\n"
-                    + $"Intensity increases damage and restoration amounts.\n\n"
-                    + $"Only affects spells that are less than or equal to the Max level value.";
-                break;
-            case (int)SigilTrinketLifeMagicEffect.ScarabShield:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["gray"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["gray"];
-
-                sigilTrinket.Name += " of Shielding";
-                sigilTrinket.Use =
-                    $"Whenever the wielder casts any spell, there is a chance they will "
-                    + $"gain a protective buff, increasing damage reduction rating by 25 for 12 seconds.\n\n"
-                    + $"Only affects spells that are less than or equal to the Max level value.";
-                break;
-            case (int)SigilTrinketLifeMagicEffect.ScarabManaReduction:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["blue"];
-
-                sigilTrinket.SigilTrinketManaReserved = 0;
-                sigilTrinket.SigilTrinketReductionAmount = GetReductionAmount(profile);
-                sigilTrinket.CooldownDuration -= 5;
-
-                sigilTrinket.Name += " of Reduction";
-                sigilTrinket.Use =
-                    $"Whenever the wielder casts any spell, there is a chance that the cost of the spell will be reduced.\n\n"
-                    + "Only affects spells that are less than or equal to the Max level value.";
-                break;
         }
-    }
 
-    private static void SetWarMagicScarabStats(TreasureDeath profile, SigilTrinket sigilTrinket)
-    {
-        switch (sigilTrinket.SigilTrinketEffectId)
+        // Name suffix
+        sigilTrinket.Name += cfg.NameSuffix ?? string.Empty;
+
+        // Intensity / Reduction / ManaReservation / Cooldown / TriggerChance
+        if (cfg.SetIntensity)
         {
-            case (int)SigilTrinketWarMagicEffect.ScarabIntensity:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["red"];
-
-                sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
-
-                sigilTrinket.Name += " of Intensity";
-                sigilTrinket.Use =
-                    $"Whenever the wielder casts any spell, there is a chance the spell will "
-                    + $"gain bonus intensity.\n\n"
-                    + $"Intensity increases damage and restoration amounts.\n\n"
-                    + $"Only affects spells that are less than or equal to the Max level value.";
-                break;
-            case (int)SigilTrinketWarMagicEffect.ScarabShield:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["gray"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["gray"];
-
-                sigilTrinket.Name += " of Shielding";
-                sigilTrinket.Use =
-                    $"Whenever the wielder casts any spell, there is a chance they will "
-                    + $"gain a protective buff, increasing damage reduction rating by 25 for 12 seconds.\n\n"
-                    + $"Only affects spells that are less than or equal to the Max level value.";
-                break;
-            case (int)SigilTrinketWarMagicEffect.ScarabManaReduction:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["blue"];
-
-                sigilTrinket.SigilTrinketManaReserved = 0;
-                sigilTrinket.SigilTrinketReductionAmount = GetReductionAmount(profile);
-                sigilTrinket.CooldownDuration -= 5;
-
-                sigilTrinket.Name += " of Reduction";
-                sigilTrinket.Use =
-                    $"Whenever the wielder casts any spell, there is a chance that the cost of the spell will be reduced.\n\n"
-                    + "Only affects spells that are less than or equal to the Max level value.";
-                break;
-            case (int)SigilTrinketWarMagicEffect.ScarabDuplicate:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["olive"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["olive"];
-                sigilTrinket.Name += " of Duplication";
-                sigilTrinket.Use =
-                    $"Whenever the wielder casts a War spell, there is a chance that the spell will be duplicated and cast against the same target.\n\n"
-                    + "Only affects spells that are less than or equal to the Max level value.";
-                break;
-            case (int)SigilTrinketWarMagicEffect.ScarabDetonate:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["yellow"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["yellow"];
-                sigilTrinket.Name += " of Detonation";
-                sigilTrinket.Use =
-                    $"Whenever the wielder damages a creature with a War spell, there is a chance that the spell will detonate on impact, causing an explosion of the same element.\n\n"
-                    + "Only affects spells that are less than or equal to the Max level value.";
-                break;
-            case (int)SigilTrinketWarMagicEffect.ScarabCrit:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["orange"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Scarab]["orange"];
-
-                sigilTrinket.SigilTrinketTriggerChance = 0;
-
-                sigilTrinket.Name += " of Crushing";
-                sigilTrinket.Use =
-                    $"Whenever the wielder performs a critical strike with a War spell, they have a chance to gain a 50% critical damage boost for 12 seconds.\n\n"
-                    + "Only affects spells that are less than or equal to the Max level value.";
-                break;
+            sigilTrinket.SigilTrinketIntensity = GetIntensity(profile);
         }
-    }
 
-    private static void SetShieldCompassStats(TreasureDeath profile, SigilTrinket sigilTrinket)
-    {
-        switch (sigilTrinket.SigilTrinketEffectId)
+        if (cfg.SetReduction)
         {
-            case (int)SigilTrinketShieldEffect.Might:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["red"];
-
-                sigilTrinket.Name += " of Might";
-
-                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-                sigilTrinket.Use =
-                    $"Whenever the wielder attacks with more than 50% power, there is a chance that a normal hit will be converted into a critical hit.\n\n" +
-                    $"Can only occur while using a shield, with a wield requirement of up to {wieldReq}.";
-                break;
-            case (int)SigilTrinketShieldEffect.Aggression:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["olive"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["olive"];
-
-                sigilTrinket.Name += " of Aggression";
-
-                wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-                sigilTrinket.Use =
-                    $"Whenever the wielder attacks with more than 50% power, they have a chance to generate double threat towards that enemy.\n\n"
-                    + $"Can only occur while using a shield, with a wield requirement of up to {wieldReq}.";
-                break;
-            // case (int)SigilTrinketShieldEffect.PH3:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["green"];
-            //
-            //     sigilTrinket.Name += " of PH3";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketShieldEffect.PH4:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["black"];
-            //
-            //     sigilTrinket.Name += " of PH4";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
+            sigilTrinket.SigilTrinketManaReserved = 0;
+            sigilTrinket.SigilTrinketReductionAmount = GetReductionAmount(profile);
         }
-    }
 
-    private static void SetTwohandedCombatCompassStats(TreasureDeath profile, SigilTrinket sigilTrinket)
-    {
-        switch (sigilTrinket.SigilTrinketEffectId)
+        if (cfg.SetManaReservedZero)
         {
-            case (int)SigilTrinketTwohandedCombatEffect.Might:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["red"];
-
-                sigilTrinket.Name += " of Might";
-
-                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-                sigilTrinket.Use =
-                    $"Whenever the wielder attacks with more than 50% power, there is a chance that a normal hit will be converted into a critical hit.\n\n" +
-                    $"Can only occur while using a two-handed weapon, with a wield requirement of up to {wieldReq}.";
-                break;
-            case (int)SigilTrinketTwohandedCombatEffect.Aggression:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["olive"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["olive"];
-
-                sigilTrinket.Name += " of Aggression";
-
-                wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-                sigilTrinket.Use =
-                    $"Whenever the wielder attacks with more than 50% power, they have a chance to generate increased threat towards that enemy.\n\n"
-                    + $"Can only occur while using a two-handed weapon, with a wield requirement of up to {wieldReq}.";
-                break;
-            // case (int)SigilTrinketTwohandedCombatEffect.PH3:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["green"];
-            //
-            //     sigilTrinket.Name += " of PH3";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketTwohandedCombatEffect.PH4:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Compass]["black"];
-            //
-            //     sigilTrinket.Name += " of PH4";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
+            sigilTrinket.SigilTrinketManaReserved = 0;
         }
-    }
 
-    private static void SetDualWieldPuzzleBoxStats(TreasureDeath profile, SigilTrinket sigilTrinket)
-    {
-        switch (sigilTrinket.SigilTrinketEffectId)
+        if (cfg.CooldownDelta != 0.0)
         {
-            case (int)SigilTrinketDualWieldEffect.Assailment:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["red"];
-
-                sigilTrinket.Name += " of Assailment";
-
-                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-                sigilTrinket.Use =
-                    $"Whenever the wielder performs an critical hit on an enemy, they have a chance to gain a 50% critical damage buff, additively, for 10 seconds.\n\n"
-                    + $"Can only occur while dual-wielding, with a wield requirement of up to {wieldReq}.";
-                break;
-            // case (int)SigilTrinketDualWieldEffect.PH2:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["blue"];
-            //
-            //     sigilTrinket.Name += " of PH2";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketDualWieldEffect.PH3:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["green"];
-            //
-            //     sigilTrinket.Name += " of PH3";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketDualWieldEffect.PH4:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["black"];
-            //
-            //     sigilTrinket.Name += " of PH4";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
+            sigilTrinket.CooldownDuration += cfg.CooldownDelta;
         }
-    }
 
-    private static void SetThieveryPuzzleBoxStats(TreasureDeath profile, SigilTrinket sigilTrinket)
-    {
-        var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-
-        switch (sigilTrinket.SigilTrinketEffectId)
+        if (cfg.ZeroTriggerChance)
         {
-            case (int)SigilTrinketThieveryEffect.Treachery:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["green"];
-
-                sigilTrinket.Name += " of Treachery";
-                sigilTrinket.Use =
-                    $"Whenever the wielder performs a sneak attack critical hit on an enemy, they have a chance to deal double critical damage.\n\n"
-                    + $"Can only occur while performing sneak attacks, using a weapon with a wield requirement of up to {wieldReq}.";
-                break;
-            // case (int)SigilTrinketThieveryEffect.PH2:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["blue"];
-            //
-            //     sigilTrinket.Name += " of PH2";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketThieveryEffect.PH3:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["green"];
-            //
-            //     sigilTrinket.Name += " of PH3";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketThieveryEffect.PH4:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PuzzleBox]["black"];
-            //
-            //     sigilTrinket.Name += " of PH4";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
+            sigilTrinket.SigilTrinketTriggerChance = 0;
         }
-    }
 
-    private static void SetPhysicalDefensePocketWatchStats(TreasureDeath profile, SigilTrinket sigilTrinket)
-    {
-        var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-
-        switch (sigilTrinket.SigilTrinketEffectId)
+        // Use text
+        if (cfg.UseBuilder != null)
         {
-            case (int)SigilTrinketPhysicalDefenseEffect.Evasion:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["yellow"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["yellow"];
-
-                sigilTrinket.Name += " of Evasion";
-                sigilTrinket.Use =
-                    $"Whenever the wielder receives a glancing blow, it has a chance to become a full evade.\n\n"
-                    + $"Can only occur while wielding a weapon with a wield requirement of up to {wieldReq}.";
-                break;
-            // case (int)SigilTrinketPhysicalDefenseEffect.PH2:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["blue"];
-            //
-            //     sigilTrinket.Name += " of PH2";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketPhysicalDefenseEffect.PH3:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["green"];
-            //
-            //     sigilTrinket.Name += " of PH3";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketPhysicalDefenseEffect.PH4:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.PocketWatch]["black"];
-            //
-            //     sigilTrinket.Name += " of PH4";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-        }
-    }
-
-    private static void SetMagicDefenseTopStats(TreasureDeath profile, SigilTrinket sigilTrinket)
-    {
-        var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-
-        switch (sigilTrinket.SigilTrinketEffectId)
-        {
-            case (int)SigilTrinketMagicDefenseEffect.Absorption:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["purple"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["purple"];
-
-                sigilTrinket.Name += " of Absorption";
-                sigilTrinket.Use =
-                    $"Whenever the wielder is damaged by a spell, they have a chance to prevent half of the damage and convert it into mana gained.\n\n"
-                    + $"Can only occur while wielding a weapon with a wield requirement of up to {wieldReq}.";
-                break;
-            // case (int)SigilTrinketMagicDefenseEffect.PH2:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["blue"];
-            //
-            //     sigilTrinket.Name += " of PH2";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketMagicDefenseEffect.PH3:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["green"];
-            //
-            //     sigilTrinket.Name += " of PH3";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketMagicDefenseEffect.PH4:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Top]["black"];
-            //
-            //     sigilTrinket.Name += " of PH4";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-        }
-    }
-
-    private static void SetPerceptionGogglesStats(TreasureDeath profile, SigilTrinket sigilTrinket)
-    {
-        var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-
-        switch (sigilTrinket.SigilTrinketEffectId)
-        {
-            case (int)SigilTrinketPerceptionEffect.Exposure:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["red"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["red"];
-
-                sigilTrinket.Name += " of Exposure";
-                sigilTrinket.Use =
-                    $"Whenever the wielder successfully uses the Expose Weakness ability, they have a chance to gain a 25% damage boost for 10 seconds.\n\n"
-                    + $"Can only occur while wielding a weapon with a wield requirement of up to {wieldReq}.";
-                break;
-            // case (int)SigilTrinketPerceptionEffect.PH2:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["blue"];
-            //
-            //     sigilTrinket.Name += " of PH2";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketPerceptionEffect.PH3:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["green"];
-            //
-            //     sigilTrinket.Name += " of PH3";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketPerceptionEffect.PH4:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["black"];
-            //
-            //     sigilTrinket.Name += " of PH4";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-        }
-    }
-
-    private static void SetDeceptionGogglesStats(TreasureDeath profile, SigilTrinket sigilTrinket)
-    {
-        var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-
-        switch (sigilTrinket.SigilTrinketEffectId)
-        {
-            case (int)SigilTrinketDeceptionEffect.Avoidance:
-                sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-                sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["black"];
-
-                sigilTrinket.Name += " of Avoidance";
-                sigilTrinket.Use =
-                    $"Whenever the wielder performs an attack with more than 50% power, they have a chance for the attack to generate no threat towards the target.\n\n"
-                    + $"Can only occur while using a weapon, with a wield requirement of up to {wieldReq}.";
-                break;
-            // case (int)SigilTrinketDeceptionEffect.PH2:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["blue"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["blue"];
-            //
-            //     sigilTrinket.Name += " of PH2";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketDeceptionEffect.PH3:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["green"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["green"];
-            //
-            //     sigilTrinket.Name += " of PH3";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
-            // case (int)SigilTrinketDeceptionEffect.PH4:
-            //     sigilTrinket.PaletteTemplate = PaletteTemplateColors["black"];
-            //     sigilTrinket.IconId = IconColorIds[(int)SigilTrinketType.Goggles]["black"];
-            //
-            //     sigilTrinket.Name += " of PH4";
-            //     sigilTrinket.Use =
-            //         $"(PH)";
-            //     break;
+            sigilTrinket.Use = cfg.UseBuilder(profile, sigilTrinket);
         }
     }
 
