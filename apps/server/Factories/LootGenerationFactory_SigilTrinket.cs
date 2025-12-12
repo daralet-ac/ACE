@@ -45,6 +45,8 @@ public static partial class LootGenerationFactory
         sigilTrinket.SigilTrinketMaxTier = Math.Clamp(profile.Tier - 1, 1, 7);
         sigilTrinket.WieldRequirements = WieldRequirement.Training;
         sigilTrinket.WieldDifficulty = 3; // Specialized
+        sigilTrinket.WieldRequirements2 = WieldRequirement.Level;
+        sigilTrinket.WieldDifficulty2 = GetWieldDifficultyPerTier(profile.Tier);
         sigilTrinket.ItemMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
         sigilTrinket.ItemBaseXp = GetBaseLevelCost(profile);
         sigilTrinket.ItemTotalXp = 0;

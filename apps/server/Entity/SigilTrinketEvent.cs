@@ -109,7 +109,7 @@ public class SigilTrinketEvent
                 var maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
                 sigilTrinket.SpellLevel = (uint)Math.Min(sigilTrinket.TriggerSpell.Level, maxLevel);
 
-                CastSigilTrinketSpell(sigilTrinket);
+                CastSigilTrinketSpell(sigilTrinket, true);
                 break;
             case ((int)Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabIntensity):
             case ((int)Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabIntensity):
@@ -131,9 +131,8 @@ public class SigilTrinketEvent
 
                 maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
                 sigilTrinket.SpellLevel = (uint)Math.Min(sigilTrinket.TriggerSpell.Level, maxLevel);
-                sigilTrinket.SigilTrinketCastSpellId = 5206; // Surge of Protection
 
-                CastSigilTrinketSpell(sigilTrinket, false);
+                CastSigilTrinketSpell(sigilTrinket, true);
                 break;
             case ((int)Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabDuplicate):
 
@@ -160,9 +159,8 @@ public class SigilTrinketEvent
 
                 maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
                 sigilTrinket.SpellLevel = (uint)Math.Min(sigilTrinket.TriggerSpell.Level, maxLevel);
-                sigilTrinket.SigilTrinketCastSpellId = (int)SpellId.SigilTrinketCriticalDamageBoost;
 
-                CastSigilTrinketSpell(sigilTrinket, false);
+                CastSigilTrinketSpell(sigilTrinket, true);
                 break;
             case ((int)Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might):
             case ((int)Skill.Shield, (int)SigilTrinketShieldEffect.Might):
@@ -203,7 +201,6 @@ public class SigilTrinketEvent
             case ((int)Skill.DualWield, (int)SigilTrinketDualWieldEffect.Assailment):
                 maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
                 sigilTrinket.SpellLevel = (uint)maxLevel; // TODO: if wielding a lower tier weapon, cast lower tier spell (like war/life checks)
-                sigilTrinket.SigilTrinketCastSpellId = (int)SpellId.SigilTrinketCriticalChanceBoost;
 
                 CastSigilTrinketSpell(sigilTrinket, false);
 
@@ -279,7 +276,6 @@ public class SigilTrinketEvent
 
                 maxLevel = sigilTrinket.SigilTrinketMaxTier ?? 1;
                 sigilTrinket.SpellLevel = (uint)maxLevel; // TODO: if wielding a lower tier weapon, cast lower tier spell (like war/life checks)
-                sigilTrinket.SigilTrinketCastSpellId = (int)SpellId.SigilTrinketDamageBoost;
 
                 CastSigilTrinketSpell(sigilTrinket, false);
 
@@ -319,6 +315,12 @@ public class SigilTrinketEvent
 
         switch ((sigilTrinket.WieldSkillType, sigilTrinket.SigilTrinketEffectId))
         {
+            case ((int)Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabShield):
+            case ((int)Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabShield):
+                castSpellLevel1IdsToCast.Add(SpellId.SigilTrinketShield1);
+
+                break;
+
             case ((int)Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate):
                 switch (sigilTrinket.TriggerSpell.Category)
                 {
@@ -453,6 +455,22 @@ public class SigilTrinketEvent
                 }
             }
                 break;
+
+            case ((int)Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabCrit):
+                castSpellLevel1IdsToCast.Add(SpellId.SigilTrinketDamageBoost);
+
+                break;
+
+            case ((int)Skill.Perception, (int)SigilTrinketPerceptionEffect.Exposure):
+                castSpellLevel1IdsToCast.Add(SpellId.SigilTrinketDamageBoost);
+
+                break;
+
+            case ((int)Skill.DualWield, (int)SigilTrinketDualWieldEffect.Assailment):
+                castSpellLevel1IdsToCast.Add(SpellId.SigilTrinketCriticalDamageBoost);
+
+                break;
+
             default:
             {
                 castSpellLevel1IdsToCast.Add((SpellId)(sigilTrinket.SigilTrinketCastSpellId ?? 0));
