@@ -5209,7 +5209,7 @@ partial class Player
             }
             else if (emoteResult.Category == EmoteCategory.Refuse)
             {
-                if (target is Creature creatureTarget && item.TrophyQuality is not null)
+                if (target is Creature creatureTarget && (item.TrophyQuality is not null || item.WeenieType is WeenieType.SigilTrinket))
                 {
                     creatureTarget.RefusalItem = (item, item.Guid.Full);
                 }

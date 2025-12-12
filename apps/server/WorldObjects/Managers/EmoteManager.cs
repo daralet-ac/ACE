@@ -613,6 +613,12 @@ public class EmoteManager
                         }
                     }
 
+                    // Sigil Trinkets
+                    if (WorldObject is Creature { RefusalItem.Item1: { WeenieType: WeenieType.SigilTrinket} } creatureObject2)
+                    {
+                        stackSize = (creatureObject2.RefusalItem.Item1.Value / 10) ?? 1;
+                    }
+
                     var motionChain = new ActionChain();
 
                     if (!WorldObject.DontTurnOrMoveWhenGiving && creature != null)
@@ -1284,6 +1290,7 @@ public class EmoteManager
                     {
                         emoteMessage = emoteMessage.Replace("(TrophyName)", creatureObject.RefusalItem.Item1.Name);
                         emoteMessage = emoteMessage.Replace("(TrophyValue)", creatureObject.RefusalItem.Item1.Value.ToString());
+                        emoteMessage = emoteMessage.Replace("(SigilValue)", (creatureObject.RefusalItem.Item1.Value / 10).ToString());
                     }
                     var confirmationText = Replace(emoteMessage, WorldObject, targetObject, emoteSet.Quest);
                     if (
