@@ -42,11 +42,11 @@ public static partial class LootGenerationFactory
 
         sigilTrinket.CooldownDuration = GetCooldown(profile);
         sigilTrinket.SigilTrinketTriggerChance = GetChance(profile);
-        sigilTrinket.SigilTrinketMaxTier = Math.Clamp(profile.Tier - 1, 1, 7);
         sigilTrinket.WieldRequirements = WieldRequirement.Training;
         sigilTrinket.WieldDifficulty = 3; // Specialized
         sigilTrinket.WieldRequirements2 = WieldRequirement.Level;
-        sigilTrinket.WieldDifficulty2 = GetWieldDifficultyPerTier(profile.Tier);
+        sigilTrinket.WieldDifficulty2 = GetRequiredLevelPerTier(profile.Tier);
+        sigilTrinket.WieldSkillType2 = 0;
         sigilTrinket.ItemMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
         sigilTrinket.ItemBaseXp = GetBaseLevelCost(profile);
         sigilTrinket.ItemTotalXp = 0;
@@ -223,9 +223,28 @@ public static partial class LootGenerationFactory
             sigilTrinket.SigilTrinketManaReserved = 0;
         }
 
-        if (cfg.CooldownDelta != 0.0)
+        // cooldown: prefer multiplicative adjustment if provided (not 1.0), otherwise fall back to additive delta for compatibility.
+        if (cfg.CooldownMultiplier != 1.0)
+        {
+            sigilTrinket.CooldownDuration *= cfg.CooldownMultiplier;
+        }
+        else if (cfg.CooldownDelta != 0.0)
         {
             sigilTrinket.CooldownDuration += cfg.CooldownDelta;
+        }
+
+        // trigger chance: prefer multiplicative adjustment if provided (not 1.0), otherwise fall back to additive delta.
+        if (cfg.TriggerChanceMultiplier != 1.0)
+        {
+            var baseChance = sigilTrinket.SigilTrinketTriggerChance ?? 0.0;
+            var newChance = baseChance * cfg.TriggerChanceMultiplier;
+            sigilTrinket.SigilTrinketTriggerChance = Math.Clamp(newChance, 0.0, 1.0);
+        }
+        else if (cfg.TriggerChanceDelta != 0.0)
+        {
+            var baseChance = sigilTrinket.SigilTrinketTriggerChance ?? 0.0;
+            var newChance = baseChance + cfg.TriggerChanceDelta;
+            sigilTrinket.SigilTrinketTriggerChance = Math.Clamp(newChance, 0.0, 1.0);
         }
 
         if (cfg.ZeroTriggerChance)
@@ -237,12 +256,6 @@ public static partial class LootGenerationFactory
         if (!string.IsNullOrEmpty(cfg.UseText))
         {
             var useText = cfg.UseText;
-            if (useText.Contains("{wieldReq}", StringComparison.Ordinal))
-            {
-                var wieldReq = GetWieldDifficultyPerTier((sigilTrinket.SigilTrinketMaxTier ?? 1) + 1);
-                useText = useText.Replace("{wieldReq}", wieldReq.ToString(), StringComparison.Ordinal);
-            }
-
             sigilTrinket.Use = useText;
         }
     }

@@ -1150,24 +1150,6 @@ public class AppraiseInfo
             return;
         }
 
-        // Max Level
-        if (PropertiesInt.TryGetValue(PropertyInt.SigilTrinketMaxTier, out var sigilTrinketTier) &&
-            sigilTrinketTier > 0)
-        {
-            if (sigilTrinket.WieldSkillType is (int)Skill.WarMagic or (int)Skill.LifeMagic)
-            {
-                _extraPropertiesText += $"\nMax Spell Level: {sigilTrinketTier}\n";
-            }
-            // else
-            // {
-            //     var wieldReq = LootGenerationFactory.GetWieldDifficultyPerTier(sigilTrinketTier + 1);
-            //
-            //     _extraPropertiesText += $"\nMax Wield Req: {wieldReq}\n";
-            // }
-
-            _hasExtraPropertiesText = true;
-        }
-
         // Proc Chance
         if (
             PropertiesFloat.TryGetValue(PropertyFloat.SigilTrinketTriggerChance, out var sigilTrinketTriggerChance)

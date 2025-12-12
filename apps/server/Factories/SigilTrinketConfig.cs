@@ -16,6 +16,9 @@ internal sealed record SigilStatConfig(
     bool SetReduction,
     bool SetManaReservedZero,
     double CooldownDelta,
+    double CooldownMultiplier,
+    double TriggerChanceDelta,
+    double TriggerChanceMultiplier,
     bool ZeroTriggerChance
 );
 
@@ -38,6 +41,9 @@ internal sealed record SigilStatRaw(
     bool setReduction = false,
     bool setManaReservedZero = false,
     double cooldownDelta = 0.0,
+    double cooldownMultiplier = 1.0,
+    double triggerChanceDelta = 0.0,
+    double triggerChanceMultiplier = 1.0,
     bool zeroTriggerChance = false,
     string useTextBuilder = null
 );
@@ -297,10 +303,10 @@ internal static class SigilTrinketConfig
 
             var r = kv.Value;
             var useText = r.useText;
-            // If useTextBuilder tokens are present, handle templated text here.
+            
             if (string.IsNullOrEmpty(useText) && !string.IsNullOrEmpty(r.useTextBuilder))
             {
-                useText = ResolveUseTextBuilder(r.useTextBuilder, r, effectId);
+                useText = string.Empty;
             }
 
             dict[effectId] = new SigilStatConfig(
@@ -312,27 +318,13 @@ internal static class SigilTrinketConfig
                 r.setReduction,
                 r.setManaReservedZero,
                 r.cooldownDelta,
+                r.cooldownMultiplier,
+                r.triggerChanceDelta,
+                r.triggerChanceMultiplier,
                 r.zeroTriggerChance
             );
         }
 
         target = dict;
-    }
-
-    private static string ResolveUseTextBuilder(string token, SigilStatRaw raw, int effectId)
-    {
-        // Keep templates here to allow computed strings (wield req, etc.).
-        return token switch
-        {
-            "shield_compass_might" => $"Whenever the wielder attacks with more than 50% power, there is a chance that a normal hit will be converted into a critical hit.\n\nCan only occur while using a shield, with a wield requirement of up to {{wieldReq}}.",
-            "shield_compass_aggression" => $"Whenever the wielder attacks with more than 50% power, they have a chance to generate double threat towards that enemy.\n\nCan only occur while using a shield, with a wield requirement of up to {{wieldReq}}.",
-            "twohand_compass_might" => $"Whenever the wielder attacks with more than 50% power, there is a chance that a normal hit will be converted into a critical hit.\n\nCan only occur while using a two-handed weapon, with a wield requirement of up to {{wieldReq}}.",
-            "twohand_compass_aggression" => $"Whenever the wielder attacks with more than 50% power, they have a chance to generate increased threat towards that enemy.\n\nCan only occur while using a two-handed weapon, with a wield requirement of up to {{wieldReq}}.",
-            "thievery_puzzle_box_treachery" => $"Whenever the wielder performs a sneak attack critical hit on an enemy, there is a chance to deal double critical damage.\n\nCan only occur while performing sneak attacks, using a weapon with a wield requirement of up to {{wieldReq}}.",
-            "physical_defense_pocket_evasion" => $"Whenever the wielder receives a glancing blow, it has a chance to become a full evade.\n\nCan only occur while wielding a weapon with a wield requirement of up to {{wieldReq}}.",
-            "magic_defense_top_absorption" => $"Whenever the wielder is damaged by a spell, they have a chance to prevent half of the damage and convert it into mana gained.\n\nCan only occur while wielding a weapon with a wield requirement of up to {{wieldReq}}.",
-            "deception_goggles_avoidance" => $"Whenever the wielder performs an attack with more than 50% power, there is a chance for the attack to generate no threat towards the target.\n\nCan only occur while using a weapon, with a wield requirement of up to {{wieldReq}}.",
-            _ => raw.useText ?? string.Empty
-        };
     }
 }
