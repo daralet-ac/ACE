@@ -50,6 +50,7 @@ public static partial class LootGenerationFactory
         sigilTrinket.ItemMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
         sigilTrinket.ItemBaseXp = GetBaseLevelCost(profile);
         sigilTrinket.ItemTotalXp = 0;
+        sigilTrinket.Value = GetValuePerTier(profile.Tier);
 
         // Icon overlay id comes from config tier icon ids
         if (SigilTrinketConfig.TierIconIds.TryGetValue(Math.Clamp(profile.Tier - 1, 1, 7), out var overlayId))
@@ -338,6 +339,27 @@ public static partial class LootGenerationFactory
                 return 1000000;
             case 8:
                 return 2000000;
+        }
+    }
+
+    private static int GetValuePerTier(int tier)
+    {
+        switch (tier)
+        {
+            default:
+                return 100;
+            case 3:
+                return 200;
+            case 4:
+                return 300;
+            case 5:
+                return 400;
+            case 6:
+                return 500;
+            case 7:
+                return 750;
+            case 8:
+                return 1000;
         }
     }
 }
