@@ -269,7 +269,7 @@ The level of the debuff is equal to the level of the cast spell.",
                 false,
                 false,
                 1.0,
-                1.0,
+                2.5,
                 false
             )
         };

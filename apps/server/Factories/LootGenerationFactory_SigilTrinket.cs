@@ -284,10 +284,16 @@ public static partial class LootGenerationFactory
         }
 
         // trigger chance: multiplicative adjustment if provided (not 1.0)
-        if (cfg.TriggerChanceMultiplier != 1.0)
+        if (cfg.TriggerChanceMultiplier < 1.0)
         {
             var baseChance = sigilTrinket.SigilTrinketTriggerChance ?? 0.0;
             var newChance = baseChance * cfg.TriggerChanceMultiplier;
+            sigilTrinket.SigilTrinketTriggerChance = Math.Clamp(newChance, 0.0, 1.0);
+        }
+        else if (cfg.TriggerChanceMultiplier > 1.0)
+        {
+            var baseChance = sigilTrinket.SigilTrinketTriggerChance ?? 0.0;
+            var newChance = 1 - (baseChance * (1 / cfg.TriggerChanceMultiplier));
             sigilTrinket.SigilTrinketTriggerChance = Math.Clamp(newChance, 0.0, 1.0);
         }
 

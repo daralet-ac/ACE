@@ -1099,8 +1099,8 @@ partial class Player
         if (!sigilTrinketSpell)
         {
             var manaModifier = spell.School == MagicSchool.LifeMagic
-                ? GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic, (int)SigilTrinketLifeWarMagicEffect.Reduction)
-                : GetSigilTrinketManaReductionMod(spell, Skill.WarMagic, (int)SigilTrinketLifeWarMagicEffect.Reduction);
+                ? GetSigilTrinketManaReductionMod(spell, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Reduction)
+                : GetSigilTrinketManaReductionMod(spell, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Reduction);
 
             var before = manaUsed;
             manaUsed = (uint)(manaUsed * manaModifier);
