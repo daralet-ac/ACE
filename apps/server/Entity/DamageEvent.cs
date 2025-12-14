@@ -606,8 +606,8 @@ public class DamageEvent
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (roll > _criticalChance || GetCriticalDefendedFromAug(attacker, defender) || CheckForSpecPerceptionCriticalDefense(defender as Player))
         {
-            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might);
-            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Shield, (int)SigilTrinketShieldEffect.Might);
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, (int)SigilTrinketShieldTwohandedCombatEffect.Might);
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Shield, (int)SigilTrinketShieldTwohandedCombatEffect.Might);
 
             if (!CriticalOverridedByTrinket)
             {

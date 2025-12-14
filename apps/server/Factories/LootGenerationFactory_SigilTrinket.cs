@@ -5,18 +5,12 @@ using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.WorldObjects;
+using static ACE.Server.Factories.SigilTrinketConfig;
 
 namespace ACE.Server.Factories;
 
 public static partial class LootGenerationFactory
 {
-    // NOTE:
-    // Static data (icon ids, palette colors, per-effect mappings) has been moved to
-    // Config/sigil_trinket_config.json and is loaded by SigilTrinketConfig.
-    // This factory now reads configuration from SigilTrinketConfig to keep data and logic separated.
-
-    // --- Creation and mutation logic uses SigilTrinketConfig for lookups ---
-
     public static WorldObject CreateSigilTrinket(TreasureDeath profile, SigilTrinketType sigilTrinketType, bool mutate = true, int? effectId = null, int? wieldSkillRng = null, uint? wcidOverride = null)
     {
         var wcid = SigilTrinketWcids.Roll(profile.Tier, sigilTrinketType);
@@ -42,18 +36,19 @@ public static partial class LootGenerationFactory
 
         sigilTrinket.CooldownDuration = GetCooldown(profile);
         sigilTrinket.SigilTrinketTriggerChance = GetChance(profile);
-        sigilTrinket.WieldRequirements = WieldRequirement.Training;
-        sigilTrinket.WieldDifficulty = 3; // Specialized
+
+        // Keep level requirement slot for item-level gating
         sigilTrinket.WieldRequirements2 = WieldRequirement.Level;
         sigilTrinket.WieldDifficulty2 = GetRequiredLevelPerTier(profile.Tier);
         sigilTrinket.WieldSkillType2 = 0;
+
         sigilTrinket.ItemMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
         sigilTrinket.ItemBaseXp = GetBaseLevelCost(profile);
         sigilTrinket.ItemTotalXp = 0;
         sigilTrinket.Value = GetValuePerTier(profile.Tier);
 
         // Icon overlay id comes from config tier icon ids
-        if (SigilTrinketConfig.TierIconIds.TryGetValue(Math.Clamp(profile.Tier - 1, 1, 7), out var overlayId))
+        if (TierIconIds.TryGetValue(Math.Clamp(profile.Tier - 1, 1, 7), out var overlayId))
         {
             sigilTrinket.IconOverlayId = overlayId;
         }
@@ -65,114 +60,172 @@ public static partial class LootGenerationFactory
         // allow emote to override the wield skill rng (0 or 1). If not provided, use a random 0/1.
         var wieldSkillRng = forcedWieldSkillRng ?? ThreadSafeRandom.Next(0, 1);
 
+        // We'll set WieldSkillType to the primary skill for other internal checks (eg. RechargeSigilTrinket).
+        // Config-driven AllowedSpecializedSkills (including multi-skill / combined keys) are applied below.
         switch (sigilTrinket.SigilTrinketType)
         {
             case (int)SigilTrinketType.Compass:
+            {
                 sigilTrinket.SigilTrinketHealthReserved = GetReservedVital(profile, false, true);
-                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.Shield : (int)Skill.TwoHandedCombat;
 
-                if (sigilTrinket.WieldSkillType == (int)Skill.Shield)
+                // Candidate config keys (prefer combined first)
+                var compassCandidates = new (string, List<Skill>)[]
                 {
-                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxShieldEffectId
-                        ? effectId.Value
-                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxShieldEffectId);
+                    ("shieldTwohandedCompass", new List<Skill>{ Skill.Shield, Skill.TwoHandedCombat }),
+                    ("shieldCompass", new List<Skill>{ Skill.Shield }),
+                    ("twohandedCompass", new List<Skill>{ Skill.TwoHandedCombat })
+                };
 
-                    ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.ShieldCompass);
-                }
-                else
+                // pass effectId so config-driven randomization picks from the map when present
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, compassCandidates))
                 {
-                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxTwohandedCombatEffectId
-                        ? effectId.Value
-                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxTwohandedCombatEffectId);
-
-                    ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.TwohandedCompass);
+                    _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
+
                 break;
+            }
             case (int)SigilTrinketType.PuzzleBox:
+            {
                 sigilTrinket.SigilTrinketHealthReserved = GetReservedVital(profile, true, true);
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile, true);
-                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.DualWield : (int)Skill.Thievery;
 
-                if (sigilTrinket.WieldSkillType == (int)Skill.DualWield)
+                var puzzleCandidates = new (string, List<Skill>)[]
                 {
-                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxDualWieldEffectId
-                        ? effectId.Value
-                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxDualWieldEffectId);
+                    ("dualWieldMissilePuzzleBox", new List<Skill>{ Skill.DualWield, Skill.Bow }),
+                    ("dualWieldPuzzleBox", new List<Skill>{ Skill.DualWield }),
+                    ("missilePuzzleBox", new List<Skill>{ Skill.Bow }),
+                    ("thieveryPuzzleBox", new List<Skill>{ Skill.Thievery })
+                };
 
-                    ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.DualWieldPuzzleBox);
-                }
-                else
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, puzzleCandidates))
                 {
-                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxThieveryEffectId
-                        ? effectId.Value
-                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxThieveryEffectId);
-
-                    ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.ThieveryPuzzleBox);
+                    _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
+
                 break;
+            }
             case (int)SigilTrinketType.Scarab:
+            {
                 sigilTrinket.SigilTrinketHealthReserved = GetReservedVital(profile, true, true);
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile, true);
-                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.LifeMagic : (int)Skill.WarMagic;
 
-                if (sigilTrinket.WieldSkillType == (int)Skill.LifeMagic)
+                var scarabCandidates = new (string, List<Skill>)[]
                 {
-                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxLifeMagicEffectId
-                        ? effectId.Value
-                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxLifeMagicEffectId);
+                    ("lifeWarMagicScarab", new List<Skill>{ Skill.LifeMagic, Skill.WarMagic }),
+                    ("lifeMagicScarab", new List<Skill>{ Skill.LifeMagic }),
+                    ("warMagicScarab", new List<Skill>{ Skill.WarMagic })
+                };
 
-                    ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.LifeMagicScarab);
-                }
-                else
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, scarabCandidates))
                 {
-                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxWarMagicEffectId
-                        ? effectId.Value
-                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxWarMagicEffectId);
-
-                    ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.WarMagicScarab);
+                    _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
+
                 break;
+            }
             case (int)SigilTrinketType.PocketWatch:
+            {
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile);
-                sigilTrinket.WieldSkillType = (int)Skill.PhysicalDefense;
-                sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxPhysicalDefenseEffectId
-                    ? effectId.Value
-                    : ThreadSafeRandom.Next(0, SigilTrinket.MaxPhysicalDefenseEffectId);
 
-                ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.PhysicalDefensePocketWatch);
+                var pocketCandidates = new (string, List<Skill>)[]
+                {
+                    ("physicalDefensePocketWatch", new List<Skill>{ Skill.PhysicalDefense })
+                };
+
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, pocketCandidates))
+                {
+                    _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
+                }
+
                 break;
+            }
             case (int)SigilTrinketType.Top:
+            {
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile);
-                sigilTrinket.WieldSkillType = (int)Skill.MagicDefense;
-                sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxMagicDefenseEffectId
-                    ? effectId.Value
-                    : ThreadSafeRandom.Next(0, SigilTrinket.MaxMagicDefenseEffectId);
 
-                ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.MagicDefenseTop);
+                var topCandidates = new (string, List<Skill>)[]
+                {
+                    ("magicDefenseTop", new List<Skill>{ Skill.MagicDefense })
+                };
+
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, topCandidates))
+                {
+                    _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
+                }
+
                 break;
+            }
             case (int)SigilTrinketType.Goggles:
+            {
                 sigilTrinket.SigilTrinketStaminaReserved = GetReservedVital(profile, true);
                 sigilTrinket.SigilTrinketManaReserved = GetReservedVital(profile, true);
-                sigilTrinket.WieldSkillType = wieldSkillRng == 0 ? (int)Skill.Perception : (int)Skill.Deception;
 
-                if (sigilTrinket.WieldSkillType == (int)Skill.Perception)
+                var gogglesCandidates = new (string, List<Skill>)[]
                 {
-                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxPerceptionEffectId
-                        ? effectId.Value
-                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxPerceptionEffectId);
+                    ("perceptionDeceptionGoggles", new List<Skill>{ Skill.Perception, Skill.Deception }),
+                    ("perceptionGoggles", new List<Skill>{ Skill.Perception }),
+                    ("deceptionGoggles", new List<Skill>{ Skill.Deception })
+                };
 
-                    ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.PerceptionGoggles);
-                }
-                else
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, gogglesCandidates))
                 {
-                    sigilTrinket.SigilTrinketEffectId = effectId.HasValue && effectId.Value >= 0 && effectId.Value < SigilTrinket.MaxDeceptionEffectId
-                        ? effectId.Value
-                        : ThreadSafeRandom.Next(0, SigilTrinket.MaxDeceptionEffectId);
-
-                    ApplyConfigMap(profile, sigilTrinket, SigilTrinketConfig.DeceptionGoggles);
+                    _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
+
                 break;
+            }
         }
+    }
+
+    // Helper to choose config map, pick an effect id from map, and set AllowedSpecializedSkills.
+    static bool TryApplyRandomMatchingMap(TreasureDeath profile, SigilTrinket sigil, int? requestedEffectId, (string MapName, List<Skill> Skills)[] candidates)
+    {
+        // collect all matching maps first
+        var matches = new List<(IReadOnlyDictionary<int, SigilStatConfig> Map, List<Skill> Skills)>();
+
+        foreach (var (mapName, skills) in candidates)
+        {
+            if (!TryGetMap(mapName, out var map))
+            {
+                continue;
+            }
+
+            var keys = new List<int>(map.Keys);
+            if (keys.Count == 0)
+            {
+                continue;
+            }
+
+            matches.Add((map, skills));
+        }
+
+        if (matches.Count == 0)
+        {
+            return false;
+        }
+
+        // choose one matching map uniformly at random
+        var chosenMapIndex = ThreadSafeRandom.Next(0, matches.Count - 1);
+        var (chosenMap, chosenSkills) = matches[chosenMapIndex];
+
+        // choose effect id from the chosen map (prefer requestedEffectId if present)
+        int chosenEffectId;
+        if (requestedEffectId.HasValue && chosenMap.ContainsKey(requestedEffectId.Value))
+        {
+            chosenEffectId = requestedEffectId.Value;
+        }
+        else
+        {
+            var keys = new List<int>(chosenMap.Keys);
+            var idx = ThreadSafeRandom.Next(0, keys.Count - 1);
+            chosenEffectId = keys[idx];
+        }
+
+        sigil.SigilTrinketEffectId = chosenEffectId;
+        sigil.AllowedSpecializedSkills = chosenSkills;
+
+        ApplyConfigMap(profile, sigil, (IReadOnlyDictionary<int, SigilStatConfig>)chosenMap);
+        return true;
     }
 
     private static void ApplyConfigMap(TreasureDeath profile, SigilTrinket sigilTrinket, IReadOnlyDictionary<int, SigilStatConfig> map)
@@ -189,15 +242,15 @@ public static partial class LootGenerationFactory
         }
 
         // Palette / Icon
-        if (cfg.PaletteKey is not null && SigilTrinketConfig.PaletteTemplateColors.TryGetValue(cfg.PaletteKey, out var palette))
+        if (cfg.PaletteKey is not null && PaletteTemplateColors.TryGetValue(cfg.PaletteKey, out var palette))
         {
             sigilTrinket.PaletteTemplate = palette;
         }
 
-        if (cfg.IconColorKey is not null && SigilTrinketConfig.IconColorIds.Count > 0)
+        if (cfg.IconColorKey is not null && IconColorIds.Count > 0)
         {
-            var typeIndex = Math.Clamp(sigilTrinket.SigilTrinketType ?? 0, 0, SigilTrinketConfig.IconColorIds.Count - 1);
-            var iconMap = SigilTrinketConfig.IconColorIds[typeIndex];
+            var typeIndex = Math.Clamp(sigilTrinket.SigilTrinketType ?? 0, 0, IconColorIds.Count - 1);
+            var iconMap = IconColorIds[typeIndex];
             if (iconMap.TryGetValue(cfg.IconColorKey, out var iconId))
             {
                 sigilTrinket.IconId = iconId;
@@ -224,27 +277,17 @@ public static partial class LootGenerationFactory
             sigilTrinket.SigilTrinketManaReserved = 0;
         }
 
-        // cooldown: prefer multiplicative adjustment if provided (not 1.0), otherwise fall back to additive delta for compatibility.
+        // cooldown: multiplicative adjustment if provided (not 1.0)
         if (cfg.CooldownMultiplier != 1.0)
         {
             sigilTrinket.CooldownDuration *= cfg.CooldownMultiplier;
         }
-        else if (cfg.CooldownDelta != 0.0)
-        {
-            sigilTrinket.CooldownDuration += cfg.CooldownDelta;
-        }
 
-        // trigger chance: prefer multiplicative adjustment if provided (not 1.0), otherwise fall back to additive delta.
+        // trigger chance: multiplicative adjustment if provided (not 1.0)
         if (cfg.TriggerChanceMultiplier != 1.0)
         {
             var baseChance = sigilTrinket.SigilTrinketTriggerChance ?? 0.0;
             var newChance = baseChance * cfg.TriggerChanceMultiplier;
-            sigilTrinket.SigilTrinketTriggerChance = Math.Clamp(newChance, 0.0, 1.0);
-        }
-        else if (cfg.TriggerChanceDelta != 0.0)
-        {
-            var baseChance = sigilTrinket.SigilTrinketTriggerChance ?? 0.0;
-            var newChance = baseChance + cfg.TriggerChanceDelta;
             sigilTrinket.SigilTrinketTriggerChance = Math.Clamp(newChance, 0.0, 1.0);
         }
 
@@ -257,6 +300,28 @@ public static partial class LootGenerationFactory
         if (!string.IsNullOrEmpty(cfg.UseText))
         {
             var useText = cfg.UseText;
+
+            // Build a short wield requirement string from any Training/Skill wield slots
+            var skillNames = new List<string>();
+            if (skillNames.Count > 0)
+            {
+                // Deduplicate and preserve order
+                var unique = new List<string>();
+                foreach (var s in skillNames)
+                {
+                    if (!unique.Contains(s))
+                    {
+                        unique.Add(s);
+                    }
+                }
+
+                var wieldReqStr = unique.Count == 1
+                    ? $"Requires specialized {unique[0]}"
+                    : $"Requires specialized {string.Join(" or ", unique)}";
+
+                useText = useText.Replace("{wieldReq}", wieldReqStr);
+            }
+
             sigilTrinket.Use = useText;
         }
     }

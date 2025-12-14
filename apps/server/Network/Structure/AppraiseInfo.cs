@@ -1283,6 +1283,52 @@ public class AppraiseInfo
 
             _hasExtraPropertiesText = true;
         }
+
+        // Wield Skill Req
+        if (wo is SigilTrinket { AllowedSpecializedSkills: not null } sigilTrinketSkills)
+        {
+            var skills = sigilTrinketSkills.AllowedSpecializedSkills;
+            if (skills.Count > 0)
+            {
+                try
+                {
+                    var names = new List<string>(skills.Count);
+                    foreach (var sk in skills)
+                    {
+                        // Prefer human-friendly name if available
+                        try
+                        {
+                            names.Add(((Skill)sk).ToSentence());
+                        }
+                        catch
+                        {
+                            names.Add(((Skill)sk).ToString());
+                        }
+                    }
+
+                    // Deduplicate while preserving order
+                    var unique = new List<string>();
+                    foreach (var n in names)
+                    {
+                        if (!unique.Contains(n))
+                        {
+                            unique.Add(n);
+                        }
+                    }
+
+                    var wieldReqStr = unique.Count == 1
+                        ? $"Wield requires specialized {unique[0]}"
+                        : $"Wield requires specialized {string.Join(" or ", unique)}";
+
+                    _extraPropertiesText += wieldReqStr + "\n";
+                    _hasExtraPropertiesText = true;
+                }
+                catch
+                {
+                    // resilient: if anything goes wrong, do not break appraisal
+                }
+            }
+        }
     }
 
     private void SetSalvageBagUseText(WorldObject wo)
