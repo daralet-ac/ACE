@@ -95,8 +95,8 @@ public enum SigilTrinketMissileEffect
 
 public enum SigilTrinketDualWieldMissileEffect
 {
-    Assailment
-    // PH2,
+    Assailment,
+    SwiftKiller
     // PH3,
     // PH4
 }

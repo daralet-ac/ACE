@@ -164,6 +164,8 @@ partial class Player
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Shield, SigilTrinketShieldTwohandedCombatEffect.Aggression);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.DualWield, SigilTrinketDualWieldMissileEffect.Assailment, damageEvent.IsCritical);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Bow, SigilTrinketDualWieldMissileEffect.Assailment, damageEvent.IsCritical);
+        CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.DualWield, SigilTrinketDualWieldMissileEffect.SwiftKiller);
+        CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Bow, SigilTrinketDualWieldMissileEffect.SwiftKiller);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Thievery, SigilTrinketThieveryEffect.Treachery, damageEvent.IsCritical);
         CheckForSigilTrinketOnAttackEffects(target, damageEvent, Skill.Deception, SigilTrinketDeceptionEffect.Avoidance);
 

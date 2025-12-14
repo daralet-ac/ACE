@@ -215,6 +215,18 @@ public class SigilTrinketEvent
                 );
                 break;
 
+            case (Skill.DualWield, SigilTrinketDualWieldMissileEffect.SwiftKiller):
+            case (Skill.Bow, SigilTrinketDualWieldMissileEffect.SwiftKiller):
+                CastSigilTrinketSpell(sigilTrinket, true);
+
+                Player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Sigil Puzzle Box of Swift Killer boosts your attack speed!",
+                        ChatMessageType.CombatSelf
+                    )
+                );
+                break;
+
             case (Skill.Thievery, SigilTrinketThieveryEffect.Treachery):
                 if (DamageEvent is null)
                 {
@@ -469,6 +481,11 @@ public class SigilTrinketEvent
                 castSpellLevel1IdsToCastSet.Add(SpellId.SigilTrinketCriticalDamageBoost);
                 break;
 
+            case (Skill.DualWield, SigilTrinketDualWieldMissileEffect.SwiftKiller):
+            case (Skill.Bow, SigilTrinketDualWieldMissileEffect.SwiftKiller):
+                castSpellLevel1IdsToCastSet.Add(SpellId.SwiftKillerSelf1);
+                break;
+
             default:
                 if (sigilTrinket.SigilTrinketCastSpellId != null)
                 {
@@ -693,6 +710,10 @@ public class SigilTrinketEvent
             case (Skill.Bow, SigilTrinketDualWieldMissileEffect.Assailment):
                 return IsValidForAssailment(sigilTrinket);
 
+            case (Skill.DualWield, SigilTrinketDualWieldMissileEffect.SwiftKiller):
+            case (Skill.Bow, SigilTrinketDualWieldMissileEffect.SwiftKiller):
+                return IsValidForSwiftKiller(sigilTrinket);
+
             case (Skill.Thievery, SigilTrinketThieveryEffect.Treachery):
                 return IsValidForTreachery(sigilTrinket);
 
@@ -900,6 +921,28 @@ public class SigilTrinketEvent
         var isMissileAttack = DamageEvent.Weapon.IsAmmoLauncher; 
 
         return validSkillDualWieldMissile && validEffectId && (isDualWieldAttack || isMissileAttack) && OnCrit;
+    }
+
+    private bool IsValidForSwiftKiller(SigilTrinket sigilTrinket)
+    {
+        if (Player.GetEquippedWeapon() == null)
+        {
+            return false;
+        }
+
+        var validSkillDualWieldMissile = GetAllowedSkills(sigilTrinket).Contains(Skill.DualWield) && GetAllowedSkills(sigilTrinket).Contains(Skill.Bow);
+        var validEffectId = sigilTrinket.SigilTrinketEffectId == (int)SigilTrinketDualWieldMissileEffect.SwiftKiller;
+        var isPowerAttack = Player.GetPowerAccuracyBar() > 0.5f;
+
+        if (DamageEvent.Weapon is null)
+        {
+            return false;
+        }
+
+        var isDualWieldAttack = Player is { IsDualWieldAttack: true };
+        var isMissileAttack = DamageEvent.Weapon.IsAmmoLauncher;
+
+        return validSkillDualWieldMissile && validEffectId && isPowerAttack && (isDualWieldAttack || isMissileAttack);
     }
 
     private bool IsValidForTreachery(SigilTrinket sigilTrinket)

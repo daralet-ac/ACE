@@ -382,6 +382,19 @@ The level of the debuff is equal to the level of the cast spell.",
                 1.0,
                 1.0,
                 false
+            ),
+
+            [1] = new SigilStatConfig(
+                "yellow",
+                "yellow",
+                " of Swift Killer",
+                "Whenever the wielder attacks with more than 50% power, there is a chance to gain an attack speed buff, for 10 seconds. The level of the buff increases with higher wield weapons.\n\nCan only occur while using a missile weapon or dual-wielding.",
+                false,
+                false,
+                false,
+                1.0,
+                1.0,
+                false
             )
         };
 
