@@ -384,6 +384,8 @@ public class SigilTrinketEvent
                     break;
                 }
 
+                castSpellLevel1IdsToCastSet.Add(SpellId.ArmorOther1);
+
                 var recentDamageTakenTypes = targetCreature.RecentDamageTypesTaken;
 
                 if (recentDamageTakenTypes.Count == 0)
