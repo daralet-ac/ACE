@@ -417,7 +417,7 @@ public class DamageEvent
 
         if (playerDefender is not null && PartialEvasion == PartialEvasion.Some)
         {
-            playerDefender.CheckForSigilTrinketOnAttackEffects(playerAttacker, this, Skill.PhysicalDefense, (int)SigilTrinketPhysicalDefenseEffect.Evasion);
+            playerDefender.CheckForSigilTrinketOnAttackEffects(playerAttacker, this, Skill.PhysicalDefense, SigilTrinketPhysicalDefenseEffect.Evasion);
         }
     }
 
@@ -606,8 +606,8 @@ public class DamageEvent
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (roll > _criticalChance || GetCriticalDefendedFromAug(attacker, defender) || CheckForSpecPerceptionCriticalDefense(defender as Player))
         {
-            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, (int)SigilTrinketTwohandedCombatEffect.Might);
-            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Shield, (int)SigilTrinketShieldEffect.Might);
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.TwoHandedCombat, SigilTrinketShieldTwohandedCombatEffect.Might);
+            _playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Shield, SigilTrinketShieldTwohandedCombatEffect.Might);
 
             if (!CriticalOverridedByTrinket)
             {
@@ -876,7 +876,7 @@ public class DamageEvent
         var playerDefender = defender as Player;
 
         CriticalDamageBonusFromTrinket = 1.0f;
-        playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Thievery, (int)SigilTrinketThieveryEffect.Treachery, true);
+        playerAttacker?.CheckForSigilTrinketOnAttackEffects(defender, this, Skill.Thievery, SigilTrinketThieveryEffect.Treachery, true);
 
         _criticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, attacker, _attackSkill, defender);
         _criticalDamageMod += GetMaceSpecCriticalDamageBonus(playerAttacker);

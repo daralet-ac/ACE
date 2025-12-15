@@ -601,17 +601,17 @@ partial class WorldObject
                 switch (spell.School)
                 {
                     case MagicSchool.LifeMagic:
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabIntensity, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabShield, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastProt, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastVuln, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastItemBuff, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, (int)SigilTrinketLifeMagicEffect.ScarabCastVitalRate, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastProt, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastVuln, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastItemBuff, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.LifeMagic, SigilTrinketLifeMagicEffect.CastVitalRate, null, false, _isSigilTrinketSpell);
                         break;
                     case MagicSchool.WarMagic:
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabIntensity, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabShield, null, false, _isSigilTrinketSpell);
-                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, (int)SigilTrinketWarMagicEffect.ScarabDuplicate, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketWarMagicEffect.Duplicate, null, false, _isSigilTrinketSpell);
                         break;
                 }
             }
@@ -1124,7 +1124,7 @@ partial class WorldObject
         tryBoost = (int)(tryBoost * scalar);
 
         SigilTrinketSpellDamageReduction = 1.0f;
-        targetPlayer?.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, tryBoost, Skill.MagicDefense, (int)SigilTrinketMagicDefenseEffect.Absorption);
+        targetPlayer?.CheckForSigilTrinketOnSpellHitReceivedEffects(this, spell, tryBoost, Skill.MagicDefense, SigilTrinketMagicDefenseEffect.Absorption);
         tryBoost = Convert.ToInt32(tryBoost * SigilTrinketSpellDamageReduction);
 
         switch (spell.VitalDamageType)
