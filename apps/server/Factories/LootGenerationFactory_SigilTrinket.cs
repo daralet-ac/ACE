@@ -159,7 +159,6 @@ public static partial class LootGenerationFactory
 
                 var gogglesCandidates = new (string, List<Skill>)[]
                 {
-                    ("perceptionDeceptionGoggles", new List<Skill>{ Skill.Perception, Skill.Deception }),
                     ("perceptionGoggles", new List<Skill>{ Skill.Perception }),
                     ("deceptionGoggles", new List<Skill>{ Skill.Deception })
                 };
