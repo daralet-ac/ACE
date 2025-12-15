@@ -426,7 +426,7 @@ The level of the debuff is equal to the level of the cast spell.",
                 false,
                 false,
                 false,
-                1.0,
+                0.5,
                 1.0,
                 false
             )
@@ -443,7 +443,7 @@ The level of the debuff is equal to the level of the cast spell.",
                 false,
                 false,
                 false,
-                1.0,
+                0.5,
                 1.0,
                 false
             )

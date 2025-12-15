@@ -382,11 +382,43 @@ public class EmoteManager
 
                     // Prefer PropertyInt-backed values when available (works for SigilTrinket or any weenie with those properties, e.g. gems)
                     var forcedEffectId = WorldObject.GetProperty(PropertyInt.SigilTrinketEffectId) ?? null;
-                    var forcedWieldSkillRng = WorldObject.GetProperty(PropertyInt.SigilTrinketSkill)
-                                                ?? (emote.Shade.HasValue ? (int?)Convert.ToInt32(Math.Round(emote.Shade.Value)) : null);
+                    //var forcedWieldSkillRng = WorldObject.GetProperty(PropertyInt.SigilTrinketSkill)
+                    //                            ?? (emote.Shade.HasValue ? (int?)Convert.ToInt32(Math.Round(emote.Shade.Value)) : null);
 
                     // allow emote to override created WCID, otherwise use source object's weenie class id as fallback
                     var forcedWcid = emote.WeenieClassId ?? null;
+
+                    // Read optional allowed specialized skills from the source object's PropertyString.
+                    // Stored format: comma-separated enum ints or names (matches SigilTrinket.AllowedSpecializedSkills getter).
+                    List<Skill> allowedSpecializedSkills = null;
+                    var rawAllowed = WorldObject.GetProperty(PropertyString.SigilTrinketAllowedSpecializedSkills);
+                    if (!string.IsNullOrWhiteSpace(rawAllowed))
+                    {
+                        var parts = rawAllowed.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        var tmp = new List<Skill>(parts.Length);
+                        foreach (var p in parts)
+                        {
+                            if (int.TryParse(p, out var v))
+                            {
+                                if (Enum.IsDefined(typeof(Skill), v))
+                                {
+                                    tmp.Add((Skill)v);
+                                }
+                            }
+                            else
+                            {
+                                if (Enum.TryParse<Skill>(p, true, out var sk))
+                                {
+                                    tmp.Add(sk);
+                                }
+                            }
+                        }
+
+                        if (tmp.Count > 0)
+                        {
+                            allowedSpecializedSkills = tmp;
+                        }
+                    }
 
                     var profile = new ACE.Server.Factories.Entity.TreasureDeathExtended
                     {
@@ -409,8 +441,8 @@ public class EmoteManager
                         trinketType,
                         true,
                         forcedEffectId,
-                        forcedWieldSkillRng,
-                        forcedWcid
+                        forcedWcid,
+                        allowedSpecializedSkills
                     );
 
                     if (trinket != null)

@@ -11,7 +11,7 @@ namespace ACE.Server.Factories;
 
 public static partial class LootGenerationFactory
 {
-    public static WorldObject CreateSigilTrinket(TreasureDeath profile, SigilTrinketType sigilTrinketType, bool mutate = true, int? effectId = null, int? wieldSkillRng = null, uint? wcidOverride = null)
+    public static WorldObject CreateSigilTrinket(TreasureDeath profile, SigilTrinketType sigilTrinketType, bool mutate = true, int? effectId = null, uint? wcidOverride = null, List<Skill> allowedSpecializedSkills = null)
     {
         var wcid = SigilTrinketWcids.Roll(profile.Tier, sigilTrinketType);
 
@@ -21,13 +21,13 @@ public static partial class LootGenerationFactory
 
         if (mutate)
         {
-            MutateSigilTrinket(wo, profile, effectId, wieldSkillRng);
+            MutateSigilTrinket(wo, profile, effectId, allowedSpecializedSkills);
         }
 
         return wo;
     }
 
-    private static void MutateSigilTrinket(WorldObject wo, TreasureDeath profile, int? effectId = null, int? forcedWieldSkillRng = null)
+    private static void MutateSigilTrinket(WorldObject wo, TreasureDeath profile, int? effectId = null, List<Skill> allowedSpecializedSkills = null)
     {
         if (wo is not SigilTrinket sigilTrinket)
         {
@@ -57,9 +57,6 @@ public static partial class LootGenerationFactory
         sigilTrinket.SigilTrinketStaminaReserved = 0;
         sigilTrinket.SigilTrinketManaReserved = 0;
 
-        // allow emote to override the wield skill rng (0 or 1). If not provided, use a random 0/1.
-        var wieldSkillRng = forcedWieldSkillRng ?? ThreadSafeRandom.Next(0, 1);
-
         // We'll set WieldSkillType to the primary skill for other internal checks (eg. RechargeSigilTrinket).
         // Config-driven AllowedSpecializedSkills (including multi-skill / combined keys) are applied below.
         switch (sigilTrinket.SigilTrinketType)
@@ -77,7 +74,7 @@ public static partial class LootGenerationFactory
                 };
 
                 // pass effectId so config-driven randomization picks from the map when present
-                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, compassCandidates))
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, compassCandidates, allowedSpecializedSkills))
                 {
                     _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
@@ -97,7 +94,7 @@ public static partial class LootGenerationFactory
                     ("thieveryPuzzleBox", new List<Skill>{ Skill.Thievery })
                 };
 
-                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, puzzleCandidates))
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, puzzleCandidates, allowedSpecializedSkills))
                 {
                     _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
@@ -116,7 +113,7 @@ public static partial class LootGenerationFactory
                     ("warMagicScarab", new List<Skill>{ Skill.WarMagic })
                 };
 
-                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, scarabCandidates))
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, scarabCandidates, allowedSpecializedSkills))
                 {
                     _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
@@ -132,7 +129,7 @@ public static partial class LootGenerationFactory
                     ("physicalDefensePocketWatch", new List<Skill>{ Skill.PhysicalDefense })
                 };
 
-                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, pocketCandidates))
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, pocketCandidates, allowedSpecializedSkills))
                 {
                     _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
@@ -148,7 +145,7 @@ public static partial class LootGenerationFactory
                     ("magicDefenseTop", new List<Skill>{ Skill.MagicDefense })
                 };
 
-                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, topCandidates))
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, topCandidates, allowedSpecializedSkills))
                 {
                     _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
@@ -167,7 +164,7 @@ public static partial class LootGenerationFactory
                     ("deceptionGoggles", new List<Skill>{ Skill.Deception })
                 };
 
-                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, gogglesCandidates))
+                if (!TryApplyRandomMatchingMap(profile, sigilTrinket, effectId, gogglesCandidates, allowedSpecializedSkills))
                 {
                     _log.Error("MutateSigilTrinket() - Could not find matching map for {Trinket}", sigilTrinket.Name);
                 }
@@ -178,7 +175,7 @@ public static partial class LootGenerationFactory
     }
 
     // Helper to choose config map, pick an effect id from map, and set AllowedSpecializedSkills.
-    static bool TryApplyRandomMatchingMap(TreasureDeath profile, SigilTrinket sigil, int? requestedEffectId, (string MapName, List<Skill> Skills)[] candidates)
+    static bool TryApplyRandomMatchingMap(TreasureDeath profile, SigilTrinket sigil, int? requestedEffectId, (string MapName, List<Skill> Skills)[] candidates, List<Skill> allowedSpecializedSkills = null)
     {
         // collect all matching maps first
         var matches = new List<(IReadOnlyDictionary<int, SigilStatConfig> Map, List<Skill> Skills)>();
@@ -204,9 +201,85 @@ public static partial class LootGenerationFactory
             return false;
         }
 
-        // choose one matching map uniformly at random
-        var chosenMapIndex = ThreadSafeRandom.Next(0, matches.Count - 1);
-        var (chosenMap, chosenSkills) = matches[chosenMapIndex];
+        // If an effectId is forced, prefer candidates according to the provided allowedSpecializedSkills.
+        (IReadOnlyDictionary<int, SigilStatConfig> Map, List<Skill> Skills)? chosen = null;
+
+        if (requestedEffectId.HasValue)
+        {
+            var forcedId = requestedEffectId.Value;
+
+            // helper to compare skill lists as sets (order/duplicates not significant)
+            static bool SkillSetsEqual(IReadOnlyList<Skill> a, IReadOnlyList<Skill> b)
+            {
+                if (a == null || b == null)
+                {
+                    return false;
+                }
+
+                if (a.Count != b.Count)
+                {
+                    return false;
+                }
+
+                var sa = new HashSet<Skill>(a);
+                var sb = new HashSet<Skill>(b);
+                return sa.SetEquals(sb);
+            }
+
+            var allowed = allowedSpecializedSkills;
+
+            if (allowed != null && allowed.Count > 0)
+            {
+                // 1) Prefer a candidate that exactly matches allowedSpecializedSkills and contains the requested effect id.
+                for (var i = 0; i < matches.Count; ++i)
+                {
+                    var (map, skills) = matches[i];
+                    if (SkillSetsEqual(skills, allowed) && map.ContainsKey(forcedId))
+                    {
+                        chosen = matches[i];
+                        break;
+                    }
+                }
+
+                // 2) If none contains the requested effect id, prefer the candidate that matches allowedSpecializedSkills.
+                if (chosen == null)
+                {
+                    for (var i = 0; i < matches.Count; ++i)
+                    {
+                        var (map, skills) = matches[i];
+                        if (SkillSetsEqual(skills, allowed))
+                        {
+                            chosen = matches[i];
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 3) If allowedSpecializedSkills not provided or above attempts failed, prefer any map that contains the requested effect id.
+            if (chosen == null)
+            {
+                for (var i = 0; i < matches.Count; ++i)
+                {
+                    var (map, skills) = matches[i];
+                    if (map.ContainsKey(forcedId))
+                    {
+                        chosen = matches[i];
+                        break;
+                    }
+                }
+            }
+        }
+
+        // If still not chosen, pick one matching map uniformly at random
+        if (chosen == null)
+        {
+            var chosenMapIndex = ThreadSafeRandom.Next(0, matches.Count - 1);
+            chosen = matches[chosenMapIndex];
+        }
+
+        var chosenMap = chosen.Value.Map;
+        var chosenSkills = chosen.Value.Skills;
 
         // choose effect id from the chosen map (prefer requestedEffectId if present)
         int chosenEffectId;
