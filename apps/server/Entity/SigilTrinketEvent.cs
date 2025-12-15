@@ -640,6 +640,11 @@ public class SigilTrinketEvent
     {
         var effectEnum = GetEffectIdEnum(sigilTrinket);
 
+        if (effectEnum is null || EffectId is null)
+        {
+            return false;
+        }
+
         if (sigilTrinket.SigilTrinketEffectId is null || effectEnum.ToString() != EffectId.ToString())
         {
             return false;
