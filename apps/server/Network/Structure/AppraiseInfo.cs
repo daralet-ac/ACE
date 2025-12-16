@@ -1819,7 +1819,7 @@ public class AppraiseInfo
         _hasExtraPropertiesText = true;
 
         _additionalPropertiesLongDescriptionsText +=
-            $"~ Critical Strike: Increases critical damage by +{amountFormatted}%, additively. " +
+            $"~ Critical Strike: Increases critical chance by +{amountFormatted}%, additively. " +
             $"Value is based on wielder attack skill (5% to 10%).\n";
     }
 
