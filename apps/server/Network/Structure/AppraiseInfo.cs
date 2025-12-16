@@ -1298,11 +1298,11 @@ public class AppraiseInfo
                         // Prefer human-friendly name if available
                         try
                         {
-                            names.Add(((Skill)sk).ToSentence());
+                            names.Add(((NewSkillNames)sk).ToSentence());
                         }
                         catch
                         {
-                            names.Add(((Skill)sk).ToString());
+                            names.Add(((NewSkillNames)sk).ToString());
                         }
                     }
 
