@@ -500,13 +500,26 @@ public class DamageEvent
             return;
         }
 
-        // If playerDefender has Phalanx active, 50% chance to convert partial hits into blocks/parries.
+        // If playerDefender has Phalanx active, up to 50% chance to convert partial hits into blocks/parries.
         if (playerDefender is { PhalanxIsActive: true }
-            && PartialEvasion == PartialEvasion.Some
-            && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.5f)
+            && PartialEvasion == PartialEvasion.Some)
         {
-            Blocked = true;
-            return;
+            var phalanxChance = playerDefender.GetEquippedShield().ArmorStyle switch
+            {
+                (int)ArmorStyle.CovenantShield => 0.5f,
+                (int)ArmorStyle.TowerShield => 0.45f,
+                (int)ArmorStyle.LargeShield => 0.4f,
+                (int)ArmorStyle.StandardShield => 0.35f,
+                (int)ArmorStyle.SmallShield => 0.3f,
+                (int)ArmorStyle.Buckler => 0.3f,
+                _ => 0.25f
+            };
+
+            if (ThreadSafeRandom.Next(0.0f, 1.0f) < phalanxChance)
+            {
+                Blocked = true;
+                return;
+            }
         }
 
         // base block/parry chance is 5%
@@ -560,9 +573,19 @@ public class DamageEvent
 
         const float effectiveAngle = 180.0f;
         var parryAngle = Math.Abs(defender.GetAngle(attacker)) < effectiveAngle / 2.0f;
+        var twohandPhalanxActive = playerDefender is { PhalanxIsActive: true } && playerDefender.GetEquippedWeapon() is { IsTwoHanded: true };
 
-        if (!parryAngle)
+        if (!parryAngle && !twohandPhalanxActive)
         {
+            return;
+        }
+
+        // If playerDefender has Phalanx active, 50% chance to convert partial hits into blocks/parries.
+        if (playerDefender is { PhalanxIsActive: true }
+            && PartialEvasion == PartialEvasion.Some
+            && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.25f)
+        {
+            Parried = true;
             return;
         }
 
