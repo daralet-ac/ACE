@@ -313,16 +313,6 @@ public class DamageEvent
 
         // Roll combat hit chance
         var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-        if (playerDefender is { EvasiveStanceIsActive: true })
-        {
-            var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-            if (luckyRoll < attackRoll)
-            {
-                attackRoll = luckyRoll;
-            }
-        }
-
         if (attackRoll > GetEvadeChance(attacker, defender))
         {
             // If playerDefender has Phalanx active, 25-50% chance to convert a full hit into a partial hit, depending on shield size.
