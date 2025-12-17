@@ -169,7 +169,10 @@ internal static class SigilTrinketConfig
             [4] = 100690999,
             [5] = 100691000,
             [6] = 100691001,
-            [7] = 100691002
+            [7] = 100691002,
+            [8] = 100691003,
+            [9] = 100691004,
+            [10] = 0
         };
 
     public static IReadOnlyDictionary<int, SigilStatConfig> LifeMagicScarab { get; } =
