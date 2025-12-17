@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ACE.Common;
 using ACE.Database.Models.World;
 using ACE.Entity.Enum;
+using ACE.Server.Entity;
 using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.WorldObjects;
 using static ACE.Server.Factories.SigilTrinketConfig;
@@ -34,6 +35,8 @@ public static partial class LootGenerationFactory
             return;
         }
 
+        var tier = Math.Clamp(profile.Tier - 1, 1, 7);
+
         sigilTrinket.CooldownDuration = GetCooldown(profile);
         sigilTrinket.SigilTrinketTriggerChance = GetChance(profile);
 
@@ -42,13 +45,16 @@ public static partial class LootGenerationFactory
         sigilTrinket.WieldDifficulty2 = GetRequiredLevelPerTier(profile.Tier);
         sigilTrinket.WieldSkillType2 = 0;
 
-        sigilTrinket.ItemMaxLevel = Math.Clamp(profile.Tier - 1, 1, 7);
-        sigilTrinket.ItemBaseXp = GetBaseLevelCost(profile);
+        sigilTrinket.ItemMaxLevel = RollSigilTrinketLevel(profile);
+        sigilTrinket.ItemBaseXp = GetBaseLevelCost(tier);
         sigilTrinket.ItemTotalXp = 0;
-        sigilTrinket.Value = GetValuePerTier(profile.Tier);
+        sigilTrinket.Value = GetValuePerTier(tier);
+
+        var setRoll = ThreadSafeRandom.Next(0, 4);
+        sigilTrinket.EquipmentSetId = Aetheria.SigilToEquipmentSet[(Sigil)setRoll];
 
         // Icon overlay id comes from config tier icon ids
-        if (TierIconIds.TryGetValue(Math.Clamp(profile.Tier - 1, 1, 7), out var overlayId))
+        if (TierIconIds.TryGetValue(sigilTrinket.ItemMaxLevel ?? 1, out var overlayId))
         {
             sigilTrinket.IconOverlayId = overlayId;
         }
@@ -171,6 +177,22 @@ public static partial class LootGenerationFactory
                 break;
             }
         }
+    }
+
+    private static int RollSigilTrinketLevel(TreasureDeath profile)
+    {
+        var roll = 100 * GetDiminishingRoll(profile);
+        var tier = Math.Clamp(profile.Tier - 1, 1, 7);
+
+        var bonusLevel = roll switch
+        {
+            > 99 => 3,
+            > 89 => 2,
+            > 69 => 1,
+            _ => 0
+        };
+
+        return tier + bonusLevel;
     }
 
     // Helper to choose config map, pick an effect id from map, and set AllowedSpecializedSkills.
@@ -464,23 +486,23 @@ public static partial class LootGenerationFactory
         return MinReduction + roll;
     }
 
-    private static uint GetBaseLevelCost(TreasureDeath treasureDeath)
+    private static uint GetBaseLevelCost(int tier)
     {
-        switch (treasureDeath.Tier)
+        switch (tier)
         {
             default:
                 return 10000;
-            case 3:
+            case 2:
                 return 50000;
-            case 4:
+            case 3:
                 return 100000;
-            case 5:
+            case 4:
                 return 250000;
-            case 6:
+            case 5:
                 return 500000;
-            case 7:
+            case 6:
                 return 1000000;
-            case 8:
+            case 7:
                 return 2000000;
         }
     }
@@ -491,17 +513,17 @@ public static partial class LootGenerationFactory
         {
             default:
                 return 100;
-            case 3:
+            case 2:
                 return 200;
-            case 4:
+            case 3:
                 return 300;
-            case 5:
+            case 4:
                 return 400;
-            case 6:
+            case 5:
                 return 500;
-            case 7:
+            case 6:
                 return 750;
-            case 8:
+            case 7:
                 return 1000;
         }
     }
