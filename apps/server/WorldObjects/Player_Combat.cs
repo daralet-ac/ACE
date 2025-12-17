@@ -1415,14 +1415,14 @@ partial class Player
         }
 
         // to account for the combat run debuff, if run is not spec we use half the expected skill
-        var expectedRunSkill = skillRun.AdvancementClass is SkillAdvancementClass.Specialized? (float)(Level * 5) : (float)(Level * 2.5);
+        var expectedRunSkill = skillRun.AdvancementClass is SkillAdvancementClass.Specialized ? (float)(Level * 5) : (float)(Level * 2.5);
         var expectedJumpSkill = (float)(Level * 5);
 
         var baseRunMod = skillRun.AdvancementClass is SkillAdvancementClass.Specialized ? 0.25f : 0.5f;
         var baseJumpMod = skillJump.AdvancementClass is SkillAdvancementClass.Specialized ? 0.25f : 0.5f;
 
-        var skillModifierRun = Math.Max(expectedRunSkill / currentSkillRun, baseRunMod);
-        var skillModifierJump = Math.Max(expectedJumpSkill / currentSkillJump, baseJumpMod);
+        var skillModifierRun = Math.Max(expectedRunSkill / currentSkillRun * baseRunMod, baseRunMod);
+        var skillModifierJump = Math.Max(expectedJumpSkill / currentSkillJump * baseJumpMod, baseJumpMod);
 
         // Use whichever skill prevents more stamina loss
         return Math.Min(skillModifierRun, skillModifierJump);
