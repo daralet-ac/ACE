@@ -1161,7 +1161,7 @@ partial class Creature
                 return multiplier;
             }
 
-            if (targetPlayer is {PhalanxIsActive: true} && targetPlayer.GetEquippedShield() != null)
+            if (targetPlayer is {PhalanxIsActive: true} && (targetPlayer.GetEquippedShield() != null || targetPlayer.GetEquippedWeapon() is { IsTwoHanded: true}))
             {
                 return 1.0f;
             }
