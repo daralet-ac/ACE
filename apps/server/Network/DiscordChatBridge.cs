@@ -41,7 +41,7 @@ public static class DiscordChatBridge
             return;
         }
 
-        var loginToken = _configuration.GetSection("Discord").GetSection("CgBot").GetValue<string>("LoginToken");
+        var loginToken = _configuration.GetSection("Discord").GetValue<string>("Token");
         var channelId = _configuration.GetSection("Discord").GetSection("CommunityChannels").GetSection("cg").GetValue<ulong>("ChannelId");
 
         var tokenPresent = !string.IsNullOrEmpty(loginToken);
