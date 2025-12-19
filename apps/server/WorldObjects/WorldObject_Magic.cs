@@ -1715,7 +1715,7 @@ partial class WorldObject
                         break;
                 }
 
-                // Determine if this drain/infuse should increase the charge meter
+                // Determine if this drain/infuse should increase the charge meter. Self-transfer does not increase charge.
                 var shouldIncreaseCharge =
                     destVitalChange > 0 &&
                     (
