@@ -1095,7 +1095,8 @@ public class DamageEvent
             return swarmedMod;
         }
 
-        for (var i = 0; i < numNearbyEnemies; i++)
+        // start loop at 1 to only count mobs beyond the first
+        for (var i = 1; i < numNearbyEnemies; i++)
         {
             swarmedMod *= 0.9f;
         }
