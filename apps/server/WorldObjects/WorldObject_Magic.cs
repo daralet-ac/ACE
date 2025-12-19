@@ -819,7 +819,7 @@ partial class WorldObject
 
             if (addResult.Enchantment.StatModValue < 0 && targetPlayerWard > 0)
             {
-                //Console.WriteLine($"StatModValue Before: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue}\n" +
+                //Console.WriteLine($"StatModValue Before: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue} {addResult.Enchantment.Duration}\n" +
                 //    $" -Target Ward Level: {targetPlayer.GetWardLevel()}");
 
                 var ignoreWardMod = 1.0f;
@@ -836,11 +836,13 @@ partial class WorldObject
                     ignoreWardMod *= 1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearWardPen, "WardPen");
                 }
 
-                var wardMod = GetWardMod(caster as Creature, targetPlayer, ignoreWardMod) / 10;
+                var wardMod = GetWardMod(caster as Creature, targetPlayer, ignoreWardMod);
+
+                wardMod += (1 - wardMod) * 0.5f;
 
                 addResult.Enchantment.StatModValue *= wardMod;
                 addResult.Enchantment.Duration *= wardMod;
-                //Console.WriteLine($"StatModValue After: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue}");
+                //Console.WriteLine($"StatModValue After: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue} {addResult.Enchantment.Duration}");
             }
         }
 
