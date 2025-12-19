@@ -1714,6 +1714,23 @@ partial class WorldObject
                         transferSource.DamageHistory.Add(this, DamageType.Health, srcVitalChange);
                         break;
                 }
+
+                // Increase charge meter for drains that restore more than 0 vital
+                if (transferSource is not Player && destVitalChange > 0)
+                {
+                    if (player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true })
+                    {
+                        player.IncreaseChargedMeter(spell);
+                    }
+                }
+                // Increase charge meter for infuse other spells that restore more than 0 vital
+                else if(transferSource is Player && destination != transferSource && destVitalChange > 0)
+                {
+                    if (player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true })
+                    {
+                        player.IncreaseChargedMeter(spell);
+                    }
+                }
             }
 
             // Apply the scaled change in vitals to the caster
