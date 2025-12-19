@@ -1715,21 +1715,18 @@ partial class WorldObject
                         break;
                 }
 
-                // Increase charge meter for drains that restore more than 0 vital
-                if (transferSource is not Player && destVitalChange > 0)
+                // Determine if this drain/infuse should increase the charge meter
+                var shouldIncreaseCharge =
+                    destVitalChange > 0 &&
+                    (
+                        transferSource is not Player || 
+                        (transferSource is Player && destination != transferSource)
+                    );
+
+                if (shouldIncreaseCharge &&
+                    player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true })
                 {
-                    if (player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true })
-                    {
-                        player.IncreaseChargedMeter(spell);
-                    }
-                }
-                // Increase charge meter for infuse other spells that restore more than 0 vital
-                else if(transferSource is Player && destination != transferSource && destVitalChange > 0)
-                {
-                    if (player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true })
-                    {
-                        player.IncreaseChargedMeter(spell);
-                    }
+                    player.IncreaseChargedMeter(spell);
                 }
             }
 
