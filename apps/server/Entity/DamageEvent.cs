@@ -1181,6 +1181,23 @@ public class DamageEvent
         // select random body part @ current attack height
         GetBodyPart(defender, _quadrant);
 
+        // Defensive check: GetBodyPart may have failed to populate _creaturePart when there's no body part table.
+        if (_creaturePart == null)
+        {
+            _log.Error(
+                "DamageEvent.GetArmorMod({Attacker} ({AttackerGuid}), {Defender} ({DefenderGuid})) - no creature body part available for wcid {DefenderWeenieClassId}; returning neutral armor mod.",
+                attacker?.Name,
+                attacker?.Guid,
+                defender?.Name,
+                defender?.Guid,
+                defender.WeenieClassId
+            );
+
+            // Mark as evaded (GetBodyPart already sets Evaded when appropriate), but ensure we return a safe neutral modifier.
+            Evaded = true;
+            return 1.0f;
+        }
+
         _armor = _creaturePart.GetArmorLayers(_propertiesBodyPart.Key);
 
         // get target armor
@@ -2117,6 +2134,18 @@ public class DamageEvent
     {
         // get cached body parts table
         var bodyParts = Creature.GetBodyParts(defender.WeenieClassId);
+
+        if (bodyParts == null)
+        {
+            _log.Debug(
+                "DamageEvent.GetBodyPart({Defender} ({DefenderGuid}) ) - no body parts table for wcid {DefenderWeenieClassId}",
+                defender.Name,
+                defender.Guid,
+                defender.WeenieClassId
+            );
+            Evaded = true;
+            return;
+        }
 
         // rng roll for body part
         var bodyPart = bodyParts.RollBodyPart(quadrant);
