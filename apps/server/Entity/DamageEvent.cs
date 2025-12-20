@@ -1005,6 +1005,11 @@ public class DamageEvent
 
     private float GetMitigation(Creature attacker, Creature defender)
     {
+        if (attacker is null || defender is null)
+        {
+            return 1.0f;
+        }
+
         var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
 
