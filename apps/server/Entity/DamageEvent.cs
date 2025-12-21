@@ -73,6 +73,7 @@ public class DamageEvent
     private float _ratingRedFury;
     private float _ratingYellowFury;
     private float _ratingSelfHarm;
+    private float _ratingPierceResistanceBonus;
     private float _recklessnessMod;
     private float _resistanceMod;
     private float _slayerMod;
@@ -675,6 +676,7 @@ public class DamageEvent
         SneakAttackMod = attacker.GetSneakAttackMod(defender);
         _attackHeightDamageBonus += GetHighAttackHeightBonus(playerAttacker);
         _ratingElementalDamageBonus = Jewel.HandleElementalBonuses(playerAttacker, DamageType);
+        _ratingPierceResistanceBonus = GetRatingPierceResistanceBonus(defender, playerAttacker);
         _levelScalingMod = GetLevelScalingMod(attacker, defender, playerDefender);
         _ammoEffectMod = GetAmmoEffectMod(Weapon, playerAttacker);
 
@@ -929,6 +931,7 @@ public class DamageEvent
                * _combatAbilityRelentlessDamagePenalty
                * _combatAbilitySteadyStrikeDamageBonus
                * _ratingElementalDamageBonus
+               * _ratingPierceResistanceBonus
                * _recklessnessMod
                * SneakAttackMod
                * _attackHeightDamageBonus
@@ -950,6 +953,7 @@ public class DamageEvent
         //                       $" -SneakAttack: {SneakAttackMod}\n" +
         //                       $" -AttackHeight: {_attackHeightDamageBonus}\n" +
         //                       $" -ElementalDamageRating: {_ratingElementalDamageBonus}\n" +
+        //                       $" -PierceResistanceRating: {_ratingPierceResistanceBonus}\n" +
         //                       $" -DualWield: {_dualWieldDamageBonus}\n" +
         //                       $" -TwoHand: {_twohandedCombatDamageBonus}\n" +
         //                       $" -MultiShot: {_combatAbilityMultishotDamagePenalty}\n" +
@@ -984,6 +988,7 @@ public class DamageEvent
                * SneakAttackMod
                * _attackHeightDamageBonus
                * _ratingElementalDamageBonus
+               * _ratingPierceResistanceBonus
                * _dualWieldDamageBonus
                * _twohandedCombatDamageBonus
                * _combatAbilityMultishotDamagePenalty
