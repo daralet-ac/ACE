@@ -1431,6 +1431,11 @@ public static partial class LootGenerationFactory
 
                 wo.SetProperty(PropertyFloat.ArmorWarMagicMod, final);
             }
+
+            if (wo.ItemType is ItemType.Armor)
+            {
+                NormalizeProtectionLevels(wo);
+            }
         }
     }
 
