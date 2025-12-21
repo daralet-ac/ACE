@@ -505,7 +505,7 @@ partial class WorldObject
         DamageType damageType
     )
     {
-        if (wielder == null || !(weapon is Caster))
+        if (wielder == null || !(weapon is Caster) || weapon.W_DamageType != damageType)
         {
             return 1.0f;
         }
