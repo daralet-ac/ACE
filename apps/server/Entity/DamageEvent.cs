@@ -1231,14 +1231,14 @@ public class DamageEvent
     {
         if (playerAttacker == null)
         {
-            return 0.0f;
+            return 1.0f;
         }
 
         var rating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearPierce);
 
         if (rating <= 0 || DamageType != DamageType.Pierce)
         {
-            return 0.0f;
+            return 1.0f;
         }
 
         var rampPercentage = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Pierce") / 100;
@@ -1246,7 +1246,7 @@ public class DamageEvent
         const float baseMod = 0.2f;
         const float bonusPerRating = 0.01f;
 
-        return rampPercentage * (baseMod + bonusPerRating * rating);
+        return 1.0f + (rampPercentage * (baseMod + bonusPerRating * rating));
     }
 
     private void PostDamageMitigationEffects(Creature attacker, Creature defender, WorldObject damageSource)
