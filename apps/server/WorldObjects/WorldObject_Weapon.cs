@@ -1072,7 +1072,7 @@ partial class WorldObject
         var creatureMod = IgnoreWard ?? 0.0f;
         var weaponMod = weapon.IgnoreWard ?? 0.0f;
 
-        var finalMod = 1.0f - (float)Math.Max(creatureMod, weaponMod);
+        var finalMod = (float)Math.Max(creatureMod, weaponMod);
         //Console.WriteLine($"FinalMod = {finalMod}");
 
         return finalMod;
