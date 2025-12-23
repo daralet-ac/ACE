@@ -302,7 +302,7 @@ public class Healer : WorldObject
         // Convert the healer's raw Healing skill into a non-linear modifier with diminishing returns.
         var healingSkillCurrent = healer.GetCreatureSkill(Skill.Healing).Current;
         var normalized = 1 - Math.Exp(-0.001 * healingSkillCurrent);
-        var healingSkillMod = (0.2 + (10.0 - 0.1) * normalized) * 0.5;
+        var healingSkillMod = (0.1 + (10.0 - 0.1) * normalized);
 
         var healkitMod = (HealkitMod ?? 1.0);
 
