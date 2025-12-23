@@ -1681,19 +1681,19 @@ public class EnchantmentManager
         var tickAmountTotal = 0.0f;
         foreach (var enchantment in enchantments)
         {
-            //var totalAmount = enchantment.StatModValue;
-            //var totalTicks = GetNumTicks(enchantment);
-            var tickAmount = enchantment.StatModValue;
-
+            var tickAmount = GetDamagePerTick(enchantment, WorldObject.HeartbeatInterval ?? 5.0);
             tickAmountTotal += tickAmount;
         }
 
-        // apply healing ratings?
+        // apply healing ratings
         tickAmountTotal *= creature.GetHealingRatingMod();
 
         // do healing
         var healAmount = creature.UpdateVitalDelta(creature.Health, (int)Math.Round(tickAmountTotal));
-        creature.DamageHistory.OnHeal((uint)healAmount);
+        if (healAmount > 0)
+        {
+            creature.DamageHistory.OnHeal((uint)healAmount);
+        }
 
         if (creature is Player player)
         {

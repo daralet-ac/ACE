@@ -254,35 +254,21 @@ public class Healer : WorldObject
             target.DamageHistory.OnHeal(actualHealAmount);
         }
 
-        // SPEC BONUS: Healing - Heal-over-time spell when used.
-        var canHealOverTime = healer.GetCreatureSkill(Skill.Healing).AdvancementClass is SkillAdvancementClass.Specialized;
-
-        if (canHealOverTime)
+        var spell = BoosterEnum switch
         {
-            var spell = BoosterEnum switch
-            {
-                PropertyAttribute2nd.Health => new Spell((int)SpellId.HealKitRegen),
-                PropertyAttribute2nd.Stamina => new Spell((int)SpellId.StaminaKitRegen),
-                PropertyAttribute2nd.Mana => new Spell((int)SpellId.ManaKitRegen),
-                _ => null
-            };
+            PropertyAttribute2nd.Health => new Spell((int)SpellId.HealKitRegen),
+            PropertyAttribute2nd.Stamina => new Spell((int)SpellId.StaminaKitRegen),
+            PropertyAttribute2nd.Mana => new Spell((int)SpellId.ManaKitRegen),
+            _ => null
+        };
 
-            if (spell is null)
-            {
-                _log.Error("DoHealing(Player {Player}, Target {Target}) - spell is null", healer.Name, target.Name);
-                return;
-            }
-
-            var healingSkillCurrent = healer.GetCreatureSkill(Skill.Healing).Current;
-            var normalized = 1 - Math.Exp(-0.001 * healingSkillCurrent);
-            var healingSkillMod = 0.1 + (10.0 - 0.1) * normalized;
-
-            var healkitMod = (HealkitMod ?? 1.0);
-
-            spell.SpellStatModVal = (float)healkitMod * (float)healingSkillMod;
-
-            healer.TryCastSpell_Inner(spell, target);
+        if (spell is null)
+        {
+            _log.Error("DoHealing(Player {Player}, Target {Target}) - spell is null", healer.Name, target.Name);
+            return;
         }
+
+        TryStartHealOverTime(healer, target, spell);
 
         var healingSkill = healer.GetCreatureSkill(Skill.Healing);
         Proficiency.OnSuccessUse(healer, healingSkill, difficulty);
@@ -309,6 +295,24 @@ public class Healer : WorldObject
         {
             healer.TryConsumeFromInventoryWithNetworking(this, 1);
         }
+    }
+
+    private void TryStartHealOverTime(Player healer, Player target, Spell spell)
+    {
+        // Convert the healer's raw Healing skill into a non-linear modifier with diminishing returns.
+        var healingSkillCurrent = healer.GetCreatureSkill(Skill.Healing).Current;
+        var normalized = 1 - Math.Exp(-0.001 * healingSkillCurrent);
+        var healingSkillMod = (0.2 + (10.0 - 0.1) * normalized) * 0.5;
+
+        var healkitMod = (HealkitMod ?? 1.0);
+
+        // SPEC BONUS: Healing - Heal-over-time doubled.
+        var specialized = healer.GetCreatureSkill(Skill.Healing).AdvancementClass is SkillAdvancementClass.Specialized;
+        var specMod = specialized ? 2.0f : 1.0f;
+
+        spell.SpellStatModVal = (float)healkitMod * (float)healingSkillMod * specMod;
+
+        healer.TryCastSpell_Inner(spell, target);
     }
 
     /// <summary>
