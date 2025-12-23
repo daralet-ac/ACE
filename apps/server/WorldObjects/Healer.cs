@@ -245,9 +245,8 @@ public class Healer : WorldObject
         var difficulty = 0;
 
         // heal up
-        var healAmount = GetHealAmount(healer, target, missingVital, out var critical, out var staminaCost);
+        var healAmount = GetHealAmount(healer, target, missingVital, out var critical);
 
-        healer.UpdateVitalDelta(healer.Stamina, (int)-staminaCost);
         // Amount displayed to player can exceed actual amount healed due to heal boost ratings, but we only want to record the actual amount healed
         var actualHealAmount = (uint)target.UpdateVitalDelta(vital, healAmount);
         if (vital.Vital == PropertyAttribute2nd.MaxHealth)
@@ -262,9 +261,9 @@ public class Healer : WorldObject
         {
             var spell = BoosterEnum switch
             {
-                PropertyAttribute2nd.Health => new Spell(6413),
-                PropertyAttribute2nd.Stamina => new Spell(6414),
-                PropertyAttribute2nd.Mana => new Spell(6415),
+                PropertyAttribute2nd.Health => new Spell((int)SpellId.HealKitRegen),
+                PropertyAttribute2nd.Stamina => new Spell((int)SpellId.StaminaKitRegen),
+                PropertyAttribute2nd.Mana => new Spell((int)SpellId.ManaKitRegen),
                 _ => null
             };
 
@@ -300,7 +299,7 @@ public class Healer : WorldObject
         {
             target.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"{healer.Name} heals you for {healAmount} {BoosterEnum.ToString()} points.",
+                    $"{healer.Name} {crit}heals you for {healAmount} {BoosterEnum.ToString()} points.",
                     ChatMessageType.Broadcast
                 )
             );
@@ -319,8 +318,7 @@ public class Healer : WorldObject
         Player healer,
         Player target,
         uint missingVital,
-        out bool criticalHeal,
-        out uint staminaCost
+        out bool criticalHeal
     )
     {
         // factors: healing skill, healing kit bonus, stamina, critical chance
@@ -351,15 +349,18 @@ public class Healer : WorldObject
             healAmount = missingVital;
         }
 
-        // stamina check? On the Q&A board a dev posted that stamina directly effects the amount of damage you can heal
-        // low stam = less vital healed. I don't have exact numbers for it. Working through forum archive.
-
-        // stamina cost: 1 stamina per 2 vital healed
-        staminaCost = (uint)Math.Round(healAmount / 2.0f);
-        if (staminaCost > healer.Stamina.Current)
+        // stamina cost: 1 stamina per 5 vital healed
+        if (BoosterEnum != PropertyAttribute2nd.Stamina)
         {
-            staminaCost = healer.Stamina.Current;
-            healAmount = staminaCost * 2;
+            var staminaCost = (uint)Math.Round(healAmount / 5.0f);
+
+            if (staminaCost > healer.Stamina.Current)
+            {
+                staminaCost = healer.Stamina.Current;
+                healAmount = staminaCost * 5;
+            }
+
+            healer.UpdateVitalDelta(healer.Stamina, (int)-staminaCost);
         }
 
         // verify healing boost comes from target instead of healer?
