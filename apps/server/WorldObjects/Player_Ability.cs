@@ -894,7 +894,7 @@ partial class Player
         else if (BatteryStanceIsActive)
         {
             var batteryMod = ManaChargeMeter * 0.5f;
-            manaCost *= (int)(1.0f - batteryMod);
+            manaCost = (int)(manaCost * (1.0f - batteryMod));
         }
 
         UpdateVitalDelta(Mana, -manaCost);
