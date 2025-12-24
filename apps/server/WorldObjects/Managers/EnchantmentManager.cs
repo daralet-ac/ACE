@@ -1855,16 +1855,16 @@ public class EnchantmentManager
             var levelScalingMod = LevelScaling.GetMonsterDamageTakenHealthScalar(sourcePlayer, creature);
 
             //Console.WriteLine($"DoT Tick (Damager: {damager?.Name}, Target: {creature?.Name})\n" +
-            //    $"-BaseTickAmount: {tickAmount}\n" +
-            //    $"-ResistanceMod: {resistanceMod}\n" +
-            //    $"-DamageResistRatingMod: {damageResistRatingMod}\n" +
-            //    $"-DotResistRatingMod: {dotResistRatingMod}\n" +
-            //    $"-BleedResistance: {bleedResistance}\n" +
-            //    $"-WardMod: {wardMod}\n" +
-            //    $"-LevelScalingMod: {levelScalingMod}\n" +
-            //    $"-FinalTickAmount: {tickAmount * resistanceMod * wardMod * damageResistRatingMod * dotResistRatingMod * bleedResistance * levelScalingMod}");
+            //    $" -BaseTickAmount: {tickAmount}\n" +
+            //    $" -ResistanceMod: {resistanceMod}\n" +
+            //    $" -DamageResistRatingMod: {damageResistRatingMod}\n" +
+            //    $" -DotResistRatingMod: {dotResistRatingMod}\n" +
+            //    $" -BleedResistance: {bleedResistance}\n" +
+            //    $" -WardMod: {wardMod}\n" +
+            //    $" -LevelScalingMod: {levelScalingMod}\n" +
+            //    $" -FinalTickAmount: {tickAmount * resistanceMod * wardMod * damageResistRatingMod * dotResistRatingMod * bleedResistance * levelScalingMod}");
 
-            //tickAmount *= resistanceMod * wardMod * damageResistRatingMod * dotResistRatingMod * bleedResistance * levelScalingMod;
+            tickAmount *= resistanceMod * wardMod * damageResistRatingMod * dotResistRatingMod * bleedResistance * levelScalingMod;
 
             // make sure the target's current health is not exceeded
             if (tickAmountTotal + tickAmount >= creature.Health.Current)
