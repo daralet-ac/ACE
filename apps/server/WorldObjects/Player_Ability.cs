@@ -1785,6 +1785,10 @@ partial class Player
         if (fromProc)
         {
             ManaChargeMeter += 0.25f;
+            if (ManaChargeMeter > 1.0f)
+            {
+                ManaChargeMeter = 1.0f;
+            }
             return;
         }
 
