@@ -635,7 +635,7 @@ partial class WorldObject
                 {
                     playerCaster.IncreaseChargedMeter(spell);
                 }
-
+                
                 // TODO: replace with some kind of 'rootOwner unless equip' concept?
                 if (itemCaster != null && (equip || itemCaster is Gem || itemCaster is Food))
                 {
@@ -772,7 +772,7 @@ partial class WorldObject
     )
     {
         // weird itemCaster -> caster collapsing going on here -- fixme
-
+        
         var player = this as Player;
         var targetCreature = target as Creature;
 
@@ -3406,19 +3406,12 @@ partial class WorldObject
     /// </summary>
     /// <param name="spell">A spell with a DotDuration</param>
     public float CalculateDotEnchantment_StatModValue(
-        Spell spell,
-        WorldObject target,
-        WorldObject weapon,
-        float statModVal
-    )
+    Spell spell,
+    WorldObject target,
+    WorldObject weapon,
+    float statModVal
+)
     {
-        // here are all the dots with current content:
-
-        // - 3 void dots (2 projectiles, 1 direct enchantment)
-        // - surge of affliction (target loses health over time)
-        // - surge of regeneration (caster gains health over time)
-        // - dirty fighting bleed
-
         if (spell.DotDuration == 0)
         {
             return statModVal;
@@ -3430,17 +3423,11 @@ partial class WorldObject
 
         if (spell.Category == SpellCategory.AetheriaProcHealthOverTimeRaising)
         {
-            // no healing boost rating modifier found in retail pcaps on apply,
-            // could there have been one on tick?
-            //if (creatureTarget != null)
-            //enchantment_statModVal *= creatureTarget.GetHealingRatingMod();
-
             return enchantment_statModVal;
         }
 
         if (spell.Category == SpellCategory.AetheriaProcDamageOverTimeRaising)
         {
-            // no mods found in retail pcaps
             return enchantment_statModVal;
         }
 
@@ -3453,7 +3440,6 @@ partial class WorldObject
 
         if (creatureSource != null)
         {
-            // damage rating mod
             var damageRating = creatureSource.GetDamageRating();
 
             if (player != null)
@@ -3473,7 +3459,6 @@ partial class WorldObject
 
         if (spell.Category is SpellCategory.DFBleedDamage)
         {
-            // retail pcaps have modifiers in the range of 1.1x - 1.7x
             return enchantment_statModVal * damageRatingMod;
         }
 
@@ -3493,20 +3478,16 @@ partial class WorldObject
             return enchantment_statModVal;
         }
 
-        // factors:
-        // - damage rating
-        // - heritage bonus (universal masteries at end of retail, TODO: merge this with damage rating)
-        // - caster damage type bonus (pvm, half for pvp)
-        // - skill in magic school vs. spell difficulty (for projectiles)
-
-        // thanks to Xenocide for figuring this part out!
+        if (spell.Category is SpellCategory.HealKitRegen or SpellCategory.StaminaKitRegen or SpellCategory.ManaKitRegen)
+        {
+            return enchantment_statModVal;
+        }
 
         var elementalDamageMod = 1.0f;
         var attributeDamageMod = 1.0f;
 
         if (creatureSource != null)
         {
-            // elemental damage mod
             elementalDamageMod = GetCasterElementalDamageModifier(
                 equippedWeapon,
                 creatureSource,
@@ -3518,6 +3499,7 @@ partial class WorldObject
             var halfOfBonus = (baseAttributeDamageMod - 1.0f) * 0.5f;
             attributeDamageMod = 1.0f + halfOfBonus;
         }
+
         enchantment_statModVal *= elementalDamageMod * attributeDamageMod * damageRatingMod;
 
         //Console.WriteLine($"\nCalculateDotEnchantment_StatModValue()\n" +
