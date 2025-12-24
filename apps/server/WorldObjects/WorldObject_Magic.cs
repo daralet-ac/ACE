@@ -838,7 +838,7 @@ partial class WorldObject
 
                 wardMod += (1 - wardMod) * 0.5f;
 
-                addResult.Enchantment.StatModValue *= wardMod;
+                //addResult.Enchantment.StatModValue *= wardMod;
                 addResult.Enchantment.Duration *= wardMod;
                 //Console.WriteLine($"StatModValue After: {addResult.Enchantment.StatModType} {addResult.Enchantment.StatModValue} {addResult.Enchantment.Duration}");
             }
@@ -3434,6 +3434,8 @@ partial class WorldObject
         var player = this as Player;
         var creatureSource = this as Creature;
 
+        var equippedWeapon = player.GetEquippedWeapon() ?? player.GetEquippedWand();
+
         var damageRatingMod = 1.0f;
 
         if (creatureSource != null)
@@ -3442,7 +3444,6 @@ partial class WorldObject
 
             if (player != null)
             {
-                var equippedWeapon = player.GetEquippedWeapon() ?? player.GetEquippedWand();
                 if (player.GetHeritageBonus(equippedWeapon))
                 {
                     damageRating += 5;
@@ -3488,16 +3489,24 @@ partial class WorldObject
         if (creatureSource != null)
         {
             elementalDamageMod = GetCasterElementalDamageModifier(
-                weapon,
+                equippedWeapon,
                 creatureSource,
                 creatureTarget,
                 spell.DamageType
             );
 
-            attributeDamageMod = creatureSource.GetAttributeMod(creatureSource.GetEquippedWeapon(), true);
+            var baseAttributeDamageMod = creatureSource.GetAttributeMod(creatureSource.GetEquippedWeapon(), true);
+            var halfOfBonus = (baseAttributeDamageMod - 1.0f) * 0.5f;
+            attributeDamageMod = 1.0f + halfOfBonus;
         }
 
         enchantment_statModVal *= elementalDamageMod * attributeDamageMod * damageRatingMod;
+
+        //Console.WriteLine($"\nCalculateDotEnchantment_StatModValue()\n" +
+        //    $" -elementalDamageMod: {elementalDamageMod}\n" +
+        //    $" -attributeDamageMod: {attributeDamageMod}\n" +
+        //    $" -damageRatingMod: {damageRatingMod}\n" +
+        //    $" -statModVal: {enchantment_statModVal}");
 
         return enchantment_statModVal;
     }
