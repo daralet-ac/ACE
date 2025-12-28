@@ -840,7 +840,7 @@ public class CombatFocus : WorldObject
                     CombatFocusSkill2SpellRemoved = (int)spellId;
                     CombatFocusNumSkillsRemoved++;
                 }
-                else
+                else if (CombatFocusSkill3SpellRemoved == null)
                 {
                     CombatFocusSkill3SpellRemoved = (int)spellId;
                     CombatFocusNumSkillsRemoved++;
@@ -848,19 +848,20 @@ public class CombatFocus : WorldObject
             }
             else
             {
-                if (CombatFocusSkill3SpellAdded != null)
+                // Remove the specific added spell that matches
+                if (CombatFocusSkillSpellAdded == (int)spellId)
                 {
-                    CombatFocusSkill3SpellAdded = null;
+                    CombatFocusSkillSpellAdded = null;
                     CombatFocusNumSkillsAdded--;
                 }
-                else if (CombatFocusSkill2SpellAdded != null)
+                else if (CombatFocusSkill2SpellAdded == (int)spellId)
                 {
                     CombatFocusSkill2SpellAdded = null;
                     CombatFocusNumSkillsAdded--;
                 }
-                else if (CombatFocusSkillSpellAdded != null)
+                else if (CombatFocusSkill3SpellAdded == (int)spellId)
                 {
-                    CombatFocusSkillSpellAdded = null;
+                    CombatFocusSkill3SpellAdded = null;
                     CombatFocusNumSkillsAdded--;
                 }
             }
@@ -909,20 +910,24 @@ public class CombatFocus : WorldObject
                     CombatFocusNumSkillsRemoved--;
                 }
             }
-            else if (CombatFocusNumSkillsAdded < 1)
+            else
             {
-                CombatFocusSkillSpellAdded = (int)spellId;
-                CombatFocusNumSkillsAdded++;
-            }
-            else if (CombatFocusNumSkillsAdded < 2)
-            {
-                CombatFocusSkill2SpellAdded = (int)spellId;
-                CombatFocusNumSkillsAdded++;
-            }
-            else if (CombatFocusNumSkillsAdded < 3)
-            {
-                CombatFocusSkill3SpellAdded = (int)spellId;
-                CombatFocusNumSkillsAdded++;
+                // Fill the first available slot, checking in order
+                if (CombatFocusSkillSpellAdded == null)
+                {
+                    CombatFocusSkillSpellAdded = (int)spellId;
+                    CombatFocusNumSkillsAdded++;
+                }
+                else if (CombatFocusSkill2SpellAdded == null)
+                {
+                    CombatFocusSkill2SpellAdded = (int)spellId;
+                    CombatFocusNumSkillsAdded++;
+                }
+                else if (CombatFocusSkill3SpellAdded == null)
+                {
+                    CombatFocusSkill3SpellAdded = (int)spellId;
+                    CombatFocusNumSkillsAdded++;
+                }
             }
         }
 
