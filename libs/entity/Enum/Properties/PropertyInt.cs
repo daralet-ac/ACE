@@ -748,7 +748,7 @@ public enum PropertyInt : ushort
     ArmorWeightClass = 393,
     GearMaxStamina = 394,
     GearMaxMana = 395,
-    CombatFocusType = 396,
+    CombatFocusTypeId = 396,
     WeightClassReqAmount = 397,
     ArmorStyle = 398,
     WeaponSubtype = 399,
