@@ -305,6 +305,12 @@ public class CombatFocus : WorldObject
 
     public void InitializeSpellList()
     {
+        if (CombatFocusTypeId is null)
+        {
+            _log.Error("CombatFocus.InitializeSpellList() - Combat Focus ({Name}) is missing CombatFocusTypeId.", Name);
+            return;
+        }
+
         CurrentSpells.Clear();
 
         CombatFocusNumSkillsAdded = 0;
@@ -913,7 +919,7 @@ public class CombatFocus : WorldObject
                 CombatFocusSkill2SpellAdded = (int)spellId;
                 CombatFocusNumSkillsAdded++;
             }
-            else
+            else if (CombatFocusNumSkillsAdded < 3)
             {
                 CombatFocusSkill3SpellAdded = (int)spellId;
                 CombatFocusNumSkillsAdded++;
