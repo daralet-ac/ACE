@@ -664,7 +664,7 @@ public class CombatFocus : WorldObject
 
         foreach (var spellId in spellIds)
         {
-            var leveledSpell = SpellLevelProgression.GetSpellAtLevel(spellId, spellLevel);
+            var leveledSpell = SpellLevelProgression.GetSpellAtLevel(spellId, spellLevel, true, true);
             if (leveledSpell == SpellId.Undef)
             {
                 ActivateSpell(player, new Spell(spellId));
@@ -697,7 +697,7 @@ public class CombatFocus : WorldObject
 
             foreach (var spellId in spellIds)
             {
-                var leveledSpell = SpellLevelProgression.GetSpellAtLevel(spellId, startingSpellLevel);
+                var leveledSpell = SpellLevelProgression.GetSpellAtLevel(spellId, spellLevel, true, true);
                 if (leveledSpell == SpellId.Undef)
                 {
                     DeactivateSpell(player, new Spell(spellId));
@@ -712,7 +712,7 @@ public class CombatFocus : WorldObject
         {
             foreach (var spellId in spellIds)
             {
-                var leveledSpell = SpellLevelProgression.GetSpellAtLevel(spellId, spellLevel);
+                var leveledSpell = SpellLevelProgression.GetSpellAtLevel(spellId, spellLevel, true, true);
                 if (leveledSpell == SpellId.Undef)
                 {
                     DeactivateSpell(player, new Spell(spellId));
