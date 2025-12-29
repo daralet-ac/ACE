@@ -870,6 +870,7 @@ public enum PropertyInt : ushort
     MonsterRank = 511,
     CombatFocusSkill3SpellRemoved = 512,
     CombatFocusSkill3SpellAdded = 513,
+    CombatFocusPrestigeVersionId = 514,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
