@@ -24,6 +24,11 @@ public enum CombatFocusType
     Spellsword
 }
 
+public enum CombatFocusPrestigeVersion
+{
+    Newcomer,
+}
+
 public class CombatFocus : WorldObject
 {
     private List<SpellId> CurrentSpells = new List<SpellId>();
@@ -204,6 +209,22 @@ public class CombatFocus : WorldObject
         }
     }
 
+    public int? CombatFocusPrestigeVersionId
+    {
+        get => GetProperty(PropertyInt.CombatFocusPrestigeVersionId);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.CombatFocusPrestigeVersionId);
+            }
+            else
+            {
+                SetProperty(PropertyInt.CombatFocusPrestigeVersionId, value.Value);
+            }
+        }
+    }
+
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
@@ -226,6 +247,12 @@ public class CombatFocus : WorldObject
     {
         InitializeSpellList();
     }
+
+    private static readonly List<SpellId> NewcomerSpells = new List<SpellId>()
+    {
+        SpellId.NewcomersFortitude,
+        SpellId.NewcomersPersistence
+    };
 
     private static readonly List<SpellId> WarriorSpells = new List<SpellId>()
     {
@@ -337,6 +364,11 @@ public class CombatFocus : WorldObject
             case CombatFocusType.Spellsword:
                 spellList = SpellswordSpells;
                 break;
+        }
+
+        if ((CombatFocusPrestigeVersionId ?? 0) == (int)CombatFocusPrestigeVersion.Newcomer)
+        {
+            spellList.AddRange(NewcomerSpells);
         }
 
         var spellListCopy = new List<SpellId>(spellList);
@@ -633,7 +665,14 @@ public class CombatFocus : WorldObject
         foreach (var spellId in spellIds)
         {
             var leveledSpell = SpellLevelProgression.GetSpellAtLevel(spellId, spellLevel);
-            ActivateSpell(player, new Spell(leveledSpell));
+            if (leveledSpell == SpellId.Undef)
+            {
+                ActivateSpell(player, new Spell(spellId));
+            }
+            else
+            {
+                ActivateSpell(player, new Spell(leveledSpell));
+            }
         }
     }
 
@@ -711,7 +750,7 @@ public class CombatFocus : WorldObject
             player.AdrenalineMeter = 0.0f;
 
             player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"You calm down and your release adrenaline without effect.", ChatMessageType.Craft)
+                new GameMessageSystemChat($"You calm down and release your adrenaline without effect.", ChatMessageType.Craft)
             );
         }
 
@@ -964,7 +1003,7 @@ public class CombatFocus : WorldObject
 
                 attributeSpellsText += spellName;
             }
-            else
+            else if (spellId is not (SpellId.NewcomersFortitude or SpellId.NewcomersPersistence))
             {
                 if (firstSkill)
                 {
@@ -983,25 +1022,30 @@ public class CombatFocus : WorldObject
         description += "Attributes: " + attributeSpellsText + ".\n\n";
         description += "Skills: " + skillSpellsText + ".\n\n";
 
-        var advancedDescription = GetCombatAbilityDescription();
-
         var alteredDescription = "";
         if (CombatFocusAttributeSpellAdded != null)
         {
-            alteredDescription = "This combat focus' attribute spell has been altered.";
+            alteredDescription = "This combat focus' attribute spell has been altered.\n\n";
         }
 
         if (CombatFocusSkillSpellAdded != null)
         {
-            alteredDescription = "This combat focus' skill spell has been altered.";
+            alteredDescription = "This combat focus' skill spell has been altered.\n\n";
         }
 
         if (CombatFocusAttributeSpellAdded != null && CombatFocusSkillSpellAdded != null)
         {
-            alteredDescription = "This combat focus' attribute and skill spells have been altered.";
+            alteredDescription = "This combat focus' attribute and skill spells have been altered.\n\n";
         }
 
-        LongDesc = advancedDescription + description + alteredDescription;
+        var prestigeDescription = "";
+        if ((CombatFocusPrestigeVersionId ?? 0) == (int)CombatFocusPrestigeVersion.Newcomer)
+        {
+            prestigeDescription =
+                "This combat focus also grants +50 Health and +100 Stamina.\n\n";
+        }
+
+        LongDesc = description + alteredDescription + prestigeDescription;
     }
 
     private static bool IsAttribute(SpellId spellId)
@@ -1043,85 +1087,6 @@ public class CombatFocus : WorldObject
         }
 
         return false;
-    }
-
-    private string GetCombatAbilityDescription()
-    {
-        var description = "";
-
-        var combatAbilityId = CombatAbilityId;
-
-        if (combatAbilityId != null)
-        {
-            switch ((CombatAbility)combatAbilityId)
-            {
-                case CombatAbility.Phalanx:
-                    description +=
-                        "With this focus equipped, your shield will reduce damage from all sides, and your enemies cannot make sneak attacks against you.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, gain 50% chance to block attacks from all directions.\n\n";
-                    break;
-                case CombatAbility.Provoke:
-                    description +=
-                        "With this focus equipped, increase the threat you generate with your attacks by 20%. All glancing blows against are always major.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, increase your damage by 20% and your threat generated by 50%.\n\n";
-                    break;
-                case CombatAbility.Riposte:
-                    description +=
-                        "With this focus equipped, to gain a 20% chance to block attacks while using a two-handed weapon or dual-wielding.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, whenever you parry an attack, you strike back at your enemy.\n\n";
-                    break;
-                case CombatAbility.Fury:
-                    description +=
-                        "With this focus equipped, attacks you make in melee range build Fury. As Fury increases, your damage receives a bonus, up to a maximum of 25%. "
-                        + "However, the Stamina cost of your attacks is increased as well, up to an additional 100%. Beyond 50 Fury, you have a chance to injure yourself on attack.\n\n"
-                        + "Activated Combat Ability: The first attack you make within the next ten seconds will gain double the bonus and exhaust all your Fury.\n\n";
-                    break;
-                case CombatAbility.Backstab:
-                    description +=
-                        "With this focus equipped, your chance to deal a critical hit is increased by 20% while performing sneak attacks. Normal hits deal 20% less damage.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, your attacks from behind cannot be evaded\n\n";
-                    break;
-                case CombatAbility.SteadyStrike:
-                    description +=
-                        "With this focus equipped, the accuracy of your missile weapon attacks is increased by 20%.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, your arrows cannot be dodged and deal an additional 25% damage.\n\n";
-                    break;
-                case CombatAbility.Smokescreen:
-                    description +=
-                        "With this focus equipped, gain 10% increased chance to evade attacks, and make enemies less likely to attack you. Other targets for the enemy must be available.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, increase your chance to evade by an additional 30%.\n\n";
-                    break;
-                case CombatAbility.Multishot:
-                    description +=
-                        "With this focus equipped, to shoot an extra arrow, quarrel or dart at another monster near your main target, if there are any. Your damage is reduced by 75%.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, each time you attack you will fire at an additional enemy near your primary target.\n\n";
-                    break;
-                case CombatAbility.Overload:
-                    description +=
-                        "With this focus equipped, your spells build Overload. As Overload increases, so does your spell effectiveness up to a maximum of 25%. "
-                        + "However, your mana costs also increase by up to 100%. Beyond 50% Overpower, you have an increasing chance to harm yourself on spellcast.\n\n"
-                        + "Activated Combat Ability: The first spell you cast within the next 10 seconds will gain a double effectiveness bonus and discharge all of your Overload.\n\n";
-                    break;
-                case CombatAbility.Battery:
-                    description +=
-                        "With this focus equipped, your mana costs are reduced by 20%, the reduction increasing as your mana pool is depleted. However, below 75% mana, your spell effectiveness also begins to decrease to as little as 25% at 0 mana.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, your spells cost 0 mana and suffer no effectiveness penalty.\n\n";
-                    break;
-                case CombatAbility.Reflect:
-                    description +=
-                        "While equipped, you will reflect fully resisted spells back at the caster. Additionally, gain 20% increased Magic Defense while attempting to resist a spell.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, your chance to resist spells is increased by an additional 30%.\n\nWhile equipped, gain a boost towards the following attributes and skills:\n\n";
-                    break;
-                case CombatAbility.EnchantedWeapon:
-                    description +=
-                        "With this focus equipped, you have a 100% chance to trigger Cast-on-strike spells while attacking at full power/accuracy. "
-                        + "The effective spellcraft of equipped weapons is increased by 10%. All weapon attacks also consume mana.\n\n"
-                        + "Activated Combat Ability: For the next 10 seconds, your weapon proc spell effectiveness is increased by 25%, as is the Mana cost.\n\n";
-                    break;
-            }
-        }
-
-        return description;
     }
 
     private static string GetSpellName(SpellId spellId)
