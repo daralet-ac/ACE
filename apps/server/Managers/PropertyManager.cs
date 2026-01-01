@@ -857,8 +857,10 @@ public static class DefaultPropertyManager
         ("mob_awareness_range", new Property<double>(1.0, "Scales the distance the monsters become alerted and aggro the players")),
         ("pk_new_character_grace_period", new Property<double>(300, "the number of seconds, in addition to pk_respite_timer, that a player killer is set to non-player killer status after first exiting training academy")),
         ("pk_respite_timer", new Property<double>(300, "the number of seconds that a player killer is set to non-player killer status after dying to another player killer")),
+        ("ps_cap", new Property<double>(8, "number of players required to trigger a portal storm")),
         ("quest_mindelta_rate", new Property<double>(1.0, "scales all quest min delta time between solves, 1 being normal")),
         ("rare_drop_rate_percent", new Property<double>(0.04, "Adjust the chance of a rare to spawn as a percentage. Default is 0.04, or 1 in 2,500. Max is 100, or every eligible drop.")),
+        ("rz_maxfall", new Property<double>(2,"maximum allowed vertical drop (in meters) when teleporting players via shroud or portal storm")),
         ("spellcast_max_angle", new Property<double>(20.0, "for advanced player spell casting, the maximum angle to target release a spell projectile. retail seemed to default to value of around 20, although some players seem to prefer a higher 45 degree angle")),
         ("trophy_drop_rate", new Property<double>(1.0, "Modifier for trophies dropped on creature death")),
         ("unlocker_window", new Property<double>(10.0, "The number of seconds a player unlocking a chest has exclusive access to first opening the chest.")),
@@ -879,6 +881,8 @@ public static class DefaultPropertyManager
         ("popup_welcome", new Property<string>("To begin your training, speak to the Society Greeter. Walk up to the Society Greeter using the 'W' key, then double-click on her to initiate a conversation.", "Welcome message popup in training halls")),
         ("popup_welcome_olthoi", new Property<string>("Welcome to the Olthoi hive! Be sure to talk to the Olthoi Queen to receive the Olthoi protections granted by the energies of the hive.", "Welcome message displayed on the first login for an Olthoi Player")),
         ("popup_motd", new Property<string>("", "Popup message of the day")),
-        ("server_motd", new Property<string>("", "Server message of the day"))
+        ("server_motd", new Property<string>("", "Server message of the day")),
+        ("shroud_zone_entries", new Property<string>("", "Shroud zones defined as '<cell> [x y z] qx qy qz qw|radius|maxDistance' separated by newlines or semicolons")),
+        ("resonance_zone_entries", new Property<string>("", "Shroud zones defined as '<cell> [x y z] qx qy qz qw|radius|maxDistance' separated by newlines or semicolons"))
     );
 }
