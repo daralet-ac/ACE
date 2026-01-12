@@ -5,7 +5,6 @@ using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Managers;
-using ACE.Server.Mods;
 using ACE.Server.WorldObjects;
 using Serilog;
 
