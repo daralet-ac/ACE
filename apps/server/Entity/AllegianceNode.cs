@@ -83,7 +83,7 @@ public class AllegianceNode
         // NEW RANK FORMULA
         // A player's allegiance rank depends on the number of unique accounts are under them in
         // their allegiance tree. Accounts who are also above them in the chain do not count towards
-        // their rank. Additionally, up to 5 rank may be obtained from the Leadership skill.
+        // their rank. Additionally, up to 5 ranks may be obtained from the Leadership skill.
         //
         // Final Rank = FollowerRank + Leadership bonus.
         //
@@ -147,7 +147,7 @@ public class AllegianceNode
 
             // check to see if player has logged in within the past 2 weeks
             var loginTimestamp = vassal.Player.GetProperty(PropertyFloat.LoginTimestamp);
-            if (loginTimestamp != null && loginTimestamp + 1209600 < Time.GetUnixTime())
+            if (loginTimestamp == null || loginTimestamp + 1209600 < Time.GetUnixTime())
             {
                 continue;
             }
