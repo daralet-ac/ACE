@@ -107,7 +107,7 @@ public class AllegianceNode
         uint baseRank = uniqueFollowers switch
         {
             >= 50 => 6,
-            >= 20 => 5,
+            >= 25 => 5,
             >= 10 => 4,
             >= 5 => 3,
             >= 1 => 2,
