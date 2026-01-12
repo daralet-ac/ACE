@@ -5,12 +5,16 @@ using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Managers;
+using ACE.Server.Mods;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Entity;
 
 public class AllegianceNode
 {
+    private static readonly ILogger _log = Log.ForContext(typeof(ModManager));
+
     public readonly ObjectGuid PlayerGuid;
     public IPlayer Player => PlayerManager.FindByGuid(PlayerGuid);
 
@@ -101,10 +105,7 @@ public class AllegianceNode
         }
 
         var uniqueFollowers = GetUniqueFollowers(this);
-
-        var leadershipBonus = Player.GetCurrentLeadership() / 100;
-
-        switch (uniqueFollowers)
+        uint baseRank = uniqueFollowers switch
         {
             >= 50 => 6,
             >= 20 => 5,
