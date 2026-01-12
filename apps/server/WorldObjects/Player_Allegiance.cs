@@ -2218,7 +2218,7 @@ partial class Player
         {
             > 250 => 5,
             > 200 => 4,
-            > 150 => 5,
+            > 150 => 3,
             > 100 => 2,
             > 50 => 1,
             _ => 0
@@ -2253,7 +2253,7 @@ partial class Player
             case 3: return 20;
             case 2: return 10;
             case 1: return 5;
-            default: return 1;
+            default: return 5;
         }
     }
 
