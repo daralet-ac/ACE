@@ -2216,44 +2216,43 @@ partial class Player
 
         return leadershipSkill switch
         {
-            > 200 => 3,
-            > 150 => 2,
-            > 100 => 1,
+            > 250 => 5,
+            > 200 => 4,
+            > 150 => 5,
+            > 100 => 2,
+            > 50 => 1,
             _ => 0
         };
     }
 
     public int GetCurrentRankFollowers()
     {
-        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var leadershipRank = GetLeadershipRank();
         var rankWithoutLeadership = Math.Max(((AllegianceRank ?? 0) - leadershipRank), 0);
 
         switch (rankWithoutLeadership)
         {
-            case 7: return 50;
-            case 6: return 25;
-            case 5: return 15;
-            case 4: return 10;
-            case 3: return 6;
-            case 2: return 3;
-            case 1: return 1;
+            case 5: return 50;
+            case 4: return 20;
+            case 3: return 10;
+            case 2: return 5;
+            case 1: return 0;
             default: return 0;
         }
     }
 
     public int GetNextRankFollowers()
     {
-        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var leadershipRank = GetLeadershipRank();
         var rankWithoutLeadership = Math.Max(((AllegianceRank ?? 0) - leadershipRank), 0);
 
         switch (rankWithoutLeadership)
         {
-            case 6: return 50;
-            case 5: return 25;
-            case 4: return 15;
-            case 3: return 10;
-            case 2: return 6;
-            case 1: return 3;
+            case 5: return 0;
+            case 4: return 50;
+            case 3: return 20;
+            case 2: return 10;
+            case 1: return 5;
             default: return 1;
         }
     }
@@ -2264,9 +2263,11 @@ partial class Player
 
         switch (leadershipRank)
         {
-            case 3: return 200;
-            case 2: return 150;
-            case 1: return 100;
+            case 5: return 250;
+            case 4: return 200;
+            case 3: return 150;
+            case 2: return 100;
+            case 1: return 50;
             default: return 0;
         }
     }
@@ -2277,9 +2278,12 @@ partial class Player
 
         switch (leadershipRank)
         {
-            case 2: return 200;
-            case 1: return 150;
-            default: return 100;
+            case 5: return 0;
+            case 4: return 250;
+            case 3: return 200;
+            case 2: return 150;
+            case 1: return 100;
+            default: return 50;
         }
     }
 }
