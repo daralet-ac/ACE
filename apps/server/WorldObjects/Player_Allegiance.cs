@@ -2204,7 +2204,7 @@ partial class Player
 
     public int GetFollowerRank()
     {
-        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var leadershipRank = GetLeadershipRank();
         var rankWithoutLeadership = Math.Max(((AllegianceRank ?? 0) - leadershipRank), 0);
 
         return (int)rankWithoutLeadership;
@@ -2216,7 +2216,6 @@ partial class Player
 
         return leadershipSkill switch
         {
-            > 250 => 5,
             > 200 => 4,
             > 150 => 3,
             > 100 => 2,
@@ -2232,11 +2231,11 @@ partial class Player
 
         switch (rankWithoutLeadership)
         {
-            case 5: return 50;
-            case 4: return 20;
-            case 3: return 10;
-            case 2: return 5;
-            case 1: return 0;
+            case 6: return 50;
+            case 5: return 25;
+            case 4: return 10;
+            case 3: return 5;
+            case 2: return 1;
             default: return 0;
         }
     }
@@ -2248,12 +2247,12 @@ partial class Player
 
         switch (rankWithoutLeadership)
         {
-            case 5: return 0;
-            case 4: return 50;
-            case 3: return 20;
-            case 2: return 10;
-            case 1: return 5;
-            default: return 5;
+            case 6: return 0;
+            case 5: return 50;
+            case 4: return 25;
+            case 3: return 10;
+            case 2: return 5;
+            default: return 1;
         }
     }
 
@@ -2263,7 +2262,6 @@ partial class Player
 
         switch (leadershipRank)
         {
-            case 5: return 250;
             case 4: return 200;
             case 3: return 150;
             case 2: return 100;
@@ -2278,8 +2276,7 @@ partial class Player
 
         switch (leadershipRank)
         {
-            case 5: return 0;
-            case 4: return 250;
+            case 4: return 0;
             case 3: return 200;
             case 2: return 150;
             case 1: return 100;
