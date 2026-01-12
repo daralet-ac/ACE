@@ -2204,7 +2204,7 @@ partial class Player
 
     public int GetFollowerRank()
     {
-        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var leadershipRank = GetLeadershipRank();
         var rankWithoutLeadership = Math.Max(((AllegianceRank ?? 0) - leadershipRank), 0);
 
         return (int)rankWithoutLeadership;
@@ -2226,7 +2226,7 @@ partial class Player
 
     public int GetCurrentRankFollowers()
     {
-        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var leadershipRank = GetLeadershipRank();
         var rankWithoutLeadership = Math.Max(((AllegianceRank ?? 0) - leadershipRank), 0);
 
         switch (rankWithoutLeadership)
@@ -2242,7 +2242,7 @@ partial class Player
 
     public int GetNextRankFollowers()
     {
-        var leadershipRank = Math.Floor(GetCreatureSkill(Skill.Leadership).Base / 100.0);
+        var leadershipRank = GetLeadershipRank();
         var rankWithoutLeadership = Math.Max(((AllegianceRank ?? 0) - leadershipRank), 0);
 
         switch (rankWithoutLeadership)
