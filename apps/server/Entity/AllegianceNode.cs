@@ -6,11 +6,14 @@ using ACE.Entity;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
+using Serilog;
 
 namespace ACE.Server.Entity;
 
 public class AllegianceNode
 {
+    private static readonly ILogger _log = Log.ForContext(typeof(AllegianceNode));
+
     public readonly ObjectGuid PlayerGuid;
     public IPlayer Player => PlayerManager.FindByGuid(PlayerGuid);
 
@@ -84,7 +87,6 @@ public class AllegianceNode
         //
         // Final Rank = FollowerRank + Leadership bonus.
         //
-        // Leadership bonus = Leadership / 100
         // Follower Rank:
         // - 1 unique follower = 2
         // - 5 unique followers = 3
@@ -104,7 +106,7 @@ public class AllegianceNode
 
         var leadershipBonus = Player.GetCurrentLeadership() / 100;
 
-        switch (uniqueFollowers)
+        if (Player == null)
         {
             >= 50 => 6,
             >= 20 => 5,
@@ -132,40 +134,39 @@ public class AllegianceNode
 
     private double GetUniqueFollowers(AllegianceNode playerNode)
     {
-        double uniqueFollowers = 0;
-
-        var vassals = playerNode.Vassals.Values.ToList();
-
-        if (Vassals.Count == 0)
+        if (playerNode.Vassals == null || playerNode.Vassals.Count == 0)
         {
             return 0;
         }
 
-        foreach (var vassal in vassals)
+        double uniqueFollowers = 0;
+
+        foreach (var vassal in playerNode.Vassals.Values)
         {
+            // check to see if character level is at least 10
+            if (vassal.Player.GetProperty(PropertyInt.Level) < 10)
+            {
+                continue;
+            }
+
             // check to see if player has logged in within the past 2 weeks
-            if (vassal.Player.GetProperty(PropertyFloat.LoginTimestamp) + 1209600 < Time.GetUnixTime())
+            var loginTimestamp = vassal.Player.GetProperty(PropertyFloat.LoginTimestamp);
+            if (loginTimestamp == null || loginTimestamp + 1209600 < Time.GetUnixTime())
             {
                 continue;
             }
 
             // check to see if this character is an alt on the same account
-            if (vassal.Player.Account.AccountId == Player.Account.AccountId)
+            if (vassal.Player.Account.AccountId == playerNode.Player.Account.AccountId)
             {
                 continue;
             }
 
             var rankContrib = vassal.Player.GetProperty(PropertyFloat.RankContribution);
+            uniqueFollowers += rankContrib != null ? (double)rankContrib : 1.0;
 
-            if (rankContrib != null)
-            {
-                uniqueFollowers += (double)rankContrib;
-            }
-
-            if (vassal.Vassals.Count > 0)
-            {
-                uniqueFollowers += GetUniqueFollowers(vassal);
-            }
+            // recursively count nested vassals
+            uniqueFollowers += GetUniqueFollowers(vassal);
         }
 
         return uniqueFollowers;
@@ -196,8 +197,18 @@ public class AllegianceNode
 
     public void OnLevelUp()
     {
+        var playerLevel = Player.Level ?? 1;
+
+        // When a player reaches level 10, they may now count toward their patron's rank
+        // Recalculate rank up the chain
+        if (playerLevel == 10)
+        {
+            _log.Information("Player {PlayerName} reached level 10, recalculating allegiance ranks", Player.Name);
+            RecalculateRankChain();
+        }
+
         // patron = self node
-        var patronLevel = Player.Level ?? 1;
+        var patronLevel = playerLevel;
 
         // find vassals who are not passing xp
         foreach (var vassal in Vassals.Values.Where(i => !i.Player.ExistedBeforeAllegianceXpChanges))
@@ -209,6 +220,18 @@ public class AllegianceNode
             {
                 vassal.Player.ExistedBeforeAllegianceXpChanges = true;
             }
+        }
+    }
+
+    private void RecalculateRankChain()
+    {
+        // Recalculate rank for this node
+        CalculateRank();
+
+        // Recalculate rank for patron up to monarch
+        if (Patron != null)
+        {
+            Patron.RecalculateRankChain();
         }
     }
 }
