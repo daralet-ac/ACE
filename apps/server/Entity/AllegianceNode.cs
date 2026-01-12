@@ -80,18 +80,25 @@ public class AllegianceNode
         // NEW RANK FORMULA
         // A player's allegiance rank depends on the number of unique accounts are under them in
         // their allegiance tree. Accounts who are also above them in the chain do not count towards
-        // their rank. Additionally, up to 3 bonus rank may be obtained from the Leadership skill.
+        // their rank. Additionally, up to 4 ranks may be obtained from the Leadership skill.
         //
         // Final Rank = FollowerRank + Leadership bonus.
         //
         // Leadership bonus = Leadership / 100
         // Follower Rank:
         // - 1 unique follower = 2
-        // - 3 = 3
-        // - 6 = 4
-        // - 10 = 5
-        // - 20 = 6
-        // - 50 - 7
+        // - 5 unique followers = 3
+        // - 10 unique followers = 4
+        // - 25 unique followers = 5
+        // - 50 unique followers = 6
+        //
+        // Leadership bonus = 1 per 50, up to 4
+
+        if (Player == null)
+        {
+            Rank = 1;
+            return;
+        }
 
         var uniqueFollowers = GetUniqueFollowers(this);
 
@@ -99,28 +106,28 @@ public class AllegianceNode
 
         switch (uniqueFollowers)
         {
-            case >= 50:
-                Rank = 7 + leadershipBonus;
-                break;
-            case >= 20:
-                Rank = 6 + leadershipBonus;
-                break;
-            case >= 10:
-                Rank = 5 + leadershipBonus;
-                break;
-            case >= 6:
-                Rank = 4 + leadershipBonus;
-                break;
-            case >= 3:
-                Rank = 3 + leadershipBonus;
-                break;
-            case >= 1:
-                Rank = 2 + leadershipBonus;
-                break;
-            default:
-                Rank = 1 + leadershipBonus;
-                break;
-        }
+            >= 50 => 6,
+            >= 20 => 5,
+            >= 10 => 4,
+            >= 5 => 3,
+            >= 1 => 2,
+            _ => 1
+        };
+
+        var currentLeadership = Player.GetCurrentLeadership();
+        uint leadershipBonus = currentLeadership switch
+        {
+            >= 200 => 4,
+            >= 150 => 3,
+            >= 100 => 2,
+            >= 50 => 1,
+            _ => 0
+        };
+
+        Rank = Math.Min(baseRank + leadershipBonus, 10u);
+
+        _log.Information("Rank calculation for {PlayerName}: {UniqueFollowers} followers (rank {BaseRank}) + {CurrentLeadership} leadership (rank {LeadershipBonus}) = final rank {Rank}",
+            Player.Name, uniqueFollowers, baseRank, currentLeadership, leadershipBonus, Rank);
     }
 
     private double GetUniqueFollowers(AllegianceNode playerNode)
