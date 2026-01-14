@@ -1171,7 +1171,7 @@ partial class Creature
     /// </summary>
     public void PeriodicTargetScan()
     {
-        if (MonsterState != State.Idle || !Attackable || TargetingTactic == TargetingTactic.None)
+        if (MonsterState != State.Idle || (!Attackable && TargetingTactic == TargetingTactic.None))
         {
             return;
         }
@@ -1198,13 +1198,13 @@ partial class Creature
             }
 
             var distSq = PhysicsObj.get_distance_sq_to_object(creature.PhysicsObj, true);
-            
-            if (player != null && player.TestStealth(this, distSq, $"{Name} sees you! You lose stealth."))
+
+            if (distSq > VisualAwarenessRangeSq)
             {
                 continue;
             }
 
-            if (distSq > VisualAwarenessRangeSq)
+            if (player != null && player.TestStealth(this, distSq, $"{Name} sees you! You lose stealth."))
             {
                 continue;
             }

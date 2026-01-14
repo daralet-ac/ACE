@@ -68,8 +68,6 @@ partial class Creature
 
         HandlePlayerCountScaling();
 
-        PeriodicTargetScan();
-
         HandleFindTarget();
 
         CheckMissHome(); // tickrate?
