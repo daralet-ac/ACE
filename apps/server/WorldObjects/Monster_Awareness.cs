@@ -1140,7 +1140,6 @@ partial class Creature
         }
 
         FooledByVanishPlayers.Add(player.Guid.Full);
-        _log.Information($"{Name} ({Guid}) - Player {player.Name} ({player.Guid}) successfully vanished from sight");
     }
 
     /// <summary>
