@@ -226,7 +226,7 @@ partial class Player
 
         var angleMod = 2.0f - angle / 90.0f; // mod ranges from 0.0 (180 angle) to 2.0 (0 angle)
 
-        var difficulty = (uint)(GetModdedPerceptionSkill() * monsterDistanceBonus * angleMod);
+        var difficulty = (uint)(creature.GetModdedPerceptionSkill() * monsterDistanceBonus * angleMod);
 
         //Console.WriteLine($"\nCreature: {creature.Name} {creature.WeenieClassId} - distance: {distance}, distanceBonus: {monsterDistanceBonus}, angle: {angle}, angleBonus: {angleMod}");
 
@@ -257,7 +257,6 @@ partial class Player
 
         if (result != StealthTestResult.Success)
         {
-            // Only attempt stamina-based stealth preservation if specialized in thievery
             if (creature != null && TryPreserveStealthWithStamina(creature, isSpecialized))
             {
                 return true;
