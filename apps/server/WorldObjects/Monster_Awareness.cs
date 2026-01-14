@@ -1165,4 +1165,59 @@ partial class Creature
 
         return true;
     }
+
+    /// <summary>
+    /// Called periodically for idle monsters to check for stationary players
+    /// </summary>
+    public void PeriodicTargetScan()
+    {
+        if (MonsterState != State.Idle || !Attackable || TargetingTactic == TargetingTactic.None)
+        {
+            return;
+        }
+
+        if ((Tolerance & ExcludeSpawnScan) != 0)
+        {
+            return;
+        }
+
+        // Scan for all creatures in range, including stationary ones
+        var creatures = PhysicsObj.ObjMaint.GetVisibleTargetsValuesOfTypeCreature();
+
+        foreach (var creature in creatures)
+        {
+            var player = creature as Player;
+            if (player != null && (!player.Attackable || player.Teleporting || (player.Hidden ?? false)))
+            {
+                continue;
+            }
+
+            if (Tolerance.HasFlag(Tolerance.Monster) && (creature is Player || creature is CombatPet))
+            {
+                continue;
+            }
+
+            var distSq = PhysicsObj.get_distance_sq_to_object(creature.PhysicsObj, true);
+            
+            if (player != null && player.TestStealth(this, distSq, $"{Name} sees you! You lose stealth."))
+            {
+                continue;
+            }
+
+            if (distSq > VisualAwarenessRangeSq)
+            {
+                continue;
+            }
+
+            // Check if player fooled this monster with vanish
+            if (player != null && IsPlayerVanished(player))
+            {
+                continue;
+            }
+
+            // Found a valid target - wake up!
+            creature.AlertMonster(this);
+            break;
+        }
+    }
 }
