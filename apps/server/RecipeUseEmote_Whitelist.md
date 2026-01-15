@@ -6,7 +6,7 @@ Only source item WeenieClassIds are evaluated.
 Recipe IDs are never used here.
 
 allowedWcids layout
-Line 1 — RIMS devices
+Line 1 — RIMS (Resonance Infused Mana Stone) devices
 
 These are active tools that intentionally fire a Use emote when used in recipes.
 
