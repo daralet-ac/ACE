@@ -497,7 +497,6 @@ public partial class RecipeManager
                 isAllowed
             );
 
-
             if (isAllowed)
             {
                 try
