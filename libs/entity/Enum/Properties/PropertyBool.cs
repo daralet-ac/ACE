@@ -296,6 +296,9 @@ public enum PropertyBool : ushort
 
     [ServerOnly]
     VendorSellsSpecialItems = 9014,
+
+    [ServerOnly]
+    PatrolEnabled = 9015,
 }
 
 public static class PropertyBoolExtensions

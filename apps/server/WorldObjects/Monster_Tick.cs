@@ -1,4 +1,5 @@
 using ACE.Entity.Enum;
+using System;
 
 namespace ACE.Server.WorldObjects;
 
@@ -13,12 +14,25 @@ partial class Creature
     public double NextMonsterTargetScanTime;
 
     private bool firstUpdate = true;
+    private const bool DebugPatrolTargets = false;
+
 
     /// <summary>
     /// Primary dispatch for monster think
     /// </summary>
     public void Monster_Tick(double currentUnixTime)
     {
+        if (HasPatrol)
+        {
+            IsAwake = true;
+
+            if (MonsterState == State.Return)
+            {
+                MonsterState = State.Awake;
+            }
+        }
+
+
         if (IsChessPiece && this is GamePiece gamePiece)
         {
             // faster than vtable?
@@ -33,6 +47,7 @@ partial class Creature
         }
 
         NextMonsterTickTime = currentUnixTime + monsterTickInterval;
+
 
         if (!IsAwake)
         {
@@ -61,8 +76,15 @@ partial class Creature
             return;
         }
 
+        // If we're busy (eg. finishing an animation right after combat), still allow patrol to progress.
+        // Otherwise, patrol will be updated in the normal non-combat flow below.
         if (EmoteManager.IsBusy)
         {
+            if (HasPatrol && AttackTarget == null)
+            {
+                PatrolUpdate(currentUnixTime);
+            }
+
             return;
         }
 
@@ -70,7 +92,45 @@ partial class Creature
 
         HandleFindTarget();
 
-        CheckMissHome(); // tickrate?
+        // If combat starts, drop any in-flight patrol destination so we don't stall after combat
+        if (HasPatrol && AttackTarget != null)
+        {
+            PatrolResetDestination();
+        }
+
+        // Patrol: prevent getting stuck targeting a dead creature (required so patrol can resume)
+        if (HasPatrol && AttackTarget is Creature at && at.IsDead)
+        {
+            if (DebugPatrolTargets && WeenieClassId == 2036553)
+            {
+                Console.WriteLine(
+                    $"[PATROL][CLEAR_TARGET] {Name} {Guid} -> {at.Name} {at.Guid} IsDead={at.IsDead} Attackable={at.Attackable}"
+                );
+            }
+
+            AttackTarget = null;
+            CurrentAttack = null;
+            firstUpdate = true;
+
+            // Patrolling creatures bypass Sleep(); ensure we leave combat stance when combat ends.
+            if (CombatMode != CombatMode.NonCombat)
+            {
+                SetCombatMode(CombatMode.NonCombat);
+            }
+
+            // Prevent re-acquiring the same dead target via threat/retaliate bookkeeping
+            ClearRetaliateTargets();
+
+            // If combat interrupted an in-flight patrol MoveTo, drop the stale destination
+            PatrolResetDestination();
+        }
+
+
+
+        if (!HasPatrol)
+        {
+            CheckMissHome(); // tickrate?
+        }
 
         if (currentUnixTime > NextMonsterThreatTickTime)
         {
@@ -79,11 +139,27 @@ partial class Creature
             NextMonsterThreatTickTime = currentUnixTime + monsterThreatTickInterval;
         }
 
-        if (AttackTarget == null && MonsterState != State.Return)
+        if (AttackTarget == null)
         {
-            Sleep();
-            return;
+            if (HasPatrol)
+            {
+                if (MonsterState == State.Return)
+                {
+                    MonsterState = State.Awake;
+                }
+
+                PatrolUpdate(currentUnixTime);
+                return;
+            }
+
+            if (MonsterState != State.Return)
+            {
+                Sleep();
+                return;
+            }
         }
+
+
 
         if (MonsterState == State.Return)
         {

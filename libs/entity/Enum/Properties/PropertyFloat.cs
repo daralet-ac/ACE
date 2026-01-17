@@ -334,6 +334,13 @@ public enum PropertyFloat : ushort
     BaseDamageMod = 20050,
     BaseElementalDamageMod = 20051,
     BaseManaConversionMod = 20052,
+
+    [ServerOnly]
+    PatrolSpeed = 20053,
+
+    [ServerOnly]
+    PatrolScanInterval = 20054,
+
 }
 
 public static class PropertyFloatExtensions
