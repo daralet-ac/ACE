@@ -1693,8 +1693,6 @@ public class EnchantmentManager
         }
 
         // apply healing ratings
-        var healingRatingMod = creature.GetHealingRatingMod();
-
         tickAmountTotal *= creature.GetHealingRatingMod();
 
         // do healing immediately
@@ -1734,7 +1732,7 @@ public class EnchantmentManager
             var sourcePlayerHealer = healer as Player;
             var levelScalingMod = LevelScaling.GetPlayerBoostSpellScalar(sourcePlayerHealer, creature);
 
-            tickAmountTotal += tickAmount;
+            tickAmountTotal += tickAmount * levelScalingMod;
         }
 
         // apply healing ratings?
@@ -1787,7 +1785,7 @@ public class EnchantmentManager
             var sourcePlayerHealer = healer as Player;
             var levelScalingMod = LevelScaling.GetPlayerBoostSpellScalar(sourcePlayerHealer, creature);
 
-            tickAmountTotal += tickAmount;
+            tickAmountTotal += tickAmount * levelScalingMod;
         }
 
         // apply healing ratings?
