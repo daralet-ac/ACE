@@ -59,7 +59,7 @@ partial class Player
             return;
         }
 
-        var result = TestStealthInternal(EnterStealthDifficulty);
+        var result = TestStealthInternal(EnterStealthDifficulty, out _);
         switch (result)
         {
             case StealthTestResult.Success:
