@@ -361,7 +361,7 @@ partial class Player
 
         var chance = SkillCheck.GetSkillChance(moddedThieverySkill, difficulty);
 
-        if (chance < 0.5)
+        if (chance >= 0.5)
         {
             tryPreserveWithStamina = true;
         }
