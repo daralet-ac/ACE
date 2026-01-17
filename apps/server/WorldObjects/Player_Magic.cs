@@ -677,25 +677,6 @@ partial class Player
         //    || spell.School == MagicSchool.WarMagic && LastSuccessCast_School == MagicSchool.VoidMagic
         //)
         //{
-        //    // roll each time?
-        //    var timeLimit = ThreadSafeRandom.Next(3.0f, 5.0f);
-
-        //    if (Time.GetUnixTime() - LastSuccessCast_Time < timeLimit)
-        //    {
-        //        var curType = spell.School == MagicSchool.WarMagic ? "War" : "Void";
-        //        var prevType = LastSuccessCast_School == MagicSchool.VoidMagic ? "Nether" : "Elemental";
-
-        //        Session.Network.EnqueueSend(
-        //            new GameMessageSystemChat(
-        //                $"The {prevType} energies permeating your blood cause this {curType} magic to fail.",
-        //                ChatMessageType.Magic
-        //            )
-        //        );
-
-        //        castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
-        //    }
-        //}
-
         // Check for Nether Dampening preventing Restoration Resonance spells
         if (EnchantmentManager.HasSpell((uint)SpellId.VoidRestorationPenalty) && IsRestorationResonanceSpell(spell.Category))
         {
