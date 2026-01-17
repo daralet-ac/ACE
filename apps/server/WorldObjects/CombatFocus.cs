@@ -1057,7 +1057,7 @@ public class CombatFocus : WorldObject
         if ((CombatFocusPrestigeVersionId ?? 0) == (int)CombatFocusPrestigeVersion.Newcomer)
         {
             prestigeDescription =
-                "This combat focus also grants +50 Health and +100 Stamina.\n\n";
+                "This combat focus also grants +50 Health, +100 Stamina, and +100 Mana.\n\n";
         }
 
         LongDesc = description + alteredDescription + prestigeDescription;
