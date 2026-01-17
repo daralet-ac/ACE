@@ -40,9 +40,6 @@ partial class Player
     public double LastSuccessCast_Time;
     public MagicSchool LastSuccessCast_School;
 
-    public double LastVoidSpellCastPenaltyLength = 10.0;
-    public double LastVoidSpellCastTime;
-
     public bool DebugSpell { get; set; }
 
     public string DebugDamageBuffer { get; set; }
@@ -675,29 +672,35 @@ partial class Player
         }
 
         // limit casting time between war and void
-        if (
-            spell.School == MagicSchool.VoidMagic && LastSuccessCast_School == MagicSchool.WarMagic
-            || spell.School == MagicSchool.WarMagic && LastSuccessCast_School == MagicSchool.VoidMagic
-        )
+        //if (
+        //    spell.School == MagicSchool.VoidMagic && LastSuccessCast_School == MagicSchool.WarMagic
+        //    || spell.School == MagicSchool.WarMagic && LastSuccessCast_School == MagicSchool.VoidMagic
+        //)
+        //{
+        // Check for Nether Dampening preventing Restoration Resonance spells
+        if (EnchantmentManager.HasSpell((uint)SpellId.VoidRestorationPenalty) && IsRestorationResonanceSpell(spell.Category))
         {
-            // roll each time?
-            var timeLimit = ThreadSafeRandom.Next(3.0f, 5.0f);
-
-            if (Time.GetUnixTime() - LastSuccessCast_Time < timeLimit)
-            {
-                var curType = spell.School == MagicSchool.WarMagic ? "War" : "Void";
-                var prevType = LastSuccessCast_School == MagicSchool.VoidMagic ? "Nether" : "Elemental";
-
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        $"The {prevType} energies permeating your blood cause this {curType} magic to fail.",
-                        ChatMessageType.Magic
-                    )
-                );
-
-                castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
-            }
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "The Nether energies permeating your form prevent you from casting heal-over-time spells!",
+                    ChatMessageType.Magic
+                )
+            );
+            castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
         }
+
+        // Check for Restoration Resonance preventing Void spells
+        if (EnchantmentManager.HasSpell((uint)SpellId.RestorationResonance) && spell.School == MagicSchool.VoidMagic)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "The Restoration energies flowing through you prevent you from casting Void spells!",
+                    ChatMessageType.Magic
+                )
+            );
+            castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
+        }
+
         return castingPreCheckStatus;
     }
 
@@ -1499,8 +1502,13 @@ partial class Player
 
         if (spell.School == MagicSchool.VoidMagic && spell.Id != (uint)SpellId.VoidRestorationPenalty)
         {
-            LastVoidSpellCastTime = Time.GetUnixTime();
             CreatePlayerSpell(this, new Spell((int)SpellId.VoidRestorationPenalty), false);
+        }
+
+        // Apply Restoration Resonance for VitalityMend, VigorMend, or ClarityMend spells cast
+        if (IsRestorationResonanceSpell(spell.Category))
+        {
+            CreatePlayerSpell(this, new Spell((int)SpellId.RestorationResonance), false);
         }
 
         var caster = GetEquippedWand();
@@ -2127,7 +2135,49 @@ partial class Player
             SpellId.ManaBolt4,
             SpellId.ManaBolt5,
             SpellId.ManaBolt6,
-            SpellId.ManaBolt7
+            SpellId.ManaBolt7,
+            SpellId.VitalityMend1,
+            SpellId.VitalityMend2,
+            SpellId.VitalityMend3,
+            SpellId.VitalityMend4,
+            SpellId.VitalityMend5,
+            SpellId.VitalityMend6,
+            SpellId.VitalityMend7,
+            SpellId.VigorMend1,
+            SpellId.VigorMend2,
+            SpellId.VigorMend3,
+            SpellId.VigorMend4,
+            SpellId.VigorMend5,
+            SpellId.VigorMend6,
+            SpellId.VigorMend7,
+            SpellId.ClarityMend1,
+            SpellId.ClarityMend2,
+            SpellId.ClarityMend3,
+            SpellId.ClarityMend4,
+            SpellId.ClarityMend5,
+            SpellId.ClarityMend6,
+            SpellId.ClarityMend7,
+            SpellId.VitalityMendOther1,
+            SpellId.VitalityMendOther2,
+            SpellId.VitalityMendOther3,
+            SpellId.VitalityMendOther4,
+            SpellId.VitalityMendOther5,
+            SpellId.VitalityMendOther6,
+            SpellId.VitalityMendOther7,
+            SpellId.VigorMendOther1,
+            SpellId.VigorMendOther2,
+            SpellId.VigorMendOther3,
+            SpellId.VigorMendOther4,
+            SpellId.VigorMendOther5,
+            SpellId.VigorMendOther6,
+            SpellId.VigorMendOther7,
+            SpellId.ClarityMendOther1,
+            SpellId.ClarityMendOther2,
+            SpellId.ClarityMendOther3,
+            SpellId.ClarityMendOther4,
+            SpellId.ClarityMendOther5,
+            SpellId.ClarityMendOther6,
+            SpellId.ClarityMendOther7,
         };
 
         if (advancedSpellCategories.Contains(spell.Category) || advancedSpellIds.Contains((SpellId)spell.Id))
@@ -2136,5 +2186,15 @@ partial class Player
         }
 
         return false;
+    }
+
+    /// <summary>
+     /// Returns TRUE if the spell is one of the Restoration Resonance spells (VitalityMend, VigorMend, or ClarityMend)
+     /// </summary>
+    private bool IsRestorationResonanceSpell(SpellCategory spellCategory)
+    {
+        return spellCategory == SpellCategory.VitalityMend
+            || spellCategory == SpellCategory.VigorMend
+            || spellCategory == SpellCategory.ClarityMend;
     }
 }
