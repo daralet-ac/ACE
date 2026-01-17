@@ -697,33 +697,27 @@ partial class Player
         //}
 
         // Check for Nether Dampening preventing Restoration Resonance spells
-        if (EnchantmentManager.HasSpell((uint)SpellId.VoidRestorationPenalty))
+        if (EnchantmentManager.HasSpell((uint)SpellId.VoidRestorationPenalty) && IsRestorationResonanceSpell(spell.Category))
         {
-            if (IsRestorationResonanceSpell(spell.Category))
-            {
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        "The Nether energies permeating your form prevent you from casting heal-over-time spells!",
-                        ChatMessageType.Magic
-                    )
-                );
-                castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
-            }
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "The Nether energies permeating your form prevent you from casting heal-over-time spells!",
+                    ChatMessageType.Magic
+                )
+            );
+            castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
         }
 
         // Check for Restoration Resonance preventing Void spells
-        if (EnchantmentManager.HasSpell((uint)SpellId.RestorationResonance))
+        if (EnchantmentManager.HasSpell((uint)SpellId.RestorationResonance) && spell.School == MagicSchool.VoidMagic)
         {
-            if (spell.School == MagicSchool.VoidMagic)
-            {
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat(
-                        "The Restoration energies flowing through you prevent you from casting Void spells!",
-                        ChatMessageType.Magic
-                    )
-                );
-                castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
-            }
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "The Restoration energies flowing through you prevent you from casting Void spells!",
+                    ChatMessageType.Magic
+                )
+            );
+            castingPreCheckStatus = CastingPreCheckStatus.CastFailed;
         }
 
         return castingPreCheckStatus;
