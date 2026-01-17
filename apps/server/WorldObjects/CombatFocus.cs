@@ -251,7 +251,8 @@ public class CombatFocus : WorldObject
     private static readonly List<SpellId> NewcomerSpells = new List<SpellId>()
     {
         SpellId.NewcomersFortitude,
-        SpellId.NewcomersPersistence
+        SpellId.NewcomersPersistence,
+        SpellId.NewcomersClarity
     };
 
     private static readonly List<SpellId> WarriorSpells = new List<SpellId>()
