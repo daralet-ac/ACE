@@ -394,9 +394,9 @@ public static class ScrollSpells
                 continue;
             }
 
-            if (spellLevels.Count != MaxLevels)
+            if (spellLevels.Count < NumLevels)
             {
-                _log.Error($"ScrollSpells - expected {MaxLevels} levels for {spell}, found {spellLevels.Count}");
+                _log.Error($"ScrollSpells - spell {spell} has {spellLevels.Count} levels, need at least {NumLevels}");
                 continue;
             }
 
