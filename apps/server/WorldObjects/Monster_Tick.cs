@@ -80,15 +80,21 @@ partial class Creature
         // This gives a small "refocus" window and prevents moving while emoting.
         if (EmoteManager.IsBusy)
         {
-            if (HasPatrol && AttackTarget == null && IsMoving)
+            if (HasPatrol && AttackTarget == null)
             {
-                // If an emote starts mid-walk, stop immediately.
-                CancelMoveToForEmote();
-                PatrolResetDestination();
+                // If an emote (Use, etc.) begins while moving, hard stop so we don't "skate".
+                if (IsMoving)
+                {
+                    CancelMoveToForEmote();
+                    PatrolResetDestination();
+                }
+
+                // Busy means stop; patrol resumes after emote finishes.
             }
 
             return;
         }
+
 
 
 

@@ -36,7 +36,7 @@ partial class Creature
     {
         Patrol?.ResetDestination();
     }
-    private void CancelMoveToForEmote()
+    public void CancelMoveToForEmote()
     {
         if (PhysicsObj?.MovementManager?.MoveToManager == null)
         {
@@ -45,11 +45,13 @@ partial class Creature
 
         PhysicsObj.MovementManager.MoveToManager.CancelMoveTo(WeenieError.ActionCancelled);
         PhysicsObj.MovementManager.MoveToManager.FailProgressCount = 0;
+        PhysicsObj.StopCompletely(false);
 
         EnqueueBroadcastMotion(new ACE.Server.Entity.Motion(CurrentMotionState.Stance, MotionCommand.Ready));
 
         IsMoving = false;
         PhysicsObj.CachedVelocity = Vector3.Zero;
     }
+
 
 }

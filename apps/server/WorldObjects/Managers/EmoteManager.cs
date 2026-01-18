@@ -3342,25 +3342,23 @@ public class EmoteManager
     }
 
 
-public void OnUse(Creature activator)
-{
-    if (WorldObject is Creature creature && creature.HasPatrol && creature.AttackTarget == null)
+    public void OnUse(Creature activator)
     {
-        if (creature.IsMoving && creature.PhysicsObj?.MovementManager?.MoveToManager != null)
+        // Don't let player 'Use' interrupt combat AI.
+        if (WorldObject is Creature usedCreature && usedCreature.AttackTarget != null)
         {
-            creature.PhysicsObj.MovementManager.MoveToManager.CancelMoveTo(WeenieError.ActionCancelled);
-            creature.PhysicsObj.MovementManager.MoveToManager.FailProgressCount = 0;
+            return;
+        }
 
-            creature.EnqueueBroadcastMotion(new ACE.Server.Entity.Motion(creature.CurrentMotionState.Stance, MotionCommand.Ready));
-
-            creature.IsMoving = false;
-            creature.PhysicsObj.CachedVelocity = Vector3.Zero;
+        if (WorldObject is Creature creature && creature.HasPatrol && creature.AttackTarget == null)
+        {
+            creature.CancelMoveToForEmote();
             creature.PatrolResetDestination();
         }
+
+        ExecuteEmoteSet(EmoteCategory.Use, null, activator);
     }
 
-    ExecuteEmoteSet(EmoteCategory.Use, null, activator);
-}
 
 
     public void OnPortal(Creature activator)
