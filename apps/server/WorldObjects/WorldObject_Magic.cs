@@ -806,7 +806,7 @@ partial class WorldObject
         var addResult = target.EnchantmentManager.Add(spell, caster, weapon, equip);
 
         // Ward reduction of Creature and Life debuffs
-        if (target is Player && spell.Id != (uint)SpellId.Vitae)
+        if (target is Player && !IsWardExcludedSpell(spell))
         {
             //Console.WriteLine("enchantment target player: " + target.Name);
             var targetPlayer = target as Player;
@@ -3813,5 +3813,23 @@ partial class WorldObject
         var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
 
         return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
+    }
+
+    /// <summary>
+    /// Spells that are excluded from ward level debuff duration reduction
+    /// </summary>
+    private static readonly HashSet<SpellId> WardExcludedSpells = new HashSet<SpellId>()
+{
+    SpellId.Vitae,
+    SpellId.RestorationResonance,
+    SpellId.VoidRestorationPenalty
+};
+
+    /// <summary>
+    /// Checks if a spell should be excluded from ward level debuff duration reduction
+    /// </summary>
+    private static bool IsWardExcludedSpell(Spell spell)
+    {
+        return WardExcludedSpells.Contains((SpellId)spell.Id);
     }
 }
