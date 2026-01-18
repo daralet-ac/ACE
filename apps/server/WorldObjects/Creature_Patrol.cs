@@ -1,6 +1,7 @@
 using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects.Patrol;
-
+using System.Numerics;      
+using ACE.Entity.Enum;  
 namespace ACE.Server.WorldObjects;
 
 partial class Creature
@@ -35,4 +36,20 @@ partial class Creature
     {
         Patrol?.ResetDestination();
     }
+    private void CancelMoveToForEmote()
+    {
+        if (PhysicsObj?.MovementManager?.MoveToManager == null)
+        {
+            return;
+        }
+
+        PhysicsObj.MovementManager.MoveToManager.CancelMoveTo(WeenieError.ActionCancelled);
+        PhysicsObj.MovementManager.MoveToManager.FailProgressCount = 0;
+
+        EnqueueBroadcastMotion(new ACE.Server.Entity.Motion(CurrentMotionState.Stance, MotionCommand.Ready));
+
+        IsMoving = false;
+        PhysicsObj.CachedVelocity = Vector3.Zero;
+    }
+
 }

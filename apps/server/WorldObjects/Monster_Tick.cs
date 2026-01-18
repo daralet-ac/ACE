@@ -76,17 +76,22 @@ partial class Creature
             return;
         }
 
-        // If we're busy (eg. finishing an animation right after combat), still allow patrol to progress.
-        // Otherwise, patrol will be updated in the normal non-combat flow below.
+        // If we're busy running an emote or finishing an animation, do not advance patrol.
+        // This gives a small "refocus" window and prevents moving while emoting.
         if (EmoteManager.IsBusy)
         {
-            if (HasPatrol && AttackTarget == null)
+            if (HasPatrol && AttackTarget == null && IsMoving)
             {
-                PatrolUpdate(currentUnixTime);
+                // If an emote starts mid-walk, stop immediately.
+                CancelMoveToForEmote();
+                PatrolResetDestination();
             }
 
             return;
         }
+
+
+
 
         HandlePlayerCountScaling();
 

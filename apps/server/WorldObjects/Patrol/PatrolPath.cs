@@ -10,6 +10,12 @@ public sealed class PatrolPath
     public int Count => _offsets.Count;
     public PatrolOffset this[int idx] => _offsets[idx];
 
+    /// <summary>
+    /// 2D-only format:
+    ///   dx,dy
+    ///   dx,dy,pauseSeconds
+    /// Waypoints separated by ';'
+    /// </summary>
     public static PatrolPath Parse(string raw)
     {
         if (string.IsNullOrWhiteSpace(raw))
@@ -22,29 +28,39 @@ public sealed class PatrolPath
         var parts = raw.Split(';', StringSplitOptions.RemoveEmptyEntries);
         foreach (var part in parts)
         {
-            var xyz = part.Trim().Split(',', StringSplitOptions.RemoveEmptyEntries);
-            if (xyz.Length < 2)
+            var tokens = part.Trim().Split(',', StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length != 2 && tokens.Length != 3)
             {
                 continue;
             }
 
-            if (!float.TryParse(xyz[0].Trim(), out var dx))
+            if (!float.TryParse(tokens[0].Trim(), out var dx))
             {
                 continue;
             }
 
-            if (!float.TryParse(xyz[1].Trim(), out var dy))
+            if (!float.TryParse(tokens[1].Trim(), out var dy))
             {
                 continue;
             }
 
-            var dz = 0f;
-            if (xyz.Length >= 3)
+            float? pauseSeconds = null;
+
+            if (tokens.Length == 3)
             {
-                float.TryParse(xyz[2].Trim(), out dz);
+                if (float.TryParse(tokens[2].Trim(), out var p))
+                {
+                    // Negative pauses don't make sense; clamp at 0.
+                    if (p < 0f)
+                    {
+                        p = 0f;
+                    }
+
+                    pauseSeconds = p;
+                }
             }
 
-            path._offsets.Add(new PatrolOffset(dx, dy, dz));
+            path._offsets.Add(new PatrolOffset(dx, dy, pauseSeconds));
         }
 
         if (path.Count > 0)

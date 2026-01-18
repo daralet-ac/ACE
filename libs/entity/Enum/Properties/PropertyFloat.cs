@@ -340,7 +340,8 @@ public enum PropertyFloat : ushort
 
     [ServerOnly]
     PatrolScanInterval = 20054,
-
+    PatrolPauseMinSeconds = 20055,
+    PatrolPauseMaxSeconds = 20056,
 }
 
 public static class PropertyFloatExtensions
