@@ -329,12 +329,12 @@ public class QuestManager
 
     private readonly List<string> QuestProgressQuestNames =
     [
+        "QuestAcademy",
         "QuestAlArqas",
         "QuestAlJalima",
         "QuestArwic",
         "QuestBaishi",
         "QuestCragstone",
-        "QuestDereth",
         "QuestDryreach",
         "QuestEastham",
         "QuestGlendenWood",
