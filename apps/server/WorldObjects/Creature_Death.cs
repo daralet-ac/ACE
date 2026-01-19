@@ -1371,15 +1371,6 @@ partial class Creature
         var nearestTown = Town.GetNearestTown(this);
         var simplifiedTownName = Town.GetSimplifiedTownString(nearestTown);
 
-        var playerTownStamps = player.QuestManager.GetCurrentSolves($"Quest{simplifiedTownName}");
-        var playerArrivedAtTownStamps = player.QuestManager.GetCurrentSolves($"Arrived{simplifiedTownName}");
-        var playerArrivedAtTown = playerArrivedAtTownStamps >= 1;
-
-        if (playerTownStamps >= 1 && !playerArrivedAtTown)
-        {
-            return;
-        }
-
         var townTier = Town.GetTownTier(nearestTown);
         var creatureTier = GetCreatureTier();
 
