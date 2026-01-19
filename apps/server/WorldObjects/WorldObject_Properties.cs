@@ -3351,6 +3351,24 @@ partial class WorldObject
             }
         }
     }
+    /// <summary>
+    /// If this property is not defined, defaults to false
+    /// </summary>
+    public bool PatrolEnabled
+    {
+        get => GetProperty(PropertyBool.PatrolEnabled) ?? false;
+        set
+        {
+            if (value)
+            {
+                SetProperty(PropertyBool.PatrolEnabled, true);
+            }
+            else
+            {
+                RemoveProperty(PropertyBool.PatrolEnabled);
+            }
+        }
+    }
 
     public bool HiddenAdmin
     {
