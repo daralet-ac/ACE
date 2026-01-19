@@ -799,4 +799,9 @@ public enum SpellCategory : uint
     SigilTrinketShield = 801,
     NewcomersFortitude = 802,
     NewcomersPersistence = 803,
+    NewcomersClarity = 804,
+    RestorationResonance = 805,
+    VitalityMend = 806,
+    VigorMend = 807,
+    ClarityMend = 808,
 }

@@ -9,6 +9,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
+using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
@@ -1654,18 +1655,18 @@ public class EnchantmentManager
             ApplyDamageTick(aetheriaDots, DamageType.Undef, true);
         }
 
-        // apply healing over time (HoTs)
+        // apply healing over time (HoTs) - healing is immediate, VFX are staggered
         if (heals.Count > 0)
         {
             ApplyHealingTick(heals);
         }
         if (staminaHots.Count > 0)
         {
-            ApplyStaminaHealingTick(staminaHots);
+            ApplyStaminaHealingTick(staminaHots, heals.Count > 0 ? 0.15 : 0.0);
         }
         if (manaHots.Count > 0)
         {
-            ApplyManaHealingTick(manaHots);
+            ApplyManaHealingTick(manaHots, (heals.Count > 0 ? 0.15 : 0.0) + (staminaHots.Count > 0 ? 0.15 : 0.0));
         }
     }
 
@@ -1679,16 +1680,22 @@ public class EnchantmentManager
 
         // get the total tick amount
         var tickAmountTotal = 0.0f;
+
         foreach (var enchantment in enchantments)
         {
             var tickAmount = GetDamagePerTick(enchantment, WorldObject.HeartbeatInterval ?? 5.0);
-            tickAmountTotal += tickAmount;
+
+            var healer = WorldObject.CurrentLandblock?.GetObject(enchantment.CasterObjectId);
+            var sourcePlayerHealer = healer as Player;
+            var levelScalingMod = LevelScaling.GetPlayerBoostSpellScalar(sourcePlayerHealer, creature);
+
+            tickAmountTotal += tickAmount * levelScalingMod;
         }
 
         // apply healing ratings
         tickAmountTotal *= creature.GetHealingRatingMod();
 
-        // do healing
+        // do healing immediately
         var healAmount = creature.UpdateVitalDelta(creature.Health, (int)Math.Round(tickAmountTotal));
         if (healAmount > 0)
         {
@@ -1698,10 +1705,14 @@ public class EnchantmentManager
         if (creature is Player player)
         {
             player.SendMessage($"You receive {healAmount} points of periodic healing.", ChatMessageType.Broadcast);
+
+            // play heal vfx immediately (no delay for health)
+            var vfxStrength = Math.Clamp(tickAmountTotal / 100, 0.1f, 1.0f);
+            player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpRed, vfxStrength));
         }
     }
 
-    public void ApplyStaminaHealingTick(List<PropertiesEnchantmentRegistry> enchantments)
+    public void ApplyStaminaHealingTick(List<PropertiesEnchantmentRegistry> enchantments, double vfxDelay)
     {
         var creature = WorldObject as Creature;
         if (creature == null || creature.IsDead)
@@ -1717,22 +1728,44 @@ public class EnchantmentManager
             //var totalTicks = GetNumTicks(enchantment);
             var tickAmount = enchantment.StatModValue;
 
-            tickAmountTotal += tickAmount;
+            var healer = WorldObject.CurrentLandblock?.GetObject(enchantment.CasterObjectId);
+            var sourcePlayerHealer = healer as Player;
+            var levelScalingMod = LevelScaling.GetPlayerBoostSpellScalar(sourcePlayerHealer, creature);
+
+            tickAmountTotal += tickAmount * levelScalingMod;
         }
 
         // apply healing ratings?
         tickAmountTotal *= creature.GetHealingRatingMod();
 
-        // do healing
+        // do healing immediately
         var healAmount = creature.UpdateVitalDelta(creature.Stamina, (int)Math.Round(tickAmountTotal));
 
         if (creature is Player player)
         {
             player.SendMessage($"You receive {healAmount} points of periodic stamina.", ChatMessageType.Broadcast);
+
+            // play heal vfx with optional delay
+            var vfxStrength = Math.Clamp(tickAmountTotal / 100, 0.1f, 1.0f);
+
+            if (vfxDelay > 0.0)
+            {
+                var actionChain = new ActionChain();
+                actionChain.AddDelaySeconds(vfxDelay);
+                actionChain.AddAction(player, () =>
+                {
+                    player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpYellow, vfxStrength));
+                });
+                actionChain.EnqueueChain();
+            }
+            else
+            {
+                player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpYellow, vfxStrength));
+            }
         }
     }
 
-    public void ApplyManaHealingTick(List<PropertiesEnchantmentRegistry> enchantments)
+    public void ApplyManaHealingTick(List<PropertiesEnchantmentRegistry> enchantments, double vfxDelay)
     {
         var creature = WorldObject as Creature;
         if (creature == null || creature.IsDead)
@@ -1748,18 +1781,40 @@ public class EnchantmentManager
             //var totalTicks = GetNumTicks(enchantment);
             var tickAmount = enchantment.StatModValue;
 
-            tickAmountTotal += tickAmount;
+            var healer = WorldObject.CurrentLandblock?.GetObject(enchantment.CasterObjectId);
+            var sourcePlayerHealer = healer as Player;
+            var levelScalingMod = LevelScaling.GetPlayerBoostSpellScalar(sourcePlayerHealer, creature);
+
+            tickAmountTotal += tickAmount * levelScalingMod;
         }
 
         // apply healing ratings?
         tickAmountTotal *= creature.GetHealingRatingMod();
 
-        // do healing
+        // do healing immediately
         var healAmount = creature.UpdateVitalDelta(creature.Mana, (int)Math.Round(tickAmountTotal));
 
         if (creature is Player player)
         {
             player.SendMessage($"You receive {healAmount} points of periodic mana.", ChatMessageType.Broadcast);
+
+            // play heal vfx with optional delay
+            var vfxStrength = Math.Clamp(tickAmountTotal / 100, 0.1f, 1.0f);
+
+            if (vfxDelay > 0.0)
+            {
+                var actionChain = new ActionChain();
+                actionChain.AddDelaySeconds(vfxDelay);
+                actionChain.AddAction(player, () =>
+                {
+                    player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpBlue, vfxStrength));
+                });
+                actionChain.EnqueueChain();
+            }
+            else
+            {
+                player.EnqueueBroadcast(new GameMessageScript(player.Guid, PlayScript.HealthUpBlue, vfxStrength));
+            }
         }
     }
 

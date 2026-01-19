@@ -234,6 +234,13 @@ public static class ScrollSpells
         SpellId.ManaBolt1,
         SpellId.DispelLifeBadSelf1,
         SpellId.DispelLifeBadOther1,
+
+        SpellId.VitalityMend1,
+        SpellId.VigorMend1,
+        SpellId.ClarityMend1,
+        SpellId.VitalityMendOther1,
+        SpellId.VigorMendOther1,
+        SpellId.ClarityMendOther1,
     };
 
     private static readonly List<SpellId> itemSpells = new List<SpellId>()
@@ -387,9 +394,9 @@ public static class ScrollSpells
                 continue;
             }
 
-            if (spellLevels.Count != MaxLevels)
+            if (spellLevels.Count < NumLevels)
             {
-                _log.Error($"ScrollSpells - expected {MaxLevels} levels for {spell}, found {spellLevels.Count}");
+                _log.Error($"ScrollSpells - spell {spell} has {spellLevels.Count} levels, need at least {NumLevels}");
                 continue;
             }
 

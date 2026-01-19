@@ -52,7 +52,8 @@ public static class StaminaTable
     {
         // Weapon tier and base cost
         weaponTier = Math.Clamp(weaponTier - 1, 0, 7);
-        var baseCost = weaponTier * 20 + 10;
+        int[] staminaCosts = [40, 60, 80, 90, 100, 105, 115, 120];
+        var baseCost = staminaCosts[weaponTier];
 
         // PowerLevel mod reduces stamina cost exponentially: i.e.  100% = 100% Cost,  75% = 56% Cost,  50% = 25% Cost,  25% = 6.25% Cost,  0% = 0% Cost (min 1)
         var powerLevelMod = (float)Math.Pow(powerAccuracyLevel, 2);

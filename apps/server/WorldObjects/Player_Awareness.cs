@@ -59,7 +59,7 @@ partial class Player
             return;
         }
 
-        var result = TestStealthInternal(EnterStealthDifficulty);
+        var result = TestStealthInternal(EnterStealthDifficulty, out _);
         switch (result)
         {
             case StealthTestResult.Success:
@@ -253,11 +253,11 @@ partial class Player
         var thieverySkill = GetCreatureSkill(Skill.Thievery);
         var isSpecialized = thieverySkill.AdvancementClass == SkillAdvancementClass.Specialized;
 
-        var result = TestStealthInternal(difficulty);
+        var result = TestStealthInternal(difficulty, out var tryPreserveWithStamina);
 
         if (result != StealthTestResult.Success)
         {
-            if (creature != null && TryPreserveStealthWithStamina(creature, isSpecialized))
+            if (creature != null && tryPreserveWithStamina && TryPreserveStealthWithStamina(creature, isSpecialized))
             {
                 return true;
             }
@@ -347,8 +347,10 @@ partial class Player
         Success
     }
 
-    private StealthTestResult TestStealthInternal(uint difficulty)
+    private StealthTestResult TestStealthInternal(uint difficulty, out bool tryPreserveWithStamina)
     {
+        tryPreserveWithStamina = false;
+
         var thieverySkill = GetCreatureSkill(Skill.Thievery); // Thievery
         if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
         {
@@ -358,6 +360,11 @@ partial class Player
         var moddedThieverySkill = GetModdedThieverySkill();
 
         var chance = SkillCheck.GetSkillChance(moddedThieverySkill, difficulty);
+
+        if (chance >= 0.5)
+        {
+            tryPreserveWithStamina = true;
+        }
 
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
 

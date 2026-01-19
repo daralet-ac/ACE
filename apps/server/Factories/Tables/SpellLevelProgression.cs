@@ -7745,6 +7745,72 @@ public static class SpellLevelProgression
         SpellId.SigilTrinketCriticalDamageBoost7
     };
 
+    public static readonly List<SpellId> VitalityMendSelf = new List<SpellId>()
+    {
+        SpellId.VitalityMend1,
+        SpellId.VitalityMend2,
+        SpellId.VitalityMend3,
+        SpellId.VitalityMend4,
+        SpellId.VitalityMend5,
+        SpellId.VitalityMend6,
+        SpellId.VitalityMend7
+    };
+
+    public static readonly List<SpellId> VitalityMendOther = new List<SpellId>()
+    {
+        SpellId.VitalityMendOther1,
+        SpellId.VitalityMendOther2,
+        SpellId.VitalityMendOther3,
+        SpellId.VitalityMendOther4,
+        SpellId.VitalityMendOther5,
+        SpellId.VitalityMendOther6,
+        SpellId.VitalityMendOther7
+    };
+
+    public static readonly List<SpellId> VigorMendSelf = new List<SpellId>()
+    {
+        SpellId.VigorMend1,
+        SpellId.VigorMend2,
+        SpellId.VigorMend3,
+        SpellId.VigorMend4,
+        SpellId.VigorMend5,
+        SpellId.VigorMend6,
+        SpellId.VigorMend7
+    };
+
+    public static readonly List<SpellId> VigorMendOther = new List<SpellId>()
+    {
+        SpellId.VigorMendOther1,
+        SpellId.VigorMendOther2,
+        SpellId.VigorMendOther3,
+        SpellId.VigorMendOther4,
+        SpellId.VigorMendOther5,
+        SpellId.VigorMendOther6,
+        SpellId.VigorMendOther7
+    };
+
+    public static readonly List<SpellId> ClarityMendSelf = new List<SpellId>()
+    {
+        SpellId.ClarityMend1,
+        SpellId.ClarityMend2,
+        SpellId.ClarityMend3,
+        SpellId.ClarityMend4,
+        SpellId.ClarityMend5,
+        SpellId.ClarityMend6,
+        SpellId.ClarityMend7
+    };
+
+    public static readonly List<SpellId> ClarityMendOther = new List<SpellId>()
+    {
+        SpellId.ClarityMendOther1,
+        SpellId.ClarityMendOther2,
+        SpellId.ClarityMendOther3,
+        SpellId.ClarityMendOther4,
+        SpellId.ClarityMendOther5,
+        SpellId.ClarityMendOther6,
+        SpellId.ClarityMendOther7
+    };
+
     static SpellLevelProgression()
     {
         // takes ~5ms
@@ -8503,6 +8569,12 @@ public static class SpellLevelProgression
         AddSpells(SigilDamage);
         AddSpells(SigilCritChance);
         AddSpells(SigilCritDamage);
+        AddSpells(VitalityMendSelf);
+        AddSpells(VitalityMendOther);
+        AddSpells(VigorMendSelf);
+        AddSpells(VigorMendOther);
+        AddSpells(ClarityMendSelf);
+        AddSpells(ClarityMendOther);
     }
 
     private static void AddSpells(List<SpellId> spells)

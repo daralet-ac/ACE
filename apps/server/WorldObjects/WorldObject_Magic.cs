@@ -806,7 +806,7 @@ partial class WorldObject
         var addResult = target.EnchantmentManager.Add(spell, caster, weapon, equip);
 
         // Ward reduction of Creature and Life debuffs
-        if (target is Player && spell.Id != (uint)SpellId.Vitae)
+        if (target is Player && !IsWardExcludedSpell(spell))
         {
             //Console.WriteLine("enchantment target player: " + target.Name);
             var targetPlayer = target as Player;
@@ -1095,12 +1095,6 @@ partial class WorldObject
 
             // reductions
             tryBoost = Convert.ToInt32(tryBoost * (1.0f - Jewel.GetJewelEffectMod(player, PropertyInt.GearVitalsTransfer)));
-
-            // Recent Void Spell Cast Mod - Lower all healing spell effects for 10 seconds.
-            if (player is not null && player.LastVoidSpellCastTime + player.LastVoidSpellCastPenaltyLength > Time.GetUnixTime())
-            {
-                tryBoost = Convert.ToInt32(tryBoost * 0.5f);
-            }
         }
         else // harm
         {
@@ -1661,12 +1655,6 @@ partial class WorldObject
                 destVitalChange = Convert.ToUInt32(destVitalChange * archetypeSpellDamageMod);
             }
 
-            // Recent Void Spell Cast Mod - Lower all healing spell effects for 10 seconds.
-            if (player is not null && player.LastVoidSpellCastTime + player.LastVoidSpellCastPenaltyLength > Time.GetUnixTime())
-            {
-                destVitalChange = (uint)(destVitalChange * 0.5f);
-            }
-
             // LEVEL SCALING - Reduce Drain effectiveness vs. monsters, and increase vs. player
             if (spell.TransferFlags.HasFlag(TransferFlags.TargetSource | TransferFlags.CasterDestination))
             {
@@ -1708,7 +1696,7 @@ partial class WorldObject
                 var shouldIncreaseCharge =
                     destVitalChange > 0 &&
                     (
-                        transferSource is not Player || 
+                        transferSource is not Player ||
                         (transferSource is Player && destination != transferSource)
                     );
 
@@ -1770,7 +1758,7 @@ partial class WorldObject
 
             var chargedMsg = "";
 
-            if (player is {OverloadStanceIsActive: true} or {BatteryStanceIsActive: true})
+            if (player is { OverloadStanceIsActive: true } or { BatteryStanceIsActive: true })
             {
                 var chargedPercent = Math.Round(player.ManaChargeMeter * 100);
                 chargedMsg = $"{chargedPercent}% Charged! ";
@@ -3470,6 +3458,9 @@ partial class WorldObject
             && spell.Category != SpellCategory.HealKitRegen
             && spell.Category != SpellCategory.StaminaKitRegen
             && spell.Category != SpellCategory.ManaKitRegen
+            && spell.Category != SpellCategory.VitalityMend
+            && spell.Category != SpellCategory.VigorMend
+            && spell.Category != SpellCategory.ClarityMend
         )
         {
             _log.Error(
@@ -3822,5 +3813,23 @@ partial class WorldObject
         var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
 
         return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
+    }
+
+    /// <summary>
+    /// Spells that are excluded from ward level debuff duration reduction
+    /// </summary>
+    private static readonly HashSet<SpellId> WardExcludedSpells = new HashSet<SpellId>()
+{
+    SpellId.Vitae,
+    SpellId.RestorationResonance,
+    SpellId.VoidRestorationPenalty
+};
+
+    /// <summary>
+    /// Checks if a spell should be excluded from ward level debuff duration reduction
+    /// </summary>
+    private static bool IsWardExcludedSpell(Spell spell)
+    {
+        return WardExcludedSpells.Contains((SpellId)spell.Id);
     }
 }
