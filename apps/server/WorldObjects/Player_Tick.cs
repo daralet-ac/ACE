@@ -173,6 +173,7 @@ partial class Player
         }
 
         base.Heartbeat(currentUnixTime);
+        ResonanceManager.Zones?.TryHandlePlayer(this, currentUnixTime);
     }
 
     public static float MaxSpeed = 50;

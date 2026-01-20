@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ACE.Database.Models.Shard;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace ACE.Database;
 
@@ -170,6 +171,155 @@ public class ShardConfigDatabase
             return context.ConfigPropertiesString.AsNoTracking().ToList();
         }
     }
+    public bool DeleteResonanceZoneEntry(int id)
+    {
+        using var context = new ShardDbContext();
+
+        var entry = context.ResonanceZoneEntries.FirstOrDefault(z => z.Id == id);
+        if (entry == null)
+        {
+            return false;
+        }
+
+        context.ResonanceZoneEntries.Remove(entry);
+        context.SaveChanges();
+        return true;
+    }
+
+    public ResonanceZoneRow FindResonanceZoneNear(
+        uint cellId,
+        float x,
+        float y,
+        float z,
+        float tolerance)
+    {
+        using var context = new ShardDbContext();
+
+        // Pull same-cell zones only (cheap filter)
+        var candidates = context.ResonanceZoneEntries
+            .Where(z => z.CellId == cellId)
+            .AsNoTracking()
+            .ToList();
+
+        ResonanceZoneRow best = null;
+        var bestDistSq = tolerance * tolerance;
+
+        foreach (var zne in candidates)
+        {
+            var dx = zne.X - x;
+            var dy = zne.Y - y;
+            var dz = zne.Z - z;
+            var distSq = dx * dx + dy * dy + dz * dz;
+
+            if (distSq <= bestDistSq)
+            {
+                best = zne;
+                bestDistSq = distSq;
+            }
+        }
+
+        return best;
+    }
+    public IReadOnlyList<ResonanceZoneRow> GetResonanceZoneEntriesAll()
+    {
+        using var context = new ShardDbContext();
+        return context.ResonanceZoneEntries
+            .AsNoTracking()
+            .ToList();
+    }
+
+    public List<ResonanceZoneRow> GetResonanceZoneEntriesEnabled()
+    {
+        using var context = new ShardDbContext();
+        return context.ResonanceZoneEntries
+            .AsNoTracking()
+            .Where(z => z.IsEnabled)
+            .ToList();
+    }
+    public List<ResonanceZoneRow> GetResonanceZoneEntriesDisabled()
+    {
+        using var context = new ShardDbContext();
+        return context.ResonanceZoneEntries
+            .AsNoTracking()
+            .Where(z => !z.IsEnabled)
+            .ToList();
+    }
+    public ACE.Database.Models.Shard.ResonanceZoneRow GetResonanceZoneEntryById(int id)
+    {
+        using var context = new ShardDbContext();
+        return context.ResonanceZoneEntries
+            .AsNoTracking()
+            .FirstOrDefault(r => r.Id == id);
+    }
+
+    public DateTime? GetResonanceZoneEntriesLastModifiedUtc()
+    {
+        using var context = new ShardDbContext();
+        return context.ResonanceZoneEntries
+            .AsNoTracking()
+            .Max(z => (DateTime?)z.ModifiedAt);
+    }
+
+    public int InsertResonanceZoneEntry(ResonanceZoneRow entry)
+    {
+        using var context = new ShardDbContext();
+        context.ResonanceZoneEntries.Add(entry);
+        entry.ModifiedAt = DateTime.UtcNow;
+        context.SaveChanges();
+        return entry.Id;
+    }
+    public bool UpdateResonanceZoneEntry(
+        int id,
+        string name,
+        float? radius,
+        float? maxDistance,
+        string shroudEventKey,
+        string stormEventKey,
+        bool? isEnabled = null)
+    {
+        using var context = new ShardDbContext();
+
+        var entry = context.ResonanceZoneEntries.FirstOrDefault(z => z.Id == id);
+        if (entry == null)
+        {
+            return false;
+        }
+
+        if (name != null)
+        {
+            entry.Name = name;
+        }
+
+        if (radius.HasValue)
+        {
+            entry.Radius = radius.Value;
+        }
+
+        if (maxDistance.HasValue)
+        {
+            entry.MaxDistance = maxDistance.Value;
+        }
+
+        if (shroudEventKey != null)
+        {
+            entry.ShroudEventKey = shroudEventKey;
+        }
+
+        if (stormEventKey != null)
+        {
+            entry.StormEventKey = stormEventKey;
+        }
+
+        if (isEnabled.HasValue)
+        {
+            entry.IsEnabled = isEnabled.Value;
+        }
+        entry.ModifiedAt = DateTime.UtcNow;
+        context.SaveChanges();
+        return true;
+    }
+
+
 
     public void SaveBool(ConfigPropertiesBoolean stat)
     {
