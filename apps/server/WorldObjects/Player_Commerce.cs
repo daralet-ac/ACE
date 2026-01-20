@@ -83,6 +83,8 @@ partial class Player
                 }
                 else
                 {
+                    CheckForQuestStampOnPurchase(item);
+
                     // trigger pickup emote on the created item (if present)
                     try
                     {
@@ -111,6 +113,8 @@ partial class Player
                 // this was only for when the unique item was sold to the vendor,
                 // to determine when the item should rot on the vendor. it gets removed now
                 item.SoldTimestamp = null;
+
+                CheckForQuestStampOnPurchase(item);
 
                 // trigger pickup emote on the created unique item (if present)
                 try
@@ -142,6 +146,16 @@ partial class Player
         var altCurrencySpent = vendor.AlternateCurrency != null ? cost : 0;
 
         vendor.ApproachVendor(this, VendorType.Buy, altCurrencySpent);
+    }
+
+    private void CheckForQuestStampOnPurchase(WorldObject item)
+    {
+        // Check if item has a quest stamp property and stamp it
+        var questOnPurchase = item.GetProperty(PropertyString.Quest);
+        if (!string.IsNullOrWhiteSpace(questOnPurchase))
+        {
+            QuestManager.Stamp(questOnPurchase);
+        }
     }
 
     // player selling items to vendor
