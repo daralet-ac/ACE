@@ -318,7 +318,18 @@ public class ContractManager
                     }
 
                     // Bestow the contract
-                    Add(contract.ContractId);
+                    var success = Add(contract.ContractId);
+
+                    if (success)
+                    {
+                        // Send message to player
+                        Player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                $"You have received a new task: {contract.ContractName}!",
+                                ChatMessageType.Broadcast
+                            )
+                        );
+                    }
                 }
             }
         }
