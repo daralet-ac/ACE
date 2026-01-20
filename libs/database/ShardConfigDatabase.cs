@@ -265,7 +265,7 @@ public class ShardConfigDatabase
         context.SaveChanges();
         return entry.Id;
     }
-   public bool UpdateResonanceZoneEntry(
+    public bool UpdateResonanceZoneEntry(
         int id,
         string name,
         float? radius,
