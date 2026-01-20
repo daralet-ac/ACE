@@ -363,5 +363,6 @@ public enum ContractId : uint
     Contract_358_Ability__Relentless,
     Contract_359_Ability__Riposte,
     Contract_360_Ability__Smokescreen,
-    Contract_361_Ability__Steady_Strike
+    Contract_361_Ability__Steady_Strike,
+    Contract_362_Sigil_Slot__Blue
 }
