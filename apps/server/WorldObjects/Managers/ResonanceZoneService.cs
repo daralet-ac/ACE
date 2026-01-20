@@ -677,9 +677,6 @@ public class ResonanceZoneService
         ResonanceZoneEntry chosenZone = null;
         var chosenDistSq = float.MaxValue;
 
-        // track overlaps (eligible zones only)
-        List<(string name, float distSq)> overlaps = null;
-
         foreach (var zone in zones)
         {
             if (!IsZoneEventActive(zone))
@@ -707,9 +704,6 @@ public class ResonanceZoneService
                 chosenZone = zone;
                 chosenDistSq = distanceSq;
             }
-
-            overlaps ??= new List<(string, float)>();
-            overlaps.Add((zone.Name, distanceSq));
         }
 
         if (chosenZone == null)
