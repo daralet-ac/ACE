@@ -55,8 +55,8 @@ public class RZModify
             return;
         }
 
-        uint id;
-        if (!uint.TryParse(parameters[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out id))
+        int id;
+        if (!int.TryParse(parameters[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out id))
         {
             CommandHandlerHelper.WriteOutputInfo(session, "Invalid id. Usage: /rzmodify <id> ...", ChatMessageType.Help);
             return;
