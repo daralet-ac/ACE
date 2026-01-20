@@ -41,6 +41,10 @@ public partial class Player : Creature, IPlayer
 
     public bool LastContact = true;
 
+    /// Debounce guard for town attunement overflow messaging (Quest{Town} completions > 5).
+    /// Stored as unix time (seconds) to prevent chat spam when multiple stamps occur in quick succession.
+    public uint LastTownAttunementMsgTime;
+
     public Player P_PetOwner;
 
     public LandblockId? CapstoneDungeon;
