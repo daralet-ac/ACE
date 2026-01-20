@@ -123,7 +123,7 @@ public class ResonanceZoneService
 
         var shroudKeyZones = 0;
         var stormKeyZones = 0;
-        var ungatedZones = 0;   // neither key set → always "zone active" per IsZoneEventActive :contentReference[oaicite:2]{index=2}
+        var ungatedZones = 0;   // neither key set → always "zone active" per IsZoneEventActive
 
         foreach (var z in config.Zones)
         {
