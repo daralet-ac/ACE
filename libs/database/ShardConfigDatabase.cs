@@ -247,7 +247,9 @@ public class ShardConfigDatabase
     public ACE.Database.Models.Shard.ResonanceZoneRow GetResonanceZoneEntryById(int id)
     {
         using var context = new ShardDbContext();
-        return context.ResonanceZoneEntries.FirstOrDefault(r => r.Id == id);
+        return context.ResonanceZoneEntries
+            .AsNoTracking()
+            .FirstOrDefault(r => r.Id == id);
     }
 
     public DateTime? GetResonanceZoneEntriesLastModifiedUtc()
