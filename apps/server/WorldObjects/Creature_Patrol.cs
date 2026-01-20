@@ -1,7 +1,7 @@
 using ACE.Entity.Enum.Properties;
 using ACE.Server.WorldObjects.Patrol;
-using System.Numerics;      
-using ACE.Entity.Enum;  
+using System.Numerics;
+using ACE.Entity.Enum;
 namespace ACE.Server.WorldObjects;
 
 partial class Creature
@@ -16,6 +16,9 @@ partial class Creature
         {
             if (!HasPatrol)
             {
+                // Patrol disabled at runtime (e.g., emote toggle).
+                // Clear component state so re-enable starts clean without carrying stale waypoint state.
+                _patrol = null;
                 return null;
             }
 
@@ -23,7 +26,7 @@ partial class Creature
             return _patrol;
         }
     }
-
+    
     public void PatrolUpdate(double currentUnixTime)
     {
         Patrol?.Update(currentUnixTime);

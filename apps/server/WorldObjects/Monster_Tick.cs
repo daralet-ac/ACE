@@ -8,15 +8,11 @@ partial class Creature
     protected const double monsterTickInterval = 0.2;
     protected const double monsterThreatTickInterval = 1.0;
     protected const double monsterTargetScanInterval = 2.0;
-
     public double NextMonsterTickTime;
     public double NextMonsterThreatTickTime;
     public double NextMonsterTargetScanTime;
-
     private bool firstUpdate = true;
     private const bool DebugPatrolTargets = false;
-
-
     /// <summary>
     /// Primary dispatch for monster think
     /// </summary>
@@ -31,7 +27,6 @@ partial class Creature
                 MonsterState = State.Awake;
             }
         }
-
 
         if (IsChessPiece && this is GamePiece gamePiece)
         {
@@ -48,14 +43,12 @@ partial class Creature
 
         NextMonsterTickTime = currentUnixTime + monsterTickInterval;
 
-
         if (!IsAwake)
         {
             if (MonsterState == State.Return)
             {
                 MonsterState = State.Idle;
             }
-
             // Periodic scan for stationary players
             if (currentUnixTime > NextMonsterTargetScanTime)
             {
@@ -67,7 +60,6 @@ partial class Creature
             {
                 FactionMob_CheckMonsters();
             }
-
             return;
         }
 
@@ -75,7 +67,6 @@ partial class Creature
         {
             return;
         }
-
         // If we're busy running an emote or finishing an animation, do not advance patrol.
         // This gives a small "refocus" window and prevents moving while emoting.
         if (EmoteManager.IsBusy)
@@ -88,27 +79,18 @@ partial class Creature
                     CancelMoveToForEmote();
                     PatrolResetDestination();
                 }
-
                 // Busy means stop; patrol resumes after emote finishes.
             }
-
             return;
         }
 
-
-
-
-
         HandlePlayerCountScaling();
-
         HandleFindTarget();
-
         // If combat starts, drop any in-flight patrol destination so we don't stall after combat
         if (HasPatrol && AttackTarget != null)
         {
             PatrolResetDestination();
         }
-
         // Patrol: prevent getting stuck targeting a dead creature (required so patrol can resume)
         if (HasPatrol && AttackTarget is Creature at && at.IsDead)
         {
@@ -122,21 +104,16 @@ partial class Creature
             AttackTarget = null;
             CurrentAttack = null;
             firstUpdate = true;
-
             // Patrolling creatures bypass Sleep(); ensure we leave combat stance when combat ends.
             if (CombatMode != CombatMode.NonCombat)
             {
                 SetCombatMode(CombatMode.NonCombat);
             }
-
             // Prevent re-acquiring the same dead target via threat/retaliate bookkeeping
             ClearRetaliateTargets();
-
             // If combat interrupted an in-flight patrol MoveTo, drop the stale destination
             PatrolResetDestination();
         }
-
-
 
         if (!HasPatrol)
         {
@@ -170,8 +147,6 @@ partial class Creature
             }
         }
 
-
-
         if (MonsterState == State.Return)
         {
             Movement();
@@ -179,7 +154,6 @@ partial class Creature
         }
 
         var combatPet = this as CombatPet;
-
         var creatureTarget = AttackTarget as Creature;
         var playerTarget = AttackTarget as Player;
 

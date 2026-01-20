@@ -176,7 +176,7 @@ partial class Creature
             var patrolScan = GetProperty(PropertyFloat.PatrolScanInterval);
             if (patrolScan != null && patrolScan.Value > 0.05f)
             {
-                next = patrolScan.Value; 
+                next = patrolScan.Value;
             }
             else
             {

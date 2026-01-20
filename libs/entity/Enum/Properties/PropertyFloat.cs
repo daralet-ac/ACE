@@ -303,7 +303,6 @@ public enum PropertyFloat : ushort
     ArmorResourcePenalty = 20021,
     ArmorDeceptionMod = 20022,
     ArmorTwohandedCombatMod = 20023,
-
     BaseArmorWarMagicMod = 20024,
     BaseArmorLifeMagicMod = 20025,
     BaseArmorMagicDefMod = 20026,
@@ -327,20 +326,23 @@ public enum PropertyFloat : ushort
     BaseArmorResourcePenalty = 20044,
     BaseArmorDeceptionMod = 20045,
     BaseArmorTwohandedCombatMod = 20046,
-
     BaseWeaponPhysicalDefense = 20047,
     BaseWeaponMagicalDefense = 20048,
     BaseWeaponOffense = 20049,
     BaseDamageMod = 20050,
     BaseElementalDamageMod = 20051,
     BaseManaConversionMod = 20052,
-
+    
     [ServerOnly]
     PatrolSpeed = 20053,
-
+    
     [ServerOnly]
     PatrolScanInterval = 20054,
+    
+    [ServerOnly]
     PatrolPauseMinSeconds = 20055,
+    
+    [ServerOnly]
     PatrolPauseMaxSeconds = 20056,
 }
 

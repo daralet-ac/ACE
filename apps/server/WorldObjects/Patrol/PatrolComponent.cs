@@ -165,9 +165,6 @@ public sealed class PatrolComponent
                     _pauseOnArrivalSeconds = 0f;
                     return;
                 }
-
-
-                _pauseOnArrivalSeconds = 0f;
             }
         }
 
