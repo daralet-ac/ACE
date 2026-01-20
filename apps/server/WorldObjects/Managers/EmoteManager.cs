@@ -3330,16 +3330,36 @@ public class EmoteManager
 
         if (WorldObject is Creature creature && creature.IsAwake)
         {
-            return;
+            // Patrol mobs are always "awake" so they can think/move.
+            // Still allow heartbeat emotes while patrolling, but only when not in combat.
+            if (!(creature.HasPatrol && creature.AttackTarget == null))
+            {
+                return;
+            }
         }
 
         ExecuteEmoteSet(EmoteCategory.HeartBeat);
     }
 
+
     public void OnUse(Creature activator)
     {
+        // Don't let player 'Use' interrupt combat AI.
+        if (WorldObject is Creature usedCreature && usedCreature.AttackTarget != null)
+        {
+            return;
+        }
+
+        if (WorldObject is Creature creature && creature.HasPatrol && creature.AttackTarget == null)
+        {
+            creature.CancelMoveToForEmote();
+            creature.PatrolResetDestination();
+        }
+
         ExecuteEmoteSet(EmoteCategory.Use, null, activator);
     }
+
+
 
     public void OnPortal(Creature activator)
     {

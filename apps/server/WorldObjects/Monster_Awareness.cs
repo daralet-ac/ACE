@@ -61,6 +61,11 @@ partial class Creature
     /// </summary>
     protected virtual void Sleep()
     {
+        if (HasPatrol)
+        {
+            return;
+        }
+
         if (DebugMove)
         {
             Console.WriteLine($"{Name} ({Guid}).Sleep()");
@@ -163,13 +168,25 @@ partial class Creature
 
     private void SetNextTargetTime()
     {
-        // use rng?
+        // Default monster cadence
+        var next = 5.0;
 
-        //var rng = ThreadSafeRandom.Next(5.0f, 10.0f);
-        var rng = 5.0f;
+        if (HasPatrol)
+        {
+            var patrolScan = GetProperty(PropertyFloat.PatrolScanInterval);
+            if (patrolScan != null && patrolScan.Value > 0.05f)
+            {
+                next = patrolScan.Value;
+            }
+            else
+            {
+                next = 1.0;
+            }
+        }
 
-        NextFindTarget = Timers.RunningTime + rng;
+        NextFindTarget = Timers.RunningTime + next;
     }
+
 
     private bool DebugThreatSystem
     {
@@ -277,6 +294,12 @@ partial class Creature
         // stopwatch.Restart();
         try
         {
+            if (HasPatrol)
+            {
+                SetNextTargetTime();
+                return PatrolFindNextTarget();
+            }
+
             SelectTargetingTactic();
             SetNextTargetTime();
 
