@@ -723,6 +723,12 @@ public class QuestManager
     {
         var questName = GetQuestName(questFormat);
         Update(questName); // ??
+
+        // Check if any contracts should be bestowed based on this quest stamp
+        if (Creature is Player player)
+        {
+            player.ContractManager.CheckAndBestowContractsOnQuestStamp(questName);
+        }
     }
 
     /// <summary>

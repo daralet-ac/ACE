@@ -283,6 +283,47 @@ public class ContractManager
         }
     }
 
+    /// <summary>
+    /// Checks all contracts in the DAT file for matching QuestflagStarted field.
+    /// If a match is found and the player doesn't already have the contract, bestow it.
+    /// </summary>
+    public void CheckAndBestowContractsOnQuestStamp(string questName)
+    {
+        var contractTable = DatManager.PortalDat.ContractTable;
+
+        if (contractTable?.Contracts == null)
+        {
+            return;
+        }
+
+        var questNameLower = questName.ToLower();
+
+        foreach (var contractEntry in contractTable.Contracts)
+        {
+            var contract = contractEntry.Value;
+
+            // Check if this contract has a QuestflagStarted that matches the quest stamp
+            if (!string.IsNullOrWhiteSpace(contract.QuestflagStarted) &&
+                contract.QuestflagStarted.Equals(questName, StringComparison.OrdinalIgnoreCase))
+            {
+                // Check if player already has this contract
+                if (!HasContract(contract.ContractId))
+                {
+                    if (Debug)
+                    {
+                        Console.WriteLine(
+                            $"{Player.Name}.ContractManager.CheckAndBestowContractsOnQuestStamp({questName}): " +
+                            $"Bestowing contract {contract.ContractName} ({contract.ContractId})"
+                        );
+                    }
+
+                    // Bestow the contract
+                    Add(contract.ContractId);
+                }
+            }
+        }
+    }
+
     private void Update(uint contractId)
     {
         if (Debug)
