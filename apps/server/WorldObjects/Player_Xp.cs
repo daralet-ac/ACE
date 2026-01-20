@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ACE.Common;
 using ACE.Common.Extensions;
@@ -831,6 +832,9 @@ partial class Player
             SetPlayerAllegianceRankContribution();
 
             CheckForBetaQuestComplete();
+
+            // Stamp quest for reaching specific levels
+            CheckForLevelQuestStamp();
         }
     }
 
@@ -1198,4 +1202,29 @@ partial class Player
     //        case < 100: return (int)DatManager.PortalDat.XpTable.CharacterLevelXPList[20 + 1];
     //    }
     //}
+
+    /// <summary>
+    /// List of levels that should grant a quest stamp when reached
+    /// </summary>
+    private static readonly HashSet<int> LevelQuestStampLevels = new HashSet<int>
+    {
+        10, 20, 30, 40, 50, 75, 100
+    };
+
+    /// <summary>
+    /// Stamps a quest for reaching specific character levels
+    /// </summary>
+    private void CheckForLevelQuestStamp()
+    {
+        if (Level == null)
+        {
+            return;
+        }
+
+        if (LevelQuestStampLevels.Contains(Level.Value))
+        {
+            var questName = $"Level{Level.Value}";
+            QuestManager.Stamp(questName);
+        }
+    }
 }
