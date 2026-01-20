@@ -83,6 +83,13 @@ partial class Player
                 }
                 else
                 {
+                    // Check if item has a quest stamp property and stamp it
+                    var questOnPurchase = item.GetProperty(PropertyString.Quest);
+                    if (!string.IsNullOrWhiteSpace(questOnPurchase))
+                    {
+                        QuestManager.Stamp(questOnPurchase);
+                    }
+
                     // trigger pickup emote on the created item (if present)
                     try
                     {
@@ -111,6 +118,13 @@ partial class Player
                 // this was only for when the unique item was sold to the vendor,
                 // to determine when the item should rot on the vendor. it gets removed now
                 item.SoldTimestamp = null;
+
+                // Check if item has a quest stamp property and stamp it
+                var questOnPurchase = item.GetProperty(PropertyString.Quest);
+                if (!string.IsNullOrWhiteSpace(questOnPurchase))
+                {
+                    QuestManager.Stamp(questOnPurchase);
+                }
 
                 // trigger pickup emote on the created unique item (if present)
                 try
