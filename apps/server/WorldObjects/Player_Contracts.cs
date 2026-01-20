@@ -19,16 +19,21 @@ partial class Player
         // Check if this contract can be abandoned
         if (NonAbandonableContracts.Contains((ContractId)contractId))
         {
-            var datContract = ContractManager.GetContractFromDat(contractId);
-            var contractName = datContract?.ContractName ?? "This task";
+            // Allow abandoning if the contract is Done
+            var contractTracker = ContractManager.GetContractTracker(contractId);
+            if (contractTracker == null || contractTracker.Stage != Network.Structure.ContractStage.DoneOrPendingRepeat)
+            {
+                var datContract = ContractManager.GetContractFromDat(contractId);
+                var contractName = datContract?.ContractName ?? "This task";
 
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"The '{contractName}' task cannot be abandoned.",
-                    ChatMessageType.Broadcast
-                )
-            );
-            return;
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"The '{contractName}' task cannot be abandoned until completed.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return;
+            }
         }
 
         ContractManager.Abandon(contractId);
