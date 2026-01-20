@@ -688,8 +688,6 @@ public class ResonanceZoneService
             var diff = playerWorld - zoneWorld;
             var distanceSq = diff.LengthSquared();
 
-            var innerRadiusSq = zone.Radius * zone.Radius;
-
             // IMPORTANT: if MaxDistance is 0/unset, fall back to Radius
             var maxDist = (zone.MaxDistance > 0) ? zone.MaxDistance : zone.Radius;
             var maxDistSq = maxDist * maxDist;
