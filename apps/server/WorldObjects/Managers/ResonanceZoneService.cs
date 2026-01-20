@@ -893,8 +893,6 @@ public class ResonanceZoneService
         var clearance = (float)PropertyManager.GetDouble("rz_teleport_clearance", 0.5).Item;
         var maxfall   = (float)PropertyManager.GetDouble("rz_maxfall", 0.5).Item;
 
-        var originZ = player.Location.PositionZ;
-
         // Zone center in world space
         var zoneWorld = ToWorld2D(zone.Location);
 
