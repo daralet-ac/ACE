@@ -498,9 +498,9 @@ public class ResonanceZoneService
         }
 
         if (eligible.Count == 0)
-            {
-                return;
-            }
+        {
+            return;
+        }
 
         var target = eligible[_random.Next(eligible.Count)];
 
