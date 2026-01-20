@@ -693,9 +693,9 @@ public class ResonanceZoneService
             var maxDistSq = maxDist * maxDist;
 
             if (distanceSq > maxDistSq)
-                {
-                    continue; // not eligible
-                }
+            {
+                continue; // not eligible
+            }
             // eligible zone (within max distance + event active)
             if (chosenZone == null || distanceSq < chosenDistSq)
             {
