@@ -224,6 +224,7 @@ public class ShardConfigDatabase
     {
         using var context = new ShardDbContext();
         return context.ResonanceZoneEntries
+            .AsNoTracking()
             .ToList();
     }
 
