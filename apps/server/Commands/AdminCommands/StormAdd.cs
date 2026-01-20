@@ -79,7 +79,14 @@ public class StormAdd
 
         var existing = DatabaseManager.ShardConfig.FindResonanceZoneNear(cellId, x, y, z, MatchTolerance);
 
-        if (string.IsNullOrWhiteSpace(stormKey)) { /* reject */ }
+        if (string.IsNullOrWhiteSpace(stormKey))
+        {
+            CommandHandlerHelper.WriteOutputInfo(
+                session,
+                "Invalid or missing storm event key. Please specify event=<stormEventKey>.",
+                ChatMessageType.Help);
+            return;
+        }
         
         if (existing != null)
         {
