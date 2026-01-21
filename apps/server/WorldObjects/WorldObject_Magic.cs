@@ -3422,7 +3422,7 @@ partial class WorldObject
         var player = this as Player;
         var creatureSource = this as Creature;
 
-        var equippedWeapon = player.GetEquippedWeapon() ?? player.GetEquippedWand();
+        var equippedWeapon = player?.GetEquippedWeapon() ?? player?.GetEquippedWand();
 
         var damageRatingMod = 1.0f;
 
@@ -3490,12 +3490,6 @@ partial class WorldObject
         }
 
         enchantment_statModVal *= elementalDamageMod * attributeDamageMod * damageRatingMod;
-
-        //Console.WriteLine($"\nCalculateDotEnchantment_StatModValue()\n" +
-        //    $" -elementalDamageMod: {elementalDamageMod}\n" +
-        //    $" -attributeDamageMod: {attributeDamageMod}\n" +
-        //    $" -damageRatingMod: {damageRatingMod}\n" +
-        //    $" -statModVal: {enchantment_statModVal}");
 
         return enchantment_statModVal;
     }
