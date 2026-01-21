@@ -31,6 +31,7 @@ public class StormAdd
 
         return dict;
     }
+
     private const float MatchTolerance = 0.25f;
 
     [CommandHandler(
@@ -39,7 +40,7 @@ public class StormAdd
         CommandHandlerFlag.None,
         4,
         "Adds/updates a Portal Storm zone at your current location (updates an existing row if present).",
-        "stormadd (float radius) (float maxDistance) (string zoneName) (string stormEventKey)"
+        "stormadd key=<zoneKey> name=<name> radius=<float> max=<float> event=<stormEventKey>"
     )]
     public static void Handle(Session session, params string[] parameters)
     {
@@ -51,14 +52,24 @@ public class StormAdd
 
         var args = ParseNamedArgs(parameters);
 
-        if (!args.TryGetValue("radius", out var radiusStr) ||
+        if (!args.TryGetValue("key", out var zoneKey) ||
+            !args.TryGetValue("radius", out var radiusStr) ||
             !args.TryGetValue("max", out var maxStr) ||
             !args.TryGetValue("name", out var zoneName) ||
             !args.TryGetValue("event", out var stormKey))
         {
             CommandHandlerHelper.WriteOutputInfo(
                 session,
-                "Usage: /stormadd name=<name> radius=<float> max=<float> event=<stormEventKey>",
+                "Usage: /stormadd key=<zoneKey> name=<name> radius=<float> max=<float> event=<stormEventKey>",
+                ChatMessageType.Help);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(zoneKey))
+        {
+            CommandHandlerHelper.WriteOutputInfo(
+                session,
+                "Invalid or missing zone key. Please specify key=<zoneKey>.",
                 ChatMessageType.Help);
             return;
         }
@@ -87,7 +98,7 @@ public class StormAdd
                 ChatMessageType.Help);
             return;
         }
-        
+
         if (existing != null)
         {
             var ok = DatabaseManager.ShardConfig.UpdateResonanceZoneEntry(
@@ -112,6 +123,7 @@ public class StormAdd
 
         var row = new DbResonanceZoneEntry
         {
+            ZoneKey = zoneKey,
             IsEnabled = true,
             CellId = cellId,
 
