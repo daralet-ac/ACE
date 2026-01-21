@@ -10,6 +10,9 @@ public class ResonanceZoneRow
     [Key]
     [Column("id")]
     public int Id { get; set; }
+    
+    [Column("zone_key")]
+    public string ZoneKey { get; set; } = "";
 
     [Column("is_enabled")]
     public bool IsEnabled { get; set; }

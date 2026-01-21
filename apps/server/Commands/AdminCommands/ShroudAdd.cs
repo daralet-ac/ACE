@@ -40,7 +40,7 @@ public class ShroudAdd
         CommandHandlerFlag.None,
         4,
         "Adds/updates a Shroud zone at your current location (updates an existing row if present).",
-        "shroudadd (float radius) (float maxDistance) (string zoneName) (string shroudEventKey)"
+        "shroudadd key=<zoneKey> name=<name> radius=<float> max=<float> event=<shroudEventKey>"
     )]
     public static void Handle(Session session, params string[] parameters)
     {
@@ -52,14 +52,24 @@ public class ShroudAdd
 
         var args = ParseNamedArgs(parameters);
 
-        if (!args.TryGetValue("radius", out var radiusStr) ||
+        if (!args.TryGetValue("key", out var zoneKey) ||
+            !args.TryGetValue("radius", out var radiusStr) ||
             !args.TryGetValue("max", out var maxStr) ||
             !args.TryGetValue("name", out var zoneName) ||
             !args.TryGetValue("event", out var shroudKey))
         {
             CommandHandlerHelper.WriteOutputInfo(
                 session,
-                "Usage: /shroudadd name=<name> radius=<float> max=<float> event=<shroudEventKey>",
+                "Usage: /shroudadd key=<zoneKey> name=<name> radius=<float> max=<float> event=<shroudEventKey>",
+                ChatMessageType.Help);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(zoneKey))
+        {
+            CommandHandlerHelper.WriteOutputInfo(
+                session,
+                "Invalid or missing zone key. Please specify key=<zoneKey>.",
                 ChatMessageType.Help);
             return;
         }
@@ -80,8 +90,15 @@ public class ShroudAdd
 
         var existing = DatabaseManager.ShardConfig.FindResonanceZoneNear(cellId, x, y, z, MatchTolerance);
 
-        if (string.IsNullOrWhiteSpace(shroudKey)) { /* reject */ }
-        
+        if (string.IsNullOrWhiteSpace(shroudKey))
+        {
+            CommandHandlerHelper.WriteOutputInfo(
+                session,
+                "Invalid or missing shroud event key. Please specify event=<shroudEventKey>.",
+                ChatMessageType.Help);
+            return;
+        }
+
         if (existing != null)
         {
             var ok = DatabaseManager.ShardConfig.UpdateResonanceZoneEntry(
@@ -106,6 +123,7 @@ public class ShroudAdd
 
         var row = new DbResonanceZoneRow
         {
+            ZoneKey = zoneKey,
             IsEnabled = true,
             CellId = cellId,
 
