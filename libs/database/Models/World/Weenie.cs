@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace ACE.Database.Models.World;
@@ -86,4 +86,7 @@ public partial class Weenie
 
     public virtual ICollection<WeeniePropertiesTextureMap> WeeniePropertiesTextureMap { get; set; } =
         new List<WeeniePropertiesTextureMap>();
+
+    public virtual ICollection<WeeniePropertiesSurfaceMap> WeeniePropertiesSurfaceMap { get; set; } =
+        new List<WeeniePropertiesSurfaceMap>();
 }

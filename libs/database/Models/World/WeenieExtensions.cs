@@ -108,9 +108,32 @@ public static class WeenieExtensions
         return weenie.WeeniePropertiesPalette.FirstOrDefault(x => x.SubPaletteId == subPaletteId);
     }
 
-    public static WeeniePropertiesTextureMap GetTextureMap(this Weenie weenie, byte index)
+    public static WeeniePropertiesTextureMap GetTextureMap(
+        this Weenie weenie,
+        byte index,
+        uint oldId)
     {
-        return weenie.WeeniePropertiesTextureMap.FirstOrDefault(x => x.Index == index);
+        if (weenie?.WeeniePropertiesTextureMap == null)
+        {
+            return null;
+        }
+
+        return weenie.WeeniePropertiesTextureMap
+                     .FirstOrDefault(x => x.Index == index && x.OldId == oldId);
+    }
+
+    public static WeeniePropertiesSurfaceMap GetSurfaceMap(
+        this Weenie weenie,
+        byte index,
+        uint oldId)
+    {
+        if (weenie?.WeeniePropertiesSurfaceMap == null)
+        {
+            return null;
+        }
+
+        return weenie.WeeniePropertiesSurfaceMap
+                     .FirstOrDefault(x => x.Index == index && x.OldId == oldId);
     }
 
     public static WeeniePropertiesCreateList GetCreateList(this Weenie weenie, sbyte destinationType)

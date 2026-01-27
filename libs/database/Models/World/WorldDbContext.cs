@@ -119,6 +119,8 @@ public partial class WorldDbContext : DbContext
 
     public virtual DbSet<WeeniePropertiesTextureMap> WeeniePropertiesTextureMap { get; set; }
 
+    public virtual DbSet<WeeniePropertiesSurfaceMap> WeeniePropertiesSurfaceMap { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -1866,6 +1868,24 @@ public partial class WorldDbContext : DbContext
                 .WithMany(p => p.WeeniePropertiesTextureMap)
                 .HasForeignKey(d => d.ObjectId)
                 .HasConstraintName("wcid_texturemap");
+        });
+
+        modelBuilder.Entity<WeeniePropertiesSurfaceMap>(entity =>
+        {
+            entity.ToTable("weenie_properties_surface_map");
+
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ObjectId).HasColumnName("object_Id");
+            entity.Property(e => e.Index).HasColumnName("index");
+            entity.Property(e => e.OldId).HasColumnName("old_Id");
+            entity.Property(e => e.NewId).HasColumnName("new_Id");
+
+            entity.HasOne(e => e.Object)
+                  .WithMany(w => w.WeeniePropertiesSurfaceMap)
+                  .HasForeignKey(e => e.ObjectId)
+                  .HasPrincipalKey(w => w.ClassId);
         });
 
         OnModelCreatingPartial(modelBuilder);
