@@ -1672,12 +1672,9 @@ partial class WorldObject
         var db = DatabaseManager.World;
         var weenie = db.GetWeenie(WeenieClassId);
 
-        if (weenie == null)
-        {
-            return;
-        }
-
-        if (weenie.WeeniePropertiesSurfaceMap == null || weenie.WeeniePropertiesSurfaceMap.Count == 0)
+        if (weenie == null ||
+             weenie.WeeniePropertiesSurfaceMap == null ||
+             weenie.WeeniePropertiesSurfaceMap.Count == 0)
         {
             return;
         }

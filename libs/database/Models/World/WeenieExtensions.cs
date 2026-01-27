@@ -109,9 +109,9 @@ public static class WeenieExtensions
     }
 
     public static WeeniePropertiesTextureMap GetTextureMap(
-    this Weenie weenie,
-    byte index,
-    uint oldId)
+        this Weenie weenie,
+        byte index,
+        uint oldId)
     {
         if (weenie?.WeeniePropertiesTextureMap == null)
         {
