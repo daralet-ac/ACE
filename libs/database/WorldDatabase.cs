@@ -160,6 +160,10 @@ public class WorldDatabase
             .WeeniePropertiesTextureMap.Where(r => r.ObjectId == weenie.ClassId)
             .ToList();
 
+        weenie.WeeniePropertiesSurfaceMap = context
+            .WeeniePropertiesSurfaceMap.Where(r => r.ObjectId == weenie.ClassId)
+            .ToList();
+
         return weenie;
     }
 
@@ -214,6 +218,8 @@ public class WorldDatabase
             context.WeeniePropertiesSpellBook.Load();
 
             context.WeeniePropertiesTextureMap.Load();
+
+            context.WeeniePropertiesSurfaceMap.Load();
 
             return context.Weenie.ToList();
         }

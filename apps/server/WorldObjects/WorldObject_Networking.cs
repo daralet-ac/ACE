@@ -1674,35 +1674,17 @@ partial class WorldObject
 
         if (weenie == null)
         {
-            _log.Information("ApplySurfaceMapsToObjDesc: No weenie found for WCID {WeenieClassId}", WeenieClassId);
             return;
         }
 
         if (weenie.WeeniePropertiesSurfaceMap == null || weenie.WeeniePropertiesSurfaceMap.Count == 0)
         {
-            _log.Information(
-                "ApplySurfaceMapsToObjDesc: Weenie {WeenieClassId} has no surface map entries.",
-                WeenieClassId
-            );
             return;
         }
-
-        _log.Information(
-            "ApplySurfaceMapsToObjDesc: Weenie {WeenieClassId} has {Count} surface map entries.",
-            WeenieClassId,
-            weenie.WeeniePropertiesSurfaceMap.Count
-        );
 
         foreach (var map in weenie.WeeniePropertiesSurfaceMap)
         {
             var partIndex = (byte)map.Index;
-
-            _log.Information(
-                "ApplySurfaceMapsToObjDesc: map Index={Index}, OldId=0x{OldId:X8}, NewId=0x{NewId:X8}",
-                partIndex,
-                map.OldId,
-                map.NewId
-            );
 
             var textureMaps = ResolveSurfaceSwapToTextureMaps(partIndex, map.OldId, map.NewId);
 
@@ -1713,13 +1695,6 @@ partial class WorldObject
 
             foreach (var tm in textureMaps)
             {
-                _log.Information(
-                    "ApplySurfaceMapsToObjDesc: adding PropertiesTextureMap PartIndex={PartIndex}, OldTexture=0x{OldTex:X8}, NewTexture=0x{NewTex:X8}",
-                    tm.PartIndex,
-                    tm.OldTexture,
-                    tm.NewTexture
-                );
-
                 objDesc.AddTextureChange(new PropertiesTextureMap
                 {
                     PartIndex = tm.PartIndex,
@@ -1747,13 +1722,6 @@ partial class WorldObject
     uint oldSurfaceDid,
     uint newSurfaceDid)
     {
-        _log.Information(
-            "ResolveSurfaceSwapToTextureMaps: partIndex={PartIndex}, oldSurfaceDid=0x{OldDid:X8}, newSurfaceDid=0x{NewDid:X8}",
-            partIndex,
-            oldSurfaceDid,
-            newSurfaceDid
-        );
-
         if (oldSurfaceDid == 0 || newSurfaceDid == 0)
         {
             _log.Information("ResolveSurfaceSwapToTextureMaps: one of the surface DIDs is 0, aborting.");
@@ -1795,14 +1763,6 @@ partial class WorldObject
             newSurface.Type.HasFlag(SurfaceType.Base1Image) ||
             newSurface.Type.HasFlag(SurfaceType.Base1ClipMap);
 
-        _log.Debug(
-            "ResolveSurfaceSwapToTextureMaps: oldIsImage={OldIsImage}, newIsImage={NewIsImage}, oldTex=0x{OldTex:X8}, newTex=0x{NewTex:X8}",
-            oldIsImage,
-            newIsImage,
-            oldSurface.OrigTextureId,
-            newSurface.OrigTextureId
-        );
-
         if (!oldIsImage || !newIsImage)
         {
             _log.Information("ResolveSurfaceSwapToTextureMaps: non-image surfaces, skipping.");
@@ -1821,13 +1781,6 @@ partial class WorldObject
             );
             yield break;
         }
-
-        _log.Information(
-            "ResolveSurfaceSwapToTextureMaps: yielding texture swap PartIndex={PartIndex}, OldTexture=0x{OldTex:X8}, NewTexture=0x{NewTex:X8}",
-            partIndex,
-            oldTex,
-            newTex
-        );
 
         yield return new PropertiesTextureMap
         {
