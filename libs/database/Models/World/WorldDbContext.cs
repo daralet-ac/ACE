@@ -1874,7 +1874,7 @@ public partial class WorldDbContext : DbContext
         {
             entity.ToTable("weenie_properties_surface_map");
 
-            entity.HasKey(e => e.Id);
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.ObjectId).HasColumnName("object_Id");
