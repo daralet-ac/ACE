@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using ACE.Database;
 using ACE.DatLoader;
 using ACE.DatLoader.Entity;
 using ACE.DatLoader.FileTypes;
@@ -1641,6 +1642,199 @@ partial class WorldObject
             );
         }
         //AddTexture(0x10, DefaultMouthTextureDID.Value, MouthTextureDID.Value);
+
+        ApplySurfaceMapsToObjDesc(objDesc);
+
+        var biota = Biota;
+
+        if (biota?.PropertiesTextureMap != null)
+        {
+            foreach (var tm in biota.PropertiesTextureMap)
+            {
+                objDesc.AddTextureChange(new PropertiesTextureMap
+                {
+                    PartIndex = tm.PartIndex,
+                    OldTexture = tm.OldTexture,
+                    NewTexture = tm.NewTexture,
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Applies weenie_properties_surface_map entries (0x08 -> 0x08)
+    /// by translating them into PropertiesTextureMap entries on the ObjDesc.
+    /// This depends on custom surface-loading logic from portal.dat and is
+    /// intentionally isolated here.
+    /// </summary>
+    private void ApplySurfaceMapsToObjDesc(ACE.Entity.ObjDesc objDesc)
+    {
+        var db = DatabaseManager.World;
+        var weenie = db.GetWeenie(WeenieClassId);
+
+        if (weenie == null)
+        {
+            _log.Information("ApplySurfaceMapsToObjDesc: No weenie found for WCID {WeenieClassId}", WeenieClassId);
+            return;
+        }
+
+        if (weenie.WeeniePropertiesSurfaceMap == null || weenie.WeeniePropertiesSurfaceMap.Count == 0)
+        {
+            _log.Information(
+                "ApplySurfaceMapsToObjDesc: Weenie {WeenieClassId} has no surface map entries.",
+                WeenieClassId
+            );
+            return;
+        }
+
+        _log.Information(
+            "ApplySurfaceMapsToObjDesc: Weenie {WeenieClassId} has {Count} surface map entries.",
+            WeenieClassId,
+            weenie.WeeniePropertiesSurfaceMap.Count
+        );
+
+        foreach (var map in weenie.WeeniePropertiesSurfaceMap)
+        {
+            var partIndex = (byte)map.Index;
+
+            _log.Information(
+                "ApplySurfaceMapsToObjDesc: map Index={Index}, OldId=0x{OldId:X8}, NewId=0x{NewId:X8}",
+                partIndex,
+                map.OldId,
+                map.NewId
+            );
+
+            var textureMaps = ResolveSurfaceSwapToTextureMaps(partIndex, map.OldId, map.NewId);
+
+            if (textureMaps == null)
+            {
+                continue;
+            }
+
+            foreach (var tm in textureMaps)
+            {
+                _log.Information(
+                    "ApplySurfaceMapsToObjDesc: adding PropertiesTextureMap PartIndex={PartIndex}, OldTexture=0x{OldTex:X8}, NewTexture=0x{NewTex:X8}",
+                    tm.PartIndex,
+                    tm.OldTexture,
+                    tm.NewTexture
+                );
+
+                objDesc.AddTextureChange(new PropertiesTextureMap
+                {
+                    PartIndex = tm.PartIndex,
+                    OldTexture = tm.OldTexture,
+                    NewTexture = tm.NewTexture,
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Given a part index and an Old/New Surface (0x08) DID pair, return the
+    /// concrete texture swaps (0x05/0x06) needed to implement that at the client level.
+    ///
+    /// You should implement this method using your Surface loader:
+    /// - Read the "old" Surface and "new" Surface from portal.dat.
+    /// - For the relevant surface entry (matching this part index, or all if index == 0),
+    ///   compare their SurfaceTexture (0x05) lists and produce the differences as
+    ///   PropertiesTextureMap entries.
+    ///
+    /// For now this is left as a stub so you can wire in your own logic.
+    /// </summary>
+    private IEnumerable<PropertiesTextureMap> ResolveSurfaceSwapToTextureMaps(
+    byte partIndex,
+    uint oldSurfaceDid,
+    uint newSurfaceDid)
+    {
+        _log.Information(
+            "ResolveSurfaceSwapToTextureMaps: partIndex={PartIndex}, oldSurfaceDid=0x{OldDid:X8}, newSurfaceDid=0x{NewDid:X8}",
+            partIndex,
+            oldSurfaceDid,
+            newSurfaceDid
+        );
+
+        if (oldSurfaceDid == 0 || newSurfaceDid == 0)
+        {
+            _log.Information("ResolveSurfaceSwapToTextureMaps: one of the surface DIDs is 0, aborting.");
+            yield break;
+        }
+
+        Surface oldSurface = null;
+        Surface newSurface = null;
+
+        try
+        {
+            oldSurface = DatManager.PortalDat.ReadFromDat<Surface>(oldSurfaceDid);
+        }
+        catch (Exception ex)
+        {
+            _log.Warning(ex, "ResolveSurfaceSwapToTextureMaps: failed to read old Surface DID 0x{OldDid:X8}", oldSurfaceDid);
+        }
+
+        try
+        {
+            newSurface = DatManager.PortalDat.ReadFromDat<Surface>(newSurfaceDid);
+        }
+        catch (Exception ex)
+        {
+            _log.Warning(ex, "ResolveSurfaceSwapToTextureMaps: failed to read new Surface DID 0x{NewDid:X8}", newSurfaceDid);
+        }
+
+        if (oldSurface == null || newSurface == null)
+        {
+            _log.Information("ResolveSurfaceSwapToTextureMaps: oldSurface or newSurface is null, aborting.");
+            yield break;
+        }
+
+        var oldIsImage =
+            oldSurface.Type.HasFlag(SurfaceType.Base1Image) ||
+            oldSurface.Type.HasFlag(SurfaceType.Base1ClipMap);
+
+        var newIsImage =
+            newSurface.Type.HasFlag(SurfaceType.Base1Image) ||
+            newSurface.Type.HasFlag(SurfaceType.Base1ClipMap);
+
+        _log.Debug(
+            "ResolveSurfaceSwapToTextureMaps: oldIsImage={OldIsImage}, newIsImage={NewIsImage}, oldTex=0x{OldTex:X8}, newTex=0x{NewTex:X8}",
+            oldIsImage,
+            newIsImage,
+            oldSurface.OrigTextureId,
+            newSurface.OrigTextureId
+        );
+
+        if (!oldIsImage || !newIsImage)
+        {
+            _log.Information("ResolveSurfaceSwapToTextureMaps: non-image surfaces, skipping.");
+            yield break;
+        }
+
+        var oldTex = oldSurface.OrigTextureId;
+        var newTex = newSurface.OrigTextureId;
+
+        if (oldTex == 0 || newTex == 0 || oldTex == newTex)
+        {
+            _log.Information(
+                "ResolveSurfaceSwapToTextureMaps: invalid or identical texture IDs (old=0x{OldTex:X8}, new=0x{NewTex:X8}), skipping.",
+                oldTex,
+                newTex
+            );
+            yield break;
+        }
+
+        _log.Information(
+            "ResolveSurfaceSwapToTextureMaps: yielding texture swap PartIndex={PartIndex}, OldTexture=0x{OldTex:X8}, NewTexture=0x{NewTex:X8}",
+            partIndex,
+            oldTex,
+            newTex
+        );
+
+        yield return new PropertiesTextureMap
+        {
+            PartIndex = partIndex,
+            OldTexture = oldTex,
+            NewTexture = newTex
+        };
     }
 
     /// <summary>
