@@ -1722,7 +1722,6 @@ partial class WorldObject
     {
         if (oldSurfaceDid == 0 || newSurfaceDid == 0)
         {
-            _log.Information("ResolveSurfaceSwapToTextureMaps: one of the surface DIDs is 0, aborting.");
             yield break;
         }
 
@@ -1749,7 +1748,6 @@ partial class WorldObject
 
         if (oldSurface == null || newSurface == null)
         {
-            _log.Information("ResolveSurfaceSwapToTextureMaps: oldSurface or newSurface is null, aborting.");
             yield break;
         }
 
@@ -1763,7 +1761,6 @@ partial class WorldObject
 
         if (!oldIsImage || !newIsImage)
         {
-            _log.Information("ResolveSurfaceSwapToTextureMaps: non-image surfaces, skipping.");
             yield break;
         }
 
@@ -1772,17 +1769,8 @@ partial class WorldObject
 
         if (oldTex == 0 || newTex == 0 || oldTex == newTex)
         {
-            _log.Information(
-                "ResolveSurfaceSwapToTextureMaps: invalid or identical texture IDs (old=0x{OldTex:X8}, new=0x{NewTex:X8}), skipping.",
-                oldTex,
-                newTex
-            );
             yield break;
         }
-
-        _log.Information(
-    "ApplySurfaceMapsToObjDesc: Weenie {WeenieClassId} surface map index={Index} oldSurface=0x{Old:X8} newSurface=0x{New:X8} -> oldTex=0x{OldTex:X8} newTex=0x{NewTex:X8}",
-    WeenieClassId, partIndex, oldSurfaceDid, newSurfaceDid, oldTex, newTex);
 
         yield return new PropertiesTextureMap
         {
