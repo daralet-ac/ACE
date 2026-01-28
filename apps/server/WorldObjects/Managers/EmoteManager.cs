@@ -536,17 +536,49 @@ public class EmoteManager
                         out var wasEquipped
                     );
 
-                    if (wo?.StackSize > 1)
+                    if (wo != null)
                     {
-                        player.TryConsumeFromInventoryWithNetworking(wo, 1);
-                    }
-                    else if (wo?.StackSize == 1)
-                    {
-                        player.TryConsumeFromInventoryWithNetworking(wo);
+                        var woStackSize = wo.StackSize ?? 1;
+
+                        if (woStackSize > 1)
+                        {
+                            // Consume exactly one from the stack
+                            if (!player.TryConsumeFromInventoryWithNetworking(wo, 1))
+                            {
+                                // Optional: log, but do NOT delete directly
+                                WorldObject.EmoteManager?._log.Warning(
+                                    "[EMOTE] DeleteSelf: failed to consume 1x from stack 0x{Guid:X8}:{Name} for player {Player}",
+                                    wo.Guid.Full,
+                                    wo.Name,
+                                    player.Name
+                                );
+                            }
+                        }
+                        else
+                        {
+                            // Single item (or non-stackable) – remove via inventory API
+                            if (!player.TryConsumeFromInventoryWithNetworking(wo))
+                            {
+                                WorldObject.EmoteManager?._log.Warning(
+                                    "[EMOTE] DeleteSelf: failed to consume 0x{Guid:X8}:{Name} for player {Player}",
+                                    wo.Guid.Full,
+                                    wo.Name,
+                                    player.Name
+                                );
+                            }
+                        }
                     }
                     else
                     {
-                        WorldObject.DeleteObject();
+                        // We expected a player but couldn't resolve the item in their possession.
+                        // Do NOT call WorldObject.DeleteObject() here; that risks killing the wrong instance
+                        // and leaving a ghost item in the player's inventory.
+                        WorldObject.EmoteManager?._log.Warning(
+                            "[EMOTE] DeleteSelf: WorldObject 0x{Guid:X8}:{Name} not found in possessions of {Player}; skipping inventory delete.",
+                            WorldObject.Guid.Full,
+                            WorldObject.Name,
+                            player.Name
+                        );
                     }
                 }
                 else
