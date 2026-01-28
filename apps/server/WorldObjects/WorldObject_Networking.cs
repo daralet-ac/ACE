@@ -311,6 +311,19 @@ partial class WorldObject
     {
         var objDesc = CalculateObjDesc();
 
+        // Normalize texture changes: remove identity mappings and keep last mapping per (PartIndex, OldTexture)
+        if (objDesc.TextureChanges != null && objDesc.TextureChanges.Count > 0)
+        {
+            var deduped = objDesc.TextureChanges
+                .Where(t => t.OldTexture != t.NewTexture)
+                .GroupBy(t => new { t.PartIndex, t.OldTexture })
+                .Select(g => g.Last())
+                .ToList();
+
+            objDesc.TextureChanges.Clear();
+            objDesc.TextureChanges.AddRange(deduped);
+        }
+
         writer.Write((byte)0x11);
         writer.Write((byte)objDesc.SubPalettes.Count);
         writer.Write((byte)objDesc.TextureChanges.Count);
@@ -404,21 +417,8 @@ partial class WorldObject
 
         if ((physicsDescriptionFlag & PhysicsDescriptionFlag.Movement) != 0)
         {
-            /* OLD METHOD
-            var movementData = new MovementData(this, CurrentMotionState).Serialize();
-
-            writer.Write((uint)movementData.Length);
-
-            if (movementData.Length > 0)
-            {
-                writer.Write(movementData);
-                writer.Write(Convert.ToUInt32(CurrentMotionState.IsAutonomous));
-            }
-            */
-
             var movementData = new MovementData(this, CurrentMotionState);
 
-            // We'll come back to here to write the length
             var preWritePosition = writer.BaseStream.Position;
             writer.Write((uint)0);
 
@@ -428,7 +428,6 @@ partial class WorldObject
 
             if (preWritePosition + 4 != postWritePosition)
             {
-                // Go back and write the length
                 writer.BaseStream.Position = preWritePosition;
                 writer.Write((uint)(postWritePosition - preWritePosition - 4));
 
@@ -534,16 +533,15 @@ partial class WorldObject
             writer.Write(DefaultScriptIntensity ?? 0f);
         }
 
-        // timestamps
-        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectPosition)); // 0
-        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectMovement)); // 1
-        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectState)); // 2
-        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectVector)); // 3
-        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectTeleport)); // 4
-        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectServerControl)); // 5
-        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectForcePosition)); // 6
-        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectVisualDesc)); // 7
-        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectInstance)); // 8
+        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectPosition));
+        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectMovement));
+        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectState));
+        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectVector));
+        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectTeleport));
+        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectServerControl));
+        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectForcePosition));
+        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectVisualDesc));
+        writer.Write(Sequences.GetCurrentSequence(SequenceType.ObjectInstance));
 
         writer.Align();
     }
@@ -1643,8 +1641,6 @@ partial class WorldObject
         }
         //AddTexture(0x10, DefaultMouthTextureDID.Value, MouthTextureDID.Value);
 
-        ApplySurfaceMapsToObjDesc(objDesc);
-
         var biota = Biota;
 
         if (biota?.PropertiesTextureMap != null)
@@ -1659,6 +1655,8 @@ partial class WorldObject
                 });
             }
         }
+
+        ApplySurfaceMapsToObjDesc(objDesc);
     }
 
     /// <summary>
@@ -1673,8 +1671,8 @@ partial class WorldObject
         var weenie = db.GetWeenie(WeenieClassId);
 
         if (weenie == null ||
-             weenie.WeeniePropertiesSurfaceMap == null ||
-             weenie.WeeniePropertiesSurfaceMap.Count == 0)
+            weenie.WeeniePropertiesSurfaceMap == null ||
+            weenie.WeeniePropertiesSurfaceMap.Count == 0)
         {
             return;
         }
@@ -1684,7 +1682,6 @@ partial class WorldObject
             var partIndex = (byte)map.Index;
 
             var textureMaps = ResolveSurfaceSwapToTextureMaps(partIndex, map.OldId, map.NewId);
-
             if (textureMaps == null)
             {
                 continue;
@@ -1692,6 +1689,10 @@ partial class WorldObject
 
             foreach (var tm in textureMaps)
             {
+                // remove any existing mapping for this (PartIndex, OldTexture)
+                objDesc.TextureChanges.RemoveAll(
+                    t => t.PartIndex == tm.PartIndex && t.OldTexture == tm.OldTexture);
+
                 objDesc.AddTextureChange(new PropertiesTextureMap
                 {
                     PartIndex = tm.PartIndex,
@@ -1778,6 +1779,10 @@ partial class WorldObject
             );
             yield break;
         }
+
+        _log.Information(
+    "ApplySurfaceMapsToObjDesc: Weenie {WeenieClassId} surface map index={Index} oldSurface=0x{Old:X8} newSurface=0x{New:X8} -> oldTex=0x{OldTex:X8} newTex=0x{NewTex:X8}",
+    WeenieClassId, partIndex, oldSurfaceDid, newSurfaceDid, oldTex, newTex);
 
         yield return new PropertiesTextureMap
         {
