@@ -6,6 +6,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
+using ACE.Server.Market;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 
@@ -109,6 +110,20 @@ partial class Player
             if (TryCreateInInventoryWithNetworking(item))
             {
                 vendor.UniqueItemsForSale.Remove(item.Guid);
+
+                // MARKET HOOK: if this unique is a market listing, mark it sold and create a payout,
+                // then restore original value.
+                var listing = MarketServiceLocator.PlayerMarketRepository
+                    .GetListingByItemGuid(item.Guid.Full);
+
+                if (listing != null)
+                {
+                    MarketServiceLocator.PlayerMarketRepository.MarkListingSold(listing, this);
+                    MarketServiceLocator.PlayerMarketRepository.CreatePayout(listing);
+
+                    // restore original value before saving item again
+                    item.Value = listing.OriginalValue;
+                }
 
                 // this was only for when the unique item was sold to the vendor,
                 // to determine when the item should rot on the vendor. it gets removed now

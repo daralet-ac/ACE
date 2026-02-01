@@ -7,13 +7,14 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
-using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
+using ACE.Server.Market;
+using ACE.Server.Entity;
 
 namespace ACE.Server.WorldObjects;
 
@@ -187,6 +188,10 @@ public class Vendor : Creature
         return success;
     }
 
+    public bool IsMarketVendor =>
+        string.Equals(GetProperty(PropertyString.Template), "Market Vendor", StringComparison.OrdinalIgnoreCase);
+
+
     /// <summary>
     /// Populates this vendor's DefaultItemsForSale
     /// </summary>
@@ -194,6 +199,16 @@ public class Vendor : Creature
     {
         if (inventoryloaded)
         {
+            return;
+        }
+
+        if (IsMarketVendor)
+        {
+            // For pure market vendors, always refresh market inventory on open.
+            DefaultItemsForSale.Clear();
+            UniqueItemsForSale.Clear();
+            LoadMarketInventory();
+            inventoryloaded = true;
             return;
         }
 
@@ -316,6 +331,111 @@ public class Vendor : Creature
         DefaultItemsForSale.Add(wo.Guid, wo);
     }
 
+    /// <summary>
+    /// Loads items listed by players for this market vendor from the player market repository.
+    /// </summary>
+    private void LoadMarketInventory()
+    {
+        // Lazy-expire old listings whenever a market vendor is opened.
+        MarketServiceLocator.PlayerMarketRepository.ExpireListings(DateTime.UtcNow);
+
+        var vendorTier = Tier ?? 0;
+        var now = DateTime.UtcNow;
+
+        var listings = MarketServiceLocator.PlayerMarketRepository
+            .GetListingsForVendorTier(vendorTier, now);
+
+        foreach (var listing in listings)
+        {
+            WorldObject item = null;
+
+            // Prefer the persisted biota so the listed item retains all stats/properties.
+            if (listing.ItemBiotaId > 0)
+            {
+                var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(listing.ItemBiotaId);
+                if (biota != null)
+                {
+                    // Create a display copy with a new GUID so multiple listings don't collide
+                    // in UniqueItemsForSale (dictionary key is ObjectGuid).
+                    var displayBiota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
+                    displayBiota.Id = GuidManager.NewDynamicGuid().Full;
+                    item = WorldObjectFactory.CreateWorldObject(displayBiota);
+                }
+            }
+
+            // Fallback: create from base weenie (will not retain rolled stats).
+            item ??= WorldObjectFactory.CreateNewWorldObject(listing.ItemWeenieClassId);
+            if (item == null)
+            {
+                continue;
+            }
+
+            // Market listings are priced in pyreals (coin) for this server.
+            item.Value = listing.ListedPrice;
+            item.AltCurrencyValue = listing.ListedPrice;
+
+            if (!string.IsNullOrWhiteSpace(listing.Inscription))
+            {
+                item.SetProperty(PropertyString.Inscription, listing.Inscription);
+            }
+
+            item.ContainerId = Guid.Full;
+            item.CalculateObjDesc();
+
+            // Ensure we don't silently overwrite items if a guid collision still occurs.
+            if (!UniqueItemsForSale.TryAdd(item.Guid, item))
+            {
+                // Extremely defensive: if we somehow collide, regenerate a new display instance and retry.
+                var retries = 3;
+                while (retries-- > 0 && UniqueItemsForSale.ContainsKey(item.Guid))
+                {
+                    if (!TryRecreateMarketDisplayItem(listing, out var recreated))
+                    {
+                        break;
+                    }
+
+                    item = recreated;
+                    item.ContainerId = Guid.Full;
+                    item.CalculateObjDesc();
+                }
+
+                UniqueItemsForSale[item.Guid] = item;
+            }
+        }
+    }
+
+    private bool TryRecreateMarketDisplayItem(ACE.Database.Models.Shard.PlayerMarketListing listing, out WorldObject item)
+    {
+        item = null;
+
+        if (listing.ItemBiotaId > 0)
+        {
+            var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(listing.ItemBiotaId);
+            if (biota != null)
+            {
+                var displayBiota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
+                displayBiota.Id = GuidManager.NewDynamicGuid().Full;
+                item = WorldObjectFactory.CreateWorldObject(displayBiota);
+            }
+        }
+
+        item ??= WorldObjectFactory.CreateNewWorldObject(listing.ItemWeenieClassId);
+        if (item == null)
+        {
+            return false;
+        }
+
+        item.Value = listing.ListedPrice;
+        item.AltCurrencyValue = listing.ListedPrice;
+
+        if (!string.IsNullOrWhiteSpace(listing.Inscription))
+        {
+            item.SetProperty(PropertyString.Inscription, listing.Inscription);
+        }
+
+        return true;
+    }
+
     public void AddDefaultItem(WorldObject item)
     {
         var existing = GetDefaultItemsByWcid(item.WeenieClassId);
@@ -389,6 +509,7 @@ public class Vendor : Creature
             return;
         }
 
+
         if (player.IsBusy)
         {
             player.SendWeenieError(WeenieError.YoureTooBusy);
@@ -429,9 +550,13 @@ public class Vendor : Creature
     /// <param name="action">The action performed by the player</param>
     public void ApproachVendor(Player player, VendorType action = VendorType.Undef, uint altCurrencySpent = 0)
     {
-        RotUniques();
-
-        RestockRandomItems();
+        // Market vendors should not rotate uniques or restock random items.
+        // Their inventory is driven purely by the player market repository.
+        if (!IsMarketVendor)
+        {
+            RotUniques();
+            RestockRandomItems();
+        }
 
         player.Session.Network.EnqueueSend(new GameEventApproachVendor(player.Session, this, altCurrencySpent));
 
@@ -737,7 +862,8 @@ public class Vendor : Creature
         return true;
     }
 
-    public uint GetSellCost(WorldObject item) => GetSellCost(item.Value, item.ItemType, item.AltCurrencyValue);
+    public uint GetSellCost(WorldObject item) =>
+    GetSellCost(item.Value, item.ItemType, item.AltCurrencyValue);
 
     public uint GetSellCost(Weenie item) => GetSellCost(item.GetValue(), item.GetItemType());
 

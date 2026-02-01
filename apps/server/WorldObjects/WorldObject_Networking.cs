@@ -1656,7 +1656,7 @@ partial class WorldObject
             }
         }
 
-        ApplySurfaceMapsToObjDesc(objDesc);
+        //ApplySurfaceMapsToObjDesc(objDesc);
     }
 
     /// <summary>
