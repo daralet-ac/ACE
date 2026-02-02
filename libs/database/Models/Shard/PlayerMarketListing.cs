@@ -39,6 +39,8 @@ public class PlayerMarketListing
 
     public DateTime? SoldAtUtc { get; set; }
 
+    public DateTime? ReturnedAtUtc { get; set; }
+
     public ulong RowVersion { get; set; }
 }
 

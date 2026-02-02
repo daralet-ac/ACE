@@ -7,6 +7,36 @@ namespace ACE.Server.Market;
 /// </summary>
 public static class MarketServiceLocator
 {
+    public const double SaleFeeRate = 0.05;
+    public const double CancellationFeeRate = 0.05;
+
+    public static int CalculateSaleFee(int amount)
+    {
+        if (amount <= 0)
+        {
+            return 0;
+        }
+
+        return (int)Math.Floor(amount * SaleFeeRate);
+    }
+
+    public static int CalculateFee(int amount) => CalculateSaleFee(amount);
+
+    public static int CalculateCancellationFee(int amount)
+    {
+        if (amount <= 0)
+        {
+            return 0;
+        }
+
+        return (int)Math.Floor(amount * CancellationFeeRate);
+    }
+
+    public static int CalculateNetAfterFee(int amount)
+    {
+        return Math.Max(0, amount - CalculateSaleFee(amount));
+    }
+
     private static IPlayerMarketRepository? _playerMarketRepository;
     private static ACE.Server.Market.PlayerMarketConfig? _config;  // fully qualified
 

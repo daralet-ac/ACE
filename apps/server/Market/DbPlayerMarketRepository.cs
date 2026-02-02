@@ -71,6 +71,20 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
             .ToList();
     }
 
+    public IEnumerable<PlayerMarketListing> GetExpiredListingsForAccount(uint accountId, DateTime nowUtc)
+    {
+        using var context = new ShardDbContext();
+
+        return context.PlayerMarketListings
+            .AsNoTracking()
+            .Where(l =>
+                l.SellerAccountId == accountId
+                && !l.IsSold
+                && l.ExpiresAtUtc <= nowUtc
+                && l.ReturnedAtUtc == null)
+            .ToList();
+    }
+
     public IEnumerable<PlayerMarketListing> GetListingsForAccount(uint accountId, DateTime nowUtc)
     {
         using var context = new ShardDbContext();
@@ -94,23 +108,40 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
             .FirstOrDefault(l => l.ItemGuid == itemGuid);
     }
 
-    public void MarkListingSold(PlayerMarketListing listing, Player buyer)
+    public PlayerMarketListing? GetListingByItemBiotaId(uint itemBiotaId)
     {
         using var context = new ShardDbContext();
 
-        var entity = context.PlayerMarketListings.SingleOrDefault(l => l.Id == listing.Id);
-        if (entity == null)
-        {
-            return;
-        }
+        return context.PlayerMarketListings
+            .AsNoTracking()
+            .FirstOrDefault(l => l.ItemBiotaId == itemBiotaId);
+    }
 
-        entity.IsSold = true;
-        entity.SoldAtUtc = DateTime.UtcNow;
-        entity.BuyerAccountId = buyer.Character.AccountId;
-        entity.BuyerCharacterId = buyer.Character.Id;
-        entity.BuyerName = buyer.Name;
+    public PlayerMarketListing? GetListingById(int listingId)
+    {
+        using var context = new ShardDbContext();
 
-        context.SaveChanges();
+        return context.PlayerMarketListings
+            .AsNoTracking()
+            .FirstOrDefault(l => l.Id == listingId);
+    }
+
+    public bool MarkListingSold(PlayerMarketListing listing, Player buyer)
+    {
+        using var context = new ShardDbContext();
+
+        var now = DateTime.UtcNow;
+
+        var updated = context.PlayerMarketListings
+            .Where(l => l.Id == listing.Id && !l.IsSold && !l.IsCancelled)
+            .ExecuteUpdate(setters => setters
+                .SetProperty(l => l.IsSold, true)
+                .SetProperty(l => l.SoldAtUtc, now)
+                .SetProperty(l => l.BuyerAccountId, buyer.Character.AccountId)
+                .SetProperty(l => l.BuyerCharacterId, buyer.Character.Id)
+                .SetProperty(l => l.BuyerName, buyer.Name));
+
+        return updated > 0;
     }
 
     public void CancelListing(PlayerMarketListing listing)
@@ -131,24 +162,14 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
     {
         using var context = new ShardDbContext();
 
-        var toExpire = context.PlayerMarketListings
+        // Use set-based update so EF doesn't attempt to materialize PlayerMarketListing
+        // (which can include columns not yet present in DB, e.g. ReturnedAtUtc).
+        context.PlayerMarketListings
             .Where(l => !l.IsSold && !l.IsCancelled && l.ExpiresAtUtc <= nowUtc)
-            .ToList();
-
-        if (toExpire.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var listing in toExpire)
-        {
-            listing.IsCancelled = true;
-        }
-
-        context.SaveChanges();
+            .ExecuteUpdate(setters => setters.SetProperty(l => l.IsCancelled, true));
     }
 
-    public PlayerMarketPayout CreatePayout(PlayerMarketListing listing)
+    public PlayerMarketPayout CreatePayout(PlayerMarketListing listing, int amount)
     {
         using var context = new ShardDbContext();
 
@@ -157,7 +178,7 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
             ListingId = listing.Id,
             SellerAccountId = listing.SellerAccountId,
             SellerCharacterId = listing.SellerCharacterId,
-            Amount = listing.ListedPrice,
+            Amount = amount,
             CurrencyType = listing.CurrencyType,
             Status = (int)MarketPayoutStatus.Pending,
             CreatedAtUtc = DateTime.UtcNow
@@ -193,5 +214,49 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
         entity.ClaimedAtUtc = DateTime.UtcNow;
 
         context.SaveChanges();
+    }
+
+    public PlayerMarketTransaction CreateTransaction(PlayerMarketListing listing, PlayerMarketPayout payout, Player buyer)
+    {
+        using var context = new ShardDbContext();
+
+        var tx = new PlayerMarketTransaction
+        {
+            ListingId = listing.Id,
+            PayoutId = payout.Id,
+            SellerAccountId = listing.SellerAccountId,
+            SellerCharacterId = listing.SellerCharacterId,
+            SellerName = listing.SellerName,
+            BuyerAccountId = buyer.Character.AccountId,
+            BuyerCharacterId = buyer.Character.Id,
+            BuyerName = buyer.Name,
+            ItemWeenieClassId = listing.ItemWeenieClassId,
+            ItemGuid = listing.ItemGuid,
+            ItemBiotaId = listing.ItemBiotaId,
+            ItemName = null,
+            Quantity = 1,
+            Price = listing.ListedPrice,
+            FeeAmount = 0,
+            SellerNetAmount = listing.ListedPrice,
+            CurrencyType = listing.CurrencyType,
+            MarketVendorTier = listing.MarketVendorTier,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        context.PlayerMarketTransactions.Add(tx);
+        context.SaveChanges();
+
+        return tx;
+    }
+
+    public void MarkListingReturned(PlayerMarketListing listing, DateTime returnedAtUtc)
+    {
+        using var context = new ShardDbContext();
+
+        context.PlayerMarketListings
+            .Where(l => l.Id == listing.Id)
+            .ExecuteUpdate(setters => setters
+                .SetProperty(l => l.ReturnedAtUtc, returnedAtUtc)
+                .SetProperty(l => l.IsCancelled, true));
     }
 }

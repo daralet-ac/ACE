@@ -197,18 +197,17 @@ public class Vendor : Creature
     /// </summary>
     private void LoadInventory()
     {
-        if (inventoryloaded)
-        {
-            return;
-        }
-
         if (IsMarketVendor)
         {
             // For pure market vendors, always refresh market inventory on open.
             DefaultItemsForSale.Clear();
             UniqueItemsForSale.Clear();
             LoadMarketInventory();
-            inventoryloaded = true;
+            return;
+        }
+
+        if (inventoryloaded)
+        {
             return;
         }
 
@@ -339,11 +338,20 @@ public class Vendor : Creature
         // Lazy-expire old listings whenever a market vendor is opened.
         MarketServiceLocator.PlayerMarketRepository.ExpireListings(DateTime.UtcNow);
 
-        var vendorTier = Tier ?? 0;
+        // Ensure we have a tier set for this vendor (Tier may be null/0 on some templates).
+        // Market vendors depend on tier routing.
+        if (!Tier.HasValue || Tier.Value == 0)
+        {
+            SetShopTier();
+        }
+
+        var vendorTier = Tier.HasValue && Tier.Value != 0 ? Tier.Value : ShopTier;
         var now = DateTime.UtcNow;
 
         var listings = MarketServiceLocator.PlayerMarketRepository
-            .GetListingsForVendorTier(vendorTier, now);
+            .GetListingsForVendorTier(vendorTier, now)
+            .OrderBy(l => l.ListedPrice)
+            .ThenBy(l => l.Id);
 
         foreach (var listing in listings)
         {
@@ -374,9 +382,25 @@ public class Vendor : Creature
             item.Value = listing.ListedPrice;
             item.AltCurrencyValue = listing.ListedPrice;
 
+            // Tag the display item so we can resolve the listing on purchase.
+            item.SetProperty(PropertyInt.MarketListingId, listing.Id);
+
+            // Show remaining listing time in the inscription.
+            var remaining = listing.ExpiresAtUtc - now;
+            if (remaining < TimeSpan.Zero)
+            {
+                remaining = TimeSpan.Zero;
+            }
+
+            var remainingText = $"{(int)Math.Floor(remaining.TotalDays)}d {remaining.Hours}h left";
+
             if (!string.IsNullOrWhiteSpace(listing.Inscription))
             {
-                item.SetProperty(PropertyString.Inscription, listing.Inscription);
+                item.SetProperty(PropertyString.Inscription, $"{listing.Inscription} ({remainingText})");
+            }
+            else
+            {
+                item.SetProperty(PropertyString.Inscription, remainingText);
             }
 
             item.ContainerId = Guid.Full;
@@ -428,9 +452,24 @@ public class Vendor : Creature
         item.Value = listing.ListedPrice;
         item.AltCurrencyValue = listing.ListedPrice;
 
+        item.SetProperty(PropertyInt.MarketListingId, listing.Id);
+
+        var now = DateTime.UtcNow;
+        var remaining = listing.ExpiresAtUtc - now;
+        if (remaining < TimeSpan.Zero)
+        {
+            remaining = TimeSpan.Zero;
+        }
+
+        var remainingText = $"{(int)Math.Floor(remaining.TotalDays)}d {remaining.Hours}h left";
+
         if (!string.IsNullOrWhiteSpace(listing.Inscription))
         {
-            item.SetProperty(PropertyString.Inscription, listing.Inscription);
+            item.SetProperty(PropertyString.Inscription, $"{listing.Inscription} ({remainingText})");
+        }
+        else
+        {
+            item.SetProperty(PropertyString.Inscription, remainingText);
         }
 
         return true;
@@ -506,6 +545,14 @@ public class Vendor : Creature
         var player = wo as Player;
         if (player == null)
         {
+            return;
+        }
+
+        // Market Broker: on use, show help via tells from the broker.
+        if (MarketBroker.IsMarketBroker(this))
+        {
+            MarketBroker.SendHelp(player, this);
+            player.SendUseDoneEvent();
             return;
         }
 
@@ -733,6 +780,11 @@ public class Vendor : Creature
             else if (UniqueItemsForSale.TryGetValue(itemGuid, out var uniqueItemForSale))
             {
                 uniqueItems.Add(uniqueItemForSale);
+            }
+            else
+            {
+                player.SendTransientError("That item is no longer available.");
+                return false;
             }
         }
 

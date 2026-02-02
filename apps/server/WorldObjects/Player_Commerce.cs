@@ -113,13 +113,58 @@ partial class Player
 
                 // MARKET HOOK: if this unique is a market listing, mark it sold and create a payout,
                 // then restore original value.
-                var listing = MarketServiceLocator.PlayerMarketRepository
+                ACE.Database.Models.Shard.PlayerMarketListing listing = null;
+
+                var marketListingId = item.GetProperty(PropertyInt.MarketListingId);
+                // Prefer direct lookup by listing id when tagged.
+                if (marketListingId.HasValue && marketListingId.Value > 0)
+                {
+                    listing = MarketServiceLocator.PlayerMarketRepository.GetListingById(marketListingId.Value);
+                }
+
+                // Fallback: for older market items that are not tagged with MarketListingId.
+                // Note: display clones may not preserve the original biota id.
+                if (listing == null && item.Biota != null)
+                {
+                    listing = MarketServiceLocator.PlayerMarketRepository
+                        .GetListingByItemBiotaId((uint)item.Biota.Id);
+                }
+
+                // Fallback: some items may not have biota; try the purchased object's guid.
+                listing ??= MarketServiceLocator.PlayerMarketRepository
                     .GetListingByItemGuid(item.Guid.Full);
 
                 if (listing != null)
                 {
-                    MarketServiceLocator.PlayerMarketRepository.MarkListingSold(listing, this);
-                    MarketServiceLocator.PlayerMarketRepository.CreatePayout(listing);
+                    if (!MarketServiceLocator.PlayerMarketRepository.MarkListingSold(listing, this))
+                    {
+                        SendTransientError("That item is no longer available.");
+                        continue;
+                    }
+
+                    var fee = MarketServiceLocator.CalculateSaleFee(listing.ListedPrice);
+                    var net = MarketServiceLocator.CalculateNetAfterFee(listing.ListedPrice);
+
+                    var payout = MarketServiceLocator.PlayerMarketRepository.CreatePayout(listing, net);
+
+                    // Track sale/spend history (skip self-purchases).
+                    if (listing.SellerAccountId != Character.AccountId)
+                    {
+                        var tx = MarketServiceLocator.PlayerMarketRepository.CreateTransaction(listing, payout, this);
+                        tx.ItemName = item.Name;
+                        tx.Quantity = item.StackSize ?? 1;
+                        tx.Price = listing.ListedPrice;
+                        tx.FeeAmount = fee;
+                        tx.SellerNetAmount = net;
+                    }
+
+                    // Notify seller if they are online.
+                    var seller = PlayerManager.GetOnlinePlayer(new ACE.Entity.ObjectGuid((uint)listing.SellerCharacterId));
+                    if (seller?.Session != null)
+                    {
+                        var msg = $"[Market] Your market listing sold! {item.Name} for {listing.ListedPrice:N0} pyreals. Claim your payout at the Market Broker.";
+                        seller.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.Tell));
+                    }
 
                     // restore original value before saving item again
                     item.Value = listing.OriginalValue;

@@ -90,16 +90,28 @@ public static class Market
                 player,
                 item,
                 price,
-                MarketCurrencyType.TradeNote,
+                MarketCurrencyType.Pyreal,
                 vendorTier,
                 null,
                 null,
                 $"Listed by {player.Name}");
 
-            // remove item from player inventory (server-side)
-            // TODO: implement safe item removal/transfer once listing flow finalized.
+            // escrow: remove the whole object from the player now.
+            if (!player.TryRemoveFromInventoryWithNetworking(item.Guid, out _, Player.RemoveFromInventoryAction.GiveItem)
+                && !player.TryDequipObjectWithNetworking(item.Guid, out _, Player.DequipObjectAction.GiveItem))
+            {
+                player.SendMessage("Unable to escrow item.");
+                return;
+            }
+
+            // Persist item off-player. Keep same biota record but clear ownership.
+            item.ContainerId = (uint?)null;
+            item.WielderId = (uint?)null;
+            item.Location = null;
+            item.SaveBiotaToDatabase();
+
             MarketBroker.ClearPendingItem(player);
-            player.SendMessage($"Listed {item.Name} for {price}. (Item removal not implemented yet)");
+            player.SendMessage($"Listed {item.Name} for {price}.");
 
             return;
         }
