@@ -173,6 +173,17 @@ partial class Player
 
                     // restore original value before saving item again
                     item.Value = listing.OriginalValue;
+
+                    // If this was a stackable market listing display item, restore the per-unit value.
+                    // On vendor display we temporarily set StackUnitValue to the listing price so the
+                    // computed Value shows the full stack amount.
+                    var purchasedStackSize = item.StackSize ?? 1;
+                    if (purchasedStackSize > 1)
+                    {
+                        var originalUnitValue = listing.OriginalValue / purchasedStackSize;
+                        item.SetProperty(PropertyInt.StackUnitValue, originalUnitValue);
+                        item.SetStackSize(purchasedStackSize);
+                    }
                 }
 
                 // this was only for when the unique item was sold to the vendor,

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Database.Models.Shard;
+using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,14 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
         string inscription)
     {
         var now = DateTime.UtcNow;
+        var lifetimeSeconds = PropertyManager
+            .GetDouble("market_listing_lifetime_seconds", MarketServiceLocator.Config.ListingLifetime.TotalSeconds)
+            .Item;
+
+        if (lifetimeSeconds < 0)
+        {
+            lifetimeSeconds = 0;
+        }
 
         using var context = new ShardDbContext();
 
@@ -43,7 +52,7 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
             Inscription = inscription,
             OriginalInscription = item.GetProperty(ACE.Entity.Enum.Properties.PropertyString.Inscription),
             CreatedAtUtc = now,
-            ExpiresAtUtc = now + MarketServiceLocator.Config.ListingLifetime,
+            ExpiresAtUtc = now + TimeSpan.FromSeconds(lifetimeSeconds),
             IsCancelled = false,
             IsSold = false
         };
@@ -58,16 +67,26 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
     {
         using var context = new ShardDbContext();
 
-        return context.PlayerMarketListings
+        var baseQuery = context.PlayerMarketListings
             .AsNoTracking()
+            .Where(l => !l.IsSold && !l.IsCancelled && l.ExpiresAtUtc > nowUtc);
+
+        // Tier 0 market vendors show "non-tier" listings.
+        // Those are currently stored with null ItemTier (and MarketVendorTier==0).
+        // Additionally, treat any listing explicitly marked vendor tier 0 as visible on tier 0 vendors.
+        if (vendorTier == 0)
+        {
+            return baseQuery
+                .Where(l => !l.ItemTier.HasValue || l.MarketVendorTier == 0)
+                .ToList();
+        }
+
+        return baseQuery
             .Where(l =>
                 // Prefer ItemTier-based routing when available.
                 // Fall back to MarketVendorTier for older listings where ItemTier is null.
                 ((l.ItemTier.HasValue && l.ItemTier.Value == vendorTier)
-                 || (!l.ItemTier.HasValue && l.MarketVendorTier == vendorTier))
-                && !l.IsSold
-                && !l.IsCancelled
-                && l.ExpiresAtUtc > nowUtc)
+                 || (!l.ItemTier.HasValue && l.MarketVendorTier == vendorTier)))
             .ToList();
     }
 
