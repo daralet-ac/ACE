@@ -889,7 +889,7 @@ CREATE TABLE IF NOT EXISTS `player_market_listings` (
   `BuyerName` VARCHAR(100) NULL,
 
   `SoldAtUtc` DATETIME(6) NULL,
-  `returned_at_utc` DATETIME(6) NULL,
+  `ReturnedAtUtc` DATETIME(6) NULL,
 
   `RowVersion` BIGINT UNSIGNED NOT NULL DEFAULT 0,
 
