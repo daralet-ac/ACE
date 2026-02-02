@@ -353,6 +353,11 @@ public class Vendor : Creature
             .OrderBy(l => l.ListedPrice)
             .ThenBy(l => l.Id);
 
+        // Avoid N+1 opens/closes/contexts by batching biota fetches through a single context.
+        // Note: ShardDatabase.GetBiota(ShardDbContext, ...) still does per-biota queries for
+        // populated collections, but this avoids creating a new DbContext per listing.
+        using var shardDbContext = new ACE.Database.Models.Shard.ShardDbContext();
+
         foreach (var listing in listings)
         {
             WorldObject item = null;
@@ -360,7 +365,7 @@ public class Vendor : Creature
             // Prefer the persisted biota so the listed item retains all stats/properties.
             if (listing.ItemBiotaId > 0)
             {
-                var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(listing.ItemBiotaId);
+                var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(shardDbContext, listing.ItemBiotaId);
                 if (biota != null)
                 {
                     // Create a display copy with a new GUID so multiple listings don't collide

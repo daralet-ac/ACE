@@ -159,7 +159,12 @@ partial class Player
                     }
 
                     // Notify seller if they are online.
-                    var seller = PlayerManager.GetOnlinePlayer(new ACE.Entity.ObjectGuid((uint)listing.SellerCharacterId));
+                    Player seller = null;
+                    if (listing.SellerCharacterId.HasValue)
+                    {
+                        seller = PlayerManager.GetOnlinePlayer(new ACE.Entity.ObjectGuid(listing.SellerCharacterId.Value));
+                    }
+
                     if (seller?.Session != null)
                     {
                         var msg = $"[Market] Your market listing sold! {item.Name} for {listing.ListedPrice:N0} pyreals. Claim your payout at the Market Broker.";

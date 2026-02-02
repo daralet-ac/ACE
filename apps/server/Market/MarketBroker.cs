@@ -175,7 +175,7 @@ public static class MarketBroker
 
         if (!ok)
         {
-            reason = "Only weapons, armor, clothin, jewelry, casters, gems, salvage, trophies, and consumables can be listed.";
+            reason = "Only weapons, armor, clothing, jewelry, casters, gems, salvage, trophies, and consumables can be listed.";
             return false;
         }
 
@@ -195,7 +195,7 @@ public static class MarketBroker
             .Count();
 
         var activeListings = MarketServiceLocator.PlayerMarketRepository
-            .GetListingsForAccount(player.Character.AccountId, DateTime.Now)
+            .GetListingsForAccount(player.Character.AccountId, DateTime.UtcNow)
             .Count();
 
         SendTell(
@@ -547,7 +547,7 @@ public static class MarketBroker
             if (fee > 0 && (player.CoinValue ?? 0) < fee)
             {
                 item.Destroy();
-                SendTell(player, broker, $"You need {fee:N0} pyreals to pay the 1% expiration fee for '{item.Name}'.");
+                SendTell(player, broker, $"You need {fee:N0} pyreals to pay the 5% expiration fee for '{item.Name}'.");
                 break;
             }
 
@@ -720,7 +720,7 @@ public static class MarketBroker
             // Charge cancellation fee in pyreals.
             if ((player.CoinValue ?? 0) < fee)
             {
-                SendTell(player, $"You need {fee:N0} pyreals to pay the 1% cancellation fee. Cancellation aborted.");
+                SendTell(player, $"You need {fee:N0} pyreals to pay the 5% cancellation fee. Cancellation aborted.");
                 // Roll back item return because cancellation did not complete.
                 if (!player.TryRemoveFromInventoryWithNetworking(item.Guid, out _, Player.RemoveFromInventoryAction.GiveItem))
                 {

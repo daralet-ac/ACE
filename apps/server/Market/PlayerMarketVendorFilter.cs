@@ -1,6 +1,8 @@
 using ACE.Database.Models.Shard;
 using ACE.Server.WorldObjects;
 
+namespace ACE.Server.Market;
+
 public static class PlayerMarketVendorFilter
 {
     /// <summary>
