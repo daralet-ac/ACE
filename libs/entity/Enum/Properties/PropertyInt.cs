@@ -873,6 +873,9 @@ public enum PropertyInt : ushort
     CombatFocusPrestigeVersionId = 514,
 
     [ServerOnly]
+    MarketListingId = 515,
+
+    [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
 
     [ServerOnly]
