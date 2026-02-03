@@ -408,13 +408,6 @@ public class Vendor : Creature
             // Tag the display item so we can resolve the listing on purchase.
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
 
-            // Some clients do not render salvage correctly in vendor lists.
-            // For market display clones, present salvage/materials as Misc so they show up.
-            if (item.WeenieType == WeenieType.Salvage || item.ItemType == ItemType.TinkeringMaterial)
-            {
-                item.ItemType = ItemType.Misc;
-            }
-
             item.ContainerId = Guid.Full;
             item.Location = null;
 
@@ -441,23 +434,6 @@ public class Vendor : Creature
                 }
 
                 UniqueItemsForSale[item.Guid] = item;
-            }
-
-            if (item.ItemType == ItemType.TinkeringMaterial || item.WeenieType == WeenieType.Salvage)
-            {
-                _log.Information(
-                    "[MARKET] Loaded salvage/material listing into vendor {Vendor} ({VendorGuid}). Item {Item} ({ItemGuid}) WCID {WCID} Stack {Stack} UnitValue {UnitValue} Value {Value} CreateListStack {CreateListStack} ListingId {ListingId}",
-                    Name,
-                    Guid.Full,
-                    item.Name,
-                    item.Guid.Full,
-                    item.WeenieClassId,
-                    item.StackSize ?? 1,
-                    item.GetProperty(PropertyInt.StackUnitValue) ?? 0,
-                    item.Value ?? 0,
-                    item.VendorShopCreateListStackSize ?? 0,
-                    item.GetProperty(PropertyInt.MarketListingId) ?? 0
-                );
             }
         }
     }

@@ -9,7 +9,6 @@ using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
-using Discord;
 
 namespace ACE.Server.Market;
 
@@ -237,7 +236,7 @@ public static class MarketBroker
                 new GameMessageSystemChat($"- 'payouts' to see pending payouts ({pendingPayouts}).", ChatMessageType.Tell));
 
         player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"- 'claim expired' to reclaim expired listings ({expiredListings}).\"", ChatMessageType.Tell));
+                new GameMessageSystemChat($"- 'claim expired' to reclaim expired listings ({expiredListings}).", ChatMessageType.Tell));
     }
 
     public static void HandleTalkDirect(Player player, WorldObject broker, string message)
@@ -582,7 +581,7 @@ public static class MarketBroker
             MarketServiceLocator.PlayerMarketRepository.MarkPayoutClaimed(payout);
         }
 
-        SendTell(player, broker, $"Claimed {payouts.Count} payout(s) for a total of {total:N0} trade notes.");
+        SendTell(player, broker, $"Claimed {payouts.Count} payout(s) for a total of {total:N0} pyreals.");
     }
 
     private static System.Collections.Generic.List<(uint wcid, int amount)> GetTradeNoteBreakdown(int totalPyreals)
