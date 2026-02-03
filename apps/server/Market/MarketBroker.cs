@@ -6,6 +6,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Factories;
+using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
 
@@ -205,6 +206,11 @@ public static class MarketBroker
             .GetListingsForAccount(player.Character.AccountId, DateTime.UtcNow)
             .Count();
 
+        var expiredListings = MarketServiceLocator.PlayerMarketRepository
+            .GetExpiredListingsForAccount(player.Character.AccountId, DateTime.UtcNow)
+            .Where(l => !l.IsSold)
+            .Count();
+
         SendTell(
             player,
             broker,
@@ -218,7 +224,7 @@ public static class MarketBroker
         SendTell(
             player,
             broker,
-            $"Market Broker tells you, \"Say 'listings' to review your active listings ({activeListings}), 'cancel <id>' to cancel a listing, 'payouts' to see pending payouts ({pendingPayouts}), or 'claim expired' to reclaim expired listings.\"");
+            $"Market Broker tells you, \"Say 'listings' to review your active listings ({activeListings}), 'cancel <id>' to cancel a listing, 'payouts' to see pending payouts ({pendingPayouts}), or 'claim expired' to reclaim expired listings ({expiredListings}).\"");
     }
 
     public static void HandleTalkDirect(Player player, WorldObject broker, string message)
@@ -414,7 +420,10 @@ public static class MarketBroker
                 return;
             }
 
-            var duration = MarketServiceLocator.Config.ListingLifetime;
+            var listingLengthSeconds = PropertyManager
+                .GetDouble("market_listing_lifetime_seconds", MarketServiceLocator.Config.ListingLifetime.TotalSeconds).Item;
+
+            var duration = TimeSpan.FromSeconds(listingLengthSeconds);
             var expiresAtUtc = DateTime.UtcNow + duration;
 
             // Store pending listing details and require a Yes/No confirmation.
@@ -915,8 +924,7 @@ public static class MarketBroker
             MarketCurrencyType.Pyreal,
             vendorTier,
             wieldReq,
-            itemTier,
-            $"Listed by {player.Name}");
+            itemTier);
 
         ClearPendingItem(player);
 

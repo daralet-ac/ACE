@@ -14,6 +14,7 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Managers;
+using ACE.Server.Market;
 using ACE.Server.Network;
 using ACE.Server.Network.GameMessages;
 using ACE.Server.Network.GameMessages.Messages;
@@ -26,6 +27,44 @@ namespace ACE.Server.WorldObjects;
 
 partial class WorldObject
 {
+    private string GetNameForClient()
+    {
+        var name = Name ?? string.Empty;
+
+        var marketListingId = GetProperty(PropertyInt.MarketListingId);
+        if (marketListingId.HasValue && marketListingId.Value > 0)
+        {
+            try
+            {
+                var listing = MarketServiceLocator.PlayerMarketRepository.GetListingById(marketListingId.Value);
+                if (listing != null && !listing.IsSold && !listing.IsCancelled && listing.ExpiresAtUtc > DateTime.UtcNow)
+                {
+                    var remaining = listing.ExpiresAtUtc - DateTime.UtcNow;
+                    if (remaining < TimeSpan.Zero)
+                    {
+                        remaining = TimeSpan.Zero;
+                    }
+
+                    var remainingText = remaining.TotalDays >= 1
+                        ? $"{(int)Math.Floor(remaining.TotalDays)}d {remaining.Hours}h"
+                        : remaining.TotalHours >= 1
+                            ? $"{(int)Math.Floor(remaining.TotalHours)}h {remaining.Minutes}m"
+                            : remaining.TotalMinutes >= 1
+                                ? $"{(int)Math.Floor(remaining.TotalMinutes)}m {remaining.Seconds}s"
+                                : $"{Math.Max(0, remaining.Seconds)}s";
+
+                    name = $"{name} ({remainingText})";
+                }
+            }
+            catch
+            {
+                // ignore; object serialization should never fail because market lookup failed
+            }
+        }
+
+        return name;
+    }
+
     public virtual void SerializeUpdateObject(BinaryWriter writer, bool adminvision = false, bool changenodraw = false)
     {
         // content of these 2 is the same? TODO: Validate that?
@@ -82,7 +121,7 @@ partial class WorldObject
         }
 
         writer.Write((uint)weenieFlags);
-        writer.WriteString16L(Name ?? string.Empty);
+        writer.WriteString16L(GetNameForClient());
         writer.WritePackedDword(WeenieClassId);
         writer.WritePackedDwordOfKnownType(IconId, 0x6000000);
         writer.Write((uint)ItemType);

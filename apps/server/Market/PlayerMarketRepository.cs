@@ -15,8 +15,7 @@ public interface IPlayerMarketRepository
         MarketCurrencyType currencyType,
         int vendorTier,
         int? wieldReq,
-        int? itemTier,
-        string inscription);
+        int? itemTier);
 
     IEnumerable<PlayerMarketListing> GetListingsForVendorTier(int vendorTier, DateTime nowUtc);
 
@@ -70,8 +69,7 @@ public sealed class PlayerMarketRepository : IPlayerMarketRepository
         MarketCurrencyType currencyType,
         int vendorTier,
         int? wieldReq,
-        int? itemTier,
-        string inscription)
+        int? itemTier)
     {
         var now = DateTime.UtcNow;
         var lifetimeSeconds = PropertyManager
@@ -98,8 +96,6 @@ public sealed class PlayerMarketRepository : IPlayerMarketRepository
             MarketVendorTier = vendorTier,
             ItemTier = itemTier,
             WieldReq = wieldReq,
-            Inscription = inscription,
-            OriginalInscription = item.GetProperty(ACE.Entity.Enum.Properties.PropertyString.Inscription),
             CreatedAtUtc = now,
             ExpiresAtUtc = now + TimeSpan.FromSeconds(lifetimeSeconds)
         };
