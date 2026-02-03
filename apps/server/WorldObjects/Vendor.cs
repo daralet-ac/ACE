@@ -129,6 +129,13 @@ public class Vendor : Creature
         OpenForBusiness = ValidateVendorRequirements();
 
         SetMerchandiseItemTypes();
+
+        // Market vendors are driven by player listings. The client filters displayed items based on
+        // `MerchandiseItemTypes`, so allow all item categories for market vendors.
+        if (IsMarketVendor)
+        {
+            MerchandiseItemTypes = (int)ItemType.Item;
+        }
     }
 
     private bool ValidateVendorRequirements()
@@ -401,7 +408,19 @@ public class Vendor : Creature
             // Tag the display item so we can resolve the listing on purchase.
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
 
+            // Some clients do not render salvage correctly in vendor lists.
+            // For market display clones, present salvage/materials as Misc so they show up.
+            if (item.WeenieType == WeenieType.Salvage || item.ItemType == ItemType.TinkeringMaterial)
+            {
+                item.ItemType = ItemType.Misc;
+            }
+
             item.ContainerId = Guid.Full;
+            item.Location = null;
+
+            // Market listings are unique sale items; ensure create-list stack size is not treated as unlimited.
+            // Preserve correct quantity display for stackables.
+            item.VendorShopCreateListStackSize = Math.Max(1, item.StackSize ?? 1);
             item.CalculateObjDesc();
 
             // Ensure we don't silently overwrite items if a guid collision still occurs.
@@ -422,6 +441,23 @@ public class Vendor : Creature
                 }
 
                 UniqueItemsForSale[item.Guid] = item;
+            }
+
+            if (item.ItemType == ItemType.TinkeringMaterial || item.WeenieType == WeenieType.Salvage)
+            {
+                _log.Information(
+                    "[MARKET] Loaded salvage/material listing into vendor {Vendor} ({VendorGuid}). Item {Item} ({ItemGuid}) WCID {WCID} Stack {Stack} UnitValue {UnitValue} Value {Value} CreateListStack {CreateListStack} ListingId {ListingId}",
+                    Name,
+                    Guid.Full,
+                    item.Name,
+                    item.Guid.Full,
+                    item.WeenieClassId,
+                    item.StackSize ?? 1,
+                    item.GetProperty(PropertyInt.StackUnitValue) ?? 0,
+                    item.Value ?? 0,
+                    item.VendorShopCreateListStackSize ?? 0,
+                    item.GetProperty(PropertyInt.MarketListingId) ?? 0
+                );
             }
         }
     }
@@ -451,6 +487,8 @@ public class Vendor : Creature
         item.AltCurrencyValue = listing.ListedPrice;
 
         item.SetProperty(PropertyInt.MarketListingId, listing.Id);
+
+        item.VendorShopCreateListStackSize = Math.Max(1, item.StackSize ?? 1);
 
         return true;
     }
