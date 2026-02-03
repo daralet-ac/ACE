@@ -254,7 +254,7 @@ public enum PropertyBool : ushort
 
     
     [ServerOnly]
-    PatrolEnabled = 175,   
+    PatrolEnabled = 174,   
 
     /* custom */
     [ServerOnly]
