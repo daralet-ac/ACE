@@ -213,7 +213,7 @@ public static class MarketBroker
         SendTell(
             player,
             broker,
-            $"Market Broker tells you, \"We charge a 5% fee upon payout or cancellation, for our services.\"");
+            $"Market Broker tells you, \"We charge a {MarketServiceLocator.SaleFeeRate * 100:N0}% fee upon payout or cancellation, for our services.\"");
 
         SendTell(
             player,
@@ -442,7 +442,7 @@ public static class MarketBroker
                 $"List '{item.Name}' for {price:N0} pyreals?\n\n" +
                 $"Duration: {FormatListingDuration(duration)}\n" +
                 $"Expires: {expiresAtUtc:yyyy-MM-dd HH:mm} UTC\n" +
-                $"Fee: You will be charged a 5% fee ({price * 0.05:N0} pyreals) upon payout or cancellation.\n\n" +
+                $"Fee: You will be charged a {MarketServiceLocator.SaleFeeRate * 100:N0}% fee ({MarketServiceLocator.CalculateSaleFee(price):N0} pyreals) upon payout or cancellation.\n\n" +
                 $"To cancel your listing: Tell the Market Broker \"listings\".";
 
             player.ConfirmationManager.EnqueueSend(
@@ -576,7 +576,7 @@ public static class MarketBroker
             if (fee > 0 && (player.CoinValue ?? 0) < fee)
             {
                 item.Destroy();
-                SendTell(player, broker, $"You need {fee:N0} pyreals to pay the 5% expiration fee for '{item.Name}'.");
+                SendTell(player, broker, $"You need {fee:N0} pyreals to pay the {MarketServiceLocator.CancellationFeeRate * 100:N0}% expiration fee for '{item.Name}'.");
                 break;
             }
 
@@ -749,7 +749,7 @@ public static class MarketBroker
             // Charge cancellation fee in pyreals.
             if ((player.CoinValue ?? 0) < fee)
             {
-                SendTell(player, $"You need {fee:N0} pyreals to pay the 5% cancellation fee. Cancellation aborted.");
+                SendTell(player, $"You need {fee:N0} pyreals to pay the {MarketServiceLocator.CancellationFeeRate * 100:N0}% cancellation fee. Cancellation aborted.");
                 // Roll back item return because cancellation did not complete.
                 if (!player.TryRemoveFromInventoryWithNetworking(item.Guid, out _, Player.RemoveFromInventoryAction.GiveItem))
                 {
