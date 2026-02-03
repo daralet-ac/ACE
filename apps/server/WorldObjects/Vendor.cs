@@ -401,24 +401,6 @@ public class Vendor : Creature
             // Tag the display item so we can resolve the listing on purchase.
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
 
-            // Show remaining listing time in the inscription.
-            var remaining = listing.ExpiresAtUtc - now;
-            if (remaining < TimeSpan.Zero)
-            {
-                remaining = TimeSpan.Zero;
-            }
-
-            var remainingText = $"{(int)Math.Floor(remaining.TotalDays)}d {remaining.Hours}h left";
-
-            if (!string.IsNullOrWhiteSpace(listing.Inscription))
-            {
-                item.SetProperty(PropertyString.Inscription, $"{listing.Inscription} ({remainingText})");
-            }
-            else
-            {
-                item.SetProperty(PropertyString.Inscription, remainingText);
-            }
-
             item.ContainerId = Guid.Full;
             item.CalculateObjDesc();
 
@@ -469,24 +451,6 @@ public class Vendor : Creature
         item.AltCurrencyValue = listing.ListedPrice;
 
         item.SetProperty(PropertyInt.MarketListingId, listing.Id);
-
-        var now = DateTime.UtcNow;
-        var remaining = listing.ExpiresAtUtc - now;
-        if (remaining < TimeSpan.Zero)
-        {
-            remaining = TimeSpan.Zero;
-        }
-
-        var remainingText = $"{(int)Math.Floor(remaining.TotalDays)}d {remaining.Hours}h left";
-
-        if (!string.IsNullOrWhiteSpace(listing.Inscription))
-        {
-            item.SetProperty(PropertyString.Inscription, $"{listing.Inscription} ({remainingText})");
-        }
-        else
-        {
-            item.SetProperty(PropertyString.Inscription, remainingText);
-        }
 
         return true;
     }

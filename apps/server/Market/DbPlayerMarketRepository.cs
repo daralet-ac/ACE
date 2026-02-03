@@ -20,8 +20,7 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
         MarketCurrencyType currencyType,
         int vendorTier,
         int? wieldReq,
-        int? itemTier,
-        string inscription)
+        int? itemTier)
     {
         var now = DateTime.UtcNow;
         var lifetimeSeconds = PropertyManager
@@ -49,8 +48,6 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
             MarketVendorTier = vendorTier,
             ItemTier = itemTier,
             WieldReq = wieldReq,
-            Inscription = inscription,
-            OriginalInscription = item.GetProperty(ACE.Entity.Enum.Properties.PropertyString.Inscription),
             CreatedAtUtc = now,
             ExpiresAtUtc = now + TimeSpan.FromSeconds(lifetimeSeconds),
             IsCancelled = false,

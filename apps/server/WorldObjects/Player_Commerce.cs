@@ -184,6 +184,9 @@ partial class Player
                         item.SetProperty(PropertyInt.StackUnitValue, originalUnitValue);
                         item.SetStackSize(purchasedStackSize);
                     }
+
+                     // This is vendor/listing metadata; do not keep it on the purchased item.
+                     item.RemoveProperty(PropertyInt.MarketListingId);
                 }
 
                 // this was only for when the unique item was sold to the vendor,
