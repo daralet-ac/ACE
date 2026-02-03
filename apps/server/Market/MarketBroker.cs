@@ -160,6 +160,12 @@ public static class MarketBroker
             return false;
         }
 
+        if (item.AllowedWielder != null)
+        {
+            reason = "Character-bound items cannot be listed.";
+            return false;
+        }
+
         var t = item.ItemType;
         var ok = t == ItemType.Weapon
                  || t == ItemType.MeleeWeapon
@@ -171,7 +177,8 @@ public static class MarketBroker
                  || t == ItemType.Food
                  || t == ItemType.Gem
                  || t == ItemType.TinkeringMaterial
-                 || t == ItemType.Useless;
+                 || t == ItemType.Useless
+                 || t == ItemType.Misc;
 
         if (!ok)
         {
@@ -202,6 +209,11 @@ public static class MarketBroker
             player,
             broker,
             $"Market Broker tells you, \"Give me an item to start a listing.\"");
+
+        SendTell(
+            player,
+            broker,
+            $"Market Broker tells you, \"We charge a {MarketServiceLocator.SaleFeeRate * 100:N0}% fee upon payout or cancellation, for our services.\"");
 
         SendTell(
             player,
@@ -266,8 +278,7 @@ public static class MarketBroker
             foreach (var p in orderedPayouts)
             {
                 var listing = MarketServiceLocator.PlayerMarketRepository
-                    .GetListingsForAccount(player.Character.AccountId, DateTime.MaxValue)
-                    .FirstOrDefault(l => l.Id == p.ListingId);
+                    .GetListingById(p.ListingId);
 
                 var itemName = listing != null
                     ? (TryGetListingItemName(listing) ?? $"WCID {listing.ItemWeenieClassId}")
@@ -368,14 +379,31 @@ public static class MarketBroker
 
             var item = player.FindObject(
                 itemGuid,
-                Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems,
+                Player.SearchLocations.MyInventory,
                 out _,
                 out _,
                 out _);
             if (item == null)
             {
+                // If the player equipped the pending item, it won't be found in inventory.
+                // Give a clearer message than the generic missing-item response.
+                var equipped = player.FindObject(
+                    itemGuid,
+                    Player.SearchLocations.MyEquippedItems,
+                    out _,
+                    out _,
+                    out var wasEquipped);
+
                 ClearPendingItem(player);
-                SendTell(player, broker, "I can't find that item anymore. Give it to me again.");
+
+                if (equipped != null && wasEquipped)
+                {
+                    SendTell(player, broker, "You must first unequip that item before listing it.");
+                }
+                else
+                {
+                    SendTell(player, broker, "I can't find that item anymore. Give it to me again.");
+                }
                 return;
             }
 
@@ -413,8 +441,9 @@ public static class MarketBroker
             var confirmText =
                 $"List '{item.Name}' for {price:N0} pyreals?\n\n" +
                 $"Duration: {FormatListingDuration(duration)}\n" +
-                $"Expires: {expiresAtUtc:yyyy-MM-dd HH:mm} UTC\n\n" +
-                $"To cancel later: Tell the Market Broker \"listings\".";
+                $"Expires: {expiresAtUtc:yyyy-MM-dd HH:mm} UTC\n" +
+                $"Fee: You will be charged a {MarketServiceLocator.SaleFeeRate * 100:N0}% fee ({MarketServiceLocator.CalculateSaleFee(price):N0} pyreals) upon payout or cancellation.\n\n" +
+                $"To cancel your listing: Tell the Market Broker \"listings\".";
 
             player.ConfirmationManager.EnqueueSend(
                 new Confirmation_Custom(
@@ -547,7 +576,7 @@ public static class MarketBroker
             if (fee > 0 && (player.CoinValue ?? 0) < fee)
             {
                 item.Destroy();
-                SendTell(player, broker, $"You need {fee:N0} pyreals to pay the 5% expiration fee for '{item.Name}'.");
+                SendTell(player, broker, $"You need {fee:N0} pyreals to pay the {MarketServiceLocator.CancellationFeeRate * 100:N0}% expiration fee for '{item.Name}'.");
                 break;
             }
 
@@ -720,7 +749,7 @@ public static class MarketBroker
             // Charge cancellation fee in pyreals.
             if ((player.CoinValue ?? 0) < fee)
             {
-                SendTell(player, $"You need {fee:N0} pyreals to pay the 5% cancellation fee. Cancellation aborted.");
+                SendTell(player, $"You need {fee:N0} pyreals to pay the {MarketServiceLocator.CancellationFeeRate * 100:N0}% cancellation fee. Cancellation aborted.");
                 // Roll back item return because cancellation did not complete.
                 if (!player.TryRemoveFromInventoryWithNetworking(item.Guid, out _, Player.RemoveFromInventoryAction.GiveItem))
                 {
@@ -756,7 +785,7 @@ public static class MarketBroker
 
         var item = player.FindObject(
             itemGuid,
-            Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems,
+            Player.SearchLocations.MyInventory,
             out _,
             out _,
             out var wasEquipped);
@@ -764,6 +793,13 @@ public static class MarketBroker
         {
             ClearPendingItem(player);
             SendTell(player, "I can't find that item anymore. Give it to me again.");
+            return;
+        }
+
+        if (wasEquipped)
+        {
+            ClearPendingItem(player);
+            SendTell(player, "You must first unequip that item before listing it.");
             return;
         }
 
@@ -775,21 +811,10 @@ public static class MarketBroker
         }
 
         // Escrow: remove the whole object from the player now.
-        if (wasEquipped)
+        if (!player.TryRemoveFromInventoryWithNetworking(item.Guid, out _, Player.RemoveFromInventoryAction.GiveItem))
         {
-            if (!player.TryDequipObjectWithNetworking(item.Guid, out _, Player.DequipObjectAction.GiveItem))
-            {
-                SendTell(player, "Unable to escrow item (failed to dequip).");
-                return;
-            }
-        }
-        else
-        {
-            if (!player.TryRemoveFromInventoryWithNetworking(item.Guid, out _, Player.RemoveFromInventoryAction.GiveItem))
-            {
-                SendTell(player, "Unable to escrow item (failed to remove from inventory).");
-                return;
-            }
+            SendTell(player, "Unable to escrow item (failed to remove from inventory).");
+            return;
         }
 
         // Persist item off-player. For now, keep the same biota record but clear ownership.
@@ -821,6 +846,14 @@ public static class MarketBroker
 
             case ItemType.Clothing:
             case ItemType.Jewelry:
+                // Sigil Trinkets store their required-level gate on the secondary fields.
+                if (item.WieldRequirements2 == WieldRequirement.Level && item.WieldDifficulty2.HasValue)
+                {
+                    wieldReq = item.WieldDifficulty2.Value;
+                    itemTier = LootGenerationFactory.GetTierFromRequiredLevel(item.WieldDifficulty2.Value);
+                    break;
+                }
+
                 // prefer explicit required level if present
                 if (item.WieldRequirements == WieldRequirement.Level && item.WieldDifficulty.HasValue)
                 {
@@ -949,6 +982,13 @@ public static class MarketBroker
     {
         if (player == null || item == null)
         {
+            return;
+        }
+
+        // Reject equipped items immediately.
+        if (item.WielderId.HasValue && item.WielderId.Value == player.Guid.Full)
+        {
+            SendTell(player, "You must first unequip that item before listing it.");
             return;
         }
 
