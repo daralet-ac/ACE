@@ -129,6 +129,13 @@ public class Vendor : Creature
         OpenForBusiness = ValidateVendorRequirements();
 
         SetMerchandiseItemTypes();
+
+        // Market vendors are driven by player listings. The client filters displayed items based on
+        // `MerchandiseItemTypes`, so allow all item categories for market vendors.
+        if (IsMarketVendor)
+        {
+            MerchandiseItemTypes = (int)ItemType.Item;
+        }
     }
 
     private bool ValidateVendorRequirements()
@@ -402,6 +409,11 @@ public class Vendor : Creature
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
 
             item.ContainerId = Guid.Full;
+            item.Location = null;
+
+            // Market listings are unique sale items; ensure create-list stack size is not treated as unlimited.
+            // Preserve correct quantity display for stackables.
+            item.VendorShopCreateListStackSize = Math.Max(1, item.StackSize ?? 1);
             item.CalculateObjDesc();
 
             // Ensure we don't silently overwrite items if a guid collision still occurs.
@@ -451,6 +463,8 @@ public class Vendor : Creature
         item.AltCurrencyValue = listing.ListedPrice;
 
         item.SetProperty(PropertyInt.MarketListingId, listing.Id);
+
+        item.VendorShopCreateListStackSize = Math.Max(1, item.StackSize ?? 1);
 
         return true;
     }

@@ -670,6 +670,8 @@ public static class DefaultPropertyManager
         PropertyManager.ModifyLong("max_level", 126);
         PropertyManager.ModifyLong("fellowship_even_share_level", 50);
 
+        PropertyManager.ModifyLong("market_listing_max_price", 1_000_000_000);
+
         PropertyManager.ModifyDouble("vendor_unique_rot_time", 1800);
     }
 
@@ -834,7 +836,8 @@ public static class DefaultPropertyManager
         ("olthoi_north_camp_south_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Southern Camp.")),
         ("olthoi_north_camp_west_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Western Camp.")),
         ("olthoi_north_camp_north_supply_level", new Property<long>(0, "Set the supply level of the Olthoi North Northern Camp.")),
-        ("fragment_stability_phase_one", new Property<long>(0, "Phase One resonance stability tracker (0–15000 max)"))
+        ("fragment_stability_phase_one", new Property<long>(0, "Phase One resonance stability tracker (0–15000 max)")),
+        ("market_listing_max_price", new Property<long>(1_000_000_000, "Max market list price"))
     );
 
     public static readonly ReadOnlyDictionary<string, Property<double>> DefaultDoubleProperties = DictOf(
