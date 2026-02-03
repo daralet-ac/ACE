@@ -103,6 +103,7 @@ public sealed class PlayerMarketRepository : IPlayerMarketRepository
         _listingsById[listing.Id] = listing;
         _listingsByItemGuid[listing.ItemGuid] = listing;
         _listingsByItemBiotaId[listing.ItemBiotaId] = listing;
+        MarketListingEvents.RaiseListingCreated(listing.Id);
 
         return listing;
     }

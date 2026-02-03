@@ -57,6 +57,8 @@ public sealed class DbPlayerMarketRepository : IPlayerMarketRepository
         context.PlayerMarketListings.Add(listing);
         context.SaveChanges();
 
+        MarketListingEvents.RaiseListingCreated(listing.Id);
+
         return listing;
     }
 
