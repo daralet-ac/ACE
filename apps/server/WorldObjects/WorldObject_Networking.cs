@@ -27,6 +27,43 @@ namespace ACE.Server.WorldObjects;
 
 partial class WorldObject
 {
+    [ThreadStatic]
+    private static Dictionary<int, (ACE.Database.Models.Shard.PlayerMarketListing Listing, DateTime ExpiresAtUtc)> _marketListingCache;
+
+    public static void ClearMarketListingCache()
+    {
+        _marketListingCache?.Clear();
+    }
+
+    private static ACE.Database.Models.Shard.PlayerMarketListing? GetMarketListingCached(int listingId)
+    {
+        if (listingId <= 0)
+        {
+            return null;
+        }
+
+        _marketListingCache ??= new Dictionary<int, (ACE.Database.Models.Shard.PlayerMarketListing Listing, DateTime ExpiresAtUtc)>();
+
+        if (_marketListingCache.TryGetValue(listingId, out var entry))
+        {
+            if (entry.ExpiresAtUtc > DateTime.UtcNow)
+            {
+                return entry.Listing;
+            }
+
+            _marketListingCache.Remove(listingId);
+        }
+
+        var listing = MarketServiceLocator.PlayerMarketRepository.GetListingById(listingId);
+        if (listing != null)
+        {
+            // Cache until listing expiry (or immediate eviction if already expired).
+            _marketListingCache[listingId] = (listing, listing.ExpiresAtUtc);
+        }
+
+        return listing;
+    }
+
     private string GetNameForClient()
     {
         var name = Name ?? string.Empty;
@@ -36,7 +73,7 @@ partial class WorldObject
         {
             try
             {
-                var listing = MarketServiceLocator.PlayerMarketRepository.GetListingById(marketListingId.Value);
+                var listing = GetMarketListingCached(marketListingId.Value);
                 if (listing != null && !listing.IsSold && !listing.IsCancelled && listing.ExpiresAtUtc > DateTime.UtcNow)
                 {
                     var remaining = listing.ExpiresAtUtc - DateTime.UtcNow;
