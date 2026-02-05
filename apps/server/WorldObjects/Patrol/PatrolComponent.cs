@@ -331,7 +331,7 @@ public sealed class PatrolComponent
         }
         else if (count == 2)
         {
-            candidate = (int)(_creature.Guid.Full % 2);
+            candidate = (bestIndex + (int)(_creature.Guid.Full % 2)) % 2;
         }
 
         _index = candidate;
