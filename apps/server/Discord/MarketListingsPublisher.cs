@@ -15,6 +15,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Timer = System.Timers.Timer;
+using System.Text.RegularExpressions;
 
 namespace ACE.Server.Discord;
 
@@ -23,6 +24,22 @@ public static class MarketListingsPublisher
     private static readonly ILogger Log = Serilog.Log.ForContext(typeof(MarketListingsPublisher));
 
     private const string SnapshotMarker = "[market-snapshot]";
+    private const string SnapshotSentinel = "\u200C";
+
+    private static readonly IReadOnlyDictionary<int, int> ItemTypeOrder = new Dictionary<int, int>
+    {
+        { (int)ItemType.MeleeWeapon, 1 },
+        { (int)ItemType.MissileWeapon, 2 },
+        { (int)ItemType.Caster, 3 },
+        { (int)ItemType.Armor, 4 },
+        { (int)ItemType.Jewelry, 5 },
+        { (int)ItemType.Clothing, 6 },
+        // Synthetic section key for SigilTrinket (see GetSnapshotItemTypeKey)
+        { SigilTrinketItemTypeKey, 7 },
+    };
+
+    private const int SigilTrinketItemTypeKey = 1_000_000_000;
+    private static readonly Regex CamelCaseSplit = new("(?<!^)([A-Z])", RegexOptions.Compiled);
 
     private static DiscordSocketClient? _client;
 
@@ -165,9 +182,17 @@ public static class MarketListingsPublisher
                 return;
             }
 
-            foreach (var page in BuildPages(lines, header: "**New Market Listings**"))
+            foreach (var id in listingIds.Distinct())
             {
-                await channel.SendMessageAsync(page);
+                var listing = MarketServiceLocator.PlayerMarketRepository.GetListingById(id);
+                if (listing == null || listing.IsSold || listing.IsCancelled || listing.ExpiresAtUtc <= now)
+                {
+                    continue;
+                }
+
+                var eb = BuildListingEmbed(listing, now)
+                    .WithAuthor("New Market Listing");
+                await channel.SendMessageAsync(embeds: [eb.Build()]);
             }
         }
         catch (Exception ex)
@@ -201,67 +226,70 @@ public static class MarketListingsPublisher
 
             var sorted = listings
                 .Select(l => new { Listing = l, Sort = GetSortKey(l) })
-                .OrderBy(x => x.Sort.WeenieType)
-                .ThenBy(x => x.Sort.ItemType)
+                .OrderBy(x => GetItemTypeSortOrder(GetSnapshotItemTypeKey(x.Listing, x.Sort.ItemType)))
                 .ThenBy(x => x.Sort.SubType)
                 .ThenBy(x => x.Listing.ListedPrice)
                 .ThenBy(x => x.Listing.Id)
                 .ToList();
 
-            var lines = new List<string>(sorted.Count);
-            int? lastItemType = null;
-            var haveListingInSection = false;
-            foreach (var e in sorted)
-            {
-                if (lastItemType != e.Sort.ItemType)
-                {
-                    lastItemType = e.Sort.ItemType;
-                    haveListingInSection = false;
-                    var itemTypeValue = unchecked((uint)e.Sort.ItemType);
-                    var label = Enum.IsDefined(typeof(ItemType), itemTypeValue)
-                        ? ((ItemType)itemTypeValue).ToString()
-                        : $"ItemType {e.Sort.ItemType}";
-                    lines.Add($"### {label}");
-                }
-
-                if (haveListingInSection)
-                {
-                    lines.Add(string.Empty);
-                }
-
-                lines.Add(FormatListingLine(e.Listing, now));
-                haveListingInSection = true;
-            }
-            if (lines.Count == 0)
-            {
-                lines.Add("(no active listings)");
-            }
-
-            var pages = BuildPages(lines, header: $"**{tier.Title} ({totalActive})**   *(updated <t:{unixNow}:f> | <t:{unixNow}:R>)*");
+            var snapshotPosts = BuildSnapshotPosts(sorted, tier.Title, totalActive, unixNow, now);
 
             var existing = await GetOrDiscoverSnapshotMessageIds(tier.Target.ChannelId, threadChannel);
 
-            // edit existing pages
-            var keepIds = new List<ulong>();
-            for (var i = 0; i < pages.Count; i++)
+            static string Normalize(string? s) => (s ?? string.Empty).Trim();
+
+            var keepIds = new List<ulong>(snapshotPosts.Count);
+            for (var i = 0; i < snapshotPosts.Count; i++)
             {
-                var content = pages[i] + $"\n\n{SnapshotMarker}";
+                var post = snapshotPosts[i];
                 if (i < existing.Count)
                 {
                     var msg = await threadChannel.GetMessageAsync(existing[i]);
                     if (msg is IUserMessage um)
                     {
-                        await um.ModifyAsync(p => p.Content = content);
+                        var desiredContent = post.Content ?? string.Empty;
+                        var desiredEmbed = post.Embed?.Build();
+
+                        var currentContent = msg.Content ?? string.Empty;
+                        var currentEmbed = msg.Embeds.FirstOrDefault();
+
+                        var contentChanged = Normalize(currentContent) != Normalize(desiredContent);
+                        var embedChanged = (desiredEmbed == null) != (currentEmbed == null)
+                            || (desiredEmbed != null && currentEmbed != null && Normalize(desiredEmbed.Description) != Normalize(currentEmbed.Description));
+
+                        if (contentChanged || embedChanged)
+                        {
+                            await um.ModifyAsync(p =>
+                            {
+                                p.Content = desiredContent;
+                                p.Embeds = desiredEmbed != null
+                                    ? new Optional<Embed[]>([desiredEmbed])
+                                    : new Optional<Embed[]>([]);
+                            });
+
+                            // Throttle PATCHes (Discord bucket is per-route)
+                            await Task.Delay(1000);
+                        }
+
                         keepIds.Add(existing[i]);
                         continue;
                     }
                 }
 
-                var created = await threadChannel.SendMessageAsync(content);
+                IUserMessage created;
+                if (post.Embed != null)
+                {
+                    created = await threadChannel.SendMessageAsync(post.Content, embeds: [post.Embed.Build()]);
+                }
+                else
+                {
+                    created = await threadChannel.SendMessageAsync(post.Content ?? string.Empty);
+                }
+
                 keepIds.Add(created.Id);
+                await Task.Delay(1000);
             }
 
-            // delete extra pages
             for (var i = keepIds.Count; i < existing.Count; i++)
             {
                 try
@@ -272,6 +300,8 @@ public static class MarketListingsPublisher
                 {
                     // ignore
                 }
+
+                await Task.Delay(500);
             }
 
             SnapshotMessageIdsByThreadId[tier.Target.ChannelId] = keepIds;
@@ -321,15 +351,215 @@ public static class MarketListingsPublisher
             return [];
         }
 
+        bool HasMarker(IMessage m)
+        {
+            if (m.Content.Contains(SnapshotSentinel, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (m.Embeds != null && m.Embeds.Any(e => (e.Footer?.Text ?? string.Empty).Contains(SnapshotSentinel, StringComparison.Ordinal)))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        // Reuse existing: snapshot header messages contain the marker in content; listing embeds contain it in footer.
         var snapshotMsgs = found
             .Where(m => m.Author.Id == botId)
-            .Where(m => m.Content.Contains(SnapshotMarker, StringComparison.Ordinal))
+            .Where(HasMarker)
             .OrderBy(m => m.Timestamp)
             .Select(m => m.Id)
             .ToList();
 
         SnapshotMessageIdsByThreadId[threadId] = snapshotMsgs;
         return snapshotMsgs;
+    }
+
+    private sealed record SnapshotPost(string? Content, EmbedBuilder? Embed);
+
+    private static List<SnapshotPost> BuildSnapshotPosts<T>(
+        List<T> sorted,
+        string tierTitle,
+        int totalActive,
+        long updatedUnix,
+        DateTime now)
+    {
+        static string SplitCamel(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+            {
+                return s;
+            }
+
+            return CamelCaseSplit.Replace(s, " $1");
+        }
+
+        static string SectionLabel(int itemType)
+        {
+            if (itemType == SigilTrinketItemTypeKey)
+            {
+                return "Sigil Trinket";
+            }
+
+            var itemTypeValue = unchecked((uint)itemType);
+            return Enum.IsDefined(typeof(ItemType), itemTypeValue)
+                ? SplitCamel(((ItemType)itemTypeValue).ToString())
+                : $"ItemType {itemType}";
+        }
+
+        var posts = new List<SnapshotPost>(Math.Max(1, sorted.Count + 8));
+
+        int? currentSection = null;
+        foreach (dynamic e in sorted)
+        {
+            var itemType = GetSnapshotItemTypeKey(e.Listing, (int)e.Sort.ItemType);
+            if (!currentSection.HasValue || currentSection.Value != itemType)
+            {
+                currentSection = itemType;
+                var header = $"## __{SectionLabel(itemType)}__\n" +
+                             $"updated <t:{updatedUnix}:R>\n" +
+                             SnapshotSentinel;
+                posts.Add(new SnapshotPost(header, null));
+            }
+
+            var listingEmbed = BuildListingEmbed((ACE.Database.Models.Shard.PlayerMarketListing)e.Listing, now)
+                .WithFooter(SnapshotSentinel);
+            posts.Add(new SnapshotPost(null, listingEmbed));
+        }
+
+        if (posts.Count == 0)
+        {
+            var empty = $"**{tierTitle} ({totalActive})**\n" +
+                        $"(no active listings)\n" +
+                        $"updated <t:{updatedUnix}:R>\n" +
+                        SnapshotSentinel;
+            posts.Add(new SnapshotPost(empty, null));
+        }
+
+        return posts;
+    }
+
+    private static int GetSnapshotItemTypeKey(ACE.Database.Models.Shard.PlayerMarketListing listing, int itemType)
+    {
+        if (listing.ItemSnapshotJson != null && listing.ItemSnapshotJson.Contains("sigil", StringComparison.OrdinalIgnoreCase))
+        {
+            return SigilTrinketItemTypeKey;
+        }
+
+        return itemType;
+    }
+
+    private static int GetItemTypeSortOrder(int itemTypeKey)
+    {
+        return ItemTypeOrder.TryGetValue(itemTypeKey, out var order) ? order : 999;
+    }
+
+    private enum ListingEmbedKind
+    {
+        Unknown = 0,
+        Weapon = 1,
+        MissileWeapon = 5,
+        Caster = 6,
+        Armor = 2,
+        Jewelry = 3,
+        SigilTrinket = 4,
+        Clothing = 7,
+    }
+
+    private static ListingEmbedKind ResolveEmbedKind(ACE.Server.WorldObjects.WorldObject obj)
+    {
+        if (obj.WeenieClassName != null && obj.Name.Contains("sigil", StringComparison.OrdinalIgnoreCase))
+        {
+            return ListingEmbedKind.SigilTrinket;
+        }
+
+        return obj.ItemType switch
+        {
+            ItemType.MeleeWeapon => ListingEmbedKind.Weapon,
+            ItemType.MissileWeapon => ListingEmbedKind.MissileWeapon,
+            ItemType.Caster => ListingEmbedKind.Caster,
+            ItemType.Armor => ListingEmbedKind.Armor,
+            ItemType.Jewelry => ListingEmbedKind.Jewelry,
+            ItemType.Clothing => ListingEmbedKind.Clothing,
+            _ => ListingEmbedKind.Unknown,
+        };
+    }
+
+    private static Color? ResolveEmbedColor(ListingEmbedKind kind)
+    {
+        return kind switch
+        {
+            ListingEmbedKind.Weapon => Color.Red,
+            ListingEmbedKind.MissileWeapon => new Color(255, 165, 0),
+            ListingEmbedKind.Caster => new Color(128, 0, 128),
+            ListingEmbedKind.Armor => Color.Gold,
+            ListingEmbedKind.Jewelry => Color.Blue,
+            ListingEmbedKind.SigilTrinket => new Color(0, 128, 128),
+            ListingEmbedKind.Clothing => Color.Green,
+            _ => null,
+        };
+    }
+
+    private static EmbedBuilder BuildListingEmbed(ACE.Database.Models.Shard.PlayerMarketListing listing, DateTime now)
+    {
+        var line = FormatListingLine(listing, now);
+
+        var kind = ListingEmbedKind.Unknown;
+        var obj = TryRecreateListingWorldObject(listing);
+        if (obj != null)
+        {
+            try
+            {
+                kind = ResolveEmbedKind(obj);
+            }
+            finally
+            {
+                obj.Destroy();
+            }
+        }
+
+        return BuildListingEmbed(line, kind);
+    }
+
+    private static EmbedBuilder BuildListingEmbed(string line, ListingEmbedKind kind)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return new EmbedBuilder();
+        }
+
+        var parts = line
+            .Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+
+        var title = parts.Count > 0 ? parts[0].TrimStart('#', ' ').Trim() : string.Empty;
+        if (parts.Count > 0)
+        {
+            parts.RemoveAt(0);
+        }
+
+        var eb = new EmbedBuilder();
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            eb.WithTitle(title);
+        }
+
+        var detailText = string.Join("\n", parts.Select(p => p.Trim()).Where(p => p.Length > 0)).Trim();
+        if (!string.IsNullOrWhiteSpace(detailText))
+        {
+            eb.WithDescription(detailText);
+        }
+
+        var color = ResolveEmbedColor(kind);
+        if (color.HasValue)
+        {
+            eb.WithColor(color.Value);
+        }
+
+        return eb;
     }
 
     private static string FormatListingLine(ACE.Database.Models.Shard.PlayerMarketListing listing, DateTime now)
@@ -341,13 +571,16 @@ public static class MarketListingsPublisher
             expiresIn = TimeSpan.Zero;
         }
 
+        var expiresAtUnix = new DateTimeOffset(listing.ExpiresAtUtc).ToUnixTimeSeconds();
+        var expiresAtText = $"<t:{expiresAtUnix}:F> | <t:{expiresAtUnix}:R>";
+
         var stackSize = ResolveStackSize(listing);
         var reqLabel = ResolveReqLabelFromWeenie(listing.ItemWeenieClassId);
         var wieldReq = listing.WieldReq.HasValue ? $"{reqLabel} {listing.WieldReq.Value}" : $"{reqLabel} -";
         var stackText = stackSize > 1 ? $"x{stackSize}" : "";
 
-        var details = TryBuildItemDetails(listing, name, stackText, listing.ListedPrice, wieldReq, listing.SellerName, FormatRemaining(expiresIn));
-        return details ?? $"• {name} {stackText} | {listing.ListedPrice:N0} py | {wieldReq} | {listing.SellerName} | expires in {FormatRemaining(expiresIn)}";
+        var details = TryBuildItemDetails(listing, name, stackText, listing.ListedPrice, wieldReq, listing.SellerName, expiresAtText);
+        return (details ?? $"• {name} {stackText} | {listing.ListedPrice:N0} py | {wieldReq} | {listing.SellerName} | expires {expiresAtText}").TrimEnd();
     }
 
     private static string? TryBuildItemDetails(
@@ -357,7 +590,7 @@ public static class MarketListingsPublisher
         int listedPrice,
         string wieldReq,
         string sellerName,
-        string expiresIn)
+        string expiresAtText)
     {
         var obj = TryRecreateListingWorldObject(listing);
         if (obj == null)
@@ -367,7 +600,8 @@ public static class MarketListingsPublisher
 
         try
         {
-            var header = $"- {name} {stackText} | {listedPrice:N0} py";
+            var header = $"### {name} {stackText} | {listedPrice:N0} py";
+            var headerTitle = header.Split(" | ", 2, StringSplitOptions.None)[0].TrimEnd();
 
             var commonParts = new List<string>(8) { wieldReq };
             AppendCommonItemParts(obj, commonParts);
@@ -384,7 +618,15 @@ public static class MarketListingsPublisher
                 var lines = FormatWeaponDetailsMultiline(obj);
                 var allLines = new List<string>(lines.Count + 1);
                 var commonLine = new List<string>(1);
-                AddIndentedLine(commonLine, commonParts);
+                var weaponCommon = new List<string>(commonParts);
+                if (weaponCommon.Count > 0)
+                {
+                    var reqVal = listing.WieldReq.HasValue ? listing.WieldReq.Value.ToString() : "-";
+                    var label = ResolveWieldLabelFromSkillType(obj.WieldSkillType, ResolveReqLabelFromWeenie(listing.ItemWeenieClassId));
+                    weaponCommon[0] = $"{label} {reqVal}";
+                }
+
+                AddIndentedLine(commonLine, weaponCommon);
 
                 if (commonLine.Count > 0)
                 {
@@ -393,8 +635,22 @@ public static class MarketListingsPublisher
                 allLines.AddRange(lines);
 
                 allLines = allLines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
-                var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)) : string.Empty;
-                return header + body + $"\n  Seller: {sellerName} | expires in {expiresIn}";
+                var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)).TrimEnd() : string.Empty;
+                return (header + $"\nSeller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
+            }
+
+            if (obj.WeenieClassName != null && obj.Name.Contains("sigil", StringComparison.OrdinalIgnoreCase))
+            {
+                var sigilDetails = FormatSigilTrinketDetails(obj);
+                var allLines = new List<string>(2);
+                if (!string.IsNullOrWhiteSpace(sigilDetails))
+                {
+                    allLines.AddRange(sigilDetails.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+                }
+
+                allLines = allLines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+                var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)).TrimEnd() : string.Empty;
+                return (header + $"\nSeller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
             }
 
             if (obj.ItemType is ItemType.Armor)
@@ -402,7 +658,29 @@ public static class MarketListingsPublisher
                 var lines = FormatArmorDetailsMultiline(obj);
                 var allLines = new List<string>(lines.Count + 1);
                 var commonLine = new List<string>(1);
-                AddIndentedLine(commonLine, commonParts);
+                var armorCommon = new List<string>(commonParts);
+                if (armorCommon.Count > 0)
+                {
+                    var reqVal = listing.WieldReq.HasValue ? listing.WieldReq.Value.ToString() : "-";
+                    var label = ResolveWieldLabelFromSkillType(obj.WieldSkillType, ResolveReqLabelFromWeenie(listing.ItemWeenieClassId));
+                    armorCommon[0] = $"{label} {reqVal}";
+                }
+
+                var wc = obj.GetProperty(PropertyInt.ArmorWeightClass);
+                if (wc.HasValue)
+                {
+                    var wcText = wc.Value switch
+                    {
+                        1 => "Cloth",
+                        2 => "Light",
+                        4 => "Heavy",
+                        _ => $"Wt {wc.Value}",
+                    };
+
+                    armorCommon.Insert(Math.Min(1, armorCommon.Count), wcText);
+                }
+
+                AddIndentedLine(commonLine, armorCommon);
 
                 if (commonLine.Count > 0)
                 {
@@ -411,8 +689,8 @@ public static class MarketListingsPublisher
                 allLines.AddRange(lines);
 
                 allLines = allLines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
-                var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)) : string.Empty;
-                return header + body + $"\n  Seller: {sellerName} | expires in {expiresIn}";
+                var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)).TrimEnd() : string.Empty;
+                return (header + $"\nSeller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
             }
 
             if (obj.ItemType is ItemType.Jewelry)
@@ -429,20 +707,15 @@ public static class MarketListingsPublisher
                 allLines.AddRange(lines);
 
                 allLines = allLines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
-                var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)) : string.Empty;
-                return header + body + $"\n  Seller: {sellerName} | expires in {expiresIn}";
+                var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)).TrimEnd() : string.Empty;
+                return (header + $"\nSeller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
             }
 
-            var details = obj.ItemType switch
-            {
-                _ => obj.WeenieClassName != null && obj.WeenieClassName.Contains("sigil", StringComparison.OrdinalIgnoreCase)
-                    ? FormatSigilTrinketDetails(obj)
-                    : null
-            };
+            var details = (string?)null;
 
             var detailsText = string.IsNullOrWhiteSpace(details) ? "" : $" | {details}";
             var reqText = string.IsNullOrWhiteSpace(wieldReq) ? string.Empty : $" | {wieldReq}";
-            return $"{header}{detailsText}{reqText} | {sellerName} | expires in {expiresIn}";
+            return $"{header}{detailsText}{reqText} | {sellerName} | expires {expiresAtText}";
         }
         catch
         {
@@ -499,6 +772,12 @@ public static class MarketListingsPublisher
             line1.Add(((DamageType)element.Value).ToString());
         }
 
+        if (obj.ItemType is ItemType.Caster)
+        {
+            AppendPropertyFloatIfPresent(obj, line1, PropertyFloat.ElementalDamageMod, "D.Mod%", multiplyBy100: true, skipIfZero: true, subtractBy1: true);
+            AppendPropertyFloatIfPresent(obj, line1, PropertyFloat.WeaponRestorationSpellsMod, "Resto%", multiplyBy100: true, skipIfZero: true, subtractBy1: true);
+        }
+
         // Show weapon damage as a range using variance: min = max * (1 - variance).
         var dmg = obj.GetProperty(PropertyInt.Damage);
         var variance = obj.GetProperty(PropertyFloat.DamageVariance);
@@ -517,7 +796,7 @@ public static class MarketListingsPublisher
             }
         }
 
-        AppendPropertyFloatIfPresent(obj, line1, PropertyFloat.DamageMod, "D.Mod%", multiplyBy100: true, skipIfZero: true);
+        AppendPropertyFloatIfPresent(obj, line1, PropertyFloat.DamageMod, "D.Mod%", multiplyBy100: true, skipIfZero: true, subtractBy1: true);
 
         if (obj.WeaponTime.HasValue)
         {
@@ -531,11 +810,13 @@ public static class MarketListingsPublisher
 
         AddIndentedLine(lines, line1);
 
-        // line 3 - Atk, Pdef, Mdef
+        // line 3 - Atk, Pdef, Mdef, War, Life
         var line3 = new List<string>(10);
-        AppendWeaponMultiplierAsBonusPercentIfPresent(obj, line3, PropertyFloat.WeaponOffense, "Atk");
-        AppendWeaponMultiplierAsBonusPercentIfPresent(obj, line3, PropertyFloat.WeaponPhysicalDefense, "P.Def");
-        AppendWeaponMultiplierAsBonusPercentIfPresent(obj, line3, PropertyFloat.WeaponMagicalDefense, "M.Def");
+        AppendWeaponMultiplierAsBonusPercentIfPresent(obj, line3, PropertyFloat.WeaponOffense, "Atk", skipIfZero: true, baseStat: 1.0f);
+        AppendWeaponMultiplierAsBonusPercentIfPresent(obj, line3, PropertyFloat.WeaponPhysicalDefense, "P.Def", skipIfZero: true, baseStat: 1.0f);
+        AppendWeaponMultiplierAsBonusPercentIfPresent(obj, line3, PropertyFloat.WeaponMagicalDefense, "M.Def", skipIfZero: true, baseStat: 1.0f);
+        AppendWeaponMultiplierAsBonusPercentIfPresent(obj, line3, PropertyFloat.WeaponWarMagicMod, "War", skipIfZero: true);
+        AppendWeaponMultiplierAsBonusPercentIfPresent(obj, line3, PropertyFloat.WeaponLifeMagicMod, "Life", skipIfZero: true);
         AddIndentedLine(lines, line3);
 
         // line 4 - Imbue, critmulti, critfreq, ignorearmor, resistmod
@@ -572,6 +853,30 @@ public static class MarketListingsPublisher
         }
 
         AddIndentedLine(lines, line5);
+
+        return lines;
+    }
+
+    private static List<string> FormatClothingDetailsMultiline(ACE.Server.WorldObjects.WorldObject obj, List<string> commonParts)
+    {
+        var lines = new List<string>(2);
+
+        var commonLine = new List<string>(1);
+        AddIndentedLine(commonLine, commonParts);
+        if (commonLine.Count > 0)
+        {
+            lines.Add(commonLine[0]);
+        }
+
+        var line2 = new List<string>(8);
+        if (obj.WardLevel.HasValue)
+        {
+            line2.Add($"Ward {obj.WardLevel.Value}");
+        }
+        AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.ArmorHealthMod, "Health", multiplyBy100: true, skipIfZero: true);
+        AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.ArmorStaminaMod, "Stam", multiplyBy100: true, skipIfZero: true);
+        AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.ArmorManaMod, "Mana", multiplyBy100: true, skipIfZero: true);
+        AddIndentedLine(lines, line2);
 
         return lines;
     }
@@ -688,14 +993,16 @@ public static class MarketListingsPublisher
             return;
         }
 
-        lines.Add("  - " + text);
+        lines.Add("- " + text);
     }
 
     private static void AppendWeaponMultiplierAsBonusPercentIfPresent(
         ACE.Server.WorldObjects.WorldObject obj,
         List<string> parts,
         PropertyFloat prop,
-        string label)
+        string label,
+        bool skipIfZero = false,
+        float baseStat = 0.0f)
     {
         var val = obj.GetProperty(prop);
         if (!val.HasValue)
@@ -703,7 +1010,12 @@ public static class MarketListingsPublisher
             return;
         }
 
-        var bonusPct = (val.Value - 1.0) * 100.0;
+        if (skipIfZero && Math.Abs(val.Value) < baseStat + 0.001)
+        {
+            return;
+        }
+
+        var bonusPct = (val.Value - baseStat) * 100.0;
         bonusPct = Math.Round(bonusPct, 1, MidpointRounding.AwayFromZero);
         parts.Add($"{label} {bonusPct:+0.0;-0.0;0.0}%");
     }
@@ -819,38 +1131,44 @@ public static class MarketListingsPublisher
 
     private static string? FormatSigilTrinketDetails(ACE.Server.WorldObjects.WorldObject obj)
     {
-        var parts = new List<string>(10);
-        AppendCommonItemParts(obj, parts);
+        var lines = new List<string>(2);
 
-        var type = obj.GetProperty(PropertyInt.SigilTrinketType);
-        var skill = obj.GetProperty(PropertyInt.SigilTrinketSkill);
-        var effect = obj.GetProperty(PropertyInt.SigilTrinketEffectId);
-        var maxTier = obj.GetProperty(PropertyInt.SigilTrinketMaxTier);
-        if (type.HasValue)
+        var line1 = new List<string>(6);
+
+        var req = obj.WieldDifficulty;
+        var reqLabel = ResolveWieldLabelFromSkillType(obj.WieldSkillType, "Lv.Req");
+        line1.Add(req.HasValue ? $"{reqLabel} {req.Value}" : $"{reqLabel} -");
+
+        var color = obj.GetProperty(PropertyInt.SigilTrinketColor);
+        if (color.HasValue)
         {
-            parts.Add($"Type {type.Value}");
-        }
-        if (skill.HasValue)
-        {
-            parts.Add($"Skill {skill.Value}");
-        }
-        if (effect.HasValue)
-        {
-            parts.Add($"Fx {effect.Value}");
-        }
-        if (maxTier.HasValue)
-        {
-            parts.Add($"MaxT {maxTier.Value}");
+            var colorText = color.Value switch
+            {
+                0 => "Blue",
+                1 => "Yellow",
+                2 => "Red",
+                _ => $"Color {color.Value}",
+            };
+            line1.Add(colorText);
         }
 
-        AppendPropertyFloatIfPresent(obj, parts, PropertyFloat.SigilTrinketTriggerChance, "Trig%", multiplyBy100: true);
-        AppendPropertyFloatIfPresent(obj, parts, PropertyFloat.SigilTrinketCooldown, "CD");
-        if (obj.ItemLevel.HasValue)
+        var maxLevel = obj.GetProperty(PropertyInt.ItemMaxLevel);
+        var curLevel = obj.ItemLevel;
+        if (curLevel.HasValue && maxLevel.HasValue)
         {
-            parts.Add($"IL {obj.ItemLevel.Value}");
+            line1.Add($"Level {curLevel.Value}/{maxLevel.Value}");
         }
 
-        return JoinParts(parts);
+        AddIndentedLine(lines, line1);
+
+        var line2 = new List<string>(8);
+        AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.SigilTrinketTriggerChance, "Proc%", multiplyBy100: true);
+        AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.CooldownDuration, "Cooldown");
+        AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.SigilTrinketReductionAmount, "Reduction", skipIfZero: true);
+        AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.SigilTrinketIntensity, "Intensity", skipIfZero: true);
+        AddIndentedLine(lines, line2);
+
+        return lines.Count > 0 ? string.Join("\n", lines).TrimEnd() : null;
     }
 
     private static void AppendCommonItemParts(ACE.Server.WorldObjects.WorldObject obj, List<string> parts)
@@ -879,7 +1197,8 @@ public static class MarketListingsPublisher
         PropertyFloat prop,
         string label,
         bool multiplyBy100 = false,
-        bool skipIfZero = false)
+        bool skipIfZero = false,
+        bool subtractBy1 = false)
     {
         var val = obj.GetProperty(prop);
         if (!val.HasValue)
@@ -890,6 +1209,11 @@ public static class MarketListingsPublisher
         if (skipIfZero && Math.Abs(val.Value) < 0.001)
         {
             return;
+        }
+
+        if (subtractBy1)
+        {
+            val -= 1;
         }
 
         var outVal = multiplyBy100 ? val.Value * 100.0 : val.Value;
@@ -1006,7 +1330,7 @@ public static class MarketListingsPublisher
             {
                 if (it == (int)ItemType.Jewelry || it == (int)ItemType.Clothing)
                 {
-                    return "L.Req";
+                    return "Lv";
                 }
             }
         }
@@ -1015,7 +1339,18 @@ public static class MarketListingsPublisher
             // ignore
         }
 
-        return "W.Req";
+        return "Att.Req";
+    }
+
+    private static string ResolveWieldLabelFromSkillType(int? wieldSkillType, string fallback)
+    {
+        return wieldSkillType switch
+        {
+            1 => "Str",
+            4 => "Crd",
+            6 => "Slf",
+            _ => fallback,
+        };
     }
 
     private static List<string> BuildPages(List<string> lines, string header)
