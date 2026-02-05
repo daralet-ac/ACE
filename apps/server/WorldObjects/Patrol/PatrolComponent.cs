@@ -34,10 +34,15 @@ public sealed class PatrolComponent
 
     public PatrolComponent(Creature creature)
     {
+        if (creature == null)
+        {
+            throw new ArgumentNullException(nameof(creature));
+        }
         _creature = creature;
 
-        // Capture patrol center once (original spawn/home).
-        _patrolHome = new Position(_creature.Home);
+        // Capture patrol center once (original spawn/home). If Home isn't set, fall back quietly.
+        var homePos = _creature.Home ?? _creature.Location;
+        _patrolHome = new Position(homePos);
 
         ReloadPath();
     }
