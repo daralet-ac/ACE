@@ -84,6 +84,8 @@ public enum PropertyString : ushort
 
     [ServerOnly]
     SigilTrinketAllowedSpecializedSkills = 53,
+    [ServerOnly]
+    PatrolPath = 54,
 
     [ServerOnly]
     PCAPRecordedCurrentMotionState = 8006,
@@ -127,8 +129,7 @@ public enum PropertyString : ushort
     AllegianceLog = 9013,
     CorpseLog = 9014,
     
-    [ServerOnly]
-    PatrolPath = 9015,
+
 
 }
 
