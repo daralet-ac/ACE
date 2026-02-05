@@ -239,6 +239,8 @@ public static class MarketListingsPublisher
             static string Normalize(string? s) => (s ?? string.Empty).Trim();
 
             var keepIds = new List<ulong>(snapshotPosts.Count);
+            var maxEditsPerRun = 25;
+            var editsThisRun = 0;
             for (var i = 0; i < snapshotPosts.Count; i++)
             {
                 var post = snapshotPosts[i];
@@ -259,6 +261,12 @@ public static class MarketListingsPublisher
 
                         if (contentChanged || embedChanged)
                         {
+                            if (editsThisRun >= maxEditsPerRun)
+                            {
+                                keepIds.Add(existing[i]);
+                                continue;
+                            }
+
                             await um.ModifyAsync(p =>
                             {
                                 p.Content = desiredContent;
@@ -268,7 +276,8 @@ public static class MarketListingsPublisher
                             });
 
                             // Throttle PATCHes (Discord bucket is per-route)
-                            await Task.Delay(1000);
+                            editsThisRun++;
+                            await Task.Delay(1500);
                         }
 
                         keepIds.Add(existing[i]);
@@ -535,10 +544,18 @@ public static class MarketListingsPublisher
             .Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .ToList();
 
+
         var title = parts.Count > 0 ? parts[0].TrimStart('#', ' ').Trim() : string.Empty;
         if (parts.Count > 0)
         {
             parts.RemoveAt(0);
+        }
+
+        string? footerText = null;
+        if (parts.Count > 0 && parts[^1].StartsWith("Footer: ", StringComparison.Ordinal))
+        {
+            footerText = parts[^1].Substring("Footer: ".Length).Trim();
+            parts.RemoveAt(parts.Count - 1);
         }
 
         var eb = new EmbedBuilder();
@@ -551,6 +568,11 @@ public static class MarketListingsPublisher
         if (!string.IsNullOrWhiteSpace(detailText))
         {
             eb.WithDescription(detailText);
+        }
+
+        if (!string.IsNullOrWhiteSpace(footerText))
+        {
+            eb.WithFooter(footerText);
         }
 
         var color = ResolveEmbedColor(kind);
@@ -636,7 +658,7 @@ public static class MarketListingsPublisher
 
                 allLines = allLines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
                 var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)).TrimEnd() : string.Empty;
-                return (header + $"\nSeller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
+                return (headerTitle + $"\nFooter: Seller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
             }
 
             if (obj.WeenieClassName != null && obj.Name.Contains("sigil", StringComparison.OrdinalIgnoreCase))
@@ -650,7 +672,7 @@ public static class MarketListingsPublisher
 
                 allLines = allLines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
                 var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)).TrimEnd() : string.Empty;
-                return (header + $"\nSeller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
+                return (headerTitle + $"\nFooter: Seller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
             }
 
             if (obj.ItemType is ItemType.Armor)
@@ -690,7 +712,7 @@ public static class MarketListingsPublisher
 
                 allLines = allLines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
                 var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)).TrimEnd() : string.Empty;
-                return (header + $"\nSeller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
+                return (headerTitle + $"\nFooter: Seller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
             }
 
             if (obj.ItemType is ItemType.Jewelry)
@@ -708,7 +730,16 @@ public static class MarketListingsPublisher
 
                 allLines = allLines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
                 var body = allLines.Count > 0 ? ("\n" + string.Join("\n", allLines)).TrimEnd() : string.Empty;
-                return (header + $"\nSeller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
+                return (headerTitle + $"\nFooter: Seller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
+            }
+
+            if (obj.ItemType is ItemType.Clothing)
+            {
+                var lines = FormatClothingDetailsMultiline(obj, commonParts);
+                lines = lines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+
+                var body = lines.Count > 0 ? ("\n" + string.Join("\n", lines)).TrimEnd() : string.Empty;
+                return (headerTitle + $"\nFooter: Seller: {sellerName} | expires {expiresAtText}" + body).TrimEnd();
             }
 
             var details = (string?)null;
