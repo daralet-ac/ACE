@@ -73,7 +73,9 @@ internal sealed class MarketSnapshotUpdater
             {
                 var sort = GetSortKey(l);
                 var sectionKey = GetSnapshotSectionKey(l);
-                return new MarketSnapshotRenderer.SortedListing(l, sectionKey, sort.ItemType, sort.SubType, l.ListedPrice, l.Id);
+                var itemType = sort.ItemType; // Store raw item type
+                var subType = sort.SubType; // Store subType for sorting
+                return new MarketSnapshotRenderer.SortedListing(l, sectionKey, itemType, subType, l.ListedPrice, l.Id);
             })
             .OrderBy(x => GetSectionSortOrder(x.SectionKey, x.ItemType))
             .ThenBy(x => x.SubType)
@@ -81,7 +83,7 @@ internal sealed class MarketSnapshotUpdater
             .ThenBy(x => x.ListingId)
             .ToList();
 
-        var snapshotPosts = _renderer.BuildPosts(sorted, tierTitle, totalActive, unixNow, now);
+        var snapshotPosts = _renderer.BuildPosts(sorted, tierTitle, totalActive, unixNow, now, _policy);
 
         var existing = await GetOrDiscoverSnapshotMessageIds(channelId, threadChannel);
 

@@ -9,7 +9,8 @@ internal sealed record MarketSnapshotUpdatePolicy(
     TimeSpan CreateDelay,
     TimeSpan DeleteDelay,
     int DiscoveryBatches,
-    int DiscoveryBatchSize
+    int DiscoveryBatchSize,
+    int MaxListingsPerEmbed
 )
 {
     internal static readonly MarketSnapshotUpdatePolicy Default = new(
@@ -18,5 +19,6 @@ internal sealed record MarketSnapshotUpdatePolicy(
         CreateDelay: TimeSpan.FromMilliseconds(1500),
         DeleteDelay: TimeSpan.FromMilliseconds(750),
         DiscoveryBatches: 5,
-        DiscoveryBatchSize: 100);
+        DiscoveryBatchSize: 100,
+        MaxListingsPerEmbed: 25);
 }

@@ -36,6 +36,12 @@ internal static class MarketListingFormatter
     }
 
     // Public API
+    internal static string BuildListingMarkdown(ACE.Database.Models.Shard.PlayerMarketListing listing, DateTime now)
+    {
+        var cache = new ListingFormatCache();
+        return FormatListingLine(listing, now, cache);
+    }
+
     internal static EmbedBuilder BuildListingEmbed(ACE.Database.Models.Shard.PlayerMarketListing listing, DateTime now, string? footer = null)
     {
         var cache = new ListingFormatCache();
@@ -195,7 +201,7 @@ internal static class MarketListingFormatter
             {
                 var bodyLines = details.Lines.Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
                 var body = bodyLines.Count > 0 ? ("\n" + string.Join("\n", bodyLines)).TrimEnd() : string.Empty;
-                return (details.HeaderTitle + $"\nFooter: Seller: {details.SellerName} | expires {details.ExpiresAtText}" + body).TrimEnd();
+                return ($"Seller: {details.SellerName} | expires {details.ExpiresAtText}" + body).TrimEnd();
             }
 
             static List<string> BuildCommonParts(ACE.Server.WorldObjects.WorldObject obj, string wieldReq)
