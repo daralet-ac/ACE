@@ -159,6 +159,44 @@ internal sealed class MarketSnapshotRenderer
                         value = value.Substring(0, 1021) + "...";
                     }
 
+                    // Discord embed hard limit: total (title + description + fields + footer etc) <= 6000
+                    // Keep a small safety margin to avoid build-time failures.
+                    const int embedHardLimit = 6000;
+                    const int safety = 32;
+                    var currentLen = 0;
+                    if (!string.IsNullOrEmpty(sectionEmbed.Title)) currentLen += sectionEmbed.Title.Length;
+                    if (!string.IsNullOrEmpty(sectionEmbed.Description)) currentLen += sectionEmbed.Description.Length;
+                    if (sectionEmbed.Footer != null && !string.IsNullOrEmpty(sectionEmbed.Footer.Text)) currentLen += sectionEmbed.Footer.Text.Length;
+                    if (sectionEmbed.Fields != null)
+                    {
+                        foreach (var f in sectionEmbed.Fields)
+                        {
+                            currentLen += (f.Name?.Length ?? 0) + (f.Value?.Length ?? 0);
+                        }
+                    }
+
+                    var budget = embedHardLimit - safety - currentLen;
+                    if (budget <= 0)
+                    {
+                        break;
+                    }
+
+                    // budget must cover both name+value
+                    var needed = title.Length + value.Length;
+                    if (needed > budget)
+                    {
+                        var availForValue = Math.Max(0, budget - title.Length);
+                        if (availForValue <= 0)
+                        {
+                            break;
+                        }
+
+                        if (value.Length > availForValue)
+                        {
+                            value = availForValue <= 3 ? value.Substring(0, availForValue) : value.Substring(0, availForValue - 3) + "...";
+                        }
+                    }
+
                     sectionEmbed.AddField(title, value, inline: false);
                 }
 
