@@ -172,8 +172,66 @@ internal static class MarketListingFormatter
         var wieldReq = listing.WieldReq.HasValue ? $"{reqLabel} {listing.WieldReq.Value}" : $"{reqLabel} -";
         var stackText = stackSize > 1 ? $"x{stackSize}" : "";
 
+        var priceText = stackSize > 1
+            ? $"{listing.ListedPrice:N0} py ({(int)Math.Ceiling(listing.ListedPrice / (double)stackSize):N0} py ea)"
+            : $"{listing.ListedPrice:N0} py";
+
+        try
+        {
+            var weenie = DatabaseManager.World.GetCachedWeenie(listing.ItemWeenieClassId);
+            if (weenie?.PropertiesInt != null
+                && weenie.PropertiesInt.TryGetValue(PropertyInt.ItemType, out var it)
+                && it == (int)ItemType.Armor
+                && weenie.PropertiesInt.TryGetValue(PropertyInt.ArmorSlots, out var slots)
+                && slots > 0)
+            {
+                var perSlot = (int)Math.Ceiling(listing.ListedPrice / (double)slots);
+                priceText += $" ({perSlot:N0} py/slot)";
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+
         var details = TryBuildItemDetails(listing, name, stackText, listing.ListedPrice, wieldReq, listing.SellerName, expiresAtText, cache);
-        return (details ?? $"• {name} {stackText} | {listing.ListedPrice:N0} py | {wieldReq} | {listing.SellerName} | expires {expiresAtText}").TrimEnd();
+        if (!string.IsNullOrWhiteSpace(details))
+        {
+            return details.TrimEnd();
+        }
+
+        // Fallback (multi-line) for snapshot field splitting.
+        // Option B: omit req/details when we can't recreate the WorldObject.
+        var header = $"### {name} {stackText} | {priceText}".TrimEnd();
+
+        string? usesLine = null;
+        if (!string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
+        {
+            try
+            {
+                var wo = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(listing.ItemSnapshotJson);
+                if (wo != null)
+                {
+                    try
+                    {
+                        if (wo.Structure.HasValue && wo.MaxStructure.HasValue && wo.MaxStructure.Value > 0)
+                        {
+                            usesLine = $"- Uses {wo.Structure.Value}/{wo.MaxStructure.Value}";
+                        }
+                    }
+                    finally
+                    {
+                        wo.Destroy();
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        return (header + "\n" + $"Seller: {listing.SellerName} | expires {expiresAtText}" + (usesLine != null ? "\n" + usesLine : string.Empty)).TrimEnd();
     }
 
     private static string? TryBuildItemDetails(
@@ -194,7 +252,45 @@ internal static class MarketListingFormatter
 
         try
         {
-            var header = $"### {name} {stackText} | {listedPrice:N0} py";
+            string priceText;
+            var stackSize = 1;
+            if (!string.IsNullOrWhiteSpace(stackText)
+                && stackText.StartsWith('x')
+                && int.TryParse(stackText.AsSpan(1), out var parsed)
+                && parsed > 1)
+            {
+                stackSize = parsed;
+            }
+
+            if (stackSize > 1)
+            {
+                var perUnit = (int)Math.Ceiling(listedPrice / (double)stackSize);
+                priceText = $"{listedPrice:N0} py ({perUnit:N0} py ea)";
+            }
+            else
+            {
+                priceText = $"{listedPrice:N0} py";
+            }
+
+            try
+            {
+                var weenie = DatabaseManager.World.GetCachedWeenie(listing.ItemWeenieClassId);
+                if (weenie?.PropertiesInt != null
+                    && weenie.PropertiesInt.TryGetValue(PropertyInt.ItemType, out var it)
+                    && it == (int)ItemType.Armor
+                    && weenie.PropertiesInt.TryGetValue(PropertyInt.ArmorSlots, out var slots)
+                    && slots > 0)
+                {
+                    var perSlot = (int)Math.Ceiling(listedPrice / (double)slots);
+                    priceText += $" ({perSlot:N0} py/slot)";
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+
+            var header = $"### {name} {stackText} | {priceText}";
             var headerTitle = header.Split(" | ", 2, StringSplitOptions.None)[0].TrimEnd();
 
             static string Render(ListingDetails details)
@@ -208,6 +304,11 @@ internal static class MarketListingFormatter
             {
                 var commonParts = new List<string>(8) { wieldReq };
                 AppendCommonItemParts(obj, commonParts);
+
+                if (obj.Structure.HasValue && obj.MaxStructure.HasValue && obj.MaxStructure.Value > 0)
+                {
+                    commonParts.Add($"Uses {obj.Structure.Value}/{obj.MaxStructure.Value}");
+                }
 
                 var jewelSockets = obj.GetProperty(PropertyInt.JewelSockets);
                 if (jewelSockets.HasValue && jewelSockets.Value > 0)

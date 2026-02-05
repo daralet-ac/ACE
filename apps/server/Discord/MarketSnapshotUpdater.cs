@@ -75,10 +75,48 @@ internal sealed class MarketSnapshotUpdater
                 var sectionKey = GetSnapshotSectionKey(l);
                 var itemType = sort.ItemType; // Store raw item type
                 var subType = sort.SubType; // Store subType for sorting
-                return new MarketSnapshotRenderer.SortedListing(l, sectionKey, itemType, subType, l.ListedPrice, l.Id);
+                var priceKey = l.ListedPrice;
+                try
+                {
+                    var weenie = DatabaseManager.World.GetCachedWeenie(l.ItemWeenieClassId);
+                    if (weenie?.PropertiesInt != null
+                        && weenie.PropertiesInt.TryGetValue(PropertyInt.ItemType, out var it)
+                        && it == (int)ItemType.Armor
+                        && weenie.PropertiesInt.TryGetValue(PropertyInt.ArmorSlots, out var slots)
+                        && slots > 0)
+                    {
+                        priceKey = (int)Math.Ceiling(l.ListedPrice / (double)slots);
+                    }
+                    else
+                    {
+                        var text = MarketListingFormatter.BuildListingMarkdown(l, now);
+                        var firstLine = text.Split('\n', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+                        var idx = firstLine.IndexOf('x', StringComparison.Ordinal);
+                        if (idx >= 0)
+                        {
+                            var span = firstLine.AsSpan(idx + 1);
+                            var len = 0;
+                            while (len < span.Length && char.IsDigit(span[len]))
+                            {
+                                len++;
+                            }
+
+                            if (len > 0 && int.TryParse(span[..len], out var stack) && stack > 1)
+                            {
+                                priceKey = (int)Math.Ceiling(l.ListedPrice / (double)stack);
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignore
+                }
+                return new MarketSnapshotRenderer.SortedListing(l, sectionKey, itemType, subType, priceKey, l.Id);
             })
             .OrderBy(x => GetSectionSortOrder(x.SectionKey, x.ItemType))
             .ThenBy(x => x.SubType)
+            .ThenBy(x => marketTier == 0 ? x.Listing.ItemWeenieClassId : 0u)
             .ThenBy(x => x.ListedPrice)
             .ThenBy(x => x.ListingId)
             .ToList();
@@ -331,9 +369,23 @@ internal sealed class MarketSnapshotUpdater
         }
         else if (itemTypeInt == (int)ItemType.Armor)
         {
-            if (weenie.PropertiesInt != null && weenie.PropertiesInt.TryGetValue(PropertyInt.ArmorType, out var at))
+            if (weenie.PropertiesInt != null)
             {
-                subType = at;
+                // Armor sorting: WeightClass (int 393) then ClothingPriority (int 35)
+                var wc = 0;
+                if (weenie.PropertiesInt.TryGetValue((PropertyInt)393, out var weightClass))
+                {
+                    wc = weightClass;
+                }
+
+                var cp = 0;
+                if (weenie.PropertiesInt.TryGetValue(PropertyInt.ClothingPriority, out var clothingPriority))
+                {
+                    cp = clothingPriority;
+                }
+
+                // Pack into one int so ThenBy(SubType) yields (wc, cp)
+                subType = (wc << 16) | (cp & 0xFFFF);
             }
         }
 
