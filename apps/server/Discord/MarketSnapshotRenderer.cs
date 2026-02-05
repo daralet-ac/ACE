@@ -171,7 +171,7 @@ internal sealed class MarketSnapshotRenderer
                     {
                         foreach (var f in sectionEmbed.Fields)
                         {
-                            currentLen += (f.Name?.Length ?? 0) + (f.Value?.Length ?? 0);
+                            currentLen += (f.Name?.Length ?? 0) + (f.Value?.ToString()?.Length ?? 0);
                         }
                     }
 
