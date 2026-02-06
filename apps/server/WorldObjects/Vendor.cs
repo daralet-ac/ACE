@@ -504,6 +504,13 @@ public class Vendor : Creature
             // Tag the display item so we can resolve the listing on purchase.
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
 
+            // Client-side vendor UI filtering can hide salvage (tinkering material) entries for some vendor templates.
+            // For market-vendor display purposes, remap salvage to Misc so it renders in the list.
+            if (item.ItemType == ItemType.TinkeringMaterial)
+            {
+                item.ItemType = ItemType.Misc;
+            }
+
             item.ContainerId = Guid.Full;
             item.Location = null;
 
