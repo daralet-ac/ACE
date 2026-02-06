@@ -304,6 +304,16 @@ internal static class MarketListingFormatter
                 priceText = $"{listedPrice:N0} py";
             }
 
+            if (stackSize <= 1 && obj.ItemType == ItemType.TinkeringMaterial)
+            {
+                var qty = obj.Structure ?? 0;
+                if (qty > 0)
+                {
+                    var perUnit = (int)Math.Ceiling(listedPrice / (double)qty);
+                    priceText += $" ({perUnit:N0} py/unit)";
+                }
+            }
+
             try
             {
                 var weenie = DatabaseManager.World.GetCachedWeenie(listing.ItemWeenieClassId);

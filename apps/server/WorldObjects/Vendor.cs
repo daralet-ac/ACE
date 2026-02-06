@@ -369,6 +369,9 @@ public class Vendor : Creature
                 (int)ItemType.Armor => 4,
                 (int)ItemType.Jewelry => 5,
                 (int)ItemType.Clothing => 6,
+                (int)ItemType.TinkeringMaterial => 7,
+                (int)ItemType.Gem => 8,
+                (int)ItemType.Food => 9,
                 _ => 999,
             };
         }
