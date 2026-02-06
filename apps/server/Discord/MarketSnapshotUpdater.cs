@@ -312,6 +312,11 @@ internal sealed class MarketSnapshotUpdater
 
     private static MarketSnapshotRenderer.SnapshotSectionKey GetSnapshotSectionKey(ACE.Database.Models.Shard.PlayerMarketListing listing)
     {
+        if (listing.ItemWeenieClassId >= 1052500 && listing.ItemWeenieClassId <= 1052511)
+        {
+            return MarketSnapshotRenderer.SnapshotSectionKey.BeastParts;
+        }
+
         try
         {
             var weenie = DatabaseManager.World.GetCachedWeenie(listing.ItemWeenieClassId);
