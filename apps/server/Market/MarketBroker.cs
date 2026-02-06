@@ -181,11 +181,14 @@ public static class MarketBroker
                  || t == ItemType.Gem
                  || t == ItemType.TinkeringMaterial
                  || t == ItemType.Useless
-                 || t == ItemType.Misc;
+                 || t == ItemType.Misc
+                 || t == ItemType.Writable
+                 || t == ItemType.SpellComponents
+                 || t == ItemType.ManaStone;
 
         if (!ok)
         {
-            reason = "Only weapons, armor, clothing, jewelry, casters, gems, salvage, trophies, and consumables can be listed.";
+            reason = "Only weapons, armor, clothing, jewelry, casters, gems, scrolls, components, mana stones, salvage, trophies, and consumables can be listed.";
             return false;
         }
 
@@ -1023,7 +1026,10 @@ public static class MarketBroker
                         || item.ItemType == ItemType.CraftFletchingBase
                         || item.ItemType == ItemType.CraftFletchingIntermediate
                         || item.ItemType == ItemType.Gem
-                        || item.ItemType == ItemType.TinkeringMaterial;
+                        || item.ItemType == ItemType.TinkeringMaterial
+                        || item.ItemType == ItemType.Writable
+                        || item.ItemType == ItemType.ManaStone
+                        || item.ItemType == ItemType.SpellComponents;
 
         int vendorTier;
         if (isNonTier)
