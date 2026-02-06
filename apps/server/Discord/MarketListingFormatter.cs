@@ -366,37 +366,16 @@ internal static class MarketListingFormatter
     {
         if (obj.ItemType == ItemType.ManaStone)
         {
-            var lines = new List<string>(commonParts.Count + 4);
-            var commonLine = new List<string>(1);
-            AddIndentedLine(commonLine, commonParts);
-            if (commonLine.Count > 0)
-            {
-                lines.Add(commonLine[0]);
-            }
+            // Mana stones: omit req line; show mana-related stats compactly.
+            var lines = new List<string>(2);
 
             var cap = obj.GetProperty(PropertyInt.ItemMaxMana);
-            if (cap.HasValue)
-            {
-                lines.Add($"- M.Cap: {cap.Value:N0}");
-            }
-
             var stored = obj.GetProperty(PropertyInt.ItemCurMana);
-            if (stored.HasValue)
-            {
-                lines.Add($"- M.Stored: {stored.Value:N0}");
-            }
+            lines.Add($"- M.Cap: {(cap.HasValue ? cap.Value.ToString("N0") : "-")} | M.Stored: {(stored.HasValue ? stored.Value.ToString("N0") : "-")}");
 
             var eff = obj.GetProperty(PropertyFloat.ItemEfficiency);
-            if (eff.HasValue)
-            {
-                lines.Add($"- Eff: {eff.Value * 100:0.#}%");
-            }
-
             var destroyChance = obj.GetProperty(PropertyFloat.ManaStoneDestroyChance);
-            if (destroyChance.HasValue)
-            {
-                lines.Add($"- Dest%: {destroyChance.Value * 100:0.#}%");
-            }
+            lines.Add($"- Eff: {(eff.HasValue ? (eff.Value * 100).ToString("0.#") + "%" : "-")} | Dest%: {(destroyChance.HasValue ? (destroyChance.Value * 100).ToString("0.#") + "%" : "-")}");
 
             return new ListingDetails(headerTitle, sellerName, expiresAtText, lines);
         }
@@ -1017,6 +996,43 @@ internal static class MarketListingFormatter
         if (!string.IsNullOrWhiteSpace(cache.Name))
         {
             return cache.Name;
+        }
+
+        // Prefer a reconstructed WorldObject when possible so item names include dynamic fields
+        // like salvage material types.
+        try
+        {
+            if (listing.ItemBiotaId > 0)
+            {
+                var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(listing.ItemBiotaId, true);
+                if (biota != null)
+                {
+                    var entityBiota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
+                    var obj = WorldObjectFactory.CreateWorldObject(entityBiota);
+                    try
+                    {
+                        if (obj.ItemType == ItemType.TinkeringMaterial)
+                        {
+                            cache.Name = obj.NameWithMaterial;
+                            return cache.Name;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(obj.Name))
+                        {
+                            cache.Name = obj.Name;
+                            return cache.Name;
+                        }
+                    }
+                    finally
+                    {
+                        obj.Destroy();
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // ignore
         }
 
         if (listing.ItemBiotaId > 0)
