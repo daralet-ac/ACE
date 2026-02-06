@@ -76,9 +76,24 @@ internal sealed class MarketSnapshotUpdater
                     var itemType = sort.ItemType; // Store raw item type
                     var subType = sort.SubType; // Store subType for sorting
                     var priceKey = l.ListedPrice;
+                    var salvageMaterialKey = int.MaxValue;
+                    var salvageWorkKey = float.MaxValue;
+                    var salvageUnitPriceKey = int.MaxValue;
+                    var gemMaterialKey = int.MaxValue;
+                    var gemWorkKey = float.MaxValue;
+                    var consumableWeenieTypeKey = int.MaxValue;
+                    var consumableWcidKey = uint.MaxValue;
+                    var consumableUnitPriceKey = int.MaxValue;
                     try
                     {
                         var weenie = DatabaseManager.World.GetCachedWeenie(l.ItemWeenieClassId);
+                        if (weenie != null && (weenie.WeenieType == WeenieType.Food || weenie.WeenieType == WeenieType.Healer))
+                        {
+                            itemType = (int)ItemType.Food;
+                            consumableWeenieTypeKey = (int)weenie.WeenieType;
+                            consumableWcidKey = l.ItemWeenieClassId;
+                        }
+
                         if (weenie?.PropertiesInt != null
                             && weenie.PropertiesInt.TryGetValue(PropertyInt.ItemType, out var it)
                             && it == (int)ItemType.Armor
@@ -86,6 +101,34 @@ internal sealed class MarketSnapshotUpdater
                             && slots > 0)
                         {
                             priceKey = (int)Math.Ceiling(l.ListedPrice / (double)slots);
+                        }
+
+                        if (itemType == (int)ItemType.Food)
+                        {
+                            var wo = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(l.ItemSnapshotJson);
+                            if (wo != null)
+                            {
+                                try
+                                {
+                                    var qty = wo.StackSize ?? 0;
+                                    if (qty > 1)
+                                    {
+                                        consumableUnitPriceKey = (int)Math.Ceiling(l.ListedPrice / (double)qty);
+                                    }
+                                    else
+                                    {
+                                        consumableUnitPriceKey = l.ListedPrice;
+                                    }
+                                }
+                                finally
+                                {
+                                    wo.Destroy();
+                                }
+                            }
+                            else
+                            {
+                                consumableUnitPriceKey = l.ListedPrice;
+                            }
                         }
                         else
                         {
@@ -107,16 +150,76 @@ internal sealed class MarketSnapshotUpdater
                                 }
                             }
                         }
+
+                        if (sort.ItemType == (int)ItemType.TinkeringMaterial)
+                        {
+                            var wo = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(l.ItemSnapshotJson);
+                            if (wo != null)
+                            {
+                                try
+                                {
+                                    salvageMaterialKey = wo.MaterialType.HasValue ? (int)wo.MaterialType.Value : int.MaxValue;
+                                    salvageWorkKey = wo.Workmanship ?? float.MaxValue;
+                                    var qty = wo.Structure ?? 0;
+                                    if (qty > 0)
+                                    {
+                                        salvageUnitPriceKey = (int)Math.Ceiling(l.ListedPrice / (double)qty);
+                                    }
+                                }
+                                finally
+                                {
+                                    wo.Destroy();
+                                }
+                            }
+                        }
+                        else if (sort.ItemType == (int)ItemType.Gem)
+                        {
+                            var wo = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(l.ItemSnapshotJson);
+                            if (wo != null)
+                            {
+                                try
+                                {
+                                    gemMaterialKey = wo.MaterialType.HasValue ? (int)wo.MaterialType.Value : int.MaxValue;
+                                    gemWorkKey = wo.Workmanship ?? float.MaxValue;
+                                }
+                                finally
+                                {
+                                    wo.Destroy();
+                                }
+                            }
+                        }
                     }
                     catch
                     {
                         // ignore
                     }
-                    return new MarketSnapshotRenderer.SortedListing(l, sectionKey, itemType, subType, priceKey, l.Id);
+                    return new MarketSnapshotRenderer.SortedListing(
+                        l,
+                        sectionKey,
+                        itemType,
+                        subType,
+                        priceKey,
+                        l.Id,
+                        salvageMaterialKey,
+                        salvageWorkKey,
+                        salvageUnitPriceKey,
+                        gemMaterialKey,
+                        gemWorkKey,
+                        consumableWeenieTypeKey,
+                        consumableWcidKey,
+                        consumableUnitPriceKey);
                 })
                 .OrderBy(x => GetSectionSortOrder(x.SectionKey, x.ItemType))
                 .ThenBy(x => x.SubType)
-                .ThenBy(x => marketTier == 0 ? x.Listing.ItemWeenieClassId : 0u)
+                .ThenBy(x => x.ItemType == (int)ItemType.TinkeringMaterial ? x.SalvageMaterialKey : int.MaxValue)
+                .ThenBy(x => x.ItemType == (int)ItemType.TinkeringMaterial ? x.SalvageWorkKey : float.MaxValue)
+                .ThenBy(x => x.ItemType == (int)ItemType.TinkeringMaterial ? x.SalvageUnitPriceKey : int.MaxValue)
+                .ThenBy(x => x.ItemType == (int)ItemType.Gem ? x.GemMaterialKey : int.MaxValue)
+                .ThenBy(x => x.ItemType == (int)ItemType.Gem ? (marketTier == 0 ? x.Listing.ItemWeenieClassId : 0u) : (marketTier == 0 ? x.Listing.ItemWeenieClassId : 0u))
+                .ThenBy(x => x.ItemType == (int)ItemType.Gem ? x.GemWorkKey : float.MaxValue)
+                .ThenBy(x => x.ItemType == (int)ItemType.Food ? x.ConsumableWeenieTypeKey : int.MaxValue)
+                .ThenBy(x => x.ItemType == (int)ItemType.Food ? x.ConsumableWcidKey : uint.MaxValue)
+                .ThenBy(x => x.ItemType == (int)ItemType.Food ? x.ConsumableUnitPriceKey : int.MaxValue)
                 .ThenBy(x => x.ListedPrice)
                 .ThenBy(x => x.ListingId)
                 .ToList();
