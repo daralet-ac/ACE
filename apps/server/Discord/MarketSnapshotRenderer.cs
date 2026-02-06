@@ -16,6 +16,7 @@ internal sealed class MarketSnapshotRenderer
     {
         ItemType = 0,
         SigilTrinket = 1,
+        BeastParts = 2,
     }
 
     private static readonly Regex CamelCaseSplit = new("(?<!^)([A-Z])", RegexOptions.Compiled);
@@ -56,6 +57,11 @@ internal sealed class MarketSnapshotRenderer
                 return "Sigil Trinkets";
             }
 
+            if (sectionKey == SnapshotSectionKey.BeastParts)
+            {
+                return "Beast Parts";
+            }
+
             var itemTypeValue = unchecked((uint)itemType);
             return Enum.IsDefined(typeof(ItemType), itemTypeValue)
                 ? (((ItemType)itemTypeValue) switch
@@ -63,6 +69,9 @@ internal sealed class MarketSnapshotRenderer
                     ItemType.MeleeWeapon => "Melee Weapons",
                     ItemType.MissileWeapon => "Missile Weapons",
                     ItemType.Caster => "Casters",
+                    ItemType.Useless => "Trophies",
+                    ItemType.Writable => "Scrolls",
+                    ItemType.Food => "Consumables",
                     _ => SplitCamel(((ItemType)itemTypeValue).ToString()),
                 })
                 : $"ItemType {itemType}";
@@ -98,6 +107,11 @@ internal sealed class MarketSnapshotRenderer
             if (sectionKey == SnapshotSectionKey.SigilTrinket)
             {
                 return new Color(0, 128, 128);
+            }
+
+            if (sectionKey == SnapshotSectionKey.BeastParts)
+            {
+                return new Color(139, 69, 19);
             }
 
             return itemType switch
