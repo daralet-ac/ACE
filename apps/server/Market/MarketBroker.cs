@@ -917,6 +917,35 @@ public static class MarketBroker
             return;
         }
 
+        var now = DateTime.UtcNow;
+
+        var maxActive = PropertyManager
+            .GetLong("market_max_active_listings_per_account", MarketServiceLocator.Config.MaxActiveListingsPerAccount)
+            .Item;
+        if (maxActive > 0)
+        {
+            try
+            {
+                // Ensure expirations are marked before we count.
+                MarketServiceLocator.PlayerMarketRepository.ExpireListings(now);
+
+                var activeCount = MarketServiceLocator.PlayerMarketRepository
+                    .GetListingsForAccount(player.Character.AccountId, now)
+                    .Count();
+
+                if (activeCount >= maxActive)
+                {
+                    ClearPendingItem(player);
+                    SendTell(player, $"You already have {activeCount} active listing(s). Maximum is {maxActive}. Cancel or wait for a listing to expire.");
+                    return;
+                }
+            }
+            catch
+            {
+                // If we can't validate the limit safely, don't block listing.
+            }
+        }
+
         if (!_stateByPlayerGuid.TryGetValue(player.Guid.Full, out var state)
             || !state.PendingItemGuid.HasValue
             || !state.PendingPrice.HasValue)
