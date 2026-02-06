@@ -67,6 +67,23 @@ public class Vendor : Creature
 {
     private static readonly VendorItemComparer VendorItemComparer = new VendorItemComparer();
 
+    private enum MarketSection
+    {
+        Unknown = 999,
+        MeleeWeapon = 1,
+        MissileWeapon = 2,
+        Caster = 3,
+        Armor = 4,
+        Jewelry = 5,
+        Clothing = 6,
+        Salvage = 7,
+        Gem = 8,
+        Food = 9,
+        Healer = 10,
+        Useless = 11,
+        Misc = 999,
+    }
+
     public readonly Dictionary<ObjectGuid, WorldObject> DefaultItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
     private Dictionary<ObjectGuid, WorldObject> TempDefaultItemsForSale = new Dictionary<ObjectGuid, WorldObject>();
 
@@ -359,21 +376,9 @@ public class Vendor : Creature
             .GetListingsForVendorTier(vendorTier, now)
             .ToList();
 
-        static int GetSectionSortOrder(int itemTypeInt)
+        static int GetSectionSortOrder(MarketSection section)
         {
-            return itemTypeInt switch
-            {
-                (int)ItemType.MeleeWeapon => 1,
-                (int)ItemType.MissileWeapon => 2,
-                (int)ItemType.Caster => 3,
-                (int)ItemType.Armor => 4,
-                (int)ItemType.Jewelry => 5,
-                (int)ItemType.Clothing => 6,
-                (int)ItemType.TinkeringMaterial => 7,
-                (int)ItemType.Gem => 8,
-                (int)ItemType.Food => 9,
-                _ => 999,
-            };
+            return (int)section;
         }
 
         static int GetSortSubType(Weenie weenie, int itemTypeInt)
@@ -393,6 +398,18 @@ public class Vendor : Creature
                 var wc = weenie.PropertiesInt.TryGetValue((PropertyInt)393, out var weightClass) ? weightClass : 0;
                 var cp = weenie.PropertiesInt.TryGetValue(PropertyInt.ClothingPriority, out var clothingPriority) ? clothingPriority : 0;
                 return (wc << 16) | (cp & 0xFFFF);
+            }
+
+            // Salvage: TargetType > MaterialType > Workmanship
+            if (itemTypeInt == (int)ItemType.TinkeringMaterial)
+            {
+                var targetType = weenie.PropertiesInt.TryGetValue(PropertyInt.TargetType, out var tt) ? tt : 0;
+                var materialType = weenie.PropertiesInt.TryGetValue(PropertyInt.MaterialType, out var mt) ? mt : 0;
+                var workmanship = weenie.PropertiesInt.TryGetValue(PropertyInt.ItemWorkmanship, out var wm) ? wm : 0;
+
+                // Pack into a single sortable key. TargetType tends to be a bitfield but ordering by numeric value
+                // is still stable/consistent for grouping.
+                return (targetType << 16) | ((materialType & 0xFF) << 8) | (workmanship & 0xFF);
             }
 
             return 0;
@@ -443,14 +460,37 @@ public class Vendor : Creature
                     itemTypeInt = it;
                 }
 
-                var sectionOrder = GetSectionSortOrder(itemTypeInt);
+                var section = MarketSection.Unknown;
+                if (itemTypeInt == (int)ItemType.MeleeWeapon) section = MarketSection.MeleeWeapon;
+                else if (itemTypeInt == (int)ItemType.MissileWeapon) section = MarketSection.MissileWeapon;
+                else if (itemTypeInt == (int)ItemType.Caster) section = MarketSection.Caster;
+                else if (itemTypeInt == (int)ItemType.Armor) section = MarketSection.Armor;
+                else if (itemTypeInt == (int)ItemType.Jewelry) section = MarketSection.Jewelry;
+                else if (itemTypeInt == (int)ItemType.Clothing) section = MarketSection.Clothing;
+                else if (itemTypeInt == (int)ItemType.TinkeringMaterial) section = MarketSection.Salvage;
+                else if (itemTypeInt == (int)ItemType.Gem) section = MarketSection.Gem;
+                else if (itemTypeInt == (int)ItemType.Food) section = MarketSection.Food;
+                else if (itemTypeInt == (int)ItemType.Useless) section = MarketSection.Useless;
+                else if (itemTypeInt == (int)ItemType.Misc) section = MarketSection.Misc;
+
+                // For misc-tier market vendors we want additional sections that are normally lumped together.
+                // Re-map the section key without changing the underlying listing.
+                if (isMiscTier && section == MarketSection.Misc && weenie != null)
+                {
+                    if (weenie.WeenieType == WeenieType.Healer)
+                        section = MarketSection.Healer;
+                    else if (weenie.WeenieType == WeenieType.Food)
+                        section = MarketSection.Food;
+                }
+
+                var sectionOrder = GetSectionSortOrder(section);
                 var subType = GetSortSubType(weenie, itemTypeInt);
                 var priceKey = GetEffectivePriceKey(l, weenie, itemTypeInt);
                 return new { listing = l, sectionOrder, subType, itemTypeInt, priceKey };
             })
             .OrderBy(x => x.sectionOrder)
             .ThenBy(x => x.subType)
-            .ThenBy(x => isMiscTier ? x.listing.ItemWeenieClassId : 0u)
+            .ThenBy(x => x.listing.ItemWeenieClassId)
             .ThenBy(x => x.priceKey)
             .ThenBy(x => x.listing.Id)
             .Select(x => x.listing)
@@ -503,6 +543,13 @@ public class Vendor : Creature
 
             // Tag the display item so we can resolve the listing on purchase.
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
+
+            // Client-side vendor UI filtering can hide salvage (tinkering material) entries for some vendor templates.
+            // For market-vendor display purposes, remap salvage to Misc so it renders in the list.
+            if (item.ItemType == ItemType.TinkeringMaterial)
+            {
+                item.ItemType = ItemType.Misc;
+            }
 
             item.ContainerId = Guid.Full;
             item.Location = null;
