@@ -173,9 +173,40 @@ internal static class MarketListingFormatter
         var wieldReq = listing.WieldReq.HasValue ? $"{reqLabel} {listing.WieldReq.Value}" : $"{reqLabel} -";
         var stackText = stackSize > 1 ? $"x{stackSize}" : "";
 
+        static int? TryResolveSalvageQtyFromInstance(uint weenieClassId, int stackSize, ACE.Server.WorldObjects.WorldObject? obj)
+        {
+            try
+            {
+                if (stackSize > 1)
+                {
+                    return null;
+                }
+
+                if (obj?.ItemType == ItemType.TinkeringMaterial && obj.Structure.HasValue && obj.Structure.Value > 0)
+                {
+                    return obj.Structure.Value;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+
+            return null;
+        }
+
         var priceText = stackSize > 1
             ? $"{listing.ListedPrice:N0} py ({(int)Math.Ceiling(listing.ListedPrice / (double)stackSize):N0} py ea)"
             : $"{listing.ListedPrice:N0} py";
+
+        // Salvage (tinkering material): show unit price right after the price text in the title line.
+        // Uses item `Structure` as the quantity.
+        var salvageQty = TryResolveSalvageQtyFromInstance(listing.ItemWeenieClassId, stackSize, GetOrCreateWorldObject(listing, cache));
+        if (salvageQty.HasValue && salvageQty.Value > 0)
+        {
+            var perUnit = (int)Math.Ceiling(listing.ListedPrice / (double)salvageQty.Value);
+            priceText += $" ({perUnit:N0} py/unit)";
+        }
 
         try
         {

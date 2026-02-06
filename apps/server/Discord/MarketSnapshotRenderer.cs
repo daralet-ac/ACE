@@ -29,7 +29,15 @@ internal sealed class MarketSnapshotRenderer
         int ItemType,
         int SubType,
         int ListedPrice,
-        int ListingId);
+        int ListingId,
+        int SalvageMaterialKey = int.MaxValue,
+        float SalvageWorkKey = float.MaxValue,
+        int SalvageUnitPriceKey = int.MaxValue,
+        int GemMaterialKey = int.MaxValue,
+        float GemWorkKey = float.MaxValue,
+        int ConsumableWeenieTypeKey = int.MaxValue,
+        uint ConsumableWcidKey = uint.MaxValue,
+        int ConsumableUnitPriceKey = int.MaxValue);
 
     // Public API
     internal List<SnapshotPost> BuildPosts(
@@ -69,9 +77,12 @@ internal sealed class MarketSnapshotRenderer
                     ItemType.MeleeWeapon => "Melee Weapons",
                     ItemType.MissileWeapon => "Missile Weapons",
                     ItemType.Caster => "Casters",
+                    ItemType.TinkeringMaterial => "Salvage",
                     ItemType.Useless => "Trophies",
                     ItemType.Writable => "Scrolls",
                     ItemType.Food => "Consumables",
+                    ItemType.Gem => "Gems",
+                    ItemType.ManaStone => "Mana Stones",
                     _ => SplitCamel(((ItemType)itemTypeValue).ToString()),
                 })
                 : $"ItemType {itemType}";
