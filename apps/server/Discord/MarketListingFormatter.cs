@@ -383,12 +383,10 @@ internal static class MarketListingFormatter
         {
             var lines = new List<string>(2);
 
-            if (obj.Workmanship.HasValue && obj.MaterialType.HasValue)
+            if (obj.Workmanship.HasValue && obj.MaterialType.HasValue && obj.Structure.HasValue && obj.Structure.Value > 0)
             {
-                lines.Add($"- Wk {obj.Workmanship.Value:0.##} | Material {obj.MaterialType.Value}");
+                lines.Add($"- Wk {obj.Workmanship.Value:0.##} | Type {obj.MaterialType.Value} | Qty {obj.Structure.Value}");
             }
-
-            AddIndentedLine(lines, salvageLine);
 
             return lines.Count > 0
                 ? new ListingDetails(headerTitle, sellerName, expiresAtText, lines)
