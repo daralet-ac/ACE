@@ -6,6 +6,7 @@ using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Factories;
+using ACE.Server.Managers;
 using ACE.Server.Market;
 using Discord;
 
@@ -364,6 +365,50 @@ internal static class MarketListingFormatter
         string expiresAtText,
         List<string> commonParts)
     {
+        if (obj.ItemType == ItemType.Gem)
+        {
+            var lines = new List<string>(1);
+
+            if (obj.Workmanship.HasValue)
+            {
+                lines.Add($"- Wk {obj.Workmanship.Value:0.##}");
+            }
+
+            return lines.Count > 0
+                ? new ListingDetails(headerTitle, sellerName, expiresAtText, lines)
+                : null;
+        }
+
+        if (obj.ItemType == ItemType.TinkeringMaterial)
+        {
+            var lines = new List<string>(2);
+
+            if (obj.Workmanship.HasValue && obj.MaterialType.HasValue)
+            {
+                lines.Add($"- Wk {obj.Workmanship.Value:0.##} | Material {obj.MaterialType.Value}");
+            }
+
+            AddIndentedLine(lines, salvageLine);
+
+            return lines.Count > 0
+                ? new ListingDetails(headerTitle, sellerName, expiresAtText, lines)
+                : null;
+        }
+
+        if (obj.ItemType == ItemType.Useless)
+        {
+            var lines = new List<string>(1);
+            var tq = obj.GetProperty(PropertyInt.TrophyQuality);
+            if (tq.HasValue)
+            {
+                lines.Add($"- Quality {tq.Value}");
+            }
+
+            return lines.Count > 0
+                ? new ListingDetails(headerTitle, sellerName, expiresAtText, lines)
+                : null;
+        }
+
         if (obj.ItemType == ItemType.ManaStone)
         {
             // Mana stones: omit req line; show mana-related stats compactly.
@@ -857,7 +902,7 @@ internal static class MarketListingFormatter
         var line1 = new List<string>(6);
 
         var req = obj.WieldDifficulty;
-        var reqLabel = ResolveWieldLabelFromSkillType(obj.WieldSkillType, "Lv.Req");
+        var reqLabel = ResolveWieldLabelFromSkillType(obj.WieldSkillType, "Lv");
         line1.Add(req.HasValue ? $"{reqLabel} {req.Value}" : $"{reqLabel} -");
 
         var color = obj.GetProperty(PropertyInt.SigilTrinketColor);
@@ -884,7 +929,12 @@ internal static class MarketListingFormatter
 
         var line2 = new List<string>(8);
         AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.SigilTrinketTriggerChance, "Proc%", multiplyBy100: true);
-        AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.CooldownDuration, "Cooldown");
+        var cooldown = obj.GetProperty(PropertyFloat.CooldownDuration);
+        if (cooldown.HasValue)
+        {
+            var seconds = Math.Round(cooldown.Value, 1, MidpointRounding.AwayFromZero);
+            line2.Add($"Cooldown {seconds:0.#}s");
+        }
         AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.SigilTrinketReductionAmount, "Reduction", skipIfZero: true);
         AppendPropertyFloatIfPresent(obj, line2, PropertyFloat.SigilTrinketIntensity, "Intensity", skipIfZero: true);
         AddIndentedLine(lines, line2);
