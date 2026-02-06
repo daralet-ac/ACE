@@ -364,6 +364,43 @@ internal static class MarketListingFormatter
         string expiresAtText,
         List<string> commonParts)
     {
+        if (obj.ItemType == ItemType.ManaStone)
+        {
+            var lines = new List<string>(commonParts.Count + 4);
+            var commonLine = new List<string>(1);
+            AddIndentedLine(commonLine, commonParts);
+            if (commonLine.Count > 0)
+            {
+                lines.Add(commonLine[0]);
+            }
+
+            var cap = obj.GetProperty(PropertyInt.ItemMaxMana);
+            if (cap.HasValue)
+            {
+                lines.Add($"- M.Cap: {cap.Value:N0}");
+            }
+
+            var stored = obj.GetProperty(PropertyInt.ItemCurMana);
+            if (stored.HasValue)
+            {
+                lines.Add($"- M.Stored: {stored.Value:N0}");
+            }
+
+            var eff = obj.GetProperty(PropertyFloat.ItemEfficiency);
+            if (eff.HasValue)
+            {
+                lines.Add($"- Eff: {eff.Value * 100:0.#}%");
+            }
+
+            var destroyChance = obj.GetProperty(PropertyFloat.ManaStoneDestroyChance);
+            if (destroyChance.HasValue)
+            {
+                lines.Add($"- Dest%: {destroyChance.Value * 100:0.#}%");
+            }
+
+            return new ListingDetails(headerTitle, sellerName, expiresAtText, lines);
+        }
+
         if (obj.ItemType is ItemType.Weapon or ItemType.MeleeWeapon or ItemType.MissileWeapon or ItemType.Caster)
         {
             var lines = FormatWeaponDetailsMultiline(obj);
