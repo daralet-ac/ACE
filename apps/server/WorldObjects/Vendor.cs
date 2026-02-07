@@ -563,6 +563,14 @@ public class Vendor : Creature
                 continue;
             }
 
+            // Listing may have expired/been removed after the initial query but before we build
+            // the display inventory. Skip generating a display item in that case.
+            var listingExists = MarketServiceLocator.PlayerMarketRepository.GetListingById(listing.Id) != null;
+            if (!listingExists)
+            {
+                continue;
+            }
+
             // Market listings are priced in pyreals (coin) for this server.
             item.Value = listing.ListedPrice;
             item.AltCurrencyValue = listing.ListedPrice;
@@ -951,6 +959,17 @@ public class Vendor : Creature
             // check unique items
             else if (UniqueItemsForSale.TryGetValue(itemGuid, out var uniqueItemForSale))
             {
+                var marketListingId = uniqueItemForSale.GetProperty(PropertyInt.MarketListingId);
+                if (marketListingId.HasValue && marketListingId.Value > 0)
+                {
+                    var listing = MarketServiceLocator.PlayerMarketRepository.GetListingById(marketListingId.Value);
+                    if (listing == null)
+                    {
+                        player.SendTransientError("That item is no longer available.");
+                        return false;
+                    }
+                }
+
                 uniqueItems.Add(uniqueItemForSale);
             }
             else
