@@ -1290,7 +1290,8 @@ public class Vendor : Creature
                     var listing = MarketServiceLocator.PlayerMarketRepository.GetListingById(marketListingId.Value);
                     if (listing == null)
                     {
-                        player.SendTransientError("That item is no longer available.");
+                        // Stale market listing: remove it from the player's vendor snapshot and refresh the UI.
+                        player.HandleStaleVendorPurchaseByGuid(this, itemGuid);
                         return false;
                     }
                 }
