@@ -128,6 +128,20 @@ partial class Player
                 }
             }
 
+            // Market vendors: the display item is a per-player clone. If the underlying listing was
+            // already purchased/expired, don't add the clone to inventory.
+            var marketListingIdPreAdd = itemToCreate.GetProperty(PropertyInt.MarketListingId);
+            if (marketListingIdPreAdd.HasValue && marketListingIdPreAdd.Value > 0)
+            {
+                var listingStillExists = MarketServiceLocator.PlayerMarketRepository.GetListingById(marketListingIdPreAdd.Value);
+                if (listingStillExists == null)
+                {
+                    HandleStaleVendorPurchase(vendor, itemToCreate.Guid, itemWasAddedToInventory: false);
+                    allAdded = false;
+                    break;
+                }
+            }
+
             if (TryCreateInInventoryWithNetworking(itemToCreate))
             {
                 // For market vendors, items are per-player snapshots and are not in UniqueItemsForSale.
@@ -165,7 +179,18 @@ partial class Player
                     {
                         // Another player bought this listing between validation and finalization.
                         // Roll back the inventory add because we haven't charged yet.
-                        HandleStaleVendorPurchase(vendor, itemToCreate.Guid, itemWasAddedToInventory: true);
+                        TryRemoveFromInventoryWithNetworking(itemToCreate.Guid, out _, RemoveFromInventoryAction.None);
+
+                        // Extra client-side cleanup: explicitly send a remove message too.
+                        Session.Network.EnqueueSend(new GameMessageInventoryRemoveObject(itemToCreate));
+
+                        // Use the shared stale-purchase handler to unwedge the client and refresh the vendor UI.
+                        HandleStaleVendorPurchase(vendor, itemToCreate.Guid, itemWasAddedToInventory: false);
+
+                        // Client can end up with a ghost/blank item if it misses a remove or gets out of sync.
+                        // Re-send inventory state using the same pattern as login.
+                        SendInventoryAndWieldedItems();
+
                         allAdded = false;
                         break;
                     }
