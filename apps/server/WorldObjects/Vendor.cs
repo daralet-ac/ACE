@@ -543,7 +543,10 @@ public class Vendor : Creature
             if (stackSize > 1)
             {
                 item.SetProperty(PropertyInt.StackUnitValue, listing.ListedPrice);
-                item.SetStackSize(stackSize);
+                item.SetStackSize(1);
+
+                var listName = stackSize.ToString() + " " + item.Name + "s";
+                item.SetProperty(PropertyString.Name, listName);
             }
 
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
@@ -1104,6 +1107,13 @@ public class Vendor : Creature
             RestockRandomItems();
         }
 
+        if (IsMarketVendor && action == VendorType.Open)
+        {
+            // Force a fresh per-player snapshot on each open so new/expired listings are reflected.
+            // The snapshot (GUIDs) then stays stable for the remainder of the open vendor session.
+            _marketSessionsByPlayerGuid.Remove(player.Guid.Full);
+        }
+
         player.Session.Network.EnqueueSend(new GameEventApproachVendor(player.Session, this, altCurrencySpent));
 
         var rotateTime = Rotate(player); // vendor rotates to player
@@ -1287,12 +1297,33 @@ public class Vendor : Creature
                 var marketListingId = uniqueItemForSale.GetProperty(PropertyInt.MarketListingId);
                 if (marketListingId.HasValue && marketListingId.Value > 0)
                 {
+
                     var listing = MarketServiceLocator.PlayerMarketRepository.GetListingById(marketListingId.Value);
                     if (listing == null)
                     {
                         // Stale market listing: remove it from the player's vendor snapshot and refresh the UI.
                         player.HandleStaleVendorPurchaseByGuid(this, itemGuid);
                         return false;
+                    }
+
+                    // Restore original stack size (and base name) from the stored listing snapshot
+                    if (!string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
+                    {
+                        var reconstructed = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(listing.ItemSnapshotJson);
+                        if (reconstructed != null)
+                        {
+                            var snapStack = reconstructed.StackSize;
+                            if (snapStack.HasValue && snapStack.Value > 1)
+                            {
+                                uniqueItemForSale.SetStackSize(snapStack.Value);
+                            }
+
+                            var snapName = reconstructed.Name;
+                            if (!string.IsNullOrWhiteSpace(snapName))
+                            {
+                                uniqueItemForSale.SetProperty(PropertyString.Name, snapName);
+                            }
+                        }
                     }
                 }
 
