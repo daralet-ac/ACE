@@ -210,7 +210,7 @@ partial class Player
                 break;
             }
         }
-        return true;
+        return leftReq <= 0;
     }
 
     private void DeepSave(WorldObject item)

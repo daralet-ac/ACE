@@ -778,10 +778,14 @@ public static class MarketBroker
         }
 
         var itemName = TryGetListingItemName(listing) ?? $"WCID {listing.ItemWeenieClassId}";
+
+        var cancellationFeePercent = PropertyManager.GetDouble("market_listing_cancellation_fee").Item * 100;
+        var cancellationFee = MarketServiceLocator.CalculateCancellationFee(listing.ListedPrice);
         var confirmText =
             $"Cancel listing?\n\n" +
             $"Item: {itemName}\n" +
-            $"Price: {listing.ListedPrice:N0} pyreals\n\n" +
+            $"Price: {listing.ListedPrice:N0} pyreals\n" +
+            $"Fee: {cancellationFee:N0} pyreals ({cancellationFeePercent:N0}%)\n\n" +
             $"This will return the item to your inventory.";
 
         _stateByPlayerGuid.AddOrUpdate(
@@ -830,6 +834,17 @@ public static class MarketBroker
         {
             SendTell(player, $"Listing #{listingId} not found (or not active). Use 'listings' to see your active listings.");
             return;
+        }
+        var cancelChargeAmount = MarketServiceLocator.CalculateCancellationFee(listing.ListedPrice);
+        if (cancelChargeAmount > 0)
+        {
+            // Charge cancellation fee before returning the escrowed item.
+            // Use the inventory consume routine as the source of truth for available currency.
+            if (!player.TryConsumeFromInventoryWithNetworking((uint)WeenieClassName.W_COINSTACK_CLASS, cancelChargeAmount))
+            {
+                SendTell(player, $"You need {cancelChargeAmount:N0} pyreals to pay the {PropertyManager.GetDouble("market_listing_cancellation_fee").Item * 100:N0}% cancellation fee. Cancellation aborted.");
+                return;
+            }
         }
 
         // Recreate the escrowed item and attempt to return it first.
@@ -892,27 +907,9 @@ public static class MarketBroker
             return;
         }
 
-        var fee = MarketServiceLocator.CalculateCancellationFee(listing.ListedPrice);
-        if (fee > 0)
-        {
-            // Charge cancellation fee in pyreals.
-            if ((player.CoinValue ?? 0) < fee)
-            {
-                SendTell(player, $"You need {fee:N0} pyreals to pay the {PropertyManager.GetDouble("market_listing_cancellation_fee").Item * 100:N0}% cancellation fee. Cancellation aborted.");
-                // Roll back item return because cancellation did not complete.
-                if (!player.TryRemoveFromInventoryWithNetworking(item.Guid, out _, Player.RemoveFromInventoryAction.GiveItem))
-                {
-                    // If we can't remove it, at least don't cancel the listing.
-                }
-                return;
-            }
-
-            player.TryConsumeFromInventoryWithNetworking((uint)WeenieClassName.W_COINSTACK_CLASS, fee);
-        }
-
         MarketServiceLocator.PlayerMarketRepository.CancelListing(listing);
         var display = requestedIndex.HasValue ? requestedIndex.Value : listingId;
-        SendTell(player, $"Cancelled listing #{display}." + (fee > 0 ? $" Cancellation fee: {fee:N0} pyreals." : ""));
+        SendTell(player, $"Cancelled listing #{display}." + (cancelChargeAmount > 0 ? $" Cancellation fee: {cancelChargeAmount:N0} pyreals." : ""));
     }
 
     private static void FinalizeConfirmedListing(Player player)
