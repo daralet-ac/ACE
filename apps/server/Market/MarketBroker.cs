@@ -219,12 +219,17 @@ public static class MarketBroker
         SendTell(
             player,
             broker,
-            $"Market Broker tells you, \"We charge a {MarketServiceLocator.SaleFeeRate * 100:N0}% fee upon payout or cancellation, for our services.\"");
+            $"Market Broker tells you, \"We charge a {PropertyManager.GetDouble("market_listing_payout_fee").Item * 100:N0}% fee upon payout for our services.\"");
 
         SendTell(
             player,
             broker,
-            $"Market Broker tells you, \"Give me an item to start a listing.\"");
+            $"Market Broker tells you, \"We charge a {PropertyManager.GetDouble("market_listing_cancellation_fee").Item * 100:N0}% fee to cancel a listed item.");
+
+        SendTell(
+            player,
+            broker,
+            $"Market Broker tells you, \"Give me an item to start a listing. Then tell me the pyreal price you'd like to list it for.\"");
 
         SendTell(
             player,
@@ -475,8 +480,8 @@ public static class MarketBroker
                 $"List '{item.Name}' for {price:N0} pyreals?\n\n" +
                 $"Duration: {FormatListingDuration(duration)}\n" +
                 $"Expires: {expiresAtUtc:yyyy-MM-dd HH:mm} UTC\n" +
-                $"Fee: You will be charged a {MarketServiceLocator.SaleFeeRate * 100:N0}% fee ({MarketServiceLocator.CalculateSaleFee(price):N0} pyreals) upon payout or cancellation.\n\n" +
-                $"To cancel your listing: Tell the Market Broker \"listings\".";
+                $"Fee: You will be charged a {PropertyManager.GetDouble("market_listing_payout_fee").Item * 100:N0}% fee ({MarketServiceLocator.CalculateSaleFee(price):N0} pyreals) upon payout.\n\n" +
+                $"To cancel your listing: Tell the Market Broker \"listings\", and then tell them \"cancel <id>\" to cancel a listing. You will be charged {PropertyManager.GetDouble("market_listing_cancellation_fee").Item * 100:N0}% of the listing price to cancel.";
 
             player.ConfirmationManager.EnqueueSend(
                 new Confirmation_Custom(
@@ -893,7 +898,7 @@ public static class MarketBroker
             // Charge cancellation fee in pyreals.
             if ((player.CoinValue ?? 0) < fee)
             {
-                SendTell(player, $"You need {fee:N0} pyreals to pay the {MarketServiceLocator.CancellationFeeRate * 100:N0}% cancellation fee. Cancellation aborted.");
+                SendTell(player, $"You need {fee:N0} pyreals to pay the {PropertyManager.GetDouble("market_listing_cancellation_fee").Item * 100:N0}% cancellation fee. Cancellation aborted.");
                 // Roll back item return because cancellation did not complete.
                 if (!player.TryRemoveFromInventoryWithNetworking(item.Guid, out _, Player.RemoveFromInventoryAction.GiveItem))
                 {
@@ -933,10 +938,25 @@ public static class MarketBroker
                     .GetListingsForAccount(player.Character.AccountId, now)
                     .Count();
 
-                if (activeCount >= maxActive)
+                // Unclaimed expired listings should still count toward the limit.
+                // This prevents accounts from building up too many expired listings.
+                var unclaimedExpiredCount = MarketServiceLocator.PlayerMarketRepository
+                    .GetExpiredListingsForAccount(player.Character.AccountId, now)
+                    .Count(l => !l.IsSold);
+
+                var totalCount = activeCount + unclaimedExpiredCount;
+
+                if (totalCount >= maxActive)
                 {
                     ClearPendingItem(player);
-                    SendTell(player, $"You already have {activeCount} active listing(s). Maximum is {maxActive}. Cancel or wait for a listing to expire.");
+                    var maxMsg = $"You already have {activeCount} active listing(s)";
+                    if (unclaimedExpiredCount > 0)
+                    {
+                        maxMsg += $" and {unclaimedExpiredCount} expired listing(s) awaiting claim";
+                    }
+                    maxMsg += $". Maximum is {maxActive}. Cancel a listing or claim expired listings.";
+
+                    SendTell(player, maxMsg);
                     return;
                 }
             }
