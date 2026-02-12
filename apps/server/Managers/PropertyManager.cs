@@ -870,6 +870,8 @@ public static class DefaultPropertyManager
         ("trophy_drop_rate", new Property<double>(1.0, "Modifier for trophies dropped on creature death")),
         ("unlocker_window", new Property<double>(10.0, "The number of seconds a player unlocking a chest has exclusive access to first opening the chest.")),
         ("market_listing_lifetime_seconds", new Property<double>(60 * 60 * 24 * 7, "How long (in seconds) a player market listing remains active before it expires.")),
+        ("market_listing_payout_fee", new Property<double>(0.05, "The fee for market listing sales.")),
+        ("market_listing_cancellation_fee", new Property<double>(0.01, "The fee for market listing cancellations")),
         ("vendor_unique_rot_time", new Property<double>(300, "the number of seconds before unique items sold to vendors disappear")),
         ("vitae_penalty", new Property<double>(0.05, "the amount of vitae penalty a player gets per death")),
         ("vitae_penalty_max", new Property<double>(0.40, "the maximum vitae penalty a player can have")),
