@@ -1305,26 +1305,6 @@ public class Vendor : Creature
                         player.HandleStaleVendorPurchaseByGuid(this, itemGuid);
                         return false;
                     }
-
-                    // Restore original stack size (and base name) from the stored listing snapshot
-                    if (!string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
-                    {
-                        var reconstructed = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(listing.ItemSnapshotJson);
-                        if (reconstructed != null)
-                        {
-                            var snapStack = reconstructed.StackSize;
-                            if (snapStack.HasValue && snapStack.Value > 1)
-                            {
-                                uniqueItemForSale.SetStackSize(snapStack.Value);
-                            }
-
-                            var snapName = reconstructed.Name;
-                            if (!string.IsNullOrWhiteSpace(snapName))
-                            {
-                                uniqueItemForSale.SetProperty(PropertyString.Name, snapName);
-                            }
-                        }
-                    }
                 }
 
                 uniqueItems.Add(uniqueItemForSale);
@@ -1353,7 +1333,34 @@ public class Vendor : Creature
         {
             foreach (var uniqueItem in uniqueItems)
             {
-                itemsToReceive.Add(uniqueItem.WeenieClassId, uniqueItem.StackSize ?? 1);
+                var qty = uniqueItem.StackSize ?? 1;
+
+                // Market vendor display items may be forced to StackSize=1 and have quantity embedded in the name.
+                // For capacity validation, use the original listing snapshot quantity when available.
+                if (IsMarketVendor)
+                {
+                    var listingId = uniqueItem.GetProperty(PropertyInt.MarketListingId);
+                    if (listingId.HasValue && listingId.Value > 0)
+                    {
+                        var listing = MarketServiceLocator.PlayerMarketRepository.GetListingById(listingId.Value);
+                        if (listing == null)
+                        {
+                            player.HandleStaleVendorPurchaseByGuid(this, uniqueItem.Guid);
+                            return false;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
+                        {
+                            var reconstructed = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(listing.ItemSnapshotJson);
+                            if (reconstructed?.StackSize is > 1)
+                            {
+                                qty = reconstructed.StackSize.Value;
+                            }
+                        }
+                    }
+                }
+
+                itemsToReceive.Add(uniqueItem.WeenieClassId, qty);
 
                 if (itemsToReceive.PlayerExceedsLimits)
                 {
