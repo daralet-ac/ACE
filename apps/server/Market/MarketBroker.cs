@@ -938,10 +938,25 @@ public static class MarketBroker
                     .GetListingsForAccount(player.Character.AccountId, now)
                     .Count();
 
-                if (activeCount >= maxActive)
+                // Unclaimed expired listings should still count toward the limit.
+                // This prevents accounts from building up too many expired listings.
+                var unclaimedExpiredCount = MarketServiceLocator.PlayerMarketRepository
+                    .GetExpiredListingsForAccount(player.Character.AccountId, now)
+                    .Count(l => !l.IsSold);
+
+                var totalCount = activeCount + unclaimedExpiredCount;
+
+                if (totalCount >= maxActive)
                 {
                     ClearPendingItem(player);
-                    SendTell(player, $"You already have {activeCount} active listing(s). Maximum is {maxActive}. Cancel or wait for a listing to expire.");
+                    var maxMsg = $"You already have {activeCount} active listing(s)";
+                    if (unclaimedExpiredCount > 0)
+                    {
+                        maxMsg += $" and {unclaimedExpiredCount} expired listing(s) awaiting claim";
+                    }
+                    maxMsg += $". Maximum is {maxActive}. Cancel a listing or claim expired listings.";
+
+                    SendTell(player, maxMsg);
                     return;
                 }
             }
