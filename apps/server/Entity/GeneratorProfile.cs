@@ -241,7 +241,17 @@ public class GeneratorProfile
                     {
                         var woi = new WorldObjectInfo(obj);
 
-                        Spawned.Add(obj.Guid.Full, woi);
+                        if (!Spawned.TryAdd(obj.Guid.Full, woi))
+                        {
+                            _log.Error(
+                                "[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} ProcessQueue(): duplicate spawned Guid {SpawnedGuid} (spawned WCID {SpawnedWeenieClassId}) while processing {GeneratorName}; ignoring duplicate",
+                                Generator.Guid,
+                                Generator.WeenieClassId,
+                                obj.Guid.Full,
+                                obj.WeenieClassId,
+                                Generator.Name
+                            );
+                        }
                     }
                 }
             }
