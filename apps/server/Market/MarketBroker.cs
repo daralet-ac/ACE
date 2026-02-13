@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ACE.Database;
@@ -14,6 +15,7 @@ namespace ACE.Server.Market;
 
 public static class MarketBroker
 {
+    private static readonly Serilog.ILogger MarketPayoutLog = Serilog.Log.ForContext(typeof(MarketBroker)).ForContext("Subsystem", "Market");
     private static readonly Serilog.ILogger Log = Serilog.Log.ForContext(typeof(MarketBroker));
 
     public const string TemplateName = "Market Broker";
@@ -559,6 +561,8 @@ public static class MarketBroker
             return;
         }
 
+        var notesBefore = GetTradeNotesInInventory(player);
+
         var payouts = MarketServiceLocator.PlayerMarketRepository
             .GetPendingPayouts(player.Character.AccountId)
             .OrderBy(p => p.CreatedAtUtc)
@@ -641,6 +645,24 @@ public static class MarketBroker
             }
         }
 
+        var notesAfter = GetTradeNotesInInventory(player);
+
+        try
+        {
+            MarketPayoutLog.Information(
+                "[MARKET PAYOUT] ClaimedPayouts={PayoutCount} Total={Total} Player='{PlayerName} ({PlayerAccountId})' \nNotesBefore={NotesBefore} \n NotesAfter={NotesAfter}",
+                payouts.Count,
+                total,
+                player.Name,
+                player.Character?.AccountId,
+                notesBefore,
+                notesAfter);
+        }
+        catch
+        {
+            // Do not allow logging failures to impact payout claims.
+        }
+
         foreach (var payout in payouts)
         {
             MarketServiceLocator.PlayerMarketRepository.MarkPayoutClaimed(payout);
@@ -684,6 +706,42 @@ public static class MarketBroker
 
         // Anything not divisible by 100 can't be represented by trade notes.
         // Keep behavior predictable by rounding down (payout records should be multiples of 100).
+        return result;
+    }
+
+    private static Dictionary<string, int> GetTradeNotesInInventory(Player player)
+    {
+        var result = new Dictionary<string, int>
+        {
+            ["M"] = 0,
+            ["D"] = 0,
+            ["C"] = 0,
+            ["L"] = 0,
+            ["X"] = 0,
+            ["V"] = 0,
+            ["I"] = 0,
+        };
+
+        foreach (var item in player.GetAllPossessions())
+        {
+            var key = item.WeenieClassId switch
+            {
+                (uint)WeenieClassName.W_TRADENOTE100000_CLASS => "M",
+                (uint)WeenieClassName.W_TRADENOTE50000_CLASS => "D",
+                (uint)WeenieClassName.W_TRADENOTE10000_CLASS => "C",
+                (uint)WeenieClassName.W_TRADENOTE5000_CLASS => "L",
+                (uint)WeenieClassName.W_TRADENOTE1000_CLASS => "X",
+                (uint)WeenieClassName.W_TRADENOTE500_CLASS => "V",
+                (uint)WeenieClassName.W_TRADENOTE100_CLASS => "I",
+                _ => null
+            };
+
+            if (key != null)
+            {
+                result[key] += item.StackSize ?? 1;
+            }
+        }
+
         return result;
     }
 
@@ -757,11 +815,32 @@ public static class MarketBroker
                 continue;
             }
 
+            var beforeCount = GetItemCountInInventory(player, item.WeenieClassId);
+
             if (!player.TryCreateInInventoryWithNetworking(item))
             {
                 item.Destroy();
                 SendTell(player, broker, "You do not have enough pack space to claim your expired listings.");
                 break;
+            }
+
+            var afterCount = GetItemCountInInventory(player, item.WeenieClassId);
+
+            try
+            {
+                MarketPayoutLog.Information(
+                    "[MARKET EXPIRED CLAIM] ListingId={ListingId} ItemWCID={ItemWeenieClassId} ItemName='{ItemName}' Player='{PlayerName} ({PlayerAccountId})' InventoryBefore={InventoryBefore} InventoryAfter={InventoryAfter}",
+                    listing.Id,
+                    listing.ItemWeenieClassId,
+                    item.Name,
+                    player.Name,
+                    player.Character?.AccountId,
+                    beforeCount,
+                    afterCount);
+            }
+            catch
+            {
+                // Do not allow logging failures to impact expired claims.
             }
 
             MarketServiceLocator.PlayerMarketRepository.MarkListingReturned(listing, DateTime.UtcNow);
@@ -775,7 +854,35 @@ public static class MarketBroker
             return;
         }
 
+        try
+        {
+            MarketPayoutLog.Information(
+                "[MARKET EXPIRED CLAIM] ReturnedListings={Returned} Requested={Requested} Player='{PlayerName} ({PlayerAccountId})'",
+                returned,
+                expired.Count,
+                player.Name,
+                player.Character?.AccountId);
+        }
+        catch
+        {
+            // Do not allow logging failures to impact expired claims.
+        }
+
         SendTell(player, broker, $"Claimed {returned} expired listing item(s)." );
+    }
+
+    private static int GetItemCountInInventory(Player player, uint weenieClassId)
+    {
+        var count = 0;
+        foreach (var item in player.GetAllPossessions())
+        {
+            if (item.WeenieClassId == weenieClassId)
+            {
+                count += item.StackSize ?? 1;
+            }
+        }
+
+        return count;
     }
 
     private static bool TryParseCancelInput(string input, out int listingId)
