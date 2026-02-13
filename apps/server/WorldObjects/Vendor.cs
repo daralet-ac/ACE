@@ -69,7 +69,8 @@ public class Vendor : Creature
 
     private sealed class MarketVendorSession
     {
-        public DateTime CreatedAtUtc { get; } = DateTime.UtcNow;
+        public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+        public void Touch() => CreatedAtUtc = DateTime.UtcNow;
         public Dictionary<ObjectGuid, WorldObject> ItemsByGuid { get; } = new();
     }
 
@@ -325,10 +326,24 @@ public class Vendor : Creature
         }
 
         var cutoff = DateTime.UtcNow - MarketSessionTtl;
-        var expired = _marketSessionsByPlayerGuid
-            .Where(kvp => kvp.Value.CreatedAtUtc < cutoff)
-            .Select(kvp => kvp.Key)
-            .ToList();
+        var expired = new List<uint>();
+        foreach (var kvp in _marketSessionsByPlayerGuid)
+        {
+            if (kvp.Value.CreatedAtUtc >= cutoff)
+            {
+                continue;
+            }
+
+            var player = PlayerManager.GetOnlinePlayer(new ObjectGuid(kvp.Key));
+            if (player != null && player.LastOpenedContainerId == Guid)
+            {
+                // Don't expire a snapshot while the player is actively viewing this vendor.
+                // Clients may continue to send appraisal requests referencing these GUIDs.
+                continue;
+            }
+
+            expired.Add(kvp.Key);
+        }
 
         foreach (var key in expired)
         {
@@ -345,7 +360,13 @@ public class Vendor : Creature
 
         PruneMarketSessions();
 
-        if (!_marketSessionsByPlayerGuid.TryGetValue(player.Guid.Full, out var session) || session.ItemsByGuid.Count == 0)
+        if (_marketSessionsByPlayerGuid.TryGetValue(player.Guid.Full, out var session) && session.ItemsByGuid.Count > 0)
+        {
+            session.Touch();
+            return session.ItemsByGuid;
+        }
+
+        if (session == null || session.ItemsByGuid.Count == 0)
         {
             session = new MarketVendorSession();
 

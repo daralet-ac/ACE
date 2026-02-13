@@ -298,6 +298,15 @@ partial class Player
                 // Market vendors: remove from the buyer's per-player vendor snapshot so the UI updates.
                 vendor.RemoveFromMarketSession(this, itemToCreate.Guid);
 
+                // Market vendors remap salvage (tinkering materials) to Misc for display so it shows in vendor UI.
+                // Ensure purchased salvage reverts to its real item type after purchase.
+                if (vendor.IsMarketVendor
+                    && itemToCreate.WeenieType == WeenieType.Salvage
+                    && itemToCreate.ItemType == ItemType.Misc)
+                {
+                    itemToCreate.ItemType = ItemType.TinkeringMaterial;
+                }
+
                 CheckForQuestStampOnPurchase(itemToCreate);
 
                 // trigger pickup emote on the created unique item (if present)
