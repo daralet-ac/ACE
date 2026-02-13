@@ -9,11 +9,13 @@ using ACE.Server.Managers;
 using ACE.Server.Market;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
 partial class Player
 {
+    private static readonly Serilog.ILogger MarketSaleLog = Log.ForContext(typeof(Player)).ForContext("Subsystem", "Market");
     // player buying items from vendor
 
     /// <summary>
@@ -241,6 +243,26 @@ partial class Player
 
                     var fee = MarketServiceLocator.CalculateSaleFee(listing.ListedPrice);
                     var net = MarketServiceLocator.CalculateNetAfterFee(listing.ListedPrice);
+
+                    try
+                    {
+                        MarketSaleLog.Information(
+                            "[MARKET SALE] Item='{ItemName} ({WCID})' ItemType={ItemType} Price={Price} Seller='{SellerName} ({SellerAccountId})' Buyer='{BuyerName} ({BuyerAccountId})' Vendor='{VendorName} ({VendorGuid})'",
+                            itemToCreate.Name,
+                            itemToCreate.WeenieClassId,
+                            itemToCreate.ItemType,
+                            listing.ListedPrice,
+                            listing.SellerName,
+                            listing.SellerAccountId,
+                            Name,
+                            Character?.AccountId,
+                            vendor?.Name,
+                            vendor?.Guid.Full);
+                    }
+                    catch
+                    {
+                        // Do not allow logging failures to impact transaction finalization.
+                    }
 
                     var payout = MarketServiceLocator.PlayerMarketRepository.CreatePayout(listing, net);
 
