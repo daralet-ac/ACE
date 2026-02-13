@@ -18,6 +18,23 @@ public static class MarketBroker
 
     public const string TemplateName = "Market Broker";
 
+    private static bool ShouldDisplayNameWithMaterial(WorldObject item)
+    {
+        if (item == null)
+        {
+            return false;
+        }
+
+        return item.WeenieType == WeenieType.Salvage
+               || item.ItemType == ItemType.Armor
+               || item.ItemType == ItemType.Clothing
+               || item.ItemType == ItemType.Jewelry
+               || item.ItemType == ItemType.MeleeWeapon
+               || item.ItemType == ItemType.MissileWeapon
+               || item.ItemType == ItemType.Caster
+               || item.ItemType == ItemType.Weapon;
+    }
+
     private static string? TryGetListingItemName(ACE.Database.Models.Shard.PlayerMarketListing listing)
     {
         if (listing == null)
@@ -25,16 +42,54 @@ public static class MarketBroker
             return null;
         }
 
+        WorldObject TryBuildItemForDisplayFromBiota(uint biotaId)
+        {
+            var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(biotaId, true);
+            if (biota == null)
+            {
+                return null;
+            }
+
+            var entityBiota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
+            return WorldObjectFactory.CreateWorldObject(entityBiota);
+        }
+
         // Prefer the exact persisted item name, if the biota still exists.
         if (listing.ItemBiotaId > 0)
         {
             try
             {
-                var biota = DatabaseManager.Shard.BaseDatabase.GetBiota(listing.ItemBiotaId, true);
-                var name = biota?.BiotaPropertiesString?.FirstOrDefault(p => p.Type == (ushort)PropertyString.Name)?.Value;
-                if (!string.IsNullOrWhiteSpace(name))
+                var item = TryBuildItemForDisplayFromBiota(listing.ItemBiotaId);
+                if (item != null)
                 {
-                    return name;
+                    var name = ShouldDisplayNameWithMaterial(item) ? item.NameWithMaterial : item.Name;
+                    item.Destroy();
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        return name;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore; fall back to weenie
+            }
+        }
+
+        // Fallback: use persisted snapshot if present (contains material props for salvage).
+        if (!string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
+        {
+            try
+            {
+                var item = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(listing.ItemSnapshotJson);
+                if (item != null)
+                {
+                    var name = ShouldDisplayNameWithMaterial(item) ? item.NameWithMaterial : item.Name;
+                    item.Destroy();
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        return name;
+                    }
                 }
             }
             catch
