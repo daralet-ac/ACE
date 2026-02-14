@@ -1397,14 +1397,22 @@ public class EmoteManager
 
             case EmoteType.LocalSignal:
 
-                if (WorldObject != null)
+                if (WorldObject != null && WorldObject.CurrentLandblock != null)
                 {
-                    if (WorldObject.CurrentLandblock != null)
+                    var crossLb = WorldObject.GetProperty(PropertyBool.SignalCrossLB) ?? false;
+
+                     if (crossLb)
+                    {
+                        WorldObject.CurrentLandblock.EmitSignalWithAdjacents(WorldObject, emote.Message);
+                    }
+                    else
                     {
                         WorldObject.CurrentLandblock.EmitSignal(WorldObject, emote.Message);
                     }
                 }
+
                 break;
+
 
             case EmoteType.LockFellow:
 

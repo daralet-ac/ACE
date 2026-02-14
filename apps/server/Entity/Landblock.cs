@@ -220,6 +220,35 @@ public class Landblock : IActor
         SetActiveMods();
         //LoadMeshes(objects);
     }
+    public void EmitSignalWithAdjacents(WorldObject emitter, string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        EmitSignal(emitter, message);
+
+        if (emitter?.PhysicsObj == null)
+        {
+            return;
+        }
+
+        var e = emitter.PhysicsObj.Position.Frame.Origin;
+        var ex = e.X;
+        var ey = e.Y;
+        var ez = e.Z;
+
+        foreach (var adjacent in Adjacents)
+        {
+            if (adjacent == null)
+            {
+                continue;
+            }
+
+            adjacent.EnqueueAction(new ActionEventDelegate(() => adjacent.EmitSignalCrossLB(emitter, message, ex, ey, ez)));
+        }
+    }
 
     /// <summary>
     /// Monster Locations, Generators<para />
@@ -1362,6 +1391,43 @@ public class Landblock : IActor
             if (emitter.IsWithinUseRadiusOf(wo, wo.HearLocalSignalsRadius))
             {
                 //Console.WriteLine($"{wo.Name}.EmoteManager.OnLocalSignal({emitter.Name}, {message})");
+                wo.EmoteManager.OnLocalSignal(emitter, message);
+            }
+        }
+    }
+    private static bool WithinRadiusCrossLB(float ex, float ey, float ez, WorldObject listener, float radius)
+    {
+        if (listener?.PhysicsObj == null)
+        {
+            return false;
+        }
+
+        var l = listener.PhysicsObj.Position.Frame.Origin;
+
+        var dx = ex - l.X;
+        var dy = ey - l.Y;
+        var dz = ez - l.Z;
+
+        return (dx * dx + dy * dy + dz * dz) <= (radius * radius);
+    }
+    public void EmitSignalCrossLB(WorldObject emitter, string message, float ex, float ey, float ez)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        foreach (var wo in worldObjects.Values.Where(w => w.HearLocalSignals).ToList())
+        {
+            if (emitter == wo)
+            {
+                continue;
+            }
+
+            var radius = wo.HearLocalSignalsRadius;
+
+            if (WithinRadiusCrossLB(ex, ey, ez, wo, radius))
+            {
                 wo.EmoteManager.OnLocalSignal(emitter, message);
             }
         }
