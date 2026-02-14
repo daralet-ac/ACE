@@ -1400,6 +1400,8 @@ public class EmoteManager
 
                 if (WorldObject != null && WorldObject.CurrentLandblock != null)
                 {
+                    var crossLb = WorldObject.GetProperty(PropertyBool.SignalCrossLB) ?? false;
+
                     if (crossLb)
                     {
                         WorldObject.CurrentLandblock.EmitSignalWithAdjacents(WorldObject, emote.Message);

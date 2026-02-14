@@ -229,6 +229,16 @@ public class Landblock : IActor
 
         EmitSignal(emitter, message);
 
+        if (emitter?.PhysicsObj == null)
+        {
+            return;
+        }
+
+        var e = emitter.PhysicsObj.Position.Frame.Origin;
+        var ex = e.X;
+        var ey = e.Y;
+        var ez = e.Z;
+
         foreach (var adjacent in Adjacents)
         {
             if (adjacent == null)
@@ -236,9 +246,10 @@ public class Landblock : IActor
                 continue;
             }
 
-           adjacent.EnqueueAction(new ActionEventDelegate(() => adjacent.EmitSignalCrossLB(emitter, message)));
+            adjacent.EnqueueAction(new ActionEventDelegate(() => adjacent.EmitSignalCrossLB(emitter, message, ex, ey, ez)));
         }
     }
+
     /// <summary>
     /// Monster Locations, Generators<para />
     /// This will be called from a separate task from our constructor. Use thread safety when interacting with this landblock.
@@ -1384,22 +1395,22 @@ public class Landblock : IActor
             }
         }
     }
-    private static bool WithinRadiusCrossLB(WorldObject emitter, WorldObject listener, float radius)
+    private static bool WithinRadiusCrossLB(float ex, float ey, float ez, WorldObject listener, float radius)
     {
-        if (emitter?.PhysicsObj == null || listener?.PhysicsObj == null)
+        if (listener?.PhysicsObj == null)
         {
             return false;
         }
-        var e = emitter.PhysicsObj.Position.Frame.Origin;
+
         var l = listener.PhysicsObj.Position.Frame.Origin;
 
-        var dx = e.X - l.X;
-        var dy = e.Y - l.Y;
-        var dz = e.Z - l.Z;
+        var dx = ex - l.X;
+        var dy = ey - l.Y;
+        var dz = ez - l.Z;
 
         return (dx * dx + dy * dy + dz * dz) <= (radius * radius);
     }
-    public void EmitSignalCrossLB(WorldObject emitter, string message)
+    public void EmitSignalCrossLB(WorldObject emitter, string message, float ex, float ey, float ez)
     {
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -1415,7 +1426,7 @@ public class Landblock : IActor
 
             var radius = wo.HearLocalSignalsRadius;
 
-            if (WithinRadiusCrossLB(emitter, wo, radius))
+            if (WithinRadiusCrossLB(ex, ey, ez, wo, radius))
             {
                 wo.EmoteManager.OnLocalSignal(emitter, message);
             }
