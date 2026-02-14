@@ -40,7 +40,7 @@ public class EmoteManager
     public int Nested { get; set; }
 
     public bool Debug = false;
-   
+
     public EmoteManager(WorldObject worldObject)
     {
         _worldObject = worldObject;
@@ -1402,7 +1402,7 @@ public class EmoteManager
                 {
                     var crossLb = WorldObject.GetProperty(PropertyBool.SignalCrossLB) ?? false;
 
-                    if (crossLb)
+                     if (crossLb)
                     {
                         WorldObject.CurrentLandblock.EmitSignalWithAdjacents(WorldObject, emote.Message);
                     }
