@@ -40,7 +40,7 @@ public class EmoteManager
     public int Nested { get; set; }
 
     public bool Debug = false;
-
+   
     public EmoteManager(WorldObject worldObject)
     {
         _worldObject = worldObject;
@@ -1398,14 +1398,27 @@ public class EmoteManager
 
             case EmoteType.LocalSignal:
 
-                if (WorldObject != null)
+                if (WorldObject != null && WorldObject.CurrentLandblock != null)
                 {
-                    if (WorldObject.CurrentLandblock != null)
+                   var crossLb = WorldObject.GetProperty(PropertyBool.SignalCrossLB) ?? false;
+                    var crossLbRaw = WorldObject.GetProperty((PropertyBool)176) ?? false;
+                    /// Delete these when fixed, just want to verify that the property is being read correctly and matches the expected value for SignalCrossLB 
+                    _log.Information($"SignalCrossLB enum value={(ushort)PropertyBool.SignalCrossLB}");
+                    _log.Information($"LocalSignal emitter={WorldObject.Name} id={WorldObject.WeenieClassId} crossLB={crossLb} raw176={crossLbRaw} msg={emote.Message}");
+
+
+                    if (crossLb)
+                    {
+                        WorldObject.CurrentLandblock.EmitSignalWithAdjacents(WorldObject, emote.Message);
+                    }
+                    else
                     {
                         WorldObject.CurrentLandblock.EmitSignal(WorldObject, emote.Message);
                     }
                 }
+
                 break;
+
 
             case EmoteType.LockFellow:
 
