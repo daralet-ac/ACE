@@ -1400,13 +1400,6 @@ public class EmoteManager
 
                 if (WorldObject != null && WorldObject.CurrentLandblock != null)
                 {
-                   var crossLb = WorldObject.GetProperty(PropertyBool.SignalCrossLB) ?? false;
-                    var crossLbRaw = WorldObject.GetProperty((PropertyBool)176) ?? false;
-                    /// Delete these when fixed, just want to verify that the property is being read correctly and matches the expected value for SignalCrossLB 
-                    _log.Information($"SignalCrossLB enum value={(ushort)PropertyBool.SignalCrossLB}");
-                    _log.Information($"LocalSignal emitter={WorldObject.Name} id={WorldObject.WeenieClassId} crossLB={crossLb} raw176={crossLbRaw} msg={emote.Message}");
-
-
                     if (crossLb)
                     {
                         WorldObject.CurrentLandblock.EmitSignalWithAdjacents(WorldObject, emote.Message);
