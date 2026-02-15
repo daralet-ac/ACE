@@ -52,11 +52,22 @@ internal sealed class MarketSnapshotUpdater
         await gate.WaitAsync();
         try
         {
-
             var threadChannel = await _client.GetChannelAsync(channelId) as IMessageChannel;
             if (threadChannel == null)
             {
                 return;
+            }
+
+            if (_client.GetChannel(channelId) is SocketThreadChannel socketThread && socketThread.IsArchived)
+            {
+                try
+                {
+                    await socketThread.ModifyAsync(p => p.Archived = false);
+                }
+                catch
+                {
+                    return;
+                }
             }
 
             var now = DateTime.UtcNow;
