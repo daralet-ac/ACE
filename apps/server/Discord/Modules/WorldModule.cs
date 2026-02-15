@@ -80,7 +80,9 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
     public async Task HandleCloseWorld()
     {
         if (!Context.Interaction.HasResponded)
+        {
             await DeferAsync(true);
+        }
 
         WorldManager.Close(null, true);
         var embed = new EmbedBuilder()
@@ -98,7 +100,9 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
     public async Task HandleOpenWorld()
     {
         if (!Context.Interaction.HasResponded)
+        {
             await DeferAsync(true);
+        }
 
         WorldManager.Open(null);
         var embed = new EmbedBuilder()
@@ -116,7 +120,9 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
     public async Task HandleCancel()
     {
         if (!Context.Interaction.HasResponded)
+        {
             await DeferAsync(true);
+        }
         await Context.Interaction.DeleteOriginalResponseAsync();
     }
 }
