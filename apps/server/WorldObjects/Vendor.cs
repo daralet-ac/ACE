@@ -15,6 +15,7 @@ using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Market;
 using ACE.Server.Entity;
+using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
@@ -66,6 +67,7 @@ public class VendorItemComparer : IComparer<WorldObject>
 public class Vendor : Creature
 {
     private static readonly VendorItemComparer VendorItemComparer = new VendorItemComparer();
+    private static readonly ILogger _log = Log.ForContext<Vendor>();
 
     private sealed class MarketVendorSession
     {
@@ -654,7 +656,19 @@ public class Vendor : Creature
 
         wo.VendorShopCreateListStackSize = stackSize ?? -1;
 
-        DefaultItemsForSale.Add(wo.Guid, wo);
+        // Defensive: avoid crashing if a duplicate ObjectGuid appears (eg. from data issues or GUID generation).
+        // The item profile de-dupe above prevents most duplicates, but this ensures robustness.
+        if (!DefaultItemsForSale.TryAdd(wo.Guid, wo))
+        {
+            _log.Warning(
+                "Vendor {VendorGuid} duplicate item guid {ItemGuid} for weenie {WeenieClassId} (palette {Palette}, shade {Shade}). Skipping.",
+                Guid.Full,
+                wo.Guid.Full,
+                weenieClassId,
+                palette ?? 0,
+                shade ?? 0
+            );
+        }
     }
 
     /// <summary>
