@@ -79,9 +79,10 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("closeWorld", true)]
     public async Task HandleCloseWorld()
     {
-        WorldManager.Close(null, true);
+        if (!Context.Interaction.HasResponded)
+            await DeferAsync(true);
 
-        await DeferAsync(true);
+        WorldManager.Close(null, true);
         var embed = new EmbedBuilder()
             .WithColor(new Color(217, 50, 50))
             .WithAuthor(Context.Interaction.User)
@@ -96,9 +97,10 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("openWorld", true)]
     public async Task HandleOpenWorld()
     {
-        WorldManager.Open(null);
+        if (!Context.Interaction.HasResponded)
+            await DeferAsync(true);
 
-        await DeferAsync(true);
+        WorldManager.Open(null);
         var embed = new EmbedBuilder()
             .WithColor(new Color(75, 181, 67))
             .WithAuthor(Context.Interaction.User)
@@ -113,7 +115,8 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("cancel", true)]
     public async Task HandleCancel()
     {
-        await DeferAsync(true);
+        if (!Context.Interaction.HasResponded)
+            await DeferAsync(true);
         await Context.Interaction.DeleteOriginalResponseAsync();
     }
 }
