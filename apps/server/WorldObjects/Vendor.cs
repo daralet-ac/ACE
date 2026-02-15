@@ -544,11 +544,33 @@ public class Vendor : Creature
 
             WorldObject item = null;
 
+            // Prefer the stored snapshot when available. This preserves rolled stats and spellbook/cantrips
+            // for vendor appraisal and ensures the purchased item matches the original listing.
+            if (!string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
+            {
+                var snapItem = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(listing.ItemSnapshotJson);
+                if (snapItem?.Biota != null)
+                {
+                    snapItem.Biota.Id = GuidManager.NewDynamicGuid().Full;
+                    item = WorldObjectFactory.CreateWorldObject(snapItem.Biota);
+                }
+            }
+
             if (listing.ItemBiotaId > 0 && biotaById != null && biotaById.TryGetValue(listing.ItemBiotaId, out var shardBiota) && shardBiota != null)
             {
                 var displayBiota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(shardBiota);
+
+                // Ensure spellbook/cantrips are present for client appraisal (notably for jewelry market listings).
+                // Shard biota stores spellbook as a collection; convert it into the entity biota dictionary.
+                if (shardBiota.BiotaPropertiesSpellBook != null && shardBiota.BiotaPropertiesSpellBook.Count > 0)
+                {
+                    displayBiota.PropertiesSpellBook = shardBiota.BiotaPropertiesSpellBook
+                        .GroupBy(s => s.Spell)
+                        .ToDictionary(g => g.Key, g => g.Max(x => x.Probability));
+                }
+
                 displayBiota.Id = GuidManager.NewDynamicGuid().Full;
-                item = WorldObjectFactory.CreateWorldObject(displayBiota);
+                item ??= WorldObjectFactory.CreateWorldObject(displayBiota);
             }
 
             item ??= WorldObjectFactory.CreateNewWorldObject(listing.ItemWeenieClassId);
@@ -559,6 +581,10 @@ public class Vendor : Creature
 
             item.Value = listing.ListedPrice;
             item.AltCurrencyValue = listing.ListedPrice;
+
+            // Ensure the object's description is fully populated for vendor-window display,
+            // including spellbook/cantrip lists (notably for jewelry).
+            item.CalculateObjDesc();
 
             var stackSize = item.StackSize ?? 1;
             if (stackSize > 1)
@@ -814,6 +840,18 @@ public class Vendor : Creature
         {
             WorldObject item = null;
 
+            // Prefer the stored snapshot when available. This preserves rolled stats and spellbook/cantrips
+            // for vendor appraisal and ensures the purchased item matches the original listing.
+            if (!string.IsNullOrWhiteSpace(listing.ItemSnapshotJson))
+            {
+                var snapItem = MarketListingSnapshotSerializer.TryRecreateWorldObjectFromSnapshot(listing.ItemSnapshotJson);
+                if (snapItem?.Biota != null)
+                {
+                    snapItem.Biota.Id = GuidManager.NewDynamicGuid().Full;
+                    item = WorldObjectFactory.CreateWorldObject(snapItem.Biota);
+                }
+            }
+
             // Prefer the persisted biota so the listed item retains all stats/properties.
             if (listing.ItemBiotaId > 0)
             {
@@ -825,8 +863,18 @@ public class Vendor : Creature
                     // Create a display copy with a new GUID so multiple listings don't collide
                     // in UniqueItemsForSale (dictionary key is ObjectGuid).
                     var displayBiota = Database.Adapter.BiotaConverter.ConvertToEntityBiota(biota);
+
+                    // Ensure spellbook/cantrips are present for client appraisal (notably for jewelry market listings).
+                    // Shard biota stores spellbook as a collection; convert it into the entity biota dictionary.
+                    if (biota.BiotaPropertiesSpellBook != null && biota.BiotaPropertiesSpellBook.Count > 0)
+                    {
+                        displayBiota.PropertiesSpellBook = biota.BiotaPropertiesSpellBook
+                            .GroupBy(s => s.Spell)
+                            .ToDictionary(g => g.Key, g => g.Max(x => x.Probability));
+                    }
+
                     displayBiota.Id = GuidManager.NewDynamicGuid().Full;
-                    item = WorldObjectFactory.CreateWorldObject(displayBiota);
+                    item ??= WorldObjectFactory.CreateWorldObject(displayBiota);
                 }
             }
 
@@ -851,6 +899,10 @@ public class Vendor : Creature
             // Market listings are priced in pyreals (coin) for this server.
             item.Value = listing.ListedPrice;
             item.AltCurrencyValue = listing.ListedPrice;
+
+            // Ensure the object's description is fully populated for vendor-window display,
+            // including spellbook/cantrip lists (notably for jewelry).
+            item.CalculateObjDesc();
 
             // For stackables, show the full stack price on the vendor UI.
             // Value is derived from StackUnitValue * StackSize.
