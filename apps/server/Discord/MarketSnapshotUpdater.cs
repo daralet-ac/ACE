@@ -376,13 +376,20 @@ internal sealed class MarketSnapshotUpdater
                 return new ExistingMessageResult(messageId, editsThisRun);
             }
 
-            await um.ModifyAsync(p =>
+            try
             {
-                p.Content = desiredContent;
-                p.Embeds = desiredEmbed != null
-                    ? new Optional<Embed[]>([desiredEmbed])
-                    : new Optional<Embed[]>([]);
-            });
+                await um.ModifyAsync(p =>
+                {
+                    p.Content = desiredContent;
+                    p.Embeds = desiredEmbed != null
+                        ? new Optional<Embed[]>([desiredEmbed])
+                        : new Optional<Embed[]>([]);
+                });
+            }
+            catch (global::Discord.Net.HttpException ex) when ((int?)ex.DiscordCode == 50083)
+            {
+                return new ExistingMessageResult(messageId, editsThisRun);
+            }
 
             editsThisRun++;
             await Task.Delay(policy.EditDelay);
