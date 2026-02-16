@@ -485,11 +485,14 @@ partial class Creature
             }
             else
             {
-                _log.Warning(
+                if (WeenieClassId != 1020001)
+                {
+                    _log.Warning(
                     "Creature.SetDamageArmorWard() - Weenie == null for {Name} ({WeenieClassId}). Cannot set Damage/Armor for this creature.",
                     Name,
                     WeenieClassId
                 );
+                }
             }
         }
 
