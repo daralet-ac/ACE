@@ -243,8 +243,9 @@ public class GeneratorProfile
 
                         if (!Spawned.TryAdd(obj.Guid.Full, woi))
                         {
-                            _log.Error(
-                                "[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} ProcessQueue(): duplicate spawned Guid {SpawnedGuid} (spawned WCID {SpawnedWeenieClassId}) while processing {GeneratorName}; ignoring duplicate",
+                            Spawned[obj.Guid.Full] = woi;
+                            _log.Warning(
+                                "[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} ProcessQueue(): duplicate spawned Guid {SpawnedGuid} (spawned WCID {SpawnedWeenieClassId}) while processing {GeneratorName}; replacing previous entry",
                                 Generator.Guid,
                                 Generator.WeenieClassId,
                                 obj.Guid.Full,
