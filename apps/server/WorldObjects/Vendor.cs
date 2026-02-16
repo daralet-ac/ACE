@@ -652,7 +652,17 @@ public class Vendor : Creature
 
         wo.CalculateObjDesc();
 
-        itemsForSale.Add(itemProfile, wo.Guid.Full);
+        if (!itemsForSale.TryAdd(itemProfile, wo.Guid.Full))
+        {
+            _log.Warning(
+                "Vendor {VendorGuid} duplicate item profile for weenie {WeenieClassId} (palette {Palette}, shade {Shade}). Skipping.",
+                Guid.Full,
+                weenieClassId,
+                palette ?? 0,
+                shade ?? 0
+            );
+            return;
+        }
 
         wo.VendorShopCreateListStackSize = stackSize ?? -1;
 
