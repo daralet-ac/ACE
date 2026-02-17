@@ -23,9 +23,11 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
     [SlashCommand("close", "Close the world and boot players.")]
     public async Task Close()
     {
+        await DeferAsync(ephemeral: true);
+
         if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Closed)
         {
-            await RespondAsync("The world is already **closed**.", ephemeral: true);
+            await FollowupAsync("The world is already **closed**.", ephemeral: true);
             return;
         }
 
@@ -45,15 +47,17 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
 
         var component = new ComponentBuilder().WithButton(button).WithButton(cancelButton);
 
-        await RespondAsync("Are you sure?", components: component.Build(), ephemeral: true);
+        await FollowupAsync("Are you sure?", components: component.Build(), ephemeral: true);
     }
 
     [SlashCommand("open", "Open the world to everyone.")]
     public async Task Open()
     {
+        await DeferAsync(ephemeral: true);
+
         if (WorldManager.WorldStatus == WorldManager.WorldStatusState.Open)
         {
-            await RespondAsync("The world is already **open**.", ephemeral: true);
+            await FollowupAsync("The world is already **open**.", ephemeral: true);
             return;
         }
 
@@ -73,7 +77,7 @@ public class WorldModule : InteractionModuleBase<SocketInteractionContext>
 
         var component = new ComponentBuilder().WithButton(button).WithButton(cancelButton);
 
-        await RespondAsync("Are you sure?", components: component.Build(), ephemeral: true);
+        await FollowupAsync("Are you sure?", components: component.Build(), ephemeral: true);
     }
 
     [ComponentInteraction("closeWorld", true)]
