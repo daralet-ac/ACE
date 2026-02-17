@@ -2036,7 +2036,7 @@ public class Vendor : Creature
                     var newItem = WorldObjectFactory.CreateNewWorldObject(item.WeenieClassId);
                     newItem.ContainerId = Guid.Full;
 
-                    UniqueItemsForSale.Add(newItem.Guid, newItem);
+                    UniqueItemsForSale[newItem.Guid] = newItem;
 
                     newItem.SoldTimestamp = Time.GetUnixTime();
                     newItem.RemoveBiotaFromDatabase();
@@ -2047,7 +2047,7 @@ public class Vendor : Creature
             {
                 item.ContainerId = Guid.Full;
 
-                UniqueItemsForSale.Add(item.Guid, item);
+                UniqueItemsForSale[item.Guid] = item;
 
                 item.SoldTimestamp = Time.GetUnixTime();
 
