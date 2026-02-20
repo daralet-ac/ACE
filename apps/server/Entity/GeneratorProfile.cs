@@ -252,6 +252,26 @@ public class GeneratorProfile
                                 obj.WeenieClassId,
                                 Generator.Name
                             );
+
+                            if (PropertyManager.GetBool("log_market_guid_suppression").Item)
+                            {
+                                try
+                                {
+                                    if (Market.MarketEscrowGuard.IsActiveListingBiotaId(obj.Guid.Full))
+                                    {
+                                        _log.Warning(
+                                            "[GENERATOR] 0x{GeneratorGuid}:{GeneratorWeenieClassId} ProcessQueue(): duplicate spawned Guid {SpawnedGuid} correlates to an ACTIVE market listing ItemBiotaId.",
+                                            Generator.Guid,
+                                            Generator.WeenieClassId,
+                                            obj.Guid.Full
+                                        );
+                                    }
+                                }
+                                catch
+                                {
+                                    // ignore correlation failures
+                                }
+                            }
                         }
                     }
                 }
