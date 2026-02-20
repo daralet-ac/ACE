@@ -1103,15 +1103,18 @@ public abstract partial class WorldObject : IActor
         {
             if (preserveBiota)
             {
-                _log.Warning(
-                    "[MARKET] Suppressing dynamic GUID recycle for escrow-backed object 0x{ObjectGuid:X8}:{Name} (WeenieClassId={WeenieClassId}, BiotaId={BiotaId}, OriginDb={OriginDb}, Landblock={Landblock}).",
-                    Guid.Full,
-                    Name,
-                    WeenieClassId,
-                    Biota?.Id,
-                    biotaOriginatedFromDatabase,
-                    CurrentLandblock?.Id
-                );
+                if (PropertyManager.GetBool("log_market_guid_suppression").Item)
+                {
+                    _log.Warning(
+                        "[MARKET] Suppressing dynamic GUID recycle for escrow-backed object 0x{ObjectGuid:X8}:{Name} (WeenieClassId={WeenieClassId}, BiotaId={BiotaId}, OriginDb={OriginDb}, Landblock={Landblock}).",
+                        Guid.Full,
+                        Name,
+                        WeenieClassId,
+                        Biota?.Id,
+                        biotaOriginatedFromDatabase,
+                        CurrentLandblock?.Id
+                    );
+                }
             }
             else
             {

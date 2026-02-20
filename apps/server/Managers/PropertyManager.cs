@@ -673,6 +673,8 @@ public static class DefaultPropertyManager
         PropertyManager.ModifyLong("market_listing_max_price", 1_000_000_000);
 
         PropertyManager.ModifyDouble("vendor_unique_rot_time", 1800);
+
+        PropertyManager.ModifyBool("log_market_guid_suppression", false);
     }
 
     // ==================================================================================
@@ -681,6 +683,7 @@ public static class DefaultPropertyManager
     // ==================================================================================
 
     public static readonly ReadOnlyDictionary<string, Property<bool>> DefaultBooleanProperties = DictOf(
+        ("log_market_guid_suppression", new Property<bool>(false, "If enabled, logs warnings when dynamic GUID recycling is suppressed for active market escrow objects")),
         ("account_login_boots_in_use", new Property<bool>(true, "if FALSE, oldest connection to account is not booted when new connection occurs")),
         ("advanced_combat_pets", new Property<bool>(false, "(non-retail function) If enabled, Combat Pets can cast spells")),
         ("advocate_fane_auto_bestow", new Property<bool>(false, "If enabled, Advocate Fane will automatically bestow new advocates to advocate_fane_auto_bestow_level")),
