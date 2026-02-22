@@ -184,6 +184,12 @@ public class ContractManager
 
             Player.CharacterChangesDetected = true;
             Player.Session.Network.EnqueueSend(new GameEventSendClientContractTracker(Player.Session, contract));
+            Player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"You have received a new task: {datContract.ContractName}.",
+                    ChatMessageType.System
+                )
+            );
 
             RefreshMonitoredQuestFlags();
         }
@@ -278,7 +284,7 @@ public class ContractManager
         {
             if (contracts.Value.Contains(questName.ToLower()))
             {
-                Update(contracts.Key);
+                Update(contracts.Key, questName);
             }
         }
     }
@@ -317,25 +323,14 @@ public class ContractManager
                         );
                     }
 
-                    // Bestow the contract
-                    var success = Add(contract.ContractId);
-
-                    if (success)
-                    {
-                        // Send message to player
-                        Player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"You have received a new task: {contract.ContractName}!",
-                                ChatMessageType.Broadcast
-                            )
-                        );
-                    }
+                    // Bestow the contract (Add() already sends the "given the task" message)
+                    Add(contract.ContractId);
                 }
             }
         }
     }
 
-    private void Update(uint contractId)
+    private void Update(uint contractId, string triggeringQuestName = null)
     {
         if (Debug)
         {
@@ -347,6 +342,22 @@ public class ContractManager
         if (contract != null)
         {
             Player.Session.Network.EnqueueSend(new GameEventSendClientContractTracker(Player.Session, contract));
+
+            if (triggeringQuestName != null)
+            {
+                var datContract = GetContractFromDat(contractId);
+                if (datContract != null &&
+                    !string.IsNullOrWhiteSpace(datContract.QuestflagFinished) &&
+                    datContract.QuestflagFinished.Equals(triggeringQuestName, StringComparison.OrdinalIgnoreCase))
+                {
+                    Player.Session.Network.EnqueueSend(
+                        new GameMessageSystemChat(
+                            $"You have completed the task: {datContract.ContractName}.",
+                            ChatMessageType.System
+                        )
+                    );
+                }
+            }
         }
     }
 }
