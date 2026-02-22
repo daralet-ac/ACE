@@ -119,13 +119,13 @@ public class ShardDatabase
 SELECT
   COALESCE(SUM(CASE
     WHEN b.weenie_Type = 14 THEN COALESCE(v.value, 0)
-    WHEN b.weenie_Class_Id = 20630 THEN COALESCE(b.stack_Size, 1) * 100000
-    WHEN b.weenie_Class_Id = 20629 THEN COALESCE(b.stack_Size, 1) * 50000
-    WHEN b.weenie_Class_Id = 20628 THEN COALESCE(b.stack_Size, 1) * 10000
-    WHEN b.weenie_Class_Id = 20627 THEN COALESCE(b.stack_Size, 1) * 5000
-    WHEN b.weenie_Class_Id = 20626 THEN COALESCE(b.stack_Size, 1) * 1000
-    WHEN b.weenie_Class_Id = 20625 THEN COALESCE(b.stack_Size, 1) * 500
-    WHEN b.weenie_Class_Id = 20624 THEN COALESCE(b.stack_Size, 1) * 100
+    WHEN b.weenie_Class_Id = 20630 THEN COALESCE(ss.value, 1) * 100000
+    WHEN b.weenie_Class_Id = 20629 THEN COALESCE(ss.value, 1) * 50000
+    WHEN b.weenie_Class_Id = 20628 THEN COALESCE(ss.value, 1) * 10000
+    WHEN b.weenie_Class_Id = 20627 THEN COALESCE(ss.value, 1) * 5000
+    WHEN b.weenie_Class_Id = 20626 THEN COALESCE(ss.value, 1) * 1000
+    WHEN b.weenie_Class_Id = 20625 THEN COALESCE(ss.value, 1) * 500
+    WHEN b.weenie_Class_Id = 20624 THEN COALESCE(ss.value, 1) * 100
     ELSE 0
   END), 0) AS pyreal_wealth,
   COALESCE(SUM(CASE
@@ -137,6 +137,8 @@ INNER JOIN biota_properties_i_i_d bank
   ON bank.object_Id = b.id AND bank.type = 9007 AND bank.value = @acct
 LEFT JOIN biota_properties_int v
   ON v.object_Id = b.id AND v.type = 19
+LEFT JOIN biota_properties_int ss
+  ON ss.object_Id = b.id AND ss.type = 12
 LEFT JOIN biota_properties_int tq
   ON tq.object_Id = b.id AND tq.type = 467;
 ";
