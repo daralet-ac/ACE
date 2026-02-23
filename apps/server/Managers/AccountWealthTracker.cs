@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using ACE.Database;
 using ACE.Server.WorldObjects;
 
@@ -16,17 +18,37 @@ public static class AccountWealthTracker
             return;
         }
 
-        var (rawPyrealCurrency, trophyValue) = PlayerWealthCalculator.GetAccountWealth(player);
-        WealthByAccountId[accountId] = rawPyrealCurrency;
+        // Scan in-memory possessions of all online characters synchronously.
+        // This must stay on the calling thread to safely access WorldObject inventories,
+        // but makes no DB calls so it completes in microseconds.
+        var (inMemRaw, inMemTrophies) = PlayerWealthCalculator.GetInMemoryWealth(player);
+        var characterId = player?.Character?.Id;
 
-        // Persist a current snapshot (best-effort).
-        DatabaseManager.Shard.BaseDatabase.UpsertAccountWealthSnapshot(
-            accountId,
-            player?.Character?.Id,
-            rawPyrealCurrency,
-            trophyValue,
-            System.DateTime.UtcNow
-        );
+        // Offload the DB-heavy work (offline alt biotass + bank aggregate + snapshot write)
+        // to a background thread so the landblock thread is never stalled by database I/O.
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var (dbRaw, dbTrophies) = PlayerWealthCalculator.GetOfflineAndBankWealth(accountId);
+                var totalRaw = inMemRaw + dbRaw;
+                var totalTrophies = inMemTrophies + dbTrophies;
+
+                WealthByAccountId[accountId] = totalRaw;
+
+                DatabaseManager.Shard.BaseDatabase.UpsertAccountWealthSnapshot(
+                    accountId,
+                    characterId,
+                    totalRaw,
+                    totalTrophies,
+                    DateTime.UtcNow
+                );
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Error(ex, "[WEALTH] Background wealth update failed for account {AccountId}", accountId);
+            }
+        });
     }
 
     public static bool TryGet(uint accountId, out long wealth) => WealthByAccountId.TryGetValue(accountId, out wealth);
