@@ -36,7 +36,7 @@ partial class Player
     private const double RoadCheckInterval = 0.5;
     private double roadGraceEndTime;
     private const double RoadGracePeriod = 5.0;
-    public static readonly uint RoadSpeedBuffSpellId = (uint)SpellId.TuskerSprint;
+    public static readonly uint RoadSpeedBuffSpellId = (uint)SpellId.RoadRunBuff;
 
     public void Player_Tick(double currentUnixTime)
     {
