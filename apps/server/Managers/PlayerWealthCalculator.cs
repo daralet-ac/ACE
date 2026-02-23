@@ -29,6 +29,24 @@ public static class PlayerWealthCalculator
             return (0, 0);
         }
 
+        var (inMemRaw, inMemTrophies) = GetInMemoryWealth(player);
+        var accountId = player.Account?.AccountId ?? 0;
+        var (dbRaw, dbTrophies) = GetOfflineAndBankWealth(accountId);
+
+        return (inMemRaw + dbRaw, inMemTrophies + dbTrophies);
+    }
+
+    /// <summary>
+    /// Scans only the in-memory possessions of all online characters on the account.
+    /// No database calls are made — safe to call on the landblock/action thread.
+    /// </summary>
+    public static (long rawPyrealCurrency, long trophyValue) GetInMemoryWealth(Player player)
+    {
+        if (player == null)
+        {
+            return (0, 0);
+        }
+
         long raw = 0;
         long trophies = 0;
 
@@ -52,30 +70,45 @@ public static class PlayerWealthCalculator
             }
         }
 
-        foreach (var biota in EnumerateAccountOwnedBiotas(player))
+        return (raw, trophies);
+    }
+
+    /// <summary>
+    /// Loads wealth for offline characters and bank storage via database queries.
+    /// Safe to call on a background thread — does not access any live WorldObjects.
+    /// </summary>
+    public static (long rawPyrealCurrency, long trophyValue) GetOfflineAndBankWealth(uint accountId)
+    {
+        if (accountId == 0)
+        {
+            return (0, 0);
+        }
+
+        long raw = 0;
+        long trophies = 0;
+
+        foreach (var biota in EnumerateOfflineAccountBiotas(accountId))
         {
             var (biotaRaw, biotaTrophies) = GetBiotaWealth(biota);
             raw += biotaRaw;
             trophies += biotaTrophies;
         }
 
-        // Account bank storage (aggregate query)
-        var accountId = player.Account?.AccountId ?? 0;
-        if (accountId != 0)
-        {
-            var (bankPyreal, bankTrophy) = DatabaseManager.Shard.BaseDatabase.GetBankWealthAggregate(accountId);
-            raw += bankPyreal;
-            trophies += bankTrophy;
-        }
+        var (bankPyreal, bankTrophy) = DatabaseManager.Shard.BaseDatabase.GetBankWealthAggregate(accountId);
+        raw += bankPyreal;
+        trophies += bankTrophy;
 
         return (raw, trophies);
     }
 
+    /// <summary>
+    /// Yields in-memory WorldObjects for all online players on the account.
+    /// No database calls are made.
+    /// </summary>
     private static IEnumerable<WorldObject> EnumerateAccountOwnedItems(Player player)
     {
         var accountId = player.Account?.AccountId ?? 0;
 
-        // Fallback: no account context, only count current character possessions.
         if (accountId == 0)
         {
             foreach (var item in player.GetAllPossessions())
@@ -86,28 +119,27 @@ public static class PlayerWealthCalculator
             yield break;
         }
 
-        // Always aggregate across all characters on the account.
-        // Prefer live in-memory possessions for online characters; otherwise load possessions from the DB.
+        // Use PlayerManager directly — no GetCharacters DB call needed for the in-memory scan.
         var accountPlayers = PlayerManager.GetAccountPlayers(accountId) ?? new Dictionary<uint, IPlayer>();
 
-        var characters = DatabaseManager.Shard.BaseDatabase.GetCharacters(accountId, includeDeleted: false);
-        foreach (var character in characters.Where(c => !c.IsDeleted))
+        foreach (var kvp in accountPlayers)
         {
-            if (accountPlayers.TryGetValue(character.Id, out var cached) && cached is Player online)
+            if (kvp.Value is Player online)
             {
                 foreach (var item in online.GetAllPossessions())
                 {
                     yield return item;
                 }
-
-                continue;
             }
         }
     }
 
-    private static IEnumerable<ACE.Entity.Models.Biota> EnumerateAccountOwnedBiotas(Player player)
+    /// <summary>
+    /// Yields biotass for offline characters on the account via database queries.
+    /// Safe to call from a background thread — does not access any live WorldObjects.
+    /// </summary>
+    private static IEnumerable<ACE.Entity.Models.Biota> EnumerateOfflineAccountBiotas(uint accountId)
     {
-        var accountId = player.Account?.AccountId ?? 0;
         if (accountId == 0)
         {
             yield break;
@@ -118,7 +150,7 @@ public static class PlayerWealthCalculator
         var characters = DatabaseManager.Shard.BaseDatabase.GetCharacters(accountId, includeDeleted: false);
         foreach (var character in characters.Where(c => !c.IsDeleted))
         {
-            // Online characters are already covered via WorldObjects.
+            // Online characters are already covered via in-memory scan.
             if (accountPlayers.TryGetValue(character.Id, out var cached) && cached is Player)
             {
                 continue;
