@@ -343,6 +343,27 @@ public class ObjectMaint
     }
 
     /// <summary>
+    /// Iterates visible objects of type Creature without allocating a list.
+    /// The action is invoked while the read lock is held.
+    /// </summary>
+    public void ForEachVisibleCreature(Action<Creature> action)
+    {
+        rwLock.EnterReadLock();
+        try
+        {
+            foreach (var obj in VisibleObjects.Values)
+            {
+                if (obj.WeenieObj.WorldObject is Creature creature)
+                    action(creature);
+            }
+        }
+        finally
+        {
+            rwLock.ExitReadLock();
+        }
+    }
+
+    /// <summary>
     /// Returns a list of objects that are currently visible from a cell
     /// </summary>
     public List<PhysicsObj> GetVisibleObjects(ObjCell cell, VisibleObjectType type = VisibleObjectType.All)
