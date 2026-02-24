@@ -343,23 +343,44 @@ public class ObjectMaint
     }
 
     /// <summary>
-    /// Iterates visible objects of type Creature without allocating a list.
-    /// The action is invoked while the read lock is held.
+    /// Snapshots visible creatures under the read lock, releases the lock,
+    /// then invokes the action on each — safe even if the action tries to
+    /// acquire a write lock (e.g. via WakeUp → EnterWorld).
+    /// Uses ArrayPool to avoid per-call heap allocation.
     /// </summary>
     public void ForEachVisibleCreature(Action<Creature> action)
     {
+        Creature[] snapshot;
+        int count;
+
         rwLock.EnterReadLock();
         try
         {
+            snapshot = System.Buffers.ArrayPool<Creature>.Shared.Rent(VisibleObjects.Count);
+            count = 0;
             foreach (var obj in VisibleObjects.Values)
             {
                 if (obj.WeenieObj.WorldObject is Creature creature)
-                    action(creature);
+                {
+                    snapshot[count++] = creature;
+                }
             }
         }
         finally
         {
             rwLock.ExitReadLock();
+        }
+
+        try
+        {
+            for (var i = 0; i < count; i++)
+            {
+                action(snapshot[i]);
+            }
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<Creature>.Shared.Return(snapshot, clearArray: true);
         }
     }
 
