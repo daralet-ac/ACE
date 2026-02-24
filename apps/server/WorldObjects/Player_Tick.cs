@@ -23,6 +23,9 @@ partial class Player
 {
     private readonly ActionQueue actionQueue = new ActionQueue();
 
+    /// <inheritdoc/>
+    public override bool NeedsPhysicsUpdate => true;
+
     private int initialAge;
     private DateTime initialAgeTime;
 
