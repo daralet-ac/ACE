@@ -37,6 +37,7 @@ partial class Player
     private double roadGraceEndTime;
     private const double RoadGracePeriod = 5.0;
     public static readonly uint RoadSpeedBuffSpellId = (uint)SpellId.RoadRunBuff;
+    public static readonly Spell RoadSpeedBuffSpell = new Spell(RoadSpeedBuffSpellId);
 
     public void Player_Tick(double currentUnixTime)
     {
@@ -175,12 +176,14 @@ partial class Player
 
             if (!hasRoadBuff)
             {
-                var spell = new Spell(RoadSpeedBuffSpellId);
-                var addResult = EnchantmentManager.Add(spell, this, null);
+                if (RoadSpeedBuffSpell.NotFound)
+                    return;
+
+                var addResult = EnchantmentManager.Add(RoadSpeedBuffSpell, this, null);
                 if (addResult.Enchantment != null)
                 {
                     Session.Network.EnqueueSend(new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, addResult.Enchantment)));
-                    HandleSpellHooks(spell);
+                    HandleSpellHooks(RoadSpeedBuffSpell);
                 }
             }
         }
