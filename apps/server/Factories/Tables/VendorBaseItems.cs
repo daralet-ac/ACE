@@ -540,7 +540,23 @@ public static class VendorBaseItems
     public static readonly List<(int, bool, int, uint, int, double, int)> ButcherItems = [];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
-    public static readonly List<(int, bool, int, uint, int, double, int)> GrocerItems = [];
+    public static readonly List<(int, bool, int, uint, int, double, int)> GrocerItems =
+    [
+        (0, false, HeritageAny, 1053937, 0, 0.0, -1), // gristly steak
+        (2, false, HeritageAny, 1053941, 0, 0.0, -1), // steak
+        (3, false, HeritageAny, 1053945, 0, 0.0, -1), // tender steak
+        (4, false, HeritageAny, 1053949, 0, 0.0, -1), // choice steak
+        
+        (0, false, HeritageAny, 1053938, 0, 0.0, -1), // gristly pepper steak
+        (2, false, HeritageAny, 1053942, 0, 0.0, -1), // pepper steak
+        (3, false, HeritageAny, 1053946, 0, 0.0, -1), // tender pepper steak
+        (4, false, HeritageAny, 1053950, 0, 0.0, -1), // choice pepper steak
+        
+        (0, false, HeritageAny, 1053939, 0, 0.0, -1), // gristly brined steak
+        (2, false, HeritageAny, 1053943, 0, 0.0, -1), // brined steak
+        (3, false, HeritageAny, 1053947, 0, 0.0, -1), // tender brined steak
+        (4, false, HeritageAny, 1053951, 0, 0.0, -1), // choice brined steak
+    ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>
     public static readonly List<(int, bool, int, uint, int, double, int)> HealerItems =

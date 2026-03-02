@@ -175,7 +175,7 @@ public partial class RecipeManager
         }
         else
         {
-            actionChain.AddAction(player, () => HandleRecipe(player, source, target, recipe, percentSuccess.Value));
+            actionChain.AddAction(player, () => HandleRecipe(player, source, target, recipe, percentSuccess.Value, confirmed));
 
             actionChain.AddAction(
                 player,
@@ -465,7 +465,8 @@ public partial class RecipeManager
         WorldObject source,
         WorldObject target,
         Recipe recipe,
-        double successChance
+        double successChance,
+        bool confirmed = false
     )
     {
         // re-verify
@@ -515,7 +516,7 @@ public partial class RecipeManager
             }
         }
 
-        var modified = CreateDestroyItems(player, recipe, source, target, successChance, success);
+        var modified = CreateDestroyItems(player, recipe, source, target, successChance, success, confirmed);
 
         if (modified != null)
         {
@@ -580,7 +581,8 @@ public partial class RecipeManager
         WorldObject target,
         Recipe recipe,
         uint dataId,
-        bool success
+        bool success,
+        bool confirmed = false
     )
     {
         // legacy method, unused by default
@@ -1416,7 +1418,8 @@ public partial class RecipeManager
         WorldObject source,
         WorldObject target,
         double successChance,
-        bool success
+        bool success,
+        bool confirmed = false
     )
     {
         var destroyTargetChance = success ? recipe.SuccessDestroyTargetChance : recipe.FailDestroyTargetChance;
@@ -1477,7 +1480,7 @@ public partial class RecipeManager
             }
         }
 
-        var modified = ModifyItem(player, recipe, source, target, result, success);
+        var modified = ModifyItem(player, recipe, source, target, result, success, confirmed);
 
         // broadcast different messages based on recipe type
         if (!recipe.IsTinkering())
@@ -1674,7 +1677,8 @@ public partial class RecipeManager
         WorldObject source,
         WorldObject target,
         WorldObject result,
-        bool success
+        bool success,
+        bool confirmed = false
     )
     {
         var modified = new HashSet<uint>();
@@ -1736,7 +1740,7 @@ public partial class RecipeManager
             // run mutation script, if applicable
             if (mod.DataId != 0)
             {
-                TryMutate(player, source, target, recipe, (uint)mod.DataId, modified, success);
+                TryMutate(player, source, target, recipe, (uint)mod.DataId, modified, success, confirmed);
             }
         }
 
@@ -2244,12 +2248,13 @@ public partial class RecipeManager
         Recipe recipe,
         uint dataId,
         HashSet<uint> modified,
-        bool success
+        bool success,
+        bool confirmed = false
     )
     {
         if (useMutateNative)
         {
-            return TryMutateNative(player, source, target, recipe, dataId, success);
+            return TryMutateNative(player, source, target, recipe, dataId, success, confirmed);
         }
 
         var numTimesTinkered = target.NumTimesTinkered;
