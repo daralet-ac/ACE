@@ -9,11 +9,14 @@ using ACE.Entity.Enum;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
+using Serilog;
 
 namespace ACE.Server.WorldObjects.Managers;
 
 public class ContractManager
 {
+    private static readonly ILogger _log = Log.ForContext(typeof(ContractManager));
+
     public Player Player { get; }
 
     private const int MaxContracts = 100;
@@ -51,6 +54,12 @@ public class ContractManager
         foreach (var contract in contracts)
         {
             var datContract = GetContractFromDat(contract.ContractId);
+
+            if (datContract == null)
+            {
+                _log.Warning("ContractManager.RefreshMonitoredQuestFlags: Contract {ContractId} not found in DAT file for player {PlayerName}", contract.ContractId, Player.Name);
+                continue;
+            }
 
             if (!MonitoredQuestFlags.ContainsKey(contract.ContractId))
             {
