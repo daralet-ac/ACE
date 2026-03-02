@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects;
 
@@ -32,6 +34,17 @@ public class Food : Stackable
     {
         ObjectDescriptionFlags |= ObjectDescriptionFlag.Food;
     }
+
+    // WCID ranges for Long-effect essence foods and potions (no cooldown, spell-only buff).
+    // Short-effect items share the same WCID base but have CooldownId set.
+    private const uint LongEssenceBaseFoodWcidMin = 1053937u;
+    private const uint LongEssenceBaseFoodWcidMax = 1053951u;
+    private const uint LongEssenceFoodWcidMin   = 1054600u;
+    private const uint LongEssenceFoodWcidMax   = 1054731u;
+    private const uint LongEssenceBasePotionWcidMin = 1053957u;
+    private const uint LongEssenceBasePotionWcidMax = 1053971u;
+    private const uint LongEssencePotionWcidMin = 1054732u;
+    private const uint LongEssencePotionWcidMax = 1054959u;
 
     /// <summary>
     /// This is raised by Player.HandleActionUseItem.<para />
@@ -95,6 +108,11 @@ public class Food : Stackable
         if (BoosterEnum != PropertyAttribute2nd.Undef)
         {
             BoostVital(player);
+        }
+
+        if (SpellDID != null || Spell2 != null)
+        {
+            TryDispelPreviousLongEssenceBuff(player);
         }
 
         if (SpellDID != null)
@@ -163,6 +181,52 @@ public class Food : Stackable
         {
             player.OnDeath(player.DamageHistory.LastDamager, DamageType.Health, false);
             player.Die();
+        }
+    }
+
+    /// <summary>
+    /// Before applying a Long-effect essence buff, dispels any previously active Long buff
+    /// of the same category (cooking or alchemy) so only one can be active at a time.
+    /// Short-effect items (CooldownId set) are excluded.
+    /// </summary>
+    private void TryDispelPreviousLongEssenceBuff(Player player)
+    {
+        if (CooldownId != null && CooldownId != 0)
+        {
+            return;
+        }
+        
+        HashSet<uint> spellIds;
+        if ((WeenieClassId >= LongEssenceFoodWcidMin && WeenieClassId <= LongEssenceFoodWcidMax) ||
+            (WeenieClassId >= LongEssenceBaseFoodWcidMin && WeenieClassId <= LongEssenceBaseFoodWcidMax))
+            
+        {
+            spellIds = TrophyEssence.AllCookFoodSpellIds;
+        }
+        else if ((WeenieClassId >= LongEssencePotionWcidMin && WeenieClassId <= LongEssencePotionWcidMax) ||
+                 (WeenieClassId >= LongEssenceBasePotionWcidMin && WeenieClassId <= LongEssenceBasePotionWcidMax))
+        {
+            spellIds = TrophyEssence.AllAlchPotionSpellIds;
+        }
+        else
+        {
+            return;
+        }
+
+        var all = player.Biota.PropertiesEnchantmentRegistry.Clone(player.BiotaDatabaseLock);
+        var toDispel = new List<PropertiesEnchantmentRegistry>();
+
+        foreach (var enchantment in all)
+        {
+            if (spellIds.Contains((uint)enchantment.SpellId))
+            {
+                toDispel.Add(enchantment);
+            }
+        }
+
+        if (toDispel.Count > 0)
+        {
+            player.EnchantmentManager.Dispel(toDispel);
         }
     }
 

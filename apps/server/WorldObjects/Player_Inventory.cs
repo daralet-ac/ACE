@@ -3533,6 +3533,7 @@ partial class Player
                             }
 
                             newStack.SetStackSize(amount);
+                            CopyMutatedStackProperties(stack, newStack);
 
                             if (
                                 DoHandleActionStackableSplitToContainer(
@@ -3592,6 +3593,7 @@ partial class Player
             }
 
             newStack.SetStackSize(amount);
+            CopyMutatedStackProperties(stack, newStack);
 
             DoHandleActionStackableSplitToContainer(
                 stack,
@@ -4116,6 +4118,7 @@ partial class Player
                             }
 
                             newStack.SetStackSize(amount);
+                            CopyMutatedStackProperties(stack, newStack);
 
                             if (
                                 DoHandleActionGetAndWieldItem(
@@ -4217,6 +4220,7 @@ partial class Player
             }
 
             newStack.SetStackSize(amount);
+            CopyMutatedStackProperties(stack, newStack);
 
             if (
                 !DoHandleActionGetAndWieldItem(
@@ -4298,14 +4302,14 @@ partial class Player
         var targetStack = FindObject(
             mergeToGuid,
             SearchLocations.LocationsICanMove,
-            out _,
+            out var targetFoundInContainer,
             out var targetStackRootOwner,
             out _
         );
 
         if (sourceStack == null)
         {
-            Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Source stack not found!")); // Custom error message
+            Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "Source stack not found!"));
             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, mergeFromGuid));
             return;
         }
@@ -4421,10 +4425,9 @@ partial class Player
             return;
         }
 
-        // For alchemy potions and cooking food stacks, since the same WCID can have different effects, we also check the Name and SpellDID to make sure the stacks are the same
-        if (sourceStack.Name != targetStack.Name || sourceStack.SpellDID != targetStack.SpellDID)
+        // For trophy item stacks, since the same WCID can have different quality levels
+        if (sourceStack.TrophyQuality != targetStack.TrophyQuality)
         {
-            Session.Network.EnqueueSend(new GameEventCommunicationTransientString(Session, "You cannot merge these items together."));
             Session.Network.EnqueueSend(
                 new GameEventInventoryServerSaveFailed(
                     Session,
@@ -4432,6 +4435,15 @@ partial class Player
                     WeenieError.YouCannotMergeDifferentStacks
                 )
             );
+            var targetContainer = targetFoundInContainer ?? targetStackRootOwner as Container;
+            if (targetContainer != null)
+            {
+                HandleActionPutItemInContainer(
+                    mergeFromGuid,
+                    targetContainer.Guid.Full,
+                    targetStack.PlacementPosition ?? 0
+                );
+            }
             return;
         }
 
@@ -5556,6 +5568,7 @@ partial class Player
             }
 
             newStack.SetStackSize(amount);
+            CopyMutatedStackProperties(item, newStack);
 
             Session.Network.EnqueueSend(
                 new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.EncumbranceVal, EncumbranceVal ?? 0)
@@ -6061,6 +6074,60 @@ partial class Player
     }
 
     const float SpecializedPackBurdenMod = 0.25f;
+
+    /// <summary>
+    /// Copies mutated properties from <paramref name="source"/> to <paramref name="dest"/> so that
+    /// a freshly-created split stack inherits any customizations applied on top of the base weenie
+    /// (e.g., quality-prefixed names, assigned SpellDID, adjusted StackUnitValue).
+    /// </summary>
+    private static void CopyMutatedStackProperties(WorldObject source, WorldObject dest)
+    {
+        if (source.Name != dest.Name)
+        {
+            dest.Name = source.Name;
+        }
+
+        if (source.PluralName != dest.PluralName)
+        {
+            dest.PluralName = source.PluralName;
+        }
+
+        var sourceUse = source.GetProperty(PropertyString.Use);
+        if (sourceUse != null && sourceUse != dest.GetProperty(PropertyString.Use))
+        {
+            dest.SetProperty(PropertyString.Use, sourceUse);
+        }
+
+        if (source.SpellDID.HasValue)
+        {
+            dest.SpellDID = source.SpellDID;
+        }
+
+        var sourceIconId = source.GetProperty(PropertyDataId.Icon);
+        var destIconId = dest.GetProperty(PropertyDataId.Icon);
+        if (sourceIconId.HasValue && sourceIconId != destIconId)
+        {
+            dest.SetProperty(PropertyDataId.Icon, sourceIconId.Value);
+        }
+
+        if (source.TrophyQuality.HasValue)
+        {
+            dest.TrophyQuality = source.TrophyQuality;
+        }
+
+        var sourceTargetType = source.GetProperty(PropertyInt.TargetType);
+        var destTargetType = dest.GetProperty(PropertyInt.TargetType);
+        if (sourceTargetType.HasValue && sourceTargetType != destTargetType)
+        {
+            dest.SetProperty(PropertyInt.TargetType, sourceTargetType.Value);
+        }
+
+        if (source.StackUnitValue.HasValue && source.StackUnitValue != dest.StackUnitValue)
+        {
+            dest.StackUnitValue = source.StackUnitValue;
+            dest.Value = (dest.StackUnitValue ?? 0) * (dest.StackSize ?? 1);
+        }
+    }
 
     public void RecalculateBurden()
     {

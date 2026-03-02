@@ -281,6 +281,7 @@ public class TrophySolvent : Stackable
             if (!player.ConfirmationManager.EnqueueSend(new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid), confirmationMessage))
             {
                 player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
+                return;
             }
 
             if (PropertyManager.GetBool("craft_exact_msg").Item)
@@ -289,6 +290,7 @@ public class TrophySolvent : Stackable
                 player.Session.Network.EnqueueSend(new GameMessageSystemChat(exactMsg, ChatMessageType.Craft));
             }
 
+            player.SendUseDoneEvent();
             return;
         }
 
@@ -297,7 +299,7 @@ public class TrophySolvent : Stackable
         var animTime = 0.0f;
 
         player.IsBusy = true;
-
+        
         if (player.CombatMode != CombatMode.NonCombat)
         {
             var stanceTime = player.SetCombatMode(CombatMode.NonCombat);
@@ -350,6 +352,10 @@ public class TrophySolvent : Stackable
                     return;
                 }
 
+                // Remove the trophy and consume solvents before adding the result
+                player.TryConsumeFromInventoryWithNetworking(target, 1);
+                player.TryConsumeFromInventoryWithNetworking(source, finalAmountToConsume);
+
                 // Add essence to player's inventory
                 if (!player.TryCreateInInventoryWithNetworking(essence))
                 {
@@ -359,24 +365,19 @@ public class TrophySolvent : Stackable
                     return;
                 }
 
-                // Remove the trophy and consume solvents
-                player.TryConsumeFromInventoryWithNetworking(target, 1);
-                player.TryConsumeFromInventoryWithNetworking(source, finalAmountToConsume);
-
                 BroadcastTrophyConversion(player, target.NameWithMaterial, essenceName, finalAmountToConsume, true);
             }
         );
-
-        player.EnqueueMotion(actionChain, MotionCommand.Ready);
 
         actionChain.AddAction(
             player,
             () =>
             {
-                player.SendUseDoneEvent();
                 player.IsBusy = false;
             }
         );
+
+        player.EnqueueMotion(actionChain, MotionCommand.Ready);
 
         actionChain.EnqueueChain();
 

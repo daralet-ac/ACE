@@ -858,10 +858,6 @@ public partial class RecipeManager
                 Ammunition.HandleAmmoSharpening(player, source, target);
                 break;
 
-            case 0x39000005: // Trophy Essence
-                TrophyEssence.HandleTrophyEssenceCrafting(player, source, target, confirmed);
-                break;
-
             default:
                 _log.Error(
                     $"{player.Name}.RecipeManager.Tinkering_ModifyItem({source.Name} ({source.Guid}), {target.Name} ({target.Guid})) - unknown mutation id: {dataId:X8}"

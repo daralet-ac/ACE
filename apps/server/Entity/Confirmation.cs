@@ -212,6 +212,9 @@ public class Confirmation_CraftInteration : Confirmation
             case WeenieType.TrophySolvent:
                 TrophySolvent.UseObjectOnTarget(player, source, target, !repeatConfirmation);
                 break;
+            case WeenieType.TrophyEssence:
+                TrophyEssence.HandleTrophyEssenceCrafting(player, source, target, !repeatConfirmation);
+                break;
             default:
                 RecipeManager.UseObjectOnTarget(player, source, target, true);
                 break;

@@ -167,6 +167,8 @@ public static class WorldObjectFactory
                 return new DungeonModder(weenie, guid);
             case WeenieType.TrophySolvent:
                 return new TrophySolvent(weenie, guid);
+            case WeenieType.TrophyEssence:
+                return new TrophyEssence(weenie, guid);
             default:
                 return new GenericObject(weenie, guid);
         }
@@ -310,6 +312,8 @@ public static class WorldObjectFactory
                 return new DungeonModder(biota);
             case WeenieType.TrophySolvent:
                 return new TrophySolvent(biota);
+            case WeenieType.TrophyEssence:
+                return new TrophyEssence(biota);
             default:
                 return new GenericObject(biota);
         }
