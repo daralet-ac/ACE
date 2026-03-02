@@ -36,7 +36,7 @@ public class TrophySolvent : Stackable
         { (uint)WCN.W_ARMOREDILLOHIDETROPHY_CLASS,  (EssenceEffect.Long,  Skill.Alchemy, (uint)SpellId.AlchPotionSlashingProtection1) },  // Prot - Slash
         { (uint)WCN.W_ARMOREDILLOSPINE_CLASS,       (EssenceEffect.Long,  Skill.Cooking, (uint)SpellId.CookFoodQuickness1) },             // Attribute - Quick
         { (uint)WCN.W_AUROCHMEAT_CLASS,             (EssenceEffect.Short, Skill.Cooking, null) },                                         // Chug Health
-        { (uint)WCN.W_AUROCHHHORNTROPHY_CLASS,      (EssenceEffect.Short,  Skill.Alchemy, (uint)SpellId.AlchPotionHeartSeeker1) },          // Item - Heart Seeker
+        { (uint)WCN.W_AUROCHHORNTROPHY_CLASS,      (EssenceEffect.Short,  Skill.Alchemy, (uint)SpellId.AlchPotionHeartSeeker1) },          // Item - Heart Seeker
         { (uint)WCN.W_BANDERLINGSCALPTROPHY_CLASS,  (EssenceEffect.Short,  Skill.Cooking, (uint)SpellId.CookFoodJump1) },                   // Skill - Jump
         { (uint)WCN.W_BANDERLINGBLOOD_CLASS,        (EssenceEffect.Short,  Skill.Alchemy, (uint)SpellId.AlchPotionHealOverTime1) },         // HoT - Health
         { (uint)WCN.W_CHITTICKSPINE_CLASS,          (EssenceEffect.Short,  Skill.Alchemy, (uint)SpellId.AlchPotionManaOverTime1) },         // HoT - Mana
@@ -49,7 +49,7 @@ public class TrophySolvent : Stackable
         { (uint)WCN.W_GRIEVVERSILK_CLASS,           (EssenceEffect.Long,  Skill.Cooking, (uint)SpellId.CookFoodFocus1) },                  // Attribute - Focus
         { (uint)WCN.W_GRIEVVERTIBIA_CLASS,          (EssenceEffect.Short,  Skill.Alchemy, (uint)SpellId.AlchPotionCriticalDamage1) },       // Rating - Crit Damage
         { (uint)WCN.W_GROMNIETOOTH_CLASS,           (EssenceEffect.Short,  Skill.Alchemy, (uint)SpellId.AlchPotionBloodDrinker1) },         // Item - Blood Drinker
-        { (uint)WCN.W_GROMNIEWINGTRPHY_CLASS,       (EssenceEffect.Short, Skill.Cooking, (uint)SpellId.CookFoodJump1) },                   // Skill - Jump
+        { (uint)WCN.W_GROMNIEWINGTROPHY_CLASS,       (EssenceEffect.Short, Skill.Cooking, (uint)SpellId.CookFoodJump1) },                   // Skill - Jump
         { (uint)WCN.W_BROWNLUMPTROPHY_CLASS,        (EssenceEffect.Short, Skill.Alchemy, (uint)SpellId.AlchPotionSpiritDrinker1) },        // Item - Spirit Drinker
         { (uint)WCN.W_KNATHEGG_CLASS,               (EssenceEffect.Short, Skill.Cooking, null) },                                         // Chug Mana
         { (uint)WCN.W_LUGIANBLOOD_CLASS,            (EssenceEffect.Long,  Skill.Alchemy, (uint)SpellId.AlchPotionBludgeoningProtection1) },// Prot - Blunt
@@ -79,7 +79,7 @@ public class TrophySolvent : Stackable
         { (uint)WCN.W_SHRETHTOOTH_CLASS,            (EssenceEffect.Short, Skill.Alchemy, (uint)SpellId.AlchPotionCriticalChance1) },       // Rating - Crit Chance
         { (uint)WCN.W_SHRETHHIDETROPHY_CLASS,       (EssenceEffect.Short, Skill.Cooking, null) },                                         // Chug Stamina
         { (uint)WCN.W_OLDBONE_CLASS,                (EssenceEffect.Long,  Skill.Alchemy, (uint)SpellId.AlchPotionPiercingProtection1) },   // Prot - Pierce
-        { (uint)WCN.W_SKULLTRPHY_CLASS,             (EssenceEffect.Short, Skill.Cooking, null) },                                         // Chug Health
+        { (uint)WCN.W_SKULLTROPHY_CLASS,             (EssenceEffect.Short, Skill.Cooking, null) },                                         // Chug Health
         { (uint)WCN.W_TUSKERPELT_CLASS,             (EssenceEffect.Long,  Skill.Alchemy, (uint)SpellId.AlchPotionBludgeoningProtection1) },// Prot - Blunt
         { (uint)WCN.W_TUSKERTUSK_CLASS,             (EssenceEffect.Long,  Skill.Cooking, (uint)SpellId.CookFoodStrength1) },               // Attribute - Strength
         { (uint)WCN.W_UNDEADLEG_CLASS,              (EssenceEffect.Long,  Skill.Alchemy, (uint)SpellId.AlchPotionPiercingProtection1) },   // Prot - Pierce
@@ -452,21 +452,5 @@ public class TrophySolvent : Stackable
         }
 
         return essence;
-    }
-
-    public int? TrophyEssenceSpellId
-    {
-        get => (int?)GetProperty(PropertyInt.TrophyEssenceSpellId);
-        set
-        {
-            if (!value.HasValue)
-            {
-                RemoveProperty(PropertyInt.TrophyEssenceSpellId);
-            }
-            else
-            {
-                SetProperty(PropertyInt.TrophyEssenceSpellId, value.Value);
-            }
-        }
     }
 }

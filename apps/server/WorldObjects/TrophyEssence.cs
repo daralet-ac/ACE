@@ -561,7 +561,8 @@ public class TrophyEssence : WorldObject
                     return;
                 }
 
-                // Create the output item from its pre-built WCID; icons, name, and Spell2 are already set.
+                // Create the output item from its pre-built WCID; icons and name are already set,
+                // and Spell2 is initialized here but may be cleared or overridden by ApplyShortEffect() for short outputs.
                 var mutatedItem = WorldObjectFactory.CreateNewWorldObject(outputWcid.Value);
                 if (mutatedItem == null)
                 {

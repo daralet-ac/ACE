@@ -4426,7 +4426,10 @@ partial class Player
         }
 
         // For trophy item stacks, since the same WCID can have different quality levels
-        if (sourceStack.TrophyQuality != targetStack.TrophyQuality)
+        if ((sourceStack.TrophyQuality != targetStack.TrophyQuality) ||
+            (sourceStack.SpellDID != targetStack.SpellDID) ||
+            (sourceStack.Spell2 != targetStack.Spell2) ||
+            (sourceStack.BoostValue != targetStack.BoostValue))
         {
             Session.Network.EnqueueSend(
                 new GameEventInventoryServerSaveFailed(
@@ -4435,14 +4438,14 @@ partial class Player
                     WeenieError.YouCannotMergeDifferentStacks
                 )
             );
+            // Redirect to a regular move so the source lands at the target's slot.
+            // Passing targetStack.PlacementPosition is safe: TryAddToInventory increments every
+            // existing item whose PlacementPosition >= that value before inserting the new item,
+            // so the target stack naturally shifts one slot higher rather than conflicting.
             var targetContainer = targetFoundInContainer ?? targetStackRootOwner as Container;
             if (targetContainer != null)
             {
-                HandleActionPutItemInContainer(
-                    mergeFromGuid,
-                    targetContainer.Guid.Full,
-                    targetStack.PlacementPosition ?? 0
-                );
+                HandleActionPutItemInContainer(mergeFromGuid, targetContainer.Guid.Full, targetStack.PlacementPosition ?? 0);
             }
             return;
         }
@@ -6103,6 +6106,11 @@ partial class Player
             dest.SpellDID = source.SpellDID;
         }
 
+        if (source.Spell2.HasValue)
+        {
+            dest.Spell2 = source.Spell2;
+        }
+
         var sourceIconId = source.GetProperty(PropertyDataId.Icon);
         var destIconId = dest.GetProperty(PropertyDataId.Icon);
         if (sourceIconId.HasValue && sourceIconId != destIconId)
@@ -6126,6 +6134,41 @@ partial class Player
         {
             dest.StackUnitValue = source.StackUnitValue;
             dest.Value = (dest.StackUnitValue ?? 0) * (dest.StackSize ?? 1);
+        }
+        
+        var sourceCooldownId = source.GetProperty(PropertyInt.SharedCooldown);
+        var destCooldownId = dest.GetProperty(PropertyInt.SharedCooldown);
+        if (sourceCooldownId.HasValue && sourceCooldownId != destCooldownId)
+        {
+            dest.SetProperty(PropertyInt.SharedCooldown, sourceCooldownId.Value);
+        }
+
+        var sourceCooldownDuration = source.GetProperty(PropertyFloat.CooldownDuration);
+        var destCooldownDuration = dest.GetProperty(PropertyFloat.CooldownDuration);
+        if (sourceCooldownDuration.HasValue && sourceCooldownDuration != destCooldownDuration)
+        {
+            dest.SetProperty(PropertyFloat.CooldownDuration, sourceCooldownDuration.Value);
+        }
+
+        var sourceBoosterEnum = source.GetProperty(PropertyInt.BoosterEnum);
+        var destBoosterEnum = dest.GetProperty(PropertyInt.BoosterEnum);
+        if (sourceBoosterEnum.HasValue && sourceBoosterEnum != destBoosterEnum)
+        {
+            dest.SetProperty(PropertyInt.BoosterEnum, sourceBoosterEnum.Value);
+        }
+
+        var sourceBoostValue = source.GetProperty(PropertyInt.BoostValue);
+        var destBoostValue = dest.GetProperty(PropertyInt.BoostValue);
+        if (sourceBoostValue.HasValue && sourceBoostValue != destBoostValue)
+        {
+            dest.SetProperty(PropertyInt.BoostValue, sourceBoostValue.Value);
+        }
+
+        var sourceUiEffects = source.GetProperty(PropertyInt.UiEffects);
+        var destUiEffects = dest.GetProperty(PropertyInt.UiEffects);
+        if (sourceUiEffects.HasValue && sourceUiEffects != destUiEffects)
+        {
+            dest.SetProperty(PropertyInt.UiEffects, sourceUiEffects.Value);
         }
     }
 
