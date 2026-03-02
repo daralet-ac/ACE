@@ -6,7 +6,6 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Network.GameMessages.Messages;
-using ACE.Server.Network.Structure;
 
 namespace ACE.Server.WorldObjects;
 
@@ -33,6 +32,19 @@ public class Food : Stackable
     private void SetEphemeralValues()
     {
         ObjectDescriptionFlags |= ObjectDescriptionFlag.Food;
+
+        if ((Spell2 == null || Spell2 == 0) && CooldownId == null)
+        {
+            CooldownDuration = 300;
+            if (ItemType == ItemType.Food)
+            {
+                CooldownId = 10076;
+            }
+            else if (ItemType == ItemType.Misc)
+            {
+                CooldownId = 10077;
+            }
+        }
     }
 
     // WCID ranges for Long-effect essence foods and potions (no cooldown, spell-only buff).
