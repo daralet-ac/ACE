@@ -210,6 +210,7 @@ public static class WeenieExtensions
             case WeenieType.ArmorPatch:
             case WeenieType.UpgradeKit:
             case WeenieType.TrophySolvent:
+            case WeenieType.BezelTool:
 
                 return true;
         }
