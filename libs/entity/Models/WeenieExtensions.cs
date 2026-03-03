@@ -209,6 +209,7 @@ public static class WeenieExtensions
             case WeenieType.SpellTransference:
             case WeenieType.ArmorPatch:
             case WeenieType.UpgradeKit:
+            case WeenieType.TrophySolvent:
 
                 return true;
         }
