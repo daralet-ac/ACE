@@ -214,11 +214,7 @@ public partial class Container : WorldObject
         var sideContainers = Inventory.Values.Where(i => i.WeenieType == WeenieType.Container).ToList();
         foreach (var container in sideContainers)
         {
-            var encumbranceValBeforeSort = container.EncumbranceVal;
-            var valueBeforeSort = container.Value;
             ((Container)container).SortWorldObjectsIntoInventory(worldObjects); // This will set the InventoryLoaded flag for this sideContainer
-            container.EncumbranceVal = encumbranceValBeforeSort; // Restore DB value – prevents double-counting
-            container.Value = valueBeforeSort;
             EncumbranceVal += container.EncumbranceVal ?? 0; // This value includes the containers burden itself + all child items
             Value += container.Value ?? 0; // This value includes the containers value itself + all child items
         }
