@@ -340,6 +340,8 @@ public class TrophySolvent : Stackable
                         target.NameWithMaterial,
                         successChance
                     );
+
+                    Player.TryAwardCraftingXp(player, player.GetCreatureSkill(mapEntry.Skill), mapEntry.Skill, difficulty, fail: true);
                     return;
                 }
 
@@ -366,6 +368,8 @@ public class TrophySolvent : Stackable
                 }
 
                 BroadcastTrophyConversion(player, target.NameWithMaterial, essenceName, finalAmountToConsume, true);
+
+                Player.TryAwardCraftingXp(player, player.GetCreatureSkill(mapEntry.Skill), mapEntry.Skill, difficulty);
             }
         );
 

@@ -532,12 +532,15 @@ public partial class RecipeManager
         }
 
         // CUSTOM CRAFTING
-        if (recipe.Skill > 0 && recipe.Difficulty > 0 && success)
+        if (recipe.Skill > 0 && recipe.Difficulty > 0)
         {
-            var skill = player.GetCreatureSkill((Skill)recipe.Skill);
             var skillType = (Skill)recipe.Skill;
+            var skill = player.GetCreatureSkill(skillType);
 
-            Player.TryAwardCraftingXp(player, skill, skillType, (int)recipe.Difficulty);
+            if (success || skillType == Skill.Alchemy || skillType == Skill.Cooking)
+            {
+                Player.TryAwardCraftingXp(player, skill, skillType, (int)recipe.Difficulty, fail: !success);
+            }
         }
     }
 
