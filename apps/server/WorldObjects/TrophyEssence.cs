@@ -558,6 +558,8 @@ public class TrophyEssence : WorldObject
                         target.NameWithMaterial,
                         successChance
                     );
+
+                    Player.TryAwardCraftingXp(player, player.GetCreatureSkill(craftSkill), craftSkill, difficulty, fail: true);
                     return;
                 }
 
@@ -607,6 +609,8 @@ public class TrophyEssence : WorldObject
                     isLong ? "Long" : "Short",
                     successChance
                 );
+
+                Player.TryAwardCraftingXp(player, player.GetCreatureSkill(craftSkill), craftSkill, difficulty);
             }
         );
 
