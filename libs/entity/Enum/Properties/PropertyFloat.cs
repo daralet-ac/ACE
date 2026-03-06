@@ -249,6 +249,7 @@ public enum PropertyFloat : ushort
     [ServerOnly]
     PatrolPauseMaxSeconds = 203,
 
+    [ServerOnly]
     SpecializedPackBurdenMod = 204,
 
     [ServerOnly]
