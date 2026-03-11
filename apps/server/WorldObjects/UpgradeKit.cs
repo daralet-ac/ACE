@@ -16,6 +16,7 @@ namespace ACE.Server.WorldObjects;
 
 public class UpgradeKit : Stackable
 {
+
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
@@ -65,30 +66,27 @@ public class UpgradeKit : Stackable
         }
 
         var requiredUpgradeKits = GetRequiredUpgradeKits(player, target);
-        var highestWieldDifficultyForPlayer = GetHighestWieldDifficultyForPlayer(player, target);
+        var maxRequirementForPlayer = GetMaxRequirementForPlayer(player, target);
 
         if (source.StackSize < requiredUpgradeKits)
         {
             player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"Upgrading {target.Name} to the highest difficulty you can wield ({highestWieldDifficultyForPlayer}) requires {requiredUpgradeKits} Upgrade kits.", ChatMessageType.Craft)
+                new GameMessageSystemChat(
+                    $"Upgrading {target.Name} to the highest difficulty you can wield ({maxRequirementForPlayer}) requires {requiredUpgradeKits} Upgrade kits.",
+                    ChatMessageType.Craft
+                )
             );
             player.SendUseDoneEvent();
             return;
         }
 
-        if (target.ItemType == ItemType.Jewelry && target.WieldDifficulty >= GetRequiredLevelFromPlayerTier(player))
+        if ((target.WieldDifficulty ?? 0) >= maxRequirementForPlayer)
         {
             player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"{target.Name} is already at the highest difficulty you can wield.", ChatMessageType.Craft)
-            );
-            player.SendUseDoneEvent();
-            return;
-        }
-
-        if (target.ItemType != ItemType.Jewelry && target.WieldDifficulty >= highestWieldDifficultyForPlayer)
-        {
-            player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat($"{target.Name} is already at the highest difficulty you can wield.", ChatMessageType.Craft)
+                new GameMessageSystemChat(
+                    $"{target.Name} is already at the highest difficulty you can wield.",
+                    ChatMessageType.Craft
+                )
             );
             player.SendUseDoneEvent();
             return;
@@ -96,14 +94,11 @@ public class UpgradeKit : Stackable
 
         if (!confirmed)
         {
-            var wieldReq = target.ItemType == ItemType.Jewelry
-                ? GetRequiredLevelFromPlayerTier(player)
-                : GetHighestWieldDifficultyForPlayer(player, target);
             var wieldReqType = target.ItemType == ItemType.Jewelry ? "Required Level" : "Wield Difficulty";
             if (
                 !player.ConfirmationManager.EnqueueSend(
                     new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                    $"This will upgrade {target.Name} to the highest difficulty you can wield. Its {wieldReqType} will be increased to {wieldReq}.\n\n" +
+                    $"This will upgrade {target.Name} to the highest difficulty you can wield. Its {wieldReqType} will be increased to {maxRequirementForPlayer}.\n\n" +
                     $"{requiredUpgradeKits} Upgrade Kits will be consumed."
                 )
             )
@@ -181,13 +176,15 @@ public class UpgradeKit : Stackable
     {
         if (target.ItemType != ItemType.Jewelry)
         {
-            var currentWieldDifficulty = target.WieldDifficulty ?? 50;
-            var newWieldDifficulty = forcedNewWieldDifficulty > 0
-                ? forcedNewWieldDifficulty
-                : GetHighestWieldDifficultyForPlayer(player, target);
+            var usesRequiredLevelPath = UsesRequiredLevelTiering(target);
 
-            var currentTier = LootGenerationFactory.GetTierFromWieldDifficulty(currentWieldDifficulty) - 1;
-            var newTier = LootGenerationFactory.GetTierFromWieldDifficulty(newWieldDifficulty) - 1;
+            var currentRequirement = target.WieldDifficulty ?? (usesRequiredLevelPath ? 1 : 50);
+            var newRequirement = forcedNewWieldDifficulty > 0
+                ? forcedNewWieldDifficulty
+                : GetMaxRequirementForPlayer(player, target);
+
+            var currentTier = GetTierIndexFromRequirement(target, currentRequirement);
+            var newTier = GetTierIndexFromRequirement(target, newRequirement);
 
             // Weapons
             if (target.ItemType is ItemType.Weapon or ItemType.MissileWeapon or ItemType.MeleeWeapon or ItemType.Caster)
@@ -216,7 +213,9 @@ public class UpgradeKit : Stackable
             // Armor
             if (target.WeenieType is WeenieType.Clothing || target.ItemType == ItemType.Armor)
             {
-                if (target.ArmorStyle == null)
+                // Allow clothing without physical armor (ArmorLevel = 0 or null) to pass through even if ArmorStyle is null
+                // Only enforce ArmorStyle requirement for items with actual physical armor (ArmorLevel > 0)
+                if (target.ArmorStyle == null && target.ArmorLevel != null && target.ArmorLevel > 0)
                 {
                     _log.Error(
                         "MutateQuestItem() - ArmorStyle is null for ({target}). Armor upgrade aborted.", target);
@@ -246,10 +245,10 @@ public class UpgradeKit : Stackable
                 ScaleUpArmorSkillMod(PropertyFloat.ArmorWarMagicMod, target, currentTier, newTier);
             }
 
-            ScaleUpSpecialRatings(target, newTier);
+            ScaleUpSpecialRatings(target, currentTier, newTier);
 
             // Wield Difficulty
-            target.SetProperty(PropertyInt.WieldDifficulty, newWieldDifficulty);
+            target.SetProperty(PropertyInt.WieldDifficulty, newRequirement);
 
             // Spells
             ScaleUpSpells(target, currentTier, newTier);
@@ -264,8 +263,8 @@ public class UpgradeKit : Stackable
             var currentRequiredLevel = target.WieldDifficulty ?? 1;
             var newRequiredLevel = GetRequiredLevelFromPlayerTier((player));
 
-            var currentTier = LootGenerationFactory.GetTierFromRequiredLevel(currentRequiredLevel) - 1;
-            var newTier = LootGenerationFactory.GetTierFromRequiredLevel(newRequiredLevel) - 1;
+            var currentTier = Math.Clamp(LootGenerationFactory.GetTierFromRequiredLevel(currentRequiredLevel) - 1, 0, 7);
+            var newTier = Math.Clamp(LootGenerationFactory.GetTierFromRequiredLevel(newRequiredLevel) - 1, 0, 7);
 
             ScaleUpJewelryWardLevel(target, currentTier, newTier);
             ScaleUpJewelryRating(PropertyInt.GearMaxHealth, target, currentTier, newTier);
@@ -279,7 +278,7 @@ public class UpgradeKit : Stackable
             ScaleUpArmorSkillMod(PropertyFloat.ArmorDeceptionMod, target, currentTier, newTier);
             ScaleUpArmorSkillMod(PropertyFloat.ArmorPerceptionMod, target, currentTier, newTier);
 
-            ScaleUpSpecialRatings(target, newTier);
+            ScaleUpSpecialRatings(target, currentTier, newTier);
 
             // Level Requirement
             target.SetProperty(PropertyInt.WieldDifficulty, newRequiredLevel);
@@ -292,6 +291,28 @@ public class UpgradeKit : Stackable
         }
 
         return true;
+    }
+
+    private static bool UsesRequiredLevelTiering(WorldObject target)
+    {
+        return target.ItemType == ItemType.Jewelry
+            || (target.WeenieType == WeenieType.Clothing && target.WieldRequirements == WieldRequirement.Level);
+    }
+
+    private static int GetMaxRequirementForPlayer(Player player, WorldObject target)
+    {
+        return UsesRequiredLevelTiering(target)
+            ? GetRequiredLevelFromPlayerTier(player)
+            : GetHighestWieldDifficultyForPlayer(player, target);
+    }
+
+    private static int GetTierIndexFromRequirement(WorldObject target, int requirementValue)
+    {
+        var tier = UsesRequiredLevelTiering(target)
+            ? LootGenerationFactory.GetTierFromRequiredLevel(requirementValue)
+            : LootGenerationFactory.GetTierFromWieldDifficulty(requirementValue);
+
+        return Math.Clamp(tier - 1, 0, 7);
     }
 
     private static int GetHighestWieldDifficultyForPlayer(Player player, WorldObject target)
@@ -621,7 +642,7 @@ public class UpgradeKit : Stackable
 
         var currentLevel = target.WardLevel.Value;
         var armorSlots = target.ArmorSlots ?? 1;
-        var wardPerSlot = currentLevel / armorSlots * necklaceMulti;
+        var wardPerSlot = currentLevel / armorSlots;
 
         var currentTierMinimum = armorStyleBaseWardLevel * Math.Clamp(currentTier, 1, 7);
         var rolledAmount = wardPerSlot - currentTierMinimum;
@@ -661,18 +682,30 @@ public class UpgradeKit : Stackable
         }
 
         var jewelryBaseWardLevelPerTier = LootTables.JewelryBaseWardLeverPerTier;
+        currentTier = Math.Clamp(currentTier, 0, jewelryBaseWardLevelPerTier.Length - 2);
+        newTier = Math.Clamp(newTier, 0, jewelryBaseWardLevelPerTier.Length - 2);
 
-        var necklaceMultiplier = target.ValidLocations is EquipMask.NeckWear ? 2.0f : 1.0f;
+        var necklaceMultiplier = target.ValidLocations is EquipMask.NeckWear ? 2 : 1;
         var currentBaseLevelFromTier = jewelryBaseWardLevelPerTier[currentTier] * necklaceMultiplier;
-        var currentRange = jewelryBaseWardLevelPerTier[currentTier + 1] - jewelryBaseWardLevelPerTier[currentTier];
+        var currentRange =
+            (jewelryBaseWardLevelPerTier[currentTier + 1] * necklaceMultiplier)
+            - (jewelryBaseWardLevelPerTier[currentTier] * necklaceMultiplier);
+
+        if (currentRange <= 0)
+        {
+            currentRange = 1;
+        }
+
         var currentRoll = currentBaseStat - currentBaseLevelFromTier;
-
         var rollPercentile = (float)currentRoll / currentRange;
+        rollPercentile = Math.Clamp(rollPercentile, 0.0f, 1.0f);
 
-        var newTierRange = jewelryBaseWardLevelPerTier[newTier + 1] - jewelryBaseWardLevelPerTier[newTier];
+        var newTierRange =
+            (jewelryBaseWardLevelPerTier[newTier + 1] * necklaceMultiplier)
+            - (jewelryBaseWardLevelPerTier[newTier] * necklaceMultiplier);
         var amountAboveMinimum = newTierRange * rollPercentile;
 
-        var newBaseLevelFromTier = jewelryBaseWardLevelPerTier[newTier];
+        var newBaseLevelFromTier = jewelryBaseWardLevelPerTier[newTier] * necklaceMultiplier;
         var final = Convert.ToInt32(newBaseLevelFromTier + amountAboveMinimum);
 
         target.SetProperty(PropertyInt.WardLevel, final);
@@ -688,12 +721,22 @@ public class UpgradeKit : Stackable
         }
 
         var jewelryBaseRatingPerTier = LootTables.JewelryBaseRatingPerTier;
+        currentTier = Math.Clamp(currentTier, 0, jewelryBaseRatingPerTier.Length - 1);
+        newTier = Math.Clamp(newTier, 0, jewelryBaseRatingPerTier.Length - 1);
 
         var currentBaseLevelFromTier = jewelryBaseRatingPerTier[currentTier];
-        var currentRange = currentBaseLevelFromTier;
+        var nextTierIndex = Math.Min(currentTier + 1, jewelryBaseRatingPerTier.Length - 1);
+        var currentRange = jewelryBaseRatingPerTier[nextTierIndex] - currentBaseLevelFromTier;
+
+        if (currentRange <= 0)
+        {
+            currentRange = 1;
+        }
+
         var currentRoll = currentBaseStat - currentBaseLevelFromTier;
 
         var rollPercentile = (float)currentRoll / currentRange;
+        rollPercentile = Math.Clamp(rollPercentile, 0.0f, 1.0f);
 
         var newTierRange = jewelryBaseRatingPerTier[newTier];
         var amountAboveMinimum = newTierRange * rollPercentile;
@@ -717,6 +760,9 @@ public class UpgradeKit : Stackable
         {
             slots = target.ArmorSlots.Value;
         }
+
+        slots = Math.Clamp(slots, 1, LootTables.QuestItemManaRate.Length);
+        newTier = Math.Clamp(newTier, 0, LootTables.QuestItemManaRate[0].Length - 1);
 
         var manaRate = LootTables.QuestItemManaRate[slots - 1][newTier];
         target.SetProperty(PropertyFloat.ManaRate, manaRate);
@@ -766,26 +812,7 @@ public class UpgradeKit : Stackable
             }
 
             var isCantrip = spellProgressionList.Count < 5;
-            var spellLevel = 0;
-
-            switch (newTier)
-            {
-                case 3:
-                    spellLevel = isCantrip ? 2 : 3;
-                    break;
-                case 4:
-                    spellLevel = isCantrip ? 2 : 4;
-                    break;
-                case 5:
-                    spellLevel = isCantrip ? 3 : 5;
-                    break;
-                case 6:
-                    spellLevel = isCantrip ? 3 : 6;
-                    break;
-                case 7:
-                    spellLevel = isCantrip ? 4 : 7;
-                    break;
-            }
+            var spellLevel = GetDeterministicSpellLevel(newTier, isCantrip);
 
             spellsToRemove.Add(spellId);
             spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, spellLevel, true, true));
@@ -806,6 +833,19 @@ public class UpgradeKit : Stackable
         {
             target.Biota.GetOrAddKnownSpell(spellId, target.BiotaDatabaseLock, out _);
         }
+    }
+
+    private static int GetDeterministicSpellLevel(int newTier, bool isCantrip)
+    {
+        return newTier switch
+        {
+            3 => isCantrip ? 2 : 3,
+            4 => isCantrip ? 2 : 4,
+            5 => isCantrip ? 3 : 5,
+            6 => isCantrip ? 3 : 6,
+            7 => isCantrip ? 4 : 7,
+            _ => isCantrip ? 2 : 3,
+        };
     }
 
     private static void ScaleUpDidSpell(WorldObject target, int newTier)
@@ -841,7 +881,7 @@ public class UpgradeKit : Stackable
     /// <summary>
     /// Scale up special ratings. (jewel ratings)
     /// </summary>
-    private static void ScaleUpSpecialRatings(WorldObject target, int newTier)
+    private static void ScaleUpSpecialRatings(WorldObject target, int currentTier, int newTier)
     {
         var ratingList = (from id in GearRatingIds let ratingValue = target.GetProperty(id) where ratingValue != null select id).ToList();
         // var totalRatings = 0; TODO: To be used if jewel ratings get added to mutable quest item system
@@ -853,8 +893,10 @@ public class UpgradeKit : Stackable
 
         int[] averageRatingValuesPerTier = [1, 2, 3, 4, 5, 6, 8, 10];
 
-        var currentTier = target.ItemType is ItemType.Jewelry or ItemType.Clothing ? LootGenerationFactory.GetTierFromRequiredLevel(target.WieldDifficulty ?? 1) : LootGenerationFactory.GetTierFromWieldDifficulty(target.WieldDifficulty ?? 50);
-        var multiplier = (float)averageRatingValuesPerTier[newTier] / averageRatingValuesPerTier[currentTier - 1];
+    currentTier = Math.Clamp(currentTier, 0, averageRatingValuesPerTier.Length - 1);
+    newTier = Math.Clamp(newTier, 0, averageRatingValuesPerTier.Length - 1);
+
+    var multiplier = (float)averageRatingValuesPerTier[newTier] / averageRatingValuesPerTier[currentTier];
 
         foreach (var itemRating in ratingList)
         {
@@ -914,7 +956,7 @@ public class UpgradeKit : Stackable
 
     private static int GetRequiredUpgradeKits(Player player, WorldObject target)
     {
-        var newWieldReq = GetHighestWieldDifficultyForPlayer(player, target);
+        var newWieldReq = GetMaxRequirementForPlayer(player, target);
 
         if (target.WieldRequirements == WieldRequirement.RawAttrib)
         {
