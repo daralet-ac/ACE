@@ -9,6 +9,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Cantrips;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 
@@ -812,7 +813,9 @@ public class UpgradeKit : Stackable
             }
 
             var isCantrip = spellProgressionList.Count < 5;
-            var spellLevel = GetDeterministicSpellLevel(newTier, isCantrip);
+            var spellLevel = isCantrip
+                ? CantripChance.RollCantripLevelForTier(newTier + 1)
+                : Math.Clamp(newTier, 3, 7);
 
             spellsToRemove.Add(spellId);
             spellsToAdd.Add((int)SpellLevelProgression.GetSpellAtLevel(minimumLevelSpellId, spellLevel, true, true));
@@ -833,19 +836,6 @@ public class UpgradeKit : Stackable
         {
             target.Biota.GetOrAddKnownSpell(spellId, target.BiotaDatabaseLock, out _);
         }
-    }
-
-    private static int GetDeterministicSpellLevel(int newTier, bool isCantrip)
-    {
-        return newTier switch
-        {
-            3 => isCantrip ? 2 : 3,
-            4 => isCantrip ? 2 : 4,
-            5 => isCantrip ? 3 : 5,
-            6 => isCantrip ? 3 : 6,
-            7 => isCantrip ? 4 : 7,
-            _ => isCantrip ? 2 : 3,
-        };
     }
 
     private static void ScaleUpDidSpell(WorldObject target, int newTier)
