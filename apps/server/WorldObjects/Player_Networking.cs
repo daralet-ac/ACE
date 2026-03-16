@@ -511,7 +511,18 @@ partial class Player
                 && forwardCommand != MotionCommand.Sleeping
             )
             {
-                var spell = new Spell(SpellId.CampfireRest1);
+                var spell = WellRestedHotspot.Level switch
+                {
+                    2 => new Spell(SpellId.CampfireRest2),
+                    3 => new Spell(SpellId.CampfireRest3),
+                    _ => new Spell(SpellId.CampfireRest1)
+                };
+
+                if (WellRestedHotspot is { WeenieClassId: 1053984 }) // Bliz's Eternal Bonfire in Hebian-to
+                {
+                    spell.SpellPowerMod = 2;
+                }    
+
                 CreateEnchantment(this, WellRestedHotspot, null, spell);
 
                 WellRestedHotspot = null;
