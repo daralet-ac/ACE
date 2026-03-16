@@ -518,7 +518,7 @@ partial class Player
                     _ => new Spell(SpellId.CampfireRest1)
                 };
 
-                if (WellRestedHotspot is { Name: "Bliz Campfire Hotspot"})
+                if (WellRestedHotspot is { WeenieClassId: 1053984 }) // Bliz's Eternal Bonfire in Hebian-to
                 {
                     spell.SpellPowerMod = 2;
                 }    
