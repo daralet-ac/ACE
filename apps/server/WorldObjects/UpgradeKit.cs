@@ -9,7 +9,6 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Tables;
-using ACE.Server.Factories.Tables.Cantrips;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 
@@ -17,7 +16,6 @@ namespace ACE.Server.WorldObjects;
 
 public class UpgradeKit : Stackable
 {
-
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
@@ -175,18 +173,17 @@ public class UpgradeKit : Stackable
 
     public static bool UpgradeItem(Player player, WorldObject target, int forcedNewWieldDifficulty = 0)
     {
+        var usesRequiredLevelPath = UsesRequiredLevelTiering(target);
+        var currentRequirement = target.WieldDifficulty ?? (usesRequiredLevelPath ? 1 : 50);
+        var newRequirement = forcedNewWieldDifficulty > 0 && target.ItemType != ItemType.Jewelry
+            ? forcedNewWieldDifficulty
+            : GetMaxRequirementForPlayer(player, target);
+
+        var currentTier = GetTierIndexFromRequirement(target, currentRequirement);
+        var newTier = GetTierIndexFromRequirement(target, newRequirement);
+
         if (target.ItemType != ItemType.Jewelry)
         {
-            var usesRequiredLevelPath = UsesRequiredLevelTiering(target);
-
-            var currentRequirement = target.WieldDifficulty ?? (usesRequiredLevelPath ? 1 : 50);
-            var newRequirement = forcedNewWieldDifficulty > 0
-                ? forcedNewWieldDifficulty
-                : GetMaxRequirementForPlayer(player, target);
-
-            var currentTier = GetTierIndexFromRequirement(target, currentRequirement);
-            var newTier = GetTierIndexFromRequirement(target, newRequirement);
-
             // Weapons
             if (target.ItemType is ItemType.Weapon or ItemType.MissileWeapon or ItemType.MeleeWeapon or ItemType.Caster)
             {
@@ -261,12 +258,6 @@ public class UpgradeKit : Stackable
         // Jewelry
         else
         {
-            var currentRequiredLevel = target.WieldDifficulty ?? 1;
-            var newRequiredLevel = GetRequiredLevelFromPlayerTier((player));
-
-            var currentTier = Math.Clamp(LootGenerationFactory.GetTierFromRequiredLevel(currentRequiredLevel) - 1, 0, 7);
-            var newTier = Math.Clamp(LootGenerationFactory.GetTierFromRequiredLevel(newRequiredLevel) - 1, 0, 7);
-
             ScaleUpJewelryWardLevel(target, currentTier, newTier);
             ScaleUpJewelryRating(PropertyInt.GearMaxHealth, target, currentTier, newTier);
             ScaleUpJewelryRating(PropertyInt.GearMaxStamina, target, currentTier, newTier);
@@ -282,7 +273,7 @@ public class UpgradeKit : Stackable
             ScaleUpSpecialRatings(target, currentTier, newTier);
 
             // Level Requirement
-            target.SetProperty(PropertyInt.WieldDifficulty, newRequiredLevel);
+            target.SetProperty(PropertyInt.WieldDifficulty, newRequirement);
 
             // Spells
             ScaleUpSpells(target, currentTier, newTier);
@@ -699,7 +690,6 @@ public class UpgradeKit : Stackable
 
         var currentRoll = currentBaseStat - currentBaseLevelFromTier;
         var rollPercentile = (float)currentRoll / currentRange;
-        rollPercentile = Math.Clamp(rollPercentile, 0.0f, 1.0f);
 
         var newTierRange =
             (jewelryBaseWardLevelPerTier[newTier + 1] * necklaceMultiplier)
@@ -737,7 +727,6 @@ public class UpgradeKit : Stackable
         var currentRoll = currentBaseStat - currentBaseLevelFromTier;
 
         var rollPercentile = (float)currentRoll / currentRange;
-        rollPercentile = Math.Clamp(rollPercentile, 0.0f, 1.0f);
 
         var newTierRange = jewelryBaseRatingPerTier[newTier];
         var amountAboveMinimum = newTierRange * rollPercentile;
@@ -814,7 +803,7 @@ public class UpgradeKit : Stackable
 
             var isCantrip = spellProgressionList.Count < 5;
             var spellLevel = isCantrip
-                ? CantripChance.RollCantripLevelForTier(newTier + 1)
+                ? GetStaticQuestCantripLevel(newTier)
                 : Math.Clamp(newTier, 3, 7);
 
             spellsToRemove.Add(spellId);
@@ -883,10 +872,7 @@ public class UpgradeKit : Stackable
 
         int[] averageRatingValuesPerTier = [1, 2, 3, 4, 5, 6, 8, 10];
 
-    currentTier = Math.Clamp(currentTier, 0, averageRatingValuesPerTier.Length - 1);
-    newTier = Math.Clamp(newTier, 0, averageRatingValuesPerTier.Length - 1);
-
-    var multiplier = (float)averageRatingValuesPerTier[newTier] / averageRatingValuesPerTier[currentTier];
+        var multiplier = (float)averageRatingValuesPerTier[newTier] / averageRatingValuesPerTier[currentTier];
 
         foreach (var itemRating in ratingList)
         {
@@ -894,6 +880,19 @@ public class UpgradeKit : Stackable
 
             target.SetProperty(itemRating, Convert.ToInt32(currentRatingValue * multiplier));
         }
+    }
+
+    private static int GetStaticQuestCantripLevel(int newTier)
+    {
+        return newTier switch
+        {
+            3 => 2,
+            4 => 2,
+            5 => 3,
+            6 => 3,
+            7 => 4,
+            _ => 0,
+        };
     }
 
     private static readonly PropertyInt[] GearRatingIds =
