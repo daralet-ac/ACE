@@ -42,6 +42,7 @@ partial class Creature
     private bool onDeathEntered = false;
 
     private float SpellStackBonus = 1.0f;
+    private float FrigidBonus = 1.0f;
 
     /// <summary>
     /// Called when a monster or player dies, in conjunction with Die()
@@ -1108,25 +1109,50 @@ partial class Creature
                 )
                 .ToList();
 
-            SpellStackBonus = GetSpellStackBonus(killer);
+            if (StackableSpellType > StackableSpellTables.StackableSpellType.None)
+            {
+                SpellStackBonus = GetSpellStackBonus(killer);
+            }
+
+            var dropRateBonus = 1.0f + (SpellStackBonus - 1.0f) + (FrigidBonus - 1.0f);
 
             var selected = new List<PropertiesCreateList>();
-
-            if (SpellStackBonus != 1.0f && StackableSpellType > StackableSpellTables.StackableSpellType.None)
+            foreach(var item in createList)
             {
-                selected = CreateListSelect(createList, SpellStackBonus);
+                Console.WriteLine($"{item.WeenieClassId} {dropRateBonus}");
             }
-            else
-            {
-                selected = CreateListSelect(createList);
-            }
-
+            selected = CreateListSelect(createList, dropRateBonus);
+            
             if (selected.Count > 0)
             {
+                var createdObjects = new List<WorldObject>();
                 foreach (var item in selected)
                 {
                     var wo = WorldObjectFactory.CreateNewWorldObject(item, Tier ?? 1);
+                    if (wo != null)
+                        createdObjects.Add(wo);
+                }
 
+                // Merge identical stackable items — can produce duplicates when overflow
+                // guaranteed draws select the same entry more than once.
+                for (var i = createdObjects.Count - 1; i >= 0; i--)
+                {
+                    if ((createdObjects[i].MaxStackSize ?? 1) > 1)
+                    {
+                        for (var j = 0; j < i; j++)
+                        {
+                            if (createdObjects[j].WeenieClassId == createdObjects[i].WeenieClassId)
+                            {
+                                createdObjects[j].SetStackSize((createdObjects[j].StackSize ?? 1) + (createdObjects[i].StackSize ?? 1));
+                                createdObjects.RemoveAt(i);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                foreach (var wo in createdObjects)
+                {
                     if (corpse != null)
                     {
                         corpse.TryAddToInventory(wo);

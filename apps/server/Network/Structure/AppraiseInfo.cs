@@ -864,6 +864,7 @@ public class AppraiseInfo
         SetWardCleavingUseLongText(wo);
 
         SetStaminaReductionUseLongText(wo);
+        SetFrigidResistanceUseLongText(wo);
         SetNoCompsRequiredSchoolUseLongText(wo);
 
         SetGearRatingText(wo, PropertyInt.GearStrength, "Mighty Thews", "Grants +10 to current Strength, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
@@ -1767,6 +1768,27 @@ public class AppraiseInfo
         _additionalPropertiesLongDescriptionsText +=
             $"~ Stamina Cost Reduction: Reduces stamina cost of attack by {ratingAmount}%. " +
             $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%).\n";
+    }
+
+    private void SetFrigidResistanceUseLongText(WorldObject wo)
+    {
+        //var hasFloat = PropertiesFloat.TryGetValue(PropertyFloat.GearFrigidProtectionMod, out var frigidProtectionMod) && frigidProtectionMod > 0.001f;
+        var hasInt = PropertiesInt.TryGetValue(PropertyInt.GearFrigidProtection, out var frigidProtection) && frigidProtection > 0;
+
+        if (!hasInt)
+        {
+            return;
+        }
+        
+        //var ratingAmount = Math.Round((frigidProtectionMod * 100), 0);
+
+        _additionalPropertiesList.Add($"Frigid Resistance {ToRoman(frigidProtection)}");
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Frigid Resistance {ToRoman(frigidProtection)}: Reduces damage taken from frigid temperatures by {frigidProtection}. " +
+            $"This effect stacks with other sources of Frigid Resistance.\n";
     }
 
     private void SetBitingStrikeUseLongText(WorldObject wo)
