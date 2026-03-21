@@ -9,6 +9,7 @@ using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Cantrips;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 
@@ -71,7 +72,7 @@ public class UpgradeKit : Stackable
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"Upgrading {target.Name} to the highest difficulty you can wield ({maxRequirementForPlayer}) requires {requiredUpgradeKits} Upgrade kits.",
+                    $"Upgrading {target.Name} to match your current tier requires {requiredUpgradeKits} Upgrade Kits.",
                     ChatMessageType.Craft
                 )
             );
@@ -83,7 +84,7 @@ public class UpgradeKit : Stackable
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"{target.Name} is already at the highest difficulty you can wield.",
+                    $"{target.Name} already matches your current tier.",
                     ChatMessageType.Craft
                 )
             );
@@ -93,11 +94,10 @@ public class UpgradeKit : Stackable
 
         if (!confirmed)
         {
-            var wieldReqType = target.ItemType == ItemType.Jewelry ? "Required Level" : "Wield Difficulty";
             if (
                 !player.ConfirmationManager.EnqueueSend(
                     new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
-                    $"This will upgrade {target.Name} to the highest difficulty you can wield. Its {wieldReqType} will be increased to {maxRequirementForPlayer}.\n\n" +
+                    $"This will upgrade {target.Name} to match your current tier.\n\n" +
                     $"{requiredUpgradeKits} Upgrade Kits will be consumed."
                 )
             )
@@ -712,17 +712,8 @@ public class UpgradeKit : Stackable
         }
 
         var jewelryBaseRatingPerTier = LootTables.JewelryBaseRatingPerTier;
-        currentTier = Math.Clamp(currentTier, 0, jewelryBaseRatingPerTier.Length - 1);
-        newTier = Math.Clamp(newTier, 0, jewelryBaseRatingPerTier.Length - 1);
-
         var currentBaseLevelFromTier = jewelryBaseRatingPerTier[currentTier];
-        var nextTierIndex = Math.Min(currentTier + 1, jewelryBaseRatingPerTier.Length - 1);
-        var currentRange = jewelryBaseRatingPerTier[nextTierIndex] - currentBaseLevelFromTier;
-
-        if (currentRange <= 0)
-        {
-            currentRange = 1;
-        }
+        var currentRange = currentBaseLevelFromTier;
 
         var currentRoll = currentBaseStat - currentBaseLevelFromTier;
 
@@ -803,7 +794,7 @@ public class UpgradeKit : Stackable
 
             var isCantrip = spellProgressionList.Count < 5;
             var spellLevel = isCantrip
-                ? GetStaticQuestCantripLevel(newTier)
+                ? CantripChance.GetQuestCantripLevelForTier(newTier)
                 : Math.Clamp(newTier, 3, 7);
 
             spellsToRemove.Add(spellId);
@@ -880,19 +871,6 @@ public class UpgradeKit : Stackable
 
             target.SetProperty(itemRating, Convert.ToInt32(currentRatingValue * multiplier));
         }
-    }
-
-    private static int GetStaticQuestCantripLevel(int newTier)
-    {
-        return newTier switch
-        {
-            3 => 2,
-            4 => 2,
-            5 => 3,
-            6 => 3,
-            7 => 4,
-            _ => 0,
-        };
     }
 
     private static readonly PropertyInt[] GearRatingIds =
