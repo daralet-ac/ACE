@@ -1741,9 +1741,9 @@ public class AppraiseInfo
         additionaPropertiesString = additionaPropertiesString.TrimEnd();
         additionaPropertiesString = additionaPropertiesString.TrimEnd(',');
 
-        var oomText = wo.Workmanship != null ? "" : "This item's properties will not activate if it is out of mana";
+        var oomText = wo.Workmanship != null ? "" : "\n\nThis item's properties will not activate if it is out of mana.\n";
 
-        _extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.\n\n{oomText}\n\n";
+        _extraPropertiesText += $"Additional Properties: {additionaPropertiesString}.{oomText}\n";
 
         _hasExtraPropertiesText = true;
     }
@@ -1763,7 +1763,7 @@ public class AppraiseInfo
         var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
         var rangeMinAtTier = Math.Round(LootTables.StaminaCostReductionPerTier[itemTier - 1] * 100, 0);
 
-        _hasExtraPropertiesText = true;
+        _hasAdditionalProperties = true;
 
         _additionalPropertiesLongDescriptionsText +=
             $"~ Stamina Cost Reduction: Reduces stamina cost of attack by {ratingAmount}%. " +
@@ -1784,7 +1784,7 @@ public class AppraiseInfo
 
         _additionalPropertiesList.Add($"Frigid Resistance {ToRoman(frigidProtection)}");
 
-        _hasExtraPropertiesText = true;
+        _hasAdditionalProperties = true;
 
         _additionalPropertiesLongDescriptionsText +=
             $"~ Frigid Resistance {ToRoman(frigidProtection)}: Reduces damage taken from frigid temperatures by {frigidProtection}. " +
