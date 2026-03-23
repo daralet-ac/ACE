@@ -1128,9 +1128,11 @@ partial class Creature
                 var createdObjects = new List<WorldObject>();
                 foreach (var item in selected)
                 {
-                    var wo = WorldObjectFactory.CreateNewWorldObject(item, Tier ?? 1);
+                    var wo = WorldObjectFactory.CreateNewWorldObject(item, Tier ?? 1, FrigidBonus);
                     if (wo != null)
+                    {
                         createdObjects.Add(wo);
+                    }
                 }
 
                 // Merge identical stackable items — can produce duplicates when overflow
