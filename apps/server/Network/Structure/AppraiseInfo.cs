@@ -912,13 +912,13 @@ public class AppraiseInfo
         SetGearRatingText(wo, PropertyInt.GearElementalist, "Elementalist", $"Grants up to a 20% damage bonus to war spells, plus an additional 1% per equipped rating ((ONE) total). The amount builds up from 0%, based on how often you have hit your target.", 1.0f, 1.0f, 20, 0, true);
         SetGearRatingText(wo, PropertyInt.GearToughness, "Toughness", $"Grants +20 physical defense, plus an additional 1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 20);
         SetGearRatingText(wo, PropertyInt.GearResistance, "Resistance", $"Grants +20 magic defense, plus an additional 1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 20);
-        SetGearRatingText(wo, PropertyInt.GearSlashBane, "Swordsman's Bane", $"Grants +0.2 slashing protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
-        SetGearRatingText(wo, PropertyInt.GearBludgeonBane, "Tusker's Bane", $"Grants +0.2 bludgeoning protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
-        SetGearRatingText(wo, PropertyInt.GearPierceBane, "Archer's Bane", $"Grants +0.2 piercing protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
-        SetGearRatingText(wo, PropertyInt.GearAcidBane, "Olthoi's Bane", $"Grants +0.2 acid protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
-        SetGearRatingText(wo, PropertyInt.GearFireBane, "Inferno's Bane", $"Grants +0.2 fire protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
-        SetGearRatingText(wo, PropertyInt.GearFrostBane, "Gelidite's Bane", $"Grants +0.2 cold protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). The protection level cannot be increased beyond 1.0 (average), from this effect.", 0.01f, 1.0f, 0.2f);
-        SetGearRatingText(wo, PropertyInt.GearLightningBane, "Astyrrian's Bane", $"Grants +0.2 electric protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total) The protection level cannot be increased beyond 1.0 (average), from this effect..", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearSlashBane, "Swordsman's Bane", $"Grants +0.2 slashing protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). Increases beyond 1.0 have steep diminishing returns.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearBludgeonBane, "Tusker's Bane", $"Grants +0.2 bludgeoning protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). Increases beyond 1.0 have steep diminishing returns.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearPierceBane, "Archer's Bane", $"Grants +0.2 piercing protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). Increases beyond 1.0 have steep diminishing returns.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearAcidBane, "Olthoi's Bane", $"Grants +0.2 acid protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). Increases beyond 1.0 have steep diminishing returns.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearFireBane, "Inferno's Bane", $"Grants +0.2 fire protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). Increases beyond 1.0 have steep diminishing returns.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearFrostBane, "Gelidite's Bane", $"Grants +0.2 cold protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). Increases beyond 1.0 have steep diminishing returns.", 0.01f, 1.0f, 0.2f);
+        SetGearRatingText(wo, PropertyInt.GearLightningBane, "Astyrrian's Bane", $"Grants +0.2 electric protection to all equipped armor, plus an additional 0.01 per equipped rating ((ONE) total). Increases beyond 1.0 have steep diminishing returns.", 0.01f, 1.0f, 0.2f);
 
         SetAdditionalPropertiesUseText(wo);
 
@@ -1779,8 +1779,17 @@ public class AppraiseInfo
         {
             return;
         }
-        
+
         //var ratingAmount = Math.Round((frigidProtectionMod * 100), 0);
+        var totalRating = 0;
+        var totalRatingString = "";
+        var creatureWielder = wo.Wielder as Creature;
+
+        if (creatureWielder != null)
+        {
+            totalRating = creatureWielder.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFrigidProtection);
+            totalRatingString = $" ({totalRating} total)";
+        }
 
         _additionalPropertiesList.Add($"Frigid Resistance {ToRoman(frigidProtection)}");
 
@@ -1788,7 +1797,7 @@ public class AppraiseInfo
 
         _additionalPropertiesLongDescriptionsText +=
             $"~ Frigid Resistance {ToRoman(frigidProtection)}: Reduces damage taken from frigid temperatures by {frigidProtection}. " +
-            $"This effect stacks with other sources of Frigid Resistance.\n";
+            $"This effect stacks with other sources of Frigid Resistance.{totalRatingString}\n";
     }
 
     private void SetBitingStrikeUseLongText(WorldObject wo)
