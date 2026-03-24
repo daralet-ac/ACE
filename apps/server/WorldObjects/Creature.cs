@@ -278,19 +278,21 @@ public partial class Creature : Container
             
             if (IsInFrigidZone())
             {
-                var frigidMod = 1.0 + (Location.PositionZ - 200.0) * 0.01;
+                var esperMountainsMultiplier = EsperMountainsZone.Contains(Location) ? 10 : 1;
+
+                var frigidMod = 1.0 + (Location.PositionZ - 200.0) * 0.001 * esperMountainsMultiplier;
                 toughness *= frigidMod;
                 lethality *= frigidMod;
 
                 // double the bonus for creature trophy drops
                 FrigidBonus = (float)(1.0f + (frigidMod - 1) * 2.0f);
 
-                _log.Information(
-                    "[FRIGID ZONE] {Name} spawning on snow/ice at elevation {Elevation:F1} - toughness and lethality boosted by {Mod:P1}",
-                    Name,
-                    Location.PositionZ,
-                    frigidMod - 1.0
-                );
+                //_log.Information(
+                //    "[FRIGID ZONE] {Name} spawning on snow/ice at elevation {Elevation:F1} - toughness and lethality boosted by {Mod:P1}",
+                //    Name,
+                //    Location.PositionZ,
+                //    frigidMod - 1.0
+                //);
             }
 
             SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence, 1.0);

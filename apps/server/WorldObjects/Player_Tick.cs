@@ -249,6 +249,31 @@ partial class Player
 
         var rawDamage = (float)Location.PositionZ - 200f;
 
+        // Outside the Northern Esper Mountains, Frigid damage is only 1/10th strength.
+        var inEsperMountains = EsperMountainsZone.Contains(Location);
+        var worldX = Location.LandblockX * 192f + Location.PositionX;
+        var worldY = Location.LandblockY * 192f + Location.PositionY;
+
+        //_log.Information(
+        //    "[FRIGID ZONE] {Name} zone check — inEsperMountains: {InZone}, mapCoords: {MapCoords}, worldX: {WorldX:F1}, worldY: {WorldY:F1}, rawDamage before modifier: {RawDamage:F1}",
+        //    Name,
+        //    inEsperMountains,
+        //    Location.GetMapCoordStr() ?? "unknown",
+        //    worldX,
+        //    worldY,
+        //    rawDamage
+        //);
+
+        if (!inEsperMountains)
+        {
+            rawDamage *= 0.1f;
+            //_log.Information(
+            //    "[FRIGID ZONE] {Name} is outside Esper Mountains — rawDamage reduced to {RawDamage:F1}",
+            //    Name,
+            //    rawDamage
+            //);
+        }
+
         // Apply percentage reduction from equipped gear
         var modReduction = GetEquippedItemsSkillModSum(PropertyFloat.GearFrigidProtectionMod);
         rawDamage *= (float)Math.Max(0.0, 1.0 - modReduction);
@@ -268,21 +293,21 @@ partial class Player
 
         var damage = (int)Math.Ceiling(rawDamage);
 
-        _log.Information(
-            "[FRIGID] {Name} took {Damage} Frigid damage at elevation {Elevation:F1} (modReduction: {ModReduction:P1}, flatReduction: {FlatReduction})",
-            Name,
-            damage,
-            Location.PositionZ,
-            modReduction,
-            flatReduction
-        );
+        //_log.Information(
+        //    "[FRIGID] {Name} took {Damage} Frigid damage at elevation {Elevation:F1} (modReduction: {ModReduction:P1}, flatReduction: {FlatReduction})",
+        //    Name,
+        //    damage,
+        //    Location.PositionZ,
+        //    modReduction,
+        //    flatReduction
+        //);
 
         DamageHistory.Add(this, DamageType.Cold, (uint)damage);
         UpdateVitalDelta(Health, -damage);
 
         Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"The frigid cold bites at you for {damage} points of cold damage!",
+                $"The frigid air bites at you for {damage} points of cold damage!",
                 ChatMessageType.Broadcast
             )
         );
