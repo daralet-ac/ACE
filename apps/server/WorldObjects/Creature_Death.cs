@@ -1022,7 +1022,18 @@ partial class Creature
                 _deathTreasureTier = Tier.Value;
             }
 
-            var items = LootGenerationFactory.CreateRandomLootObjects(DeathTreasure);
+            var deathTreasure = DeathTreasure;
+
+            // FrigidBonus increases lootqualitymod.
+            // Strong diminishing returns, cap of 0.5 at FrigidBonus = 10.0 (realistic FB range: 1-5)
+            if (FrigidBonus > 1.0f)
+            {
+                var fullFrigidBonus = (float)Math.Sqrt((FrigidBonus - 1.0f) / 9.0f) * 0.5f;
+                var frigidQualityBonus = (1.0f - deathTreasure.LootQualityMod) * fullFrigidBonus;
+                deathTreasure.LootQualityMod = Math.Min(1.0f, deathTreasure.LootQualityMod + frigidQualityBonus);
+            }
+
+            var items = LootGenerationFactory.CreateRandomLootObjects(deathTreasure);
 
             for (var i = items.Count - 1; i >= 0; i--)
             {
@@ -1117,10 +1128,6 @@ partial class Creature
             var dropRateBonus = 1.0f + (SpellStackBonus - 1.0f) + (FrigidBonus - 1.0f);
 
             var selected = new List<PropertiesCreateList>();
-            foreach(var item in createList)
-            {
-                Console.WriteLine($"{item.WeenieClassId} {dropRateBonus}");
-            }
             selected = CreateListSelect(createList, dropRateBonus);
             
             if (selected.Count > 0)

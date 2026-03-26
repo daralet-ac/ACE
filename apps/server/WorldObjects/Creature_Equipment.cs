@@ -1512,13 +1512,13 @@ partial class Creature
                     {
                         var effectiveProb = modifier.Set.TrophyProbability * dropRateMod;
                         var fractionalChance = modifier.Set.TrophyProbability * modifier.TrophyMod;
-                        _log.Information(
-                            "[LOOT][OVERFLOW] dropRateMod {DropRateMod:F4} -> effectiveProb {EffectiveProb:F4}: {GuaranteedDrops} guaranteed draw(s) + {FractionalChance:P1} fractional chance",
-                            dropRateMod,
-                            effectiveProb,
-                            modifier.GuaranteedDrops,
-                            fractionalChance
-                        );
+                        //_log.Information(
+                        //    "[LOOT][OVERFLOW] dropRateMod {DropRateMod:F4} -> effectiveProb {EffectiveProb:F4}: {GuaranteedDrops} guaranteed draw(s) + {FractionalChance:P1} fractional chance",
+                        //    dropRateMod,
+                        //    effectiveProb,
+                        //    modifier.GuaranteedDrops,
+                        //    fractionalChance
+                        //);
                     }
 
                     for (var g = 0; g < modifier.GuaranteedDrops; g++)
@@ -1527,12 +1527,12 @@ partial class Creature
                         if (guaranteed != null)
                         {
                             results.Add(guaranteed);
-                            _log.Information(
-                                "[LOOT][OVERFLOW] Guaranteed draw {DrawNumber}/{TotalDraws}: WeenieClassId {WeenieClassId}",
-                                g + 1,
-                                modifier.GuaranteedDrops,
-                                guaranteed.WeenieClassId
-                            );
+                            //_log.Information(
+                            //    "[LOOT][OVERFLOW] Guaranteed draw {DrawNumber}/{TotalDraws}: WeenieClassId {WeenieClassId}",
+                            //    g + 1,
+                            //    modifier.GuaranteedDrops,
+                            //    guaranteed.WeenieClassId
+                            //);
                         }
                     }
 
@@ -1551,7 +1551,6 @@ partial class Creature
                     totalProbability += probability;
                 }
 
-                Console.WriteLine($"Modifier: {modifier}, TotalProb: {totalProbability}");
                 if (rngSelected || rng >= totalProbability)
                 {
                     continue;
