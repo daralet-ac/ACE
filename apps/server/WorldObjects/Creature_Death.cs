@@ -42,7 +42,7 @@ partial class Creature
     private bool onDeathEntered = false;
 
     private float SpellStackBonus = 1.0f;
-    private float FrigidBonus = 1.0f;
+    private double FrigidBonus = 1.0;
 
     /// <summary>
     /// Called when a monster or player dies, in conjunction with Die()
@@ -1025,12 +1025,13 @@ partial class Creature
             var deathTreasure = DeathTreasure;
 
             // FrigidBonus increases lootqualitymod.
-            // Strong diminishing returns, cap of 0.5 at FrigidBonus = 10.0 (realistic FB range: 1-5)
+            // Strong diminishing returns, cap of 0.5 at FrigidBonus = 5.0
             if (FrigidBonus > 1.0f)
             {
-                var fullFrigidBonus = (float)Math.Sqrt((FrigidBonus - 1.0f) / 9.0f) * 0.5f;
+                var fullFrigidBonus = (float)Math.Sqrt((FrigidBonus - 1.0f) / 4.0f) * 0.5f;
                 var frigidQualityBonus = (1.0f - deathTreasure.LootQualityMod) * fullFrigidBonus;
                 deathTreasure.LootQualityMod = Math.Min(1.0f, deathTreasure.LootQualityMod + frigidQualityBonus);
+                Console.WriteLine($"FB: {FrigidBonus}, fullFB: {fullFrigidBonus}, LQM: {deathTreasure.LootQualityMod}");
             }
 
             var items = LootGenerationFactory.CreateRandomLootObjects(deathTreasure);
@@ -1125,7 +1126,9 @@ partial class Creature
                 SpellStackBonus = GetSpellStackBonus(killer);
             }
 
-            var dropRateBonus = 1.0f + (SpellStackBonus - 1.0f) + (FrigidBonus - 1.0f);
+            var frigidDropBonus =  (float)(1.0f + (FrigidBonus - 1) * 2.0f);
+
+            var dropRateBonus = 1.0f + (SpellStackBonus - 1.0f) + (frigidDropBonus - 1.0f);
 
             var selected = new List<PropertiesCreateList>();
             selected = CreateListSelect(createList, dropRateBonus);
@@ -1135,7 +1138,7 @@ partial class Creature
                 var createdObjects = new List<WorldObject>();
                 foreach (var item in selected)
                 {
-                    var wo = WorldObjectFactory.CreateNewWorldObject(item, Tier ?? 1, FrigidBonus);
+                    var wo = WorldObjectFactory.CreateNewWorldObject(item, Tier ?? 1, frigidDropBonus);
                     if (wo != null)
                     {
                         createdObjects.Add(wo);

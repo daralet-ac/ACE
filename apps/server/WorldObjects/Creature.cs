@@ -280,12 +280,9 @@ public partial class Creature : Container
             {
                 var esperMountainsMultiplier = EsperMountainsZone.Contains(Location) ? 10 : 1;
 
-                var frigidMod = 1.0 + (Location.PositionZ - 200.0) * 0.001 * esperMountainsMultiplier;
-                toughness *= frigidMod;
-                lethality *= frigidMod;
-
-                // double the bonus for creature trophy drops
-                FrigidBonus = (float)(1.0f + (frigidMod - 1) * 2.0f);
+                FrigidBonus = 1.0 + (Location.PositionZ - 200.0) * 0.001 * esperMountainsMultiplier;
+                toughness *= FrigidBonus;
+                lethality *= FrigidBonus;
 
                 //_log.Information(
                 //    "[FRIGID ZONE] {Name} spawning on snow/ice at elevation {Elevation:F1} - toughness and lethality boosted by {Mod:P1}",
