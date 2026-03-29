@@ -101,7 +101,7 @@ public class StabilizationDevice : WorldObject
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    "This item is already stabilized and cannot be stabilized again.",
+                    "This item is already stabilized.",
                     ChatMessageType.Broadcast
                 )
             );
@@ -179,7 +179,7 @@ public class StabilizationDevice : WorldObject
                     }
                     player.Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            "The stabilization failed. The item may not be compatible.",
+                            "The stabilization fails. The item does not respond.",
                             ChatMessageType.Broadcast
                         )
                     );

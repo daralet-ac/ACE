@@ -113,7 +113,7 @@ public static class DestabilizedLootEffects
         if (family == DestabilizeItemFamily.None)
         {
             result.Success = false;
-            result.FailureReason = "That item family is not supported by destabilize.";
+            result.FailureReason = "The destabilizer has no effect.";
             return result;
         }
 
@@ -138,7 +138,7 @@ public static class DestabilizedLootEffects
         if (result.PackageDetails.Count == 0)
         {
             result.Success = false;
-            result.FailureReason = "The forge found no destabilize-eligible affixes on that item.";
+            result.FailureReason = "The item holds no resonance the destabilizer can disturb.";
             return result;
         }
 
@@ -160,13 +160,13 @@ public static class DestabilizedLootEffects
         var family = GetEligibleFamily(item);
         if (family == DestabilizeItemFamily.None)
         {
-            reason = "That item family is not supported by destabilize.";
+            reason = "The destabilizer has no effect.";
             return false;
         }
 
         if (GetEligibleFloatCandidates(item, family).Count == 0 && GetEligibleIntCandidates(item, family).Count == 0)
         {
-            reason = "The forge found no destabilize-eligible affixes on that item.";
+            reason = "The item holds no resonance the destabilizer can disturb.";
             return false;
         }
 

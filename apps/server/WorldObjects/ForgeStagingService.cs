@@ -20,9 +20,9 @@ public static class ForgeStagingService
 
     private const string FastPathHint =
         "Tip: Fast single-item mode is Item -> Forge. Click-forge mode is for all eligible or guided selection.";
-    private const string NotImplementedMessage = "The forge's second pass has not yet been implemented.";
+    private const string NotImplementedMessage = "The forge's deeper workings remain dormant.";
     private const string SecondPassLockedMessage =
-        "The forge's second pass remains sealed until phase one stability reaches 66%.";
+        "The forge's deeper workings remain dormant.";
 
     public static bool IsForgeTarget(WorldObject target)
     {
@@ -166,13 +166,13 @@ public static class ForgeStagingService
 
         if (processed == 0 && skipped == 0)
         {
-            player.SendTransientError("No items here carry unstable resonance.");
+            player.SendTransientError("You have no items carrying unstable resonance.");
             return;
         }
 
         player.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"The forge stabilizes {processed:N0} item(s){(skipped > 0 ? $", skipping {skipped:N0}." : ".")}",
+                $"The forge stabilizes {processed:N0} item(s){(skipped > 0 ? $", leaving {skipped:N0} untouched." : ".")}",
                 ChatMessageType.Broadcast
             )
         );
@@ -184,7 +184,7 @@ public static class ForgeStagingService
 
         if (candidateGuids.Count == 0)
         {
-            player.SendTransientError("No items here carry unstable resonance.");
+            player.SendTransientError("You have no items carrying unstable resonance.");
             return;
         }
 
@@ -222,7 +222,7 @@ public static class ForgeStagingService
 
                         if (!TryProcessItem(player, selected, out var failureMessage))
                         {
-                            player.SendTransientError(failureMessage ?? "That item could not be processed.");
+                            player.SendTransientError(failureMessage ?? "The forge cannot work that item.");
                             return;
                         }
 

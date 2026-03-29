@@ -11,9 +11,9 @@ namespace ACE.Server.WorldObjects;
 
 public class Destabilizer : Stackable
 {
-    private const string DirectDestabilizeBlockedMessage = "That item cannot be directly destabilized.";
-    private const string QuestItemBlockedMessage = "Quest items cannot be directly destabilized.";
-    private const string StableItemsMustUseForgeMessage = "Stable items must be destabilized through the forge.";
+    private const string DirectDestabilizeBlockedMessage = "That item cannot be destabilized.";
+    private const string QuestItemBlockedMessage = "Quest items cannot be destabilized.";
+    private const string StableItemsMustUseForgeMessage = "Stable items must be taken to the forge for destabilization.";
     private const string RetainedMessage = "That item is retained and cannot be altered.";
 
     public Destabilizer(Weenie weenie, ObjectGuid guid)

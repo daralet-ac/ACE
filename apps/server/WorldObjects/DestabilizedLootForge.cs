@@ -23,16 +23,18 @@ public static class DestabilizedLootForge
 
     private const string ConfirmMessagePlaceholder =
         "Destabilize this item? This cannot be undone. "
-        + "The item will become ineligible for further tinkers. "
-        + "Requires 1x Pulsing Resonance Fragment from your inventory; it will be consumed on success.";
-    private const string SuccessMessagePlaceholder =
-        "The forge destabilizes the resonance within your";
+        + "The item will no longer accept further tinkering. "
+        + "Requires 1 Pulsing Resonance Fragment from your pack, consumed on success.";
+    private const string SuccessMessageTemplate =
+        "The forge destabilizes the resonance within your {item}, {summary}";
+    private const string DirectSuccessMessageTemplate =
+        "{item} is destabilized. {summary}";
     private const string FailureMessagePlaceholder =
-        "The forge rejects the destabilization attempt.";
+        "The forge fails to destabilize the item.";
     private const string ExceptionalMessagePlaceholder =
-        "Exceptional resonance cascade detected.";
+        "An exceptional resonance cascade surges through the item.";
     private const string MissingIngredientMessagePlaceholder =
-        "You need 1 Pulsing Resonance Fragment in your inventory to finalize destabilization.";
+        "You need 1 Pulsing Resonance Fragment in your pack to complete the destabilization.";
     private const string LockedAlterationMessage =
         "That item is retained and cannot be altered.";
 
@@ -76,7 +78,7 @@ public static class DestabilizedLootForge
         if (IsTerminallyDestabilized(item))
         {
             DebugLog(player, item, "queue rejected: item already terminally destabilized");
-            failureMessage = "That item is already terminally destabilized.";
+            failureMessage = "That item has already been destabilized.";
             return false;
         }
 
@@ -99,7 +101,7 @@ public static class DestabilizedLootForge
                 {
                     if (!response)
                     {
-                        player.SendTransientError("Destabilize cancelled.");
+                        player.SendTransientError("Destabilization cancelled.");
                         onResolved?.Invoke();
                         return;
                     }
@@ -132,7 +134,7 @@ public static class DestabilizedLootForge
         if (IsTerminallyDestabilized(item))
         {
             DebugLog(player, item, "immediate finalize rejected: item already terminally destabilized");
-            failureMessage = "That item is already terminally destabilized.";
+            failureMessage = "That item has already been destabilized.";
             return false;
         }
 
@@ -164,7 +166,7 @@ public static class DestabilizedLootForge
 
         if (IsTerminallyDestabilized(item))
         {
-            failureMessage = "That item is already terminally destabilized.";
+            failureMessage = "That item has already been destabilized.";
             return false;
         }
 
@@ -183,7 +185,7 @@ public static class DestabilizedLootForge
             return false;
         }
 
-        FinalizeItem(player, item, rollResult, "The destabilizer tears through the resonance within your", source.Name ?? "destabilizer");
+        FinalizeItem(player, item, rollResult, DirectSuccessMessageTemplate, source.Name ?? "destabilizer");
         return true;
     }
 
@@ -201,7 +203,7 @@ public static class DestabilizedLootForge
         if (IsTerminallyDestabilized(item))
         {
             DebugLog(player, item, "execute aborted: item already terminally destabilized");
-            player.SendTransientError("That item is already terminally destabilized.");
+            player.SendTransientError("That item has already been destabilized.");
             return;
         }
 
@@ -242,7 +244,7 @@ public static class DestabilizedLootForge
             return;
         }
 
-        FinalizeItem(player, item, rollResult, SuccessMessagePlaceholder, RequiredIngredientName);
+        FinalizeItem(player, item, rollResult, SuccessMessageTemplate, RequiredIngredientName);
     }
 
     private static bool HasRequiredIngredient(Player player)
@@ -302,7 +304,7 @@ public static class DestabilizedLootForge
         DebugLog(player, null, $"item restored: {itemName} amount={amount} weenie={weenieClassId}");
     }
 
-    private static void FinalizeItem(Player player, WorldObject item, DestabilizedRollResult rollResult, string successMessagePrefix, string costName)
+    private static void FinalizeItem(Player player, WorldObject item, DestabilizedRollResult rollResult, string successMessageTemplate, string costName)
     {
         var previousStage = ForgeStageDisplay.GetStage(item);
         var previousForgePassCount = item.GetProperty(ForgePassCountProperty) ?? 1;
@@ -317,9 +319,14 @@ public static class DestabilizedLootForge
 
         player.EnqueueBroadcast(new GameMessageUpdateObject(item));
 
+        var alterationSummary = $"altering {rollResult.AppliedPackageCount} {(rollResult.AppliedPackageCount == 1 ? "property" : "properties")}.";
+        var successMessage = successMessageTemplate
+            .Replace("{item}", item.NameWithMaterial)
+            .Replace("{summary}", alterationSummary);
+
         player.Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"{successMessagePrefix} {item.NameWithMaterial}, altering {rollResult.AppliedPackageCount} {(rollResult.AppliedPackageCount == 1 ? "property" : "properties") }.",
+                successMessage,
                 ChatMessageType.Broadcast
             )
         );
