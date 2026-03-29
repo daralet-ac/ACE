@@ -253,6 +253,9 @@ public enum PropertyFloat : ushort
     SpecializedPackBurdenMod = 204,
 
     [ServerOnly]
+    DestabVarPercent = 205,
+
+    [ServerOnly]
     PCAPRecordedWorkmanship = 8004,
 
     [ServerOnly]

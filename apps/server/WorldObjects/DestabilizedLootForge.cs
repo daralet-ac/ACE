@@ -15,8 +15,8 @@ public static class DestabilizedLootForge
 {
     private static readonly ILogger _log = Log.ForContext(typeof(DestabilizedLootForge));
 
-    private const PropertyBool TerminalDestabilizedLockProperty = (PropertyBool)10012;
-    private const PropertyInt ForgePassCountProperty = (PropertyInt)10011;
+    private const PropertyBool TerminalDestabilizedLockProperty = PropertyBool.TerminalDestabilizedLock;
+    private const PropertyInt ForgePassCountProperty = PropertyInt.ForgePassCount;
     private const uint RequiredIngredientWcid = 2023154;
     private const int RequiredIngredientAmount = 1;
     private const string RequiredIngredientName = "Pulsing Resonance Fragment";
@@ -152,6 +152,41 @@ public static class DestabilizedLootForge
         return true;
     }
 
+    public static bool TryFinalizeDirect(Player player, WorldObject item, WorldObject source, double? variancePercentOverride, out string failureMessage)
+    {
+        failureMessage = null;
+
+        if (player == null || item == null || source == null)
+        {
+            failureMessage = "That item is unavailable.";
+            return false;
+        }
+
+        if (IsTerminallyDestabilized(item))
+        {
+            failureMessage = "That item is already terminally destabilized.";
+            return false;
+        }
+
+        if (!player.TryConsumeFromInventoryWithNetworking(source, 1))
+        {
+            failureMessage = "That item is unavailable.";
+            return false;
+        }
+
+        var sourceConsumed = true;
+        var rollResult = DestabilizedLootEffects.ApplyDestabilize(item, variancePercentOverride);
+        if (!rollResult.Success)
+        {
+            RestoreConsumedWorldObject(player, source.WeenieClassId, 1, sourceConsumed, source.Name ?? "destabilizer");
+            failureMessage = rollResult.FailureReason ?? FailureMessagePlaceholder;
+            return false;
+        }
+
+        FinalizeItem(player, item, rollResult, "The destabilizer tears through the resonance within your", source.Name ?? "destabilizer");
+        return true;
+    }
+
     private static void ExecuteFinalization(Player player, ObjectGuid itemGuid)
     {
         var item = player.FindObject(itemGuid.Full, Player.SearchLocations.MyInventory);
@@ -207,45 +242,7 @@ public static class DestabilizedLootForge
             return;
         }
 
-        var previousStage = ForgeStageDisplay.GetStage(item);
-        var previousForgePassCount = item.GetProperty(ForgePassCountProperty) ?? 1;
-        item.SetProperty(TerminalDestabilizedLockProperty, true);
-        item.SetProperty(ForgePassCountProperty, previousForgePassCount + 1);
-        ForgeStageDisplay.ApplyStageOverlay(item);
-        item.Bonded = BondedStatus.Bonded;
-        item.AllowedWielder = player.Guid.Full;
-        item.CraftsmanName = player.Name;
-
-        DebugLog(player, item, BuildAdminDestabilizationSuccessLog(player, item, previousStage, ForgeStageDisplay.GetStage(item), rollResult));
-
-        player.EnqueueBroadcast(new GameMessageUpdateObject(item));
-
-        player.Session.Network.EnqueueSend(
-            new GameMessageSystemChat(
-                $"{SuccessMessagePlaceholder} {item.NameWithMaterial}, altering {rollResult.AppliedPackageCount} {(rollResult.AppliedPackageCount == 1 ? "property" : "properties")}.",
-                ChatMessageType.Broadcast
-            )
-        );
-
-        foreach (var packageDetail in rollResult.PackageDetails)
-        {
-            player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    packageDetail,
-                    ChatMessageType.Broadcast
-                )
-            );
-        }
-
-        if (rollResult.ExceptionalExtraPackageCount > 0)
-        {
-            player.Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"{ExceptionalMessagePlaceholder} (+{rollResult.ExceptionalExtraPackageCount} extra package(s)).",
-                    ChatMessageType.Broadcast
-                )
-            );
-        }
+        FinalizeItem(player, item, rollResult, SuccessMessagePlaceholder, RequiredIngredientName);
     }
 
     private static bool HasRequiredIngredient(Player player)
@@ -284,6 +281,68 @@ public static class DestabilizedLootForge
             null,
             $"ingredient restored: {RequiredIngredientName} amount={RequiredIngredientAmount} inventoryCount={player.GetNumInventoryItemsOfWCID(RequiredIngredientWcid)}"
         );
+    }
+
+    private static void RestoreConsumedWorldObject(Player player, uint weenieClassId, int amount, bool itemConsumed, string itemName)
+    {
+        if (!itemConsumed)
+        {
+            return;
+        }
+
+        var restored = WorldObjectFactory.CreateNewWorldObject(weenieClassId);
+        if (restored == null)
+        {
+            DebugLog(player, null, $"item restore failed: could not create {itemName} weenie={weenieClassId}");
+            return;
+        }
+
+        restored.StackSize = amount;
+        player.TryCreateInInventoryWithNetworking(restored);
+        DebugLog(player, null, $"item restored: {itemName} amount={amount} weenie={weenieClassId}");
+    }
+
+    private static void FinalizeItem(Player player, WorldObject item, DestabilizedRollResult rollResult, string successMessagePrefix, string costName)
+    {
+        var previousStage = ForgeStageDisplay.GetStage(item);
+        var previousForgePassCount = item.GetProperty(ForgePassCountProperty) ?? 1;
+        item.SetProperty(TerminalDestabilizedLockProperty, true);
+        item.SetProperty(ForgePassCountProperty, previousForgePassCount + 1);
+        ForgeStageDisplay.ApplyStageOverlay(item);
+        item.Bonded = BondedStatus.Bonded;
+        item.AllowedWielder = player.Guid.Full;
+        item.CraftsmanName = player.Name;
+
+        DebugLog(player, item, BuildAdminDestabilizationSuccessLog(player, item, previousStage, ForgeStageDisplay.GetStage(item), rollResult, costName));
+
+        player.EnqueueBroadcast(new GameMessageUpdateObject(item));
+
+        player.Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"{successMessagePrefix} {item.NameWithMaterial}, altering {rollResult.AppliedPackageCount} {(rollResult.AppliedPackageCount == 1 ? "property" : "properties") }.",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        foreach (var packageDetail in rollResult.PackageDetails)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    packageDetail,
+                    ChatMessageType.Broadcast
+                )
+            );
+        }
+
+        if (rollResult.ExceptionalExtraPackageCount > 0)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"{ExceptionalMessagePlaceholder} (+{rollResult.ExceptionalExtraPackageCount} extra package(s)).",
+                    ChatMessageType.Broadcast
+                )
+            );
+        }
     }
 
     public static bool TryBlockFurtherAlteration(Player player, WorldObject target)
@@ -406,7 +465,8 @@ public static class DestabilizedLootForge
         WorldObject item,
         ForgeStage beforeStage,
         ForgeStage afterStage,
-        DestabilizedRollResult rollResult)
+        DestabilizedRollResult rollResult,
+        string costName)
     {
         var itemGuid = $"0x{item.Guid.Full:X8}";
         var changeSummary = BuildAdminPackageSummary(rollResult.PackageDetails, rollResult.AppliedPackageCount);
@@ -414,7 +474,7 @@ public static class DestabilizedLootForge
             ? $" exceptionalExtras={rollResult.ExceptionalExtraPackageCount}"
             : string.Empty;
 
-        return $"[ForgeAdmin] destabilize success, {player.Name} lvl={player.Level ?? 1}. item={item.Name} ({itemGuid}). {beforeStage}->{afterStage} ingredient={RequiredIngredientName} x{RequiredIngredientAmount} changes={changeSummary}{exceptionalSegment}";
+        return $"[ForgeAdmin] destabilize success, {player.Name} lvl={player.Level ?? 1}. item={item.Name} ({itemGuid}). {beforeStage}->{afterStage} cost={costName} changes={changeSummary}{exceptionalSegment}";
     }
 
     private static string BuildAdminPackageSummary(System.Collections.Generic.IReadOnlyList<string> packageDetails, int appliedPackageCount)

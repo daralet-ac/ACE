@@ -880,6 +880,9 @@ public enum PropertyInt : ushort
     TrophyEssenceEffectType = 518,
 
     [ServerOnly]
+    ForgePassCount = 519,
+
+    [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
 
     [ServerOnly]

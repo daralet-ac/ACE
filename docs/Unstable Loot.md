@@ -1,7 +1,6 @@
 # Unstable Loot
 
-One quick reference for the two people who need this system most on a real shard:
-
+One quick reference for:
 - content creators authoring weenies
 - admins operating and troubleshooting the system live
 
@@ -75,7 +74,36 @@ INSERT INTO weenie (class_Id, class_Name, type)
 VALUES (900101, 'ace900101_stabilizationdevice', 87);
 ```
 
-### 4. Optional Test-Item Notes
+### 4. Destabilizer Object
+
+Required weenie type:
+
+- `WeenieType.Destabilizer = 89`
+
+Notes:
+
+- any WCID authored with this weenie type will use the direct destabilizer behavior
+- this is item-in-inventory used on item-in-inventory
+- the destabilizer is single-use and consumed on success
+- valid targets must be ordinary lootgen items still at forge stage `None`
+- stable items are not valid targets and must still use the forge path
+- a successful use produces the same terminal result as the forge final destabilize pass
+- optional custom property: `PropertyFloat.DestabVarPercent = 205` on the destabilizer weenie sets the exact `+/-` variance percent for that item
+- if `PropertyFloat.DestabVarPercent` is absent, the destabilizer uses the shard global `destabilize_variance`
+
+```sql
+INSERT INTO weenie (class_Id, class_Name, type)
+VALUES (<destabilizer_wcid>, '<destabilizer_name>', 89);
+```
+
+Example:
+
+```sql
+INSERT INTO weenie (class_Id, class_Name, type)
+VALUES (900102, 'ace900102_destabilizer', 89);
+```
+
+### 5. Optional Test-Item Notes
 
 These are mostly useful for hand-authored test items, not normal content authoring.
 
@@ -94,6 +122,16 @@ Resonance-stabilized item:
 
 - `PropertyBool.IsUnstable = 178`
 - `PropertyInt.Lifespan = 267` absent
+
+Directly-destabilized item:
+
+- `PropertyBool.TerminalDestabilizedLock = 179` present and `True`
+- `PropertyInt.ForgePassCount = 519` present and `>= 2`
+
+Destabilizer item with exact per-item variance:
+
+- `PropertyFloat.DestabVarPercent = 30` means that destabilizer rolls within `+/-30%`
+- this overrides the global `destabilize_variance` for that item only
 
 ## Live Admin Reference
 
@@ -166,6 +204,7 @@ modifybool debug_stabilization false
 - First forge pass works on resonance-stabilized items
 - Second forge pass is the destabilize path and remains locked until `fragment_stability_phase_one >= 9900`
 - The unlock threshold is hardcoded at `9900`, which is displayed in game as `66.0%`
+- `Destabilizer` items are a separate direct path for ordinary lootgen items and do not replace the forge for stable items
 
 ### 5. Minimal Live Admin Checklist
 
@@ -175,5 +214,6 @@ When an admin needs to test the whole loop quickly:
 2. Use the stabilization device on the unstable item
 3. If the item reaches the forge, confirm it is resonance-stabilized and not still on the scanner-only step
 4. Confirm you have `1x` Pulsing Resonance Fragment for the destabilize pass
-5. Tune destabilize behavior with `modifydouble destabilize_variance <value>`
-6. Turn debug logging on with `modifybool debug_stabilization true`
+5. Optionally test a `Destabilizer` item on a normal lootgen target that is still at forge stage `None`
+6. Tune destabilize behavior with `modifydouble destabilize_variance <value>`
+7. Turn debug logging on with `modifybool debug_stabilization true`

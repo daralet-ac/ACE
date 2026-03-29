@@ -99,7 +99,7 @@ public static class DestabilizedLootEffects
         PropertyFloat.SigilTrinketReductionAmount,
     };
 
-    public static DestabilizedRollResult ApplyDestabilize(WorldObject item)
+    public static DestabilizedRollResult ApplyDestabilize(WorldObject item, double? variancePercentOverride = null)
     {
         var result = new DestabilizedRollResult();
         if (item == null)
@@ -119,7 +119,7 @@ public static class DestabilizedLootEffects
 
         foreach (var property in GetEligibleFloatCandidates(item, family))
         {
-            if (TryApplyFloatRoll(item, property, out var detail))
+            if (TryApplyFloatRoll(item, property, variancePercentOverride, out var detail))
             {
                 result.PackageDetails.Add(detail);
             }
@@ -127,7 +127,7 @@ public static class DestabilizedLootEffects
 
         foreach (var property in GetEligibleIntCandidates(item, family))
         {
-            if (TryApplyIntRoll(item, property, out var detail))
+            if (TryApplyIntRoll(item, property, variancePercentOverride, out var detail))
             {
                 result.PackageDetails.Add(detail);
             }
@@ -173,12 +173,12 @@ public static class DestabilizedLootEffects
         return true;
     }
 
-    private static bool TryApplyFloatRoll(WorldObject item, PropertyFloat property, out string detail)
+    private static bool TryApplyFloatRoll(WorldObject item, PropertyFloat property, double? variancePercentOverride, out string detail)
     {
         detail = null;
 
         var current = item.GetProperty(property) ?? 0.0;
-        var deltaPercent = RollDeltaPercent();
+        var deltaPercent = RollDeltaPercent(variancePercentOverride);
         var next = UsesBaselineWeaponMultiplierMath(property)
             ? 1.0 + ((current - 1.0) * (1 + deltaPercent))
             : current * (1 + deltaPercent);
@@ -194,12 +194,12 @@ public static class DestabilizedLootEffects
         return true;
     }
 
-    private static bool TryApplyIntRoll(WorldObject item, PropertyInt property, out string detail)
+    private static bool TryApplyIntRoll(WorldObject item, PropertyInt property, double? variancePercentOverride, out string detail)
     {
         detail = null;
 
         var current = item.GetProperty(property) ?? 0;
-        var deltaPercent = RollDeltaPercent();
+        var deltaPercent = RollDeltaPercent(variancePercentOverride);
         var next = (int)Math.Round(current * (1 + deltaPercent));
         next = Math.Max(GetMinimumIntValue(property), next);
 
@@ -213,10 +213,10 @@ public static class DestabilizedLootEffects
         return true;
     }
 
-    private static double RollDeltaPercent()
+    private static double RollDeltaPercent(double? variancePercentOverride)
     {
         var variancePercent = Math.Clamp(
-            PropertyManager.GetDouble("destabilize_variance", DefaultDestabilizeVariancePercent).Item,
+            variancePercentOverride ?? PropertyManager.GetDouble("destabilize_variance", DefaultDestabilizeVariancePercent).Item,
             0.0,
             100.0
         );

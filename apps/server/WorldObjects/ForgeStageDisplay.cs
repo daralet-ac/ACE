@@ -14,8 +14,8 @@ public enum ForgeStage
 
 public static class ForgeStageDisplay
 {
-    private const PropertyInt ForgePassCountProperty = (PropertyInt)10011;
-    private const PropertyBool TerminalDestabilizedLockProperty = (PropertyBool)10012;
+    private const PropertyInt ForgePassCountProperty = PropertyInt.ForgePassCount;
+    private const PropertyBool TerminalDestabilizedLockProperty = PropertyBool.TerminalDestabilizedLock;
 
     private const uint UnstableOverlayIcon = 0x06005EC2;
     private const uint ResonanceStabilizedOverlayIcon = 0x06005EC0;

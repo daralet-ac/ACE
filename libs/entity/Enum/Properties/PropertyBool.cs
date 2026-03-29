@@ -262,6 +262,10 @@ public enum PropertyBool : ushort
     UnstableLoot = 177,
     [ServerOnly]
     IsUnstable = 178,
+    [ServerOnly]
+    TerminalDestabilizedLock = 179,
+    [ServerOnly]
+    GeneratesPassiveThreat = 180,
 
     /* custom */
     [ServerOnly]

@@ -90,5 +90,6 @@ public enum WeenieType : uint
     TrophySolvent,
     TrophyEssence,
     StabilizationDevice,
-    ResonanceForge
+    ResonanceForge,
+    Destabilizer
 }

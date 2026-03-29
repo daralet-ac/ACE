@@ -173,6 +173,8 @@ public static class WorldObjectFactory
                 return new StabilizationDevice(weenie, guid);
             case WeenieType.ResonanceForge:
                 return new ResonanceForge(weenie, guid);
+            case WeenieType.Destabilizer:
+                return new Destabilizer(weenie, guid);
             default:
                 return new GenericObject(weenie, guid);
         }
@@ -322,6 +324,8 @@ public static class WorldObjectFactory
                 return new StabilizationDevice(biota);
             case WeenieType.ResonanceForge:
                 return new ResonanceForge(biota);
+            case WeenieType.Destabilizer:
+                return new Destabilizer(biota);
             default:
                 return new GenericObject(biota);
         }
