@@ -393,7 +393,16 @@ public static class DestabilizedLootForge
                 numSpells++;
 
                 var cantripLevels = SpellLevelProgression.GetSpellLevels(spellId);
+                if (cantripLevels == null)
+                {
+                    continue;
+                }
+
                 var cantripLevel = cantripLevels.IndexOf(spellId);
+                if (cantripLevel < 0)
+                {
+                    continue;
+                }
 
                 if (cantripLevel == Minor)
                 {

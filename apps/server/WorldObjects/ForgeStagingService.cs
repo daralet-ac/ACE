@@ -63,7 +63,7 @@ public static class ForgeStagingService
                     }
                 }
             ),
-                "Process all unstable resonance items in your main pack? (Selecting No will allow you to choose a single item to process instead.)"
+                "Process all resonance-stabilized items in your main pack? (Selecting No will allow you to choose a single item to process instead.)"
         );
     }
 
@@ -166,7 +166,7 @@ public static class ForgeStagingService
 
         if (processed == 0 && skipped == 0)
         {
-            player.SendTransientError("You have no items carrying unstable resonance.");
+            player.SendTransientError("You have no resonance-stabilized items.");
             return;
         }
 
@@ -184,7 +184,7 @@ public static class ForgeStagingService
 
         if (candidateGuids.Count == 0)
         {
-            player.SendTransientError("You have no items carrying unstable resonance.");
+            player.SendTransientError("You have no resonance-stabilized items.");
             return;
         }
 
