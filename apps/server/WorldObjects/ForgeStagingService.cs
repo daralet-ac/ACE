@@ -18,11 +18,11 @@ public static class ForgeStagingService
 
     private const PropertyInt ForgePassCountProperty = PropertyInt.ForgePassCount;
 
-    private const string FastPathHint =
-        "Tip: Fast single-item mode is Item -> Forge. Click-forge mode is for all eligible or guided selection.";
-    private const string NotImplementedMessage = "The forge's deeper workings remain dormant.";
-    private const string SecondPassLockedMessage =
-        "The forge's deeper workings remain dormant.";
+    private const string FirstPassBulkPrompt = "Process all resonance-stabilized items in your main pack? (Selecting No will allow you to choose a single item to process instead.)";
+    private const string UnlockedTopLevelPrompt = "The forge now stands open to destabilization. Select Yes to inspect destabilization-ready items, or No to work resonance-stabilized items instead.";
+    private const string UnlockedDiscoveryMessage = "You have no eligible items for the forge.";
+    private const string NoFirstPassItemsMessage = "You have no resonance-stabilized items.";
+    private const string SecondPassLockedMessage = "The forge's deeper workings remain dormant.";
 
     public static bool IsForgeTarget(WorldObject target)
     {
@@ -47,6 +47,34 @@ public static class ForgeStagingService
             return;
         }
 
+        if (!IsSecondPassUnlocked())
+        {
+            PromptFirstPassOptions(player);
+            return;
+        }
+
+        var firstPassCandidates = GetBulkProcessableInventoryItems(player).ToList();
+        var secondPassCandidates = GetSecondPassInventoryItems(player).ToList();
+        var ingredientCount = DestabilizedLootForge.GetAvailableIngredientCount(player);
+
+        if (secondPassCandidates.Count == 0)
+        {
+            if (firstPassCandidates.Count > 0)
+            {
+                PromptFirstPassOptions(player);
+                return;
+            }
+
+            SendForgeMessage(player, UnlockedDiscoveryMessage);
+            return;
+        }
+
+        if (firstPassCandidates.Count == 0)
+        {
+            BeginSecondPassPhase(player, secondPassCandidates, ingredientCount);
+            return;
+        }
+
         player.ConfirmationManager.EnqueueSend(
             new ForgeConfirmation(
                 player.Guid,
@@ -54,16 +82,15 @@ public static class ForgeStagingService
                 {
                     if (response)
                     {
-                        ProcessAllEligibleFromInventory(player);
+                        BeginSecondPassPhase(player);
                     }
                     else
                     {
-                        player.SendMessage(FastPathHint);
-                        BeginGuidedSingleSelection(player);
+                        PromptFirstPassOptions(player);
                     }
                 }
             ),
-                "Process all resonance-stabilized items in your main pack? (Selecting No will allow you to choose a single item to process instead.)"
+            UnlockedTopLevelPrompt
         );
     }
 
@@ -76,26 +103,29 @@ public static class ForgeStagingService
 
         if (itemWasEquipped)
         {
-            player.SendTransientError("You must unequip that item first.");
+            SendForgeMessage(player, "You must unequip that item first.");
             return false;
         }
 
-        if (!TryProcessItem(player, item, out var failureMessage))
+        if (!TryProcessItem(player, item, true, out var handledByFirstPass, out var failureMessage))
         {
             if (!string.IsNullOrWhiteSpace(failureMessage))
             {
-                player.SendTransientError(failureMessage);
+                SendForgeMessage(player, failureMessage);
             }
 
             return false;
         }
 
-        player.Session.Network.EnqueueSend(
-            new GameMessageSystemChat(
-                $"The forge stabilizes the resonance within your {item.NameWithMaterial}.",
-                ChatMessageType.Broadcast
-            )
-        );
+        if (handledByFirstPass)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"The forge stabilizes the resonance within your {item.NameWithMaterial}.",
+                    ChatMessageType.Broadcast
+                )
+            );
+        }
 
         return true;
     }
@@ -125,6 +155,12 @@ public static class ForgeStagingService
             return false;
         }
 
+        if (DestabilizedLootForge.IsTerminallyDestabilized(item))
+        {
+            reason = "That item can no longer be altered.";
+            return false;
+        }
+
         if (item.GetProperty(PropertyBool.IsUnstable) != true)
         {
             reason = "The forge responds only to items with unstable resonance.";
@@ -140,21 +176,348 @@ public static class ForgeStagingService
         return true;
     }
 
+    public static bool IsEligibleForSecondPass(WorldObject item, out string reason)
+    {
+        reason = null;
+
+        if (item == null)
+        {
+            reason = "That item is unavailable.";
+            return false;
+        }
+
+        if (DestabilizedLootForge.IsTerminallyDestabilized(item))
+        {
+            reason = "That item can no longer be altered.";
+            return false;
+        }
+
+        if (GetForgePassCount(item) < 1)
+        {
+            reason = "That item is not yet ready for destabilization.";
+            return false;
+        }
+
+        return DestabilizedLootEffects.CanDestabilize(item, out reason);
+    }
+
     private static bool IsUsable(Player player, WorldObject forgeTarget)
     {
         return player?.Session != null && forgeTarget != null && IsForgeTarget(forgeTarget);
     }
 
+    private static void PromptFirstPassOptions(Player player)
+    {
+        var candidateGuids = GetBulkProcessableInventoryItems(player).Select(item => item.Guid.Full).ToList();
+
+        if (candidateGuids.Count == 0)
+        {
+            SendForgeMessage(player, NoFirstPassItemsMessage);
+            return;
+        }
+
+        if (candidateGuids.Count == 1)
+        {
+            PromptSelectCandidate(player, candidateGuids, 0);
+            return;
+        }
+
+        player.ConfirmationManager.EnqueueSend(
+            new ForgeConfirmation(
+                player.Guid,
+                response =>
+                {
+                    if (response)
+                    {
+                        ProcessAllEligibleFromInventory(player);
+                    }
+                    else
+                    {
+                        BeginGuidedSingleSelection(player);
+                    }
+                }
+            ),
+            FirstPassBulkPrompt
+        );
+    }
+
+    private static void BeginSecondPassPhase(Player player)
+    {
+        var secondPassCandidates = GetSecondPassInventoryItems(player).ToList();
+        var ingredientCount = DestabilizedLootForge.GetAvailableIngredientCount(player);
+        BeginSecondPassPhase(player, secondPassCandidates, ingredientCount);
+    }
+
+    private static void BeginSecondPassPhase(Player player, List<WorldObject> secondPassCandidates, int ingredientCount)
+    {
+        if (secondPassCandidates.Count == 0)
+        {
+            SendForgeMessage(player, HasFirstPassCandidates(player) ? NoFirstPassItemsMessage : UnlockedDiscoveryMessage);
+            return;
+        }
+
+        if (ingredientCount <= 0)
+        {
+            if (!HasFirstPassCandidates(player))
+            {
+                var requiredTotal = DestabilizedLootForge.GetRequiredIngredientCountForItems(secondPassCandidates.Count);
+                var ingredientName = DestabilizedLootForge.GetRequiredIngredientName();
+                SendForgeMessage(
+                    player,
+                    $"You have {secondPassCandidates.Count} destabilize-eligible item(s), but need {requiredTotal} {ingredientName} to process them."
+                );
+                return;
+            }
+
+            var neededTotal = DestabilizedLootForge.GetRequiredIngredientCountForItems(secondPassCandidates.Count);
+            var neededName = DestabilizedLootForge.GetRequiredIngredientName();
+            PromptFollowUpToFirstPass(
+                player,
+                $"You have {secondPassCandidates.Count} destabilize-eligible item(s), but need {neededTotal} {neededName} to process them. Would you like to work resonance-stabilized items instead?"
+            );
+            return;
+        }
+
+        if (ingredientCount < secondPassCandidates.Count)
+        {
+            PromptSecondPassCapacitySummary(player, secondPassCandidates, ingredientCount);
+            return;
+        }
+
+        if (secondPassCandidates.Count > 1)
+        {
+            PromptSecondPassFullCapacitySummary(player, secondPassCandidates, ingredientCount);
+            return;
+        }
+
+        BeginGuidedSecondPassSelection(player, secondPassCandidates);
+    }
+
+    private static void PromptFollowUpToFirstPass(Player player, string message)
+    {
+        player.ConfirmationManager.EnqueueSend(
+            new ForgeConfirmation(
+                player.Guid,
+                response =>
+                {
+                    if (response)
+                    {
+                        PromptFirstPassOptions(player);
+                    }
+                }
+            ),
+            message
+        );
+    }
+
+    private static void PromptSecondPassCapacitySummary(Player player, List<WorldObject> candidates, int ingredientCount)
+    {
+        player.ConfirmationManager.EnqueueSend(
+            new ForgeConfirmation(
+                player.Guid,
+                response =>
+                {
+                    if (response)
+                    {
+                        BeginGuidedSecondPassSelection(player, candidates);
+                    }
+                    else if (HasFirstPassCandidates(player))
+                    {
+                        PromptFirstPassOptions(player);
+                    }
+                }
+            ),
+            $"You can destabilize {ingredientCount} of {candidates.Count} eligible item(s) with your current ingredients. Continue?"
+        );
+    }
+
+    private static void PromptSecondPassFullCapacitySummary(Player player, List<WorldObject> candidates, int ingredientCount)
+    {
+        player.ConfirmationManager.EnqueueSend(
+            new ForgeConfirmation(
+                player.Guid,
+                response =>
+                {
+                    if (response)
+                    {
+                        ProcessAllEligibleSecondPass(player, candidates, ingredientCount);
+                    }
+                    else
+                    {
+                        BeginGuidedSecondPassSelection(player, candidates);
+                    }
+                }
+            ),
+            $"You can destabilize {ingredientCount} of {candidates.Count} eligible item(s) with your current ingredients. Destabilize all?"
+        );
+    }
+
+    private static void ProcessAllEligibleSecondPass(Player player, List<WorldObject> candidates, int ingredientCount)
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        var processed = 0;
+        var skipped = 0;
+        var remainingCapacity = Math.Max(0, ingredientCount);
+
+        foreach (var candidate in candidates)
+        {
+            if (remainingCapacity <= 0)
+            {
+                break;
+            }
+
+            var item = player.FindObject(candidate.Guid.Full, Player.SearchLocations.MyInventory);
+            if (item == null || !IsEligibleForSecondPass(item, out _))
+            {
+                skipped++;
+                continue;
+            }
+
+            if (DestabilizedLootForge.TryFinalizeImmediately(player, item, out var failureMessage))
+            {
+                processed++;
+                remainingCapacity--;
+                continue;
+            }
+
+            skipped++;
+            if (!string.IsNullOrWhiteSpace(failureMessage))
+            {
+                SendForgeMessage(player, failureMessage);
+            }
+        }
+
+        if (processed == 0 && skipped == 0)
+        {
+            SendForgeMessage(player, UnlockedDiscoveryMessage);
+            return;
+        }
+
+        SendForgeMessage(
+            player,
+            $"The forge destabilizes {processed:N0} item(s){(skipped > 0 ? $", leaving {skipped:N0} untouched." : ".")}"
+        );
+    }
+
+    private static void BeginGuidedSecondPassSelection(Player player, List<WorldObject> candidates)
+    {
+        if (candidates.Count == 0)
+        {
+            if (HasFirstPassCandidates(player))
+            {
+                PromptFirstPassOptions(player);
+            }
+            else
+            {
+                SendForgeMessage(player, UnlockedDiscoveryMessage);
+            }
+
+            return;
+        }
+
+        PromptSecondPassCandidate(player, candidates, 0);
+    }
+
+    private static void PromptSecondPassCandidate(Player player, List<WorldObject> candidates, int index)
+    {
+        if (index >= candidates.Count)
+        {
+            if (HasFirstPassCandidates(player))
+            {
+                PromptFirstPassOptions(player);
+            }
+
+            return;
+        }
+
+        var item = player.FindObject(candidates[index].Guid.Full, Player.SearchLocations.MyInventory);
+        if (item == null || !IsEligibleForSecondPass(item, out _))
+        {
+            PromptSecondPassCandidate(player, candidates, index + 1);
+            return;
+        }
+
+        player.ConfirmationManager.EnqueueSend(
+            new ForgeConfirmation(
+                player.Guid,
+                response =>
+                {
+                    if (!response)
+                    {
+                        PromptSecondPassCandidate(player, candidates, index + 1);
+                        return;
+                    }
+
+                    var selected = player.FindObject(item.Guid.Full, Player.SearchLocations.MyInventory);
+                    if (selected == null)
+                    {
+                        SendForgeMessage(player, "That item is no longer available.");
+                        PromptSecondPassCandidate(player, candidates, index + 1);
+                        return;
+                    }
+
+                    if (!DestabilizedLootForge.TryFinalizeImmediately(player, selected, out var failureMessage, () => PromptPostSecondPassPhase(player)))
+                    {
+                        if (!string.IsNullOrWhiteSpace(failureMessage))
+                        {
+                            SendForgeMessage(player, failureMessage);
+                        }
+
+                        PromptPostSecondPassPhase(player);
+                    }
+                }
+            ),
+            $"Destabilize {item.NameWithMaterial}? This cannot be undone. The item will no longer accept further tinkering. Requires 1 {DestabilizedLootForge.GetRequiredIngredientName()} from your pack, consumed on success."
+        );
+    }
+
+    private static void PromptPostSecondPassPhase(Player player)
+    {
+        var secondPassCandidates = GetSecondPassInventoryItems(player).ToList();
+        var ingredientCount = DestabilizedLootForge.GetAvailableIngredientCount(player);
+
+        if (secondPassCandidates.Count > 0 && ingredientCount > 0)
+        {
+            player.ConfirmationManager.EnqueueSend(
+                new ForgeConfirmation(
+                    player.Guid,
+                    response =>
+                    {
+                        if (response)
+                        {
+                            BeginSecondPassPhase(player);
+                        }
+                        else if (HasFirstPassCandidates(player))
+                        {
+                            PromptFirstPassOptions(player);
+                        }
+                    }
+                ),
+                "Would you like to continue destabilizing prepared items? Selecting No will let you work resonance-stabilized items instead."
+            );
+            return;
+        }
+
+        if (HasFirstPassCandidates(player))
+        {
+            PromptFirstPassOptions(player);
+        }
+    }
+
     private static void ProcessAllEligibleFromInventory(Player player)
     {
-        var candidates = GetProcessableInventoryItems(player).ToList();
+        var candidates = GetBulkProcessableInventoryItems(player).ToList();
 
         var processed = 0;
         var skipped = 0;
 
         foreach (var item in candidates)
         {
-            if (TryProcessItem(player, item, out _))
+            if (TryProcessItem(player, item, false, out _, out _))
             {
                 processed++;
             }
@@ -166,7 +529,7 @@ public static class ForgeStagingService
 
         if (processed == 0 && skipped == 0)
         {
-            player.SendTransientError("You have no resonance-stabilized items.");
+            SendForgeMessage(player, "You have no resonance-stabilized items.");
             return;
         }
 
@@ -180,11 +543,11 @@ public static class ForgeStagingService
 
     private static void BeginGuidedSingleSelection(Player player)
     {
-        var candidateGuids = GetProcessableInventoryItems(player).Select(i => i.Guid.Full).ToList();
+        var candidateGuids = GetBulkProcessableInventoryItems(player).Select(i => i.Guid.Full).ToList();
 
         if (candidateGuids.Count == 0)
         {
-            player.SendTransientError("You have no resonance-stabilized items.");
+            SendForgeMessage(player, NoFirstPassItemsMessage);
             return;
         }
 
@@ -195,7 +558,7 @@ public static class ForgeStagingService
     {
         if (index >= candidateGuids.Count)
         {
-            player.SendTransientError("No item selected.");
+            SendForgeMessage(player, "No item selected.");
             return;
         }
 
@@ -216,22 +579,25 @@ public static class ForgeStagingService
                         var selected = player.FindObject(item.Guid.Full, Player.SearchLocations.MyInventory);
                         if (selected == null)
                         {
-                            player.SendTransientError("That item is no longer available.");
+                            SendForgeMessage(player, "That item is no longer available.");
                             return;
                         }
 
-                        if (!TryProcessItem(player, selected, out var failureMessage))
+                        if (!TryProcessItem(player, selected, false, out var handledByFirstPass, out var failureMessage))
                         {
-                            player.SendTransientError(failureMessage ?? "The forge cannot work that item.");
+                            SendForgeMessage(player, failureMessage ?? "The forge cannot work that item.");
                             return;
                         }
 
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"The forge stabilizes the resonance within your {selected.NameWithMaterial}.",
-                                ChatMessageType.Broadcast
-                            )
-                        );
+                        if (handledByFirstPass)
+                        {
+                            player.Session.Network.EnqueueSend(
+                                new GameMessageSystemChat(
+                                    $"The forge stabilizes the resonance within your {selected.NameWithMaterial}.",
+                                    ChatMessageType.Broadcast
+                                )
+                            );
+                        }
                     }
                     else
                     {
@@ -243,7 +609,7 @@ public static class ForgeStagingService
         );
     }
 
-    private static IEnumerable<WorldObject> GetProcessableInventoryItems(Player player)
+    private static IEnumerable<WorldObject> GetBulkProcessableInventoryItems(Player player)
     {
         if (player == null)
         {
@@ -254,11 +620,46 @@ public static class ForgeStagingService
             .GetAllPossessions()
             .Where(i => i != null)
             .Where(i => i.ContainerId == player.Guid.Full)
-            .Where(i => i.GetProperty(PropertyBool.IsUnstable) == true || GetForgePassCount(i) >= 1);
+            .Where(IsEligibleInventoryCandidateForFirstPass);
     }
 
-    private static bool TryProcessItem(Player player, WorldObject item, out string failureMessage)
+    private static bool IsEligibleInventoryCandidateForFirstPass(WorldObject item)
     {
+        if (item == null)
+        {
+            return false;
+        }
+
+        if (DestabilizedLootForge.IsTerminallyDestabilized(item))
+        {
+            return false;
+        }
+
+        if (GetForgePassCount(item) != 0)
+        {
+            return false;
+        }
+
+        return item.GetProperty(PropertyBool.IsUnstable) == true && item.Lifespan == null;
+    }
+
+    private static IEnumerable<WorldObject> GetSecondPassInventoryItems(Player player)
+    {
+        if (player == null)
+        {
+            return Enumerable.Empty<WorldObject>();
+        }
+
+        return player
+            .GetAllPossessions()
+            .Where(i => i != null)
+            .Where(i => i.ContainerId == player.Guid.Full)
+            .Where(i => IsEligibleForSecondPass(i, out _));
+    }
+
+    private static bool TryProcessItem(Player player, WorldObject item, bool immediateSecondPass, out bool handledByFirstPass, out string failureMessage)
+    {
+        handledByFirstPass = false;
         failureMessage = null;
 
         if (item == null)
@@ -267,11 +668,24 @@ public static class ForgeStagingService
             return false;
         }
 
+        if (DestabilizedLootForge.IsTerminallyDestabilized(item))
+        {
+            failureMessage = "That item has already been destabilized.";
+            return false;
+        }
+
         var forgePassCount = GetForgePassCount(item);
         if (forgePassCount >= 1)
         {
-            failureMessage = IsSecondPassUnlocked() ? NotImplementedMessage : SecondPassLockedMessage;
-            return false;
+            if (!IsSecondPassUnlocked())
+            {
+                failureMessage = SecondPassLockedMessage;
+                return false;
+            }
+
+            return immediateSecondPass
+                ? DestabilizedLootForge.TryFinalizeImmediately(player, item, out failureMessage)
+                : DestabilizedLootForge.TryQueueFinalization(player, item, out failureMessage);
         }
 
         if (!IsEligibleForFirstPass(item, out failureMessage))
@@ -280,11 +694,27 @@ public static class ForgeStagingService
         }
 
         item.RemoveProperty(PropertyBool.IsUnstable);
-        item.RemoveProperty(PropertyDataId.IconOverlay);
         item.SetProperty(ForgePassCountProperty, forgePassCount + 1);
+        ForgeStageDisplay.ApplyStageOverlay(item);
+        handledByFirstPass = true;
 
         player.EnqueueBroadcast(new GameMessageUpdateObject(item));
         return true;
+    }
+
+    private static bool HasFirstPassCandidates(Player player)
+    {
+        return GetBulkProcessableInventoryItems(player).Any();
+    }
+
+    private static void SendForgeMessage(Player player, string message)
+    {
+        if (player == null || string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        player.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Craft));
     }
 
     private sealed class ForgeConfirmation : Confirmation
