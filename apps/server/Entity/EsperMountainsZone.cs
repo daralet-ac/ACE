@@ -22,8 +22,6 @@ public static class EsperMountainsZone
     /// Vertices may be listed clockwise or counter-clockwise; the ray-cast algorithm handles both.
     /// Add as many vertices as needed for an accurate boundary fit.
     ///
-    /// TODO: Replace these placeholder vertices with the real Northern Esper Mountains boundary.
-    /// </summary>
     private static readonly (float NS, float EW)[] NsEwVertices =
     [
         // (northSouth, eastWest) — e.g. 78.7N 8.0W → (78.7f, -8.0f)

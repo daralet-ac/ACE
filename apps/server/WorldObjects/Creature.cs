@@ -275,12 +275,15 @@ public partial class Creature : Container
 
             // Boost toughness and lethality for creatures that spawn on snow/ice above elevation 200.
             // Multiplier scales at 1% per unit of elevation above 200.
-            
+
             if (IsInFrigidZone())
             {
                 var esperMountainsMultiplier = EsperMountainsZone.Contains(Location) ? 10 : 1;
 
-                FrigidBonus = 1.0 + (Location.PositionZ - 200.0) * 0.001 * esperMountainsMultiplier;
+                const double frigidElevationBase = 200.0;
+                const double frigidScalingFactor = 0.001;
+
+                FrigidBonus = 1.0 + (Location.PositionZ - frigidElevationBase) * frigidScalingFactor * esperMountainsMultiplier;
                 toughness *= FrigidBonus;
                 lethality *= FrigidBonus;
 
