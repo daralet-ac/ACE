@@ -240,12 +240,12 @@ partial class Player
             return;
         }
 
-        _log.Information(
-            "[FRIGID] {Name} is near snow/ice terrain (within 50 units) at cell {CellID:X8}, elevation {Elevation:F1}",
-            Name,
-            PhysicsObj.Position.ObjCellID,
-            Location.PositionZ
-        );
+        // _log.Information(
+        //     "[FRIGID] {Name} is near snow/ice terrain (within 50 units) at cell {CellID:X8}, elevation {Elevation:F1}",
+        //     Name,
+        //     PhysicsObj.Position.ObjCellID,
+        //     Location.PositionZ
+        // );
 
         var rawDamage = (float)Location.PositionZ - 200f;
 
