@@ -201,6 +201,13 @@ public class ContractManager
             );
 
             RefreshMonitoredQuestFlags();
+
+            // If the player already has the completion flag, advance to Done immediately.
+            if (!string.IsNullOrWhiteSpace(datContract.QuestflagFinished) &&
+                Player.QuestManager.HasQuest(datContract.QuestflagFinished))
+            {
+                Update(contractId, datContract.QuestflagFinished);
+            }
         }
         else
         {
@@ -285,6 +292,26 @@ public class ContractManager
         }
 
         RefreshMonitoredQuestFlags();
+    }
+
+    public void HandleContractsOnLogin()
+    {
+        var contracts = Player.Character.GetContracts(Player.CharacterDatabaseLock);
+
+        foreach (var contract in contracts)
+        {
+            var datContract = GetContractFromDat(contract.ContractId);
+            if (datContract == null)
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(datContract.QuestflagFinished) &&
+                Player.QuestManager.HasQuest(datContract.QuestflagFinished))
+            {
+                Update(contract.ContractId);
+            }
+        }
     }
 
     public void NotifyOfQuestUpdate(string questName)
