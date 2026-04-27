@@ -2984,8 +2984,11 @@ public static partial class LootGenerationFactory
         var name = GetTrophyQualityName(trophyQuality);
         wo.SetProperty(PropertyString.Name, name + " " + wo.Name);
 
+        // if value is 0 (possibly due to StackUnitValue), set default to 100
+        var baseValue = wo.Value is > 0 ? wo.Value.Value : 100;
+
         var multiplier = trophyQuality * trophyQuality;
-        var value = (wo.Value ?? 0) * multiplier;
+        var value = baseValue * multiplier;
         wo.SetProperty(PropertyInt.Value, value);
         wo.SetProperty(PropertyInt.StackUnitValue, value);
     }
