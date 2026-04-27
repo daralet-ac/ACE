@@ -1443,7 +1443,7 @@ partial class Creature
             QuestManager.Stamp($"KilledByTracking-{lastDamager.Name}");
         }
 
-        if (lastDamager.IsPlayer && Name is not null)
+        if (lastDamager is { IsPlayer: true } && Name is not null)
         {
             //var creatureName = Name.Replace(" ", "");
             lastDamager.Player.QuestManager.Stamp($"KilledTracking-{Name}");
