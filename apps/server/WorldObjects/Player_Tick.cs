@@ -302,7 +302,6 @@ partial class Player
         //    flatReduction
         //);
 
-        DamageHistory.Add(this, DamageType.Cold, (uint)damage);
         UpdateVitalDelta(Health, -damage);
 
         Session.Network.EnqueueSend(
@@ -314,7 +313,7 @@ partial class Player
 
         if (Health.Current == 0)
         {
-            OnDeath(DamageHistory.LastDamager, DamageType.Cold);
+            OnDeath(null, DamageType.Cold);
             Die();
         }
     }
