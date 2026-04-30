@@ -338,13 +338,14 @@ public class QuestManager
         };
 
         var now = (uint)Time.GetUnixTime();
+        var resonanceExposureLabel = quest.NumTimesCompleted == 1 ? "exposure" : "exposures";
 
         // Always allow 1–4
         if (quest.NumTimesCompleted <= 4)
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"Tempered by the portal energies of {townName}, a {level} resilience has taken shape within you. You currently have {quest.NumTimesCompleted} resonance exposures.",
+                    $"Tempered by the portal energies of {townName}, a {level} resilience has taken shape within you. You currently have {quest.NumTimesCompleted} resonance {resonanceExposureLabel}.",
                     ChatMessageType.System
                 )
             );
