@@ -881,7 +881,7 @@ public enum PropertyInt : ushort
     GearFrigidProtection = 519,
 
     [ServerOnly]
-    ForgePassCount = 519,
+    ForgePassCount = 520,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,

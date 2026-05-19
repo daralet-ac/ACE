@@ -157,30 +157,23 @@ partial class Player
             return;
         }
 
-        var salvageBags = new List<WorldObject>();
-        var salvageResults = new SalvageResults();
-
+        // collect valid items first so we can check pack space before consuming anything
+        var validItems = new List<WorldObject>();
         foreach (var itemGuid in salvageItems)
         {
             var item = GetInventoryItem(itemGuid);
             if (item == null)
             {
-                //log.DebugFormat("[CRAFTING] {0}.HandleSalvaging({1:X8}): couldn't find inventory item", Name, itemGuid);
                 continue;
             }
-
             if (item.MaterialType == null)
             {
-                _log.Warning($"[CRAFTING] {Name}.HandleSalvaging({item.Name}): no material type");
                 continue;
             }
-
             if (IsTrading && item.IsBeingTradedOrContainsItemBeingTraded(ItemsInTradeWindow))
             {
-                SendWeenieError(WeenieError.YouCannotSalvageItemsInTrading);
                 continue;
             }
-
             if (item.Workmanship == null || item.Retained)
             {
                 continue;
@@ -189,8 +182,40 @@ partial class Player
             {
                 continue;
             }
-            // random chance of receiving a jewelcrafting gem in salvage, higher based on gem count and tier
+            validItems.Add(item);
+        }
 
+        // determine how many new salvage bags would be needed
+        var neededKeys = validItems
+            .Select(i => ((MaterialType)i.MaterialType, (int)(i.Workmanship ?? 1)))
+            .ToHashSet();
+
+        var existingBags = Inventory.Values
+            .Where(i => i.WeenieType == WeenieType.Salvage && (i.Structure ?? 0) < (i.MaxStructure ?? 1000))
+            .ToList();
+
+        var newBagsNeeded = neededKeys.Count(key =>
+            !existingBags.Any(b =>
+                (MaterialType)(b.GetProperty(PropertyInt.MaterialType) ?? 0) == key.Item1 &&
+                (int)(b.Workmanship ?? 1) == key.Item2));
+
+        if (newBagsNeeded > GetFreeInventorySlots())
+        {
+            Session.Network.EnqueueSend(new GameMessageSystemChat(
+                $"You do not have enough pack space for the salvage. You need {newBagsNeeded} free slot{(newBagsNeeded != 1 ? "s" : "")}.",
+                ChatMessageType.Broadcast));
+            return;
+        }
+
+        // pre-load existing matching bags so we can fill them before creating new ones
+        var salvageBags = existingBags.ToList();
+        var preExistingBags = new HashSet<uint>(salvageBags.Select(b => b.Guid.Full));
+
+        var salvageResults = new SalvageResults();
+
+        foreach (var item in validItems)
+        {
+            // random chance of receiving a jewelcrafting gem in salvage, higher based on gem count and tier
             if (item.GemType != null)
             {
                 var random = new Random();
@@ -236,19 +261,23 @@ partial class Player
                 }
             }
 
-            // can any salvagable items be stacked?
-            TryConsumeFromInventoryWithNetworking(item);
-
             AddSalvage(salvageBags, item, salvageResults);
 
-            // can any salvagable items be stacked?
             TryConsumeFromInventoryWithNetworking(item);
         }
 
-        // add salvage bags
+        // update pre-existing bags that received new salvage, create new ones
         foreach (var salvageBag in salvageBags)
         {
-            TryCreateInInventoryWithNetworking(salvageBag);
+            if (preExistingBags.Contains(salvageBag.Guid.Full))
+            {
+                salvageBag.Name = $"Salvage ({salvageBag.Structure})";
+                Session.Network.EnqueueSend(new GameMessageUpdateObject(salvageBag));
+            }
+            else
+            {
+                TryCreateInInventoryWithNetworking(salvageBag);
+            }
         }
 
         // send network messages
@@ -322,6 +351,7 @@ partial class Player
     public void AddSalvage(List<WorldObject> salvageBags, WorldObject item, SalvageResults salvageResults)
     {
         var materialType = (MaterialType)item.MaterialType;
+        var workmanship = (int)(item.Workmanship ?? 1);
 
         // determine the amount of salvage produced (structure)
         SalvageMessage message = null;
@@ -331,13 +361,7 @@ partial class Player
 
         while (remaining > 0)
         {
-            // get the destination salvage bag
-
-            // if there are no existing salvage bags for this material type,
-            // or all of the salvage bags for this material type are full,
-            // this will create a new salvage bag, and adds it to salvageBags
-
-            var salvageBag = GetSalvageBag(materialType, salvageBags);
+            var salvageBag = GetSalvageBag(materialType, workmanship, salvageBags);
 
             var added = TryAddSalvage(salvageBag, item, remaining);
             remaining -= added;
@@ -474,12 +498,12 @@ partial class Player
         return 1 + (int)Math.Floor(skill / 194.0f * workmanship * (1.0f + 0.25f * numAugs));
     }
 
-    public WorldObject GetSalvageBag(MaterialType materialType, List<WorldObject> salvageBags)
+    public WorldObject GetSalvageBag(MaterialType materialType, int workmanship, List<WorldObject> salvageBags)
     {
-        // first try finding the first non-filled salvage bag, for this material type
         var existing = salvageBags.FirstOrDefault(i =>
             (i.GetProperty(PropertyInt.MaterialType) ?? 0) == (int)materialType
-            && (i.Structure ?? 0) < (i.MaxStructure ?? 0)
+            && (int)(i.Workmanship ?? 1) == workmanship
+            && (i.Structure ?? 0) < (i.MaxStructure ?? 1000)
         );
 
         if (existing != null)
@@ -494,6 +518,7 @@ partial class Player
         salvageBag.Structure = null; // TODO: fix bugged TOD data for mahogany 20988 / green garnet 21050
         salvageBag.ItemWorkmanship = null;
         salvageBag.NumItemsInMaterial = null;
+        salvageBag.Workmanship = workmanship;
 
         salvageBags.Add(salvageBag);
 

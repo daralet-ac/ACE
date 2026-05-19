@@ -34,7 +34,10 @@ public class Salvage : WorldObject
         SetEphemeralValues();
     }
 
-    private void SetEphemeralValues() { }
+    private void SetEphemeralValues()
+    {
+        TargetType = (TargetType ?? ItemType.None) | ItemType.TinkeringMaterial;
+    }
 
     public override void HandleActionUseOnTarget(Player player, WorldObject target)
     {
@@ -73,6 +76,7 @@ public class Salvage : WorldObject
         }
 
         var combineSalvage = false;
+        var upgradeCombine = false;
 
         if (target is { WeenieType: WeenieType.Salvage })
         {
@@ -94,7 +98,38 @@ public class Salvage : WorldObject
                 return;
             }
 
-            if (target.Structure + source.Structure > 1000)
+            var sourceWork = (int)(source.Workmanship ?? 1);
+            var targetWork = (int)(target.Workmanship ?? 1);
+
+            if (sourceWork == targetWork - 1)
+            {
+                upgradeCombine = true;
+
+                var unitsGained = (source.Structure ?? 0) / targetWork;
+                var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
+                if (unitsGained > targetSpace)
+                {
+                    unitsGained = targetSpace;
+                }
+
+                if (unitsGained < 1)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                        $"You need at least {targetWork} units of source salvage to upgrade a workmanship {targetWork} bag.",
+                        ChatMessageType.Broadcast));
+                    player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+                    return;
+                }
+            }
+            else if (sourceWork != targetWork)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                    $"Salvage bags must have matching workmanship to combine, or the source must be exactly one tier lower to upgrade.",
+                    ChatMessageType.Broadcast));
+                player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+                return;
+            }
+            else if (target.Structure + source.Structure > 1000)
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
@@ -263,17 +298,37 @@ public class Salvage : WorldObject
 
         if (combineSalvage)
         {
-            var sourceWork = source.Workmanship ?? 1.0f;
-            var sourceStruct = source.Structure ?? 1;
-            var targetWork = target.Workmanship ?? 1.0f;
-            var targetStruct = target.Structure ?? 1;
+            if (upgradeCombine)
+            {
+                var targetWork = (int)(target.Workmanship ?? 1);
+                var sourceStruct = source.Structure ?? 0;
+                var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
 
-            var combinedWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
-            combinedWork = (float)Math.Round(combinedWork, 2);
+                var unitsGained = sourceStruct / targetWork;
+                if (unitsGained > targetSpace)
+                {
+                    unitsGained = targetSpace;
+                }
 
-            var combinedStruct = sourceStruct + targetStruct;
+                var unitsConsumed = unitsGained * targetWork;
 
-            message = $"Combining this salvage will produce {combinedStruct} units with a workmanship of {combinedWork}. Would you like to proceed?";
+                message = $"Combining will add {unitsGained} units to the workmanship {targetWork} bag, " +
+                          $"consuming {unitsConsumed} units from the workmanship {(int)(source.Workmanship ?? 1)} bag. Would you like to proceed?";
+            }
+            else
+            {
+                var sourceWork = source.Workmanship ?? 1.0f;
+                var sourceStruct = source.Structure ?? 1;
+                var targetWork = target.Workmanship ?? 1.0f;
+                var targetStruct = target.Structure ?? 1;
+
+                var combinedWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
+                combinedWork = (float)Math.Round(combinedWork, 2);
+
+                var combinedStruct = sourceStruct + targetStruct;
+
+                message = $"Combining this salvage will produce {combinedStruct} units with a workmanship of {combinedWork}. Would you like to proceed?";
+            }
         }
 
         if (!confirmed)
@@ -317,7 +372,14 @@ public class Salvage : WorldObject
             {
                 if (combineSalvage)
                 {
-                    CombineSalvage(player, source, target);
+                    if (upgradeCombine)
+                    {
+                        UpgradeSalvage(player, source, target);
+                    }
+                    else
+                    {
+                        CombineSalvage(player, source, target);
+                    }
                 }
                 else
                 {
@@ -362,7 +424,6 @@ public class Salvage : WorldObject
         var targetStruct = target.Structure ?? 1;
 
         var newWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
-        Console.WriteLine(newWork);
         target.Workmanship = (float)Math.Round((newWork), 2);
         target.Structure += sourceStruct;
         target.Name = $"Salvage ({target.Structure})";
@@ -378,6 +439,54 @@ public class Salvage : WorldObject
 
         player.TryConsumeFromInventoryWithNetworking(source);
         player.Session.Network.EnqueueSend(new GameMessageDeleteObject(source));
+    }
+
+    private static void UpgradeSalvage(Player player, WorldObject source, WorldObject target)
+    {
+        if (source is null || target is null)
+        {
+            return;
+        }
+
+        var targetWork = (int)(target.Workmanship ?? 1);
+        var sourceStruct = source.Structure ?? 0;
+        var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
+
+        var unitsGained = sourceStruct / targetWork;
+        if (unitsGained > targetSpace)
+        {
+            unitsGained = targetSpace;
+        }
+
+        var unitsConsumed = unitsGained * targetWork;
+
+        if (unitsGained < 1)
+        {
+            return;
+        }
+
+        target.Structure = (ushort)((target.Structure ?? 0) + unitsGained);
+        target.Name = $"Salvage ({target.Structure})";
+        UpdateObj(player, target);
+
+        source.Structure = (ushort)(sourceStruct - unitsConsumed);
+        source.Name = $"Salvage ({source.Structure})";
+
+        if (source.Structure < 1)
+        {
+            player.TryConsumeFromInventoryWithNetworking(source);
+            player.Session.Network.EnqueueSend(new GameMessageDeleteObject(source));
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                $"You add {unitsGained} units to the workmanship {targetWork} bag, consuming {unitsConsumed} units. The source bag is used up.",
+                ChatMessageType.Broadcast));
+        }
+        else
+        {
+            UpdateObj(player, source);
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                $"You add {unitsGained} units to the workmanship {targetWork} bag, consuming {unitsConsumed} units. {source.Structure} units remain in the source bag.",
+                ChatMessageType.Broadcast));
+        }
     }
 
     public static bool CheckTinkerType(Player player, WorldObject source, WorldObject target, Skill tinkeringSkill)
