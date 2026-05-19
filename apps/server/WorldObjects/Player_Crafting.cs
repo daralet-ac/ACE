@@ -271,7 +271,7 @@ partial class Player
         {
             if (preExistingBags.Contains(salvageBag.Guid.Full))
             {
-                salvageBag.Name = $"Salvage ({salvageBag.Structure})";
+                salvageBag.Name = $"Salvage Wk{(int)(salvageBag.Workmanship ?? 1)} ({salvageBag.Structure})";
                 Session.Network.EnqueueSend(new GameMessageUpdateObject(salvageBag));
             }
             else
@@ -433,7 +433,7 @@ partial class Player
         }
         salvageBag.NumItemsInMaterial = (salvageBag.NumItemsInMaterial ?? 0) + item_numItems;
 
-        salvageBag.Name = $"Salvage ({salvageBag.Structure})";
+        salvageBag.Name = $"Salvage Wk{(int)(salvageBag.Workmanship ?? 1)} ({salvageBag.Structure})";
 
         if (item.ItemType == ItemType.TinkeringMaterial)
         {

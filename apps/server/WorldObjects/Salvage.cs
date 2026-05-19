@@ -426,7 +426,7 @@ public class Salvage : WorldObject
         var newWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
         target.Workmanship = (float)Math.Round((newWork), 2);
         target.Structure += sourceStruct;
-        target.Name = $"Salvage ({target.Structure})";
+        target.Name = $"Salvage Wk{(int)(target.Workmanship ?? 1)} ({target.Structure})";
 
         UpdateObj(player, target);
 
@@ -466,11 +466,11 @@ public class Salvage : WorldObject
         }
 
         target.Structure = (ushort)((target.Structure ?? 0) + unitsGained);
-        target.Name = $"Salvage ({target.Structure})";
+        target.Name = $"Salvage Wk{targetWork} ({target.Structure})";
         UpdateObj(player, target);
 
         source.Structure = (ushort)(sourceStruct - unitsConsumed);
-        source.Name = $"Salvage ({source.Structure})";
+        source.Name = $"Salvage Wk{(int)(source.Workmanship ?? 1)} ({source.Structure})";
 
         if (source.Structure < 1)
         {
@@ -1397,7 +1397,7 @@ public class Salvage : WorldObject
             );
         }
 
-        source.Name = $"Salvage ({source.Structure})";
+        source.Name = $"Salvage Wk{(int)(source.Workmanship ?? 1)} ({source.Structure})";
 
         UpdateObj(player, source);
         UpdateObj(player, target);

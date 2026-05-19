@@ -22,7 +22,9 @@ public static partial class LootGenerationFactory
         var value = (int)(workmanship * 5000) * SalvageWcids.GetValueMod(salvage.WeenieClassId);
         value *= (float)ThreadSafeRandom.Next(0.8f, 1.2f);
 
-        salvage.Name = $"Salvage ({structure})";
+        var workmanshipInt = (int)Math.Round(workmanship);
+        salvage.Name = $"Salvage Wk{workmanshipInt} ({structure})";
+        salvage.Workmanship = workmanshipInt;
         salvage.Structure = structure;
         salvage.ItemWorkmanship = itemWorkmanship;
         salvage.NumItemsInMaterial = numItemsInMaterial;
