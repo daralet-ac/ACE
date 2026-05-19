@@ -259,6 +259,9 @@ public enum PropertyBool : ushort
     [ServerOnly]
     SignalCrossLB = 176,
 
+    [ServerOnly]
+    AttuneOnEquip = 181,
+
     /* custom */
     [ServerOnly]
     LinkedPortalOneSummon = 9001,
