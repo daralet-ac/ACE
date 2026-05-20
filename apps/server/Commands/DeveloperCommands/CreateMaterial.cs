@@ -73,6 +73,9 @@ public class CreateMaterial
         salvageBag.Workmanship = workmanship;
         salvageBag.ItemWorkmanship = itemWorkmanship;
         salvageBag.NumItemsInMaterial = numItemsInMaterial;
+        salvageBag.IconId = Salvage.GetSalvageBagIcon(materialType, workmanship);
+        salvageBag.IgnoreCloIcons = true;
+        salvageBag.UiEffects = UiEffects.Magical;
 
         session.Player.TryCreateInInventoryWithNetworking(salvageBag);
     }

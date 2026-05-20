@@ -1,5 +1,6 @@
 using System;
 using ACE.Common;
+using ACE.Entity.Enum;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.WorldObjects;
@@ -25,6 +26,9 @@ public static partial class LootGenerationFactory
         var workmanshipInt = (int)Math.Round(workmanship);
         salvage.Name = $"Salvage Wk{workmanshipInt} ({structure})";
         salvage.Workmanship = workmanshipInt;
+        salvage.IconId = Salvage.GetSalvageBagIcon((MaterialType)(salvage.MaterialType ?? 0), workmanshipInt);
+        salvage.IgnoreCloIcons = true;
+        salvage.UiEffects = UiEffects.Magical;
         salvage.Structure = structure;
         salvage.ItemWorkmanship = itemWorkmanship;
         salvage.NumItemsInMaterial = numItemsInMaterial;
