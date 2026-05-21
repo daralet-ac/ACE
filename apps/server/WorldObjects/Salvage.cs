@@ -106,7 +106,7 @@ public class Salvage : WorldObject
             {
                 upgradeCombine = true;
 
-                var unitsGained = (source.Structure ?? 0) / targetWork;
+                var unitsGained = (source.Structure ?? 0) / 2;
                 var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
                 if (unitsGained > targetSpace)
                 {
@@ -116,7 +116,7 @@ public class Salvage : WorldObject
                 if (unitsGained < 1)
                 {
                     player.Session.Network.EnqueueSend(new GameMessageSystemChat(
-                        $"You need at least {targetWork} units of source salvage to upgrade a workmanship {targetWork} bag.",
+                        $"You need at least 2 units of source salvage to upgrade.",
                         ChatMessageType.Broadcast));
                     player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
                     return;
@@ -305,13 +305,13 @@ public class Salvage : WorldObject
                 var sourceStruct = source.Structure ?? 0;
                 var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
 
-                var unitsGained = sourceStruct / targetWork;
+                var unitsGained = sourceStruct / 2;
                 if (unitsGained > targetSpace)
                 {
                     unitsGained = targetSpace;
                 }
 
-                var unitsConsumed = unitsGained * targetWork;
+                var unitsConsumed = unitsGained * 2;
 
                 message = $"Combining will add {unitsGained} units to the workmanship {targetWork} bag, " +
                           $"consuming {unitsConsumed} units from the workmanship {(int)(source.Workmanship ?? 1)} bag. Would you like to proceed?";
@@ -453,13 +453,13 @@ public class Salvage : WorldObject
         var sourceStruct = source.Structure ?? 0;
         var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
 
-        var unitsGained = sourceStruct / targetWork;
+        var unitsGained = sourceStruct / 2;
         if (unitsGained > targetSpace)
         {
             unitsGained = targetSpace;
         }
 
-        var unitsConsumed = unitsGained * targetWork;
+        var unitsConsumed = unitsGained * 2;
 
         if (unitsGained < 1)
         {
