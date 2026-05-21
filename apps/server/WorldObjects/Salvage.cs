@@ -1811,6 +1811,13 @@ public class Salvage : WorldObject
         return (uint)(0x06009200 + ((int)category * 0x10) + index);
     }
 
+    public static (int category, int materialType, int workmanship) GetSalvageBagSortKey(WorldObject bag)
+    {
+        var mat = (MT)(bag.GetProperty(ACE.Entity.Enum.Properties.PropertyInt.MaterialType) ?? 0);
+        var category = MaterialCategories.TryGetValue(mat, out var cat) ? (int)cat : 99;
+        return (category, (int)mat, (int)Math.Round(bag.Workmanship ?? 1));
+    }
+
     public static Dictionary<MaterialType?, Skill> TinkeringTarget = new Dictionary<MaterialType?, Skill>
     {
         // Spellcrafting
