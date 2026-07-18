@@ -175,6 +175,12 @@ public static class WorldObjectFactory
                 return new ResonanceForge(weenie, guid);
             case WeenieType.Destabilizer:
                 return new Destabilizer(weenie, guid);
+            case WeenieType.BlankScroll:
+                return new BlankScroll(weenie, guid);
+            case WeenieType.SpellDust:
+                return new SpellDust(weenie, guid);
+            case WeenieType.ScribingTable:
+                return new ScribingTable(weenie, guid);
             default:
                 return new GenericObject(weenie, guid);
         }
@@ -326,6 +332,12 @@ public static class WorldObjectFactory
                 return new ResonanceForge(biota);
             case WeenieType.Destabilizer:
                 return new Destabilizer(biota);
+            case WeenieType.BlankScroll:
+                return new BlankScroll(biota);
+            case WeenieType.SpellDust:
+                return new SpellDust(biota);
+            case WeenieType.ScribingTable:
+                return new ScribingTable(biota);
             default:
                 return new GenericObject(biota);
         }

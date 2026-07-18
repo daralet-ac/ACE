@@ -91,5 +91,8 @@ public enum WeenieType : uint
     TrophyEssence,
     StabilizationDevice,
     ResonanceForge,
-    Destabilizer
+    Destabilizer,
+    BlankScroll,
+    SpellDust,
+    ScribingTable
 }
