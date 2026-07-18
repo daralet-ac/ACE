@@ -88,6 +88,12 @@ public enum PropertyString : ushort
     PatrolPath = 54,
 
     [ServerOnly]
+    ScrollWritingComponents = 55,
+
+    [ServerOnly]
+    SpellTomeDiscoveredFormulas = 56,
+
+    [ServerOnly]
     PCAPRecordedCurrentMotionState = 8006,
 
     [ServerOnly]

@@ -218,6 +218,9 @@ public class Confirmation_CraftInteration : Confirmation
             case WeenieType.TrophyEssence:
                 TrophyEssence.HandleTrophyEssenceCrafting(player, source, target, !repeatConfirmation);
                 break;
+            case WeenieType.SpellDust:
+                ScrollFinalizer.TryFinalizeScroll(player, source, target, true);
+                break;
             default:
                 RecipeManager.UseObjectOnTarget(player, source, target, true);
                 break;

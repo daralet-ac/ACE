@@ -226,6 +226,58 @@ public class WorldDatabase
     }
 
     /// <summary>
+    /// Returns a mapping of spellId -> scroll weenie classId, for every Scroll-type weenie
+    /// that has a PropertyDataId.Spell set. Used by Scroll Writing to look up which existing
+    /// scroll item corresponds to a spell the player has assembled the correct components for.
+    /// This is a pair of small targeted queries, not a full GetAllWeenies() load.
+    /// </summary>
+    public virtual Dictionary<uint, uint> GetScrollWeenieSpellMap()
+    {
+        using (var context = new WorldDbContext())
+        {
+            var scrollWcids = context
+                .Weenie.Where(w => w.Type == (int)WeenieType.Scroll)
+                .Select(w => w.ClassId)
+                .ToList();
+
+            var map = new Dictionary<uint, uint>();
+
+            var spellDids = context
+                .WeeniePropertiesDID.Where(p => p.Type == (ushort)PropertyDataId.Spell && scrollWcids.Contains(p.ObjectId))
+                .ToList();
+
+            foreach (var row in spellDids)
+            {
+                if (!map.TryAdd(row.Value, row.ObjectId))
+                {
+                    _log.Warning(
+                        "[DATABASE] GetScrollWeenieSpellMap: spellId {SpellId} has multiple scroll weenies; keeping wcid {Wcid}",
+                        row.Value,
+                        map[row.Value]
+                    );
+                }
+            }
+
+            return map;
+        }
+    }
+
+    /// <summary>
+    /// Returns the classId of the first weenie found with the given WeenieType, or null if none exists.
+    /// Used by Scribing Table to find the Scroll Dust weenie to spawn, without hardcoding its WCID.
+    /// </summary>
+    public virtual uint? GetFirstWeenieClassIdByType(WeenieType weenieType)
+    {
+        using (var context = new WorldDbContext())
+        {
+            return context
+                .Weenie.Where(w => w.Type == (int)weenieType)
+                .Select(w => (uint?)w.ClassId)
+                .FirstOrDefault();
+        }
+    }
+
+    /// <summary>
     /// This will populate all sub collections except the following: LandblockInstances, PointsOfInterest
     /// </summary>
     public Weenie GetWeenie(uint weenieClassId)

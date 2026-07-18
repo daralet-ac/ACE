@@ -216,6 +216,7 @@ public static class VendorBaseItems
         (0, false, HeritageAny, 1054005, 0, 0.0, -1), // Pearl of Spell Purging
         (0, false, HeritageAny, 1053979, 0, 0.0, -1), // Bezel (spellcrafting)
         (0, false, HeritageAny, 1053981, 0, 0.0, -1), // Alkahest Salt (cooking/alchemy)
+        (0, false, HeritageAny, 1053988, 0, 0.0, -1), // Blank Scroll (spellcrafting)
     ];
 
     // <(tier, onlyThisTier, heritage, wcid, paletteTemplate, shade, stackSize)>

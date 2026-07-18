@@ -114,6 +114,16 @@ public class SpellFormula
     }
 
     /// <summary>
+    /// Returns TRUE if this spell component is a taper
+    /// </summary>
+    /// <param name="componentID">The ID from the spell components table</param>
+    public static bool IsTaper(uint componentID)
+    {
+        return SpellComponentsTable.SpellComponents.TryGetValue(componentID, out var component)
+            && component.Type == (uint)SpellComponentsTable.Type.Taper;
+    }
+
+    /// <summary>
     /// The spell for this formula
     /// </summary>
     public Spell Spell;

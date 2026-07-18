@@ -134,9 +134,80 @@ partial class Player
             UpdateCoinValue();
         }
 
+        SpellTomeService.SyncOnAcquire(this, item);
+
         item.SaveBiotaToDatabase();
 
         return true;
+    }
+
+    /// <summary>
+    /// Adds `amount` of `weenieClassId` to inventory, merging into existing stacks with room before
+    /// creating a new stack for any remainder (e.g. a reward that shouldn't fragment into a separate
+    /// stack when the player already has some). Splits across multiple existing stacks if needed.
+    /// </summary>
+    public bool TryCreateOrMergeStackInInventoryWithNetworking(uint weenieClassId, int amount)
+    {
+        if (amount <= 0)
+        {
+            return true;
+        }
+
+        var existingStacks = GetInventoryItemsOfWCID(weenieClassId)
+            .Where(i => (i.StackSize ?? 1) < (i.MaxStackSize ?? 1))
+            .ToList();
+
+        foreach (var stack in existingStacks)
+        {
+            if (amount <= 0)
+            {
+                break;
+            }
+
+            var room = (stack.MaxStackSize ?? 1) - (stack.StackSize ?? 1);
+
+            if (room <= 0)
+            {
+                continue;
+            }
+
+            if (
+                FindObject(stack.Guid.Full, SearchLocations.MyInventory, out var stackContainer, out var rootOwner, out _)
+                == null
+            )
+            {
+                continue;
+            }
+
+            var mergeAmount = Math.Min(room, amount);
+
+            if (!AdjustStack(stack, mergeAmount, stackContainer, rootOwner))
+            {
+                continue;
+            }
+
+            Session.Network.EnqueueSend(
+                new GameMessageSetStackSize(stack),
+                new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.EncumbranceVal, EncumbranceVal ?? 0)
+            );
+
+            amount -= mergeAmount;
+        }
+
+        if (amount <= 0)
+        {
+            return true;
+        }
+
+        var newStack = WorldObjectFactory.CreateNewWorldObject(weenieClassId);
+        if (newStack == null)
+        {
+            return false;
+        }
+
+        newStack.SetStackSize(amount);
+
+        return TryCreateInInventoryWithNetworking(newStack);
     }
 
     public bool TryConsumeFromInventoryWithNetworking(WorldObject item, int amount = int.MaxValue, uint? guid = null)
@@ -5232,6 +5303,26 @@ partial class Player
             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
 
             SendUseDoneEvent();
+
+            return;
+        }
+
+        if (target is ScribingTable scribingTable)
+        {
+            // This is a "give object" interaction (see RemoveItemForGive's whole-object branch below,
+            // used by real quest NPCs that accept and consume an item), not a "use item" one. On
+            // success, TryConvertScrollToDust already sends GameEventItemServerSaysContainId, which is
+            // the complete, sufficient acknowledgment for a give transaction on its own. On rejection
+            // (item untouched), send GameEventInventoryServerSaveFailed instead, same as a normal give.
+            // Deliberately no SendUseDoneEvent() here — that belongs to the use-item/use-with-target
+            // action family (GameAction 0x35/0x36), not give-object, and sending it confused the
+            // client's cursor state for a transaction it never considered a "use" to begin with.
+            var consumed = ScribingTableService.TryConvertScrollToDust(this, scribingTable, item);
+
+            if (!consumed)
+            {
+                Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
+            }
 
             return;
         }
