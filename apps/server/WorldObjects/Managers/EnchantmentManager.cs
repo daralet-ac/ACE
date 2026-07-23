@@ -489,43 +489,42 @@ public class EnchantmentManager
     }
 
     /// <summary>
-    /// Removes all enchantments except for vitae and item spells
+    /// Removes all enchantments except for vitae, item spells, and enchantments
+    /// that persist past death (e.g. Olthoi North stacks)
     /// Called on player death
     /// </summary>
     public virtual void RemoveAllEnchantments()
     {
-        // exclude cooldowns and enchantments from items
-        var spellsToExclude = WorldObject
+        // exclude cooldowns, enchantments from items, and death-persistent enchantments
+        var toRemove = WorldObject
             .Biota.PropertiesEnchantmentRegistry.Clone(WorldObject.BiotaDatabaseLock)
-            .Where(i => i.Duration == -1 || i.SpellId > short.MaxValue || DeathPersistentSpellCategory(i.SpellCategory))
-            .Select(i => i.SpellId);
+            .Where(i =>
+                i.Duration != -1 && i.SpellId <= short.MaxValue && !DeathPersistentSpellCategory(i.SpellCategory)
+            )
+            .ToList();
 
-        WorldObject.Biota.PropertiesEnchantmentRegistry.RemoveAllEnchantments(
-            spellsToExclude,
-            WorldObject.BiotaDatabaseLock
-        );
-        WorldObject.ChangesDetected = true;
+        Dispel(toRemove);
     }
 
     /// <summary>
-    /// Removes all enchantments except for beneficial enchantments, vitae and item spells
+    /// Removes all enchantments except for beneficial enchantments, vitae, item spells,
+    /// and enchantments that persist past death (e.g. Olthoi North stacks)
     /// Called on player death
     /// </summary>
     public virtual void RemoveAllBadEnchantments()
     {
-        // exclude beneficial enchantments, cooldowns and enchantments from items
-        var spellsToExclude = WorldObject
+        // exclude beneficial enchantments, cooldowns, enchantments from items, and death-persistent enchantments
+        var toRemove = WorldObject
             .Biota.PropertiesEnchantmentRegistry.Clone(WorldObject.BiotaDatabaseLock)
             .Where(i =>
-                i.StatModType.HasFlag(EnchantmentTypeFlags.Beneficial) || i.Duration == -1 || i.SpellId > short.MaxValue
+                !i.StatModType.HasFlag(EnchantmentTypeFlags.Beneficial)
+                && i.Duration != -1
+                && i.SpellId <= short.MaxValue
+                && !DeathPersistentSpellCategory(i.SpellCategory)
             )
-            .Select(i => i.SpellId);
+            .ToList();
 
-        WorldObject.Biota.PropertiesEnchantmentRegistry.RemoveAllEnchantments(
-            spellsToExclude,
-            WorldObject.BiotaDatabaseLock
-        );
-        WorldObject.ChangesDetected = true;
+        Dispel(toRemove);
     }
 
     /// <summary>

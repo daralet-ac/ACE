@@ -800,12 +800,20 @@ partial class Player
 
         var msg = "Olthoi North Modifiers - ";
 
-        var olthoiStaminaDebuff = EnchantmentManager.GetEnchantment((uint)SpellId.OlthoiStaminaDebuff); // stamaina and mana
+        var olthoiStaminaDebuff = EnchantmentManager.GetEnchantment((uint)SpellId.OlthoiStaminaDebuff);
         if (olthoiStaminaDebuff != null)
         {
             var staminaDebuff = olthoiStaminaDebuff.SpellStacks + 1;
             totalStacks += staminaDebuff;
-            msg += $" Stamina/Mana: -{staminaDebuff}%";
+            msg += $" Stamina: -{staminaDebuff}%";
+        }
+
+        var olthoiManaDebuff = EnchantmentManager.GetEnchantment((uint)SpellId.OlthoiManaDebuff);
+        if (olthoiManaDebuff != null)
+        {
+            var manaDebuff = olthoiManaDebuff.SpellStacks + 1;
+            totalStacks += manaDebuff;
+            msg += $" Mana: -{manaDebuff}%";
         }
 
         var olthoiHealthDebuff = EnchantmentManager.GetEnchantment((uint)SpellId.OlthoiHealthDebuff);

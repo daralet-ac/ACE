@@ -1538,7 +1538,7 @@ public class Vendor : Creature
         }
 
         // calculate price
-        uint totalPrice = 0;
+        ulong totalPriceAccumulator = 0;
 
         foreach (var item in purchaseItems)
         {
@@ -1565,9 +1565,16 @@ public class Vendor : Creature
                 cost = GetSellCost(item);
             }
 
-            // detect rollover?
-            totalPrice += cost;
+            totalPriceAccumulator += cost;
         }
+
+        if (totalPriceAccumulator > uint.MaxValue)
+        {
+            CleanupCreatedItems(defaultItems);
+            return false;
+        }
+
+        var totalPrice = (uint)totalPriceAccumulator;
 
         // verify player has enough currency
         if (AlternateCurrency == null)

@@ -1263,7 +1263,7 @@ public static partial class LootGenerationFactory
         }
 
         // Armor Skill Mods
-        if (skillModsPercentile == float.NaN)
+        if (double.IsNaN(skillModsPercentile))
         {
             skillModsPercentile = 0;
         }

@@ -392,7 +392,7 @@ partial class Jewel : WorldObject
                 var difference = Math.Max(difficulty - skill.Current, 0);
                 var reductionPenalty = (int)Math.Round((float)difference / 10) + 1;
 
-                modifiedQuality -= reductionPenalty;
+                modifiedQuality = Math.Max(modifiedQuality - reductionPenalty, 1);
 
                 jewelRelativeQuality = (float)modifiedQuality / baseValue;
             }
