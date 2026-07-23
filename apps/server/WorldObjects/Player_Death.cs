@@ -266,16 +266,12 @@ partial class Player
 
         if (IsPKDeath(topDamager) || AugmentationSpellsRemainPastDeath == 0)
         {
-            var msgPurgeEnchantments = new GameEventMagicPurgeEnchantments(Session);
             EnchantmentManager.RemoveAllEnchantments();
-            Session.Network.EnqueueSend(msgPurgeEnchantments);
         }
         else
         {
-            var msgPurgeBadEnchantments = new GameEventMagicPurgeBadEnchantments(Session);
             EnchantmentManager.RemoveAllBadEnchantments();
             Session.Network.EnqueueSend(
-                msgPurgeBadEnchantments,
                 new GameMessageSystemChat(
                     "Your augmentation prevents the tides of death from ripping away your current enchantments!",
                     ChatMessageType.Broadcast

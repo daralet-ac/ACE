@@ -789,14 +789,14 @@ public static class MarketBroker
         var returned = 0;
         foreach (var listing in expired)
         {
-            // Ensure listing is cancelled so it doesn't show as active.
-            if (!listing.IsCancelled)
-            {
-                MarketServiceLocator.PlayerMarketRepository.CancelListing(listing);
-            }
-
             if (listing.ItemBiotaId <= 0)
             {
+                // Nothing to recover for this listing; safe to mark it resolved so it doesn't linger as active.
+                if (!listing.IsCancelled)
+                {
+                    MarketServiceLocator.PlayerMarketRepository.CancelListing(listing);
+                }
+
                 continue;
             }
 
@@ -828,6 +828,12 @@ public static class MarketBroker
 
             if (item == null)
             {
+                // Item is unrecoverable (missing biota and no snapshot); nothing left to give back.
+                if (!listing.IsCancelled)
+                {
+                    MarketServiceLocator.PlayerMarketRepository.CancelListing(listing);
+                }
+
                 continue;
             }
 
@@ -835,7 +841,10 @@ public static class MarketBroker
 
             if (!player.TryCreateInInventoryWithNetworking(item))
             {
-                item.Destroy();
+                // Do NOT destroy the item or cancel the listing here: item.Biota is the listing's real
+                // escrowed item, and this listing has already expired so MarketEscrowGuard will not protect
+                // it from deletion. Leave the listing (and its item) untouched so the player can retry after
+                // freeing up pack space, instead of permanently destroying the escrowed item.
                 SendTell(player, broker, "You do not have enough pack space to claim your expired listings.");
                 break;
             }
@@ -1280,14 +1289,42 @@ public static class MarketBroker
             return;
         }
 
-        MarketServiceLocator.PlayerMarketRepository.CreateListingFromWorldObject(
-            player,
-            item,
-            price,
-            MarketCurrencyType.Pyreal,
-            vendorTier,
-            wieldReq,
-            itemTier);
+        try
+        {
+            MarketServiceLocator.PlayerMarketRepository.CreateListingFromWorldObject(
+                player,
+                item,
+                price,
+                MarketCurrencyType.Pyreal,
+                vendorTier,
+                wieldReq,
+                itemTier);
+        }
+        catch (Exception ex)
+        {
+            // The item's ownership was already stripped and its biota saved to the DB above.
+            // If listing creation fails here, nothing will reference that biota anymore, so
+            // it must be returned to the player rather than left orphaned.
+            Log.Error(
+                ex,
+                "Market listing creation failed after escrow for item {ItemGuid} (WCID={WCID}, Player={Player}); returning item to inventory",
+                item.Guid,
+                item.WeenieClassId,
+                player.Name);
+
+            if (!player.TryCreateInInventoryWithNetworking(item))
+            {
+                Log.Error(
+                    "Market listing creation failed and item {ItemGuid} (WCID={WCID}, Player={Player}) could not be returned to inventory; item is orphaned",
+                    item.Guid,
+                    item.WeenieClassId,
+                    player.Name);
+            }
+
+            ClearPendingItem(player);
+            SendTell(player, "Something went wrong creating your listing. Your item has been returned if possible; please verify your inventory.");
+            return;
+        }
 
         ClearPendingItem(player);
 

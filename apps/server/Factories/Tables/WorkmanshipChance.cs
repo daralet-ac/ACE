@@ -47,7 +47,12 @@ public static class WorkmanshipChance
 
         var workmanshipChance = workmanshipChances[tier - 1];
 
-        return workmanshipChance.Roll(qualityMod, true);
+        // A higher spell level on the item biases the roll toward higher workmanship,
+        // the same way a negative qualityMod increases the odds of hitting the rarer,
+        // high-workmanship tail of the table (see ChanceTable.Roll's invertedQualityMod).
+        var effectiveQualityMod = qualityMod - cantripLevel * 0.05f;
+
+        return workmanshipChance.Roll(effectiveQualityMod, true);
     }
 
     /// <summary>
