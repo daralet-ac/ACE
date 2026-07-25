@@ -102,6 +102,29 @@ partial class Creature
     }
 
     /// <summary>
+    /// When set, this monster will only ever consider creatures of this specific WeenieClassId
+    /// as valid attack targets - still subject to the other normal filters (Attackable,
+    /// Tolerance.Monster, faction, range, etc.) in GetAttackTargets(). Intended for scripted
+    /// encounters where a monster should beeline toward one specific NPC (e.g. a boss) instead
+    /// of whichever eligible target happens to be nearest.
+    /// </summary>
+    public uint? TargetSpecificWcid
+    {
+        get => (uint?)GetProperty(PropertyInt.TargetSpecificWcid);
+        set
+        {
+            if (value == null)
+            {
+                RemoveProperty(PropertyInt.TargetSpecificWcid);
+            }
+            else
+            {
+                SetProperty(PropertyInt.TargetSpecificWcid, (int)value);
+            }
+        }
+    }
+
+    /// <summary>
     /// This list of possible targeting tactics for this monster
     /// </summary>
     public TargetingTactic TargetingTactic
@@ -699,10 +722,20 @@ partial class Creature
     {
         var visibleTargets = new List<Creature>();
 
+        // cached once per call rather than re-read from the property dictionary per candidate
+        var targetSpecificWcid = TargetSpecificWcid;
+
         foreach (var creature in PhysicsObj.ObjMaint.GetVisibleTargetsValuesOfTypeCreature())
         {
             // ensure attackable
             if (!creature.Attackable && creature.TargetingTactic == TargetingTactic.None || creature.Teleporting)
+            {
+                continue;
+            }
+
+            // if configured to only target one specific weenie class (e.g. a boss/matriarch),
+            // filter out everything else
+            if (targetSpecificWcid != null && creature.WeenieClassId != targetSpecificWcid)
             {
                 continue;
             }
