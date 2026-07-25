@@ -959,6 +959,14 @@ public enum PropertyInt : ushort
 
     [ServerOnly]
     VendorStockMaxAmount = 10010,
+
+    /// <summary>
+    /// When set on a monster, restricts its attack-target search (see Monster_Awareness.GetAttackTargets)
+    /// to only ever consider creatures of this specific WeenieClassId - e.g. a grub that should always
+    /// beeline toward one specific boss/matriarch rather than the nearest eligible monster.
+    /// </summary>
+    [ServerOnly]
+    TargetSpecificWcid = 10011,
 }
 
 public static class PropertyIntExtensions
