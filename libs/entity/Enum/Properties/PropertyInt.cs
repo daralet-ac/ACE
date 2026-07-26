@@ -878,12 +878,15 @@ public enum PropertyInt : ushort
     TrophyEssenceSkill = 517,
     TrophyEssenceEffectType = 518,
     GearFrigidProtection = 519,
-    
+
     [ServerOnly]
     ForgePassCount = 520,
-    
+
     [ServerOnly]
     PassiveThreatThreshold = 521,
+    
+    [ServerOnly]
+    TargetSpecificWcid = 522,
 
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
@@ -958,15 +961,7 @@ public enum PropertyInt : ushort
     EmptyId = 10009,
 
     [ServerOnly]
-    VendorStockMaxAmount = 10010,
-
-    /// <summary>
-    /// When set on a monster, restricts its attack-target search (see Monster_Awareness.GetAttackTargets)
-    /// to only ever consider creatures of this specific WeenieClassId - e.g. a grub that should always
-    /// beeline toward one specific boss/matriarch rather than the nearest eligible monster.
-    /// </summary>
-    [ServerOnly]
-    TargetSpecificWcid = 10011,
+    VendorStockMaxAmount = 10010
 }
 
 public static class PropertyIntExtensions
