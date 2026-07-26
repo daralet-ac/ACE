@@ -81,20 +81,24 @@ public class AllegianceNode
     private void CalculateRank()
     {
         // NEW RANK FORMULA
-        // A player's allegiance rank depends on the number of unique accounts are under them in
-        // their allegiance tree. Accounts who are also above them in the chain do not count towards
-        // their rank. Additionally, up to 4 ranks may be obtained from the Leadership skill.
+        // A player's allegiance rank depends on the number of follower points beneath them in their allegiance tree.
+        // Characters provide up to 1 follower point depending on their level, compared to other character levels
+        // on their account.
+        // e.g. An account with 2 characters, one level 10 and one level 30, would provide 0.25 and 0.75 follower
+        // points, respectively.
+        //
+        // Additionally, up to 5 ranks may be obtained from the Leadership skill.
         //
         // Final Rank = FollowerRank + Leadership bonus.
         //
         // Follower Rank:
-        // - 1 unique follower = 2
-        // - 5 unique followers = 3
-        // - 10 unique followers = 4
-        // - 25 unique followers = 5
-        // - 50 unique followers = 6
+        // - Join an allegiance = 1
+        // - 1 follower point = 2
+        // - 10 follower points = 3
+        // - 25 follower points = 4
+        // - 50 follower points = 5
         //
-        // Leadership bonus = 1 per 50, up to 4
+        // Leadership bonus = 1 per 40, up to 5
 
         if (Player == null)
         {
@@ -105,10 +109,9 @@ public class AllegianceNode
         var uniqueFollowers = GetUniqueFollowers(this);
         uint baseRank = uniqueFollowers switch
         {
-            >= 50 => 6,
-            >= 25 => 5,
-            >= 10 => 4,
-            >= 5 => 3,
+            >= 50 => 5,
+            >= 25 => 4,
+            >= 10 => 3,
             >= 1 => 2,
             _ => 1
         };
@@ -116,10 +119,11 @@ public class AllegianceNode
         var currentLeadership = Player.GetCurrentLeadership();
         uint leadershipBonus = currentLeadership switch
         {
-            >= 200 => 4,
-            >= 150 => 3,
-            >= 100 => 2,
-            >= 50 => 1,
+            >= 200 => 5,
+            >= 160 => 4,
+            >= 120 => 3,
+            >= 80 => 2,
+            >= 40 => 1,
             _ => 0
         };
 
