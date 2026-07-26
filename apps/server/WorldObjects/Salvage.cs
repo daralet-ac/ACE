@@ -238,7 +238,7 @@ public class Salvage : WorldObject
         var attemptNum = Math.Clamp(target.NumTimesTinkered + 1, 1, 10);
         var attemptMod = attemptNum * 0.1f + 1.0;
 
-        var difficulty = (int)Math.Max(((baseDifficulty - workmanshipMod) * attemptMod), 1);
+        var difficulty = (int)Math.Round((baseDifficulty - workmanshipMod) * attemptMod);
         var craftingXpDifficulty = baseDifficulty * attemptMod;
 
 
