@@ -15,11 +15,39 @@ public class MarketSearchRequest
     public string? ArmorWeightClass { get; set; }
     public List<string>? Coverage { get; set; }
     public string? SigilTrinketType { get; set; }
+    public string? SigilEffect { get; set; }
     public string? JewelrySlot { get; set; }
     public string? SalvageTargetType { get; set; }
     public string? SalvageMaterial { get; set; }
+    public string? ConsumableType { get; set; }
+    public string? MiscType { get; set; }
+    public string? TrophyType { get; set; }
+    public int? MinTrophyQuality { get; set; }
+    public int? MaxTrophyQuality { get; set; }
+    public string? GemMaterial { get; set; }
+    public bool? CarvedJewelOnly { get; set; }
+    public int? MinGemQuality { get; set; }
+    public int? MaxGemQuality { get; set; }
+    public string? ScrollSchool { get; set; }
+    public string? ScrollSpellName { get; set; }
+    public double? MinWorkmanship { get; set; }
+    public double? MaxWorkmanship { get; set; }
+    public int? MinUnits { get; set; }
+    public int? MaxUnits { get; set; }
+    public double? MinPricePerUnit { get; set; }
+    public double? MaxPricePerUnit { get; set; }
     public int? SigilMinLevel { get; set; }
     public int? SigilMaxLevel { get; set; }
+    public double? MinProcChance { get; set; }
+    public double? MaxProcChance { get; set; }
+    public double? MinCooldown { get; set; }
+    public double? MaxCooldown { get; set; }
+    public double? MinManaReserved { get; set; }
+    public double? MaxManaReserved { get; set; }
+    public double? MinStaminaReserved { get; set; }
+    public double? MaxStaminaReserved { get; set; }
+    public double? MinHealthReserved { get; set; }
+    public double? MaxHealthReserved { get; set; }
     public double? MinDps { get; set; }
     public double? MaxDps { get; set; }
     public int? MinBaseDamage { get; set; }
@@ -92,6 +120,24 @@ public class MarketSearchRequest
     public double? MaxArmorPerceptionMod { get; set; }
     public double? MinArmorDeceptionMod { get; set; }
     public double? MaxArmorDeceptionMod { get; set; }
+    public double? MinArmorHealthMod { get; set; }
+    public double? MaxArmorHealthMod { get; set; }
+    public double? MinArmorManaMod { get; set; }
+    public double? MaxArmorManaMod { get; set; }
+    public double? MinArmorStaminaMod { get; set; }
+    public double? MaxArmorStaminaMod { get; set; }
+    public int? MinGearCritDamage { get; set; }
+    public int? MaxGearCritDamage { get; set; }
+    public int? MinGearCritDamageResist { get; set; }
+    public int? MaxGearCritDamageResist { get; set; }
+    public int? MinGearDamage { get; set; }
+    public int? MaxGearDamage { get; set; }
+    public int? MinGearDamageResist { get; set; }
+    public int? MaxGearDamageResist { get; set; }
+    public int? MinGearHealingBoost { get; set; }
+    public int? MaxGearHealingBoost { get; set; }
+    public int? MinGearMaxHealth { get; set; }
+    public int? MaxGearMaxHealth { get; set; }
     public string? SortBy { get; set; }
     public string? SortDir { get; set; }
     public int Page { get; set; } = 1;
@@ -129,6 +175,8 @@ public class MarketRepository
     private const uint ItemTypeMissileWeapon = 0x00000100;
     private const uint ItemTypeSpellComponents = 0x00001000;
     private const uint ItemTypeCaster = 0x00008000;
+    private const uint ItemTypeFood = 0x00000020;
+    private const uint ItemTypeMisc = 0x00000080;
     private const uint ItemTypeWeaponMask = ItemTypeMeleeWeapon | ItemTypeMissileWeapon | ItemTypeCaster;
     private const uint ItemTypeArmorMask = ItemTypeArmor | ItemTypeClothing;
 
@@ -243,9 +291,47 @@ public class MarketRepository
     // SigilTrinketType (PropertyInt.SigilTrinketType) — apps/server/WorldObjects/SigilTrinket.cs.
     private static readonly string[] SigilTrinketTypeNames = { "Compass", "PuzzleBox", "Scarab", "PocketWatch", "Top", "Goggles" };
 
+    // Every NameSuffix (minus the leading " of ") across apps/server/Factories/SigilTrinketConfig.cs's
+    // effect maps — the full set of effect names a Sigil Trinket's name can end with.
+    private static readonly string[] SigilEffectNames =
+    {
+        "Protection", "Vulnerability", "Artifice", "Growth",
+        "Duplication", "Detonation", "Crushing",
+        "Intensity", "Shielding", "Reduction",
+        "Might", "Aggression",
+        "Assailment", "Swift Killer",
+        "Treachery", "Evasion", "Absorption", "Exposure", "Avoidance",
+    };
+
+    // Base trophy species/material names (PropertyInt.TrophyQuality-bearing weenies, class_Ids
+    // 1054100-1054164 in ace_world) — the stored Name is always "<QualityWord> <one of these>"
+    // (see LootGenerationFactory.MutateTrophy), so this doubles as both the Type dropdown's option
+    // list and the suffix-match pattern used to classify/filter by it.
+    private static readonly string[] TrophyTypeNames =
+    {
+        "Armoredillo Hide", "Armoredillo Spine", "Auroch Meat", "Auroch Horn", "Banderling Scalp",
+        "Banderling Blood", "Chittick Spine", "Chittick Head", "Drudge Guts", "Drudge Charm",
+        "Ectoplasm", "Doll Mask", "Violet Energy", "Grievver Silk", "Grievver Tibia",
+        "Gromnie Tooth", "Gromnie Wing", "Brown Lump", "K'nath Egg", "Lugian Blood",
+        "Lugian Sinew", "Mattekar Hide", "Mattekar Horn", "Mite Fur", "Mite Heart",
+        "Monougat", "Monouga Skull", "Mosswart Eggs", "Swamp Stone", "Mu-miyah Arm",
+        "Tomb Dust", "Niffis Shell", "Niffis Pearl", "Olthoi Claw", "Olthoi Ichor",
+        "Wasp Venom", "Wasp Wing", "Rat Tail", "Rat Saliva", "Reedshark Fang",
+        "Reedshark Hide", "Sclavus Hide", "Sclavus Tongue", "Shreth Tooth", "Shreth Hide",
+        "Old Bone", "Skull", "Tusker Pelt", "Tusker Tusk", "Undead Leg",
+        "Mnemosyne", "Ursuin Fang", "Ursuin Hide", "Zefir Gossamer", "Zefir Wing",
+        "Wisp Heart", "Wisp Essence", "Tumerok Insignia", "Tumerok Salted Meats", "Moarsmuck",
+        "Moarsman Head", "Crystalized Fire", "Crystalized Frost", "Crystalized Acid", "Crystalized Lightning",
+    };
+
     // WeenieType (top-level MarketListingSnapshot.WeenieType field, serialized as its numeric value —
     // no JsonStringEnumConverter is registered on the snapshot serializer) — ACE.Entity.Enum.WeenieType.
     private const int WeenieTypeSalvage = 76;
+    private const int WeenieTypeFood = 18;
+    private const int WeenieTypeHealer = 28;
+    private const int WeenieTypeScroll = 34;
+    private const int WeenieTypeGem = 38;
+    private const int WeenieTypeJewel = 75;
 
     // MaterialType (PropertyInt.MaterialType) -> which item category the salvage can actually be
     // applied to, derived from Salvage.CheckTinkerType's real eligibility gates (not the tinkering
@@ -678,8 +764,12 @@ public class MarketRepository
         ["ward"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WardLevel') AS SIGNED)",
         ["procChance"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.SigilTrinketTriggerChance') AS DOUBLE)",
         ["cooldown"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.SigilTrinketCooldown') AS DOUBLE)",
+        ["manaReserved"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.SigilTrinketManaReserved') AS DOUBLE)",
+        ["staminaReserved"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.SigilTrinketStaminaReserved') AS DOUBLE)",
+        ["healthReserved"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.SigilTrinketHealthReserved') AS DOUBLE)",
         ["workmanship"] = "(CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.ItemWorkmanship') AS DOUBLE) / CAST(COALESCE(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.NumItemsInMaterial'), 1) AS DOUBLE))",
         ["units"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.Structure') AS SIGNED)",
+        ["pricePerUnit"] = "(ListedPrice / NULLIF(CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.Structure') AS SIGNED), 0))",
         ["armorModVsSlash"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorModVsSlash') AS DOUBLE)",
         ["armorModVsPierce"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorModVsPierce') AS DOUBLE)",
         ["armorModVsBludgeon"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorModVsBludgeon') AS DOUBLE)",
@@ -703,6 +793,15 @@ public class MarketRepository
         ["armorHealthRegenMod"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorHealthRegenMod') AS DOUBLE)",
         ["armorPerceptionMod"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorPerceptionMod') AS DOUBLE)",
         ["armorDeceptionMod"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorDeceptionMod') AS DOUBLE)",
+        ["armorHealthMod"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorHealthMod') AS DOUBLE)",
+        ["armorManaMod"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorManaMod') AS DOUBLE)",
+        ["armorStaminaMod"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorStaminaMod') AS DOUBLE)",
+        ["gearCritDamage"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearCritDamage') AS SIGNED)",
+        ["gearCritDamageResist"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearCritDamageResist') AS SIGNED)",
+        ["gearDamage"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearDamage') AS SIGNED)",
+        ["gearDamageResist"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearDamageResist') AS SIGNED)",
+        ["gearHealingBoost"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearHealingBoost') AS SIGNED)",
+        ["gearMaxHealth"] = "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearMaxHealth') AS SIGNED)",
         // Per-slot variants — used for the Ward Level / Skill Mods filters instead of the raw totals above.
         ["wardPerSlot"] = PerSlotExpr("CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WardLevel') AS SIGNED)"),
         ["armorWarMagicModPerSlot"] = PerSlotExpr("CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorWarMagicMod') AS DOUBLE)"),
@@ -721,6 +820,32 @@ public class MarketRepository
         ["armorHealthRegenModPerSlot"] = PerSlotExpr("CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorHealthRegenMod') AS DOUBLE)"),
         ["armorPerceptionModPerSlot"] = PerSlotExpr("CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorPerceptionMod') AS DOUBLE)"),
         ["armorDeceptionModPerSlot"] = PerSlotExpr("CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorDeceptionMod') AS DOUBLE)"),
+        ["armorHealthModPerSlot"] = PerSlotExpr("CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorHealthMod') AS DOUBLE)"),
+        ["armorManaModPerSlot"] = PerSlotExpr("CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorManaMod') AS DOUBLE)"),
+        ["armorStaminaModPerSlot"] = PerSlotExpr("CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorStaminaMod') AS DOUBLE)"),
+    };
+
+    // spellId -> MagicSchool (ACE.Entity.Enum.MagicSchool numeric value), extracted once from the
+    // client's portal.dat SpellTable via a throwaway ACE.DatLoader console tool — there's no
+    // "school" column in ace_world.spell (the closest thing, dispel_School, is the school a Dispel
+    // spell purges from a target, not the spell's own casting school), so this is the only source.
+    private static readonly Dictionary<int, int> SpellSchoolById = LoadSpellSchools();
+
+    private static Dictionary<int, int> LoadSpellSchools()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Data", "SpellSchools.json");
+        var json = File.ReadAllText(path);
+        return System.Text.Json.JsonSerializer.Deserialize<Dictionary<int, int>>(json) ?? new();
+    }
+
+    // ACE.Entity.Enum.MagicSchool values, keyed by the name used in the Market UI's School dropdown.
+    private static readonly Dictionary<string, int> MagicSchoolNameToValue = new()
+    {
+        ["WarMagic"] = 1,
+        ["LifeMagic"] = 2,
+        ["PortalMagic"] = 3,
+        ["CreatureEnchantment"] = 4,
+        ["VoidMagic"] = 5,
     };
 
     private readonly DatabaseOptions _dbOptions;
@@ -746,6 +871,18 @@ public class MarketRepository
             extraClauses.Add(
                 spellIds.Count > 0
                     ? "(" + string.Join(" OR ", spellIds.Select(id => $"JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesSpellBook.\"{id}\"') IS NOT NULL")) + ")"
+                    : "1=0"
+            );
+        }
+
+        // Scrolls carry a single direct-cast spell (PropertiesDID.Spell), not a PropertiesSpellBook
+        // dictionary like gear does, so this needs its own IN(...) match rather than the block above.
+        if (!string.IsNullOrWhiteSpace(request.ScrollSpellName))
+        {
+            var scrollSpellIds = await GetSpellIdsByNameAsync(request.ScrollSpellName.Trim(), ct);
+            extraClauses.Add(
+                scrollSpellIds.Count > 0
+                    ? $"CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesDID.Spell') AS UNSIGNED) IN ({string.Join(",", scrollSpellIds)})"
                     : "1=0"
             );
         }
@@ -789,6 +926,7 @@ public class MarketRepository
                     JSON_UNQUOTE(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesString.Name')) AS ItemName,
                     JSON_UNQUOTE(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesString.LongDesc')) AS ItemDesc,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesDID.Icon') AS IconDidRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesDID.IconOverlay') AS IconOverlayDidRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.ItemType') AS ItemTypeRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.WeaponType') AS WeaponTypeRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.DefaultCombatStyle') AS CombatStyleRaw,
@@ -840,6 +978,15 @@ public class MarketRepository
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorHealthRegenMod') AS ArmorHealthRegenModRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorPerceptionMod') AS ArmorPerceptionModRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorDeceptionMod') AS ArmorDeceptionModRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorHealthMod') AS ArmorHealthModRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorManaMod') AS ArmorManaModRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ArmorStaminaMod') AS ArmorStaminaModRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearCritDamage') AS GearCritDamageRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearCritDamageResist') AS GearCritDamageResistRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearDamage') AS GearDamageRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearDamageResist') AS GearDamageResistRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearHealingBoost') AS GearHealingBoostRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.GearMaxHealth') AS GearMaxHealthRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.SigilTrinketTriggerChance') AS SigilTriggerChanceRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.SigilTrinketCooldown') AS SigilCooldownRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.SigilTrinketManaReserved') AS SigilManaReservedRaw,
@@ -881,7 +1028,11 @@ public class MarketRepository
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.CriticalFrequency') AS CriticalFrequencyRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesFloat.ResistanceModifier') AS ResistanceModifierRaw,
                     JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.ResistanceModifierType') AS ResistanceModifierTypeRaw,
-                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.NoCompsRequiredForMagicSchool') AS NoCompsRequiredForMagicSchoolRaw
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.NoCompsRequiredForMagicSchool') AS NoCompsRequiredForMagicSchoolRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.TrophyQuality') AS TrophyQualityRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.JewelQuality') AS JewelQualityRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.JewelMaterialType') AS JewelMaterialTypeRaw,
+                    JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesDID.Spell') AS SpellDidRaw
                 FROM player_market_listings
                 {whereClause}
                 ORDER BY {orderByExpr} {orderByDir}
@@ -1037,7 +1188,9 @@ public class MarketRepository
                 break;
             case "Clothing":
                 // Clothing (shirts, pants, etc.) shares ItemType's "wearable" family with Armor but
-                // carries none of Armor's protection/weight-class stats — no per-stat filters here.
+                // carries none of Armor's protection/weight-class stats — just Ward Level and its
+                // own vital-mod trio (ArmorHealthMod/ArmorManaMod/ArmorStaminaMod), distinct
+                // properties from Armor's *RegenMod family.
                 clauses.Add($"({itemTypeCol} & {ItemTypeClothing}) != 0");
                 if (request.Coverage is { Count: > 0 })
                 {
@@ -1054,6 +1207,12 @@ public class MarketRepository
                         clauses.Add($"(CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.ClothingPriority') AS UNSIGNED) & {clothingCoverageMask}) != 0");
                     }
                 }
+                AddMinMaxFilter(SortExpressions["wardPerSlot"], request.MinWardLevel, request.MaxWardLevel, "wardLevel", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["armorHealthModPerSlot"], request.MinArmorHealthMod, request.MaxArmorHealthMod, "armorHealthMod", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["armorManaModPerSlot"], request.MinArmorManaMod, request.MaxArmorManaMod, "armorManaMod", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["armorStaminaModPerSlot"], request.MinArmorStaminaMod, request.MaxArmorStaminaMod, "armorStaminaMod", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["difficulty"], request.MinDifficulty, request.MaxDifficulty, "difficulty", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["spellcraft"], request.MinSpellcraft, request.MaxSpellcraft, "spellcraft", clauses, parameters);
                 break;
             case "Salvage":
                 clauses.Add("CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) = " + WeenieTypeSalvage);
@@ -1080,6 +1239,9 @@ public class MarketRepository
                         clauses.Add($"JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.MaterialType') IN ({string.Join(",", targetSet)})");
                     }
                 }
+                AddMinMaxFilter(SortExpressions["workmanship"], request.MinWorkmanship, request.MaxWorkmanship, "workmanship", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["units"], request.MinUnits, request.MaxUnits, "units", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["pricePerUnit"], request.MinPricePerUnit, request.MaxPricePerUnit, "pricePerUnit", clauses, parameters);
                 break;
             case "SigilTrinket":
                 clauses.Add("JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.SigilTrinketType') IS NOT NULL");
@@ -1092,6 +1254,13 @@ public class MarketRepository
                         parameters.Add(("@sigilTrinketType", index));
                     }
                 }
+                if (request.SigilEffect is { Length: > 0 } && Array.IndexOf(SigilEffectNames, request.SigilEffect) >= 0)
+                {
+                    // The effect name is baked into the item's name as a " of <Effect>" suffix (see
+                    // SigilEffectName computation in ReadListing) rather than stored as its own property.
+                    clauses.Add($"{SortExpressions["name"]} LIKE @sigilEffectPattern");
+                    parameters.Add(("@sigilEffectPattern", "% of " + request.SigilEffect));
+                }
                 if (request.SigilMinLevel.HasValue)
                 {
                     clauses.Add($"{ItemLevelSqlExpr} >= @sigilMinLevel");
@@ -1102,6 +1271,11 @@ public class MarketRepository
                     clauses.Add($"{ItemLevelSqlExpr} <= @sigilMaxLevel");
                     parameters.Add(("@sigilMaxLevel", request.SigilMaxLevel.Value));
                 }
+                AddMinMaxFilter(SortExpressions["procChance"], request.MinProcChance, request.MaxProcChance, "procChance", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["cooldown"], request.MinCooldown, request.MaxCooldown, "cooldown", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["manaReserved"], request.MinManaReserved, request.MaxManaReserved, "manaReserved", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["staminaReserved"], request.MinStaminaReserved, request.MaxStaminaReserved, "staminaReserved", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["healthReserved"], request.MinHealthReserved, request.MaxHealthReserved, "healthReserved", clauses, parameters);
                 break;
             case "Jewelry":
                 clauses.Add($"({itemTypeCol} & {ItemTypeJewelry}) != 0");
@@ -1121,6 +1295,110 @@ public class MarketRepository
                     {
                         clauses.Add($"(CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.ValidLocations') AS UNSIGNED) & {mask.Value}) != 0");
                     }
+                }
+                AddMinMaxFilter(SortExpressions["wardPerSlot"], request.MinWardLevel, request.MaxWardLevel, "wardLevel", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["gearCritDamage"], request.MinGearCritDamage, request.MaxGearCritDamage, "gearCritDamage", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["gearCritDamageResist"], request.MinGearCritDamageResist, request.MaxGearCritDamageResist, "gearCritDamageResist", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["gearDamage"], request.MinGearDamage, request.MaxGearDamage, "gearDamage", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["gearDamageResist"], request.MinGearDamageResist, request.MaxGearDamageResist, "gearDamageResist", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["gearHealingBoost"], request.MinGearHealingBoost, request.MaxGearHealingBoost, "gearHealingBoost", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["gearMaxHealth"], request.MinGearMaxHealth, request.MaxGearMaxHealth, "gearMaxHealth", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["difficulty"], request.MinDifficulty, request.MaxDifficulty, "difficulty", clauses, parameters);
+                AddMinMaxFilter(SortExpressions["spellcraft"], request.MinSpellcraft, request.MaxSpellcraft, "spellcraft", clauses, parameters);
+                break;
+            case "Consumable":
+                clauses.Add($"CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) IN ({WeenieTypeFood}, {WeenieTypeHealer})");
+                switch (request.ConsumableType)
+                {
+                    case "HealingKit":
+                        clauses.Add($"CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) = {WeenieTypeHealer}");
+                        break;
+                    case "Food":
+                        clauses.Add($"CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) = {WeenieTypeFood}");
+                        clauses.Add($"({itemTypeCol} & {ItemTypeFood}) != 0");
+                        break;
+                    case "Potion":
+                        clauses.Add($"CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) = {WeenieTypeFood}");
+                        clauses.Add($"({itemTypeCol} & {ItemTypeMisc}) != 0");
+                        break;
+                }
+                break;
+            case "Misc":
+                // Catch-all: not Salvage, not a Sigil Trinket, not Jewelry/Armor/Clothing/Weapon by
+                // ItemType, and not a Consumable — mirrors the else-chain in ReadListing exactly.
+                clauses.Add($"""
+                    NOT (
+                        CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) = {WeenieTypeSalvage}
+                        OR JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.SigilTrinketType') IS NOT NULL
+                        OR ({itemTypeCol} & {ItemTypeJewelry}) != 0
+                        OR ({itemTypeCol} & {ItemTypeArmorMask}) != 0
+                        OR ({itemTypeCol} & {ItemTypeWeaponMask}) != 0
+                        OR CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) IN ({WeenieTypeFood}, {WeenieTypeHealer})
+                    )
+                    """);
+                switch (request.MiscType)
+                {
+                    case "Scroll":
+                        clauses.Add($"CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) = {WeenieTypeScroll}");
+                        if (request.ScrollSchool is { Length: > 0 } && MagicSchoolNameToValue.TryGetValue(request.ScrollSchool, out var schoolValue))
+                        {
+                            var schoolSpellIds = SpellSchoolById.Where(kv => kv.Value == schoolValue).Select(kv => kv.Key).ToList();
+                            clauses.Add(
+                                schoolSpellIds.Count > 0
+                                    ? $"CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesDID.Spell') AS UNSIGNED) IN ({string.Join(",", schoolSpellIds)})"
+                                    : "1=0"
+                            );
+                        }
+                        break;
+                    case "Gem":
+                        // Loose gemstones (Gem) and carved jewels (Jewel) share one subtype — see
+                        // ReadListing's Gem branch for why.
+                        clauses.Add($"CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) IN ({WeenieTypeGem}, {WeenieTypeJewel})");
+                        if (request.CarvedJewelOnly == true)
+                        {
+                            clauses.Add($"CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) = {WeenieTypeJewel}");
+                        }
+                        if (request.GemMaterial is { Length: > 0 })
+                        {
+                            var gemMaterialId = MaterialTypeNames.FirstOrDefault(kv => kv.Value == request.GemMaterial).Key;
+                            if (gemMaterialId != 0)
+                            {
+                                clauses.Add($"""
+                                    (
+                                        (CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) = {WeenieTypeGem} AND JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.MaterialType') = @gemMaterial)
+                                        OR (CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) = {WeenieTypeJewel} AND JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.JewelMaterialType') = @gemMaterial)
+                                    )
+                                    """);
+                                parameters.Add(("@gemMaterial", gemMaterialId));
+                            }
+                        }
+                        // Quality is ItemWorkmanship for a loose Gem, JewelQuality for a carved Jewel —
+                        // both are the same 1-10 scale, just stored under different properties.
+                        AddMinMaxFilter(
+                            "COALESCE(CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.JewelQuality') AS SIGNED), CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.ItemWorkmanship') AS SIGNED))",
+                            request.MinGemQuality, request.MaxGemQuality, "gemQuality", clauses, parameters
+                        );
+                        break;
+                    case "Trophy":
+                        clauses.Add("JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.TrophyQuality') IS NOT NULL");
+                        if (request.TrophyType is { Length: > 0 } && Array.IndexOf(TrophyTypeNames, request.TrophyType) >= 0)
+                        {
+                            clauses.Add($"{SortExpressions["name"]} LIKE @trophyTypePattern");
+                            parameters.Add(("@trophyTypePattern", "%" + request.TrophyType));
+                        }
+                        AddMinMaxFilter(
+                            "CAST(JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.TrophyQuality') AS SIGNED)",
+                            request.MinTrophyQuality, request.MaxTrophyQuality, "trophyQuality", clauses, parameters
+                        );
+                        break;
+                    case "Other":
+                        clauses.Add($"""
+                            NOT (
+                                CAST(JSON_EXTRACT(ItemSnapshotJson, '$.WeenieType') AS UNSIGNED) IN ({WeenieTypeScroll}, {WeenieTypeGem}, {WeenieTypeJewel})
+                                OR JSON_EXTRACT(ItemSnapshotJson, '$.PropertiesInt.TrophyQuality') IS NOT NULL
+                            )
+                            """);
+                        break;
                 }
                 break;
         }
@@ -1193,6 +1471,7 @@ public class MarketRepository
     private (MarketListing Listing, List<int> SpellIds) ReadListing(MySqlDataReader reader)
     {
         long? iconDid = GetNullableLong(reader, "IconDidRaw");
+        long? iconOverlayDid = GetNullableLong(reader, "IconOverlayDidRaw");
         var itemType = GetNullableUInt(reader, "ItemTypeRaw");
         var weaponType = GetNullableInt(reader, "WeaponTypeRaw");
         var combatStyle = GetNullableUInt(reader, "CombatStyleRaw");
@@ -1240,6 +1519,10 @@ public class MarketRepository
         var resistanceModifier = GetNullableDouble(reader, "ResistanceModifierRaw");
         var resistanceModifierType = GetNullableInt(reader, "ResistanceModifierTypeRaw");
         var noCompsRequiredForMagicSchool = GetNullableInt(reader, "NoCompsRequiredForMagicSchoolRaw");
+        var trophyQuality = GetNullableInt(reader, "TrophyQualityRaw");
+        var jewelQuality = GetNullableInt(reader, "JewelQualityRaw");
+        var jewelMaterialType = GetNullableInt(reader, "JewelMaterialTypeRaw");
+        var spellDid = GetNullableInt(reader, "SpellDidRaw");
         var spellBookRaw = reader.IsDBNull(reader.GetOrdinal("SpellBookRaw")) ? null : reader.GetString("SpellBookRaw");
         var spellIds = new List<int>();
         if (!string.IsNullOrEmpty(spellBookRaw))
@@ -1273,6 +1556,7 @@ public class MarketRepository
             ItemName = itemName,
             ItemDesc = reader.IsDBNull(reader.GetOrdinal("ItemDesc")) ? null : reader.GetString("ItemDesc"),
             IconHex = iconDid.HasValue ? ((uint)iconDid.Value).ToString("X8") : null,
+            IconOverlayHex = iconOverlayDid.HasValue ? ((uint)iconOverlayDid.Value).ToString("X8") : null,
             IconEffect = ComputeIconEffect(damageType, spellCount),
             IconUnderlay = ComputeIconUnderlay(itemType),
             LevelReq = wieldRequirements.LevelReq,
@@ -1329,6 +1613,15 @@ public class MarketRepository
             ArmorHealthRegenMod = GetNullableDouble(reader, "ArmorHealthRegenModRaw"),
             ArmorPerceptionMod = GetNullableDouble(reader, "ArmorPerceptionModRaw"),
             ArmorDeceptionMod = GetNullableDouble(reader, "ArmorDeceptionModRaw"),
+            ArmorHealthMod = GetNullableDouble(reader, "ArmorHealthModRaw"),
+            ArmorManaMod = GetNullableDouble(reader, "ArmorManaModRaw"),
+            ArmorStaminaMod = GetNullableDouble(reader, "ArmorStaminaModRaw"),
+            GearCritDamage = GetNullableInt(reader, "GearCritDamageRaw"),
+            GearCritDamageResist = GetNullableInt(reader, "GearCritDamageResistRaw"),
+            GearDamage = GetNullableInt(reader, "GearDamageRaw"),
+            GearDamageResist = GetNullableInt(reader, "GearDamageResistRaw"),
+            GearHealingBoost = GetNullableInt(reader, "GearHealingBoostRaw"),
+            GearMaxHealth = GetNullableInt(reader, "GearMaxHealthRaw"),
             SigilTriggerChance = GetNullableDouble(reader, "SigilTriggerChanceRaw"),
             SigilCooldown = GetNullableDouble(reader, "SigilCooldownRaw"),
             SigilManaReserved = GetNullableDouble(reader, "SigilManaReservedRaw"),
@@ -1368,6 +1661,20 @@ public class MarketRepository
             listing.ItemCategory = "SigilTrinket";
             listing.SigilTrinketType = SigilTrinketTypeNames[sigilTrinketType.Value];
 
+            // The effect name isn't a distinct biota property — the loot factory bakes it directly
+            // into the item's name as a " of <Effect>" suffix (LootGenerationFactory_SigilTrinket.cs:
+            // sigilTrinket.Name += cfg.NameSuffix, e.g. "Sigil Compass of Might"), so recover it the
+            // same way rather than re-deriving it from SigilTrinketEffectId/AllowedSpecializedSkills
+            // (whose effect-enum mapping doesn't cover every skill combination the loot tables use).
+            if (itemName != null)
+            {
+                var ofIndex = itemName.LastIndexOf(" of ", StringComparison.Ordinal);
+                if (ofIndex >= 0)
+                {
+                    listing.SigilEffectName = itemName[(ofIndex + 4)..];
+                }
+            }
+
             // Sigil Trinkets override the normal icon underlay/uieffect with one of three colors
             // (SigilTrinketColor enum: Blue=0, Yellow=1, Red=2 — apps/server/WorldObjects/SigilTrinket.cs),
             // instead of the usual ItemType-based underlay or DamageType/spell-based uieffect.
@@ -1385,6 +1692,16 @@ public class MarketRepository
             {
                 listing.IconUnderlay = "SigilRed";
                 listing.IconEffect = "SigilRed";
+            }
+
+            // The IconOverlay read straight from PropertiesDID is a numeral badge showing the
+            // trinket's max level, but only Blue trinkets consistently carry the intended custom
+            // badge (client data for Yellow/Red points at unrelated stock icons instead) — so
+            // override it uniformly here to the matching digit from the same custom badge set
+            // (0600900{maxLevel}.png) regardless of color.
+            if (itemMaxLevel is >= 0 and <= 9)
+            {
+                listing.IconOverlayHex = $"0600900{itemMaxLevel}";
             }
         }
         else if (itemType.HasValue && (itemType.Value & ItemTypeJewelry) != 0)
@@ -1417,6 +1734,69 @@ public class MarketRepository
         {
             listing.ItemCategory = "Weapon";
             listing.WeaponClass = ClassifyWeapon(itemType.Value, weaponType, combatStyle, weaponSkill);
+        }
+        else if (weenieType == WeenieTypeFood || weenieType == WeenieTypeHealer)
+        {
+            // Healer (health/stamina/mana kits) and Food (both eaten dishes and drinkable
+            // potions — the client uses one WorldObject class for both, split only by ItemType:
+            // Food-flag for meals/drinks, Misc-flag for buff potions/draughts/elixirs) share no
+            // wield requirements or gear stats, so they're grouped as one Consumable category.
+            listing.ItemCategory = "Consumable";
+            listing.ConsumableType = weenieType == WeenieTypeHealer ? "HealingKit"
+                : itemType.HasValue && (itemType.Value & ItemTypeFood) != 0 ? "Food"
+                : "Potion";
+        }
+        else
+        {
+            // Catch-all for anything not otherwise classified above.
+            listing.ItemCategory = "Misc";
+            if (weenieType == WeenieTypeScroll)
+            {
+                listing.MiscType = "Scroll";
+                if (spellDid.HasValue && SpellSchoolById.TryGetValue(spellDid.Value, out var schoolValue))
+                {
+                    listing.SpellSchool = MagicSchoolNameToValue.FirstOrDefault(kv => kv.Value == schoolValue).Key;
+                }
+            }
+            else if (weenieType == WeenieTypeGem || weenieType == WeenieTypeJewel)
+            {
+                // Loose gemstones (Gem) and carved jewels (Jewel, made from a socketed item via
+                // the Jewelcarving skill — apps/server/WorldObjects/Jewel.cs) are the same "gem"
+                // concept to a buyer, just different craft stages, so they share one subtype.
+                listing.MiscType = "Gem";
+                listing.IsCarvedJewel = weenieType == WeenieTypeJewel;
+                if (weenieType == WeenieTypeJewel)
+                {
+                    listing.GemQuality = jewelQuality;
+                    if (jewelMaterialType.HasValue && MaterialTypeNames.TryGetValue(jewelMaterialType.Value, out var jewelMatName))
+                    {
+                        listing.GemMaterialType = jewelMatName;
+                    }
+                }
+                else
+                {
+                    listing.GemQuality = itemWorkmanship;
+                    if (materialType.HasValue && MaterialTypeNames.TryGetValue(materialType.Value, out var gemMatName))
+                    {
+                        listing.GemMaterialType = gemMatName;
+                    }
+                }
+            }
+            else if (trophyQuality.HasValue)
+            {
+                listing.MiscType = "Trophy";
+                listing.TrophyQuality = trophyQuality;
+                // Stored Name is always "<QualityWord> <BaseName>" (LootGenerationFactory.MutateTrophy),
+                // so the base name is recoverable as a suffix match against the known type list.
+                if (itemName != null)
+                {
+                    listing.TrophyType = TrophyTypeNames.FirstOrDefault(t => itemName.EndsWith(t, StringComparison.Ordinal));
+                }
+            }
+            else
+            {
+                listing.MiscType = "Other";
+            }
         }
 
         if (clothingPriority.HasValue)

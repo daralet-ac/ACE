@@ -12,6 +12,10 @@ public class MarketListing
     public string? ItemName { get; set; }
     public string? ItemDesc { get; set; }
     public string? IconHex { get; set; }
+    // Salvage bags (and a handful of other stacked-icon items) carry a genuine PropertiesDID.
+    // IconOverlay distinct from Icon — e.g. a material-specific gem/ore glyph drawn on top of the
+    // generic bag art. Most items don't have one (null).
+    public string? IconOverlayHex { get; set; }
     public string? IconEffect { get; set; }
     public string? IconUnderlay { get; set; }
 
@@ -30,7 +34,27 @@ public class MarketListing
     public string? WeaponClass { get; set; }
     public string? ArmorWeightClass { get; set; }
     public string? SigilTrinketType { get; set; }
+    // Recovered from the " of <Effect>" suffix the loot factory bakes into ItemName — see
+    // MarketRepository.ReadListing's SigilTrinket branch.
+    public string? SigilEffectName { get; set; }
     public string? JewelrySlot { get; set; }
+    // "Food" | "Potion" | "HealingKit" — see MarketRepository.ReadListing's Consumable branch.
+    public string? ConsumableType { get; set; }
+    // "Scroll" | "Gem" | "Trophy" | "Other" — the catch-all bucket for anything not otherwise classified.
+    public string? MiscType { get; set; }
+    // Trophy-specific — the base species/material name recovered from the "<Quality> <Type>" name
+    // (e.g. "Damaged Armoredillo Hide" -> "Armoredillo Hide"), and the 1-10 TrophyQuality roll.
+    public string? TrophyType { get; set; }
+    public int? TrophyQuality { get; set; }
+    // Gem-specific — covers both loose gemstones (WeenieType.Gem, MaterialType + ItemWorkmanship)
+    // and carved jewels (WeenieType.Jewel, JewelMaterialType + JewelQuality) under one pair of
+    // fields, since they're the same "gem" concept to a buyer, just at different craft stages.
+    public string? GemMaterialType { get; set; }
+    public int? GemQuality { get; set; }
+    public bool? IsCarvedJewel { get; set; }
+    // Scroll-specific — the magic school of the spell it casts, resolved from a client-DAT-derived
+    // static lookup (no school column exists in ace_world.spell) — see SpellSchools.json.
+    public string? SpellSchool { get; set; }
     public List<string> Coverage { get; set; } = new();
     public List<string> ImbuedEffects { get; set; } = new();
 
@@ -102,6 +126,23 @@ public class MarketListing
     public double? ArmorHealthRegenMod { get; set; }
     public double? ArmorPerceptionMod { get; set; }
     public double? ArmorDeceptionMod { get; set; }
+
+    // Clothing's vital mods (distinct properties from Armor's *RegenMod family above — Clothing
+    // items roll ArmorHealthMod/ArmorManaMod/ArmorStaminaMod instead, per real item snapshots).
+    public double? ArmorHealthMod { get; set; }
+    public double? ArmorManaMod { get; set; }
+    public double? ArmorStaminaMod { get; set; }
+
+    // Jewelry's mods — Gear* rating PropertyInts distinct from the GearRatingProperties list used
+    // for the generic Properties tooltip (LootGenerationFactory_Jewelry.cs: Rings roll CritDamage
+    // or CritDamageResist; Bracelets roll Damage or DamageResist; Necklaces/Amulets roll
+    // HealingBoost or MaxHealth).
+    public int? GearCritDamage { get; set; }
+    public int? GearCritDamageResist { get; set; }
+    public int? GearDamage { get; set; }
+    public int? GearDamageResist { get; set; }
+    public int? GearHealingBoost { get; set; }
+    public int? GearMaxHealth { get; set; }
 
     // Sigil trinket stats.
     public double? SigilTriggerChance { get; set; }
