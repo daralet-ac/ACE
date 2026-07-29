@@ -313,3 +313,9 @@ Database/tools/password.txt
 docker.env
 docker-compose.yml
 docker-compose.arm64
+
+# Market API secrets — appsettings.json itself stays committed with blank credential values;
+# the per-environment overlay files below hold the real read-only DB connection info and must
+# never be committed.
+apps/market-api/appsettings.*.json
+!apps/market-api/appsettings.json
