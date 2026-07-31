@@ -2729,7 +2729,26 @@ public class EmoteManager
                 break;
             }
 
+            case EmoteType.HealSelf:
 
+                if (creature != null)
+                {
+                    var healMin = emote.Min ?? emote.Amount ?? 0;
+                    var healMax = emote.Max ?? healMin;
+
+                    var healAmount = healMin == healMax ? healMin : ThreadSafeRandom.Next(healMin, healMax);
+
+                    if (healAmount > 0)
+                    {
+                        var actualHealed = creature.UpdateVitalDelta(creature.Health, healAmount);
+
+                        if (actualHealed > 0)
+                        {
+                            creature.DamageHistory.OnHeal((uint)actualHealed);
+                        }
+                    }
+                }
+                break;
 
             default:
                 _log.Debug(
