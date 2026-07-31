@@ -2729,6 +2729,19 @@ public class EmoteManager
                 break;
             }
 
+            // -----------------------------------------------------------------------------
+            // EmoteType.HealSelf  (content author guide)
+            //
+            // Heals WorldObject (must be a Creature) directly via UpdateVitalDelta - no spell
+            // ID required, so no client/portal.dat changes needed for custom heal amounts.
+            //
+            //   amount      = fixed heal amount (used when min/max are not both set)
+            //   min / max   = inclusive random range, rolled each time this fires
+            //
+            // Amount is clamped to MaxHealth by UpdateVital; a WorldObject that isn't a
+            // Creature (e.g. a Hotspot) is a no-op.
+            // -----------------------------------------------------------------------------
+
             case EmoteType.HealSelf:
 
                 if (creature != null)
