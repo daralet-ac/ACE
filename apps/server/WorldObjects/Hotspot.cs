@@ -257,6 +257,27 @@ public class Hotspot : WorldObject
         }
     }
 
+    /// <summary>
+    /// Opt-in for PhysicsObj.is_touching()'s custom collision check: treats this Hotspot's
+    /// placement position as the CENTER of its CylSphere collision height rather than the base,
+    /// shifting the whole collision volume down by Height/2. See PropertyBool.HotspotCollidesFromCenter.
+    /// </summary>
+    public bool CollidesFromCenter
+    {
+        get => GetProperty(PropertyBool.HotspotCollidesFromCenter) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.HotspotCollidesFromCenter);
+            }
+            else
+            {
+                SetProperty(PropertyBool.HotspotCollidesFromCenter, value);
+            }
+        }
+    }
+
     private void Activate()
     {
         if (Creatures == null || CurrentLandblock == null)
