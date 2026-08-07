@@ -369,7 +369,7 @@ partial class Creature
             return;
         }
 
-        if (PhysicsObj.MovementManager.MoveToManager.FailProgressCount > 0 && Timers.RunningTime > NextCancelTime)
+        if (PhysicsObj.MovementManager?.MoveToManager?.FailProgressCount > 0 && Timers.RunningTime > NextCancelTime)
         {
             CancelMoveTo();
         }

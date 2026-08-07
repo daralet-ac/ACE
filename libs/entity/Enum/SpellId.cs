@@ -6841,6 +6841,7 @@ public enum SpellId : uint
     CookFoodThievery8,
     CookFoodThievery9,
     CookFoodThievery10,
+    OlthoiQueenAcidVulnerability,
 
     NumSpells = 8192,
 

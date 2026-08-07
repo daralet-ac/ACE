@@ -195,6 +195,18 @@ partial class Creature
 
         currentTick = diminishedMaxVital * vitalTypeBaseMod * vitalTypeArmorMod * stanceMod * enchantmentMod * augMod * relentlessStaminaMod;
 
+        // Flat, opt-in bonus added straight onto the health tick, independent of the max-health-
+        // based formula above - content-settable via SetMyFloatStat/SetFloatStat on
+        // PropertyFloat.BonusHealthRegenPerTick. Added here (not via a HeartBeat-category emote)
+        // specifically because this method runs unconditionally every ~5s for every Creature
+        // (Creature_Tick.cs Heartbeat() -> VitalHeartBeat()), regardless of IsAwake/combat state -
+        // unlike EmoteManager.HeartBeat(), which silently skips the whole HeartBeat emote category
+        // for any awake, non-patrolling Creature. Zero/unset is a no-op.
+        if (vital.Vital == PropertyAttribute2nd.MaxHealth)
+        {
+            currentTick += GetProperty(PropertyFloat.BonusHealthRegenPerTick) ?? 0;
+        }
+
         // add in partially accumulated / rounded vitals from previous tick(s)
         var totalTick = currentTick + vital.PartialRegen;
 

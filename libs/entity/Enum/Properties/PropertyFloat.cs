@@ -258,6 +258,12 @@ public enum PropertyFloat : ushort
     DestabVarPercent = 205,
 
     [ServerOnly]
+    HomesickGracePeriod = 206,
+
+    [ServerOnly]
+    BonusHealthRegenPerTick = 207,
+
+    [ServerOnly]
     PCAPRecordedWorkmanship = 8004,
 
     [ServerOnly]

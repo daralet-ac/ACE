@@ -7283,6 +7283,22 @@ partial class WorldObject
         }
     }
 
+    public int? WeaponRelicApplyCount
+    {
+        get => GetProperty(PropertyInt.WeaponRelicApplyCount);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.WeaponRelicApplyCount);
+            }
+            else
+            {
+                SetProperty(PropertyInt.WeaponRelicApplyCount, value.Value);
+            }
+        }
+    }
+
     public bool? BossKillXpReward
     {
         get => GetProperty(PropertyBool.BossKillXpReward);

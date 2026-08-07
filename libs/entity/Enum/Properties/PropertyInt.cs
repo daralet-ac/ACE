@@ -889,6 +889,9 @@ public enum PropertyInt : ushort
     TargetSpecificWcid = 522,
 
     [ServerOnly]
+    WeaponRelicApplyCount = 523,
+
+    [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
 
     [ServerOnly]

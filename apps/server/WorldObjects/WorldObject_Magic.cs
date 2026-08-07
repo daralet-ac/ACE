@@ -1965,18 +1965,22 @@ partial class WorldObject
 
         if (targetCreature != null && projectileSpellType == ProjectileSpellType.Blast)
         {
+            var blastRadius = spell.Id == (uint)SpellId.OlthoiQueenAcidSpray ? 1000 : 10;
             List<Creature> nearbyTargets;
-            const int blastRadius = 10;
             nearbyTargets = this is Player ? targetCreature.GetNearbyMonsters(blastRadius) : targetCreature.GetNearbyPlayers(blastRadius);
 
             var blastTargets = new List<Creature> { targetCreature };
+
+            // Max ADDITIONAL targets beyond the primary - i.e. total targets hit caps at
+            // spell.NumProjectiles (the DB-set projectile count), not a fixed retail value.
+            var maxExtraBlastTargets = Math.Max(0, spell.NumProjectiles - 1);
 
             if (nearbyTargets != null)
             {
                 var blastCount = 0;
                 foreach (var nearbyTarget in nearbyTargets)
                 {
-                    if (blastCount == 2)
+                    if (blastCount >= maxExtraBlastTargets)
                     {
                         break;
                     }
@@ -1986,7 +1990,11 @@ partial class WorldObject
                         continue;
                     }
 
-                    var angle = targetCreature.GetAngle(nearbyTarget);
+                    // In front of the CASTER's own facing, not the primary target's facing - a
+                    // player's orientation relative to their neighbors has nothing to do with
+                    // where the caster is aiming, which was making this look like it fired in
+                    // random directions once the radius was widened for Acid Spray.
+                    var angle = (caster ?? targetCreature).GetAngle(nearbyTarget);
                     if (Math.Abs(angle) > Creature.CleaveAngle / 4.0f)
                     {
                         continue;
@@ -1995,16 +2003,6 @@ partial class WorldObject
                     blastTargets.Add(nearbyTarget);
                     blastCount++;
                 }
-            }
-
-            if (blastTargets.Count >= 3)
-            {
-                spell.SpellPowerMod = 0.67f;
-            }
-
-            if (blastTargets.Count == 2)
-            {
-                spell.SpellPowerMod = 0.75f;
             }
 
             foreach (var blastTarget in blastTargets)

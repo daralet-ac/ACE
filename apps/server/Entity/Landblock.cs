@@ -2217,6 +2217,9 @@ public class Landblock : IActor
             case "Mountain Fortress":
                 dungeonLandblocks = [0x011C, 0x12FE, 0x12FD, 0x12FC, 0x12FB, 0x12FA];
                 break;
+            case "Olthoi Queen's Lair":
+                dungeonLandblocks = [0xC7B7, 0x1AFE, 0x1AFD, 0x1AFC, 0x1AFB, 0x1AFA];
+                break;
             default:
                 return null;
         }
@@ -2372,6 +2375,12 @@ public class Landblock : IActor
         { new LandblockId(0x12FC << 16 | 0xFFFF), new Position(0x12FC030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
         { new LandblockId(0x12FB << 16 | 0xFFFF), new Position(0x12FB030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
         { new LandblockId(0x12FA << 16 | 0xFFFF), new Position(0x12FA030F, 100.572f, -160.084f, 0.005f, 0f, 0f, 0.711837f, 0.702345f) },
+        { new LandblockId(0xC7B7u << 16 | 0xFFFF), new Position(0xC7B70462, -50.2814f, 7.25725f, 162.405f, 0f, 0f, -0.017697f, 0.999843f) },
+        { new LandblockId(0x1AFE << 16 | 0xFFFF), new Position(0x1AFE0462, -50.2814f, 7.25725f, 162.405f, 0f, 0f, -0.017697f, 0.999843f) },
+        { new LandblockId(0x1AFD << 16 | 0xFFFF), new Position(0x1AFD0462, -50.2814f, 7.25725f, 162.405f, 0f, 0f, -0.017697f, 0.999843f) },
+        { new LandblockId(0x1AFC << 16 | 0xFFFF), new Position(0x1AFC0462, -50.2814f, 7.25725f, 162.405f, 0f, 0f, -0.017697f, 0.999843f) },
+        { new LandblockId(0x1AFB << 16 | 0xFFFF), new Position(0x1AFB0462, -50.2814f, 7.25725f, 162.405f, 0f, 0f, -0.017697f, 0.999843f) },
+        { new LandblockId(0x1AFA << 16 | 0xFFFF), new Position(0x1AFA0462, -50.2814f, 7.25725f, 162.405f, 0f, 0f, -0.017697f, 0.999843f) },
     };
 
     public bool IsFellowshipRequired()
@@ -2397,7 +2406,8 @@ public class Landblock : IActor
             0x0139, 0x15FE, 0x15FD, 0x15FC, 0x15FB, 0x15FA, // "Mage Academy"
             0x02E9, 0x16FE, 0x16FD, 0x16FC, 0x16FB, 0x16FA, // "Lugian Mines"
             0x02E7, 0x17FE, 0x17FD, 0x17FC, 0x17FB, 0x17FA, // "Lugian Mines2"
-            0x011C, 0x12FE, 0x12FD, 0x12FC, 0x12FB, 0x12FA // "Mountain Fortress"
+            0x011C, 0x12FE, 0x12FD, 0x12FC, 0x12FB, 0x12FA, // "Mountain Fortress"
+            0xC7B7, 0x1AFE, 0x1AFD, 0x1AFC, 0x1AFB, 0x1AFA, // "Olthoi Queen's Lair"
         ];
 
     private void IncreaseMinimumEncounterSpawnDensity(List<Encounter> encounters, List<uint> generatedEncounterIdList)

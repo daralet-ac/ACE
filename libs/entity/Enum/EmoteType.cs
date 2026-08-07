@@ -160,5 +160,34 @@ public enum EmoteType
     /// Heals the emote's own WorldObject (must be a Creature) by an amount.
     /// Amount = fixed heal amount. Min/Max = inclusive random range (overrides Amount when both are set).
     /// </summary>
-    HealSelf = 10020
+    HealSelf = 10020,
+
+    /// <summary>
+    /// Randomly reschedules the emote's own WorldObject's next HeartBeat tick, by directly
+    /// setting the in-memory NextHeartbeatTime field (WorldObject_Tick.cs) to now + a random
+    /// offset. Min/Max = inclusive random offset range in seconds.
+    ///
+    /// Exists because HeartbeatTimestamp/HeartbeatInterval alone can't desync multiple
+    /// instances of the same weenie that all get activated by the same broadcast signal at
+    /// the same moment (e.g. several identical landblock fixtures reacting to one LocalSignal)
+    /// - NextHeartbeatTime is a runtime-only field recomputed from "now" at load time (with
+    /// only a small built-in 0-5s spread) and is never re-derived from the saved
+    /// HeartbeatTimestamp property afterward, so writing that property via StampMyQuest-style
+    /// emotes has no effect on actual tick scheduling.
+    /// </summary>
+    JitterNextHeartbeat = 10021,
+
+    /// <summary>
+    /// Sets the emote's own WorldObject's IsHot property (PropertyBool.IsHot) to true, if the
+    /// WorldObject is a Hotspot.
+    ///
+    /// Exists because the built-in SetBoolStat/SetMyBoolStat emotes only operate on Player or
+    /// Creature WorldObjects respectively (see EmoteManager.cs) - a Hotspot is neither, so
+    /// there was no data-driven way to flip a Hotspot's damage on after it already exists.
+    /// Hotspot.IsHot is read fresh from the property store on every collision tick (see
+    /// Hotspot.cs Activate()), so a Hotspot can be spawned inert (no IsHot set, purely visual)
+    /// and then have this fired after a delay once its spawn-in animation has finished, without
+    /// needing to destroy/respawn the object.
+    /// </summary>
+    ActivateHotspot = 10022
 }

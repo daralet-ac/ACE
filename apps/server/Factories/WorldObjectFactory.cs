@@ -181,6 +181,8 @@ public static class WorldObjectFactory
                 return new SpellDust(weenie, guid);
             case WeenieType.ScribingTable:
                 return new ScribingTable(weenie, guid);
+            case WeenieType.WeaponRelic:
+                return new WeaponRelic(weenie, guid);
             default:
                 return new GenericObject(weenie, guid);
         }
@@ -338,6 +340,8 @@ public static class WorldObjectFactory
                 return new SpellDust(biota);
             case WeenieType.ScribingTable:
                 return new ScribingTable(biota);
+            case WeenieType.WeaponRelic:
+                return new WeaponRelic(biota);
             default:
                 return new GenericObject(biota);
         }

@@ -254,7 +254,9 @@ public class AddEnchantmentResult
         SpellId.OlthoiManaDebuff,
         SpellId.OlthoiDefenseDebuff,
         SpellId.OlthoiAcidVulnerability,
-        SpellId.OlthoiHealthDebuff
+        SpellId.OlthoiHealthDebuff,
+
+        SpellId.OlthoiQueenAcidVulnerability
     };
 
     private bool IsStackableEnchantment(SpellId spellId)

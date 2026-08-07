@@ -858,6 +858,7 @@ public class AppraiseInfo
 
         SetCriticalStrikeUseLongText(wo);
         SetBitingStrikeUseLongText(wo);
+        SetSlayerUseLongText(wo);
 
         // "Additional Properties" ('Use' and 'LongDesc' text)
         SetWardRendingUseLongText(wo);
@@ -1922,6 +1923,26 @@ public class AppraiseInfo
         _additionalPropertiesLongDescriptionsText +=
             $"~ Biting Strike: Increases critical chance by +{ratingAmount}%, additively. " +
             $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 5}%).\n";
+    }
+
+    private void SetSlayerUseLongText(WorldObject wo)
+    {
+        if (
+            !PropertiesInt.TryGetValue(PropertyInt.SlayerCreatureType, out var slayerCreatureTypeInt)
+            || !PropertiesFloat.TryGetValue(PropertyFloat.SlayerDamageBonus, out var slayerDamageBonus)
+            || !(slayerDamageBonus > 1.0)
+        )
+        {
+            return;
+        }
+
+        var slayerCreatureType = (CreatureType)slayerCreatureTypeInt;
+        var bonusPercent = Math.Round((slayerDamageBonus - 1.0) * 100, 0);
+
+        _hasExtraPropertiesText = true;
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ {slayerCreatureType} Slayer: Deals +{bonusPercent}% damage against {slayerCreatureType} creatures.\n";
     }
 
     private void SetCriticalStrikeUseLongText(WorldObject wo)

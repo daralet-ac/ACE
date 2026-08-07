@@ -1256,6 +1256,20 @@ public class PhysicsObj
 
     public void MoveToPosition(Position pos, MovementParameters movementParams)
     {
+        if (MovementManager == null)
+        {
+            MovementManager = MovementManager.Create(this, WeenieObj);
+            MovementManager.EnterDefaultState();
+            if (!State.HasFlag(PhysicsState.Static))
+            {
+                if (!TransientState.HasFlag(TransientStateFlags.Active))
+                {
+                    UpdateTime = PhysicsTimer.CurrentTime;
+                }
+
+                TransientState &= ~TransientStateFlags.Active;
+            }
+        }
         var mvs = new MovementStruct();
         mvs.Position = new Position(pos);
         mvs.Type = MovementType.MoveToPosition;
