@@ -2763,6 +2763,27 @@ public class EmoteManager
                 }
                 break;
 
+            case EmoteType.JitterNextHeartbeat:
+
+                if (WorldObject != null)
+                {
+                    var jitterMin = emote.Min ?? 0;
+                    var jitterMax = emote.Max ?? jitterMin;
+
+                    var jitter = jitterMin == jitterMax ? jitterMin : ThreadSafeRandom.Next(jitterMin, jitterMax);
+
+                    WorldObject.NextHeartbeatTime = Time.GetUnixTime() + jitter;
+                }
+                break;
+
+            case EmoteType.ActivateHotspot:
+
+                if (WorldObject is Hotspot hotspot)
+                {
+                    hotspot.IsHot = true;
+                }
+                break;
+
             default:
                 _log.Debug(
                     "EmoteManager.Execute - Encountered Unhandled EmoteType {EmoteType} for {WorldObjectName} ({WorldObjectWeenieClassId})",
@@ -3580,7 +3601,15 @@ public class EmoteManager
     /// </summary>
     public void OnLocalSignal(WorldObject emitter, string message)
     {
-        ExecuteEmoteSet(EmoteCategory.ReceiveLocalSignal, message, emitter);
+        // nested:true - an incoming signal from another object is a distinct external event, not
+        // part of whatever action chain this object's own EmoteManager is currently mid-processing
+        // (e.g. a combat creature's own Taunt/WoundedTaunt/ReceiveCritical/HeartBeat reactions).
+        // Without this, "if (IsBusy && !nested) return false;" in ExecuteEmoteSet silently drops
+        // the entire incoming signal with no error and no retry whenever the receiver happens to
+        // be mid-processing anything else at that instant. HeartBeat/Taunt/WoundedTaunt/
+        // ReceiveCritical deliberately keep their existing busy-gating (unchanged) - only the
+        // incoming-signal path is affected.
+        ExecuteEmoteSet(EmoteCategory.ReceiveLocalSignal, message, emitter, true);
     }
 
     /// <summary>

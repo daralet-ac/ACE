@@ -314,6 +314,15 @@ public enum PropertyBool : ushort
 
     [ServerOnly]
     VendorSellsSpecialItems = 9014,
+
+    /// <summary>
+    /// Opt-in for Hotspot.OnCollideObject's custom PhysicsObj.is_touching() check: treats this
+    /// object's placement position as the CENTER of its CylSphere collision height rather than
+    /// the base, shifting the whole collision volume down by Height/2. Unset/false preserves the
+    /// stock base-anchored behavior for every other object.
+    /// </summary>
+    [ServerOnly]
+    HotspotCollidesFromCenter = 9015,
 }
 
 public static class PropertyBoolExtensions

@@ -125,6 +125,64 @@ partial class Creature
     }
 
     /// <summary>
+    /// When set (seconds), this monster won't call MoveToHome() / fire Homesick the instant it
+    /// finds itself with zero valid attack targets - it waits this long first, and cancels the
+    /// wait if a target becomes visible again in the meantime. Intended for scripted encounters
+    /// where a brief target loss (e.g. a player using a short stealth effect while solo) shouldn't
+    /// be treated the same as genuinely abandoning the fight. Unset/0 preserves the original
+    /// instant behavior.
+    /// </summary>
+    public double? HomesickGracePeriod
+    {
+        get => GetProperty(PropertyFloat.HomesickGracePeriod);
+        set
+        {
+            if (value == null)
+            {
+                RemoveProperty(PropertyFloat.HomesickGracePeriod);
+            }
+            else
+            {
+                SetProperty(PropertyFloat.HomesickGracePeriod, value.Value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Unix timestamp of when this monster first found itself with zero valid attack targets,
+    /// during the current target-loss streak. Null when it currently has a target. Only
+    /// meaningful when HomesickGracePeriod is set - see HandleNoTargetsFound().
+    /// </summary>
+    private double? _targetsLostTimestamp;
+
+    /// <summary>
+    /// Called whenever FindNextTarget() finds no valid attack targets, instead of calling
+    /// MoveToHome() directly - applies HomesickGracePeriod if set (see above), otherwise
+    /// preserves the original instant MoveToHome() behavior.
+    /// </summary>
+    private void HandleNoTargetsFound()
+    {
+        if (MonsterState == State.Return)
+        {
+            return;
+        }
+
+        var gracePeriod = HomesickGracePeriod;
+
+        if (gracePeriod is > 0)
+        {
+            _targetsLostTimestamp ??= Time.GetUnixTime();
+
+            if (Time.GetUnixTime() - _targetsLostTimestamp.Value < gracePeriod.Value)
+            {
+                return;
+            }
+        }
+
+        MoveToHome();
+    }
+
+    /// <summary>
     /// This list of possible targeting tactics for this monster
     /// </summary>
     public TargetingTactic TargetingTactic
@@ -330,11 +388,7 @@ partial class Creature
 
             if (visibleTargets.Count == 0)
             {
-                if (MonsterState != State.Return)
-                {
-                    MoveToHome();
-                }
-
+                HandleNoTargetsFound();
                 return false;
             }
 
@@ -354,10 +408,13 @@ partial class Creature
 
                 if (visibleTargets.Count == 0)
                 {
-                    MoveToHome();
+                    HandleNoTargetsFound();
                     return false;
                 }
             }
+
+            // Got here with at least one real target - clear any in-progress grace-period streak.
+            _targetsLostTimestamp = null;
 
             if (AttackTarget is Creature attackTargetCreature && GetDistance(AttackTarget) > VisualAwarenessRange)
             {

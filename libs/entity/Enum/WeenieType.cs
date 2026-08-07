@@ -94,5 +94,6 @@ public enum WeenieType : uint
     Destabilizer,
     BlankScroll,
     SpellDust,
-    ScribingTable
+    ScribingTable,
+    WeaponRelic
 }

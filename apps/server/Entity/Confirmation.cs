@@ -221,6 +221,9 @@ public class Confirmation_CraftInteration : Confirmation
             case WeenieType.SpellDust:
                 ScrollFinalizer.TryFinalizeScroll(player, source, target, true);
                 break;
+            case WeenieType.WeaponRelic:
+                WeaponRelic.UseObjectOnTarget(player, source, target, true);
+                break;
             default:
                 RecipeManager.UseObjectOnTarget(player, source, target, true);
                 break;

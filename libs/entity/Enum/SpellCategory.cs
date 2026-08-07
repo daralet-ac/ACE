@@ -841,4 +841,5 @@ public enum SpellCategory : uint
     CookFoodLifeMagic = 843,
     CookFoodWarMagic = 844,
     CookFoodThievery = 845,
+    OlthoiQueenAcidVulnerability = 846,
 }

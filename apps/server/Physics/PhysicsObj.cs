@@ -637,6 +637,15 @@ public class PhysicsObj
                 var center = Position.Frame.LocalToGlobal(pSphere.Center);
                 var lowpoint = obj.Position.Frame.LocalToGlobal(cylsphere.LowPoint);
 
+                // opt-in (PropertyBool.HotspotCollidesFromCenter): treat obj's placement as the
+                // CENTER of the CylSphere's height instead of the base, shifting the whole
+                // collision volume down by Height/2. Off by default - every other object keeps
+                // the stock base-anchored behavior.
+                if (obj.WeenieObj?.WorldObject?.GetProperty(PropertyBool.HotspotCollidesFromCenter) ?? false)
+                {
+                    lowpoint.Z -= cylsphere.Height * 0.5f;
+                }
+
                 var disp = center - lowpoint;
                 var radsum = pSphere.Radius + cylsphere.Radius - PhysicsGlobals.EPSILON;
 
@@ -1256,6 +1265,20 @@ public class PhysicsObj
 
     public void MoveToPosition(Position pos, MovementParameters movementParams)
     {
+        if (MovementManager == null)
+        {
+            MovementManager = MovementManager.Create(this, WeenieObj);
+            MovementManager.EnterDefaultState();
+            if (!State.HasFlag(PhysicsState.Static))
+            {
+                if (!TransientState.HasFlag(TransientStateFlags.Active))
+                {
+                    UpdateTime = PhysicsTimer.CurrentTime;
+                }
+
+                TransientState &= ~TransientStateFlags.Active;
+            }
+        }
         var mvs = new MovementStruct();
         mvs.Position = new Position(pos);
         mvs.Type = MovementType.MoveToPosition;
