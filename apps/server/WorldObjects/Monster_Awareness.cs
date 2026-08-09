@@ -339,6 +339,11 @@ partial class Creature
     /// </summary>
     private void TickDownAllTargetThreatLevels()
     {
+        if (ThreatLevel == null || ThreatLevel.Count == 0)
+        {
+            return;
+        }
+
         var totalThreat = 0;
         foreach (var kvp in ThreatLevel)
         {
