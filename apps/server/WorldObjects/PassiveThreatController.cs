@@ -4,6 +4,9 @@ using Serilog;
 
 namespace ACE.Server.WorldObjects;
 
+/// <summary>
+/// Passive objectives require a CreatureType matching each intended attacker's FoeType.
+/// </summary>
 public sealed class PassiveThreatController
 {
     private const float PassiveTargetPctDefault = 0.40f;

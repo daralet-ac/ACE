@@ -856,7 +856,7 @@ partial class Creature
         foreach (var creature in candidates)
         {
             // ensure attackable
-            var allowPassiveThreat = usePassiveThreat && creature.GeneratesPassiveThreat;
+            var allowPassiveThreat = usePassiveThreat && creature.GeneratesPassiveThreat && PotentialFoe(creature);
             if (!allowPassiveThreat && !creature.Attackable && creature.TargetingTactic == TargetingTactic.None
                 || creature.Teleporting)
             {
