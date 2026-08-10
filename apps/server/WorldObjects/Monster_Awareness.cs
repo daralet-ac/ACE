@@ -239,6 +239,11 @@ partial class Creature
 
     protected virtual void HandleFindTarget()
     {
+        if (GeneratesPassiveThreat && TargetingTactic == TargetingTactic.None)
+        {
+            return;
+        }
+
         if (Timers.RunningTime < NextFindTarget)
         {
             return;
@@ -273,8 +278,15 @@ partial class Creature
     {
         get => PropertyManager.GetBool("debug_threat_system").Item;
     }
+    private readonly PassiveThreatController _passiveThreatController = new();
     private const int ThreatMinimum = 100;
     private double ThreatGainedSinceLastTick = 1;
+
+    public bool GeneratesPassiveThreat =>
+        GetProperty(PropertyBool.GeneratesPassiveThreat) ?? false;
+
+    public int PassiveThreatThreshold =>
+        GetProperty(PropertyInt.PassiveThreatThreshold) ?? 0;
 
     private Dictionary<Creature, int> ThreatLevel;
     public Dictionary<Creature, float> PositiveThreat;
@@ -339,6 +351,7 @@ partial class Creature
     /// </summary>
     private void TickDownAllTargetThreatLevels()
     {
+        PruneDeadThreatTargets();
         if (ThreatLevel == null || ThreatLevel.Count == 0)
         {
             return;
@@ -367,12 +380,39 @@ partial class Creature
             {
                 ThreatLevel[key] = ThreatMinimum;
             }
+
+            if (key.GeneratesPassiveThreat && key.PassiveThreatThreshold >= 2)
+            {
+                var passiveFloor = ThreatMinimum + key.PassiveThreatThreshold;
+                if (ThreatLevel[key] < passiveFloor)
+                {
+                    ThreatLevel[key] = passiveFloor;
+                }
+            }
         }
 
         //if (DebugThreatSystem)
         //    _log.Information("TickDownAllTargetThreatLevels() - {Name} - {Threat}", Name, threatGained);
 
         ThreatGainedSinceLastTick = 0;
+    }
+
+    private void PruneDeadThreatTargets()
+    {
+        if (ThreatLevel == null || ThreatLevel.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var (target, _) in ThreatLevel.ToList())
+        {
+            if (target == null || target.IsDead)
+            {
+                ThreatLevel.Remove(target);
+                PositiveThreat?.Remove(target);
+                NegativeThreat?.Remove(target);
+            }
+        }
     }
 
     public virtual bool FindNextTarget(bool onTakeDamage, Creature untargetablePlayer = null)
@@ -476,6 +516,16 @@ partial class Creature
                         }
                     }
                 }
+
+                _passiveThreatController.ApplyPassiveThreatThreshold(
+                    this,
+                    visibleTargets,
+                    ThreatLevel,
+                    ThreatMinimum,
+                    DebugThreatSystem,
+                    _log
+                );
+                PruneDeadThreatTargets();
 
                 if (ThreatLevel?.Count == 0)
                 {
@@ -626,9 +676,11 @@ partial class Creature
                         }
                     }
 
-                    if (DebugThreatSystem)
+                    var selectedTarget = AttackTarget as Creature;
+                    _passiveThreatController.UpdatePassiveLossStreaks(selectedTarget, ThreatLevel);
+                    if (DebugThreatSystem && selectedTarget != null)
                     {
-                        _log.Information("SELECTED PLAYER: {Name}", AttackTarget.Name);
+                        _log.Information("SELECTED TARGET: {Name}", selectedTarget.Name);
                     }
                 }
             }
@@ -784,13 +836,29 @@ partial class Creature
     {
         var visibleTargets = new List<Creature>();
 
+        var usePassiveThreat = !(UseLegacyThreatSystem ?? false);
+        var candidates = PhysicsObj.ObjMaint.GetVisibleTargetsValuesOfTypeCreature().ToList();
+        if (usePassiveThreat)
+        {
+            foreach (var obj in PhysicsObj.ObjMaint.GetVisibleObjects(PhysicsObj.CurCell))
+            {
+                if (obj.WeenieObj.WorldObject is Creature { GeneratesPassiveThreat: true } passiveTarget
+                    && !candidates.Contains(passiveTarget))
+                {
+                    candidates.Add(passiveTarget);
+                }
+            }
+        }
+
         // cached once per call rather than re-read from the property dictionary per candidate
         var targetSpecificWcid = TargetSpecificWcid;
 
-        foreach (var creature in PhysicsObj.ObjMaint.GetVisibleTargetsValuesOfTypeCreature())
+        foreach (var creature in candidates)
         {
             // ensure attackable
-            if (!creature.Attackable && creature.TargetingTactic == TargetingTactic.None || creature.Teleporting)
+            var allowPassiveThreat = usePassiveThreat && creature.GeneratesPassiveThreat;
+            if (!allowPassiveThreat && !creature.Attackable && creature.TargetingTactic == TargetingTactic.None
+                || creature.Teleporting)
             {
                 continue;
             }
