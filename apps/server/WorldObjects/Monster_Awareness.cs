@@ -27,8 +27,23 @@ partial class Creature
     /// <summary>
     /// Transitions a monster from idle to awake state
     /// </summary>
+    private static readonly HashSet<uint> OnpTraceWcids = new HashSet<uint>
+    {
+        2036560,
+        2036575, 2036555, 2036565,
+        2036572, 2036558, 2036567,
+        2036552, 2036566, 2036556, 2036561,
+    };
+
     public void WakeUp(bool alertNearby = true)
     {
+        if (OnpTraceWcids.Contains(WeenieClassId))
+        {
+            Console.WriteLine(
+                $"[ONP-TRACE] 0x{Guid} {Name} ({WeenieClassId}).WakeUp() called, AttackTarget={AttackTarget?.Name}, alertNearby={alertNearby}"
+            );
+        }
+
         MonsterState = State.Awake;
         IsAwake = true;
         //LastHeartbeatPosition = Location;

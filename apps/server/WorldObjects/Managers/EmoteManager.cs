@@ -41,6 +41,23 @@ public class EmoteManager
 
     public bool Debug = false;
 
+    /// <summary>
+    /// TEMP diagnostic trace for the Olthoi North Patrol investigation - remove once resolved.
+    /// Logs every emote action executed, every ExecuteEmoteSet call (including silent IsBusy drops),
+    /// and every NewEnemy trigger, for these specific WCIDs only.
+    /// </summary>
+    private static readonly HashSet<uint> OnpTraceWcids = new HashSet<uint>
+    {
+        2036560, // Camp Supply Encounter Wrapper
+        2036575, 2036555, 2036565, // Camp Supply Watchdog N/S/W
+        2036572, 2036558, 2036567, // ON_Patrol_Controller N/S/W
+        2036552, // Roaming Patrol N Camp 1 Gen (shared across all 3 camps)
+        2036566, // ON_Roaming Patrol Master Generator
+        2036556, 2036561, // Knight x2 (the actual roaming patrol spawns)
+    };
+
+    private bool OnpTraceEnabled => WorldObject != null && OnpTraceWcids.Contains(WorldObject.WeenieClassId);
+
     public EmoteManager(WorldObject worldObject)
     {
         _worldObject = worldObject;
@@ -64,6 +81,13 @@ public class EmoteManager
 
         //if (Debug)
         //Console.WriteLine($"{WorldObject.Name}.ExecuteEmote({emoteType})");
+
+        if (OnpTraceEnabled)
+        {
+            Console.WriteLine(
+                $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}).ExecuteEmote: type={emoteType} category={emoteSet.Category} quest={emoteSet.Quest} message={emote.Message} min={emote.Min} max={emote.Max} target={targetObject?.Name}"
+            );
+        }
 
         var text = emote.Message;
 
@@ -1402,7 +1426,7 @@ public class EmoteManager
                 {
                     var crossLb = WorldObject.GetProperty(PropertyBool.SignalCrossLB) ?? false;
 
-                     if (crossLb)
+                    if (crossLb)
                     {
                         WorldObject.CurrentLandblock.EmitSignalWithAdjacents(WorldObject, emote.Message);
                     }
@@ -2612,7 +2636,6 @@ public class EmoteManager
 
                 if (targetPlayer is null)
                 {
-                    _log.Error("ExecuteEmote({EmoteSet}, {Emote}, {TargetObject}) - StampQuestForAllFellows - targetPlayer is null.", emoteSet, emote, targetObject);
                     break;
                 }
 
@@ -2867,7 +2890,9 @@ public class EmoteManager
             //emoteSet = emoteSet.Where(e => e.Probability >= rng);
         }
 
-        return emoteSet.FirstOrDefault();
+        var result = emoteSet.FirstOrDefault();
+
+        return result;
     }
 
     /// <summary>
@@ -2883,6 +2908,13 @@ public class EmoteManager
         //if (Debug) Console.WriteLine($"{WorldObject.Name}.EmoteManager.ExecuteEmoteSet({category}, {quest}, {targetObject}, {nested})");
 
         var emoteSet = GetEmoteSet(category, quest);
+
+        if (OnpTraceEnabled)
+        {
+            Console.WriteLine(
+                $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}).ExecuteEmoteSet(category+quest): category={category} quest={quest} nested={nested} resolvedEmoteSet={(emoteSet == null ? "NULL (no matching header found)" : "found")}"
+            );
+        }
 
         if (emoteSet == null)
         {
@@ -2903,11 +2935,25 @@ public class EmoteManager
     {
         //if (Debug) Console.WriteLine($"{WorldObject.Name}.EmoteManager.ExecuteEmoteSet({emoteSet}, {targetObject}, {nested})");
 
+        if (OnpTraceEnabled)
+        {
+            Console.WriteLine(
+                $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}).ExecuteEmoteSet(PropertiesEmote): category={emoteSet.Category} quest={emoteSet.Quest} nested={nested} IsBusy={IsBusy} Nested={Nested}"
+            );
+        }
+
         // detect busy state
         // TODO: maybe eventually we should consider having categories that can be queued?
         // there are some categories that shouldn't be queued, like heartbeats...
         if (IsBusy && !nested)
         {
+            if (OnpTraceEnabled)
+            {
+                Console.WriteLine(
+                    $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}) BLOCKED (silently, no other log) - IsBusy=true and not nested. category={emoteSet.Category} quest={emoteSet.Quest}"
+                );
+            }
+
             return false;
         }
 
@@ -3511,6 +3557,13 @@ public class EmoteManager
     /// </summary>
     public void OnNewEnemy(WorldObject newEnemy)
     {
+        if (OnpTraceEnabled)
+        {
+            Console.WriteLine(
+                $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}).OnNewEnemy called, newEnemy={newEnemy?.Name}"
+            );
+        }
+
         ExecuteEmoteSet(EmoteCategory.NewEnemy, null, newEnemy);
     }
 
