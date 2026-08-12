@@ -1402,7 +1402,7 @@ public class EmoteManager
                 {
                     var crossLb = WorldObject.GetProperty(PropertyBool.SignalCrossLB) ?? false;
 
-                     if (crossLb)
+                    if (crossLb)
                     {
                         WorldObject.CurrentLandblock.EmitSignalWithAdjacents(WorldObject, emote.Message);
                     }
@@ -2612,7 +2612,6 @@ public class EmoteManager
 
                 if (targetPlayer is null)
                 {
-                    _log.Error("ExecuteEmote({EmoteSet}, {Emote}, {TargetObject}) - StampQuestForAllFellows - targetPlayer is null.", emoteSet, emote, targetObject);
                     break;
                 }
 
@@ -2657,6 +2656,92 @@ public class EmoteManager
                             }
 
                             questTarget.QuestManager.Stamp(emote.Message);
+                        }
+                    }
+                }
+
+                break;
+
+            case EmoteType.EraseQuestForAllFellows:
+                var erasePlayer = targetCreature as Player;
+
+                // If emote is triggered by a player-created hotspot, reference the hotspot's player
+                if (targetObject is Hotspot {P_HotspotOwner: not null} eraseHotspot)
+                {
+                    erasePlayer = eraseHotspot.P_HotspotOwner;
+                }
+
+                if (erasePlayer is null)
+                {
+                    break;
+                }
+
+                // Erase quest for the target, regardless of if in a fellowship
+                questTarget = GetQuestTarget((EmoteType)emote.Type, erasePlayer, creature);
+
+                if (questTarget != null)
+                {
+                    questTarget.QuestManager.Erase(emote.Message);
+                }
+
+                // If target is in a fellowship, also erase the quest for all fellows
+                if (erasePlayer != null && erasePlayer.Fellowship != null)
+                {
+                    foreach (var fellow in erasePlayer.Fellowship.GetFellowshipMembers().Values)
+                    {
+                        if (erasePlayer == fellow)
+                        {
+                            continue;
+                        }
+
+                        questTarget = GetQuestTarget((EmoteType)emote.Type, fellow, creature);
+
+                        if (questTarget != null)
+                        {
+                            questTarget.QuestManager.Erase(emote.Message);
+                        }
+                    }
+                }
+
+                break;
+
+            case EmoteType.IncrementQuestForAllFellows:
+                var incrementPlayer = targetCreature as Player;
+
+                // If emote is triggered by a player-created hotspot, reference the hotspot's player
+                if (targetObject is Hotspot {P_HotspotOwner: not null} incrementHotspot)
+                {
+                    incrementPlayer = incrementHotspot.P_HotspotOwner;
+                }
+
+                if (incrementPlayer is null)
+                {
+                    break;
+                }
+
+                // Increment quest for the target, regardless of if in a fellowship
+                questTarget = GetQuestTarget((EmoteType)emote.Type, incrementPlayer, creature);
+
+                if (questTarget != null)
+                {
+                    questTarget.QuestManager.Increment(emote.Message, emote.Amount ?? 1);
+                }
+
+                // If target is in a fellowship, also increment the quest for all fellows
+                if (incrementPlayer != null && incrementPlayer.Fellowship != null)
+                {
+                    foreach (var fellow in incrementPlayer.Fellowship.GetFellowshipMembers().Values)
+                    {
+                        if (incrementPlayer == fellow)
+                        {
+                            continue;
+                        }
+
+                        questTarget = GetQuestTarget((EmoteType)emote.Type, fellow, creature);
+
+                        if (questTarget != null)
+                        {
+                            questTarget.QuestManager.Increment(emote.Message, emote.Amount ?? 1);
                         }
                     }
                 }
@@ -2867,7 +2952,9 @@ public class EmoteManager
             //emoteSet = emoteSet.Where(e => e.Probability >= rng);
         }
 
-        return emoteSet.FirstOrDefault();
+        var result = emoteSet.FirstOrDefault();
+
+        return result;
     }
 
     /// <summary>
@@ -3511,6 +3598,7 @@ public class EmoteManager
     /// </summary>
     public void OnNewEnemy(WorldObject newEnemy)
     {
+
         ExecuteEmoteSet(EmoteCategory.NewEnemy, null, newEnemy);
     }
 

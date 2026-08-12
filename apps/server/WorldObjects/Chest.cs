@@ -1,3 +1,4 @@
+using System;
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
@@ -178,6 +179,40 @@ public partial class Chest : Container, Lock
             }
 
             return new ActivationResult(false);
+        }
+
+        // handle a hard prerequisite gate, same semantics as Portal.cs's QuestRestriction check:
+        // the player must currently HOLD the quest and be unable to solve it again right now.
+        // With no `quest`-table row for the name (the norm for content-tracked quests), CanSolve
+        // is always false once a record exists, so this collapses to a clean "must have this
+        // quest stamped at all" check - unlike Chest's own Quest/CanSolve path below, a player who
+        // has never touched the quest name is rejected outright rather than let through once for
+        // free. Content can revoke access by EraseQuest-ing the same name (HasQuest flips back to
+        // false), which this immediately honors - unlike Quest/CanSolve, nothing here auto-stamps
+        // anything, so pairing it with content-level Stamp/Erase never fights itself.
+        //
+        // Unlike Portal.cs's read-only use of the same property, Chest consumes it immediately
+        // here rather than leaving that to a content-authored Use emote action: EmoteManager's
+        // per-object busy gate (ExecuteEmoteSet's `IsBusy && !nested` check) silently drops a
+        // queued Use emote set - including any EraseQuest action in it - on a rapid re-click,
+        // while ActOnUse()/Open() below is not gated by that at all and still runs every time.
+        // A content-authored erase can therefore race a fast double-click: the erase from click 1
+        // gets dropped, click 2 passes this same check again, and the chest re-opens with fresh
+        // loot from a single grant. Erasing synchronously in this check, before ActOnUse ever
+        // runs, closes that race - each activation independently consumes its own grant, with no
+        // dependency on the emote queue.
+        if (QuestRestriction != null)
+        {
+            var hasQuest = player.QuestManager.HasQuest(QuestRestriction);
+            var canSolve = player.QuestManager.CanSolve(QuestRestriction);
+
+            if (!(hasQuest && !canSolve))
+            {
+                player.SendTransientError($"You cannot open the {Name}.");
+                return new ActivationResult(false);
+            }
+
+            player.QuestManager.Erase(QuestRestriction);
         }
 
         // handle quest requirements
