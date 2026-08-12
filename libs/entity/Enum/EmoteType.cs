@@ -189,5 +189,31 @@ public enum EmoteType
     /// and then have this fired after a delay once its spawn-in animation has finished, without
     /// needing to destroy/respawn the object.
     /// </summary>
-    ActivateHotspot = 10022
+    ActivateHotspot = 10022,
+
+    /// <summary>
+    /// Erases a quest from the emote's target (same target resolution as StampQuestForAllFellows -
+    /// including the Hotspot P_HotspotOwner fallback) and, if that target is in a fellowship, from
+    /// every other current fellow member's own individual QuestManager too.
+    ///
+    /// Exists as the erase-side counterpart to StampQuestForAllFellows: since that emote mirrors a
+    /// stamp onto every fellow member's own personal QuestManager rather than a shared
+    /// Fellowship.QuestManager, a plain EraseQuest/EraseFellowQuest pair only clears the triggering
+    /// target's own copy - every other fellow member who received the mirrored stamp keeps their
+    /// value, which for a spend-once resource (e.g. a contribution counter reset after successfully
+    /// triggering an encounter) lets each fellow member independently re-spend the same underlying
+    /// pooled total.
+    /// </summary>
+    EraseQuestForAllFellows = 10023,
+
+    /// <summary>
+    /// Increments a quest's solve count on the emote's target (same target resolution as
+    /// StampQuestForAllFellows - the acting target regardless of fellowship, plus every OTHER
+    /// current fellow member's own QuestManager) by the action's Amount column (default 1),
+    /// instead of the flat +1 a plain StampQuestForAllFellows applies. Lets a single kill/event
+    /// contribute a different amount depending on which weenie triggered it (e.g. a tougher
+    /// monster type worth more toward a pooled contribution total than a weaker one), without
+    /// needing the caller to fire the same emote multiple times.
+    /// </summary>
+    IncrementQuestForAllFellows = 10024
 }

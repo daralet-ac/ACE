@@ -41,23 +41,6 @@ public class EmoteManager
 
     public bool Debug = false;
 
-    /// <summary>
-    /// TEMP diagnostic trace for the Olthoi North Patrol investigation - remove once resolved.
-    /// Logs every emote action executed, every ExecuteEmoteSet call (including silent IsBusy drops),
-    /// and every NewEnemy trigger, for these specific WCIDs only.
-    /// </summary>
-    private static readonly HashSet<uint> OnpTraceWcids = new HashSet<uint>
-    {
-        2036560, // Camp Supply Encounter Wrapper
-        2036575, 2036555, 2036565, // Camp Supply Watchdog N/S/W
-        2036572, 2036558, 2036567, // ON_Patrol_Controller N/S/W
-        2036552, // Roaming Patrol N Camp 1 Gen (shared across all 3 camps)
-        2036566, // ON_Roaming Patrol Master Generator
-        2036556, 2036561, // Knight x2 (the actual roaming patrol spawns)
-    };
-
-    private bool OnpTraceEnabled => WorldObject != null && OnpTraceWcids.Contains(WorldObject.WeenieClassId);
-
     public EmoteManager(WorldObject worldObject)
     {
         _worldObject = worldObject;
@@ -81,13 +64,6 @@ public class EmoteManager
 
         //if (Debug)
         //Console.WriteLine($"{WorldObject.Name}.ExecuteEmote({emoteType})");
-
-        if (OnpTraceEnabled)
-        {
-            Console.WriteLine(
-                $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}).ExecuteEmote: type={emoteType} category={emoteSet.Category} quest={emoteSet.Quest} message={emote.Message} min={emote.Min} max={emote.Max} target={targetObject?.Name}"
-            );
-        }
 
         var text = emote.Message;
 
@@ -2686,6 +2662,92 @@ public class EmoteManager
 
                 break;
 
+            case EmoteType.EraseQuestForAllFellows:
+                var erasePlayer = targetCreature as Player;
+
+                // If emote is triggered by a player-created hotspot, reference the hotspot's player
+                if (targetObject is Hotspot {P_HotspotOwner: not null} eraseHotspot)
+                {
+                    erasePlayer = eraseHotspot.P_HotspotOwner;
+                }
+
+                if (erasePlayer is null)
+                {
+                    break;
+                }
+
+                // Erase quest for the target, regardless of if in a fellowship
+                questTarget = GetQuestTarget((EmoteType)emote.Type, erasePlayer, creature);
+
+                if (questTarget != null)
+                {
+                    questTarget.QuestManager.Erase(emote.Message);
+                }
+
+                // If target is in a fellowship, also erase the quest for all fellows
+                if (erasePlayer != null && erasePlayer.Fellowship != null)
+                {
+                    foreach (var fellow in erasePlayer.Fellowship.GetFellowshipMembers().Values)
+                    {
+                        if (erasePlayer == fellow)
+                        {
+                            continue;
+                        }
+
+                        questTarget = GetQuestTarget((EmoteType)emote.Type, fellow, creature);
+
+                        if (questTarget != null)
+                        {
+                            questTarget.QuestManager.Erase(emote.Message);
+                        }
+                    }
+                }
+
+                break;
+
+            case EmoteType.IncrementQuestForAllFellows:
+                var incrementPlayer = targetCreature as Player;
+
+                // If emote is triggered by a player-created hotspot, reference the hotspot's player
+                if (targetObject is Hotspot {P_HotspotOwner: not null} incrementHotspot)
+                {
+                    incrementPlayer = incrementHotspot.P_HotspotOwner;
+                }
+
+                if (incrementPlayer is null)
+                {
+                    break;
+                }
+
+                // Increment quest for the target, regardless of if in a fellowship
+                questTarget = GetQuestTarget((EmoteType)emote.Type, incrementPlayer, creature);
+
+                if (questTarget != null)
+                {
+                    questTarget.QuestManager.Increment(emote.Message, emote.Amount ?? 1);
+                }
+
+                // If target is in a fellowship, also increment the quest for all fellows
+                if (incrementPlayer != null && incrementPlayer.Fellowship != null)
+                {
+                    foreach (var fellow in incrementPlayer.Fellowship.GetFellowshipMembers().Values)
+                    {
+                        if (incrementPlayer == fellow)
+                        {
+                            continue;
+                        }
+
+                        questTarget = GetQuestTarget((EmoteType)emote.Type, fellow, creature);
+
+                        if (questTarget != null)
+                        {
+                            questTarget.QuestManager.Increment(emote.Message, emote.Amount ?? 1);
+                        }
+                    }
+                }
+
+                break;
+
             case EmoteType.AdjustServerPropertyLong:
 
                 var adjustPropertyString = emote.Message;
@@ -2909,13 +2971,6 @@ public class EmoteManager
 
         var emoteSet = GetEmoteSet(category, quest);
 
-        if (OnpTraceEnabled)
-        {
-            Console.WriteLine(
-                $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}).ExecuteEmoteSet(category+quest): category={category} quest={quest} nested={nested} resolvedEmoteSet={(emoteSet == null ? "NULL (no matching header found)" : "found")}"
-            );
-        }
-
         if (emoteSet == null)
         {
             return;
@@ -2935,25 +2990,11 @@ public class EmoteManager
     {
         //if (Debug) Console.WriteLine($"{WorldObject.Name}.EmoteManager.ExecuteEmoteSet({emoteSet}, {targetObject}, {nested})");
 
-        if (OnpTraceEnabled)
-        {
-            Console.WriteLine(
-                $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}).ExecuteEmoteSet(PropertiesEmote): category={emoteSet.Category} quest={emoteSet.Quest} nested={nested} IsBusy={IsBusy} Nested={Nested}"
-            );
-        }
-
         // detect busy state
         // TODO: maybe eventually we should consider having categories that can be queued?
         // there are some categories that shouldn't be queued, like heartbeats...
         if (IsBusy && !nested)
         {
-            if (OnpTraceEnabled)
-            {
-                Console.WriteLine(
-                    $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}) BLOCKED (silently, no other log) - IsBusy=true and not nested. category={emoteSet.Category} quest={emoteSet.Quest}"
-                );
-            }
-
             return false;
         }
 
@@ -3557,12 +3598,6 @@ public class EmoteManager
     /// </summary>
     public void OnNewEnemy(WorldObject newEnemy)
     {
-        if (OnpTraceEnabled)
-        {
-            Console.WriteLine(
-                $"[ONP-TRACE] 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}).OnNewEnemy called, newEnemy={newEnemy?.Name}"
-            );
-        }
 
         ExecuteEmoteSet(EmoteCategory.NewEnemy, null, newEnemy);
     }

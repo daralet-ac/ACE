@@ -12,7 +12,6 @@ partial class Creature
     public double NextMonsterThreatTickTime;
     public double NextMonsterTargetScanTime;
     private bool firstUpdate = true;
-    private const bool DebugPatrolTargets = false;
     /// <summary>
     /// Primary dispatch for monster think
     /// </summary>
@@ -94,13 +93,6 @@ partial class Creature
         // Patrol: prevent getting stuck targeting a dead creature (required so patrol can resume)
         if (HasPatrol && AttackTarget is Creature at && at.IsDead)
         {
-            if (DebugPatrolTargets && WeenieClassId == 2036553)
-            {
-                Console.WriteLine(
-                    $"[PATROL][CLEAR_TARGET] {Name} {Guid} -> {at.Name} {at.Guid} IsDead={at.IsDead} Attackable={at.Attackable}"
-                );
-            }
-
             AttackTarget = null;
             CurrentAttack = null;
             firstUpdate = true;
