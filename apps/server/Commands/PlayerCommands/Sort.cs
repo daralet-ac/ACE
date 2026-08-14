@@ -4,6 +4,7 @@ using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network;
+using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
 using ACE.Entity.Enum.Properties;
@@ -382,6 +383,24 @@ public class Sort
 
             if (containerItems.Count <= 1)
             {
+                continue;
+            }
+
+            // Salvage crates: directly assign PlacementPosition and send ContainId messages so
+            // client updates immediately without needing HandleActionPutItemInContainer round-trips.
+            if (salvageSidePacks.Any(sp => sp.Guid.Full == sidePack.Guid.Full))
+            {
+                var sortedSalvage = containerItems
+                    .OrderBy(i => Salvage.GetSalvageBagSortKey(i))
+                    .ToList();
+
+                for (var i = 0; i < sortedSalvage.Count; i++)
+                {
+                    sortedSalvage[i].PlacementPosition = i;
+                    session.Network.EnqueueSend(new GameEventItemServerSaysContainId(session, sortedSalvage[i], sidePack));
+                }
+
+                movesScheduled += sortedSalvage.Count;
                 continue;
             }
 

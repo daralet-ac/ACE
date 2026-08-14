@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using ACE.Common;
 using ACE.Entity;
 using ACE.Entity.Enum;
+using MT = ACE.Entity.Enum.MaterialType;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
@@ -34,7 +35,10 @@ public class Salvage : WorldObject
         SetEphemeralValues();
     }
 
-    private void SetEphemeralValues() { }
+    private void SetEphemeralValues()
+    {
+        TargetType = (TargetType ?? ItemType.None) | ItemType.TinkeringMaterial;
+    }
 
     public override void HandleActionUseOnTarget(Player player, WorldObject target)
     {
@@ -73,6 +77,7 @@ public class Salvage : WorldObject
         }
 
         var combineSalvage = false;
+        var upgradeCombine = false;
 
         if (target is { WeenieType: WeenieType.Salvage })
         {
@@ -94,7 +99,38 @@ public class Salvage : WorldObject
                 return;
             }
 
-            if (target.Structure + source.Structure > 1000)
+            var sourceWork = (int)(source.Workmanship ?? 1);
+            var targetWork = (int)(target.Workmanship ?? 1);
+
+            if (sourceWork == targetWork - 1)
+            {
+                upgradeCombine = true;
+
+                var unitsGained = (source.Structure ?? 0) / 2;
+                var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
+                if (unitsGained > targetSpace)
+                {
+                    unitsGained = targetSpace;
+                }
+
+                if (unitsGained < 1)
+                {
+                    player.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                        $"You need at least 2 units of source salvage to upgrade.",
+                        ChatMessageType.Broadcast));
+                    player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+                    return;
+                }
+            }
+            else if (sourceWork != targetWork)
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                    $"Salvage bags must have matching workmanship to combine, or the source must be exactly one tier lower to upgrade.",
+                    ChatMessageType.Broadcast));
+                player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+                return;
+            }
+            else if (target.Structure + source.Structure > 1000)
             {
                 player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
@@ -263,17 +299,37 @@ public class Salvage : WorldObject
 
         if (combineSalvage)
         {
-            var sourceWork = source.Workmanship ?? 1.0f;
-            var sourceStruct = source.Structure ?? 1;
-            var targetWork = target.Workmanship ?? 1.0f;
-            var targetStruct = target.Structure ?? 1;
+            if (upgradeCombine)
+            {
+                var targetWork = (int)(target.Workmanship ?? 1);
+                var sourceStruct = source.Structure ?? 0;
+                var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
 
-            var combinedWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
-            combinedWork = (float)Math.Round(combinedWork, 2);
+                var unitsGained = sourceStruct / 2;
+                if (unitsGained > targetSpace)
+                {
+                    unitsGained = targetSpace;
+                }
 
-            var combinedStruct = sourceStruct + targetStruct;
+                var unitsConsumed = unitsGained * 2;
 
-            message = $"Combining this salvage will produce {combinedStruct} units with a workmanship of {combinedWork}. Would you like to proceed?";
+                message = $"Combining will add {unitsGained} units to the workmanship {targetWork} bag, " +
+                          $"consuming {unitsConsumed} units from the workmanship {(int)(source.Workmanship ?? 1)} bag. Would you like to proceed?";
+            }
+            else
+            {
+                var sourceWork = source.Workmanship ?? 1.0f;
+                var sourceStruct = source.Structure ?? 1;
+                var targetWork = target.Workmanship ?? 1.0f;
+                var targetStruct = target.Structure ?? 1;
+
+                var combinedWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
+                combinedWork = (float)Math.Round(combinedWork, 2);
+
+                var combinedStruct = sourceStruct + targetStruct;
+
+                message = $"Combining this salvage will produce {combinedStruct} units with a workmanship of {combinedWork}. Would you like to proceed?";
+            }
         }
 
         if (!confirmed)
@@ -317,7 +373,14 @@ public class Salvage : WorldObject
             {
                 if (combineSalvage)
                 {
-                    CombineSalvage(player, source, target);
+                    if (upgradeCombine)
+                    {
+                        UpgradeSalvage(player, source, target);
+                    }
+                    else
+                    {
+                        CombineSalvage(player, source, target);
+                    }
                 }
                 else
                 {
@@ -362,10 +425,9 @@ public class Salvage : WorldObject
         var targetStruct = target.Structure ?? 1;
 
         var newWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
-        Console.WriteLine(newWork);
         target.Workmanship = (float)Math.Round((newWork), 2);
         target.Structure += sourceStruct;
-        target.Name = $"Salvage ({target.Structure})";
+        target.Name = $"Salvage Wk{(int)(target.Workmanship ?? 1)} ({target.Structure})";
 
         UpdateObj(player, target);
 
@@ -378,6 +440,54 @@ public class Salvage : WorldObject
 
         player.TryConsumeFromInventoryWithNetworking(source);
         player.Session.Network.EnqueueSend(new GameMessageDeleteObject(source));
+    }
+
+    private static void UpgradeSalvage(Player player, WorldObject source, WorldObject target)
+    {
+        if (source is null || target is null)
+        {
+            return;
+        }
+
+        var targetWork = (int)(target.Workmanship ?? 1);
+        var sourceStruct = source.Structure ?? 0;
+        var targetSpace = (target.MaxStructure ?? 1000) - (target.Structure ?? 0);
+
+        var unitsGained = sourceStruct / 2;
+        if (unitsGained > targetSpace)
+        {
+            unitsGained = targetSpace;
+        }
+
+        var unitsConsumed = unitsGained * 2;
+
+        if (unitsGained < 1)
+        {
+            return;
+        }
+
+        target.Structure = (ushort)((target.Structure ?? 0) + unitsGained);
+        target.Name = $"Salvage Wk{targetWork} ({target.Structure})";
+        UpdateObj(player, target);
+
+        source.Structure = (ushort)(sourceStruct - unitsConsumed);
+        source.Name = $"Salvage Wk{(int)(source.Workmanship ?? 1)} ({source.Structure})";
+
+        if (source.Structure < 1)
+        {
+            player.TryConsumeFromInventoryWithNetworking(source);
+            player.Session.Network.EnqueueSend(new GameMessageDeleteObject(source));
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                $"You add {unitsGained} units to the workmanship {targetWork} bag, consuming {unitsConsumed} units. The source bag is used up.",
+                ChatMessageType.Broadcast));
+        }
+        else
+        {
+            UpdateObj(player, source);
+            player.Session.Network.EnqueueSend(new GameMessageSystemChat(
+                $"You add {unitsGained} units to the workmanship {targetWork} bag, consuming {unitsConsumed} units. {source.Structure} units remain in the source bag.",
+                ChatMessageType.Broadcast));
+        }
     }
 
     public static bool CheckTinkerType(Player player, WorldObject source, WorldObject target, Skill tinkeringSkill)
@@ -1288,7 +1398,7 @@ public class Salvage : WorldObject
             );
         }
 
-        source.Name = $"Salvage ({source.Structure})";
+        source.Name = $"Salvage Wk{(int)(source.Workmanship ?? 1)} ({source.Structure})";
 
         UpdateObj(player, source);
         UpdateObj(player, target);
@@ -1596,6 +1706,117 @@ public class Salvage : WorldObject
         ACE.Entity.Enum.MaterialType.Tourmaline,
         ACE.Entity.Enum.MaterialType.WhiteSapphire
     };
+
+    private enum SalvageBagCategory
+    {
+        Metal = 0,
+        Wood = 1,
+        Gem = 2,
+        ImbueGem = 3,
+        Cloth = 4,
+        Hide = 5,
+        Ceramic = 6,
+        Stone = 7,
+    }
+
+    private static readonly Dictionary<MT, SalvageBagCategory> MaterialCategories = BuildMaterialCategories();
+
+    private static Dictionary<MT, SalvageBagCategory> BuildMaterialCategories()
+    {
+        return new Dictionary<MT, SalvageBagCategory>
+        {
+            { MT.Brass, SalvageBagCategory.Metal },
+            { MT.Bronze, SalvageBagCategory.Metal },
+            { MT.Copper, SalvageBagCategory.Metal },
+            { MT.Gold, SalvageBagCategory.Metal },
+            { MT.Iron, SalvageBagCategory.Metal },
+            { MT.Pyreal, SalvageBagCategory.Metal },
+            { MT.Silver, SalvageBagCategory.Metal },
+            { MT.Steel, SalvageBagCategory.Metal },
+            { MT.Ebony, SalvageBagCategory.Wood },
+            { MT.Mahogany, SalvageBagCategory.Wood },
+            { MT.Oak, SalvageBagCategory.Wood },
+            { MT.Pine, SalvageBagCategory.Wood },
+            { MT.Teak, SalvageBagCategory.Wood },
+            { MT.Agate, SalvageBagCategory.Gem },
+            { MT.Amber, SalvageBagCategory.Gem },
+            { MT.Amethyst, SalvageBagCategory.Gem },
+            { MT.Azurite, SalvageBagCategory.Gem },
+            { MT.Bloodstone, SalvageBagCategory.Gem },
+            { MT.Carnelian, SalvageBagCategory.Gem },
+            { MT.Citrine, SalvageBagCategory.Gem },
+            { MT.Diamond, SalvageBagCategory.Gem },
+            { MT.GreenGarnet, SalvageBagCategory.Gem },
+            { MT.GreenJade, SalvageBagCategory.Gem },
+            { MT.Hematite, SalvageBagCategory.Gem },
+            { MT.LapisLazuli, SalvageBagCategory.Gem },
+            { MT.LavenderJade, SalvageBagCategory.Gem },
+            { MT.Malachite, SalvageBagCategory.Gem },
+            { MT.Moonstone, SalvageBagCategory.Gem },
+            { MT.Onyx, SalvageBagCategory.Gem },
+            { MT.Opal, SalvageBagCategory.Gem },
+            { MT.Peridot, SalvageBagCategory.Gem },
+            { MT.RedJade, SalvageBagCategory.Gem },
+            { MT.RoseQuartz, SalvageBagCategory.Gem },
+            { MT.Ruby, SalvageBagCategory.Gem },
+            { MT.Sapphire, SalvageBagCategory.Gem },
+            { MT.SmokeyQuartz, SalvageBagCategory.Gem },
+            { MT.TigerEye, SalvageBagCategory.Gem },
+            { MT.Turquoise, SalvageBagCategory.Gem },
+            { MT.WhiteJade, SalvageBagCategory.Gem },
+            { MT.WhiteQuartz, SalvageBagCategory.Gem },
+            { MT.YellowGarnet, SalvageBagCategory.Gem },
+            { MT.YellowTopaz, SalvageBagCategory.Gem },
+            { MT.Zircon, SalvageBagCategory.Gem },
+            { MT.Aquamarine, SalvageBagCategory.ImbueGem },
+            { MT.BlackGarnet, SalvageBagCategory.ImbueGem },
+            { MT.BlackOpal, SalvageBagCategory.ImbueGem },
+            { MT.Emerald, SalvageBagCategory.ImbueGem },
+            { MT.FireOpal, SalvageBagCategory.ImbueGem },
+            { MT.ImperialTopaz, SalvageBagCategory.ImbueGem },
+            { MT.Jet, SalvageBagCategory.ImbueGem },
+            { MT.RedGarnet, SalvageBagCategory.ImbueGem },
+            { MT.Sunstone, SalvageBagCategory.ImbueGem },
+            { MT.Tourmaline, SalvageBagCategory.ImbueGem },
+            { MT.WhiteSapphire, SalvageBagCategory.ImbueGem },
+            { MT.Linen, SalvageBagCategory.Cloth },
+            { MT.Satin, SalvageBagCategory.Cloth },
+            { MT.Silk, SalvageBagCategory.Cloth },
+            { MT.Velvet, SalvageBagCategory.Cloth },
+            { MT.Wool, SalvageBagCategory.Cloth },
+            { MT.Ivory, SalvageBagCategory.Hide },
+            { MT.Leather, SalvageBagCategory.Hide },
+            { MT.ArmoredilloHide, SalvageBagCategory.Hide },
+            { MT.GromnieHide, SalvageBagCategory.Hide },
+            { MT.ReedSharkHide, SalvageBagCategory.Hide },
+            { MT.Ceramic, SalvageBagCategory.Ceramic },
+            { MT.Porcelain, SalvageBagCategory.Ceramic },
+            { MT.Alabaster, SalvageBagCategory.Stone },
+            { MT.Granite, SalvageBagCategory.Stone },
+            { MT.Marble, SalvageBagCategory.Stone },
+            { MT.Obsidian, SalvageBagCategory.Stone },
+            { MT.Sandstone, SalvageBagCategory.Stone },
+            { MT.Serpentine, SalvageBagCategory.Stone },
+        };
+    }
+
+    public static uint GetSalvageBagIcon(MaterialType materialType, int workmanship)
+    {
+        if (!MaterialCategories.TryGetValue(materialType, out var category))
+        {
+            return 0x0600102C;
+        }
+
+        var index = Math.Clamp(workmanship, 1, 10) - 1;
+        return (uint)(0x06009200 + ((int)category * 0x10) + index);
+    }
+
+    public static (int category, int materialType, int workmanship) GetSalvageBagSortKey(WorldObject bag)
+    {
+        var mat = (MT)(bag.GetProperty(ACE.Entity.Enum.Properties.PropertyInt.MaterialType) ?? 0);
+        var category = MaterialCategories.TryGetValue(mat, out var cat) ? (int)cat : 99;
+        return (category, (int)mat, (int)Math.Round(bag.Workmanship ?? 1));
+    }
 
     public static Dictionary<MaterialType?, Skill> TinkeringTarget = new Dictionary<MaterialType?, Skill>
     {

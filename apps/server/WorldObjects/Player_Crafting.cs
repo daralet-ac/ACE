@@ -6,8 +6,10 @@ using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Managers;
+using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
 
@@ -157,30 +159,28 @@ partial class Player
             return;
         }
 
-        var salvageBags = new List<WorldObject>();
-        var salvageResults = new SalvageResults();
+        var salvageCrateWcids = new HashSet<uint> { 1055060, 1055070, 1055080 };
+        var salvageCrate = Inventory.Values
+            .OfType<Container>()
+            .FirstOrDefault(c => salvageCrateWcids.Contains(c.WeenieClassId));
 
+        // collect valid items first so we can check pack space before consuming anything
+        var validItems = new List<WorldObject>();
         foreach (var itemGuid in salvageItems)
         {
             var item = GetInventoryItem(itemGuid);
             if (item == null)
             {
-                //log.DebugFormat("[CRAFTING] {0}.HandleSalvaging({1:X8}): couldn't find inventory item", Name, itemGuid);
                 continue;
             }
-
             if (item.MaterialType == null)
             {
-                _log.Warning($"[CRAFTING] {Name}.HandleSalvaging({item.Name}): no material type");
                 continue;
             }
-
             if (IsTrading && item.IsBeingTradedOrContainsItemBeingTraded(ItemsInTradeWindow))
             {
-                SendWeenieError(WeenieError.YouCannotSalvageItemsInTrading);
                 continue;
             }
-
             if (item.Workmanship == null || item.Retained)
             {
                 continue;
@@ -189,8 +189,48 @@ partial class Player
             {
                 continue;
             }
-            // random chance of receiving a jewelcrafting gem in salvage, higher based on gem count and tier
+            validItems.Add(item);
+        }
 
+        // determine how many new salvage bags would be needed
+        var neededKeys = validItems
+            .Select(i => ((MaterialType)i.MaterialType, (int)Math.Round(i.Workmanship ?? 1)))
+            .ToHashSet();
+
+        var existingBags = Inventory.Values
+            .Concat(Inventory.Values.OfType<Container>().SelectMany(pack => pack.Inventory.Values))
+            .Where(i => i.WeenieType == WeenieType.Salvage && (i.Structure ?? 0) < (i.MaxStructure ?? 1000))
+            .ToList();
+
+        var newBagsNeeded = neededKeys.Count(key =>
+            !existingBags.Any(b =>
+                (MaterialType)(b.GetProperty(PropertyInt.MaterialType) ?? 0) == key.Item1 &&
+                (int)Math.Round(b.Workmanship ?? 1) == key.Item2));
+
+        var crateFreeSlots = salvageCrate?.GetFreeInventorySlots() ?? 0;
+        var totalFreeSlots = GetFreeInventorySlots() + crateFreeSlots;
+        if (newBagsNeeded > totalFreeSlots)
+        {
+            Session.Network.EnqueueSend(new GameMessageSystemChat(
+                $"You do not have enough pack space for the salvage. You need {newBagsNeeded} free slot{(newBagsNeeded != 1 ? "s" : "")}.",
+                ChatMessageType.Broadcast));
+            return;
+        }
+
+        // pre-load existing matching bags so we can fill them before creating new ones
+        var salvageBags = existingBags.ToList();
+        var preExistingBags = new HashSet<uint>(salvageBags.Select(b => b.Guid.Full));
+        var bagStructureBefore = salvageBags.ToDictionary(b => b.Guid.Full, b => b.Structure ?? (ushort)0);
+        var crateBagGuids = salvageCrate != null
+            ? new HashSet<uint>(salvageCrate.Inventory.Values.Select(b => b.Guid.Full))
+            : new HashSet<uint>();
+
+        var salvageResults = new SalvageResults();
+        var salvageEvents = new List<(string itemName, WorldObject bag, int addedUnits, int priorStructure)>();
+
+        foreach (var item in validItems)
+        {
+            // random chance of receiving a jewelcrafting gem in salvage, higher based on gem count and tier
             if (item.GemType != null)
             {
                 var random = new Random();
@@ -236,41 +276,165 @@ partial class Player
                 }
             }
 
-            // can any salvagable items be stacked?
-            TryConsumeFromInventoryWithNetworking(item);
+            var structureSnapshot = salvageBags.ToDictionary(b => b.Guid.Full, b => b.Structure ?? (ushort)0);
+            var capturedName = item.Name ?? "Unknown Item";
 
             AddSalvage(salvageBags, item, salvageResults);
 
-            // can any salvagable items be stacked?
+            foreach (var bag in salvageBags)
+            {
+                var before = structureSnapshot.TryGetValue(bag.Guid.Full, out var s) ? s : 0;
+                var after = bag.Structure ?? 0;
+                if (after > before)
+                {
+                    salvageEvents.Add((capturedName, bag, after - before, before));
+                }
+            }
+
             TryConsumeFromInventoryWithNetworking(item);
         }
 
-        // add salvage bags
+        // Phase 1: update pre-existing bag properties and add new bags to crate inventory.
+        // No network messages sent yet for crate bags — sort must run first so every
+        // ContainId or CreateObject the client sees carries the final sorted position.
+        var crateSlotsFilled = 0;
+        var newCrateBags = new List<(WorldObject bag, Container container)>();
+
         foreach (var salvageBag in salvageBags)
         {
-            TryCreateInInventoryWithNetworking(salvageBag);
+            if (preExistingBags.Contains(salvageBag.Guid.Full))
+            {
+                salvageBag.Name = $"Salvage W{(int)Math.Round(salvageBag.Workmanship ?? 1)} ({salvageBag.Structure})";
+                salvageBag.IconId = Salvage.GetSalvageBagIcon((MaterialType)(salvageBag.GetProperty(PropertyInt.MaterialType) ?? 0), (int)Math.Round(salvageBag.Workmanship ?? 1));
+                salvageBag.IgnoreCloIcons = true;
+                salvageBag.UiEffects = ACE.Entity.Enum.UiEffects.Frost;
+                // network messages deferred until after sort
+            }
+            else if (salvageCrate != null && crateSlotsFilled < crateFreeSlots
+                && salvageCrate.TryAddToInventory(salvageBag, out var crateContainer, placementPosition: salvageCrate.Inventory.Count, limitToMainPackOnly: true))
+            {
+                newCrateBags.Add((salvageBag, crateContainer));
+                salvageBag.SaveBiotaToDatabase();
+                crateSlotsFilled++;
+            }
+            else
+            {
+                TryCreateInInventoryWithNetworking(salvageBag);
+            }
         }
 
-        // send network messages
+        // Phase 2: sort the crate in memory so all PlacementPositions are final before
+        // any ContainId or CreateObject messages are constructed.
+        var crateTouched = crateSlotsFilled > 0 ||
+            salvageBags.Any(b =>
+                preExistingBags.Contains(b.Guid.Full) &&
+                crateBagGuids.Contains(b.Guid.Full) &&
+                (b.Structure ?? 0) > (bagStructureBefore.TryGetValue(b.Guid.Full, out var bef) ? bef : 0));
+
+        if (salvageCrate != null && crateTouched)
+        {
+            SortSalvageCratePositions(salvageCrate);
+        }
+
+        // Phase 3: send all network messages now that positions are finalised.
+        foreach (var salvageBag in salvageBags)
+        {
+            if (!preExistingBags.Contains(salvageBag.Guid.Full))
+            {
+                continue;
+            }
+
+            Session.Network.EnqueueSend(new GameMessageUpdateObject(salvageBag));
+            if (salvageBag.Container != null && !crateBagGuids.Contains(salvageBag.Guid.Full))
+            {
+                Session.Network.EnqueueSend(new GameEventItemServerSaysContainId(Session, salvageBag, salvageBag.Container));
+            }
+        }
+
+        foreach (var (bag, _) in newCrateBags)
+        {
+            // CreateObject goes to SmartboxQueue (group 0x0A).
+            // ContainId goes to UIQueue (group 0x09).
+            // The network session flushes groups in enum order, so UIQueue is always sent
+            // BEFORE SmartboxQueue within the same tick — meaning a ContainId for the new bag
+            // would arrive at the client before the client even knows the bag exists (no CreateObject yet).
+            // Fix: send ONLY CreateObject this tick. ContainId (and the full sort) is deferred via
+            // ActionChain to the next tick, by which time the client has processed CreateObject.
+            Session.Network.EnqueueSend(new GameMessageCreateObject(bag));
+            Session.Network.EnqueueSend(
+                new GameMessagePrivateUpdatePropertyInt(this, PropertyInt.EncumbranceVal, EncumbranceVal ?? 0)
+            );
+        }
+
+        // Defer ContainId messages to a future tick so they arrive after CreateObject.
+        // An un-delayed AddAction(this, ...) fires in the same tick's action queue pass,
+        // and UIQueue (ContainId, 0x09) is flushed before SmartboxQueue (CreateObject, 0x0A),
+        // so ContainId for a new bag would arrive before the client knows the bag exists.
+        // AddDelaySeconds routes the action through WorldManager.DelayManager, guaranteeing
+        // it runs in a future tick after this tick's network flush has delivered CreateObject.
+        if (salvageCrate != null && crateTouched)
+        {
+            var crateRef = salvageCrate;
+            var sortChain = new ActionChain();
+            sortChain.AddDelaySeconds(0.1);
+            sortChain.AddAction(this, () => SendSortedCrateContainIds(crateRef));
+            sortChain.EnqueueChain();
+        }
+
         if (!SquelchManager.Squelches.Contains(this, ChatMessageType.Salvaging))
         {
-            foreach (var kvp in salvageResults.GetMessages())
+            foreach (var (itemName, bag, addedUnits, priorStructure) in salvageEvents)
             {
-                var salvageSkill = kvp.Key;
-                var results = kvp.Value;
+                var materialEnum = (MaterialType)(bag.GetProperty(PropertyInt.MaterialType) ?? 0);
+                var materialName = Regex.Replace(materialEnum.ToString(), "(?<!^)([A-Z])", " $1");
+                var workmanship = (int)Math.Round(bag.Workmanship ?? 1);
 
-                foreach (var result in results)
+                var isMerge = preExistingBags.Contains(bag.Guid.Full);
+                var isInCrate = crateBagGuids.Contains(bag.Guid.Full)
+                    || newCrateBags.Any(nb => nb.bag.Guid.Full == bag.Guid.Full);
+
+                string suffix;
+                if (isMerge)
                 {
-                    var salvResults = new Network.Structure.SalvageResult(result);
-                    var materialType = Regex.Replace((salvResults.MaterialType).ToString(), "(?<!^)([A-Z])", " $1");
-                    Session.Network.EnqueueSend(
-                        new GameMessageSystemChat(
-                            $"You obtain {salvResults.Units} {materialType} (ws {salvResults.Workmanship.ToString("N2")}).",
-                            ChatMessageType.Broadcast
-                        )
-                    );
+                    suffix = $" -> combined with {materialName} Salvage (W{workmanship} | {priorStructure} units)";
                 }
+                else if (isInCrate)
+                {
+                    suffix = " -> moved to Salvage Crate";
+                }
+                else
+                {
+                    suffix = "";
+                }
+
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"{materialName} {itemName} (W{workmanship} | {addedUnits} units){suffix}",
+                        ChatMessageType.Broadcast
+                    )
+                );
             }
+        }
+    }
+
+    private void SortSalvageCratePositions(Container salvageCrate)
+    {
+        var sorted = salvageCrate.Inventory.Values
+            .OrderBy(b => Salvage.GetSalvageBagSortKey(b))
+            .ToList();
+
+        for (var i = 0; i < sorted.Count; i++)
+        {
+            sorted[i].PlacementPosition = i;
+        }
+    }
+
+    private void SendSortedCrateContainIds(Container salvageCrate)
+    {
+        var bags = salvageCrate.Inventory.Values.OrderBy(b => b.PlacementPosition).ToList();
+        foreach (var bag in bags)
+        {
+            Session.Network.EnqueueSend(new GameEventItemServerSaysContainId(Session, bag, salvageCrate));
         }
     }
 
@@ -322,6 +486,7 @@ partial class Player
     public void AddSalvage(List<WorldObject> salvageBags, WorldObject item, SalvageResults salvageResults)
     {
         var materialType = (MaterialType)item.MaterialType;
+        var workmanship = (int)Math.Round(item.Workmanship ?? 1);
 
         // determine the amount of salvage produced (structure)
         SalvageMessage message = null;
@@ -331,13 +496,7 @@ partial class Player
 
         while (remaining > 0)
         {
-            // get the destination salvage bag
-
-            // if there are no existing salvage bags for this material type,
-            // or all of the salvage bags for this material type are full,
-            // this will create a new salvage bag, and adds it to salvageBags
-
-            var salvageBag = GetSalvageBag(materialType, salvageBags);
+            var salvageBag = GetSalvageBag(materialType, workmanship, salvageBags);
 
             var added = TryAddSalvage(salvageBag, item, remaining);
             remaining -= added;
@@ -409,7 +568,7 @@ partial class Player
         }
         salvageBag.NumItemsInMaterial = (salvageBag.NumItemsInMaterial ?? 0) + item_numItems;
 
-        salvageBag.Name = $"Salvage ({salvageBag.Structure})";
+        salvageBag.Name = $"Salvage W{(int)Math.Round(salvageBag.Workmanship ?? 1)} ({salvageBag.Structure})";
 
         if (item.ItemType == ItemType.TinkeringMaterial)
         {
@@ -447,7 +606,7 @@ partial class Player
         {
             bonus += 1;
         }
-        
+
         addStructure += bonus;
 
         message = salvageResults.GetMessage(
@@ -474,12 +633,12 @@ partial class Player
         return 1 + (int)Math.Floor(skill / 194.0f * workmanship * (1.0f + 0.25f * numAugs));
     }
 
-    public WorldObject GetSalvageBag(MaterialType materialType, List<WorldObject> salvageBags)
+    public WorldObject GetSalvageBag(MaterialType materialType, int workmanship, List<WorldObject> salvageBags)
     {
-        // first try finding the first non-filled salvage bag, for this material type
         var existing = salvageBags.FirstOrDefault(i =>
             (i.GetProperty(PropertyInt.MaterialType) ?? 0) == (int)materialType
-            && (i.Structure ?? 0) < (i.MaxStructure ?? 0)
+            && (int)Math.Round(i.Workmanship ?? 1) == workmanship
+            && (i.Structure ?? 0) < (i.MaxStructure ?? 1000)
         );
 
         if (existing != null)
@@ -494,6 +653,14 @@ partial class Player
         salvageBag.Structure = null; // TODO: fix bugged TOD data for mahogany 20988 / green garnet 21050
         salvageBag.ItemWorkmanship = null;
         salvageBag.NumItemsInMaterial = null;
+        // Do NOT pre-set Workmanship here: Workmanship = ItemWorkmanship / NumItemsInMaterial, so
+        // setting it writes ItemWorkmanship = wk. TryAddSalvage then adds the item's ItemWorkmanship
+        // on top, doubling it (e.g. Wk3 → ItemWorkmanship 3+3=6 → reads back as Wk6). Let
+        // TryAddSalvage accumulate from zero so the computed value is always correct.
+        salvageBag.MaxStructure = 1000;
+        salvageBag.IconId = Salvage.GetSalvageBagIcon(materialType, workmanship);
+        salvageBag.IgnoreCloIcons = true;
+        salvageBag.UiEffects = ACE.Entity.Enum.UiEffects.Frost;
 
         salvageBags.Add(salvageBag);
 
