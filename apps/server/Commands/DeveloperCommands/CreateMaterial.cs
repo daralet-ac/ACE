@@ -52,24 +52,30 @@ public class CreateMaterial
             ushort.TryParse(parameters[1], out structure);
         }
 
-        var workmanship = 10f;
+        var workmanship = 10;
         if (parameters.Length > 2)
         {
-            float.TryParse(parameters[2], out workmanship);
+            int.TryParse(parameters[2], out workmanship);
         }
 
-        var numItemsInMaterial = (int)Math.Round(workmanship);
+        workmanship = Math.Clamp(workmanship, 1, 10);
+
+        var numItemsInMaterial = workmanship;
         if (parameters.Length > 3)
         {
             int.TryParse(parameters[3], out numItemsInMaterial);
         }
 
-        var itemWorkmanship = (int)Math.Round(workmanship * numItemsInMaterial);
+        var itemWorkmanship = workmanship * numItemsInMaterial;
 
-        salvageBag.Name = $"Salvage ({structure})";
+        salvageBag.Name = $"Salvage Wk{workmanship} ({structure})";
         salvageBag.Structure = structure;
+        salvageBag.Workmanship = workmanship;
         salvageBag.ItemWorkmanship = itemWorkmanship;
         salvageBag.NumItemsInMaterial = numItemsInMaterial;
+        salvageBag.IconId = Salvage.GetSalvageBagIcon(materialType, workmanship);
+        salvageBag.IgnoreCloIcons = true;
+        salvageBag.UiEffects = UiEffects.Magical;
 
         session.Player.TryCreateInInventoryWithNetworking(salvageBag);
     }

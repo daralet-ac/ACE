@@ -884,7 +884,7 @@ public enum PropertyInt : ushort
 
     [ServerOnly]
     PassiveThreatThreshold = 521,
-    
+
     [ServerOnly]
     TargetSpecificWcid = 522,
 
