@@ -1390,7 +1390,7 @@ partial class Creature
 
     private void OnDeath_HandleTownAttunement(DamageHistoryInfo lastDamager)
     {
-        if (!lastDamager.IsPlayer)
+        if (lastDamager is not { IsPlayer: true })
         {
             return;
         }
