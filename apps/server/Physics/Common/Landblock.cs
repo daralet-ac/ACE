@@ -501,6 +501,11 @@ public class Landblock : LandblockStruct
 
     public uint GetRoad(int x, int y)
     {
+        if (x < 0 || x > LandDefs.BlockSide || y < 0 || y > LandDefs.BlockSide)
+        {
+            return 0;
+        }
+
         var t0 = Terrain[x * 9 + y];
         t0 = (ushort)(t0 & ((1 << 2) - 1));
         return t0;
