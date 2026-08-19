@@ -304,10 +304,9 @@ partial class Player
         {
             if (preExistingBags.Contains(salvageBag.Guid.Full))
             {
-                salvageBag.Name = $"Salvage W{(int)Math.Round(salvageBag.Workmanship ?? 1)} ({salvageBag.Structure})";
-                salvageBag.IconId = Salvage.GetSalvageBagIcon((MaterialType)(salvageBag.GetProperty(PropertyInt.MaterialType) ?? 0), (int)Math.Round(salvageBag.Workmanship ?? 1));
-                salvageBag.IgnoreCloIcons = true;
-                salvageBag.UiEffects = ACE.Entity.Enum.UiEffects.Frost;
+                var mergedWorkmanship = (int)Math.Round(salvageBag.Workmanship ?? 1);
+                salvageBag.Name = $"Salvage W{mergedWorkmanship} ({salvageBag.Structure})";
+                Salvage.RefreshSalvageBagIcon(this, salvageBag, (MaterialType)(salvageBag.GetProperty(PropertyInt.MaterialType) ?? 0), mergedWorkmanship);
                 // network messages deferred until after sort
             }
             else if (salvageCrate != null && crateSlotsFilled < crateFreeSlots
