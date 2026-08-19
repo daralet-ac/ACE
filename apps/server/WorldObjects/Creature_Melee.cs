@@ -236,7 +236,7 @@ partial class Creature
             // no objects in cleave range
             var cleaveDistance = puncturingWeapon ? 3 : CleaveCylRange;
             var cylDist = GetCylinderDistance(creature);
-Console.WriteLine();
+
             if (cylDist > cleaveDistance)
             {
                 return cleaveTargets;
