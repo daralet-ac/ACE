@@ -9,6 +9,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects.Entity;
@@ -427,7 +428,9 @@ public class Salvage : WorldObject
         var newWork = ((sourceWork * sourceStruct) + (targetWork * targetStruct)) / (targetStruct + sourceStruct);
         target.Workmanship = (float)Math.Round((newWork), 2);
         target.Structure += sourceStruct;
-        target.Name = $"Salvage Wk{(int)(target.Workmanship ?? 1)} ({target.Structure})";
+        var combinedWorkmanship = (int)(target.Workmanship ?? 1);
+        target.Name = $"Salvage Wk{combinedWorkmanship} ({target.Structure})";
+        RefreshSalvageBagIcon(player, target, (MaterialType)(target.GetProperty(ACE.Entity.Enum.Properties.PropertyInt.MaterialType) ?? 0), combinedWorkmanship);
 
         UpdateObj(player, target);
 
@@ -1809,6 +1812,38 @@ public class Salvage : WorldObject
 
         var index = Math.Clamp(workmanship, 1, 10) - 1;
         return (uint)(0x06009200 + ((int)category * 0x10) + index);
+    }
+
+    /// <summary>
+    /// Re-derives a salvage bag's full icon composition (base icon, clothing palette, overlays)
+    /// from its weenie template. A merge only mutates structure/workmanship on the existing bag
+    /// object — it never re-runs WorldObjectFactory against it — so without this, a bag created
+    /// before a content/icon fix stays stuck with whatever appearance it had at creation time.
+    /// Uses per-property update messages (matching CorePlating.Integrate's pattern for live
+    /// overlay changes) rather than relying on the generic GameMessageUpdateObject to pick these
+    /// up, since that alone was not reliably refreshing the client's rendered icon.
+    /// </summary>
+    public static void RefreshSalvageBagIcon(Player player, WorldObject salvageBag, MaterialType materialType, int workmanship)
+    {
+        if (Player.MaterialSalvage.TryGetValue((int)materialType, out var wcid) && wcid != 0)
+        {
+            var reference = WorldObjectFactory.CreateNewWorldObject((uint)wcid);
+
+            // only touch it if it's actually missing/stale — avoids needless network
+            // spam on merges where the overlay is already correct
+            if (salvageBag.IconOverlayId != reference.IconOverlayId)
+            {
+                player.UpdateProperty(salvageBag, PropertyDataId.ClothingBase, reference.ClothingBase);
+                player.UpdateProperty(salvageBag, PropertyInt.PaletteTemplate, reference.PaletteTemplate);
+                player.UpdateProperty(salvageBag, PropertyFloat.Shade, reference.Shade);
+                player.UpdateProperty(salvageBag, PropertyDataId.IconOverlay, reference.IconOverlayId);
+                player.UpdateProperty(salvageBag, PropertyDataId.IconOverlaySecondary, reference.IconOverlaySecondary);
+            }
+        }
+
+        player.UpdateProperty(salvageBag, PropertyDataId.Icon, GetSalvageBagIcon(materialType, workmanship));
+        salvageBag.IgnoreCloIcons = true;
+        salvageBag.UiEffects = ACE.Entity.Enum.UiEffects.Frost;
     }
 
     public static (int category, int materialType, int workmanship) GetSalvageBagSortKey(WorldObject bag)
