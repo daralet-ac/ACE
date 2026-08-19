@@ -173,6 +173,10 @@ partial class Player
             {
                 continue;
             }
+            if (item.WeenieType == WeenieType.Salvage)
+            {
+                continue;
+            }
             if (item.MaterialType == null)
             {
                 continue;
