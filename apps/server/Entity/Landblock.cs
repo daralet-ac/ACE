@@ -287,7 +287,16 @@ public class Landblock : IActor
                         }
                     }
 
-                    AddWorldObject(fo);
+                    var added = AddWorldObject(fo);
+
+                    // Static world-DB instances bypass EnterWorld(), so creatures using the
+                    // archetype system never get their stats recalculated there - do it here instead,
+                    // otherwise they keep whatever raw MaxHealth/etc. was authored in the weenie sql.
+                    if (added && fo is Creature creature && fo is not Player)
+                    {
+                        creature.ApplyArchetypeSystem();
+                    }
+
                     fo.ActivateLinks(objects, shardObjects, parent);
 
                     if (fo.PhysicsObj != null)

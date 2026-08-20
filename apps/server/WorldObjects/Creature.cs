@@ -232,7 +232,14 @@ public partial class Creature : Container
         return result;
     }
 
-    private void ApplyArchetypeSystem()
+    /// <summary>
+    /// Recalculates this creature's archetype-driven stats (skills, vitals, damage/armor/ward, xp).
+    /// Called from EnterWorld() for generator-spawned creatures. Static world-DB instances placed
+    /// directly by Landblock.CreateWorldObjects() bypass EnterWorld(), so that path calls this
+    /// explicitly too - otherwise UseArchetypeSystem creatures placed as static instances keep
+    /// whatever raw MaxHealth/etc. was authored in the weenie sql instead of the archetype-computed values.
+    /// </summary>
+    internal void ApplyArchetypeSystem()
     {
         var useArchetypeSystem = UseArchetypeSystem ?? false;
         if (useArchetypeSystem && WeenieClassId != 1020001)
