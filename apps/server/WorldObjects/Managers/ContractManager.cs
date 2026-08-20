@@ -199,6 +199,7 @@ public class ContractManager
                     ChatMessageType.System
                 )
             );
+            Player.PopupManager.EnqueueNewTask(datContract.ContractName);
 
             RefreshMonitoredQuestFlags();
 
@@ -211,7 +212,7 @@ public class ContractManager
             else if (!string.IsNullOrWhiteSpace(datContract.QuestflagProgress) &&
                 Player.QuestManager.IsMaxSolves(datContract.QuestflagProgress))
             {
-                Update(contractId);
+                Update(contractId, datContract.QuestflagProgress);
             }
         }
         else
@@ -392,16 +393,31 @@ public class ContractManager
             if (triggeringQuestName != null)
             {
                 var datContract = GetContractFromDat(contractId);
-                if (datContract != null &&
-                    !string.IsNullOrWhiteSpace(datContract.QuestflagFinished) &&
-                    datContract.QuestflagFinished.Equals(triggeringQuestName, StringComparison.OrdinalIgnoreCase))
+                if (datContract != null)
                 {
-                    Player.Session.Network.EnqueueSend(
-                        new GameMessageSystemChat(
-                            $"You have completed the task: {datContract.ContractName}.",
-                            ChatMessageType.System
-                        )
-                    );
+                    var isFinishedFlagMatch =
+                        !string.IsNullOrWhiteSpace(datContract.QuestflagFinished) &&
+                        datContract.QuestflagFinished.Equals(triggeringQuestName, StringComparison.OrdinalIgnoreCase);
+
+                    // Counter-style contracts (e.g. "Complete 3 Rumors") have no separate
+                    // QuestflagFinished flag - completion is signaled by QuestflagProgress
+                    // reaching its max solve count instead.
+                    var isProgressMaxed =
+                        !isFinishedFlagMatch &&
+                        !string.IsNullOrWhiteSpace(datContract.QuestflagProgress) &&
+                        datContract.QuestflagProgress.Equals(triggeringQuestName, StringComparison.OrdinalIgnoreCase) &&
+                        Player.QuestManager.IsMaxSolves(datContract.QuestflagProgress);
+
+                    if (isFinishedFlagMatch || isProgressMaxed)
+                    {
+                        Player.Session.Network.EnqueueSend(
+                            new GameMessageSystemChat(
+                                $"You have completed the task: {datContract.ContractName}.",
+                                ChatMessageType.CombatSelf
+                            )
+                        );
+                        Player.PopupManager.EnqueueTaskCompleted(datContract.ContractName);
+                    }
                 }
             }
         }

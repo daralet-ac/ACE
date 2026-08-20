@@ -127,7 +127,7 @@ public class Quest
                 var canSolve = creature.QuestManager.CanSolve(questName);
                 if (canSolve)
                 {
-                    creature.QuestManager.Update(questName);
+                    creature.QuestManager.Stamp(questName);
                     session.Player.SendMessage($"{questName} bestowed on {creature.Name}");
                     return;
                 }
@@ -182,10 +182,15 @@ public class Quest
                 if (numCompletions != int.MinValue)
                 {
                     creature.QuestManager.SetQuestCompletions(questName, numCompletions);
+
+                    if (creature is Player completionsPlayer)
+                    {
+                        completionsPlayer.ContractManager.CheckAndBestowContractsOnQuestStamp(questName);
+                    }
                 }
                 else
                 {
-                    creature.QuestManager.Update(questName);
+                    creature.QuestManager.Stamp(questName);
                 }
 
                 var quest = creature.QuestManager.GetQuest(questName);
@@ -436,7 +441,7 @@ public class Quest
                         var canSolve = fellowship.QuestManager.CanSolve(questName);
                         if (canSolve)
                         {
-                            fellowship.QuestManager.Update(questName);
+                            fellowship.QuestManager.Stamp(questName);
                             session.Player.SendMessage($"{questName} bestowed on Fellowship of {creature.Name}");
                             return;
                         }
@@ -494,7 +499,7 @@ public class Quest
                         }
                         else
                         {
-                            fellowship.QuestManager.Update(questName);
+                            fellowship.QuestManager.Stamp(questName);
                         }
 
                         var quest = fellowship.QuestManager.GetQuest(questName);
