@@ -124,6 +124,8 @@ public partial class Player : Creature, IPlayer
 
     public ConfirmationManager ConfirmationManager;
 
+    public PopupManager PopupManager;
+
     public SquelchManager SquelchManager;
 
     public const float MaxRadarRange_Indoors = 25.0f;
@@ -274,6 +276,8 @@ public partial class Player : Creature, IPlayer
         ContractManager = new ContractManager(this);
 
         ConfirmationManager = new ConfirmationManager(this);
+
+        PopupManager = new PopupManager(this);
 
         LootPermission = new Dictionary<ObjectGuid, DateTime>();
 
