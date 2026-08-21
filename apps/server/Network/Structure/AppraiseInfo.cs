@@ -1780,14 +1780,22 @@ public class AppraiseInfo
 
         var ratingAmount = Math.Round((staminaCostReductionMod * 100), 0);
 
-        var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
-        var rangeMinAtTier = Math.Round(LootTables.StaminaCostReductionPerTier[itemTier - 1] * 100, 0);
-
         _hasAdditionalProperties = true;
 
-        _additionalPropertiesLongDescriptionsText +=
-            $"~ Stamina Cost Reduction: Reduces stamina cost of attack by {ratingAmount}%. " +
-            $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%).\n";
+        if (wo.Workmanship == null)
+        {
+            _additionalPropertiesLongDescriptionsText +=
+                $"~ Stamina Cost Reduction: Reduces stamina cost of attack by {ratingAmount}%.\n";
+        }
+        else
+        {
+            var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
+            var rangeMinAtTier = Math.Round(LootTables.StaminaCostReductionPerTier[itemTier - 1] * 100, 0);
+
+            _additionalPropertiesLongDescriptionsText +=
+                $"~ Stamina Cost Reduction: Reduces stamina cost of attack by {ratingAmount}%. " +
+                $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%).\n";
+        }
     }
 
     private void SetFrigidResistanceUseLongText(WorldObject wo)
@@ -1915,14 +1923,37 @@ public class AppraiseInfo
 
         var ratingAmount = Math.Round((critFrequency - 0.1) * 100, 0);
 
-        var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
-        var rangeMinAtTier = Math.Round(LootTables.BonusCritChancePerTier[itemTier - 1] * 100, 0);
-
         _hasExtraPropertiesText = true;
 
-        _additionalPropertiesLongDescriptionsText +=
-            $"~ Biting Strike: Increases critical chance by +{ratingAmount}%, additively. " +
-            $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 5}%).\n";
+        if (wo.Workmanship == null)
+        {
+            var baseCritFrequency = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId)
+                ?.GetProperty(PropertyFloat.CriticalFrequency);
+
+            if (baseCritFrequency != null)
+            {
+                var rangeMin = Math.Round((baseCritFrequency.Value - 0.1) * 100, 0);
+                var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestCritFrequencyBonusRange * 100, 0);
+
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ Biting Strike: Increases critical chance by +{ratingAmount}%, additively. " +
+                    $"Roll range is {rangeMin}% to {rangeMax}%.\n";
+            }
+            else
+            {
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ Biting Strike: Increases critical chance by +{ratingAmount}%, additively.\n";
+            }
+        }
+        else
+        {
+            var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
+            var rangeMinAtTier = Math.Round(LootTables.BonusCritChancePerTier[itemTier - 1] * 100, 0);
+
+            _additionalPropertiesLongDescriptionsText +=
+                $"~ Biting Strike: Increases critical chance by +{ratingAmount}%, additively. " +
+                $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 5}%).\n";
+        }
     }
 
     private void SetSlayerUseLongText(WorldObject wo)
@@ -1989,14 +2020,37 @@ public class AppraiseInfo
 
         var ratingAmount = Math.Round((critMultiplier - 1) * 100, 0);
 
-        var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
-        var rangeMinAtTier = Math.Round(LootTables.BonusCritMultiplierPerTier[itemTier - 1] * 100, 0);
-
         _hasExtraPropertiesText = true;
 
-        _additionalPropertiesLongDescriptionsText +=
-            $"~ Crushing Blow: Increases critical damage by +{ratingAmount}%, additively. " +
-            $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 50}%)\n";
+        if (wo.Workmanship == null)
+        {
+            var baseCritMultiplier = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId)
+                ?.GetProperty(PropertyFloat.CriticalMultiplier);
+
+            if (baseCritMultiplier != null)
+            {
+                var rangeMin = Math.Round((baseCritMultiplier.Value - 1) * 100, 0);
+                var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestCritMultiplierBonusRange * 100, 0);
+
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ Crushing Blow: Increases critical damage by +{ratingAmount}%, additively. " +
+                    $"Roll range is {rangeMin}% to {rangeMax}%.\n";
+            }
+            else
+            {
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ Crushing Blow: Increases critical damage by +{ratingAmount}%, additively.\n";
+            }
+        }
+        else
+        {
+            var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
+            var rangeMinAtTier = Math.Round(LootTables.BonusCritMultiplierPerTier[itemTier - 1] * 100, 0);
+
+            _additionalPropertiesLongDescriptionsText +=
+                $"~ Crushing Blow: Increases critical damage by +{ratingAmount}%, additively. " +
+                $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 50}%)\n";
+        }
     }
 
     private void SetCripplingBlowUseLongText(WorldObject wo)
@@ -2040,14 +2094,34 @@ public class AppraiseInfo
 
         var ratingAmount = 100 - Math.Round((ignoreArmor * 100), 0);
 
-        var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
-        var rangeMinAtTier = 10 + Math.Round(LootTables.BonusIgnoreArmorPerTier[itemTier - 1] * 100, 0);
-
         _hasExtraPropertiesText = true;
 
-        _additionalPropertiesLongDescriptionsText +=
-            $"~ Armor Cleaving: Increases armor ignored by {ratingAmount}%, additively. " +
-            $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%)\n";
+        if (wo.Workmanship == null)
+        {
+            var baseIgnoreArmor = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId)
+                ?.GetProperty(PropertyFloat.IgnoreArmor);
+
+            if (baseIgnoreArmor != null)
+            {
+                var rangeMin = 100 - Math.Round(baseIgnoreArmor.Value * 100, 0);
+                var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestIgnoreArmorBonusRange * 100, 0);
+
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ Armor Cleaving: Increases armor ignored by {ratingAmount}%, additively. " +
+                    $"Roll range is {rangeMin}% to {rangeMax}%.\n";
+            }
+            else
+            {
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ Armor Cleaving: Increases armor ignored by {ratingAmount}%, additively.\n";
+            }
+        }
+        else
+        {
+            _additionalPropertiesLongDescriptionsText +=
+                $"~ Armor Cleaving: Increases armor ignored by {ratingAmount}%, additively. " +
+                "Roll range is 10% to 20%.\n";
+        }
     }
 
     private void SetArmorRendUseLongText(WorldObject wo)
@@ -2163,14 +2237,34 @@ public class AppraiseInfo
 
             var ratingAmount = 100.0f - Math.Round((ignoreWard * 100), 0);
 
-            var itemTier = LootGenerationFactory.GetTierFromWieldDifficulty(wo.WieldDifficulty ?? 1);
-            var rangeMinAtTier = 10 + Math.Round(LootTables.BonusIgnoreWardPerTier[itemTier - 1] * 100, 0);
-
             _hasExtraPropertiesText = true;
 
-            _additionalPropertiesLongDescriptionsText +=
-                $"~ Ward Cleaving: Increases ward ignored by {ratingAmount}%, additively. " +
-                $"Roll range is based on item tier ({rangeMinAtTier}% to {rangeMinAtTier + 10}%).\n";
+            if (wo.Workmanship == null)
+            {
+                var baseIgnoreWard = DatabaseManager.World.GetCachedWeenie(wo.WeenieClassId)
+                    ?.GetProperty(PropertyFloat.IgnoreWard);
+
+                if (baseIgnoreWard != null)
+                {
+                    var rangeMin = 100 - Math.Round(baseIgnoreWard.Value * 100, 0);
+                    var rangeMax = rangeMin + Math.Round(LootGenerationFactory.QuestIgnoreWardBonusRange * 100, 0);
+
+                    _additionalPropertiesLongDescriptionsText +=
+                        $"~ Ward Cleaving: Increases ward ignored by {ratingAmount}%, additively. " +
+                        $"Roll range is {rangeMin}% to {rangeMax}%.\n";
+                }
+                else
+                {
+                    _additionalPropertiesLongDescriptionsText +=
+                        $"~ Ward Cleaving: Increases ward ignored by {ratingAmount}%, additively.\n";
+                }
+            }
+            else
+            {
+                _additionalPropertiesLongDescriptionsText +=
+                    $"~ Ward Cleaving: Increases ward ignored by {ratingAmount}%, additively. " +
+                    "Roll range is 10% to 20%.\n";
+            }
         }
     }
 

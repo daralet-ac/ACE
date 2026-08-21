@@ -923,7 +923,13 @@ public static partial class LootGenerationFactory
     }
 
     private static readonly float WeaponModMaxBonus = 0.1f;
-    private static readonly float MaxMiscBonus = 0.5f;
+
+    // Quest item mutation bonus ranges (flat, additive on top of the item's SQL-authored base value).
+    // Shared with AppraiseInfo so the appraisal roll-range text can't drift from the actual roll.
+    public const float QuestCritFrequencyBonusRange = 0.05f;
+    public const float QuestCritMultiplierBonusRange = 0.5f;
+    public const float QuestIgnoreArmorBonusRange = 0.1f;
+    public const float QuestIgnoreWardBonusRange = 0.1f;
 
     public static void MutateQuestItem(WorldObject wo)
     {
@@ -1079,7 +1085,7 @@ public static partial class LootGenerationFactory
             if (wo.CriticalFrequency != null)
             {
                 var baseStat = wo.CriticalFrequency.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = QuestCritFrequencyBonusRange;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
@@ -1090,7 +1096,7 @@ public static partial class LootGenerationFactory
             if (wo.GetProperty(PropertyFloat.CriticalMultiplier) != null)
             {
                 var baseStat = wo.GetProperty(PropertyFloat.CriticalMultiplier) ?? 1.0f;
-                var bonusRange = (baseStat - 1) * MaxMiscBonus;
+                var bonusRange = QuestCritMultiplierBonusRange;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
                 var final = baseStat + bonus;
@@ -1101,10 +1107,10 @@ public static partial class LootGenerationFactory
             if (wo.IgnoreArmor != null)
             {
                 var baseStat = wo.IgnoreArmor.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = QuestIgnoreArmorBonusRange;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
-                var final = baseStat + bonus;
+                var final = baseStat - bonus;
 
                 wo.SetProperty(PropertyFloat.IgnoreArmor, final);
             }
@@ -1112,10 +1118,10 @@ public static partial class LootGenerationFactory
             if (wo.IgnoreWard != null)
             {
                 var baseStat = wo.IgnoreWard.Value;
-                var bonusRange = baseStat * MaxMiscBonus;
+                var bonusRange = QuestIgnoreWardBonusRange;
                 var roll = GetDiminishingRoll(null, lootQuality);
                 var bonus = bonusRange * roll;
-                var final = baseStat + bonus;
+                var final = baseStat - bonus;
 
                 wo.SetProperty(PropertyFloat.IgnoreWard, final);
             }
