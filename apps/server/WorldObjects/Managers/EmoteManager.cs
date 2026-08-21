@@ -3685,10 +3685,33 @@ public class EmoteManager
     }
 
     /// <summary>
+    /// Tracks how many LocalSignal hops deep the current synchronous call stack is, on this thread.
+    /// Two or more objects that each respond to an incoming signal by broadcasting a signal of their
+    /// own can otherwise ping-pong through OnLocalSignal forever (A emits -> B hears + emits -> A
+    /// hears + emits -> ...), all synchronously, which overflows the stack instead of erroring out.
+    /// </summary>
+    [ThreadStatic]
+    private static int _localSignalDepth;
+
+    private const int MaxLocalSignalDepth = 32;
+
+    /// <summary>
     /// Called when this NPC receives a local signal from a player
     /// </summary>
     public void OnLocalSignal(WorldObject emitter, string message)
     {
+        if (_localSignalDepth >= MaxLocalSignalDepth)
+        {
+            _log.Error(
+                "[EMOTE] {Name} (0x{Guid}).EmoteManager.OnLocalSignal({Message}) aborted - LocalSignal recursion depth exceeded {MaxDepth}, likely a signal ping-pong loop between objects",
+                WorldObject.Name,
+                WorldObject.Guid,
+                message,
+                MaxLocalSignalDepth
+            );
+            return;
+        }
+
         // nested:true - an incoming signal from another object is a distinct external event, not
         // part of whatever action chain this object's own EmoteManager is currently mid-processing
         // (e.g. a combat creature's own Taunt/WoundedTaunt/ReceiveCritical/HeartBeat reactions).
@@ -3697,7 +3720,19 @@ public class EmoteManager
         // be mid-processing anything else at that instant. HeartBeat/Taunt/WoundedTaunt/
         // ReceiveCritical deliberately keep their existing busy-gating (unchanged) - only the
         // incoming-signal path is affected.
-        ExecuteEmoteSet(EmoteCategory.ReceiveLocalSignal, message, emitter, true);
+        //
+        // _localSignalDepth guards against the recursion this reopened: it's incremented only for
+        // the synchronous portion of this call (delayed/queued continuations run on a fresh stack,
+        // so they don't need to count against it).
+        _localSignalDepth++;
+        try
+        {
+            ExecuteEmoteSet(EmoteCategory.ReceiveLocalSignal, message, emitter, true);
+        }
+        finally
+        {
+            _localSignalDepth--;
+        }
     }
 
     /// <summary>
