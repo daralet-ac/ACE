@@ -30,7 +30,7 @@ public static class LevelScaling
 
     private static readonly int[] AvgPlayerHealthPerTier = [75, 110, 170, 200, 230, 260, 300, 350, 400];
     private static readonly int[] AvgPlayerArmorWardPerTier = [50, 100, 200, 300, 400, 500, 600, 700, 800];
-    private static readonly int[] AvgPlayerAttributePerTier = [125, 175, 200, 215, 230, 250, 270, 290, 300];
+    private static readonly int[] AvgPlayerAttributePerTier = [100, 125, 175, 200, 215, 230, 250, 270, 290];
     private static readonly int[] AvgPlayerAttackSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
     private static readonly int[] AvgPlayerDefenseSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
     private static readonly float[] AvgPlayerResistancePerTier = [1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f];
