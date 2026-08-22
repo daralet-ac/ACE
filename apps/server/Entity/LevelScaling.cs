@@ -28,16 +28,16 @@ public static class LevelScaling
 
     private static readonly ILogger _log = Log.ForContext(typeof(LevelScaling));
 
-    private static readonly int[] AvgPlayerHealthPerTier = [25, 60, 120, 150, 180, 210, 250, 300, 350];
+    private static readonly int[] AvgPlayerHealthPerTier = [75, 110, 170, 200, 230, 260, 300, 350, 400];
     private static readonly int[] AvgPlayerArmorWardPerTier = [50, 100, 200, 300, 400, 500, 600, 700, 800];
-    private static readonly int[] AvgPlayerAttributePerTier = [125, 175, 200, 215, 230, 250, 270, 290, 300];
+    private static readonly int[] AvgPlayerAttributePerTier = [100, 125, 175, 200, 215, 230, 250, 270, 290];
     private static readonly int[] AvgPlayerAttackSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
     private static readonly int[] AvgPlayerDefenseSkillPerTier = [10, 60, 90, 120, 150, 180, 225, 300, 500];
     private static readonly float[] AvgPlayerResistancePerTier = [1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f];
     private static readonly float[] AvgPlayerBoostPerTier = [5.0f, 7.5f, 12.5f, 17.5f, 22.5f, 27.5f, 32.5f, 37.5f, 42.5f];
 
-    private static readonly int[] AvgMonsterArmorWardPerTier = [20, 45, 68, 101, 152, 228, 342, 513, 600];
-    private static readonly int[] AvgMonsterHealthPerTier = [10, 75, 150, 250, 400, 600, 800, 1000, 2000 ];
+    private static readonly int[] AvgMonsterArmorWardPerTier = [10, 20, 45, 68, 101, 152, 228, 342, 513];
+    private static readonly int[] AvgMonsterHealthPerTier = [10, 100, 200, 300, 500, 750, 1000, 1500, 2000];
 
     private static readonly float[] AvgTimeToKillMonster = [9.0f, 10.7f, 12.9f, 16.1f, 17.2f, 17.4f, 24.6f, 44.1f];
     private static readonly float[] AvgEnemyDpsPerTier = [ 1.0f, 2.0f, 3.0f, 4.0f, 6.0f, 7.0f, 7.5f, 8.0f, 10.0f];
@@ -45,6 +45,11 @@ public static class LevelScaling
     public static float GetMonsterDamageDealtHealthScalar(Creature player, Creature monster)
     {
         if (!CanScalePlayer(player, monster))
+        {
+            return 1.0f;
+        }
+
+        if (monster.CurrentLandblock?.IsFellowshipRequired() == true)
         {
             return 1.0f;
         }
@@ -99,20 +104,69 @@ public static class LevelScaling
         var statAtPlayerLevel = GetMonsterHealthAtLevel(player.Level.Value);
         var statAtMonsterLevel = GetMonsterHealthAtLevel(monster.Level.Value);
 
+        var scalarMod = (float)statAtMonsterLevel / statAtPlayerLevel;
+
+        // Fellowship-required dungeons: on top of the normal health-ratio scaling, additionally divide by a
+        // per-dungeon-tier constant so a Shrouded player's damage-dealt TTK against this tier approaches
+        // native level-50 TTK instead of the tier's own (much faster) native pace. Monster Armor/Ward is
+        // deliberately NOT scaled up for these landblocks (see GetMonsterArmorWardScalar) -- this health-only
+        // ratio is close enough on its own. Natives are unaffected: CanScalePlayer already excludes them.
+        // See docs/fellowship-dungeon-scaling.md for the derivation, and GetFellowshipDealtTtkDivisor() below.
+        if (monster.CurrentLandblock?.IsFellowshipRequired() == true)
+        {
+            scalarMod /= GetFellowshipDealtTtkDivisor(monster.Level.Value);
+        }
+
         if (PropertyManager.GetBool("debug_level_scaling_system").Item)
         {
             Console.WriteLine(
                 $"\nGetMonsterDamageTakenHealthScalar(Player {player.Name}, Monster {monster.Name})"
-                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {(float)statAtMonsterLevel / statAtPlayerLevel}"
+                + $"\n  statAtPlayerLevel: {statAtPlayerLevel}, statAtMonsterLevel: {statAtMonsterLevel}, scalarMod: {scalarMod}"
             );
         }
 
-        return (float)statAtMonsterLevel / statAtPlayerLevel;
+        return scalarMod;
+    }
+
+    /// <summary>
+    /// Per-dungeon-tier divisor applied in GetMonsterDamageTakenHealthScalar() for fellowship-required
+    /// dungeons. Derived from native TTK = ArchetypeHealth / (real weapon DPS * real attribute mod * armor
+    /// mitigation) at each tier -- using GetWeaponBaseDps, the real Str-by-tier progression, and
+    /// Creature_ArchetypeSystem's enemyHealth/enemyArmorWard -- as the ratio of native level-50 TTK to each
+    /// lower tier's own native TTK. Hand-computed, not derived at runtime: recompute if the reference level
+    /// (currently native level 50) or any of the source tables above change. See
+    /// docs/fellowship-dungeon-scaling.md for the full derivation and its known limits at high shrouded levels.
+    /// </summary>
+    private static float GetFellowshipDealtTtkDivisor(int monsterLevel)
+    {
+        switch (monsterLevel)
+        {
+            case 10:
+                return 1.906f;
+            case 20:
+                return 1.551f;
+            case 30:
+                return 1.464f;
+            case 40:
+                return 1.171f;
+            case 50:
+                return 1.000f;
+            default:
+                return 1.0f;
+        }
     }
 
     public static float GetMonsterArmorWardScalar(Creature player, Creature monster)
     {
         if (!CanScalePlayer(player, monster))
+        {
+            return 1.0f;
+        }
+
+        // See the matching guard in GetMonsterDamageTakenHealthScalar() -- fellowship-required dungeons already
+        // pin this monster's actual Armor/Ward to a fixed reference tier for every visitor, so scaling it again
+        // here off the monster's stale Level property would double-count on top of an already-normalized value.
+        if (monster.CurrentLandblock?.IsFellowshipRequired() == true)
         {
             return 1.0f;
         }
@@ -147,6 +201,13 @@ public static class LevelScaling
     public static float GetPlayerArmorWardScalar(Creature player, Creature monster)
     {
         if (!CanScalePlayer(player, monster))
+        {
+            return 1.0f;
+        }
+
+        // Companion to the guard in GetMonsterDamageDealtHealthScalar() -- scaling the player's own armor
+        // down based on the monster's stale Level would undo the point of flattening the health scalar above.
+        if (monster.CurrentLandblock?.IsFellowshipRequired() == true)
         {
             return 1.0f;
         }
