@@ -270,6 +270,9 @@ public enum PropertyBool : ushort
     [ServerOnly]
     AttuneOnEquip = 181,
 
+    [ServerOnly]
+    RequiresShrouded = 182,
+
     /* custom */
     [ServerOnly]
     LinkedPortalOneSummon = 9001,

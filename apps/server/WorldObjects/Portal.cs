@@ -213,6 +213,17 @@ public partial class Portal : WorldObject
                 );
             }
 
+            if (RequiresShrouded && !player.EnchantmentManager.HasSpell((int)SpellId.Shrouded))
+            {
+                player.Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        "You must be Shrouded to enter this dungeon.",
+                        ChatMessageType.System
+                    )
+                );
+                return new ActivationResult(false);
+            }
+
             //var playerPkLevel = player.PkLevel;
 
             //if (PropertyManager.GetBool("pk_server").Item)

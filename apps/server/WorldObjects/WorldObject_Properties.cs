@@ -9394,6 +9394,27 @@ partial class WorldObject
         }
     }
 
+    /// <summary>
+    /// If true (on a Portal), a player must have the Shrouded enchantment active to use it, regardless of
+    /// their level relative to MinLevel/MaxLevel. Lets level-scaled dungeons require every visitor -- including
+    /// natives at the dungeon's own level -- to be Shrouded, so LevelScaling.cs's scalars apply to everyone.
+    /// </summary>
+    public bool RequiresShrouded
+    {
+        get => GetProperty(PropertyBool.RequiresShrouded) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.RequiresShrouded);
+            }
+            else
+            {
+                SetProperty(PropertyBool.RequiresShrouded, value);
+            }
+        }
+    }
+
     public string CacheLog
     {
         get => GetProperty(PropertyString.CacheLog);

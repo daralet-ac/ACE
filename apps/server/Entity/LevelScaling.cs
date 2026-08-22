@@ -597,7 +597,16 @@ public static class LevelScaling
             return false;
         }
 
-        if (player.Level <= monster.Level)
+        if (player.Level < monster.Level)
+        {
+            return false;
+        }
+
+        // Equal levels only scale in fellowship-required (level-scaled) dungeons -- these can require every
+        // visitor to be Shrouded via Portal.RequiresShrouded, including natives fighting at-level enemies, so
+        // they get the same TTK normalization as anyone else. Everywhere else, equal levels never scaled
+        // before and still don't -- this only changes behavior inside fellowship-required landblocks.
+        if (player.Level == monster.Level && monster.CurrentLandblock?.IsFellowshipRequired() != true)
         {
             return false;
         }
