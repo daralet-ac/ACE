@@ -607,7 +607,7 @@ partial class Player
 
     private bool ItemDoesNotHaveGearRating(WorldObject item, PropertyInt propertyInt)
     {
-        return GetRatingFromSocketedJewels(propertyInt, item) == 0;
+        return (item.GetProperty(propertyInt) ?? 0) == 0 && GetRatingFromSocketedJewels(propertyInt, item) == 0;
     }
 
     public bool TryActivateSpells(WorldObject item)
