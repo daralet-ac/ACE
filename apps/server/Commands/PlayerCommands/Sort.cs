@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using ACE.DatLoader;
+using ACE.DatLoader.FileTypes;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity.Actions;
@@ -320,8 +322,95 @@ public class Sort
             }
         }
 
-        // ---------- PART C: Sort main pack minimally (insertion-style: only move misplaced items). ----------
+        // ---------- PART C: Combine stacks of the same item into as few stacks as possible ----------
+        // Groups items by the same compatibility fields HandleActionStackableMerge checks
+        // (WeenieClassId, TrophyQuality, SpellDID, Spell2, BoostValue) across the main pack and
+        // every side pack, then greedily drains the smallest stacks into the largest so duplicates
+        // end up as full stacks instead of scattered partial ones. HandleActionStackableMerge
+        // supports merging across the player's own containers directly (no relocation needed
+        // first), so this doesn't have to wait for Part D/E's per-container position sort.
+        var stacksCombined = 0;
+        {
+            var stackLocations = new List<(WorldObject Item, List<WorldObject> OwningList)>();
+
+            foreach (var stackItem in mainItems)
+            {
+                if ((stackItem.MaxStackSize ?? 1) > 1)
+                {
+                    stackLocations.Add((stackItem, mainItems));
+                }
+            }
+
+            foreach (var snapshot in containerSnapshots.Values)
+            {
+                foreach (var stackItem in snapshot)
+                {
+                    if ((stackItem.MaxStackSize ?? 1) > 1)
+                    {
+                        stackLocations.Add((stackItem, snapshot));
+                    }
+                }
+            }
+
+            // Real StackSize is only updated when the scheduled merge actually runs later, so we
+            // track the post-merge size ourselves to decide the remaining merges in this pass.
+            var simulatedStackSize = stackLocations.ToDictionary(sl => sl.Item.Guid.Full, sl => sl.Item.StackSize ?? 1);
+
+            var groups = stackLocations
+                .GroupBy(sl => (sl.Item.WeenieClassId, sl.Item.TrophyQuality, sl.Item.SpellDID, sl.Item.Spell2, sl.Item.BoostValue))
+                .Where(g => g.Count() > 1);
+
+            foreach (var group in groups)
+            {
+                // Largest stacks absorb the smallest first, so the result is the fewest possible stacks.
+                var members = group.OrderByDescending(sl => simulatedStackSize[sl.Item.Guid.Full]).ToList();
+
+                var targetIdx = 0;
+                var sourceIdx = members.Count - 1;
+
+                while (targetIdx < sourceIdx)
+                {
+                    var target = members[targetIdx].Item;
+                    var source = members[sourceIdx].Item;
+
+                    var room = (target.MaxStackSize ?? 1) - simulatedStackSize[target.Guid.Full];
+                    if (room <= 0)
+                    {
+                        targetIdx++;
+                        continue;
+                    }
+
+                    var moveAmount = Math.Min(room, simulatedStackSize[source.Guid.Full]);
+
+                    var sourceGuid = source.Guid.Full;
+                    var targetGuid = target.Guid.Full;
+
+                    actionChain.AddDelaySeconds(0.03);
+                    actionChain.AddAction(player, () => player.HandleActionStackableMerge(sourceGuid, targetGuid, moveAmount));
+
+                    simulatedStackSize[target.Guid.Full] += moveAmount;
+                    simulatedStackSize[source.Guid.Full] -= moveAmount;
+
+                    movesScheduled++;
+
+                    if (simulatedStackSize[source.Guid.Full] <= 0)
+                    {
+                        members[sourceIdx].OwningList.RemoveAll(i => i.Guid == source.Guid);
+                        stacksCombined++;
+                        sourceIdx--;
+                    }
+
+                    if (simulatedStackSize[target.Guid.Full] >= (target.MaxStackSize ?? 1))
+                    {
+                        targetIdx++;
+                    }
+                }
+            }
+        }
+
+        // ---------- PART D: Sort main pack minimally (insertion-style: only move misplaced items). ----------
         var desiredMain = mainItems.OrderByDescending(i => i.WeenieType)
+            .ThenBy(i => GetSpellComponentSortKey(i))
             .ThenByDescending(i => i.ItemType)
             .ThenByDescending(i => i.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -373,7 +462,7 @@ public class Sort
             }
         }
 
-        // ---------- PART D: Sort each side-pack minimally (same ordering rules) using snapshots ----------
+        // ---------- PART E: Sort each side-pack minimally (same ordering rules) using snapshots ----------
         foreach (var sidePack in allSidePacks)
         {
             if (!containerSnapshots.TryGetValue(sidePack.Guid.Full, out var containerItems))
@@ -406,6 +495,7 @@ public class Sort
 
             var desiredContainer = containerItems
                 .OrderByDescending(i => i.WeenieType)
+                .ThenBy(i => GetSpellComponentSortKey(i))
                 .ThenByDescending(i => i.ItemType)
                 .ThenByDescending(i => i.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
@@ -458,6 +548,7 @@ public class Sort
         {
             var scheduled = movesScheduled;
             var movedToSide = itemsMovedToSidePacks;
+            var combined = stacksCombined;
 
             actionChain.AddAction(
                 player,
@@ -465,7 +556,7 @@ public class Sort
                 {
                     session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Inventory sort complete. Scheduled {scheduled} moves; moved {movedToSide} items into side packs.",
+                            $"Inventory sort complete. Scheduled {scheduled} moves; moved {movedToSide} items into side packs; combined {combined} stacks.",
                             ChatMessageType.System
                         )
                     );
@@ -478,5 +569,102 @@ public class Sort
         {
             session.Network.EnqueueSend(new GameMessageSystemChat("No moves necessary; inventory already sorted.", ChatMessageType.System));
         }
+    }
+
+    // Desired spell component ordering: Scarab > Herb > Powder > Talisman > Taper (Potion is a
+    // formula-only category with no droppable item, kept in its dat-defined slot between Powder
+    // and Talisman). Scarabs are further ordered by material tier.
+    private static readonly string[] ScarabMaterialOrder =
+    {
+        "Lead",
+        "Iron",
+        "Copper",
+        "Silver",
+        "Gold",
+        "Pyreal",
+        "Platinum",
+        "Diamond"
+    };
+
+    private static int GetComponentTypeOrder(uint componentType)
+    {
+        if (componentType == (uint)SpellComponentsTable.Type.Scarab)
+        {
+            return 0;
+        }
+
+        if (componentType == (uint)SpellComponentsTable.Type.Herb)
+        {
+            return 1;
+        }
+
+        if (componentType == (uint)SpellComponentsTable.Type.Powder)
+        {
+            return 2;
+        }
+
+        if (componentType == (uint)SpellComponentsTable.Type.Potion)
+        {
+            return 3;
+        }
+
+        if (componentType == (uint)SpellComponentsTable.Type.Talisman)
+        {
+            return 4;
+        }
+
+        if (componentType == (uint)SpellComponentsTable.Type.Taper)
+        {
+            return 5;
+        }
+
+        return 6;
+    }
+
+    private static int GetScarabMaterialOrder(string componentName)
+    {
+        if (!string.IsNullOrEmpty(componentName))
+        {
+            for (var i = 0; i < ScarabMaterialOrder.Length; i++)
+            {
+                if (componentName.Contains(ScarabMaterialOrder[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+        }
+
+        return ScarabMaterialOrder.Length;
+    }
+
+    // Non-component items (and any component whose id fails the dat lookup) return the same
+    // neutral key, so they fall through unchanged to the existing ItemType/Name ordering below.
+    //
+    // "Pea" (reusable) components are separate weenies from their consumable counterparts and
+    // carry no runtime flag for it, but they share the consumable's PropertyDataId.SpellComponent
+    // id (so spellcasting/formula matching treats them the same) and their WeenieClassName always
+    // carries a "pea" prefix (peascarablead, peaherbamaranth, etc.), so that prefix is what we key
+    // the "own section after the above" split on.
+    private static (bool IsPea, int TypeOrder, int MaterialOrder) GetSpellComponentSortKey(WorldObject item)
+    {
+        if (item.WeenieType != WeenieType.SpellComponent)
+        {
+            return (false, 0, 0);
+        }
+
+        var isPea = item.WeenieClassName?.StartsWith("pea", StringComparison.OrdinalIgnoreCase) ?? false;
+
+        var componentId = item.GetProperty(PropertyDataId.SpellComponent) ?? 0;
+        if (!DatManager.PortalDat.SpellComponentsTable.SpellComponents.TryGetValue(componentId, out var component))
+        {
+            return (isPea, 6, 0);
+        }
+
+        var typeOrder = GetComponentTypeOrder(component.Type);
+        var materialOrder = component.Type == (uint)SpellComponentsTable.Type.Scarab
+            ? GetScarabMaterialOrder(component.Name)
+            : 0;
+
+        return (isPea, typeOrder, materialOrder);
     }
 }
