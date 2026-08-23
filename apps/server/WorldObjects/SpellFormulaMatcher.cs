@@ -3,6 +3,7 @@ using System.Linq;
 using ACE.Database;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
+using ACE.Server.Factories.Tables;
 using Serilog;
 
 namespace ACE.Server.WorldObjects;
@@ -15,22 +16,146 @@ namespace ACE.Server.WorldObjects;
 /// taper choice/order is normally account-hash-randomized (SpellFormula.GetPlayerFormula), but
 /// Scroll Writing ignores that entirely so every player scribes the same formula for a given spell.
 ///
-/// Only spells with an existing Scroll weenie in the world DB, AND whose magic school is in
-/// <see cref="AllowedSchools"/>, are considered candidates.
+/// Only spells with an existing Scroll weenie in the world DB, AND that are in the explicit
+/// <see cref="AllowedSpellIds"/> allowlist, are considered candidates.
 /// </summary>
 public static class SpellFormulaMatcher
 {
     private static readonly ILogger _log = Log.ForContext(typeof(SpellFormulaMatcher));
 
     /// <summary>
-    /// The only magic schools Scroll Writing can currently produce scrolls for.
-    /// Narrow this further (or add per-spell exclusions alongside it) as needed.
+    /// The level-1 head of every spell family Scroll Writing can produce. Mirrors the War/Life/Void
+    /// selections in <see cref="Factories.Tables.Spells.ScrollSpells"/> (the loot-scroll table) —
+    /// the same families already judged fit to exist as a standalone scroll — but kept as its own
+    /// list rather than a reference to that table, so retuning loot-scroll drops can't silently
+    /// change what players are able to craft.
+    ///
+    /// Each family is expanded up to <see cref="MaxScribeLevel"/> via <see cref="SpellLevelProgression"/>;
+    /// level 8 "Ultimate" spells are deliberately excluded and stay loot/quest-reward only.
     /// </summary>
-    private static readonly HashSet<MagicSchool> AllowedSchools = new() { MagicSchool.WarMagic, MagicSchool.LifeMagic };
+    private static readonly List<SpellId> AllowedSpellFamilies = new()
+    {
+        // Life
+        SpellId.HealSelf1,
+        SpellId.HealOther1,
+        SpellId.HarmOther1,
+        SpellId.RevitalizeSelf1,
+        SpellId.RevitalizeOther1,
+        SpellId.EnfeebleOther1,
+        SpellId.ManaBoostSelf1,
+        SpellId.ManaBoostOther1,
+        SpellId.ManaDrainOther1,
+        SpellId.FellowshipHeal1,
+        SpellId.FellowshipRevitalize1,
+        SpellId.FellowshipManaBoost1,
+        SpellId.HealthToStaminaSelf1,
+        SpellId.HealthToManaSelf1,
+        SpellId.StaminaToHealthSelf1,
+        SpellId.StaminaToManaSelf1,
+        SpellId.ManaToHealthSelf1,
+        SpellId.ManaToStaminaSelf1,
+        SpellId.InfuseHealth1,
+        SpellId.InfuseStamina1,
+        SpellId.InfuseMana1,
+        SpellId.DrainHealth1,
+        SpellId.DrainStamina1,
+        SpellId.DrainMana1,
+        SpellId.HealthBolt1,
+        SpellId.StaminaBolt1,
+        SpellId.ManaBolt1,
+        SpellId.DispelLifeBadSelf1,
+        SpellId.DispelLifeBadOther1,
+        SpellId.VitalityMend1,
+        SpellId.VigorMend1,
+        SpellId.ClarityMend1,
+        SpellId.VitalityMendOther1,
+        SpellId.VigorMendOther1,
+        SpellId.ClarityMendOther1,
+
+        // War
+        SpellId.FlameBolt1,
+        SpellId.FrostBolt1,
+        SpellId.AcidStream1,
+        SpellId.ShockWave1,
+        SpellId.LightningBolt1,
+        SpellId.ForceBolt1,
+        SpellId.WhirlingBlade1,
+        SpellId.AcidStreak1,
+        SpellId.FlameStreak1,
+        SpellId.ForceStreak1,
+        SpellId.FrostStreak1,
+        SpellId.LightningStreak1,
+        SpellId.ShockwaveStreak1,
+        SpellId.WhirlingBladeStreak1,
+        SpellId.AcidArc1,
+        SpellId.ForceArc1,
+        SpellId.FrostArc1,
+        SpellId.LightningArc1,
+        SpellId.FlameArc1,
+        SpellId.ShockArc1,
+        SpellId.BladeArc1,
+        SpellId.AcidBlast1,
+        SpellId.ShockBlast1,
+        SpellId.FrostBlast1,
+        SpellId.LightningBlast1,
+        SpellId.FlameBlast1,
+        SpellId.ForceBlast1,
+        SpellId.BladeBlast1,
+        SpellId.AcidVolley1,
+        SpellId.BludgeoningVolley1,
+        SpellId.FrostVolley1,
+        SpellId.LightningVolley1,
+        SpellId.FlameVolley1,
+        SpellId.ForceVolley1,
+        SpellId.BladeVolley1,
+
+        // Void
+        SpellId.Corrosion1,
+        SpellId.CurseDestructionOther1,
+        SpellId.CurseWeakness1,
+    };
+
+    /// <summary>
+    /// Highest spell level Scroll Writing will produce for any family in <see cref="AllowedSpellFamilies"/>.
+    /// Level 8 ("Ultimate") is excluded, matching the loot-scroll table's NumLevels cap.
+    /// </summary>
+    private const int MaxScribeLevel = 7;
+
+    private static HashSet<uint> _allowedSpellIds;
+
+    /// <summary>
+    /// Every exact spellId Scroll Writing can produce, expanded from <see cref="AllowedSpellFamilies"/>.
+    /// Built once from static content (spell enum + level progression table), not the world DB, so it
+    /// never needs rebuilding at runtime.
+    /// </summary>
+    private static HashSet<uint> AllowedSpellIds => _allowedSpellIds ??= BuildAllowedSpellIds();
+
+    private static HashSet<uint> BuildAllowedSpellIds()
+    {
+        var result = new HashSet<uint>();
+
+        foreach (var family in AllowedSpellFamilies)
+        {
+            var levels = SpellLevelProgression.GetSpellLevels(family);
+
+            if (levels == null)
+            {
+                _log.Warning("SpellFormulaMatcher: no level progression found for {Spell}", family);
+                continue;
+            }
+
+            for (var i = 0; i < levels.Count && i < MaxScribeLevel; i++)
+            {
+                result.Add((uint)levels[i]);
+            }
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// spellId -> scroll weenie classId, built from every Scroll-type weenie with a PropertyDataId.Spell
-    /// whose spell is in an allowed magic school.
+    /// that is in the Scroll Writing allowlist.
     /// </summary>
     private static Dictionary<uint, uint> _scrollWcidBySpellId;
 
@@ -59,9 +184,14 @@ public static class SpellFormulaMatcher
 
         foreach (var (spellId, scrollWcid) in rawMap)
         {
+            if (!AllowedSpellIds.Contains(spellId))
+            {
+                continue;
+            }
+
             var spell = new Spell(spellId, false);
 
-            if (spell._spellBase != null && AllowedSchools.Contains(spell.School))
+            if (spell._spellBase != null)
             {
                 filtered.Add(spellId, scrollWcid);
             }
