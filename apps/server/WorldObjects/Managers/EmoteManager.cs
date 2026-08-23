@@ -3778,7 +3778,7 @@ public class EmoteManager
     {
         var capstoneModifier = GetCapstoneModifier(player.CurrentLandblock);
         var capstonesCompleted = QuestManager.GetCapstonesCompleted(player);
-        var minimumRoll = (capstonesCompleted * 5) + (capstoneModifier * 100);
+        var minimumRoll = Math.Clamp((capstonesCompleted * 5) + (capstoneModifier * 100), 0, 99);
 
         for (var i = 0; i < amount; i++)
         {
@@ -3836,7 +3836,7 @@ public class EmoteManager
 
         var capstoneModifier = GetCapstoneModifier(player.CurrentLandblock);
         var capstonesCompleted = QuestManager.GetCapstonesCompleted(player);
-        var minimumRoll = (capstonesCompleted * 2) + (capstoneModifier * 100);
+        var minimumRoll = Math.Clamp((capstonesCompleted * 2) + (capstoneModifier * 100), 0, 99);
 
         var amount = 1;
         switch (ThreadSafeRandom.Next((int)minimumRoll, 100))
@@ -3877,6 +3877,6 @@ public class EmoteManager
 
     private static double GetCapstoneModifier(Landblock landblock)
     {
-        return landblock?.LandblockLootQualityMod ?? 1.0;
+        return landblock?.LandblockLootQualityMod ?? 0.0;
     }
 }
