@@ -628,10 +628,6 @@ public class SpellTransference : Stackable
                     {
                         player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
                     }
-                    else
-                    {
-                        player.SendUseDoneEvent();
-                    }
 
                     return;
                 }
@@ -750,6 +746,7 @@ public class SpellTransference : Stackable
                     player,
                     () =>
                     {
+                        player.SendUseDoneEvent();
                         player.IsBusy = false;
                     }
                 );

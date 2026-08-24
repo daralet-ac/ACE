@@ -1916,6 +1916,21 @@ public class EnchantmentManager
             var wardMod = creature.GetWardMod(damager as Creature, creature, 1.0f);
             var levelScalingMod = LevelScaling.GetMonsterDamageTakenHealthScalar(sourcePlayer, creature);
 
+            // COMBAT ABILITY - Overload/Battery: DoT ticks need to independently consult the caster's
+            // current Overload/Battery state, since it can change (activate/expire) over the lifetime of the DoT,
+            // and the enchantment's baked-in StatModValue does not get recalculated on refresh casts.
+            // mirrors CheckForCombatAbilityOverloadDamageMod/CheckForCombatAbilityBatteryDamageMod used for direct spell damage.
+            var overloadDamageMod = sourcePlayer switch
+            {
+                { OverloadDischargeIsActive: true } => 1.0f + sourcePlayer.DischargeLevel,
+                { OverloadStanceIsActive: true } => 1.0f + sourcePlayer.ManaChargeMeter * 0.2f,
+                _ => 1.0f
+            };
+
+            var batteryDamageMod = sourcePlayer is { BatteryStanceIsActive: true }
+                ? 1.0f - sourcePlayer.ManaChargeMeter * 0.1f
+                : 1.0f;
+
             //Console.WriteLine($"DoT Tick (Damager: {damager?.Name}, Target: {creature?.Name})\n" +
             //    $" -BaseTickAmount: {tickAmount}\n" +
             //    $" -ResistanceMod: {resistanceMod}\n" +
@@ -1924,9 +1939,11 @@ public class EnchantmentManager
             //    $" -BleedResistance: {bleedResistance}\n" +
             //    $" -WardMod: {wardMod}\n" +
             //    $" -LevelScalingMod: {levelScalingMod}\n" +
-            //    $" -FinalTickAmount: {tickAmount * resistanceMod * wardMod * damageResistRatingMod * dotResistRatingMod * bleedResistance * levelScalingMod}");
+            //    $" -OverloadDamageMod: {overloadDamageMod}\n" +
+            //    $" -BatteryDamageMod: {batteryDamageMod}\n" +
+            //    $" -FinalTickAmount: {tickAmount * resistanceMod * wardMod * damageResistRatingMod * dotResistRatingMod * bleedResistance * levelScalingMod * overloadDamageMod * batteryDamageMod}");
 
-            tickAmount *= resistanceMod * wardMod * damageResistRatingMod * dotResistRatingMod * bleedResistance * levelScalingMod;
+            tickAmount *= resistanceMod * wardMod * damageResistRatingMod * dotResistRatingMod * bleedResistance * levelScalingMod * overloadDamageMod * batteryDamageMod;
 
             // make sure the target's current health is not exceeded
             if (tickAmountTotal + tickAmount >= creature.Health.Current)

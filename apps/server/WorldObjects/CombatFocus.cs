@@ -331,6 +331,33 @@ public class CombatFocus : WorldObject
         SpellId.MagicResistanceSelf1
     };
 
+    // Heritage skills occupy a single conceptual "base skill" slot: whichever one is
+    // applicable to a character's heritage. Removing/re-adding any one of them must be
+    // treated as removing/re-adding that shared slot.
+    private static readonly SpellId[] HeritageSkillSpellIds =
+    {
+        SpellId.FinesseWeaponsMasterySelf1,
+        SpellId.StaffMasterySelf1,
+        SpellId.UnarmedCombatMasterySelf1
+    };
+
+    private static bool IsSameBaseSkillRemoval(int? removedSlotValue, SpellId spellId)
+    {
+        if (removedSlotValue is not int v)
+        {
+            return false;
+        }
+
+        if (v == (int)spellId)
+        {
+            return true;
+        }
+
+        // heritage group: any heritage member re-added should clear the slot recorded
+        // for any other heritage member, since they represent the same base skill slot.
+        return HeritageSkillSpellIds.Contains((SpellId)v) && HeritageSkillSpellIds.Contains(spellId);
+    }
+
     public void InitializeSpellList()
     {
         if (CombatFocusTypeId is null)
@@ -367,12 +394,17 @@ public class CombatFocus : WorldObject
                 break;
         }
 
+        // spellList above is a reference to one of the static readonly lists (e.g. SorcererSpells),
+        // shared by every CombatFocus of that type for the lifetime of the process. Copy it before
+        // mutating so a Newcomer-prestige focus doesn't permanently append NewcomerSpells onto the
+        // shared base list (which would otherwise grow with duplicates every time any Newcomer
+        // focus of that type loads, corrupting the base list for all other focuses of that type).
+        var spellListCopy = new List<SpellId>(spellList);
+
         if ((CombatFocusPrestigeVersionId ?? 0) == (int)CombatFocusPrestigeVersion.Newcomer)
         {
-            spellList.AddRange(NewcomerSpells);
+            spellListCopy.AddRange(NewcomerSpells);
         }
-
-        var spellListCopy = new List<SpellId>(spellList);
 
         static bool IsValidSpellInt(int value)
         {
@@ -948,20 +980,55 @@ public class CombatFocus : WorldObject
         {
             if (IsBaseSpell(spellId))
             {
-                if (CombatFocusSkillSpellRemoved != null)
+                // Clear the specific removed-slot that recorded this spell (or, for heritage
+                // skills, whichever heritage member was recorded) being taken out. Clearing
+                // the first occupied slot regardless of which spell it actually holds would
+                // desync the persisted slots from CurrentSpells: the wrong spell would stay
+                // marked "removed" and would silently reappear (replacing whatever the player
+                // actually wanted) the next time this focus is reloaded from the database
+                // (e.g. on relog or server restart).
+                if (IsSameBaseSkillRemoval(CombatFocusSkillSpellRemoved, spellId))
                 {
                     CombatFocusSkillSpellRemoved = null;
                     CombatFocusNumSkillsRemoved--;
                 }
-                else if (CombatFocusSkill2SpellRemoved != null)
+                else if (IsSameBaseSkillRemoval(CombatFocusSkill2SpellRemoved, spellId))
                 {
                     CombatFocusSkill2SpellRemoved = null;
                     CombatFocusNumSkillsRemoved--;
                 }
-                else if (CombatFocusSkill3SpellRemoved != null)
+                else if (IsSameBaseSkillRemoval(CombatFocusSkill3SpellRemoved, spellId))
                 {
                     CombatFocusSkill3SpellRemoved = null;
                     CombatFocusNumSkillsRemoved--;
+                }
+                else
+                {
+                    // Shouldn't normally happen (spellMatch being false implies this base
+                    // spell was previously removed), but fall back to clearing the first
+                    // occupied slot rather than leaving CombatFocusNumSkillsRemoved out of
+                    // sync with the actual number of occupied removed-slots.
+                    _log.Warning(
+                        "CombatFocus.AddSpell() - {Name} could not find a removed-slot matching {SpellId} being re-added; falling back to clearing the first occupied slot.",
+                        Name,
+                        spellId
+                    );
+
+                    if (CombatFocusSkillSpellRemoved != null)
+                    {
+                        CombatFocusSkillSpellRemoved = null;
+                        CombatFocusNumSkillsRemoved--;
+                    }
+                    else if (CombatFocusSkill2SpellRemoved != null)
+                    {
+                        CombatFocusSkill2SpellRemoved = null;
+                        CombatFocusNumSkillsRemoved--;
+                    }
+                    else if (CombatFocusSkill3SpellRemoved != null)
+                    {
+                        CombatFocusSkill3SpellRemoved = null;
+                        CombatFocusNumSkillsRemoved--;
+                    }
                 }
             }
             else

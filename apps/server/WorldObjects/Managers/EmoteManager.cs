@@ -2981,6 +2981,36 @@ public class EmoteManager
     }
 
     /// <summary>
+    /// Decrements Nested, and once it fully unwinds to 0, marks this object no longer busy
+    /// and clears any leftover Refuse-emote RefusalItem stash.
+    /// </summary>
+    /// <remarks>
+    /// RefusalItem is set by Player_Inventory.HandleActionGiveObjectRequest right before firing
+    /// a Refuse-category emote set, so a later TakeItems action in that same list can target the
+    /// specific item examined rather than any stack of the same WCID. TakeItems clears it when it
+    /// runs, but a Refuse row that never calls TakeItems (e.g. a generic "I don't know what to do
+    /// with that" reply) leaves it set indefinitely - silently hijacking the *next* unrelated
+    /// TakeItems call anywhere on this same Creature instance. Clearing it here, once this
+    /// object's entire emote cascade for this call has fully unwound, ensures a leftover
+    /// RefusalItem never outlives the action list that set it.
+    /// </remarks>
+    private void EndNestedEmoteCall()
+    {
+        Nested--;
+
+        if (Nested == 0)
+        {
+            IsBusy = false;
+
+            if (WorldObject is Creature creature && creature.RefusalItem.Item2 != null)
+            {
+                creature.RefusalItem.Item1 = null;
+                creature.RefusalItem.Item2 = null;
+            }
+        }
+    }
+
+    /// <summary>
     /// Executes a set of emotes to run with delays
     /// </summary>
     /// <param name="emoteSet">A list of emotes to execute</param>
@@ -3030,12 +3060,7 @@ public class EmoteManager
                 emoteSet.Quest
             );
 
-            Nested--;
-
-            if (Nested == 0)
-            {
-                IsBusy = false;
-            }
+            EndNestedEmoteCall();
 
             return;
         }
@@ -3054,12 +3079,7 @@ public class EmoteManager
                 emoteSet.Quest
             );
 
-            Nested--;
-
-            if (Nested == 0)
-            {
-                IsBusy = false;
-            }
+            EndNestedEmoteCall();
 
             return;
         }
@@ -3088,12 +3108,7 @@ public class EmoteManager
                 // ignore diagnostics failures
             }
 
-            Nested--;
-
-            if (Nested == 0)
-            {
-                IsBusy = false;
-            }
+            EndNestedEmoteCall();
 
             return;
         }
@@ -3118,12 +3133,7 @@ public class EmoteManager
                 $"[EMOTE] {WorldObject.Name}.EmoteManager.Enqueue(): Nested > 75, possible Infinite loop detected and aborted on 0x{WorldObject.Guid}:{WorldObject.WeenieClassId}\n-> {emoteStack}"
             );
 
-            Nested--;
-
-            if (Nested == 0)
-            {
-                IsBusy = false;
-            }
+            EndNestedEmoteCall();
 
             return;
         }
@@ -3194,28 +3204,12 @@ public class EmoteManager
             {
                 var delayChain = new ActionChain();
                 delayChain.AddDelaySeconds(nextDelay);
-                delayChain.AddAction(
-                    WorldObject,
-                    () =>
-                    {
-                        Nested--;
-
-                        if (Nested == 0)
-                        {
-                            IsBusy = false;
-                        }
-                    }
-                );
+                delayChain.AddAction(WorldObject, EndNestedEmoteCall);
                 delayChain.EnqueueChain();
             }
             else
             {
-                Nested--;
-
-                if (Nested == 0)
-                {
-                    IsBusy = false;
-                }
+                EndNestedEmoteCall();
             }
         }
     }
