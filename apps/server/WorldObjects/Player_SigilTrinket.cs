@@ -183,10 +183,13 @@ partial class Player
             0 => // Low
                 equippedSigilTrinketBlue?.Structure < equippedSigilTrinketBlue?.MaxStructure,
             1 => // Moderate
-                equippedSigilTrinketYellow?.Structure < equippedSigilTrinketYellow?.MaxStructure
+                equippedSigilTrinketBlue?.Structure < equippedSigilTrinketBlue?.MaxStructure
+                || equippedSigilTrinketYellow?.Structure < equippedSigilTrinketYellow?.MaxStructure
                 || SigilTrinketInListCanBeRecharged(heldSigilTrinketsBlue),
             2 => // High
-                equippedSigilTrinketRed?.Structure < equippedSigilTrinketRed?.MaxStructure
+                equippedSigilTrinketBlue?.Structure < equippedSigilTrinketBlue?.MaxStructure
+                || equippedSigilTrinketYellow?.Structure < equippedSigilTrinketYellow?.MaxStructure
+                || equippedSigilTrinketRed?.Structure < equippedSigilTrinketRed?.MaxStructure
                 || SigilTrinketInListCanBeRecharged(heldSigilTrinketsYellow)
                 || SigilTrinketInListCanBeRecharged(heldSigilTrinketsBlue),
             3 => // Lyceum
