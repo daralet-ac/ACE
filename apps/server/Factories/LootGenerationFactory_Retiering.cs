@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ACE.Database;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
@@ -40,8 +41,23 @@ public static partial class LootGenerationFactory
         {
             if (target.ArmorStyle == null && target.ArmorLevel != null && target.ArmorLevel > 0)
             {
-                _log.Error("MutateQuestItem() - ArmorStyle is null for ({target}). Armor upgrade aborted.", target);
-                return false;
+                // Self-heal: an earlier upgrade may have scaled ArmorLevel above 0 on an item whose
+                // weenie template was missing ArmorStyle (see ScaleUpArmorLevel), or the template
+                // itself may simply be missing it. Backfill from the source weenie before failing
+                // outright - same fallback used for unstable loot in TryApplyUnstableArmorStyle().
+                var sourceWeenie = DatabaseManager.World.GetWeenie(target.WeenieClassId);
+                var sourceArmorStyle = sourceWeenie?.WeeniePropertiesInt
+                    .FirstOrDefault(p => p.Type == (ushort)PropertyInt.ArmorStyle)?.Value;
+
+                if (sourceArmorStyle.HasValue)
+                {
+                    target.SetProperty(PropertyInt.ArmorStyle, sourceArmorStyle.Value);
+                }
+                else
+                {
+                    _log.Error("MutateQuestItem() - ArmorStyle is null for ({target}). Armor upgrade aborted.", target);
+                    return false;
+                }
             }
 
             ScaleUpArmorLevel(target, currentTier, newTier);
@@ -290,8 +306,14 @@ public static partial class LootGenerationFactory
 
     private static void ScaleUpArmorLevel(WorldObject target, int currentTier, int newTier)
     {
-        if (target.ArmorLevel == null)
+        if (target.ArmorLevel is null or 0)
         {
+            // ArmorLevel == 0 means this item deliberately carries no physical armor rating (e.g. a
+            // caster-support quest item that only grants Wards/Gear ratings). Leave it at 0 rather
+            // than scaling it up from the tier-minimum baseline - doing so would give the item armor
+            // it was never designed to have, and would also violate the ArmorStyle-null exemption in
+            // ApplyUpgradeKitTierUpgrades() (which intentionally allows ArmorLevel == 0 items through
+            // without an ArmorStyle) by promoting it above 0 on the very next upgrade.
             return;
         }
 
