@@ -49,11 +49,6 @@ public static class LevelScaling
             return 1.0f;
         }
 
-        if (monster.CurrentLandblock?.IsFellowshipRequired() == true)
-        {
-            return 1.0f;
-        }
-
         if (player.Level == null)
         {
             _log.Error("LevelScaling.GetMonsterDamageDealtHealthScalar() - Player ({Player}) level is null. Scaling set to x1.0.", player.Name);
@@ -201,13 +196,6 @@ public static class LevelScaling
     public static float GetPlayerArmorWardScalar(Creature player, Creature monster)
     {
         if (!CanScalePlayer(player, monster))
-        {
-            return 1.0f;
-        }
-
-        // Companion to the guard in GetMonsterDamageDealtHealthScalar() -- scaling the player's own armor
-        // down based on the monster's stale Level would undo the point of flattening the health scalar above.
-        if (monster.CurrentLandblock?.IsFellowshipRequired() == true)
         {
             return 1.0f;
         }

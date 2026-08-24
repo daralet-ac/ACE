@@ -38,16 +38,45 @@ called for. The design below is scoped to **Shrouded visitors only**. Natives pl
 dungeon at their own level are completely unaffected; `CanScalePlayer`'s `player.Level >
 monster.Level` requirement already guarantees this without any extra guard.
 
-## Damage taken: flattened across dungeons, for a fixed Shrouded level
+## Damage taken: exact, and not Shroud-specific — fixed at the root
 
 `GetMonsterDamageDealtHealthScalar` (despite the name — confirmed via its `DamageEvent.cs:855-856`
 call site to be the function actually driving incoming damage, i.e. damage the player *takes*) and
-`GetPlayerArmorWardScalar` (`LevelScaling.cs:45`, `:169`) both return `1.0f` immediately for
-fellowship-required landblocks, before their normal `PlayerHealth`/`PlayerArmorWard` tier-ratio
-calculation. With both suppressed, a Shrouded player takes damage using their own real health and
-armor against the monster's own real (unscaled) outgoing damage — identical, in relative terms,
-in all 18 dungeons. Verified: before this guard, a shrouded level 50 took 7.09× more damage per
-hit in the level-10 dungeon than in the level-50 one; after, it's 1.00× everywhere.
+`GetPlayerArmorWardScalar` (`LevelScaling.cs:45`, `:202`) are the standard, unconditional
+`PlayerHealth`/`PlayerArmorWard` target/source ratios — no fellowship-specific handling. An earlier
+version of this work suppressed both of them for fellowship landblocks to force a Shrouded player
+onto their own real health/armor. That's no longer necessary, because the actual root cause turned
+out to live one level down, in how monster damage gets authored in the first place — see the next
+section. Once that's fixed, these two scalars *combined with the monster's own (now correctly
+calibrated) damage* produce an exact result on their own: a Shrouded player's damage taken lands on
+precisely the same %HP-per-hit as their real health pool, for every dungeon and every player level.
+Verified algebraically and numerically flat at **7.0%** (the fellowship override's target rate)
+for every (player level, dungeon) pair tested, 10 through 50.
+
+### Root cause: `GetNewBaseDamage()`'s authoring-stage armor assumption didn't match real combat
+
+`Creature_ArchetypeSystem.GetNewBaseDamage()` authors a monster's raw damage once, at spawn, by
+dividing a health-based target by several "assumed defender" factors — including
+`avgPlayerArmorReduction[tier]` — so that when *real* combat re-applies real armor mitigation, the
+two cancel and the realized damage lands back on the intended rate (`enemyDamage[5]`, forced to the
+same value for all 18 dungeons by the pre-existing fellowship override). The bug: this table was
+authored independently and never actually matched `100/(100+RealAL)`, the real formula
+(`SkillFormula.CalcArmorMod`) that runs during live combat. Confirmed by tracing the full chain —
+including the Strength-derived attack-skill floor (`AdjustAttributesForArchetypeConstraints`) and
+`_attributeMod`, which also cancels correctly since it's applied generically to any attacker,
+player or monster — this mismatch alone was enough to make a **native** level-10 character take
+about 1.8× the %HP-per-hit that a native level-50 takes in their own dungeon, even before Shrouding
+enters the picture at all. `avgPlayerLifeProtReduction` (the same authoring stage's other
+"cancel-later" assumption) was checked too and confirmed *correct* — its curve (0%, 0%, 10%, 10%,
+15%, 20%, 20%, 25%, 25% reduction by tier) matches the real Minor/Major/Epic/Legendary cantrip
+progression exactly, so it needed no change.
+
+Fix: `avgPlayerArmorReduction` (`Creature_ArchetypeSystem.cs:29`) now reads directly as
+`100/(100+RealAL[tier])` against the same real player-armor table used elsewhere this session
+(`50, 100, 200, 300, 400, 500, 600, 700, 800`). This is a global fix, not scoped to the 18
+dungeons — it corrects native damage-taken uniformity everywhere `UseArchetypeSystem` creatures
+spawn, and the fellowship dungeons' Shrouded-visitor uniformity falls out of it for free, combined
+with the two (already-unconditional) `LevelScaling` scalars above.
 
 ## Damage dealt: brought close to native level-50 pace, not pinned exactly
 
@@ -112,7 +141,8 @@ every visiting player's power individually) that could close the gap exactly.
 | Monster Health/Armor/Ward (the actual spawned stats) | **No** | Everything here is a `LevelScaling` scalar applied per-fight, not a change to what a creature spawns with. Natives and the monster's baseline are untouched. |
 | Attack skill / Defense skill | **No** | Left on whatever basis they already use (native per-dungeon tier). Scaling a Shrouded player's effective attack/defense skill was never part of this specific fix. |
 | Outgoing monster damage | **No** | Stays on the pre-existing, separate fellowship override in `GetNewBaseDamage()` / `GetArchetypeSpellDamageMultiplier()` (`Creature_ArchetypeSystem.cs:1163`, `:1257`), which forces `enemyDamage[5]` for these landblocks regardless of dungeon tier. Unrelated to and unchanged by this work. |
-| Native (non-Shrouded) play | **No** | `CanScalePlayer` requires `player.Level > monster.Level`; a native at a dungeon's own minimum level never triggers any of `LevelScaling`'s scalars, before or after this change. |
+| Native (non-Shrouded) play, damage **dealt** | **No** | `CanScalePlayer` requires `player.Level > monster.Level`; a native at a dungeon's own minimum level never triggers the dealt-side `LevelScaling` scalars. |
+| Native (non-Shrouded) play, damage **taken** | **Yes, incidentally** | The `avgPlayerArmorReduction` fix isn't `LevelScaling`-gated — it corrects `GetNewBaseDamage()`'s authoring for every `UseArchetypeSystem` creature. Natives now also take a flat 7.0%/hit in their own dungeon at every tier, where before it ranged as high as ~180% of the level-50 rate at level 10. Not the goal of this specific fix, but a direct, welcome side effect of correcting the underlying bug rather than working around it. |
 
 ## Future work
 
