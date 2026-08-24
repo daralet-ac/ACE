@@ -40,17 +40,21 @@ public static class DeveloperCommandUtilities
                 continue;
             }
 
+            if (loot.TrophyQuality != null)
+            {
+                var newWcid = LootGenerationFactory.RollTrophyWcid(loot.WeenieClassId, loot.Tier ?? 1);
+                loot = WorldObjectFactory.CreateNewWorldObject(newWcid);
+                if (loot == null)
+                {
+                    continue;
+                }
+            }
+
             var stackSizeForThisWeenieId = stackSize ?? loot.MaxStackSize;
 
             if (stackSizeForThisWeenieId > 1)
             {
                 loot.SetStackSize(stackSizeForThisWeenieId);
-            }
-
-
-            if (loot.TrophyQuality != null)
-            {
-                LootGenerationFactory.MutateTrophy(loot, loot.Tier ?? 1);
             }
 
             session.Player.TryCreateInInventoryWithNetworking(loot);

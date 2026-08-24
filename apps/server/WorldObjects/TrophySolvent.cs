@@ -8,6 +8,7 @@ using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
+using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameMessages.Messages;
 using MotionCommand = ACE.Entity.Enum.MotionCommand;
@@ -136,6 +137,7 @@ public class TrophySolvent : Stackable
         Player player,
         string trophyName,
         string essenceName,
+        string solventName,
         int numberOfSolventsConsumed,
         bool success
     )
@@ -145,7 +147,7 @@ public class TrophySolvent : Stackable
         {
             player.EnqueueBroadcast(
                 new GameMessageSystemChat(
-                    $"You successfully convert {trophyName} into {essenceName}, consuming {numberOfSolventsConsumed} Trophy Solvents.",
+                    $"You successfully convert {trophyName} into {essenceName}, consuming {numberOfSolventsConsumed} {solventName}.",
                     ChatMessageType.Broadcast
                 ),
                 8f,
@@ -173,6 +175,7 @@ public class TrophySolvent : Stackable
     public static void UseObjectOnTarget(Player player, WorldObject source, WorldObject target, bool confirmed = false)
     {
         var solventStackSize = source.StackSize ?? 1;
+        var solventName = source.PluralName ?? source.Name;
 
         if (player.IsBusy)
         {
@@ -228,8 +231,13 @@ public class TrophySolvent : Stackable
             return;
         }
 
+        // A trophy's WCID can be any of 10 quality variants (or, for items held from before
+        // the per-quality WCID refactor, a legacy WCID) - normalize to the base WCID the map
+        // is keyed on.
+        var targetBaseWcid = TrophyWcids.ToBaseTrophyWcid(target.WeenieClassId);
+
         // Verify the trophy has a valid essence mapping with a supported effect
-        if (!TrophyEssenceMap.TryGetValue(target.WeenieClassId, out var mapEntry)
+        if (!TrophyEssenceMap.TryGetValue(targetBaseWcid, out var mapEntry)
             || mapEntry.EssenceEffect == EssenceEffect.None)
         {
             player.Session.Network.EnqueueSend(
@@ -250,7 +258,7 @@ public class TrophySolvent : Stackable
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
-                    $"You require a stack of {amountToConsume} Trophy Solvents to convert {target.NameWithMaterial}.",
+                    $"You require a stack of {amountToConsume} {solventName} to convert {target.NameWithMaterial}.",
                     ChatMessageType.Craft
                 )
             );
@@ -275,8 +283,8 @@ public class TrophySolvent : Stackable
             var showDialog = player.GetCharacterOption(CharacterOption.UseCraftingChanceOfSuccessDialog);
 
             var confirmationMessage = showDialog
-                ? $"You determine that you have a {Math.Round(successChance * 100)} percent chance to succeed.\n\nConverting {target.NameWithMaterial} into {essenceName} will consume the trophy and {amountToConsume} Trophy Solvents. Failure will destroy both.\n\n"
-                : $"Convert {target.NameWithMaterial} into {essenceName}?\n\nThis will consume the trophy and {amountToConsume} Trophy Solvents. Failure will destroy both.\n\n";
+                ? $"You determine that you have a {Math.Round(successChance * 100)} percent chance to succeed.\n\nConverting {target.NameWithMaterial} into {essenceName} will consume the trophy and {amountToConsume} {solventName}. Failure will destroy both.\n\n"
+                : $"Convert {target.NameWithMaterial} into {essenceName}?\n\nThis will consume the trophy and {amountToConsume} {solventName}. Failure will destroy both.\n\n";
 
             if (!player.ConfirmationManager.EnqueueSend(new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid), confirmationMessage))
             {
@@ -332,7 +340,7 @@ public class TrophySolvent : Stackable
                 {
                     player.TryConsumeFromInventoryWithNetworking(target, 1);
                     player.TryConsumeFromInventoryWithNetworking(source, finalAmountToConsume);
-                    BroadcastTrophyConversion(player, target.NameWithMaterial, essenceName, finalAmountToConsume, false);
+                    BroadcastTrophyConversion(player, target.NameWithMaterial, essenceName, solventName, finalAmountToConsume, false);
 
                     _log.Debug(
                         "[TROPHY_SOLVENT] {PlayerName} failed to convert {TargetName} | Chance: {Chance}",
@@ -367,7 +375,7 @@ public class TrophySolvent : Stackable
                     return;
                 }
 
-                BroadcastTrophyConversion(player, target.NameWithMaterial, essenceName, finalAmountToConsume, true);
+                BroadcastTrophyConversion(player, target.NameWithMaterial, essenceName, solventName, finalAmountToConsume, true);
 
                 Player.TryAwardCraftingXp(player, player.GetCreatureSkill(mapEntry.Skill), mapEntry.Skill, difficulty);
             }
@@ -425,7 +433,9 @@ public class TrophySolvent : Stackable
 
         var qualityOffset = (trophy.TrophyQuality ?? 1) - 1;
 
-        if (TrophyEssenceMap.TryGetValue(trophy.WeenieClassId, out var essenceData))
+        var trophyBaseWcid = TrophyWcids.ToBaseTrophyWcid(trophy.WeenieClassId);
+
+        if (TrophyEssenceMap.TryGetValue(trophyBaseWcid, out var essenceData))
         {
             // Store the essence effect type and skill
             essence.SetProperty(PropertyInt.TrophyEssenceEffectType, (int)essenceData.EssenceEffect);

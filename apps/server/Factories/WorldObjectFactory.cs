@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using ACE.Common;
 using ACE.Database;
 using ACE.Database.Models.World;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Models;
+using ACE.Server.Factories.Tables;
+using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using Serilog;
@@ -524,7 +528,9 @@ public static class WorldObjectFactory
     {
         var isTreasure = (item.DestinationType & DestinationType.Treasure) != 0;
 
-        var wo = CreateNewWorldObject(item.WeenieClassId);
+        var weenieClassId = ResolveTrophyWcid(item.WeenieClassId, tier, frigidBonus);
+
+        var wo = CreateNewWorldObject(weenieClassId);
 
         if (wo == null)
         {
@@ -549,11 +555,37 @@ public static class WorldObjectFactory
             wo.Shade = item.Shade;
         }
 
-        if (wo.TrophyQuality != null)
+        return wo;
+    }
+
+    /// <summary>
+    /// If <paramref name="weenieClassId"/> is a trophy, resolves it to the specific
+    /// per-quality WCID to actually construct - the create-list row already picked a
+    /// tier-appropriate quality by which specific WCID it targets, so this only needs to
+    /// apply the frigid-zone bonus (a runtime, spawn-position-dependent nudge that can't be
+    /// baked into content) on top. A legacy (pre-refactor) WCID doesn't encode a quality at
+    /// all, so it still rolls one fresh via WorkmanshipChance, matching the old behavior.
+    /// Returns <paramref name="weenieClassId"/> unchanged for non-trophy items.
+    /// </summary>
+    private static uint ResolveTrophyWcid(uint weenieClassId, int tier, float frigidBonus)
+    {
+        var trophyBaseWcid = TrophyWcids.ToBaseTrophyWcid(weenieClassId);
+        if (trophyBaseWcid == 0)
         {
-            LootGenerationFactory.MutateTrophy(wo, tier, frigidBonus);
+            return weenieClassId;
         }
 
-        return wo;
+        var quality = TrophyWcids.IsLegacyTrophyWcid(weenieClassId)
+            ? WorkmanshipChance.Roll(tier)
+            : TrophyWcids.GetTrophyQuality(weenieClassId, trophyBaseWcid);
+
+        if (frigidBonus > 1.0f)
+        {
+            var frigidBonusRoll = ThreadSafeRandom.Next(0.0f, frigidBonus - 1.0f);
+            var frigidBonusRounded = (int)Math.Round(quality + frigidBonusRoll, MidpointRounding.AwayFromZero);
+            quality = Math.Clamp(frigidBonusRounded, TrophyWcids.MinQuality, TrophyWcids.MaxQuality);
+        }
+
+        return TrophyWcids.GetTrophyWcid(trophyBaseWcid, quality);
     }
 }

@@ -13,6 +13,7 @@ using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
 using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
+using ACE.Server.Factories.Tables.Wcids;
 using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameEvent.Events;
@@ -305,8 +306,14 @@ public abstract partial class WorldObject : IActor
 
     public bool HasGiveOrRefuseEmoteForItem(WorldObject item, out PropertiesEmote emote)
     {
+        // A trophy's WCID can be any of 10 quality variants (or, for items held from before
+        // the per-quality WCID refactor, a legacy WCID) - normalize to the base WCID that
+        // NPC Refuse/Give rows actually reference, so one row still matches every quality.
+        var trophyBaseWcid = TrophyWcids.ToBaseTrophyWcid(item.WeenieClassId);
+        var matchWcid = trophyBaseWcid != 0 ? trophyBaseWcid : item.WeenieClassId;
+
         // NPC refuses this item, with a custom response
-        var refuseItem = EmoteManager.GetEmoteSet(EmoteCategory.Refuse, null, null, item.WeenieClassId);
+        var refuseItem = EmoteManager.GetEmoteSet(EmoteCategory.Refuse, null, null, matchWcid);
         if (refuseItem != null)
         {
             emote = refuseItem;
@@ -314,7 +321,7 @@ public abstract partial class WorldObject : IActor
         }
 
         // NPC accepts this item
-        var giveItem = EmoteManager.GetEmoteSet(EmoteCategory.Give, null, null, item.WeenieClassId);
+        var giveItem = EmoteManager.GetEmoteSet(EmoteCategory.Give, null, null, matchWcid);
         if (giveItem != null)
         {
             emote = giveItem;

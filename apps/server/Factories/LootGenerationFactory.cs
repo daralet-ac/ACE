@@ -785,7 +785,7 @@ public static partial class LootGenerationFactory
         return wo;
     }
 
-    public static bool MutateItem(WorldObject item, TreasureDeath profile, bool isMagical)
+    public static bool MutateItem(ref WorldObject item, TreasureDeath profile, bool isMagical)
     {
         // should ideally be split up between getting the item type,
         // and getting the specific mutate function parameters
@@ -907,8 +907,18 @@ public static partial class LootGenerationFactory
         }
         else if (item.TrophyQuality != null)
         {
-            // mutate trophy quality
-            MutateTrophy(item, profile.Tier);
+            // this dev-command path hands in a single WCID and expects a tier-appropriate
+            // roll (unlike the normal drop path, where the create-list's own weighted rows
+            // already picked the quality) - resolve the rolled WCID and reconstruct at it,
+            // since quality is now baked into which specific WCID gets constructed.
+            var newWcid = RollTrophyWcid(item.WeenieClassId, profile.Tier);
+            var newItem = WorldObjectFactory.CreateNewWorldObject(newWcid);
+            if (newItem == null)
+            {
+                return false;
+            }
+
+            item = newItem;
         }
         // other mundane items (mana stones, food/drink, healing kits, lockpicks, and spell components/peas) don't get mutated
         // it should be safe to return false here, for the 1 caller that currently uses this method
@@ -3095,11 +3105,21 @@ public static partial class LootGenerationFactory
         };
     }
 
-    public static void MutateTrophy(WorldObject wo, int tier, float frigidBonus = 1.0f)
+    /// <summary>
+    /// Rolls a fresh trophy quality for <paramref name="wcid"/> (any WCID identifying one
+    /// of its 10 quality variants, or its legacy pre-refactor WCID) against <paramref name="tier"/>,
+    /// and returns the resolved per-quality WCID to construct. Used by admin/dev-command
+    /// paths that hand in a single WCID and expect a tier-appropriate roll - unlike the
+    /// normal drop path (see WorldObjectFactory.CreateNewWorldObject(PropertiesCreateList, ...)),
+    /// where the create-list's own weighted rows already picked the quality, so it's read
+    /// from the WCID rather than re-rolled here.
+    /// </summary>
+    public static uint RollTrophyWcid(uint wcid, int tier, float frigidBonus = 1.0f)
     {
-        if (wo.TrophyQuality == null)
+        var baseWcid = TrophyWcids.ToBaseTrophyWcid(wcid);
+        if (baseWcid == 0)
         {
-            return;
+            return wcid;
         }
 
         var trophyQuality = WorkmanshipChance.Roll(tier);
@@ -3107,19 +3127,8 @@ public static partial class LootGenerationFactory
         // bonus trophy quality from monsters with frigid bonuses
         var frigidBonusRoll = ThreadSafeRandom.Next(0.0f, frigidBonus - 1.0f);
         var frigidBonusRounded = (int)Math.Round(trophyQuality + frigidBonusRoll, MidpointRounding.AwayFromZero);
-        trophyQuality = Math.Clamp(frigidBonusRounded, 1, 10);
+        trophyQuality = Math.Clamp(frigidBonusRounded, TrophyWcids.MinQuality, TrophyWcids.MaxQuality);
 
-        wo.SetProperty(PropertyInt.TrophyQuality, trophyQuality);
-
-        var name = GetTrophyQualityName(trophyQuality);
-        wo.SetProperty(PropertyString.Name, name + " " + wo.Name);
-
-        // if value is 0 (possibly due to StackUnitValue), set default to 100
-        var baseValue = wo.Value is > 0 ? wo.Value.Value : 100;
-
-        var multiplier = trophyQuality * trophyQuality;
-        var value = baseValue * multiplier;
-        wo.SetProperty(PropertyInt.Value, value);
-        wo.SetProperty(PropertyInt.StackUnitValue, value);
+        return TrophyWcids.GetTrophyWcid(baseWcid, trophyQuality);
     }
 }
