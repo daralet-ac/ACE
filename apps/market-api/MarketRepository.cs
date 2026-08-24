@@ -303,10 +303,12 @@ public class MarketRepository
         "Treachery", "Evasion", "Absorption", "Exposure", "Avoidance",
     };
 
-    // Base trophy species/material names (PropertyInt.TrophyQuality-bearing weenies, class_Ids
-    // 1054100-1054164 in ace_world) — the stored Name is always "<QualityWord> <one of these>"
-    // (see LootGenerationFactory.MutateTrophy), so this doubles as both the Type dropdown's option
-    // list and the suffix-match pattern used to classify/filter by it.
+    // Base trophy species/material names (PropertyInt.TrophyQuality-bearing weenies - 65 trophy
+    // types, each with its own WCID per quality tier, class_Ids 1055100-1055749 in ace_world;
+    // legacy pre-refactor single-WCID-per-trophy items, class_Ids 1054100-1054164, may still
+    // exist on unmigrated shard items) — the stored Name is always "<QualityWord> <one of these>"
+    // (see LootGenerationFactory.GetTrophyQualityName), so this doubles as both the Type
+    // dropdown's option list and the suffix-match pattern used to classify/filter by it.
     private static readonly string[] TrophyTypeNames =
     {
         "Armoredillo Hide", "Armoredillo Spine", "Auroch Meat", "Auroch Horn", "Banderling Scalp",
@@ -1786,8 +1788,9 @@ public class MarketRepository
             {
                 listing.MiscType = "Trophy";
                 listing.TrophyQuality = trophyQuality;
-                // Stored Name is always "<QualityWord> <BaseName>" (LootGenerationFactory.MutateTrophy),
-                // so the base name is recoverable as a suffix match against the known type list.
+                // Stored Name is always "<QualityWord> <BaseName>" (baked into the per-quality
+                // weenie template - see LootGenerationFactory.GetTrophyQualityName), so the base
+                // name is recoverable as a suffix match against the known type list.
                 if (itemName != null)
                 {
                     listing.TrophyType = TrophyTypeNames.FirstOrDefault(t => itemName.EndsWith(t, StringComparison.Ordinal));

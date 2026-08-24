@@ -76,7 +76,7 @@ public class LootGen
 
         wo.Tier = tier;
 
-        var success = LootGenerationFactory.MutateItem(wo, profile, true);
+        var success = LootGenerationFactory.MutateItem(ref wo, profile, true);
 
         session.Player.TryCreateInInventoryWithNetworking(wo);
     }
