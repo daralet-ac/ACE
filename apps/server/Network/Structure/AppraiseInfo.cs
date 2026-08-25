@@ -871,6 +871,7 @@ public class AppraiseInfo
         SetCriticalResistanceUseLongText(wo);
         SetCriticalDamageResistanceUseLongText(wo);
         SetAttuneOnEquipUseLongText(wo);
+        SetAccountAttunedUseLongText(wo);
         SetNoCompsRequiredSchoolUseLongText(wo);
 
         SetGearRatingText(wo, PropertyInt.GearStrength, "Mighty Thews", "Grants +10 to current Strength, plus an additional +1 per equipped rating ((ONE) total).", 1.0f, 1.0f, 10);
@@ -1353,6 +1354,12 @@ public class AppraiseInfo
         }
 
         _extraPropertiesText += $"\nThis bag contains {structure} units of salvage.\n";
+
+        if (wo.MaterialType.HasValue && Salvage.ImbueSalvage.Contains(wo.MaterialType.Value))
+        {
+            _extraPropertiesText += "This can only be applied to an item that is fully tinkered.\n";
+        }
+
         _hasExtraPropertiesText = true;
     }
 
@@ -1908,7 +1915,20 @@ public class AppraiseInfo
         _additionalPropertiesList.Add("Attune-on-Equip");
         _hasAdditionalProperties = true;
         _additionalPropertiesLongDescriptionsText +=
-            "~ Attune-on-Equip: This item will permanently attune to the first character who equips it. Once attuned, it cannot be traded.\n";
+            "~ Attune-on-Equip: This item will permanently attune to the account of the first character who equips it. Once attuned, it cannot be traded, unless a Scouring Stone is used to reset all tinkering applied to the item.\n";
+    }
+
+    private void SetAccountAttunedUseLongText(WorldObject wo)
+    {
+        if (!(wo.GetProperty(PropertyBool.AccountAttuned) ?? false))
+        {
+            return;
+        }
+
+        _additionalPropertiesList.Add("Account-attuned");
+        _hasAdditionalProperties = true;
+        _additionalPropertiesLongDescriptionsText +=
+            "~ Account-attuned: This item may be equipped by another character on the same account.\n";
     }
 
     private void SetBitingStrikeUseLongText(WorldObject wo)

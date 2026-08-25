@@ -737,6 +737,7 @@ public partial class Container : WorldObject
                 worldObject.AllowedWielder = this.Guid.Full;
                 worldObject.CraftsmanName = this.Name;
                 worldObject.Ivoryable = null;
+                worldObject.SetProperty(PropertyBool.AccountAttuned, true);
 
                 EnqueueBroadcast(new GameMessageUpdateObject(worldObject));
             }

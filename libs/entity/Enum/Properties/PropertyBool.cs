@@ -326,6 +326,9 @@ public enum PropertyBool : ushort
     /// </summary>
     [ServerOnly]
     HotspotCollidesFromCenter = 9015,
+
+    [ServerOnly]
+    AccountAttuned = 9016,
 }
 
 public static class PropertyBoolExtensions

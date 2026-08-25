@@ -127,8 +127,11 @@ public partial class RecipeManager
             return;
         }
 
+        var isScouringStone = source.WeenieClassId == 1054003; // Scouring Stone
+
         var showDialog =
-            HasDifficulty(recipe) && player.GetCharacterOption(CharacterOption.UseCraftingChanceOfSuccessDialog);
+            isScouringStone
+            || (HasDifficulty(recipe) && player.GetCharacterOption(CharacterOption.UseCraftingChanceOfSuccessDialog));
 
         if (!confirmed && player.LumAugSkilledCraft > 0)
         {
@@ -156,11 +159,16 @@ public partial class RecipeManager
 
         var motion = new Motion(player, motionCommand);
         var currentStance = player.CurrentMotionState.Stance; // expected to be MotionStance.NonCombat
-        var clapTime = !confirmed
+
+        // Scouring Stone shows its confirmation before any animation plays, then claps on confirm;
+        // every other recipe claps first, then (optionally) shows its dialog.
+        var playMotionNow = isScouringStone ? confirmed : !confirmed;
+
+        var clapTime = playMotionNow
             ? Physics.Animation.MotionTable.GetAnimationLength(player.MotionTableId, currentStance, motionCommand)
             : 0.0f;
 
-        if (!confirmed)
+        if (playMotionNow)
         {
             actionChain.AddAction(player, () => player.SendMotionAsCommands(motionCommand, currentStance));
             actionChain.AddDelaySeconds(clapTime);
@@ -414,19 +422,30 @@ public partial class RecipeManager
     {
         var percent = successChance * 100;
 
-        // retail messages:
+        string floorMsg;
 
-        // You determine that you have a 100 percent chance to succeed.
-        // You determine that you have a 99 percent chance to succeed.
-        // You determine that you have a 38 percent chance to succeed. 5 percent is due to your augmentation.
-
-        var floorMsg = $"You determine that you have a {percent.Round()} percent chance to succeed.";
-
-        var numAugs = recipe.IsImbuing() ? player.AugmentationBonusImbueChance : 0;
-
-        if (numAugs > 0)
+        if (source.WeenieClassId == 1054003) // Scouring Stone
         {
-            floorMsg += $"\n{numAugs * 5} percent is due to your augmentation.";
+            floorMsg =
+                $"Are you sure you want to use the {source.NameWithMaterial} on the {target.NameWithMaterial}? "
+                + "This will remove all tinkering, imbues, and wield restrictions from the item. This cannot be undone.";
+        }
+        else
+        {
+            // retail messages:
+
+            // You determine that you have a 100 percent chance to succeed.
+            // You determine that you have a 99 percent chance to succeed.
+            // You determine that you have a 38 percent chance to succeed. 5 percent is due to your augmentation.
+
+            floorMsg = $"You determine that you have a {percent.Round()} percent chance to succeed.";
+
+            var numAugs = recipe.IsImbuing() ? player.AugmentationBonusImbueChance : 0;
+
+            if (numAugs > 0)
+            {
+                floorMsg += $"\n{numAugs * 5} percent is due to your augmentation.";
+            }
         }
 
         if (
