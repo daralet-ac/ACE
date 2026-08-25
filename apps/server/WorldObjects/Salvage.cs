@@ -1131,10 +1131,12 @@ public class Salvage : WorldObject
                 case ACE.Entity.Enum.MaterialType.Aquamarine:
                     target.ImbuedEffect = ImbuedEffectType.ColdRending;
                     target.IconUnderlayId = 0x06003353;
+                    target.SetProperty(PropertyBool.AttuneOnEquip, true);
                     break;
                 case ACE.Entity.Enum.MaterialType.BlackGarnet:
                     target.ImbuedEffect = ImbuedEffectType.PierceRending;
                     target.IconUnderlayId = 0x0600335B;
+                    target.SetProperty(PropertyBool.AttuneOnEquip, true);
                     break;
                 case ACE.Entity.Enum.MaterialType.BlackOpal:
                     if (target.ItemType == ItemType.Armor || target.ItemType == ItemType.Clothing)
@@ -1154,6 +1156,7 @@ public class Salvage : WorldObject
                 case ACE.Entity.Enum.MaterialType.Emerald:
                     target.ImbuedEffect = ImbuedEffectType.AcidRending;
                     target.IconUnderlayId = 0x06003355;
+                    target.SetProperty(PropertyBool.AttuneOnEquip, true);
                     break;
                 case ACE.Entity.Enum.MaterialType.FireOpal:
                     if (target.ItemType == ItemType.Armor || target.ItemType == ItemType.Clothing)
@@ -1174,14 +1177,17 @@ public class Salvage : WorldObject
                 case ACE.Entity.Enum.MaterialType.ImperialTopaz:
                     target.ImbuedEffect = ImbuedEffectType.SlashRending;
                     target.IconUnderlayId = 0x0600335C;
+                    target.SetProperty(PropertyBool.AttuneOnEquip, true);
                     break;
                 case ACE.Entity.Enum.MaterialType.Jet:
                     target.ImbuedEffect = ImbuedEffectType.ElectricRending;
                     target.IconUnderlayId = 0x06003354;
+                    target.SetProperty(PropertyBool.AttuneOnEquip, true);
                     break;
                 case ACE.Entity.Enum.MaterialType.RedGarnet:
                     target.ImbuedEffect = ImbuedEffectType.FireRending;
                     target.IconUnderlayId = 0x06003359;
+                    target.SetProperty(PropertyBool.AttuneOnEquip, true);
                     break;
                 case ACE.Entity.Enum.MaterialType.Sunstone:
                     if (target.ItemType == ItemType.Armor || target.ItemType == ItemType.Clothing)
@@ -1216,6 +1222,7 @@ public class Salvage : WorldObject
                 case ACE.Entity.Enum.MaterialType.WhiteSapphire:
                     target.ImbuedEffect = ImbuedEffectType.BludgeonRending;
                     target.IconUnderlayId = 0x0600335A;
+                    target.SetProperty(PropertyBool.AttuneOnEquip, true);
                     break;
 
                 // Wands ONLY
@@ -1228,7 +1235,7 @@ public class Salvage : WorldObject
 
                 // 5% Damage and 5% Mana conversion
                 case ACE.Entity.Enum.MaterialType.Opal:
-                    target.ElementalDamageMod = (target.ElementalDamageMod ?? 0.0f) + 0.075f;
+                    target.ElementalDamageMod = (target.ElementalDamageMod ?? 0.0f) + 0.05f;
                     target.ManaConversionMod = (target.ManaConversionMod ?? 0.0f) + 0.05f;
                     successAmount = $"raising its Elemental Damage and Mana Conversion modifiers by 5%";
                     break;

@@ -613,6 +613,10 @@ partial class WorldObject
                         player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, _isSigilTrinketSpell);
                         player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.WarMagic, SigilTrinketWarMagicEffect.Duplicate, null, false, _isSigilTrinketSpell);
                         break;
+                    case MagicSchool.VoidMagic:
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Intensity, null, false, _isSigilTrinketSpell);
+                        player?.CheckForSigilTrinketOnCastEffects(targetCreature, spell, true, Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Shielding, null, false, _isSigilTrinketSpell);
+                        break;
                 }
             }
         }
