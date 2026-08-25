@@ -152,6 +152,7 @@ public class SigilTrinketEvent
 
             case (Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Intensity):
             case (Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Intensity):
+            case (Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Intensity):
                 if (sigilTrinket.SigilTrinketIntensity != null)
                 {
                     sigilTrinket.TriggerSpell.SpellPowerMod = (float)sigilTrinket.SigilTrinketIntensity + 1;
@@ -167,6 +168,7 @@ public class SigilTrinketEvent
 
             case (Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Shielding):
             case (Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Shielding):
+            case (Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Shielding):
                 CastSigilTrinketSpell(sigilTrinket, true);
                 break;
 
@@ -650,9 +652,17 @@ public class SigilTrinketEvent
             return false;
         }
         
-        // Validate that the triggering Skill is allowed by the trinket (supports AllowedSpecializedSkills list)
+        // Validate that the triggering Skill is allowed by the trinket (supports AllowedSpecializedSkills list).
+        // Void Magic casts are always a valid trigger for the Life/War scarab family (Intensity/Shielding/Reduction),
+        // without adding Void Magic as a wield-eligibility skill - AllowedSpecializedSkills (and thus the wear
+        // requirement checked in Player_Inventory.cs) stays Life/War only.
         var allowedSkills = GetAllowedSkills(sigilTrinket).ToList();
-        var skillMatches = allowedSkills.Count > 0 && allowedSkills.Contains(Skill);
+        var isVoidTriggerForLifeWarScarab =
+            Skill == Skill.VoidMagic
+            && effectEnum is SigilTrinketLifeWarMagicEffect
+            && allowedSkills.Contains(Skill.LifeMagic)
+            && allowedSkills.Contains(Skill.WarMagic);
+        var skillMatches = isVoidTriggerForLifeWarScarab || (allowedSkills.Count > 0 && allowedSkills.Contains(Skill));
 
         if (!skillMatches)
         {
@@ -686,10 +696,12 @@ public class SigilTrinketEvent
 
             case (Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Intensity):
             case (Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Intensity):
+            case (Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Intensity):
                 return IsValidForIntensity(sigilTrinket);
 
             case (Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Shielding):
             case (Skill.WarMagic, SigilTrinketLifeWarMagicEffect.Shielding):
+            case (Skill.VoidMagic, SigilTrinketLifeWarMagicEffect.Shielding):
                 return IsValidForShield(sigilTrinket);
 
             case (Skill.LifeMagic, SigilTrinketLifeWarMagicEffect.Reduction):

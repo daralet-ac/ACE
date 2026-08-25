@@ -12,6 +12,7 @@ using ACE.Server.Network.Enum;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.Network.Structure;
+using ACE.Server.WorldObjects.Entity;
 using Time = ACE.Common.Time;
 
 namespace ACE.Server.WorldObjects;
@@ -1186,11 +1187,12 @@ partial class Player
         var specMod = skill.AdvancementClass == SkillAdvancementClass.Specialized ? 1.5 : 2;
 
         var manaDamage = (amount * manaBarrierDamageReduction) * specMod * skillPenalty;
+        var vfxIntensity = (float)manaDamage / player.Mana.MaxValue;
 
         if (player.Mana.Current >= manaDamage)
         {
             finalAmount = (uint)(amount * (1 - manaBarrierDamageReduction));
-            player.PlayParticleEffect(PlayScript.RestrictionEffectBlue, player.Guid);
+            player.PlayParticleEffect(PlayScript.RestrictionEffectBlue, player.Guid, vfxIntensity);
             player.UpdateVitalDelta(player.Mana, (int)-Math.Round(manaDamage));
             player.UpdateVitalDelta(player.Health, (int)-finalAmount);
             player.DamageHistory.Add(source, damageType, (uint)-finalAmount);

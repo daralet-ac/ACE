@@ -112,6 +112,7 @@ public class Town
         {"Qalaba'r", 4 },
         {"Stonehold", 4 },
 
+        {"Mountain Retreat", 5 },
         {"Ahurenga", 5 },
         {"Bluespire", 5 },
         {"Greenspire", 5 },
