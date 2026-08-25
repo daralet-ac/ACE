@@ -39,6 +39,14 @@ public class EmoteManager
     public bool IsBusy { get; set; }
     public int Nested { get; set; }
 
+    /// <summary>
+    /// True while an InqYesNo confirmation tied to the current RefusalItem is awaiting the
+    /// player's response. The Refuse-emote cascade that shows the prompt unwinds (Nested hits 0)
+    /// before the player answers, so EndNestedEmoteCall must not clear RefusalItem in that case -
+    /// the later TestSuccess/TestFailure cascade that fires on response still needs it.
+    /// </summary>
+    private bool _awaitingRefusalItemConfirmation;
+
     public bool Debug = false;
 
     public EmoteManager(WorldObject worldObject)
@@ -1370,6 +1378,10 @@ public class EmoteManager
                     )
                     {
                         ExecuteEmoteSet(EmoteCategory.TestFailure, emote.Message, player);
+                    }
+                    else if (WorldObject is Creature { RefusalItem.Item2: not null })
+                    {
+                        _awaitingRefusalItemConfirmation = true;
                     }
                 }
                 break;
@@ -3002,7 +3014,14 @@ public class EmoteManager
         {
             IsBusy = false;
 
-            if (WorldObject is Creature creature && creature.RefusalItem.Item2 != null)
+            if (_awaitingRefusalItemConfirmation)
+            {
+                // The cascade that just unwound only unwound because it's waiting on the
+                // player's InqYesNo response - the RefusalItem is still needed by the
+                // TestSuccess/TestFailure cascade that fires once they answer.
+                _awaitingRefusalItemConfirmation = false;
+            }
+            else if (WorldObject is Creature creature && creature.RefusalItem.Item2 != null)
             {
                 creature.RefusalItem.Item1 = null;
                 creature.RefusalItem.Item2 = null;
