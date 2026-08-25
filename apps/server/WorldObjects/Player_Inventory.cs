@@ -506,9 +506,9 @@ partial class Player
         if (item.GetProperty(PropertyBool.AttuneOnEquip) ?? false)
         {
             item.RemoveProperty(PropertyBool.AttuneOnEquip);
-            item.Attuned = AttunedStatus.Attuned;
             item.AllowedWielder = Guid.Full;
             item.CraftsmanName = Name;
+            item.SetProperty(PropertyBool.AccountAttuned, true);
             Session.Network.EnqueueSend(new GameMessageSystemChat(
                 $"The {item.Name} has attuned to you.", ChatMessageType.Broadcast));
         }
@@ -2750,7 +2750,7 @@ partial class Player
                     _confirmedAttuneEquips.Add(itemGuidFull);
                     HandleActionGetAndWieldItem(itemGuidFull, capturedWieldedLocation);
                 }),
-                $"The {item.Name} will permanently attune to your character when equipped and can never be traded after this point. Do you wish to proceed?"
+                $"The {item.Name} will permanently attune to your account when equipped and cannot be traded after this point, unless a Scouring Stone is used to reset all tinkering applied to the item. Do you wish to proceed?"
             );
 
             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));

@@ -149,11 +149,24 @@ public class Salvage : WorldObject
         var message = "";
 
         // check workmanship max
-        if (!combineSalvage && target.NumTimesTinkered >= target.Workmanship)
+        if (!combineSalvage && !IsImbueSource(source.MaterialType) && target.NumTimesTinkered >= target.Workmanship)
         {
             player.Session.Network.EnqueueSend(
                 new GameMessageSystemChat(
                     $"The {target.Name} can only be tinkered {target.Workmanship} times!",
+                    ChatMessageType.Broadcast
+                )
+            );
+            player.SendUseDoneEvent(WeenieError.YouDoNotPassCraftingRequirements);
+            return;
+        }
+
+        // imbue materials can only be applied to a fully tinkered item
+        if (!combineSalvage && IsImbueSource(source.MaterialType) && target.NumTimesTinkered < target.Workmanship)
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"The {target.Name} must be fully tinkered before it can be imbued.",
                     ChatMessageType.Broadcast
                 )
             );
@@ -1671,6 +1684,13 @@ public class Salvage : WorldObject
             if (target.IconUnderlayId != null)
             {
                 target.IconUnderlayId = null;
+            }
+
+            if (target.AllowedWielder != null)
+            {
+                target.AllowedWielder = null;
+                target.CraftsmanName = null;
+                target.RemoveProperty(PropertyBool.AccountAttuned);
             }
 
             target.NumTimesTinkered = 0;
