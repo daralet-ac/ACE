@@ -2202,7 +2202,6 @@ public class Vendor : Creature
             case "Khayyaban":
             case "Lost Wish Mountains":
             case "Plateau":
-            case "Mountain Retreat":
             case "Danby's Outpost":
                 if (ShopTier == 0)
                 {
@@ -2226,6 +2225,7 @@ public class Vendor : Creature
 
                 ShopQualityMod = 0.0f;
                 break;
+            case "Mountain Retreat":
             case "Linvak Tukal":
             case "Bluespire":
             case "Greenspire":
