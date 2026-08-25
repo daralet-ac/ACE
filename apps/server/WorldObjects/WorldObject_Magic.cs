@@ -1165,7 +1165,9 @@ partial class WorldObject
                 else if (creature is { IsMonster: false } && targetCreature.IsMonster)
                 {
                     targetCreature.DamageHistory.Add(this, DamageType.Health, (uint)-boost);
-                    targetCreature.IncreaseTargetThreatLevel(player, boost);
+
+                    var percentOfTargetMaxHealth = -boost / (float)targetCreature.Health.MaxValue;
+                    targetCreature.IncreaseTargetThreatLevel(player, (int)(percentOfTargetMaxHealth * 1000));
 
                     if (player is { OverloadStanceIsActive: true } or {BatteryStanceIsActive: true} && boost < 0)
                     {

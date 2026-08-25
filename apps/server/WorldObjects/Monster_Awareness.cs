@@ -333,7 +333,10 @@ partial class Creature
         ThreatLevel.TryAdd(targetCreature, ThreatMinimum);
 
         amount = Convert.ToInt32(modifiedAmount);
-        amount = amount < 2 ? 2 : amount;
+        if (amount > 0 && amount < 2)
+        {
+            amount = 2;
+        }
 
         ThreatLevel[targetCreature] += amount;
 
