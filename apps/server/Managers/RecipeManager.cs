@@ -2383,7 +2383,7 @@ public partial class RecipeManager
 
     private static bool RequiresEqualOrGreaterWork(Player player, WorldObject source, WorldObject target)
     {
-        if (source.ItemType != ItemType.TinkeringMaterial)
+        if (source.WeenieType != WeenieType.Salvage)
         {
             return true;
         }

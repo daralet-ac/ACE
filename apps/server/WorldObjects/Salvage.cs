@@ -38,7 +38,7 @@ public class Salvage : WorldObject
 
     private void SetEphemeralValues()
     {
-        TargetType = (TargetType ?? ItemType.None) | ItemType.TinkeringMaterial;
+        TargetType = (TargetType ?? ItemType.None) | ItemType.Misc;
     }
 
     public override void HandleActionUseOnTarget(Player player, WorldObject target)

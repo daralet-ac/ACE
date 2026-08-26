@@ -1930,7 +1930,9 @@ partial class Player
         //Console.WriteLine($"-> DoHandleActionPutItemInContainer({item.Name}, {itemRootOwner?.Name}, {itemWasEquipped}, {container?.Name}, ContainerRootOwner: {containerRootOwner?.Name}, {placement})");
 
         var containerValidTypes = (ItemType)(container.MerchandiseItemTypes ?? 0);
-        var itemType = item.WeenieType == WeenieType.Ammunition ? ItemType.CraftFletchingIntermediate : item.ItemType;
+        var itemType = item.WeenieType == WeenieType.Ammunition ? ItemType.CraftFletchingIntermediate
+            : item.WeenieType == WeenieType.Salvage ? ItemType.TinkeringMaterial
+            : item.ItemType;
         if (containerValidTypes != 0 && (itemType & containerValidTypes) == 0)
         {
             Session.Network.EnqueueSend(
@@ -3516,7 +3518,9 @@ partial class Player
         }
 
         var containerValidTypes = (ItemType)(container.MerchandiseItemTypes ?? 0);
-        var itemType = stack.WeenieType == WeenieType.Ammunition ? ItemType.CraftFletchingIntermediate : stack.ItemType;
+        var itemType = stack.WeenieType == WeenieType.Ammunition ? ItemType.CraftFletchingIntermediate
+            : stack.WeenieType == WeenieType.Salvage ? ItemType.TinkeringMaterial
+            : stack.ItemType;
         if (containerValidTypes != 0 && (itemType & containerValidTypes) == 0)
         {
             Session.Network.EnqueueSend(

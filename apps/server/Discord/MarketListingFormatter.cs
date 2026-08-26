@@ -478,6 +478,13 @@ internal static class MarketListingFormatter
             catch { }
         }
 
+        // Salvage bags are classified as Misc at the weenie level to avoid client-side issues
+        // tied to ItemType.TinkeringMaterial; treat them as TinkeringMaterial here for formatting.
+        if (snap.WeenieType == WeenieType.Salvage)
+        {
+            itemType = ItemType.TinkeringMaterial;
+        }
+
         // We re-use the old formatting logic where possible, but now backed by snapshot properties.
         if (itemType is ItemType.MeleeWeapon or ItemType.MissileWeapon or ItemType.Caster or ItemType.Weapon)
         {
@@ -1647,7 +1654,7 @@ internal static class MarketListingFormatter
                     var obj = WorldObjectFactory.CreateWorldObject(entityBiota);
                     try
                     {
-                        if (obj.ItemType == ItemType.TinkeringMaterial)
+                        if (obj.WeenieType == WeenieType.Salvage)
                         {
                             cache.Name = obj.NameWithMaterial;
                             return cache.Name;

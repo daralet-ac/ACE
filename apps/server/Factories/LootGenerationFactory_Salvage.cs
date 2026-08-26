@@ -11,7 +11,7 @@ public static partial class LootGenerationFactory
 {
     private static void MutateSalvage(WorldObject salvage, int tier)
     {
-        if (salvage.ItemType != ACE.Entity.Enum.ItemType.TinkeringMaterial)
+        if (salvage.WeenieType != WeenieType.Salvage)
         {
             return;
         }
