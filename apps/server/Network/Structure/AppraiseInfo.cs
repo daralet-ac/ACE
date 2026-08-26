@@ -597,6 +597,20 @@ public class AppraiseInfo
         PropertiesDID = wo.GetAllPropertyDataIdWhere(ClientProperties.PropertiesDataId);
         PropertiesIID = wo.GetAllPropertyInstanceIdWhere(ClientProperties.PropertiesInstanceId);
 
+        // SPECIALIZED PACKS: EncumbranceVal is accumulated from the raw (undiscounted) weight of contained
+        // items, since that raw total is also what feeds into the owning player's RecalculateBurden(), which
+        // applies the pack's SpecializedPackBurdenMod there. The displayed Burden on the pack itself must have
+        // that same discount applied here, or it shows the pack's true (undiscounted) weight to the player.
+        if (
+            wo is Container specializedPack
+            && specializedPack.MerchandiseItemTypes.HasValue
+            && PropertiesInt.TryGetValue(PropertyInt.EncumbranceVal, out var rawEncumbranceVal)
+        )
+        {
+            var burdenMod = specializedPack.SpecializedPackBurdenMod ?? 0.5;
+            PropertiesInt[PropertyInt.EncumbranceVal] = (int)(rawEncumbranceVal * burdenMod);
+        }
+
         if (wo is Player player)
         {
             // handle character options

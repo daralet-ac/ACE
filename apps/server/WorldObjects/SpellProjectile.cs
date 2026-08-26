@@ -840,8 +840,8 @@ public class SpellProjectile : WorldObject
 
             var ratingDamageTypeWard = Spell.DamageType switch
             {
-                DamageType.Physical => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearPhysicalWard),
-                DamageType.Elemental => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearElementalWard),
+                var dt when (dt & DamageType.Physical) != 0 => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearPhysicalWard),
+                var dt when (dt & DamageType.Elemental) != 0 => 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearElementalWard),
                 _ => 1.0f
             };
 

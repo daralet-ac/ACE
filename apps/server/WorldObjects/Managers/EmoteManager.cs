@@ -456,6 +456,24 @@ public class EmoteManager
 
                     if (trinket != null)
                     {
+                        // Free up the placeholder's inventory slot before giving the real trinket.
+                        // This item is normally cleaned up by a subsequent DeleteSelf emote action,
+                        // but that runs too late: if this was the player's last free main pack slot,
+                        // the trinket would overflow into an unrelated side pack (e.g. a salvage bag)
+                        // instead of taking the placeholder's spot.
+                        var placeholder = player.FindObject(
+                            WorldObject.Guid.Full,
+                            Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems,
+                            out _,
+                            out _,
+                            out _
+                        );
+
+                        if (placeholder != null)
+                        {
+                            player.TryConsumeFromInventoryWithNetworking(placeholder);
+                        }
+
                         player.TryCreateForGive(WorldObject, trinket);
                     }
                 }
