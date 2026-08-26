@@ -715,7 +715,7 @@ partial class Jewel
                     $"~ {name}: Gain up to {baseRating}% reduced magic damage taken (+{bonusPerQuality}% per equipped rating). " +
                     $"The amount builds up from 0%, based on how often you have recently been hit with a damaging spell. " +
                     $"Once socketed, the bracelet can only be worn on the right wrist.\n\n" +
-                    $"~ {nameAlternate}: Gain +{baseRatingAlternate} Physical Defense (+{bonusPerQualityAlternate} per equipped rating).\n\n" +
+                    $"~ {nameAlternate}: Gain +{baseRatingAlternate} Magic Defense (+{bonusPerQualityAlternate} per equipped rating).\n\n" +
                     $"{JewelStatsDescription(baseRating, quality, bonusPerQuality, name, null, nameAlternate)}\n\n";
                 break;
             case ACE.Entity.Enum.MaterialType.Diamond:
