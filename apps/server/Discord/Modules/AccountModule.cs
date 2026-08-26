@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ACE.Common;
 using ACE.Entity.Enum;
+using ACE.Server.Entity;
 using ACE.Server.Managers;
 using ACE.Server.WorldObjects;
 using Discord.Interactions;
@@ -71,7 +72,7 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
 
     private string GeneratePlayersOnlineWithTableMessage(
         string totalsLine,
-        IList<(string Name, string AccountName)> sortedOnlinePlayers
+        IList<(string Name, string AccountName, string Level, string Location)> sortedOnlinePlayers
     )
     {
         var playerAccountTable = GeneratePlayerAccountTable(sortedOnlinePlayers);
@@ -86,7 +87,10 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
         return totals;
     }
 
-    private IList<(string Name, string AccountName)> SortOnlinePlayers(bool showAdmins, IList<Player> players)
+    private IList<(string Name, string AccountName, string Level, string Location)> SortOnlinePlayers(
+        bool showAdmins,
+        IList<Player> players
+    )
     {
         return players
             .Where(x =>
@@ -96,16 +100,22 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
             })
             .OrderByDescending(x => x.Account.AccessLevel)
             .ThenBy(x => x.Name)
-            .Select(x => (x.Name, x.Account.AccountName))
+            .Select(x =>
+                (x.Name, x.Account.AccountName, x.Level.ToString(), PlayerLocationInfo.GetDisplayString(x))
+            )
             .ToList();
     }
 
-    private string GeneratePlayerAccountTable(IList<(string Name, string AccountName)> playerAccountTuples)
+    private string GeneratePlayerAccountTable(
+        IList<(string Name, string AccountName, string Level, string Location)> playerAccountTuples
+    )
     {
         var longestNameLength = 6;
         var longestAccountLength = 7;
+        var longestLevelLength = 5;
+        var longestLocationLength = 8;
 
-        foreach (var (name, accountName) in playerAccountTuples)
+        foreach (var (name, accountName, level, location) in playerAccountTuples)
         {
             if (name.Length > longestNameLength)
             {
@@ -116,12 +126,26 @@ public class AccountModule : InteractionModuleBase<SocketInteractionContext>
             {
                 longestAccountLength = accountName.Length;
             }
+
+            if (level.Length > longestLevelLength)
+            {
+                longestLevelLength = level.Length;
+            }
+
+            if (location.Length > longestLocationLength)
+            {
+                longestLocationLength = location.Length;
+            }
         }
 
-        var header = $"| {"Player".PadRight(longestNameLength)} | {"Account".PadRight(longestAccountLength)} |";
-        var divider = $"|{"".PadRight(longestNameLength + 2, '-')}|{"".PadRight(longestAccountLength + 2, '-')}|";
+        var header =
+            $"| {"Player".PadRight(longestNameLength)} | {"Account".PadRight(longestAccountLength)} | {"Level".PadRight(longestLevelLength)} | {"Location".PadRight(longestLocationLength)} |";
+        var divider =
+            $"|{"".PadRight(longestNameLength + 2, '-')}|{"".PadRight(longestAccountLength + 2, '-')}|{"".PadRight(longestLevelLength + 2, '-')}|{"".PadRight(longestLocationLength + 2, '-')}|";
         var playerTable = playerAccountTuples
-            .Select(x => $"| {x.Name.PadRight(longestNameLength)} | {x.AccountName.PadRight(longestAccountLength)} |\n")
+            .Select(x =>
+                $"| {x.Name.PadRight(longestNameLength)} | {x.AccountName.PadRight(longestAccountLength)} | {x.Level.PadRight(longestLevelLength)} | {x.Location.PadRight(longestLocationLength)} |\n"
+            )
             .ToList();
         var concatedPlayerTable = string.Join("", playerTable);
 

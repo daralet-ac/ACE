@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Linq;
-using ACE.Database.Models.World;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity;
@@ -65,51 +63,12 @@ public class ListPlayers
                 continue;
             }
 
-            var locationName = GetLocationName(player.Location.LandblockId.Raw) ?? player.Location.LandblockId.ToString();
-            var coordinates = player.Location.GetMapCoordStr();
-            var paranthesis = coordinates != null ? $" ({coordinates})" : " (Indoors)";
-
-            var location = $"{locationName}{paranthesis}";
-
+            var location = PlayerLocationInfo.GetDisplayString(player);
 
             message += $"{player.Name} ({player.Account.AccountName}/{player.Session.AccountId})  -  Lv: {player.Level}  -  Loc: {location}\n";
         }
 
 
         CommandHandlerHelper.WriteOutputInfo(session, message, ChatMessageType.System);
-    }
-
-    private static string GetLocationName(uint cellId)
-    {
-        using var ctx = new WorldDbContext();
-
-        var query =
-            from landblockName in ctx.LandblockName
-            where
-                landblockName.ObjCellId == cellId
-            select new
-            {
-                Name = landblockName.Name
-            };
-
-        var name = query.ToList().FirstOrDefault()?.Name;
-
-        if (query.FirstOrDefault() is null)
-        {
-            var landblockId = (cellId | 0xFFFF) - 0xFFFF;
-
-            query =
-                from landblockName in ctx.LandblockName
-                where
-                    landblockName.ObjCellId == landblockId
-                select new
-                {
-                    landblockName.Name
-                };
-
-            name = query.ToList().FirstOrDefault()?.Name;
-        }
-
-        return name;
     }
 }

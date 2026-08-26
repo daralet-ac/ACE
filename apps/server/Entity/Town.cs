@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using ACE.Entity;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Entity;
@@ -9,11 +10,26 @@ public class Town
 {
     public static string GetNearestTown(WorldObject worldObject)
     {
-        var objectPosition = worldObject.Location.GetMapCoords() ?? new Vector2(0.0f, 0.0f);
+        // GetMapCoords() returns null when standing on indoor cells (e.g. inside a
+        // building), since the local position there isn't a valid overworld offset.
+        // Fall back to the landblock's own center instead of (0,0), which would
+        // otherwise report whichever town happens to be nearest the map's origin.
+        var objectPosition = worldObject.Location.GetMapCoords() ?? GetLandblockMapCoords(worldObject.Location.LandblockId);
 
         var closest = TownPositions.MinBy(kv => Vector2.Distance(kv.Value, objectPosition));
 
         return closest.Key;
+    }
+
+    private static Vector2 GetLandblockMapCoords(LandblockId landblockId)
+    {
+        var globalX = landblockId.LandblockX * Position.BlockLength + Position.BlockLength / 2f;
+        var globalY = landblockId.LandblockY * Position.BlockLength + Position.BlockLength / 2f;
+
+        var mapCoords = new Vector2(globalX / 240f, globalY / 240f);
+        mapCoords -= Vector2.One * 102;
+
+        return mapCoords;
     }
 
     public static string GetSimplifiedTownString(string townName)
