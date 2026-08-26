@@ -429,6 +429,14 @@ public class Vendor : Creature
                     itemTypeInt = it;
                 }
 
+                // Salvage bags are classified as Misc at the weenie level (see the ItemType.Misc
+                // remap below) to avoid client-side issues tied to ItemType.TinkeringMaterial;
+                // treat them as TinkeringMaterial here so section/sort grouping is unaffected.
+                if (weenie?.WeenieType == WeenieType.Salvage)
+                {
+                    itemTypeInt = (int)ItemType.TinkeringMaterial;
+                }
+
                 var section = MarketSection.Unknown;
                 if (itemTypeInt == (int)ItemType.MeleeWeapon)
                 {
@@ -600,11 +608,6 @@ public class Vendor : Creature
 
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
 
-            if (item.ItemType == ItemType.TinkeringMaterial)
-            {
-                item.ItemType = ItemType.Misc;
-            }
-
             item.ContainerId = Guid.Full;
             item.Location = null;
             item.VendorShopCreateListStackSize = Math.Max(1, item.StackSize ?? 1);
@@ -775,6 +778,14 @@ public class Vendor : Creature
                     itemTypeInt = it;
                 }
 
+                // Salvage bags are classified as Misc at the weenie level (see the ItemType.Misc
+                // remap below) to avoid client-side issues tied to ItemType.TinkeringMaterial;
+                // treat them as TinkeringMaterial here so section/sort grouping is unaffected.
+                if (weenie?.WeenieType == WeenieType.Salvage)
+                {
+                    itemTypeInt = (int)ItemType.TinkeringMaterial;
+                }
+
                 var section = MarketSection.Unknown;
                 if (itemTypeInt == (int)ItemType.MeleeWeapon)
                 {
@@ -941,13 +952,6 @@ public class Vendor : Creature
 
             // Tag the display item so we can resolve the listing on purchase.
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
-
-            // Client-side vendor UI filtering can hide salvage (tinkering material) entries for some vendor templates.
-            // For market-vendor display purposes, remap salvage to Misc so it renders in the list.
-            if (item.ItemType == ItemType.TinkeringMaterial)
-            {
-                item.ItemType = ItemType.Misc;
-            }
 
             item.ContainerId = Guid.Full;
             item.Location = null;

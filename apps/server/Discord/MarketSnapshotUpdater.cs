@@ -485,6 +485,14 @@ internal sealed class MarketSnapshotUpdater
             itemTypeInt = it;
         }
 
+        // Salvage bags are classified as Misc at the weenie level to avoid client-side issues
+        // tied to ItemType.TinkeringMaterial; treat them as TinkeringMaterial here so sorting,
+        // section labeling, and salvage-specific keys downstream are unaffected.
+        if (weenie.WeenieType == WeenieType.Salvage)
+        {
+            itemTypeInt = (int)ItemType.TinkeringMaterial;
+        }
+
         var subType = 0;
         if (itemTypeInt is (int)ItemType.Weapon or (int)ItemType.MeleeWeapon or (int)ItemType.MissileWeapon or (int)ItemType.Caster)
         {
