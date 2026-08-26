@@ -1532,7 +1532,12 @@ public partial class RecipeManager
         {
             var message = success ? recipe.SuccessMessage : recipe.FailMessage;
 
-            player.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Craft));
+            // recipes that deliver their player-facing text via a Use emote (e.g. RIMS devices)
+            // leave this column blank on purpose; don't send an empty chat line for those.
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                player.Session.Network.EnqueueSend(new GameMessageSystemChat(message, ChatMessageType.Craft));
+            }
 
             _log.Debug(
                 "[CRAFTING] {PlayerName} used {SourceNameWithMaterial} on {TargetNameWithMaterial} {Success}. {DestroySource}{DestroyTarget}| {Message}",
