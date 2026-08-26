@@ -998,7 +998,7 @@ public class DamageEvent
         }
 
         _damageResistanceRatingMod = GetDamageResistRatingMod(defender, _pkBattle);
-        _damageResistanceRatingMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearHardenedDefense, "Hardened Defense");
+        _damageResistanceRatingMod *= 1.0f - GetRatingHardenedDefenseDamageResistanceBonus(playerDefender);
 
         _specDefenseMod = GetSpecDefenseMod(attacker, playerDefender);
 
@@ -1011,8 +1011,8 @@ public class DamageEvent
         _ratingYellowFury = 1.0f + Jewel.GetJewelYellowFury(playerAttacker);
         _ratingDamageTypeWard = DamageType switch
         {
-            DamageType.Physical => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearPhysicalWard),
-            DamageType.Elemental => Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearElementalWard),
+            var dt when (dt & DamageType.Physical) != 0 => 1.0f - Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearPhysicalWard),
+            var dt when (dt & DamageType.Elemental) != 0 => 1.0f - Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearElementalWard),
             _ => 1.0f
         };
 

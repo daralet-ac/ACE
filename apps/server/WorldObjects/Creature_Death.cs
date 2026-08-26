@@ -459,6 +459,11 @@ partial class Creature
                 combatPet = true;
             }
 
+            if (playerDamager == null && kvp.Value.HotspotOwner != null)
+            {
+                playerDamager = kvp.Value.TryGetHotspotOwner();
+            }
+
             if (playerDamager == null)
             {
                 continue;
@@ -758,13 +763,18 @@ partial class Creature
                     if (petOwner != null)
                     {
                         corpse.KillerId = petOwner.Guid.Full;
+                        killerName = petOwner.Name;
                     }
                 }
 
                 if (killer.HotspotOwner != null)
                 {
                     var hotspotOwner = killer.TryGetHotspotOwner();
-                    corpse.KillerId = hotspotOwner.Guid.Full;
+                    if (hotspotOwner != null)
+                    {
+                        corpse.KillerId = hotspotOwner.Guid.Full;
+                        killerName = hotspotOwner.Name;
+                    }
                 }
             }
         }
