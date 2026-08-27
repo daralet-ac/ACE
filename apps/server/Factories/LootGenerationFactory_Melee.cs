@@ -207,15 +207,16 @@ public static partial class LootGenerationFactory
         AssignMagic(wo, profile, roll, false, isMagical);
         wo.ItemSpellcraft = RollSpellcraft(wo, profile);
 
+        // workmanship - must be set before MutateValue, which reads
+        // wo.ItemWorkmanship to scale value
+        wo.ItemWorkmanship = GetWeaponWorkmanship(wo, damagePercentile, modsPercentile, subtypeBonusesPercentile);
+
         // item value
         //if (wo.HasMutateFilter(MutateFilter.Value))   // fixme: data
         MutateValue(wo, profile.Tier, roll);
 
         // long description
         wo.LongDesc = GetLongDesc(wo);
-
-        // workmanship
-        wo.ItemWorkmanship = GetWeaponWorkmanship(wo, damagePercentile, modsPercentile, subtypeBonusesPercentile);
 
         wo.BaseDamage = (wo.Damage == null ? 0 : wo.Damage);
         wo.BaseWeaponTime = (wo.WeaponTime == null ? 0 : wo.WeaponTime);
