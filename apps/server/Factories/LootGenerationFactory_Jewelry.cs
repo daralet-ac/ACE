@@ -67,12 +67,6 @@ public static partial class LootGenerationFactory
         // assign magic
         AssignMagic(wo, profile, roll, false, isMagical);
 
-        // item value
-        //  if (wo.HasMutateFilter(MutateFilter.Value))     // fixme: data
-        MutateValue(wo, profile.Tier, roll);
-
-        wo.LongDesc = GetLongDesc(wo);
-
         var totalGearRatingPercentile = 0.0;
 
         if (profile.Tier > 1)
@@ -83,8 +77,16 @@ public static partial class LootGenerationFactory
         }
         TryMutateJewelryMods(wo, profile, roll, isMagical, out totalGearRatingPercentile);
 
-        // Workmanship
+        // Workmanship - must be set before MutateValue, which reads
+        // wo.ItemWorkmanship (via the Workmanship property setter) to scale value
         wo.Workmanship = GetJewelryWorkmanship(wo, totalGearRatingPercentile);
+
+        // item value
+        //  if (wo.HasMutateFilter(MutateFilter.Value))     // fixme: data
+        MutateValue(wo, profile.Tier, roll);
+
+        wo.LongDesc = GetLongDesc(wo);
+
         AssignJewelSlots(wo);
         wo.BaseWard = (wo.WardLevel == null ? 0 : wo.WardLevel);
         wo.BaseMaxMana = (wo.ItemMaxMana == null ? 0 : wo.ItemMaxMana);

@@ -306,9 +306,12 @@ public class Vendor : Creature
 
         LoadDefaultItems(itemsForSale, templateDefaultItems);
 
-        foreach (var item in Biota.PropertiesCreateList.Where(x => x.DestinationType == DestinationType.Shop))
+        if (Biota.PropertiesCreateList != null)
         {
-            LoadInventoryItem(itemsForSale, item.WeenieClassId, item.Palette, item.Shade, item.StackSize);
+            foreach (var item in Biota.PropertiesCreateList.Where(x => x.DestinationType == DestinationType.Shop))
+            {
+                LoadInventoryItem(itemsForSale, item.WeenieClassId, item.Palette, item.Shade, item.StackSize);
+            }
         }
 
         //if (Biota.PropertiesGenerator != null && !PropertyManager.GetBool("vendor_shop_uses_generator").Item)
@@ -1855,39 +1858,11 @@ public class Vendor : Creature
             ShopHeritage = TreasureHeritageGroup.Invalid;
         }
 
-        if (ShopTier == 0) // We're not in a town and no defined shop tier! See what's around us.
+        if (ShopTier == 0) // We're not in a town and no defined shop tier! Fall back to the nearest town's tier.
         {
-            ShopTier = 1; // Fallback to tier 1 if there's nothing around us.
+            var nearestTown = Town.GetNearestTown(this);
 
-            var creatures = CurrentLandblock
-                .GetAllWorldObjectsForDiagnostics()
-                .Where(x => x.ItemType == ItemType.Creature)
-                .Select(x => x as Creature)
-                .Where(x => x is not null);
-
-            foreach (var creature in creatures)
-            {
-                var pkStatus = (PlayerKillerStatus)(creature.GetProperty(PropertyInt.PlayerKillerStatus) ?? 0);
-
-                if (string.IsNullOrEmpty(creature.Name) || creature.Guid.IsPlayer())
-                {
-                    continue;
-                }
-
-                if (
-                    pkStatus != PlayerKillerStatus.RubberGlue
-                    && creature.DeathTreasure is not null
-                    && creature.DeathTreasure.Tier > ShopTier
-                )
-                {
-                    ShopTier = creature.DeathTreasure.Tier; // Find highest monster tier
-                }
-
-                if (creature.Tier.HasValue && creature.Tier > ShopTier)
-                {
-                    ShopTier = creature.Tier.Value; // Find highest NPC tier
-                }
-            }
+            ShopTier = (int)Town.GetTownTier(nearestTown) + 1;
         }
 
         // Let's overwrite the database values for MerchandiseMaxValue depending on our tier.
@@ -2259,6 +2234,10 @@ public class Vendor : Creature
             //case "MacNiall's Freehold":
             //case "Kryst":
         }
+
+        // Lets a vendor's own LootQualityMod property (otherwise unused on Vendor) bias its
+        // random-restock item quality on top of whatever the town-based lookup above set.
+        ShopQualityMod += (float)(LootQualityMod ?? 0.0);
     }
 
     private void LoadDefaultItems(
