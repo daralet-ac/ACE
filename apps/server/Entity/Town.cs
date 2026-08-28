@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using ACE.DatLoader;
+using ACE.DatLoader.FileTypes;
 using ACE.Entity;
 using ACE.Server.WorldObjects;
 
@@ -21,6 +23,23 @@ public class Town
         return closest.Key;
     }
 
+    /// <summary>
+    /// Returns FALSE if <see cref="GetNearestTown"/> can't produce a meaningful answer for this
+    /// object's current position: it's indoors on a landblock with no traversable overworld (a true
+    /// dungeon interior), whose landblock X/Y bytes are just an arbitrary dat-file slot, not real map
+    /// coordinates. Callers that display the nearest-town guess to a person should check this first;
+    /// callers that just want a best-effort tiebreaker (e.g. quest stamping) can ignore it.
+    /// </summary>
+    public static bool HasReliableNearestTown(WorldObject worldObject)
+    {
+        if (worldObject.Location.GetMapCoords() != null)
+        {
+            return true;
+        }
+
+        return !IsDungeonLandblock(worldObject.Location.LandblockId);
+    }
+
     private static Vector2 GetLandblockMapCoords(LandblockId landblockId)
     {
         var globalX = landblockId.LandblockX * Position.BlockLength + Position.BlockLength / 2f;
@@ -30,6 +49,40 @@ public class Town
         mapCoords -= Vector2.One * 102;
 
         return mapCoords;
+    }
+
+    /// <summary>
+    /// Mirrors <c>ACE.Server.Entity.Landblock.IsDungeon</c> (all terrain heights are 0, it has at
+    /// least one interior cell, and it contains no buildings), but reads straight from the cell dat
+    /// file instead of loading/activating the live landblock - safe to call for a display lookup.
+    /// </summary>
+    private static bool IsDungeonLandblock(LandblockId landblockId)
+    {
+        // hack for NW island, mirrors the live Landblock.IsDungeon check
+        if (landblockId.LandblockX < 0x08 && landblockId.LandblockY > 0xF8)
+        {
+            return false;
+        }
+
+        var blockId = (uint)landblockId.LandblockX << 24 | (uint)landblockId.LandblockY << 16;
+
+        try
+        {
+            var cellLandblock = DatManager.CellDat.ReadFromDat<CellLandblock>(blockId | 0xFFFF);
+
+            if (cellLandblock.Height.Any(height => height != 0))
+            {
+                return false;
+            }
+
+            var landblockInfo = DatManager.CellDat.ReadFromDat<LandblockInfo>(blockId | 0xFFFE);
+
+            return landblockInfo != null && landblockInfo.NumCells > 0 && landblockInfo.Buildings.Count == 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static string GetSimplifiedTownString(string townName)
