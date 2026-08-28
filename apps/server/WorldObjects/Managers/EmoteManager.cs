@@ -2919,6 +2919,33 @@ public class EmoteManager
                 }
                 break;
 
+            case EmoteType.TopOffEquippedItemsMana:
+
+                if (player != null)
+                {
+                    if (player.CombatMode != CombatMode.NonCombat)
+                    {
+                        player.SendUseDoneEvent(WeenieError.YouMustBeInPeaceModeToTrade);
+                        break;
+                    }
+
+                    var topOffPercent = emote.Percent ?? 0;
+
+                    var topOffPool = (int)
+                        Math.Round(
+                            topOffPercent
+                                * player
+                                    .EquippedObjects.Values.Where(k => k.ItemMaxMana.HasValue)
+                                    .Sum(k => k.ItemMaxMana.Value)
+                        );
+
+                    if (topOffPool > 0)
+                    {
+                        player.TopOffEquippedItemsMana(topOffPool);
+                    }
+                }
+                break;
+
             default:
                 _log.Debug(
                     "EmoteManager.Execute - Encountered Unhandled EmoteType {EmoteType} for {WorldObjectName} ({WorldObjectWeenieClassId})",
@@ -3497,7 +3524,7 @@ public class EmoteManager
         result = result.Replace("%onws", olthoiNorthCampWestSupplyPercentile);
 
         var fragmentStabilityPhaseOneLevel = PropertyManager.GetLong("fragment_stability_phase_one").Item;
-        var fragmentStabilityPhaseOnePercentile = $"{Math.Round(fragmentStabilityPhaseOneLevel / 150.0f, 1)}";
+        var fragmentStabilityPhaseOnePercentile = $"{Math.Floor(fragmentStabilityPhaseOneLevel / 150.0f * 10) / 10}";
 
         result = result.Replace("%fspo", fragmentStabilityPhaseOnePercentile);
 

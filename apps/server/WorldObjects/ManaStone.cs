@@ -165,60 +165,7 @@ public class ManaStone : WorldObject
             if (target == player)
             {
                 // dump mana into equipped items
-                var origItemsNeedingMana = player
-                    .EquippedObjects.Values.Where(k =>
-                        k.ItemCurMana.HasValue && k.ItemMaxMana.HasValue && k.ItemCurMana < k.ItemMaxMana
-                    )
-                    .ToList();
-                var itemsGivenMana = new Dictionary<WorldObject, int>();
-
-                while (ItemCurMana > 0)
-                {
-                    var itemsNeedingMana = origItemsNeedingMana.Where(k => k.ItemCurMana < k.ItemMaxMana).ToList();
-                    if (itemsNeedingMana.Count < 1)
-                    {
-                        break;
-                    }
-
-                    var ration = Math.Max(ItemCurMana.Value / itemsNeedingMana.Count, 1);
-
-                    foreach (var item in itemsNeedingMana)
-                    {
-                        var manaNeededForTopoff = (int)(item.ItemMaxMana - item.ItemCurMana);
-                        var adjustedRation = Math.Min(ration, manaNeededForTopoff);
-
-                        ItemCurMana -= adjustedRation;
-
-                        if (player.LumAugItemManaGain != 0)
-                        {
-                            adjustedRation = (int)
-                                Math.Round(
-                                    adjustedRation * Creature.GetPositiveRatingMod(player.LumAugItemManaGain * 5)
-                                );
-                            if (adjustedRation > manaNeededForTopoff)
-                            {
-                                var diff = adjustedRation - manaNeededForTopoff;
-                                adjustedRation = manaNeededForTopoff;
-                                ItemCurMana += diff;
-                            }
-                        }
-
-                        item.ItemCurMana += adjustedRation;
-                        if (!itemsGivenMana.ContainsKey(item))
-                        {
-                            itemsGivenMana[item] = adjustedRation;
-                        }
-                        else
-                        {
-                            itemsGivenMana[item] += adjustedRation;
-                        }
-
-                        if (ItemCurMana <= 0)
-                        {
-                            break;
-                        }
-                    }
-                }
+                var (leftover, itemsGivenMana) = player.TopOffEquippedItemsMana(ItemCurMana.Value);
 
                 if (itemsGivenMana.Count < 1)
                 {
@@ -232,13 +179,17 @@ public class ManaStone : WorldObject
                 }
                 else
                 {
+                    ItemCurMana = leftover;
+
                     //The Mana Stone gives 4,496 points of mana to the following items: Fire Compound Crossbow, Qafiya, Celdon Sleeves, Amuli Leggings, Messenger's Collar, Heavy Bracelet, Scalemail Bracers, Olthoi Alduressa Gauntlets, Studded Leather Girth, Shoes, Chainmail Greaves, Loose Pants, Mechanical Scarab, Ring, Ring, Heavy Bracelet
                     //Your items are fully charged.
 
                     //The Mana Stone gives 1,921 points of mana to the following items: Haebrean Girth, Chiran Helm, Ring, Baggy Breeches, Scalemail Greaves, Alduressa Boots, Heavy Bracelet, Heavy Bracelet, Lorica Breastplate, Pocket Watch, Heavy Necklace
                     //You need 2,232 more mana to fully charge your items.
 
-                    var additionalManaNeeded = origItemsNeedingMana.Sum(k => k.ItemMaxMana.Value - k.ItemCurMana.Value);
+                    var additionalManaNeeded = player
+                        .EquippedObjects.Values.Where(k => k.ItemCurMana.HasValue && k.ItemMaxMana.HasValue)
+                        .Sum(k => k.ItemMaxMana.Value - k.ItemCurMana.Value);
                     var additionalManaText =
                         (additionalManaNeeded > 0)
                             ? $"\nYou need {additionalManaNeeded:N0} more mana to fully charge your items."
