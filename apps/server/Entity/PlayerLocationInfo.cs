@@ -19,7 +19,7 @@ public static class PlayerLocationInfo
 
         var location = $"{locationName}{parenthesis}";
 
-        if (namedLocation is null)
+        if (namedLocation is null && Town.HasReliableNearestTown(player))
         {
             var nearestTown = Town.GetNearestTown(player);
             location += $" (Nearest town: {nearestTown})";
