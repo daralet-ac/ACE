@@ -1026,8 +1026,18 @@ public class EmoteManager
                 {
                     var numRequired = emote.StackSize ?? 1;
 
-                    var items = player.GetInventoryItemsOfWCID(emote.WeenieClassId ?? 0);
-                    items.AddRange(player.GetEquippedObjectsOfWCID(emote.WeenieClassId ?? 0));
+                    // Trophy Refuse/InqYesNo/InqOwnsItems rows are written against the base
+                    // (quality 1) WCID so one row matches every quality (see
+                    // TrophyWcids.ToBaseTrophyWcid / WorldObject.HasGiveOrRefuseEmoteForItem).
+                    // Resolve to the WCID of the item actually examined, or a quality-10
+                    // trophy would never be found under the base WCID this check was written for.
+                    var wcidToCheck =
+                        creature?.RefusalItem.Item1 is { TrophyQuality: not null } refusedTrophyItem
+                            ? refusedTrophyItem.WeenieClassId
+                            : emote.WeenieClassId ?? 0;
+
+                    var items = player.GetInventoryItemsOfWCID(wcidToCheck);
+                    items.AddRange(player.GetEquippedObjectsOfWCID(wcidToCheck));
                     var numItems = items.Sum(i => i.StackSize ?? 1);
 
                     uint? refusalItemGuidId = null;
@@ -2283,6 +2293,16 @@ public class EmoteManager
                             $"EmoteManager.Execute: 0x{WorldObject.Guid} {WorldObject.Name} ({WorldObject.WeenieClassId}) EmoteType.TakeItems has invalid emote.StackSize: {amountToTake}"
                         );
                         break;
+                    }
+
+                    // Trophy Refuse/InqYesNo/TakeItems rows are written against the base
+                    // (quality 1) WCID so one row matches every quality (see
+                    // TrophyWcids.ToBaseTrophyWcid / WorldObject.HasGiveOrRefuseEmoteForItem).
+                    // Resolve to the WCID of the item actually examined, or a quality-10
+                    // trophy would never be found under the base WCID this row was written for.
+                    if (creature?.RefusalItem.Item1 is { TrophyQuality: not null } refusedTrophyItemToTake)
+                    {
+                        weenieItemToTake = refusedTrophyItemToTake.WeenieClassId;
                     }
 
                     // If a guid was stored during a Refuse emote, make sure that specific item is taken
