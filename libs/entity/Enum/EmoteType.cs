@@ -215,5 +215,21 @@ public enum EmoteType
     /// monster type worth more toward a pooled contribution total than a weaker one), without
     /// needing the caller to fire the same emote multiple times.
     /// </summary>
-    IncrementQuestForAllFellows = 10024
+    IncrementQuestForAllFellows = 10024,
+
+    /// <summary>
+    /// Restores mana to the emote's activating Player's currently-equipped items, rationed across
+    /// every equipped item that still needs it - the same algorithm a native ManaStone uses on
+    /// itself (see WorldObjects/ManaStone.cs and the extracted Player.TopOffEquippedItemsMana()),
+    /// but driven by a fixed data-defined percentage of the player's own gear instead of a
+    /// persisted ItemCurMana pool. The action's Percent column (0.0-1.0) is multiplied against the
+    /// sum of ItemMaxMana across the player's currently-equipped items to compute the pool.
+    ///
+    /// Exists because this weenie (e.g. RIMS 1.0, WCID 2023139) needs the *effect* of a Mana Stone
+    /// without becoming one - WeenieType.ManaStone's HandleActionUseOnTarget override intercepts
+    /// all Use handling for that weenie type and never calls EmoteManager.OnUse(), which would
+    /// silently kill this item's other, emote-driven Use functions. Requires peace mode - fails
+    /// with WeenieError.YouMustBeInPeaceModeToTrade if the player is not in NonCombat mode.
+    /// </summary>
+    TopOffEquippedItemsMana = 10025
 }

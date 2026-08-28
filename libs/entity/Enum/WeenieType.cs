@@ -95,5 +95,8 @@ public enum WeenieType : uint
     BlankScroll,
     SpellDust,
     ScribingTable,
-    WeaponRelic
+    WeaponRelic,
+
+    // Must stay last - sequential enum, no explicit values, renumbering would break live data.
+    ResonanceEnergyStorageDevice
 }
