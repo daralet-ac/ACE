@@ -79,21 +79,21 @@ public static class GemMaterialChance
         (new GemResult(WeenieClassName.gemagate, MaterialType.Agate), 1.0f),
         (new GemResult(WeenieClassName.gemamber, MaterialType.Amber), 1.0f),
         (new GemResult(WeenieClassName.gemamethyst, MaterialType.Amethyst), 1.0f),
-        (new GemResult(WeenieClassName.gemaquamarine, MaterialType.Aquamarine), 0.2f), // imbue gem: 5x rarer
+        (new GemResult(WeenieClassName.gemaquamarine, MaterialType.Aquamarine), 0.5f), // imbue gem: 2x rarer
         (new GemResult(WeenieClassName.gemazurite, MaterialType.Azurite), 1.0f),
-        (new GemResult(WeenieClassName.gemblackgarnet, MaterialType.BlackGarnet), 0.2f), // imbue gem: 5x rarer
-        (new GemResult(WeenieClassName.gemblackopal, MaterialType.BlackOpal), 0.2f), // imbue gem: 5x rarer
+        (new GemResult(WeenieClassName.gemblackgarnet, MaterialType.BlackGarnet), 0.5f), // imbue gem: 2x rarer
+        (new GemResult(WeenieClassName.gemblackopal, MaterialType.BlackOpal), 0.5f), // imbue gem: 2x rarer
         (new GemResult(WeenieClassName.gembloodstone, MaterialType.Bloodstone), 1.0f),
         (new GemResult(WeenieClassName.gemcarnelian, MaterialType.Carnelian), 1.0f),
         (new GemResult(WeenieClassName.gemcitrine, MaterialType.Citrine), 1.0f),
         (new GemResult(WeenieClassName.jeweldiamond, MaterialType.Diamond), 1.0f),
-        (new GemResult(WeenieClassName.jewelemerald, MaterialType.Emerald), 0.2f), // imbue gem: 5x rarer
-        (new GemResult(WeenieClassName.gemfireopal, MaterialType.FireOpal), 0.2f), // imbue gem: 5x rarer
+        (new GemResult(WeenieClassName.jewelemerald, MaterialType.Emerald), 0.5f), // imbue gem: 2x rarer
+        (new GemResult(WeenieClassName.gemfireopal, MaterialType.FireOpal), 0.5f), // imbue gem: 2x rarer
         (new GemResult(WeenieClassName.gemgreengarnet, MaterialType.GreenGarnet), 1.0f),
         (new GemResult(WeenieClassName.gemgreenjade, MaterialType.GreenJade), 1.0f),
         (new GemResult(WeenieClassName.gemhematite, MaterialType.Hematite), 1.0f),
-        (new GemResult(WeenieClassName.gemimperialtopaz, MaterialType.ImperialTopaz), 0.2f), // imbue gem: 5x rarer
-        (new GemResult(WeenieClassName.gemjet, MaterialType.Jet), 0.2f), // imbue gem: 5x rarer
+        (new GemResult(WeenieClassName.gemimperialtopaz, MaterialType.ImperialTopaz), 0.5f), // imbue gem: 2x rarer
+        (new GemResult(WeenieClassName.gemjet, MaterialType.Jet), 0.5f), // imbue gem: 2x rarer
         (new GemResult(WeenieClassName.gemlapislazuli, MaterialType.LapisLazuli), 1.0f),
         (new GemResult(WeenieClassName.gemlavenderjade, MaterialType.LavenderJade), 1.0f),
         (new GemResult(WeenieClassName.gemmalachite, MaterialType.Malachite), 1.0f),
@@ -101,19 +101,19 @@ public static class GemMaterialChance
         (new GemResult(WeenieClassName.gemonyx, MaterialType.Onyx), 1.0f),
         (new GemResult(WeenieClassName.gemopal, MaterialType.Opal), 1.0f),
         (new GemResult(WeenieClassName.gemperidot, MaterialType.Peridot), 1.0f),
-        (new GemResult(WeenieClassName.gemredgarnet, MaterialType.RedGarnet), 0.2f), // imbue gem: 5x rarer
+        (new GemResult(WeenieClassName.gemredgarnet, MaterialType.RedGarnet), 0.5f), // imbue gem: 2x rarer
         (new GemResult(WeenieClassName.gemredjade, MaterialType.RedJade), 1.0f),
         (new GemResult(WeenieClassName.gemrosequartz, MaterialType.RoseQuartz), 1.0f),
         (new GemResult(WeenieClassName.jewelruby, MaterialType.Ruby), 1.0f),
         (new GemResult(WeenieClassName.jewelsapphire, MaterialType.Sapphire), 1.0f),
         (new GemResult(WeenieClassName.gemsmokeyquartz, MaterialType.SmokeyQuartz), 1.0f),
-        (new GemResult(WeenieClassName.gemsunstone, MaterialType.Sunstone), 0.2f), // imbue gem: 5x rarer
+        (new GemResult(WeenieClassName.gemsunstone, MaterialType.Sunstone), 0.5f), // imbue gem: 2x rarer
         (new GemResult(WeenieClassName.gemtigereye, MaterialType.TigerEye), 1.0f),
-        (new GemResult(WeenieClassName.gemtourmaline, MaterialType.Tourmaline), 0.2f), // imbue gem: 5x rarer
+        (new GemResult(WeenieClassName.gemtourmaline, MaterialType.Tourmaline), 0.5f), // imbue gem: 2x rarer
         (new GemResult(WeenieClassName.gemturquoise, MaterialType.Turquoise), 1.0f),
         (new GemResult(WeenieClassName.gemwhitequartz, MaterialType.WhiteQuartz), 1.0f),
         (new GemResult(WeenieClassName.gemwhitejade, MaterialType.WhiteJade), 1.0f),
-        (new GemResult(WeenieClassName.gemwhitesapphire, MaterialType.WhiteSapphire), 0.2f), // imbue gem: 5x rarer
+        (new GemResult(WeenieClassName.gemwhitesapphire, MaterialType.WhiteSapphire), 0.5f), // imbue gem: 2x rarer
         (new GemResult(WeenieClassName.gemyellowgarnet, MaterialType.YellowGarnet), 1.0f),
         (new GemResult(WeenieClassName.gemyellowtopaz, MaterialType.YellowTopaz), 1.0f),
         (new GemResult(WeenieClassName.gemzircon, MaterialType.Zircon), 1.0f),
