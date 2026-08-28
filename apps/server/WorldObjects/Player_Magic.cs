@@ -42,6 +42,8 @@ partial class Player
 
     public bool DebugSpell { get; set; }
 
+    public bool DebugSpellcasting { get; set; }
+
     public string DebugDamageBuffer { get; set; }
 
     public RecordCast RecordCast { get; set; }

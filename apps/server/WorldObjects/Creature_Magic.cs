@@ -119,6 +119,8 @@ partial class Creature
 
         var manaCostMultiplier = PropertyManager.GetDouble("mana_cost_multiplier").Item + abilityPenaltyMod;
 
+        var difficulty = spell.Level * 50;
+
         // Mana Conversion
         var manaConversion = caster.GetCreatureSkill(Skill.ManaConversion);
 
@@ -127,10 +129,24 @@ partial class Creature
             || spell.Flags.HasFlag(SpellFlags.IgnoresManaConversion)
         )
         {
-            return Convert.ToUInt32(baseCost * manaCostMultiplier);
-        }
+            var untrainedManaCost = Convert.ToUInt32(baseCost * manaCostMultiplier);
 
-        var difficulty = spell.Level * 50;
+            if (caster is Player untrainedDebugPlayer && untrainedDebugPlayer.DebugSpellcasting)
+            {
+                SendSpellcastingDebugInfo(
+                    untrainedDebugPlayer,
+                    spell,
+                    difficulty,
+                    baseCost,
+                    untrainedManaCost,
+                    0,
+                    manaConversion.Current,
+                    0
+                );
+            }
+
+            return untrainedManaCost;
+        }
 
         var robeManaConversionMod = 0.0;
         var robe = EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.Armor);
@@ -143,15 +159,54 @@ partial class Creature
             Math.Round(manaConversion.Current * (GetWeaponManaConversionModifier(caster) + robeManaConversionMod));
 
         // Final Calculation
-        var manaCost = GetManaCost(caster, difficulty, baseCost, mana_conversion_skill);
+        var manaCost = GetManaCost(caster, difficulty, baseCost, mana_conversion_skill, out var savedMana);
 
-        return Convert.ToUInt32(manaCost * manaCostMultiplier);
+        var finalManaCost = Convert.ToUInt32(manaCost * manaCostMultiplier);
+
+        if (caster is Player debugPlayer && debugPlayer.DebugSpellcasting)
+        {
+            SendSpellcastingDebugInfo(
+                debugPlayer,
+                spell,
+                difficulty,
+                baseCost,
+                finalManaCost,
+                savedMana,
+                manaConversion.Current,
+                mana_conversion_skill
+            );
+        }
+
+        return finalManaCost;
     }
 
-    private static uint GetManaCost(Creature caster, uint difficulty, uint manaCost, uint manaConv)
+    private static void SendSpellcastingDebugInfo(
+        Player player,
+        Spell spell,
+        uint difficulty,
+        uint baseManaCost,
+        uint finalManaCost,
+        uint savedMana,
+        uint baseManaConversionSkill,
+        uint effectiveManaConversionSkill
+    )
+    {
+        var savedPercent = (double)savedMana / baseManaCost;
+
+        player.Session?.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"[Spellcasting Debug] {spell.Name}: Base Mana Cost {baseManaCost}, Final Mana Cost {finalManaCost}, Saved {savedMana} ({Math.Round(savedPercent * 100)}%), "
+                    + $"Difficulty {difficulty}, Mana Conversion Skill {baseManaConversionSkill} (Effective {effectiveManaConversionSkill})",
+                ChatMessageType.Magic
+            )
+        );
+    }
+
+    private static uint GetManaCost(Creature caster, uint difficulty, uint manaCost, uint manaConv, out uint savedMana)
     {
         if (manaConv == 0 || manaCost <= 1)
         {
+            savedMana = 0;
             return manaCost;
         }
 
@@ -160,7 +215,7 @@ partial class Creature
         var manaConModCeiling = SkillCheck.GetSkillChance(manaConv, difficulty);
         var manaConModFloor = manaConModCeiling * 0.5;
         var reductionRoll = maxManaReduction * ThreadSafeRandom.Next((float)manaConModFloor, (float)manaConModCeiling);
-        var savedMana = (uint)Math.Round(manaCost * reductionRoll);
+        savedMana = (uint)Math.Round(manaCost * reductionRoll);
 
         manaCost -= savedMana;
 
