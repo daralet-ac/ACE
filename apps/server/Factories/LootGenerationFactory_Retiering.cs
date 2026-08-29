@@ -363,7 +363,15 @@ public static partial class LootGenerationFactory
             return;
         }
 
-        var armorStyleBaseWardLevel = 7;
+        // Keep in sync with AssignArmorLevel in LootGenerationFactory_Clothing.cs:
+        // body armor keys off weight class, Amuli-family styles are overridden, and
+        // shields carry ward but no weight class so they stay style-based.
+        var armorStyleBaseWardLevel = target.ArmorWeightClass switch
+        {
+            (int)ArmorWeightClass.Cloth => 6,
+            (int)ArmorWeightClass.Heavy => 7,
+            _ => 5,
+        };
 
         if (target.ArmorStyle != null)
         {
@@ -372,17 +380,9 @@ public static partial class LootGenerationFactory
                 ArmorStyle.CovenantShield => 10,
                 ArmorStyle.TowerShield => 8,
                 ArmorStyle.LargeShield => 7,
-                ArmorStyle.Amuli or ArmorStyle.Chiran
-                    or ArmorStyle.OlthoiAmuli or ArmorStyle.StandardShield
-                    => 6,
+                ArmorStyle.StandardShield => 6,
                 ArmorStyle.Buckler or ArmorStyle.SmallShield => 5,
-                ArmorStyle.Leather or ArmorStyle.StuddedLeather
-                    or ArmorStyle.Koujia or ArmorStyle.OlthoiKoujia
-                    or ArmorStyle.Chainmail or ArmorStyle.Scalemail
-                    or ArmorStyle.Nariyid or ArmorStyle.Platemail
-                    or ArmorStyle.Celdon or ArmorStyle.OlthoiCeldon
-                    or ArmorStyle.Covenant or ArmorStyle.OlthoiArmor
-                    => 5,
+                ArmorStyle.Amuli or ArmorStyle.Chiran or ArmorStyle.OlthoiAmuli => 6,
                 _ => armorStyleBaseWardLevel
             };
         }

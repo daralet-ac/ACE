@@ -2927,27 +2927,28 @@ public static partial class LootGenerationFactory
 
     private static int GetBaseWardOfTier(int tier)
     {
+        // Values reduced ~50% from prior jewelry ward tuning pass
         switch (tier)
         {
             case 1:
             case 2:
-                return 7;
+                return 4;
             case 3:
-                return 14;
-            case 4:
-                return 21;
-            case 5:
-                return 28;
-            case 6:
-                return 35;
-            case 7:
-                return 50;
-            case 8:
-                return 75;
-            case 9:
-                return 100;
-            default:
                 return 7;
+            case 4:
+                return 11;
+            case 5:
+                return 14;
+            case 6:
+                return 18;
+            case 7:
+                return 25;
+            case 8:
+                return 38;
+            case 9:
+                return 50;
+            default:
+                return 4;
         }
     }
 
