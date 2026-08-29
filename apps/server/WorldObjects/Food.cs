@@ -49,14 +49,17 @@ public class Food : Stackable
 
     // WCID ranges for Long-effect essence foods and potions (no cooldown, spell-only buff).
     // Short-effect items share the same WCID base but have CooldownId set.
+    // Crafted essence output WCIDs are tier-specific (TrophyEssence.cs mints one WCID per quality
+    // tier 1-10), but the ranges below stay contiguous across every base/spell/tier combination,
+    // so a single min/max bound still covers the whole category.
     private const uint LongEssenceBaseFoodWcidMin = 1053937u;
     private const uint LongEssenceBaseFoodWcidMax = 1053951u;
-    private const uint LongEssenceFoodWcidMin   = 1054600u;
-    private const uint LongEssenceFoodWcidMax   = 1054731u;
+    private const uint LongEssenceFoodWcidMin   = 1060000u;
+    private const uint LongEssenceFoodWcidMax   = 1061319u;
     private const uint LongEssenceBasePotionWcidMin = 1053957u;
     private const uint LongEssenceBasePotionWcidMax = 1053971u;
-    private const uint LongEssencePotionWcidMin = 1054732u;
-    private const uint LongEssencePotionWcidMax = 1054959u;
+    private const uint LongEssencePotionWcidMin = 1061320u;
+    private const uint LongEssencePotionWcidMax = 1063599u;
 
     /// <summary>
     /// This is raised by Player.HandleActionUseItem.<para />
