@@ -12,7 +12,14 @@ namespace ACE.Server.WorldObjects;
 
 partial class Jewel
 {
-    public static float GetJewelEffectMod(Player player, PropertyInt propertyInt, string rampQuestString = "", bool secondary = false, bool alternate = false)
+    /// <param name="rampQuestSource">
+    /// For ramping effects whose quest stamps accumulate on the *other* combatant (per-target ramps
+    /// such as Familiarity / Bravado / melee Bludgeon), the creature whose QuestManager holds the
+    /// stamps. The stamp key always uses the jewel wearer's name (<paramref name="player"/>).
+    /// When null, the ramp is read from the wearer's own QuestManager (self ramps, e.g. Hardened
+    /// Fortification, Elementalist).
+    /// </param>
+    public static float GetJewelEffectMod(Player player, PropertyInt propertyInt, string rampQuestString = "", bool secondary = false, bool alternate = false, Creature rampQuestSource = null)
     {
         if (player is null)
         {
@@ -44,9 +51,15 @@ partial class Jewel
 
         var rampPercentage = rampQuestString is "" ? 1.0f : 0.0f;
 
-        if (player.QuestManager.HasQuest($"{player.Name},{rampQuestString}"))
+        if (rampQuestString is not "")
         {
-            rampPercentage = Math.Min((float)player.QuestManager.GetCurrentSolves($"{player.Name},{rampQuestString}") / 100, 1.0f);
+            var questHolder = rampQuestSource ?? player;
+            var questKey = $"{player.Name},{rampQuestString}";
+
+            if (questHolder.QuestManager.HasQuest(questKey))
+            {
+                rampPercentage = Math.Min((float)questHolder.QuestManager.GetCurrentSolves(questKey) / 100, 1.0f);
+            }
         }
 
         // Console.WriteLine($"\nJewel Mod:\n" +
@@ -88,7 +101,10 @@ partial class Jewel
     {
         var scaledStamps = GetMeleeMissileScaledStamps(playerAttacker);
 
+        // Per-target ramps: stamps accumulate on the target creature, keyed by the attacker's name,
+        // and are read back (with rampQuestSource: defender) when that creature strikes the player.
         AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearFamiliarity, "Familiarity", scaledStamps);
+        AddRatingQuestStamps(playerAttacker, defender, PropertyInt.GearBravado, "Bravado", scaledStamps);
 
         switch (damageType)
         {
@@ -101,18 +117,21 @@ partial class Jewel
         }
     }
 
-    public static void HandleMeleeMissileDefenderRampingQuestStamps(Player playerDefender)
+    public static void HandleMeleeMissileDefenderRampingQuestStamps(Player playerDefender, Creature attacker)
     {
-        AddRatingQuestStamps(playerDefender, null, PropertyInt.GearHardenedDefense, "Hardened Defense", 10);
-        AddRatingQuestStamps(playerDefender, null, PropertyInt.GearBravado, "Bravado", 10);
+        // Self ramp: Hardened Fortification builds on the defender's own QuestManager as they take
+        // hits, and is read back via GetRatingHardenedDefenseDamageResistanceBonus.
+        AddRatingQuestStamps(playerDefender, attacker, PropertyInt.GearHardenedDefense, "Hardened Defense", 10, questManagerOfPlayer: true);
     }
 
     public static void HandleCasterAttackerRampingQuestStamps(Player sourcePlayer, Creature targetCreature, Spell spell, ProjectileSpellType projectileSpellTyper)
     {
         var scaledStamps = GetCasterScaledStamps(spell.Level, projectileSpellTyper);
 
+        // Familiarity is a per-target ramp (stamps on the target, read back with rampQuestSource).
         AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearFamiliarity, "Familiarity", scaledStamps);
-        AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearWardPen, "WardPen", scaledStamps);
+        // WardPen and Elementalist are self ramps: stamps live on the caster's own QuestManager.
+        AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearWardPen, "WardPen", scaledStamps, true);
         AddRatingQuestStamps(sourcePlayer, targetCreature, PropertyInt.GearElementalist, "Elementalist", scaledStamps, true);
 
         switch (spell.DamageType)
@@ -1387,6 +1406,12 @@ partial class Jewel
         {PropertyInt.Undef, EquipMask.None}
     };
 
+    /// <summary>
+    /// Advisory map of where each jewel material is "meant" to live, kept as documentation and for
+    /// tooling. It is NOT consulted when resolving a socketed jewel's combat contribution - see
+    /// <see cref="WorldObject.GetJewelRating"/>. Crafting-time slot validation is driven by
+    /// <see cref="RatingToEquipLocations"/> in <see cref="Jewel.UseObjectOnTarget"/>.
+    /// </summary>
     public static readonly Dictionary<MaterialType?, EquipMask> MaterialValidLocations = new()
     {
         // wand only
@@ -1399,6 +1424,7 @@ partial class Jewel
         { ACE.Entity.Enum.MaterialType.Hematite, EquipMask.Weapon },
         { ACE.Entity.Enum.MaterialType.Bloodstone, EquipMask.Weapon },
         { ACE.Entity.Enum.MaterialType.WhiteJade, EquipMask.Weapon },
+        { ACE.Entity.Enum.MaterialType.Citrine, EquipMask.Weapon },
         // weapon or armor
         { ACE.Entity.Enum.MaterialType.ImperialTopaz, EquipMask.WeaponAndArmor },
         { ACE.Entity.Enum.MaterialType.BlackGarnet,EquipMask.WeaponAndArmor },
@@ -1421,7 +1447,6 @@ partial class Jewel
         { ACE.Entity.Enum.MaterialType.SmokeyQuartz, EquipMask.WristWear },
         { ACE.Entity.Enum.MaterialType.Agate, EquipMask.WristWear },
         { ACE.Entity.Enum.MaterialType.Moonstone, EquipMask.WristWear },
-        { ACE.Entity.Enum.MaterialType.Citrine, EquipMask.WristWear },
         { ACE.Entity.Enum.MaterialType.Malachite, EquipMask.WristWear },
         // bracelet only (right rest)
         { ACE.Entity.Enum.MaterialType.Onyx, EquipMask.WristWear },
@@ -1497,7 +1522,7 @@ partial class Jewel
         { ACE.Entity.Enum.MaterialType.Emerald, (PropertyInt.GearAcid, "Devouring Mist", "weapon", 10, 0.5f, 2, 0.1f) },
         { ACE.Entity.Enum.MaterialType.ImperialTopaz, (PropertyInt.GearSlash, "Falcon's Gyre", "weapon", 10, 0.5f, 0, 0.0f) },
         { ACE.Entity.Enum.MaterialType.BlackGarnet, (PropertyInt.GearPierce, "Precision Strikes", "weapon", 20, 1.0f, 0, 0.0f) },
-        { ACE.Entity.Enum.MaterialType.WhiteSapphire, (PropertyInt.GearBludgeon, "Skull-cracker", "weapon", 10, 0.5f, 0, 0.0f) },
+        { ACE.Entity.Enum.MaterialType.WhiteSapphire, (PropertyInt.GearBludgeon, "Skull-cracker", "weapon", 20, 1.0f, 0, 0.0f) },
         { ACE.Entity.Enum.MaterialType.LapisLazuli, (PropertyInt.GearBlueFury, "Blue Fury", "weapon", 20, 1.0f, 0, 0.0f) },
         { ACE.Entity.Enum.MaterialType.Amber, (PropertyInt.GearYellowFury, "Yellow Fury", "weapon", 20, 1.0f, 0, 0.0f) },
 
