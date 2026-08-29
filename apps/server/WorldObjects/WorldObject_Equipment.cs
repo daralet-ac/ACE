@@ -216,6 +216,17 @@ partial class WorldObject
         EmoteManager.OnUnwield(creature);
     }
 
+    /// <summary>
+    /// Sums the socketed-jewel contribution to <paramref name="propertyInt"/> for a single item.
+    /// A socketed jewel contributes its effect regardless of which slot the host item occupies -
+    /// crafting restrictions (see <see cref="Jewel.UseObjectOnTarget"/>) govern what can be socketed,
+    /// but once socketed (including sockets pre-authored on special equipment) the effect always applies
+    /// to any attack/cast that can use it. Whether the primary or alternate effect is granted is driven
+    /// by the stored <c>JewelSocketNAlternateEffect</c> flag; when that flag is absent (legacy or
+    /// hand-authored sockets) it is inferred from the host item's equip mask (armor -> alternate).
+    /// This is the single source of truth shared with the combat path
+    /// (<see cref="Creature.GetRatingFromSocketedJewels"/>).
+    /// </summary>
     public static int GetJewelRating(WorldObject worldObject, PropertyInt propertyInt)
     {
         var total = 0;
@@ -226,17 +237,29 @@ partial class WorldObject
             var jewelQuality = worldObject.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketQualityIntId);
             var jewelAlternate = worldObject.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketAlternateEffect);
 
-            if (jewelMaterial is null || jewelQuality is null || jewelAlternate is null)
+            if (jewelMaterial is null || jewelQuality is null)
             {
                 continue;
             }
 
-            if (jewelAlternate is not true && Jewel.JewelMaterialToType[(MaterialType)jewelMaterial].PrimaryRating != propertyInt)
+            if (!Jewel.JewelMaterialToType.TryGetValue((MaterialType)jewelMaterial, out var ratingTypes))
             {
                 continue;
             }
 
-            if (jewelAlternate is true && Jewel.JewelMaterialToType[(MaterialType)jewelMaterial].AlternateRating != propertyInt)
+            var hasAlternate = ratingTypes.AlternateRating != PropertyInt.Undef;
+
+            // Prefer the stored flag; fall back to "armor slot grants the alternate effect" for
+            // legacy sockets that predate the flag or hand-authored sockets that omit it. A jewel
+            // with no alternate effect always grants its primary in every slot.
+            var validLocations = worldObject.ValidLocations ?? EquipMask.None;
+            var useAlternate = hasAlternate
+                && (jewelAlternate
+                    ?? (validLocations != EquipMask.None && (validLocations & EquipMask.Armor) == validLocations));
+
+            var grantedRating = useAlternate ? ratingTypes.AlternateRating : ratingTypes.PrimaryRating;
+
+            if (grantedRating != propertyInt)
             {
                 continue;
             }
