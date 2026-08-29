@@ -891,6 +891,12 @@ public enum PropertyInt : ushort
     [ServerOnly]
     WeaponRelicApplyCount = 523,
 
+    /// <summary>
+    /// A plain shared tag identifying valid beneficial-cast partners for EmoteType.CastSpellOnCohort.
+    /// See WorldObject.Cohort for the full explanation of why this is separate from FriendType.
+    /// </summary>
+    Cohort = 524,
+
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
 
