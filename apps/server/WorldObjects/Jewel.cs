@@ -161,7 +161,6 @@ partial class Jewel : WorldObject
                 !player.ConfirmationManager.EnqueueSend(
                     new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
                     $"Adding {source.Name} to {target.Name}, enhancing its properties.\n\n" +
-                    $"Once socketed into an item, this jewel becomes permanently attuned to your character. Items with contained jewels become attuned and will remain so until all jewels are removed.\n\n" +
                     $"Jewels may be unsocketed using an Intricate Carving Tool. There is no skill check or destruction chance.\n\n"
                 )
             )
@@ -283,7 +282,6 @@ partial class Jewel : WorldObject
                 }
             }
 
-            target.Attuned = AttunedStatus.Attuned;
             target.Bonded = BondedStatus.Bonded;
 
             break;
@@ -504,7 +502,6 @@ partial class Jewel : WorldObject
             var materialString = MaterialTypeToString[jewel.JewelMaterialType.Value];
             jewel.Name = $"{qualityString} {materialString}";
 
-            jewel.Attuned = AttunedStatus.Attuned;
             jewel.Bonded = BondedStatus.Bonded;
 
             player.TryCreateInInventoryWithNetworking(jewel);
@@ -553,7 +550,6 @@ partial class Jewel : WorldObject
         jewel.JewelMaterialType = convertedMaterialType;
         jewel.Name = $"{socketArray[0]} {socketArray[1]}";
 
-        jewel.Attuned = AttunedStatus.Attuned;
         jewel.Bonded = BondedStatus.Bonded;
 
         player.TryCreateInInventoryWithNetworking(jewel);
