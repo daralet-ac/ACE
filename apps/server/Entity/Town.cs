@@ -128,7 +128,7 @@ public class Town
         {"Rithwic", new Vector2(59.3f, 10.8f) },
         {"Samsur", new Vector2(19.0f, -3.2f) },
         {"Sawato", new Vector2(59.3f, -28.7f) },
-        {"Shoushi", new Vector2(73.6f, -34.2f) },
+        {"Shoushi", new Vector2(72.8f, -33.5f) },
         {"Stonehold", new Vector2(-21.8f, 68.7f) },
         {"Tou-Tou", new Vector2(95.8f, -28.1f) },
         {"Tufa", new Vector2(5.0f, -13.9f) },
