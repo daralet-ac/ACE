@@ -2046,6 +2046,13 @@ partial class Player
         SpellCategory[] advancedSpellCategories =
         {
             // War
+            SpellCategory.AcidBurst,
+            SpellCategory.BludgeoningBurst,
+            SpellCategory.ColdBurst,
+            SpellCategory.ElectricBurst,
+            SpellCategory.FireBurst,
+            SpellCategory.PiercingBurst,
+            SpellCategory.SlashingBurst,
             SpellCategory.AcidBlast,
             SpellCategory.BludgeoningBlast,
             SpellCategory.ColdBlast,
