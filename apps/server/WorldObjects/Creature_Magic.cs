@@ -159,10 +159,12 @@ partial class Creature
         var manaCostMultiplierProp = PropertyManager.GetDouble("mana_cost_multiplier").Item;
         var manaCostMultiplier = manaCostMultiplierProp + abilityPenaltyMod;
 
-        var difficulty = spell.Level * 50;
-
         // Mana Conversion
         var manaConversion = caster.GetCreatureSkill(Skill.ManaConversion);
+
+        // Casting difficulty for the mana conversion check comes from the spell's actual Power
+        // (portal.dat casting difficulty), not the bucketed 1-7 spell tier.
+        var difficulty = spell.Power;
 
         if (debugTrace != null)
         {
