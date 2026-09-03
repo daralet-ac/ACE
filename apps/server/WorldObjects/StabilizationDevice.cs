@@ -70,6 +70,22 @@ public class StabilizationDevice : WorldObject
 
     private static void SetEphemeralValues() { }
 
+    // RIMS 1.0 charge siphon (Resonance Energy Storage Device, per the
+    // RIMS_1_0_Phase_Transition_Item_Dossier.md design intent): 2023161 used on 2023139
+    // transfers one charge stage instead of running the normal stabilize-gear flow below.
+    // 2023139 is never IsUnstable, so this has to be checked first or it always falls into
+    // the "no unstable resonance" bail-out - hardcoded WCID/quest-name pairing, same idiom
+    // as DestabilizedLootForge.cs's hardcoded Pulsing Resonance Fragment reagent WCID.
+    private const uint RimsStorageDeviceWcid = 2023139;
+    private const string RimsChargeLevelQuest = "RIMSChargeLevel";
+
+    // 2023139's own static LongDesc (weenie content) - kept here as the stable prefix so
+    // HandleRimsChargeSiphon can rewrite the live "Currently holding X% charge" tail onto it
+    // without clobbering the base flavor text. Must be kept in sync by hand if the weenie's
+    // LongDesc content ever changes.
+    private const string RimsStorageDeviceBaseLongDesc =
+        "A functional tool devised to read and interact with ambient resonance fields, retuning the bearer's own frequency to whatever it touches. Its exact effect depends on where and how it's used.";
+
     public override void HandleActionUseOnTarget(Player player, WorldObject target)
     {
         UseObjectOnTarget(player, this, target);
@@ -82,6 +98,12 @@ public class StabilizationDevice : WorldObject
         if (player.IsBusy)
         {
             player.SendUseDoneEvent(WeenieError.YoureTooBusy);
+            return;
+        }
+
+        if (target.WeenieClassId == RimsStorageDeviceWcid)
+        {
+            HandleRimsChargeSiphon(player, source, target, confirmed);
             return;
         }
 
@@ -230,6 +252,78 @@ public class StabilizationDevice : WorldObject
         actionChain.EnqueueChain();
 
         player.NextUseTime = DateTime.UtcNow.AddSeconds(animTime);
+    }
+
+    /// <summary>
+    /// RIMS 1.0 charge siphon - 2023161 used on 2023139. No animation delay (unlike the
+    /// stabilize-gear flow above), so this resolves synchronously like a plain recipe use.
+    /// </summary>
+    private static void HandleRimsChargeSiphon(Player player, WorldObject source, WorldObject target, bool confirmed)
+    {
+        if (!confirmed)
+        {
+            if (
+                !player.ConfirmationManager.EnqueueSend(
+                    new Confirmation_CraftInteration(player.Guid, source.Guid, target.Guid),
+                    $"Use {source.NameWithMaterial} on {target.NameWithMaterial}?"
+                )
+            )
+            {
+                player.SendUseDoneEvent(WeenieError.ConfirmationInProgress);
+            }
+            else
+            {
+                player.SendUseDoneEvent();
+            }
+
+            return;
+        }
+
+        // Already at 100% (5 solves) - siphon still consumes the stabilizer, just no further
+        // charge gain. Matches the RIMS 0.5 scanners' existing "maintain the loop after 100%,
+        // no gain" behavior (see 2023138's own Use emote).
+        if (player.QuestManager.IsMaxSolves(RimsChargeLevelQuest))
+        {
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "The device is already fully charged - the stabilizer's reading has nowhere left to go.",
+                    ChatMessageType.Broadcast
+                )
+            );
+        }
+        else
+        {
+            player.QuestManager.Increment(RimsChargeLevelQuest);
+
+            var maxSolves = player.QuestManager.GetMaxSolves(RimsChargeLevelQuest);
+            var currentSolves = player.QuestManager.GetCurrentSolves(RimsChargeLevelQuest);
+            var percentPerSolve = maxSolves > 0 ? 100 / maxSolves : 0;
+            var currentPercent = currentSolves * percentPerSolve;
+
+            // ItemCurMana/ItemMaxMana was tried here first, but it's the wrong fit: the tooltip
+            // renders it as a raw "Stored Mana: 60" number, not a %, and there's no real mana pool
+            // behind this at all - the only thing that matters is the fixed 25% top-off at 100%
+            // release. Rewriting the item's own LongDesc instead states the real number in the
+            // actual unit that matters, visible at rest via the normal tooltip, no extra
+            // interaction needed.
+            target.SetProperty(
+                PropertyString.LongDesc,
+                $"{RimsStorageDeviceBaseLongDesc}\n\nCurrently holding {currentPercent}% charge. "
+                    + "Release at 100% to restore up to 25% of your equipped gear's total mana pool, "
+                    + "split across whatever isn't already full."
+            );
+
+            player.Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    $"The stabilizer's reading drains into the device - charge rises to {currentPercent}% (+{percentPerSolve}%).",
+                    ChatMessageType.Craft
+                )
+            );
+        }
+
+        player.TryConsumeFromInventoryWithNetworking(source, 1);
+
+        player.SendUseDoneEvent();
     }
 
     private const double MaxChance = 0.75;

@@ -306,9 +306,12 @@ public class Vendor : Creature
 
         LoadDefaultItems(itemsForSale, templateDefaultItems);
 
-        foreach (var item in Biota.PropertiesCreateList.Where(x => x.DestinationType == DestinationType.Shop))
+        if (Biota.PropertiesCreateList != null)
         {
-            LoadInventoryItem(itemsForSale, item.WeenieClassId, item.Palette, item.Shade, item.StackSize);
+            foreach (var item in Biota.PropertiesCreateList.Where(x => x.DestinationType == DestinationType.Shop))
+            {
+                LoadInventoryItem(itemsForSale, item.WeenieClassId, item.Palette, item.Shade, item.StackSize);
+            }
         }
 
         //if (Biota.PropertiesGenerator != null && !PropertyManager.GetBool("vendor_shop_uses_generator").Item)
@@ -427,6 +430,14 @@ public class Vendor : Creature
                 if (weenie?.PropertiesInt != null && weenie.PropertiesInt.TryGetValue(PropertyInt.ItemType, out var it))
                 {
                     itemTypeInt = it;
+                }
+
+                // Salvage bags are classified as Misc at the weenie level (see the ItemType.Misc
+                // remap below) to avoid client-side issues tied to ItemType.TinkeringMaterial;
+                // treat them as TinkeringMaterial here so section/sort grouping is unaffected.
+                if (weenie?.WeenieType == WeenieType.Salvage)
+                {
+                    itemTypeInt = (int)ItemType.TinkeringMaterial;
                 }
 
                 var section = MarketSection.Unknown;
@@ -600,11 +611,6 @@ public class Vendor : Creature
 
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
 
-            if (item.ItemType == ItemType.TinkeringMaterial)
-            {
-                item.ItemType = ItemType.Misc;
-            }
-
             item.ContainerId = Guid.Full;
             item.Location = null;
             item.VendorShopCreateListStackSize = Math.Max(1, item.StackSize ?? 1);
@@ -775,6 +781,14 @@ public class Vendor : Creature
                     itemTypeInt = it;
                 }
 
+                // Salvage bags are classified as Misc at the weenie level (see the ItemType.Misc
+                // remap below) to avoid client-side issues tied to ItemType.TinkeringMaterial;
+                // treat them as TinkeringMaterial here so section/sort grouping is unaffected.
+                if (weenie?.WeenieType == WeenieType.Salvage)
+                {
+                    itemTypeInt = (int)ItemType.TinkeringMaterial;
+                }
+
                 var section = MarketSection.Unknown;
                 if (itemTypeInt == (int)ItemType.MeleeWeapon)
                 {
@@ -941,13 +955,6 @@ public class Vendor : Creature
 
             // Tag the display item so we can resolve the listing on purchase.
             item.SetProperty(PropertyInt.MarketListingId, listing.Id);
-
-            // Client-side vendor UI filtering can hide salvage (tinkering material) entries for some vendor templates.
-            // For market-vendor display purposes, remap salvage to Misc so it renders in the list.
-            if (item.ItemType == ItemType.TinkeringMaterial)
-            {
-                item.ItemType = ItemType.Misc;
-            }
 
             item.ContainerId = Guid.Full;
             item.Location = null;
@@ -1851,39 +1858,11 @@ public class Vendor : Creature
             ShopHeritage = TreasureHeritageGroup.Invalid;
         }
 
-        if (ShopTier == 0) // We're not in a town and no defined shop tier! See what's around us.
+        if (ShopTier == 0) // We're not in a town and no defined shop tier! Fall back to the nearest town's tier.
         {
-            ShopTier = 1; // Fallback to tier 1 if there's nothing around us.
+            var nearestTown = Town.GetNearestTown(this);
 
-            var creatures = CurrentLandblock
-                .GetAllWorldObjectsForDiagnostics()
-                .Where(x => x.ItemType == ItemType.Creature)
-                .Select(x => x as Creature)
-                .Where(x => x is not null);
-
-            foreach (var creature in creatures)
-            {
-                var pkStatus = (PlayerKillerStatus)(creature.GetProperty(PropertyInt.PlayerKillerStatus) ?? 0);
-
-                if (string.IsNullOrEmpty(creature.Name) || creature.Guid.IsPlayer())
-                {
-                    continue;
-                }
-
-                if (
-                    pkStatus != PlayerKillerStatus.RubberGlue
-                    && creature.DeathTreasure is not null
-                    && creature.DeathTreasure.Tier > ShopTier
-                )
-                {
-                    ShopTier = creature.DeathTreasure.Tier; // Find highest monster tier
-                }
-
-                if (creature.Tier.HasValue && creature.Tier > ShopTier)
-                {
-                    ShopTier = creature.Tier.Value; // Find highest NPC tier
-                }
-            }
+            ShopTier = (int)Town.GetTownTier(nearestTown) + 1;
         }
 
         // Let's overwrite the database values for MerchandiseMaxValue depending on our tier.
@@ -2255,6 +2234,10 @@ public class Vendor : Creature
             //case "MacNiall's Freehold":
             //case "Kryst":
         }
+
+        // Lets a vendor's own LootQualityMod property (otherwise unused on Vendor) bias its
+        // random-restock item quality on top of whatever the town-based lookup above set.
+        ShopQualityMod += (float)(LootQualityMod ?? 0.0);
     }
 
     private void LoadDefaultItems(

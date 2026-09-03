@@ -362,6 +362,15 @@ partial class Creature
         //if (!IsRanged)
         UpdatePosition();
 
+        // UpdatePosition() runs physics, which can relocate the monster to a new landblock.
+        // If that transition fails (e.g. returning home across an unloaded/invalid cell),
+        // AddWorldObjectInternal destroys and nulls PhysicsObj, orphaning the monster - nothing left to do.
+        if (PhysicsObj is null)
+        {
+            _log.Warning("Movement aborted - PhysicsObj became null during UpdatePosition for {Monster}", Name);
+            return;
+        }
+
         if (MonsterState == State.Awake && AttackTarget != null && GetDistanceToTarget() >= MaxChaseRange)
         {
             CancelMoveTo();

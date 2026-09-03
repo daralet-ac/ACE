@@ -425,10 +425,12 @@ public class TrophySolvent : Stackable
             essence.SetProperty(PropertyInt.TrophyQuality, trophy.TrophyQuality.Value);
         }
 
-        // Transfer the trophy value
-        if (trophy.Value.HasValue)
+        // Transfer the trophy's per-unit value (essence is not stackable, so avoid the stack's total Value)
+        var trophyUnitValue = trophy.StackUnitValue ?? (trophy.Value / (trophy.StackSize ?? 1));
+
+        if (trophyUnitValue.HasValue)
         {
-            essence.SetProperty(PropertyInt.Value, trophy.Value.Value);
+            essence.SetProperty(PropertyInt.Value, trophyUnitValue.Value);
         }
 
         var qualityOffset = (trophy.TrophyQuality ?? 1) - 1;

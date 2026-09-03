@@ -239,6 +239,12 @@ public class SpellTransference : Stackable
                 allSpells.Add((int)target.ProcSpell);
             }
 
+            // gems carry their spell on SpellDID rather than in the spellbook
+            if (target.SpellDID != null && target.SpellDID != 0 && !allSpells.Contains((int)target.SpellDID))
+            {
+                allSpells.Add((int)target.SpellDID);
+            }
+
             var spells = new List<int>();
 
             foreach (var spellId in allSpells)
@@ -356,35 +362,13 @@ public class SpellTransference : Stackable
 
                         pearl.SpellExtracted = source.SpellToExtract;
 
-                        var itemType = "";
-                        if (target.ItemType == ItemType.Jewelry)
-                        {
-                            itemType = "a piece of jewelry";
-                        }
-                        if (target.ItemType == ItemType.Armor)
-                        {
-                            itemType = "a piece of armor";
-                        }
-                        if (target.ItemType == ItemType.MissileWeapon || target.ItemType == ItemType.MeleeWeapon)
-                        {
-                            itemType = "a missile or melee weapon";
-                        }
-                        if (target.ItemType == ItemType.Caster)
-                        {
-                            itemType = "a magic caster";
-                        }
-                        if (target.ItemType == ItemType.Clothing)
-                        {
-                            itemType = "a piece of clothing";
-                        }
-
                         player.TryConsumeFromInventoryWithNetworking(source, amountToAdd);
 
                         pearl.Tier = target.Tier;
                         var wieldReq = LootGenerationFactory.GetWieldDifficultyPerTier(pearl.Tier ?? 1);
                         pearl.LongDesc =
                             $"This pearl contains the spell {spell.Name}." +
-                            $"\n\nIt may only be applied to {itemType} with a Wield Requirement of {wieldReq} or greater." +
+                            $"\n\nIt may be applied to any loot-generated armor, clothing, jewelry, weapon, or caster with a Wield Requirement of {wieldReq} or greater." +
                             $"\n\nAdding this spell will increase Spellcraft and Arcane Lore of the target item, and will bind it to your character." +
                             $"\n\nIf the spell is an on-hit weapon proc, it will add a Life or War Magic skill wield requirement as well.";
                         pearl.TinkerLog = $"{target.ItemType}";
@@ -470,34 +454,17 @@ public class SpellTransference : Stackable
                 return;
             }
 
-            var validType = false;
+            // a contained spell may be moved onto any loot-generated equippable item,
+            // regardless of the item type it was originally extracted from
+            const ItemType validTransferTargetTypes =
+                ItemType.Armor
+                | ItemType.Clothing
+                | ItemType.Jewelry
+                | ItemType.MeleeWeapon
+                | ItemType.MissileWeapon
+                | ItemType.Caster;
 
-            if (Enum.TryParse<ItemType>(source.TinkerLog, out var itemType))
-            {
-                if (itemType == ItemType.MissileWeapon || itemType == ItemType.MeleeWeapon)
-                {
-                    if (target.ItemType != ItemType.MissileWeapon && target.ItemType != ItemType.MeleeWeapon)
-                    {
-                        player.Session.Network.EnqueueSend(
-                            new GameMessageSystemChat(
-                                $"The {source.Name} cannot be used on an item of that type.",
-                                ChatMessageType.Craft
-                            )
-                        );
-                        player.SendUseDoneEvent();
-                        return;
-                    }
-                    else
-                    {
-                        validType = true;
-                    }
-                }
-
-                if (target.ItemType == itemType)
-                {
-                    validType = true;
-                }
-            }
+            var validType = (target.ItemType & validTransferTargetTypes) != ItemType.None;
 
             if (!validType)
             {

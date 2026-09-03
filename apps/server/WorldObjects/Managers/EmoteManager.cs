@@ -456,6 +456,24 @@ public class EmoteManager
 
                     if (trinket != null)
                     {
+                        // Free up the placeholder's inventory slot before giving the real trinket.
+                        // This item is normally cleaned up by a subsequent DeleteSelf emote action,
+                        // but that runs too late: if this was the player's last free main pack slot,
+                        // the trinket would overflow into an unrelated side pack (e.g. a salvage bag)
+                        // instead of taking the placeholder's spot.
+                        var placeholder = player.FindObject(
+                            WorldObject.Guid.Full,
+                            Player.SearchLocations.MyInventory | Player.SearchLocations.MyEquippedItems,
+                            out _,
+                            out _,
+                            out _
+                        );
+
+                        if (placeholder != null)
+                        {
+                            player.TryConsumeFromInventoryWithNetworking(placeholder);
+                        }
+
                         player.TryCreateForGive(WorldObject, trinket);
                     }
                 }
@@ -1008,8 +1026,18 @@ public class EmoteManager
                 {
                     var numRequired = emote.StackSize ?? 1;
 
-                    var items = player.GetInventoryItemsOfWCID(emote.WeenieClassId ?? 0);
-                    items.AddRange(player.GetEquippedObjectsOfWCID(emote.WeenieClassId ?? 0));
+                    // Trophy Refuse/InqYesNo/InqOwnsItems rows are written against the base
+                    // (quality 1) WCID so one row matches every quality (see
+                    // TrophyWcids.ToBaseTrophyWcid / WorldObject.HasGiveOrRefuseEmoteForItem).
+                    // Resolve to the WCID of the item actually examined, or a quality-10
+                    // trophy would never be found under the base WCID this check was written for.
+                    var wcidToCheck =
+                        creature?.RefusalItem.Item1 is { TrophyQuality: not null } refusedTrophyItem
+                            ? refusedTrophyItem.WeenieClassId
+                            : emote.WeenieClassId ?? 0;
+
+                    var items = player.GetInventoryItemsOfWCID(wcidToCheck);
+                    items.AddRange(player.GetEquippedObjectsOfWCID(wcidToCheck));
                     var numItems = items.Sum(i => i.StackSize ?? 1);
 
                     uint? refusalItemGuidId = null;
@@ -2267,6 +2295,16 @@ public class EmoteManager
                         break;
                     }
 
+                    // Trophy Refuse/InqYesNo/TakeItems rows are written against the base
+                    // (quality 1) WCID so one row matches every quality (see
+                    // TrophyWcids.ToBaseTrophyWcid / WorldObject.HasGiveOrRefuseEmoteForItem).
+                    // Resolve to the WCID of the item actually examined, or a quality-10
+                    // trophy would never be found under the base WCID this row was written for.
+                    if (creature?.RefusalItem.Item1 is { TrophyQuality: not null } refusedTrophyItemToTake)
+                    {
+                        weenieItemToTake = refusedTrophyItemToTake.WeenieClassId;
+                    }
+
                     // If a guid was stored during a Refuse emote, make sure that specific item is taken
                     uint? refusalItemGuidId = null;
 
@@ -2881,6 +2919,33 @@ public class EmoteManager
                 }
                 break;
 
+            case EmoteType.TopOffEquippedItemsMana:
+
+                if (player != null)
+                {
+                    if (player.CombatMode != CombatMode.NonCombat)
+                    {
+                        player.SendUseDoneEvent(WeenieError.YouMustBeInPeaceModeToTrade);
+                        break;
+                    }
+
+                    var topOffPercent = emote.Percent ?? 0;
+
+                    var topOffPool = (int)
+                        Math.Round(
+                            topOffPercent
+                                * player
+                                    .EquippedObjects.Values.Where(k => k.ItemMaxMana.HasValue)
+                                    .Sum(k => k.ItemMaxMana.Value)
+                        );
+
+                    if (topOffPool > 0)
+                    {
+                        player.TopOffEquippedItemsMana(topOffPool);
+                    }
+                }
+                break;
+
             default:
                 _log.Debug(
                     "EmoteManager.Execute - Encountered Unhandled EmoteType {EmoteType} for {WorldObjectName} ({WorldObjectWeenieClassId})",
@@ -3459,7 +3524,7 @@ public class EmoteManager
         result = result.Replace("%onws", olthoiNorthCampWestSupplyPercentile);
 
         var fragmentStabilityPhaseOneLevel = PropertyManager.GetLong("fragment_stability_phase_one").Item;
-        var fragmentStabilityPhaseOnePercentile = $"{Math.Round(fragmentStabilityPhaseOneLevel / 150.0f, 1)}";
+        var fragmentStabilityPhaseOnePercentile = $"{Math.Floor(fragmentStabilityPhaseOneLevel / 150.0f * 10) / 10}";
 
         result = result.Replace("%fspo", fragmentStabilityPhaseOnePercentile);
 

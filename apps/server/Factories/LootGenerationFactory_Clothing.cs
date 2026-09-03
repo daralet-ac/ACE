@@ -253,7 +253,12 @@ public static partial class LootGenerationFactory
         var armorSlots = wo.ArmorSlots ?? 1;
 
         // Get Armor/Ward Level
-        var baseWardLevel = wo.ArmorWeightClass == (int)ArmorWeightClass.Cloth ? 7 : 5;
+        var baseWardLevel = wo.ArmorWeightClass switch
+        {
+            (int)ArmorWeightClass.Cloth => 6,
+            (int)ArmorWeightClass.Heavy => 7,
+            _ => 5,
+        };
 
         switch (wo.ArmorStyle)
         {

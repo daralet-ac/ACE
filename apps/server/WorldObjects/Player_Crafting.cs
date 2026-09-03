@@ -542,7 +542,7 @@ partial class Player
         salvageBag.ItemWorkmanship = workmanship_bag + workmanship_item * item_numItems;
 
         // increment # of items that went into this salvage bag
-        if (item.ItemType == ItemType.TinkeringMaterial)
+        if (item.WeenieType == WeenieType.Salvage)
         {
             item_numItems = item.NumItemsInMaterial ?? 1;
 
@@ -573,7 +573,7 @@ partial class Player
 
         salvageBag.Name = $"Salvage W{(int)Math.Round(salvageBag.Workmanship ?? 1)} ({salvageBag.Structure})";
 
-        if (item.ItemType == ItemType.TinkeringMaterial)
+        if (item.WeenieType == WeenieType.Salvage)
         {
             if (!PropertyManager.GetBool("salvage_handle_overages").Item)
             {
@@ -595,7 +595,7 @@ partial class Player
         // is this a bag of salvage?
         // if so, return its existing structure
 
-        if (salvageItem.ItemType == ItemType.TinkeringMaterial)
+        if (salvageItem.WeenieType == WeenieType.Salvage)
         {
             return salvageItem.Structure.Value;
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
@@ -13,7 +14,13 @@ partial class Creature
 {
     public uint CalculateManaUsage(Creature caster, Spell spell, WorldObject target = null)
     {
+        var debugTrace = (caster as Player)?.DebugSpellcasting == true ? new ManaUsageTrace() : null;
+
         var baseCost = spell.BaseMana;
+        if (debugTrace != null)
+        {
+            debugTrace.SpellBaseMana = baseCost;
+        }
 
         var manaResourcePen = 1.0f;
         if (spell.School != MagicSchool.PortalMagic)
@@ -28,6 +35,15 @@ partial class Creature
         if (castItem != null && (castItem.SpellDID ?? 0) == spell.Id)
         {
             baseCost = (uint)(castItem.ItemManaCost ?? 0);
+            if (debugTrace != null)
+            {
+                debugTrace.CastItemManaSubstitution = $"{castItem.Name} ItemManaCost={castItem.ItemManaCost ?? 0}";
+            }
+        }
+
+        if (debugTrace != null)
+        {
+            debugTrace.CostAfterResourceAndItem = baseCost;
         }
 
         if (
@@ -75,11 +91,21 @@ partial class Creature
 
         var playerCaster = caster as Player;
 
+        if (debugTrace != null)
+        {
+            debugTrace.CostAfterSpecialAdds = baseCost;
+            debugTrace.StanceInfo = "none";
+        }
+
         // Overload - Increased cost up to 100% with Overload Charged stacks
         if (playerCaster is {OverloadStanceIsActive: true})
         {
             var manaCostPenalty = (1.0f + playerCaster.ManaChargeMeter);
             baseCost = (uint)(baseCost * manaCostPenalty);
+            if (debugTrace != null)
+            {
+                debugTrace.StanceInfo = $"Overload stance, ManaChargeMeter={playerCaster.ManaChargeMeter:F3}, x{manaCostPenalty:F3}";
+            }
         }
 
         // Battery - Reduced cost up to 50% with battery Charged stacks, up to 100% if Discharging
@@ -87,11 +113,24 @@ partial class Creature
         {
             var manaCostReduction = (1.0f - playerCaster.ManaChargeMeter * 0.5f);
             baseCost = (uint)(baseCost * manaCostReduction);
+            if (debugTrace != null)
+            {
+                debugTrace.StanceInfo = $"Battery stance, ManaChargeMeter={playerCaster.ManaChargeMeter:F3}, x{manaCostReduction:F3}";
+            }
         }
         else if (playerCaster is {BatteryDischargeIsActive: true})
         {
             var manaCostReduction = (1.0f - playerCaster.DischargeLevel);
             baseCost = (uint)(baseCost * manaCostReduction);
+            if (debugTrace != null)
+            {
+                debugTrace.StanceInfo = $"Battery DISCHARGE, DischargeLevel={playerCaster.DischargeLevel:F3}, x{manaCostReduction:F3}";
+            }
+        }
+
+        if (debugTrace != null)
+        {
+            debugTrace.CostAfterStance = baseCost;
         }
 
         var abilityPenaltyMod = 0.0f;
@@ -117,20 +156,46 @@ partial class Creature
                                 + backstabPenaltyMod;
         }
 
-        var manaCostMultiplier = PropertyManager.GetDouble("mana_cost_multiplier").Item + abilityPenaltyMod;
+        var manaCostMultiplierProp = PropertyManager.GetDouble("mana_cost_multiplier").Item;
+        var manaCostMultiplier = manaCostMultiplierProp + abilityPenaltyMod;
 
         // Mana Conversion
         var manaConversion = caster.GetCreatureSkill(Skill.ManaConversion);
+
+        // Casting difficulty for the mana conversion check comes from the spell's actual Power
+        // (portal.dat casting difficulty), not the bucketed 1-7 spell tier.
+        var difficulty = spell.Power;
+
+        if (debugTrace != null)
+        {
+            debugTrace.AbilityPenaltyMod = abilityPenaltyMod;
+            debugTrace.ManaCostMultiplierProp = manaCostMultiplierProp;
+            debugTrace.ManaCostMultiplier = manaCostMultiplier;
+            debugTrace.Difficulty = difficulty;
+            debugTrace.ManaConversionCurrent = manaConversion.Current;
+        }
 
         if (
             manaConversion.AdvancementClass < SkillAdvancementClass.Trained
             || spell.Flags.HasFlag(SpellFlags.IgnoresManaConversion)
         )
         {
-            return Convert.ToUInt32(baseCost * manaCostMultiplier);
-        }
+            var untrainedManaCost = Convert.ToUInt32(baseCost * manaCostMultiplier);
 
-        var difficulty = spell.Level * 50;
+            if (debugTrace != null)
+            {
+                debugTrace.ManaConversionApplied = false;
+                debugTrace.ManaConversionSkipReason =
+                    manaConversion.AdvancementClass < SkillAdvancementClass.Trained
+                        ? $"Mana Conversion not trained (AdvancementClass {manaConversion.AdvancementClass})"
+                        : "spell has SpellFlags.IgnoresManaConversion";
+                debugTrace.CostAfterConversion = baseCost;
+                debugTrace.FinalManaCost = untrainedManaCost;
+                LogManaUsageTrace((Player)caster, spell, target, debugTrace);
+            }
+
+            return untrainedManaCost;
+        }
 
         var robeManaConversionMod = 0.0;
         var robe = EquippedObjects.Values.FirstOrDefault(e => e.CurrentWieldedLocation == EquipMask.Armor);
@@ -139,19 +204,165 @@ partial class Creature
             robeManaConversionMod = robe.ManaConversionMod ?? 0;
         }
 
+        var weaponManaConversionMod = GetWeaponManaConversionModifier(caster);
+
         var mana_conversion_skill = (uint)
-            Math.Round(manaConversion.Current * (GetWeaponManaConversionModifier(caster) + robeManaConversionMod));
+            Math.Round(manaConversion.Current * (weaponManaConversionMod + robeManaConversionMod));
+
+        if (debugTrace != null)
+        {
+            debugTrace.WeaponManaConversionMod = weaponManaConversionMod;
+            debugTrace.RobeManaConversionMod = robeManaConversionMod;
+            debugTrace.EffectiveManaConversionSkill = mana_conversion_skill;
+        }
 
         // Final Calculation
-        var manaCost = GetManaCost(caster, difficulty, baseCost, mana_conversion_skill);
+        var manaCost = GetManaCost(caster, difficulty, baseCost, mana_conversion_skill, out var savedMana, debugTrace);
 
-        return Convert.ToUInt32(manaCost * manaCostMultiplier);
+        var finalManaCost = Convert.ToUInt32(manaCost * manaCostMultiplier);
+
+        if (debugTrace != null)
+        {
+            debugTrace.FinalManaCost = finalManaCost;
+            LogManaUsageTrace((Player)caster, spell, target, debugTrace);
+        }
+
+        return finalManaCost;
     }
 
-    private static uint GetManaCost(Creature caster, uint difficulty, uint manaCost, uint manaConv)
+    /// <summary>
+    /// Full per-cast breakdown of every factor that changes a spell's mana cost, populated only when
+    /// the casting player has toggled <see cref="Player.DebugSpellcasting"/> (admin command "debug-spellcasting").
+    /// </summary>
+    private class ManaUsageTrace
     {
+        public uint SpellBaseMana;
+        public string CastItemManaSubstitution;
+        public uint CostAfterResourceAndItem;
+        public uint CostAfterSpecialAdds;
+        public string StanceInfo;
+        public uint CostAfterStance;
+        public float AbilityPenaltyMod;
+        public double ManaCostMultiplierProp;
+        public double ManaCostMultiplier;
+        public uint Difficulty;
+        public uint ManaConversionCurrent;
+        public bool ManaConversionApplied = true;
+        public string ManaConversionSkipReason;
+        public float WeaponManaConversionMod;
+        public double RobeManaConversionMod;
+        public uint EffectiveManaConversionSkill;
+        public double SkillChanceCeiling;
+        public double RollFloor;
+        public double RawRoll;
+        public double ReductionFraction;
+        public uint CostBeforeConversion;
+        public uint SavedMana;
+        public uint CostAfterConversion;
+        public bool SpecConversionApplied;
+        public int SpecConversionAmount;
+        public bool EvasiveStaminaRefundApplied;
+        public uint EvasiveStaminaRefundAmount;
+        public uint FinalManaCost;
+    }
+
+    private void LogManaUsageTrace(Player player, Spell spell, WorldObject target, ManaUsageTrace t)
+    {
+        var totalSaved = (long)t.SpellBaseMana - t.FinalManaCost;
+        var totalPct = t.SpellBaseMana > 0 ? (double)totalSaved / t.SpellBaseMana * 100 : 0;
+
+        var lines = new System.Collections.Generic.List<string>();
+
+        if (!t.ManaConversionApplied)
+        {
+            lines.Add(
+                $"[ManaDbg] {spell.Name} L{spell.Level} pow{t.Difficulty}: base {t.SpellBaseMana}"
+                + $" -> stance {t.CostAfterStance} -> MC SKIPPED ({t.ManaConversionSkipReason})"
+                + $" -> x{t.ManaCostMultiplier:F3} = {t.FinalManaCost}  (saved {totalSaved}, {totalPct:F0}%)"
+            );
+        }
+        else
+        {
+            lines.Add(
+                $"[ManaDbg] {spell.Name} L{spell.Level} pow{t.Difficulty}: base {t.SpellBaseMana}"
+                + $" -> res/item {t.CostAfterResourceAndItem} -> +adds {t.CostAfterSpecialAdds}"
+                + $" -> stance {t.CostAfterStance} -> conv {t.CostAfterConversion}"
+                + $" -> x{t.ManaCostMultiplier:F3} = {t.FinalManaCost}  (saved {totalSaved}, {totalPct:F0}%)"
+            );
+
+            var gap = (long)t.EffectiveManaConversionSkill - t.Difficulty;
+            lines.Add(
+                $"[ManaDbg]  MC {t.ManaConversionCurrent} x(wpn {t.WeaponManaConversionMod:F3} + robe {t.RobeManaConversionMod:F3})"
+                + $" = eff {t.EffectiveManaConversionSkill} vs {t.Difficulty}  gap {gap}"
+                + $"  c {t.SkillChanceCeiling:F3} roll {t.RawRoll:F3} in[{t.RollFloor:F3},{t.SkillChanceCeiling:F3}]"
+                + $" frac {t.ReductionFraction:F3}  saved {t.SavedMana}/{t.CostBeforeConversion}"
+            );
+        }
+
+        var extras = new StringBuilder();
+        if (t.StanceInfo != null && t.StanceInfo != "none")
+        {
+            extras.Append("stance[").Append(t.StanceInfo).Append("] ");
+        }
+
+        if (t.AbilityPenaltyMod != 0f || t.ManaCostMultiplierProp != 1.0)
+        {
+            extras.Append($"mult=prop {t.ManaCostMultiplierProp:F3}+abilPen {t.AbilityPenaltyMod:F3} ");
+        }
+
+        if (t.CastItemManaSubstitution != null)
+        {
+            extras.Append("itemManaCost[").Append(t.CastItemManaSubstitution).Append("] ");
+        }
+
+        if (t.SpecConversionApplied)
+        {
+            extras.Append($"spec+{t.SpecConversionAmount}hp/sp ");
+        }
+
+        if (t.EvasiveStaminaRefundApplied)
+        {
+            extras.Append($"evasive+{t.EvasiveStaminaRefundAmount}sp ");
+        }
+
+        if (extras.Length > 0)
+        {
+            lines.Add("[ManaDbg]  " + extras.ToString().TrimEnd());
+        }
+
+        _log.Information(string.Join("\n", lines));
+
+        foreach (var line in lines)
+        {
+            player.Session?.Network.EnqueueSend(new GameMessageSystemChat(line, ChatMessageType.Magic));
+        }
+    }
+
+    private static uint GetManaCost(
+        Creature caster,
+        uint difficulty,
+        uint manaCost,
+        uint manaConv,
+        out uint savedMana,
+        ManaUsageTrace trace = null
+    )
+    {
+        if (trace != null)
+        {
+            trace.CostBeforeConversion = manaCost;
+        }
+
         if (manaConv == 0 || manaCost <= 1)
         {
+            savedMana = 0;
+            if (trace != null)
+            {
+                trace.ManaConversionApplied = false;
+                trace.ManaConversionSkipReason =
+                    manaConv == 0 ? "effective mana conversion skill rounded to 0" : "cost <= 1";
+                trace.CostAfterConversion = manaCost;
+            }
+
             return manaCost;
         }
 
@@ -159,10 +370,20 @@ partial class Creature
 
         var manaConModCeiling = SkillCheck.GetSkillChance(manaConv, difficulty);
         var manaConModFloor = manaConModCeiling * 0.5;
-        var reductionRoll = maxManaReduction * ThreadSafeRandom.Next((float)manaConModFloor, (float)manaConModCeiling);
-        var savedMana = (uint)Math.Round(manaCost * reductionRoll);
+        var rawRoll = ThreadSafeRandom.Next((float)manaConModFloor, (float)manaConModCeiling);
+        var reductionRoll = maxManaReduction * rawRoll;
+        savedMana = (uint)Math.Round(manaCost * reductionRoll);
 
         manaCost -= savedMana;
+
+        if (trace != null)
+        {
+            trace.SkillChanceCeiling = manaConModCeiling;
+            trace.RollFloor = manaConModFloor;
+            trace.RawRoll = rawRoll;
+            trace.ReductionFraction = reductionRoll;
+            trace.SavedMana = savedMana;
+        }
 
         if (caster.GetCreatureSkill(Skill.ManaConversion).AdvancementClass == SkillAdvancementClass.Specialized
             && manaCost <= caster.Mana.Current)
@@ -170,14 +391,30 @@ partial class Creature
             var conversionAmount = (int)Math.Round(savedMana * 0.5f);
             caster.UpdateVitalDelta(caster.Health, conversionAmount);
             caster.UpdateVitalDelta(caster.Stamina, conversionAmount);
+            if (trace != null)
+            {
+                trace.SpecConversionApplied = true;
+                trace.SpecConversionAmount = conversionAmount;
+            }
         }
 
         if (caster is Player { EvasiveStanceIsActive: true })
         {
             caster.UpdateVitalDelta(caster.Stamina, manaCost);
+            if (trace != null)
+            {
+                trace.EvasiveStaminaRefundApplied = true;
+                trace.EvasiveStaminaRefundAmount = manaCost;
+            }
         }
 
-        return Math.Max(manaCost, 1);
+        var clamped = Math.Max(manaCost, 1);
+        if (trace != null)
+        {
+            trace.CostAfterConversion = clamped;
+        }
+
+        return clamped;
     }
 
     /// <summary>

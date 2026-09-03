@@ -1930,7 +1930,9 @@ partial class Player
         //Console.WriteLine($"-> DoHandleActionPutItemInContainer({item.Name}, {itemRootOwner?.Name}, {itemWasEquipped}, {container?.Name}, ContainerRootOwner: {containerRootOwner?.Name}, {placement})");
 
         var containerValidTypes = (ItemType)(container.MerchandiseItemTypes ?? 0);
-        var itemType = item.WeenieType == WeenieType.Ammunition ? ItemType.CraftFletchingIntermediate : item.ItemType;
+        var itemType = item.WeenieType == WeenieType.Ammunition ? ItemType.CraftFletchingIntermediate
+            : item.WeenieType == WeenieType.Salvage ? ItemType.TinkeringMaterial
+            : item.ItemType;
         if (containerValidTypes != 0 && (itemType & containerValidTypes) == 0)
         {
             Session.Network.EnqueueSend(
@@ -2791,8 +2793,14 @@ partial class Player
             return true;
         }
 
+        Position wieldPrevLocation = null;
+        Landblock prevLandblock = null;
+
         if (item.CurrentLandblock != null) // Movement is an item pickup off the landblock
         {
+            wieldPrevLocation = new Position(item.Location);
+            prevLandblock = item.CurrentLandblock;
+
             item.CurrentLandblock.RemoveWorldObject(item.Guid, false, true);
             item.Location = null;
         }
@@ -2814,13 +2822,38 @@ partial class Player
             ); // Custom error message
             Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, item.Guid.Full));
 
-            // todo: So the item isn't lost, we should try to put the item in the players inventory, or if that's full, on the landblock.
-            _log.Warning(
-                "Item 0x{0:X8}:{1} for player {2} lost from DoHandleActionGetAndWieldItem failure.",
-                item.Guid.Full,
-                item.Name,
-                Name
-            );
+            // The item was already pulled out of its source (landblock or container) above, so on
+            // equip failure it has to be put back somewhere instead of being left orphaned for the
+            // rest of the session (recoverable only via relog, since nothing here ever re-saved the
+            // half-applied state to the DB). Mirrors DoHandleActionPutItemInContainer's existing
+            // recovery for the exact same "already removed from source" shape - this path used to
+            // be effectively unreachable (a normal item that passes CheckWieldRequirements almost
+            // never fails again a few lines later), until world-db's Tide Mage unstable-loot content
+            // gave it a reliable way to fail here on purpose (see Creature_Equipment.cs's
+            // TryEquipObject() IsUnstable guard).
+            if (wieldPrevLocation != null)
+            {
+                var landblockReturn = new ActionChain();
+
+                landblockReturn.AddDelaySeconds(1);
+                landblockReturn.AddAction(prevLandblock, () => RemoveTrackedObject(item, false));
+                landblockReturn.AddDelaySeconds(1);
+                landblockReturn.AddAction(
+                    prevLandblock,
+                    () =>
+                    {
+                        item.Location = new Position(wieldPrevLocation);
+                        LandblockManager.AddObject(item);
+                    }
+                );
+                landblockReturn.EnqueueChain();
+            }
+            else if (itemRootOwner == null || !itemRootOwner.TryAddToInventory(item))
+            {
+                _log.Error(
+                    $"{Name}.DoHandleActionGetAndWieldItem({item.Name} ({item.Guid}), {fromContainer?.Name} ({fromContainer?.Guid}), {itemRootOwner?.Name} ({itemRootOwner?.Guid}), {wasEquipped}, {wieldedLocation}, {fromSplit}) - removed item from original location, failed to equip, failed to re-add to original location"
+                );
+            }
 
             return false;
         }
@@ -3516,7 +3549,9 @@ partial class Player
         }
 
         var containerValidTypes = (ItemType)(container.MerchandiseItemTypes ?? 0);
-        var itemType = stack.WeenieType == WeenieType.Ammunition ? ItemType.CraftFletchingIntermediate : stack.ItemType;
+        var itemType = stack.WeenieType == WeenieType.Ammunition ? ItemType.CraftFletchingIntermediate
+            : stack.WeenieType == WeenieType.Salvage ? ItemType.TinkeringMaterial
+            : stack.ItemType;
         if (containerValidTypes != 0 && (itemType & containerValidTypes) == 0)
         {
             Session.Network.EnqueueSend(

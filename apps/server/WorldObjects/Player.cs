@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using ACE.Common;
 using ACE.Database;
@@ -1447,5 +1448,75 @@ public partial class Player : Creature, IPlayer
             default:
                 return 8;
         }
+    }
+
+    /// <summary>
+    /// Rations a mana pool across every one of this player's currently-equipped items that still
+    /// needs it, exactly like a native ManaStone gives mana to itself (extracted from
+    /// ManaStone.HandleActionUseOnTarget's self-target branch, behavior unchanged there - see
+    /// ManaStone.cs). Repeatedly re-splits whatever's left across whichever items still aren't
+    /// topped off, so items needing less than an even split don't waste their share of the pool.
+    ///
+    /// Does not touch anything on the caller's own object (no ItemCurMana concept here) - the
+    /// caller is responsible for whatever bookkeeping its own source of the pool needs (a
+    /// persisted charge, a one-shot computed percentage, etc.) using the returned leftover.
+    /// </summary>
+    /// <param name="manaPool">The amount of mana available to distribute.</param>
+    /// <returns>Whatever was left over once no equipped item needed more, and how much each item
+    /// that received any actually got (empty if no equipped item needed mana at all).</returns>
+    public (int leftover, Dictionary<WorldObject, int> itemsGivenMana) TopOffEquippedItemsMana(int manaPool)
+    {
+        var origItemsNeedingMana = EquippedObjects
+            .Values.Where(k => k.ItemCurMana.HasValue && k.ItemMaxMana.HasValue && k.ItemCurMana < k.ItemMaxMana)
+            .ToList();
+        var itemsGivenMana = new Dictionary<WorldObject, int>();
+
+        while (manaPool > 0)
+        {
+            var itemsNeedingMana = origItemsNeedingMana.Where(k => k.ItemCurMana < k.ItemMaxMana).ToList();
+            if (itemsNeedingMana.Count < 1)
+            {
+                break;
+            }
+
+            var ration = Math.Max(manaPool / itemsNeedingMana.Count, 1);
+
+            foreach (var item in itemsNeedingMana)
+            {
+                var manaNeededForTopoff = (int)(item.ItemMaxMana - item.ItemCurMana);
+                var adjustedRation = Math.Min(ration, manaNeededForTopoff);
+
+                manaPool -= adjustedRation;
+
+                if (LumAugItemManaGain != 0)
+                {
+                    adjustedRation = (int)
+                        Math.Round(adjustedRation * Creature.GetPositiveRatingMod(LumAugItemManaGain * 5));
+                    if (adjustedRation > manaNeededForTopoff)
+                    {
+                        var diff = adjustedRation - manaNeededForTopoff;
+                        adjustedRation = manaNeededForTopoff;
+                        manaPool += diff;
+                    }
+                }
+
+                item.ItemCurMana += adjustedRation;
+                if (!itemsGivenMana.ContainsKey(item))
+                {
+                    itemsGivenMana[item] = adjustedRation;
+                }
+                else
+                {
+                    itemsGivenMana[item] += adjustedRation;
+                }
+
+                if (manaPool <= 0)
+                {
+                    break;
+                }
+            }
+        }
+
+        return (manaPool, itemsGivenMana);
     }
 }

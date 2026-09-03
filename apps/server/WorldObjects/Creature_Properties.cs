@@ -557,10 +557,11 @@ partial class Creature
     public uint GetModdedPhysicalDefSkill()
     {
         var meleeDefSkill = GetCreatureSkill(Skill.PhysicalDefense);
-        var hardenedDefenseBonus = Jewel.GetJewelEffectMod(this as Player, PropertyInt.GearHardenedDefense);
+        // Hardened Fortification (Diamond) is a ramping physical damage reduction applied in
+        // DamageEvent.GetRatingHardenedDefenseDamageResistanceBonus(), not a defense-skill bonus.
         var armorMeleeDefSkillMod = (GetArmorPhysicalDefMod() ?? 0) + 1;
         var weaponPhysicalDefenseSkillMod = GetWeaponPhysicalDefenseModifier(this) - 1.0f;
-        var tempMeleeDefSkill = (meleeDefSkill.Current + hardenedDefenseBonus) * (armorMeleeDefSkillMod + weaponPhysicalDefenseSkillMod);
+        var tempMeleeDefSkill = meleeDefSkill.Current * (armorMeleeDefSkillMod + weaponPhysicalDefenseSkillMod);
         var moddedMeleeDefSkill = (uint)tempMeleeDefSkill;
 
         return moddedMeleeDefSkill;
@@ -585,10 +586,12 @@ partial class Creature
     public uint GetModdedMagicDefSkill()
     {
         var magicDefSkill = GetCreatureSkill(Skill.MagicDefense);
-        var nullificationBonus = Jewel.GetJewelEffectMod(this as Player, PropertyInt.GearNullification);
+        // Nullification (Amethyst) is a ramping spell-damage reduction applied in
+        // WorldObject_Magic.CheckForRatingNullificationBoostDefenseBonus() and the spell-projectile
+        // absorb path, not a magic-defense-skill bonus.
         var armorMagicDefSkillMod = (GetArmorMagicDefMod() ?? 0) + 1;
         var weaponMagicDefSkillMod = GetWeaponMagicDefenseModifier(this) - 1.0f;
-        var tempMagicDefSkill = (magicDefSkill.Current + nullificationBonus) * (armorMagicDefSkillMod + weaponMagicDefSkillMod);
+        var tempMagicDefSkill = magicDefSkill.Current * (armorMagicDefSkillMod + weaponMagicDefSkillMod);
         var moddedMagicDefSkill = (uint)tempMagicDefSkill;
 
         return moddedMagicDefSkill;
