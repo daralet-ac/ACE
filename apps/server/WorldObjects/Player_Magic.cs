@@ -1110,6 +1110,13 @@ partial class Player
             var before = manaUsed;
             manaUsed = (uint)(manaUsed * manaModifier);
 
+            if (DebugSpellcasting)
+            {
+                var scarabMsg = $"[ManaDbg]  scarab factor {manaModifier:F3}: manaUsed {before} -> {manaUsed}";
+                _log.Information(scarabMsg);
+                Session.Network.EnqueueSend(new GameMessageSystemChat(scarabMsg, ChatMessageType.Magic));
+            }
+
             if (manaModifier < 1.0f)
             {
                 Session.Network.EnqueueSend(
@@ -2046,6 +2053,13 @@ partial class Player
         SpellCategory[] advancedSpellCategories =
         {
             // War
+            SpellCategory.AcidBurst,
+            SpellCategory.BludgeoningBurst,
+            SpellCategory.ColdBurst,
+            SpellCategory.ElectricBurst,
+            SpellCategory.FireBurst,
+            SpellCategory.PiercingBurst,
+            SpellCategory.SlashingBurst,
             SpellCategory.AcidBlast,
             SpellCategory.BludgeoningBlast,
             SpellCategory.ColdBlast,

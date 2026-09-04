@@ -1433,10 +1433,17 @@ partial class WorldObject
                         }
                     }
                 }
-                playerAttacker.UpdateVitalDelta(
-                    playerAttacker.Mana,
-                    (int)(baseCost * (scarabReduction * -1) * loreScaler)
-                );
+                var procManaCost = (int)(baseCost * (scarabReduction * -1) * loreScaler);
+                playerAttacker.UpdateVitalDelta(playerAttacker.Mana, procManaCost);
+
+                if (playerAttacker.DebugSpellcasting)
+                {
+                    var procMsg =
+                        $"[ManaDbg] PROC {spell.Name}: base {spell.BaseMana} -> stance {baseCost}"
+                        + $" -> scarab x{scarabReduction:F3} -> lore x{loreScaler:F3} = {-procManaCost}  (no ManaConv / mult on procs)";
+                    _log.Information(procMsg);
+                    playerAttacker.Session?.Network.EnqueueSend(new GameMessageSystemChat(procMsg, ChatMessageType.Magic));
+                }
             }
 
             attacker.TryCastSpell(spell, target, itemCaster, itemCaster, true, true);

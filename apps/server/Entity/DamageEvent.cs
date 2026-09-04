@@ -901,7 +901,7 @@ public class DamageEvent
         _criticalDamageMod = 1.0f + WorldObject.GetWeaponCritDamageMod(Weapon, attacker, _attackSkill, defender);
         _criticalDamageMod += GetMaceSpecCriticalDamageBonus(playerAttacker);
         _criticalDamageMod += GetStaffSpecCriticalDamageBonus(playerAttacker);
-        _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBludgeon, "Bludgeon");
+        _criticalDamageMod *= 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBludgeon, "Bludgeon", rampQuestSource: defender);
         _criticalDamageMod *= CriticalDamageBonusFromTrinket;
 
         CheckForRatingReprisalCriticalDefense(attacker, playerDefender);
@@ -992,10 +992,9 @@ public class DamageEvent
 
         _resistanceMod = GetResistanceMod(defender, playerDefender);
 
-        if (DamageType is DamageType.Pierce)
-        {
-            _resistanceMod += Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearPierce, "Pierce");
-        }
+        // Piercing resistance penetration (Black Garnet / Precision Strikes) is applied as a damage
+        // multiplier via _ratingPierceResistanceBonus in GetRatingPierceResistanceBonus(); it must
+        // not also be folded into the target's resistance here.
 
         _damageResistanceRatingMod = GetDamageResistRatingMod(defender, _pkBattle);
         _damageResistanceRatingMod *= 1.0f - GetRatingHardenedDefenseDamageResistanceBonus(playerDefender);
@@ -1533,7 +1532,7 @@ public class DamageEvent
         if (playerDefender != null)
         {
             Jewel.HandlePlayerDefenderBonuses(playerDefender, attacker, Damage);
-            Jewel.HandleMeleeMissileDefenderRampingQuestStamps(playerDefender);
+            Jewel.HandleMeleeMissileDefenderRampingQuestStamps(playerDefender, attacker);
         }
     }
 
@@ -1654,32 +1653,6 @@ public class DamageEvent
 
         var msg = $"Reprisal! You evade the attack by {attacker.Name}";
         playerDefender.Session.Network.EnqueueSend(new GameMessageSystemChat(msg, ChatMessageType.CombatEnemy));
-    }
-
-    /// <summary>
-    /// RATING - Bludgeon: Ramping Bludgeon Crit Damage Bonus.
-    /// Up to +20% + 1% per rating (at max quest stamps).
-    /// (JEWEL - White Sapphire)
-    /// </summary>
-    private static float GetRatingBludgeonCriticalDamageBonus(Creature defender, Player playerAttacker)
-    {
-        if (playerAttacker == null)
-        {
-            return 0.0f;
-        }
-
-        var rating = playerAttacker.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearBludgeon);
-        if (rating <= 0)
-        {
-            return 0.0f;
-        }
-
-        var rampPercentage = (float)defender.QuestManager.GetCurrentSolves($"{playerAttacker.Name},Bludgeon") / 100;
-
-        const float baseMod = 0.2f;
-        const float bonusPerRating = 0.01f;
-
-        return rampPercentage * (baseMod + bonusPerRating * rating);
     }
 
     /// <summary>
@@ -1964,13 +1937,13 @@ public class DamageEvent
 
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForAttackHeightMediumAttackSkillBonus(playerAttacker));
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForCombatAbilitySteadyStrikeAttackSkillBonus(playerAttacker));
-        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * (1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBravado, "Bravado")));
+        EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * (1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBravado, "Bravado", rampQuestSource: defender)));
 
         _effectiveDefenseSkill = (uint)(defender.GetEffectiveDefenseSkill(CombatType) * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker)
         );
 
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * CheckForAttackHeightLowDefenseSkillBonus(playerDefender, playerAttacker));
-        _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * (1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearFamiliarity, "Familiarity")));
+        _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * (1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearFamiliarity, "Familiarity", rampQuestSource: attacker)));
 
         var evadeChance = SkillCheck.GetSkillChance(_effectiveDefenseSkill, EffectiveAttackSkill);
         evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, playerDefender);

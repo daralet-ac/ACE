@@ -548,8 +548,9 @@ public static class LootTables
     // Bonus crit multi per tier for Mace/Staff/Atlatl/Wand
     public static readonly float[] BonusCritMultiplierPerTier = [0.0f, 0.1f, 0.15f, 0.2f, 0.25f, 0.3f, 0.4f, 0.5f];
 
-    // Jewelry Ward Level per Tier
-    public static readonly int[] JewelryBaseWardLeverPerTier = [0, 10, 20, 30, 40, 50, 75, 100, 126];
+    // Jewelry Ward Level per Tier - index == tier, mirrors GetBaseWardOfTier in
+    // LootGenerationFactory so retiered/stabilized jewelry matches freshly generated jewelry.
+    public static readonly int[] JewelryBaseWardLeverPerTier = [0, 4, 4, 7, 11, 14, 18, 25, 38, 50];
 
     // Jewelry Rating per Tier
     public static readonly int[] JewelryBaseRatingPerTier = [0, 1, 2, 3, 4, 5, 6, 7, 8];

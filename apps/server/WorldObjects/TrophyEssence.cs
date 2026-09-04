@@ -41,15 +41,19 @@ public class TrophyEssence : WorldObject
         0, 20, 40, 60, 80, 100, 130, 160, 190, 220
     ];
 
-    // Output WCID ranges: spell foods 1054600-1054731 (12 bases × 11 spells),
-    // spell potions 1054732-1054959 (12 bases × 19 spells), Sudden foods 1054960+ (12 bases × 3 vitals).
-    private const uint FoodSpellOutputBase   = 1054600u;
-    private const uint PotionSpellOutputBase = 1054732u;
-    private const uint FoodSuddenOutputBase  = 1054960u;
+    // Output WCID ranges, one distinct WCID per quality tier (1-10) so that different-quality crafted
+    // items never share a WCID and can never be conflated/merged by the client:
+    // spell foods 1060000-1061319 (12 bases × 11 spells × 10 tiers),
+    // spell potions 1061320-1063599 (12 bases × 19 spells × 10 tiers),
+    // Sudden foods 1063600-1063959 (12 bases × 3 vitals × 10 tiers).
+    private const uint FoodSpellOutputBase   = 1060000u;
+    private const uint PotionSpellOutputBase = 1061320u;
+    private const uint FoodSuddenOutputBase  = 1063600u;
 
     private const int CookSpellCount = 11;
     private const int AlchSpellCount = 19;
     private const int VitalCount     = 3;
+    private const int TierCount      = 10;
 
     /// <summary>
     /// Maps each cooking target WCID to its row index (0-11) in the food variant WCID table.
@@ -64,7 +68,7 @@ public class TrophyEssence : WorldObject
 
     /// <summary>
     /// Maps each alchemy target WCID to its row index (0-11) in the potion variant WCID table,
-    /// ordered Health/Stamina/Mana per tier to match the sequence starting at 1054732.
+    /// ordered Health/Stamina/Mana per tier to match the sequence starting at PotionSpellOutputBase.
     /// </summary>
     private static readonly Dictionary<uint, int> TargetPotionBaseIndex = new()
     {
@@ -289,7 +293,7 @@ public class TrophyEssence : WorldObject
         _    => 4,
     };
 
-    private static uint? GetOutputFoodWcid(uint targetWcid, uint baseSpellId)
+    private static uint? GetOutputFoodWcid(uint targetWcid, uint baseSpellId, int trophyQuality)
     {
         if (!TargetFoodBaseIndex.TryGetValue(targetWcid, out var baseIndex))
         {
@@ -301,10 +305,15 @@ public class TrophyEssence : WorldObject
             return null;
         }
 
-        return FoodSpellOutputBase + (uint)(baseIndex * CookSpellCount + spellIndex);
+        if (trophyQuality < 1 || trophyQuality > TierCount)
+        {
+            return null;
+        }
+
+        return FoodSpellOutputBase + (uint)((baseIndex * CookSpellCount + spellIndex) * TierCount + (trophyQuality - 1));
     }
 
-    private static uint? GetOutputPotionWcid(uint targetWcid, uint baseSpellId)
+    private static uint? GetOutputPotionWcid(uint targetWcid, uint baseSpellId, int trophyQuality)
     {
         if (!TargetPotionBaseIndex.TryGetValue(targetWcid, out var baseIndex))
         {
@@ -316,10 +325,15 @@ public class TrophyEssence : WorldObject
             return null;
         }
 
-        return PotionSpellOutputBase + (uint)(baseIndex * AlchSpellCount + spellIndex);
+        if (trophyQuality < 1 || trophyQuality > TierCount)
+        {
+            return null;
+        }
+
+        return PotionSpellOutputBase + (uint)((baseIndex * AlchSpellCount + spellIndex) * TierCount + (trophyQuality - 1));
     }
 
-    private static uint? GetSuddenFoodWcid(uint targetWcid, PropertyAttribute2nd vital)
+    private static uint? GetSuddenFoodWcid(uint targetWcid, PropertyAttribute2nd vital, int trophyQuality)
     {
         if (!TargetFoodBaseIndex.TryGetValue(targetWcid, out var baseIndex))
         {
@@ -331,7 +345,12 @@ public class TrophyEssence : WorldObject
             return null;
         }
 
-        return FoodSuddenOutputBase + (uint)(baseIndex * VitalCount + vitalIndex);
+        if (trophyQuality < 1 || trophyQuality > TierCount)
+        {
+            return null;
+        }
+
+        return FoodSuddenOutputBase + (uint)((baseIndex * VitalCount + vitalIndex) * TierCount + (trophyQuality - 1));
     }
 
     private static int GetDifficulty(int trophyQuality)
@@ -468,12 +487,12 @@ public class TrophyEssence : WorldObject
         {
             var baseSpellId = (uint)(spellId.Value - (trophyQuality - 1));
             outputWcid = isCookTarget
-                ? GetOutputFoodWcid(target.WeenieClassId, baseSpellId)
-                : GetOutputPotionWcid(target.WeenieClassId, baseSpellId);
+                ? GetOutputFoodWcid(target.WeenieClassId, baseSpellId, trophyQuality)
+                : GetOutputPotionWcid(target.WeenieClassId, baseSpellId, trophyQuality);
         }
         else if (isShort && isCookTarget && chugVital != PropertyAttribute2nd.Undef)
         {
-            outputWcid = GetSuddenFoodWcid(target.WeenieClassId, chugVital);
+            outputWcid = GetSuddenFoodWcid(target.WeenieClassId, chugVital, trophyQuality);
         }
 
         if (outputWcid == null)

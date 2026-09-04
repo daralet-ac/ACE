@@ -364,7 +364,9 @@ partial class WorldObject
         var difficulty = (uint)(targetCreature.GetModdedMagicDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(targetCreature, casterCreature));
 
         difficulty = Convert.ToUInt32(difficulty * (1.0f + CheckForCombatAbilityReflectMagicDefBonus(targetPlayer)));
-        difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, "Familiarity")));
+        // Familiar Foe (Fire Opal): the ramp stamps live on the casting creature's QuestManager,
+        // keyed by the defending player's name (accrued while that player attacked this creature).
+        difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, "Familiarity", rampQuestSource: casterCreature)));
 
         var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, targetPlayer);
 
@@ -444,38 +446,6 @@ partial class WorldObject
         }
 
         return resisted;
-    }
-
-    /// <summary>
-    /// RATING - Familiarity: Bonus resist chance for having attacked target creature.
-    /// Up to +20% + 1% per rating (with max quest stamps).
-    /// (JEWEL - Fire Opal)
-    /// </summary>
-    private static float CheckForRatingFamiliaritySpellResistBonus(Player targetPlayer, Creature casterCreature)
-    {
-        if (targetPlayer == null || casterCreature == null)
-        {
-            return 1.0f;
-        }
-
-        var rating = targetPlayer.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearFamiliarity);
-
-        if (rating <= 0)
-        {
-            return 1.0f;
-        }
-
-        if (!casterCreature.QuestManager.HasQuest($"{targetPlayer.Name},Familiarity"))
-        {
-            return 1.0f;
-        }
-
-        var rampPercentage = Math.Clamp((float)casterCreature.QuestManager.GetCurrentSolves($"{targetPlayer.Name},Familiarity") / 100, 0.0f, 1.0f);
-
-        const float baseMod = 0.2f;
-        const float bonusPerRating = 0.01f;
-
-        return rampPercentage * (baseMod + bonusPerRating * rating);
     }
 
     /// <summary>
@@ -1094,7 +1064,15 @@ partial class WorldObject
         if (tryBoost > 0) // heal
         {
             // increases
-            tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearSelflessness)));
+            // Selfless Spirit (Lavender Jade): full bonus when restoring others, an equivalent
+            // penalty when restoring yourself, and no effect when restoring a pet/monster.
+            var selflessnessMod = Jewel.GetJewelEffectMod(player, PropertyInt.GearSelflessness);
+            if (selflessnessMod > 0.0f && !targetCreature.IsMonster)
+            {
+                var selflessnessFactor = targetCreature == this ? 1.0f - selflessnessMod : 1.0f + selflessnessMod;
+                tryBoost = Convert.ToInt32(tryBoost * selflessnessFactor);
+            }
+
             tryBoost = Convert.ToInt32(tryBoost * (1.0f + Jewel.GetJewelEffectMod(player, PropertyInt.GearHealBubble)));
 
             // reductions
@@ -1402,32 +1380,6 @@ partial class WorldObject
         var equippedRating = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearHealBubble);
 
         return baseMod + equippedRating * bonusPerRating;
-    }
-
-    /// <summary>
-    /// RATING - Selflessness: +2% Boost bonus per rating to others, -2% penalty to self.
-    /// (JEWEL - Lavender Jade)
-    /// </summary>
-    private float CheckForRatingSelflessnessBoostMod(Creature targetCreature, Player player)
-    {
-        if (player == null)
-        {
-            return 1.0f;
-        }
-
-        if (player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelflessness) <= 0 || targetCreature.IsMonster)
-        {
-            return 1.0f;
-        }
-
-        var ratingMod = player.GetEquippedAndActivatedItemRatingSum(PropertyInt.GearSelflessness) * 0.02f;
-
-        if (targetCreature == this)
-        {
-            return 1.0f - ratingMod;
-        }
-
-        return 1.0f + ratingMod;
     }
 
     /// <summary>

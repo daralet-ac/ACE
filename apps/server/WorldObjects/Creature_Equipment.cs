@@ -682,58 +682,10 @@ partial class Creature
 
     protected static int GetRatingFromSocketedJewels(PropertyInt rating, WorldObject item)
     {
-        var jewelRating = 0;
-
-        for (var i = 0; i < (item.JewelSockets ?? 0); i++)
-        {
-            var jewelMaterialType = item.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketMaterialIntId);
-            var jewelQuality = item.GetProperty(Jewel.SocketedJewelDetails[i].JewelSocketQualityIntId);
-            var itemLocation = item.ValidLocations;
-
-            if (jewelMaterialType is null || jewelQuality is null || itemLocation is null)
-            {
-                continue;
-            }
-
-            if (!Jewel.JewelTypeToMaterial.TryGetValue(rating, out var materialType) || materialType != (MaterialType)jewelMaterialType)
-            {
-                continue;
-            }
-
-            jewelRating += GetRatingFromJewel(rating, (EquipMask)itemLocation, (MaterialType)jewelMaterialType, (int)jewelQuality);
-        }
-
-        //Console.WriteLine($" -Rating ({rating}) from item ({item.Name}): {jewelRating}");
-        return jewelRating;
-    }
-
-    private static int GetRatingFromJewel(PropertyInt rating, EquipMask equipMask, MaterialType jewelMaterialType, int jewelQuality)
-    {
-        // Check if the rating's material type matches the jewel's material type
-        if (!Jewel.JewelTypeToMaterial.TryGetValue(rating, out var value) && value != jewelMaterialType)
-        {
-            return 0;
-        }
-
-        // Check if the item's equip location can be used with the jewel's equip mask
-        if ((Jewel.MaterialValidLocations[jewelMaterialType] & equipMask) != equipMask)
-        {
-            return 0;
-        }
-
-        // If the item is an armor, check if the rating's type matches the jewel's alternate rating type
-        if ((EquipMask.Armor & equipMask) == equipMask && Jewel.JewelMaterialToType[jewelMaterialType].AlternateRating != rating)
-        {
-            return 0;
-        }
-
-        // If item is not an armor, check if the rating's type matches the jewels primary rating
-        if ((EquipMask.Armor & equipMask) != equipMask && Jewel.JewelMaterialToType[jewelMaterialType].PrimaryRating != rating)
-        {
-            return 0;
-        }
-
-        return jewelQuality;
+        // Delegates to the shared resolver so the combat path and the appraisal display can never
+        // disagree about which socketed effect is active. Slot is no longer a hard gate: a jewel
+        // socketed into any item contributes to any attack/cast that can use its rating.
+        return GetJewelRating(item, rating);
     }
 
     public int GetEquippedItemsWardSum(PropertyInt wardLevel)
