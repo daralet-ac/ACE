@@ -835,6 +835,30 @@ public class EmoteManager
                 }
                 break;
 
+            case EmoteType.InqMyBoolStat:
+
+                if (creature != null)
+                {
+                    var myStat = creature.GetProperty((PropertyBool)emote.Stat);
+
+                    if (myStat == null && HasValidTestNoQuality(emote.Message))
+                    {
+                        ExecuteEmoteSet(EmoteCategory.TestNoQuality, emote.Message, targetObject, true);
+                    }
+                    else
+                    {
+                        success = myStat ?? false;
+
+                        ExecuteEmoteSet(
+                            success ? EmoteCategory.TestSuccess : EmoteCategory.TestFailure,
+                            emote.Message,
+                            targetObject,
+                            true
+                        );
+                    }
+                }
+                break;
+
             case EmoteType.InqContractsFull:
 
                 ExecuteEmoteSet(
@@ -3527,6 +3551,7 @@ public class EmoteManager
             case EmoteType.InqQuest:
             case EmoteType.InqQuestSolves:
             case EmoteType.InqBoolStat:
+            case EmoteType.InqMyBoolStat:
             case EmoteType.InqIntStat:
             case EmoteType.InqFloatStat:
             case EmoteType.InqStringStat:

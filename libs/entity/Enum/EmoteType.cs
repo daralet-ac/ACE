@@ -258,5 +258,18 @@ public enum EmoteType
     /// vital's MaxValue - Stat holds the raw PropertyAttribute2nd value (Health/Stamina/Mana),
     /// Percent is a fraction (0.0-1.0) of that vital's MaxValue. Self only, no target resolution.
     /// </summary>
-    SetVitalPercent = 10028
+    SetVitalPercent = 10028,
+
+    /// <summary>
+    /// Reads a PropertyBool off the emote's own WorldObject (self, must be a Creature) and
+    /// dispatches to TestSuccess/TestFailure - the self-scoped read counterpart to the existing
+    /// SetMyBoolStat (which already exists for writing). Stat = the PropertyBool to check.
+    ///
+    /// Exists because the built-in InqBoolStat only reads the emote's TARGET (e.g. the activating
+    /// Player on a bare Use, per EmoteManager.OnUse's ExecuteEmoteSet(EmoteCategory.Use, null,
+    /// activator) call - targetObject there is the player, never self) - there was no data-driven
+    /// way for an object to branch on its OWN bool property (e.g. a generic on/off gate flipped by
+    /// SetMyBoolStat elsewhere) from its own Use/ReceiveLocalSignal/etc. emote chain.
+    /// </summary>
+    InqMyBoolStat = 10029
 }
