@@ -329,15 +329,6 @@ public enum PropertyBool : ushort
 
     [ServerOnly]
     AccountAttuned = 9016,
-
-    /// <summary>
-    /// Generic, content-driven on/off gate - not tied to any specific mechanic or encounter.
-    /// Set/read via the normal SetMyBoolStat/InqMyBoolStat emotes, and readable by
-    /// RecipeRequirements (as a plain target property) where quest-state checks aren't available.
-    /// Purely a per-object flag; has no built-in engine behavior of its own.
-    /// </summary>
-    [ServerOnly]
-    IsEnabled = 9017,
 }
 
 public static class PropertyBoolExtensions
