@@ -312,6 +312,11 @@ partial class Creature
                 modifiedAmount *= 0.5f;
             }
 
+            if (targetPlayer.ShadowFlurryIsActive)
+            {
+                modifiedAmount *= 0.5f;
+            }
+
             // sigils
             if (SkipThreatFromNextAttackTargets != null && SkipThreatFromNextAttackTargets.Contains(targetPlayer))
             {

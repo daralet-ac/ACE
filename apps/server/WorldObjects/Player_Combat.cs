@@ -1380,6 +1380,7 @@ partial class Player
         var steadyStrikePenaltyMod = SteadyStrikeIsActive ? 0.25f : 0.0f;
         var smokescreenPenaltyMod = SmokescreenIsActive ? 0.25f : 0.0f;
         var backstabPenaltyMod = BackstabIsActive ? 0.25f : 0.0f;
+        var shadowFlurryPenaltyMod = ShadowFlurryIsActive ? 0.25f : 0.0f;
         var abilityPenaltyMod = 1.0f
                                 + evasiveStancePenaltyMod
                                 + phalanxPenaltyMod
@@ -1389,7 +1390,8 @@ partial class Player
                                 + multiShotPenaltyMod
                                 + steadyStrikePenaltyMod
                                 + smokescreenPenaltyMod
-                                + backstabPenaltyMod;
+                                + backstabPenaltyMod
+                                + shadowFlurryPenaltyMod;
 
         baseCost *= staminaCostReductionMod * abilityPenaltyMod;
 
@@ -2267,6 +2269,11 @@ partial class Player
 
     public bool IsBehindTargetCreature(Creature targetCreature)
     {
+        if (ShadowFlurryIsActive)
+        {
+            return true;
+        }
+
         if (targetCreature is null)
         {
             return false;
