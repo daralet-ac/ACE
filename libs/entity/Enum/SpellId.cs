@@ -6888,7 +6888,7 @@ public enum SpellId : uint
 
     Provoke = 0x8000 | 10050, // 20 second cooldown
     Smokescreen = 0x8000 | 10051, // 20 second cooldown
-    Vanish = 0x8000 | 10052, // 60 second cooldown
+    ShadowFlurry = 0x8000 | 10052, // 20 second cooldown
     ExposeWeakness = 0x8000 | 10053, // 15 second cooldown
     ActivatedCombatAbilities = 0x8000 | 10054, // 120 second shared cooldown
     ManaBarrier = 0x8000 | 10055, // 10 second cooldown

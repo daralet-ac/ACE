@@ -2267,6 +2267,11 @@ partial class Player
 
     public bool IsBehindTargetCreature(Creature targetCreature)
     {
+        if (ShadowFlurryIsActive)
+        {
+            return true;
+        }
+
         if (targetCreature is null)
         {
             return false;

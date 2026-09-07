@@ -3,6 +3,7 @@ using System.Linq;
 using ACE.Common;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
+using ACE.Server.Entity.Actions;
 using ACE.Server.Factories;
 using ACE.Server.Factories.Tables;
 using ACE.Server.Network.GameEvent.Events;
@@ -71,6 +72,10 @@ partial class Player
     public bool SmokescreenIsActive => LastSmokescreenActivated > Time.GetUnixTime() - SmokescreenActivatedDuration;
     private double LastSmokescreenActivated;
     private double SmokescreenActivatedDuration = 10;
+
+    public bool ShadowFlurryIsActive => LastShadowFlurryActivated > Time.GetUnixTime() - ShadowFlurryActivatedDuration;
+    private double LastShadowFlurryActivated;
+    private double ShadowFlurryActivatedDuration = 10;
 
     // Sorcerer
     public bool OverloadDischargeIsActive => LastOverloadDischargeActivated > Time.GetUnixTime() - OverloadDischargeActivatedDuration;
@@ -529,38 +534,29 @@ partial class Player
             target.PlayParticleEffect(PlayScript.VisionDownBlack, target.Guid);
         }
 
+        TryVanishFromSmokescreen();
+
         return true;
     }
 
-    public bool TryUseVanish(WorldObject ability)
+    /// <summary>
+    /// Vanish's former effect, now folded into Smokescreen: attempts to slip away from anyone
+    /// currently attacking the player, entering stealth if every attacker is fooled.
+    /// Silently does nothing if the player is already stealthed or untrained in Thievery,
+    /// since Smokescreen's threat-reduction effect above still applies either way.
+    /// </summary>
+    private void TryVanishFromSmokescreen()
     {
-        if (!VerifyCombatFocus(CombatAbility.Vanish))
-        {
-            return false;
-        }
-
         if (IsStealthed)
         {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"You cannot use Vanish while stealthed.",
-                    ChatMessageType.Broadcast
-                )
-            );
-            return false;
+            return;
         }
 
         var thieverySkill = GetCreatureSkill(Skill.Thievery);
 
         if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
         {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"Vanish requires trained Thievery.",
-                    ChatMessageType.Broadcast
-                )
-            );
-            return false;
+            return;
         }
 
         var nearbyMonsters = GetNearbyMonsters(50);
@@ -578,7 +574,7 @@ partial class Player
 
             LastVanishActivated = Time.GetUnixTime();
             BeginStealth();
-            return true;
+            return;
         }
 
         // Calculate total stamina cost: average monster level + (1/10th of each monster level, rounded down)
@@ -603,7 +599,7 @@ partial class Player
                     ChatMessageType.Broadcast
                 )
             );
-            return false;
+            return;
         }
 
         var fooledMonsters = 0;
@@ -675,6 +671,49 @@ partial class Player
                 )
             );
         }
+    }
+
+    /// <summary>
+    /// While active: all attacks count as sneak attacks from behind, the player becomes
+    /// translucent like when Stealthed, and threat generated from attacks is halved.
+    /// </summary>
+    public bool TryUseShadowFlurry(WorldObject ability)
+    {
+        if (!VerifyCombatFocus(CombatAbility.ShadowFlurry))
+        {
+            return false;
+        }
+
+        if (ShadowFlurryIsActive)
+        {
+            return false;
+        }
+
+        LastShadowFlurryActivated = Time.GetUnixTime();
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat(
+                $"You melt into the shadows, striking from every angle!",
+                ChatMessageType.Broadcast
+            )
+        );
+
+        EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthBegin));
+        PlayParticleEffect(PlayScript.EnchantUpPurple, Guid);
+
+        var actionChain = new ActionChain();
+        actionChain.AddDelaySeconds(ShadowFlurryActivatedDuration);
+        actionChain.AddAction(
+            this,
+            () =>
+            {
+                if (!ShadowFlurryIsActive)
+                {
+                    EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthEnd));
+                }
+            }
+        );
+        actionChain.EnqueueChain();
 
         return true;
     }
@@ -1739,12 +1778,12 @@ partial class Player
                     return false;
                 }
                 break;
-            case CombatAbility.Vanish:
+            case CombatAbility.ShadowFlurry:
                 if (GetEquippedCombatFocus() is not {CombatFocusTypeId: (int)CombatFocusType.Vagabond})
                 {
                     Session.Network.EnqueueSend(
                         new GameMessageSystemChat(
-                            $"Vanish can only be used with a Vagabond Focus.",
+                            $"Shadow Flurry can only be used with a Vagabond Focus.",
                             ChatMessageType.Broadcast
                         )
                     );

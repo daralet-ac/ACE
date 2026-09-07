@@ -1143,7 +1143,7 @@ partial class Creature
             }
         }
 
-        if (this as Player is { IsAttackFromStealth: true})
+        if (this as Player is { IsAttackFromStealth: true } or { ShadowFlurryIsActive: true })
         {
             behind = true;
         }
