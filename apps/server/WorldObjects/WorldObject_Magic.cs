@@ -966,10 +966,14 @@ partial class WorldObject
         }
 
         // Resist
-        if (targetPlayer is { ReflectIsActive: true, ReflectFirstSpell: true })
+        if (targetPlayer is { ReflectIsActive: true, ReflectGuaranteedWindowActive: true })
         {
             CheckForCombatAbilityReflectSpell(true, targetPlayer, this as Creature, spell);
-            targetPlayer.ReflectFirstSpell = false;
+        }
+        else if (targetPlayer is { ReflectIsActive: true } && targetPlayer.ReflectGuaranteedCharges > 0)
+        {
+            CheckForCombatAbilityReflectSpell(true, targetPlayer, this as Creature, spell);
+            targetPlayer.ReflectGuaranteedCharges--;
         }
         else
         {

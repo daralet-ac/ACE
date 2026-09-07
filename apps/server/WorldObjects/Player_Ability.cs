@@ -89,9 +89,11 @@ partial class Player
 
     // Spellsword
     public bool ReflectIsActive => LastReflectActivated > Time.GetUnixTime() - ReflectActivatedDuration;
-    public bool ReflectFirstSpell = false;
+    public bool ReflectGuaranteedWindowActive => LastReflectActivated > Time.GetUnixTime() - ReflectGuaranteedWindowDuration;
+    public int ReflectGuaranteedCharges = 0;
     private double LastReflectActivated;
     private double ReflectActivatedDuration = 10;
+    private double ReflectGuaranteedWindowDuration = 1;
 
     public bool AegisIsActive => LastAegisActivated > Time.GetUnixTime() - AegisActivatedDuration;
     private double LastAegisActivated;
@@ -1056,10 +1058,12 @@ partial class Player
 
         LastReflectActivated = Time.GetUnixTime();
 
-        if (GetCreatureSkill(Skill.MagicDefense).AdvancementClass is SkillAdvancementClass.Specialized)
+        ReflectGuaranteedCharges = GetCreatureSkill(Skill.MagicDefense).AdvancementClass switch
         {
-            ReflectFirstSpell = true;
-        }
+            SkillAdvancementClass.Specialized => 2,
+            SkillAdvancementClass.Trained => 1,
+            _ => 0
+        };
 
         PlayParticleEffect(PlayScript.SkillUpPurple, Guid);
 
