@@ -563,7 +563,10 @@ partial class WorldObject
         }
 
         // Sigil Scarabs
-        if (this is Player)
+        // Excludes spells triggered by consuming a Food/Drink/Gem item (e.g. Alchemy potions) -
+        // those are cast as `player.TryCastSpell(spell, player, item, ...)`, so `this` is
+        // still the player even though the player didn't actively cast the spell themselves.
+        if (this is Player && itemCaster is not (Food or Gem))
         {
             if (targetCreature != null && !equip)
             {
