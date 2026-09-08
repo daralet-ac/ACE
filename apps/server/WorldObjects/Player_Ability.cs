@@ -709,10 +709,7 @@ partial class Player
             this,
             () =>
             {
-                if (!ShadowFlurryIsActive)
-                {
-                    EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthEnd));
-                }
+                EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthEnd));
             }
         );
         actionChain.EnqueueChain();

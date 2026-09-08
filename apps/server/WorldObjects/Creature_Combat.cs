@@ -2053,7 +2053,18 @@ partial class Creature
     /// </summary>
     public static float GetStealthBackstabDamageMultiplier(Player playerAttacker, Creature target)
     {
-        if (playerAttacker is not { BackstabIsActive: true, IsAttackFromStealth: true })
+        if (playerAttacker is null)
+        {
+            return 1.0f;
+        }
+
+        // Consume the flag here regardless of outcome - this is the one attack that
+        // followed the stealth break, so it shouldn't linger and grant this bonus to
+        // some unrelated later attack just because Backstab wasn't active yet this swing.
+        var wasAttackFromStealth = playerAttacker.IsAttackFromStealth;
+        playerAttacker.IsAttackFromStealth = false;
+
+        if (!wasAttackFromStealth || !playerAttacker.BackstabIsActive)
         {
             return 1.0f;
         }
@@ -2093,7 +2104,6 @@ partial class Creature
             new GameMessageSystemChat(message, ChatMessageType.Broadcast)
         );
 
-        playerAttacker.IsAttackFromStealth = false;
         return multiplier;
     }
 }
