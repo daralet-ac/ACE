@@ -900,5 +900,5 @@ public enum CharacterTitle : uint
     Spellsword,
     FistsRecruit,
     FistsKnight,
-    FistsKnightCaptain
+    FistsKnightLieutenant
 }
