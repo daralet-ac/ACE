@@ -938,33 +938,20 @@ partial class Player
             weaponDamageType = SlashThrustToggle ? DamageType.Pierce : DamageType.Slash;
         }
 
+        // Attack height determines which effect is stored:
+        //   War  - High: Blast,        Medium: Bolt,        Low: Volley
+        //   Life - High: Drain Health, Medium: Harm Other,  Low: Heal Self
         var baseSpellHighAttack = magicSchool is MagicSchool.WarMagic
             ? GetLevelOneBlastOfDamageType(weaponDamageType)
-            : new Spell(SpellId.HealSelf1);
+            : new Spell(SpellId.DrainHealth1);
 
         var baseSpellMedAttack = magicSchool is MagicSchool.WarMagic
             ? GetLevelOneBoltOfDamageType(weaponDamageType)
-            : new Spell(SpellId.RevitalizeSelf1);
+            : new Spell(SpellId.HarmOther1);
 
         var baseSpellLowAttack = magicSchool is MagicSchool.WarMagic
             ? GetLevelOneVolleyOfDamageType(weaponDamageType)
-            : new Spell(SpellId.ManaBoostSelf1);
-
-        if (true) // TODO: If player has upgraded Enchanted Blade to use advanced spells, prevent this block from running
-        {
-            if (magicSchool is MagicSchool.WarMagic)
-            {
-                baseSpellHighAttack = GetLevelOneBoltOfDamageType(weaponDamageType);
-                baseSpellMedAttack = GetLevelOneBoltOfDamageType(weaponDamageType);
-                baseSpellLowAttack = GetLevelOneBoltOfDamageType(weaponDamageType);
-            }
-            else
-            {
-                baseSpellHighAttack = new Spell(SpellId.HealSelf1);
-                baseSpellMedAttack = new Spell(SpellId.HealSelf1);
-                baseSpellLowAttack = new Spell(SpellId.HealSelf1);
-            }
-        }
+            : new Spell(SpellId.HealSelf1);
 
         if (baseSpellHighAttack is null || baseSpellMedAttack is null || baseSpellLowAttack is null)
         {
@@ -979,7 +966,7 @@ partial class Player
         magicSkill += (uint)(weaponSpellcraft * 0.1);
 
         var roll = Convert.ToInt32(ThreadSafeRandom.Next(magicSkill * 0.5f, magicSkill));
-        int[] diff = [50, 100, 200, 300, 350, 400, 450];
+        int[] diff = [20, 150, 200, 250, 300, 350, 400];
         var closest = diff.MinBy(x => Math.Abs(x - roll));
         var level = Array.IndexOf(diff, closest);
 
