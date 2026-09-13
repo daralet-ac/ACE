@@ -4741,6 +4741,28 @@ partial class WorldObject
         }
     }
 
+    /// <summary>
+    /// A plain shared tag: two WorldObjects with the same Cohort value are valid beneficial-cast
+    /// partners for EmoteType.CastSpellOnCohort. Deliberately separate from FriendType/CreatureType -
+    /// those already drive unrelated behavior (alert propagation, loot/faction rules), so reusing
+    /// either here would couple this casting mechanic to systems it has nothing to do with.
+    /// </summary>
+    public int? Cohort
+    {
+        get => (int?)GetProperty(PropertyInt.Cohort);
+        set
+        {
+            if (!value.HasValue)
+            {
+                RemoveProperty(PropertyInt.Cohort);
+            }
+            else
+            {
+                SetProperty(PropertyInt.Cohort, value.Value);
+            }
+        }
+    }
+
     public CreatureType? FoeType
     {
         get => (CreatureType?)GetProperty(PropertyInt.FoeType);

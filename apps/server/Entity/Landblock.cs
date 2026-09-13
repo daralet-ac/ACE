@@ -2229,6 +2229,12 @@ public class Landblock : IActor
             case "Olthoi Queen's Lair":
                 dungeonLandblocks = [0xC7B7, 0x1AFE, 0x1AFD, 0x1AFC, 0x1AFB, 0x1AFA];
                 break;
+            case "Shattered Source":
+                dungeonLandblocks = [0x21FE, 0x21FD, 0x21FC, 0x21FB, 0x21FA, 0x21F9];
+                break;
+            case "Xarabydun Researcher Halls":
+                dungeonLandblocks = [0x22FE, 0x22FD, 0x22FC, 0x22FB, 0x22FA, 0x22F9];
+                break;    
             default:
                 return null;
         }
