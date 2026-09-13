@@ -2848,7 +2848,15 @@ partial class Player
                 );
                 landblockReturn.EnqueueChain();
             }
-            else if (itemRootOwner == null || !itemRootOwner.TryAddToInventory(item))
+            // fromSplit: `item` here is a freshly-created split-off stack fragment that was never
+            // added to itemRootOwner's inventory in the first place (see the `!fromSplit &&` guard
+            // on the TryRemoveFromInventory call above), and the split caller already restores the
+            // original stack's size on failure (AdjustStack(stack, +amount, ...)). Falling through
+            // to TryAddToInventory(item) here as well would duplicate the split amount - the
+            // original stack gets bumped back up AND this fragment gets added as a second, separate
+            // stack. Skip this recovery entirely for the split case; the caller's own restore is
+            // both correct and sufficient.
+            else if (!fromSplit && (itemRootOwner == null || !itemRootOwner.TryAddToInventory(item)))
             {
                 _log.Error(
                     $"{Name}.DoHandleActionGetAndWieldItem({item.Name} ({item.Guid}), {fromContainer?.Name} ({fromContainer?.Guid}), {itemRootOwner?.Name} ({itemRootOwner?.Guid}), {wasEquipped}, {wieldedLocation}, {fromSplit}) - removed item from original location, failed to equip, failed to re-add to original location"
