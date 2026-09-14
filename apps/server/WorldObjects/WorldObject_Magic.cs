@@ -165,29 +165,18 @@ partial class WorldObject
         var chance = (1.0 - SkillCheck.GetSkillChance((int)casterMagicSkill, (int)targetMagicDefenseSkill));
         resistChance = (float)chance;
 
-        var resistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-        if (targetPlayer is { EvasiveStanceIsActive: true })
+        // COMBAT ABILITY - Evasive Stance: flat 30% chance to fully resist any spell, independent of magic defense skill.
+        if (targetPlayer is { EvasiveStanceIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) < 0.3f)
         {
-            var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-            if (luckyRoll < resistRoll)
-            {
-                resistRoll = luckyRoll;
-            }
+            partialResist = PartialEvasion.All;
+            return true;
         }
+
+        var resistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
         if (resistRoll < chance)
         {
             var partialResistRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-            if (targetPlayer is { EvasiveStanceIsActive: true })
-            {
-                var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-                if (luckyRoll < partialResistRoll)
-                {
-                    partialResistRoll = luckyRoll;
-                }
-            }
 
             // Roll resist type (33% for each resist type)
             const float fullResistChance = 1.0f / 3.0f;

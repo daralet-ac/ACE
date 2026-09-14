@@ -316,6 +316,14 @@ public class DamageEvent
             return;
         }
 
+        // COMBAT ABILITY - Evasive Stance: flat 30% chance to fully evade any attack, independent of defense skill.
+        if (playerDefender is { EvasiveStanceIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) < 0.3f)
+        {
+            Evaded = true;
+            PartialEvasion = PartialEvasion.All;
+            return;
+        }
+
         // Roll combat hit chance
         var attackRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
         if (attackRoll > GetEvadeChance(attacker, defender))
@@ -354,15 +362,6 @@ public class DamageEvent
         const float partialEvadeChance = fullEvadeChance * 2;
 
         var partialEvadeRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-
-        if (playerDefender is { EvasiveStanceIsActive: true })
-        {
-            var luckyRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
-            if (luckyRoll < partialEvadeRoll)
-            {
-                partialEvadeRoll = luckyRoll;
-            }
-        }
 
         switch (partialEvadeRoll)
         {
