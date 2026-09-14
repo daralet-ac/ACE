@@ -1092,7 +1092,7 @@ partial class Creature
     /// <item>Spec - Perception: Up to 50% chance to avoid sneak attack.</item>
     /// <item>Spec - Deception: Up to 50% chance to sneak attack from the front.</item>
     /// <item>Spec - Thievery: Increased angle to land sneak attacks to up to 270 degrees.</item>
-    /// <item>Ability - Backstab: Increased sneak attack damage to 50%, to 100% if target has full health.</item>
+    /// <item>Ability - Backstab: your next sneak attack within the activation window deals 100% more damage instead of the normal bonus.</item>
     /// </list>
     /// </summary>
     public float GetSneakAttackMod(WorldObject target)
@@ -1150,19 +1150,16 @@ partial class Creature
 
         var multiplier = 1.25f;
 
-        // COMBAT ABILITY - Backstab: Sneak attack damage increased to 50% if nearby.
-        if (this as Player is { BackstabIsActive: true })
-        {
-            var targetIsNearby = GetDistance(creatureTarget) < 10;
-
-            if (targetIsNearby)
-            {
-                multiplier = 1.5f;
-            }
-        }
-
         if (behind)
         {
+            // COMBAT ABILITY - Backstab: your next sneak attack within the activation
+            // window deals 100% more damage, replacing the normal sneak attack bonus.
+            if (this as Player is { BackstabIsActive: true, BackstabSingleUseIsActive: true } player)
+            {
+                multiplier = 2.0f;
+                player.BackstabSingleUseIsActive = false;
+            }
+
             if (target is not Player targetPlayer)
             {
                 return multiplier;
