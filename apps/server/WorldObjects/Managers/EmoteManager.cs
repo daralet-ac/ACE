@@ -220,7 +220,12 @@ public class EmoteManager
 
                 if (player != null)
                 {
-                    player.EarnXP(emote.Amount64 ?? emote.Amount ?? 0, XpType.Quest, player.Level, ShareType.None);
+                    // Stat, when set, is repurposed as a "Level" for this emote: the amount is reduced
+                    // using the same overlevel penalty applied to monster kill xp when the player is
+                    // higher level than this value. Unset (0/null) preserves the old behavior of always
+                    // granting the full amount, regardless of player level.
+                    var xpSourceLevel = emote.Stat > 0 ? emote.Stat : player.Level;
+                    player.EarnXP(emote.Amount64 ?? emote.Amount ?? 0, XpType.Quest, xpSourceLevel, ShareType.None);
                 }
 
                 break;
@@ -263,7 +268,12 @@ public class EmoteManager
                     var amt = emote.Amount64 ?? emote.Amount ?? 0;
                     if (amt > 0)
                     {
-                        player.EarnXP(amt, XpType.Quest, player.Level, ShareType.All);
+                        // Stat, when set, is repurposed as a "Level" for this emote: the amount is reduced
+                        // using the same overlevel penalty applied to monster kill xp when the player is
+                        // higher level than this value. Unset (0/null) preserves the old behavior of always
+                        // granting the full amount, regardless of player level.
+                        var xpSourceLevel = emote.Stat > 0 ? emote.Stat : player.Level;
+                        player.EarnXP(amt, XpType.Quest, xpSourceLevel, ShareType.All);
                     }
                     else if (amt < 0)
                     {
