@@ -1158,6 +1158,7 @@ partial class Creature
             {
                 multiplier = 2.0f;
                 player.BackstabSingleUseIsActive = false;
+                player.CancelShadowFlurry();
             }
 
             if (target is not Player targetPlayer)
