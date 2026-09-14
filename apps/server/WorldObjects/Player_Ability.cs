@@ -719,6 +719,26 @@ partial class Player
         return true;
     }
 
+    /// <summary>
+    /// Ends Shadow Flurry early. Called when a Backstab-boosted hit lands, since landing
+    /// that opening is the payoff and shouldn't also let the flurry keep running.
+    /// </summary>
+    public void CancelShadowFlurry()
+    {
+        if (!ShadowFlurryIsActive)
+        {
+            return;
+        }
+
+        LastShadowFlurryActivated = 0;
+
+        Session.Network.EnqueueSend(
+            new GameMessageSystemChat("You return from the shadows.", ChatMessageType.Broadcast)
+        );
+
+        EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthEnd));
+    }
+
     public bool TryUseOverload(Gem gem)
     {
         if (!VerifyCombatFocus(CombatAbility.Overload))
