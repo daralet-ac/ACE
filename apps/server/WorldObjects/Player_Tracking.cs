@@ -64,6 +64,12 @@ partial class Player
             return;
         }
 
+        // PK/PKL players cannot see stealthed players at all.
+        if (worldObject is Player stealthedPlayer && stealthedPlayer.IsStealthed && IsPKType)
+        {
+            return;
+        }
+
         Session.Network.EnqueueSend(new GameMessageCreateObject(worldObject, Adminvision, Adminvision));
 
         if (worldObject is Player player && player.IsStealthed)

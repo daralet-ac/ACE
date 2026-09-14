@@ -59,46 +59,53 @@ partial class Player
             return;
         }
 
-        var result = TestStealthInternal(EnterStealthDifficulty, out _);
-        switch (result)
+        var thieverySkill = GetCreatureSkill(Skill.Thievery);
+        if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
         {
-            case StealthTestResult.Success:
-            {
-                IsStealthed = true;
-                if (Time.GetUnixTime() < LastVanishActivated + 5)
-                {
-                    Session.Network.EnqueueSend(
-                        new GameMessageSystemChat(
-                            "You vanish in a cloud of smoke, and you cannot be detected for the next 5 seconds!",
-                            ChatMessageType.Broadcast
-                        )
-                    );
-                }
-                else
-                {
-                    Session.Network.EnqueueSend(
-                        new GameMessageSystemChat("You enter stealth.", ChatMessageType.Broadcast)
-                    );
-                }
-
-                EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthBegin));
-
-                ApplyStealthRunPenalty();
-
-                break;
-            }
-            case StealthTestResult.Failure:
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat("You fail on your attempt to enter stealth.", ChatMessageType.Broadcast)
-                );
-                break;
-            case StealthTestResult.Untrained:
-            default:
-                Session.Network.EnqueueSend(
-                    new GameMessageSystemChat("You are not trained in thievery!", ChatMessageType.Broadcast)
-                );
-                break;
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat("You are not trained in thievery!", ChatMessageType.Broadcast)
+            );
+            return;
         }
+
+        if (GetModdedThieverySkill() < EnterStealthDifficulty)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat("Not skilled enough in Thievery to use.", ChatMessageType.Broadcast)
+            );
+            return;
+        }
+
+        IsStealthed = true;
+        if (Time.GetUnixTime() < LastVanishActivated + 5)
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat(
+                    "You vanish in a cloud of smoke, and you cannot be detected for the next 5 seconds!",
+                    ChatMessageType.Broadcast
+                )
+            );
+        }
+        else
+        {
+            Session.Network.EnqueueSend(
+                new GameMessageSystemChat("You enter stealth.", ChatMessageType.Broadcast)
+            );
+        }
+
+        EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthBegin));
+
+        // PK/PKL players cannot see stealthed players at all - fully hide from anyone
+        // who already knows about us instead of just showing the translucent effect.
+        foreach (var knownPlayer in PhysicsObj.ObjMaint.GetKnownPlayersValuesAsPlayer())
+        {
+            if (knownPlayer != this && knownPlayer.IsPKType)
+            {
+                knownPlayer.Session.Network.EnqueueSend(new GameMessageDeleteObject(this));
+            }
+        }
+
+        ApplyStealthRunPenalty();
     }
 
     public void EndStealth(string message = null, bool isAttackFromStealth = false)
@@ -134,8 +141,14 @@ partial class Player
             }
         );
 
-        RadarColor = null;
-        EnqueueBroadcast(true, new GameMessagePublicUpdatePropertyInt(this, PropertyInt.RadarBlipColor, 0));
+        // Restore visibility for PK/PKL players we hid from while stealthed.
+        foreach (var knownPlayer in PhysicsObj.ObjMaint.GetKnownPlayersValuesAsPlayer())
+        {
+            if (knownPlayer != this && knownPlayer.IsPKType)
+            {
+                knownPlayer.Session.Network.EnqueueSend(new GameMessageCreateObject(this));
+            }
+        }
 
         actionChain.EnqueueChain();
     }
@@ -202,29 +215,19 @@ partial class Player
             return true;
         }
 
-        foreach (var kvp in RecentStealthTests)
+        if (RecentStealthTests.TryGetValue(creature.Guid, out var lastTestTime) && Time.GetUnixTime() < lastTestTime + CreatureRetestDelay)
         {
-            if (creature.Guid == kvp.Key)
-            {
-                if (Time.GetUnixTime() < kvp.Value + CreatureRetestDelay)
-                {
-                    return true;
-                }
-                else
-                {
-                    RecentStealthTests.Remove(kvp.Key);
-                }
-            }
+            return true;
         }
 
-        RecentStealthTests.Add(creature.Guid, Time.GetUnixTime());
+        RecentStealthTests[creature.Guid] = Time.GetUnixTime();
 
         var maxDistance = creature.VisualAwarenessRangeSq;
         var monsterDistanceBonus = Math.Min(2.0f, (float)(maxDistance / distance));
 
         var angle = Math.Abs(creature.GetAngle(this));
 
-        var angleMod = 2.0f - angle / 90.0f; // mod ranges from 0.0 (180 angle) to 2.0 (0 angle)
+        var angleMod = 1.0f - angle / 180.0f; // mod ranges from 0.0 (180 angle) to 1.0 (0 angle, face-on)
 
         var difficulty = (uint)(creature.GetModdedPerceptionSkill() * monsterDistanceBonus * angleMod);
 
@@ -250,6 +253,11 @@ partial class Player
 
     public bool TestStealth(uint difficulty, string failureMessage, Creature creature = null)
     {
+        if (!IsStealthed)
+        {
+            return false;
+        }
+
         var thieverySkill = GetCreatureSkill(Skill.Thievery);
         var isSpecialized = thieverySkill.AdvancementClass == SkillAdvancementClass.Specialized;
 

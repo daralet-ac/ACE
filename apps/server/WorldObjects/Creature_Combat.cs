@@ -1154,9 +1154,15 @@ partial class Creature
         {
             // COMBAT ABILITY - Backstab: your next sneak attack within the activation
             // window deals 100% more damage, replacing the normal sneak attack bonus.
+            // A stealth attack instead gets its range-based 2.0x-3.0x bonus from
+            // GetStealthBackstabDamageMultiplier, so don't also apply the flat bonus here.
             if (this as Player is { BackstabIsActive: true, BackstabSingleUseIsActive: true } player)
             {
-                multiplier = 2.0f;
+                if (!player.IsAttackFromStealth)
+                {
+                    multiplier = 2.0f;
+                }
+
                 player.BackstabSingleUseIsActive = false;
                 player.CancelShadowFlurry();
             }

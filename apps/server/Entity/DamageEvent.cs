@@ -660,7 +660,7 @@ public class DamageEvent
         }
     }
 
-    private void SetDamageModifiers(Creature attacker, Creature defender, float? powerMod = null)
+    private void SetDamageModifiers(Creature attacker, Creature defender, float? powerMod = null, bool consumeSneakAttackBonuses = true)
     {
         var playerAttacker = attacker as Player;
         var playerDefender = defender as Player;
@@ -676,8 +676,21 @@ public class DamageEvent
         _combatAbilityRelentlessDamagePenalty = GetCombatAbilityRelentlessDamagePenalty(playerAttacker);
         _combatAbilitySteadyStrikeDamageBonus = GetCombatAbilitySteadySrikeDamageBonus(playerAttacker);
         _recklessnessMod = Creature.GetRecklessnessMod(attacker, defender);
-        SneakAttackMod = attacker.GetSneakAttackMod(defender);
-        _backstabDamageMultiplier = Creature.GetStealthBackstabDamageMultiplier(playerAttacker, defender);
+
+        // Sneak attack / Backstab bonuses (and their one-shot charges) should only be
+        // consumed by an attacker's own normal attack - not by ancillary reactive damage
+        // calculations like Thorns reflection or a Riposte counter-hit.
+        if (consumeSneakAttackBonuses)
+        {
+            SneakAttackMod = attacker.GetSneakAttackMod(defender);
+            _backstabDamageMultiplier = Creature.GetStealthBackstabDamageMultiplier(playerAttacker, defender);
+        }
+        else
+        {
+            SneakAttackMod = 1.0f;
+            _backstabDamageMultiplier = 1.0f;
+        }
+
         _attackHeightDamageBonus += GetHighAttackHeightBonus(playerAttacker);
         _ratingElementalDamageBonus = Jewel.HandleElementalBonuses(playerAttacker, DamageType);
         _ratingPierceResistanceBonus = GetRatingPierceResistanceBonus(defender, playerAttacker);
@@ -1815,7 +1828,7 @@ public class DamageEvent
 
         SetCombatSources(attacker, defender, defender.GetEquippedWeapon());
         SetBaseDamage(attacker, defender, damageSource);
-        SetDamageModifiers(attacker, defender);
+        SetDamageModifiers(attacker, defender, consumeSneakAttackBonuses: false);
 
         var damage = GetNonCriticalDamageBeforeMitigation();
 
@@ -1861,7 +1874,7 @@ public class DamageEvent
 
         SetCombatSources(defender, attacker, defender.GetEquippedWeapon());
         SetBaseDamage(defender, attacker, defender.GetEquippedWeapon());
-        SetDamageModifiers(defender, attacker);
+        SetDamageModifiers(defender, attacker, consumeSneakAttackBonuses: false);
 
         _powerMod = 1.0f;
         var baseDamage = GetNonCriticalDamageBeforeMitigation();
