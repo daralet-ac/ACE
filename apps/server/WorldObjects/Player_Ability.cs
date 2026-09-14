@@ -68,6 +68,7 @@ partial class Player
     public bool BackstabIsActive => LastBackstabActivated > Time.GetUnixTime() - BackstabActivatedDuration;
     private double LastBackstabActivated;
     private double BackstabActivatedDuration = 10;
+    public bool BackstabSingleUseIsActive;
 
     public bool SmokescreenIsActive => LastSmokescreenActivated > Time.GetUnixTime() - SmokescreenActivatedDuration;
     private double LastSmokescreenActivated;
@@ -489,6 +490,7 @@ partial class Player
         }
 
         LastBackstabActivated = Time.GetUnixTime();
+        BackstabSingleUseIsActive = true;
 
         PlayParticleEffect(PlayScript.EnchantUpGreen, Guid);
 
