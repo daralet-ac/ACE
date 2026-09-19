@@ -173,6 +173,11 @@ partial class Creature
         if (vital == Health)
         {
             vitalTypeArmorMod = GetArmorHealthRegenMod() + 1;
+
+            if (this is not Player)
+            {
+                vitalTypeBaseMod *= 0.2f;
+            }
         }
         else if (vital == Stamina)
         {
