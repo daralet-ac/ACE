@@ -891,6 +891,21 @@ public enum PropertyInt : ushort
     [ServerOnly]
     WeaponRelicApplyCount = 523,
 
+    /// <summary>
+    /// A plain shared tag identifying valid beneficial-cast partners for EmoteType.CastSpellOnCohort.
+    /// See WorldObject.Cohort for the full explanation of why this is separate from FriendType.
+    /// </summary>
+    Cohort = 524,
+
+    /// <summary>
+    /// Generic, content-driven state value - not tied to any specific mechanic or encounter.
+    /// Set via SetMyIntStat/SetIntStat, and readable by RecipeRequirements (as a plain target
+    /// property) where quest-state checks aren't available. Purely a per-object flag; has no
+    /// built-in engine behavior of its own.
+    /// </summary>
+    [ServerOnly]
+    SequenceState = 525,
+
     [ServerOnly]
     PCAPRecordedAutonomousMovement = 8007,
 
