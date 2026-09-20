@@ -519,6 +519,12 @@ public class EnvCell : ObjCell, IEquatable<EnvCell>
 
     public override bool point_in_cell(Vector3 point)
     {
+        // A cell that isn't in the cell dat has no CellStructure, and can't contain anything
+        if (CellStructure == null)
+        {
+            return false;
+        }
+
         var localPoint = Pos.Frame.GlobalToLocal(point);
         return CellStructure.point_in_cell(localPoint);
     }
