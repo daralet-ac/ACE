@@ -281,6 +281,23 @@ public class InstanceCommand
             );
         }
 
+        // The position of a player comes from their client, which can be somewhere the server has stopped it from going
+        var positionLandblock = wo.Location?.LandblockId;
+
+        if (
+            positionLandblock.HasValue
+            && (
+                wo.InstanceId == Landblock.PersistentInstance
+                    ? InstanceManager.IsInstanceOnly(positionLandblock.Value)
+                    : !InstanceManager.IsInFootprint(wo.InstanceId, positionLandblock.Value)
+            )
+        )
+        {
+            text.Append(
+                $"\n   MISMATCH: its position says landblock {positionLandblock.Value.Landblock:X4}, which is {InstanceManager.DescribePlace(wo.InstanceId, positionLandblock.Value)}, but it is in landblock {landblock.Id.Landblock:X4}"
+            );
+        }
+
         return text.ToString();
     }
 

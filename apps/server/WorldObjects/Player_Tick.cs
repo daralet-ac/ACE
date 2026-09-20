@@ -827,6 +827,17 @@ partial class Player
 
                         CheckMonsters();
                     }
+                    else if (!InstanceManager.CanEnter(InstanceId, newPosition.LandblockId))
+                    {
+                        // There is nothing there. The client walks by itself and knows the whole world, so it has gone past the edge of what
+                        // this instance is made of (or, in the persistent world, into a landblock that only exists in instances). Physics stops
+                        // at the edge, so the client has to be put back, the same way as when its height is not possible. If the position were
+                        // let through, the client would be somewhere the server does not have, it would throw away everything it was shown
+                        // (the server would still think it has it, and would not send it again), and the player would keep going.
+                        Sequences.GetNextSequence(SequenceType.ObjectForcePosition);
+                        SendUpdatePosition();
+                        return false;
+                    }
                 }
                 else
                 {
