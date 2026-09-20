@@ -122,7 +122,10 @@ public struct LandblockId
 
     public override int GetHashCode()
     {
-        return base.GetHashCode();
+        // Must agree with operator ==, which only compares the landblock (X/Y) portion of the ID.
+        // Hashing all of Raw would let two IDs that compare equal hash differently when they only differ in their
+        // cell bits, so they would miss each other when used as dictionary keys.
+        return Landblock;
     }
 
     public override string ToString()

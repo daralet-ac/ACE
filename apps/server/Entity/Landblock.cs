@@ -50,7 +50,22 @@ public class Landblock : IActor
     public static float MaxObjectRange { get; } = 192f;
     public static float MaxObjectGhostRange { get; } = 250f;
 
+    /// <summary>
+    /// The instance id of the persistent world. Every landblock that isn't part of an instance lives here.
+    /// </summary>
+    public const uint PersistentInstance = 0;
+
     public LandblockId Id { get; }
+
+    /// <summary>
+    /// Which instance this landblock belongs to. Several landblocks can share the same Id as long as they belong to
+    /// different instances. They never see each other: objects, adjacencies and tick groups are all per instance.
+    /// </summary>
+    /// <remarks>
+    /// Do not create landblocks in a non-zero instance yet. Physics cell lookups (LScape.get_landblock/get_landcell)
+    /// are not instance-aware, so they still resolve to the persistent world, and static object GUIDs are not yet remapped.
+    /// </remarks>
+    public uint Instance { get; }
 
     /// <summary>
     /// Flag indicates if this landblock is permanently loaded (for example, towns on high-traffic servers)
@@ -186,11 +201,12 @@ public class Landblock : IActor
 
     public List<uint> PlayerAccountIds = new List<uint>();
 
-    public Landblock(LandblockId id)
+    public Landblock(LandblockId id, uint instance = PersistentInstance)
     {
         //log.DebugFormat("Landblock({0:X8})", (id.Raw | 0xFFFF));
 
         Id = id;
+        Instance = instance;
 
         CellLandblock = DatManager.CellDat.ReadFromDat<CellLandblock>(Id.Raw | 0xFFFF);
         LandblockInfo = DatManager.CellDat.ReadFromDat<LandblockInfo>((uint)Id.Landblock << 16 | 0xFFFE);
@@ -1191,6 +1207,7 @@ public class Landblock : IActor
         }
 
         wo.CurrentLandblock = this;
+        wo.InstanceId = Instance;
 
         if (wo.PhysicsObj == null)
         {

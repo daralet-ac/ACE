@@ -69,6 +69,13 @@ public abstract partial class WorldObject : IActor
     /// </summary>
     public Landblock CurrentLandblock { get; internal set; }
 
+    /// <summary>
+    /// The instance this object belongs to, or will enter if it is not in a landblock yet.<para />
+    /// 0 is the persistent world. Landblock keeps this in sync whenever the object is added to it.
+    /// Anything that spawns an object next to another object must copy the spawner's InstanceId before calling EnterWorld().
+    /// </summary>
+    public uint InstanceId { get; set; }
+
     public bool IsBusy { get; set; }
     public bool IsShield
     {

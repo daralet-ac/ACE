@@ -31,10 +31,28 @@ public static class LandblockManager
     );
 
     /// <summary>
-    /// A table of all the landblocks in the world map
+    /// A table of all the landblocks in the persistent world (instance 0)
     /// Landblocks which aren't currently loaded will be null here
     /// </summary>
+    /// <remarks>
+    /// Instance 0 deliberately keeps its own array so the hot path for the persistent world is unchanged.
+    /// Landblocks that belong to any other instance live in <see cref="instancedLandblocks"/>.
+    /// </remarks>
     private static readonly Landblock[,] landblocks = new Landblock[255, 255];
+
+    /// <summary>
+    /// Identifies a landblock inside an instance. The same X/Y can be loaded once per instance.
+    /// </summary>
+    public readonly record struct InstancedLandblockKey(uint Instance, byte X, byte Y)
+    {
+        public InstancedLandblockKey(uint instance, LandblockId landblockId)
+            : this(instance, landblockId.LandblockX, landblockId.LandblockY) { }
+    }
+
+    /// <summary>
+    /// A table of all the currently loaded landblocks that belong to an instance other than the persistent world
+    /// </summary>
+    private static readonly Dictionary<InstancedLandblockKey, Landblock> instancedLandblocks = new();
 
     /// <summary>
     /// A lookup table of all the currently loaded landblocks
@@ -525,23 +543,25 @@ public static class LandblockManager
     }
 
     /// <summary>
-    /// Adds a WorldObject to the landblock defined by the object's location
+    /// Adds a WorldObject to the landblock defined by the object's location, in the instance the object belongs to (WorldObject.InstanceId)
     /// </summary>
     /// <param name="loadAdjacents">If TRUE, ensures all of the adjacent landblocks for this WorldObject are loaded</param>
     public static bool AddObject(WorldObject worldObject, bool loadAdjacents = false)
     {
-        var block = GetLandblock(worldObject.Location.LandblockId, loadAdjacents);
+        var block = GetLandblock(worldObject.Location.LandblockId, worldObject.InstanceId, loadAdjacents);
 
         return block.AddWorldObject(worldObject);
     }
 
     /// <summary>
-    /// Relocates an object to the appropriate landblock -- Should only be called from physics/worldmanager -- not player!
+    /// Relocates an object to the appropriate landblock -- Should only be called from physics/worldmanager -- not player!<para />
+    /// The object stays in its own instance (WorldObject.InstanceId). Moving an object to a different instance
+    /// means changing its InstanceId first, and must not be done as an adjacencyMove.
     /// </summary>
     public static void RelocateObjectForPhysics(WorldObject worldObject, bool adjacencyMove)
     {
         var oldBlock = worldObject.CurrentLandblock;
-        var newBlock = GetLandblock(worldObject.Location.LandblockId, true);
+        var newBlock = GetLandblock(worldObject.Location.LandblockId, worldObject.InstanceId, true);
 
         if (newBlock.IsDormant && worldObject is SpellProjectile)
         {
@@ -559,12 +579,23 @@ public static class LandblockManager
         newBlock.AddWorldObjectForPhysics(worldObject);
     }
 
+    /// <summary>
+    /// Returns true if the landblock is currently loaded in the persistent world
+    /// </summary>
     public static bool IsLoaded(LandblockId landblockId)
+    {
+        return IsLoaded(landblockId, Landblock.PersistentInstance);
+    }
+
+    /// <summary>
+    /// Returns true if the landblock is currently loaded in the specified instance
+    /// </summary>
+    public static bool IsLoaded(LandblockId landblockId, uint instance)
     {
         landblockLock.EnterReadLock();
         try
         {
-            return landblocks[landblockId.LandblockX, landblockId.LandblockY] != null;
+            return GetLoadedLandblock(instance, landblockId) != null;
         }
         finally
         {
@@ -573,9 +604,75 @@ public static class LandblockManager
     }
 
     /// <summary>
-    /// Returns a reference to a landblock, loading the landblock if not already active
+    /// Returns the loaded landblock at this id in this instance, or null if it isn't loaded<para />
+    /// The caller must hold landblockLock
+    /// </summary>
+    private static Landblock GetLoadedLandblock(uint instance, LandblockId landblockId)
+    {
+        if (instance == Landblock.PersistentInstance)
+        {
+            return landblocks[landblockId.LandblockX, landblockId.LandblockY];
+        }
+
+        instancedLandblocks.TryGetValue(new InstancedLandblockKey(instance, landblockId), out var landblock);
+        return landblock;
+    }
+
+    /// <summary>
+    /// Registers a newly created landblock in the table for its instance<para />
+    /// The caller must hold landblockLock for writing
+    /// </summary>
+    private static void SetLoadedLandblock(Landblock landblock)
+    {
+        if (landblock.Instance == Landblock.PersistentInstance)
+        {
+            landblocks[landblock.Id.LandblockX, landblock.Id.LandblockY] = landblock;
+        }
+        else
+        {
+            instancedLandblocks[new InstancedLandblockKey(landblock.Instance, landblock.Id)] = landblock;
+        }
+    }
+
+    /// <summary>
+    /// Removes an unloaded landblock from the table for its instance<para />
+    /// The caller must hold landblockLock for writing
+    /// </summary>
+    private static void ClearLoadedLandblock(Landblock landblock)
+    {
+        if (landblock.Instance == Landblock.PersistentInstance)
+        {
+            landblocks[landblock.Id.LandblockX, landblock.Id.LandblockY] = null;
+        }
+        else
+        {
+            instancedLandblocks.Remove(new InstancedLandblockKey(landblock.Instance, landblock.Id));
+        }
+    }
+
+    /// <summary>
+    /// Returns a reference to a landblock in the persistent world, loading the landblock if not already active
     /// </summary>
     public static Landblock GetLandblock(LandblockId landblockId, bool loadAdjacents, bool permaload = false)
+    {
+        return GetLandblock(landblockId, Landblock.PersistentInstance, loadAdjacents, permaload);
+    }
+
+    /// <summary>
+    /// Returns a reference to a landblock in the specified instance, loading the landblock if not already active<para />
+    /// Adjacent landblocks are always loaded into, and resolved within, the same instance
+    /// </summary>
+    /// <remarks>
+    /// Only the persistent world (instance 0) is safe to use for now. Physics lookups through LScape are not
+    /// instance-aware yet and static object GUIDs are not remapped, so a non-zero instance would leak into
+    /// the persistent world.
+    /// </remarks>
+    public static Landblock GetLandblock(
+        LandblockId landblockId,
+        uint instance,
+        bool loadAdjacents,
+        bool permaload = false
+    )
     {
         Landblock landblock;
 
@@ -584,7 +681,7 @@ public static class LandblockManager
         {
             var setAdjacents = false;
 
-            landblock = landblocks[landblockId.LandblockX, landblockId.LandblockY];
+            landblock = GetLoadedLandblock(instance, landblockId);
 
             if (landblock == null)
             {
@@ -592,7 +689,8 @@ public static class LandblockManager
                 try
                 {
                     // load up this landblock
-                    landblock = landblocks[landblockId.LandblockX, landblockId.LandblockY] = new Landblock(landblockId);
+                    landblock = new Landblock(landblockId, instance);
+                    SetLoadedLandblock(landblock);
 
                     if (!loadedLandblocks.Add(landblock))
                     {
@@ -626,7 +724,7 @@ public static class LandblockManager
                 var adjacents = GetAdjacentIDs(landblock);
                 foreach (var adjacent in adjacents)
                 {
-                    GetLandblock(adjacent, false, permaload);
+                    GetLandblock(adjacent, instance, false, permaload);
                 }
 
                 setAdjacents = true;
@@ -663,7 +761,8 @@ public static class LandblockManager
     }
 
     /// <summary>
-    /// Returns the active, non-null adjacents for a landblock
+    /// Returns the active, non-null adjacents for a landblock<para />
+    /// Only landblocks in the same instance can be adjacent to each other
     /// </summary>
     private static List<Landblock> GetAdjacents(Landblock landblock)
     {
@@ -673,7 +772,7 @@ public static class LandblockManager
 
         foreach (var adjacentID in adjacentIDs)
         {
-            var adjacent = landblocks[adjacentID.LandblockX, adjacentID.LandblockY];
+            var adjacent = GetLoadedLandblock(landblock.Instance, adjacentID);
             if (adjacent != null)
             {
                 adjacents.Add(adjacent);
@@ -846,7 +945,7 @@ public static class LandblockManager
                     // remove from list of managed landblocks
                     if (loadedLandblocks.Remove(landblock))
                     {
-                        landblocks[landblock.Id.LandblockX, landblock.Id.LandblockY] = null;
+                        ClearLoadedLandblock(landblock);
 
                         // remove from landblock group
                         for (var i = landblockGroups.Count - 1; i >= 0; i--)
