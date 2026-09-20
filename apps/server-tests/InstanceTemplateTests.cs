@@ -535,7 +535,7 @@ public class InstanceTemplateConfigTests
     [TestMethod]
     public void Config_TheFileThatComesWithTheServerHasNoIslandsAndNoMistakes()
     {
-        // instances.json is copied next to the test assembly, since it is copied next to the server's
+        // the instances.json that comes with the server (apps/server/instances.json) is copied next to the test assembly by the tests project
         var path = System.IO.Path.Combine(AppContext.BaseDirectory, "instances.json");
 
         if (!System.IO.File.Exists(path))

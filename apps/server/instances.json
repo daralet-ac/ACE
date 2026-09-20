@@ -1,6 +1,7 @@
 {
   // Islands: groups of landblocks that are instanced. Nothing is an island until it is listed here.
-  // This is read once, when the server starts. See docs/instanced-landblocks.md.
+  // This is read once, when the server starts, from the copy that sits next to ACE.Server.exe. The build puts this file there only when there is
+  // none yet and never over one that is there, so that copy is the one to edit. Delete it and build to get this one back. See docs/instanced-landblocks.md.
   //
   // An example (remove the // to use it):
   //

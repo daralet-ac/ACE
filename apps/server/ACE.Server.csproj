@@ -287,10 +287,13 @@
     <None Update="starterGear.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="instances.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
+
+  <!-- instances.json is the server's own configuration. The build puts the one that comes with the server next to it when there is none there yet,
+       and leaves one that is already there alone, so that a rebuild can't undo what has been edited. Delete it and build to get the default back. -->
+  <Target Name="CopyInstancesJsonOnce" AfterTargets="CopyFilesToOutputDirectory">
+    <Copy SourceFiles="instances.json" DestinationFolder="$(OutDir)" Condition="!Exists('$(OutDir)instances.json')" />
+  </Target>
 
   <ItemGroup>
     <Content Include="recipe_use_emote_whitelist.json">
