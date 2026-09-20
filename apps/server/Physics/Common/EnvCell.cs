@@ -142,7 +142,7 @@ public class EnvCell : ObjCell, IEquatable<EnvCell>
                 continue;
             }
 
-            var cell = (EnvCell)LScape.get_landcell(blockCellID);
+            var cell = (EnvCell)LScape.get_landcell(blockCellID, Instance);
             VisibleCells.Add(visibleCellID, cell);
         }
     }
@@ -308,6 +308,7 @@ public class EnvCell : ObjCell, IEquatable<EnvCell>
     public EnvCell add_visible_cell(uint cellID)
     {
         var envCell = DBObj.GetEnvCell(cellID);
+        envCell.Instance = Instance;
         VisibleCells.Add(cellID, envCell);
         return envCell;
     }

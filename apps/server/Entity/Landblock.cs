@@ -214,7 +214,7 @@ public class Landblock : IActor
         lastActiveTime = DateTime.UtcNow;
 
         var cellLandblock = DBObj.GetCellLandblock(Id.Raw | 0xFFFF);
-        PhysicsLandblock = new Physics.Common.Landblock(cellLandblock);
+        PhysicsLandblock = new Physics.Common.Landblock(cellLandblock) { Instance = instance };
     }
 
     public void Init(bool reload = false)
@@ -464,7 +464,7 @@ public class Landblock : IActor
 
                     wo.Location = new Position(pos.ObjCellID, pos.Frame.Origin, pos.Frame.Orientation);
 
-                    var sortCell = LScape.get_landcell(pos.ObjCellID) as SortCell;
+                    var sortCell = LScape.get_landcell(pos.ObjCellID, Instance) as SortCell;
                     if (sortCell != null && sortCell.has_building())
                     {
                         wo.Destroy();
@@ -475,7 +475,7 @@ public class Landblock : IActor
                     {
                         // Avoid some less than ideal locations
                         if (
-                            !wo.Location.IsWalkable()
+                            !wo.Location.IsWalkable(Instance)
                             || PhysicsLandblock.OnRoad(new Vector3(xPos, yPos, pos.Frame.Origin.Z))
                         )
                         {
@@ -1650,7 +1650,7 @@ public class Landblock : IActor
         actionQueue.Clear();
 
         // remove physics landblock
-        LScape.unload_landblock(landblockID);
+        LScape.unload_landblock(landblockID, Instance);
 
         PhysicsLandblock.release_shadow_objs();
     }

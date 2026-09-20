@@ -726,6 +726,9 @@ public class Transition
     public void InitObject(PhysicsObj obj, ObjectInfoState objectState)
     {
         ObjectInfo.Init(obj, objectState);
+
+        // Transitions are reused, so the cells collected for this one must be looked up in the instance of the object it is now for
+        CellArray.Instance = obj.Instance;
     }
 
     public void InitPath(ObjCell beginCell, Position beginPos, Position endPos)

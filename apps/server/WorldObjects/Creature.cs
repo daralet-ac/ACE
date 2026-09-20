@@ -340,7 +340,7 @@ public partial class Creature : Container
             return false;
         }
 
-        var frigidLandblock = LScape.get_landblock(Location.Cell);
+        var frigidLandblock = LScape.get_landblock(Location.Cell, InstanceId);
         return frigidLandblock != null && frigidLandblock.NearSnow(
             new Vector3(Location.PositionX, Location.PositionY, Location.PositionZ), 50f);
     }

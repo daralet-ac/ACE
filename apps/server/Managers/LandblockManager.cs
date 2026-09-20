@@ -54,6 +54,14 @@ public static class LandblockManager
     /// </summary>
     private static readonly Dictionary<InstancedLandblockKey, Landblock> instancedLandblocks = new();
 
+    private static int instancedLandblockCount;
+
+    /// <summary>
+    /// How many landblocks belonging to an instance other than the persistent world are currently loaded.<para />
+    /// This is read without a lock. It is only a cheap hint for hot paths that need to do extra work while instances exist.
+    /// </summary>
+    public static int InstancedLandblockCount => Volatile.Read(ref instancedLandblockCount);
+
     /// <summary>
     /// A lookup table of all the currently loaded landblocks
     /// </summary>
@@ -630,7 +638,14 @@ public static class LandblockManager
         }
         else
         {
-            instancedLandblocks[new InstancedLandblockKey(landblock.Instance, landblock.Id)] = landblock;
+            if (instancedLandblocks.TryAdd(new InstancedLandblockKey(landblock.Instance, landblock.Id), landblock))
+            {
+                Interlocked.Increment(ref instancedLandblockCount);
+            }
+            else
+            {
+                instancedLandblocks[new InstancedLandblockKey(landblock.Instance, landblock.Id)] = landblock;
+            }
         }
     }
 
@@ -646,7 +661,28 @@ public static class LandblockManager
         }
         else
         {
-            instancedLandblocks.Remove(new InstancedLandblockKey(landblock.Instance, landblock.Id));
+            if (instancedLandblocks.Remove(new InstancedLandblockKey(landblock.Instance, landblock.Id)))
+            {
+                Interlocked.Decrement(ref instancedLandblockCount);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns the landblock if it is currently loaded in the instance, or null if it isn't.<para />
+    /// Unlike GetLandblock this never loads anything, which is what physics uses to look up a landblock in an instance:
+    /// an instance only ever contains the landblocks that were set up for it.
+    /// </summary>
+    public static Landblock TryGetLandblock(LandblockId landblockId, uint instance)
+    {
+        landblockLock.EnterReadLock();
+        try
+        {
+            return GetLoadedLandblock(instance, landblockId);
+        }
+        finally
+        {
+            landblockLock.ExitReadLock();
         }
     }
 

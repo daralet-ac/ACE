@@ -34,6 +34,13 @@ public class ObjCell : PartCell, IEquatable<ObjCell>
     public Landblock CurLandblock;
 
     /// <summary>
+    /// The instance this cell belongs to. Set for both outdoor and indoor cells when they are created by their landblock,
+    /// and used to look up neighbouring cells in the same instance. 0 is the persistent world.<para />
+    /// This is separate from CurLandblock, which is only set for outdoor cells and is used for water lookups.
+    /// </summary>
+    public uint Instance;
+
+    /// <summary>
     /// Returns TRUE if this is a house cell that can be protected by a housing barrier
     /// </summary>
     public bool IsCellRestricted => RestrictionObj != 0;
@@ -261,6 +268,11 @@ public class ObjCell : PartCell, IEquatable<ObjCell>
 
     public static ObjCell GetVisible(uint cellID)
     {
+        return GetVisible(cellID, LScape.PersistentInstance);
+    }
+
+    public static ObjCell GetVisible(uint cellID, uint instance)
+    {
         if (cellID == 0)
         {
             return null;
@@ -271,7 +283,7 @@ public class ObjCell : PartCell, IEquatable<ObjCell>
            return EnvCell.get_visible(cellID);
         else
             return LandCell.Get(cellID);*/
-        return LScape.get_landcell(cellID);
+        return LScape.get_landcell(cellID, instance);
     }
 
     public void Init()
@@ -390,7 +402,7 @@ public class ObjCell : PartCell, IEquatable<ObjCell>
         cellArray.NumCells = 0;
         cellArray.AddedOutside = false;
 
-        var visibleCell = GetVisible(position.ObjCellID);
+        var visibleCell = GetVisible(position.ObjCellID, cellArray.Instance);
 
         if ((position.ObjCellID & 0xFFFF) >= 0x100)
         {

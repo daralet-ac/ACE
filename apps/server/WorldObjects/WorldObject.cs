@@ -223,7 +223,10 @@ public abstract partial class WorldObject : IActor
             return false;
         }
 
-        AdjustDungeon(Location);
+        // the physics object is placed in the instance this object belongs to
+        PhysicsObj.Instance = InstanceId;
+
+        AdjustDungeon(Location, InstanceId);
 
         // exclude linkspots from spawning
         if (WeenieClassId == 10762)
@@ -231,7 +234,7 @@ public abstract partial class WorldObject : IActor
             return true;
         }
 
-        var cell = LScape.get_landcell(Location.Cell);
+        var cell = LScape.get_landcell(Location.Cell, InstanceId);
         if (cell == null)
         {
             PhysicsObj.DestroyObject();
@@ -911,21 +914,21 @@ public abstract partial class WorldObject : IActor
     }
 
     // todo: This should really be an extension method for Position, or a static method within Position or even AdjustPos
-    public static void AdjustDungeon(Position pos)
+    public static void AdjustDungeon(Position pos, uint instance = LScape.PersistentInstance)
     {
-        AdjustDungeonPos(pos);
-        AdjustDungeonCells(pos);
+        AdjustDungeonPos(pos, instance);
+        AdjustDungeonCells(pos, instance);
     }
 
     // todo: This should really be an extension method for Position, or a static method within Position or even AdjustPos
-    public static bool AdjustDungeonCells(Position pos)
+    public static bool AdjustDungeonCells(Position pos, uint instance = LScape.PersistentInstance)
     {
         if (pos == null)
         {
             return false;
         }
 
-        var landblock = LScape.get_landblock(pos.Cell);
+        var landblock = LScape.get_landblock(pos.Cell, instance);
         if (landblock == null || !landblock.HasDungeon)
         {
             return false;
@@ -933,7 +936,12 @@ public abstract partial class WorldObject : IActor
 
         var dungeonID = pos.Cell >> 16;
 
-        var adjustCell = AdjustCell.Get(dungeonID);
+        var adjustCell = AdjustCell.Get(dungeonID, instance);
+        if (adjustCell == null)
+        {
+            return false;
+        }
+
         var cellID = adjustCell.GetCell(pos.Pos);
 
         if (cellID != null && pos.Cell != cellID.Value)
@@ -945,14 +953,14 @@ public abstract partial class WorldObject : IActor
     }
 
     // todo: This should really be an extension method for Position, or a static method within Position, or even AdjustPos
-    public static bool AdjustDungeonPos(Position pos)
+    public static bool AdjustDungeonPos(Position pos, uint instance = LScape.PersistentInstance)
     {
         if (pos == null)
         {
             return false;
         }
 
-        var landblock = LScape.get_landblock(pos.Cell);
+        var landblock = LScape.get_landblock(pos.Cell, instance);
         if (landblock == null || !landblock.HasDungeon)
         {
             return false;

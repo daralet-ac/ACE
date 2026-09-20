@@ -9,6 +9,13 @@ public class CellArray
     public Dictionary<uint, ObjCell> Cells;
     public int NumCells;
 
+    /// <summary>
+    /// The instance the cells in this array belong to. The static helpers that collect cells (find_cell_list and friends)
+    /// look up neighbouring cells by id, and use this to look them up in the same instance as whoever asked.
+    /// 0 is the persistent world.
+    /// </summary>
+    public uint Instance;
+
     public CellArray()
     {
         Cells = new Dictionary<uint, ObjCell>();

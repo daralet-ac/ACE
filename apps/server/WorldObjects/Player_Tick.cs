@@ -177,7 +177,7 @@ partial class Player
             return;
         }
 
-        var physLandblock = LScape.get_landblock(PhysicsObj.Position.ObjCellID);
+        var physLandblock = LScape.get_landblock(PhysicsObj.Position.ObjCellID, InstanceId);
         if (physLandblock == null)
         {
             RemoveRoadSpeedBuff();
@@ -250,7 +250,7 @@ partial class Player
             return;
         }
 
-        var physLandblock = LScape.get_landblock(PhysicsObj.Position.ObjCellID);
+        var physLandblock = LScape.get_landblock(PhysicsObj.Position.ObjCellID, InstanceId);
         if (physLandblock == null || !physLandblock.NearSnow(PhysicsObj.Position.Frame.Origin, 50f))
         {
             return;
@@ -779,7 +779,7 @@ partial class Player
                         }
                     }
 
-                    var curCell = LScape.get_landcell(newPosition.Cell);
+                    var curCell = LScape.get_landcell(newPosition.Cell, InstanceId);
                     if (curCell != null)
                     {
                         //if (PhysicsObj.CurCell == null || curCell.ID != PhysicsObj.CurCell.ID)
@@ -919,7 +919,7 @@ partial class Player
 
             if (CurrentLandblock.IsDungeon)
             {
-                var destBlock = LScape.get_landblock(newPosition.Cell);
+                var destBlock = LScape.get_landblock(newPosition.Cell, InstanceId);
                 if (destBlock != null && destBlock.IsDungeon)
                 {
                     return false;
