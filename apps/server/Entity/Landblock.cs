@@ -68,7 +68,9 @@ public class Landblock : IActor
     public uint Instance { get; }
 
     /// <summary>
-    /// Flag indicates if this landblock is permanently loaded (for example, towns on high-traffic servers)
+    /// Flag indicates if this landblock is permanently loaded (for example, towns on high-traffic servers).
+    /// It is never unloaded, and in the persistent world it never goes dormant either. An instance keeps all of its landblocks
+    /// loaded for as long as it lasts with this, but the ones that nobody is near still go dormant.
     /// </summary>
     public bool Permaload = false;
 
@@ -805,7 +807,12 @@ public class Landblock : IActor
                 }
             }
 
-            if (!Permaload && HasNoKeepAliveObjects)
+            // A landblock that is kept loaded (Permaload) is kept active too, except in an instance. An instance keeps all of the landblocks it is made of
+            // loaded for as long as it lasts, but the ones that no player is near still go dormant, like any others: without that every monster
+            // in a big island would keep running for nobody, for as long as the instance exists.
+            var keptActive = Permaload && Instance == PersistentInstance;
+
+            if (!keptActive && HasNoKeepAliveObjects)
             {
                 if (lastActiveTime + dormantInterval < thisHeartBeat)
                 {
@@ -822,7 +829,7 @@ public class Landblock : IActor
                     IsDormant = true;
                 }
 
-                if (lastActiveTime + UnloadInterval < thisHeartBeat)
+                if (!Permaload && lastActiveTime + UnloadInterval < thisHeartBeat)
                 {
                     LandblockManager.AddToDestructionQueue(this);
                 }
