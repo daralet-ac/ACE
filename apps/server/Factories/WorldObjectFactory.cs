@@ -380,6 +380,9 @@ public static class WorldObjectFactory
     {
         var results = new List<WorldObject>();
 
+        // the instance keeps which guid each static object had in the world db, for what refers to it by that guid (see GetObjectFromWorldGuid)
+        var worldInstance = instanceId == 0 ? null : InstanceManager.Get(instanceId);
+
         // spawn direct landblock objects
         foreach (var instance in sourceObjects.Where(x => x.IsLinkChild == false))
         {
@@ -399,6 +402,8 @@ public static class WorldObjectFactory
             }
 
             var guid = instanceId == 0 ? new ObjectGuid(instance.Guid) : GuidManager.NewEphemeralStaticGuid();
+
+            worldInstance?.MapWorldGuid(instance.Guid, guid.Full);
 
             WorldObject worldObject;
 

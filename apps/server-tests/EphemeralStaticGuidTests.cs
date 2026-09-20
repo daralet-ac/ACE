@@ -34,6 +34,67 @@ public class EphemeralStaticGuidTests
     }
 
     [TestMethod]
+    public void EphemeralStaticRange_HasNoneOfTheStaticGuidsThatTheWorldDatabaseNamesInAWeenie()
+    {
+        // The result of this query on ace_world (2026-09-20), 38 rows that are all ActivationTarget (property 16), 35 different guids:
+        //   SELECT object_Id, type, value FROM weenie_properties_i_i_d WHERE value BETWEEN 1879048192 AND 2147483647;
+        // Those are guids of statics that were written into a weenie. In an instance the statics have other guids, and what refers to the
+        // old one is translated (WorldInstance.TranslateWorldGuid), which only works if no such guid could also be one made in an instance.
+        uint[] activationTargets =
+        {
+            1918373954,
+            1980014800,
+            1980014600,
+            1977929902,
+            1985237108,
+            1985237095,
+            1985237070,
+            1985237106,
+            1985237115,
+            1985237117,
+            1985237118,
+            1985237121,
+            1985237122,
+            1985237124,
+            1985241226,
+            1985241214,
+            1985241235,
+            1985241231,
+            1982083307,
+            1975828599,
+            2045460487,
+            1980010542,
+            1977929729,
+            1977929731,
+            1984200705,
+            1984200704,
+            2064207873,
+            1980010563,
+            2015944705,
+            1880039427,
+            1978990654,
+            1997606914,
+            1978994750,
+            1998655488,
+            1978986558
+        };
+
+        Assert.AreEqual(35, activationTargets.Distinct().Count());
+
+        foreach (var guid in activationTargets)
+        {
+            Assert.IsTrue(ObjectGuid.IsStatic(guid), $"0x{guid:X8} is a static guid");
+            Assert.IsFalse(
+                ObjectGuid.IsEphemeralStatic(guid),
+                $"0x{guid:X8} must not be in the range for the statics of instances"
+            );
+
+            // 0x7, the landblock, and an index: none of them is in a landblock with an X of 0xFF
+            Assert.IsTrue(((guid >> 20) & 0xFF) != 0xFF, $"0x{guid:X8}");
+        }
+    }
+
+    [TestMethod]
     public void EphemeralStaticGuid_StaysStaticSoEverythingThatTreatsStaticsSpeciallyStillDoes()
     {
         // Decay, pickup and stacking all look at IsStatic()/IsDynamic(), so a static object in an instance must not turn into a dynamic one

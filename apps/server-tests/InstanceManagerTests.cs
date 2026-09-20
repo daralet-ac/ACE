@@ -370,6 +370,66 @@ public class InstanceManagerTests
     }
 
     [TestMethod]
+    public void WorldInstance_FindsTheGuidAStaticHasInTheInstanceFromTheGuidTheWorldDatabaseGaveIt()
+    {
+        // 0x76545074 is a guid from the world database. In an instance the object has one of its own, and a weenie that says
+        // "activate 0x76545074" (its ActivationTarget) has to find the copy that is in the instance
+        var instance = InstanceManager.Register(NewTemplate());
+
+        instance.MapWorldGuid(0x76545074, 0x7FF00010);
+
+        Assert.AreEqual(0x7FF00010u, instance.TranslateWorldGuid(0x76545074));
+        Assert.AreEqual(0x7FF00010u, InstanceManager.TranslateWorldGuid(instance.Id, 0x76545074));
+    }
+
+    [TestMethod]
+    public void WorldInstance_LeavesAGuidThatIsNotFromTheWorldDatabaseAsItIs()
+    {
+        // what is made in the instance has the same guid wherever it is looked up: the statics themselves,
+        // the activation target a linked parent gives its children, and anything that is not static
+        var instance = InstanceManager.Register(NewTemplate());
+
+        instance.MapWorldGuid(0x76545074, 0x7FF00010);
+
+        Assert.AreEqual(0x7FF00010u, instance.TranslateWorldGuid(0x7FF00010));
+        Assert.AreEqual(0x80000123u, instance.TranslateWorldGuid(0x80000123));
+        Assert.AreEqual(
+            0x76545075u,
+            instance.TranslateWorldGuid(0x76545075),
+            "a guid the instance has no copy for is left alone"
+        );
+    }
+
+    [TestMethod]
+    public void WorldInstance_TwoInstancesOfTheSameLandblockDoNotShareTheirGuids()
+    {
+        var template = NewTemplate();
+        var first = InstanceManager.Register(template);
+        var second = InstanceManager.Register(template);
+
+        first.MapWorldGuid(0x76545074, 0x7FF00010);
+        second.MapWorldGuid(0x76545074, 0x7FF00020);
+
+        Assert.AreEqual(0x7FF00010u, InstanceManager.TranslateWorldGuid(first.Id, 0x76545074));
+        Assert.AreEqual(0x7FF00020u, InstanceManager.TranslateWorldGuid(second.Id, 0x76545074));
+    }
+
+    [TestMethod]
+    public void InstanceManager_TheGuidsOfThePersistentWorldAreNeverTranslated()
+    {
+        var instance = InstanceManager.Register(NewTemplate());
+
+        instance.MapWorldGuid(0x76545074, 0x7FF00010);
+
+        Assert.AreEqual(0x76545074u, InstanceManager.TranslateWorldGuid(Landblock.PersistentInstance, 0x76545074));
+        Assert.AreEqual(
+            0x76545074u,
+            InstanceManager.TranslateWorldGuid(instance.Id + 1000, 0x76545074),
+            "an instance that doesn't exist has nothing to translate with"
+        );
+    }
+
+    [TestMethod]
     public void InstanceManager_TwoPlayersWhoArriveAtTheSameMomentGetTheSameInstance()
     {
         // the two members of a fellowship who go through a portal together must not make one instance each

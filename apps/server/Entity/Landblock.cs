@@ -1522,6 +1522,17 @@ public class Landblock : IActor
     }
 
     /// <summary>
+    /// The object that a guid from the world database is for, such as the activation target of a weenie.<para />
+    /// In the persistent world that is the object with that guid. In an instance the static objects have guids of their own
+    /// (the same landblock exists more than once), so it is the copy of the object that is in this instance.
+    /// A guid that is not one of those is looked up as it is: objects made in the instance have the same guid wherever it comes from.
+    /// </summary>
+    public WorldObject GetObjectFromWorldGuid(uint worldGuid)
+    {
+        return GetObject(new ObjectGuid(InstanceManager.TranslateWorldGuid(Instance, worldGuid)));
+    }
+
+    /// <summary>
     /// This will return null if the object was not found in the current or adjacent landblocks.
     /// </summary>
     public WorldObject GetObject(ObjectGuid guid, bool searchAdjacents = true)

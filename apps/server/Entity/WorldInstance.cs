@@ -1,11 +1,13 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace ACE.Server.Entity;
 
 /// <summary>
 /// One live copy of an InstanceTemplate. Everything in it exists for as long as it does, and nothing in it is ever saved.<para />
-/// The state in here is protected by the InstanceManager, which is the only thing that changes it.
+/// The state in here is protected by the InstanceManager, which is the only thing that changes it,
+/// except for the guids of its static objects, which are made while its landblocks load, on other threads.
 /// </summary>
 public class WorldInstance
 {
@@ -36,6 +38,27 @@ public class WorldInstance
     internal HashSet<uint> MemberGuids { get; } = new HashSet<uint>();
 
     public int MemberCount => MemberGuids.Count;
+
+    /// <summary>
+    /// The guid the world database gave to a static object, and the guid the copy of it in this instance has instead.
+    /// Statics in an instance can't keep their guids, because the same landblock exists more than once. Those guids are unique in
+    /// the whole world, so one map is enough for all the landblocks of the instance. It is filled while the landblocks load.
+    /// </summary>
+    private readonly ConcurrentDictionary<uint, uint> worldGuids = new ConcurrentDictionary<uint, uint>();
+
+    internal void MapWorldGuid(uint worldGuid, uint guidInInstance)
+    {
+        worldGuids[worldGuid] = guidInInstance;
+    }
+
+    /// <summary>
+    /// The guid an object has in this instance, for a guid that was written down in the world database (or the guid itself,
+    /// if it is not one of those: the guid of something that was made in the instance is the same wherever it is looked up)
+    /// </summary>
+    public uint TranslateWorldGuid(uint guid)
+    {
+        return worldGuids.TryGetValue(guid, out var guidInInstance) ? guidInInstance : guid;
+    }
 
     internal WorldInstance(uint id, InstanceTemplate template, object owner, DateTime createdAt)
     {

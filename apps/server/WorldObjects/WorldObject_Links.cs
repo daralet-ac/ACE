@@ -62,6 +62,11 @@ partial class WorldObject
 
             wo.InstanceId = InstanceId;
 
+            if (InstanceId != 0)
+            {
+                InstanceManager.Get(InstanceId)?.MapWorldGuid(link.Guid, wo.Guid.Full);
+            }
+
             wo.Location = new Position(
                 link.ObjCellId,
                 link.OriginX,

@@ -286,6 +286,20 @@ public static class InstanceManager
         }
     }
 
+    /// <summary>
+    /// The guid an object has in an instance, for a guid that was written down in the world database, such as the activation target of a weenie.
+    /// In the persistent world the guid is what the world database says it is. In an instance the statics have guids of their own.
+    /// </summary>
+    public static uint TranslateWorldGuid(uint instanceId, uint guid)
+    {
+        if (instanceId == Landblock.PersistentInstance)
+        {
+            return guid;
+        }
+
+        return Get(instanceId)?.TranslateWorldGuid(guid) ?? guid;
+    }
+
     public static List<WorldInstance> GetInstances()
     {
         lock (sync)
