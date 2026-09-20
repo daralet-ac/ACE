@@ -573,6 +573,7 @@ partial class Player
             if (smoke != null)
             {
                 smoke.Location = Location;
+                smoke.InstanceId = InstanceId;
                 smoke.EnterWorld();
             }
 
@@ -639,6 +640,7 @@ partial class Player
         if (smoke != null)
         {
             smoke.Location = Location;
+            smoke.InstanceId = InstanceId;
             smoke.EnterWorld();
         }
 

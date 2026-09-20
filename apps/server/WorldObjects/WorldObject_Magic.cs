@@ -2433,7 +2433,7 @@ partial class WorldObject
             summonLoc.LandblockId = new LandblockId(summonLoc.GetCell());
         }
 
-        var success = SummonPortal(portalId, summonLoc, spell.PortalLifetime);
+        var success = SummonPortal(portalId, summonLoc, spell.PortalLifetime, InstanceId);
 
         if (!success && player != null)
         {
@@ -2446,7 +2446,7 @@ partial class WorldObject
     /// <summary>
     /// Spawns a portal for SpellType.PortalSummon spells
     /// </summary>
-    private static bool SummonPortal(uint portalId, Position location, double portalLifetime)
+    private static bool SummonPortal(uint portalId, Position location, double portalLifetime, uint instanceId)
     {
         var portal = GetPortal(portalId);
 
@@ -2480,6 +2480,9 @@ partial class WorldObject
         gateway.Biota.PropertiesEmote = portal.Biota.PropertiesEmote;
 
         gateway.PortalRestrictions |= PortalBitmask.NoSummon; // all gateways are marked NoSummon but by default ruleset, the OriginalPortal is the one that is checked against
+
+        // the gateway opens in the same instance as whoever summoned it
+        gateway.InstanceId = instanceId;
 
         gateway.EnterWorld();
 
@@ -3179,6 +3182,8 @@ partial class WorldObject
             sp.WeaponSpellcraft = weaponSpellcraft;
 
             sp.DamageMultiplier = damageMultiplier;
+
+            sp.InstanceId = InstanceId;
 
             if (!LandblockManager.AddObject(sp))
             {

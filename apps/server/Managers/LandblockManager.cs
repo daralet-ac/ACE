@@ -556,9 +556,49 @@ public static class LandblockManager
     /// <param name="loadAdjacents">If TRUE, ensures all of the adjacent landblocks for this WorldObject are loaded</param>
     public static bool AddObject(WorldObject worldObject, bool loadAdjacents = false)
     {
+        if (worldObject.InstanceId == Landblock.PersistentInstance)
+        {
+            ReportSpawnIntoPersistentWorldFromInstance(worldObject);
+        }
+
         var block = GetLandblock(worldObject.Location.LandblockId, worldObject.InstanceId, loadAdjacents);
 
         return block.AddWorldObject(worldObject);
+    }
+
+    private static int spawnsFromInstanceReports;
+
+    /// <summary>
+    /// An object that spawns next to another object has to be given that object's instance (WorldObject.InstanceId) before it enters the world.
+    /// If it isn't, it enters the persistent world, at coordinates that belong to an instance, where nobody in the instance can see it.<para />
+    /// This reports it, with a stack trace, a few times, when an object without an instance enters the world while a landblock group is being ticked for an instance.
+    /// It costs a single integer read when there are no instances.
+    /// </summary>
+    private static void ReportSpawnIntoPersistentWorldFromInstance(WorldObject worldObject)
+    {
+        if (InstancedLandblockCount == 0)
+        {
+            return;
+        }
+
+        var group = CurrentMultiThreadedTickingLandblockGroup.Value;
+        if (group == null || group.Instance == Landblock.PersistentInstance)
+        {
+            return;
+        }
+
+        if (Interlocked.Increment(ref spawnsFromInstanceReports) > 25)
+        {
+            return;
+        }
+
+        _log.Error(
+            "[INSTANCE] {Name} (0x{Guid}) was spawned into the persistent world by code running for instance {Instance}. Give it the instance of what spawned it before it enters the world.\n{StackTrace}",
+            worldObject.Name,
+            worldObject.Guid,
+            group.Instance,
+            Environment.StackTrace
+        );
     }
 
     /// <summary>

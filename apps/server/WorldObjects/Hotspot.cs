@@ -566,6 +566,7 @@ public class Hotspot : WorldObject
 
         activator.Location.PositionZ += 0.05f;
 
+        activator.InstanceId = defender.InstanceId;
         activator.EnterWorld();
 
         if (success != true)
@@ -588,6 +589,7 @@ public class Hotspot : WorldObject
 
         hotspot.Location.PositionZ += 0.05f;
 
+        hotspot.InstanceId = defender.InstanceId;
         hotspot.EnterWorld();
 
         return true;

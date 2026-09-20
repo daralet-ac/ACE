@@ -367,12 +367,15 @@ public static class WorldObjectFactory
     }
 
     /// <summary>
-    /// This will create a list of WorldObjects, all with new GUIDs and for every position provided.
+    /// This will create a list of WorldObjects, one for every position provided. In the persistent world they keep the guid
+    /// they have in the world db (or the biota from the shard, if they were changed). In an instance the same landblock exists more than once,
+    /// so they get a guid of their own instead, and nothing is restored from the shard.
     /// </summary>
     public static List<WorldObject> CreateNewWorldObjects(
         List<LandblockInstance> sourceObjects,
         List<Biota> biotas,
-        uint? restrict_wcid = null
+        uint? restrict_wcid = null,
+        uint instanceId = 0
     )
     {
         var results = new List<WorldObject>();
@@ -395,11 +398,11 @@ public static class WorldObjectFactory
                 continue;
             }
 
-            var guid = new ObjectGuid(instance.Guid);
+            var guid = instanceId == 0 ? new ObjectGuid(instance.Guid) : GuidManager.NewEphemeralStaticGuid();
 
             WorldObject worldObject;
 
-            var biota = biotas.FirstOrDefault(b => b.Id == instance.Guid);
+            var biota = instanceId == 0 ? biotas.FirstOrDefault(b => b.Id == instance.Guid) : null;
             if (biota == null)
             {
                 worldObject = CreateWorldObject(weenie, guid);
@@ -439,6 +442,8 @@ public static class WorldObjectFactory
 
             if (worldObject != null)
             {
+                worldObject.InstanceId = instanceId;
+
                 // queue linked child objects
                 foreach (var link in instance.LandblockInstanceLink)
                 {

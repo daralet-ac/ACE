@@ -46,6 +46,7 @@ partial class Creature
             {
                 var wo = WorldObjectFactory.CreateNewWorldObject(1020001);
                 wo.Location = Location;
+                wo.InstanceId = InstanceId;
                 wo.EnterWorld();
             }
         }

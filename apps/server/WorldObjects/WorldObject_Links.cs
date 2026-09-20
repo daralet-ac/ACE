@@ -6,6 +6,7 @@ using ACE.Database.Models.Shard;
 using ACE.Database.Models.World;
 using ACE.Entity;
 using ACE.Server.Factories;
+using ACE.Server.Managers;
 
 namespace ACE.Server.WorldObjects;
 
@@ -37,12 +38,15 @@ partial class WorldObject
         foreach (var link in LinkedInstances)
         {
             WorldObject wo = null;
-            var biota = biotas.FirstOrDefault(b => b.Id == link.Guid);
+
+            // In an instance the guid from the world db can't be used, because the same landblock exists more than once,
+            // and nothing is restored from the shard
+            var biota = InstanceId == 0 ? biotas.FirstOrDefault(b => b.Id == link.Guid) : null;
             if (biota == null)
             {
                 wo = WorldObjectFactory.CreateWorldObject(
                     DatabaseManager.World.GetCachedWeenie(link.WeenieClassId),
-                    new ObjectGuid(link.Guid)
+                    InstanceId == 0 ? new ObjectGuid(link.Guid) : GuidManager.NewEphemeralStaticGuid()
                 );
             }
             else
@@ -55,6 +59,8 @@ partial class WorldObject
             {
                 continue;
             }
+
+            wo.InstanceId = InstanceId;
 
             wo.Location = new Position(
                 link.ObjCellId,

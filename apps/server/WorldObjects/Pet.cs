@@ -101,6 +101,9 @@ public class Pet : Creature
         // All pets don't leave corpses, this maybe should have been in data, but isn't so lets make sure its true.
         NoCorpse = true;
 
+        // a pet is in the same instance as its owner
+        InstanceId = player.InstanceId;
+
         var success = EnterWorld();
 
         if (!success)

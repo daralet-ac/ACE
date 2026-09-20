@@ -273,8 +273,14 @@ public class Landblock : IActor
     private void CreateWorldObjects()
     {
         var objects = DatabaseManager.World.GetCachedInstancesByLandblock(Id.Landblock);
-        var shardObjects = DatabaseManager.Shard.BaseDatabase.GetStaticObjectsByLandblock(Id.Landblock);
-        var factoryObjects = WorldObjectFactory.CreateNewWorldObjects(objects, shardObjects);
+
+        // Nothing in an instance is restored from the shard. Its objects are made from the world db, and only exist for as long as the instance does.
+        var shardObjects =
+            Instance == PersistentInstance
+                ? DatabaseManager.Shard.BaseDatabase.GetStaticObjectsByLandblock(Id.Landblock)
+                : new List<ACE.Database.Models.Shard.Biota>();
+
+        var factoryObjects = WorldObjectFactory.CreateNewWorldObjects(objects, shardObjects, instanceId: Instance);
 
         actionQueue.EnqueueAction(
             new ActionEventDelegate(() =>
@@ -358,6 +364,12 @@ public class Landblock : IActor
     /// </summary>
     private void SpawnDynamicShardObjects()
     {
+        // what is saved for a landblock (corpses and the like) belongs to the persistent world, not to its instances
+        if (Instance != PersistentInstance)
+        {
+            return;
+        }
+
         var dynamics = DatabaseManager.Shard.BaseDatabase.GetDynamicObjectsByLandblock(Id.Landblock);
         var factoryShardObjects = WorldObjectFactory.CreateWorldObjects(dynamics);
 
@@ -1708,6 +1720,12 @@ public class Landblock : IActor
 
     private void SaveDB()
     {
+        // Nothing in an instance is ever saved. It would come back in the persistent world, where the same landblock is loaded from the same rows.
+        if (Instance != PersistentInstance)
+        {
+            return;
+        }
+
         var biotas = new Collection<(Biota biota, ReaderWriterLockSlim rwLock)>();
 
         foreach (var wo in worldObjects.Values)

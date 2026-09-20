@@ -1143,6 +1143,11 @@ public abstract partial class WorldObject : IActor
                 GuidManager.RecycleDynamicGuid(Guid);
             }
         }
+        else if (Guid.IsEphemeralStatic())
+        {
+            // a static object in an instance has a guid of its own, which is given back once the instance is done with it
+            GuidManager.RecycleEphemeralStaticGuid(Guid);
+        }
     }
 
     public void FadeOutAndDestroy(bool raiseNotifyOfDestructionEvent = true)
