@@ -73,6 +73,19 @@ public static class InstanceTemplateConfig
         public float Qy { get; set; }
         public float Qz { get; set; }
         public float Qw { get; set; } = 1f;
+
+        /// <summary>
+        /// Nothing has been written in it, as in "return": { }. That says nothing, which is the same as leaving it out.
+        /// </summary>
+        public bool IsEmpty() =>
+            string.IsNullOrWhiteSpace(Cell)
+            && X == 0f
+            && Y == 0f
+            && Z == 0f
+            && Qx == 0f
+            && Qy == 0f
+            && Qz == 0f
+            && Qw == 1f;
     }
 
     /// <summary>
@@ -246,7 +259,12 @@ public static class InstanceTemplateConfig
 
         Position returnPosition = null;
 
-        if (island.Return != null && !TryBuildPosition(island.Return, out returnPosition, out problem))
+        // "return": { } says nothing, which is the same as leaving it out: players are sent to their sanctuary
+        if (
+            island.Return != null
+            && !island.Return.IsEmpty()
+            && !TryBuildPosition(island.Return, out returnPosition, out problem)
+        )
         {
             Fail($"return: {problem}");
         }
@@ -350,6 +368,12 @@ public static class InstanceTemplateConfig
         if (entry == null)
         {
             problem = "it is missing";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(entry.Cell))
+        {
+            problem = "it has no cell. A position is a cell, x, y and z (and a rotation): /myloc shows them";
             return false;
         }
 

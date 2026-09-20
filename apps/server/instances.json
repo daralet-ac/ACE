@@ -26,7 +26,7 @@
   //     "entry": { "cell": "0xE74E0019", "x": 84, "y": 7.1, "z": 94, "qw": 1 },
   //
   //     // where players are sent when the island is closed, and where someone who logs out inside it is saved.
-  //     // Leave it out to send them to their sanctuary (lifestone). It can't be inside the island.
+  //     // Leave it out, or write it as { }, to send them to their sanctuary (lifestone). It can't be inside the island.
   //     "return": { "cell": "0xA9B40019", "x": 84, "y": 7.1, "z": 94, "qw": 1 }
   //   }
   // ]

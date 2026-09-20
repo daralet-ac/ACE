@@ -298,6 +298,42 @@ public class InstanceTemplateConfigTests
     }
 
     [TestMethod]
+    public void Config_AnEmptyReturnIsTheSameAsLeavingItOut()
+    {
+        // "return": { } says nothing, so it is the sanctuary, like no return at all
+        var templates = Parse(
+            With(Valid, "\"instanceOnly\": true,", "\"instanceOnly\": true, \"return\": { },"),
+            out var errors
+        );
+
+        Assert.AreEqual(0, errors.Count, string.Join(" | ", errors));
+        Assert.AreEqual(1, templates.Count);
+        Assert.IsNull(templates[0].ReturnPosition);
+    }
+
+    [TestMethod]
+    public void Config_AReturnThatHasSomethingInItButNoCellIsAMistake()
+    {
+        AssertRejected(
+            With(
+                Valid,
+                "\"instanceOnly\": true,",
+                "\"instanceOnly\": true, \"return\": { \"x\": 1, \"y\": 2, \"z\": 3 },"
+            ),
+            "return: it has no cell"
+        );
+    }
+
+    [TestMethod]
+    public void Config_AnEntryWithNothingInItSaysThatItHasNoCell()
+    {
+        AssertRejected(
+            With(Valid, "\"entry\": { \"cell\": \"0xE74E0019\", \"x\": 84, \"y\": 7.1, \"z\": 94 }", "\"entry\": { }"),
+            "entry: it has no cell"
+        );
+    }
+
+    [TestMethod]
     public void Config_InstanceOnlyHasToBeSaidEitherWay()
     {
         // leaving it out would make islands that are in use in the persistent world stop existing there, or not, by accident
