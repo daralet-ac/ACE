@@ -159,6 +159,7 @@ Off by default. Set the server property `capstone_instanced_dungeons` to a comma
 ## Known gaps
 
 - Not run against a live server yet (there is no database in the environment it was written in): the capstone path, `/instance`, and the real player flows (teleport, login, logout, death). The pieces below them (physics, landblocks, ids, teardown) are tested, both with unit tests and against the real DATs.
+- Portal storm zones (`ResonanceZoneService`) group players by landblock number and never look at the instance, so a storm in a landblock also reaches the players in instances of it. Decide whether that is wanted.
 - Only `ActivationTarget` is translated. The world database was checked for weenies that name a static object by its guid (`SELECT object_Id, type, value FROM weenie_properties_i_i_d WHERE value BETWEEN 1879048192 AND 2147483647`): 38 weenies, all `ActivationTarget`, pointing at 35 statics in 18 landblocks (none of them in a capstone dungeon), and nothing else. A guid written down anywhere else (a new property, an emote) would not be translated. The links between statics (`landblock_instance_link`) are not affected, because they are made as references between the objects.
 - Admin `Create*` commands and the old `Game.cs` chess pieces don't copy the instance to what they make. The `[INSTANCE]` warning in the log says when something is spawned without one.
 - Spawns that would be placed right at the outer edge of a footprint fail, because the edge is solid (see the ring).
