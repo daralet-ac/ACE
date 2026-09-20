@@ -533,7 +533,7 @@ public class InstanceTemplateConfigTests
     }
 
     [TestMethod]
-    public void Config_TheFileThatComesWithTheServerHasNoIslandsAndNoMistakes()
+    public void Config_TheFileThatComesWithTheServerHasNoMistakesAndNothingInstanceOnly()
     {
         // the instances.json that comes with the server (apps/server/instances.json) is copied next to the test assembly by the tests project
         var path = System.IO.Path.Combine(AppContext.BaseDirectory, "instances.json");
@@ -544,8 +544,14 @@ public class InstanceTemplateConfigTests
         }
 
         var errors = new List<string>();
+        var templates = InstanceTemplateConfig.Parse(System.IO.File.ReadAllText(path), errors);
 
-        Assert.AreEqual(0, InstanceTemplateConfig.Parse(System.IO.File.ReadAllText(path), errors).Count);
         Assert.AreEqual(0, errors.Count, string.Join(" | ", errors));
+
+        // an island that is instance only takes its landblocks away from the persistent world, so nothing that comes with the server may be
+        foreach (var template in templates)
+        {
+            Assert.IsFalse(template.InstanceOnly, template.Name + " is instance only");
+        }
     }
 }

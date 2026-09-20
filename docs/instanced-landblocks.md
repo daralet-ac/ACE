@@ -41,7 +41,7 @@ An instance ends `instance_empty_timeout_minutes` (default **15**) after its las
 
 ## Islands
 
-An island is a template that is read from `instances.json`, next to the server. The build copies the one in `apps/server` there only when there is none yet, and never over one that is there, so the copy next to the server is the one to edit, and a rebuild does not undo it (delete it and build to get the default back). It is read once, when the server starts, before the world opens. There are no islands until some are listed. The file allows comments and trailing commas.
+An island is a template that is read from `instances.json`, next to the server. The build copies the one in `apps/server` there only when there is none yet, and never over one that is there, so the copy next to the server is the one to edit, and a rebuild does not undo it (delete it and build to get the default back). It is read once, when the server starts, before the world opens. The file that comes with the server lists one island, `aerlinthe`, for testing: 13 x 12 landblocks, 210 with the ring. It is not instance only, so nothing changes in the persistent world until somebody runs `/instance open aerlinthe`. A copy next to the server that was made before it was added does not get it, because a build never overwrites that copy: delete the copy and build, or copy the island in. The file allows comments and trailing commas.
 
 ```json
 {

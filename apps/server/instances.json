@@ -31,5 +31,16 @@
   //     "return": { "cell": "0xA9B40019", "x": 84, "y": 7.1, "z": 94, "qw": 1 }
   //   }
   // ]
-  "islands": []
+  "islands": [
+    {
+      // A big island for testing: 13 x 12 landblocks (B3F3 to BFE8), 210 with the ring. Open it with /instance open aerlinthe.
+      // It is not instance only, so nothing changes in the persistent world until somebody opens it. There is no "return", so
+      // players go to their sanctuary (lifestone) when it closes.
+      "name": "aerlinthe",
+      "rectangles": [ { "from": "B3F3", "to": "BFE8" } ],
+      "bufferRing": 1,
+      "instanceOnly": false,
+      "entry": { "cell": "0xBAE8001D", "x": 84.141266, "y": 102.750717, "z": 26.004999, "qw": 1 }
+    }
+  ]
 }
