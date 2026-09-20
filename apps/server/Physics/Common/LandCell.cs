@@ -279,6 +279,10 @@ public class LandCell : SortCell
             {
                 cellArray.add_cell(cellID, landCell);
             }
+            else
+            {
+                cellArray.MissingOutdoorCell = true;
+            }
         }
     }
 

@@ -281,6 +281,10 @@ partial class Program
 
         RecipeComponentUseEmote.Initialize();
 
+        // before the world opens: landblocks that only exist as instances have to be known before anything can load them
+        _log.Information("Loading instance templates (instances.json)...");
+        InstanceManager.LoadTemplates();
+
         _log.Information("Initializing GuidManager...");
         GuidManager.Initialize();
 

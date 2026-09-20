@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ACE.Entity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -35,6 +36,16 @@ public class LandblockIdTests
         Assert.IsTrue(lookup.ContainsKey(new LandblockId(0x01E303B9)));
         Assert.IsTrue(lookup.TryGetValue(new LandblockId(0x01E30001), out var value));
         Assert.AreEqual("capstone", value);
+    }
+
+    [TestMethod]
+    public void LandblockId_IsComparedWithoutBoxing()
+    {
+        // sets and dictionaries of landblocks use this instead of Equals(object), which boxes both sides on every comparison
+        IEquatable<LandblockId> withCell = new LandblockId(0x01E30001);
+
+        Assert.IsTrue(withCell.Equals(new LandblockId(0x01E3FFFF)));
+        Assert.IsFalse(withCell.Equals(new LandblockId(0x01E4FFFF)));
     }
 
     [TestMethod]

@@ -2,7 +2,7 @@ using System;
 
 namespace ACE.Entity;
 
-public struct LandblockId
+public struct LandblockId : IEquatable<LandblockId>
 {
     public uint Raw { get; }
 
@@ -108,6 +108,14 @@ public struct LandblockId
         {
             return new LandblockId((uint)LandblockX << 24 | (uint)newY << 16 | Raw & 0xFFFF);
         }
+    }
+
+    /// <summary>
+    /// Without this, every dictionary or set that has a LandblockId in its key boxes it to compare it
+    /// </summary>
+    public bool Equals(LandblockId other)
+    {
+        return this == other;
     }
 
     public override bool Equals(object obj)

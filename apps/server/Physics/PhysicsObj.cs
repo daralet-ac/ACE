@@ -1861,7 +1861,12 @@ public class PhysicsObj
                 LandDefs.AdjustToOutside(newPos);
 
                 // ensure walkable slope
-                var landcell = (LandCell)LScape.get_landcell(newPos.ObjCellID, Instance);
+                // null if this is next to the landblock the object is in, and that one is not in the instance
+                var landcell = LScape.get_landcell(newPos.ObjCellID, Instance) as LandCell;
+                if (landcell == null)
+                {
+                    continue;
+                }
 
                 Polygon walkable = null;
                 var terrainPoly = landcell.find_terrain_poly(newPos.Frame.Origin, ref walkable);
@@ -1880,6 +1885,11 @@ public class PhysicsObj
                 {
                     // set to ground pos
                     var landblock = LScape.get_landblock(newPos.ObjCellID, Instance);
+                    if (landblock == null)
+                    {
+                        continue;
+                    }
+
                     var groundZ = landblock.GetZ(newPos.Frame.Origin) + 0.05f;
 
                     if (Math.Abs(newPos.Frame.Origin.Z - groundZ) > ScatterThreshold_Z)
@@ -1916,6 +1926,11 @@ public class PhysicsObj
             if (indoors)
             {
                 var landblock = LScape.get_landblock(newPos.ObjCellID, Instance);
+                if (landblock == null)
+                {
+                    continue;
+                }
+
                 var envcells = landblock.get_envcells();
                 var found = false;
                 foreach (var envCell in envcells)

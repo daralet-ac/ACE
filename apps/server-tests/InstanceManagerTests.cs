@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using ACE.Entity;
 using ACE.Server.Entity;
 using ACE.Server.Managers;
@@ -305,5 +306,103 @@ public class InstanceManagerTests
     {
         // the server property is read through the database, so what is checked here is the default it falls back to
         Assert.AreEqual(15L, DefaultPropertyManager.DefaultLongProperties["instance_empty_timeout_minutes"].Item);
+    }
+
+    [TestMethod]
+    public void InstanceManager_ALandblockThatOnlyExistsAsAnInstanceIsNotThereInThePersistentWorld()
+    {
+        var island = new LandblockId(0x7D7DFFFF);
+        var elsewhere = new LandblockId(0x7E7EFFFF);
+        var template = NewTemplate(true, island);
+
+        Assert.IsFalse(InstanceManager.IsInstanceOnly(island), "nothing says so before the template is registered");
+
+        InstanceManager.RegisterTemplate(template);
+        var instance = InstanceManager.Register(template);
+
+        Assert.IsTrue(InstanceManager.IsInstanceOnly(island));
+        Assert.IsTrue(InstanceManager.IsInstanceOnly(new LandblockId(0x7D7D0100)), "cell bits don't matter");
+        Assert.IsFalse(InstanceManager.IsInstanceOnly(elsewhere));
+
+        // nobody can be sent there in the persistent world, but they can be sent to an instance of it
+        Assert.IsFalse(InstanceManager.CanEnter(Landblock.PersistentInstance, island));
+        Assert.IsTrue(InstanceManager.CanEnter(Landblock.PersistentInstance, elsewhere));
+        Assert.IsTrue(InstanceManager.CanEnter(instance.Id, island));
+    }
+
+    [TestMethod]
+    public void InstanceManager_ATemplateThatIsNotInstanceOnlyLeavesItsLandblocksInThePersistentWorld()
+    {
+        var landblock = new LandblockId(0x7F7FFFFF);
+
+        InstanceManager.RegisterTemplate(NewTemplate(false, landblock));
+
+        Assert.IsFalse(InstanceManager.IsInstanceOnly(landblock));
+        Assert.IsTrue(InstanceManager.CanEnter(Landblock.PersistentInstance, landblock));
+    }
+
+    [TestMethod]
+    public void InstanceManager_ReplacingATemplateChangesWhichLandblocksAreInstanceOnly()
+    {
+        var name = "test-" + Guid.NewGuid();
+        var first = new LandblockId(0x8080FFFF);
+        var second = new LandblockId(0x8081FFFF);
+
+        InstanceManager.RegisterTemplate(new InstanceTemplate(name, new[] { first }, At(0x80800100), null, true));
+        Assert.IsTrue(InstanceManager.IsInstanceOnly(first));
+
+        InstanceManager.RegisterTemplate(new InstanceTemplate(name, new[] { second }, At(0x80810100), null, true));
+        Assert.IsFalse(InstanceManager.IsInstanceOnly(first), "the earlier template is gone");
+        Assert.IsTrue(InstanceManager.IsInstanceOnly(second));
+    }
+
+    [TestMethod]
+    public void LandblockManager_WillNotLoadALandblockThatOnlyExistsAsAnInstanceInThePersistentWorld()
+    {
+        // Nothing has to be set up for this: the landblock is refused before there is anything to load
+        var island = new LandblockId(0x8181FFFF);
+
+        InstanceManager.RegisterTemplate(NewTemplate(true, island));
+
+        Assert.IsNull(LandblockManager.GetLandblock(island, false));
+        Assert.IsNull(LandblockManager.GetLandblock(island, true, true));
+        Assert.IsFalse(LandblockManager.IsLoaded(island));
+    }
+
+    [TestMethod]
+    public void InstanceManager_TwoPlayersWhoArriveAtTheSameMomentGetTheSameInstance()
+    {
+        // the two members of a fellowship who go through a portal together must not make one instance each
+        var template = NewTemplate();
+        var owner = new object();
+
+        var results = Enumerable
+            .Range(0, 16)
+            .AsParallel()
+            .WithDegreeOfParallelism(16)
+            .Select(_ =>
+            {
+                var instance = InstanceManager.FindOrRegister(template, owner, out var created);
+                return (instance, created);
+            })
+            .ToList();
+
+        Assert.AreEqual(1, results.Count(r => r.created), "only one of them makes it");
+        Assert.AreEqual(1, results.Select(r => r.instance.Id).Distinct().Count());
+    }
+
+    [TestMethod]
+    public void InstanceManager_AnInstanceThatIsShuttingDownIsNotFoundAgain()
+    {
+        var template = NewTemplate();
+        var owner = new object();
+
+        var first = InstanceManager.FindOrRegister(template, owner, out var firstCreated);
+        first.IsClosing = true;
+        var second = InstanceManager.FindOrRegister(template, owner, out var secondCreated);
+
+        Assert.IsTrue(firstCreated);
+        Assert.IsTrue(secondCreated, "a new one is made instead of going into one that is about to be deleted");
+        Assert.AreNotEqual(first.Id, second.Id);
     }
 }

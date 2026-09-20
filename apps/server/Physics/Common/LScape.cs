@@ -124,9 +124,10 @@ public static class LScape
                 return LandblockManager.TryGetLandblock(lbid, instance)?.PhysicsLandblock;
             }
 
+            // null for a landblock that only exists as an instance: the persistent world refuses to load those
             var lbmLandblock = LandblockManager.GetLandblock(lbid, false, false);
 
-            return lbmLandblock.PhysicsLandblock;
+            return lbmLandblock?.PhysicsLandblock;
         }
 
         // client implementation

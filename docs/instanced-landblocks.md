@@ -1,0 +1,152 @@
+# Instanced landblocks
+
+An **instance** is a separate, private copy of some landblocks. Two players in two instances of the same landblock never see, hear, hit or collide with each other, and nothing in an instance is ever saved. Instance 0 is the persistent world, which is everything that existed before instances.
+
+This is used for two things:
+
+- **Dungeons for one group** (the capstone dungeons): one instance per fellowship, instead of the six hand-made copies of each dungeon.
+- **Islands**: whole groups of landblocks, made as instances. An island can be *instance only*, so that it does not exist in the persistent world at all.
+
+## How it works
+
+| Word | Meaning |
+|---|---|
+| **Template** (`InstanceTemplate`) | What an instance is made of: its landblocks (the **footprint**), where players arrive, and where they are sent when it ends. |
+| **Footprint** | The landblocks of the instance. Nothing else is ever loaded for it, whatever is next to them in the world. |
+| **Ring / boundary** | Landblocks of the footprint that are a margin around the place. They are loaded, but players are turned back when they get into one. |
+| **Instance only** | The template's landblocks stop existing in the persistent world. |
+| **Instance** (`WorldInstance`) | One live copy made from a template. It has an id (1, 2, 3, ...), never reused while the server runs. |
+
+Everything that belongs to an instance carries its id: the landblocks (`Landblock.Instance`), the objects in them (`WorldObject.InstanceId`), and the physics cells and objects (`ObjCell.Instance`, `PhysicsObj.Instance`). Landblocks of different instances are never ticked in the same `LandblockGroup`, and lookups from physics into an instance never load anything.
+
+### What is guaranteed
+
+- **Nothing leaks between instances.** Objects, players, physics, visibility, monsters' targets and spawns are per instance. Anything that spawns something (a pet, a projectile, a portal, loot) puts it in the instance of whoever made it.
+- **Nothing is saved.** An instance loads nothing from the shard and saves nothing to it. Objects in it get their ids from a reserved range (`0x7FF00000`-`0x7FFFFFFF`, given back when the instance ends), so two copies of one landblock don't have two objects with the same id.
+- **Nothing outlives its instance.** When an instance is deleted everything in it is destroyed.
+- **Nobody ends up in an instance by accident.** A teleport with no instance stays in the instance the player is in only if the destination is inside its footprint (a portal inside a dungeon). Anything else (a recall, a lifestone, an admin `/tele`) goes to the persistent world.
+- **The edge is solid.** Anything that would move into a landblock that is not part of the instance (or, next to the persistent world, into an instance-only landblock) stops at the edge, like at a wall. This holds for monsters, pets and projectiles too, not only players.
+
+### Rules for what happens in an instance
+
+- **No corpse.** A player who dies in an instance leaves no corpse and loses nothing, since the corpse would only be deleted along with the instance.
+- **No dropping items.** Dropping and splitting a stack onto the ground are refused, because whatever was dropped would be deleted with the instance.
+- **Logging out.** A player who logs out inside an instance is saved at the template's return position (or at their sanctuary if it has none), so they log back in to the persistent world. A player who is found saved inside an instance-only landblock (the server went down while they were in it) is moved out when they log in.
+
+### Lifetime
+
+An instance ends `instance_empty_timeout_minutes` (default **15**) after its last player has left it. An instance nobody ever entered ends 15 minutes after it was made. `/instance close <id>` sends everyone out and deletes it as soon as they are gone.
+
+## Islands
+
+An island is a template that is read from `instances.json`, next to the server (`apps/server/instances.json`, copied to the output like `starterGear.json`). It is read once, when the server starts, before the world opens. There are no islands until some are listed. The file allows comments and trailing commas.
+
+```json
+{
+  "islands": [
+    {
+      "name": "hebian-island",
+
+      // the landblocks of the island: the first four digits of a cell (0xE74E0019 is landblock E74E).
+      // "landblocks" lists them one by one and "rectangles" gives every landblock from one corner to the other
+      "landblocks": [ "E74E" ],
+      "rectangles": [ { "from": "E750", "to": "E852" } ],
+
+      // 0 to 4 landblocks that are loaded around the island as a margin. Default 1.
+      "bufferRing": 1,
+
+      // required: true means the persistent world no longer has these landblocks
+      "instanceOnly": true,
+
+      // where players arrive. Inside the island itself, not in its ring.
+      "entry": { "cell": "0xE74E0019", "x": 84, "y": 7.1, "z": 94, "qw": 1 },
+
+      // optional, where players go when it ends (default their sanctuary). Not inside the island.
+      "return": { "cell": "0xA9B40019", "x": 84, "y": 7.1, "z": 94, "qw": 1 }
+    }
+  ]
+}
+```
+
+Positions are a cell, `x`, `y`, `z`, and a rotation as `qx`, `qy`, `qz`, `qw` (no rotation is `qw` 1 and the others 0, which is what you get by leaving them out). Take them from `/loc` in the game. **For an outdoor cell the server works out the cell from `x` and `y`**, so use a cell and coordinates that match.
+
+A mistake in one island is logged (`[INSTANCE] instances.json: island 'x': ...`) and only leaves that island out. These are refused: no name, a name used twice, names that start with `capstone:`, `instanceOnly` missing (it has to be said on purpose, see below), no landblocks or one that is not written like `E74E`, more than 400 landblocks with the ring, an entry that is not in the island's own landblocks, and a return position inside the island or in another island that is instance only.
+
+### The ring
+
+A footprint ends where nothing is loaded. A player can travel a long way between two position updates, so without a margin someone who is knocked back, or is fast, could end up in a place with no landblock. So an island is loaded with a ring of landblocks around it, and the moment a player gets into one the server turns them back (`InstanceManager.OnPlayerMoved`): they are teleported to the place they were last in the island itself (or to the entry position if they have not been anywhere yet) and told "You can go no further that way." A player who somehow gets outside the footprint is turned back the same way.
+
+The ring only exists to keep players on ground that is loaded. Put nothing there: creatures that would spawn right at the outer edge of the footprint can't be placed, because the edge is solid.
+
+### Instance only
+
+`"instanceOnly": true` says these landblocks exist **only** as instances. Then:
+
+- the persistent world refuses to load them (`LandblockManager.GetLandblock` returns null and logs `[INSTANCE] Something asked the persistent world for landblock ...` once for each landblock), they are not loaded as neighbours of the landblocks next to them, and nobody can walk into them from there;
+- `Player.Teleport` to them without an instance is refused ("That place is no longer there.");
+- `/tele` and the advocate map teleport say that the landblock only exists as an instance.
+
+It is destructive, so it has to be written down as `true` or `false`: an island for a place that is in use in the persistent world stops existing there. **Don't make landblocks that have player housing instance only.** Nothing loads the houses of a landblock that is refused, and their owners would lose them.
+
+A template has to be registered before the world opens for this to be complete. If an instance-only template is registered while its landblocks are already loaded in the persistent world, that is logged as a warning and they stay loaded.
+
+## Getting players in
+
+Nothing sends players into an island by itself. For testing there are admin commands, and for content there is the API.
+
+### Commands (admin)
+
+| Command | Does |
+|---|---|
+| `/instance` or `/instance list` | The templates that are set up and the instances that are open, and how long the empty ones have left. |
+| `/instance open <template> [new]` | Goes into the instance of a template (the one shared instance, made if there is none). `new` makes another one. |
+| `/instance here [radius]` | Makes a private copy of the landblock you are in, and the ones within `radius` (up to 3) around it, and takes you in. |
+| `/instance enter <id>` | Goes into an open instance. |
+| `/instance leave` | Goes back to where the instance sends players. |
+| `/instance close <id>` | Shuts an instance down, sending everyone in it out. |
+| `@capstone` | Also lists the capstone dungeons that are open as instances. |
+
+### From code
+
+```csharp
+var template = InstanceManager.GetTemplate("hebian-island");
+
+// one instance for everybody. Give an owner (a fellowship, a player) for one each: the same owner always gets the same instance
+var instance = InstanceManager.FindOrCreate(template, owner: null, out var created);
+
+InstanceManager.Enter(player, instance);   // to the template's entry position
+InstanceManager.Leave(player);             // to where the template sends players
+```
+
+`FindOrCreate` finds and makes in one step, so two players who arrive at the same moment get the same instance. `created` is true for the call that made it, which is when whatever the instance needs (the fellowship's modifiers, for a capstone) is set up. A template made in code can be given to `InstanceManager.RegisterTemplate` to get a name (and to make it instance only).
+
+## Capstone dungeons
+
+Off by default. Set the server property `capstone_instanced_dungeons` to a comma separated list of dungeon names (as they are in the `AssignCapstoneDungeon` emote, for example `Glenden Wood Dungeon,Green Mire Grave`) and those dungeons open a private instance of the original landblock for each fellowship, instead of one of the numbered copies. The dungeons that hand their modifiers on to a second part (Lugian Mines and Mines of Despair) can't be instanced, because the second part finds the first by landblock.
+
+## Server properties
+
+| Property | Default | |
+|---|---|---|
+| `instance_empty_timeout_minutes` | 15 | How long an instance stays open after the last player has left it. Change with `/modifylong`. |
+| `capstone_instanced_dungeons` | (empty) | The capstone dungeons that are opened as instances. |
+
+## Performance
+
+- An instance landblock costs what a persistent one does (all its cells, statics, monsters and spawns), and an island is that many of them: 3 x 3 landblocks with a ring of one is 25. They are kept loaded for as long as the instance is open, whether or not anyone is in them.
+- Creating an instance loads all of its landblocks, on the thread that asks (their DAT data and their world database content), which is noticeable for a big island. Do it when it is quiet, or make the shared instance early.
+- The persistent world pays almost nothing while there are no instances or instance-only landblocks: a read of one field per landblock lookup. With instance-only landblocks it is one set lookup.
+- Static objects in instances take their ids from a pool of about a million, and get them back when the instance ends, after a six hour wait (so an id that a client may still remember is not given out again at once). If every id has been used and none has waited that long, the one that has been back the longest is used early and a warning is logged. If all of them are in use, that is logged as fatal and the object is not made.
+- Instances are ticked in their own landblock groups, so they run in parallel like other landblocks when multi-threaded ticking is on.
+
+## Known gaps
+
+- Not run against a live server yet (there is no database in the environment it was written in): the capstone path, `/instance`, and the real player flows (teleport, login, logout, death). The pieces below them (physics, landblocks, ids, teardown) are tested, both with unit tests and against the real DATs.
+- Admin `Create*` commands and the old `Game.cs` chess pieces don't copy the instance to what they make. The `[INSTANCE]` warning in the log says when something is spawned without one.
+- Spawns that would be placed right at the outer edge of a footprint fail, because the edge is solid (see the ring).
+- Islands are made from a file, and there is nothing in the game yet that sends a player into one.
+
+## Testing
+
+- `apps/server-tests`: `InstanceManagerTests`, `InstanceTemplateTests` (templates, rings and `instances.json`), `InstancePhysicsTests`, `EphemeralStaticGuidTests`, `LandblockGroupTests`, `LandblockIdTests`. They need no DATs or database.
+- Against the real DATs, with no database: a console project that references `ACE.Server.csproj`, calls `ConfigManager.Initialize(Config.js)`, `DatManager.Initialize(<dat folder>)`, `new PhysicsEngine(new ObjectMaint(), new SmartBox()) { Server = true }`, and then makes instances of real landblocks with `InstanceManager.Create()`. Objects are placed with `Landblock.AddWorldObject`, and movement is tried with `PhysicsObj.transition()`. (The tests that fail in a fresh checkout, `Sphere_*`, `CanParseStarterGearJson` and the `*_Initialize` ones, fail the same way without any of this: they need a database, DATs and config.)

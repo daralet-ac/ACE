@@ -80,6 +80,34 @@ public class InstancePhysicsTests
     }
 
     [TestMethod]
+    public void CellArray_NotesAnOutdoorCellThatIsNotThere()
+    {
+        // Nothing is loaded in instance 7. Looking for a cell over a place on the map gives nothing, and the array has to say so:
+        // it is how movement finds out that it has reached the edge of what an instance is made of
+        var cells = new CellArray { Instance = 7 };
+
+        Assert.IsFalse(cells.MissingOutdoorCell);
+
+        LandCell.add_outside_cell(cells, 100f, 100f);
+
+        Assert.IsTrue(cells.MissingOutdoorCell);
+        Assert.AreEqual(0, cells.Cells.Count, "a cell that is not there is not added");
+    }
+
+    [TestMethod]
+    public void CellArray_DoesNotNoteBeingOffTheEdgeOfTheMap()
+    {
+        // that has always been passable, and is not what an instance's edge is
+        var cells = new CellArray { Instance = 7 };
+
+        LandCell.add_outside_cell(cells, 2040f, 100f);
+        LandCell.add_outside_cell(cells, 100f, 2040f);
+        LandCell.add_outside_cell(cells, -5f, 100f);
+
+        Assert.IsFalse(cells.MissingOutdoorCell);
+    }
+
+    [TestMethod]
     public void ObjCell_StartsInThePersistentWorld()
     {
         Assert.AreEqual(LScape.PersistentInstance, new ObjCell().Instance);

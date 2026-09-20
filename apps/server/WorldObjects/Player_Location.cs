@@ -855,8 +855,19 @@ partial class Player
         InstanceId = newInstance;
         PhysicsObj.Instance = newInstance;
 
+        InstanceSafePosition = null;
+        InstanceTurnBackAllowedAfter = DateTime.MinValue;
+
         InstanceManager.OnPlayerChangedInstance(this, oldInstance, newInstance);
     }
+
+    /// <summary>
+    /// Where the player last was in the part of the instance they are allowed in. Only kept for an instance that has a boundary,
+    /// and it is where they are turned back to when they get into the boundary.
+    /// </summary>
+    internal Position InstanceSafePosition;
+
+    internal DateTime InstanceTurnBackAllowedAfter;
 
     public void DoPreTeleportHide()
     {

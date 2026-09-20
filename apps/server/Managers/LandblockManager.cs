@@ -770,6 +770,8 @@ public static class LandblockManager
     /// Instances are made with InstanceManager.Create(), which is what loads their landblocks.
     /// This returns null for a landblock that is not part of the instance, and for an instance that doesn't exist (any more),
     /// so an instance can never grow past what its template says it is made of.
+    /// It also returns null for a landblock of the persistent world that only exists as an instance (an instance only island):
+    /// whatever asks for one has a mistake in it, and that is logged.
     /// </remarks>
     public static Landblock GetLandblock(
         LandblockId landblockId,
@@ -778,8 +780,16 @@ public static class LandblockManager
         bool permaload = false
     )
     {
-        if (instance != Landblock.PersistentInstance && !InstanceManager.IsInFootprint(instance, landblockId))
+        if (instance != Landblock.PersistentInstance)
         {
+            if (!InstanceManager.IsInFootprint(instance, landblockId))
+            {
+                return null;
+            }
+        }
+        else if (InstanceManager.IsInstanceOnly(landblockId))
+        {
+            InstanceManager.ReportInstanceOnlyLoad(landblockId);
             return null;
         }
 
@@ -956,6 +966,11 @@ public static class LandblockManager
         if (landblock.Instance != Landblock.PersistentInstance)
         {
             adjacents.RemoveAll(id => !InstanceManager.IsInFootprint(landblock.Instance, id));
+        }
+        else
+        {
+            // and a landblock that only exists in instances is not next to anything in the persistent world
+            adjacents.RemoveAll(InstanceManager.IsInstanceOnly);
         }
 
         return adjacents;

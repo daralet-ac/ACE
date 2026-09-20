@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using ACE.Entity;
+using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.WorldObjects;
 using Serilog;
@@ -31,6 +34,19 @@ public static class InstanceManager
     private static uint lastInstanceId;
 
     /// <summary>
+    /// The landblocks that only exist as instances, from the registered templates that say so.<para />
+    /// LandblockManager asks about every landblock it is asked to load, so this is read without the lock: it is never changed,
+    /// only replaced by a new set whenever a template is registered.
+    /// </summary>
+    private static volatile HashSet<LandblockId> instanceOnlyLandblocks = new HashSet<LandblockId>();
+
+    /// <summary>
+    /// How long after a player has been turned back from the boundary of an instance they can be turned back again.
+    /// The turn back is queued, so more position updates can come in before it has happened.
+    /// </summary>
+    private static readonly TimeSpan SweepBackCooldown = TimeSpan.FromSeconds(3);
+
+    /// <summary>
     /// The current time, replaceable so tests can move it
     /// </summary>
     internal static Func<DateTime> UtcNow = () => DateTime.UtcNow;
@@ -44,7 +60,8 @@ public static class InstanceManager
     #region Templates
 
     /// <summary>
-    /// Makes a template known by name. Registering a name again replaces the earlier template, which does not affect instances already made from it.
+    /// Makes a template known by name. Registering a name again replaces the earlier template, which does not affect instances already made from it.<para />
+    /// A template that is instance only has to be registered before the world opens: landblocks the persistent world has loaded already stay loaded.
     /// </summary>
     public static void RegisterTemplate(InstanceTemplate template)
     {
@@ -56,6 +73,72 @@ public static class InstanceManager
             }
 
             templates[template.Name] = template;
+
+            instanceOnlyLandblocks = new HashSet<LandblockId>(
+                templates.Values.Where(t => t.InstanceOnly).SelectMany(t => t.Footprint)
+            );
+        }
+
+        // not with the lock held: this is LandblockManager's
+        if (template.InstanceOnly)
+        {
+            foreach (var landblockId in template.Footprint)
+            {
+                if (LandblockManager.IsLoaded(landblockId))
+                {
+                    _log.Warning(
+                        "[INSTANCE] {Template} only exists as an instance, but landblock {Landblock:X4} is already loaded in the persistent world",
+                        template.Name,
+                        landblockId.Landblock
+                    );
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Reads the islands of instances.json, which is next to the server, and registers them. A mistake in one island is logged
+    /// and only loses that island. There is no such file if there are no islands. This is done before the world opens.
+    /// </summary>
+    public static void LoadTemplates(string path = null)
+    {
+        path ??= Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "instances.json");
+
+        if (!File.Exists(path))
+        {
+            _log.Information("[INSTANCE] There is no {Path}, so there are no islands", path);
+            return;
+        }
+
+        var errors = new List<string>();
+        List<InstanceTemplate> loaded;
+
+        try
+        {
+            loaded = InstanceTemplateConfig.Parse(File.ReadAllText(path), errors);
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "[INSTANCE] {Path} can't be read, so there are no islands", path);
+            return;
+        }
+
+        foreach (var error in errors)
+        {
+            _log.Error("[INSTANCE] {Path}: {Error}", path, error);
+        }
+
+        foreach (var template in loaded)
+        {
+            RegisterTemplate(template);
+
+            _log.Information(
+                "[INSTANCE] Island {Template}: {Landblocks} landblocks, {Boundary} of them ring{InstanceOnly}",
+                template.Name,
+                template.Footprint.Count,
+                template.Boundary.Count,
+                template.InstanceOnly ? ", instance only" : ""
+            );
         }
     }
 
@@ -87,6 +170,41 @@ public static class InstanceManager
         }
     }
 
+    /// <summary>
+    /// Whether a landblock only exists in instances, so that nothing is ever loaded there in the persistent world.
+    /// This is asked for every landblock that is loaded, so it is nothing but a read for as long as there are no such landblocks.
+    /// </summary>
+    public static bool IsInstanceOnly(LandblockId landblockId)
+    {
+        var landblocks = instanceOnlyLandblocks;
+
+        return landblocks.Count != 0 && landblocks.Contains(landblockId);
+    }
+
+    /// <summary>
+    /// The persistent world was asked to load a landblock that only exists in instances. That is always a mistake in whatever asked:
+    /// something in the world database that points into an island, or a portal that leads there. It is logged once for each landblock.
+    /// </summary>
+    internal static void ReportInstanceOnlyLoad(LandblockId landblockId)
+    {
+        lock (reportedInstanceOnlyLoads)
+        {
+            if (!reportedInstanceOnlyLoads.Add(landblockId))
+            {
+                return;
+            }
+        }
+
+        _log.Error(
+            "[INSTANCE] Something asked the persistent world for landblock {Landblock:X4}, which only exists in instances ({Template}). It was refused.{StackTrace}",
+            landblockId.Landblock,
+            GetInstanceOnlyTemplate(landblockId)?.Name,
+            Environment.NewLine + Environment.StackTrace
+        );
+    }
+
+    private static readonly HashSet<LandblockId> reportedInstanceOnlyLoads = new HashSet<LandblockId>();
+
     #endregion
 
     #region Instances
@@ -100,16 +218,50 @@ public static class InstanceManager
     {
         var instance = Register(template, owner);
 
+        Load(instance);
+
+        return instance;
+    }
+
+    /// <summary>
+    /// The instance of a template that belongs to an owner, made if there is none yet. Finding it and making it is one step,
+    /// so two players who arrive at the same moment (two members of a fellowship going through the same portal) get the same instance.
+    /// </summary>
+    /// <param name="created">True if this call made the instance, which is when whatever it needs to be set up is to be done</param>
+    public static WorldInstance FindOrCreate(InstanceTemplate template, object owner, out bool created)
+    {
+        var instance = FindOrRegister(template, owner, out created);
+
+        if (created)
+        {
+            // not with the lock held: this is LandblockManager's
+            Load(instance);
+        }
+
+        return instance;
+    }
+
+    internal static WorldInstance FindOrRegister(InstanceTemplate template, object owner, out bool created)
+    {
+        lock (sync)
+        {
+            var instance = Find(template, owner);
+            created = instance == null;
+
+            return instance ?? Register(template, owner);
+        }
+    }
+
+    private static void Load(WorldInstance instance)
+    {
         // The instance has to be known before its landblocks are loaded: LandblockManager only loads
         // a landblock in an instance if the instance's template says it is part of it.
-        foreach (var landblockId in template.Footprint)
+        foreach (var landblockId in instance.Template.Footprint)
         {
             LandblockManager.GetLandblock(landblockId, instance.Id, false, true);
         }
 
         _log.Information("[INSTANCE] Created {Instance}", instance);
-
-        return instance;
     }
 
     /// <summary>
@@ -173,14 +325,14 @@ public static class InstanceManager
     }
 
     /// <summary>
-    /// Whether anyone can be sent to this landblock in this instance. That is any landblock of the persistent world,
-    /// and for an instance only a landblock of its footprint, as long as the instance is not shutting down.
+    /// Whether anyone can be sent to this landblock in this instance. That is any landblock of the persistent world that is not one
+    /// of the ones that only exist as instances, and for an instance only a landblock of its footprint, as long as the instance is not shutting down.
     /// </summary>
     public static bool CanEnter(uint instanceId, LandblockId landblockId)
     {
         if (instanceId == Landblock.PersistentInstance)
         {
-            return true;
+            return !IsInstanceOnly(landblockId);
         }
 
         lock (sync)
@@ -252,6 +404,46 @@ public static class InstanceManager
     {
         OnMemberLeft(fromInstance, player.Guid.Full);
         OnMemberEntered(toInstance, player.Guid.Full);
+    }
+
+    /// <summary>
+    /// Called when a player who is in an instance has moved.<para />
+    /// In an instance that has a boundary, this remembers where the player last was in the part they are allowed in,
+    /// and when they get into the boundary (or somewhere that isn't in the instance at all) it turns them back to there.
+    /// A player who has just arrived, and has not been anywhere yet, is turned back to where the instance lets players in.
+    /// </summary>
+    public static void OnPlayerMoved(Player player)
+    {
+        var template = Get(player.InstanceId)?.Template;
+
+        if (template == null || !template.HasBoundary)
+        {
+            return;
+        }
+
+        var landblockId = player.Location.LandblockId;
+
+        if (template.Contains(landblockId) && !template.IsBoundary(landblockId))
+        {
+            player.InstanceSafePosition = new Position(player.Location);
+            return;
+        }
+
+        var now = UtcNow();
+
+        if (now < player.InstanceTurnBackAllowedAfter)
+        {
+            return;
+        }
+
+        player.InstanceTurnBackAllowedAfter = now + SweepBackCooldown;
+
+        var destination = new Position(player.InstanceSafePosition ?? template.EntryPosition);
+
+        player.SendMessage("You can go no further that way.", ChatMessageType.Broadcast);
+
+        // no instance id: the destination is in the instance's footprint, so the player stays in it
+        WorldManager.ThreadSafeTeleport(player, destination);
     }
 
     /// <summary>

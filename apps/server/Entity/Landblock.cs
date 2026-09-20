@@ -2044,12 +2044,11 @@ public class Landblock : IActor
             }
         }
 
-        var instance = InstanceManager.Find(template, fellowship);
+        // one step, so two members of the fellowship who come through the portal at the same moment don't make one each
+        var instance = InstanceManager.FindOrCreate(template, fellowship, out var created);
 
-        if (instance == null)
+        if (created)
         {
-            instance = InstanceManager.Create(template, fellowship);
-
             // set it up the way FindOpenInstanceFellowship does for a copy: which fellowship opened it, and the modifiers its leader chose
             var landblock = LandblockManager.TryGetLandblock(original, instance.Id);
 

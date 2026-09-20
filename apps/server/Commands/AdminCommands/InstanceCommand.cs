@@ -13,8 +13,9 @@ namespace ACE.Server.Commands.AdminCommands;
 public class InstanceCommand
 {
     private const string Usage =
-        "instance [list] | here [radius] | enter <id> | leave | close <id>\n"
+        "instance [list] | open <template> [new] | here [radius] | enter <id> | leave | close <id>\n"
         + "  list: the templates that are set up and the instances that are open\n"
+        + "  open <template> [new]: goes into the instance of an island (or any other template that is set up), and makes it if there is none. new makes another one\n"
         + "  here [radius]: opens a private copy of the landblock you are in (and the ones within radius, up to 3) and takes you into it. Nothing in it is saved.\n"
         + "  enter <id>: goes into an open instance\n"
         + "  leave: goes back to where the instance sends players\n"
@@ -37,6 +38,10 @@ public class InstanceCommand
         {
             case "list":
                 List(player);
+                break;
+
+            case "open":
+                Open(player, parameters);
                 break;
 
             case "here":
@@ -70,7 +75,7 @@ public class InstanceCommand
         foreach (var template in templates)
         {
             player.SendMessage(
-                $"{template.Name}: {template.Footprint.Count} landblock(s){(template.InstanceOnly ? ", instance only" : "")}",
+                $"{template.Name}: {template.Footprint.Count} landblock(s){(template.HasBoundary ? $", {template.Boundary.Count} of them ring" : "")}{(template.InstanceOnly ? ", instance only" : "")}",
                 ChatMessageType.System
             );
         }
@@ -88,6 +93,30 @@ public class InstanceCommand
 
             player.SendMessage($"{instance.Id}: {instance.Template.Name} - {state}", ChatMessageType.System);
         }
+    }
+
+    private static void Open(WorldObjects.Player player, string[] parameters)
+    {
+        var template = parameters.Length > 1 ? InstanceManager.GetTemplate(parameters[1]) : null;
+
+        if (template == null)
+        {
+            player.SendMessage(
+                parameters.Length > 1
+                    ? $"There is no template {parameters[1]}. /instance list shows the ones there are."
+                    : $"Usage: {Usage}",
+                ChatMessageType.System
+            );
+            return;
+        }
+
+        var makeAnother = parameters.Length > 2 && parameters[2].Equals("new", StringComparison.OrdinalIgnoreCase);
+
+        var instance = makeAnother
+            ? InstanceManager.Create(template)
+            : InstanceManager.FindOrCreate(template, null, out _);
+
+        InstanceManager.Enter(player, instance);
     }
 
     private static void Here(WorldObjects.Player player, string[] parameters)

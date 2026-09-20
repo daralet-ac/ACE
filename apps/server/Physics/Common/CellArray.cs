@@ -44,6 +44,14 @@ public class CellArray
         }
     }
 
+    /// <summary>
+    /// Set when the last search for cells found something over a place on the map where there is no outdoor cell.
+    /// Every landblock that is loaded has all of its outdoor cells, so this means there is a landblock that isn't loaded:
+    /// the edge of what an instance is made of, or a landblock that only exists in instances, next to the persistent world.
+    /// (Being off the edge of the map itself does not set it.)
+    /// </summary>
+    public bool MissingOutdoorCell;
+
     public void remove_cell(ObjCell cell)
     {
         if (Cells.ContainsKey(cell.ID))

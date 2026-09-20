@@ -402,6 +402,7 @@ public class ObjCell : PartCell, IEquatable<ObjCell>
     {
         cellArray.NumCells = 0;
         cellArray.AddedOutside = false;
+        cellArray.MissingOutdoorCell = false;
 
         var visibleCell = GetVisible(position.ObjCellID, cellArray.Instance);
 
@@ -633,9 +634,18 @@ public class ObjCell : PartCell, IEquatable<ObjCell>
 
     public void release_shadow_objs()
     {
-        foreach (var shadowObj in ShadowObjectList)
+        // objects are still being added to and removed from a cell by other threads, if it is unloaded soon after it was loaded
+        readerWriterLockSlim.EnterReadLock();
+        try
         {
-            shadowObj.PhysicsObj.ShadowObjects.Remove(ID);
+            foreach (var shadowObj in ShadowObjectList)
+            {
+                shadowObj.PhysicsObj.ShadowObjects.Remove(ID);
+            }
+        }
+        finally
+        {
+            readerWriterLockSlim.ExitReadLock();
         }
     }
 

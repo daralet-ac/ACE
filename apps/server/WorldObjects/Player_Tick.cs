@@ -871,6 +871,12 @@ partial class Player
                 LandblockManager.RelocateObjectForPhysics(this, true);
             }
 
+            // an instance can have a margin that players are turned back from, and has to know where they last were inside it
+            if (InstanceId != LScape.PersistentInstance && !Teleporting)
+            {
+                InstanceManager.OnPlayerMoved(this);
+            }
+
             return landblockUpdate;
         }
         finally
