@@ -160,7 +160,8 @@ public class ObjCell : PartCell, IEquatable<ObjCell>
             return false;
         }
 
-        return ID.Equals(objCell.ID);
+        // The same cell id in two instances is two different cells. Physics uses this to decide whether an object has changed cells.
+        return ID.Equals(objCell.ID) && Instance == objCell.Instance;
     }
 
     public virtual TransitionState FindCollisions(Transition transition)

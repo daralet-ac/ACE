@@ -296,7 +296,12 @@ partial class Player
             this,
             () =>
             {
-                if (PropertyManager.GetBool("create_corpse_on_player_death").Item)
+                // Nobody leaves a corpse in an instance, and so nothing is lost: an instance doesn't outlast the people in it,
+                // so a corpse and everything on it would just be deleted along with it
+                if (
+                    InstanceId == Landblock.PersistentInstance
+                    && PropertyManager.GetBool("create_corpse_on_player_death").Item
+                )
                 {
                     CreateCorpse(topDamager, hadVitae);
                 }

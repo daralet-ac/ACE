@@ -4680,7 +4680,8 @@ public class PhysicsObj
         Position.ObjCellID = newPos.ObjCellID;
         Position.Frame = new AFrame(newPos.Frame);
 
-        if (CurCell == null || CurCell.ID != Position.ObjCellID)
+        // a cell of another instance is a different cell, even if it has the same id
+        if (CurCell == null || CurCell.ID != Position.ObjCellID || CurCell.Instance != Instance)
         {
             var newCell = LScape.get_landcell(newPos.ObjCellID, Instance);
 

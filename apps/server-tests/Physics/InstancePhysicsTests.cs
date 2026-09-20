@@ -3,6 +3,7 @@ using ACE.Server.Managers;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Common;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PhysicsPosition = ACE.Server.Physics.Common.Position;
 
 namespace ACE.Server.Tests.Physics;
 
@@ -82,5 +83,61 @@ public class InstancePhysicsTests
     public void ObjCell_StartsInThePersistentWorld()
     {
         Assert.AreEqual(LScape.PersistentInstance, new ObjCell().Instance);
+    }
+
+    [TestMethod]
+    public void ObjCell_TheSameIdInAnotherInstanceIsADifferentCell()
+    {
+        // Physics decides whether an object has changed cells by comparing them. A cell of another instance with the same id
+        // has to count as a different cell, or an object teleported into an instance would stay registered in the cell it left.
+        var a = new ObjCell(0x01E30100) { Instance = 1 };
+        var b = new ObjCell(0x01E30100) { Instance = 1 };
+        var elsewhere = new ObjCell(0x01E30100) { Instance = 2 };
+        var otherId = new ObjCell(0x01E30101) { Instance = 1 };
+
+        Assert.IsTrue(a.Equals(b));
+        Assert.IsFalse(a.Equals(elsewhere));
+        Assert.IsFalse(a.Equals(otherId));
+        Assert.IsFalse(a.Equals((ObjCell)null));
+    }
+
+    [TestMethod]
+    public void EnvCell_TheSameIdInAnotherInstanceIsADifferentCell()
+    {
+        var a = new EnvCell { ID = 0x01E30100, Instance = 1 };
+        var b = new EnvCell { ID = 0x01E30100, Instance = 1 };
+        var elsewhere = new EnvCell { ID = 0x01E30100, Instance = 2 };
+
+        Assert.IsTrue(a.Equals(b));
+        Assert.IsFalse(a.Equals(elsewhere));
+        Assert.IsFalse(((ObjCell)a).Equals(elsewhere));
+    }
+
+    [TestMethod]
+    public void PhysicsObj_LeavesACellThatBelongsToAnotherInstanceEvenIfItHasTheSameId()
+    {
+        // The cell the object is in is instance 0's. The object has been moved to instance 1, and its position (and so its cell id) hasn't changed.
+        // It must not go on thinking it is in that cell. No landblock is loaded for instance 1 here, so it ends up in no cell at all.
+        var obj = new PhysicsObj();
+        var cell = new ObjCell(0x01E30100) { Instance = 0 };
+        obj.CurCell = cell;
+        obj.Instance = 1;
+
+        obj.set_current_pos(new PhysicsPosition(0x01E30100));
+
+        Assert.IsNull(obj.CurCell);
+    }
+
+    [TestMethod]
+    public void PhysicsObj_StaysInItsCellIfNothingAboutItHasChanged()
+    {
+        // and the other way round: same id, same instance, so nothing to do
+        var obj = new PhysicsObj();
+        var cell = new ObjCell(0x01E30100) { Instance = 0 };
+        obj.CurCell = cell;
+
+        obj.set_current_pos(new PhysicsPosition(0x01E30100));
+
+        Assert.AreSame(cell, obj.CurCell);
     }
 }

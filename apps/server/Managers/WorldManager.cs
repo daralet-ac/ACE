@@ -212,6 +212,8 @@ public static class WorldManager
 
         Player.HandleCapstoneLandblockLogin(session, player);
 
+        InstanceManager.OnPlayerLogin(player);
+
         if (stripAdminProperties) // continue stripping properties
         {
             player.CloakStatus = CloakStatus.Undef;
@@ -427,13 +429,14 @@ public static class WorldManager
         Player player,
         Position newPosition,
         IAction actionToFollowUpWith = null,
-        bool fromPortal = false
+        bool fromPortal = false,
+        uint? instanceId = null
     )
     {
         EnqueueAction(
             new ActionEventDelegate(() =>
             {
-                player.Teleport(newPosition, fromPortal);
+                player.Teleport(newPosition, fromPortal, instanceId);
 
                 if (actionToFollowUpWith != null)
                 {
@@ -610,6 +613,8 @@ public static class WorldManager
         ServerPerformanceMonitor.RestartEvent(ServerPerformanceMonitor.MonitorType.UpdateGameWorld_Entire);
 
         LandblockManager.Tick(Timers.PortalYearTicks);
+
+        InstanceManager.Tick();
 
         HouseManager.Tick();
         ResonanceManager.Tick(Timers.PortalYearTicks);

@@ -62,8 +62,8 @@ public class Landblock : IActor
     /// different instances. They never see each other: objects, adjacencies and tick groups are all per instance.
     /// </summary>
     /// <remarks>
-    /// Do not create landblocks in a non-zero instance yet. Physics cell lookups (LScape.get_landblock/get_landcell)
-    /// are not instance-aware, so they still resolve to the persistent world, and static object GUIDs are not yet remapped.
+    /// Landblocks in a non-zero instance are made by InstanceManager.Create(), which knows which landblocks an instance is made of.
+    /// Nothing in an instance is ever saved.
     /// </remarks>
     public uint Instance { get; }
 
@@ -1974,6 +1974,13 @@ public class Landblock : IActor
 
         var fellowship = player.Fellowship;
 
+        // a dungeon that is instanced doesn't need its copies: every fellowship gets a private instance of the original
+        if (IsCapstoneInstanced(dungeonName))
+        {
+            AssignInstancedCapstoneDungeon(player, dungeonName, dungeonLandblocks[0]);
+            return;
+        }
+
         if (fellowship.CapstoneDungeon.HasValue && dungeonLandblocks.Contains((LandblockId)fellowship.CapstoneDungeon))
         {
             var landblock = LandblockManager.GetLandblock((LandblockId)fellowship.CapstoneDungeon, false);
@@ -1984,6 +1991,82 @@ public class Landblock : IActor
         {
             FindOpenInstanceFellowship(player, dungeonLandblocks, dungeonName);
         }
+    }
+
+    private static readonly Dictionary<string, InstanceTemplate> capstoneInstanceTemplates =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether a capstone dungeon is opened as an instance of its original landblock rather than as one of its numbered copies.
+    /// This is set with the capstone_instanced_dungeons server property. The dungeons that hand their modifiers on to a second part
+    /// can't be, because the second part looks its first part up by landblock.
+    /// </summary>
+    private static bool IsCapstoneInstanced(string dungeonName)
+    {
+        if (dungeonName is "Lugian Mines" or "Lugian Mines2" or "Mines of Despair" or "Beyond the Mines")
+        {
+            return false;
+        }
+
+        var names = PropertyManager.GetString("capstone_instanced_dungeons").Item;
+        if (string.IsNullOrWhiteSpace(names))
+        {
+            return false;
+        }
+
+        return names
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Contains(dungeonName, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Opens the dungeon as a private instance of the original landblock for the player's fellowship, or takes the player
+    /// into the one their fellowship already has. The instance is deleted a while after everyone has left it.
+    /// </summary>
+    private static void AssignInstancedCapstoneDungeon(Player player, string dungeonName, LandblockId original)
+    {
+        var fellowship = player.Fellowship;
+
+        InstanceTemplate template;
+
+        lock (capstoneInstanceTemplates)
+        {
+            if (!capstoneInstanceTemplates.TryGetValue(dungeonName, out template))
+            {
+                // no return position: a player who logs out in here, or is still inside when it ends, goes to their sanctuary,
+                // the same as HandleCapstoneLandblockLogin does for the copies
+                template = new InstanceTemplate(
+                    $"capstone:{dungeonName}",
+                    new[] { original },
+                    CapstoneTeleportLocations[original]
+                );
+                capstoneInstanceTemplates.Add(dungeonName, template);
+            }
+        }
+
+        var instance = InstanceManager.Find(template, fellowship);
+
+        if (instance == null)
+        {
+            instance = InstanceManager.Create(template, fellowship);
+
+            // set it up the way FindOpenInstanceFellowship does for a copy: which fellowship opened it, and the modifiers its leader chose
+            var landblock = LandblockManager.TryGetLandblock(original, instance.Id);
+
+            if (landblock != null)
+            {
+                landblock.CapstoneFellowship = fellowship;
+                landblock.SetLandblockMods(fellowship, dungeonName);
+            }
+        }
+
+        fellowship.CapstoneDungeon = original;
+        player.CapstoneDungeon = original;
+
+        var destination = new Position(template.EntryPosition);
+        WorldObject.AdjustDungeon(destination, instance.Id);
+
+        InstanceManager.Enter(player, instance, destination);
     }
 
     private static void FindOpenInstanceFellowship(

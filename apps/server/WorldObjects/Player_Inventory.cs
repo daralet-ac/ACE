@@ -2076,6 +2076,16 @@ partial class Player
     /// </summary>
     public void HandleActionDropItem(uint itemGuid)
     {
+        // Nothing dropped in an instance would survive it
+        if (InstanceId != Landblock.PersistentInstance)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventCommunicationTransientString(Session, "You can't drop items here.")
+            );
+            Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
+            return;
+        }
+
         if (IsBusy || Teleporting || suicideInProgress)
         {
             Session.Network.EnqueueSend(new GameEventWeenieError(Session, WeenieError.YoureTooBusy));
@@ -3834,6 +3844,17 @@ partial class Player
     public void HandleActionStackableSplitTo3D(uint stackId, int amount)
     {
         //Console.WriteLine($"\n\n{Name}.HandleActionStackableSplitTo3D(uint {stackId}, int {amount})");
+
+        // Nothing dropped in an instance would survive it
+        if (InstanceId != Landblock.PersistentInstance)
+        {
+            Session.Network.EnqueueSend(
+                new GameEventCommunicationTransientString(Session, "You can't drop items here.")
+            );
+            Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, stackId));
+            return;
+        }
+
         if (amount <= 0)
         {
             _log.Warning(

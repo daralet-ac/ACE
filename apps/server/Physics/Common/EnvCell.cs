@@ -545,7 +545,8 @@ public class EnvCell : ObjCell, IEquatable<EnvCell>
             return false;
         }
 
-        return ID == envCell.ID;
+        // The same cell id in two instances is two different cells
+        return ID == envCell.ID && Instance == envCell.Instance;
     }
 
     public override int GetHashCode()

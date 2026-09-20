@@ -741,7 +741,11 @@ partial class Player
             {
                 var distSq = Location.SquaredDistanceTo(newPosition);
 
-                if (distSq > PhysicsGlobals.EpsilonSq)
+                // A player who has been moved to another instance is still in a cell of the instance they left until the physics update runs.
+                // That has to happen even if they are moving to exactly the place they are at.
+                var inWrongInstance = PhysicsObj.CurCell != null && PhysicsObj.CurCell.Instance != InstanceId;
+
+                if (distSq > PhysicsGlobals.EpsilonSq || inWrongInstance)
                 {
                     /*var p = new Physics.Common.Position(newPosition);
                     var dist = PhysicsObj.Position.Distance(p);

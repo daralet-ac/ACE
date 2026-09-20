@@ -563,6 +563,20 @@ public static class LandblockManager
 
         var block = GetLandblock(worldObject.Location.LandblockId, worldObject.InstanceId, loadAdjacents);
 
+        // the position isn't part of the object's instance
+        if (block == null)
+        {
+            _log.Warning(
+                "[INSTANCE] {Name} (0x{Guid}) can't enter instance {Instance} at {Location}, which is not part of it",
+                worldObject.Name,
+                worldObject.Guid,
+                worldObject.InstanceId,
+                worldObject.Location
+            );
+
+            return false;
+        }
+
         return block.AddWorldObject(worldObject);
     }
 
@@ -610,6 +624,20 @@ public static class LandblockManager
     {
         var oldBlock = worldObject.CurrentLandblock;
         var newBlock = GetLandblock(worldObject.Location.LandblockId, worldObject.InstanceId, true);
+
+        // Physics can't move something into a landblock that isn't part of its instance, so this doesn't happen. If it does, leave it where it is.
+        if (newBlock == null)
+        {
+            _log.Warning(
+                "[INSTANCE] {Name} (0x{Guid}) moved to {Location}, which is not part of instance {Instance}",
+                worldObject.Name,
+                worldObject.Guid,
+                worldObject.Location,
+                worldObject.InstanceId
+            );
+
+            return;
+        }
 
         if (newBlock.IsDormant && worldObject is SpellProjectile)
         {
@@ -739,9 +767,9 @@ public static class LandblockManager
     /// Adjacent landblocks are always loaded into, and resolved within, the same instance
     /// </summary>
     /// <remarks>
-    /// Only the persistent world (instance 0) is safe to use for now. Physics lookups through LScape are not
-    /// instance-aware yet and static object GUIDs are not remapped, so a non-zero instance would leak into
-    /// the persistent world.
+    /// Instances are made with InstanceManager.Create(), which is what loads their landblocks.
+    /// This returns null for a landblock that is not part of the instance, and for an instance that doesn't exist (any more),
+    /// so an instance can never grow past what its template says it is made of.
     /// </remarks>
     public static Landblock GetLandblock(
         LandblockId landblockId,
@@ -750,6 +778,11 @@ public static class LandblockManager
         bool permaload = false
     )
     {
+        if (instance != Landblock.PersistentInstance && !InstanceManager.IsInFootprint(instance, landblockId))
+        {
+            return null;
+        }
+
         Landblock landblock;
 
         landblockLock.EnterUpgradeableReadLock();
@@ -917,6 +950,12 @@ public static class LandblockManager
         if (southeast != null)
         {
             adjacents.Add(southeast.Value);
+        }
+
+        // Whatever is next to an instance in the world is not part of it
+        if (landblock.Instance != Landblock.PersistentInstance)
+        {
+            adjacents.RemoveAll(id => !InstanceManager.IsInFootprint(landblock.Instance, id));
         }
 
         return adjacents;
