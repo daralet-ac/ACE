@@ -554,6 +554,151 @@ public static class InstanceManager
 
     #endregion
 
+    #region Looking at and moving things
+
+    /// <summary>
+    /// An instance as a person reads it. 0 is the persistent world.
+    /// </summary>
+    public static string Describe(uint instanceId)
+    {
+        if (instanceId == Landblock.PersistentInstance)
+        {
+            return "0 (the persistent world)";
+        }
+
+        var instance = Get(instanceId);
+
+        if (instance == null)
+        {
+            return $"{instanceId} (does not exist any more)";
+        }
+
+        var players = instance.MemberCount;
+
+        return $"{instanceId} ({instance.Template.Name}, {players} player{(players == 1 ? "" : "s")}{(instance.IsClosing ? ", shutting down" : "")})";
+    }
+
+    /// <summary>
+    /// Where a landblock is, in relation to an instance
+    /// </summary>
+    public static string DescribePlace(uint instanceId, LandblockId landblockId)
+    {
+        if (instanceId == Landblock.PersistentInstance)
+        {
+            return IsInstanceOnly(landblockId)
+                ? "a landblock that only exists in instances, so nothing should be here"
+                : "the persistent world";
+        }
+
+        var template = Get(instanceId)?.Template;
+
+        if (template == null)
+        {
+            return "an instance that does not exist any more";
+        }
+
+        if (!template.Contains(landblockId))
+        {
+            return "OUTSIDE the landblocks of the instance";
+        }
+
+        return template.IsBoundary(landblockId)
+            ? "the ring of the instance, where players are turned back"
+            : "inside the instance";
+    }
+
+    /// <summary>
+    /// Why an object can't be moved from one instance to another, or null if it can.<para />
+    /// Objects that are not players, are lying in a landblock and have a guid of their own (they were made while the server was running)
+    /// can be. Players are moved by teleporting them.
+    /// </summary>
+    internal static string WhyNotMovable(
+        ObjectGuid guid,
+        bool isPlayer,
+        bool isInLandblock,
+        bool isGenerator,
+        bool isGenerated
+    )
+    {
+        if (isPlayer)
+        {
+            return "Players are moved with /instance enter and /instance leave.";
+        }
+
+        if (!isInLandblock)
+        {
+            return "It is not on the ground: it is in a container, or worn by someone.";
+        }
+
+        if (!guid.IsDynamic())
+        {
+            return "It is one of the objects that a landblock is made of (a static object). Taking it out of the landblock would take it away from everyone who is in it.";
+        }
+
+        if (isGenerator)
+        {
+            return "It is a generator, and what it made would stay behind.";
+        }
+
+        if (isGenerated)
+        {
+            return "A generator made it and keeps count of it. Make another one in the instance instead.";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Takes an object out of the instance it is in and puts it in another one (0 is the persistent world), at a place in it.
+    /// It is done the way picking something up and putting it down is: nothing of it is left behind, and everyone who could see
+    /// it stops seeing it, and everyone in the other instance sees it appear. See WhyNotMovable for what can be moved.
+    /// </summary>
+    public static bool TryMoveObject(WorldObject wo, uint instanceId, Position destination, out string problem)
+    {
+        problem = WhyNotMovable(
+            wo.Guid,
+            wo is Player,
+            wo.CurrentLandblock != null,
+            wo.IsGenerator,
+            wo.Generator != null
+        );
+
+        if (problem != null)
+        {
+            return false;
+        }
+
+        if (!CanEnter(instanceId, destination.LandblockId))
+        {
+            problem =
+                $"Landblock {destination.LandblockId.Landblock:X4} is not somewhere anything can be in instance {instanceId}.";
+            return false;
+        }
+
+        var previousInstance = wo.InstanceId;
+        var previousLocation = wo.Location;
+
+        wo.CurrentLandblock.RemoveWorldObject(wo.Guid, false);
+
+        wo.InstanceId = instanceId;
+        wo.Location = new Position(destination);
+
+        if (wo.EnterWorld())
+        {
+            return true;
+        }
+
+        // it can't go there: put it back where it was
+        wo.InstanceId = previousInstance;
+        wo.Location = previousLocation;
+        wo.EnterWorld();
+
+        problem = "It could not be placed there: something is in the way.";
+        return false;
+    }
+
+    #endregion
+
     #region Ending instances
 
     /// <summary>

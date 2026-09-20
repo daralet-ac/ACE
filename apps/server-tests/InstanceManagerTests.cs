@@ -430,6 +430,84 @@ public class InstanceManagerTests
     }
 
     [TestMethod]
+    public void InstanceManager_DescribesAnInstanceTheWayAPersonReadsIt()
+    {
+        var template = NewTemplate();
+        var instance = InstanceManager.Register(template);
+
+        StringAssert.Contains(InstanceManager.Describe(Landblock.PersistentInstance), "persistent world");
+        StringAssert.Contains(InstanceManager.Describe(instance.Id), $"{instance.Id} ({template.Name}, 0 players)");
+
+        InstanceManager.OnMemberEntered(instance.Id, 0x50000001);
+        StringAssert.Contains(InstanceManager.Describe(instance.Id), "1 player)");
+
+        InstanceManager.OnMemberEntered(instance.Id, 0x50000002);
+        StringAssert.Contains(InstanceManager.Describe(instance.Id), "2 players)");
+
+        InstanceManager.Close(instance.Id);
+        StringAssert.Contains(InstanceManager.Describe(instance.Id), "shutting down");
+
+        StringAssert.Contains(InstanceManager.Describe(instance.Id + 1000), "does not exist");
+    }
+
+    [TestMethod]
+    public void InstanceManager_SaysWhereALandblockIsInRelationToTheInstanceItIsLookedAtFrom()
+    {
+        var inside = new LandblockId(0x50, 0x50);
+        var ring = new LandblockId(0x51, 0x50);
+        var instance = InstanceManager.Register(
+            new InstanceTemplate(
+                "test-" + Guid.NewGuid(),
+                new[] { inside, ring },
+                At(0x50500100),
+                null,
+                false,
+                new[] { ring }
+            )
+        );
+
+        StringAssert.Contains(InstanceManager.DescribePlace(instance.Id, inside), "inside the instance");
+        StringAssert.Contains(InstanceManager.DescribePlace(instance.Id, ring), "ring");
+        StringAssert.Contains(InstanceManager.DescribePlace(instance.Id, new LandblockId(0x60, 0x60)), "OUTSIDE");
+        StringAssert.Contains(InstanceManager.DescribePlace(instance.Id + 1000, inside), "does not exist");
+        StringAssert.Contains(InstanceManager.DescribePlace(Landblock.PersistentInstance, inside), "persistent world");
+
+        var islandOnly = new LandblockId(0x8383FFFF);
+        InstanceManager.RegisterTemplate(NewTemplate(true, islandOnly));
+
+        StringAssert.Contains(
+            InstanceManager.DescribePlace(Landblock.PersistentInstance, islandOnly),
+            "only exists in instances"
+        );
+    }
+
+    [TestMethod]
+    public void InstanceManager_OnlyObjectsMadeWhileTheServerRanAndLyingOnTheGroundCanBeMovedBetweenInstances()
+    {
+        var dynamicGuid = new ObjectGuid(ObjectGuid.DynamicMin + 5);
+
+        Assert.IsNull(InstanceManager.WhyNotMovable(dynamicGuid, false, true, false, false));
+
+        StringAssert.Contains(InstanceManager.WhyNotMovable(dynamicGuid, true, true, false, false), "/instance enter");
+        StringAssert.Contains(
+            InstanceManager.WhyNotMovable(dynamicGuid, false, false, false, false),
+            "not on the ground"
+        );
+        StringAssert.Contains(InstanceManager.WhyNotMovable(dynamicGuid, false, true, true, false), "generator");
+        StringAssert.Contains(InstanceManager.WhyNotMovable(dynamicGuid, false, true, false, true), "keeps count");
+
+        // what a landblock is made of: a guid from the world database, or the one it has in an instance
+        StringAssert.Contains(
+            InstanceManager.WhyNotMovable(new ObjectGuid(0x76545074), false, true, false, false),
+            "static object"
+        );
+        StringAssert.Contains(
+            InstanceManager.WhyNotMovable(new ObjectGuid(ObjectGuid.EphemeralStaticMin + 3), false, true, false, false),
+            "static object"
+        );
+    }
+
+    [TestMethod]
     public void InstanceManager_TwoPlayersWhoArriveAtTheSameMomentGetTheSameInstance()
     {
         // the two members of a fellowship who go through a portal together must not make one instance each
