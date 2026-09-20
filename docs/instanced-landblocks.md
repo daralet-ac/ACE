@@ -26,12 +26,12 @@ Everything that belongs to an instance carries its id: the landblocks (`Landbloc
 - **Nothing is saved.** An instance loads nothing from the shard and saves nothing to it. Objects in it get their ids from a reserved range (`0x7FF00000`-`0x7FFFFFFF`, given back when the instance ends), so two copies of one landblock don't have two objects with the same id.
 - **Guids written in the world database still work.** A weenie can name a static object by the guid the world database gave it: its `ActivationTarget` (a button that opens one particular door). In an instance that door has a guid of its own, so `Landblock.GetObjectFromWorldGuid` looks such a guid up as the copy of the object that is in the instance (each instance keeps a map from the world database's guids to its own, made as its landblocks load). Anything else that finds an object from a guid that was written down before the server was running has to do the same.
 - **Nothing outlives its instance.** When an instance is deleted everything in it is destroyed.
-- **Nobody ends up in an instance by accident.** A teleport with no instance stays in the instance the player is in only if the destination is inside its footprint (a portal inside a dungeon). Anything else (a recall, a lifestone, an admin `/tele`) goes to the persistent world.
+- **Nobody ends up in an instance by accident.** A teleport with no instance stays in the instance the player is in only if the destination is inside its landblocks: a portal inside a dungeon, or a recall to a lifestone that is part of the island. A destination outside them (a recall to a lifestone somewhere else, an admin `/tele` to another place) goes to the persistent world.
 - **The edge is solid.** Anything the server moves (monsters, pets, projectiles) stops at the edge of what an instance is made of, like at a wall. A player's client walks by itself and knows the whole world, so when it reports a position past the edge the server refuses it and puts the client back where it was (the way it does when a jump height is not possible): to the player it is a wall, with a little rubber-banding when they push on. The same is done in the persistent world next to a landblock that only exists in instances. If the server let such a position through, the client would end up somewhere the server does not have, and would throw away everything it was shown.
 
 ### Rules for what happens in an instance
 
-- **No corpse.** A player who dies in an instance leaves no corpse and loses nothing, since the corpse would only be deleted along with the instance.
+- **No corpse.** A player who dies in an instance leaves no corpse and loses nothing, since the corpse would only be deleted along with the instance. They respawn at their bound lifestone by the same rule as every other teleport: in the instance if that lifestone is inside its landblocks (the lifestone of an island, say), in the persistent world if it is not.
 - **No dropping items.** Dropping and splitting a stack onto the ground are refused, because whatever was dropped would be deleted with the instance.
 - **Logging out.** A player who logs out inside an instance is saved at the template's return position (or at their sanctuary if it has none), so they log back in to the persistent world. A player who is found saved inside an instance-only landblock (the server went down while they were in it) is moved out when they log in.
 
@@ -41,7 +41,7 @@ An instance ends `instance_empty_timeout_minutes` (default **15**) after its las
 
 ## Islands
 
-An island is a template that is read from `instances.json`, next to the server (`apps/server/instances.json`, copied to the output like `starterGear.json`). It is read once, when the server starts, before the world opens. There are no islands until some are listed. The file allows comments and trailing commas.
+An island is a template that is read from `instances.json`, next to the server. The build copies the one in `apps/server` there only when there is none yet, and never over one that is there, so the copy next to the server is the one to edit, and a rebuild does not undo it (delete it and build to get the default back). It is read once, when the server starts, before the world opens. There are no islands until some are listed. The file allows comments and trailing commas.
 
 ```json
 {
@@ -63,7 +63,7 @@ An island is a template that is read from `instances.json`, next to the server (
       // where players arrive. Inside the island itself, not in its ring.
       "entry": { "cell": "0xE74E0019", "x": 84, "y": 7.1, "z": 94, "qw": 1 },
 
-      // optional, where players go when it ends (default their sanctuary). Not inside the island.
+      // optional, where players go when it ends. Leave it out, or write it as { }, for their sanctuary. Not inside the island.
       "return": { "cell": "0xA9B40019", "x": 84, "y": 7.1, "z": 94, "qw": 1 }
     }
   ]
@@ -150,8 +150,9 @@ Off by default. Set the server property `capstone_instanced_dungeons` to a comma
 
 ## Performance
 
-- An instance landblock costs what a persistent one does (all its cells, statics, monsters and spawns), and an island is that many of them: 3 x 3 landblocks with a ring of one is 25. They are kept loaded for as long as the instance is open, whether or not anyone is in them.
+- An instance landblock costs what a persistent one does (all its cells, statics, monsters and spawns), and an island is that many of them: 3 x 3 landblocks with a ring of one is 25. They are all kept loaded for as long as the instance is open, whether or not anyone is in them. The ones that no player is near go dormant after a minute like any landblock (monster AI and physics stop, but generators keep running) and wake when a player comes near, so a big island with one player in it does not run every monster in it. Landblocks of an instance that lie together are one landblock group, so one thread ticks a contiguous island whole.
 - Creating an instance loads all of its landblocks, on the thread that asks (their DAT data and their world database content), which is noticeable for a big island. Do it when it is quiet, or make the shared instance early.
+- **Measured** (2026-09-20, an island of 210 landblocks with its ring, on a development server with one player): opening it paused the server for 3 to 4 seconds. Memory went from 1,206 MB to 1,270 MB (64 MB, about 0.3 MB for each landblock), and loaded landblocks from 10 to 220. There were about 1,700 more objects (statics and the like), one more landblock group, and no database rows. The first instance of an island also fills caches that stay afterwards (about 480 more files from `Cell.dat`, 240 from `Portal.dat`, 200 sets of landblock content from the world database), so the next one should be cheaper. It also used about 4,400 dynamic guids in those first seconds, for what the island holds (what monsters carry and what generators spawn). In a second run, watched for six minutes after that, the island used 20,800 more, mostly in the first five while it filled in (from about 2,000 objects to 3,000), and only about 2,700 of them were given back when it was deleted. A guid that is given back is held for six hours before it is used again, and why the others were not given back is not known yet (test plan, J9). The CPU, object and memory numbers of that run are in the test plan, section 7. With the dormancy fix, 201 of the island's 210 landblocks were dormant 98 seconds after it opened (the 9 next to the player, and the one persistent landblock that is kept loaded, stayed awake), the island stayed one landblock group, and it cost about 4 to 6 CPU seconds a minute more than the same server without it, which is roughly a tenth of one core or less. It held no monsters in that run, so what stopping monster AI saves was not measured (test plan, section 7).
 - The persistent world pays almost nothing while there are no instances or instance-only landblocks: a read of one field per landblock lookup. With instance-only landblocks it is one set lookup.
 - Static objects in instances take their ids from a pool of about a million, and get them back when the instance ends, after a six hour wait (so an id that a client may still remember is not given out again at once). If every id has been used and none has waited that long, the one that has been back the longest is used early and a warning is logged. If all of them are in use, that is logged as fatal and the object is not made.
 - Instances are ticked in their own landblock groups, so they run in parallel like other landblocks when multi-threaded ticking is on.
