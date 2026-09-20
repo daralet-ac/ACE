@@ -238,6 +238,14 @@ public class Pet : Creature
             return;
         }
 
+        // The owner is in another instance and the pet was left behind: it is not near them, whatever their coordinates say.
+        // (An owner who teleports away has always lost their pet, when it was too far from them.)
+        if (P_PetOwner.InstanceId != InstanceId)
+        {
+            Destroy();
+            return;
+        }
+
         var dist = GetCylinderDistance(P_PetOwner);
 
         if (dist > MaxDistance)
