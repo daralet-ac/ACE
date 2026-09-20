@@ -40,7 +40,9 @@ public class Capstone
                 "Gredaline Consulate",
                 "Mage Academy",
                 "Lugian Mines",
-                "Mountain Fortress"
+                "Mountain Fortress",
+                "Shattered Source",
+                "Xarabydun Researcher Halls"
             };
             foreach (var capstone in capstones)
             {
@@ -160,6 +162,17 @@ public class Capstone
                 case "fortress":
                 case "hamud":
                     dungeonName = "Mountain Fortress";
+                    break;
+                case "shattered source":
+                case "shattered":
+                case "ss":
+                    dungeonName = "Shattered Source";
+                    break;
+                case "xarabydun researcher halls":
+                case "xarabydun":
+                case "researcher halls":
+                case "residence":
+                    dungeonName = "Xarabydun Researcher Halls";
                     break;
             }
 
