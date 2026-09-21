@@ -41,7 +41,7 @@ An instance ends `instance_empty_timeout_minutes` (default **15**) after its las
 
 ## Islands
 
-An island is a template that is read from `instances.json`, next to the server. The build copies the one in `apps/server` there only when there is none yet, and never over one that is there, so the copy next to the server is the one to edit, and a rebuild does not undo it (delete it and build to get the default back). It is read once, when the server starts, before the world opens. The file that comes with the server lists one island, `aerlinthe`, for testing: 13 x 12 landblocks, 210 with the ring. It is not instance only, so nothing changes in the persistent world until somebody runs `/instance open aerlinthe`. A copy next to the server that was made before it was added does not get it, because a build never overwrites that copy: delete the copy and build, or copy the island in. The file allows comments and trailing commas.
+An island is a template that is read from `instances.json`, next to the server. The build copies the one in `apps/server` there only when there is none yet, and never over one that is there, so the copy next to the server is the one to edit, and a rebuild does not undo it (delete it and build to get the default back). It is read once, when the server starts, before the world opens. The file that comes with the server lists three islands for testing: `aerlinthe` (13 x 12 landblocks, 210 with the ring), `test-holtburg` (one landblock, 9 with the ring) and `test-big` (3 x 3 landblocks, 25 with the ring). None is instance only, so nothing changes in the persistent world until somebody runs `/instance open <name>`. A copy next to the server that was made before they were added does not get them, because a build never overwrites that copy: delete the copy and build, or copy the islands in. The file allows comments and trailing commas.
 
 ```json
 {
@@ -72,7 +72,7 @@ An island is a template that is read from `instances.json`, next to the server. 
 
 Positions are a cell, `x`, `y`, `z`, and a rotation as `qx`, `qy`, `qz`, `qw` (no rotation is `qw` 1 and the others 0, which is what you get by leaving them out). Take them from `/loc` in the game. **For an outdoor cell the server works out the cell from `x` and `y`**, so use a cell and coordinates that match.
 
-A mistake in one island is logged (`[INSTANCE] instances.json: island 'x': ...`) and only leaves that island out. These are refused: no name, a name used twice, names that start with `capstone:`, `instanceOnly` missing (it has to be said on purpose, see below), no landblocks or one that is not written like `E74E`, more than 400 landblocks with the ring, an entry that is not in the island's own landblocks, and a return position inside the island or in another island that is instance only.
+A mistake in one island is logged (`[INSTANCE] instances.json: island 'x': ...`) and only leaves that island out. These are refused: no name, a name used twice, names that start with `capstone:`, `instanceOnly` missing (it has to be said on purpose, see below) or written in quotes, any other value of the wrong kind (text where a number or a list belongs), no landblocks or one that is not written like `E74E`, more than 400 landblocks with the ring, an entry that is not in the island's own landblocks, and a return position inside the island or in another island that is instance only. Text that is not JSON, or a file that is not an object with a list of `islands`, can't be read at all, and then no island loads.
 
 ### The ring
 
