@@ -41,10 +41,8 @@ public static class InstanceTemplateConfig
             PropertyNameCaseInsensitive = true
         };
 
-    internal sealed class IslandFile
-    {
-        public List<Island> Islands { get; set; }
-    }
+    private static readonly JsonDocumentOptions DocumentOptions =
+        new() { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip };
 
     internal sealed class Island
     {
@@ -95,11 +93,11 @@ public static class InstanceTemplateConfig
     {
         var templates = new List<InstanceTemplate>();
 
-        IslandFile file;
+        JsonDocument document;
 
         try
         {
-            file = JsonSerializer.Deserialize<IslandFile>(json, Options);
+            document = JsonDocument.Parse(json, DocumentOptions);
         }
         catch (JsonException ex)
         {
@@ -107,30 +105,68 @@ public static class InstanceTemplateConfig
             return templates;
         }
 
-        if (file?.Islands == null)
+        using (document)
         {
-            return templates;
-        }
+            var root = document.RootElement;
 
-        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        for (var i = 0; i < file.Islands.Count; i++)
-        {
-            var island = file.Islands[i];
-
-            if (island == null)
+            if (root.ValueKind == JsonValueKind.Null)
             {
-                errors.Add($"island #{i + 1} is empty");
-                continue;
+                return templates;
             }
 
-            var label = string.IsNullOrWhiteSpace(island.Name) ? $"island #{i + 1}" : $"island '{island.Name.Trim()}'";
-
-            var template = Build(island, label, names, errors);
-
-            if (template != null)
+            if (root.ValueKind != JsonValueKind.Object)
             {
-                templates.Add(template);
+                errors.Add("The file can't be read: it has to be an object with a list of islands, { \"islands\": [ ... ] }");
+                return templates;
+            }
+
+            var list = FindProperty(root, "islands");
+
+            if (list == null || list.Value.ValueKind == JsonValueKind.Null)
+            {
+                return templates;
+            }
+
+            if (list.Value.ValueKind != JsonValueKind.Array)
+            {
+                errors.Add("The file can't be read: \"islands\" has to be a list, [ ... ]");
+                return templates;
+            }
+
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var number = 0;
+
+            // each island is read on its own, so that a value of the wrong kind in one of them only leaves that island out
+            foreach (var element in list.Value.EnumerateArray())
+            {
+                number++;
+
+                Island island;
+
+                try
+                {
+                    island = element.Deserialize<Island>(Options);
+                }
+                catch (JsonException ex)
+                {
+                    errors.Add($"{LabelOf(element, number)}: {Describe(ex)}");
+                    continue;
+                }
+
+                if (island == null)
+                {
+                    errors.Add($"island #{number} is empty");
+                    continue;
+                }
+
+                var label = string.IsNullOrWhiteSpace(island.Name) ? $"island #{number}" : $"island '{island.Name.Trim()}'";
+
+                var template = Build(island, label, names, errors);
+
+                if (template != null)
+                {
+                    templates.Add(template);
+                }
             }
         }
 
@@ -151,6 +187,86 @@ public static class InstanceTemplateConfig
         });
 
         return templates;
+    }
+
+    private static JsonElement? FindProperty(JsonElement obj, string name)
+    {
+        foreach (var property in obj.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return property.Value;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// How an island is called in a message when it could not be read: by its name if it has one that is text, or else by its place in the list.
+    /// </summary>
+    private static string LabelOf(JsonElement element, int number)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            var name = FindProperty(element, "name");
+
+            if (name?.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(name.Value.GetString()))
+            {
+                return $"island '{name.Value.GetString().Trim()}'";
+            }
+        }
+
+        return $"island #{number}";
+    }
+
+    /// <summary>
+    /// What is wrong with an island that has a value of the wrong kind in it, in place of the .NET message about System.Nullable of Boolean.
+    /// The island is read on its own, so the path starts at the island: $.instanceOnly, $.entry.x, $.rectangles[0].
+    /// </summary>
+    private static string Describe(JsonException ex)
+    {
+        var path = ex.Path ?? "$";
+        var where = path.Length > 2 ? path[2..] : null;
+
+        if (where == null)
+        {
+            return "it has to be an object, { ... }";
+        }
+
+        var message = ex.Message;
+
+        if (message.Contains("System.Boolean"))
+        {
+            return $"{where} has to be true or false, without quotes";
+        }
+
+        if (message.Contains("System.Int32"))
+        {
+            return $"{where} has to be a whole number";
+        }
+
+        if (message.Contains("System.Single") || message.Contains("System.Double"))
+        {
+            return $"{where} has to be a number";
+        }
+
+        if (message.Contains("System.Collections.Generic.List"))
+        {
+            return $"{where} has to be a list, [ ... ]";
+        }
+
+        if (message.Contains("PositionEntry") || message.Contains("Rectangle"))
+        {
+            return $"{where} has to be an object, {{ ... }}";
+        }
+
+        if (message.Contains("System.String"))
+        {
+            return $"{where} has to be text, in quotes";
+        }
+
+        return $"{where} is not the right kind of value";
     }
 
     private static InstanceTemplate Build(Island island, string label, HashSet<string> names, List<string> errors)

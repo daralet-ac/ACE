@@ -439,6 +439,35 @@ public class InstanceTemplateConfigTests
         AssertRejected(With(Valid, "0xE74E0019", "0xA9B40019"), "not one of the island's landblocks");
     }
 
+    // aerlinthe as it is written in instances.json: a rectangle from B3F3 to BFE8, two opposite corners that are not the smaller one in both directions
+    private static string Aerlinthe()
+    {
+        return With(Valid, "\"landblocks\": [ \"E74E\" ]", "\"rectangles\": [ { \"from\": \"B3F3\", \"to\": \"BFE8\" } ]");
+    }
+
+    [TestMethod]
+    public void Config_TheFourCornersOfARectangleAreInsideTheIsland()
+    {
+        // B3F3 is the corner that the rectangle is written from. It is an island landblock, not part of the ring
+        foreach (var corner in new[] { "0xB3F3", "0xBFE8", "0xB3E8", "0xBFF3" })
+        {
+            var templates = Parse(With(Aerlinthe(), "0xE74E", corner), out var errors);
+
+            Assert.AreEqual(0, errors.Count, corner + ": " + string.Join(" | ", errors));
+            Assert.AreEqual(1, templates.Count, corner);
+        }
+    }
+
+    [TestMethod]
+    public void Config_AnEntryOneLandblockOutsideARectangleIsInTheRingAndRefused()
+    {
+        // one step out from the corner it is written from, from the other edges, and diagonally
+        foreach (var outside in new[] { "0xB2F3", "0xB3F4", "0xB2F4", "0xC0E8", "0xBFE7", "0xC0E7" })
+        {
+            AssertRejected(With(Aerlinthe(), "0xE74E", outside), "not one of the island's landblocks");
+        }
+    }
+
     [TestMethod]
     public void Config_TheEntryPositionHasToBeAValidPosition()
     {
@@ -518,6 +547,57 @@ public class InstanceTemplateConfigTests
         Assert.AreEqual(0, templates.Count);
         Assert.AreEqual(1, errors.Count);
         StringAssert.Contains(errors[0], "can't be read");
+    }
+
+    [TestMethod]
+    public void Config_AValueOfTheWrongKindLeavesOutOnlyThatIsland()
+    {
+        // "true" in quotes is text, not a boolean. The other island is fine, and has to load
+        var bad = With(Valid, "\"instanceOnly\": true", "\"instanceOnly\": \"true\"");
+        var good = With(Valid, "\"name\": \"hebian\"", "\"name\": \"good\"");
+
+        var templates = Parse(bad + ", " + good, out var errors);
+
+        Assert.AreEqual(1, templates.Count, string.Join(" | ", errors));
+        Assert.AreEqual("good", templates[0].Name);
+        Assert.AreEqual(1, errors.Count, string.Join(" | ", errors));
+        StringAssert.Contains(errors[0], "island 'hebian'");
+        StringAssert.Contains(errors[0], "instanceOnly has to be true or false");
+    }
+
+    [TestMethod]
+    public void Config_TheKindOfValueThatIsNeededIsNamed()
+    {
+        AssertRejected(With(Valid, "\"bufferRing\": 1", "\"bufferRing\": \"lots\""), "bufferRing has to be a whole number");
+        AssertRejected(With(Valid, "\"landblocks\": [ \"E74E\" ]", "\"landblocks\": \"E74E\""), "landblocks has to be a list");
+        AssertRejected(
+            With(Valid, "\"entry\": { \"cell\": \"0xE74E0019\", \"x\": 84, \"y\": 7.1, \"z\": 94 }", "\"entry\": \"0xE74E0019\""),
+            "entry has to be an object"
+        );
+        AssertRejected(With(Valid, "\"name\": \"hebian\"", "\"name\": 5"), "name has to be text");
+    }
+
+    [TestMethod]
+    public void Config_TheFileHasToBeAnObjectWithAListOfIslands()
+    {
+        foreach (var json in new[] { "[ ]", "\"islands\"", "{ \"islands\": 5 }" })
+        {
+            var errors = new List<string>();
+
+            Assert.AreEqual(0, InstanceTemplateConfig.Parse(json, errors).Count, json);
+            Assert.AreEqual(1, errors.Count, json + ": " + string.Join(" | ", errors));
+            StringAssert.Contains(errors[0], "can't be read", json);
+        }
+    }
+
+    [TestMethod]
+    public void Config_TheNamesOfTheListAndOfTheIslandsDoNotCareAboutCapitals()
+    {
+        var errors = new List<string>();
+        var templates = InstanceTemplateConfig.Parse("{ \"ISLANDS\": [ " + With(Valid, "\"name\"", "\"NAME\"") + " ] }", errors);
+
+        Assert.AreEqual(0, errors.Count, string.Join(" | ", errors));
+        Assert.AreEqual(1, templates.Count);
     }
 
     [TestMethod]
