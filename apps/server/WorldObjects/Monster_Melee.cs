@@ -108,7 +108,8 @@ partial class Creature
                 this,
                 () =>
                 {
-                    if (AttackTarget == null || IsDead || target.IsDead)
+                    // the target may have left the instance during the swing
+                    if (AttackTarget == null || IsDead || target.IsDead || target.InstanceId != InstanceId)
                     {
                         return;
                     }

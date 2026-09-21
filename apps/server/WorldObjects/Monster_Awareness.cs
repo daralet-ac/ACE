@@ -424,6 +424,43 @@ partial class Creature
         }
     }
 
+    /// <summary>
+    /// Forgets the creatures that are not in this monster's instance.<para />
+    /// The threat tables keep a creature for as long as the monster lives, and a creature can leave the instance the monster is in, or enter it, at any time.
+    /// The monster can't see such a creature and must not fight it. The new threat system chooses from the whole table, not only from the visible targets,
+    /// and the invisible attacker fix in FindNextTarget would then show the two to each other: the monster would be seen from, and attack, another instance.
+    /// </summary>
+    private void ForgetThreatOutsideInstance()
+    {
+        if (ThreatLevel == null || ThreatLevel.Count == 0)
+        {
+            return;
+        }
+
+        List<Creature> outside = null;
+
+        foreach (var creature in ThreatLevel.Keys)
+        {
+            if (creature.InstanceId != InstanceId)
+            {
+                outside ??= new List<Creature>();
+                outside.Add(creature);
+            }
+        }
+
+        if (outside == null)
+        {
+            return;
+        }
+
+        foreach (var creature in outside)
+        {
+            ThreatLevel.Remove(creature);
+            PositiveThreat?.Remove(creature);
+            NegativeThreat?.Remove(creature);
+        }
+    }
+
     public virtual bool FindNextTarget(bool onTakeDamage, Creature untargetablePlayer = null)
     {
         // stopwatch.Restart();
@@ -437,6 +474,8 @@ partial class Creature
 
             SelectTargetingTactic();
             SetNextTargetTime();
+
+            ForgetThreatOutsideInstance();
 
             var visibleTargets = GetAttackTargets();
 
@@ -766,8 +805,17 @@ partial class Creature
             }
             //Console.WriteLine($"{Name}.FindNextTarget = {AttackTarget.Name}");
 
+            // Whatever chose the target, a monster only fights what is in its own instance. The threat tables are cleaned above, but the legacy tactics
+            // (LastDamager, TopDamager) use the damage history, and Focused / None keep the previous target, and none of those are limited to the visible targets.
+            if (AttackTarget is Creature chosen && chosen.InstanceId != InstanceId)
+            {
+                AttackTarget = SelectWeightedDistance(targetDistances);
+            }
+
+            // The fix is for a target in this instance that the monster can't be seen by. It must never reach into another instance:
+            // it makes the player see the monster and the monster see the player, which is exactly what an instance is there to prevent.
             var player = AttackTarget as Player;
-            if (player != null && !Visibility && player.AddTrackedObject(this))
+            if (player != null && !Visibility && player.InstanceId == InstanceId && player.AddTrackedObject(this))
             {
                 _log.Error(
                     $"Fixed invisible attacker on player {player.Name}. (Landblock:{CurrentLandblock.Id} - {Name} ({Guid})"
@@ -868,6 +916,12 @@ partial class Creature
             var allowPassiveThreat = usePassiveThreat && creature.GeneratesPassiveThreat && PotentialFoe(creature);
             if (!allowPassiveThreat && !creature.Attackable && creature.TargetingTactic == TargetingTactic.None
                 || creature.Teleporting)
+            {
+                continue;
+            }
+
+            // a creature in another instance is never a target, however it got into the list
+            if (creature.InstanceId != InstanceId)
             {
                 continue;
             }
