@@ -31,6 +31,22 @@ public static class WorldManager
 {
     private static readonly ILogger _log = Log.ForContext(typeof(WorldManager));
 
+    /// <summary>
+    /// A place that always exists and is always safe to send a player to: Holtburg's lifestone. The last resort
+    /// for anywhere a player is meant to end up (on login, on leaving an instance, on death) when nothing else
+    /// usable is left: no location, no sanctuary, or a sanctuary that is no longer reachable.
+    /// </summary>
+    public static readonly Position DefaultFallbackPosition = new Position(
+        0xA9B40019,
+        84,
+        7.1f,
+        94,
+        0,
+        0,
+        -0.0784591f,
+        0.996917f
+    );
+
     private static readonly PhysicsEngine Physics;
 
     public static bool WorldActive { get; private set; }
@@ -277,7 +293,7 @@ public static class WorldManager
             }
             else
             {
-                session.Player.Location = new Position(0xA9B40019, 84, 7.1f, 94, 0, 0, -0.0784591f, 0.996917f); // ultimate fallback
+                session.Player.Location = new Position(DefaultFallbackPosition); // ultimate fallback
             }
         }
 
@@ -294,8 +310,7 @@ public static class WorldManager
         if (!success)
         {
             // send to lifestone, or fallback location
-            var fixLoc =
-                session.Player.Sanctuary ?? new Position(0xA9B40019, 84, 7.1f, 94, 0, 0, -0.0784591f, 0.996917f);
+            var fixLoc = session.Player.Sanctuary ?? new Position(DefaultFallbackPosition);
 
             _log.Error(
                 $"WorldManager.DoPlayerEnterWorld: failed to spawn {session.Player.Name}, relocating to {fixLoc.ToLOCString()}"

@@ -424,26 +424,9 @@ public static class InstanceManager
     }
 
     /// <summary>
-    /// The same spot WorldManager falls back to when a player has no location at all: Holtburg's lifestone.
-    /// Used here so a player can never be stuck inside an instance because their sanctuary, or the landblock it
-    /// is in, is not a place the persistent world will let them into any more (for example, someone's sanctuary
-    /// was set before their landblock became instance-only).
-    /// </summary>
-    private static readonly Position UltimateFallbackPosition = new Position(
-        0xA9B40019,
-        84,
-        7.1f,
-        94,
-        0,
-        0,
-        -0.0784591f,
-        0.996917f
-    );
-
-    /// <summary>
     /// Where a player who leaves their instance ends up: the template's own return position, or their sanctuary,
     /// or where they started, whichever of those is the first one that is still a place the persistent world
-    /// will let them into. If none of them are, the ultimate fallback always is.
+    /// will let them into. If none of them are, WorldManager's ultimate fallback always is.
     /// </summary>
     private static Position GetReturnPosition(Player player)
     {
@@ -457,7 +440,18 @@ public static class InstanceManager
             }
         }
 
-        return UltimateFallbackPosition;
+        return new Position(WorldManager.DefaultFallbackPosition);
+    }
+
+    /// <summary>
+    /// Whether Teleport() would actually accept sending someone at this instance to this position: the same
+    /// resolution and check it makes itself (ResolveDestinationInstance, then CanEnter). Lets a caller validate a
+    /// candidate destination (a sanctuary, a saved position) before relying on it, instead of finding out only
+    /// when the teleport silently refuses to happen.
+    /// </summary>
+    public static bool CanReach(uint fromInstance, Position destination)
+    {
+        return CanEnter(ResolveDestinationInstance(fromInstance, destination), destination.LandblockId);
     }
 
     public static void OnPlayerChangedInstance(Player player, uint fromInstance, uint toInstance)
