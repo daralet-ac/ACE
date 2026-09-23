@@ -46,9 +46,15 @@ public class WorldInstance
     /// </summary>
     private readonly ConcurrentDictionary<uint, uint> worldGuids = new ConcurrentDictionary<uint, uint>();
 
+    /// <summary>
+    /// The reverse of worldGuids: the world database guid a static object's guid in this instance stands in for.
+    /// </summary>
+    private readonly ConcurrentDictionary<uint, uint> instanceGuids = new ConcurrentDictionary<uint, uint>();
+
     internal void MapWorldGuid(uint worldGuid, uint guidInInstance)
     {
         worldGuids[worldGuid] = guidInInstance;
+        instanceGuids[guidInInstance] = worldGuid;
     }
 
     /// <summary>
@@ -58,6 +64,15 @@ public class WorldInstance
     public uint TranslateWorldGuid(uint guid)
     {
         return worldGuids.TryGetValue(guid, out var guidInInstance) ? guidInInstance : guid;
+    }
+
+    /// <summary>
+    /// The world database guid a guid in this instance stands in for (or the guid itself, if it was not remapped:
+    /// the guid of something that was made in the instance, rather than copied from the world database)
+    /// </summary>
+    public uint TranslateInstanceGuid(uint guid)
+    {
+        return instanceGuids.TryGetValue(guid, out var worldGuid) ? worldGuid : guid;
     }
 
     internal WorldInstance(uint id, InstanceTemplate template, object owner, DateTime createdAt)

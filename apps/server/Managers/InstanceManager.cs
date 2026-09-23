@@ -300,6 +300,20 @@ public static class InstanceManager
         return Get(instanceId)?.TranslateWorldGuid(guid) ?? guid;
     }
 
+    /// <summary>
+    /// The world database guid a guid in this instance stands in for, for a guid that is a static object of the instance
+    /// (or the guid itself, for a guid that was not remapped, such as a dynamic object, or anything in the persistent world).
+    /// </summary>
+    public static uint TranslateInstanceGuid(uint instanceId, uint guid)
+    {
+        if (instanceId == Landblock.PersistentInstance)
+        {
+            return guid;
+        }
+
+        return Get(instanceId)?.TranslateInstanceGuid(guid) ?? guid;
+    }
+
     public static List<WorldInstance> GetInstances()
     {
         lock (sync)
