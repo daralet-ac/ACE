@@ -109,6 +109,8 @@ partial class Player
 
         CheckRoadSpeedBuff(currentUnixTime);
 
+        UpdateStealthDetectionLevel(currentUnixTime);
+
         if (House != null && PropertyManager.GetBool("house_rent_enabled").Item)
         {
             if (houseRentWarnTimestamp > 0 && currentUnixTime > houseRentWarnTimestamp)
