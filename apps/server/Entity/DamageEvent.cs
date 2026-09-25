@@ -577,7 +577,7 @@ public class DamageEvent
         // If playerDefender has Phalanx active, 50% chance to convert partial hits into blocks/parries.
         if (playerDefender is { PhalanxIsActive: true }
             && PartialEvasion == PartialEvasion.Some
-            && ThreadSafeRandom.Next(0.0f, 1.0f) > 0.25f)
+            && ThreadSafeRandom.Next(0.0f, 1.0f) < 0.25f)
         {
             Parried = true;
             return;
