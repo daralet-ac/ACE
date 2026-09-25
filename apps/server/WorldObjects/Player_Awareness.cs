@@ -95,6 +95,10 @@ partial class Player
 
         EnqueueBroadcast(new GameMessageScript(Guid, PlayScript.StealthBegin));
 
+        // refresh the detection bar on the next tick
+        NextStealthDetectionUpdateTime = 0;
+        LastStealthDetectionLevel = null;
+
         // PK/PKL players cannot see stealthed players at all - fully hide from anyone
         // who already knows about us instead of just showing the translucent effect.
         foreach (var knownPlayer in PhysicsObj.ObjMaint.GetKnownPlayersValuesAsPlayer())
@@ -117,6 +121,8 @@ partial class Player
 
         IsStealthed = false;
         IsAttackFromStealth = isAttackFromStealth;
+
+        SetStealthDetectionLevel(0);
 
         Session.Network.EnqueueSend(
             new GameMessageSystemChat(message ?? "You lose stealth.", ChatMessageType.Broadcast)
@@ -199,18 +205,7 @@ partial class Player
             return true;
         }
 
-        if (
-            creature == null
-            || creature.PlayerKillerStatus == PlayerKillerStatus.RubberGlue
-            || creature.PlayerKillerStatus == PlayerKillerStatus.Protected
-            || distance > creature.VisualAwarenessRangeSq
-            || !creature.IsDirectVisible(this)
-        )
-        {
-            return true;
-        }
-
-        if (creature.CannotBreakStealth == true || creature.Translucency == 1.0 || creature.Visibility == true) // watchers
+        if (!CanCreatureDetectStealth(creature, distance))
         {
             return true;
         }
@@ -222,6 +217,40 @@ partial class Player
 
         RecentStealthTests[creature.Guid] = Time.GetUnixTime();
 
+        var difficulty = GetStealthDifficulty(creature, distance);
+
+        return TestStealth(difficulty, failureMessage, creature);
+    }
+
+    /// <summary>
+    /// Returns false for creatures that can never break this player's stealth from their current position
+    /// </summary>
+    private bool CanCreatureDetectStealth(Creature creature, double distance)
+    {
+        if (
+            creature == null
+            || creature.PlayerKillerStatus == PlayerKillerStatus.RubberGlue
+            || creature.PlayerKillerStatus == PlayerKillerStatus.Protected
+            || distance > creature.VisualAwarenessRangeSq
+            || !creature.IsDirectVisible(this)
+        )
+        {
+            return false;
+        }
+
+        if (creature.CannotBreakStealth == true || creature.Translucency == 1.0 || creature.Visibility == true) // watchers
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The difficulty of the stealth check a creature makes against this player, based on its perception, distance and facing
+    /// </summary>
+    private uint GetStealthDifficulty(Creature creature, double distance)
+    {
         var maxDistance = creature.VisualAwarenessRangeSq;
         var monsterDistanceBonus = Math.Min(2.0f, (float)(maxDistance / distance));
 
@@ -229,11 +258,9 @@ partial class Player
 
         var angleMod = 1.0f - angle / 180.0f; // mod ranges from 0.0 (180 angle) to 1.0 (0 angle, face-on)
 
-        var difficulty = (uint)(creature.GetModdedPerceptionSkill() * monsterDistanceBonus * angleMod);
-
         //Console.WriteLine($"\nCreature: {creature.Name} {creature.WeenieClassId} - distance: {distance}, distanceBonus: {monsterDistanceBonus}, angle: {angle}, angleBonus: {angleMod}");
 
-        return TestStealth(difficulty, failureMessage, creature);
+        return (uint)(creature.GetModdedPerceptionSkill() * monsterDistanceBonus * angleMod);
     }
 
     public bool TestStealth(Creature creature, string failureMessage)
@@ -261,11 +288,18 @@ partial class Player
         var thieverySkill = GetCreatureSkill(Skill.Thievery);
         var isSpecialized = thieverySkill.AdvancementClass == SkillAdvancementClass.Specialized;
 
-        var result = TestStealthInternal(difficulty, out var tryPreserveWithStamina);
+        // movement only matters against creatures, not traps
+        var detectionMod = creature != null ? GetStealthMovementDetectionMod() : 1.0;
+
+        var result = TestStealthInternal(difficulty, out var detectionChance, detectionMod);
 
         if (result != StealthTestResult.Success)
         {
-            if (creature != null && tryPreserveWithStamina && TryPreserveStealthWithStamina(creature, isSpecialized))
+            if (
+                creature != null
+                && result == StealthTestResult.Failure
+                && TryPreserveStealthWithStamina(creature, isSpecialized, detectionChance)
+            )
             {
                 return true;
             }
@@ -285,7 +319,7 @@ partial class Player
         return true;
     }
 
-    private bool TryPreserveStealthWithStamina(Creature creature, bool isSpecialized)
+    private bool TryPreserveStealthWithStamina(Creature creature, bool isSpecialized, double detectionChance)
     {
         var currentTime = Time.GetUnixTime();
 
@@ -318,7 +352,10 @@ partial class Player
         var creatureLevel = creature.Level ?? 1;
         var divisor = isSpecialized ? 2 : 1;
         var baseCost = Math.Max(1, creatureLevel / divisor);
-        var staminaCost = baseCost * (1 + tracker.FailureCount);
+
+        // Scale linearly by detection chance: i.e. 90% = 90% cost, 50% = 50% cost, 20% = 20% cost (min 1)
+        var detectionCostMod = detectionChance;
+        var staminaCost = Math.Max(1, (int)Math.Round(baseCost * (1 + tracker.FailureCount) * detectionCostMod));
 
         // Check if player has enough stamina for the cost
         if (Stamina.Current < staminaCost)
@@ -355,9 +392,9 @@ partial class Player
         Success
     }
 
-    private StealthTestResult TestStealthInternal(uint difficulty, out bool tryPreserveWithStamina)
+    private StealthTestResult TestStealthInternal(uint difficulty, out double detectionChance, double detectionMod = 1.0)
     {
-        tryPreserveWithStamina = false;
+        detectionChance = 1.0;
 
         var thieverySkill = GetCreatureSkill(Skill.Thievery); // Thievery
         if (thieverySkill.AdvancementClass < SkillAdvancementClass.Trained)
@@ -367,12 +404,9 @@ partial class Player
 
         var moddedThieverySkill = GetModdedThieverySkill();
 
-        var chance = SkillCheck.GetSkillChance(moddedThieverySkill, difficulty);
+        detectionChance = (1.0 - SkillCheck.GetSkillChance(moddedThieverySkill, difficulty)) * detectionMod;
 
-        if (chance >= 0.5)
-        {
-            tryPreserveWithStamina = true;
-        }
+        var chance = 1.0 - detectionChance;
 
         var roll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
@@ -390,6 +424,137 @@ partial class Player
         else
         {
             return StealthTestResult.Failure;
+        }
+    }
+
+    private const double StealthDetectionUpdateInterval = 0.2;
+    private const int StealthDetectionMaxLevel = 100;
+    private double NextStealthDetectionUpdateTime;
+    private int? LastStealthDetectionLevel;
+
+    /// <summary>
+    /// While stealthed, periodically shows the player's chance of being detected on the Stealth ability's structure bar
+    /// </summary>
+    public void UpdateStealthDetectionLevel(double currentUnixTime)
+    {
+        if (!IsStealthed || currentUnixTime < NextStealthDetectionUpdateTime)
+        {
+            return;
+        }
+
+        NextStealthDetectionUpdateTime = currentUnixTime + StealthDetectionUpdateInterval;
+
+        var level = (int)Math.Round(GetStealthDetectionChance() * StealthDetectionMaxLevel);
+
+        SetStealthDetectionLevel(level);
+    }
+
+    /// <summary>
+    /// Returns the combined chance (0-1) that at least one nearby creature detects this player
+    /// on its next stealth check, using the same difficulty as TestStealth()
+    /// </summary>
+    public double GetStealthDetectionChance()
+    {
+        if (!IsStealthed || Time.GetUnixTime() < LastVanishActivated + 5)
+        {
+            return 0.0;
+        }
+
+        var moddedThieverySkill = GetModdedThieverySkill();
+        var movementDetectionMod = GetStealthMovementDetectionMod();
+        var undetectedChance = 1.0;
+
+        // same creature set as CheckMonsters()
+        PhysicsObj.ObjMaint.ForEachVisibleCreature(creature =>
+        {
+            if (creature is Player)
+            {
+                return;
+            }
+
+            var distSq = PhysicsObj.get_distance_sq_to_object(creature.PhysicsObj, true);
+
+            if (!CanCreatureDetectStealth(creature, distSq))
+            {
+                return;
+            }
+
+            var difficulty = GetStealthDifficulty(creature, distSq);
+
+            var detectionChance = (1.0 - SkillCheck.GetSkillChance(moddedThieverySkill, difficulty)) * movementDetectionMod;
+
+            undetectedChance *= 1.0 - detectionChance;
+        });
+
+        return Math.Clamp(1.0 - undetectedChance, 0.0, 1.0);
+    }
+
+    private const double StealthStandingStillDetectionMod = 0.5;
+    private const double StealthWalkingDetectionMod = 0.75;
+
+    /// <summary>
+    /// Creatures are less likely to detect a stealthed player who is standing still (50%) or walking (75%) instead of running
+    /// </summary>
+    private double GetStealthMovementDetectionMod()
+    {
+        // server-driven movement (moving to use an object) always runs
+        if (IsJumping || IsPlayerMovingTo || IsPlayerMovingTo2)
+        {
+            return 1.0;
+        }
+
+        var rawState = CurrentMoveToState?.RawMotionState;
+
+        if (rawState == null)
+        {
+            return StealthStandingStillDetectionMod;
+        }
+
+        var isMovingForwardOrBack =
+            rawState.ForwardCommand == MotionCommand.WalkForward || rawState.ForwardCommand == MotionCommand.WalkBackwards;
+
+        var isSidestepping =
+            rawState.SidestepCommand == MotionCommand.SideStepRight || rawState.SidestepCommand == MotionCommand.SideStepLeft;
+
+        // turning in place counts as standing still
+        if (!isMovingForwardOrBack && !isSidestepping)
+        {
+            return StealthStandingStillDetectionMod;
+        }
+
+        if (rawState.CurrentHoldKey != HoldKey.Run)
+        {
+            return StealthWalkingDetectionMod;
+        }
+
+        return 1.0;
+    }
+
+    /// <summary>
+    /// Sets the structure bar on the player's Stealth ability gem(s) to the given detection level (0-100)
+    /// </summary>
+    private void SetStealthDetectionLevel(int level)
+    {
+        if (level == LastStealthDetectionLevel)
+        {
+            return;
+        }
+
+        LastStealthDetectionLevel = level;
+
+        var stealthGems = GetAllPossessions().Where(i => i.CombatAbilityId == (int)CombatAbility.Stealth);
+
+        foreach (var gem in stealthGems)
+        {
+            if (gem.MaxStructure != StealthDetectionMaxLevel)
+            {
+                UpdateProperty(gem, PropertyInt.MaxStructure, StealthDetectionMaxLevel);
+            }
+
+            if (gem.Structure != level)
+            {
+                UpdateProperty(gem, PropertyInt.Structure, level);
+            }
         }
     }
 
