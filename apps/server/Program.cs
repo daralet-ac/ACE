@@ -284,6 +284,7 @@ partial class Program
         // before the world opens: landblocks that only exist as instances have to be known before anything can load them
         _log.Information("Loading instance templates (instances.json)...");
         InstanceManager.LoadTemplates();
+        InstanceManager.RegisterStarterAcademies();
 
         _log.Information("Initializing GuidManager...");
         GuidManager.Initialize();

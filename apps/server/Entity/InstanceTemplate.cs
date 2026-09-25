@@ -44,6 +44,13 @@ public class InstanceTemplate
     /// </summary>
     public bool InstanceOnly { get; }
 
+    /// <summary>
+    /// True if every player who logs in inside its landblocks gets an instance of their own, and is put in a new one whenever they log in
+    /// there again, at the place where they logged out. Where they are saved when they log out inside it is where they are, not where
+    /// the template sends players. The training academies, which every new character starts in, are like this.
+    /// </summary>
+    public bool Personal { get; }
+
     private readonly HashSet<LandblockId> footprintSet;
     private readonly HashSet<LandblockId> boundarySet;
 
@@ -53,7 +60,8 @@ public class InstanceTemplate
         Position entryPosition,
         Position returnPosition = null,
         bool instanceOnly = false,
-        IEnumerable<LandblockId> boundary = null
+        IEnumerable<LandblockId> boundary = null,
+        bool personal = false
     )
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -95,6 +103,7 @@ public class InstanceTemplate
         EntryPosition = entryPosition ?? throw new ArgumentNullException(nameof(entryPosition));
         ReturnPosition = returnPosition;
         InstanceOnly = instanceOnly;
+        Personal = personal;
     }
 
     public bool Contains(LandblockId landblockId)

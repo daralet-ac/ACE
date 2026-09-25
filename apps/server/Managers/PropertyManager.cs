@@ -784,6 +784,7 @@ public static class DefaultPropertyManager
         ("smite_uses_takedamage", new Property<bool>(false, "if enabled, smite applies damage via TakeDamage")),
         ("spellcast_recoil_queue", new Property<bool>(false, "if true, players can queue the next spell to cast during recoil animation")),
         ("spell_projectile_ethereal", new Property<bool>(true, "broadcasts all spell projectiles as ethereal to clients only, and manually send stop velocity on collision. can fix various issues with client missing target id.")),
+        ("starter_academy_instances", new Property<bool>(true, "if true, every player who logs in inside a training academy, which includes every new character, gets an instance of it of their own instead of sharing the one in the persistent world. It only affects logins: turning it off does not move anyone who is in an academy instance.")),
         ("suicide_instant_death", new Property<bool>(false, "if enabled, @die command kills player instantly. defaults to disabled, as in retail")),
         ("taboo_table", new Property<bool>(true, "if enabled, taboo table restricts player names during character creation")),
         ("tailoring_intermediate_uieffects", new Property<bool>(false, "If true, tailoring intermediate icons retain the magical/elemental highlight of the original item")),

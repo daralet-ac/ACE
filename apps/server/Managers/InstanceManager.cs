@@ -512,7 +512,9 @@ public static class InstanceManager
         }
 
         var template = GetInstanceOnlyTemplate(player.Location.LandblockId);
-        if (template == null)
+
+        // where every player has an instance of their own they are put in it as they enter the world (AssignPersonalInstance), not moved out
+        if (template == null || template.Personal)
         {
             return;
         }
@@ -535,7 +537,9 @@ public static class InstanceManager
 
     /// <summary>
     /// A player who logs out inside an instance is saved at the place the instance sends players, so they log back in there,
-    /// in the persistent world, instead of at coordinates that mean nothing outside the instance.
+    /// in the persistent world, instead of at coordinates that mean nothing outside the instance.<para />
+    /// The exception is an instance where every player has one of their own (a training academy): they are saved where they are,
+    /// because they get a new instance of it as they log in (AssignPersonalInstance), and carry on from where they left off.
     /// </summary>
     public static void OnPlayerLoggingOut(Player player)
     {
@@ -544,16 +548,113 @@ public static class InstanceManager
             return;
         }
 
-        var destination = GetReturnPosition(player);
-        if (destination != null)
+        if (Get(player.InstanceId)?.Template.Personal != true)
         {
-            player.Location = new Position(destination);
+            var destination = GetReturnPosition(player);
+            if (destination != null)
+            {
+                player.Location = new Position(destination);
+            }
         }
 
         OnMemberLeft(player.InstanceId, player.Guid.Full);
 
         player.InstanceId = Landblock.PersistentInstance;
     }
+
+    #region Personal instances
+
+    /// <summary>
+    /// Makes the training academies known, so that every player who logs in inside one gets an instance of it of their own
+    /// (AssignPersonalInstance). Done at startup, with the islands, so that /instance list shows them and admins can open them.
+    /// </summary>
+    public static void RegisterStarterAcademies()
+    {
+        foreach (var academy in StarterAcademies.All)
+        {
+            RegisterTemplate(academy.Template);
+        }
+    }
+
+    /// <summary>
+    /// The registered template whose landblocks a player who logs in at this landblock gets an instance of their own of, if there is one
+    /// </summary>
+    public static InstanceTemplate GetPersonalTemplate(LandblockId landblockId)
+    {
+        lock (sync)
+        {
+            return templates.Values.FirstOrDefault(t => t.Personal && t.Contains(landblockId));
+        }
+    }
+
+    /// <summary>
+    /// Called as a player logs in, just before they enter the world. If they are standing in a place where every player has an instance
+    /// of their own (a training academy, which is where every new character starts), this makes theirs and puts them in it, so that they
+    /// enter the world there and not in the persistent world. It is also what puts them back in one after they log out inside it.<para />
+    /// Whatever goes wrong leaves them in the persistent world, as before: logging in must never fail because of an instance.
+    /// </summary>
+    public static void AssignPersonalInstance(Player player)
+    {
+        if (player.Location == null || player.InstanceId != Landblock.PersistentInstance)
+        {
+            return;
+        }
+
+        if (!PropertyManager.GetBool("starter_academy_instances").Item)
+        {
+            return;
+        }
+
+        var template = GetPersonalTemplate(player.Location.LandblockId);
+        if (template == null)
+        {
+            return;
+        }
+
+        var instance = Register(template);
+
+        try
+        {
+            Load(instance);
+
+            player.InstanceId = instance.Id;
+            OnMemberEntered(instance.Id, player.Guid.Full);
+        }
+        catch (Exception ex)
+        {
+            _log.Error(
+                ex,
+                "[INSTANCE] Could not make an instance of {Template} for {Player}, who enters the persistent world instead",
+                template.Name,
+                player.Name
+            );
+
+            AbandonLoginInstance(player);
+            Close(instance.Id);
+        }
+    }
+
+    /// <summary>
+    /// Takes a player out of the instance that AssignPersonalInstance put them in, because they could not be put in the world there.
+    /// The instance is deleted, since nobody else will ever be in it.
+    /// </summary>
+    public static void AbandonLoginInstance(Player player)
+    {
+        var instanceId = player.InstanceId;
+
+        if (instanceId == Landblock.PersistentInstance)
+        {
+            return;
+        }
+
+        OnMemberLeft(instanceId, player.Guid.Full);
+
+        player.InstanceId = Landblock.PersistentInstance;
+
+        Close(instanceId);
+    }
+
+    #endregion
 
     internal static void OnMemberEntered(uint instanceId, uint memberGuid)
     {

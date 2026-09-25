@@ -2,10 +2,11 @@
 
 An **instance** is a separate, private copy of some landblocks. Two players in two instances of the same landblock never see, hear, hit or collide with each other, and nothing in an instance is ever saved. Instance 0 is the persistent world, which is everything that existed before instances.
 
-This is used for two things:
+This is used for three things:
 
 - **Dungeons for one group** (the capstone dungeons): one instance per fellowship, instead of the six hand-made copies of each dungeon.
 - **Islands**: whole groups of landblocks, made as instances. An island can be *instance only*, so that it does not exist in the persistent world at all.
+- **The training academies**: every new character starts in an instance of the academy of their starter town that is theirs alone.
 
 ## How it works
 
@@ -141,12 +142,29 @@ InstanceManager.Leave(player);             // to where the template sends player
 
 Off by default. Set the server property `capstone_instanced_dungeons` to a comma separated list of dungeon names (as they are in the `AssignCapstoneDungeon` emote, for example `Glenden Wood Dungeon,Green Mire Grave`) and those dungeons open a private instance of the original landblock for each fellowship, instead of one of the numbered copies. The dungeons that hand their modifiers on to a second part (Lugian Mines and Mines of Despair) can't be instanced, because the second part finds the first by landblock.
 
+## Training academies
+
+Every new character starts in the training academy of their starter town: landblock `20FC` for Shoushi, `20FD` for Yaraq and `20FE` for Holtburg. They are three copies of the same dungeon (a Life Stone, a chest for each class, sparring golems, and two exit portals to the town). Each is an instance template that is **personal** (`InstanceTemplate.Personal`), named `academy:shoushi`, `academy:yaraq` and `academy:holtburg`. They are made in code (`StarterAcademies`, which is also where new characters get their start position from) and registered at startup, after `instances.json`, so `/instance list` shows them.
+
+A personal template gives every player who logs in inside its landblocks an instance of their own, so no two characters ever share an academy:
+
+- As a player logs in, just before they enter the world (`InstanceManager.AssignPersonalInstance`, called from `WorldManager.DoPlayerEnterWorld`), a player who is standing in a personal template's landblock gets a new instance of it and enters the world in it. That is every new character (they are saved at the start of their academy) and everyone who logged out, or lost their connection, inside an academy.
+- A player who logs out inside a personal instance is saved **where they are**, not at the template's return position, and gets a new instance there when they log in again, so they carry on from where they left off. Their quests, items and vitae belong to the character, so nothing about the academy starts again.
+- Everything else works as in any instance. The exit portals lead to the persistent world (and still set the sanctuary to the outpost in town, as they did). A player who dies in an academy respawns at their bound lifestone in the same instance (the Life Stone of the academy, or the start position). The template's return position, which is where `/instance leave` and `/instance close` send players, is the town that the first exit portal leads to.
+- The academies in the persistent world stay: they are not instance only, so a builder can still `/tele` there and the content commands work. Nobody arrives there by logging in. A player who is in an academy instance and needs the persistent one uses `/instance leave` and then `/tele`.
+- If the instance can't be made, the error is logged (`[INSTANCE] Could not make an instance of ...`) and the player enters the persistent academy instead. Logging in never fails because of an instance.
+- The instance of an academy is deleted `instance_empty_timeout_minutes` after its player has left it (15 minutes by default), although nobody can ever go into it again.
+- Two new characters can't see each other, group up, trade or use local chat in the academy, because they are in different instances. They meet in the town.
+
+`/instance open academy:holtburg` makes one shared instance for testing, like for any template. To turn the whole thing off, use `/modifybool starter_academy_instances false`: new logins enter the persistent academies again, and nobody who is in an instance is moved.
+
 ## Server properties
 
 | Property | Default | |
 |---|---|---|
 | `instance_empty_timeout_minutes` | 15 | How long an instance stays open after the last player has left it. Change with `/modifylong`. |
 | `capstone_instanced_dungeons` | (empty) | The capstone dungeons that are opened as instances. |
+| `starter_academy_instances` | true | Whether a player who logs in inside a training academy (every new character) gets an instance of it of their own. Change with `/modifybool`. It only affects logins. |
 
 ## Performance
 
@@ -164,9 +182,9 @@ Off by default. Set the server property `capstone_instanced_dungeons` to a comma
 - Only `ActivationTarget` is translated. The world database was checked for weenies that name a static object by its guid (`SELECT object_Id, type, value FROM weenie_properties_i_i_d WHERE value BETWEEN 1879048192 AND 2147483647`): 38 weenies, all `ActivationTarget`, pointing at 35 statics in 18 landblocks (none of them in a capstone dungeon), and nothing else. A guid written down anywhere else (a new property, an emote) would not be translated. The links between statics (`landblock_instance_link`) are not affected, because they are made as references between the objects.
 - Admin `Create*` commands and the old `Game.cs` chess pieces don't copy the instance to what they make. The `[INSTANCE]` warning in the log says when something is spawned without one.
 - Spawns that would be placed right at the outer edge of a footprint fail, because the edge is solid (see the ring).
-- Islands are made from a file, and there is nothing in the game yet that sends a player into one.
+- Islands are made from a file, and there is nothing in the game yet that sends a player into one. The training academies are the only thing that puts players in instances by itself.
 
 ## Testing
 
-- `apps/server-tests`: `InstanceManagerTests`, `InstanceTemplateTests` (templates, rings and `instances.json`), `InstancePhysicsTests`, `EphemeralStaticGuidTests`, `LandblockGroupTests`, `LandblockIdTests`. They need no DATs or database.
+- `apps/server-tests`: `InstanceManagerTests`, `InstanceTemplateTests` (templates, rings and `instances.json`), `InstancePhysicsTests`, `EphemeralStaticGuidTests`, `LandblockGroupTests`, `LandblockIdTests`, `StarterAcademyTests`. They need no DATs or database.
 - Against the real DATs, with no database: a console project that references `ACE.Server.csproj`, calls `ConfigManager.Initialize(Config.js)`, `DatManager.Initialize(<dat folder>)`, `new PhysicsEngine(new ObjectMaint(), new SmartBox()) { Server = true }`, and then makes instances of real landblocks with `InstanceManager.Create()`. Objects are placed with `Landblock.AddWorldObject`, and movement is tried with `PhysicsObj.transition()`. (The tests that fail in a fresh checkout, `Sphere_*`, `CanParseStarterGearJson` and the `*_Initialize` ones, fail the same way without any of this: they need a database, DATs and config.)

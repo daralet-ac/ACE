@@ -88,7 +88,7 @@ public class InstanceCommand
         foreach (var template in templates)
         {
             player.SendMessage(
-                $"{template.Name}: {template.Footprint.Count} landblock(s){(template.HasBoundary ? $", {template.Boundary.Count} of them ring" : "")}{(template.InstanceOnly ? ", instance only" : "")}",
+                $"{template.Name}: {template.Footprint.Count} landblock(s){(template.HasBoundary ? $", {template.Boundary.Count} of them ring" : "")}{(template.InstanceOnly ? ", instance only" : "")}{(template.Personal ? ", one for each player" : "")}",
                 ChatMessageType.System
             );
         }

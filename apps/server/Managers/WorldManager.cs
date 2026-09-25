@@ -304,11 +304,17 @@ public static class WorldManager
             session.Player.Location = new Position(session.Player.Sanctuary);
         }
 
+        // where every player has an instance of their own (the training academies, where every new character starts) they enter the world in it
+        InstanceManager.AssignPersonalInstance(session.Player);
+
         session.Player.PlayerEnterWorld();
 
         var success = LandblockManager.AddObject(session.Player, true);
         if (!success)
         {
+            // one who could not be put in the world in their own instance goes to the persistent world instead
+            InstanceManager.AbandonLoginInstance(session.Player);
+
             // send to lifestone, or fallback location
             var fixLoc = session.Player.Sanctuary ?? new Position(DefaultFallbackPosition);
 
