@@ -1372,7 +1372,12 @@ partial class Creature
     /// to its archetype values. Only the values passed in are changed, not the creature's own Archetype properties,
     /// so the mods can't be overwritten by a later recalculation or applied twice.
     /// </summary>
-    private void ApplyDungeonMods(ref double toughness, ref double lethality, ref double skillMultiplier)
+    private void ApplyDungeonMods(
+        ref double toughness,
+        ref double lethality,
+        ref double healthMultiplier,
+        ref double skillMultiplier
+    )
     {
         var landblock = CurrentLandblock;
 
@@ -1381,7 +1386,10 @@ partial class Creature
             return;
         }
 
+        // Dungeon: Difficulty I-XX
         lethality *= 1.0 + landblock.GetLandblockLethalityMod();
+        healthMultiplier *= 1.0 + landblock.GetLandblockHealthMod();
+        skillMultiplier *= 1.0 + landblock.GetLandblockSkillMod();
 
         if (landblock.LandblockMods["Titans"].Active && MonsterRank >= 4)
         {
@@ -1390,7 +1398,24 @@ partial class Creature
 
         if (landblock.LandblockMods["Skilled"].Active)
         {
-            skillMultiplier = 1.1;
+            skillMultiplier *= 1.1;
         }
+    }
+
+    /// <summary>
+    /// Multiplies the creature's finished max health. Done on the result rather than through toughness, so it
+    /// doesn't also raise armor, ward and regen, and so creatures with hand-set health (OverrideArchetypeHealth,
+    /// which skips the archetype health calculation) get it too.
+    /// </summary>
+    private void ApplyHealthMultiplier(double healthMultiplier)
+    {
+        if (healthMultiplier == 1.0)
+        {
+            return;
+        }
+
+        var maxHealth = Vitals[PropertyAttribute2nd.MaxHealth];
+
+        maxHealth.StartingValue += (uint)Math.Round(maxHealth.Base * (healthMultiplier - 1.0));
     }
 }

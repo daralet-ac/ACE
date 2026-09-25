@@ -311,9 +311,10 @@ public partial class Creature : Container
                 //);
             }
 
+            var healthMultiplier = 1.0;
             var skillMultiplier = 1.0;
 
-            ApplyDungeonMods(ref toughness, ref lethality, ref skillMultiplier);
+            ApplyDungeonMods(ref toughness, ref lethality, ref healthMultiplier, ref skillMultiplier);
 
             SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence, 1.0);
 
@@ -327,6 +328,8 @@ public partial class Creature : Container
             {
                 SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence, skillMultiplier);
             }
+
+            ApplyHealthMultiplier(healthMultiplier);
 
             var difficultyMod =
                 (toughness * 3 + physicality + dexterity + magic + intelligence + lethality * 3) / 10.0;

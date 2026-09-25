@@ -2145,41 +2145,21 @@ public class Landblock : IActor
         }
         else
         {
-            var leaderLandblockModSpells = new List<PropertiesEnchantmentRegistry>();
-
-            foreach (var landblockMod in LandblockMods)
+            foreach (var modName in LandblockMods.Keys.ToList())
             {
-                leaderLandblockModSpells.Add(
-                    playerLeader.EnchantmentManager.GetEnchantment((uint)landblockMod.Value.SpellId));
-            }
+                var modInfo = LandblockMods[modName];
+                var landblockModSpell = playerLeader.EnchantmentManager.GetEnchantment((uint)modInfo.SpellId);
 
-            if (leaderLandblockModSpells.Count == 0)
-            {
-                return;
-            }
-
-            var distinctLandblockMoSpellsActive = leaderLandblockModSpells.Distinct();
-
-            foreach (var landblockModSpell in distinctLandblockMoSpellsActive)
-            {
                 if (landblockModSpell is null)
                 {
                     continue;
                 }
 
-                LandblockModsSpellToName.TryGetValue(landblockModSpell.SpellId, out var modName);
-
-                if (modName is null)
-                {
-                    continue;
-                }
-
-                var modInfo = LandblockMods[modName];
                 modInfo.Active = true;
 
                 LandblockMods[modName] = modInfo;
 
-                LandblockLootQualityMod += LandblockMods[modName].LootQualityBonus;
+                LandblockLootQualityMod += modInfo.LootQualityBonus;
 
                 playerLeader.EnchantmentManager.Dispel(landblockModSpell);
             }
@@ -2217,12 +2197,12 @@ public class Landblock : IActor
                 }
 
                 fellowPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat(
-                    $" -{activeLandblockMod.Key}: +{activeLandblockMod.Value.LootQualityBonus * 100}%",
+                    $" -{activeLandblockMod.Key}: +{Math.Round(activeLandblockMod.Value.LootQualityBonus * 100, 1)}%",
                     ChatMessageType.Broadcast
                 ));
             }
 
-            var totalBonus = baseBonus + completionBonus + Math.Round(LandblockLootQualityMod * 100);
+            var totalBonus = baseBonus + completionBonus + Math.Round(LandblockLootQualityMod * 100, 1);
             var diminishedRoll = (float)(1 - Math.Exp(-1 * totalBonus / 100));
 
             fellowPlayer.Session.Network.EnqueueSend(new GameMessageSystemChat(
@@ -2232,52 +2212,94 @@ public class Landblock : IActor
         }
     }
 
-    public Dictionary<string, (bool Active, int SpellId, double LootQualityBonus)> LandblockMods { get; private set; }
+    /// <summary>
+    /// The dungeon mods the fellowship leader can choose (by using a DungeonModder), keyed by the name shown to the fellowship.
+    /// DifficultyTier is 1-20 for the Dungeon: Difficulty mods and 0 for the rest.
+    /// </summary>
+    public Dictionary<string, (bool Active, int SpellId, double LootQualityBonus, int DifficultyTier)> LandblockMods { get; private set; }
+
+    /// <summary>
+    /// What each tier of Dungeon: Difficulty adds to the enemies in the dungeon
+    /// </summary>
+    public const double DifficultyDamageBonusPerTier = 0.25;
+    public const double DifficultyHealthBonusPerTier = 0.10;
+    public const double DifficultySkillBonusPerTier = 0.02;
 
     private void SetActiveMods()
     {
-        LandblockMods = new Dictionary<string, (bool Active, int SpellId, double LootQualityBonus)>
+        LandblockMods = new Dictionary<string, (bool Active, int SpellId, double LootQualityBonus, int DifficultyTier)>
         {
-            { "Lethality 50%", (false, 6416, 0.05) },
-            { "Lethality 100%", (false, 6417, 0.1) },
-            { "Lethality 150%", (false, 6418, 0.15) },
-            { "Lethality 200%", (false, 6419, 0.2) },
-            { "Lethality 250%", (false, 6420, 0.25) },
-            { "Lethality 300%", (false, 6421, 0.3) },
-            { "Lethality 350%", (false, 6422, 0.35) },
-            { "Lethality 400%", (false, 6423, 0.4) },
-            { "Lethality 450%", (false, 6424, 0.45) },
-            { "Lethality 500%", (false, 6425, 0.5) },
-            { "Titans", (false, 6426, 0.05) },
-            { "Drained", (false, 6427, 0.05) },
-            { "Explosive", (false, 6428, 0.05) },
-            { "Skilled", (false, 6429, 0.05) },
-            { "Fester", (false, 6430, 0.05) },
-            { "Enraged", (false, 6431, 0.05) },
-            { "Inspired", (false, 6432, 0.05) },
+            { "Difficulty I", (false, (int)SpellId.DungeonDifficulty1, 0.025, 1) },
+            { "Difficulty II", (false, (int)SpellId.DungeonDifficulty2, 0.05, 2) },
+            { "Difficulty III", (false, (int)SpellId.DungeonDifficulty3, 0.075, 3) },
+            { "Difficulty IV", (false, (int)SpellId.DungeonDifficulty4, 0.1, 4) },
+            { "Difficulty V", (false, (int)SpellId.DungeonDifficulty5, 0.125, 5) },
+            { "Difficulty VI", (false, (int)SpellId.DungeonDifficulty6, 0.15, 6) },
+            { "Difficulty VII", (false, (int)SpellId.DungeonDifficulty7, 0.175, 7) },
+            { "Difficulty VIII", (false, (int)SpellId.DungeonDifficulty8, 0.2, 8) },
+            { "Difficulty IX", (false, (int)SpellId.DungeonDifficulty9, 0.225, 9) },
+            { "Difficulty X", (false, (int)SpellId.DungeonDifficulty10, 0.25, 10) },
+            { "Difficulty XI", (false, (int)SpellId.DungeonDifficulty11, 0.275, 11) },
+            { "Difficulty XII", (false, (int)SpellId.DungeonDifficulty12, 0.3, 12) },
+            { "Difficulty XIII", (false, (int)SpellId.DungeonDifficulty13, 0.325, 13) },
+            { "Difficulty XIV", (false, (int)SpellId.DungeonDifficulty14, 0.35, 14) },
+            { "Difficulty XV", (false, (int)SpellId.DungeonDifficulty15, 0.375, 15) },
+            { "Difficulty XVI", (false, (int)SpellId.DungeonDifficulty16, 0.4, 16) },
+            { "Difficulty XVII", (false, (int)SpellId.DungeonDifficulty17, 0.425, 17) },
+            { "Difficulty XVIII", (false, (int)SpellId.DungeonDifficulty18, 0.45, 18) },
+            { "Difficulty XIX", (false, (int)SpellId.DungeonDifficulty19, 0.475, 19) },
+            { "Difficulty XX", (false, (int)SpellId.DungeonDifficulty20, 0.5, 20) },
+            { "Titans", (false, (int)SpellId.DungeonTitans, 0.05, 0) },
+            { "Drained", (false, (int)SpellId.DungeonDrained, 0.05, 0) },
+            { "Explosive", (false, (int)SpellId.DungeonExplosive, 0.05, 0) },
+            { "Skilled", (false, (int)SpellId.DungeonSkilled, 0.05, 0) },
+            { "Fester", (false, (int)SpellId.DungeonFester, 0.05, 0) },
+            { "Enraged", (false, (int)SpellId.DungeonEnraged, 0.05, 0) },
+            { "Inspired", (false, (int)SpellId.DungeonInspired, 0.05, 0) },
         };
     }
 
-    private static readonly Dictionary<int, string> LandblockModsSpellToName = new()
+    /// <summary>
+    /// The tier (1-20) of the Dungeon: Difficulty mod active in this landblock, or 0 if there is none
+    /// </summary>
+    public int GetDifficultyTier()
     {
-        {6416, "Lethality 50%"},
-        {6417, "Lethality 100%"},
-        {6418, "Lethality 150%"},
-        {6419, "Lethality 200%"},
-        {6420, "Lethality 250%"},
-        {6421, "Lethality 300%"},
-        {6422, "Lethality 350%"},
-        {6423, "Lethality 400%"},
-        {6424, "Lethality 450%"},
-        {6425, "Lethality 500%"},
-        {6426, "Titans"},
-        {6427, "Drained"},
-        {6428, "Explosive"},
-        {6429, "Skilled"},
-        {6430, "Fester"},
-        {6431, "Enraged"},
-        {6432, "Inspired"},
-    };
+        var tier = 0;
+
+        foreach (var landblockMod in LandblockMods.Values)
+        {
+            if (landblockMod.Active && landblockMod.DifficultyTier > tier)
+            {
+                tier = landblockMod.DifficultyTier;
+            }
+        }
+
+        return tier;
+    }
+
+    /// <summary>
+    /// Extra damage for the enemies in this landblock from Dungeon: Difficulty (0.25 = +25%)
+    /// </summary>
+    public double GetLandblockLethalityMod()
+    {
+        return GetDifficultyTier() * DifficultyDamageBonusPerTier;
+    }
+
+    /// <summary>
+    /// Extra max health for the enemies in this landblock from Dungeon: Difficulty (0.1 = +10%)
+    /// </summary>
+    public double GetLandblockHealthMod()
+    {
+        return GetDifficultyTier() * DifficultyHealthBonusPerTier;
+    }
+
+    /// <summary>
+    /// Extra skill for the enemies in this landblock from Dungeon: Difficulty (0.02 = +2%)
+    /// </summary>
+    public double GetLandblockSkillMod()
+    {
+        return GetDifficultyTier() * DifficultySkillBonusPerTier;
+    }
 
     public static void CapstoneTeleport(Player player, Landblock landblock)
     {
@@ -2642,23 +2664,5 @@ public class Landblock : IActor
                 }
             }
         }
-    }
-
-    public double GetLandblockLethalityMod()
-    {
-        return true switch
-        {
-            _ when LandblockMods["Lethality 500%"].Active => 5.0,
-            _ when LandblockMods["Lethality 450%"].Active => 4.5,
-            _ when LandblockMods["Lethality 400%"].Active => 4.0,
-            _ when LandblockMods["Lethality 350%"].Active => 3.5,
-            _ when LandblockMods["Lethality 300%"].Active => 3.0,
-            _ when LandblockMods["Lethality 250%"].Active => 2.5,
-            _ when LandblockMods["Lethality 200%"].Active => 2.0,
-            _ when LandblockMods["Lethality 150%"].Active => 1.5,
-            _ when LandblockMods["Lethality 100%"].Active => 1.0,
-            _ when LandblockMods["Lethality 50%"].Active => 0.5,
-            _ => 0.0
-        };
     }
 }
