@@ -1340,9 +1340,12 @@ partial class WorldObject
 
             if (playerAttacker != null)
             {
-                chance *= playerAttacker.ScaleWithPowerAccuracyBar((float)chance);
-                chance *= GetMagicSkillProcChanceMod(playerAttacker, spell);
-                chance *= GetSpecMagicSkillProcChanceMod(playerAttacker, spell);
+                // proc chance bonuses are summed together before being applied, rather than multiplied with each other
+                var procChanceBonus = playerAttacker.GetPowerAccuracyBar()
+                                      + GetMagicSkillProcChanceBonus(playerAttacker, spell)
+                                      + GetSpecMagicSkillProcChanceBonus(playerAttacker, spell);
+
+                chance *= 1.0 + procChanceBonus;
             }
         }
 
@@ -1451,28 +1454,28 @@ partial class WorldObject
     }
 
     /// <summary>
-    /// Up to double proc chance based on player effective magic skill and spell difficulty
+    /// Up to +100% proc chance based on player effective magic skill and spell difficulty
     /// </summary>
-    private static double GetMagicSkillProcChanceMod(Player playerAttacker, Spell spell)
+    private static double GetMagicSkillProcChanceBonus(Player playerAttacker, Spell spell)
     {
         var school = spell.School;
         var difficulty = spell.Power;
         var magicSkill = school == MagicSchool.WarMagic ? playerAttacker.GetModdedWarMagicSkill() : playerAttacker.GetModdedLifeMagicSkill();
 
-        return 1.0 + SkillCheck.GetMagicSkillChance((int)magicSkill, (int)difficulty);
+        return SkillCheck.GetMagicSkillChance((int)magicSkill, (int)difficulty);
     }
 
     /// <summary>
-    /// Up to double proc chance based on player effective magic skill and spell difficulty
+    /// +100% proc chance if the player is specialized in the spell's magic school
     /// </summary>
-    private static double GetSpecMagicSkillProcChanceMod(Player playerAttacker, Spell spell)
+    private static double GetSpecMagicSkillProcChanceBonus(Player playerAttacker, Spell spell)
     {
         var school = spell.School;
         var magicSkill = school == MagicSchool.WarMagic
             ? playerAttacker.GetCreatureSkill(Skill.WarMagic)
             : playerAttacker.GetCreatureSkill(Skill.LifeMagic);
 
-        return magicSkill.AdvancementClass == SkillAdvancementClass.Specialized ? 2.0 : 1.0;
+        return magicSkill.AdvancementClass == SkillAdvancementClass.Specialized ? 1.0 : 0.0;
     }
 
     private bool? isMasterable;

@@ -833,14 +833,6 @@ partial class Player
         return GetCombatType() == CombatType.Missile ? AccuracyLevel : PowerLevel;
     }
 
-    /// <summary>
-    /// Up to double proc chance based on power/accuracy bar amount
-    /// </summary>
-    public float ScaleWithPowerAccuracyBar(float value)
-    {
-        return 1.0f + GetPowerAccuracyBar();
-    }
-
     public Sound GetHitSound(WorldObject source, BodyPart bodyPart)
     {
         /*var creature = source as Creature;

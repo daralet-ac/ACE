@@ -1000,7 +1000,7 @@ partial class Player
         EnchantedBladeMedStoredSpell = new Spell(finalMedSpellId);
         EnchantedBladeLowStoredSpell = new Spell(finalLowSpellId);
 
-        var manaCost = (int)EnchantedBladeHighStoredSpell.BaseMana;
+        var manaCost = (int)(EnchantedBladeHighStoredSpell.BaseMana * 0.5f);
         if (Mana.Current < manaCost)
         {
             Session.Network.EnqueueSend(
