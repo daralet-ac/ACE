@@ -1449,7 +1449,10 @@ partial class WorldObject
                 }
             }
 
-            attacker.TryCastSpell(spell, target, itemCaster, itemCaster, true, true);
+            // power/accuracy bar adds +0% to +100% damage to proc spells
+            var procDamageMultiplier = 1.0 + (playerAttacker?.GetPowerAccuracyBar() ?? 0.0f);
+
+            attacker.TryCastSpell(spell, target, itemCaster, itemCaster, true, true, true, true, null, procDamageMultiplier);
         }
     }
 
