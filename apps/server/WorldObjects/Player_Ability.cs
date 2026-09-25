@@ -1532,11 +1532,11 @@ partial class Player
         {
             var mostRecentAttackEventTime = LastAttackTime > LastAttackReceivedTime ? LastAttackTime : LastAttackReceivedTime;
 
-            if (Time.GetUnixTime() - mostRecentAttackEventTime < 10.0)
+            if (Time.GetUnixTime() - mostRecentAttackEventTime < 5.0)
             {
                 Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
-                        $"You cannot use Stealth if you have attacked, or received an attack, within the last 10 seconds.",
+                        $"You cannot use Stealth if you have attacked, or received an attack, within the last 5 seconds.",
                         ChatMessageType.Broadcast
                     )
                 );
