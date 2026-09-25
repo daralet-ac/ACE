@@ -88,7 +88,9 @@ public class EmoteManager
                 if (WorldObject.ActivationTarget > 0)
                 {
                     // ActOnUse delay?
-                    var activationTarget = WorldObject.CurrentLandblock?.GetObject(WorldObject.ActivationTarget);
+                    var activationTarget = WorldObject.CurrentLandblock?.GetObjectFromWorldGuid(
+                        WorldObject.ActivationTarget
+                    );
                     activationTarget?.OnActivate(player ?? WorldObject);
                 }
                 else if (WorldObject.GeneratorId.HasValue && WorldObject.GeneratorId > 0) // Fallback to linked generator

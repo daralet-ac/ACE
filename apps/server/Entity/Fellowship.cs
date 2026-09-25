@@ -965,6 +965,12 @@ public class Fellowship
             return 1.0f;
         }
 
+        // Whoever is in another instance is not there, however close their coordinates are
+        if (earner.InstanceId != fellow.InstanceId)
+        {
+            return 0.0f;
+        }
+
         // https://asheron.fandom.com/wiki/Announcements_-_2004/01_-_Mirror,_Mirror#Rollout_Article
 
         // If they are indoors while you are outdoors, or vice-versa.
@@ -1014,6 +1020,12 @@ public class Fellowship
         foreach (var fellow in fellows.Values)
         {
             if (player == fellow && !includeSelf)
+            {
+                continue;
+            }
+
+            // Whoever is in another instance is not near, however close their coordinates are
+            if (player.InstanceId != fellow.InstanceId)
             {
                 continue;
             }

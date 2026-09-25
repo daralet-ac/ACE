@@ -179,7 +179,7 @@ partial class Player
             return;
         }
 
-        var physLandblock = LScape.get_landblock(PhysicsObj.Position.ObjCellID);
+        var physLandblock = LScape.get_landblock(PhysicsObj.Position.ObjCellID, InstanceId);
         if (physLandblock == null)
         {
             RemoveRoadSpeedBuff();
@@ -252,7 +252,7 @@ partial class Player
             return;
         }
 
-        var physLandblock = LScape.get_landblock(PhysicsObj.Position.ObjCellID);
+        var physLandblock = LScape.get_landblock(PhysicsObj.Position.ObjCellID, InstanceId);
         if (physLandblock == null || !physLandblock.NearSnow(PhysicsObj.Position.Frame.Origin, 50f))
         {
             return;
@@ -743,7 +743,11 @@ partial class Player
             {
                 var distSq = Location.SquaredDistanceTo(newPosition);
 
-                if (distSq > PhysicsGlobals.EpsilonSq)
+                // A player who has been moved to another instance is still in a cell of the instance they left until the physics update runs.
+                // That has to happen even if they are moving to exactly the place they are at.
+                var inWrongInstance = PhysicsObj.CurCell != null && PhysicsObj.CurCell.Instance != InstanceId;
+
+                if (distSq > PhysicsGlobals.EpsilonSq || inWrongInstance)
                 {
                     /*var p = new Physics.Common.Position(newPosition);
                     var dist = PhysicsObj.Position.Distance(p);
@@ -781,7 +785,7 @@ partial class Player
                         }
                     }
 
-                    var curCell = LScape.get_landcell(newPosition.Cell);
+                    var curCell = LScape.get_landcell(newPosition.Cell, InstanceId);
                     if (curCell != null)
                     {
                         //if (PhysicsObj.CurCell == null || curCell.ID != PhysicsObj.CurCell.ID)
@@ -825,6 +829,17 @@ partial class Player
 
                         CheckMonsters();
                     }
+                    else if (!InstanceManager.CanEnter(InstanceId, newPosition.LandblockId))
+                    {
+                        // There is nothing there. The client walks by itself and knows the whole world, so it has gone past the edge of what
+                        // this instance is made of (or, in the persistent world, into a landblock that only exists in instances). Physics stops
+                        // at the edge, so the client has to be put back, the same way as when its height is not possible. If the position were
+                        // let through, the client would be somewhere the server does not have, it would throw away everything it was shown
+                        // (the server would still think it has it, and would not send it again), and the player would keep going.
+                        Sequences.GetNextSequence(SequenceType.ObjectForcePosition);
+                        SendUpdatePosition();
+                        return false;
+                    }
                 }
                 else
                 {
@@ -867,6 +882,12 @@ partial class Player
             if (!InUpdate)
             {
                 LandblockManager.RelocateObjectForPhysics(this, true);
+            }
+
+            // an instance can have a margin that players are turned back from, and has to know where they last were inside it
+            if (InstanceId != LScape.PersistentInstance && !Teleporting)
+            {
+                InstanceManager.OnPlayerMoved(this);
             }
 
             return landblockUpdate;
@@ -921,7 +942,7 @@ partial class Player
 
             if (CurrentLandblock.IsDungeon)
             {
-                var destBlock = LScape.get_landblock(newPosition.Cell);
+                var destBlock = LScape.get_landblock(newPosition.Cell, InstanceId);
                 if (destBlock != null && destBlock.IsDungeon)
                 {
                     return false;

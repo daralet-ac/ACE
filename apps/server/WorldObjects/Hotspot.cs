@@ -561,11 +561,12 @@ public class Hotspot : WorldObject
 
         activator.Location = new Position(defender.Location)
         {
-            LandblockId = new LandblockId(defender.Location.GetCell())
+            LandblockId = new LandblockId(defender.Location.GetCell(defender.InstanceId))
         };
 
         activator.Location.PositionZ += 0.05f;
 
+        activator.InstanceId = defender.InstanceId;
         activator.EnterWorld();
 
         if (success != true)
@@ -583,11 +584,12 @@ public class Hotspot : WorldObject
 
         hotspot.Location = new Position(defender.Location)
         {
-            LandblockId = new LandblockId(defender.Location.GetCell())
+            LandblockId = new LandblockId(defender.Location.GetCell(defender.InstanceId))
         };
 
         hotspot.Location.PositionZ += 0.05f;
 
+        hotspot.InstanceId = defender.InstanceId;
         hotspot.EnterWorld();
 
         return true;

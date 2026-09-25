@@ -50,10 +50,27 @@ public class Landblock : IActor
     public static float MaxObjectRange { get; } = 192f;
     public static float MaxObjectGhostRange { get; } = 250f;
 
+    /// <summary>
+    /// The instance id of the persistent world. Every landblock that isn't part of an instance lives here.
+    /// </summary>
+    public const uint PersistentInstance = 0;
+
     public LandblockId Id { get; }
 
     /// <summary>
-    /// Flag indicates if this landblock is permanently loaded (for example, towns on high-traffic servers)
+    /// Which instance this landblock belongs to. Several landblocks can share the same Id as long as they belong to
+    /// different instances. They never see each other: objects, adjacencies and tick groups are all per instance.
+    /// </summary>
+    /// <remarks>
+    /// Landblocks in a non-zero instance are made by InstanceManager.Create(), which knows which landblocks an instance is made of.
+    /// Nothing in an instance is ever saved.
+    /// </remarks>
+    public uint Instance { get; }
+
+    /// <summary>
+    /// Flag indicates if this landblock is permanently loaded (for example, towns on high-traffic servers).
+    /// It is never unloaded, and in the persistent world it never goes dormant either. An instance keeps all of its landblocks
+    /// loaded for as long as it lasts with this, but the ones that nobody is near still go dormant.
     /// </summary>
     public bool Permaload = false;
 
@@ -186,11 +203,12 @@ public class Landblock : IActor
 
     public List<uint> PlayerAccountIds = new List<uint>();
 
-    public Landblock(LandblockId id)
+    public Landblock(LandblockId id, uint instance = PersistentInstance)
     {
         //log.DebugFormat("Landblock({0:X8})", (id.Raw | 0xFFFF));
 
         Id = id;
+        Instance = instance;
 
         CellLandblock = DatManager.CellDat.ReadFromDat<CellLandblock>(Id.Raw | 0xFFFF);
         LandblockInfo = DatManager.CellDat.ReadFromDat<LandblockInfo>((uint)Id.Landblock << 16 | 0xFFFE);
@@ -198,7 +216,7 @@ public class Landblock : IActor
         lastActiveTime = DateTime.UtcNow;
 
         var cellLandblock = DBObj.GetCellLandblock(Id.Raw | 0xFFFF);
-        PhysicsLandblock = new Physics.Common.Landblock(cellLandblock);
+        PhysicsLandblock = new Physics.Common.Landblock(cellLandblock) { Instance = instance };
     }
 
     public void Init(bool reload = false)
@@ -257,8 +275,14 @@ public class Landblock : IActor
     private void CreateWorldObjects()
     {
         var objects = DatabaseManager.World.GetCachedInstancesByLandblock(Id.Landblock);
-        var shardObjects = DatabaseManager.Shard.BaseDatabase.GetStaticObjectsByLandblock(Id.Landblock);
-        var factoryObjects = WorldObjectFactory.CreateNewWorldObjects(objects, shardObjects);
+
+        // Nothing in an instance is restored from the shard. Its objects are made from the world db, and only exist for as long as the instance does.
+        var shardObjects =
+            Instance == PersistentInstance
+                ? DatabaseManager.Shard.BaseDatabase.GetStaticObjectsByLandblock(Id.Landblock)
+                : new List<ACE.Database.Models.Shard.Biota>();
+
+        var factoryObjects = WorldObjectFactory.CreateNewWorldObjects(objects, shardObjects, instanceId: Instance);
 
         actionQueue.EnqueueAction(
             new ActionEventDelegate(() =>
@@ -342,6 +366,12 @@ public class Landblock : IActor
     /// </summary>
     private void SpawnDynamicShardObjects()
     {
+        // what is saved for a landblock (corpses and the like) belongs to the persistent world, not to its instances
+        if (Instance != PersistentInstance)
+        {
+            return;
+        }
+
         var dynamics = DatabaseManager.Shard.BaseDatabase.GetDynamicObjectsByLandblock(Id.Landblock);
         var factoryShardObjects = WorldObjectFactory.CreateWorldObjects(dynamics);
 
@@ -448,7 +478,7 @@ public class Landblock : IActor
 
                     wo.Location = new Position(pos.ObjCellID, pos.Frame.Origin, pos.Frame.Orientation);
 
-                    var sortCell = LScape.get_landcell(pos.ObjCellID) as SortCell;
+                    var sortCell = LScape.get_landcell(pos.ObjCellID, Instance) as SortCell;
                     if (sortCell != null && sortCell.has_building())
                     {
                         wo.Destroy();
@@ -459,7 +489,7 @@ public class Landblock : IActor
                     {
                         // Avoid some less than ideal locations
                         if (
-                            !wo.Location.IsWalkable()
+                            !wo.Location.IsWalkable(Instance)
                             || PhysicsLandblock.OnRoad(new Vector3(xPos, yPos, pos.Frame.Origin.Z))
                         )
                         {
@@ -777,7 +807,12 @@ public class Landblock : IActor
                 }
             }
 
-            if (!Permaload && HasNoKeepAliveObjects)
+            // A landblock that is kept loaded (Permaload) is kept active too, except in an instance. An instance keeps all of the landblocks it is made of
+            // loaded for as long as it lasts, but the ones that no player is near still go dormant, like any others: without that every monster
+            // in a big island would keep running for nobody, for as long as the instance exists.
+            var keptActive = Permaload && Instance == PersistentInstance;
+
+            if (!keptActive && HasNoKeepAliveObjects)
             {
                 if (lastActiveTime + dormantInterval < thisHeartBeat)
                 {
@@ -794,7 +829,7 @@ public class Landblock : IActor
                     IsDormant = true;
                 }
 
-                if (lastActiveTime + UnloadInterval < thisHeartBeat)
+                if (!Permaload && lastActiveTime + UnloadInterval < thisHeartBeat)
                 {
                     LandblockManager.AddToDestructionQueue(this);
                 }
@@ -1191,6 +1226,7 @@ public class Landblock : IActor
         }
 
         wo.CurrentLandblock = this;
+        wo.InstanceId = Instance;
 
         if (wo.PhysicsObj == null)
         {
@@ -1493,6 +1529,17 @@ public class Landblock : IActor
     }
 
     /// <summary>
+    /// The object that a guid from the world database is for, such as the activation target of a weenie.<para />
+    /// In the persistent world that is the object with that guid. In an instance the static objects have guids of their own
+    /// (the same landblock exists more than once), so it is the copy of the object that is in this instance.
+    /// A guid that is not one of those is looked up as it is: objects made in the instance have the same guid wherever it comes from.
+    /// </summary>
+    public WorldObject GetObjectFromWorldGuid(uint worldGuid)
+    {
+        return GetObject(new ObjectGuid(InstanceManager.TranslateWorldGuid(Instance, worldGuid)));
+    }
+
+    /// <summary>
     /// This will return null if the object was not found in the current or adjacent landblocks.
     /// </summary>
     public WorldObject GetObject(ObjectGuid guid, bool searchAdjacents = true)
@@ -1633,7 +1680,7 @@ public class Landblock : IActor
         actionQueue.Clear();
 
         // remove physics landblock
-        LScape.unload_landblock(landblockID);
+        LScape.unload_landblock(landblockID, Instance);
 
         PhysicsLandblock.release_shadow_objs();
     }
@@ -1691,6 +1738,12 @@ public class Landblock : IActor
 
     private void SaveDB()
     {
+        // Nothing in an instance is ever saved. It would come back in the persistent world, where the same landblock is loaded from the same rows.
+        if (Instance != PersistentInstance)
+        {
+            return;
+        }
+
         var biotas = new Collection<(Biota biota, ReaderWriterLockSlim rwLock)>();
 
         foreach (var wo in worldObjects.Values)
@@ -1939,6 +1992,13 @@ public class Landblock : IActor
 
         var fellowship = player.Fellowship;
 
+        // a dungeon that is instanced doesn't need its copies: every fellowship gets a private instance of the original
+        if (IsCapstoneInstanced(dungeonName))
+        {
+            AssignInstancedCapstoneDungeon(player, dungeonName, dungeonLandblocks[0]);
+            return;
+        }
+
         if (fellowship.CapstoneDungeon.HasValue && dungeonLandblocks.Contains((LandblockId)fellowship.CapstoneDungeon))
         {
             var landblock = LandblockManager.GetLandblock((LandblockId)fellowship.CapstoneDungeon, false);
@@ -1949,6 +2009,81 @@ public class Landblock : IActor
         {
             FindOpenInstanceFellowship(player, dungeonLandblocks, dungeonName);
         }
+    }
+
+    private static readonly Dictionary<string, InstanceTemplate> capstoneInstanceTemplates =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether a capstone dungeon is opened as an instance of its original landblock rather than as one of its numbered copies.
+    /// This is set with the capstone_instanced_dungeons server property. The dungeons that hand their modifiers on to a second part
+    /// can't be, because the second part looks its first part up by landblock.
+    /// </summary>
+    private static bool IsCapstoneInstanced(string dungeonName)
+    {
+        if (dungeonName is "Lugian Mines" or "Lugian Mines2" or "Mines of Despair" or "Beyond the Mines")
+        {
+            return false;
+        }
+
+        var names = PropertyManager.GetString("capstone_instanced_dungeons").Item;
+        if (string.IsNullOrWhiteSpace(names))
+        {
+            return false;
+        }
+
+        return names
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Contains(dungeonName, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Opens the dungeon as a private instance of the original landblock for the player's fellowship, or takes the player
+    /// into the one their fellowship already has. The instance is deleted a while after everyone has left it.
+    /// </summary>
+    private static void AssignInstancedCapstoneDungeon(Player player, string dungeonName, LandblockId original)
+    {
+        var fellowship = player.Fellowship;
+
+        InstanceTemplate template;
+
+        lock (capstoneInstanceTemplates)
+        {
+            if (!capstoneInstanceTemplates.TryGetValue(dungeonName, out template))
+            {
+                // no return position: a player who logs out in here, or is still inside when it ends, goes to their sanctuary,
+                // the same as HandleCapstoneLandblockLogin does for the copies
+                template = new InstanceTemplate(
+                    $"capstone:{dungeonName}",
+                    new[] { original },
+                    CapstoneTeleportLocations[original]
+                );
+                capstoneInstanceTemplates.Add(dungeonName, template);
+            }
+        }
+
+        // one step, so two members of the fellowship who come through the portal at the same moment don't make one each
+        var instance = InstanceManager.FindOrCreate(template, fellowship, out var created);
+
+        if (created)
+        {
+            // set it up the way FindOpenInstanceFellowship does for a copy: which fellowship opened it, and the modifiers its leader chose
+            var landblock = LandblockManager.TryGetLandblock(original, instance.Id);
+
+            if (landblock != null)
+            {
+                landblock.CapstoneFellowship = fellowship;
+                landblock.SetLandblockMods(fellowship, dungeonName);
+            }
+        }
+
+        fellowship.CapstoneDungeon = original;
+        player.CapstoneDungeon = original;
+
+        var destination = new Position(template.EntryPosition);
+        WorldObject.AdjustDungeon(destination, instance.Id);
+
+        InstanceManager.Enter(player, instance, destination);
     }
 
     private static void FindOpenInstanceFellowship(
