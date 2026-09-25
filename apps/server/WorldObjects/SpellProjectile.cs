@@ -767,18 +767,9 @@ public class SpellProjectile : WorldObject
             spellcraftMod = spellcraft * 0.01f;
         }
 
-        // for traps and creatures that don't have a lethality mod,
+        // for traps and creatures the archetype system doesn't scale,
         // make sure they receive multipliers from landblock mods
-        var landblockScalingMod = 1.0f;
-        if (source is {ArchetypeLethality: null})
-        {
-            var sourceLandblock = source.CurrentLandblock;
-
-            if (sourceLandblock is not null)
-            {
-                landblockScalingMod *= (1.0f + (float)sourceLandblock.GetLandblockLethalityMod());
-            }
-        }
+        var landblockScalingMod = source.GetLandblockLethalitySpellMod();
 
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)

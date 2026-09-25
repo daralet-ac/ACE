@@ -78,7 +78,14 @@ partial class WorldObject
                 link.AnglesW
             );
             parent.SetLinkProperties(wo);
-            CurrentLandblock?.AddWorldObject(wo);
+            var added = CurrentLandblock?.AddWorldObject(wo) ?? false;
+
+            // like Landblock.CreateWorldObjects(), this bypasses EnterWorld(), so archetype stats have to be set here
+            if (added && wo is Creature creature and not Player)
+            {
+                creature.ApplyArchetypeSystem();
+            }
+
             if (wo.PhysicsObj != null)
             {
                 wo.PhysicsObj.Order = 0;

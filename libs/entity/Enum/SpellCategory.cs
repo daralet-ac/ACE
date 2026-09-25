@@ -784,7 +784,7 @@ public enum SpellCategory : uint
     HealKitRegen = 786,
     StaminaKitRegen = 787,
     ManaKitRegen = 788,
-    DungeonEnemyDamage = 789,
+    DungeonDifficulty = 789,
     DungeonTitans = 790,
     DungeonDrained = 791,
     DungeonExplosive = 792,
