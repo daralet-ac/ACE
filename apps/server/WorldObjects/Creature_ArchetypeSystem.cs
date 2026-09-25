@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
@@ -29,9 +31,6 @@ partial class Creature
     private static readonly float[] avgPlayerArmorReduction = { 0.6667f, 0.5000f, 0.3333f, 0.2500f, 0.2000f, 0.1667f, 0.1429f, 0.1250f, 0.1111f };
     private static readonly float[] avgPlayerLifeProtReduction = { 1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
     private static readonly int[] avgPlayerPhysicalMagicDefense = { 10, 60, 90, 120, 150, 180, 225, 300, 500 };
-
-    private int _tier;
-    private float _statWeight;
 
     private void SetSkills(
         int tier,
@@ -403,9 +402,6 @@ partial class Creature
             Console.WriteLine($"\n-- SetDamageArmorAegus() for {Name} ({WeenieClassId}) (statWeight: {statWeight}) --");
         }
 
-        _tier = tier;
-        _statWeight = statWeight;
-
         // Damage + Armor
         {
             // Armor Level
@@ -445,10 +441,9 @@ partial class Creature
             // Set Body Parts
             if (Weenie != null)
             {
-                var bodyParts = GetBodyParts(this);
-                if (bodyParts.Weenie.PropertiesBodyPart != null)
+                if (Weenie.PropertiesBodyPart != null)
                 {
-                    foreach (var kvp in bodyParts.Weenie.PropertiesBodyPart)
+                    foreach (var kvp in GetOwnBodyParts())
                     {
                         var bodyPart = kvp.Value;
 
@@ -509,6 +504,23 @@ partial class Creature
 
             WardLevel = tweakedWard;
         }
+    }
+
+    /// <summary>
+    /// A creature made from a weenie shares the weenie's body part table with every other creature of its wcid
+    /// (WeenieConverter.ConvertToBiota, referenceWeenieCollectionsForCommonProperties). The archetype system sets
+    /// damage and armor per creature, so writing them into the shared table would let the last creature of a wcid
+    /// to spawn anywhere decide the damage and armor of all of them - dungeon mods and frigid bonuses included.
+    /// This gives the creature its own copy the first time it's needed.
+    /// </summary>
+    private IDictionary<CombatBodyPart, PropertiesBodyPart> GetOwnBodyParts()
+    {
+        if (ReferenceEquals(Biota.PropertiesBodyPart, Weenie?.PropertiesBodyPart))
+        {
+            Biota.PropertiesBodyPart = Weenie.PropertiesBodyPart.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Clone());
+        }
+
+        return Biota.PropertiesBodyPart;
     }
 
     private void SetXp(double difficltyMod)
@@ -1355,119 +1367,30 @@ partial class Creature
         };
     }
 
-    public void SetLethalityModFromDungeonMod()
+    /// <summary>
+    /// Adds the dungeon mods the fellowship leader chose for this creature's landblock (Landblock.SetLandblockMods)
+    /// to its archetype values. Only the values passed in are changed, not the creature's own Archetype properties,
+    /// so the mods can't be overwritten by a later recalculation or applied twice.
+    /// </summary>
+    private void ApplyDungeonMods(ref double toughness, ref double lethality, ref double skillMultiplier)
     {
-        if (CurrentLandblock is null)
+        var landblock = CurrentLandblock;
+
+        if (landblock?.LandblockMods is null)
         {
             return;
         }
 
-        if (UseArchetypeSystem is not true)
+        lethality *= 1.0 + landblock.GetLandblockLethalityMod();
+
+        if (landblock.LandblockMods["Titans"].Active && MonsterRank >= 4)
         {
-            return;
+            toughness *= 2;
         }
 
-        if (WeenieClassId == 1020001)
+        if (landblock.LandblockMods["Skilled"].Active)
         {
-            return;
+            skillMultiplier = 1.1;
         }
-
-        var archetypeLethality = ArchetypeLethality ?? 1.0;
-
-        var landblockLethalityMod = true switch
-        {
-            _ when CurrentLandblock.LandblockMods["Lethality 500%"].Active => 5.0,
-            _ when CurrentLandblock.LandblockMods["Lethality 450%"].Active => 4.5,
-            _ when CurrentLandblock.LandblockMods["Lethality 400%"].Active => 4.0,
-            _ when CurrentLandblock.LandblockMods["Lethality 350%"].Active => 3.5,
-            _ when CurrentLandblock.LandblockMods["Lethality 300%"].Active => 3.0,
-            _ when CurrentLandblock.LandblockMods["Lethality 250%"].Active => 2.5,
-            _ when CurrentLandblock.LandblockMods["Lethality 200%"].Active => 2.0,
-            _ when CurrentLandblock.LandblockMods["Lethality 150%"].Active => 1.5,
-            _ when CurrentLandblock.LandblockMods["Lethality 100%"].Active => 1.0,
-            _ when CurrentLandblock.LandblockMods["Lethality 50%"].Active => 0.5,
-            _ => 0.0
-        };
-
-        var adjustment = archetypeLethality * landblockLethalityMod;
-
-        ArchetypeLethality = adjustment + archetypeLethality;
-
-        SetSkills(_tier,
-            _statWeight,
-            ArchetypeToughness ?? 1.0,
-            ArchetypePhysicality ?? 1.0,
-            ArchetypeDexterity ?? 1.0,
-            ArchetypeMagic ?? 1.0,
-            ArchetypeIntelligence ?? 1.0,
-            1.0);
-
-        SetDamageArmorWard(_tier,
-            _statWeight,
-            ArchetypeToughness ?? 1.0,
-            ArchetypePhysicality ?? 1.0,
-            ArchetypeMagic ?? 1.0,
-            ArchetypeLethality ?? 1.0);
-
-        //Console.WriteLine($"{Name}: BaseLethality = {archetypeLethality}, LbLethality = {CurrentLandblock.LandblockLethalityMod}, Adjustment = {adjustment}, Total: {adjustment + archetypeLethality}");
-    }
-
-    public void SetHealthFromDungeonMod()
-    {
-        if (CurrentLandblock is null)
-        {
-            return;
-        }
-
-        if (UseArchetypeSystem is not true)
-        {
-            return;
-        }
-
-        if (!CurrentLandblock.LandblockMods["Titans"].Active)
-        {
-            return;
-        }
-
-        if (MonsterRank < 4)
-        {
-            return;
-        }
-
-        ArchetypeToughness *= 2;
-
-    SetVitals(_tier,
-            _statWeight,
-            ArchetypeToughness ?? 1.0,
-            ArchetypePhysicality ?? 1.0,
-            ArchetypeDexterity ?? 1.0,
-            ArchetypeMagic ?? 1.0);
-    }
-
-    public void SetSkillsFromDungeonMod()
-    {
-        if (CurrentLandblock is null)
-        {
-            return;
-        }
-
-        if (UseArchetypeSystem is not true)
-        {
-            return;
-        }
-
-        if (!CurrentLandblock.LandblockMods["Skilled"].Active)
-        {
-            return;
-        }
-
-        SetSkills(_tier,
-            _statWeight,
-            ArchetypeToughness ?? 1.0,
-            ArchetypePhysicality ?? 1.0,
-            ArchetypeDexterity ?? 1.0,
-            ArchetypeMagic ?? 1.0,
-            ArchetypeIntelligence ?? 1.0,
-            1.1);
     }
 }

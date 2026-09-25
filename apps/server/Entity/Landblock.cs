@@ -1336,13 +1336,6 @@ public class Landblock : IActor
             }
         }
 
-        if (wo is Creature creature and not Player)
-        {
-            creature.SetLethalityModFromDungeonMod();
-            creature.SetHealthFromDungeonMod();
-            creature.SetSkillsFromDungeonMod();
-        }
-
         return true;
     }
 

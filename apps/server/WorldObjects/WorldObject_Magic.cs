@@ -1045,13 +1045,9 @@ partial class WorldObject
             spellcraftMod += spellcraft * 0.01f;
         }
 
-        // for traps and creatures that don't have a lethality mod,
+        // for traps and creatures the archetype system doesn't scale,
         // make sure they receive multipliers from landblock mods
-        var landblockScalingMod = 1.0f;
-        if (ArchetypeLethality is null && CurrentLandblock is not null)
-        {
-            landblockScalingMod *= (1.0f + (float)CurrentLandblock.GetLandblockLethalityMod());
-        }
+        var landblockScalingMod = GetLandblockLethalitySpellMod();
 
         tryBoost = (int)(tryBoost * overloadMod * batterMod * damageMultiplier * spellcraftMod * landblockScalingMod * resistedMod);
 
@@ -1472,6 +1468,22 @@ partial class WorldObject
     }
 
     /// <summary>
+    /// The damage bonus from the fellowship leader's dungeon mod (Landblock.GetLandblockLethalityMod) for a spell cast by this object.
+    /// Only for the dungeon's traps and the creatures the archetype system doesn't scale: archetype creatures get the bonus
+    /// through their lethality (Creature.ApplyDungeonMods), and players and their pets never get it, since the mod makes the
+    /// dungeon's enemies stronger, not the fellowship.
+    /// </summary>
+    public float GetLandblockLethalitySpellMod()
+    {
+        if (this is Player or CombatPet or Creature { ArchetypeSystemApplies: true } || CurrentLandblock is null)
+        {
+            return 1.0f;
+        }
+
+        return 1.0f + (float)CurrentLandblock.GetLandblockLethalityMod();
+    }
+
+    /// <summary>
     /// Checks for death from a boost / transfer spell
     /// </summary>
     private static void HandleBoostTransferDeath(Creature caster, Creature target)
@@ -1624,12 +1636,9 @@ partial class WorldObject
                 destVitalChange = (uint)(destVitalChange * levelScalingMod);
             }
 
-            // for traps and creatures that don't have a lethality mod,
+            // for traps and creatures the archetype system doesn't scale,
             // make sure they receive multipliers from landblock mods
-            if (ArchetypeLethality is null && CurrentLandblock is not null)
-            {
-                destVitalChange *= (uint)(1.0f + (float)CurrentLandblock.GetLandblockLethalityMod());
-            }
+            destVitalChange = Convert.ToUInt32(destVitalChange * GetLandblockLethalitySpellMod());
 
             // Apply the change in vitals to the source
             if (transferSource != null)

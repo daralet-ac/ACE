@@ -233,16 +233,22 @@ public partial class Creature : Container
     }
 
     /// <summary>
+    /// True if ApplyArchetypeSystem() sets this creature's stats, which is also where its dungeon mods are applied.
+    /// </summary>
+    internal bool ArchetypeSystemApplies => (UseArchetypeSystem ?? false) && WeenieClassId != 1020001;
+
+    /// <summary>
     /// Recalculates this creature's archetype-driven stats (skills, vitals, damage/armor/ward, xp).
     /// Called from EnterWorld() for generator-spawned creatures. Static world-DB instances placed
-    /// directly by Landblock.CreateWorldObjects() bypass EnterWorld(), so that path calls this
-    /// explicitly too - otherwise UseArchetypeSystem creatures placed as static instances keep
-    /// whatever raw MaxHealth/etc. was authored in the weenie sql instead of the archetype-computed values.
+    /// directly by Landblock.CreateWorldObjects() and linked children placed by ActivateLinks() bypass
+    /// EnterWorld(), so those paths call this explicitly too - otherwise UseArchetypeSystem creatures placed
+    /// as static instances keep whatever raw MaxHealth/etc. was authored in the weenie sql instead of the
+    /// archetype-computed values. Must be called after the creature has been added to its landblock, so the
+    /// landblock's dungeon mods can be applied.
     /// </summary>
     internal void ApplyArchetypeSystem()
     {
-        var useArchetypeSystem = UseArchetypeSystem ?? false;
-        if (useArchetypeSystem && WeenieClassId != 1020001)
+        if (ArchetypeSystemApplies)
         {
             var statWeight = 0.0f;
             var level = (float)(Level ?? 1);
@@ -305,11 +311,22 @@ public partial class Creature : Container
                 //);
             }
 
+            var skillMultiplier = 1.0;
+
+            ApplyDungeonMods(ref toughness, ref lethality, ref skillMultiplier);
+
             SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence, 1.0);
 
             SetVitals(tier, statWeight, toughness, physicality, dexterity, magic);
 
             SetDamageArmorWard(tier, statWeight, toughness, physicality, magic, lethality);
+
+            // Damage is tuned to the creature's skill (a creature that hits more often gets less per hit),
+            // so a skill boost is applied after it, or the extra hits would be paid for with weaker ones
+            if (skillMultiplier != 1.0)
+            {
+                SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence, skillMultiplier);
+            }
 
             var difficultyMod =
                 (toughness * 3 + physicality + dexterity + magic + intelligence + lethality * 3) / 10.0;

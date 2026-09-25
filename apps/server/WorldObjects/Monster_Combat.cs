@@ -526,11 +526,6 @@ partial class Creature
         return bpTable;
     }
 
-    public static BodyPartTable GetBodyParts(Creature creature)
-    {
-        return new BodyPartTable(creature.Weenie);
-    }
-
     /// <summary>
     /// Flag indicates if a monster will aggro, but not attack
     /// </summary>
