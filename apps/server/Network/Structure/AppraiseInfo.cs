@@ -1757,11 +1757,41 @@ public class AppraiseInfo
             return;
         }
 
-        var wielder = (Creature)wo.Wielder;
-
         _extraPropertiesText += $"Cast on strike chance: {Math.Round(procSpellRate * 100, 1)}%\n";
 
         _hasExtraPropertiesText = true;
+
+        SetSpellProcRateLongText(wo, procSpellRate);
+    }
+
+    private void SetSpellProcRateLongText(WorldObject wo, double procSpellRate)
+    {
+        var spell = new Spell(wo.ProcSpell.Value);
+
+        if (spell.NotFound)
+        {
+            return;
+        }
+
+        // matches GetMagicSkillProcChanceBonus, which treats every non-war proc as life magic
+        var school = spell.School == MagicSchool.WarMagic ? "War Magic" : "Life Magic";
+        var amountFormatted = Math.Round(procSpellRate * 100, 1);
+
+        var rangeText = "";
+
+        // only loot-generated weapons roll their proc rate; quest weapons use a fixed value
+        if (wo.Workmanship != null)
+        {
+            var (rangeMin, rangeMax) = LootGenerationFactory.GetProcSpellRateRange(wo);
+
+            rangeText =
+                $"Roll range is based on the weapon's attacks per second ({Math.Round(rangeMin * 100, 1)}% to {Math.Round(rangeMax * 100, 1)}%). ";
+        }
+
+        _additionalPropertiesLongDescriptionsText +=
+            $"~ Cast on Strike Chance: Grants a {amountFormatted}% chance on attack to cast {spell.Name}. " +
+            rangeText +
+            $"Chance is increased by attack power, {school} skill, and {school} specialization.\n";
     }
 
     private void SetAdditionalPropertiesUseText(WorldObject wo)
