@@ -58,6 +58,13 @@ public class SpellProjectile : WorldObject
     public double DamageMultiplier = 1.0;
 
     /// <summary>
+    /// COMBAT ABILITY - Reflect: the original caster of a reflected spell.
+    /// The projectile is launched by the reflecting player (ProjectileSource),
+    /// but its resist check and damage are based on this creature's stats.
+    /// </summary>
+    public Creature ReflectedCaster;
+
+    /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
     public SpellProjectile(Weenie weenie, ObjectGuid guid)
@@ -562,7 +569,11 @@ public class SpellProjectile : WorldObject
         ref bool resisted
     )
     {
-        var sourcePlayer = source as Player;
+        // COMBAT ABILITY - Reflect: a reflected spell is launched by the reflecting player (source),
+        // but its resist check and damage are based on the original caster's stats
+        var damageSource = ReflectedCaster ?? source;
+
+        var sourcePlayer = damageSource as Player;
         var targetPlayer = target as Player;
 
         if (source == null || !target.IsAlive || targetPlayer != null && targetPlayer.Invincible)
@@ -573,9 +584,9 @@ public class SpellProjectile : WorldObject
         // check lifestone protection
         if (targetPlayer != null && targetPlayer.UnderLifestoneProtection)
         {
-            if (sourcePlayer != null)
+            if (source is Player player)
             {
-                sourcePlayer.Session.Network.EnqueueSend(
+                player.Session.Network.EnqueueSend(
                     new GameMessageSystemChat(
                         $"The Lifestone's magic protects {targetPlayer.Name} from the attack!",
                         ChatMessageType.Magic
@@ -604,7 +615,7 @@ public class SpellProjectile : WorldObject
 
         var resistanceType = Creature.GetResistanceType(Spell.DamageType);
 
-        var sourceCreature = source as Creature;
+        var sourceCreature = damageSource as Creature;
         if (sourceCreature?.Overpower != null)
         {
             overpower = Creature.GetOverpower(sourceCreature, target);
@@ -612,7 +623,7 @@ public class SpellProjectile : WorldObject
 
         var weapon = ProjectileLauncher;
 
-        var resistSource = IsWeaponSpell ? weapon : source;
+        var resistSource = IsWeaponSpell ? weapon : damageSource;
 
         var weaponAttackMod = 1.0;
         if (sourcePlayer?.GetEquippedWeapon() != null)
@@ -620,20 +631,20 @@ public class SpellProjectile : WorldObject
             weaponAttackMod = sourcePlayer.GetEquippedWeapon().WeaponOffense ?? 1.0;
         }
 
-        resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true, WeaponSpellcraft, weaponAttackMod);
+        resisted = source.TryResistSpell(target, Spell, out var partialEvasion, resistSource, true, WeaponSpellcraft, weaponAttackMod, ReflectedCaster != null);
 
-        if (targetPlayer is { ReflectIsActive: true, ReflectGuaranteedWindowActive: true })
+        // COMBAT ABILITY - Reflect: a reflected spell never damages the reflecting player.
+        // Overpower pierces a regular resist, and a spell that was already reflected can't be reflected again.
+        if (
+            ReflectedCaster == null
+            && CheckForCombatAbilityReflectSpell(!overpower && partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, sourceCreature, Spell)
+        )
         {
-            CheckForCombatAbilityReflectSpell(true, targetPlayer, sourceCreature);
-        }
-        else if (targetPlayer is { ReflectIsActive: true } && targetPlayer.ReflectGuaranteedCharges > 0)
-        {
-            CheckForCombatAbilityReflectSpell(true, targetPlayer, sourceCreature);
-            targetPlayer.ReflectGuaranteedCharges--;
-        }
-        else
-        {
-            CheckForCombatAbilityReflectSpell(partialEvasion is PartialEvasion.All or PartialEvasion.Some, targetPlayer, sourceCreature);
+            targetPlayer.CastReflectedSpell(Spell, sourceCreature, this);
+
+            resisted = true;
+            _partialEvasion = PartialEvasion.All;
+            return null;
         }
 
         var resistedMod = 1.0f;
@@ -687,7 +698,7 @@ public class SpellProjectile : WorldObject
             }
 
             // EMPOWERED SCARAB - Crushing
-            if (criticalHit && sourcePlayer != null && Spell.School == MagicSchool.WarMagic)
+            if (criticalHit && sourcePlayer != null && ReflectedCaster == null && Spell.School == MagicSchool.WarMagic)
             {
                 sourcePlayer.CheckForSigilTrinketOnCastEffects(target, Spell, false, Skill.WarMagic, SigilTrinketWarMagicEffect.Crushing, null, true);
             }
@@ -714,7 +725,7 @@ public class SpellProjectile : WorldObject
         //Console.WriteLine($"TargetWard: {target.WardLevel} WardRend: {wardRendingMod} Nullification: {NullificationMod} WardMod: {wardMod}");
 
         // absorb mod
-        var isPVP = sourcePlayer != null && targetPlayer != null;
+        var isPVP = source is Player && targetPlayer != null;
         var absorbMod = GetAbsorbMod(target, this);
 
         absorbMod *= 1.0f - Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearNullification, "Nullification");
@@ -729,7 +740,7 @@ public class SpellProjectile : WorldObject
 
         if (isPVP && Spell.IsHarmful)
         {
-            Player.UpdatePKTimers(sourcePlayer, targetPlayer);
+            Player.UpdatePKTimers(source as Player, targetPlayer);
         }
 
 
@@ -769,7 +780,7 @@ public class SpellProjectile : WorldObject
 
         // for traps and creatures the archetype system doesn't scale,
         // make sure they receive multipliers from landblock mods
-        var landblockScalingMod = source.GetLandblockLethalitySpellMod();
+        var landblockScalingMod = damageSource.GetLandblockLethalitySpellMod();
 
         // life magic projectiles: ie., martyr's hecatomb
         if (Spell.MetaSpellType == ACE.Entity.Enum.SpellType.LifeProjectile)
@@ -1111,22 +1122,6 @@ public class SpellProjectile : WorldObject
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Reflect: Reflect resisted spells back to the caster.
-    /// </summary>
-    private void CheckForCombatAbilityReflectSpell(bool resisted, Player targetPlayer, Creature sourceCreature)
-    {
-        if (!resisted || targetPlayer == null || sourceCreature == null)
-        {
-            return;
-        }
-
-        if (targetPlayer.ReflectIsActive)
-        {
-            targetPlayer.TryCastSpell(Spell, sourceCreature, null, null, false, false, false);
-        }
-    }
-
-    /// <summary>
     /// SPEC BONUS - War Magic (Scepter): +5% critical chance (additively).
     /// </summary>
     private static float CheckForWarSpecCriticalChanceBonus(Player sourcePlayer, WorldObject weapon)
@@ -1389,6 +1384,9 @@ public class SpellProjectile : WorldObject
         var sourceCreature = ProjectileSource as Creature;
         var sourcePlayer = ProjectileSource as Player;
 
+        // COMBAT ABILITY - Reflect: damage ratings for a reflected spell come from the original caster
+        var damageSource = ReflectedCaster ?? sourceCreature;
+
         var pkBattle = sourcePlayer != null && targetPlayer != null;
 
         var amount = 0u;
@@ -1421,7 +1419,7 @@ public class SpellProjectile : WorldObject
         {
             // for possibly applying sneak attack to magic projectiles,
             // only do this for health-damaging projectiles?
-            if (sourcePlayer != null)
+            if (sourcePlayer != null && ReflectedCaster == null)
             {
                 // TODO: use target direction vs. projectile position, instead of player position
                 // could sneak attack be applied to void DoTs?
@@ -1430,12 +1428,12 @@ public class SpellProjectile : WorldObject
                 heritageMod = sourcePlayer.GetHeritageBonus(sourcePlayer.GetEquippedWand()) ? 1.05f : 1.0f;
             }
             // Calc sneak bonus for monsters
-            if (targetPlayer != null && sourceCreature != null)
+            if (targetPlayer != null && sourceCreature != null && ReflectedCaster == null)
             {
                 sneakAttackMod = sourceCreature.GetSneakAttackMod(targetPlayer);
             }
 
-            var damageRating = sourceCreature?.GetDamageRating() ?? 0;
+            var damageRating = damageSource?.GetDamageRating() ?? 0;
             damageRatingMod = Creature.AdditiveCombine(
                 Creature.GetPositiveRatingMod(damageRating),
                 heritageMod,
@@ -1446,12 +1444,12 @@ public class SpellProjectile : WorldObject
 
             if (critical)
             {
-                damageRatingMod = Creature.GetPositiveRatingMod(sourceCreature?.GetCritDamageRating() ?? 0);
+                damageRatingMod = Creature.GetPositiveRatingMod(damageSource?.GetCritDamageRating() ?? 0);
                 damageResistRatingMod = Creature.GetNegativeRatingMod(target.GetCritDamageResistRating());
             }
             if (pkBattle)
             {
-                pkDamageRatingMod = Creature.GetPositiveRatingMod(sourceCreature.GetPKDamageRating());
+                pkDamageRatingMod = Creature.GetPositiveRatingMod(damageSource.GetPKDamageRating());
                 pkDamageResistRatingMod = Creature.GetNegativeRatingMod(target.GetPKDamageResistRating());
 
                 damageRatingMod = Creature.AdditiveCombine(damageRatingMod, pkDamageRatingMod);
