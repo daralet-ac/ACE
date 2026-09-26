@@ -167,6 +167,8 @@ public static class WorldObjectFactory
                 return new UpgradeKit(weenie, guid);
             case WeenieType.BezelTool:
                 return new BezelTool(weenie, guid);
+            case WeenieType.BezelFragment:
+                return new BezelFragment(weenie, guid);
             case WeenieType.DungeonModder:
                 return new DungeonModder(weenie, guid);
             case WeenieType.TrophySolvent:
@@ -328,6 +330,8 @@ public static class WorldObjectFactory
                 return new UpgradeKit(biota);
             case WeenieType.BezelTool:
                 return new BezelTool(biota);
+            case WeenieType.BezelFragment:
+                return new BezelFragment(biota);
             case WeenieType.DungeonModder:
                 return new DungeonModder(biota);
             case WeenieType.TrophySolvent:
