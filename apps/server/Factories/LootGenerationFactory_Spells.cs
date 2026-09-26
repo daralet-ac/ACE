@@ -80,6 +80,16 @@ public partial class LootGenerationFactory
         return procRate * 2.0;
     }
 
+    /// <summary>
+    /// Returns the lowest and highest proc rate RollProcSpellRate can produce for this weapon.
+    /// </summary>
+    public static (double min, double max) GetProcSpellRateRange(WorldObject wo)
+    {
+        var animLength = WeaponAnimationLength.GetWeaponAnimLength(wo) / 100;
+
+        return (animLength * 2.0, (animLength + animLength) * 2.0);
+    }
+
     private static SpellId RollIProcSpellId(WorldObject wo, TreasureDeath profile, TreasureRoll roll)
     {
         var procSpellId = SpellId.Undef;
