@@ -36,6 +36,7 @@ public class DamageEvent
     private float _backstabDamageMultiplier;
     private float _baseDamage;
     private BaseDamageMod _baseDamageMod;
+    private float _combatAbilityAegisDamageReduction;
     private float _combatAbilityFuryDamageBonus;
     private float _combatAbilityRelentlessDamagePenalty;
     private float _combatAbilityMultishotDamagePenalty;
@@ -363,13 +364,16 @@ public class DamageEvent
 
         var partialEvadeRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
+        // COMBAT ABILITY - Aegis: full evades become full hits (glancing blows are unaffected).
+        var aegisPreventsFullEvade = playerDefender is { AegisIsActive: true };
+
         switch (partialEvadeRoll)
         {
-            case < fullEvadeChance:
+            case < fullEvadeChance when !aegisPreventsFullEvade:
                 PartialEvasion = PartialEvasion.All;
                 Evaded = true;
                 break;
-            case < partialEvadeChance:
+            case >= fullEvadeChance and < partialEvadeChance:
                 _evasionMod = 0.5f;
                 PartialEvasion = PartialEvasion.Some; // glancing blow
                 Evaded = false;
@@ -775,6 +779,14 @@ public class DamageEvent
         return playerDefender is { ProvokeIsActive: true } ? 0.85f : 1.0f;
     }
 
+    /// <summary>
+    /// COMBAT ABILITY - Aegis: Damage taken from weapon attacks reduced by 40%.
+    /// </summary>
+    private static float GetCombatAbilityAegisDamageReduction(Player playerDefender)
+    {
+        return playerDefender is { AegisIsActive: true } ? 1.0f - Player.AegisDamageReduction : 1.0f;
+    }
+
     private void PostDamageMitigationEffects()
     {
         if (_attacker.IsMonster)
@@ -1016,6 +1028,7 @@ public class DamageEvent
         ShieldMod = _defender.GetShieldMod(attacker, DamageType, Weapon);
 
         _combatAbilityProvokeDamageReduction = GetCombatAbilityProvokeDamageReduction(playerDefender);
+        _combatAbilityAegisDamageReduction = GetCombatAbilityAegisDamageReduction(playerDefender);
 
         _ratingSelfHarm = 1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearSelfHarm);
         _ratingRedFury = 1.0f + Jewel.GetJewelRedFury(playerAttacker);
@@ -1039,6 +1052,7 @@ public class DamageEvent
                * _evasionMod
                * _specDefenseMod
                * _combatAbilityProvokeDamageReduction
+               * _combatAbilityAegisDamageReduction
                * _ratingDamageTypeWard
                * _ratingSelfHarm
                * _ratingRedFury
@@ -1252,6 +1266,7 @@ public class DamageEvent
 
         CheckForRatingPostDamageEffects(attacker, defender, damageSource, playerAttacker, playerDefender);
         CheckForCombatAbilityFuryBuildUpWhenDamaged(playerDefender);
+        CheckForCombatAbilityAegisRestoration(playerDefender);
         CheckForWeaponMasterEffects(playerAttacker, defender);
         CheckForEnchantedBlade(playerAttacker, defender, _attackHeight);
 
@@ -1566,6 +1581,30 @@ public class DamageEvent
                 playerDefender.AdrenalineMeter = 1.0f;
             }
         }
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Aegis: Restore stamina and mana equal to 10% of the damage prevented by Aegis.
+    /// </summary>
+    private void CheckForCombatAbilityAegisRestoration(Player playerDefender)
+    {
+        // _combatAbilityAegisDamageReduction is 1.0 unless Aegis reduced this hit
+        if (playerDefender is null || _combatAbilityAegisDamageReduction is <= 0.0f or >= 1.0f)
+        {
+            return;
+        }
+
+        // Damage already includes the Aegis reduction, so this is the amount Aegis alone prevented
+        var damagePrevented = Damage / _combatAbilityAegisDamageReduction - Damage;
+        var restoreAmount = (int)Math.Round(damagePrevented * Player.AegisRestorationMod);
+
+        if (restoreAmount <= 0)
+        {
+            return;
+        }
+
+        playerDefender.UpdateVitalDelta(playerDefender.Stamina, restoreAmount);
+        playerDefender.UpdateVitalDelta(playerDefender.Mana, restoreAmount);
     }
 
     /// <summary>
