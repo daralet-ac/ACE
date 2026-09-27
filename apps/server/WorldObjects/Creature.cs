@@ -244,12 +244,15 @@ public partial class Creature : Container
     /// EnterWorld(), so those paths call this explicitly too - otherwise UseArchetypeSystem creatures placed
     /// as static instances keep whatever raw MaxHealth/etc. was authored in the weenie sql instead of the
     /// archetype-computed values. Must be called after the creature has been added to its landblock, so the
-    /// landblock's dungeon mods can be applied.
+    /// landblock's dungeon mods can be applied. Can be called again, which the landblock does when its dungeon
+    /// mods are set after the creature was placed.
     /// </summary>
     internal void ApplyArchetypeSystem()
     {
         if (ArchetypeSystemApplies)
         {
+            RestoreArchetypeStartingValues();
+
             var statWeight = 0.0f;
             var level = (float)(Level ?? 1);
             var tier = (Tier ?? 1) - 1;
@@ -316,7 +319,7 @@ public partial class Creature : Container
 
             ApplyDungeonMods(ref toughness, ref lethality, ref healthMultiplier, ref skillMultiplier);
 
-            SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence, 1.0);
+            SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence);
 
             SetVitals(tier, statWeight, toughness, physicality, dexterity, magic);
 
@@ -324,10 +327,7 @@ public partial class Creature : Container
 
             // Damage is tuned to the creature's skill (a creature that hits more often gets less per hit),
             // so a skill boost is applied after it, or the extra hits would be paid for with weaker ones
-            if (skillMultiplier != 1.0)
-            {
-                SetSkills(tier, statWeight, toughness, physicality, dexterity, magic, intelligence, skillMultiplier);
-            }
+            ApplySkillMultiplier(skillMultiplier);
 
             ApplyHealthMultiplier(healthMultiplier);
 
