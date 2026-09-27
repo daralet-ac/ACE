@@ -430,8 +430,19 @@ public static class InstanceManager
     /// </summary>
     private static Position GetReturnPosition(Player player)
     {
-        var candidates = new[] { Get(player.InstanceId)?.Template.ReturnPosition, player.Sanctuary, player.Instantiation };
+        return FirstEnterablePosition(Get(player.InstanceId)?.Template.ReturnPosition, player.Sanctuary, player.Instantiation);
+    }
 
+    /// <summary>
+    /// The first of these candidates whose landblock the persistent world will still let someone into (the same check
+    /// Teleport() itself makes for a destination there), or WorldManager's ultimate fallback if none of them are.<para />
+    /// For whenever a player has to end up in the persistent world and what is on hand for that (a saved sanctuary, a
+    /// template's return position, where they started) might not be reachable any more, for instance because its
+    /// landblock has since become instance only. A caller with a live instance to consider (a respawn, which can stay
+    /// in the instance the player died in) wants CanReach instead: this always means the persistent world.
+    /// </summary>
+    public static Position FirstEnterablePosition(params Position[] candidates)
+    {
         foreach (var candidate in candidates)
         {
             if (candidate != null && CanEnter(Landblock.PersistentInstance, candidate.LandblockId))
@@ -502,7 +513,9 @@ public static class InstanceManager
 
     /// <summary>
     /// A player was saved inside a landblock that only exists in instances, which means the server went down while they were in it.
-    /// The instance is gone, so they are sent to where it sent players.
+    /// The instance is gone, so they are sent to where it sent players, or their sanctuary, or where they started, whichever of
+    /// those the persistent world still lets someone into (their sanctuary can be the very same instance-only landblock, or
+    /// anywhere else that has since stopped being reachable, so this is never trusted unchecked).
     /// </summary>
     public static void OnPlayerLogin(Player player)
     {
@@ -519,11 +532,7 @@ public static class InstanceManager
             return;
         }
 
-        var destination = template.ReturnPosition ?? player.Sanctuary ?? player.Instantiation;
-        if (destination == null)
-        {
-            return;
-        }
+        var destination = FirstEnterablePosition(template.ReturnPosition, player.Sanctuary, player.Instantiation);
 
         _log.Information(
             "[INSTANCE] {Player} was saved inside {Template}, which only exists as an instance. Moving them to {Destination}",
