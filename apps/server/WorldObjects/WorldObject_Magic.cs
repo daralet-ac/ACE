@@ -2251,7 +2251,7 @@ partial class WorldObject
     /// <summary>
     /// Returns a Portal object for a WCID
     /// </summary>
-    private static Portal GetPortal(uint wcid)
+    protected static Portal GetPortal(uint wcid)
     {
         var weenie = DatabaseManager.World.GetCachedWeenie(wcid);
 
@@ -2423,10 +2423,14 @@ partial class WorldObject
                     targetPlayer,
                     () =>
                     {
-                        var teleportDest = new Position(portal.Destination);
-                        AdjustDungeon(teleportDest);
+                        // a capstone dungeon's entrance leaves it to its Portal emote to send the player anywhere
+                        if (!portal.IsCapstoneEntrance)
+                        {
+                            var teleportDest = new Position(portal.Destination);
+                            AdjustDungeon(teleportDest);
 
-                        targetPlayer.Teleport(teleportDest);
+                            targetPlayer.Teleport(teleportDest);
+                        }
 
                         portal.EmoteManager.OnPortal(player);
                     }

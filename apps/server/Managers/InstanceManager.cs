@@ -394,11 +394,13 @@ public static class InstanceManager
     /// <summary>
     /// Sends a player into an instance, to its entry position unless told otherwise
     /// </summary>
-    public static void Enter(Player player, WorldInstance instance, Position destination = null)
+    /// <param name="fromPortal">True if a portal is sending them, so they're held to the time between portal teleports</param>
+    public static void Enter(Player player, WorldInstance instance, Position destination = null, bool fromPortal = false)
     {
         WorldManager.ThreadSafeTeleport(
             player,
             destination ?? instance.Template.EntryPosition,
+            fromPortal: fromPortal,
             instanceId: instance.Id
         );
     }

@@ -1996,12 +1996,24 @@ public class Landblock : IActor
         {
             var landblock = LandblockManager.GetLandblock((LandblockId)fellowship.CapstoneDungeon, false);
 
-            CapstoneTeleport(player, landblock);
+            // The dungeon is unloaded a while after everyone has left it (UnloadInterval), and comes back without the fellowship
+            // or its mods. Take it back, with the same mods.
+            if (landblock.CapstoneFellowship == null)
+            {
+                landblock.CapstoneFellowship = fellowship;
+                landblock.SetLandblockMods(fellowship, dungeonName);
+            }
+
+            if (landblock.CapstoneFellowship == fellowship)
+            {
+                CapstoneTeleport(player, landblock);
+                return;
+            }
+
+            // another fellowship got it after it was unloaded, so this one gets another copy, with its mods
         }
-        else
-        {
-            FindOpenInstanceFellowship(player, dungeonLandblocks, dungeonName);
-        }
+
+        FindOpenInstanceFellowship(player, dungeonLandblocks, dungeonName);
     }
 
     private static readonly Dictionary<string, InstanceTemplate> capstoneInstanceTemplates =
@@ -2009,16 +2021,10 @@ public class Landblock : IActor
 
     /// <summary>
     /// Whether a capstone dungeon is opened as an instance of its original landblock rather than as one of its numbered copies.
-    /// This is set with the capstone_instanced_dungeons server property. The dungeons that hand their modifiers on to a second part
-    /// can't be, because the second part looks its first part up by landblock.
+    /// This is set with the capstone_instanced_dungeons server property, which has every capstone dungeon by default.
     /// </summary>
     private static bool IsCapstoneInstanced(string dungeonName)
     {
-        if (dungeonName is "Lugian Mines" or "Lugian Mines2" or "Mines of Despair" or "Beyond the Mines")
-        {
-            return false;
-        }
-
         var names = PropertyManager.GetString("capstone_instanced_dungeons").Item;
         if (string.IsNullOrWhiteSpace(names))
         {
@@ -2076,7 +2082,8 @@ public class Landblock : IActor
         var destination = new Position(template.EntryPosition);
         WorldObject.AdjustDungeon(destination, instance.Id);
 
-        InstanceManager.Enter(player, instance, destination);
+        // a capstone entrance's emote does its teleport (Portal.IsCapstoneEntrance)
+        InstanceManager.Enter(player, instance, destination, fromPortal: true);
     }
 
     private static void FindOpenInstanceFellowship(
@@ -2097,9 +2104,11 @@ public class Landblock : IActor
             }
 
             landblock.CapstoneFellowship = fellowship;
-            fellowship.CapstoneDungeon = landblockId;
 
+            // before CapstoneDungeon is changed, since that's how SetLandblockMods knows which dungeon the fellowship's mods are for
             landblock.SetLandblockMods(fellowship, dungeonName);
+
+            fellowship.CapstoneDungeon = landblockId;
 
             CapstoneTeleport(player, landblock);
             return;
@@ -2115,55 +2124,49 @@ public class Landblock : IActor
         WorldManager.ThreadSafeTeleport(player, player.Sanctuary);
     }
 
+    /// <summary>
+    /// Sets the dungeon mods for a fellowship's run of a dungeon. The first time the fellowship enters the dungeon, they're the mods
+    /// its leader has active (from DungeonModders), which are used up. The fellowship keeps them (Fellowship.CapstoneDungeonMods), and
+    /// they're what the dungeon gets from then on: when it's loaded again after being unloaded, and for the second part of a dungeon.
+    /// Must be called before the fellowship's CapstoneDungeon is changed to this landblock.
+    /// </summary>
     private void SetLandblockMods(Fellowship fellowship, string dungeonName)
     {
-        LandblockLootQualityMod = 0.0;
+        if (fellowship.CapstoneDungeonMods != null && HasCapstoneDungeon(fellowship, dungeonName))
+        {
+            ApplyLandblockMods(fellowship.CapstoneDungeonMods);
+            return;
+        }
+
+        var modNames = new List<string>();
+
+        // a new run of a dungeon starts with the mods found here, even if there are none, so the last run's don't carry over
+        fellowship.CapstoneDungeonMods = modNames;
 
         var playerLeaderGuid = fellowship.FellowshipLeaderGuid;
 
         // must be fellowship leader
         if (!fellowship.GetFellowshipMembers().TryGetValue(playerLeaderGuid, out var playerLeader))
         {
+            ApplyLandblockMods(modNames);
             return;
         }
 
-        if (dungeonName is "Lugian Mines2" or "Beyond the Mines")
+        foreach (var (modName, modInfo) in LandblockMods)
         {
-            var previousLandblock = LandblockManager.GetLandblock(GetPartOneDungeon(Id), false);
+            var landblockModSpell = playerLeader.EnchantmentManager.GetEnchantment((uint)modInfo.SpellId);
 
-            var previousLandblockMods = previousLandblock.LandblockMods;
-            var previousLandblockLootQuality = previousLandblock.LandblockLootQualityMod;
-
-            foreach (var kvp in previousLandblockMods)
+            if (landblockModSpell is null)
             {
-                LandblockMods[kvp.Key] = kvp.Value;
+                continue;
             }
 
-            LandblockLootQualityMod = previousLandblockLootQuality;
+            modNames.Add(modName);
 
-            return;
+            playerLeader.EnchantmentManager.Dispel(landblockModSpell);
         }
-        else
-        {
-            foreach (var modName in LandblockMods.Keys.ToList())
-            {
-                var modInfo = LandblockMods[modName];
-                var landblockModSpell = playerLeader.EnchantmentManager.GetEnchantment((uint)modInfo.SpellId);
 
-                if (landblockModSpell is null)
-                {
-                    continue;
-                }
-
-                modInfo.Active = true;
-
-                LandblockMods[modName] = modInfo;
-
-                LandblockLootQualityMod += modInfo.LootQualityBonus;
-
-                playerLeader.EnchantmentManager.Dispel(landblockModSpell);
-            }
-        }
+        ApplyLandblockMods(modNames);
 
         foreach (var fellowshipMember in playerLeader.Fellowship.GetFellowshipMembers())
         {
@@ -2209,6 +2212,69 @@ public class Landblock : IActor
                 $" -Total Loot Quality Bonus: +{totalBonus}%",
                 ChatMessageType.Broadcast
             ));
+        }
+    }
+
+    /// <summary>
+    /// True if the fellowship is already doing this dungeon (its CapstoneDungeon is one of the dungeon's landblocks), or has done the
+    /// first part of it
+    /// </summary>
+    private static bool HasCapstoneDungeon(Fellowship fellowship, string dungeonName)
+    {
+        if (fellowship.CapstoneDungeon is not { } capstoneDungeon)
+        {
+            return false;
+        }
+
+        var partOneName = dungeonName switch
+        {
+            "Lugian Mines2" => "Lugian Mines",
+            "Beyond the Mines" => "Mines of Despair",
+            _ => null
+        };
+
+        return (CapstoneDungeonLists(dungeonName)?.Contains(capstoneDungeon) ?? false)
+               || (partOneName != null && CapstoneDungeonLists(partOneName).Contains(capstoneDungeon));
+    }
+
+    /// <summary>
+    /// Makes the named mods the ones that are active in this landblock, and gives them to the creatures that are already in it
+    /// </summary>
+    private void ApplyLandblockMods(ICollection<string> modNames)
+    {
+        LandblockLootQualityMod = 0.0;
+
+        foreach (var modName in LandblockMods.Keys.ToList())
+        {
+            var modInfo = LandblockMods[modName];
+
+            modInfo.Active = modNames.Contains(modName);
+
+            LandblockMods[modName] = modInfo;
+
+            if (modInfo.Active)
+            {
+                LandblockLootQualityMod += modInfo.LootQualityBonus;
+            }
+        }
+
+        // A creature gets the mods when it's placed (Creature.ApplyArchetypeSystem), so the ones that were placed before they were set
+        // have to be done again: the landblock can have been loaded before the fellowship got it, with its creatures already in it.
+        // A capstone portal takes the player to the dungeon's original landblock (the first copy) before its AssignCapstoneDungeon
+        // emote sends them on to their own, so that one is loaded by everyone who goes in. That's done on the landblock's own thread,
+        // since this is called from the thread of the player going into the dungeon.
+        EnqueueAction(new ActionEventDelegate(ApplyLandblockModsToCreatures));
+    }
+
+    private void ApplyLandblockModsToCreatures()
+    {
+        foreach (var wo in worldObjects.Values.Concat(pendingAdditions.Values).ToList())
+        {
+            // not one that's dying: this gives it full health
+            if (wo is Creature { IsDead: false } creature and not Player)
+            {
+                creature.ApplyArchetypeSystem();
+            }
         }
     }
 
@@ -2311,7 +2377,9 @@ public class Landblock : IActor
         }
 
         WorldObject.AdjustDungeon(destination);
-        WorldManager.ThreadSafeTeleport(player, destination);
+
+        // a capstone entrance's emote does its teleport (Portal.IsCapstoneEntrance)
+        WorldManager.ThreadSafeTeleport(player, destination, fromPortal: true);
     }
 
     public static List<LandblockId> CapstoneDungeonLists(string dungeonName)
@@ -2394,22 +2462,6 @@ public class Landblock : IActor
             return landblockIds;
         }
         return null;
-    }
-
-    public static LandblockId GetPartOneDungeon(LandblockId dungeonId)
-    {
-        if (CapstoneDungeonLists("Lugian Mines2").Contains(dungeonId))
-        {
-            var index = CapstoneDungeonLists("Lugian Mines2").IndexOf(dungeonId);
-
-            return CapstoneDungeonLists("Lugian Mines")[index];
-        }
-        else
-        {
-            var index = CapstoneDungeonLists("Beyond the Mines").IndexOf(dungeonId);
-
-            return CapstoneDungeonLists("Mines of Despair")[index];
-        }
     }
 
 
