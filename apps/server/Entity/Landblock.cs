@@ -2021,16 +2021,10 @@ public class Landblock : IActor
 
     /// <summary>
     /// Whether a capstone dungeon is opened as an instance of its original landblock rather than as one of its numbered copies.
-    /// This is set with the capstone_instanced_dungeons server property. The dungeons that hand their modifiers on to a second part
-    /// never are.
+    /// This is set with the capstone_instanced_dungeons server property, which has every capstone dungeon by default.
     /// </summary>
     private static bool IsCapstoneInstanced(string dungeonName)
     {
-        if (dungeonName is "Lugian Mines" or "Lugian Mines2" or "Mines of Despair" or "Beyond the Mines")
-        {
-            return false;
-        }
-
         var names = PropertyManager.GetString("capstone_instanced_dungeons").Item;
         if (string.IsNullOrWhiteSpace(names))
         {

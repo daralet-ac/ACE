@@ -140,7 +140,7 @@ InstanceManager.Leave(player);             // to where the template sends player
 
 ## Capstone dungeons
 
-Off by default. Set the server property `capstone_instanced_dungeons` to a comma separated list of dungeon names (as they are in the `AssignCapstoneDungeon` emote, for example `Glenden Wood Dungeon,Green Mire Grave`) and those dungeons open a private instance of the original landblock for each fellowship, instead of one of the numbered copies. The dungeons that have a second part (Lugian Mines and Mines of Despair) always use their copies.
+On for every capstone dungeon. The server property `capstone_instanced_dungeons` is a comma separated list of dungeon names (as they are in the `AssignCapstoneDungeon` emote), and the dungeons in it open a private instance of the original landblock for each fellowship, instead of one of the numbered copies. By default it has all 17: the 15 capstone dungeons, and the second parts of Lugian Mines (`Lugian Mines2`) and Mines of Despair (`Beyond the Mines`), which are instances of their own. Take a dungeon out of the list to use its copies again, or empty it for all of them. The shard update `2026-09-27-00-Capstone-Instanced-Dungeons.sql` saves the list on a server that already had the old default (empty) saved.
 
 The modifiers the leader chose are kept by the fellowship for as long as it has the dungeon, so an instance made again after the last one was deleted, or a copy loaded again after it was unloaded, gets the same ones. A capstone entrance portal (one whose Portal emote is `AssignCapstoneDungeon`) sends the player straight to their instance or copy, without going to the portal's own destination in the original landblock first. That goes for a recall or a summoned portal of one too.
 
@@ -165,7 +165,7 @@ A personal template gives every player who logs in inside its landblocks an inst
 | Property | Default | |
 |---|---|---|
 | `instance_empty_timeout_minutes` | 15 | How long an instance stays open after the last player has left it. Change with `/modifylong`. |
-| `capstone_instanced_dungeons` | (empty) | The capstone dungeons that are opened as instances. |
+| `capstone_instanced_dungeons` | (every capstone dungeon) | The capstone dungeons that are opened as instances. |
 | `starter_academy_instances` | true | Whether a player who logs in inside a training academy (every new character) gets an instance of it of their own. Change with `/modifybool`. It only affects logins. |
 
 ## Performance

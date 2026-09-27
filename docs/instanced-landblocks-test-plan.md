@@ -27,7 +27,7 @@ What to run, and what to expect, to trust the instancing system on a live server
 | Setting | How | Used for |
 |---|---|---|
 | `instance_empty_timeout_minutes` | `/modifylong instance_empty_timeout_minutes 1` (default 15) | Lifecycle tests. Never set it to 0: an instance nobody has entered yet would be deleted at once. |
-| `capstone_instanced_dungeons` | `/modifystring capstone_instanced_dungeons Glenden Wood Dungeon` (comma separated; empty by default) | Section G |
+| `capstone_instanced_dungeons` | `/modifystring capstone_instanced_dungeons Glenden Wood Dungeon` (comma separated; every capstone dungeon by default) | Section G |
 | `starter_academy_instances` | `/modifybool starter_academy_instances false` (true by default) | Section N |
 | `Server.Threading.MultiThreadedLandblockGroupTicking` and `...MultiThreadedLandblockGroupPhysicsTicking` | `Config.js`, both `true` in `Config.js.example` | Run the P0 tests once with both `true` and once with both `false` (J1, J2) |
 | `instances.json` | The server reads the copy that sits next to `ACE.Server.exe` (`dist/apps/server/net8.0/instances.json`), and it is read once, at startup. Edit that copy, then restart. A build only puts the one from `apps/server` there when there is none, so it never overwrites yours (delete it and build to get the default back). The shipped file lists `aerlinthe` (210 landblocks), `test-holtburg` (9) and `test-big` (25), all for testing and none instance only; a copy made before they were added does not have them. | Sections A and F. Samples in appendix C. |
@@ -175,7 +175,7 @@ Use `test-holtburg` (1 landblock plus ring) and `test-big` (3 x 3 plus ring) wit
 | G6 | P1 | Leave by the exit. Re-enter within the timeout. Then leave and wait past it. | Within it: the same instance, monsters killed stay dead. After it: deleted, and a new entry gives a fresh dungeon, with the same modifiers. |
 | G7 | P1 | Disband or change the leader while inside. | Players stay. No errors. The instance is deleted after everyone has left and the timeout has passed. |
 | G8 | P1 | Enter the dungeon without a fellowship. | Same as before. No errors. |
-| G9 | P1 | Add `Lugian Mines` and `Mines of Despair` to the property. | Ignored: they still use their copies. |
+| G9 | P1 | Lugian Mines and Mines of Despair, with modifiers: go through the first part into the second. | The second part is an instance of its own (`capstone:Lugian Mines2`, `capstone:Beyond the Mines`), with the modifiers chosen for the first. |
 | G10 | P1 | Die inside. | No corpse, nothing lost, sanctuary respawn. |
 | G11 | P1 | Monster levels and health against `docs/fellowship-dungeon-scaling.md`, for the same fellowship size, instance against copy. | The same. |
 | G12 | P1 | Stop the server with a fellowship inside, start, log in. | Sanctuary, as for the copies. |
