@@ -1,13 +1,13 @@
 using System;
 using System.Numerics;
 using ACE.Entity;
-using ACE.Server.WorldObjects;
+using ACE.Server.Entity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ACE.Server.Tests;
 
 /// <summary>
-/// Unit coverage for the anti-blink path/door geometry on <see cref="Player"/>. Pure coordinate
+/// Unit coverage for the anti-blink path/door geometry in <see cref="AntiBlinkGeometry"/>. Pure coordinate
 /// arithmetic: no landblock, no physics, no live object, no door weenie.
 /// Ported from ACE-DreamWeave (https://github.com/Awful-Waffle-Rofl/ACE-DreamWeave, AGPL-3.0).
 /// </summary>
@@ -51,7 +51,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetGlobalPos_LiftsLandblockLocalIntoGlobalCoords()
     {
-        var global = Player.GetGlobalPos(At(BlockA, 96f, 48f));
+        var global = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 48f));
 
         Assert.AreEqual(0x01 * LandblockLength + 96f, global.X, 0.001f);
         Assert.AreEqual(0x02 * LandblockLength + 48f, global.Y, 0.001f);
@@ -65,8 +65,8 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetGlobalPos_AdjacentLandblocksDoNotCollide()
     {
-        var a = Player.GetGlobalPos(At(BlockA, 96f, 96f));
-        var b = Player.GetGlobalPos(At(BlockB, 96f, 96f));
+        var a = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 96f));
+        var b = AntiBlinkGeometry.GetGlobalPos(At(BlockB, 96f, 96f));
 
         Assert.AreNotEqual(a.X, b.X);
         Assert.AreEqual(LandblockLength, b.X - a.X, 0.001f);
@@ -80,9 +80,9 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetDoorSegment_IdentityRotation_SpansEastWestCenteredOnDoor()
     {
-        var segment = Player.GetDoorSegment(DoorFacingNorth(BlockA, 96f, 96f), 3.0f);
+        var segment = AntiBlinkGeometry.GetDoorSegment(DoorFacingNorth(BlockA, 96f, 96f), 3.0f);
 
-        var center = Player.GetGlobalPos(At(BlockA, 96f, 96f));
+        var center = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 96f));
 
         // door faces +Y, so its width axis is X
         Assert.AreEqual(center.X - 1.5f, Math.Min(segment.Start.X, segment.End.X), 0.001f);
@@ -94,9 +94,9 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetDoorSegment_RotatedNinetyDegrees_SpansNorthSouth()
     {
-        var segment = Player.GetDoorSegment(DoorRotated(BlockA, 96f, 96f, 90f), 3.0f);
+        var segment = AntiBlinkGeometry.GetDoorSegment(DoorRotated(BlockA, 96f, 96f, 90f), 3.0f);
 
-        var center = Player.GetGlobalPos(At(BlockA, 96f, 96f));
+        var center = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 96f));
 
         Assert.AreEqual(center.X, segment.Start.X, 0.001f);
         Assert.AreEqual(center.X, segment.End.X, 0.001f);
@@ -107,8 +107,8 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetDoorSegment_WidthIsHonored()
     {
-        var narrow = Player.GetDoorSegment(DoorFacingNorth(BlockA, 96f, 96f), 2.0f);
-        var wide = Player.GetDoorSegment(DoorFacingNorth(BlockA, 96f, 96f), 8.0f);
+        var narrow = AntiBlinkGeometry.GetDoorSegment(DoorFacingNorth(BlockA, 96f, 96f), 2.0f);
+        var wide = AntiBlinkGeometry.GetDoorSegment(DoorFacingNorth(BlockA, 96f, 96f), 8.0f);
 
         Assert.AreEqual(2.0f, (narrow.End - narrow.Start).Length(), 0.001f);
         Assert.AreEqual(8.0f, (wide.End - wide.Start).Length(), 0.001f);
@@ -121,7 +121,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetSegmentIntersection_CrossingSegments_ReturnsCrossingPoint()
     {
-        var hit = Player.GetSegmentIntersection(
+        var hit = AntiBlinkGeometry.GetSegmentIntersection(
             new Vector2(0f, -1f),
             new Vector2(0f, 1f),
             new Vector2(-1f, 0f),
@@ -136,7 +136,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetSegmentIntersection_ParallelSegments_ReturnsNull()
     {
-        var hit = Player.GetSegmentIntersection(
+        var hit = AntiBlinkGeometry.GetSegmentIntersection(
             new Vector2(0f, 0f),
             new Vector2(10f, 0f),
             new Vector2(0f, 5f),
@@ -149,7 +149,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetSegmentIntersection_CollinearSegments_ReturnsNull()
     {
-        var hit = Player.GetSegmentIntersection(
+        var hit = AntiBlinkGeometry.GetSegmentIntersection(
             new Vector2(0f, 0f),
             new Vector2(10f, 0f),
             new Vector2(2f, 0f),
@@ -166,7 +166,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetSegmentIntersection_CrossingBeyondSegmentEnd_ReturnsNull()
     {
-        var hit = Player.GetSegmentIntersection(
+        var hit = AntiBlinkGeometry.GetSegmentIntersection(
             new Vector2(0f, -5f),
             new Vector2(0f, -1f),
             new Vector2(-1f, 0f),
@@ -183,7 +183,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetSegmentIntersection_CrossesPlaneBesideDoorway_ReturnsNull()
     {
-        var hit = Player.GetSegmentIntersection(
+        var hit = AntiBlinkGeometry.GetSegmentIntersection(
             new Vector2(20f, -1f),
             new Vector2(20f, 1f),
             new Vector2(-1f, 0f),
@@ -196,7 +196,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void GetSegmentIntersection_DegenerateSegment_ReturnsNull()
     {
-        var hit = Player.GetSegmentIntersection(new Vector2(0f, -1f), new Vector2(0f, 1f), Vector2.Zero, Vector2.Zero);
+        var hit = AntiBlinkGeometry.GetSegmentIntersection(new Vector2(0f, -1f), new Vector2(0f, 1f), Vector2.Zero, Vector2.Zero);
 
         Assert.IsNull(hit);
     }
@@ -208,7 +208,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void DistanceToSegmentSq_PointOnSegment_IsZero()
     {
-        var d = Player.DistanceToSegmentSq(new Vector2(0f, 0f), new Vector2(-1f, 0f), new Vector2(1f, 0f));
+        var d = AntiBlinkGeometry.DistanceToSegmentSq(new Vector2(0f, 0f), new Vector2(-1f, 0f), new Vector2(1f, 0f));
 
         Assert.AreEqual(0f, d, 0.0001f);
     }
@@ -216,7 +216,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void DistanceToSegmentSq_PointOffSegment_UsesPerpendicularDistance()
     {
-        var d = Player.DistanceToSegmentSq(new Vector2(0f, 3f), new Vector2(-1f, 0f), new Vector2(1f, 0f));
+        var d = AntiBlinkGeometry.DistanceToSegmentSq(new Vector2(0f, 3f), new Vector2(-1f, 0f), new Vector2(1f, 0f));
 
         Assert.AreEqual(9f, d, 0.0001f);
     }
@@ -227,7 +227,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void DistanceToSegmentSq_PointBeyondEnd_UsesEndpoint()
     {
-        var d = Player.DistanceToSegmentSq(new Vector2(5f, 0f), new Vector2(-1f, 0f), new Vector2(1f, 0f));
+        var d = AntiBlinkGeometry.DistanceToSegmentSq(new Vector2(5f, 0f), new Vector2(-1f, 0f), new Vector2(1f, 0f));
 
         Assert.AreEqual(16f, d, 0.0001f);
     }
@@ -235,7 +235,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void DistanceToSegmentSq_DegenerateSegment_UsesPointDistance()
     {
-        var d = Player.DistanceToSegmentSq(new Vector2(3f, 4f), Vector2.Zero, Vector2.Zero);
+        var d = AntiBlinkGeometry.DistanceToSegmentSq(new Vector2(3f, 4f), Vector2.Zero, Vector2.Zero);
 
         Assert.AreEqual(25f, d, 0.0001f);
     }
@@ -249,11 +249,11 @@ public class AntiBlinkGeometryTests
     public void DistanceToSegmentSq_PlayerStandingInDoorway_RegistersOnThePlane()
     {
         var door = DoorFacingNorth(BlockA, 96f, 96f);
-        var segment = Player.GetDoorSegment(door, 3.0f);
+        var segment = AntiBlinkGeometry.GetDoorSegment(door, 3.0f);
 
-        var standingInIt = Player.GetGlobalPos(At(BlockA, 96f, 96f));
+        var standingInIt = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 96f));
 
-        Assert.IsTrue(Player.DistanceToSegmentSq(standingInIt, segment.Start, segment.End) < 0.25f * 0.25f);
+        Assert.IsTrue(AntiBlinkGeometry.DistanceToSegmentSq(standingInIt, segment.Start, segment.End) < AntiBlinkGeometry.DoorPlaneToleranceSq);
     }
 
     /// <summary>
@@ -264,11 +264,11 @@ public class AntiBlinkGeometryTests
     public void DistanceToSegmentSq_PlayerApproachingDoor_IsNotOnThePlane()
     {
         var door = DoorFacingNorth(BlockA, 96f, 96f);
-        var segment = Player.GetDoorSegment(door, 3.0f);
+        var segment = AntiBlinkGeometry.GetDoorSegment(door, 3.0f);
 
-        var approaching = Player.GetGlobalPos(At(BlockA, 96f, 95f));
+        var approaching = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 95f));
 
-        Assert.IsFalse(Player.DistanceToSegmentSq(approaching, segment.Start, segment.End) < 0.25f * 0.25f);
+        Assert.IsFalse(AntiBlinkGeometry.DistanceToSegmentSq(approaching, segment.Start, segment.End) < AntiBlinkGeometry.DoorPlaneToleranceSq);
     }
 
     #endregion
@@ -282,12 +282,12 @@ public class AntiBlinkGeometryTests
     public void PathThroughDoor_IsDetected()
     {
         var door = DoorFacingNorth(BlockA, 96f, 96f);
-        var segment = Player.GetDoorSegment(door, 3.0f);
+        var segment = AntiBlinkGeometry.GetDoorSegment(door, 3.0f);
 
-        var start = Player.GetGlobalPos(At(BlockA, 96f, 94f));
-        var end = Player.GetGlobalPos(At(BlockA, 96f, 98f));
+        var start = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 94f));
+        var end = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 98f));
 
-        Assert.IsNotNull(Player.GetSegmentIntersection(start, end, segment.Start, segment.End));
+        Assert.IsNotNull(AntiBlinkGeometry.GetSegmentIntersection(start, end, segment.Start, segment.End));
     }
 
     /// <summary>
@@ -297,12 +297,12 @@ public class AntiBlinkGeometryTests
     public void PathStoppingAtDoor_IsNotDetected()
     {
         var door = DoorFacingNorth(BlockA, 96f, 96f);
-        var segment = Player.GetDoorSegment(door, 3.0f);
+        var segment = AntiBlinkGeometry.GetDoorSegment(door, 3.0f);
 
-        var start = Player.GetGlobalPos(At(BlockA, 96f, 90f));
-        var end = Player.GetGlobalPos(At(BlockA, 96f, 95f));
+        var start = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 90f));
+        var end = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 96f, 95f));
 
-        Assert.IsNull(Player.GetSegmentIntersection(start, end, segment.Start, segment.End));
+        Assert.IsNull(AntiBlinkGeometry.GetSegmentIntersection(start, end, segment.Start, segment.End));
     }
 
     /// <summary>
@@ -314,13 +314,13 @@ public class AntiBlinkGeometryTests
     {
         // door sits 1 unit inside BlockB's western edge, facing east (+X), so its plane runs north-south
         var door = DoorRotated(BlockB, 1f, 96f, 90f);
-        var segment = Player.GetDoorSegment(door, 3.0f);
+        var segment = AntiBlinkGeometry.GetDoorSegment(door, 3.0f);
 
         // walk east out of BlockA's eastern edge and into BlockB, straight through the door
-        var start = Player.GetGlobalPos(At(BlockA, 190f, 96f));
-        var end = Player.GetGlobalPos(At(BlockB, 3f, 96f));
+        var start = AntiBlinkGeometry.GetGlobalPos(At(BlockA, 190f, 96f));
+        var end = AntiBlinkGeometry.GetGlobalPos(At(BlockB, 3f, 96f));
 
-        Assert.IsNotNull(Player.GetSegmentIntersection(start, end, segment.Start, segment.End));
+        Assert.IsNotNull(AntiBlinkGeometry.GetSegmentIntersection(start, end, segment.Start, segment.End));
     }
 
     #endregion
@@ -334,19 +334,19 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void IsDoorWithinZ_ApexAboveLimitLandingAtFloor_IsWithin()
     {
-        Assert.IsTrue(Player.IsDoorWithinZ(0f, 4.3f, 0.1f, 3.5f));
+        Assert.IsTrue(AntiBlinkGeometry.IsDoorWithinZ(0f, 4.3f, 0.1f, 3.5f));
     }
 
     [TestMethod]
     public void IsDoorWithinZ_StoreyAbove_IsNotWithin()
     {
-        Assert.IsFalse(Player.IsDoorWithinZ(6f, 0f, 0.2f, 3.5f));
+        Assert.IsFalse(AntiBlinkGeometry.IsDoorWithinZ(6f, 0f, 0.2f, 3.5f));
     }
 
     [TestMethod]
     public void IsDoorWithinZ_JumpingDownToDoorLevel_IsWithin()
     {
-        Assert.IsTrue(Player.IsDoorWithinZ(0f, 5f, 0f, 3.5f));
+        Assert.IsTrue(AntiBlinkGeometry.IsDoorWithinZ(0f, 5f, 0f, 3.5f));
     }
 
     /// <summary>
@@ -355,7 +355,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void IsDoorWithinZ_UpperFloorAtDefaultLimit_IsNotWithin()
     {
-        Assert.IsFalse(Player.IsDoorWithinZ(0f, 2.8f, 2.8f, 2.0f));
+        Assert.IsFalse(AntiBlinkGeometry.IsDoorWithinZ(0f, 2.8f, 2.8f, 2.0f));
     }
 
     #endregion
@@ -365,25 +365,25 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void IsLegitimatelyOnDoorPlane_ArrivedBeforeClose_IsExempt()
     {
-        Assert.IsTrue(Player.IsLegitimatelyOnDoorPlane(1u, 100d, 1u, 105d));
+        Assert.IsTrue(AntiBlinkGeometry.IsLegitimatelyOnDoorPlane(1u, 100d, 1u, 105d));
     }
 
     [TestMethod]
     public void IsLegitimatelyOnDoorPlane_ArrivedAfterClose_IsEnforced()
     {
-        Assert.IsFalse(Player.IsLegitimatelyOnDoorPlane(1u, 110d, 1u, 105d));
+        Assert.IsFalse(AntiBlinkGeometry.IsLegitimatelyOnDoorPlane(1u, 110d, 1u, 105d));
     }
 
     [TestMethod]
     public void IsLegitimatelyOnDoorPlane_NeverClosedDoor_IsEnforced()
     {
-        Assert.IsFalse(Player.IsLegitimatelyOnDoorPlane(1u, 50d, 1u, 0d));
+        Assert.IsFalse(AntiBlinkGeometry.IsLegitimatelyOnDoorPlane(1u, 50d, 1u, 0d));
     }
 
     [TestMethod]
     public void IsLegitimatelyOnDoorPlane_DifferentDoor_IsEnforced()
     {
-        Assert.IsFalse(Player.IsLegitimatelyOnDoorPlane(1u, 50d, 2u, 105d));
+        Assert.IsFalse(AntiBlinkGeometry.IsLegitimatelyOnDoorPlane(1u, 50d, 2u, 105d));
     }
 
     #endregion
@@ -393,7 +393,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void NextOnDoorPlaneRecord_NoCandidate_ClearsRecord()
     {
-        var next = Player.NextOnDoorPlaneRecord(1u, 100d, 0u, 200d);
+        var next = AntiBlinkGeometry.NextOnDoorPlaneRecord(1u, 100d, 0u, 200d);
 
         Assert.AreEqual(0u, next.Guid);
     }
@@ -401,7 +401,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void NextOnDoorPlaneRecord_NewGuid_StampsNow()
     {
-        var next = Player.NextOnDoorPlaneRecord(1u, 100d, 2u, 200d);
+        var next = AntiBlinkGeometry.NextOnDoorPlaneRecord(1u, 100d, 2u, 200d);
 
         Assert.AreEqual(2u, next.Guid);
         Assert.AreEqual(200d, next.Since, 0.0001d);
@@ -410,7 +410,7 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void NextOnDoorPlaneRecord_SameGuid_KeepsOriginalSince()
     {
-        var next = Player.NextOnDoorPlaneRecord(1u, 100d, 1u, 200d);
+        var next = AntiBlinkGeometry.NextOnDoorPlaneRecord(1u, 100d, 1u, 200d);
 
         Assert.AreEqual(1u, next.Guid);
         Assert.AreEqual(100d, next.Since, 0.0001d);
@@ -422,8 +422,8 @@ public class AntiBlinkGeometryTests
     [TestMethod]
     public void NextOnDoorPlaneRecord_ClearThenRearrive_RestampsSince()
     {
-        var cleared = Player.NextOnDoorPlaneRecord(1u, 100d, 0u, 150d);
-        var reArrived = Player.NextOnDoorPlaneRecord(cleared.Guid, cleared.Since, 1u, 300d);
+        var cleared = AntiBlinkGeometry.NextOnDoorPlaneRecord(1u, 100d, 0u, 150d);
+        var reArrived = AntiBlinkGeometry.NextOnDoorPlaneRecord(cleared.Guid, cleared.Since, 1u, 300d);
 
         Assert.AreEqual(1u, reArrived.Guid);
         Assert.AreEqual(300d, reArrived.Since, 0.0001d);
