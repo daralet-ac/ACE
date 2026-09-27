@@ -172,7 +172,7 @@ Use `test-holtburg` (1 landblock plus ring) and `test-big` (3 x 3 plus ring) wit
 | G3 | P0 | A second fellowship enters. | A different instance. The two do not see or affect each other. |
 | G4 | P0 | Landblock modifiers chosen by the leader (loot quality, lethality...). | They apply to monsters and loot in the instance, the same as in a copy. Compare with a copy of the same dungeon. |
 | G5 | P0 | `A` and `B` go through the entrance at the same moment, 10 times (a new fellowship each time, or wait until the instance has been deleted). | One instance for the fellowship, never two: `/instance list` shows one `capstone:` instance. |
-| G6 | P1 | Leave by the exit. Re-enter within the timeout. Then leave and wait past it. | Within it: the same instance, monsters killed stay dead. After it: deleted, and a new entry gives a fresh dungeon. |
+| G6 | P1 | Leave by the exit. Re-enter within the timeout. Then leave and wait past it. | Within it: the same instance, monsters killed stay dead. After it: deleted, and a new entry gives a fresh dungeon, with the same modifiers. |
 | G7 | P1 | Disband or change the leader while inside. | Players stay. No errors. The instance is deleted after everyone has left and the timeout has passed. |
 | G8 | P1 | Enter the dungeon without a fellowship. | Same as before. No errors. |
 | G9 | P1 | Add `Lugian Mines` and `Mines of Despair` to the property. | Ignored: they still use their copies. |

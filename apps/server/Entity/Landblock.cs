@@ -2088,7 +2088,8 @@ public class Landblock : IActor
         var destination = new Position(template.EntryPosition);
         WorldObject.AdjustDungeon(destination, instance.Id);
 
-        InstanceManager.Enter(player, instance, destination);
+        // a capstone entrance's emote does its teleport (Portal.IsCapstoneEntrance)
+        InstanceManager.Enter(player, instance, destination, fromPortal: true);
     }
 
     private static void FindOpenInstanceFellowship(
@@ -2382,7 +2383,9 @@ public class Landblock : IActor
         }
 
         WorldObject.AdjustDungeon(destination);
-        WorldManager.ThreadSafeTeleport(player, destination);
+
+        // a capstone entrance's emote does its teleport (Portal.IsCapstoneEntrance)
+        WorldManager.ThreadSafeTeleport(player, destination, fromPortal: true);
     }
 
     public static List<LandblockId> CapstoneDungeonLists(string dungeonName)

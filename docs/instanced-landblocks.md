@@ -140,7 +140,9 @@ InstanceManager.Leave(player);             // to where the template sends player
 
 ## Capstone dungeons
 
-Off by default. Set the server property `capstone_instanced_dungeons` to a comma separated list of dungeon names (as they are in the `AssignCapstoneDungeon` emote, for example `Glenden Wood Dungeon,Green Mire Grave`) and those dungeons open a private instance of the original landblock for each fellowship, instead of one of the numbered copies. The dungeons that hand their modifiers on to a second part (Lugian Mines and Mines of Despair) can't be instanced, because the second part finds the first by landblock.
+Off by default. Set the server property `capstone_instanced_dungeons` to a comma separated list of dungeon names (as they are in the `AssignCapstoneDungeon` emote, for example `Glenden Wood Dungeon,Green Mire Grave`) and those dungeons open a private instance of the original landblock for each fellowship, instead of one of the numbered copies. The dungeons that have a second part (Lugian Mines and Mines of Despair) always use their copies.
+
+The modifiers the leader chose are kept by the fellowship for as long as it has the dungeon, so an instance made again after the last one was deleted, or a copy loaded again after it was unloaded, gets the same ones. A capstone entrance portal (one whose Portal emote is `AssignCapstoneDungeon`) sends the player straight to their instance or copy, without going to the portal's own destination in the original landblock first. That goes for a recall or a summoned portal of one too.
 
 ## Training academies
 
