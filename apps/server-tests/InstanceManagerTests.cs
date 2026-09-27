@@ -175,6 +175,36 @@ public class InstanceManagerTests
     }
 
     [TestMethod]
+    public void InstanceManager_FirstEnterablePositionSkipsNullsAndUnreachableOnes()
+    {
+        var island = new LandblockId(0x8484FFFF);
+        InstanceManager.RegisterTemplate(NewTemplate(true, island));
+
+        var onTheIsland = At(0x84840100);
+        var ordinary = At(0xA9B40019);
+
+        Assert.AreSame(ordinary, InstanceManager.FirstEnterablePosition(ordinary), "the first one that is fine is used as is");
+        Assert.AreSame(
+            ordinary,
+            InstanceManager.FirstEnterablePosition(null, onTheIsland, ordinary),
+            "a null, then one that has become instance only, are both skipped"
+        );
+    }
+
+    [TestMethod]
+    public void InstanceManager_FirstEnterablePositionFallsBackWhenNothingIsReachable()
+    {
+        var island = new LandblockId(0x8585FFFF);
+        InstanceManager.RegisterTemplate(NewTemplate(true, island));
+
+        var fallback = InstanceManager.FirstEnterablePosition();
+        Assert.AreEqual(WorldManager.DefaultFallbackPosition.LandblockId, fallback.LandblockId, "no candidates at all");
+
+        var onlyBadOne = InstanceManager.FirstEnterablePosition(null, At(0x85850100));
+        Assert.AreEqual(WorldManager.DefaultFallbackPosition.LandblockId, onlyBadOne.LandblockId, "a null and an instance-only one");
+    }
+
+    [TestMethod]
     public void InstanceManager_AnInstanceNobodyEntersIsDeletedAfterTheTimeout()
     {
         var instance = InstanceManager.Register(NewTemplate());
