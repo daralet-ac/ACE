@@ -2264,9 +2264,10 @@ public class Landblock : IActor
         }
 
         // A creature gets the mods when it's placed (Creature.ApplyArchetypeSystem), so the ones that were placed before they were set
-        // have to be done again: the landblock can have been loaded before the fellowship got it (as the neighbour of a landblock
-        // that was loaded), with its creatures already in it. That's done on the landblock's own thread, since this is called from
-        // the thread of the player going into the dungeon.
+        // have to be done again: the landblock can have been loaded before the fellowship got it, with its creatures already in it.
+        // A capstone portal takes the player to the dungeon's original landblock (the first copy) before its AssignCapstoneDungeon
+        // emote sends them on to their own, so that one is loaded by everyone who goes in. That's done on the landblock's own thread,
+        // since this is called from the thread of the player going into the dungeon.
         EnqueueAction(new ActionEventDelegate(ApplyLandblockModsToCreatures));
     }
 
