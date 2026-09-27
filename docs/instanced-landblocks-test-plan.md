@@ -27,7 +27,7 @@ What to run, and what to expect, to trust the instancing system on a live server
 | Setting | How | Used for |
 |---|---|---|
 | `instance_empty_timeout_minutes` | `/modifylong instance_empty_timeout_minutes 1` (default 15) | Lifecycle tests. Never set it to 0: an instance nobody has entered yet would be deleted at once. |
-| `capstone_instanced_dungeons` | `/modifystring capstone_instanced_dungeons Glenden Wood Dungeon` (comma separated; every capstone dungeon by default) | Section G |
+| `capstone_instanced_dungeons` | `/modifystring capstone_instanced_dungeons Glenden Wood Dungeon` (comma separated; every capstone dungeon and the Olthoi Queen's Lair by default) | Section G |
 | `starter_academy_instances` | `/modifybool starter_academy_instances false` (true by default) | Section N |
 | `Server.Threading.MultiThreadedLandblockGroupTicking` and `...MultiThreadedLandblockGroupPhysicsTicking` | `Config.js`, both `true` in `Config.js.example` | Run the P0 tests once with both `true` and once with both `false` (J1, J2) |
 | `instances.json` | The server reads the copy that sits next to `ACE.Server.exe` (`dist/apps/server/net8.0/instances.json`), and it is read once, at startup. Edit that copy, then restart. A build only puts the one from `apps/server` there when there is none, so it never overwrites yours (delete it and build to get the default back). The shipped file lists `aerlinthe` (210 landblocks), `test-holtburg` (9) and `test-big` (25), all for testing and none instance only; a copy made before they were added does not have them. | Sections A and F. Samples in appendix C. |

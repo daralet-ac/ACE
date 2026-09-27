@@ -108,16 +108,18 @@ public partial class Portal : WorldObject
 
     /// <summary>
     /// True for a capstone dungeon's entrance: a portal whose Portal emote sends the player on to their fellowship's copy or
-    /// instance of the dungeon (EmoteType.AssignCapstoneDungeon). Such a portal doesn't take them to its own Destination first.
-    /// That's in the dungeon's original landblock, which is also the first of its copies: going there loaded it, with its creatures,
-    /// before any fellowship had it or its mods had been set, and left the player in it, rather than in their own copy, whenever the
-    /// emote didn't move them on.
+    /// instance of the dungeon (EmoteType.AssignCapstoneDungeon), straight away or from a set it goes on to, such as the
+    /// QuestSuccess of a quest check. Such a portal doesn't take them to its own Destination first. For a capstone dungeon that's
+    /// in its original landblock, which is also the first of its copies: going there loaded it, with its creatures, before any
+    /// fellowship had it or its mods had been set, and left the player in it, rather than in their own copy, whenever the emote
+    /// didn't move them on. A player the emote doesn't send anywhere (no fellowship, a failed quest check) stays at the portal.
     /// </summary>
     public bool IsCapstoneEntrance =>
-        Biota.PropertiesEmote?.Any(emote =>
-            emote.Category == EmoteCategory.Portal
-            && emote.PropertiesEmoteAction.Any(action => action.Type == (uint)EmoteType.AssignCapstoneDungeon)
-        ) ?? false;
+        Biota.PropertiesEmote != null
+        && Biota.PropertiesEmote.Any(emote => emote.Category == EmoteCategory.Portal)
+        && Biota.PropertiesEmote.Any(emote =>
+            emote.PropertiesEmoteAction.Any(action => action.Type == (uint)EmoteType.AssignCapstoneDungeon)
+        );
 
     /// <summary>
     /// The capstone dungeon entrance this portal is, or was summoned from, or null. A summoned portal (IsGateway) has the
