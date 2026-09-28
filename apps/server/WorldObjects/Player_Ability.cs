@@ -22,6 +22,15 @@ partial class Player
     private double ProvokeActivatedDuration = 10;
 
     public bool PhalanxIsActive;
+    public const float PhalanxDamageReduction = 0.3f;
+
+    /// <summary>
+    /// Phalanx only takes effect while a shield or two-handed weapon is equipped, so swapping to other
+    /// weapons after activating the stance does not keep its benefits.
+    /// </summary>
+    public bool PhalanxIsEffective => PhalanxIsActive && HasPhalanxEquipment;
+
+    private bool HasPhalanxEquipment => GetEquippedShield() is not null || GetEquippedWeapon() is { IsTwoHanded: true };
 
     public bool RiposteIsActive => LastRiposteActivated > Time.GetUnixTime() - RiposteActivatedDuration;
     private double LastRiposteActivated;
@@ -138,19 +147,20 @@ partial class Player
             return false;
         }
 
-        if (GetEquippedShield() is null && GetEquippedWeapon() is not { IsTwoHanded: true})
-        {
-            Session.Network.EnqueueSend(
-                new GameMessageSystemChat(
-                    $"Phalanx requires an equipped shield or two-handed weapon.",
-                    ChatMessageType.Broadcast
-                )
-            );
-            return false;
-        }
-
         if (!PhalanxIsActive)
         {
+            // only checked when activating, so the stance can always be lowered after swapping weapons
+            if (!HasPhalanxEquipment)
+            {
+                Session.Network.EnqueueSend(
+                    new GameMessageSystemChat(
+                        $"Phalanx requires an equipped shield or two-handed weapon.",
+                        ChatMessageType.Broadcast
+                    )
+                );
+                return false;
+            }
+
             PhalanxIsActive = true;
 
             Session.Network.EnqueueSend(
@@ -172,6 +182,40 @@ partial class Player
         PlayParticleEffect(PlayScript.DispelLife, Guid);
 
         return true;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Phalanx: Damage taken from full hits is reduced by 30%.
+    /// Returns the damage multiplier for a full hit (1.0 while Phalanx is not in effect).
+    /// </summary>
+    public float GetPhalanxFullHitDamageMod()
+    {
+        return PhalanxIsEffective ? 1.0f - PhalanxDamageReduction : 1.0f;
+    }
+
+    /// <summary>
+    /// COMBAT ABILITY - Phalanx: Block and parry chance is increased by 25-50%, based on shield size.
+    /// Two-handed weapons receive the smallest bonus. Returns the multiplier for block/parry chance.
+    /// </summary>
+    public float GetPhalanxBlockParryMod()
+    {
+        if (!PhalanxIsEffective)
+        {
+            return 1.0f;
+        }
+
+        var bonus = GetEquippedShield()?.ArmorStyle switch
+        {
+            (int)ACE.Entity.Enum.ArmorStyle.CovenantShield => 0.5f,
+            (int)ACE.Entity.Enum.ArmorStyle.TowerShield => 0.45f,
+            (int)ACE.Entity.Enum.ArmorStyle.LargeShield => 0.4f,
+            (int)ACE.Entity.Enum.ArmorStyle.StandardShield => 0.35f,
+            (int)ACE.Entity.Enum.ArmorStyle.SmallShield => 0.3f,
+            (int)ACE.Entity.Enum.ArmorStyle.Buckler => 0.3f,
+            _ => 0.25f
+        };
+
+        return 1.0f + bonus;
     }
 
     public bool TryUseProvoke(WorldObject ability)

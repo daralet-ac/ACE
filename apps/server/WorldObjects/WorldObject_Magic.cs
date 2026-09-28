@@ -165,8 +165,8 @@ partial class WorldObject
         var chance = (1.0 - SkillCheck.GetSkillChance((int)casterMagicSkill, (int)targetMagicDefenseSkill));
         resistChance = (float)chance;
 
-        // COMBAT ABILITY - Evasive Stance: flat 30% chance to fully resist any spell, independent of magic defense skill.
-        if (targetPlayer is { EvasiveStanceIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) < 0.3f)
+        // COMBAT ABILITY - Evasive Stance: flat 25% chance to fully resist any spell, independent of magic defense skill.
+        if (targetPlayer is { EvasiveStanceIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) < 0.25f)
         {
             partialResist = PartialEvasion.All;
             return true;
@@ -190,32 +190,6 @@ partial class WorldObject
                 case < partialResistChance:
                     partialResist = PartialEvasion.Some;
                     return false;
-            }
-        }
-
-        // If playerDefender has Phalanx active, 25-50% chance to convert a full hit into a partial hit, depending on shield size.
-        if (targetPlayer is { PhalanxIsActive: true } && (targetPlayer.GetEquippedShield() is not null || targetPlayer.GetEquippedWeapon() is { IsTwoHanded: true}))
-        {
-            var phalanxChance = 0.25;
-
-            if (targetPlayer.GetEquippedShield() is not null)
-            {
-                phalanxChance = targetPlayer.GetEquippedShield().ArmorStyle switch
-                {
-                    (int)ACE.Entity.Enum.ArmorStyle.CovenantShield => 0.5f,
-                    (int)ACE.Entity.Enum.ArmorStyle.TowerShield => 0.45f,
-                    (int)ACE.Entity.Enum.ArmorStyle.LargeShield => 0.4f,
-                    (int)ACE.Entity.Enum.ArmorStyle.StandardShield => 0.35f,
-                    (int)ACE.Entity.Enum.ArmorStyle.SmallShield => 0.3f,
-                    (int)ACE.Entity.Enum.ArmorStyle.Buckler => 0.3f,
-                    _ => 0.25f
-                };
-            }
-
-            if (ThreadSafeRandom.Next(0.0f, 1.0f) < phalanxChance)
-            {
-                partialResist = PartialEvasion.Some;
-                return false;
             }
         }
 
@@ -1099,6 +1073,12 @@ partial class WorldObject
             var wardMod = GetWardMod(damageSourcePlayer, targetCreature, ignoreWardMod);
 
             tryBoost = Convert.ToInt32(tryBoost * wardMod);
+
+            // COMBAT ABILITY - Phalanx: health damage taken from full hits reduced by 30%. Partial resists are unaffected.
+            if (spell.VitalDamageType == DamageType.Health && _partialEvasion == PartialEvasion.None)
+            {
+                tryBoost = Convert.ToInt32(tryBoost * (targetPlayer?.GetPhalanxFullHitDamageMod() ?? 1.0f));
+            }
         }
 
         ResetRatingElementalistQuestStamps(player);
@@ -1134,7 +1114,16 @@ partial class WorldObject
                 srcVital = "stamina";
                 break;
             default: // Health
-                boost = targetCreature.UpdateVitalDelta(targetCreature.Health, tryBoost);
+                // COMBAT ABILITY - Mana Barrier: part of the health damage is taken as mana instead
+                if (tryBoost < 0 && targetCreature != this && targetPlayer is { ManaBarrierIsActive: true })
+                {
+                    boost = -(int)Player.CombatAbilityManaBarrier(targetPlayer, (uint)-tryBoost, this, DamageType.Health);
+                }
+                else
+                {
+                    boost = targetCreature.UpdateVitalDelta(targetCreature.Health, tryBoost);
+                }
+
                 srcVital = "health";
 
                 if (boost >= 0 && !targetCreature.IsMonster)
@@ -1680,6 +1669,15 @@ partial class WorldObject
                         destVitalChange = (uint)Math.Round(srcVitalChange * (1.0f - spell.LossPercent) * boostMod);
                     }
                 }
+
+                // COMBAT ABILITY - Phalanx: health drained by a full hit reduced by 30%. Partial resists are unaffected.
+                if (targetPlayer is { PhalanxIsEffective: true } && _partialEvasion == PartialEvasion.None)
+                {
+                    var phalanxMod = targetPlayer.GetPhalanxFullHitDamageMod();
+
+                    srcVitalChange = (uint)Math.Round(srcVitalChange * phalanxMod);
+                    destVitalChange = (uint)Math.Round(destVitalChange * phalanxMod);
+                }
             }
 
             string srcVital = null, destVital;
@@ -1736,9 +1734,18 @@ partial class WorldObject
                         break;
                     default: // Health
                         srcVital = "health";
-                        srcVitalChange = (uint)-transferSource.UpdateVitalDelta(transferSource.Health, -(int)srcVitalChange);
 
-                        transferSource.DamageHistory.Add(this, DamageType.Health, srcVitalChange);
+                        // COMBAT ABILITY - Mana Barrier: part of the drained health is taken as mana instead
+                        if (isDrain && transferSource is Player { ManaBarrierIsActive: true } barrierPlayer)
+                        {
+                            srcVitalChange = Player.CombatAbilityManaBarrier(barrierPlayer, srcVitalChange, this, DamageType.Health);
+                        }
+                        else
+                        {
+                            srcVitalChange = (uint)-transferSource.UpdateVitalDelta(transferSource.Health, -(int)srcVitalChange);
+
+                            transferSource.DamageHistory.Add(this, DamageType.Health, srcVitalChange);
+                        }
                         break;
                 }
 

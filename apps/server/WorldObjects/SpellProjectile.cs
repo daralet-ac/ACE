@@ -912,6 +912,12 @@ public class SpellProjectile : WorldObject
             finalDamage *= GetImbuedArmorCritSpellDamageMod(target);
         }
 
+        // COMBAT ABILITY - Phalanx: damage taken from full hits reduced by 30%. Partial resists are unaffected.
+        if (resistedMod >= 1.0f)
+        {
+            finalDamage *= targetPlayer?.GetPhalanxFullHitDamageMod() ?? 1.0f;
+        }
+
         //if (sourcePlayer is not null)
         //{
         //    Console.WriteLine($"\n{sourceCreature.Name} casted {Spell.Name} on {target.Name} for {Math.Round(finalDamage, 0)}.\n" +
@@ -1285,7 +1291,8 @@ public class SpellProjectile : WorldObject
     /// </summary>
     private static float GetShieldMod(Creature target, WorldObject shield, WorldObject source)
     {
-        if (target is Player {PhalanxIsActive: true})
+        // COMBAT ABILITY - Phalanx: shields absorb spells from all angles
+        if (target is not Player { PhalanxIsEffective: true })
         {
             // is spell projectile in front of creature target,
             // within shield effectiveness area?

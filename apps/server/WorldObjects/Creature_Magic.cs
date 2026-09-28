@@ -137,7 +137,7 @@ partial class Creature
 
         if (playerCaster is not null)
         {
-            var phalanxPenaltyMod = playerCaster.PhalanxIsActive ? 0.25f : 0.0f;
+            var phalanxPenaltyMod = playerCaster.PhalanxIsEffective ? 0.25f : 0.0f;
             var provokePenaltyMod = playerCaster.ProvokeIsActive ? 0.25f : 0.0f;
             var ripostePenaltyMod = playerCaster.RiposteIsActive ? 0.25f : 0.0f;
             var furyPenaltyMod = playerCaster.FuryEnrageIsActive ? 0.25f : 0.0f;
