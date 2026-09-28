@@ -1064,7 +1064,8 @@ public class SpellProjectile : WorldObject
             return 1.0f;
         }
 
-        var magicDefenseSkill = targetPlayer.GetModdedMagicDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(targetPlayer, sourceCreature);
+        // float, so the division below isn't integer division
+        var magicDefenseSkill = (float)LevelScaling.GetScaledPlayerDefenseSkill(targetPlayer.GetModdedMagicDefSkill(), targetPlayer, sourceCreature);
 
         var bonusAmount = Math.Min(magicDefenseSkill, 500) / 50;
 
@@ -1276,14 +1277,18 @@ public class SpellProjectile : WorldObject
         {
             wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetMonsterArmorWardScalar(caster, target));
         }
-        else if (target is Player)
-        {
-            wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetPlayerArmorWardScalar(target, caster));
-        }
 
         var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
 
-        return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
+        var wardMod = SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
+
+        // level scaling scales the mitigation, not the ward level -- see LevelScaling.GetPlayerArmorWardModScalar()
+        if (caster is not Player && target is Player)
+        {
+            wardMod *= LevelScaling.GetPlayerArmorWardModScalar(target, caster);
+        }
+
+        return wardMod;
     }
 
     /// <summary>

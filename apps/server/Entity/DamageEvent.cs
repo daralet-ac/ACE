@@ -1561,9 +1561,12 @@ public class DamageEvent
             return 1.0f;
         }
 
-        var playerDefenderPhysicalDefense =
-            playerDefender.GetModdedPhysicalDefSkill()
-            * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker);
+        // float, so the division below isn't integer division
+        var playerDefenderPhysicalDefense = (float)LevelScaling.GetScaledPlayerDefenseSkill(
+            playerDefender.GetModdedPhysicalDefSkill(),
+            playerDefender,
+            attacker
+        );
         var bonusAmount = Math.Min(playerDefenderPhysicalDefense, 500) / 50;
 
         return 0.9f - bonusAmount * 0.01f;
@@ -1934,11 +1937,13 @@ public class DamageEvent
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * CheckForCombatAbilitySteadyStrikeAttackSkillBonus(playerAttacker));
         EffectiveAttackSkill = Convert.ToUInt32(EffectiveAttackSkill * (1.0f + Jewel.GetJewelEffectMod(playerAttacker, PropertyInt.GearBravado, "Bravado", rampQuestSource: defender)));
 
-        _effectiveDefenseSkill = (uint)(defender.GetEffectiveDefenseSkill(CombatType) * LevelScaling.GetPlayerDefenseSkillScalar(playerDefender, attacker)
-        );
+        _effectiveDefenseSkill = defender.GetEffectiveDefenseSkill(CombatType);
 
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * CheckForAttackHeightLowDefenseSkillBonus(playerDefender, playerAttacker));
         _effectiveDefenseSkill = Convert.ToUInt32(_effectiveDefenseSkill * (1.0f + Jewel.GetJewelEffectMod(playerDefender, PropertyInt.GearFamiliarity, "Familiarity", rampQuestSource: attacker)));
+
+        // level scaling goes last, so the bonuses above are worth the same at every level (see GetScaledPlayerDefenseSkill)
+        _effectiveDefenseSkill = LevelScaling.GetScaledPlayerDefenseSkill(_effectiveDefenseSkill, playerDefender, attacker);
 
         var evadeChance = SkillCheck.GetSkillChance(_effectiveDefenseSkill, EffectiveAttackSkill);
         evadeChance = CheckForCombatAbilitySmokescreenEvadeChanceBonus(evadeChance, playerDefender);
