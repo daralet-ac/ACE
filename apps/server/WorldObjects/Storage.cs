@@ -18,7 +18,14 @@ public class Storage : Container
 {
     public static readonly List<Storage> BankChests = [];
 
-    private static Player _bankUser;
+    // Per chest: two players can have two different bank chests open at the same time.
+    private Player _bankUser;
+
+    /// <summary>
+    /// True once the viewer's bank items have been loaded from the database into this chest.
+    /// The load is asynchronous, so the chest is briefly open and empty after Open().
+    /// </summary>
+    public bool BankInventoryLoaded { get; private set; }
 
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
@@ -73,6 +80,8 @@ public class Storage : Container
         Viewer = player.Guid.Full;
 
         _bankUser = player;
+
+        BankInventoryLoaded = false;
 
         Translucency = 1f;
 
@@ -171,6 +180,8 @@ public class Storage : Container
 
         EncumbranceVal = 0;
         Value = 0;
+
+        BankInventoryLoaded = true;
 
         SendBankVaultInventory(_bankUser);
     }
