@@ -286,6 +286,14 @@ partial class Program
         InstanceManager.LoadTemplates();
         InstanceManager.RegisterStarterAcademies();
 
+        // a value that is already in the database is used instead of the default, so this is what is really in force
+        _log.Information(
+            "[INSTANCE] capstone_instanced_dungeons is {Meaning}",
+            ACE.Server.Entity.Landblock.DescribeCapstoneInstancing(
+                PropertyManager.GetString("capstone_instanced_dungeons").Item
+            )
+        );
+
         _log.Information("Initializing GuidManager...");
         GuidManager.Initialize();
 

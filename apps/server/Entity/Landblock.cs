@@ -2025,15 +2025,39 @@ public class Landblock : IActor
     /// </summary>
     private static bool IsCapstoneInstanced(string dungeonName)
     {
-        var names = PropertyManager.GetString("capstone_instanced_dungeons").Item;
+        return IsListedAsCapstoneInstanced(PropertyManager.GetString("capstone_instanced_dungeons").Item, dungeonName);
+    }
+
+    /// <summary>
+    /// Whether a dungeon is in the value of capstone_instanced_dungeons: a comma separated list of names, or * for every dungeon
+    /// </summary>
+    internal static bool IsListedAsCapstoneInstanced(string names, string dungeonName)
+    {
         if (string.IsNullOrWhiteSpace(names))
         {
             return false;
         }
 
-        return names
-            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Contains(dungeonName, StringComparer.OrdinalIgnoreCase);
+        var listed = names.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+        return listed.Contains("*") || listed.Contains(dungeonName, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// What the value of capstone_instanced_dungeons comes to, for the log at startup
+    /// </summary>
+    internal static string DescribeCapstoneInstancing(string names)
+    {
+        if (string.IsNullOrWhiteSpace(names))
+        {
+            return "empty, so every capstone dungeon opens as one of its numbered copies";
+        }
+
+        var listed = names.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+        return listed.Contains("*")
+            ? "*, so every capstone dungeon opens as an instance"
+            : $"{listed.Length} name(s), so only those capstone dungeons open as instances and the others as their numbered copies";
     }
 
     /// <summary>

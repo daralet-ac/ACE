@@ -141,7 +141,9 @@ InstanceManager.Leave(player);             // to where the template sends player
 
 ## Capstone dungeons
 
-On for every capstone dungeon. The server property `capstone_instanced_dungeons` is a comma separated list of dungeon names (as they are in the `AssignCapstoneDungeon` emote), and the dungeons in it open a private instance of the original landblock for each fellowship, instead of one of the numbered copies. By default it has all 18: the 15 capstone dungeons, the second parts of Lugian Mines (`Lugian Mines2`) and Mines of Despair (`Beyond the Mines`), which are instances of their own, and the Olthoi Queen's Lair raid. Take a dungeon out of the list to use its copies again, or empty it for all of them. The shard update `2026-09-27-00-Capstone-Instanced-Dungeons.sql` saves the list on a server that already had the old default (empty) saved.
+On for every capstone dungeon. The server property `capstone_instanced_dungeons` is `*`, or a comma separated list of dungeon names (as they are in the `AssignCapstoneDungeon` emote), and the dungeons it names open a private instance of the original landblock for each fellowship, instead of one of the numbered copies. `*` is the default, and it means all 18 now (the 15 capstone dungeons, the second parts of Lugian Mines (`Lugian Mines2`) and Mines of Despair (`Beyond the Mines`), which are instances of their own, and the Olthoi Queen's Lair raid) and any that is added later. To use the copies for some, list the ones that should be instances, or empty the property for all of them.
+
+**A value that is saved in the shard database is used instead of the default.** A server that ran before the default was changed still has the old default (empty) saved, and nothing changes there until it is saved again: `/modifystring capstone_instanced_dungeons *` (no quotes needed, and short enough to type in the client), or the shard update `2026-09-27-00-Capstone-Instanced-Dungeons.sql`, which only runs where `AutoApplyDatabaseUpdates` is on. The log at startup says what is in force (`[INSTANCE] capstone_instanced_dungeons is *, so every capstone dungeon opens as an instance`), and `/fetchstring capstone_instanced_dungeons` shows the value first, in lines the client can show. A name has to match a whole dungeon name: `Glenden` is not `Glenden Wood Dungeon`.
 
 The modifiers the leader chose are kept by the fellowship for as long as it has the dungeon, so an instance made again after the last one was deleted, or a copy loaded again after it was unloaded, gets the same ones. A capstone entrance portal (one whose Portal emote leads to `AssignCapstoneDungeon`, straight away or after a quest check like the Olthoi Passage Door's) sends the player straight to their instance or copy, without going to the portal's own destination first. A player it doesn't send on (no fellowship, a failed quest check) stays at the portal. That goes for a recall or a summoned portal of one too.
 
@@ -166,7 +168,7 @@ A personal template gives every player who logs in inside its landblocks an inst
 | Property | Default | |
 |---|---|---|
 | `instance_empty_timeout_minutes` | 15 | How long an instance stays open after the last player has left it. Change with `/modifylong`. |
-| `capstone_instanced_dungeons` | (every capstone dungeon, and the Olthoi Queen's Lair) | The capstone dungeons that are opened as instances. |
+| `capstone_instanced_dungeons` | `*` (every capstone dungeon, and the Olthoi Queen's Lair) | The capstone dungeons that are opened as instances: `*`, or a comma separated list of names. A value already saved in the database wins over the default. |
 | `starter_academy_instances` | true | Whether a player who logs in inside a training academy (every new character) gets an instance of it of their own. Change with `/modifybool`. It only affects logins. |
 
 ## Performance
