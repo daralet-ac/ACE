@@ -384,6 +384,9 @@ public class Hotspot : WorldObject
 
                 if (player != null)
                 {
+                    // COMBAT ABILITY - Phalanx: hotspots can't be evaded, so they count as full hits
+                    amount *= player.GetPhalanxFullHitDamageMod();
+
                     iAmount = player.TakeDamage(this, DamageType, amount, BodyPart.Foot, PartialEvasion.None);
                 }
                 else

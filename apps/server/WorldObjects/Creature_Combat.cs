@@ -979,7 +979,7 @@ partial class Creature
 
         if (weapon == null || ((weapon.IgnoreShield ?? 0) == 0 && !weapon.IsTwoHanded))
         {
-            if (this is Player {PhalanxIsActive: true})
+            if (this is Player {PhalanxIsEffective: true})
             {
                 bypassShieldAngleCheck = true;
             }
@@ -1172,7 +1172,8 @@ partial class Creature
                 return multiplier;
             }
 
-            if (targetPlayer is {PhalanxIsActive: true} && (targetPlayer.GetEquippedShield() != null || targetPlayer.GetEquippedWeapon() is { IsTwoHanded: true}))
+            // COMBAT ABILITY - Phalanx: cannot be sneak attacked
+            if (targetPlayer is { PhalanxIsEffective: true })
             {
                 return 1.0f;
             }
@@ -2074,6 +2075,12 @@ partial class Creature
         }
 
         if (target is null || !playerAttacker.IsBehindTargetCreature(target))
+        {
+            return 1.0f;
+        }
+
+        // COMBAT ABILITY - Phalanx: cannot be sneak attacked, including backstabs from stealth
+        if (target is Player { PhalanxIsEffective: true })
         {
             return 1.0f;
         }

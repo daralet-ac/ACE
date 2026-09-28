@@ -1183,7 +1183,7 @@ partial class Player
             player.PlayParticleEffect(PlayScript.RestrictionEffectBlue, player.Guid, vfxIntensity);
             player.UpdateVitalDelta(player.Mana, (int)-Math.Round(manaDamage));
             player.UpdateVitalDelta(player.Health, (int)-finalAmount);
-            player.DamageHistory.Add(source, damageType, (uint)-finalAmount);
+            player.DamageHistory.Add(source, damageType, finalAmount);
         }
         // if not enough mana, barrier falls and player takes remainder of damage as health
         else
@@ -1208,7 +1208,7 @@ partial class Player
             finalAmount = (uint)((amount * (1 - manaBarrierDamageReduction)) + manaRemainder);
             player.UpdateVitalDelta(player.Mana, (int)-(player.Mana.Current - 1));
             player.UpdateVitalDelta(player.Health, (int)-(finalAmount));
-            player.DamageHistory.Add(source, damageType, (uint)-finalAmount);
+            player.DamageHistory.Add(source, damageType, finalAmount);
         }
 
         return finalAmount;
@@ -1360,7 +1360,7 @@ partial class Player
 
         // ability penalty mods are additive with each other
         var evasiveStancePenaltyMod = GetEvasiveStanceStaminaPenalty();
-        var phalanxPenaltyMod = PhalanxIsActive ? 0.25f : 0.0f;
+        var phalanxPenaltyMod = PhalanxIsEffective ? 0.25f : 0.0f;
         var provokePenaltyMod = ProvokeIsActive ? 0.25f : 0.0f;
         var ripostePenaltyMod = RiposteIsActive ? 0.25f : 0.0f;
         var furyPenaltyMod = FuryEnrageIsActive ? 0.25f : 0.0f;
