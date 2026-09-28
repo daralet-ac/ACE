@@ -1,7 +1,8 @@
 /*
  * Aegis (WCID 1051128) was reworked into a weapon damage reduction ability: for 10 seconds, damage
- * taken from weapon attacks is reduced by 40%, full evades become full hits, and each hit restores
- * stamina and mana equal to 10% of the damage prevented. It costs mana equal to character level.
+ * taken from full hits by weapon attacks is reduced by 50%, and each full hit restores stamina and
+ * mana equal to 10% of the damage prevented. Glancing blows and evades are unaffected. It costs
+ * mana equal to character level.
  *
  * world-db lowered the Aegis weenie's CooldownDuration from 20 to 1 second, so it can be recast to
  * refresh its duration, and replaced its description. Those template changes only affect NEWLY
@@ -27,8 +28,8 @@ ON DUPLICATE KEY UPDATE value = 1;
 
 /* Use text */
 INSERT INTO biota_properties_string (object_Id, `type`, value)
-SELECT id, 14, 'Use to reduce the damage you take from weapon attacks by 40%, for 10 seconds. While active, attacks you would have fully evaded become full hits, and each hit you take restores stamina and mana equal to 10% of the damage prevented.\n\nUsing Aegis again while it is active refreshes its duration.\n\nCost: Mana equal to your character level.\n\nRequired Focus: Spellsword, Warrior, or Sorcerer.'
+SELECT id, 14, 'Use to reduce the damage of full hits you receive from weapon attacks by 50%, for 10 seconds. Each full hit also restores stamina and mana equal to 10% of the damage prevented. Glancing blows and evaded attacks are unaffected.\n\nUsing Aegis again while it is active refreshes its duration.\n\nCost: Mana equal to your character level.\n\nRequired Focus: Spellsword, Warrior, or Sorcerer.'
 FROM biota WHERE weenie_Class_Id = 1051128
-ON DUPLICATE KEY UPDATE value = 'Use to reduce the damage you take from weapon attacks by 40%, for 10 seconds. While active, attacks you would have fully evaded become full hits, and each hit you take restores stamina and mana equal to 10% of the damage prevented.\n\nUsing Aegis again while it is active refreshes its duration.\n\nCost: Mana equal to your character level.\n\nRequired Focus: Spellsword, Warrior, or Sorcerer.';
+ON DUPLICATE KEY UPDATE value = 'Use to reduce the damage of full hits you receive from weapon attacks by 50%, for 10 seconds. Each full hit also restores stamina and mana equal to 10% of the damage prevented. Glancing blows and evaded attacks are unaffected.\n\nUsing Aegis again while it is active refreshes its duration.\n\nCost: Mana equal to your character level.\n\nRequired Focus: Spellsword, Warrior, or Sorcerer.';
 
 COMMIT;

@@ -364,16 +364,13 @@ public class DamageEvent
 
         var partialEvadeRoll = ThreadSafeRandom.Next(0.0f, 1.0f);
 
-        // COMBAT ABILITY - Aegis: full evades become full hits (glancing blows are unaffected).
-        var aegisPreventsFullEvade = playerDefender is { AegisIsActive: true };
-
         switch (partialEvadeRoll)
         {
-            case < fullEvadeChance when !aegisPreventsFullEvade:
+            case < fullEvadeChance:
                 PartialEvasion = PartialEvasion.All;
                 Evaded = true;
                 break;
-            case >= fullEvadeChance and < partialEvadeChance:
+            case < partialEvadeChance:
                 _evasionMod = 0.5f;
                 PartialEvasion = PartialEvasion.Some; // glancing blow
                 Evaded = false;
@@ -780,11 +777,16 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Aegis: Damage taken from weapon attacks reduced by 40%.
+    /// COMBAT ABILITY - Aegis: Damage taken from full hits reduced by 50%. Glancing blows are unaffected.
     /// </summary>
-    private static float GetCombatAbilityAegisDamageReduction(Player playerDefender)
+    private float GetCombatAbilityAegisDamageReduction(Player playerDefender)
     {
-        return playerDefender is { AegisIsActive: true } ? 1.0f - Player.AegisDamageReduction : 1.0f;
+        if (playerDefender is not { AegisIsActive: true } || Evaded || PartialEvasion != PartialEvasion.None)
+        {
+            return 1.0f;
+        }
+
+        return 1.0f - Player.AegisDamageReduction;
     }
 
     private void PostDamageMitigationEffects()
@@ -1588,7 +1590,7 @@ public class DamageEvent
     /// </summary>
     private void CheckForCombatAbilityAegisRestoration(Player playerDefender)
     {
-        // _combatAbilityAegisDamageReduction is 1.0 unless Aegis reduced this hit
+        // _combatAbilityAegisDamageReduction is 1.0 unless Aegis reduced this hit (only full hits are reduced)
         if (playerDefender is null || _combatAbilityAegisDamageReduction is <= 0.0f or >= 1.0f)
         {
             return;

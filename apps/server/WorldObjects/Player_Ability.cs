@@ -105,7 +105,7 @@ partial class Player
     private double LastAegisActivated;
     private double AegisActivatedDuration = 10;
     private const int AegisManaCostPerLevel = 1;
-    public const float AegisDamageReduction = 0.4f;
+    public const float AegisDamageReduction = 0.5f;
     public const float AegisRestorationMod = 0.1f;
 
     public bool EnchantedWeaponIsActive => LastEnchantedWeaponActivated > Time.GetUnixTime() - EnchantedWeaponActivatedDuration;
@@ -1121,8 +1121,8 @@ partial class Player
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Aegis: For 10 seconds, damage taken from weapon attacks is reduced by 40%,
-    /// full evades become full hits, and each hit restores stamina and mana equal to 10% of the damage prevented.
+    /// COMBAT ABILITY - Aegis: For 10 seconds, damage taken from full hits by weapon attacks is reduced by 50%,
+    /// and each full hit restores stamina and mana equal to 10% of the damage prevented. Glancing blows and evades are unaffected.
     /// Costs mana equal to character level. Recasting while active refreshes the duration.
     /// </summary>
     public bool TryUseAegis(Gem gem)
@@ -1151,7 +1151,7 @@ partial class Player
 
         Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"You raise your Aegis! For the next {AegisActivatedDuration} seconds, weapon attacks deal {Math.Round(AegisDamageReduction * 100)}% less damage to you, but you cannot fully evade them.",
+                $"You raise your Aegis! For the next {AegisActivatedDuration} seconds, full hits from weapon attacks deal {Math.Round(AegisDamageReduction * 100)}% less damage to you.",
                 ChatMessageType.Broadcast
             )
         );
