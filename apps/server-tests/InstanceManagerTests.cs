@@ -538,6 +538,18 @@ public class InstanceManagerTests
     }
 
     [TestMethod]
+    public void InstanceManager_AnObjectCantBeMovedToTheInstanceItIsAlreadyIn()
+    {
+        // a move to where it already is takes it out of its landblock and back into the same one, and it is left invisible
+        StringAssert.Contains(InstanceManager.WhyNotMovableTo(0, 0), "persistent world");
+        StringAssert.Contains(InstanceManager.WhyNotMovableTo(3, 3), "instance 3");
+
+        Assert.IsNull(InstanceManager.WhyNotMovableTo(0, 3));
+        Assert.IsNull(InstanceManager.WhyNotMovableTo(3, 0));
+        Assert.IsNull(InstanceManager.WhyNotMovableTo(3, 4));
+    }
+
+    [TestMethod]
     public void InstanceManager_TwoPlayersWhoArriveAtTheSameMomentGetTheSameInstance()
     {
         // the two members of a fellowship who go through a portal together must not make one instance each

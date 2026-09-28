@@ -801,19 +801,28 @@ public static class InstanceManager
     }
 
     /// <summary>
+    /// Why an object can't be moved to an instance it is already in (the move leaves it in the world but shown to nobody).
+    /// </summary>
+    internal static string WhyNotMovableTo(uint currentInstance, uint targetInstance)
+    {
+        if (currentInstance != targetInstance)
+        {
+            return null;
+        }
+
+        return $"It is already in {(targetInstance == Landblock.PersistentInstance ? "the persistent world" : $"instance {targetInstance}")}.";
+    }
+
+    /// <summary>
     /// Takes an object out of the instance it is in and puts it in another one (0 is the persistent world), at a place in it.
     /// It is done the way picking something up and putting it down is: nothing of it is left behind, and everyone who could see
     /// it stops seeing it, and everyone in the other instance sees it appear. See WhyNotMovable for what can be moved.
     /// </summary>
     public static bool TryMoveObject(WorldObject wo, uint instanceId, Position destination, out string problem)
     {
-        problem = WhyNotMovable(
-            wo.Guid,
-            wo is Player,
-            wo.CurrentLandblock != null,
-            wo.IsGenerator,
-            wo.Generator != null
-        );
+        problem =
+            WhyNotMovable(wo.Guid, wo is Player, wo.CurrentLandblock != null, wo.IsGenerator, wo.Generator != null)
+            ?? WhyNotMovableTo(wo.InstanceId, instanceId);
 
         if (problem != null)
         {
