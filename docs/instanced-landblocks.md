@@ -109,7 +109,7 @@ Nothing sends players into an island by itself. For testing there are admin comm
 | `/instance here [radius]` | Makes a private copy of the landblock you are in, and the ones within `radius` (up to 3) around it, and takes you in. |
 | `/instance enter <id> [player]` | Goes into an open instance, or sends the player. `0` is the persistent world. Players arrive where the template says. |
 | `/instance leave [player]` | Goes back to where the instance sends players, or sends the player. |
-| `/instance move <id> [0xguid]` | Moves the object you have selected, or the one with that guid, into instance `<id>` (0 is the persistent world), at the place where it is now. Refused if that place is not one of the instance's landblocks. Only objects that were made while the server was running and are lying on the ground can be moved: not players, not the objects a landblock is made of (statics), not generators, and not what a generator made. |
+| `/instance move <id> [0xguid]` | Moves the object you have selected, or the one with that guid, into instance `<id>` (0 is the persistent world), at the place where it is now. Refused if that place is not one of the instance's landblocks, or if the object is already in instance `<id>` (a move to where it is would leave it in the world but invisible). Only objects that were made while the server was running and are lying on the ground can be moved: not players, not the objects a landblock is made of (statics), not generators, and not what a generator made. |
 | `/instance close <id>` | Shuts an instance down, sending everyone in it out. |
 
 The guid works from anywhere, because an object in another instance can't be selected: you can't see it. You can get the guid from `/getinfo` while you are in the instance, or from the log line that `/ci` writes when it creates something.
@@ -123,6 +123,7 @@ Other commands know about instances too:
 | `/create`, `/ci`, `/createnamed`, `/createliveops`, `/moveto` | What you make appears in **your** instance. |
 | `/tele`, `/teleloc`, `/telepoi`, `/telexyz`, and the other commands that go to coordinates | You stay in your instance if the place is inside its landblocks, and go to the persistent world if not. Nothing takes you into an instance by coordinates. |
 | `@capstone` | Also lists the capstone dungeons that are open as instances. |
+| `/createinst`, `/addenc`, `/removeenc` | Refused: they change the world database from where you stand, and a landblock in an instance has the coordinates of the real one, so the change would land on the real one. `/nudge`, `/rotate` and `/removeinst` work on the object you select, and refuse the statics of an instance, which are not rows in the world database. |
 
 ### From code
 
