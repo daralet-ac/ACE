@@ -329,12 +329,15 @@ partial class WorldObject
         }
 
         // Retrieve target's Magic Defense Skill
-        var difficulty = (uint)(targetCreature.GetModdedMagicDefSkill() * LevelScaling.GetPlayerDefenseSkillScalar(targetCreature, casterCreature));
+        var difficulty = targetCreature.GetModdedMagicDefSkill();
 
         difficulty = Convert.ToUInt32(difficulty * (1.0f + CheckForCombatAbilityReflectMagicDefBonus(targetPlayer)));
         // Familiar Foe (Fire Opal): the ramp stamps live on the casting creature's QuestManager,
         // keyed by the defending player's name (accrued while that player attacked this creature).
         difficulty = Convert.ToUInt32(difficulty * (1.0f + Jewel.GetJewelEffectMod(targetPlayer, PropertyInt.GearFamiliarity, "Familiarity", rampQuestSource: casterCreature)));
+
+        // level scaling goes last, so the bonuses above are worth the same at every level (see LevelScaling.GetScaledPlayerDefenseSkill)
+        difficulty = LevelScaling.GetScaledPlayerDefenseSkill(difficulty, targetCreature, casterCreature);
 
         var resisted = MagicDefenseCheck(magicSkill, difficulty, out var pResist, out var resistChance, targetPlayer);
 
@@ -3890,14 +3893,18 @@ partial class WorldObject
         {
             wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetMonsterArmorWardScalar(caster, target));
         }
-        else if (target is Player)
-        {
-            wardLevel = Convert.ToInt32(wardLevel * LevelScaling.GetPlayerArmorWardScalar(target, caster));
-        }
 
         var wardBuffDebuffMod = target.EnchantmentManager.GetWardMultiplicativeMod();
 
-        return SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
+        var wardMod = SkillFormula.CalcWardMod(wardLevel * ignoreWardMod * wardBuffDebuffMod);
+
+        // level scaling scales the mitigation, not the ward level -- see LevelScaling.GetPlayerArmorWardModScalar()
+        if (caster is not Player && target is Player)
+        {
+            wardMod *= LevelScaling.GetPlayerArmorWardModScalar(target, caster);
+        }
+
+        return wardMod;
     }
 
     /// <summary>
