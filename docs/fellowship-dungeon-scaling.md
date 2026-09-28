@@ -137,12 +137,19 @@ their level-50 capstone (1.00 = same difficulty; gear scaled from each level's t
 | Top (AL ×2.4, defense ×1.95) | 1.50 | 1.09 | 1.13 | 0.98 |
 
 The worst case anywhere, a top-geared level 50/53 in a level-10 capstone, goes from 1.70× to 1.12×.
-Armor and resistance are exact; what's left comes from evade and the spec bonuses and is a property
-of the authoring tables, not the scaling: `enemyAttack` vs. `avgPlayerPhysDef` assumes natives evade
-50% at tier 1 but 29–35% at tiers 3–5, and evade can cut damage by at most half, so a strong evader
-sits less far below the tier-1 target than below a tier-3 one. Natives at those tiers see the same
-difference. Evening it out means making that assumed gap equal at every tier, which would change
-monster damage for everyone.
+Armor and resistance are exact. Most of what was left came from evade, as a property of the
+authoring tables rather than the scaling: `enemyAttack` vs. `avgPlayerPhysicalMagicDefense` assumed
+natives evade 50% at tier 1 but 29–35% at tiers 3–5, and evade can cut damage by at most half, so a
+strong evader sat less far below the tier-1 target than below a tier-3 one. Natives at those tiers
+saw the same difference. (The figures above were modeled with those old tables.)
+
+That's since been evened out: monster attack and defense are now a flat `EnemySkillGap` (50) above
+the table average at every tier (`Creature_ArchetypeSystem`), so the assumed evade chance is the same
+18% everywhere and above-average defense is worth the same at every tier. This changed monster damage
+per hit for everyone, since it's authored against the assumed hit rate, but not monster damage per
+second against an average player. It also made monsters evade the average player's attacks 82% of
+the time at every tier, the rate level 100 already had (before, it ranged from 50% at levels 1–10
+and 125 up to 82% at level 100), which applies to both natives and Shrouded players.
 
 ## Damage dealt: brought close to native level-50 pace, not pinned exactly
 
@@ -174,7 +181,9 @@ from `LootGenerationFactory_Weapon.GetWeaponBaseDps`, the real Str-by-tier progr
 
 These are hand-computed constants, not derived at runtime — recompute them if the reference level
 (currently native level 50) changes, or if `GetWeaponBaseDps`/the Archetype health or armor tables
-change. `LevelScaling.cs` already has an `AvgTimeToKillMonster` table that looks like it might have
+change. Evade isn't part of this TTK: monster defense sits the same `EnemySkillGap` above the
+average player's attack at every tier, so it stretches every tier's TTK by the same factor and
+cancels out of the divisors (recompute if that gap stops being flat). `LevelScaling.cs` already has an `AvgTimeToKillMonster` table that looks like it might have
 been intended for exactly this kind of reference curve, but it's dead code (`GetTtkMonsterAtLevel`
 is defined and never called) and its provenance couldn't be confirmed, so it wasn't used.
 
