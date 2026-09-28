@@ -20,8 +20,6 @@ partial class Creature
     private static readonly int[] enemyStaminaManaRegen = { 1, 2, 5, 10, 15, 20, 25, 30, 50 };
 
     private static readonly int[] enemyArmorWard = { 10, 20, 45, 68, 101, 152, 228, 342, 513 };
-    private static readonly int[] enemyAttack = { 10, 60, 100, 150, 175, 200, 250, 350, 500 };
-    private static readonly int[] enemyDefense = { 10, 60, 100, 150, 175, 200, 250, 350, 500 };
     private static readonly int[] enemyAssessDeception = { 10, 60, 100, 150, 175, 200, 250, 350, 500 };
     private static readonly int[] enemyRun = { 10, 100, 150, 200, 250, 300, 400, 500, 600 };
 
@@ -31,6 +29,17 @@ partial class Creature
     private static readonly float[] avgPlayerArmorReduction = { 0.6667f, 0.5000f, 0.3333f, 0.2500f, 0.2000f, 0.1667f, 0.1429f, 0.1250f, 0.1111f };
     private static readonly float[] avgPlayerLifeProtReduction = { 1.0f, 1.0f, 0.9f, 0.9f, 0.85f, 0.8f, 0.8f, 0.75f, 0.75f };
     private static readonly int[] avgPlayerPhysicalMagicDefense = { 10, 60, 90, 120, 150, 180, 225, 300, 500 };
+
+    // Monster attack and defense are a flat EnemySkillGap above the average player's skill, which is the same for attack and
+    // defense (avgPlayerPhysicalMagicDefense, and LevelScaling's AvgPlayerAttackSkillPerTier/AvgPlayerDefenseSkillPerTier).
+    // Evade rolls (SkillCheck.GetSkillChance) depend on the difference between the two skills, not their ratio, so a flat
+    // gap gives the same evade odds at every tier. At 50, monsters evade ~82% of the average player's attacks (50% at even
+    // skill), which makes them ~27% slower to kill. Monster damage is tuned to how often it hits (GetNewBaseDamage), so the
+    // gap on attack changes how often monsters hit the average player, not how much damage they deal to them.
+    // Declared after avgPlayerPhysicalMagicDefense, since static fields are initialized in order.
+    private const int EnemySkillGap = 50;
+    private static readonly int[] enemyAttack = avgPlayerPhysicalMagicDefense.Select(skill => skill + EnemySkillGap).ToArray();
+    private static readonly int[] enemyDefense = avgPlayerPhysicalMagicDefense.Select(skill => skill + EnemySkillGap).ToArray();
 
     private void SetSkills(
         int tier,
