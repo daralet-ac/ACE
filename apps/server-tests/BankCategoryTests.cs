@@ -1,0 +1,156 @@
+using ACE.Entity.Enum;
+using ACE.Server.Entity;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace ACE.Server.Tests;
+
+[TestClass]
+public class BankCategoryTests
+{
+    [TestMethod]
+    public void Classify_PutsEachKindOfItemInItsCategory()
+    {
+        Assert.AreEqual(BankCategory.Salvage, BankCategories.Classify(WeenieType.Salvage, ItemType.TinkeringMaterial, EquipMask.None));
+
+        Assert.AreEqual(BankCategory.Weapons, BankCategories.Classify(WeenieType.MeleeWeapon, ItemType.MeleeWeapon, EquipMask.MeleeWeapon));
+        Assert.AreEqual(BankCategory.Weapons, BankCategories.Classify(WeenieType.MissileLauncher, ItemType.MissileWeapon, EquipMask.MissileWeapon));
+        Assert.AreEqual(BankCategory.Weapons, BankCategories.Classify(WeenieType.Caster, ItemType.Caster, EquipMask.Held));
+
+        Assert.AreEqual(BankCategory.Armor, BankCategories.Classify(WeenieType.Clothing, ItemType.Armor, EquipMask.ChestArmor));
+        Assert.AreEqual(BankCategory.Armor, BankCategories.Classify(WeenieType.Clothing, ItemType.Armor, EquipMask.Shield));
+        Assert.AreEqual(BankCategory.Armor, BankCategories.Classify(WeenieType.Clothing, ItemType.Clothing, EquipMask.ChestWear));
+        Assert.AreEqual(BankCategory.Armor, BankCategories.Classify(WeenieType.Clothing, ItemType.Clothing, EquipMask.Cloak));
+
+        Assert.AreEqual(BankCategory.Jewelry, BankCategories.Classify(WeenieType.Generic, ItemType.Jewelry, EquipMask.NeckWear));
+    }
+
+    [TestMethod]
+    public void Classify_TrinketsAreNeverJewelryOrWeapons()
+    {
+        // However a trinket's weenie sets ItemType, it is a trinket.
+        Assert.AreEqual(BankCategory.Trinkets, BankCategories.Classify(WeenieType.SigilTrinket, ItemType.Jewelry, EquipMask.TrinketOne));
+        Assert.AreEqual(BankCategory.Trinkets, BankCategories.Classify(WeenieType.SigilTrinket, ItemType.Misc, EquipMask.None));
+        Assert.AreEqual(BankCategory.Trinkets, BankCategories.Classify(WeenieType.Generic, ItemType.Jewelry, EquipMask.TrinketOne));
+    }
+
+    [TestMethod]
+    public void Classify_SuppliesAndMiscAreNotGear()
+    {
+        Assert.AreEqual(BankCategory.None, BankCategories.Classify(WeenieType.Ammunition, ItemType.MissileWeapon, EquipMask.MissileAmmo));
+        Assert.AreEqual(BankCategory.None, BankCategories.Classify(WeenieType.Coin, ItemType.Money, EquipMask.None));
+        Assert.AreEqual(BankCategory.None, BankCategories.Classify(WeenieType.SpellComponent, ItemType.SpellComponents, EquipMask.None));
+        Assert.AreEqual(BankCategory.None, BankCategories.Classify(WeenieType.Gem, ItemType.Gem, EquipMask.None));
+
+        // An item that can go anywhere is not a trinket just because TrinketOne is one of its slots.
+        Assert.AreEqual(BankCategory.None, BankCategories.Classify(WeenieType.Generic, ItemType.Misc, EquipMask.All));
+    }
+
+    [TestMethod]
+    public void TryParse_AcceptsSingularsPluralsAndSpellings()
+    {
+        Assert.IsTrue(BankCategories.TryParse("Weapon", out var weapons));
+        Assert.AreEqual(BankCategory.Weapons, weapons);
+
+        Assert.IsTrue(BankCategories.TryParse("armour", out var armor));
+        Assert.AreEqual(BankCategory.Armor, armor);
+
+        Assert.IsTrue(BankCategories.TryParse(" jewellery ", out var jewelry));
+        Assert.AreEqual(BankCategory.Jewelry, jewelry);
+
+        Assert.IsTrue(BankCategories.TryParse("GEAR", out var gear));
+        Assert.AreEqual(BankCategory.Gear, gear);
+
+        Assert.IsFalse(BankCategories.TryParse("all", out _));
+        Assert.IsFalse(BankCategories.TryParse("jewel", out _));
+        Assert.IsFalse(BankCategories.TryParse("", out _));
+        Assert.IsFalse(BankCategories.TryParse(null, out _));
+    }
+
+    [TestMethod]
+    public void TryParseItemType_ReadsTypeNamesButNotNumbers()
+    {
+        Assert.IsTrue(BankCategories.TryParseItemType("gem", out var gem));
+        Assert.AreEqual(ItemType.Gem, gem);
+
+        Assert.IsTrue(BankCategories.TryParseItemType("Keys", out var key));
+        Assert.AreEqual(ItemType.Key, key);
+
+        Assert.IsTrue(BankCategories.TryParseItemType("manastones", out var manaStone));
+        Assert.AreEqual(ItemType.ManaStone, manaStone);
+
+        Assert.IsTrue(BankCategories.TryParseItemType("clothing", out var clothing));
+        Assert.AreEqual(ItemType.Clothing, clothing);
+
+        Assert.IsFalse(BankCategories.TryParseItemType("64", out _));
+        Assert.IsFalse(BankCategories.TryParseItemType("None", out _));
+        Assert.IsFalse(BankCategories.TryParseItemType("pyreal", out _));
+        Assert.IsFalse(BankCategories.TryParseItemType("mana stone", out _));
+        Assert.IsFalse(BankCategories.TryParseItemType("", out _));
+    }
+
+    [TestMethod]
+    public void ParseInscription_CollectsEveryCategoryWordAndIgnoresTheRest()
+    {
+        Assert.AreEqual(
+            new BankPackTags(BankCategory.Weapons | BankCategory.Armor, false),
+            BankCategories.ParseInscription("Weapons + Armor"));
+
+        Assert.AreEqual(
+            new BankPackTags(BankCategory.Weapons | BankCategory.Armor, false),
+            BankCategories.ParseInscription("my armor & weapons"));
+
+        Assert.AreEqual(
+            new BankPackTags(BankCategory.Salvage, false),
+            BankCategories.ParseInscription("salvage,salvage;SALVAGE"));
+
+        Assert.AreEqual(
+            new BankPackTags(BankCategory.Gear, false),
+            BankCategories.ParseInscription("gear"));
+
+        Assert.IsTrue(BankCategories.ParseInscription("Bob's pack").IsEmpty);
+        Assert.IsTrue(BankCategories.ParseInscription("").IsEmpty);
+        Assert.IsTrue(BankCategories.ParseInscription(null).IsEmpty);
+    }
+
+    [TestMethod]
+    public void ParseInscription_ReadsKeepOnItsOwnAndWithCategories()
+    {
+        Assert.AreEqual(new BankPackTags(BankCategory.None, true), BankCategories.ParseInscription("Keep"));
+        Assert.AreEqual(new BankPackTags(BankCategory.Trinkets, true), BankCategories.ParseInscription("keep, trinkets"));
+
+        // Only the whole word counts.
+        Assert.IsFalse(BankCategories.ParseInscription("keeper").Keep);
+        Assert.AreEqual(BankCategory.None, BankCategories.ParseInscription("gearbox").Categories);
+    }
+
+    [TestMethod]
+    public void PackFit_PrefersTheExactPackOverAWiderOne()
+    {
+        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Weapons, BankCategory.Weapons));
+        Assert.AreEqual(1, BankCategories.PackFit(BankCategory.Gear, BankCategory.Weapons));
+        Assert.AreEqual(1, BankCategories.PackFit(BankCategory.Weapons | BankCategory.Salvage, BankCategory.Salvage));
+        Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Armor, BankCategory.Weapons));
+        Assert.AreEqual(0, BankCategories.PackFit(BankCategory.None, BankCategory.Weapons));
+
+        // Items with no category never claim a tagged pack.
+        Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Gear, BankCategory.None));
+    }
+
+    [TestMethod]
+    public void SortOrder_GroupsGearFirstAndUncategorizedLast()
+    {
+        Assert.IsTrue(BankCategories.SortOrder(BankCategory.Weapons) < BankCategories.SortOrder(BankCategory.Armor));
+        Assert.IsTrue(BankCategories.SortOrder(BankCategory.Trinkets) < BankCategories.SortOrder(BankCategory.Salvage));
+        Assert.IsTrue(BankCategories.SortOrder(BankCategory.Salvage) < BankCategories.SortOrder(BankCategory.None));
+    }
+
+    [TestMethod]
+    public void Describe_NamesCategoriesAndTags()
+    {
+        Assert.AreEqual("gear", BankCategories.Describe(BankCategory.Gear));
+        Assert.AreEqual("weapons, salvage", BankCategories.Describe(BankCategory.Weapons | BankCategory.Salvage));
+        Assert.AreEqual("untagged", BankCategories.Describe(default(BankPackTags)));
+        Assert.AreEqual("keep", BankCategories.Describe(new BankPackTags(BankCategory.None, true)));
+        Assert.AreEqual("armor, keep", BankCategories.Describe(new BankPackTags(BankCategory.Armor, true)));
+    }
+}
