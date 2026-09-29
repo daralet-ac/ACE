@@ -28,6 +28,10 @@ public class Storage : Container
     /// </summary>
     public bool BankInventoryLoaded { get; private set; }
 
+    public const string BankCommandsHint =
+        "Type /bank to see what else I can do: deposit and sort your items by kind, search your bank, combine salvage, "
+        + "count your pyreals, and inscribe your packs to say what goes in them.";
+
     /// <summary>
     /// A new biota be created taking all of its values from weenie.
     /// </summary>
@@ -96,6 +100,12 @@ public class Storage : Container
                 ChatMessageType.Tell
             )
         );
+
+        // Nothing else in game mentions /bank, so the bank does until the player has used it.
+        if (!player.BankCommandsUsed)
+        {
+            player.Session.Network.EnqueueSend(new GameEventTell(this, BankCommandsHint, player, ChatMessageType.Tell));
+        }
 
         DatabaseManager.Shard.GetBankInventoryInParallel(
             Guid.Full,

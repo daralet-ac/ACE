@@ -36,6 +36,12 @@ public class BankCommand
     )]
     public static void HandleBank(Session session, params string[] parameters)
     {
+        // The bank stops mentioning /bank when it's opened (Storage.Open) once the player has used it.
+        if (!session.Player.BankCommandsUsed)
+        {
+            session.Player.BankCommandsUsed = true;
+        }
+
         if (parameters.Length == 0)
         {
             ShowHelp(session);

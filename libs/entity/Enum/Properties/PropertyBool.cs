@@ -329,6 +329,12 @@ public enum PropertyBool : ushort
 
     [ServerOnly]
     AccountAttuned = 9016,
+
+    /// <summary>
+    /// Set once the player has used a /bank command. Until then, opening a bank tells them about /bank.
+    /// </summary>
+    [ServerOnly]
+    BankCommandsUsed = 9017,
 }
 
 public static class PropertyBoolExtensions

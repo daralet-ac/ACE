@@ -132,6 +132,25 @@ public partial class Player
     private const int RankMisfiled = 7;
 
     /// <summary>
+    /// Set once the player has used a /bank command. Until then, opening a bank tells them about /bank.
+    /// </summary>
+    public bool BankCommandsUsed
+    {
+        get => GetProperty(PropertyBool.BankCommandsUsed) ?? false;
+        set
+        {
+            if (!value)
+            {
+                RemoveProperty(PropertyBool.BankCommandsUsed);
+            }
+            else
+            {
+                SetProperty(PropertyBool.BankCommandsUsed, value);
+            }
+        }
+    }
+
+    /// <summary>
     /// A safety net for BankPackExpansion: a pack the player carries should be at its own size, since leaving
     /// the bank shrinks it. If one got out grown some other way, it is shrunk here, before the client is sent anything.
     /// One holding more than its own size can't be shrunk without dropping items, so it only shrinks to what it holds
