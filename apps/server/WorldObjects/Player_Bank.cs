@@ -831,5 +831,32 @@ public partial class Player
                 DeepSave(container);
             }
         }
+
+        RefreshBankViews(bank, touched);
+    }
+
+    /// <summary>
+    /// Re-sends the contents lists of the bank and the packs a bulk operation touched, as opening the bank does.
+    /// The client moves an item it dragged itself, but when the server moves one, the bank window adds it to
+    /// its new container and keeps showing it in the old one until the bank is reopened. Re-sending a list
+    /// replaces it (picking up a pack from the bank already re-sends that pack's list), which clears the copies.
+    /// </summary>
+    private void RefreshBankViews(Storage bank, HashSet<Container> touched)
+    {
+        if (touched.Count == 0)
+        {
+            return;
+        }
+
+        // The bank's own list holds its packs, and items move in and out of it, so it is always re-sent.
+        Session.Network.EnqueueSend(new GameEventViewContents(Session, bank));
+
+        foreach (var pack in touched)
+        {
+            if (pack != bank && pack.Container == bank)
+            {
+                Session.Network.EnqueueSend(new GameEventViewContents(Session, pack));
+            }
+        }
     }
 }
