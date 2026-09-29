@@ -43,11 +43,12 @@ public enum BankCategory
 
 /// <summary>
 /// What a side pack's inscription asks of the bank commands.
-/// Categories: the pack collects those items. Keep: a pack you carry is left alone by /bank deposit.
+/// Categories: the pack collects those items. Keep: a pack you carry is left alone by /bank deposit and /sort.
+/// Deposit: opening the bank offers to deposit everything in a pack you carry.
 /// </summary>
-public readonly record struct BankPackTags(BankCategory Categories, bool Keep)
+public readonly record struct BankPackTags(BankCategory Categories, bool Keep, bool Deposit = false)
 {
-    public bool IsEmpty => Categories == BankCategory.None && !Keep;
+    public bool IsEmpty => Categories == BankCategory.None && !Keep && !Deposit;
 }
 
 public static class BankCategories
@@ -80,6 +81,7 @@ public static class BankCategories
     ];
 
     public const string KeepTag = "keep";
+    public const string DepositTag = "deposit";
 
     private static readonly Dictionary<string, BankCategory> Words = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -379,6 +381,7 @@ public static class BankCategories
 
         var categories = BankCategory.None;
         var keep = false;
+        var deposit = false;
 
         foreach (var word in SplitWords(inscription))
         {
@@ -386,13 +389,17 @@ public static class BankCategories
             {
                 keep = true;
             }
+            else if (word.Equals(DepositTag, StringComparison.OrdinalIgnoreCase))
+            {
+                deposit = true;
+            }
             else if (Words.TryGetValue(word, out var category))
             {
                 categories |= category;
             }
         }
 
-        return new BankPackTags(categories, keep);
+        return new BankPackTags(categories, keep, deposit);
     }
 
     /// <summary>
@@ -463,6 +470,11 @@ public static class BankCategories
         if (tags.Keep)
         {
             text = text.Length == 0 ? KeepTag : $"{text}, {KeepTag}";
+        }
+
+        if (tags.Deposit)
+        {
+            text = text.Length == 0 ? DepositTag : $"{text}, {DepositTag}";
         }
 
         return text;

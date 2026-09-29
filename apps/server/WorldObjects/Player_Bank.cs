@@ -40,6 +40,56 @@ public sealed class BankReport
     /// </summary>
     public List<(string Name, int Count)> MovedInto { get; } = [];
 
+    /// <summary>
+    /// Where the moved items went, e.g. "6 into Weapons Pack, 8 into your bank".
+    /// </summary>
+    public string DescribeDestinations()
+    {
+        return string.Join(", ", MovedInto.Select(m => $"{m.Count:N0} into {m.Name ?? "your bank"}"));
+    }
+
+    /// <summary>
+    /// The message for the player after a deposit. what names what was deposited, for when there was nothing.
+    /// </summary>
+    public string DescribeDeposit(string what)
+    {
+        var lines = new List<string>();
+
+        if (Moved > 0)
+        {
+            lines.Add($"Deposited {Plural(Moved, "item")} ({DescribeDestinations()}).");
+        }
+
+        if (StacksCombined > 0)
+        {
+            lines.Add($"Added {Plural(StacksCombined, "stack")} to stacks already in your bank.");
+        }
+
+        if (NoRoom > 0)
+        {
+            lines.Add($"{Plural(NoRoom, "item")} didn't fit: your bank and its packs are full.");
+        }
+
+        if (Failed > 0)
+        {
+            lines.Add($"{Plural(Failed, "item")} couldn't be moved.");
+        }
+
+        if (Attuned > 0)
+        {
+            lines.Add($"{Plural(Attuned, "item")} {(Attuned == 1 ? "is" : "are")} attuned and can't be banked.");
+        }
+
+        if (lines.Count == 0)
+        {
+            lines.Add($"You have no {what} to deposit.");
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    public static string Plural(int count, string noun) => $"{count:N0} {noun}{(count == 1 ? "" : "s")}";
+
     public void CountMove(Container target, Storage bank)
     {
         var name = target == bank ? null : target.Name;
@@ -164,11 +214,13 @@ public partial class Player
 
     /// <summary>
     /// Moves every item matching filter (null = everything) from the main pack and side packs into the bank.
-    /// Packs inscribed "keep" are skipped, and so are the packs themselves.
-    /// Stackable items first top up stacks already in the bank, then each item goes to the best place with room:
-    /// a bank pack inscribed for it, then an untagged specialized pack that takes it, then the bank, then an untagged pack.
+    /// Packs inscribed "keep" are skipped, and so are the packs themselves. With fromDepositPacksOnly, only the
+    /// packs inscribed "deposit" are emptied (the popup when the bank opens, see OfferDepositPacks).
+    /// Stackable items first top up stacks already in the bank, then each item goes to the best place with room
+    /// (see RankBankSpot): a named pack for it, a bank pack inscribed for it, an untagged specialized pack that takes it,
+    /// then the bank, then an untagged pack.
     /// </summary>
-    public BankReport DepositToBank(Storage bank, BankCategory? filter)
+    public BankReport DepositToBank(Storage bank, BankCategory? filter, bool fromDepositPacksOnly = false)
     {
         var report = new BankReport();
         var touched = new HashSet<Container>();
@@ -178,7 +230,7 @@ public partial class Player
 
         var anythingMoved = false;
 
-        foreach (var item in GetDepositCandidates(filter, report))
+        foreach (var item in GetDepositCandidates(GetDepositSources(fromDepositPacksOnly), filter, report))
         {
             var category = BankCategories.Tags(item);
 
@@ -230,6 +282,42 @@ public partial class Player
         }
 
         return report;
+    }
+
+    /// <summary>
+    /// Called when the bank has opened: if a pack the player carries is inscribed "deposit" and holds anything
+    /// that can be banked, asks whether to deposit it all. Yes deposits it as /bank deposit does; no does nothing.
+    /// </summary>
+    public void OfferDepositPacks(Storage bank)
+    {
+        var count = GetDepositCandidates(GetDepositSources(true), null, new BankReport()).Count;
+        if (count == 0)
+        {
+            return;
+        }
+
+        var confirmation = new Confirmation_Custom(
+            Guid,
+            () =>
+            {
+                // the bank may have closed, or the player moved away, while the question was up
+                var openBank = GetOpenBank();
+                if (openBank == null || !openBank.BankInventoryLoaded || IsBusy)
+                {
+                    Session.Network.EnqueueSend(
+                        new GameMessageSystemChat("Open your bank and stand at it to deposit your \"deposit\" packs.", ChatMessageType.System)
+                    );
+                    return;
+                }
+
+                var report = DepositToBank(openBank, null, fromDepositPacksOnly: true);
+
+                Session.Network.EnqueueSend(new GameMessageSystemChat(report.DescribeDeposit("items"), ChatMessageType.System));
+            }
+        );
+
+        // quietly skipped if another question is already up
+        ConfirmationManager.EnqueueSend(confirmation, $"Deposit all items in \"Deposit\" packs? ({BankReport.Plural(count, "item")})");
     }
 
     /// <summary>
@@ -608,16 +696,26 @@ public partial class Player
         return best;
     }
 
-    private List<WorldObject> GetDepositCandidates(BankCategory? filter, BankReport report)
+    /// <summary>
+    /// Where a deposit takes items from: the main pack and every pack not inscribed "keep",
+    /// or with fromDepositPacksOnly, just the packs inscribed "deposit".
+    /// </summary>
+    private List<Container> GetDepositSources(bool fromDepositPacksOnly)
     {
-        var sources = new List<Container> { this };
-        sources.AddRange(
-            Inventory.Values
-                .OfType<Container>()
-                .Where(p => !BankCategories.ParseInscription(p.Inscription).Keep)
-                .OrderBy(p => p.PlacementPosition ?? int.MaxValue)
-        );
+        var packs = Inventory.Values.OfType<Container>().OrderBy(p => p.PlacementPosition ?? int.MaxValue);
 
+        if (fromDepositPacksOnly)
+        {
+            return packs.Where(p => BankCategories.ParseInscription(p.Inscription).Deposit).ToList();
+        }
+
+        var sources = new List<Container> { this };
+        sources.AddRange(packs.Where(p => !BankCategories.ParseInscription(p.Inscription).Keep));
+        return sources;
+    }
+
+    private List<WorldObject> GetDepositCandidates(List<Container> sources, BankCategory? filter, BankReport report)
+    {
         var candidates = new List<WorldObject>();
 
         foreach (var source in sources)

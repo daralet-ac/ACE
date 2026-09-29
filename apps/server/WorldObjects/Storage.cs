@@ -192,6 +192,12 @@ public class Storage : Container
         BankInventoryLoaded = true;
 
         SendBankVaultInventory(_bankUser);
+
+        // offer to empty the viewer's "deposit" packs into the bank
+        if (_bankUser != null && IsOpen && Viewer == _bankUser.Guid.Full)
+        {
+            _bankUser.OfferDepositPacks(this);
+        }
     }
 
     private void SendBankVaultInventory(Player player)

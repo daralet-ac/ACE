@@ -94,7 +94,8 @@ public class BankCommand
                 + $"Categories: {CategoryList}.\n"
                 + "Tag a pack by inscribing it with category words, like \"weapons\" or \"gems, keys\". "
                 + "A Salvage Crate, Quiver, Component Pouch or Trophy Pack is filled first with what its name says, then inscribed packs; that goes for bank deposits and sorts, and for /sort with the packs you carry. "
-                + "Inscribe a pack you carry with \"keep\" and neither /bank deposit nor /sort takes anything out of it.\n"
+                + "Inscribe a pack you carry with \"keep\" and neither /bank deposit nor /sort takes anything out of it. "
+                + "Inscribe one with \"deposit\" and opening your bank offers to deposit everything in it.\n"
                 + "Gear is weapons (including casters), armor (including shields and clothing), jewelry and trinkets. "
                 + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels; animal is hides, bones and meat.\n"
                 + "Blacksmithing, tailoring, spellcrafting, woodworking and jewelcrafting are the salvage those tinkering skills use, "
@@ -122,39 +123,7 @@ public class BankCommand
         var report = player.DepositToBank(bank, filter);
         var what = filter == null ? "items" : BankCategories.Describe(filter.Value);
 
-        var lines = new List<string>();
-
-        if (report.Moved > 0)
-        {
-            lines.Add($"Deposited {Items(report.Moved)} ({DescribeDestinations(report)}).");
-        }
-
-        if (report.StacksCombined > 0)
-        {
-            lines.Add($"Added {Plural(report.StacksCombined, "stack")} to stacks already in your bank.");
-        }
-
-        if (report.NoRoom > 0)
-        {
-            lines.Add($"{Items(report.NoRoom)} didn't fit: your bank and its packs are full.");
-        }
-
-        if (report.Failed > 0)
-        {
-            lines.Add($"{Items(report.Failed)} couldn't be moved.");
-        }
-
-        if (report.Attuned > 0)
-        {
-            lines.Add($"{Items(report.Attuned)} {(report.Attuned == 1 ? "is" : "are")} attuned and can't be banked.");
-        }
-
-        if (lines.Count == 0)
-        {
-            lines.Add($"You have no {what} to deposit.");
-        }
-
-        Send(session, string.Join("\n", lines));
+        Send(session, report.DescribeDeposit(what));
     }
 
     // --- /bank sort ---
@@ -182,7 +151,7 @@ public class BankCommand
 
         if (report.Moved > 0)
         {
-            lines.Add($"Moved {Items(report.Moved)} ({DescribeDestinations(report)}).");
+            lines.Add($"Moved {Items(report.Moved)} ({report.DescribeDestinations()}).");
         }
 
         if (report.StacksCombined > 0)
@@ -519,7 +488,7 @@ public class BankCommand
         Send(
             session,
             tags.IsEmpty
-                ? $"Inscribed {pack.Name}. It has no bank tags: use salvage, weapons, armor, jewelry, trinkets, gear or keep."
+                ? $"Inscribed {pack.Name}. It has no bank tags; see /bank for the words (categories, keep, deposit)."
                 : $"Inscribed {pack.Name} [{BankCategories.Describe(tags)}]."
         );
     }
@@ -573,14 +542,9 @@ public class BankCommand
         return false;
     }
 
-    private static string DescribeDestinations(BankReport report)
-    {
-        return string.Join(", ", report.MovedInto.Select(m => $"{m.Count:N0} into {m.Name ?? "your bank"}"));
-    }
-
     private static string Items(int count) => Plural(count, "item");
 
-    private static string Plural(int count, string noun) => $"{count:N0} {noun}{(count == 1 ? "" : "s")}";
+    private static string Plural(int count, string noun) => BankReport.Plural(count, noun);
 
     private static void Send(Session session, string text)
     {

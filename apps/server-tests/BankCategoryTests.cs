@@ -253,6 +253,20 @@ public class BankCategoryTests
     }
 
     [TestMethod]
+    public void ParseInscription_ReadsDepositOnItsOwnAndWithOtherTags()
+    {
+        Assert.AreEqual(new BankPackTags(BankCategory.None, false, true), BankCategories.ParseInscription("Deposit"));
+        Assert.AreEqual(new BankPackTags(BankCategory.Weapons, false, true), BankCategories.ParseInscription("weapons + deposit"));
+        Assert.AreEqual(new BankPackTags(BankCategory.None, true, true), BankCategories.ParseInscription("keep, deposit"));
+
+        Assert.IsFalse(BankCategories.ParseInscription("Deposit").IsEmpty);
+        Assert.IsFalse(BankCategories.ParseInscription("deposits").Deposit);
+
+        Assert.AreEqual("deposit", BankCategories.Describe(new BankPackTags(BankCategory.None, false, true)));
+        Assert.AreEqual("weapons, deposit", BankCategories.Describe(new BankPackTags(BankCategory.Weapons, false, true)));
+    }
+
+    [TestMethod]
     public void PackFit_PrefersTheExactPackOverAWiderOne()
     {
         Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Weapons, BankCategory.Weapons));
