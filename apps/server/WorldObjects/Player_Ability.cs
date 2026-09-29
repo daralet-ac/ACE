@@ -1165,8 +1165,8 @@ partial class Player
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Aegis: For 10 seconds, damage taken from full hits by weapon attacks is reduced by 50%,
-    /// and each full hit restores stamina and mana equal to 10% of the damage prevented. Glancing blows and evades are unaffected.
+    /// COMBAT ABILITY - Aegis: For 10 seconds, damage taken from weapon attacks is reduced by 50%, but those attacks
+    /// can't be evaded, fully or partially. Each hit restores stamina and mana equal to 10% of the damage prevented.
     /// Costs mana equal to character level. Recasting while active refreshes the duration.
     /// </summary>
     public bool TryUseAegis(Gem gem)
@@ -1195,7 +1195,7 @@ partial class Player
 
         Session.Network.EnqueueSend(
             new GameMessageSystemChat(
-                $"You raise your Aegis! For the next {AegisActivatedDuration} seconds, full hits from weapon attacks deal {Math.Round(AegisDamageReduction * 100)}% less damage to you.",
+                $"You raise your Aegis! For the next {AegisActivatedDuration} seconds, weapon attacks deal {Math.Round(AegisDamageReduction * 100)}% less damage to you, but you can't evade them.",
                 ChatMessageType.Broadcast
             )
         );

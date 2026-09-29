@@ -318,6 +318,14 @@ public class DamageEvent
             return;
         }
 
+        // COMBAT ABILITY - Aegis: attacks can't be evaded, fully or partially.
+        // The evade chance is still calculated because block and parry chances use the attack and defense skills it sets.
+        if (playerDefender is { AegisIsActive: true })
+        {
+            GetEvadeChance(attacker, defender);
+            return;
+        }
+
         // COMBAT ABILITY - Evasive Stance: flat 25% chance to fully evade any attack, independent of defense skill.
         if (playerDefender is { EvasiveStanceIsActive: true } && ThreadSafeRandom.Next(0.0f, 1.0f) < 0.25f)
         {
@@ -701,11 +709,11 @@ public class DamageEvent
     }
 
     /// <summary>
-    /// COMBAT ABILITY - Aegis: Damage taken from full hits reduced by 50%. Glancing blows are unaffected.
+    /// COMBAT ABILITY - Aegis: Damage taken from weapon attacks reduced by 50%. Attacks can't be evaded while active (see SetEvaded).
     /// </summary>
     private float GetCombatAbilityAegisDamageReduction(Player playerDefender)
     {
-        if (playerDefender is not { AegisIsActive: true } || Evaded || PartialEvasion != PartialEvasion.None)
+        if (playerDefender is not { AegisIsActive: true } || Evaded)
         {
             return 1.0f;
         }
@@ -1529,7 +1537,7 @@ public class DamageEvent
     /// </summary>
     private void CheckForCombatAbilityAegisRestoration(Player playerDefender)
     {
-        // _combatAbilityAegisDamageReduction is 1.0 unless Aegis reduced this hit (only full hits are reduced)
+        // _combatAbilityAegisDamageReduction is 1.0 unless Aegis reduced this hit
         if (playerDefender is null || _combatAbilityAegisDamageReduction is <= 0.0f or >= 1.0f)
         {
             return;
