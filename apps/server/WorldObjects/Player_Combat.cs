@@ -434,10 +434,11 @@ partial class Player
     public override uint GetEffectiveAttackSkill()
     {
         var weapon = GetEquippedWeapon();
-        var attackSkill = GetCreatureSkill(GetCurrentWeaponSkill()).Current;
+        var weaponSkill = GetCurrentWeaponSkill();
+        var attackSkill = GetCreatureSkill(weaponSkill).Current;
         double? offenseMod = 1.0;
 
-        offenseMod = GetWeaponOffenseModifier(this) + GetArmorAttackMod();
+        offenseMod = GetWeaponOffenseModifier(this) + GetGearAttackModNotInCurrent(weaponSkill);
 
         var accuracyMod = GetAccuracySkillMod(weapon);
 
