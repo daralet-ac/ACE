@@ -77,6 +77,10 @@ public class DamageHistoryInfo
         {
             return TryGetPetOwner();
         }
+        else if (HotspotOwner != null)
+        {
+            return TryGetHotspotOwner();
+        }
         else
         {
             return TryGetAttacker();
