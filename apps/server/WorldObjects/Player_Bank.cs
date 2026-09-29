@@ -176,7 +176,7 @@ public partial class Player
     /// <summary>
     /// Tidies the bank. For a full sort (null filter) partial stacks are combined first.
     /// Then items matching filter move into the packs inscribed for them, items in a pack inscribed for
-    /// something else move out, and the bank and its packs are put in order: by category, then name.
+    /// something else move out, and the bank and its packs are put in order (see ItemSortOrder: by category, then per-type rules, then name).
     /// A sort for one category only reorders the bank and the packs inscribed for that category.
     /// </summary>
     public BankReport SortBank(Storage bank, BankCategory? filter)
@@ -781,17 +781,13 @@ public partial class Player
     }
 
     /// <summary>
-    /// Puts a bank container's items in /bank sort order. Returns false if they already were.
+    /// Puts a bank container's items in /bank sort order (ItemSortOrder). Returns false if they already were.
     /// The client is told each item's new slot, the same way /sort reorders a salvage crate.
     /// </summary>
     private bool ReorderBankContainer(Container container, Storage bank)
     {
         var sorted = GetMyBankItems(container, bank)
-            .OrderBy(i => BankCategories.SortOrder(BankCategories.Classify(i)))
-            .ThenBy(i => i.WeenieType == WeenieType.Salvage ? Salvage.GetSalvageBagSortKey(i) : default)
-            .ThenBy(i => i.Name, StringComparer.OrdinalIgnoreCase)
-            .ThenByDescending(i => i.StackSize ?? 1)
-            .ThenBy(i => i.Guid.Full)
+            .OrderBy(i => i, Comparer<WorldObject>.Create(ItemSortOrder.Compare))
             .ToList();
 
         var inOrder = true;
