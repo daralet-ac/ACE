@@ -92,7 +92,7 @@ public class BankCommand
                 + "  /bank inscribe <tags> - Inscribes the pack you last examined (\"/bank inscribe clear\" to clear it).\n"
                 + $"Categories: {CategoryList}.\n"
                 + "Tag a pack by inscribing it with category words, like \"weapons\" or \"gems, keys\". "
-                + "Bank deposits and sorts fill those bank packs first, and /sort files your carried items into the packs you carry the same way. "
+                + "A Salvage Crate, Quiver, Component Pouch or Trophy Pack is filled first with what its name says, then inscribed packs; that goes for bank deposits and sorts, and for /sort with the packs you carry. "
                 + "Inscribe a pack you carry with \"keep\" and neither /bank deposit nor /sort takes anything out of it.\n"
                 + "Gear is weapons (including casters), armor (including shields and clothing), jewelry and trinkets. "
                 + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels."
@@ -204,10 +204,10 @@ public class BankCommand
 
         lines.Insert(0, lines.Count == 0 ? "Your bank is already sorted." : "Bank sorted.");
 
-        if (filter != null && !player.GetBankPacks(bank).Any(p => (BankCategories.ParseInscription(p.Inscription).Categories & filter.Value) != 0))
+        if (filter != null && !player.GetBankPacks(bank).Any(p => (NamedPacks.Collects(p) & filter.Value) != 0))
         {
             var what = BankCategories.Describe(filter.Value);
-            lines.Add($"No pack in your bank is inscribed for {what}. Inscribe one with \"{what}\" to collect them.");
+            lines.Add($"No pack in your bank collects {what}. Inscribe one with \"{what}\" to collect them.");
         }
 
         Send(session, string.Join("\n", lines));
@@ -445,7 +445,16 @@ public class BankCommand
     private static string DescribePack(Container pack)
     {
         var used = pack.Inventory.Values.Count(i => !i.UseBackpackSlot);
-        var tags = BankCategories.Describe(BankCategories.ParseInscription(pack.Inscription));
+        var inscribed = BankCategories.ParseInscription(pack.Inscription);
+        var tags = BankCategories.Describe(inscribed);
+
+        // Named packs (Quiver, Trophy Pack, ...) collect their kind by name, first.
+        var named = NamedPacks.CategoryOf(NamedPacks.KindOf(pack));
+        if (named != BankCategory.None)
+        {
+            var byName = $"{BankCategories.Describe(named)} by name";
+            tags = inscribed.IsEmpty ? byName : $"{byName}, {tags}";
+        }
 
         return $"{pack.Name} [{tags}] {used} of {pack.ItemCapacity ?? 0} slots used";
     }

@@ -77,8 +77,9 @@ public partial class Player
     }
 
     // Lower is a better home for an item, see RankBankSpot.
-    private const int RankNeutral = 3;
-    private const int RankMisfiled = 4;
+    private const int RankNamedPack = 0;
+    private const int RankNeutral = 4;
+    private const int RankMisfiled = 5;
 
     /// <summary>
     /// The bank chest this player has open and is standing at, or null.
@@ -235,7 +236,7 @@ public partial class Player
 
         foreach (var spot in spots)
         {
-            if (filter != null && !spot.IsMain && (spot.Tags.Categories & filter.Value) == 0)
+            if (filter != null && !spot.IsMain && (NamedPacks.Collects(spot.Container) & filter.Value) == 0)
             {
                 continue;
             }
@@ -467,10 +468,12 @@ public partial class Player
 
     /// <summary>
     /// How good a home spot is for item, lower is better, or null if the item must not go there.
-    /// 0: a pack inscribed for exactly this category. 1: a pack inscribed for it among other things (gear).
-    /// 2: an untagged specialized pack that takes it (a quiver for arrows).
-    /// 3 (neutral): the bank itself, or an untagged pack.
+    /// 0: a named pack meant for it (Salvage Crate, Quiver, Component Pouch, Trophy Pack), as /sort fills them first.
+    /// 1: a pack inscribed for exactly this category. 2: a pack inscribed for it among other things (gear).
+    /// 3: an untagged specialized pack that takes it.
+    /// 4 (neutral): the bank itself, or an untagged pack.
     /// null: a pack inscribed for other things, or a specialized pack that does not take this type.
+    /// For anything else a named pack is ranked by its inscription, or as any untagged pack.
     /// </summary>
     private static int? RankBankSpot(BankSpot spot, WorldObject item, BankCategory category)
     {
@@ -484,13 +487,18 @@ public partial class Player
             return RankNeutral;
         }
 
+        if (NamedPacks.IsHomeFor(spot.Container, item))
+        {
+            return RankNamedPack;
+        }
+
         if (spot.Tags.Categories != BankCategory.None)
         {
             var fit = BankCategories.PackFit(spot.Tags.Categories, category);
-            return fit == 0 ? null : 2 - fit;
+            return fit == 0 ? null : 3 - fit;
         }
 
-        return (spot.Container.MerchandiseItemTypes ?? 0) != 0 ? 2 : RankNeutral;
+        return (spot.Container.MerchandiseItemTypes ?? 0) != 0 ? 3 : RankNeutral;
     }
 
     /// <summary>

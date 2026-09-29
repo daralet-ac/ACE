@@ -80,22 +80,14 @@ public class Sort
             originalPackCounts[sp.Guid.Full] = list.Count;
         }
 
-        // Pre-categorize named side packs
-        var salvageSidePacks = allSidePacks
-            .Where(c => !string.IsNullOrEmpty(c.Name) && c.Name.Contains("Salvage Crate", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        // Pre-categorize named side packs (the bank fills these first too, see NamedPacks)
+        var salvageSidePacks = allSidePacks.Where(c => NamedPacks.KindOf(c) == NamedPackKind.SalvageCrate).ToList();
 
-        var quiverSidePacks = allSidePacks
-            .Where(c => !string.IsNullOrEmpty(c.Name) && c.Name.Contains("Quiver", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        var quiverSidePacks = allSidePacks.Where(c => NamedPacks.KindOf(c) == NamedPackKind.Quiver).ToList();
 
-        var componentPouches = allSidePacks
-            .Where(c => !string.IsNullOrEmpty(c.Name) && c.Name.Contains("Component Pouch", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        var componentPouches = allSidePacks.Where(c => NamedPacks.KindOf(c) == NamedPackKind.ComponentPouch).ToList();
 
-        var trophyPacks = allSidePacks
-            .Where(c => !string.IsNullOrEmpty(c.Name) && c.Name.Contains("Trophy Pack", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        var trophyPacks = allSidePacks.Where(c => NamedPacks.KindOf(c) == NamedPackKind.TrophyPack).ToList();
 
         var actionChain = new ActionChain();
         var movesScheduled = 0;
@@ -167,7 +159,7 @@ public class Sort
         // Trophy items -> "Trophy Pack"
         if (trophyPacks.Count > 0)
         {
-            var trophyCandidates = mainItems.Where(i => i.IsTrophy).ToList();
+            var trophyCandidates = mainItems.Where(i => NamedPacks.Takes(NamedPackKind.TrophyPack, i)).ToList();
 
             foreach (var trophy in trophyCandidates)
             {
@@ -182,7 +174,7 @@ public class Sort
         // Ammunition -> "Quiver"
         if (quiverSidePacks.Count > 0)
         {
-            var ammoCandidates = mainItems.Where(i => i.WeenieType == WeenieType.Ammunition).ToList();
+            var ammoCandidates = mainItems.Where(i => NamedPacks.Takes(NamedPackKind.Quiver, i)).ToList();
 
             foreach (var ammo in ammoCandidates)
             {
@@ -197,7 +189,7 @@ public class Sort
         // Spell components -> "Component Pouch"
         if (componentPouches.Count > 0)
         {
-            var compCandidates = mainItems.Where(i => i.WeenieType == WeenieType.SpellComponent).ToList();
+            var compCandidates = mainItems.Where(i => NamedPacks.Takes(NamedPackKind.ComponentPouch, i)).ToList();
 
             foreach (var comp in compCandidates)
             {
@@ -212,7 +204,7 @@ public class Sort
         // Salvage -> "Salvage Crate"
         if (salvageSidePacks.Count > 0)
         {
-            var salvageCandidates = mainItems.Where(i => i.WeenieType == WeenieType.Salvage).ToList();
+            var salvageCandidates = mainItems.Where(i => NamedPacks.Takes(NamedPackKind.SalvageCrate, i)).ToList();
 
             foreach (var salvage in salvageCandidates)
             {
@@ -278,25 +270,16 @@ public class Sort
         }
 
         // Scan side packs for trophy items
-        ScanSidePacksAndSchedule(item => item.IsTrophy, trophyPacks);
+        ScanSidePacksAndSchedule(item => NamedPacks.Takes(NamedPackKind.TrophyPack, item), trophyPacks);
 
         // Scan side packs for ammunition
-        ScanSidePacksAndSchedule(
-            item => item.WeenieType == WeenieType.Ammunition,
-            quiverSidePacks
-        );
+        ScanSidePacksAndSchedule(item => NamedPacks.Takes(NamedPackKind.Quiver, item), quiverSidePacks);
 
         // Scan side packs for spell components
-        ScanSidePacksAndSchedule(
-            item => item.WeenieType == WeenieType.SpellComponent,
-            componentPouches
-        );
+        ScanSidePacksAndSchedule(item => NamedPacks.Takes(NamedPackKind.ComponentPouch, item), componentPouches);
 
         // Scan side packs for salvage
-        ScanSidePacksAndSchedule(
-            item => item.WeenieType == WeenieType.Salvage,
-            salvageSidePacks
-        );
+        ScanSidePacksAndSchedule(item => NamedPacks.Takes(NamedPackKind.SalvageCrate, item), salvageSidePacks);
 
         // ---------- PART B2: file items into carried packs inscribed for them (see /bank inscribe) ----------
         // A pack inscribed with category words ("weapons", "gems, keys", ...) collects those items from the main pack
