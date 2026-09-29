@@ -4007,6 +4007,21 @@ public class PhysicsObj
         return obj;
     }
 
+    /// <summary>
+    /// Makes the object that direct line of sight is tested with, in the instance of the object that is looking.<para />
+    /// A transition looks up every cell in the instance of the object it moves, so a sight object left in the persistent world
+    /// would test against the persistent copy of an instanced landblock (loading it on demand), where the target never is.
+    /// </summary>
+    public static PhysicsObj makeSightObject(uint dataDID, uint instance)
+    {
+        var obj = makeObject(dataDID, 0, false, true);
+
+        obj.Instance = instance;
+        obj.State |= PhysicsState.Missile;
+
+        return obj;
+    }
+
     public static PhysicsObj makeParticleObject(int numParts, Sphere sortingSphere)
     {
         var particle = new PhysicsObj();
