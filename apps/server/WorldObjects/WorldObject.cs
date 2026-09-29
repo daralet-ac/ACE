@@ -368,9 +368,7 @@ public abstract partial class WorldObject : IActor
             return false;
         }
 
-        var SightObj = PhysicsObj.makeObject(0x02000124, 0, false, true);
-
-        SightObj.State |= PhysicsState.Missile;
+        var SightObj = PhysicsObj.makeSightObject(0x02000124, PhysicsObj.Instance);
 
         var startPos = new Physics.Common.Position(PhysicsObj.Position);
         var targetPos = new Physics.Common.Position(wo.PhysicsObj.Position);
@@ -413,9 +411,7 @@ public abstract partial class WorldObject : IActor
             return false;
         }
 
-        var SightObj = PhysicsObj.makeObject(0x02000124, 0, false, true);
-
-        SightObj.State |= PhysicsState.Missile;
+        var SightObj = PhysicsObj.makeSightObject(0x02000124, PhysicsObj.Instance);
 
         var startPos = new Physics.Common.Position(PhysicsObj.Position);
         var targetPos = new Physics.Common.Position(pos);

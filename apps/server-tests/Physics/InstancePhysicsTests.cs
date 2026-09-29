@@ -1,4 +1,5 @@
 using ACE.Entity;
+using ACE.Entity.Enum;
 using ACE.Server.Managers;
 using ACE.Server.Physics;
 using ACE.Server.Physics.Common;
@@ -77,6 +78,25 @@ public class InstancePhysicsTests
         var second = new PhysicsObj { Instance = 0 };
         transition.InitObject(second, ObjectInfoState.Default);
         Assert.AreEqual(0u, transition.CellArray.Instance);
+    }
+
+    [TestMethod]
+    public void SightObject_IsMadeInTheInstanceOfTheObjectThatIsLooking()
+    {
+        // Monsters test line of sight with a sight object before they cast a projectile spell. One made in the persistent world
+        // looked for the target in the persistent copy of an instanced landblock, never found it, and every war spell was rerolled.
+        var sightObj = PhysicsObj.makeSightObject(0, 4);
+
+        Assert.AreEqual(4u, sightObj.Instance);
+        Assert.AreEqual(4u, sightObj.CellArray.Instance);
+        Assert.IsTrue(sightObj.IsSightObj);
+        Assert.IsTrue(sightObj.State.HasFlag(PhysicsState.Missile));
+
+        var transition = new Transition();
+        transition.Init();
+        transition.InitObject(sightObj, ObjectInfoState.Default);
+
+        Assert.AreEqual(4u, transition.CellArray.Instance);
     }
 
     [TestMethod]
