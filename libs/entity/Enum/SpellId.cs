@@ -6853,6 +6853,24 @@ public enum SpellId : uint
     DungeonDifficulty19,
     DungeonDifficulty20,
 
+    // gear mod bonuses, see Creature.UpdateArmorModBuffs()
+    PhysicalDefenseBonus = 6846,
+    MagicDefenseBonus,
+    DualWieldBonus,
+    TwoHandedCombatBonus,
+    ThieveryBonus,
+    ShieldBonus,
+    PerceptionBonus,
+    DeceptionBonus,
+    WarMagicBonus,
+    LifeMagicBonus,
+    MartialWeaponsAttackBonus,
+    StaffAttackBonus,
+    DaggerAttackBonus,
+    UnarmedCombatAttackBonus,
+    BowAttackBonus,
+    ThrownWeaponAttackBonus,
+
     NumSpells = 8192,
 
     // shared cooldowns, (0x8000 | shared cooldown id)

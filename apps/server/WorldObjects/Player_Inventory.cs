@@ -561,7 +561,7 @@ partial class Player
         {
             foreach (var enchantment in allEnchantments)
             {
-                enchantment.StatModValue = 10 + totalRating;
+                EnchantmentManager.SetStatModValue(enchantment, 10 + totalRating);
                 enchantment.Duration = -1;
                 Session.Network.EnqueueSend(
                     new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, enchantment)));
@@ -597,7 +597,7 @@ partial class Player
         {
             foreach (var enchantment in allEnchantments)
             {
-                enchantment.StatModValue = baseAmount + totalRating;
+                EnchantmentManager.SetStatModValue(enchantment, baseAmount + totalRating);
                 enchantment.Duration = -1;
                 Session.Network.EnqueueSend(
                     new GameEventMagicUpdateEnchantment(Session, new Enchantment(this, enchantment)));
