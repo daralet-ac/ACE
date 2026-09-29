@@ -21,6 +21,7 @@ namespace ACE.Server.Entity;
 /// - Components: scarabs by tier, herbs, powders, potions, talismans, tapers, then reusable (pea) components.
 /// - Consumables: healing kits first, by vital (health, stamina, mana) then quality, best first; then the rest.
 /// - Trophies: trophy type, then quality, best first.
+/// - Animal parts: hides, bones, then meat, each by quality, best first.
 /// - Everything else (gems, keys, mana stones, ...): name.
 /// Names compare without the material first, then with it, so the same item in different materials sits together.
 /// </summary>
@@ -96,6 +97,7 @@ public static class ItemSortOrder
             BankCategory.Components => GetSpellComponentSortKey(a).CompareTo(GetSpellComponentSortKey(b)),
             BankCategory.Consumables => CompareConsumables(a, b),
             BankCategory.Trophies => CompareTrophies(a, b),
+            BankCategory.Animal => CompareAnimalParts(a, b),
             _ => 0,
         };
         if (result != 0)
@@ -204,6 +206,21 @@ public static class ItemSortOrder
 
         // better kits (a bigger heal) first
         return (b.HealkitMod ?? 1.0).CompareTo(a.HealkitMod ?? 1.0);
+    }
+
+    private static int CompareAnimalParts(WorldObject a, WorldObject b)
+    {
+        BankCategories.TryGetAnimalPart(a.WeenieClassId, out var kindA, out var qualityA);
+        BankCategories.TryGetAnimalPart(b.WeenieClassId, out var kindB, out var qualityB);
+
+        var result = kindA.CompareTo(kindB);
+        if (result != 0)
+        {
+            return result;
+        }
+
+        // better parts first
+        return qualityB.CompareTo(qualityA);
     }
 
     private static int CompareTrophies(WorldObject a, WorldObject b)

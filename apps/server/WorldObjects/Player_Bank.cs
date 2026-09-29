@@ -78,8 +78,8 @@ public partial class Player
 
     // Lower is a better home for an item, see RankBankSpot.
     private const int RankNamedPack = 0;
-    private const int RankNeutral = 4;
-    private const int RankMisfiled = 5;
+    private const int RankNeutral = 6;
+    private const int RankMisfiled = 7;
 
     /// <summary>
     /// A safety net for BankPackExpansion: a pack the player carries should be at its own size, since leaving
@@ -180,7 +180,7 @@ public partial class Player
 
         foreach (var item in GetDepositCandidates(filter, report))
         {
-            var category = BankCategories.Classify(item);
+            var category = BankCategories.Tags(item);
 
             var mergedAll = TopUpBankStacks(item, bankStacks, touched, out var mergedAny);
             anythingMoved |= mergedAny;
@@ -259,7 +259,7 @@ public partial class Player
                     continue;
                 }
 
-                var category = BankCategories.Classify(item);
+                var category = BankCategories.Tags(item);
                 var currentRank = RankBankSpot(spot, item, category) ?? RankMisfiled;
 
                 var target = FindBankSpot(spots, item, category, spot, out var bestRankIgnoringRoom);
@@ -527,13 +527,14 @@ public partial class Player
     /// <summary>
     /// How good a home spot is for item, lower is better, or null if the item must not go there.
     /// 0: a named pack meant for it (Salvage Crate, Quiver, Component Pouch, Trophy Pack), as /sort fills them first.
-    /// 1: a pack inscribed for exactly this category. 2: a pack inscribed for it among other things (gear).
-    /// 3: an untagged specialized pack that takes it.
-    /// 4 (neutral): the bank itself, or an untagged pack.
+    /// 1-4: a pack inscribed for it, 5 - PackFit: its salvage kind exactly (imbue), its salvage kind among others,
+    /// its category exactly (weapons), its category among others (gear).
+    /// 5: an untagged specialized pack that takes it.
+    /// 6 (neutral): the bank itself, or an untagged pack.
     /// null: a pack inscribed for other things, or a specialized pack that does not take this type.
     /// For anything else a named pack is ranked by its inscription, or as any untagged pack.
     /// </summary>
-    private static int? RankBankSpot(BankSpot spot, WorldObject item, BankCategory category)
+    private static int? RankBankSpot(BankSpot spot, WorldObject item, BankCategory tags)
     {
         if (!spot.Container.CanHoldItemType(item))
         {
@@ -552,11 +553,11 @@ public partial class Player
 
         if (spot.Tags.Categories != BankCategory.None)
         {
-            var fit = BankCategories.PackFit(spot.Tags.Categories, category);
-            return fit == 0 ? null : 3 - fit;
+            var fit = BankCategories.PackFit(spot.Tags.Categories, tags);
+            return fit == 0 ? null : 5 - fit;
         }
 
-        return (spot.Container.MerchandiseItemTypes ?? 0) != 0 ? 3 : RankNeutral;
+        return (spot.Container.MerchandiseItemTypes ?? 0) != 0 ? 5 : RankNeutral;
     }
 
     /// <summary>

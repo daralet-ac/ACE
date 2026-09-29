@@ -91,7 +91,15 @@ public static class NamedPacks
     /// </summary>
     public static BankCategory Collects(Container pack)
     {
-        return BankCategories.ParseInscription(pack.Inscription).Categories | CategoryOf(KindOf(pack));
+        var collects = BankCategories.ParseInscription(pack.Inscription).Categories | CategoryOf(KindOf(pack));
+
+        // a pack for all salvage takes every kind of salvage (imbue, blacksmithing, ...) too
+        if ((collects & BankCategory.Salvage) != 0)
+        {
+            collects |= BankCategory.SalvageKinds;
+        }
+
+        return collects;
     }
 
     /// <summary>

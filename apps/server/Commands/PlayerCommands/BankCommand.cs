@@ -19,7 +19,8 @@ public class BankCommand
     private const int MaxInscriptionLength = 100;
 
     private const string CategoryList =
-        "all, gear, weapons, armor, jewelry, trinkets, salvage, ammo, components, consumables, gems, keys, manastones, trophies";
+        "all, gear, weapons, armor, jewelry, trinkets, salvage, ammo, animal, components, consumables, gems, keys, manastones, trophies, "
+        + "blacksmithing, tailoring, spellcrafting, woodworking, jewelcrafting, imbue";
 
     // /bank balance reads every offline character's possessions from the database, so it can't be spammed.
     private static readonly TimeSpan BalanceCooldown = TimeSpan.FromSeconds(30);
@@ -95,7 +96,9 @@ public class BankCommand
                 + "A Salvage Crate, Quiver, Component Pouch or Trophy Pack is filled first with what its name says, then inscribed packs; that goes for bank deposits and sorts, and for /sort with the packs you carry. "
                 + "Inscribe a pack you carry with \"keep\" and neither /bank deposit nor /sort takes anything out of it.\n"
                 + "Gear is weapons (including casters), armor (including shields and clothing), jewelry and trinkets. "
-                + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels."
+                + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels; animal is hides, bones and meat.\n"
+                + "Blacksmithing, tailoring, spellcrafting, woodworking and jewelcrafting are the salvage those tinkering skills use, "
+                + "and imbue is the imbue gems. A pack tagged for one of them beats a pack tagged \"salvage\"."
         );
     }
 
@@ -239,7 +242,7 @@ public class BankCommand
         var isItemType = BankCategories.TryParseItemType(query, out var itemType);
 
         bool Matches(WorldObject item) =>
-            (isCategory && (BankCategories.Classify(item) & category) != 0)
+            (isCategory && (BankCategories.Tags(item) & category) != 0)
             || (isWeaponClass && (BankSearch.GetWeaponClass(item) & weaponClass) != 0)
             || (isItemType && (item.ItemType & itemType) != 0)
             || BankSearch.NameMatches(item.NameWithMaterial, query);

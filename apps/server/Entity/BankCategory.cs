@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ACE.Entity.Enum;
+using ACE.Server.Factories;
 using ACE.Server.WorldObjects;
 
 namespace ACE.Server.Entity;
@@ -25,8 +26,19 @@ public enum BankCategory
     Keys = 1 << 9,
     ManaStones = 1 << 10,
     Trophies = 1 << 11,
+    Animal = 1 << 12,
+
+    // Salvage by what uses it: the tinkering skill for its material (Salvage.TinkeringTarget), or imbuing.
+    // A salvage bag is Salvage plus one of these, and a pack tagged for one of them beats a pack tagged "salvage".
+    Blacksmithing = 1 << 13,
+    Tailoring = 1 << 14,
+    Spellcrafting = 1 << 15,
+    Woodworking = 1 << 16,
+    Jewelcrafting = 1 << 17,
+    Imbue = 1 << 18,
 
     Gear = Weapons | Armor | Jewelry | Trinkets,
+    SalvageKinds = Blacksmithing | Tailoring | Spellcrafting | Woodworking | Jewelcrafting | Imbue,
 }
 
 /// <summary>
@@ -42,6 +54,7 @@ public static class BankCategories
 {
     /// <summary>
     /// The order the categories are listed in, and the order /bank sort groups items in.
+    /// The salvage kinds come last: they are never an item's own category, only a narrower tag for salvage.
     /// </summary>
     public static readonly BankCategory[] Singles =
     [
@@ -51,12 +64,19 @@ public static class BankCategories
         BankCategory.Trinkets,
         BankCategory.Ammo,
         BankCategory.Salvage,
+        BankCategory.Animal,
         BankCategory.Components,
         BankCategory.ManaStones,
         BankCategory.Gems,
         BankCategory.Consumables,
         BankCategory.Keys,
         BankCategory.Trophies,
+        BankCategory.Blacksmithing,
+        BankCategory.Tailoring,
+        BankCategory.Spellcrafting,
+        BankCategory.Woodworking,
+        BankCategory.Jewelcrafting,
+        BankCategory.Imbue,
     ];
 
     public const string KeepTag = "keep";
@@ -101,16 +121,46 @@ public static class BankCategories
         { "manastones", BankCategory.ManaStones },
         { "trophy", BankCategory.Trophies },
         { "trophies", BankCategory.Trophies },
+        { "animal", BankCategory.Animal },
+        { "animals", BankCategory.Animal },
+        { "blacksmithing", BankCategory.Blacksmithing },
+        { "blacksmith", BankCategory.Blacksmithing },
+        { "tailoring", BankCategory.Tailoring },
+        { "tailor", BankCategory.Tailoring },
+        { "spellcrafting", BankCategory.Spellcrafting },
+        { "spellcraft", BankCategory.Spellcrafting },
+        { "woodworking", BankCategory.Woodworking },
+        { "woodwork", BankCategory.Woodworking },
+        { "jewelcrafting", BankCategory.Jewelcrafting },
+        { "jewelcraft", BankCategory.Jewelcrafting },
+        { "imbue", BankCategory.Imbue },
+        { "imbues", BankCategory.Imbue },
+        { "imbuing", BankCategory.Imbue },
     };
 
+    /// <summary>
+    /// The one category an item belongs to: what /bank sort groups it under. See Tags for everything a pack tag can match.
+    /// </summary>
     public static BankCategory Classify(WorldObject item)
     {
         return Classify(
             item.WeenieType,
             item.ItemType,
             item.ValidLocations ?? EquipMask.None,
-            item.IsTrophy
+            item.IsTrophy,
+            IsAnimalPart(item.WeenieClassId)
         );
+    }
+
+    /// <summary>
+    /// Every category an item answers to: its own (Classify), plus for salvage what uses it (blacksmithing, imbue, ...).
+    /// Deposit and sort filters, searches and pack tags all go by these.
+    /// </summary>
+    public static BankCategory Tags(WorldObject item)
+    {
+        var category = Classify(item);
+
+        return category == BankCategory.Salvage ? category | SalvageKindOf(item.MaterialType) : category;
     }
 
     /// <summary>
@@ -118,15 +168,80 @@ public static class BankCategories
     /// </summary>
     public static bool Matches(WorldObject item, BankCategory? filter)
     {
-        return filter == null || (Classify(item) & filter.Value) != 0;
+        return filter == null || (Tags(item) & filter.Value) != 0;
+    }
+
+    /// <summary>
+    /// What uses salvage of this material: imbuing for the imbue gems (whose skill depends on what is imbued), or
+    /// the tinkering skill Salvage.TinkeringTarget gives the material. None if the material has neither.
+    /// </summary>
+    public static BankCategory SalvageKindOf(MaterialType? material)
+    {
+        if (material is not { } materialType)
+        {
+            return BankCategory.None;
+        }
+
+        if (Salvage.ImbueSalvage.Contains(materialType))
+        {
+            return BankCategory.Imbue;
+        }
+
+        if (!Salvage.TinkeringTarget.TryGetValue(materialType, out var skill))
+        {
+            return BankCategory.None;
+        }
+
+        return skill switch
+        {
+            Skill.Blacksmithing => BankCategory.Blacksmithing,
+            Skill.Tailoring => BankCategory.Tailoring,
+            Skill.Spellcrafting => BankCategory.Spellcrafting,
+            Skill.Woodworking => BankCategory.Woodworking,
+            Skill.Jewelcrafting => BankCategory.Jewelcrafting,
+            _ => BankCategory.None,
+        };
+    }
+
+    /// <summary>
+    /// Animal parts are the hides, bones and meat in LootTables.AnimalPartsLootMatrix.
+    /// kind: 0 hide, 1 bone, 2 meat. quality: 0 (tattered, cracked, gristly) up to 3 (rugged, pristine, choice).
+    /// </summary>
+    public static bool TryGetAnimalPart(uint weenieClassId, out int kind, out int quality)
+    {
+        var matrix = LootTables.AnimalPartsLootMatrix;
+
+        for (kind = 0; kind < matrix.Length; kind++)
+        {
+            quality = Array.IndexOf(matrix[kind], (int)weenieClassId);
+            if (quality >= 0)
+            {
+                return true;
+            }
+        }
+
+        kind = -1;
+        quality = -1;
+        return false;
+    }
+
+    public static bool IsAnimalPart(uint weenieClassId)
+    {
+        return TryGetAnimalPart(weenieClassId, out _, out _);
     }
 
     /// <summary>
     /// The one category an item belongs to, or None for everything else (pyreals, scrolls, quest items, ...).
-    /// Earlier checks win: a trophy is only ever a trophy, a trinket is never jewelry, and arrows
-    /// (ItemType.MissileWeapon) are ammo, not weapons.
+    /// Earlier checks win: a trophy is only ever a trophy, animal parts are never food, a trinket is never jewelry,
+    /// and arrows (ItemType.MissileWeapon) are ammo, not weapons.
     /// </summary>
-    public static BankCategory Classify(WeenieType weenieType, ItemType itemType, EquipMask validLocations, bool isTrophy = false)
+    public static BankCategory Classify(
+        WeenieType weenieType,
+        ItemType itemType,
+        EquipMask validLocations,
+        bool isTrophy = false,
+        bool isAnimalPart = false
+    )
     {
         if (weenieType == WeenieType.Salvage)
         {
@@ -136,6 +251,11 @@ public static class BankCategories
         if (isTrophy)
         {
             return BankCategory.Trophies;
+        }
+
+        if (isAnimalPart)
+        {
+            return BankCategory.Animal;
         }
 
         if (weenieType == WeenieType.SigilTrinket || validLocations == EquipMask.TrinketOne)
@@ -276,17 +396,26 @@ public static class BankCategories
     }
 
     /// <summary>
-    /// How well a pack tagged with packCategories fits an item of itemCategory. Higher is better, 0 is no fit.
-    /// A pack tagged for exactly that category beats a pack that also takes other things (weapons beats gear).
+    /// How well a pack tagged with packCategories fits an item with these Tags. Higher is better, 0 is no fit.
+    /// A tag for what uses a salvage bag (imbue, blacksmithing, ...) beats a plain "salvage" tag, and either way
+    /// a pack tagged for exactly that beats a pack that also takes other things ("weapons" beats "gear").
+    /// 4: exactly its salvage kind. 3: its salvage kind among others. 2: exactly its category. 1: its category among others.
     /// </summary>
-    public static int PackFit(BankCategory packCategories, BankCategory itemCategory)
+    public static int PackFit(BankCategory packCategories, BankCategory itemTags)
     {
-        if (itemCategory == BankCategory.None || (packCategories & itemCategory) == 0)
+        var kind = itemTags & BankCategory.SalvageKinds;
+        if (kind != BankCategory.None && (packCategories & kind) != 0)
         {
-            return 0;
+            return packCategories == kind ? 4 : 3;
         }
 
-        return packCategories == itemCategory ? 2 : 1;
+        var category = itemTags & ~BankCategory.SalvageKinds;
+        if (category != BankCategory.None && (packCategories & category) != 0)
+        {
+            return packCategories == category ? 2 : 1;
+        }
+
+        return 0;
     }
 
     /// <summary>

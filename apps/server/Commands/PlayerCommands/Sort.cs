@@ -325,7 +325,7 @@ public class Sort
             {
                 foreach (var item in items.ToList())
                 {
-                    var category = BankCategories.Classify(item);
+                    var category = BankCategories.Tags(item);
                     if (category == BankCategory.None)
                     {
                         continue;

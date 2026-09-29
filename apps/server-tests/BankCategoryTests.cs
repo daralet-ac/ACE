@@ -183,6 +183,76 @@ public class BankCategoryTests
     }
 
     [TestMethod]
+    public void SalvageKindOf_IsTheTinkeringSkillForTheMaterialOrImbue()
+    {
+        Assert.AreEqual(BankCategory.Blacksmithing, BankCategories.SalvageKindOf(MaterialType.Iron));
+        Assert.AreEqual(BankCategory.Tailoring, BankCategories.SalvageKindOf(MaterialType.Linen));
+        Assert.AreEqual(BankCategory.Woodworking, BankCategories.SalvageKindOf(MaterialType.Oak));
+        Assert.AreEqual(BankCategory.Spellcrafting, BankCategories.SalvageKindOf(MaterialType.Amethyst));
+        Assert.AreEqual(BankCategory.Jewelcrafting, BankCategories.SalvageKindOf(MaterialType.Zircon));
+
+        // Imbue gems are spellcrafting materials too, but their skill depends on what is imbued, so they are imbue.
+        Assert.AreEqual(BankCategory.Imbue, BankCategories.SalvageKindOf(MaterialType.RedGarnet));
+        Assert.AreEqual(BankCategory.Imbue, BankCategories.SalvageKindOf(MaterialType.Sunstone));
+
+        Assert.AreEqual(BankCategory.None, BankCategories.SalvageKindOf(MaterialType.Granite));
+        Assert.AreEqual(BankCategory.None, BankCategories.SalvageKindOf(null));
+    }
+
+    [TestMethod]
+    public void AnimalParts_AreTheHideBoneAndMeatLoot()
+    {
+        Assert.IsTrue(BankCategories.TryGetAnimalPart(1052500, out var kind, out var quality));
+        Assert.AreEqual((0, 0), (kind, quality));
+
+        Assert.IsTrue(BankCategories.TryGetAnimalPart(1052507, out kind, out quality));
+        Assert.AreEqual((1, 3), (kind, quality));
+
+        Assert.IsTrue(BankCategories.TryGetAnimalPart(1052511, out kind, out quality));
+        Assert.AreEqual((2, 3), (kind, quality));
+
+        Assert.IsFalse(BankCategories.IsAnimalPart(1052512));
+        Assert.IsFalse(BankCategories.IsAnimalPart(273));
+
+        // Meat is food, but an animal part is an animal part.
+        Assert.AreEqual(BankCategory.Animal, BankCategories.Classify(WeenieType.Food, ItemType.Food, EquipMask.None, isAnimalPart: true));
+        Assert.AreEqual(BankCategory.Consumables, BankCategories.Classify(WeenieType.Food, ItemType.Food, EquipMask.None));
+    }
+
+    [TestMethod]
+    public void PackFit_PrefersASalvageKindTagOverSalvage()
+    {
+        var redGarnetBag = BankCategory.Salvage | BankCategory.Imbue;
+
+        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.Imbue, redGarnetBag));
+        Assert.AreEqual(3, BankCategories.PackFit(BankCategory.Imbue | BankCategory.Keys, redGarnetBag));
+        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Salvage, redGarnetBag));
+        Assert.AreEqual(1, BankCategories.PackFit(BankCategory.Salvage | BankCategory.Keys, redGarnetBag));
+
+        // a pack tagged for another kind of salvage doesn't take it
+        Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Blacksmithing, redGarnetBag));
+
+        // and a salvage kind tag doesn't take anything that isn't that salvage
+        Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Imbue, BankCategory.Gems));
+    }
+
+    [TestMethod]
+    public void ParseInscription_ReadsTheNewTags()
+    {
+        Assert.AreEqual(
+            new BankPackTags(BankCategory.Blacksmithing | BankCategory.Tailoring, false),
+            BankCategories.ParseInscription("blacksmith + tailor"));
+
+        Assert.AreEqual(
+            new BankPackTags(BankCategory.Imbue | BankCategory.Spellcrafting, false),
+            BankCategories.ParseInscription("Imbue, spellcraft"));
+
+        Assert.AreEqual(
+            new BankPackTags(BankCategory.Animal | BankCategory.Consumables, false),
+            BankCategories.ParseInscription("animal parts & consumables"));
+    }
+
+    [TestMethod]
     public void PackFit_PrefersTheExactPackOverAWiderOne()
     {
         Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Weapons, BankCategory.Weapons));
