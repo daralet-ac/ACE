@@ -169,10 +169,7 @@ public class Sort
         // Trophy items -> "Trophy Pack"
         if (trophyPacks.Count > 0)
         {
-            var trophyCandidates = mainItems.Where(i =>
-                (i.TrophyQuality ?? 0) > 0
-                || (i.GetProperty((PropertyInt)476) ?? 0) > 0
-            ).ToList();
+            var trophyCandidates = mainItems.Where(i => i.IsTrophy).ToList();
 
             foreach (var trophy in trophyCandidates)
             {
@@ -283,10 +280,7 @@ public class Sort
         }
 
         // Scan side packs for trophy items
-        ScanSidePacksAndSchedule(
-            item => (item.TrophyQuality ?? 0) > 0 || (item.GetProperty((PropertyInt)476) ?? 0) > 0,
-            trophyPacks
-        );
+        ScanSidePacksAndSchedule(item => item.IsTrophy, trophyPacks);
 
         // Scan side packs for ammunition
         ScanSidePacksAndSchedule(

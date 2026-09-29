@@ -109,7 +109,7 @@ public static class BankCategories
             item.WeenieType,
             item.ItemType,
             item.ValidLocations ?? EquipMask.None,
-            (item.TrophyQuality ?? 0) > 0
+            item.IsTrophy
         );
     }
 
