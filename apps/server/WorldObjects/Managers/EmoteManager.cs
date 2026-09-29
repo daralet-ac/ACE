@@ -3721,6 +3721,13 @@ public class EmoteManager
 
         var lastDamager = lastDamagerInfo?.TryGetPetOwnerOrAttacker();
 
+        // if a non-player (such as an NPC) landed the killing blow,
+        // credit the player who dealt the most damage instead
+        if (lastDamager is not Player && WorldObject is Creature creature)
+        {
+            lastDamager = creature.DamageHistory.GetTopPlayerDamager() ?? lastDamager;
+        }
+
         ExecuteEmoteSet(EmoteCategory.Death, null, lastDamager);
     }
 
