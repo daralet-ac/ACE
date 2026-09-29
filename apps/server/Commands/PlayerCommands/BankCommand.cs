@@ -92,8 +92,8 @@ public class BankCommand
                 + "  /bank inscribe <tags> - Inscribes the pack you last examined (\"/bank inscribe clear\" to clear it).\n"
                 + $"Categories: {CategoryList}.\n"
                 + "Tag a pack by inscribing it with category words, like \"weapons\" or \"gems, keys\". "
-                + "Deposits and sorts fill those bank packs first. "
-                + "Inscribe a pack you carry with \"keep\" and /bank deposit leaves it alone.\n"
+                + "Bank deposits and sorts fill those bank packs first, and /sort files your carried items into the packs you carry the same way. "
+                + "Inscribe a pack you carry with \"keep\" and neither /bank deposit nor /sort takes anything out of it.\n"
                 + "Gear is weapons (including casters), armor (including shields and clothing), jewelry and trinkets. "
                 + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels."
         );
