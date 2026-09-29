@@ -84,7 +84,8 @@ public class BankCommand
             "Bank commands (stand at your open bank):\n"
                 + "  /bank deposit <category> - Moves those items from your packs into your bank.\n"
                 + "  /bank sort [category] - Files items into their inscribed packs, combines stacks and puts everything in order.\n"
-                + "  /bank search <name, category or type> - Lists matching items in your bank and where they are.\n"
+                + "  /bank search <name, category or type> - Lists matching items in your bank and where they are. "
+                + "Weapon types work too: sword, axe, mace, spear, dagger, staff, unarmed, bow, crossbow, atlatl, thrown, two-handed, or a weapon like longsword or jitte.\n"
                 + "  /bank combine - Combines salvage bags in your bank that have the same material and workmanship.\n"
                 + "  /bank balance - Shows the pyreals and trade notes in your bank and across your account. Works anywhere.\n"
                 + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
@@ -220,7 +221,7 @@ public class BankCommand
 
         if (query.Length == 0)
         {
-            Send(session, "Usage: /bank search <name, category or type>. For example: /bank search pyreal, /bank search trinkets, /bank search gem");
+            Send(session, "Usage: /bank search <name, category or type>. For example: /bank search pyreal, /bank search trinkets, /bank search mace, /bank search longsword");
             return;
         }
 
@@ -230,15 +231,18 @@ public class BankCommand
             return;
         }
 
-        // A category (weapons) or item type (gem) word matches by kind, and every search also matches by name,
-        // so "portal" still finds a "Portal Gem".
+        // A category (weapons), weapon class (mace, two-handed) or item type (gem) word matches by kind.
+        // Every search also matches by name, material included and spaces ignored, so "portal" still finds a
+        // "Portal Gem", "longsword" finds a "Long Sword" and "iron jitte" finds an iron jitte.
         var isCategory = BankCategories.TryParse(query, out var category);
+        var isWeaponClass = BankSearch.TryParseWeaponClass(query, out var weaponClass);
         var isItemType = BankCategories.TryParseItemType(query, out var itemType);
 
         bool Matches(WorldObject item) =>
             (isCategory && (BankCategories.Classify(item) & category) != 0)
+            || (isWeaponClass && (BankSearch.GetWeaponClass(item) & weaponClass) != 0)
             || (isItemType && (item.ItemType & itemType) != 0)
-            || (item.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false);
+            || BankSearch.NameMatches(item.NameWithMaterial, query);
 
         var found = session.Player.GetBankContents(bank).Where(c => Matches(c.Item)).ToList();
 
@@ -260,7 +264,7 @@ public class BankCommand
 
             var names = group
                 .Take(MaxSearchResults - listed)
-                .Select(c => (c.Item.StackSize ?? 1) > 1 ? $"{c.Item.Name} ({c.Item.StackSize:N0})" : c.Item.Name)
+                .Select(c => (c.Item.StackSize ?? 1) > 1 ? $"{c.Item.NameWithMaterial} ({c.Item.StackSize:N0})" : c.Item.NameWithMaterial)
                 .ToList();
 
             listed += names.Count;
