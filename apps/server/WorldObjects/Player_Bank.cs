@@ -4,8 +4,10 @@ using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
+using ACE.Server.WorldObjects.Logging;
 
 namespace ACE.Server.WorldObjects;
 
@@ -248,6 +250,135 @@ public partial class Player
         SaveBankContainers(bank, touched);
 
         return report;
+    }
+
+    /// <summary>
+    /// How many salvage bags in the bank /bank combine would empty into others.
+    /// </summary>
+    public int CountBankSalvageToCombine(Storage bank)
+    {
+        return GetBankSalvageGroups(bank).Sum(bags => SalvagePourPlanner.CountEmptied(GetBagUnits(bags), SalvagePourPlanner.Plan(GetBagUnits(bags))));
+    }
+
+    /// <summary>
+    /// The pyreals in the bank and its packs: coins, and trade notes at face value (their Value, as house payments count them).
+    /// </summary>
+    public (long Coins, long Notes, int NoteCount) GetBankMoney(Storage bank)
+    {
+        long coins = 0;
+        long notes = 0;
+        var noteCount = 0;
+
+        foreach (var (item, _) in GetBankContents(bank))
+        {
+            if (item.WeenieType == WeenieType.Coin)
+            {
+                coins += item.Value ?? 0;
+            }
+            else if (item.IsTradeNote)
+            {
+                notes += item.Value ?? 0;
+                noteCount += item.StackSize ?? 1;
+            }
+        }
+
+        return (coins, notes, noteCount);
+    }
+
+    /// <summary>
+    /// Combines salvage bags anywhere in the bank that share a material and workmanship, like /salvage combine
+    /// does for the bags you carry: the fullest bags are topped up from the emptiest, and empty bags are removed.
+    /// Returns how many bags were emptied.
+    /// </summary>
+    public int CombineBankSalvage(Storage bank)
+    {
+        var touched = new HashSet<Container>();
+        var emptied = 0;
+
+        foreach (var bags in GetBankSalvageGroups(bank))
+        {
+            var units = GetBagUnits(bags);
+            var plan = SalvagePourPlanner.Plan(units);
+
+            // Pouring that frees no bag would only nudge workmanship around.
+            if (SalvagePourPlanner.CountEmptied(units, plan) == 0)
+            {
+                continue;
+            }
+
+            var changed = new HashSet<WorldObject>();
+
+            foreach (var pour in plan)
+            {
+                var source = bags[pour.Source];
+                var target = bags[pour.Target];
+
+                if (Salvage.PourSalvageBag(source, target, pour.Amount) <= 0)
+                {
+                    continue;
+                }
+
+                changed.Add(source);
+                changed.Add(target);
+            }
+
+            foreach (var bag in changed)
+            {
+                if (bag.Container is Container container)
+                {
+                    touched.Add(container);
+                }
+
+                if ((bag.Structure ?? 0) > 0)
+                {
+                    var material = (ACE.Entity.Enum.MaterialType)(bag.GetProperty(PropertyInt.MaterialType) ?? 0);
+                    Salvage.RefreshSalvageBagIcon(this, bag, material, (int)(bag.Workmanship ?? 1));
+                    Session.Network.EnqueueSend(new GameMessageUpdateObject(bag));
+                    continue;
+                }
+
+                // Emptied: take it out of the bank (or its pack) and delete it, as a merge that empties a stack does.
+                Session.Network.EnqueueSend(new GameMessageInventoryRemoveObject(bag));
+
+                if (bank.TryRemoveFromInventory(bag.Guid, out var removed))
+                {
+                    removed.Destroy();
+                    emptied++;
+                }
+            }
+        }
+
+        SaveBankContainers(bank, touched);
+
+        if (emptied > 0 && PropertyManager.GetBool("banking_system_logging").Item)
+        {
+            _log.Information(
+                "(BANKING - SALVAGE COMBINE in BANK)\n PLAYER: {@Player}\n BAGS EMPTIED: {Count}",
+                new BankLogPlayer(Name, Account.AccountId),
+                emptied
+            );
+        }
+
+        return emptied;
+    }
+
+    /// <summary>
+    /// The salvage bags in the bank, in groups that /bank combine may pour together:
+    /// the same material and the same workmanship to the nearest whole number, as /salvage combine groups them.
+    /// </summary>
+    private List<List<WorldObject>> GetBankSalvageGroups(Storage bank)
+    {
+        return GetBankItems(bank)
+            .Where(i => i.WeenieType == WeenieType.Salvage)
+            .GroupBy(i => ((int)(i.MaterialType ?? ACE.Entity.Enum.MaterialType.Unknown), (int)Math.Round(i.Workmanship ?? 1)))
+            .Where(g => g.Count() > 1)
+            .Select(g => g.ToList())
+            .ToList();
+    }
+
+    private static List<(int Units, int MaxUnits)> GetBagUnits(List<WorldObject> bags)
+    {
+        return bags.Select(b => ((int)(b.Structure ?? 0), (int)(b.MaxStructure ?? 1000))).ToList();
     }
 
     /// <summary>

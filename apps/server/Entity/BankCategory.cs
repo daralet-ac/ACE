@@ -18,6 +18,13 @@ public enum BankCategory
     Armor = 1 << 2,
     Jewelry = 1 << 3,
     Trinkets = 1 << 4,
+    Ammo = 1 << 5,
+    Components = 1 << 6,
+    Consumables = 1 << 7,
+    Gems = 1 << 8,
+    Keys = 1 << 9,
+    ManaStones = 1 << 10,
+    Trophies = 1 << 11,
 
     Gear = Weapons | Armor | Jewelry | Trinkets,
 }
@@ -42,7 +49,14 @@ public static class BankCategories
         BankCategory.Armor,
         BankCategory.Jewelry,
         BankCategory.Trinkets,
+        BankCategory.Ammo,
         BankCategory.Salvage,
+        BankCategory.Components,
+        BankCategory.ManaStones,
+        BankCategory.Gems,
+        BankCategory.Consumables,
+        BankCategory.Keys,
+        BankCategory.Trophies,
     ];
 
     public const string KeepTag = "keep";
@@ -61,11 +75,42 @@ public static class BankCategories
         { "trinket", BankCategory.Trinkets },
         { "trinkets", BankCategory.Trinkets },
         { "gear", BankCategory.Gear },
+        { "ammo", BankCategory.Ammo },
+        { "ammunition", BankCategory.Ammo },
+        { "arrow", BankCategory.Ammo },
+        { "arrows", BankCategory.Ammo },
+        { "bolt", BankCategory.Ammo },
+        { "bolts", BankCategory.Ammo },
+        { "component", BankCategory.Components },
+        { "components", BankCategory.Components },
+        { "comp", BankCategory.Components },
+        { "comps", BankCategory.Components },
+        { "consumable", BankCategory.Consumables },
+        { "consumables", BankCategory.Consumables },
+        { "food", BankCategory.Consumables },
+        { "potion", BankCategory.Consumables },
+        { "potions", BankCategory.Consumables },
+        { "gem", BankCategory.Gems },
+        { "gems", BankCategory.Gems },
+        { "jewel", BankCategory.Gems },
+        { "jewels", BankCategory.Gems },
+        { "key", BankCategory.Keys },
+        { "keys", BankCategory.Keys },
+        { "mana", BankCategory.ManaStones },
+        { "manastone", BankCategory.ManaStones },
+        { "manastones", BankCategory.ManaStones },
+        { "trophy", BankCategory.Trophies },
+        { "trophies", BankCategory.Trophies },
     };
 
     public static BankCategory Classify(WorldObject item)
     {
-        return Classify(item.WeenieType, item.ItemType, item.ValidLocations ?? EquipMask.None);
+        return Classify(
+            item.WeenieType,
+            item.ItemType,
+            item.ValidLocations ?? EquipMask.None,
+            (item.TrophyQuality ?? 0) > 0
+        );
     }
 
     /// <summary>
@@ -77,14 +122,20 @@ public static class BankCategories
     }
 
     /// <summary>
-    /// The category an item belongs to, or None for everything else (pyreals, keys, components, ...).
-    /// Trinkets are checked before jewelry and weapons so a trinket is only ever a trinket.
+    /// The one category an item belongs to, or None for everything else (pyreals, scrolls, quest items, ...).
+    /// Earlier checks win: a trophy is only ever a trophy, a trinket is never jewelry, and arrows
+    /// (ItemType.MissileWeapon) are ammo, not weapons.
     /// </summary>
-    public static BankCategory Classify(WeenieType weenieType, ItemType itemType, EquipMask validLocations)
+    public static BankCategory Classify(WeenieType weenieType, ItemType itemType, EquipMask validLocations, bool isTrophy = false)
     {
         if (weenieType == WeenieType.Salvage)
         {
             return BankCategory.Salvage;
+        }
+
+        if (isTrophy)
+        {
+            return BankCategory.Trophies;
         }
 
         if (weenieType == WeenieType.SigilTrinket || validLocations == EquipMask.TrinketOne)
@@ -92,10 +143,9 @@ public static class BankCategories
             return BankCategory.Trinkets;
         }
 
-        // Arrows and bolts are ItemType.MissileWeapon, but they are supplies, not gear.
         if (weenieType == WeenieType.Ammunition)
         {
-            return BankCategory.None;
+            return BankCategory.Ammo;
         }
 
         if ((itemType & ItemType.WeaponOrCaster) != 0)
@@ -112,6 +162,33 @@ public static class BankCategories
         if ((itemType & ItemType.Jewelry) != 0)
         {
             return BankCategory.Jewelry;
+        }
+
+        if (weenieType == WeenieType.SpellComponent || (itemType & ItemType.SpellComponents) != 0)
+        {
+            return BankCategory.Components;
+        }
+
+        if (weenieType == WeenieType.ManaStone || (itemType & ItemType.ManaStone) != 0)
+        {
+            return BankCategory.ManaStones;
+        }
+
+        // Lockpicks open locks too, so they go with keys.
+        if (weenieType == WeenieType.Key || weenieType == WeenieType.Lockpick || (itemType & ItemType.Key) != 0)
+        {
+            return BankCategory.Keys;
+        }
+
+        // Food covers potions and drinks as well; Healer is healing kits.
+        if (weenieType == WeenieType.Food || weenieType == WeenieType.Healer)
+        {
+            return BankCategory.Consumables;
+        }
+
+        if (weenieType == WeenieType.Gem || weenieType == WeenieType.Jewel || (itemType & ItemType.Gem) != 0)
+        {
+            return BankCategory.Gems;
         }
 
         return BankCategory.None;

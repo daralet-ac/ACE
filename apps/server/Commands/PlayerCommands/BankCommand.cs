@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity;
+using ACE.Server.Entity.Actions;
+using ACE.Server.Managers;
 using ACE.Server.Network;
 using ACE.Server.Network.GameMessages.Messages;
 using ACE.Server.WorldObjects;
@@ -15,15 +18,20 @@ public class BankCommand
     private const int MaxSearchResults = 60;
     private const int MaxInscriptionLength = 100;
 
-    private const string CategoryList = "all, salvage, gear, weapons, armor, jewelry, trinkets";
+    private const string CategoryList =
+        "all, gear, weapons, armor, jewelry, trinkets, salvage, ammo, components, consumables, gems, keys, manastones, trophies";
+
+    // /bank balance reads every offline character's possessions from the database, so it can't be spammed.
+    private static readonly TimeSpan BalanceCooldown = TimeSpan.FromSeconds(30);
+    private static readonly ConcurrentDictionary<uint, DateTime> LastBalanceCheck = new();
 
     [CommandHandler(
         "bank",
         AccessLevel.Player,
         CommandHandlerFlag.RequiresWorld,
         0,
-        "Bank tools: deposit, sort and search your bank, and tag packs by inscription. Use /bank for help.",
-        "deposit|sort|search|packs|inscribe ..."
+        "Bank tools: deposit, sort, search and combine salvage in your bank, check your balance, and tag packs by inscription. Use /bank for help.",
+        "deposit|sort|search|combine|balance|packs|inscribe ..."
     )]
     public static void HandleBank(Session session, params string[] parameters)
     {
@@ -48,6 +56,13 @@ public class BankCommand
             case "find":
                 HandleSearch(session, rest);
                 break;
+            case "combine":
+                HandleCombine(session);
+                break;
+            case "balance":
+            case "bal":
+                HandleBalance(session);
+                break;
             case "packs":
             case "info":
                 HandlePacks(session);
@@ -67,15 +82,19 @@ public class BankCommand
         Send(
             session,
             "Bank commands (stand at your open bank):\n"
-                + $"  /bank deposit <{CategoryList}> - Moves those items from your packs into your bank.\n"
+                + "  /bank deposit <category> - Moves those items from your packs into your bank.\n"
                 + "  /bank sort [category] - Files items into their inscribed packs, combines stacks and puts everything in order.\n"
                 + "  /bank search <name, category or type> - Lists matching items in your bank and where they are.\n"
+                + "  /bank combine - Combines salvage bags in your bank that have the same material and workmanship.\n"
+                + "  /bank balance - Shows the pyreals and trade notes in your bank and across your account. Works anywhere.\n"
                 + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
                 + "  /bank inscribe <tags> - Inscribes the pack you last examined (\"/bank inscribe clear\" to clear it).\n"
-                + "Tag a pack by inscribing it with category words: salvage, weapons, armor, jewelry, trinkets or gear. "
+                + $"Categories: {CategoryList}.\n"
+                + "Tag a pack by inscribing it with category words, like \"weapons\" or \"gems, keys\". "
                 + "Deposits and sorts fill those bank packs first. "
                 + "Inscribe a pack you carry with \"keep\" and /bank deposit leaves it alone.\n"
-                + "Gear is weapons (including casters), armor (including shields and clothing), jewelry and trinkets."
+                + "Gear is weapons (including casters), armor (including shields and clothing), jewelry and trinkets. "
+                + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels."
         );
     }
 
@@ -256,6 +275,125 @@ public class BankCommand
         }
 
         Send(session, string.Join("\n", lines));
+    }
+
+    // --- /bank combine ---
+
+    private static void HandleCombine(Session session)
+    {
+        var player = session.Player;
+        var bank = GetReadyBank(session);
+        if (bank == null)
+        {
+            return;
+        }
+
+        var toEmpty = player.CountBankSalvageToCombine(bank);
+        if (toEmpty == 0)
+        {
+            Send(session, "No salvage bags in your bank can be combined. Bags combine with others of the same material and workmanship.");
+            return;
+        }
+
+        var question = $"Combine the salvage in your bank? {Plural(toEmpty, "bag")} will be poured into others of the same material and workmanship.";
+
+        var confirmation = new Confirmation_Custom(
+            player.Guid,
+            () =>
+            {
+                // The bank may have closed or changed while the question was up.
+                var openBank = GetReadyBank(session);
+                if (openBank == null)
+                {
+                    return;
+                }
+
+                var emptied = player.CombineBankSalvage(openBank);
+
+                Send(
+                    session,
+                    emptied == 0
+                        ? "No salvage bags in your bank can be combined any more."
+                        : $"Combined the salvage in your bank: {Plural(emptied, "bag")} poured into others."
+                );
+            }
+        );
+
+        if (!player.ConfirmationManager.EnqueueSend(confirmation, question))
+        {
+            Send(session, "A confirmation is already pending.");
+        }
+    }
+
+    // --- /bank balance ---
+
+    private static void HandleBalance(Session session)
+    {
+        var player = session.Player;
+        var now = DateTime.UtcNow;
+
+        if (LastBalanceCheck.TryGetValue(player.Guid.Full, out var last) && now - last < BalanceCooldown)
+        {
+            var wait = (int)Math.Ceiling((BalanceCooldown - (now - last)).TotalSeconds);
+            Send(session, $"You counted your pyreals a moment ago. Try again in {Plural(wait, "second")}.");
+            return;
+        }
+
+        LastBalanceCheck[player.Guid.Full] = now;
+
+        // With the bank open, count what is in it now; the database may be a moment behind the last deposit.
+        var bank = player.GetOpenBank();
+        long? liveBank = null;
+
+        if (bank is { BankInventoryLoaded: true })
+        {
+            var (coins, notes, noteCount) = player.GetBankMoney(bank);
+            liveBank = coins + notes;
+
+            Send(
+                session,
+                $"Your bank holds {coins + notes:N0} pyreals: {coins:N0} in coin and {notes:N0} in {Plural(noteCount, "trade note")}."
+            );
+        }
+        else
+        {
+            Send(session, "Counting your pyreals...");
+        }
+
+        AccountWealthTracker.Update(
+            player,
+            wealth =>
+                WorldManager.EnqueueAction(
+                    new ActionEventDelegate(() =>
+                    {
+                        // gone while we counted
+                        if (session.Player != player)
+                        {
+                            return;
+                        }
+
+                        if (wealth == null)
+                        {
+                            Send(session, "Your pyreals couldn't be counted right now. Try again later.");
+                            return;
+                        }
+
+                        var bankPyreals = liveBank ?? wealth.Value.BankPyreals;
+                        var accountPyreals = wealth.Value.TotalPyreals - wealth.Value.BankPyreals + bankPyreals;
+
+                        var lines = new List<string>();
+
+                        if (liveBank == null)
+                        {
+                            lines.Add($"Your bank holds {bankPyreals:N0} pyreals in coin and trade notes.");
+                        }
+
+                        lines.Add($"Your account holds {accountPyreals:N0} pyreals in all, counting every character and your bank.");
+
+                        Send(session, string.Join("\n", lines));
+                    })
+                )
+        );
     }
 
     // --- /bank packs ---
