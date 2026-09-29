@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
@@ -18,6 +19,9 @@ public class BankCommand
     private const int MaxSearchResults = 60;
     private const int MaxInscriptionLength = 100;
 
+    // /bank withdraw asks first before taking more than this many items without a count
+    private const int WithdrawConfirmAbove = 20;
+
     private const string CategoryList =
         "all, gear, weapons, armor, jewelry, trinkets, salvage, ammo, animal, components, consumables, gems, keys, manastones, trophies, "
         + "blacksmithing, tailoring, spellcrafting, woodworking, jewelcrafting, imbue";
@@ -31,8 +35,8 @@ public class BankCommand
         AccessLevel.Player,
         CommandHandlerFlag.RequiresWorld,
         0,
-        "Bank tools: deposit, sort, search and combine salvage in your bank, check your balance, and tag packs by inscription. Use /bank for help.",
-        "deposit|sort|search|combine|balance|packs|inscribe ..."
+        "Bank tools: deposit, withdraw, sort, search and combine salvage in your bank, check your balance, and tag packs by inscription. Use /bank for help.",
+        "deposit|withdraw|sort|search|combine|balance|packs|inscribe ..."
     )]
     public static void HandleBank(Session session, params string[] parameters)
     {
@@ -55,6 +59,11 @@ public class BankCommand
             case "deposit":
             case "d":
                 HandleDeposit(session, rest);
+                break;
+            case "withdraw":
+            case "w":
+            case "take":
+                HandleWithdraw(session, rest);
                 break;
             case "sort":
                 HandleSort(session, rest);
@@ -90,6 +99,9 @@ public class BankCommand
             session,
             "Bank commands (stand at your open bank):\n"
                 + "  /bank deposit <category> - Moves those items from your packs into your bank.\n"
+                + "  /bank withdraw [how many] <name, category or type> - Takes those items out of your bank into your packs, "
+                + "filling named and inscribed packs first, then your main pack. With a number, takes that many (\"/bank withdraw 200 arrows\"). "
+                + "Stops at your burden limit, and never fills a pack inscribed \"deposit\".\n"
                 + "  /bank sort [category] - Files items into their inscribed packs, combines stacks and puts everything in order.\n"
                 + "  /bank search <name, category or type> - Lists matching items in your bank and where they are. "
                 + "Weapon types work too: sword, axe, mace, spear, dagger, staff, unarmed, bow, crossbow, atlatl, thrown, two-handed, or a weapon like longsword or jitte.\n"
@@ -209,20 +221,7 @@ public class BankCommand
             return;
         }
 
-        // A category (weapons), weapon class (mace, two-handed) or item type (gem) word matches by kind.
-        // Every search also matches by name, material included and spaces ignored, so "portal" still finds a
-        // "Portal Gem", "longsword" finds a "Long Sword" and "iron jitte" finds an iron jitte.
-        var isCategory = BankCategories.TryParse(query, out var category);
-        var isWeaponClass = BankSearch.TryParseWeaponClass(query, out var weaponClass);
-        var isItemType = BankCategories.TryParseItemType(query, out var itemType);
-
-        bool Matches(WorldObject item) =>
-            (isCategory && (BankCategories.Tags(item) & category) != 0)
-            || (isWeaponClass && (BankSearch.GetWeaponClass(item) & weaponClass) != 0)
-            || (isItemType && (item.ItemType & itemType) != 0)
-            || BankSearch.NameMatches(item.NameWithMaterial, query);
-
-        var found = session.Player.GetBankContents(bank).Where(c => Matches(c.Item)).ToList();
+        var found = FindInBank(session.Player, bank, query);
 
         if (found.Count == 0)
         {
@@ -257,6 +256,145 @@ public class BankCommand
         }
 
         Send(session, string.Join("\n", lines));
+    }
+
+    // --- /bank withdraw ---
+
+    private static void HandleWithdraw(Session session, string[] parameters)
+    {
+        int? limit = null;
+
+        if (parameters.Length > 0 && TryParseCount(parameters[0], out var count))
+        {
+            limit = count;
+            parameters = parameters.Skip(1).ToArray();
+        }
+
+        var query = string.Join(" ", parameters).Trim();
+
+        if (query.Length == 0 || query.Equals("all", StringComparison.OrdinalIgnoreCase) || limit <= 0)
+        {
+            Send(
+                session,
+                "Usage: /bank withdraw [how many] <name, category or type>. For example: /bank withdraw healing kits, /bank withdraw 200 arrows, /bank withdraw mace"
+            );
+            return;
+        }
+
+        var player = session.Player;
+        var bank = GetReadyBank(session);
+        if (bank == null)
+        {
+            return;
+        }
+
+        var found = FindInBank(player, bank, query);
+
+        if (found.Count == 0)
+        {
+            Send(session, $"Nothing in your bank matches \"{query}\".");
+            return;
+        }
+
+        if (limit != null || found.Count <= WithdrawConfirmAbove)
+        {
+            Withdraw(session, bank, query, limit);
+            return;
+        }
+
+        // A short name like "a" matches most of the bank, so a big withdrawal is asked about first.
+        var confirmation = new Confirmation_Custom(
+            player.Guid,
+            () =>
+            {
+                // The bank may have closed or changed while the question was up.
+                var openBank = GetReadyBank(session);
+                if (openBank != null)
+                {
+                    Withdraw(session, openBank, query, null);
+                }
+            }
+        );
+
+        if (!player.ConfirmationManager.EnqueueSend(confirmation, $"Withdraw all {Items(found.Count)} in your bank that match \"{query}\"?"))
+        {
+            Send(session, "A confirmation is already pending.");
+        }
+    }
+
+    private static void Withdraw(Session session, Storage bank, string query, int? limit)
+    {
+        var items = FindInBank(session.Player, bank, query).Select(c => c.Item).ToList();
+
+        if (items.Count == 0)
+        {
+            Send(session, $"Nothing in your bank matches \"{query}\" any more.");
+            return;
+        }
+
+        var report = session.Player.WithdrawFromBank(bank, items, limit);
+
+        var lines = new List<string>();
+
+        if (report.Taken.Count > 0)
+        {
+            lines.Add("Withdrew from your bank:");
+
+            var listed = 0;
+
+            foreach (var group in report.Taken.GroupBy(t => t.Into))
+            {
+                if (listed >= MaxSearchResults)
+                {
+                    break;
+                }
+
+                var names = group
+                    .Take(MaxSearchResults - listed)
+                    .Select(t => t.Amount == null ? t.Name : $"{t.Name} ({t.Amount:N0})")
+                    .ToList();
+
+                listed += names.Count;
+                lines.Add($"  Into {group.Key}: {string.Join(", ", names)}");
+            }
+
+            if (report.Taken.Count > listed)
+            {
+                lines.Add($"  ...and {report.Taken.Count - listed} more.");
+            }
+        }
+
+        var stoppedShort = report.NoRoom + report.TooHeavy + report.Failed > 0;
+
+        if (limit != null && report.Units < limit && !stoppedShort)
+        {
+            lines.Add($"Your bank only had {report.Units:N0} of those.");
+        }
+
+        if (report.NoRoom > 0)
+        {
+            lines.Add($"{Items(report.NoRoom)} didn't fit: your packs are full.");
+        }
+
+        if (report.TooHeavy > 0)
+        {
+            lines.Add($"{Items(report.TooHeavy)} stayed in your bank, all or in part: you can't carry more without going over your burden limit.");
+        }
+
+        if (report.Failed > 0)
+        {
+            lines.Add($"{Items(report.Failed)} couldn't be moved.");
+        }
+
+        Send(session, string.Join("\n", lines));
+    }
+
+    /// <summary>
+    /// A leading count for /bank withdraw: digits, commas allowed ("1,000").
+    /// </summary>
+    private static bool TryParseCount(string word, out int count)
+    {
+        return int.TryParse(word.Replace(",", ""), NumberStyles.None, CultureInfo.InvariantCulture, out count);
     }
 
     // --- /bank combine ---
@@ -500,6 +638,27 @@ public class BankCommand
     }
 
     // --- helpers ---
+
+    /// <summary>
+    /// Your items in the bank and its packs that match query, in bank order.
+    /// A category (weapons), weapon class (mace, two-handed) or item type (gem) word matches by kind.
+    /// Every query also matches by name, material included and spaces ignored, so "portal" still finds a
+    /// "Portal Gem", "longsword" finds a "Long Sword" and "iron jitte" finds an iron jitte.
+    /// </summary>
+    private static List<(WorldObject Item, Container Container)> FindInBank(Player player, Storage bank, string query)
+    {
+        var isCategory = BankCategories.TryParse(query, out var category);
+        var isWeaponClass = BankSearch.TryParseWeaponClass(query, out var weaponClass);
+        var isItemType = BankCategories.TryParseItemType(query, out var itemType);
+
+        bool Matches(WorldObject item) =>
+            (isCategory && (BankCategories.Tags(item) & category) != 0)
+            || (isWeaponClass && (BankSearch.GetWeaponClass(item) & weaponClass) != 0)
+            || (isItemType && (item.ItemType & itemType) != 0)
+            || BankSearch.NameMatches(item.NameWithMaterial, query);
+
+        return player.GetBankContents(bank).Where(c => Matches(c.Item)).ToList();
+    }
 
     private static Storage GetReadyBank(Session session)
     {

@@ -4,6 +4,7 @@ using System.Linq;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
+using ACE.Server.Factories;
 using ACE.Server.Managers;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages.Messages;
@@ -107,6 +108,43 @@ public sealed class BankReport
 }
 
 /// <summary>
+/// What a /bank withdraw did, for the message back to the player.
+/// </summary>
+public sealed class WithdrawReport
+{
+    /// <summary>
+    /// What was taken and where it went ("your main pack" or a pack's name), in order.
+    /// Amount is how many of a stack, or null for an item that doesn't stack.
+    /// </summary>
+    public List<(string Into, string Name, int? Amount)> Taken { get; } = [];
+
+    /// <summary>How many were taken, counting each one in a stack.</summary>
+    public int Units { get; set; }
+
+    /// <summary>Items left in the bank because no pack you carry had room.</summary>
+    public int NoRoom { get; set; }
+
+    /// <summary>Items left in the bank, or part of a stack, because they would have put you over your burden limit.</summary>
+    public int TooHeavy { get; set; }
+
+    /// <summary>Moves the normal inventory checks turned down.</summary>
+    public int Failed { get; set; }
+
+    public void Add(string into, string name, int? amount)
+    {
+        // a stack split between topping up and a new stack in the same pack reads as one line
+        var last = Taken.Count - 1;
+        if (last >= 0 && Taken[last].Into == into && Taken[last].Name == name && amount != null && Taken[last].Amount != null)
+        {
+            Taken[last] = (into, name, Taken[last].Amount + amount);
+            return;
+        }
+
+        Taken.Add((into, name, amount));
+    }
+}
+
+/// <summary>
 /// Bulk bank operations for the /bank command.
 /// Every move goes through the same checks and code as dragging the item by hand
 /// (HandleActionPutItemInContainer_Verify, DoHandleActionPutItemInContainer, DoHandleActionStackableMerge),
@@ -124,6 +162,12 @@ public partial class Player
         public BankPackTags Tags { get; init; }
         public int FreeSlots { get; set; }
         public int Order { get; init; }
+
+        /// <summary>
+        /// Takes only what it is named, inscribed or specialized for, nothing at the neutral rank
+        /// (a carried pack inscribed "keep", for /bank withdraw).
+        /// </summary>
+        public bool OnlyItsOwn { get; init; }
     }
 
     // Lower is a better home for an item, see RankBankSpot.
@@ -326,6 +370,302 @@ public partial class Player
 
         // quietly skipped if another question is already up
         ConfirmationManager.EnqueueSend(confirmation, $"Deposit all items in \"Deposit\" packs? ({BankReport.Plural(count, "item")})");
+    }
+
+    /// <summary>
+    /// Takes items out of the bank (or its packs) into the packs you carry, up to limit counting each one in a stack
+    /// (null = all of them). items are bank items, in the order to take them.
+    /// A stackable item first tops up stacks you carry. The rest goes to the best of your packs with room, ranked as a
+    /// deposit ranks the bank's (see RankBankSpot): a named pack for it, a pack inscribed for it, an untagged specialized
+    /// pack that takes it, then your main pack, then an untagged pack. Packs inscribed "deposit" get nothing, and packs
+    /// inscribed "keep" only what they are named, inscribed or specialized for.
+    /// Nothing is taken past your burden limit (100%, where you start to slow down); a stack is split to take what you can carry.
+    /// </summary>
+    public WithdrawReport WithdrawFromBank(Storage bank, List<WorldObject> items, int? limit)
+    {
+        var report = new WithdrawReport();
+        var bankTouched = new HashSet<Container>();
+        var carriedTouched = new HashSet<Container>();
+
+        var spots = GetWithdrawSpots();
+        var carriedStacks = spots
+            .SelectMany(spot => spot.Container.Inventory.Values)
+            .Where(i => i is Stackable && (i.StackSize ?? 1) < (i.MaxStackSize ?? 1))
+            .ToList();
+
+        var remaining = limit ?? int.MaxValue;
+        var coinsTaken = false;
+
+        foreach (var item in items)
+        {
+            if (remaining <= 0)
+            {
+                break;
+            }
+
+            // gone from the bank since the list was made
+            if (item.Container is not Container source || (source != bank && source.Container != bank))
+            {
+                continue;
+            }
+
+            var name = item.NameWithMaterial;
+            var isStack = item is Stackable;
+            var isCoin = item.WeenieType == WeenieType.Coin;
+            var want = Math.Min(item.StackSize ?? 1, remaining);
+            var taken = 0;
+            var tooHeavy = false;
+
+            // top up stacks you carry
+            if (isStack)
+            {
+                foreach (var target in carriedStacks.ToList())
+                {
+                    if (taken >= want)
+                    {
+                        break;
+                    }
+
+                    if (!CanStackTogether(item, target))
+                    {
+                        continue;
+                    }
+
+                    var room = (target.MaxStackSize ?? 1) - (target.StackSize ?? 1);
+                    if (room <= 0)
+                    {
+                        carriedStacks.Remove(target);
+                        continue;
+                    }
+
+                    var targetContainer = target.Container as Container;
+                    var amount = Math.Min(Math.Min(room, want - taken), UnitsYouCanCarry(item, targetContainer));
+                    if (amount <= 0)
+                    {
+                        tooHeavy = true;
+                        break;
+                    }
+
+                    if (!DoHandleActionStackableMerge(item, target, amount))
+                    {
+                        break;
+                    }
+
+                    taken += amount;
+                    bankTouched.Add(source);
+                    carriedTouched.Add(targetContainer);
+                    report.Add(DescribeCarried(targetContainer), name, amount);
+                }
+            }
+
+            // the rest, into a pack
+            var rest = want - taken;
+            if (rest > 0 && !tooHeavy)
+            {
+                var spot = FindBankSpot(spots, item, BankCategories.Tags(item), null, out _);
+                var amount = spot == null ? 0 : Math.Min(rest, UnitsYouCanCarry(item, spot.Container));
+
+                WorldObject moved = null;
+
+                if (spot == null)
+                {
+                    report.NoRoom++;
+                }
+                else if (amount <= 0)
+                {
+                    tooHeavy = true;
+                }
+                else if (amount == (item.StackSize ?? 1))
+                {
+                    if (TryMoveItemInBank(item, spot.Container))
+                    {
+                        OnTakenFromBank(item);
+                        moved = item;
+                    }
+                }
+                else
+                {
+                    moved = TrySplitOutOfBank(item, bank, spot.Container, amount);
+                }
+
+                if (moved != null)
+                {
+                    spot.FreeSlots--;
+                    taken += amount;
+                    bankTouched.Add(source);
+                    carriedTouched.Add(spot.Container);
+                    report.Add(DescribeCarried(spot.Container), name, isStack ? amount : null);
+
+                    if (isStack && (moved.StackSize ?? 1) < (moved.MaxStackSize ?? 1))
+                    {
+                        carriedStacks.Add(moved);
+                    }
+
+                    // a stack cut short by your burden
+                    tooHeavy = amount < rest;
+                }
+                else if (spot != null && amount > 0)
+                {
+                    report.Failed++;
+                }
+            }
+
+            if (tooHeavy)
+            {
+                report.TooHeavy++;
+            }
+
+            report.Units += taken;
+            remaining -= taken;
+            coinsTaken |= isCoin && taken > 0;
+        }
+
+        if (report.Units > 0)
+        {
+            EndStealth();
+
+            // A move adds an item's full burden; a specialized pack lightens it, which only a recount picks up.
+            RecalculateBurden();
+
+            if (coinsTaken)
+            {
+                UpdateCoinValue();
+            }
+
+            EnqueueBroadcast(new GameMessageSound(Guid, Sound.PickUpItem));
+
+            foreach (var container in carriedTouched)
+            {
+                DeepSave(container);
+            }
+
+            SaveBankContainers(bank, bankTouched);
+        }
+
+        return report;
+    }
+
+    /// <summary>
+    /// Where /bank withdraw can put items: your main pack, then your packs in order, except those inscribed "deposit"
+    /// (their contents would be offered back to the bank). A pack inscribed "keep" takes only its own (BankSpot.OnlyItsOwn).
+    /// </summary>
+    private List<BankSpot> GetWithdrawSpots()
+    {
+        var spots = new List<BankSpot>
+        {
+            new()
+            {
+                Container = this,
+                IsMain = true,
+                FreeSlots = GetFreeInventorySlots(false),
+                Order = 0,
+            },
+        };
+
+        var order = 1;
+        foreach (var pack in Inventory.Values.OfType<Container>().OrderBy(p => p.PlacementPosition ?? int.MaxValue))
+        {
+            var tags = BankCategories.ParseInscription(pack.Inscription);
+            if (tags.Deposit)
+            {
+                continue;
+            }
+
+            spots.Add(
+                new BankSpot
+                {
+                    Container = pack,
+                    Tags = tags,
+                    FreeSlots = pack.GetFreeInventorySlots(false),
+                    Order = order++,
+                    OnlyItsOwn = tags.Keep,
+                }
+            );
+        }
+
+        return spots;
+    }
+
+    private string DescribeCarried(Container container) => container == this ? "your main pack" : container.Name;
+
+    /// <summary>
+    /// How many of item (each one in a stack) you can put in container without going over your burden limit
+    /// (100%, where you start to slow down). A specialized pack lightens what is in it, as RecalculateBurden counts it.
+    /// </summary>
+    private int UnitsYouCanCarry(WorldObject item, Container container)
+    {
+        double unitBurden = item is Stackable
+            ? item.StackUnitEncumbrance ?? (item.EncumbranceVal ?? 0) / Math.Max(1, item.StackSize ?? 1)
+            : item.EncumbranceVal ?? 0;
+
+        if (container is { MerchandiseItemTypes: not null } specPack)
+        {
+            unitBurden *= specPack.SpecializedPackBurdenMod ?? 0.5;
+        }
+
+        if (unitBurden <= 0)
+        {
+            return int.MaxValue;
+        }
+
+        var available = GetEncumbranceCapacity() - (EncumbranceVal ?? 0);
+
+        return available <= 0 ? 0 : (int)Math.Min(int.MaxValue, Math.Floor(available / unitBurden));
+    }
+
+    /// <summary>
+    /// Splits amount off a stack in the bank (or one of its packs) into container, one you carry, the same way
+    /// dragging part of a stack does. Returns the new stack, or null if it couldn't be done.
+    /// </summary>
+    private WorldObject TrySplitOutOfBank(WorldObject stack, Storage bank, Container container, int amount)
+    {
+        if (IsBusy || stack is not Stackable || amount <= 0 || amount >= (stack.StackSize ?? 1))
+        {
+            return null;
+        }
+
+        if (stack.Container is not Container stackContainer || !container.CanHoldItemType(stack))
+        {
+            return null;
+        }
+
+        var newStack = WorldObjectFactory.CreateNewWorldObject(stack.WeenieClassId);
+        if (newStack == null)
+        {
+            return null;
+        }
+
+        newStack.SetStackSize(amount);
+        CopyMutatedStackProperties(stack, newStack);
+
+        var placement = container.Inventory.Values.Count(i => !i.UseBackpackSlot);
+
+        return DoHandleActionStackableSplitToContainer(stack, stackContainer, bank, container, this, newStack, placement, amount)
+            ? newStack
+            : null;
+    }
+
+    /// <summary>
+    /// What picking an item up out of the bank by hand does once it has moved (HandleActionPutItemInContainer).
+    /// </summary>
+    private void OnTakenFromBank(WorldObject item)
+    {
+        item.EmoteManager.OnPickup(this);
+        item.NotifyOfEvent(RegenerationType.PickUp);
+        item.BankAccountId = 0;
+        item.SaveBiotaToDatabase();
+
+        // it must not stay in another bank chest's copy of this account's items
+        List<Storage> chests;
+        lock (Storage.BankChests)
+        {
+            chests = Storage.BankChests.ToList();
+        }
+
+        foreach (var chest in chests)
+        {
+            chest.Inventory.Remove(item.Guid);
+        }
     }
 
     /// <summary>
@@ -537,6 +877,17 @@ public partial class Player
     }
 
     /// <summary>
+    /// How full the bank is for this player: its own slots used and in all, and the free slots in their packs in it.
+    /// </summary>
+    public (int Used, int Capacity, int PackFree) GetBankSpace(Storage bank)
+    {
+        var used = GetMyBankItems(bank, bank).Count;
+        var packFree = GetBankPacks(bank).Sum(p => Math.Max(0, p.GetFreeInventorySlots(false)));
+
+        return (used, bank.ItemCapacity ?? 0, packFree);
+    }
+
+    /// <summary>
     /// Every item of yours in the bank and its side packs, not counting the packs themselves.
     /// </summary>
     public List<(WorldObject Item, Container Container)> GetBankContents(Storage bank)
@@ -627,10 +978,19 @@ public partial class Player
     /// its category exactly (weapons), its category among others (gear).
     /// 5: an untagged specialized pack that takes it.
     /// 6 (neutral): the bank itself, or an untagged pack.
-    /// null: a pack inscribed for other things, or a specialized pack that does not take this type.
+    /// null: a pack inscribed for other things, or a specialized pack that does not take this type,
+    /// or a neutral place that takes only its own (BankSpot.OnlyItsOwn).
     /// For anything else a named pack is ranked by its inscription, or as any untagged pack.
+    /// The same ranks pick the pack you carry that /bank withdraw puts an item in, your main pack standing in for the bank.
     /// </summary>
     private static int? RankBankSpot(BankSpot spot, WorldObject item, BankCategory tags)
+    {
+        var rank = RankSpotFor(spot, item, tags);
+
+        return spot.OnlyItsOwn && rank >= RankNeutral ? null : rank;
+    }
+
+    private static int? RankSpotFor(BankSpot spot, WorldObject item, BankCategory tags)
     {
         if (!spot.Container.CanHoldItemType(item))
         {

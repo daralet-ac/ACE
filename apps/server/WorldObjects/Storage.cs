@@ -29,7 +29,7 @@ public class Storage : Container
     public bool BankInventoryLoaded { get; private set; }
 
     public const string BankCommandsHint =
-        "Type /bank to see what else I can do: deposit and sort your items by kind, search your bank, combine salvage, "
+        "Type /bank to see what else I can do: deposit, withdraw and sort your items by kind, search your bank, combine salvage, "
         + "count your pyreals, and inscribe your packs to say what goes in them.";
 
     /// <summary>
@@ -203,11 +203,40 @@ public class Storage : Container
 
         SendBankVaultInventory(_bankUser);
 
-        // offer to empty the viewer's "deposit" packs into the bank
         if (_bankUser != null && IsOpen && Viewer == _bankUser.Guid.Full)
         {
+            _bankUser.Session.Network.EnqueueSend(new GameEventTell(this, DescribeSpace(_bankUser), _bankUser, ChatMessageType.Tell));
+
+            // offer to empty the viewer's "deposit" packs into the bank
             _bankUser.OfferDepositPacks(this);
         }
+    }
+
+    /// <summary>
+    /// What the bank says about its space when it opens, e.g. "You're using 212 of your 300 bank slots,
+    /// and your packs here have room for 140 more items."
+    /// </summary>
+    private string DescribeSpace(Player player)
+    {
+        var (used, capacity, packFree) = player.GetBankSpace(this);
+        var free = capacity - used;
+
+        var text = $"You're using {used:N0} of your {capacity:N0} bank slots";
+
+        text += player.GetBankPacks(this).Count > 0
+            ? $", and your packs here have room for {packFree:N0} more {(packFree == 1 ? "item" : "items")}."
+            : ".";
+
+        if (free <= 0)
+        {
+            text += " My own slots are full.";
+        }
+        else if (free * 10 <= capacity)
+        {
+            text += $" Only {free:N0} {(free == 1 ? "slot is" : "slots are")} left.";
+        }
+
+        return text;
     }
 
     private void SendBankVaultInventory(Player player)
