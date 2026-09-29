@@ -39,7 +39,7 @@ public class BankCommand
         // The bank stops mentioning /bank when it's opened (Storage.Open) once the player has used it.
         if (!session.Player.BankCommandsUsed)
         {
-            session.Player.BankCommandsUsed = true;
+            session.Player.QuestManager.Stamp(Player.BankCommandsUsedQuest);
         }
 
         if (parameters.Length == 0)

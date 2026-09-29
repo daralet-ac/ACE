@@ -132,23 +132,12 @@ public partial class Player
     private const int RankMisfiled = 7;
 
     /// <summary>
-    /// Set once the player has used a /bank command. Until then, opening a bank tells them about /bank.
+    /// Stamped once the player has used a /bank command. Until then, opening a bank tells them about /bank.
+    /// As an ACCOUNT_ flag, it is copied to characters made later on the account.
     /// </summary>
-    public bool BankCommandsUsed
-    {
-        get => GetProperty(PropertyBool.BankCommandsUsed) ?? false;
-        set
-        {
-            if (!value)
-            {
-                RemoveProperty(PropertyBool.BankCommandsUsed);
-            }
-            else
-            {
-                SetProperty(PropertyBool.BankCommandsUsed, value);
-            }
-        }
-    }
+    public const string BankCommandsUsedQuest = "ACCOUNT_BankCommandsUsed";
+
+    public bool BankCommandsUsed => QuestManager.HasQuest(BankCommandsUsedQuest);
 
     /// <summary>
     /// A safety net for BankPackExpansion: a pack the player carries should be at its own size, since leaving
