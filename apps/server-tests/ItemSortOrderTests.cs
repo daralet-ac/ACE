@@ -1,7 +1,10 @@
 using System.Linq;
+using ACE.DatLoader.FileTypes;
 using ACE.Entity.Enum;
+using ACE.Entity.Enum.Properties;
 using ACE.Server.Entity;
 using ACE.Server.Factories;
+using ACE.Server.Factories.Tables.Wcids;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ACE.Server.Tests;
@@ -86,6 +89,69 @@ public class ItemSortOrderTests
         Assert.IsTrue(ItemSortOrder.SubtypeRank(LootTables.WeaponSubtype.MaceSmall) < ItemSortOrder.SubtypeRank(LootTables.WeaponSubtype.SwordLarge));
         Assert.IsTrue(ItemSortOrder.SubtypeRank(LootTables.WeaponSubtype.ThrownShuriken) < ItemSortOrder.SubtypeRank(null));
         Assert.AreEqual(ItemSortOrder.SubtypeRank(null), ItemSortOrder.SubtypeRank(LootTables.WeaponSubtype.Undef));
+    }
+
+    [TestMethod]
+    public void JewelrySlotRank_GoesNecklaceBraceletRing()
+    {
+        Assert.IsTrue(ItemSortOrder.JewelrySlotRank(EquipMask.NeckWear) < ItemSortOrder.JewelrySlotRank(EquipMask.WristWearLeft));
+        Assert.AreEqual(ItemSortOrder.JewelrySlotRank(EquipMask.WristWearLeft), ItemSortOrder.JewelrySlotRank(EquipMask.WristWear));
+        Assert.IsTrue(ItemSortOrder.JewelrySlotRank(EquipMask.WristWear) < ItemSortOrder.JewelrySlotRank(EquipMask.FingerWear));
+        Assert.AreEqual(ItemSortOrder.JewelrySlotRank(EquipMask.FingerWearRight), ItemSortOrder.JewelrySlotRank(EquipMask.FingerWear));
+        Assert.IsTrue(ItemSortOrder.JewelrySlotRank(EquipMask.FingerWear) < ItemSortOrder.JewelrySlotRank(null));
+    }
+
+    [TestMethod]
+    public void AmmoRanks_GoByTypeThenElementWithNoneLast()
+    {
+        Assert.IsTrue(ItemSortOrder.AmmoTypeRank(AmmoType.Arrow) < ItemSortOrder.AmmoTypeRank(AmmoType.Bolt));
+        Assert.IsTrue(ItemSortOrder.AmmoTypeRank(AmmoType.Bolt) < ItemSortOrder.AmmoTypeRank(AmmoType.Atlatl));
+        Assert.IsTrue(ItemSortOrder.AmmoTypeRank(AmmoType.AtlatlCrystal) < ItemSortOrder.AmmoTypeRank(AmmoType.None));
+        Assert.AreEqual(ItemSortOrder.AmmoTypeRank(null), ItemSortOrder.AmmoTypeRank(AmmoType.None));
+
+        Assert.IsTrue(ItemSortOrder.ElementRank(DamageType.Slash) < ItemSortOrder.ElementRank(DamageType.Fire));
+        Assert.IsTrue(ItemSortOrder.ElementRank(DamageType.Electric) < ItemSortOrder.ElementRank(DamageType.Undef));
+    }
+
+    [TestMethod]
+    public void KitVitalRank_GoesHealthStaminaManaThenOther()
+    {
+        Assert.IsTrue(ItemSortOrder.KitVitalRank(PropertyAttribute2nd.Health) < ItemSortOrder.KitVitalRank(PropertyAttribute2nd.Stamina));
+        Assert.IsTrue(ItemSortOrder.KitVitalRank(PropertyAttribute2nd.Stamina) < ItemSortOrder.KitVitalRank(PropertyAttribute2nd.Mana));
+        Assert.IsTrue(ItemSortOrder.KitVitalRank(PropertyAttribute2nd.Mana) < ItemSortOrder.KitVitalRank(PropertyAttribute2nd.Undef));
+
+        // Kits that name the max vital count as that vital.
+        Assert.AreEqual(ItemSortOrder.KitVitalRank(PropertyAttribute2nd.Health), ItemSortOrder.KitVitalRank(PropertyAttribute2nd.MaxHealth));
+    }
+
+    [TestMethod]
+    public void TrophyTypeRank_IsTheSameForEveryQualityOfATrophy()
+    {
+        var hideBase = (uint)ACE.Entity.Enum.WeenieClassName.W_MATTEKARHIDETROPHY_CLASS;
+        var hornBase = (uint)ACE.Entity.Enum.WeenieClassName.W_MATTEKARHORN_CLASS;
+
+        var hideDamaged = TrophyWcids.GetTrophyWcid(hideBase, 1);
+        var hidePeerless = TrophyWcids.GetTrophyWcid(hideBase, 10);
+
+        Assert.AreEqual(ItemSortOrder.TrophyTypeRank(hideDamaged), ItemSortOrder.TrophyTypeRank(hidePeerless));
+        Assert.AreNotEqual(ItemSortOrder.TrophyTypeRank(hideDamaged), ItemSortOrder.TrophyTypeRank(TrophyWcids.GetTrophyWcid(hornBase, 5)));
+
+        // Anything that isn't one of the trophy types goes after them.
+        Assert.AreEqual(long.MaxValue, ItemSortOrder.TrophyTypeRank(1));
+        Assert.IsTrue(ItemSortOrder.TrophyTypeRank(hidePeerless) < ItemSortOrder.TrophyTypeRank(1));
+    }
+
+    [TestMethod]
+    public void ComponentOrder_IsScarabsByTierThenHerbPowderPotionTalismanTaper()
+    {
+        Assert.IsTrue(ItemSortOrder.GetComponentTypeOrder((uint)SpellComponentsTable.Type.Scarab) < ItemSortOrder.GetComponentTypeOrder((uint)SpellComponentsTable.Type.Herb));
+        Assert.IsTrue(ItemSortOrder.GetComponentTypeOrder((uint)SpellComponentsTable.Type.Herb) < ItemSortOrder.GetComponentTypeOrder((uint)SpellComponentsTable.Type.Powder));
+        Assert.IsTrue(ItemSortOrder.GetComponentTypeOrder((uint)SpellComponentsTable.Type.Powder) < ItemSortOrder.GetComponentTypeOrder((uint)SpellComponentsTable.Type.Talisman));
+        Assert.IsTrue(ItemSortOrder.GetComponentTypeOrder((uint)SpellComponentsTable.Type.Talisman) < ItemSortOrder.GetComponentTypeOrder((uint)SpellComponentsTable.Type.Taper));
+
+        Assert.IsTrue(ItemSortOrder.GetScarabMaterialOrder("Lead Scarab") < ItemSortOrder.GetScarabMaterialOrder("Iron Scarab"));
+        Assert.IsTrue(ItemSortOrder.GetScarabMaterialOrder("Platinum Scarab") < ItemSortOrder.GetScarabMaterialOrder("Diamond Scarab"));
+        Assert.IsTrue(ItemSortOrder.GetScarabMaterialOrder("Diamond Scarab") < ItemSortOrder.GetScarabMaterialOrder("Mana Scarab"));
     }
 
     [TestMethod]
