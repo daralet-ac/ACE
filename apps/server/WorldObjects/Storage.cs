@@ -277,10 +277,10 @@ public class Storage : Container
 
         player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, this));
 
-        // send sub-containers
-        foreach (var container in Inventory.Values.Where(i => i is Container))
+        // send sub-containers, in slot order: the bank window seems to place a pack by when its list arrives
+        foreach (var container in Inventory.Values.OfType<Container>().OrderBy(c => c.PlacementPosition ?? int.MaxValue))
         {
-            player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, (Container)container));
+            player.Session.Network.EnqueueSend(new GameEventViewContents(player.Session, container));
         }
 
         player.Session.Network.EnqueueSend(itemsToSend.ToArray());

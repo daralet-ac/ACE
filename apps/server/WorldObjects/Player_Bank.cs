@@ -1365,7 +1365,7 @@ public partial class Player
     }
 
     /// <summary>
-    /// Re-sends the contents lists of the bank and the packs a bulk operation touched, as opening the bank does.
+    /// Re-sends the contents lists of the bank and its packs after a bulk operation touched any of them, as opening the bank does.
     /// The client moves an item it dragged itself, but when the server moves one, the bank window adds it to
     /// its new container and keeps showing it in the old one until the bank is reopened. Re-sending a list
     /// replaces it (picking up a pack from the bank already re-sends that pack's list), which clears the copies.
@@ -1380,12 +1380,11 @@ public partial class Player
         // The bank's own list holds its packs, and items move in and out of it, so it is always re-sent.
         Session.Network.EnqueueSend(new GameEventViewContents(Session, bank));
 
-        foreach (var pack in touched)
+        // The bank window seems to place a pack by when its list arrives: re-sending only the touched packs, in no set
+        // order, shuffled the packs. So every pack's list is re-sent, in slot order, as Storage.SendBankVaultInventory does.
+        foreach (var pack in GetBankPacks(bank))
         {
-            if (pack != bank && pack.Container == bank)
-            {
-                Session.Network.EnqueueSend(new GameEventViewContents(Session, pack));
-            }
+            Session.Network.EnqueueSend(new GameEventViewContents(Session, pack));
         }
     }
 }
