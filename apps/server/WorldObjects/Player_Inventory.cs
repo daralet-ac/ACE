@@ -1411,6 +1411,11 @@ partial class Player
                 Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, itemGuid));
                 return false;
             }
+
+            if (!CanTakePackOutOfBank(item, itemRootOwner, container))
+            {
+                return false;
+            }
         }
 
         if (
@@ -1928,6 +1933,12 @@ partial class Player
     )
     {
         //Console.WriteLine($"-> DoHandleActionPutItemInContainer({item.Name}, {itemRootOwner?.Name}, {itemWasEquipped}, {container?.Name}, ContainerRootOwner: {containerRootOwner?.Name}, {placement})");
+
+        // checked again here, as a pickup can wait on walking to the bank after _Verify passed
+        if (!CanTakePackOutOfBank(item, itemRootOwner, container))
+        {
+            return false;
+        }
 
         if (!container.CanHoldItemType(item))
         {

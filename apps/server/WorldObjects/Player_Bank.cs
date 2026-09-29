@@ -82,6 +82,64 @@ public partial class Player
     private const int RankMisfiled = 5;
 
     /// <summary>
+    /// A safety net for BankPackExpansion: a pack the player carries should be at its own size, since leaving
+    /// the bank shrinks it. If one got out grown some other way, it is shrunk here, before the client is sent anything.
+    /// One holding more than its own size can't be shrunk without dropping items, so it only shrinks to what it holds
+    /// (it can't take more) and is logged.
+    /// </summary>
+    protected override void OnInitialInventoryLoadCompleted()
+    {
+        base.OnInitialInventoryLoadCompleted();
+
+        foreach (var pack in Inventory.Values.OfType<Container>())
+        {
+            if (!BankPackExpansion.Revert(pack))
+            {
+                continue;
+            }
+
+            if (!BankPackExpansion.CanLeaveBank(pack, out var ownCapacity, out var itemCount))
+            {
+                _log.Warning(
+                    "[BANKING] {Player} carries {Pack} (0x{PackGuid:X8}) holding {Count} items, more than its own {OwnCapacity}. Shrunk to {Count}.",
+                    Name,
+                    pack.Name,
+                    pack.Guid.Full,
+                    itemCount,
+                    ownCapacity
+                );
+            }
+        }
+    }
+
+    /// <summary>
+    /// A pack that grew in the bank (BankPackExpansion) can only leave it once it holds no more than its own size.
+    /// Returns false, and tells the player what to take out, if item is such a pack moving from the bank to anywhere else.
+    /// </summary>
+    private bool CanTakePackOutOfBank(WorldObject item, Container itemRootOwner, Container container)
+    {
+        if (item is not Container pack || itemRootOwner is not Storage || container is Storage)
+        {
+            return true;
+        }
+
+        if (BankPackExpansion.CanLeaveBank(pack, out var ownCapacity, out var itemCount))
+        {
+            return true;
+        }
+
+        Session.Network.EnqueueSend(
+            new GameEventCommunicationTransientString(
+                Session,
+                $"Your {pack.Name} holds {itemCount} items. Take out {itemCount - ownCapacity} to carry it; it holds {ownCapacity} outside the bank."
+            )
+        );
+        Session.Network.EnqueueSend(new GameEventInventoryServerSaveFailed(Session, pack.Guid.Full));
+
+        return false;
+    }
+
+    /// <summary>
     /// The bank chest this player has open and is standing at, or null.
     /// </summary>
     public Storage GetOpenBank()

@@ -5,6 +5,7 @@ using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Entity.Enum.Properties;
 using ACE.Entity.Models;
+using ACE.Server.Entity;
 using ACE.Server.Entity.Actions;
 using ACE.Server.Network.GameEvent.Events;
 using ACE.Server.Network.GameMessages;
@@ -180,6 +181,13 @@ public class Storage : Container
 
         EncumbranceVal = 0;
         Value = 0;
+
+        // Packs grow in the bank (BankPackExpansion). Doing it here covers packs banked before the feature,
+        // and follows the settings if they change. The CreateObject messages below carry the new sizes.
+        foreach (var pack in Inventory.Values.OfType<Container>())
+        {
+            BankPackExpansion.ApplyInBank(pack);
+        }
 
         BankInventoryLoaded = true;
 
