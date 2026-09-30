@@ -130,7 +130,8 @@ public class BankCommand
                 + "  /bank combine - Combines salvage bags in your bank that have the same material and workmanship.\n"
                 + "  /bank balance - Shows the pyreals and trade notes in your bank and across your account. Works anywhere.\n"
                 + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
-                + "  /bank inscribe <tags> - Inscribes the pack you last examined, even one in your bank (\"/bank inscribe clear\" to clear it).\n"
+                + "  /bank inscribe [number] <tags> - Inscribes a pack in your bank: the one with that number in /bank packs, "
+                + "or the one you last examined (\"/bank inscribe 2 clear\" clears pack 2).\n"
                 + "  /bank log [how many] - Your account's recent bank deposits, withdrawals and salvage combines, by any of your characters. Works anywhere.\n\n"
                 + $"Categories: {CategoryList}.\n\n"
                 + "Types, each part of a category, and tiers:\n"
@@ -139,7 +140,7 @@ public class BankCommand
                 + "Tag a pack by inscribing it with any number of category and type words, like \"weapons\", \"gems, keys\" or \"heavy armor\", "
                 + "and tiers to take only those: \"swords t6\" is swords of tier t6, \"t6\" alone any gear of tier t6. "
                 + "To inscribe a pack you carry, examine it and type in its inscription box; "
-                + "for a pack in your bank, examine it and use /bank inscribe. "
+                + "for a pack in your bank, use /bank inscribe with its number from /bank packs. "
                 + "A Salvage Crate, Quiver, Component Pouch or Trophy Pack is filled first with what its name says, then inscribed packs, "
                 + "and a pack tagged for a type beats one tagged for its whole category (\"swords\" before \"weapons\"). "
                 + "That goes for bank deposits, withdrawals and sorts, and for /sort with the packs you carry. "
@@ -452,14 +453,30 @@ public class BankCommand
     // --- /bank inscribe ---
 
     // The client only lets a player type an inscription on something they carry (admins excepted), so a pack in the
-    // bank is inscribed with this. It works on carried packs too.
+    // bank is inscribed with this. Carried packs are inscribed from the appraisal panel.
+    //
+    // "The pack you last examined" is RequestedAppraisalTarget, which every appraisal request overwrites, including the
+    // ones an add-on sends when it scans items. So the pack can also be named by its number in /bank packs, which no
+    // scan can change, and a last-examined item that isn't one of your bank packs is refused with its name.
     private static void HandleInscribe(Session session, string[] parameters)
     {
+        int? packNumber = null;
+
+        if (parameters.Length > 0 && int.TryParse(parameters[0], NumberStyles.None, CultureInfo.InvariantCulture, out var number))
+        {
+            packNumber = number;
+            parameters = parameters.Skip(1).ToArray();
+        }
+
         var text = string.Join(" ", parameters).Trim();
 
         if (text.Length == 0)
         {
-            Send(session, "Usage: examine one of your packs, then /bank inscribe <tags>. For example: /bank inscribe weapons, armor. Use /bank inscribe clear to remove it.");
+            Send(
+                session,
+                "Usage: /bank inscribe <number> <tags>, with the pack's number from /bank packs, or examine a pack in your bank and use /bank inscribe <tags>. "
+                    + "For example: /bank inscribe 2 weapons, armor. Use /bank inscribe <number> clear to remove it."
+            );
             return;
         }
 
@@ -470,17 +487,44 @@ public class BankCommand
         }
 
         var player = session.Player;
-        var targetGuid = player.RequestedAppraisalTarget;
-
-        var pack = targetGuid == null
-            ? null
-            : player.FindObject(targetGuid.Value, Player.SearchLocations.MyInventory, out _, out _, out _)
-                ?? player.FindItemInOpenBank(targetGuid.Value);
-
-        if (pack is not Container { WeenieType: WeenieType.Container })
+        var bank = GetReadyBank(session);
+        if (bank == null)
         {
-            Send(session, "Examine one of your packs first (in your inventory or your open bank), then use /bank inscribe.");
             return;
+        }
+
+        var bankPacks = player.GetBankPacks(bank);
+        Container pack;
+
+        if (packNumber != null)
+        {
+            if (packNumber < 1 || packNumber > bankPacks.Count)
+            {
+                Send(session, $"Your bank has {Plural(bankPacks.Count, "pack")}. /bank packs shows their numbers.");
+                return;
+            }
+
+            pack = bankPacks[packNumber.Value - 1];
+        }
+        else
+        {
+            var targetGuid = player.RequestedAppraisalTarget;
+            var examined = targetGuid == null ? null : player.FindItemInOpenBank(targetGuid.Value);
+
+            if (examined is not Container examinedPack || !bankPacks.Contains(examinedPack))
+            {
+                var name = examined?.Name
+                    ?? (targetGuid == null ? null : player.FindObject(targetGuid.Value, Player.SearchLocations.Everywhere, out _, out _, out _)?.Name);
+
+                Send(
+                    session,
+                    (name == null ? "Examine a pack in your bank first" : $"The last thing you examined was {name}, not a pack in your bank")
+                        + ". Use /bank inscribe <number> <tags> with the pack's number from /bank packs; add-ons that examine items can change what you examined last."
+                );
+                return;
+            }
+
+            pack = examinedPack;
         }
 
         var clear = text.Equals("clear", StringComparison.OrdinalIgnoreCase);
@@ -492,14 +536,14 @@ public class BankCommand
         }
 
         // A pack in the bank is saved with the bank, which only happens when the landblock saves; do it now.
-        if (pack.Container is Storage)
-        {
-            pack.SaveBiotaToDatabase();
-        }
+        pack.SaveBiotaToDatabase();
+
+        // the number lets the player check it was the pack they meant
+        var which = $"{pack.Name} (bank pack {bankPacks.IndexOf(pack) + 1})";
 
         if (clear)
         {
-            Send(session, $"Cleared the inscription on {pack.Name}.");
+            Send(session, $"Cleared the inscription on {which}.");
             return;
         }
 
@@ -508,8 +552,8 @@ public class BankCommand
         Send(
             session,
             tags.IsEmpty
-                ? $"Inscribed {pack.Name}. It has no bank tags; see /bank for the words (categories, types, tiers, keep, deposit)."
-                : $"Inscribed {pack.Name} [{BankCategories.Describe(tags)}]."
+                ? $"Inscribed {which}. It has no bank tags; see /bank for the words (categories, types, tiers, keep, deposit)."
+                : $"Inscribed {which} [{BankCategories.Describe(tags)}]."
         );
     }
 
@@ -715,9 +759,11 @@ public class BankCommand
             var used = bank.Inventory.Values.Count(i => !i.UseBackpackSlot);
             lines.Add($"Your bank: {used} of {bank.ItemCapacity ?? 0} slots used.");
 
-            foreach (var pack in player.GetBankPacks(bank))
+            var bankPacks = player.GetBankPacks(bank);
+
+            for (var i = 0; i < bankPacks.Count; i++)
             {
-                lines.Add($"  {DescribePack(pack)}");
+                lines.Add($"  {i + 1}. {DescribePack(bankPacks[i])}");
             }
         }
 
