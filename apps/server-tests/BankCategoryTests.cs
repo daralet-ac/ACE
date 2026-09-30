@@ -297,4 +297,130 @@ public class BankCategoryTests
         Assert.AreEqual("keep", BankCategories.Describe(new BankPackTags(BankCategory.None, true)));
         Assert.AreEqual("armor, keep", BankCategories.Describe(new BankPackTags(BankCategory.Armor, true)));
     }
+
+    [TestMethod]
+    public void TryParse_ReadsWeaponArmorAndJewelryTypes()
+    {
+        (string Word, BankCategory Expected)[] cases =
+        [
+            ("sword", BankCategory.Swords),
+            ("Maces", BankCategory.Maces),
+            ("axe", BankCategory.Axes),
+            ("spear", BankCategory.Spears),
+            ("dagger", BankCategory.Daggers),
+            ("staff", BankCategory.Staffs),
+            ("ua", BankCategory.Unarmed),
+            ("two-hand", BankCategory.TwoHanded),
+            ("Two Handed", BankCategory.TwoHanded),
+            ("2h", BankCategory.TwoHanded),
+            ("bow", BankCategory.Bows),
+            ("crossbow", BankCategory.Crossbows),
+            ("atlatl", BankCategory.Atlatls),
+            ("thrown", BankCategory.Thrown),
+            ("caster", BankCategory.Casters),
+            ("heavy", BankCategory.HeavyArmor),
+            ("light", BankCategory.LightArmor),
+            ("cloth", BankCategory.ClothArmor),
+            ("clothing", BankCategory.Clothing),
+            ("necklace", BankCategory.Necklaces),
+            ("ring", BankCategory.Rings),
+            ("bracelet", BankCategory.Bracelets),
+        ];
+
+        foreach (var (word, expected) in cases)
+        {
+            Assert.IsTrue(BankCategories.TryParse(word, out var parsed), $"\"{word}\" does not parse");
+            Assert.AreEqual(expected, parsed, word);
+        }
+    }
+
+    [TestMethod]
+    public void ParseInscription_ReadsTypesAndTypePhrases()
+    {
+        // A type followed by its own category is just the type...
+        Assert.AreEqual(BankCategory.HeavyArmor, BankCategories.ParseInscription("heavy armor").Categories);
+        Assert.AreEqual(BankCategory.LightArmor, BankCategories.ParseInscription("Light Armour").Categories);
+        Assert.AreEqual(BankCategory.TwoHanded, BankCategories.ParseInscription("two-handed weapons").Categories);
+
+        // ...but a list with both keeps both.
+        Assert.AreEqual(BankCategory.HeavyArmor | BankCategory.Armor, BankCategories.ParseInscription("heavy, armor").Categories);
+
+        Assert.AreEqual(BankCategory.Swords | BankCategory.TwoHanded, BankCategories.ParseInscription("swords 2h").Categories);
+        Assert.AreEqual(BankCategory.Rings | BankCategory.Necklaces, BankCategories.ParseInscription("rings & necklaces").Categories);
+        Assert.AreEqual(BankCategory.Weapons | BankCategory.Armor, BankCategories.ParseInscription("weapons-armor").Categories);
+
+        Assert.AreEqual(BankCategory.TwoHanded, BankCategories.ParseInscription("Two Handed").Categories);
+        Assert.AreEqual(BankCategory.TwoHanded, BankCategories.ParseInscription("two handed weapons").Categories);
+
+        // AC's weapon skill names: the weight class only describes the next word, so no armor is tagged.
+        Assert.AreEqual(BankCategory.Weapons, BankCategories.ParseInscription("Heavy Weapons").Categories);
+        Assert.AreEqual(BankCategory.Weapons, BankCategories.ParseInscription("light weapons").Categories);
+        Assert.AreEqual(BankCategory.Crossbows, BankCategories.ParseInscription("light crossbows").Categories);
+        Assert.AreEqual(BankCategory.HeavyArmor | BankCategory.Weapons, BankCategories.ParseInscription("heavy, weapons").Categories);
+
+        var keepRings = BankCategories.ParseInscription("rings, keep");
+        Assert.AreEqual(BankCategory.Rings, keepRings.Categories);
+        Assert.IsTrue(keepRings.Keep);
+    }
+
+    [TestMethod]
+    public void Kinds_ComeFromWeaponClassWeightClassAndSlot()
+    {
+        Assert.AreEqual(
+            BankCategory.Swords | BankCategory.TwoHanded,
+            BankCategories.WeaponKindsOf(WeaponClass.Sword | WeaponClass.TwoHanded, ItemType.MeleeWeapon));
+        Assert.AreEqual(BankCategory.Bows, BankCategories.WeaponKindsOf(WeaponClass.Bow, ItemType.MissileWeapon));
+        Assert.AreEqual(BankCategory.Casters, BankCategories.WeaponKindsOf(WeaponClass.None, ItemType.Caster));
+
+        Assert.AreEqual(BankCategory.HeavyArmor, BankCategories.ArmorKindsOf(ArmorWeightClass.Heavy, ItemType.Armor));
+        Assert.AreEqual(BankCategory.ClothArmor | BankCategory.Clothing, BankCategories.ArmorKindsOf(ArmorWeightClass.Cloth, ItemType.Clothing));
+        Assert.AreEqual(BankCategory.Clothing, BankCategories.ArmorKindsOf(null, ItemType.Clothing));
+        Assert.AreEqual(BankCategory.None, BankCategories.ArmorKindsOf(null, ItemType.Armor));
+
+        Assert.AreEqual(BankCategory.Necklaces, BankCategories.JewelryKindsOf(EquipMask.NeckWear));
+        Assert.AreEqual(BankCategory.Rings, BankCategories.JewelryKindsOf(EquipMask.FingerWear));
+        Assert.AreEqual(BankCategory.Bracelets, BankCategories.JewelryKindsOf(EquipMask.WristWear));
+    }
+
+    [TestMethod]
+    public void PackFit_PrefersATypeTagOverItsCategory()
+    {
+        var twoHandedSword = BankCategory.Weapons | BankCategory.Swords | BankCategory.TwoHanded;
+
+        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.Swords, twoHandedSword));
+        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.TwoHanded, twoHandedSword));
+        Assert.AreEqual(3, BankCategories.PackFit(BankCategory.Swords | BankCategory.Maces, twoHandedSword));
+        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Weapons, twoHandedSword));
+        Assert.AreEqual(1, BankCategories.PackFit(BankCategory.Gear, twoHandedSword));
+        Assert.AreEqual(0, BankCategories.PackFit(BankCategory.Maces, twoHandedSword));
+
+        var plate = BankCategory.Armor | BankCategory.HeavyArmor;
+
+        Assert.AreEqual(4, BankCategories.PackFit(BankCategory.HeavyArmor, plate));
+        Assert.AreEqual(2, BankCategories.PackFit(BankCategory.Armor, plate));
+        Assert.AreEqual(0, BankCategories.PackFit(BankCategory.LightArmor, plate));
+    }
+
+    [TestMethod]
+    public void ParentsAndKinds_LinkEachTypeToItsCategory()
+    {
+        Assert.AreEqual(BankCategory.Weapons | BankCategory.Jewelry, BankCategories.ParentsOf(BankCategory.Swords | BankCategory.Rings));
+        Assert.AreEqual(BankCategory.Salvage, BankCategories.ParentsOf(BankCategory.Imbue));
+        Assert.AreEqual(BankCategory.None, BankCategories.ParentsOf(BankCategory.Gems));
+
+        Assert.AreEqual(BankCategory.WeaponKinds, BankCategories.KindsWithin(BankCategory.Weapons));
+        Assert.AreEqual(BankCategory.ArmorKinds | BankCategory.JewelryKinds, BankCategories.KindsWithin(BankCategory.Armor | BankCategory.Jewelry));
+    }
+
+    [TestMethod]
+    public void Describe_NamesTypesSoTheyReadAsItemsAndParseBack()
+    {
+        Assert.AreEqual("swords, two-handed weapons", BankCategories.Describe(BankCategory.Swords | BankCategory.TwoHanded));
+        Assert.AreEqual("heavy armor", BankCategories.Describe(BankCategory.HeavyArmor));
+
+        // the "Inscribe one with ..." hint in /bank sort uses these names, so they must tag a pack with just that type
+        Assert.AreEqual(BankCategory.HeavyArmor, BankCategories.ParseInscription("heavy armor").Categories);
+        Assert.AreEqual(BankCategory.Thrown, BankCategories.ParseInscription("thrown weapons").Categories);
+        Assert.AreEqual(BankCategory.Unarmed, BankCategories.ParseInscription("unarmed weapons").Categories);
+    }
 }

@@ -281,7 +281,7 @@ public class Sort
         // Scan side packs for salvage
         ScanSidePacksAndSchedule(item => NamedPacks.Takes(NamedPackKind.SalvageCrate, item), salvageSidePacks);
 
-        // ---------- PART B2: file items into carried packs inscribed for them (see /bank inscribe) ----------
+        // ---------- PART B2: file items into carried packs inscribed for them (see /bank) ----------
         // A pack inscribed with category words ("weapons", "gems, keys", ...) collects those items from the main pack
         // and from other packs, best fit first: a pack inscribed for exactly that category before one that takes it
         // among others ("weapons" before "gear"). An item already in a pack that fits at least as well stays put.

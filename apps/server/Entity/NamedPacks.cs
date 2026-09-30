@@ -93,13 +93,9 @@ public static class NamedPacks
     {
         var collects = BankCategories.ParseInscription(pack.Inscription).Categories | CategoryOf(KindOf(pack));
 
-        // a pack for all salvage takes every kind of salvage (imbue, blacksmithing, ...) too
-        if ((collects & BankCategory.Salvage) != 0)
-        {
-            collects |= BankCategory.SalvageKinds;
-        }
-
-        return collects;
+        // A pack for a whole category takes every kind in it (a "weapons" pack takes swords, a "salvage" pack imbue),
+        // and a pack for a kind takes part of its category (a "swords" pack gets weapons in a /bank sort weapons).
+        return collects | BankCategories.KindsWithin(collects) | BankCategories.ParentsOf(collects);
     }
 
     /// <summary>

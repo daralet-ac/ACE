@@ -5862,7 +5862,12 @@ partial class Player
         );
 
         // your own things in the bank you have open, so a pack can be inscribed for /bank where it sits
-        item ??= FindItemInOpenBank(itemGuid);
+        var inOpenBank = false;
+        if (item == null)
+        {
+            item = FindItemInOpenBank(itemGuid);
+            inOpenBank = item != null;
+        }
 
         if (item == null)
         {
@@ -5880,7 +5885,11 @@ partial class Player
 
         if (item.Inscribable)
         {
-            TrySetInscription(item, inscriptionText);
+            // Something in the bank is otherwise saved only when its landblock saves, so save it now.
+            if (TrySetInscription(item, inscriptionText) && inOpenBank)
+            {
+                item.SaveBiotaToDatabase();
+            }
 
             // this response was never recorded occuring from retail servers
             // Session.Network.EnqueueSend(new GameEventInscriptionResponse(Session, item));

@@ -17,14 +17,19 @@ namespace ACE.Server.Commands.PlayerCommands;
 public class BankCommand
 {
     private const int MaxSearchResults = 60;
-    private const int MaxInscriptionLength = 100;
 
     // /bank withdraw asks first before taking more than this many items without a count
     private const int WithdrawConfirmAbove = 20;
 
     private const string CategoryList =
-        "all, gear, weapons, armor, jewelry, trinkets, salvage, ammo, animal, components, consumables, gems, keys, manastones, trophies, "
-        + "blacksmithing, tailoring, spellcrafting, woodworking, jewelcrafting, imbue";
+        "all, gear, weapons, armor, jewelry, trinkets, salvage, ammo, animal, components, consumables, gems, keys, manastones, trophies";
+
+    // The kinds inside a category (BankCategory.Kinds): a pack tagged for one beats a pack tagged for the whole category.
+    private const string TypeList =
+        "Weapons: swords, maces, axes, spears, daggers, staffs, unarmed (ua), two-handed (2h), bows, crossbows, atlatls, thrown, casters.\n"
+        + "Armor: heavy, light and cloth (by weight class), clothing.\n"
+        + "Jewelry: necklaces, rings, bracelets.\n"
+        + "Salvage: blacksmithing, tailoring, spellcrafting, woodworking, jewelcrafting, imbue.";
 
     // /bank balance reads every offline character's possessions from the database, so it can't be spammed.
     private static readonly TimeSpan BalanceCooldown = TimeSpan.FromSeconds(30);
@@ -35,8 +40,8 @@ public class BankCommand
         AccessLevel.Player,
         CommandHandlerFlag.RequiresWorld,
         0,
-        "Bank tools: deposit, withdraw, sort, search and combine salvage in your bank, check your balance, and tag packs by inscription. Use /bank for help.",
-        "deposit|withdraw|sort|search|combine|balance|packs|inscribe ..."
+        "Bank tools: deposit, withdraw, sort, search and combine salvage in your bank, check your balance, and see how your packs are tagged. Use /bank for help.",
+        "deposit|withdraw|sort|search|combine|balance|packs ..."
     )]
     public static void HandleBank(Session session, params string[] parameters)
     {
@@ -83,10 +88,6 @@ public class BankCommand
             case "info":
                 HandlePacks(session);
                 break;
-            case "inscribe":
-            case "tag":
-                HandleInscribe(session, rest);
-                break;
             default:
                 ShowHelp(session);
                 break;
@@ -98,26 +99,30 @@ public class BankCommand
         Send(
             session,
             "Bank commands (stand at your open bank):\n"
-                + "  /bank deposit <category> - Moves those items from your packs into your bank.\n"
+                + "  /bank deposit <category or type> - Moves those items from your packs into your bank.\n"
                 + "  /bank withdraw [how many] <name, category or type> - Takes those items out of your bank into your packs, "
                 + "filling named and inscribed packs first, then your main pack. With a number, takes that many (\"/bank withdraw 200 arrows\"). "
                 + "Stops at your burden limit, and never fills a pack inscribed \"deposit\".\n"
-                + "  /bank sort [category] - Files items into their inscribed packs, combines stacks and puts everything in order.\n"
+                + "  /bank sort [category or type] - Files items into their inscribed packs, combines stacks and puts everything in order.\n"
                 + "  /bank search <name, category or type> - Lists matching items in your bank and where they are. "
-                + "Weapon types work too: sword, axe, mace, spear, dagger, staff, unarmed, bow, crossbow, atlatl, thrown, two-handed, or a weapon like longsword or jitte.\n"
+                + "A weapon's own name works too, like longsword or jitte.\n"
                 + "  /bank combine - Combines salvage bags in your bank that have the same material and workmanship.\n"
                 + "  /bank balance - Shows the pyreals and trade notes in your bank and across your account. Works anywhere.\n"
-                + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
-                + "  /bank inscribe <tags> - Inscribes the pack you last examined (\"/bank inscribe clear\" to clear it).\n\n"
+                + "  /bank packs - Shows your bank space and how each pack is tagged.\n\n"
                 + $"Categories: {CategoryList}.\n\n"
-                + "Tag a pack by inscribing it with category words, like \"weapons\" or \"gems, keys\". "
-                + "A Salvage Crate, Quiver, Component Pouch or Trophy Pack is filled first with what its name says, then inscribed packs; that goes for bank deposits and sorts, and for /sort with the packs you carry. "
+                + "Types, each part of a category:\n"
+                + TypeList
+                + "\n\n"
+                + "Tag a pack by inscribing it with category and type words, like \"weapons\", \"gems, keys\" or \"heavy armor\": "
+                + "examine the pack and type in its inscription box, whether you carry it or it is in your open bank. "
+                + "A Salvage Crate, Quiver, Component Pouch or Trophy Pack is filled first with what its name says, then inscribed packs, "
+                + "and a pack tagged for a type beats one tagged for its whole category (\"swords\" before \"weapons\"). "
+                + "That goes for bank deposits, withdrawals and sorts, and for /sort with the packs you carry. "
                 + "Inscribe a pack you carry with \"keep\" and neither /bank deposit nor /sort takes anything out of it. "
                 + "Inscribe one with \"deposit\" and opening your bank offers to deposit everything in it.\n\n"
                 + "Gear is weapons (including casters), armor (including shields and clothing), jewelry and trinkets. "
-                + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels; animal is hides, bones and meat.\n\n"
-                + "Blacksmithing, tailoring, spellcrafting, woodworking and jewelcrafting are the salvage those tinkering skills use, "
-                + "and imbue is the imbue gems. A pack tagged for one of them beats a pack tagged \"salvage\"."
+                + "Consumables are food, potions and healing kits; keys include lockpicks; gems include jewels; animal is hides, bones and meat. "
+                + "The salvage types are the salvage each tinkering skill uses, and imbue is the imbue gems."
         );
     }
 
@@ -127,7 +132,7 @@ public class BankCommand
     {
         if (parameters.Length == 0 || !TryParseFilter(parameters[0], out var filter))
         {
-            Send(session, $"Usage: /bank deposit <{CategoryList}>");
+            Send(session, $"Usage: /bank deposit <category or type>. Categories: {CategoryList}. Types like swords, heavy or rings work too; /bank lists them.");
             return;
         }
 
@@ -152,7 +157,7 @@ public class BankCommand
 
         if (parameters.Length > 0 && !TryParseFilter(parameters[0], out filter))
         {
-            Send(session, $"Usage: /bank sort [{CategoryList}]");
+            Send(session, $"Usage: /bank sort [category or type]. Categories: {CategoryList}. Types like swords, heavy or rings work too; /bank lists them.");
             return;
         }
 
@@ -573,68 +578,6 @@ public class BankCommand
         }
 
         return $"{pack.Name} [{tags}] {used} of {pack.ItemCapacity ?? 0} slots used";
-    }
-
-    // --- /bank inscribe ---
-
-    private static void HandleInscribe(Session session, string[] parameters)
-    {
-        var text = string.Join(" ", parameters).Trim();
-
-        if (text.Length == 0)
-        {
-            Send(session, "Usage: examine one of your packs, then /bank inscribe <tags>. For example: /bank inscribe weapons, armor. Use /bank inscribe clear to remove it.");
-            return;
-        }
-
-        if (text.Length > MaxInscriptionLength)
-        {
-            Send(session, $"That inscription is too long ({MaxInscriptionLength} characters at most).");
-            return;
-        }
-
-        var player = session.Player;
-        var targetGuid = player.RequestedAppraisalTarget;
-
-        var pack = targetGuid == null
-            ? null
-            : player.FindObject(targetGuid.Value, Player.SearchLocations.MyInventory, out _, out _, out _)
-                ?? player.FindItemInOpenBank(targetGuid.Value);
-
-        if (pack is not Container { WeenieType: WeenieType.Container })
-        {
-            Send(session, "Examine one of your packs first (in your inventory or your open bank), then use /bank inscribe.");
-            return;
-        }
-
-        var clear = text.Equals("clear", StringComparison.OrdinalIgnoreCase);
-
-        if (!player.TrySetInscription(pack, clear ? null : text))
-        {
-            Send(session, $"{pack.Name} was inscribed by {pack.ScribeName ?? "someone else"}. Only they can change it.");
-            return;
-        }
-
-        // A pack in the bank is saved with the bank, which only happens when the landblock saves; do it now.
-        if (pack.Container is Storage)
-        {
-            pack.SaveBiotaToDatabase();
-        }
-
-        if (clear)
-        {
-            Send(session, $"Cleared the inscription on {pack.Name}.");
-            return;
-        }
-
-        var tags = BankCategories.ParseInscription(text);
-
-        Send(
-            session,
-            tags.IsEmpty
-                ? $"Inscribed {pack.Name}. It has no bank tags; see /bank for the words (categories, keep, deposit)."
-                : $"Inscribed {pack.Name} [{BankCategories.Describe(tags)}]."
-        );
     }
 
     // --- helpers ---
