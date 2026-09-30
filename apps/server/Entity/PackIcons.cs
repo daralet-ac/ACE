@@ -27,8 +27,8 @@ public readonly record struct PackIconRequest(PackIconStyle? Style, string Color
 /// The icons /bank icon gives a pack: a plain Pack's or Sack's icon in a color. Only the icon changes; the pack keeps
 /// its model, name, capacity and everything else.
 ///
-/// A color is one of the Pack's or Sack's palette templates, the way dye colors clothing, and its icon comes from that
-/// style's clothing table in the portal.dat, so the colors offered are the ones this server's client files draw.
+/// A color is one of the palette templates shopkeepers sell the Pack and Sack in, and its icon comes from that style's
+/// clothing table in the portal.dat, as a bought colored pack's does (WorldObject.CalculateObjDesc).
 /// </summary>
 public static class PackIcons
 {
@@ -38,21 +38,20 @@ public static class PackIcons
 
     public const string DefaultColor = "brown";
 
-    // Each color's palette templates, the first the clothing table has winning.
-    // A plain Pack and Sack are Gold, which draws their brown leather.
-    private static readonly (string Name, PaletteTemplate[] Templates)[] Colors =
+    // Each color's palette template: the ones shopkeepers sell the Pack and Sack in (VendorBaseItems.ShopkeeperItems).
+    // A plain Pack and Sack are Gold, which draws their brown leather. There's no orange one.
+    private static readonly (string Name, PaletteTemplate Template)[] Colors =
     {
-        ("brown", new[] { PaletteTemplate.Gold, PaletteTemplate.Brown, PaletteTemplate.DeepBrown }),
-        ("black", new[] { PaletteTemplate.Black }),
-        ("white", new[] { PaletteTemplate.White, PaletteTemplate.SnowyWhite }),
-        ("gray", new[] { PaletteTemplate.Grey, PaletteTemplate.MediumGrey, PaletteTemplate.MidGrey }),
-        ("blue", new[] { PaletteTemplate.Blue, PaletteTemplate.DarkBlue }),
-        ("teal", new[] { PaletteTemplate.Aqua, PaletteTemplate.AquaBlue, PaletteTemplate.BlueGreen }),
-        ("green", new[] { PaletteTemplate.Green, PaletteTemplate.DeepGreen }),
-        ("yellow", new[] { PaletteTemplate.Yellow }),
-        ("red", new[] { PaletteTemplate.Red }),
-        ("purple", new[] { PaletteTemplate.Purple }),
-        ("orange", new[] { PaletteTemplate.Orange, PaletteTemplate.PaleOrange })
+        ("brown", PaletteTemplate.Gold),
+        ("black", PaletteTemplate.Black),
+        ("white", PaletteTemplate.White),
+        ("gray", PaletteTemplate.Grey),
+        ("blue", PaletteTemplate.Blue),
+        ("teal", PaletteTemplate.BlueGreen),
+        ("green", PaletteTemplate.Green),
+        ("yellow", PaletteTemplate.Yellow),
+        ("red", PaletteTemplate.Red),
+        ("purple", PaletteTemplate.Purple)
     };
 
     private static readonly Dictionary<string, string> ColorAliases = new(StringComparer.OrdinalIgnoreCase)
@@ -129,15 +128,13 @@ public static class PackIcons
     }
 
     /// <summary>
-    /// The icon for a color, from a clothing table's icons by palette template, or null if it has none of that color's templates.
+    /// The icon for a color, from a clothing table's icons by palette template, or null if the table doesn't have that color.
     /// </summary>
     public static uint? PickIcon(string color, IReadOnlyDictionary<uint, uint> iconsByTemplate)
     {
-        var templates = Colors.FirstOrDefault(c => c.Name == color).Templates ?? Array.Empty<PaletteTemplate>();
-
-        foreach (var template in templates)
+        foreach (var (name, template) in Colors)
         {
-            if (iconsByTemplate.TryGetValue((uint)template, out var icon) && icon != 0)
+            if (name == color && iconsByTemplate.TryGetValue((uint)template, out var icon) && icon != 0)
             {
                 return icon;
             }

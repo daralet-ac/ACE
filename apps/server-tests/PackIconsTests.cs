@@ -49,25 +49,30 @@ public class PackIconsTests
     }
 
     [TestMethod]
-    public void PickIcon_UsesTheFirstTemplateTheTableHas()
+    public void TryParse_HasNoOrange()
     {
-        // a plain Pack's table: Gold is its brown
+        Assert.IsFalse(PackIcons.TryParse(new[] { "orange" }, out _));
+    }
+
+    [TestMethod]
+    public void PickIcon_UsesTheColorsVendorTemplate()
+    {
+        // a plain Pack's table: Gold is its brown, BlueGreen its teal
         var icons = new Dictionary<uint, uint>
         {
             { (uint)PaletteTemplate.Gold, 0x06001BAF },
             { (uint)PaletteTemplate.Black, 0x06001BB4 },
-            { (uint)PaletteTemplate.AquaBlue, 0x06000001 },
+            { (uint)PaletteTemplate.BlueGreen, 0x06000001 },
+            { (uint)PaletteTemplate.Aqua, 0x06000002 },
             { (uint)PaletteTemplate.Red, 0 }
         };
 
         Assert.AreEqual(0x06001BAFu, PackIcons.PickIcon("brown", icons));
         Assert.AreEqual(0x06001BB4u, PackIcons.PickIcon("black", icons));
-
-        // no Aqua, so teal falls to AquaBlue
         Assert.AreEqual(0x06000001u, PackIcons.PickIcon("teal", icons));
 
         // an entry with no icon doesn't count, and a color the table lacks has none
         Assert.IsNull(PackIcons.PickIcon("red", icons));
-        Assert.IsNull(PackIcons.PickIcon("orange", icons));
+        Assert.IsNull(PackIcons.PickIcon("purple", icons));
     }
 }
