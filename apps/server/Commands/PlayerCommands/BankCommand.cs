@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
+using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Commands.Handlers;
 using ACE.Server.Entity;
@@ -48,8 +49,8 @@ public class BankCommand
         AccessLevel.Player,
         CommandHandlerFlag.RequiresWorld,
         0,
-        "Bank tools: deposit, withdraw, sort, search and combine salvage in your bank, check your balance and bank log, and see how your packs are tagged. Use /bank for help.",
-        "deposit|withdraw|sort|search|combine|balance|packs|inscribe|autosort|log ..."
+        "Bank tools: deposit, withdraw, sort, search and combine salvage in your bank, check your balance and bank log, see how your packs are tagged and change their icons. Use /bank for help.",
+        "deposit|withdraw|sort|search|combine|balance|packs|inscribe|icon|autosort|log ..."
     )]
     public static void HandleBank(Session session, params string[] parameters)
     {
@@ -100,6 +101,9 @@ public class BankCommand
             case "tag":
                 HandleInscribe(session, rest);
                 break;
+            case "icon":
+                HandleIcon(session, rest);
+                break;
             case "autosort":
                 HandleAutoSort(session, rest);
                 break;
@@ -132,6 +136,8 @@ public class BankCommand
                 + "  /bank packs - Shows your bank space and how each pack is tagged.\n"
                 + "  /bank inscribe [number] <tags> - Inscribes a pack in your bank: the one with that number in /bank packs, "
                 + "or the one you last examined (\"/bank inscribe 2 clear\" clears pack 2).\n"
+                + "  /bank icon [number] <pack or sack> <color> - Changes a pack's icon, for a bank pack by its number in /bank packs "
+                + "or the pack you last examined, carried or banked (\"/bank icon 2 sack blue\", \"/bank icon 2 default\"). /bank icon lists the colors.\n"
                 + "  /bank log [how many] - Your account's recent bank deposits, withdrawals and salvage combines, by any of your characters. Works anywhere.\n\n"
                 + $"Categories: {CategoryList}.\n\n"
                 + "Types, each part of a category, and tiers:\n"
@@ -454,20 +460,9 @@ public class BankCommand
 
     // The client only lets a player type an inscription on something they carry (admins excepted), so a pack in the
     // bank is inscribed with this. Carried packs are inscribed from the appraisal panel.
-    //
-    // "The pack you last examined" is RequestedAppraisalTarget, which every appraisal request overwrites, including the
-    // ones an add-on sends when it scans items. So the pack can also be named by its number in /bank packs, which no
-    // scan can change, and a last-examined item that isn't one of your bank packs is refused with its name.
     private static void HandleInscribe(Session session, string[] parameters)
     {
-        int? packNumber = null;
-
-        if (parameters.Length > 0 && int.TryParse(parameters[0], NumberStyles.None, CultureInfo.InvariantCulture, out var number))
-        {
-            packNumber = number;
-            parameters = parameters.Skip(1).ToArray();
-        }
-
+        var packNumber = TakePackNumber(ref parameters);
         var text = string.Join(" ", parameters).Trim();
 
         if (text.Length == 0)
@@ -487,44 +482,10 @@ public class BankCommand
         }
 
         var player = session.Player;
-        var bank = GetReadyBank(session);
-        if (bank == null)
+        var pack = FindPack(session, packNumber, carriedToo: false, "/bank inscribe <number> <tags>", out var which);
+        if (pack == null)
         {
             return;
-        }
-
-        var bankPacks = player.GetBankPacks(bank);
-        Container pack;
-
-        if (packNumber != null)
-        {
-            if (packNumber < 1 || packNumber > bankPacks.Count)
-            {
-                Send(session, $"Your bank has {Plural(bankPacks.Count, "pack")}. /bank packs shows their numbers.");
-                return;
-            }
-
-            pack = bankPacks[packNumber.Value - 1];
-        }
-        else
-        {
-            var targetGuid = player.RequestedAppraisalTarget;
-            var examined = targetGuid == null ? null : player.FindItemInOpenBank(targetGuid.Value);
-
-            if (examined is not Container examinedPack || !bankPacks.Contains(examinedPack))
-            {
-                var name = examined?.Name
-                    ?? (targetGuid == null ? null : player.FindObject(targetGuid.Value, Player.SearchLocations.Everywhere, out _, out _, out _)?.Name);
-
-                Send(
-                    session,
-                    (name == null ? "Examine a pack in your bank first" : $"The last thing you examined was {name}, not a pack in your bank")
-                        + ". Use /bank inscribe <number> <tags> with the pack's number from /bank packs; add-ons that examine items can change what you examined last."
-                );
-                return;
-            }
-
-            pack = examinedPack;
         }
 
         var clear = text.Equals("clear", StringComparison.OrdinalIgnoreCase);
@@ -537,9 +498,6 @@ public class BankCommand
 
         // A pack in the bank is saved with the bank, which only happens when the landblock saves; do it now.
         pack.SaveBiotaToDatabase();
-
-        // the number lets the player check it was the pack they meant
-        var which = $"{pack.Name} (bank pack {bankPacks.IndexOf(pack) + 1})";
 
         if (clear)
         {
@@ -556,6 +514,92 @@ public class BankCommand
                 : $"Inscribed {which} [{BankCategories.Describe(tags)}]."
         );
     }
+
+    // --- /bank icon ---
+
+    private static void HandleIcon(Session session, string[] parameters)
+    {
+        var packNumber = TakePackNumber(ref parameters);
+
+        if (parameters.Length == 0)
+        {
+            Send(session, IconUsage());
+            return;
+        }
+
+        if (!PackIcons.TryParse(parameters, out var request))
+        {
+            Send(session, $"\"{string.Join(" ", parameters)}\" isn't an icon. {IconUsage()}");
+            return;
+        }
+
+        var pack = FindPack(session, packNumber, carriedToo: true, "/bank icon <number> <pack or sack> <color>", out var which);
+        if (pack == null)
+        {
+            return;
+        }
+
+        if ((pack.ItemType & ItemType.Container) == 0)
+        {
+            Send(session, $"{which} isn't a pack.");
+            return;
+        }
+
+        string result;
+
+        if (request.Default)
+        {
+            if (!PackIcons.Restore(pack))
+            {
+                Send(session, $"Couldn't find the icon {which} started with.");
+                return;
+            }
+
+            result = $"{which} has its own icon again.";
+        }
+        else
+        {
+            // a style or color left out stays as the pack shows it now
+            var current = PackIcons.LookOf(pack);
+            var style = request.Style ?? current?.Style ?? PackIconStyle.Pack;
+            var color = request.Color ?? current?.Color ?? PackIcons.DefaultColor;
+
+            if (PackIcons.IconFor(style, color) is not { } icon)
+            {
+                Send(session, $"There's no {color} {StyleName(style)} icon. {DescribeIconColors(style)}");
+                return;
+            }
+
+            PackIcons.Apply(pack, icon);
+            result = $"{which} now has a {color} {StyleName(style)} icon.";
+        }
+
+        // A pack in the bank is saved with the bank, which only happens when the landblock saves; do it now.
+        pack.SaveBiotaToDatabase();
+
+        // the client redraws the icon from the object's new description
+        session.Network.EnqueueSend(new GameMessageUpdateObject(pack));
+
+        Send(session, result);
+    }
+
+    private static string IconUsage()
+    {
+        return "Usage: /bank icon <number> <pack or sack> <color>, with the pack's number from /bank packs, "
+            + "or examine one of your packs and use /bank icon <pack or sack> <color>. "
+            + "For example: /bank icon 2 sack blue. Leave out pack/sack or the color to keep the one it has, "
+            + "and use /bank icon <number> default for its own icon back.\n"
+            + $"{DescribeIconColors(PackIconStyle.Pack)}\n{DescribeIconColors(PackIconStyle.Sack)}";
+    }
+
+    private static string DescribeIconColors(PackIconStyle style)
+    {
+        var colors = PackIcons.AvailableColors(style);
+
+        return $"{StyleName(style)} colors: {(colors.Count == 0 ? "none" : string.Join(", ", colors))}.";
+    }
+
+    private static string StyleName(PackIconStyle style) => style == PackIconStyle.Sack ? "sack" : "pack";
 
     // --- /bank log ---
 
@@ -855,6 +899,95 @@ public class BankCommand
             || BankSearch.NameMatches(item.NameWithMaterial, query);
 
         return contents.Where(c => Matches(c.Item)).ToList();
+    }
+
+    /// <summary>
+    /// Takes a leading pack number off the parameters, if there is one.
+    /// </summary>
+    private static int? TakePackNumber(ref string[] parameters)
+    {
+        if (parameters.Length > 0 && int.TryParse(parameters[0], NumberStyles.None, CultureInfo.InvariantCulture, out var number))
+        {
+            parameters = parameters.Skip(1).ToArray();
+            return number;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The pack a command is for: the bank pack with that number in /bank packs, or else the pack last examined, which
+    /// must be in the open bank, or with carriedToo also one of the player's own side packs. Says why not and returns
+    /// null if there isn't one. which names the pack and where it is, so the player can check it was the one they meant.
+    ///
+    /// "The pack you last examined" is RequestedAppraisalTarget, which every appraisal request overwrites, including the
+    /// ones an add-on sends when it scans items. So a bank pack can also be named by its number, which no scan can
+    /// change, and a last-examined item that isn't one of your packs is refused with its name.
+    /// </summary>
+    private static Container FindPack(Session session, int? packNumber, bool carriedToo, string numberUsage, out string which)
+    {
+        which = null;
+
+        var player = session.Player;
+        var targetGuid = player.RequestedAppraisalTarget;
+
+        if (
+            packNumber == null
+            && carriedToo
+            && targetGuid != null
+            && player.Inventory.TryGetValue(new ObjectGuid(targetGuid.Value), out var carried)
+            && carried is Container carriedPack
+        )
+        {
+            which = $"{carriedPack.Name} (carried)";
+            return carriedPack;
+        }
+
+        // A carried pack needs no bank, so without one open this can only be the wrong thing examined.
+        List<Container> bankPacks = null;
+
+        if (packNumber != null || !carriedToo || player.GetOpenBank() != null)
+        {
+            var bank = GetReadyBank(session);
+            if (bank == null)
+            {
+                return null;
+            }
+
+            bankPacks = player.GetBankPacks(bank);
+        }
+
+        if (packNumber != null)
+        {
+            if (packNumber < 1 || packNumber > bankPacks.Count)
+            {
+                Send(session, $"Your bank has {Plural(bankPacks.Count, "pack")}. /bank packs shows their numbers.");
+                return null;
+            }
+
+            var numbered = bankPacks[packNumber.Value - 1];
+            which = $"{numbered.Name} (bank pack {packNumber})";
+            return numbered;
+        }
+
+        var examined = targetGuid == null ? null : player.FindItemInOpenBank(targetGuid.Value);
+
+        if (bankPacks != null && examined is Container examinedPack && bankPacks.Contains(examinedPack))
+        {
+            which = $"{examinedPack.Name} (bank pack {bankPacks.IndexOf(examinedPack) + 1})";
+            return examinedPack;
+        }
+
+        var name = examined?.Name
+            ?? (targetGuid == null ? null : player.FindObject(targetGuid.Value, Player.SearchLocations.Everywhere, out _, out _, out _)?.Name);
+        var packs = carriedToo ? "one of your packs" : "a pack in your bank";
+
+        Send(
+            session,
+            (name == null ? $"Examine {packs} first" : $"The last thing you examined was {name}, not {packs}")
+                + $". Use {numberUsage} with the pack's number from /bank packs; add-ons that examine items can change what you examined last."
+        );
+        return null;
     }
 
     private static Storage GetReadyBank(Session session)
